@@ -1,14 +1,13 @@
 package(default_testonly = 1)
 
-load("//haskell:haskell.bzl",
-    "haskell_library",
+load("@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
 )
 
 haskell_binary(
     name = "hello",
-    srcs = ["hello.hs"],
-    # main_is = "hello.hs",
+    srcs = ["Main.hs"],
+    deps = ["//tests/test-lib:test-lib"]
 )
 
 [sh_test(
