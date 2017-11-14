@@ -18,3 +18,8 @@ cabal.sandbox.config
 .stack-work/
 cabal.project.local
 .HTF/
+/bazel-bin
+/bazel-genfiles
+/bazel-out
+/bazel-rules_haskell
+/bazel-testlogs
