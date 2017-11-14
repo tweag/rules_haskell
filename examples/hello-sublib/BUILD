@@ -6,9 +6,7 @@ load(
 )
 
 haskell_library(
-  name = 'test-lib',
-  srcs = [
-    'TestLib.hs',
-  ],
-  deps = ["//tests/test-sublib:test-sublib"]
+  name = 'hello-sublib',
+  srcs = glob(['**/*.hs']),
+  deps = ["@examples//hello-subsublib:hello-subsublib"]
 )

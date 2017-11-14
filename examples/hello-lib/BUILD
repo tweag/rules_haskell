@@ -7,9 +7,6 @@ load(
 
 haskell_library(
   name = 'hello-lib',
-  srcs = [
-    'MsgType.hs',
-    'Unused.hs',
-    'Lib.hs'
-  ]
+  srcs = glob(['**/*.hs']),
+  deps = ["@examples//hello-sublib:hello-sublib"]
 )
