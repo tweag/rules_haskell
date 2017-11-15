@@ -10,15 +10,18 @@ load(":toolchain.bzl",
 )
 
 def _haskell_binary_impl(ctx):
-  depInputs = []
-  systemLibs = []
+  depInputs = depset()
+  depLibs = depset()
   for d in ctx.attr.deps:
-    # depend on output of deps, i.e. package file
-    depInputs += d.files.to_list()
-    # We need interface files of the package for compilation
-    depInputs += d[HaskellPackageInfo].interfaceFiles
-    # Lastly we need library object for linking
-    systemLibs.append(d[HaskellPackageInfo].systemLib)
+    depInputs += d.files
+    pkg = d[HaskellPackageInfo]
+    depInputs += pkg.pkgConfs
+    depInputs += pkg.pkgCaches
+    depInputs += pkg.pkgLibs
+    depInputs += pkg.interfaceFiles
+    depLibs += pkg.pkgLibs
+
+  depInputs += ctx.files.srcs
 
   objDir = ctx.actions.declare_directory("objects")
   binObjs = [ctx.actions.declare_file(src_to_ext(ctx, s, "o", directory=objDir))
@@ -26,18 +29,19 @@ def _haskell_binary_impl(ctx):
 
   # Compile sources of the binary.
   ctx.actions.run(
-    inputs = ctx.files.srcs + depInputs + systemLibs,
+    inputs = depInputs + depLibs,
     outputs = binObjs + [objDir],
+    # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
     use_default_shell_env = True,
     progress_message = "Building {0}".format(ctx.attr.name),
     executable = "ghc",
-    arguments = [ghc_bin_obj_args(ctx, objDir)],
+    arguments = [ghc_bin_obj_args(ctx, objDir)]
     )
 
   # Link everything together
-  linkTarget, linkArgs = ghc_bin_link_args(ctx, binObjs, systemLibs)
+  linkTarget, linkArgs = ghc_bin_link_args(ctx, binObjs, depLibs)
   ctx.actions.run(
-    inputs = binObjs + systemLibs + [linkTarget],
+    inputs = binObjs + depLibs.to_list() + [linkTarget],
     outputs = [ctx.outputs.executable],
     use_default_shell_env = True,
     progress_message = "Linking {0}".format(ctx.outputs.executable),
@@ -55,47 +59,78 @@ def _haskell_library_impl(ctx):
   interfaceFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, "hi", directory=ifaceDir))
                     for s in ctx.files.srcs ]
 
-  # Compile library files
-  #
-  # TODO: Library deps
+
+  # Build transitive depsets
+  depPkgConfs = depset()
+  depPkgCaches = depset()
+  depPkgNames = depset()
+  depPkgLibs = depset()
+  depInterfaceFiles = depset()
+  depImportDirs = depset()
+  depLibDirs = depset()
+  for d in ctx.attr.deps:
+    pkg = d[HaskellPackageInfo]
+    depPkgConfs += pkg.pkgConfs
+    depPkgCaches += pkg.pkgCaches
+    depPkgNames += pkg.pkgNames
+    depInterfaceFiles += pkg.interfaceFiles
+    depPkgLibs += pkg.pkgLibs
+    depImportDirs += pkg.pkgImportDirs
+    depLibDirs += pkg.pkgLibDirs
+
+   # Compile library files
   ctx.actions.run(
-    inputs = ctx.files.srcs,
+    inputs =
+      ctx.files.srcs +
+      (depPkgConfs + depPkgCaches + depInterfaceFiles).to_list(),
     outputs = [ifaceDir, objDir] + objectFiles + interfaceFiles,
     use_default_shell_env = True,
     progress_message = "Compiling {0}".format(ctx.attr.name),
     executable = "ghc",
-    arguments = [ghc_lib_args(ctx, objDir, ifaceDir)]
+    arguments = [ghc_lib_args(ctx, objDir, ifaceDir, depPkgConfs, depPkgNames)]
   )
 
   # Make library archive; currently only static
   #
   # TODO: configurable shared &c. see various scenarios in buck
   libDir = ctx.actions.declare_directory("lib")
-  systemLib = ctx.actions.declare_file("{0}/lib{1}.a".format(libDir.basename, ctx.attr.name))
+  pkgLib = ctx.actions.declare_file("{0}/lib{1}.a".format(libDir.basename, ctx.attr.name))
 
   ctx.actions.run(
     inputs = objectFiles,
-    outputs = [systemLib, libDir],
+    outputs = [pkgLib, libDir],
     use_default_shell_env = True,
     executable = "ar",
-    arguments = [ar_args(ctx, systemLib, objectFiles)],
+    arguments = [ar_args(ctx, pkgLib, objectFiles)],
   )
 
   # Create and register ghc package.
   pkgId = "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
   confFile = ctx.actions.declare_file("{0}.conf".format(pkgId))
-  cacheFile = ctx.actions.declare_file("package.cache")
+  cacheFile = ctx.actions.declare_file("package.cache", sibling=confFile)
   registrationFile = mk_registration_file(ctx, pkgId, ifaceDir, libDir)
   ctx.actions.run_shell(
-    inputs = [systemLib, ifaceDir, registrationFile],
+    inputs =
+      [ pkgLib, ifaceDir, registrationFile ] +
+      (depPkgConfs + depPkgCaches + depPkgLibs + depImportDirs + depLibDirs + interfaceFiles).to_list(),
     outputs = [confFile, cacheFile],
+    # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
     use_default_shell_env = True,
-    command = register_package(ifaceDir, registrationFile, confFile.dirname)
+    command = register_package(registrationFile, confFile, depPkgConfs)
   )
-  return [HaskellPackageInfo( packageName = pkgId,
-                              pkgDb = confFile.dirname,
-                              systemLib = systemLib,
-                              interfaceFiles = interfaceFiles)]
+
+  return [HaskellPackageInfo(
+    pkgName = pkgId,
+    pkgNames = depPkgNames + depset([pkgId]),
+    pkgConfs = depPkgConfs + depset([confFile]),
+    pkgCaches = depPkgCaches + depset([cacheFile]),
+    # Keep package libraries in preorder (naive_link) order: this
+    # gives us the valid linking order at binary linking time.
+    pkgLibs = depset([pkgLib], order="preorder") + depPkgLibs,
+    interfaceFiles = depInterfaceFiles + depset(interfaceFiles),
+    pkgImportDirs = depImportDirs + depset([ifaceDir]),
+    pkgLibDirs = depLibDirs + depset([libDir])
+  )]
 
 _haskell_common_attrs = {
   "srcs": attr.label_list(allow_files = FileType([".hs"])),

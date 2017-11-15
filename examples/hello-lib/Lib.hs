@@ -1,6 +1,7 @@
 module Lib (libText) where
 
-import MsgType (Msg)
+import Lib.MsgType (Msg)
+import MessageSuffix (messageSuffix)
 
 libText :: Msg
-libText = "hello world"
+libText = "hello " ++ messageSuffix
