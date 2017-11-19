@@ -8,5 +8,5 @@ load(
 haskell_library(
   name = 'hello-lib',
   srcs = glob(['**/*.hs']),
-  deps = ["@examples//hello-sublib:hello-sublib"]
+  deps = ["@examples//hello-sublib"]
 )

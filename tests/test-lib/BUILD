@@ -10,5 +10,5 @@ haskell_library(
   srcs = [
     'TestLib.hs',
   ],
-  deps = ["//tests/test-sublib:test-sublib"]
+  deps = ["//tests/test-sublib"]
 )

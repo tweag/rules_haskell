@@ -7,7 +7,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
 haskell_binary(
     name = "hello",
     srcs = ["Main.hs"],
-    deps = ["//tests/test-lib:test-lib"]
+    deps = ["//tests/test-lib"]
 )
 
 [sh_test(
