@@ -15,6 +15,7 @@ haskell_binary(
     srcs = ["test_binary.sh"],
     args = ["$(location %s)" % binary],
     data = [":%s" % binary],
+    timeout="short",
 ) for binary in [
     "hello",
 ]]
