@@ -117,8 +117,11 @@ def take_haskell_module(ctx, f):
   pkgDirLen = len(pkgDir)
   # TODO: hack; depending on circumstance, workspace_root can have a
   # leading / which f.path does not have: if that's the case, drop one
-  # less character
-  if pkgDirLen > 0 and pkgDir[0] == '/':
+  # less character. If workspace_root and package are both empty, drop
+  # two characters.
+  if pkgDir == "//":
+    pkgDirLen -= 2
+  elif pkgDirLen > 0 and pkgDir[0] == '/':
     pkgDirLen -= 1
   return f.path[pkgDirLen:f.path.rfind(".")]
 
