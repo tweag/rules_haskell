@@ -8,5 +8,5 @@ load(
 haskell_binary(
   name = "hello-world",
   srcs = ["Main.hs"],
-  deps = ["@examples//hello-lib:hello-lib"]
+  deps = ["@examples//hello-lib"]
 )
