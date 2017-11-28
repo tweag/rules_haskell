@@ -7,6 +7,8 @@ load(":toolchain.bzl",
      "mk_registration_file",
      "register_package",
      "src_to_ext",
+     "get_object_suffix",
+     "get_interface_suffix"
 )
 
 def _haskell_binary_impl(ctx):
@@ -24,7 +26,7 @@ def _haskell_binary_impl(ctx):
   depInputs += ctx.files.srcs
 
   objDir = ctx.actions.declare_directory("objects")
-  binObjs = [ctx.actions.declare_file(src_to_ext(ctx, s, "o", directory=objDir))
+  binObjs = [ctx.actions.declare_file(src_to_ext(ctx, s, get_object_suffix(ctx), directory=objDir))
              for s in ctx.files.srcs]
 
   # Compile sources of the binary.
@@ -44,7 +46,7 @@ def _haskell_binary_impl(ctx):
     inputs = binObjs + depLibs.to_list() + [linkTarget],
     outputs = [ctx.outputs.executable],
     use_default_shell_env = True,
-    progress_message = "Linking {0}".format(ctx.outputs.executable),
+    progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
     executable = "ghc",
     arguments = [linkArgs],
   )
@@ -52,11 +54,11 @@ def _haskell_binary_impl(ctx):
 def _haskell_library_impl(ctx):
 
   objDir = ctx.actions.declare_directory("objects")
-  objectFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, "o", directory=objDir))
+  objectFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, get_object_suffix(ctx), directory=objDir))
                  for s in ctx.files.srcs]
 
   ifaceDir = ctx.actions.declare_directory("interfaces")
-  interfaceFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, "hi", directory=ifaceDir))
+  interfaceFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, get_interface_suffix(ctx), directory=ifaceDir))
                     for s in ctx.files.srcs ]
 
 
@@ -142,7 +144,17 @@ _haskell_common_attrs = {
   ),
   "compilerFlags": attr.string_list(
     doc="Flags to pass to Haskell compiler while compiling this rule's sources."
-  )
+  ),
+  "profiling": attr.bool(
+    # Disabled because of linking errors against RTS. Buck has exactly
+    # the same problem.
+    default=False,
+    doc="Build target profiled. You need to enable profiling for all the dependencies as well. Broken."
+  ),
+  "PIC": attr.bool(
+    default=False,
+    doc="Build as position independent code"
+  ),
 }
 
 haskell_library = rule(
