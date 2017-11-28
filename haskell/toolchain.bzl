@@ -25,6 +25,12 @@ def ghc_bin_obj_args(ctx, objDir):
   args.add(ctx.files.srcs)
   args.add(["-odir", objDir])
 
+  if ctx.attr.profiling:
+    args.add("-prof")
+  elif ctx.attr.PIC:
+    args.add("-dynamic")
+  args.add(["-osuf", get_object_suffix(ctx), "-hisuf", get_interface_suffix(ctx)])
+
   # Collapse all library dependencies
   depNames = depset([ n for d in ctx.attr.deps for n in d[HaskellPackageInfo].pkgNames ])
   depConfs = depset([ c.dirname for d in ctx.attr.deps for c in d[HaskellPackageInfo].pkgConfs ])
@@ -54,11 +60,11 @@ def ghc_bin_link_args(ctx, binObjs, depLibs):
   #
   # https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
   dummy = ctx.actions.declare_file("BazelDummy.hs")
-  dummyObj = ctx.actions.declare_file("BazelDummy.o")
+  dummyObj = ctx.actions.declare_file("BazelDummy." + get_object_suffix(ctx))
   ctx.actions.write(output=dummy, content="module BazelDummy () where")
   dummyLib = ctx.actions.declare_file("libempty.a")
   dummyArgs = ctx.actions.args()
-  dummyArgs.add(["-no-link", dummy])
+  dummyArgs.add(["-no-link", dummy, "-osuf", get_object_suffix(ctx)])
   ctx.actions.run(
     inputs = [dummy],
     outputs = [dummyObj],
@@ -98,6 +104,12 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames):
   args.add(["-no-link"])
   args.add(["-package-name", "{0}-{1}".format(ctx.attr.name, ctx.attr.version)])
   args.add(["-odir", objDir, "-hidir", ifaceDir])
+
+  if ctx.attr.profiling:
+    args.add("-prof")
+  elif ctx.attr.PIC:
+    args.add("-dynamic")
+  args.add(["-osuf", get_object_suffix(ctx), "-hisuf", get_interface_suffix(ctx)])
 
   for n in pkgNames:
     args.add(["-package", n])
@@ -199,6 +211,31 @@ def register_package(registrationFile, confFile, pkgConfs):
       checkPackage
     ]
   )
+
+def get_object_suffix(ctx):
+  """Get the object file suffix that GHC expects for this mode of compilation.
+
+  Args:
+    ctx: Rule context.
+  """
+  if ctx.attr.profiling:
+    return "p_o"
+  else:
+    return "o"
+
+def get_interface_suffix(ctx):
+  """Get the interface file suffix that GHC expects for this mode of
+  compilation.
+
+  Args:
+    ctx: Rule context.
+  """
+  if ctx.attr.PIC:
+    return "dyn_hi"
+  elif ctx.attr.profiling:
+    return "p_hi"
+  else:
+    return "hi"
 
 def src_to_ext(ctx, src, ext, directory=None):
   """Haskell source file to Haskell file living in specified directory.
