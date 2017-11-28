@@ -146,10 +146,8 @@ _haskell_common_attrs = {
     doc="Flags to pass to Haskell compiler while compiling this rule's sources."
   ),
   "profiling": attr.bool(
-    # Disabled because of linking errors against RTS. Buck has exactly
-    # the same problem.
     default=False,
-    doc="Build target profiled. You need to enable profiling for all the dependencies as well. Broken."
+    doc="Build target profiled. You need to enable profiling for all the dependencies as well."
   ),
   "PIC": attr.bool(
     default=False,
