@@ -20,6 +20,7 @@ def ghc_bin_obj_args(ctx, objDir):
     objDir: Output directory for object files.
   """
   args = ctx.actions.args()
+  args.add(ctx.attr.compilerFlags)
   args.add("-no-link")
   args.add(ctx.files.srcs)
   args.add(["-odir", objDir])
@@ -93,6 +94,7 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames):
     pkgNames: Package names of dependencies.
   """
   args = ctx.actions.args()
+  args.add(ctx.attr.compilerFlags)
   args.add(["-no-link"])
   args.add(["-package-name", "{0}-{1}".format(ctx.attr.name, ctx.attr.version)])
   args.add(["-odir", objDir, "-hidir", ifaceDir])

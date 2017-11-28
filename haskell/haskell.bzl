@@ -133,8 +133,16 @@ def _haskell_library_impl(ctx):
   )]
 
 _haskell_common_attrs = {
-  "srcs": attr.label_list(allow_files = FileType([".hs"])),
-  "deps": attr.label_list(),
+  "srcs": attr.label_list(
+    allow_files=FileType([".hs"]),
+    doc="A list of Haskell sources to be built by this rule."
+  ),
+  "deps": attr.label_list(
+    doc="haskell_library dependencies"
+  ),
+  "compilerFlags": attr.string_list(
+    doc="Flags to pass to Haskell compiler while compiling this rule's sources."
+  )
 }
 
 haskell_library = rule(
@@ -144,7 +152,10 @@ haskell_library = rule(
     "packageCache": "package.cache"
   },
   attrs = _haskell_common_attrs + {
-    "version": attr.string(default="1.0.0"),
+    "version": attr.string(
+      default="1.0.0",
+      doc="Library version"
+    ),
   }
 )
 
