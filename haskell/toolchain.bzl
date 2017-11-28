@@ -24,6 +24,7 @@ def ghc_bin_obj_args(ctx, objDir):
   args.add("-no-link")
   args.add(ctx.files.srcs)
   args.add(["-odir", objDir])
+  args.add(["-main-is", ctx.attr.main])
 
   if ctx.attr.profiling:
     args.add("-prof")
