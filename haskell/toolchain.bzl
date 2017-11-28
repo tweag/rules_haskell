@@ -82,6 +82,8 @@ def ghc_bin_link_args(ctx, binObjs, depLibs):
   )
 
   args = ctx.actions.args()
+  if ctx.attr.profiling:
+    args.add("-prof")
   args.add(["-o", ctx.outputs.executable])
   args.add(dummyLib)
   for o in binObjs:
