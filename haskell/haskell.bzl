@@ -8,7 +8,8 @@ load(":toolchain.bzl",
      "register_package",
      "src_to_ext",
      "get_object_suffix",
-     "get_interface_suffix"
+     "get_interface_suffix",
+     "hsc2hs_args"
 )
 
 def _haskell_binary_impl(ctx):
@@ -41,7 +42,11 @@ def _haskell_binary_impl(ctx):
     )
 
   # Link everything together
-  linkTarget, linkArgs = ghc_bin_link_args(ctx, binObjs, depLibs)
+  prebuiltDeps = depset(ctx.attr.prebuiltDeps)
+  for d in ctx.attr.deps:
+    prebuiltDeps += d[HaskellPackageInfo].prebuiltDeps
+
+  linkTarget, linkArgs = ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps)
   ctx.actions.run(
     inputs = binObjs + depLibs.to_list() + [linkTarget],
     outputs = [ctx.outputs.executable],
@@ -61,7 +66,6 @@ def _haskell_library_impl(ctx):
   interfaceFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, get_interface_suffix(ctx), directory=ifaceDir))
                     for s in ctx.files.srcs ]
 
-
   # Build transitive depsets
   depPkgConfs = depset()
   depPkgCaches = depset()
@@ -70,6 +74,7 @@ def _haskell_library_impl(ctx):
   depInterfaceFiles = depset()
   depImportDirs = depset()
   depLibDirs = depset()
+  depPrebuiltDeps = depset()
   for d in ctx.attr.deps:
     pkg = d[HaskellPackageInfo]
     depPkgConfs += pkg.pkgConfs
@@ -79,17 +84,36 @@ def _haskell_library_impl(ctx):
     depPkgLibs += pkg.pkgLibs
     depImportDirs += pkg.pkgImportDirs
     depLibDirs += pkg.pkgLibDirs
+    depPrebuiltDeps += pkg.prebuiltDeps
 
-   # Compile library files
+  exFiles = depset()
+  for t in ctx.attr.external_deps:
+    exFiles += t.files
+
+  # Process hsc files
+  hscFiles = []
+  for hscFile in ctx.files.hscs:
+    hsOut = ctx.actions.declare_file(src_to_ext(ctx, hscFile, "hs"))
+    ctx.actions.run(
+      inputs = exFiles + depset([hscFile]),
+      outputs = [hsOut],
+      use_default_shell_env = True,
+      progress_message = "Processing {0}".format(hscFile.basename),
+      executable = "hsc2hs",
+      arguments = [hsc2hs_args(ctx, hscFile, hsOut, exFiles)],
+    )
+    hscFiles.append(hsOut)
+
+  # Compile library files
   ctx.actions.run(
     inputs =
-      ctx.files.srcs +
+      ctx.files.srcs + hscFiles +
       (depPkgConfs + depPkgCaches + depInterfaceFiles).to_list(),
     outputs = [ifaceDir, objDir] + objectFiles + interfaceFiles,
     use_default_shell_env = True,
     progress_message = "Compiling {0}".format(ctx.attr.name),
     executable = "ghc",
-    arguments = [ghc_lib_args(ctx, objDir, ifaceDir, depPkgConfs, depPkgNames)]
+    arguments = [ghc_lib_args(ctx, objDir, ifaceDir, depPkgConfs, depPkgNames, hscFiles)]
   )
 
   # Make library archive; currently only static
@@ -108,30 +132,33 @@ def _haskell_library_impl(ctx):
 
   # Create and register ghc package.
   pkgId = "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
-  confFile = ctx.actions.declare_file("{0}.conf".format(pkgId))
+  pkgDbDir = ctx.actions.declare_directory(pkgId)
+  confFile = ctx.actions.declare_file("{0}/{1}.conf".format(pkgDbDir.basename, pkgId))
   cacheFile = ctx.actions.declare_file("package.cache", sibling=confFile)
   registrationFile = mk_registration_file(ctx, pkgId, ifaceDir, libDir)
+
   ctx.actions.run_shell(
     inputs =
       [ pkgLib, ifaceDir, registrationFile ] +
       (depPkgConfs + depPkgCaches + depPkgLibs + depImportDirs + depLibDirs + interfaceFiles).to_list(),
-    outputs = [confFile, cacheFile],
+    outputs = [pkgDbDir, confFile, cacheFile],
     # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
     use_default_shell_env = True,
-    command = register_package(registrationFile, confFile, depPkgConfs)
+    command = register_package(registrationFile, pkgDbDir, depPkgConfs)
   )
 
   return [HaskellPackageInfo(
     pkgName = pkgId,
     pkgNames = depPkgNames + depset([pkgId]),
-    pkgConfs = depPkgConfs + depset([confFile]),
+    pkgConfs = depPkgConfs + depset ([confFile]),
     pkgCaches = depPkgCaches + depset([cacheFile]),
     # Keep package libraries in preorder (naive_link) order: this
     # gives us the valid linking order at binary linking time.
     pkgLibs = depset([pkgLib], order="preorder") + depPkgLibs,
     interfaceFiles = depInterfaceFiles + depset(interfaceFiles),
     pkgImportDirs = depImportDirs + depset([ifaceDir]),
-    pkgLibDirs = depLibDirs + depset([libDir])
+    pkgLibDirs = depLibDirs + depset([libDir]),
+    prebuiltDeps = depPrebuiltDeps + depset(ctx.attr.prebuiltDeps)
   )]
 
 _haskell_common_attrs = {
@@ -153,13 +180,24 @@ _haskell_common_attrs = {
     default=False,
     doc="Build as position independent code"
   ),
+  "hscs": attr.label_list(
+    allow_files=FileType([".hsc"]),
+    doc=".hsc files to preprocess and link"
+  ),
+  "external_deps": attr.label_list(
+    allow_files=True,
+    doc="Non-Haskell dependencies",
+  ),
+  "prebuiltDeps": attr.string_list(
+    doc="Haskell packages which are magically available such as wired-in packages."
+  )
 }
 
 haskell_library = rule(
   _haskell_library_impl,
   outputs = {
-    "conf": "%{name}-%{version}.conf",
-    "packageCache": "package.cache"
+    "conf": "%{name}-%{version}/%{name}-%{version}.conf",
+    "packageCache": "%{name}-%{version}/package.cache"
   },
   attrs = _haskell_common_attrs + {
     "version": attr.string(
