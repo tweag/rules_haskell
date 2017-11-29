@@ -13,6 +13,14 @@ HaskellPackageInfo = provider(
   }
 )
 
+def mk_name(ctx, namePrefix):
+  """Make a target-unique name.
+
+  Args:
+    namePrefix: Template for the name.
+  """
+  return "{0}-{1}-{2}".format(namePrefix, ctx.attr.name, ctx.attr.version)
+
 def ghc_bin_obj_args(ctx, objDir):
   """Build arguments for Haskell binary object building.
 
@@ -173,7 +181,7 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
     interfaceDir: Directory with interface files.
     libDir: Directory containing library archive(s).
   """
-  registrationFile = ctx.actions.declare_file("registration-file")
+  registrationFile = ctx.actions.declare_file(mk_name(ctx, "registration-file"))
   registrationFileDict = {
     "name": ctx.attr.name,
     "version": ctx.attr.version,
@@ -186,7 +194,7 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
                                  for f in ctx.files.srcs]),
     "import-dirs": "${{pkgroot}}/{0}".format(interfaceDir.basename),
     "library-dirs": "${{pkgroot}}/{0}".format(libDir.basename),
-    "hs-libraries": ctx.attr.name,
+    "hs-libraries": pkgId,
     "depends": ", ".join([ d[HaskellPackageInfo].pkgName for d in ctx.attr.deps ])
   }
   ctx.actions.write(

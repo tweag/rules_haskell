@@ -9,7 +9,8 @@ load(":toolchain.bzl",
      "src_to_ext",
      "get_object_suffix",
      "get_interface_suffix",
-     "hsc2hs_args"
+     "hsc2hs_args",
+     "mk_name",
 )
 
 def _haskell_binary_impl(ctx):
@@ -26,7 +27,7 @@ def _haskell_binary_impl(ctx):
 
   depInputs += ctx.files.srcs
 
-  objDir = ctx.actions.declare_directory("objects")
+  objDir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
   binObjs = [ctx.actions.declare_file(src_to_ext(ctx, s, get_object_suffix(ctx), directory=objDir))
              for s in ctx.files.srcs]
 
@@ -57,12 +58,11 @@ def _haskell_binary_impl(ctx):
   )
 
 def _haskell_library_impl(ctx):
-
-  objDir = ctx.actions.declare_directory("objects")
+  objDir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
   objectFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, get_object_suffix(ctx), directory=objDir))
                  for s in ctx.files.srcs]
 
-  ifaceDir = ctx.actions.declare_directory("interfaces")
+  ifaceDir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
   interfaceFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, get_interface_suffix(ctx), directory=ifaceDir))
                     for s in ctx.files.srcs ]
 
@@ -119,9 +119,10 @@ def _haskell_library_impl(ctx):
   # Make library archive; currently only static
   #
   # TODO: configurable shared &c. see various scenarios in buck
-  libDir = ctx.actions.declare_directory("lib")
-  pkgLib = ctx.actions.declare_file("{0}/lib{1}.a".format(libDir.basename, ctx.attr.name))
-
+  pkgId = "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
+  libDir = ctx.actions.declare_directory(mk_name(ctx, "lib"))
+  # We need libDir because ghc-pkg wants a directory for library-dirs.
+  pkgLib = ctx.actions.declare_file("{0}/lib{1}.a".format(libDir.basename, pkgId))
   ctx.actions.run(
     inputs = objectFiles,
     outputs = [pkgLib, libDir],
@@ -131,7 +132,6 @@ def _haskell_library_impl(ctx):
   )
 
   # Create and register ghc package.
-  pkgId = "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
   pkgDbDir = ctx.actions.declare_directory(pkgId)
   confFile = ctx.actions.declare_file("{0}/{1}.conf".format(pkgDbDir.basename, pkgId))
   cacheFile = ctx.actions.declare_file("package.cache", sibling=confFile)
@@ -190,7 +190,11 @@ _haskell_common_attrs = {
   ),
   "prebuiltDeps": attr.string_list(
     doc="Haskell packages which are magically available such as wired-in packages."
-  )
+  ),
+  "version": attr.string(
+    default="1.0.0",
+    doc="Package/binary version"
+  ),
 }
 
 haskell_library = rule(
@@ -199,12 +203,7 @@ haskell_library = rule(
     "conf": "%{name}-%{version}/%{name}-%{version}.conf",
     "packageCache": "%{name}-%{version}/package.cache"
   },
-  attrs = _haskell_common_attrs + {
-    "version": attr.string(
-      default="1.0.0",
-      doc="Library version"
-    ),
-  }
+  attrs = _haskell_common_attrs,
 )
 
 haskell_binary = rule(

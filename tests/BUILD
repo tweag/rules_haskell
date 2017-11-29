@@ -10,6 +10,16 @@ haskell_binary(
     deps = ["//tests/test-lib"]
 )
 
+haskell_binary(
+  name = "two-libs-one-BUILD",
+  main = "TogetherTest.main",
+  srcs = ["TogetherTest.hs"],
+  deps = [
+    "//tests/together-lib:one",
+    "//tests/together-lib:two"
+  ]
+)
+
 [sh_test(
     name = "Run" + binary,
     srcs = ["test_binary.sh"],
@@ -18,4 +28,5 @@ haskell_binary(
     timeout="short",
 ) for binary in [
     "hello",
+    "two-libs-one-BUILD",
 ]]
