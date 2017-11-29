@@ -7,8 +7,9 @@ HaskellPackageInfo = provider(
     "pkgCaches": "Package cache files.",
     "pkgLibs": "Compiled library archives.",
     "interfaceFiles": "Interface files belonging to the packages.",
-    "pkgImportDirs": "",
-    "pkgLibDirs": ""
+    "pkgImportDirs": "Interface file directories",
+    "pkgLibDirs": "Library file directories",
+    "prebuiltDeps": "Transitive collection of all wired-in Haskell dependencies."
   }
 )
 
@@ -42,7 +43,7 @@ def ghc_bin_obj_args(ctx, objDir):
     args.add(["-package-db", db])
   return args
 
-def ghc_bin_link_args(ctx, binObjs, depLibs):
+def ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps):
   """Build arguments for Haskell binary linking stage.
 
   Also creates an empty library archive to as a build target: this
@@ -90,9 +91,15 @@ def ghc_bin_link_args(ctx, binObjs, depLibs):
     args.add(["-optl", o])
   for l in depLibs:
     args.add(["-optl", l])
+
+  # We have to remember to specify all (transitive) wired-in
+  # dependencies or we can't find objects for linking.
+  for p in prebuiltDeps:
+    args.add(["-package", p])
+
   return dummyLib, args
 
-def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames):
+def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, hscFiles):
   """Build arguments for Haskell package build.
 
   Args:
@@ -101,6 +108,7 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames):
     ifaceDir: Output directory for interface files.
     pkgConfs: Package conf files of dependencies.
     pkgNames: Package names of dependencies.
+    hscFiles: Processed hsc files.
   """
   args = ctx.actions.args()
   args.add(ctx.attr.compilerFlags)
@@ -118,8 +126,22 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames):
     args.add(["-package", n])
   for c in pkgConfs:
     args.add(["-package-db", c.dirname])
-  args.add("-i")
+
+  args.add(hscFiles)
   args.add(ctx.files.srcs)
+  return args
+
+def hsc2hs_args(ctx, hscFile, hsOut, exFiles):
+  args = ctx.actions.args()
+  args.add("-v")
+  args.add(hscFile)
+  args.add(["-o", hsOut])
+  includeDirs = depset()
+  for exFile in exFiles:
+    includeDir = exFile.dirname
+    if includeDir not in includeDirs:
+      args.add(["-I", includeDir])
+      includeDirs += depset([includeDir])
   return args
 
 def take_haskell_module(ctx, f):
@@ -162,8 +184,8 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
     # without GHC help.
     "exposed-modules": " ".join([take_haskell_module(ctx, f).replace("/", ".")
                                  for f in ctx.files.srcs]),
-    "import-dirs": "${{pkgroot}}/{0}/{1}".format(ctx.label.name, interfaceDir.basename),
-    "library-dirs": "${{pkgroot}}/{0}/{1}".format(ctx.label.name, libDir.basename),
+    "import-dirs": "${{pkgroot}}/{0}".format(interfaceDir.basename),
+    "library-dirs": "${{pkgroot}}/{0}".format(libDir.basename),
     "hs-libraries": ctx.attr.name,
     "depends": ", ".join([ d[HaskellPackageInfo].pkgName for d in ctx.attr.deps ])
   }
@@ -174,21 +196,14 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
   )
   return registrationFile
 
-def register_package(registrationFile, confFile, pkgConfs):
+def register_package(registrationFile, pkgDbDir, pkgConfs):
   """Initialises, registers and checks ghc DB package.
 
   Args:
     registrationFile: File containing package description.
-    confFile: The conf file to use for this package.
+    pkgDbDir: Directory for GHC package DB.
     pkgConfs: Package config files of dependencies this package needs.
   """
-  pkgDir = confFile.dirname
-  scratchDir = "ghc-pkg-init-scratch"
-  initPackage = "ghc-pkg init {0}".format(scratchDir)
-  # Move things out of scratch to make it easier for everyone. ghc-pkg
-  # refuses to use an existing directory.
-  mvFromScratch = "mv {0}/* {1}".format(scratchDir, pkgDir)
-
   # TODO: Set GHC_PACKAGE_PATH with ctx.actions.run_shell.env when we
   # stop using use_default_shell_env! That way we can't forget to set
   # this.
@@ -200,17 +215,17 @@ def register_package(registrationFile, confFile, pkgConfs):
       "ghc-pkg",
       "-v0",
       "register",
-      "--package-conf={0}".format(pkgDir),
+      "--package-conf={0}".format(pkgDbDir.path),
       "--no-expand-pkgroot",
+      "-v",
       registrationFile.path,
     ]
   )
+
   # make sure what we produce is valid
-  checkPackage = "{0} ghc-pkg check --package-conf={1}".format(ghcPackagePath, pkgDir)
+  checkPackage = "{0}  ghc-pkg check -v --package-conf={1}".format(ghcPackagePath, pkgDbDir.path)
   return " && ".join(
-    [ initPackage,
-      mvFromScratch,
-      registerPackage,
+    [ registerPackage,
       checkPackage
     ]
   )
