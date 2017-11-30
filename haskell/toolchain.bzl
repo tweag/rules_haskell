@@ -130,8 +130,13 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
     args.add("-dynamic")
   args.add(["-osuf", get_object_suffix(ctx), "-hisuf", get_interface_suffix(ctx)])
 
-  for n in pkgNames:
+  # Expose every dependency and every prebuilt dependency.
+  packages = pkgNames + depset(ctx.attr.prebuiltDeps)
+  for n in packages:
     args.add(["-package", n])
+
+  # Only include package DBs for deps, prebuilt deps should be found
+  # auto-magically by GHC.
   for c in pkgConfs:
     args.add(["-package-db", c.dirname])
 
@@ -177,7 +182,7 @@ def take_haskell_module(ctx, f):
     pkgDirLen -= 1
   return f.path[pkgDirLen:f.path.rfind(".")]
 
-def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
+def mk_registration_file(ctx, pkgId, interfaceDir, libDir, inputFiles):
   """Prepare a file we'll use to register a package with.
 
   Args:
@@ -187,6 +192,7 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
     libDir: Directory containing library archive(s).
   """
   registrationFile = ctx.actions.declare_file(mk_name(ctx, "registration-file"))
+  modules = [take_haskell_module(ctx, f).replace("/", ".") for f in inputFiles]
   registrationFileDict = {
     "name": ctx.attr.name,
     "version": ctx.attr.version,
@@ -195,8 +201,7 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
     "exposed": "True",
     # Translate module source paths in Haskell modules. Best effort
     # without GHC help.
-    "exposed-modules": " ".join([take_haskell_module(ctx, f).replace("/", ".")
-                                 for f in ctx.files.srcs]),
+    "exposed-modules": " ".join(modules),
     "import-dirs": "${{pkgroot}}/{0}".format(interfaceDir.basename),
     "library-dirs": "${{pkgroot}}/{0}".format(libDir.basename),
     "hs-libraries": pkgId,
