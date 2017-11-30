@@ -107,7 +107,7 @@ def ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps):
 
   return dummyLib, args
 
-def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, hscFiles):
+def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
   """Build arguments for Haskell package build.
 
   Args:
@@ -116,7 +116,7 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, hscFiles):
     ifaceDir: Output directory for interface files.
     pkgConfs: Package conf files of dependencies.
     pkgNames: Package names of dependencies.
-    hscFiles: Processed hsc files.
+    genHsFiles: Generated Haskell files.
   """
   args = ctx.actions.args()
   args.add(ctx.attr.compilerFlags)
@@ -135,21 +135,26 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, hscFiles):
   for c in pkgConfs:
     args.add(["-package-db", c.dirname])
 
-  args.add(hscFiles)
+  args.add(genHsFiles)
   args.add(ctx.files.srcs)
   return args
 
-def hsc2hs_args(ctx, hscFile, hsOut, exFiles):
+def hsc2hs_args(ctx, hscFile, hsOut, includeDirs):
   args = ctx.actions.args()
-  args.add("-v")
   args.add(hscFile)
   args.add(["-o", hsOut])
-  includeDirs = depset()
-  for exFile in exFiles:
-    includeDir = exFile.dirname
-    if includeDir not in includeDirs:
-      args.add(["-I", includeDir])
-      includeDirs += depset([includeDir])
+  for includeDir in includeDirs:
+    args.add(["-I", includeDir])
+  return args
+
+def ghc_cpphs_args(ctx, cpphsFile, hsOut, includeDirs):
+  args = ctx.actions.args()
+  args.add(["-E", "-cpp", "-pgmPcpphs", "-optP--cpp", "-x", "hs"])
+  for includeDir in includeDirs:
+    args.add("-optP-I{0}".format(includeDir))
+
+  args.add(["-o", hsOut])
+  args.add(cpphsFile)
   return args
 
 def take_haskell_module(ctx, f):
