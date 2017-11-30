@@ -11,6 +11,7 @@ load(":toolchain.bzl",
      "get_interface_suffix",
      "hsc2hs_args",
      "mk_name",
+     "ghc_cpphs_args",
 )
 
 def _haskell_binary_impl(ctx):
@@ -90,6 +91,11 @@ def _haskell_library_impl(ctx):
   for t in ctx.attr.external_deps:
     exFiles += t.files
 
+  # Directories of external dependencies.
+  includeDirs = depset()
+  for exFile in exFiles:
+    includeDirs += depset([exFile.dirname])
+
   # Process hsc files
   hscFiles = []
   for hscFile in ctx.files.hscs:
@@ -100,20 +106,37 @@ def _haskell_library_impl(ctx):
       use_default_shell_env = True,
       progress_message = "Processing {0}".format(hscFile.basename),
       executable = "hsc2hs",
-      arguments = [hsc2hs_args(ctx, hscFile, hsOut, exFiles)],
+      arguments = [hsc2hs_args(ctx, hscFile, hsOut, includeDirs)],
     )
     hscFiles.append(hsOut)
+
+  # Process cpphs files
+  cpphsFiles = []
+  for cpphsFile in ctx.files.cpphs:
+    hsOut = ctx.actions.declare_file(src_to_ext(ctx, cpphsFile, "hs"))
+    ctx.actions.run(
+      inputs = exFiles + depset([cpphsFile]),
+      outputs = [hsOut],
+      use_default_shell_env = True,
+      progress_message = "Processing {0}".format(cpphsFile.basename),
+      executable = "ghc",
+      arguments = [ghc_cpphs_args(ctx, cpphsFile, hsOut, includeDirs)],
+    )
+    cpphsFiles.append(hsOut)
+
+  genHsFiles = hscFiles + cpphsFiles
 
   # Compile library files
   ctx.actions.run(
     inputs =
-      ctx.files.srcs + hscFiles +
+      ctx.files.srcs + genHsFiles +
       (depPkgConfs + depPkgCaches + depInterfaceFiles).to_list(),
     outputs = [ifaceDir, objDir] + objectFiles + interfaceFiles,
     use_default_shell_env = True,
     progress_message = "Compiling {0}".format(ctx.attr.name),
     executable = "ghc",
-    arguments = [ghc_lib_args(ctx, objDir, ifaceDir, depPkgConfs, depPkgNames, hscFiles)]
+    arguments = [ghc_lib_args(ctx, objDir, ifaceDir, depPkgConfs, depPkgNames,
+                              genHsFiles)]
   )
 
   # Make library archive; currently only static
@@ -164,6 +187,8 @@ def _haskell_library_impl(ctx):
 _haskell_common_attrs = {
   "srcs": attr.label_list(
     allow_files=FileType([".hs"]),
+    # TODO: Figure out how to deal with sources where module hierarchy
+    # doesn't start straight away.
     doc="A list of Haskell sources to be built by this rule."
   ),
   "deps": attr.label_list(
@@ -183,6 +208,10 @@ _haskell_common_attrs = {
   "hscs": attr.label_list(
     allow_files=FileType([".hsc"]),
     doc=".hsc files to preprocess and link"
+  ),
+  "cpphs": attr.label_list(
+    allow_files=FileType([".cpphs"]),
+    doc=".cpphs file to preprocess and link",
   ),
   "external_deps": attr.label_list(
     allow_files=True,
