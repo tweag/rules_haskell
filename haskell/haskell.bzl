@@ -60,12 +60,13 @@ def _haskell_binary_impl(ctx):
 
 def _haskell_library_impl(ctx):
   objDir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
+  inputFiles = ctx.files.srcs + ctx.files.hscs + ctx.files.cpphs
   objectFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, get_object_suffix(ctx), directory=objDir))
-                 for s in ctx.files.srcs]
+                 for s in inputFiles]
 
   ifaceDir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
   interfaceFiles = [ctx.actions.declare_file(src_to_ext(ctx, s, get_interface_suffix(ctx), directory=ifaceDir))
-                    for s in ctx.files.srcs ]
+                    for s in inputFiles]
 
   # Build transitive depsets
   depPkgConfs = depset()
@@ -158,7 +159,7 @@ def _haskell_library_impl(ctx):
   pkgDbDir = ctx.actions.declare_directory(pkgId)
   confFile = ctx.actions.declare_file("{0}/{1}.conf".format(pkgDbDir.basename, pkgId))
   cacheFile = ctx.actions.declare_file("package.cache", sibling=confFile)
-  registrationFile = mk_registration_file(ctx, pkgId, ifaceDir, libDir)
+  registrationFile = mk_registration_file(ctx, pkgId, ifaceDir, libDir, inputFiles)
 
   ctx.actions.run_shell(
     inputs =
