@@ -7,10 +7,19 @@ HaskellPackageInfo = provider(
     "pkgCaches": "Package cache files.",
     "pkgLibs": "Compiled library archives.",
     "interfaceFiles": "Interface files belonging to the packages.",
-    "pkgImportDirs": "",
-    "pkgLibDirs": ""
+    "pkgImportDirs": "Interface file directories",
+    "pkgLibDirs": "Library file directories",
+    "prebuiltDeps": "Transitive collection of all wired-in Haskell dependencies."
   }
 )
+
+def mk_name(ctx, namePrefix):
+  """Make a target-unique name.
+
+  Args:
+    namePrefix: Template for the name.
+  """
+  return "{0}-{1}-{2}".format(namePrefix, ctx.attr.name, ctx.attr.version)
 
 def ghc_bin_obj_args(ctx, objDir):
   """Build arguments for Haskell binary object building.
@@ -20,9 +29,17 @@ def ghc_bin_obj_args(ctx, objDir):
     objDir: Output directory for object files.
   """
   args = ctx.actions.args()
+  args.add(ctx.attr.compilerFlags)
   args.add("-no-link")
   args.add(ctx.files.srcs)
   args.add(["-odir", objDir])
+  args.add(["-main-is", ctx.attr.main])
+
+  if ctx.attr.profiling:
+    args.add("-prof")
+  elif ctx.attr.PIC:
+    args.add("-dynamic")
+  args.add(["-osuf", get_object_suffix(ctx), "-hisuf", get_interface_suffix(ctx)])
 
   # Collapse all library dependencies
   depNames = depset([ n for d in ctx.attr.deps for n in d[HaskellPackageInfo].pkgNames ])
@@ -34,7 +51,7 @@ def ghc_bin_obj_args(ctx, objDir):
     args.add(["-package-db", db])
   return args
 
-def ghc_bin_link_args(ctx, binObjs, depLibs):
+def ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps):
   """Build arguments for Haskell binary linking stage.
 
   Also creates an empty library archive to as a build target: this
@@ -53,11 +70,11 @@ def ghc_bin_link_args(ctx, binObjs, depLibs):
   #
   # https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
   dummy = ctx.actions.declare_file("BazelDummy.hs")
-  dummyObj = ctx.actions.declare_file("BazelDummy.o")
+  dummyObj = ctx.actions.declare_file("BazelDummy." + get_object_suffix(ctx))
   ctx.actions.write(output=dummy, content="module BazelDummy () where")
   dummyLib = ctx.actions.declare_file("libempty.a")
   dummyArgs = ctx.actions.args()
-  dummyArgs.add(["-no-link", dummy])
+  dummyArgs.add(["-no-link", dummy, "-osuf", get_object_suffix(ctx)])
   ctx.actions.run(
     inputs = [dummy],
     outputs = [dummyObj],
@@ -74,15 +91,23 @@ def ghc_bin_link_args(ctx, binObjs, depLibs):
   )
 
   args = ctx.actions.args()
+  if ctx.attr.profiling:
+    args.add("-prof")
   args.add(["-o", ctx.outputs.executable])
   args.add(dummyLib)
   for o in binObjs:
     args.add(["-optl", o])
   for l in depLibs:
     args.add(["-optl", l])
+
+  # We have to remember to specify all (transitive) wired-in
+  # dependencies or we can't find objects for linking.
+  for p in prebuiltDeps:
+    args.add(["-package", p])
+
   return dummyLib, args
 
-def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames):
+def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, genHsFiles):
   """Build arguments for Haskell package build.
 
   Args:
@@ -90,19 +115,49 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames):
     objDir: Output directory for object files.
     ifaceDir: Output directory for interface files.
     pkgConfs: Package conf files of dependencies.
-    pkgNames: Package names of dependencies.
+    genHsFiles: Generated Haskell files.
   """
   args = ctx.actions.args()
+  args.add(ctx.attr.compilerFlags)
   args.add(["-no-link"])
   args.add(["-package-name", "{0}-{1}".format(ctx.attr.name, ctx.attr.version)])
   args.add(["-odir", objDir, "-hidir", ifaceDir])
 
-  for n in pkgNames:
+  if ctx.attr.profiling:
+    args.add("-prof")
+  elif ctx.attr.PIC:
+    args.add("-dynamic")
+  args.add(["-osuf", get_object_suffix(ctx), "-hisuf", get_interface_suffix(ctx)])
+
+  # Expose every dependency and every prebuilt dependency.
+  for n in depset(ctx.attr.prebuiltDeps):
     args.add(["-package", n])
+
+  # Only include package DBs for deps, prebuilt deps should be found
+  # auto-magically by GHC.
   for c in pkgConfs:
     args.add(["-package-db", c.dirname])
-  args.add("-i")
+
+  args.add(genHsFiles)
   args.add(ctx.files.srcs)
+  return args
+
+def hsc2hs_args(ctx, hscFile, hsOut, includeDirs):
+  args = ctx.actions.args()
+  args.add(hscFile)
+  args.add(["-o", hsOut])
+  for includeDir in includeDirs:
+    args.add(["-I", includeDir])
+  return args
+
+def ghc_cpphs_args(ctx, cpphsFile, hsOut, includeDirs):
+  args = ctx.actions.args()
+  args.add(["-E", "-cpp", "-pgmPcpphs", "-optP--cpp", "-x", "hs"])
+  for includeDir in includeDirs:
+    args.add("-optP-I{0}".format(includeDir))
+
+  args.add(["-o", hsOut])
+  args.add(cpphsFile)
   return args
 
 def take_haskell_module(ctx, f):
@@ -125,7 +180,7 @@ def take_haskell_module(ctx, f):
     pkgDirLen -= 1
   return f.path[pkgDirLen:f.path.rfind(".")]
 
-def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
+def mk_registration_file(ctx, pkgId, interfaceDir, libDir, inputFiles):
   """Prepare a file we'll use to register a package with.
 
   Args:
@@ -134,7 +189,8 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
     interfaceDir: Directory with interface files.
     libDir: Directory containing library archive(s).
   """
-  registrationFile = ctx.actions.declare_file("registration-file")
+  registrationFile = ctx.actions.declare_file(mk_name(ctx, "registration-file"))
+  modules = [take_haskell_module(ctx, f).replace("/", ".") for f in inputFiles]
   registrationFileDict = {
     "name": ctx.attr.name,
     "version": ctx.attr.version,
@@ -143,11 +199,10 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
     "exposed": "True",
     # Translate module source paths in Haskell modules. Best effort
     # without GHC help.
-    "exposed-modules": " ".join([take_haskell_module(ctx, f).replace("/", ".")
-                                 for f in ctx.files.srcs]),
-    "import-dirs": "${{pkgroot}}/{0}/{1}".format(ctx.label.name, interfaceDir.basename),
-    "library-dirs": "${{pkgroot}}/{0}/{1}".format(ctx.label.name, libDir.basename),
-    "hs-libraries": ctx.attr.name,
+    "exposed-modules": " ".join(modules),
+    "import-dirs": "${{pkgroot}}/{0}".format(interfaceDir.basename),
+    "library-dirs": "${{pkgroot}}/{0}".format(libDir.basename),
+    "hs-libraries": pkgId,
     "depends": ", ".join([ d[HaskellPackageInfo].pkgName for d in ctx.attr.deps ])
   }
   ctx.actions.write(
@@ -157,21 +212,14 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir):
   )
   return registrationFile
 
-def register_package(registrationFile, confFile, pkgConfs):
+def register_package(registrationFile, pkgDbDir, pkgConfs):
   """Initialises, registers and checks ghc DB package.
 
   Args:
     registrationFile: File containing package description.
-    confFile: The conf file to use for this package.
+    pkgDbDir: Directory for GHC package DB.
     pkgConfs: Package config files of dependencies this package needs.
   """
-  pkgDir = confFile.dirname
-  scratchDir = "ghc-pkg-init-scratch"
-  initPackage = "ghc-pkg init {0}".format(scratchDir)
-  # Move things out of scratch to make it easier for everyone. ghc-pkg
-  # refuses to use an existing directory.
-  mvFromScratch = "mv {0}/* {1}".format(scratchDir, pkgDir)
-
   # TODO: Set GHC_PACKAGE_PATH with ctx.actions.run_shell.env when we
   # stop using use_default_shell_env! That way we can't forget to set
   # this.
@@ -183,20 +231,45 @@ def register_package(registrationFile, confFile, pkgConfs):
       "ghc-pkg",
       "-v0",
       "register",
-      "--package-conf={0}".format(pkgDir),
+      "--package-conf={0}".format(pkgDbDir.path),
       "--no-expand-pkgroot",
+      "-v",
       registrationFile.path,
     ]
   )
+
   # make sure what we produce is valid
-  checkPackage = "{0} ghc-pkg check --package-conf={1}".format(ghcPackagePath, pkgDir)
+  checkPackage = "{0}  ghc-pkg check -v --package-conf={1}".format(ghcPackagePath, pkgDbDir.path)
   return " && ".join(
-    [ initPackage,
-      mvFromScratch,
-      registerPackage,
+    [ registerPackage,
       checkPackage
     ]
   )
+
+def get_object_suffix(ctx):
+  """Get the object file suffix that GHC expects for this mode of compilation.
+
+  Args:
+    ctx: Rule context.
+  """
+  if ctx.attr.profiling:
+    return "p_o"
+  else:
+    return "o"
+
+def get_interface_suffix(ctx):
+  """Get the interface file suffix that GHC expects for this mode of
+  compilation.
+
+  Args:
+    ctx: Rule context.
+  """
+  if ctx.attr.PIC:
+    return "dyn_hi"
+  elif ctx.attr.profiling:
+    return "p_hi"
+  else:
+    return "hi"
 
 def src_to_ext(ctx, src, ext, directory=None):
   """Haskell source file to Haskell file living in specified directory.
