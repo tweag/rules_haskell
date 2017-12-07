@@ -131,12 +131,12 @@ def _haskell_library_impl(ctx):
   ctx.actions.run(
     inputs =
       ctx.files.srcs + genHsFiles +
-      (depPkgConfs + depPkgCaches + depInterfaceFiles).to_list(),
+      (exFiles + depPkgConfs + depPkgCaches + depInterfaceFiles).to_list(),
     outputs = [ifaceDir, objDir] + objectFiles + interfaceFiles,
     use_default_shell_env = True,
     progress_message = "Compiling {0}".format(ctx.attr.name),
     executable = "ghc",
-    arguments = [ghc_lib_args(ctx, objDir, ifaceDir, depPkgConfs, depPkgNames,
+    arguments = [ghc_lib_args(ctx, objDir, ifaceDir, depPkgConfs,
                               genHsFiles)]
   )
 
@@ -186,6 +186,10 @@ def _haskell_library_impl(ctx):
   )]
 
 _haskell_common_attrs = {
+  "sourceDir": attr.string(
+    mandatory=False,
+    doc="Directory in which module hierarchy starts."
+  ),
   "srcs": attr.label_list(
     allow_files=FileType([".hs"]),
     # TODO: Figure out how to deal with sources where module hierarchy

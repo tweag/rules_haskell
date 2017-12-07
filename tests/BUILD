@@ -20,6 +20,16 @@ haskell_binary(
   ]
 )
 
+haskell_binary(
+  name = "non-top-srcs",
+  sourceDir = "non-top-srcs",
+  srcs = [
+    "non-top-srcs/Test.hs",
+    "non-top-srcs/Main.hs"
+  ],
+  prebuiltDeps = ["base"]
+)
+
 [sh_test(
     name = "Run" + binary,
     srcs = ["test_binary.sh"],
@@ -29,4 +39,5 @@ haskell_binary(
 ) for binary in [
     "hello",
     "two-libs-one-BUILD",
+    "non-top-srcs",
 ]]

@@ -107,7 +107,7 @@ def ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps):
 
   return dummyLib, args
 
-def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
+def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, genHsFiles):
   """Build arguments for Haskell package build.
 
   Args:
@@ -115,7 +115,6 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
     objDir: Output directory for object files.
     ifaceDir: Output directory for interface files.
     pkgConfs: Package conf files of dependencies.
-    pkgNames: Package names of dependencies.
     genHsFiles: Generated Haskell files.
   """
   args = ctx.actions.args()
@@ -131,8 +130,7 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
   args.add(["-osuf", get_object_suffix(ctx), "-hisuf", get_interface_suffix(ctx)])
 
   # Expose every dependency and every prebuilt dependency.
-  packages = pkgNames + depset(ctx.attr.prebuiltDeps)
-  for n in packages:
+  for n in depset(ctx.attr.prebuiltDeps):
     args.add(["-package", n])
 
   # Only include package DBs for deps, prebuilt deps should be found
@@ -162,25 +160,78 @@ def ghc_cpphs_args(ctx, cpphsFile, hsOut, includeDirs):
   args.add(cpphsFile)
   return args
 
+def path_append(p1, p2):
+  """Append the two given paths with / separator but without creating
+  spurious separators if either path is empty or already has a
+  separator present. It does not try to normalise the path. None is
+  treated as empty path.
+
+  path_append("foo", "bar") => "foo/bar"
+  path_append("foo", "/bar") => "foo/bar"
+  path_append("foo/", "bar") => "foo/bar"
+  path_append("foo/", "/bar") => "foo//bar"
+  path_append("foo", "") => "foo"
+  path_append("foo/", "") => "foo/"
+  path_append("", "bar") => "bar"
+  path_append("", "/bar") => "/bar"
+  path_append("", "") => ""
+
+  Args:
+    p1: Left side of the path.
+    p2: Right side of the path.
+
+  """
+  # Front empty
+  if p1 == "" or p1 == None:
+    return p2
+  # Back empty
+  elif p2 == "" or p2 == None:
+    return p1
+  # Neither empty, but if there's a slash at either end of p1 or start
+  # of p2, just append. If there's one at both, too bad.
+  elif p1[:-1] == '/' or p2[0] == '/':
+    return p1 + p2
+  # No slash at join point add one.
+  else:
+    return "{0}/{1}".format(p1, p2)
+
+def drop_path_prefix(p1, p2):
+  """Drop p1 path prefix from p2 if it exists.
+
+  drop_path_prefix("foo/bar", "foo/bar/baz") => "baz"
+  drop_path_prefix("", "/foo") => "foo"
+  drop_path_prefix("foo/mid", "foo/middle/bar") => "dle/bar"
+  drop_path_prefix("nomatch", "some/path") => "some/path"
+  drop_path_prefix("nomatch", "/some/path") => "/some/path"
+  """
+  # Check if prefix matches
+  if p1 == p2[:len(p1)]:
+    newPath = p2[len(p1):]
+    # We cut off the prefix and found a leading path separator, drop
+    # it as it was necessary with the prefix. Most likely.
+    if newPath[:1] == '/':
+      return newPath[1:]
+    else:
+      return newPath
+  else:
+    return p2
+
 def take_haskell_module(ctx, f):
   """Given Haskell source file, get the path hierarchy without the extension.
 
-  some-workspace/some-package/Foo/Bar/Baz.hs => Foo/Bar/Baz
+  some-workspace/some-package/src/Foo/Bar/Baz.hs => Foo/Bar/Baz
 
   Args:
     f: Haskell source file.
   """
-  pkgDir = "{0}/{1}/".format(ctx.label.workspace_root, ctx.label.package)
-  pkgDirLen = len(pkgDir)
-  # TODO: hack; depending on circumstance, workspace_root can have a
-  # leading / which f.path does not have: if that's the case, drop one
-  # less character. If workspace_root and package are both empty, drop
-  # two characters.
-  if pkgDir == "//":
-    pkgDirLen -= 2
-  elif pkgDirLen > 0 and pkgDir[0] == '/':
-    pkgDirLen -= 1
-  return f.path[pkgDirLen:f.path.rfind(".")]
+  # Directory under which module hierarchy starts.
+  pkgDir = path_append(path_append(ctx.label.workspace_root, ctx.label.package),
+                       ctx.attr.sourceDir)
+  # Module path without the workspace and source directories, just
+  # relevant hierarchy.
+  noPrefixPath = drop_path_prefix(pkgDir, f.path)
+  # Drop extension.
+  return noPrefixPath[:noPrefixPath.rfind(".")]
 
 def mk_registration_file(ctx, pkgId, interfaceDir, libDir, inputFiles):
   """Prepare a file we'll use to register a package with.
