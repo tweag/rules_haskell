@@ -136,7 +136,7 @@ def _haskell_library_impl(ctx):
     use_default_shell_env = True,
     progress_message = "Compiling {0}".format(ctx.attr.name),
     executable = "ghc",
-    arguments = [ghc_lib_args(ctx, objDir, ifaceDir, depPkgConfs, depPkgNames,
+    arguments = [ghc_lib_args(ctx, objDir, ifaceDir, depPkgConfs,
                               genHsFiles)]
   )
 

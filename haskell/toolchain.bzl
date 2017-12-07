@@ -107,7 +107,7 @@ def ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps):
 
   return dummyLib, args
 
-def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
+def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, genHsFiles):
   """Build arguments for Haskell package build.
 
   Args:
@@ -115,7 +115,6 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
     objDir: Output directory for object files.
     ifaceDir: Output directory for interface files.
     pkgConfs: Package conf files of dependencies.
-    pkgNames: Package names of dependencies.
     genHsFiles: Generated Haskell files.
   """
   args = ctx.actions.args()
@@ -131,7 +130,8 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
   args.add(["-osuf", get_object_suffix(ctx), "-hisuf", get_interface_suffix(ctx)])
 
   # Expose every dependency and every prebuilt dependency.
-  packages = pkgNames + depset(ctx.attr.prebuiltDeps)
+  for n in depset(ctx.attr.prebuiltDeps):
+    args.add(["-package", n])
 
   # Only include package DBs for deps, prebuilt deps should be found
   # auto-magically by GHC.
