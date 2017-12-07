@@ -132,8 +132,6 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
 
   # Expose every dependency and every prebuilt dependency.
   packages = pkgNames + depset(ctx.attr.prebuiltDeps)
-  for n in packages:
-    args.add(["-package", n])
 
   # Only include package DBs for deps, prebuilt deps should be found
   # auto-magically by GHC.
