@@ -1,0 +1,6 @@
+module Test (cpphsFired) where
+
+#ifndef _INTERNAL_CPPHS_DO_NOT_DEFINE_ME
+cpphsFired :: String
+cpphsFired = "cpphsFired"
+#endif
