@@ -10,5 +10,8 @@ haskell_library(
   srcs = [
     'TestLib.hs',
   ],
-  deps = ["//tests/test-sublib"]
+  deps = ["//tests/test-sublib"],
+  prebuiltDeps = [
+    "base",
+  ],
 )
