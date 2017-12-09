@@ -1,7 +1,8 @@
 package(default_testonly = 1)
 
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
+     "haskell_binary",
+     "haskell_library",
 )
 
 haskell_binary(
@@ -37,6 +38,24 @@ haskell_binary(
   prebuiltDeps = ["base"],
 )
 
+
+haskell_library(
+  name = "hsc-lib",
+  sourceDir = "hsc",
+  srcs = [],
+  hscs = ["hsc/Test.hsc"],
+  prebuiltDeps = ["base"]
+)
+
+# https://github.com/tweag/rules_haskell/issues/13
+haskell_binary(
+  name = "hsc",
+  sourceDir = "hsc",
+  srcs = ["hsc/Main.hs"],
+  prebuiltDeps = ["base"],
+  deps = [":hsc-lib"],
+)
+
 [sh_test(
     name = "Run" + binary,
     srcs = ["test_binary.sh"],
@@ -48,4 +67,5 @@ haskell_binary(
     "two-libs-one-BUILD",
     "non-top-srcs",
     "main-is",
+    "hsc",
 ]]
