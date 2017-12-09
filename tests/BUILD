@@ -30,6 +30,13 @@ haskell_binary(
   prebuiltDeps = ["base"]
 )
 
+haskell_binary(
+  name = "main-is",
+  main = "MainIs.mainIs",
+  srcs = [ "MainIs.hs" ],
+  prebuiltDeps = ["base"],
+)
+
 [sh_test(
     name = "Run" + binary,
     srcs = ["test_binary.sh"],
@@ -40,4 +47,5 @@ haskell_binary(
     "hello",
     "two-libs-one-BUILD",
     "non-top-srcs",
+    "main-is",
 ]]
