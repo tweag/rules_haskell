@@ -6,8 +6,7 @@ load(":toolchain.bzl",
      "get_dyn_object_suffix",
      "get_interface_suffix",
      "get_object_suffix",
-     "ghc_bin_link_args",
-     "ghc_bin_obj_args",
+     "link_haskell_bin",
      "create_dynamic_library",
      "mk_name",
      "path_append",
@@ -17,6 +16,7 @@ load(":toolchain.bzl",
      "create_static_library",
      "get_pkg_id",
      "create_ghc_package",
+     "compile_haskell_bin",
 )
 
 load(":path_utils.bzl",
@@ -37,52 +37,13 @@ load(":c_compile.bzl",
 )
 
 def _haskell_binary_impl(ctx):
-  depInputs = depset()
-  depLibs = depset()
-  depDynLibs = depset()
   externalLibs = {}
   for d in ctx.attr.deps:
-    depInputs += d.files
-    pkg = d[HaskellPackageInfo]
-    depInputs += pkg.pkgConfs
-    depInputs += pkg.pkgCaches
-    depInputs += pkg.pkgLibs
-    depInputs += pkg.interfaceFiles
-    depLibs += pkg.pkgLibs
-    depDynLibs += pkg.pkgDynLibs
-    externalLibs.update(pkg.externalLibs)
+    externalLibs.update(d[HaskellPackageInfo].externalLibs)
 
-  depInputs += ctx.files.srcs
+  object_files = compile_haskell_bin(ctx)
 
-  objDir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
-  binObjs = [declare_compiled(ctx, s, get_object_suffix(), directory=objDir)
-             for s in ctx.files.srcs]
-
-  # Compile sources of the binary.
-  ctx.actions.run(
-    inputs = depInputs + depLibs + depDynLibs,
-    outputs = binObjs + [objDir],
-    # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
-    use_default_shell_env = True,
-    progress_message = "Building {0}".format(ctx.attr.name),
-    executable = "ghc",
-    arguments = [ghc_bin_obj_args(ctx, objDir)]
-    )
-
-  # Link everything together
-  prebuiltDeps = depset(ctx.attr.prebuiltDeps)
-  for d in ctx.attr.deps:
-    prebuiltDeps += d[HaskellPackageInfo].prebuiltDeps
-
-  linkTarget, linkArgs = ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps, externalLibs)
-  ctx.actions.run(
-    inputs = binObjs + depLibs.to_list() + [linkTarget],
-    outputs = [ctx.outputs.executable],
-    use_default_shell_env = True,
-    progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
-    executable = "ghc",
-    arguments = [linkArgs],
-  )
+  link_haskell_bin(ctx, object_files, externalLibs)
 
 def _haskell_library_impl(ctx):
   objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))

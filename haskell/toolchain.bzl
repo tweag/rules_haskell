@@ -36,90 +36,127 @@ def mk_name(ctx, namePrefix):
   """
   return "{0}-{1}-{2}".format(namePrefix, ctx.attr.name, ctx.attr.version)
 
-def ghc_bin_obj_args(ctx, objDir):
+def compile_haskell_bin(ctx):
   """Build arguments for Haskell binary object building.
 
   Args:
     ctx: Rule context.
-    objDir: Output directory for object files.
   """
+  object_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
+  object_files = [declare_compiled(ctx, s, get_object_suffix(), directory=object_dir)
+                  for s in ctx.files.srcs]
   args = ctx.actions.args()
   args.add(ctx.attr.compilerFlags)
   args.add("-no-link")
   args.add(ctx.files.srcs)
-  args.add(["-odir", objDir])
+  args.add(["-odir", object_dir])
   args.add(["-main-is", ctx.attr.main])
   args.add(["-osuf", get_object_suffix(), "-hisuf", get_interface_suffix()])
 
-  # Collapse all library dependencies
-  depNames = depset([ n for d in ctx.attr.deps for n in d[HaskellPackageInfo].pkgNames ])
-  depConfs = depset([ c.dirname for d in ctx.attr.deps for c in d[HaskellPackageInfo].pkgConfs ])
-
-  for n in depNames:
+  for n in depset([ n for d in ctx.attr.deps
+                      for n in d[HaskellPackageInfo].pkgNames ]):
     args.add(["-package", n])
-  for db in depConfs:
+
+  for db in depset([ c.dirname for d in ctx.attr.deps
+                               for c in d[HaskellPackageInfo].pkgConfs ]):
     args.add(["-package-db", db])
-  return args
 
-def ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps, externalLibs):
-  """Build arguments for Haskell binary linking stage.
+  dep_dynamic_libraries = depset()
+  dep_interface_files = depset()
+  dep_pkg_confs = depset()
+  dep_pkg_caches = depset()
+  for d in ctx.attr.deps:
+    pkg = d[HaskellPackageInfo]
+    dep_interface_files += pkg.interfaceFiles
+    dep_pkg_confs += pkg.pkgConfs
+    dep_pkg_caches += pkg.pkgCaches
+    dep_dynamic_libraries += pkg.pkgDynLibs
 
-  Also creates an empty library archive to as a build target: this
-  stops GHC from complaining about no target when we only want to use
-  it for linking. This result is silently passed into the arguments
-  but the link target should be explicitly added to the action as an
-  input.
+  ctx.actions.run(
+    inputs = dep_interface_files + dep_pkg_confs + dep_pkg_caches +
+             dep_dynamic_libraries + ctx.files.srcs,
+    outputs = object_files + [object_dir],
+    # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
+    use_default_shell_env = True,
+    progress_message = "Building {0}".format(ctx.attr.name),
+    executable = "ghc",
+    arguments = [args]
+  )
+
+  return object_files
+
+def link_haskell_bin(ctx, object_files, external_libraries):
+  """Link Haskell binary.
 
   Args:
     ctx: Rule context.
-    binObjs: Object files to include during linking.
-    depLibs: Library archives to include during linking.
-
+    object_files: Object files to include during linking.
+    external_libraries: Absolute external libraries.
   """
   # Create empty archive so that GHC has some input files to work on during linking
   #
   # https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
-  dummy = ctx.actions.declare_file("BazelDummy.hs")
-  dummyObj = ctx.actions.declare_file("BazelDummy." + get_object_suffix())
-  ctx.actions.write(output=dummy, content="module BazelDummy () where")
-  dummyLib = ctx.actions.declare_file("libempty.a")
-  dummyArgs = ctx.actions.args()
-  dummyArgs.add(["-no-link", dummy, "-osuf", get_object_suffix()])
+  dummy_input = ctx.actions.declare_file("BazelDummy.hs")
+  dummy_object = ctx.actions.declare_file(replace_ext("BazelDummy", get_object_suffix()))
+
+  ctx.actions.write(output=dummy_input, content="\n".join([
+    "{-# LANGUAGE NoImplicitPrelude #-}",
+    "module BazelDummy () where"
+  ]))
+
+  dummy_static_lib = ctx.actions.declare_file("libempty.a")
+  dummy_args = ctx.actions.args()
+  dummy_args.add(["-no-link", dummy_input, "-osuf", get_object_suffix()])
   ctx.actions.run(
-    inputs = [dummy],
-    outputs = [dummyObj],
+    inputs = [dummy_input],
+    outputs = [dummy_object],
     use_default_shell_env = True,
     executable = "ghc",
-    arguments = [dummyArgs]
+    arguments = [dummy_args]
   )
+  ar_args = ctx.actions.args()
+  ar_args.add(["qc", dummy_static_lib, dummy_object])
+
   ctx.actions.run(
-    inputs = [dummyObj],
-    outputs = [dummyLib],
+    inputs = [dummy_object],
+    outputs = [dummy_static_lib],
     use_default_shell_env = True,
     executable = "ar",
-    arguments = [ar_args(ctx, dummyLib, [dummyObj])]
+    arguments = [ar_args]
   )
 
-  args = ctx.actions.args()
+  link_args = ctx.actions.args()
+  link_args.add(["-o", ctx.outputs.executable, dummy_static_lib])
 
-  args.add(["-o", ctx.outputs.executable])
-  args.add(dummyLib)
-  for o in binObjs:
-    args.add(["-optl", o])
-  for l in depLibs:
-    args.add(["-optl", l])
+  dep_static_libraries = depset()
+  prebuilt_deps = depset(ctx.attr.prebuiltDeps)
+  for dep in ctx.attr.deps:
+    dep_static_libraries += dep[HaskellPackageInfo].pkgLibs
+    prebuilt_deps += dep[HaskellPackageInfo].prebuiltDeps
 
-  for depName, depDirs in externalLibs.items():
-    args.add("-l{0}".format(depName))
-    for d in depDirs:
-      args.add("-L{0}".format(d))
+  for o in object_files:
+    link_args.add(["-optl", o])
+  for l in dep_static_libraries:
+    link_args.add(["-optl", l])
+
+  for dep_name, dep_dirs in external_libraries.items():
+    link_args.add("-l{0}".format(dep_name))
+    for d in dep_dirs:
+      link_args.add("-L{0}".format(d))
 
   # We have to remember to specify all (transitive) wired-in
   # dependencies or we can't find objects for linking.
-  for p in prebuiltDeps:
-    args.add(["-package", p])
+  for p in prebuilt_deps:
+    link_args.add(["-package", p])
 
-  return dummyLib, args
+  ctx.actions.run(
+    inputs = dep_static_libraries + object_files + [dummy_static_lib],
+    outputs = [ctx.outputs.executable],
+    use_default_shell_env = True,
+    progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
+    executable = "ghc",
+    arguments = [link_args],
+  )
 
 def compile_haskell_lib(ctx, generated_hs_sources):
   """Build arguments for Haskell package build.
@@ -364,17 +401,3 @@ def get_input_files(ctx):
     ctx: Rule context.
   """
   return ctx.files.srcs + ctx.files.hscs + ctx.files.cpphs
-
-# We might want ranlib like Buck does.
-def ar_args(ctx, pkgLib, objectFiles):
-  """Create arguments for `ar` tool.
-
-  Args:
-    pkgLib: The declared static library to generate.
-    objectFiles: Object files to pack into the library.
-  """
-  args = ctx.actions.args()
-  args.add("qc")
-  args.add(pkgLib)
-  args.add(objectFiles)
-  return args
