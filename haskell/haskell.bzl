@@ -2,7 +2,6 @@
 """
 load(":toolchain.bzl",
      "HaskellPackageInfo",
-     "ar_args",
      "get_dyn_interface_suffix",
      "get_dyn_object_suffix",
      "get_interface_suffix",
@@ -17,6 +16,7 @@ load(":toolchain.bzl",
      "replace_ext",
      "compile_haskell_lib",
      "get_input_files",
+     "create_static_library",
 )
 
 load(":path_utils.bzl",
@@ -126,31 +126,22 @@ def _haskell_library_impl(ctx):
   # Process cpphs files
   processed_cpphs_files = cpphs(ctx)
 
-  (interfaces_dir, interface_files, object_files, object_dyn_files) = compile_haskell_lib(ctx, processed_hsc_files + processed_cpphs_files)
+  interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(ctx, processed_hsc_files + processed_cpphs_files)
 
   c_object_files = c_compile_static(ctx)
   c_object_dyn_files = c_compile_dynamic(ctx)
 
   # Make static library archive
-  pkgId = "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
+  pkg_id = "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
   # Haskell lib names have to start with HS
   # https://ghc.haskell.org/trac/ghc/ticket/9625
-  libName = "HS{0}".format(pkgId)
-  libDir = ctx.actions.declare_directory(mk_name(ctx, "lib"))
-  # We need libDir because ghc-pkg wants a directory for library-dirs.
-  pkgLib = ctx.actions.declare_file(path_append(libDir.basename, "lib{0}.a".format(libName)))
+  library_name = "HS{0}".format(pkg_id)
 
-  ctx.actions.run(
-    inputs = object_files + c_object_files,
-    outputs = [pkgLib, libDir],
-    use_default_shell_env = True,
-    executable = "ar",
-    arguments = [ar_args(ctx, pkgLib, object_files + c_object_files)],
-  )
+  static_library_dir, static_library = create_static_library(ctx, library_name, object_files + c_object_files)
 
   # Make shared library
   dynLibDir = ctx.actions.declare_directory(mk_name(ctx, "dynlib"))
-  pkgDynLib = ctx.actions.declare_file(path_append(dynLibDir.basename, "lib{0}-ghc{1}.so".format(libName, ctx.attr.ghcVersion)))
+  pkgDynLib = ctx.actions.declare_file(path_append(dynLibDir.basename, "lib{0}-ghc{1}.so".format(library_name, ctx.attr.ghcVersion)))
 
   ctx.actions.run(
     inputs = depPkgConfs + depPkgCaches + object_dyn_files + c_object_dyn_files +
@@ -162,14 +153,14 @@ def _haskell_library_impl(ctx):
   )
 
   # Create and register ghc package.
-  pkgDbDir = ctx.actions.declare_directory(pkgId)
-  confFile = ctx.actions.declare_file(path_append(pkgDbDir.basename, "{0}.conf".format(pkgId)))
+  pkgDbDir = ctx.actions.declare_directory(pkg_id)
+  confFile = ctx.actions.declare_file(path_append(pkgDbDir.basename, "{0}.conf".format(pkg_id)))
   cacheFile = ctx.actions.declare_file("package.cache", sibling=confFile)
-  registrationFile = mk_registration_file(ctx, pkgId, interfaces_dir, libDir, dynLibDir, get_input_files(ctx), libName)
+  registrationFile = mk_registration_file(ctx, pkg_id, interfaces_dir, static_library_dir, dynLibDir, get_input_files(ctx), library_name)
 
   ctx.actions.run_shell(
     inputs =
-      [ pkgLib, pkgDynLib, interfaces_dir, registrationFile ] +
+      [ static_library, pkgDynLib, interfaces_dir, registrationFile ] +
       (depPkgConfs + depPkgCaches + depPkgLibs + depImportDirs + depLibDirs + interface_files).to_list(),
     outputs = [pkgDbDir, confFile, cacheFile],
     # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
@@ -178,17 +169,17 @@ def _haskell_library_impl(ctx):
   )
 
   return [HaskellPackageInfo(
-    pkgName = pkgId,
-    pkgNames = depPkgNames + depset([pkgId]),
+    pkgName = pkg_id,
+    pkgNames = depPkgNames + depset([pkg_id]),
     pkgConfs = depPkgConfs + depset ([confFile]),
     pkgCaches = depPkgCaches + depset([cacheFile]),
     # Keep package libraries in preorder (naive_link) order: this
     # gives us the valid linking order at binary linking time.
-    pkgLibs = depset([pkgLib], order="preorder") + depPkgLibs,
+    pkgLibs = depset([static_library], order="preorder") + depPkgLibs,
     pkgDynLibs = depset([pkgDynLib]) + depPkgDynLibs,
     interfaceFiles = depInterfaceFiles + depset(interface_files),
     pkgImportDirs = depImportDirs + depset([interfaces_dir]),
-    pkgLibDirs = depLibDirs + depset([libDir]),
+    pkgLibDirs = depLibDirs + depset([static_library_dir]),
     pkgDynLibDirs = depLibDirs + depset([dynLibDir]),
     prebuiltDeps = depPrebuiltDeps + depset(ctx.attr.prebuiltDeps),
     externalLibs = allExternalLibs

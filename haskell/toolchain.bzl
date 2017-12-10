@@ -195,6 +195,32 @@ def compile_haskell_lib(ctx, generated_hs_sources):
 
   return interfaces_dir, interface_files, object_files, object_dyn_files
 
+def create_static_library(ctx, library_name, object_files):
+  """Create a static library for the package using given object files.
+
+  Args:
+    ctx: Rule context.
+    object_files: All object files to include in the library.
+  """
+  args = ctx.actions.args()
+  static_library_dir = ctx.actions.declare_directory(mk_name(ctx, "lib"))
+  static_library = ctx.actions.declare_file(path_append(static_library_dir.basename, "lib{0}.a".format(library_name)))
+
+
+  args = ctx.actions.args()
+  args.add(["qc", static_library])
+  args.add(object_files)
+
+  ctx.actions.run(
+    inputs = object_files,
+    outputs = [static_library, static_library_dir],
+    use_default_shell_env = True,
+    executable = "ar",
+    arguments = [args],
+  )
+  return static_library_dir, static_library
+
+
 def get_input_files(ctx):
   """Get all files we expect to project object files from.
 
