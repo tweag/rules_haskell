@@ -11,10 +11,10 @@ Haskell rules for Bazel.
 Add the following to your `WORKSPACE` file, and select a `$COMMIT` accordingly.
 
 ```bzl
-git_repository(
+http_archive(
     name = "io_tweag_rules_haskell",
-    remote = "https://github.com/tweag/rules_haskell.git",
-    commit = "$COMMIT",
+    strip_prefix = "rules_haskell-$COMMIT",
+    urls = ["https://github.com/tweag/rules_haskell/archive/$COMMIT.tar.gz"],
 )
 ```
 
