@@ -11,7 +11,7 @@ haskell_library(
     'TestLib.hs',
   ],
   deps = ["//tests/test-sublib"],
-  prebuiltDeps = [
+  prebuilt_dependencies = [
     "base",
   ],
 )

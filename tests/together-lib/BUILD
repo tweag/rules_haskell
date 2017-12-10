@@ -8,7 +8,7 @@ load(
 haskell_library(
   name = 'one',
   srcs = [ 'One.hs' ],
-  prebuiltDeps = [
+  prebuilt_dependencies = [
     "base"
   ],
 )
@@ -16,7 +16,7 @@ haskell_library(
 haskell_library(
   name = 'two',
   srcs = [ 'Two.hs' ],
-  prebuiltDeps = [
+  prebuilt_dependencies = [
     "base"
   ],
 )

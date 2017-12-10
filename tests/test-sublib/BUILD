@@ -10,7 +10,7 @@ haskell_library(
   srcs = [
     'TestSubLib.hs',
   ],
-  prebuiltDeps = [
+  prebuilt_dependencies = [
     "base"
   ],
 )

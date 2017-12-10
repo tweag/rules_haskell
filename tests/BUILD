@@ -28,14 +28,14 @@ haskell_binary(
     "non-top-srcs/Test.hs",
     "non-top-srcs/Main.hs"
   ],
-  prebuiltDeps = ["base"]
+  prebuilt_dependencies = ["base"]
 )
 
 haskell_binary(
   name = "main-is",
   main = "MainIs.mainIs",
   srcs = [ "MainIs.hs" ],
-  prebuiltDeps = ["base"],
+  prebuilt_dependencies = ["base"],
 )
 
 
@@ -44,7 +44,7 @@ haskell_library(
   sourceDir = "hsc",
   srcs = [],
   hscs = ["hsc/Test.hsc"],
-  prebuiltDeps = ["base"]
+  prebuilt_dependencies = ["base"]
 )
 
 # https://github.com/tweag/rules_haskell/issues/13
@@ -52,7 +52,7 @@ haskell_binary(
   name = "hsc",
   sourceDir = "hsc",
   srcs = ["hsc/Main.hs"],
-  prebuiltDeps = ["base"],
+  prebuilt_dependencies = ["base"],
   deps = [":hsc-lib"],
 )
 
@@ -61,7 +61,7 @@ haskell_library(
   sourceDir = "cpphs",
   srcs = [],
   cpphs = ["cpphs/Test.cpphs"],
-  prebuiltDeps = ["base"]
+  prebuilt_dependencies = ["base"]
 )
 
 # https://github.com/tweag/rules_haskell/issues/13
@@ -69,7 +69,7 @@ haskell_binary(
   name = "cpphs",
   sourceDir = "cpphs",
   srcs = ["cpphs/Main.hs"],
-  prebuiltDeps = ["base"],
+  prebuilt_dependencies = ["base"],
   deps = [":cpphs-lib"],
 )
 

@@ -2,25 +2,14 @@
 """
 load(":toolchain.bzl",
      "HaskellPackageInfo",
-     "get_dyn_interface_suffix",
-     "get_dyn_object_suffix",
-     "get_interface_suffix",
-     "get_object_suffix",
-     "link_haskell_bin",
-     "create_dynamic_library",
-     "mk_name",
-     "path_append",
-     "replace_ext",
-     "compile_haskell_lib",
-     "get_input_files",
-     "create_static_library",
-     "get_pkg_id",
-     "create_ghc_package",
      "compile_haskell_bin",
-)
-
-load(":path_utils.bzl",
-     "declare_compiled",
+     "compile_haskell_lib",
+     "create_dynamic_library",
+     "create_ghc_package",
+     "create_static_library",
+     "gather_dependency_information",
+     "get_pkg_id",
+     "link_haskell_bin",
 )
 
 load(":hsc2hs.bzl",
@@ -37,51 +26,10 @@ load(":c_compile.bzl",
 )
 
 def _haskell_binary_impl(ctx):
-  externalLibs = {}
-  for d in ctx.attr.deps:
-    externalLibs.update(d[HaskellPackageInfo].externalLibs)
-
   object_files = compile_haskell_bin(ctx)
-
-  link_haskell_bin(ctx, object_files, externalLibs)
+  link_haskell_bin(ctx, object_files)
 
 def _haskell_library_impl(ctx):
-  objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
-
-  # Directory used for interface files.
-  interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
-
-  # Build transitive depsets
-  depPkgConfs = depset()
-  depPkgCaches = depset()
-  depPkgNames = depset()
-  depPkgLibs = depset()
-  depPkgDynLibs = depset()
-  depInterfaceFiles = depset()
-  depImportDirs = depset()
-  depLibDirs = depset()
-  depDynLibDirs = depset()
-  depPrebuiltDeps = depset()
-  allExternalLibs = {}
-  for d in ctx.attr.deps:
-    pkg = d[HaskellPackageInfo]
-    depPkgConfs += pkg.pkgConfs
-    depPkgCaches += pkg.pkgCaches
-    depPkgNames += pkg.pkgNames
-    depInterfaceFiles += pkg.interfaceFiles
-    depPkgLibs += pkg.pkgLibs
-    depPkgDynLibs += pkg.pkgDynLibs
-    depImportDirs += pkg.pkgImportDirs
-    depLibDirs += pkg.pkgLibDirs
-    depDynLibDirs += pkg.pkgDynLibDirs
-    depPrebuiltDeps += pkg.prebuiltDeps
-    allExternalLibs.update(pkg.externalLibs)
-
-  # Put external libraries for current target into the external lib
-  # dict.
-  for name, f in ctx.attr.external_libraries.items():
-    allExternalLibs[name] = allExternalLibs.get(name, default=depset()) + [f]
-
   # Process hsc files
   processed_hsc_files = hsc_to_hs(ctx)
   # Process cpphs files
@@ -98,7 +46,7 @@ def _haskell_library_impl(ctx):
 
   c_object_dyn_files = c_compile_dynamic(ctx)
   dynamic_library_dir, dynamic_library = create_dynamic_library(
-    ctx, allExternalLibs, object_dyn_files + c_object_dyn_files
+    ctx, object_dyn_files + c_object_dyn_files
   )
 
   # Create and register ghc package.
@@ -109,21 +57,21 @@ def _haskell_library_impl(ctx):
     dynamic_library_dir
   )
 
+  dep_info = gather_dependency_information(ctx)
   return [HaskellPackageInfo(
-    pkgName = get_pkg_id(ctx),
-    pkgNames = depPkgNames + depset([get_pkg_id(ctx)]),
-    pkgConfs = depPkgConfs + depset ([conf_file]),
-    pkgCaches = depPkgCaches + depset([cache_file]),
+    name = dep_info.name,
+    names = dep_info.names + depset([get_pkg_id(ctx)]), #depPkgNames + depset([get_pkg_id(ctx)]),
+    confs = dep_info.confs + depset([conf_file]),
+    caches = dep_info.caches + depset([cache_file]),
     # Keep package libraries in preorder (naive_link) order: this
     # gives us the valid linking order at binary linking time.
-    pkgLibs = depset([static_library], order="preorder") + depPkgLibs,
-    pkgDynLibs = depset([dynamic_library]) + depPkgDynLibs,
-    interfaceFiles = depInterfaceFiles + depset(interface_files),
-    pkgImportDirs = depImportDirs + depset([interfaces_dir]),
-    pkgLibDirs = depLibDirs + depset([static_library_dir]),
-    pkgDynLibDirs = depLibDirs + depset([dynamic_library_dir]),
-    prebuiltDeps = depPrebuiltDeps + depset(ctx.attr.prebuiltDeps),
-    externalLibs = allExternalLibs
+    static_libraries = depset([static_library], order="preorder") + dep_info.static_libraries,
+    dynamic_libraries = depset([dynamic_library]) + dep_info.dynamic_libraries,
+    interface_files = dep_info.interface_files + depset(interface_files),
+    static_library_dirs = dep_info.static_library_dirs + depset([static_library_dir]),
+    dynamic_library_dirs = dep_info.dynamic_library_dirs + depset([dynamic_library_dir]),
+    prebuilt_dependencies = dep_info.prebuilt_dependencies + depset(ctx.attr.prebuilt_dependencies),
+    external_libraries = dep_info.external_libraries
   )]
 
 _haskell_common_attrs = {
@@ -166,7 +114,7 @@ _haskell_common_attrs = {
   "external_libraries": attr.string_dict(
     doc="Non-Haskell libraries that we should link",
   ),
-  "prebuiltDeps": attr.string_list(
+  "prebuilt_dependencies": attr.string_list(
     doc="Haskell packages which are magically available such as wired-in packages."
   ),
   "version": attr.string(
