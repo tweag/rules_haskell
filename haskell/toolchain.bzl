@@ -4,6 +4,7 @@ load(":path_utils.bzl",
      "get_dyn_object_suffix",
      "get_interface_suffix",
      "get_object_suffix",
+     "mk_name",
      "path_append",
      "path_to_module",
      "replace_ext",
@@ -25,14 +26,6 @@ HaskellPackageInfo = provider(
     "external_libraries": "Non-Haskell libraries needed for linking. Dict of Name:LinkDir.",
   }
 )
-
-def mk_name(ctx, name_prefix):
-  """Make a target-unique name.
-
-  Args:
-    name_prefix: Template for the name.
-  """
-  return "{0}-{1}-{2}".format(name_prefix, ctx.attr.name, ctx.attr.version)
 
 def compile_haskell_bin(ctx):
   """Build arguments for Haskell binary object building.

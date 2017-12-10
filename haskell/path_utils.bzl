@@ -152,3 +152,11 @@ def declare_compiled(ctx, src, ext, directory=None):
   fp = replace_ext(path_to_module_path(ctx, src), ext)
   fp_with_dir = fp if directory == None else path_append(directory.basename, fp)
   return ctx.actions.declare_file(fp_with_dir)
+
+def mk_name(ctx, name_prefix):
+  """Make a target-unique name.
+
+  Args:
+    name_prefix: Template for the name.
+  """
+  return "{0}-{1}-{2}".format(name_prefix, ctx.attr.name, ctx.attr.version)
