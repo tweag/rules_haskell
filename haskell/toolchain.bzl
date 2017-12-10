@@ -239,16 +239,6 @@ def ghc_dyn_link_args(ctx, dynObjectFiles, pkgDynLib, pkgNames, pkgConfs, allExt
   args.add(dynObjectFiles)
   return args
 
-def ghc_cpphs_args(ctx, cpphsFile, hsOut, includeDirs):
-  args = ctx.actions.args()
-  args.add(["-E", "-cpp", "-pgmPcpphs", "-optP--cpp", "-x", "hs"])
-  for includeDir in includeDirs:
-    args.add("-optP-I{0}".format(includeDir))
-
-  args.add(["-o", hsOut])
-  args.add(cpphsFile)
-  return args
-
 def mk_registration_file(ctx, pkgId, interfaceDir, libDir, dynLibDir, inputFiles, libName):
   """Prepare a file we'll use to register a package with.
 

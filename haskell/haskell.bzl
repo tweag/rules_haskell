@@ -11,7 +11,6 @@ load(":toolchain.bzl",
      "ghc_bin_obj_args",
      "ghc_c_dyn_lib_args",
      "ghc_c_lib_args",
-     "ghc_cpphs_args",
      "ghc_dyn_link_args",
      "ghc_lib_args",
      "mk_name",
@@ -27,6 +26,10 @@ load(":path_utils.bzl",
 
 load(":hsc2hs.bzl",
      "hsc_to_hs",
+)
+
+load(":cpphs.bzl",
+     "cpphs",
 )
 
 def _haskell_binary_impl(ctx):
@@ -149,22 +152,9 @@ def _haskell_library_impl(ctx):
   # Process hsc files
   processed_hsc_files = hsc_to_hs(ctx)
   # Process cpphs files
-#  processed_cpphs_files = cpphs_to_hs(ctx)
+  processed_cpphs_files = cpphs(ctx)
 
-  cpphsFiles = []
-  for cpphsFile in ctx.files.cpphs:
-    hsOut = declare_compiled(ctx, cpphsFile, "hs")
-    ctx.actions.run(
-      inputs = exFiles + depset([cpphsFile]),
-      outputs = [hsOut],
-      use_default_shell_env = True,
-      progress_message = "Processing {0}".format(cpphsFile.basename),
-      executable = "ghc",
-      arguments = [ghc_cpphs_args(ctx, cpphsFile, hsOut, includeDirs)],
-    )
-    cpphsFiles.append(hsOut)
-
-  genHsFiles = processed_hsc_files + cpphsFiles
+  genHsFiles = processed_hsc_files + processed_cpphs_files
 
   # Compile C static objects
   ctx.actions.run(
