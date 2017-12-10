@@ -1,3 +1,14 @@
+load(":path_utils.bzl",
+     "drop_path_prefix",
+     "get_dyn_interface_suffix",
+     "get_dyn_object_suffix",
+     "get_interface_suffix",
+     "get_object_suffix",
+     "path_append",
+     "replace_ext",
+     "path_to_module",
+)
+
 HaskellPackageInfo = provider(
   doc = "Package information exposed by Haskell libraries.",
   fields = {
@@ -37,7 +48,7 @@ def ghc_bin_obj_args(ctx, objDir):
   args.add(ctx.files.srcs)
   args.add(["-odir", objDir])
   args.add(["-main-is", ctx.attr.main])
-  args.add(["-osuf", get_object_suffix(ctx), "-hisuf", get_interface_suffix(ctx)])
+  args.add(["-osuf", get_object_suffix(), "-hisuf", get_interface_suffix()])
 
   # Collapse all library dependencies
   depNames = depset([ n for d in ctx.attr.deps for n in d[HaskellPackageInfo].pkgNames ])
@@ -68,11 +79,11 @@ def ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps, externalLibs):
   #
   # https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
   dummy = ctx.actions.declare_file("BazelDummy.hs")
-  dummyObj = ctx.actions.declare_file("BazelDummy." + get_object_suffix(ctx))
+  dummyObj = ctx.actions.declare_file("BazelDummy." + get_object_suffix())
   ctx.actions.write(output=dummy, content="module BazelDummy () where")
   dummyLib = ctx.actions.declare_file("libempty.a")
   dummyArgs = ctx.actions.args()
-  dummyArgs.add(["-no-link", dummy, "-osuf", get_object_suffix(ctx)])
+  dummyArgs.add(["-no-link", dummy, "-osuf", get_object_suffix()])
   ctx.actions.run(
     inputs = [dummy],
     outputs = [dummyObj],
@@ -113,7 +124,7 @@ def ghc_c_lib_args(ctx, objDir, pkgConfs, pkgNames, includeDirs):
   args = ctx.actions.args()
   args.add([
     "-c", "-fPIC",
-    "-osuf", get_object_suffix(ctx),
+    "-osuf", get_object_suffix(),
     "-odir", objDir
   ])
 
@@ -179,9 +190,9 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
     "-hide-all-packages",
     "-package-name", "{0}-{1}".format(ctx.attr.name, ctx.attr.version),
     "-static", "-dynamic-too",
-    "-osuf", get_object_suffix(ctx),
+    "-osuf", get_object_suffix(),
     "-dynosuf", get_dyn_object_suffix(),
-    "-hisuf", get_interface_suffix(ctx),
+    "-hisuf", get_interface_suffix(),
     "-dynhisuf", get_dyn_interface_suffix(),
     "-odir", objDir, "-hidir", ifaceDir,
   ])
@@ -246,79 +257,6 @@ def ghc_cpphs_args(ctx, cpphsFile, hsOut, includeDirs):
   args.add(cpphsFile)
   return args
 
-def path_append(p1, p2):
-  """Append the two given paths with / separator but without creating
-  spurious separators if either path is empty or already has a
-  separator present. It does not try to normalise the path. None is
-  treated as empty path.
-
-  path_append("foo", "bar") => "foo/bar"
-  path_append("foo", "/bar") => "foo/bar"
-  path_append("foo/", "bar") => "foo/bar"
-  path_append("foo/", "/bar") => "foo//bar"
-  path_append("foo", "") => "foo"
-  path_append("foo/", "") => "foo/"
-  path_append("", "bar") => "bar"
-  path_append("", "/bar") => "/bar"
-  path_append("", "") => ""
-
-  Args:
-    p1: Left side of the path.
-    p2: Right side of the path.
-
-  """
-  # Front empty
-  if p1 == "" or p1 == None:
-    return p2
-  # Back empty
-  elif p2 == "" or p2 == None:
-    return p1
-  # Neither empty, but if there's a slash at either end of p1 or start
-  # of p2, just append. If there's one at both, too bad.
-  elif p1[:-1] == '/' or p2[0] == '/':
-    return p1 + p2
-  # No slash at join point add one.
-  else:
-    return "{0}/{1}".format(p1, p2)
-
-def drop_path_prefix(p1, p2):
-  """Drop p1 path prefix from p2 if it exists.
-
-  drop_path_prefix("foo/bar", "foo/bar/baz") => "baz"
-  drop_path_prefix("", "/foo") => "foo"
-  drop_path_prefix("foo/mid", "foo/middle/bar") => "dle/bar"
-  drop_path_prefix("nomatch", "some/path") => "some/path"
-  drop_path_prefix("nomatch", "/some/path") => "/some/path"
-  """
-  # Check if prefix matches
-  if p1 == p2[:len(p1)]:
-    newPath = p2[len(p1):]
-    # We cut off the prefix and found a leading path separator, drop
-    # it as it was necessary with the prefix. Most likely.
-    if newPath[:1] == '/':
-      return newPath[1:]
-    else:
-      return newPath
-  else:
-    return p2
-
-def take_haskell_module(ctx, f):
-  """Given Haskell source file, get the path hierarchy without the extension.
-
-  some-workspace/some-package/src/Foo/Bar/Baz.hs => Foo/Bar/Baz
-
-  Args:
-    f: Haskell source file.
-  """
-  # Directory under which module hierarchy starts.
-  pkgDir = path_append(path_append(ctx.label.workspace_root, ctx.label.package),
-                       ctx.attr.sourceDir)
-  # Module path without the workspace and source directories, just
-  # relevant hierarchy.
-  noPrefixPath = drop_path_prefix(pkgDir, f.path)
-  # Drop extension.
-  return noPrefixPath[:noPrefixPath.rfind(".")]
-
 def mk_registration_file(ctx, pkgId, interfaceDir, libDir, dynLibDir, inputFiles, libName):
   """Prepare a file we'll use to register a package with.
 
@@ -331,7 +269,7 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir, dynLibDir, inputFiles
     libName: Shared library name.
   """
   registrationFile = ctx.actions.declare_file(mk_name(ctx, "registration-file"))
-  modules = [take_haskell_module(ctx, f).replace("/", ".") for f in inputFiles]
+  modules = [path_to_module(ctx, f) for f in inputFiles]
   registrationFileDict = {
     "name": ctx.attr.name,
     "version": ctx.attr.version,
@@ -341,9 +279,9 @@ def mk_registration_file(ctx, pkgId, interfaceDir, libDir, dynLibDir, inputFiles
     # Translate module source paths in Haskell modules. Best effort
     # without GHC help.
     "exposed-modules": " ".join(modules),
-    "import-dirs": "${{pkgroot}}/{0}".format(interfaceDir.basename),
-    "library-dirs": "${{pkgroot}}/{0}".format(libDir.basename),
-    "dynamic-library-dirs": "${{pkgroot}}/{0}".format(dynLibDir.basename),
+    "import-dirs": path_append("${pkgroot}", interfaceDir.basename),
+    "library-dirs": path_append("${pkgroot}", libDir.basename),
+    "dynamic-library-dirs": path_append("${pkgroot}", dynLibDir.basename),
     "hs-libraries": libName,
     "depends": ", ".join([ d[HaskellPackageInfo].pkgName for d in ctx.attr.deps ])
   }
@@ -377,69 +315,6 @@ def register_package(registrationFile, pkgDbDir, pkgConfs):
       registrationFile.path,
     ]
   )
-
-def get_object_suffix(ctx):
-  """Get the object file suffix that GHC expects for this mode of compilation.
-
-  Args:
-    ctx: Rule context.
-  """
-  return "o"
-
-def get_dyn_object_suffix():
-  """Get the dynamic object file suffix.
-  """
-  return "dyn_o"
-
-def get_interface_suffix(ctx):
-  """Get the interface file suffix that GHC expects for this mode of
-  compilation.
-
-  Args:
-    ctx: Rule context.
-  """
-  return "hi"
-
-def get_dyn_interface_suffix():
-  """Get the dynamic interface file suffix that GHC expects for this
-  mode of compilation.
-  """
-  return "dyn_hi"
-
-def replace_ext(p, newExt):
-  """Replace an extension in a path with the given one.
-
-  replace_ext("foo/bar.hs", "o") => "foo/bar.o"
-  replace_ext("foo/bar.hs", "") => "foo/bar"
-  replace_ext("foo/bar", "") => "foo/bar"
-  replace_ext("foo/bar", "hs") => "foo/bar.hs"
-  replace_ext("foo/bar.hs", ".o") => "foo/bar.o"
-  """
-
-  noExt = p[:p.rfind(".")]
-  if newExt != None and newExt != "":
-    if newExt[:1] == ".":
-      # If user passed ext with dot, don't add one ourselves.
-      return "{0}{1}".format(noExt, newExt)
-    else:
-      return "{0}.{1}".format(noExt, newExt)
-  else:
-    return noExt
-
-def src_to_ext(ctx, src, ext, directory=None):
-  """Haskell source file to Haskell file living in specified directory.
-
-  Args:
-    ctx: Rule context.
-    src: Haskell source file.
-    ext: New extension.
-    directory: Directory the new file should live in.
-  """
-  fp = "{0}.{1}".format(take_haskell_module(ctx, src), ext)
-  if directory == None:
-    return fp
-  else:
-    return "{0}/{1}".format(directory.basename, fp)
 
 # We might want ranlib like Buck does.
 def ar_args(ctx, pkgLib, objectFiles):
