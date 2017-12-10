@@ -9,8 +9,6 @@ load(":toolchain.bzl",
      "get_object_suffix",
      "ghc_bin_link_args",
      "ghc_bin_obj_args",
-     "ghc_c_dyn_lib_args",
-     "ghc_c_lib_args",
      "ghc_dyn_link_args",
      "ghc_lib_args",
      "mk_name",
@@ -30,6 +28,11 @@ load(":hsc2hs.bzl",
 
 load(":cpphs.bzl",
      "cpphs",
+)
+
+load(":c_compile.bzl",
+     "c_compile_dynamic",
+     "c_compile_static",
 )
 
 def _haskell_binary_impl(ctx):
@@ -82,13 +85,7 @@ def _haskell_binary_impl(ctx):
 
 def _haskell_library_impl(ctx):
   objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
-  # Directory for object files generated from C files. This can't be
-  # the same as objDir as we can have Foo/Bar.hs and Foo/Bar.c and we
-  # need to link objects from both without them generating the same
-  # file.
-  objects_c_dir = ctx.actions.declare_directory(mk_name(ctx, "objects_c"))
-  # Directory for dynamic objects generated from C files.
-  objects_c_dyn_dir = ctx.actions.declare_directory(mk_name(ctx, "objects_c_dyn"))
+
   # Directory used for interface files.
   interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
   # All input files we're going to be compiling.
@@ -98,13 +95,6 @@ def _haskell_library_impl(ctx):
                  for s in input_files]
   object_dyn_files = [declare_compiled(ctx, s, get_dyn_object_suffix(), directory=objects_dir)
                     for s in input_files]
-
-  # C source files paths are preserved when GHC is outputting object
-  # files so make sure to accomodate for it.
-  c_object_files = [ctx.actions.declare_file(path_append(objects_c_dir.basename, replace_ext(s.path, get_object_suffix())))
-                  for s in ctx.files.c_sources]
-  c_object_dyn_files = [ctx.actions.declare_file(path_append(objects_c_dyn_dir.basename, replace_ext(s.path, get_dyn_object_suffix())))
-                        for s in ctx.files.c_sources]
 
   # We need to keep interface files we produce so we can import
   # modules cross-package.
@@ -156,31 +146,8 @@ def _haskell_library_impl(ctx):
 
   genHsFiles = processed_hsc_files + processed_cpphs_files
 
-  # Compile C static objects
-  ctx.actions.run(
-    inputs =
-    ctx.files.c_sources +
-    (depPkgDynLibs + depDynLibDirs + exFiles + depPkgConfs + depPkgLibs +
-     depPkgCaches + depInterfaceFiles).to_list(),
-    outputs = [objects_c_dir] + c_object_files,
-    use_default_shell_env = True,
-    progress_message = "Compiling C static {0}".format(ctx.attr.name),
-    executable = "ghc",
-    arguments = [ghc_c_lib_args(ctx, objects_c_dir, depPkgConfs, depPkgNames, includeDirs)],
-  )
-
-  # Compile C dynamic objects
-  ctx.actions.run(
-    inputs =
-      ctx.files.c_sources +
-      (depPkgDynLibs + depDynLibDirs + exFiles + depPkgConfs + depPkgLibs +
-       depPkgCaches + depInterfaceFiles).to_list(),
-    outputs = [objects_c_dyn_dir] + c_object_dyn_files,
-    use_default_shell_env = True,
-    progress_message = "Compiling C dynamic {0}".format(ctx.attr.name),
-    executable = "ghc",
-    arguments = [ghc_c_dyn_lib_args(ctx, objects_c_dyn_dir, depPkgConfs, depPkgNames, includeDirs)]
-  )
+  c_object_files = c_compile_static(ctx)
+  c_object_dyn_files = c_compile_dynamic(ctx)
 
   ctx.actions.run(
     inputs =

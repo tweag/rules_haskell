@@ -120,58 +120,6 @@ def ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps, externalLibs):
 
   return dummyLib, args
 
-def ghc_c_lib_args(ctx, objDir, pkgConfs, pkgNames, includeDirs):
-  args = ctx.actions.args()
-  args.add([
-    "-c", "-fPIC",
-    "-osuf", get_object_suffix(),
-    "-odir", objDir
-  ])
-
-  args.add("-optc-O2")
-  for opt in ctx.attr.c_options:
-    args.add("-optc{0}".format(opt))
-
-  # Expose every dependency and every prebuilt dependency.
-  packages = pkgNames + depset(ctx.attr.prebuiltDeps)
-  for n in packages:
-    args.add(["-package", n])
-
-  for c in pkgConfs:
-    args.add(["-package-db", c.dirname])
-
-  for d in includeDirs:
-    args.add("-I{0}".format(d))
-
-  args.add(ctx.files.c_sources)
-  return args
-
-def ghc_c_dyn_lib_args(ctx, objDir, pkgConfs, pkgNames, includeDirs):
-  args = ctx.actions.args()
-  args.add([
-    "-c", "-dynamic", "-fPIC",
-    "-osuf", get_dyn_object_suffix(),
-    "-odir", objDir
-  ])
-
-  args.add("-optc-O2")
-  for opt in ctx.attr.c_options:
-    args.add("-optc{0}".format(opt))
-
-  # Expose every dependency and every prebuilt dependency.
-  packages = pkgNames + depset(ctx.attr.prebuiltDeps)
-  for n in packages:
-    args.add(["-package", n])
-
-  for c in pkgConfs:
-    args.add(["-package-db", c.dirname])
-
-  for d in includeDirs:
-    args.add("-I{0}".format(d))
-
-  args.add(ctx.files.c_sources)
-  return args
-
 def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
   """Build arguments for Haskell package build.
 
