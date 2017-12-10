@@ -195,7 +195,7 @@ def compile_haskell_lib(ctx, generated_hs_sources):
 
   return interfaces_dir, interface_files, object_files, object_dyn_files
 
-def create_static_library(ctx, library_name, object_files):
+def create_static_library(ctx, object_files):
   """Create a static library for the package using given object files.
 
   Args:
@@ -204,7 +204,7 @@ def create_static_library(ctx, library_name, object_files):
   """
   args = ctx.actions.args()
   static_library_dir = ctx.actions.declare_directory(mk_name(ctx, "lib"))
-  static_library = ctx.actions.declare_file(path_append(static_library_dir.basename, "lib{0}.a".format(library_name)))
+  static_library = ctx.actions.declare_file(path_append(static_library_dir.basename, "lib{0}.a".format(get_library_name(ctx))))
 
 
   args = ctx.actions.args()
@@ -220,12 +220,11 @@ def create_static_library(ctx, library_name, object_files):
   )
   return static_library_dir, static_library
 
-def create_dynamic_library(ctx, library_name, external_libraries, object_files):
+def create_dynamic_library(ctx, external_libraries, object_files):
   """Create a dynamic library for the package using given object files.
 
   Args:
     ctx: Rule context.
-    library_name: Name of the library.
     external_libraries: Any absolute path libraries to link against.
     object_files: Object files to use for linking.
   """
@@ -234,7 +233,7 @@ def create_dynamic_library(ctx, library_name, external_libraries, object_files):
   dynamic_library_dir = ctx.actions.declare_directory(mk_name(ctx, "dynlib"))
   dynamic_library = ctx.actions.declare_file(
     path_append(dynamic_library_dir.basename,
-                "lib{0}-ghc{1}.so".format(library_name, ctx.attr.ghcVersion))
+                "lib{0}-ghc{1}.so".format(get_library_name(ctx), ctx.attr.ghcVersion))
   )
 
   args = ctx.actions.args()
@@ -277,6 +276,86 @@ def create_dynamic_library(ctx, library_name, external_libraries, object_files):
 
   return dynamic_library_dir, dynamic_library
 
+def create_ghc_package(ctx, interface_files, interfaces_dir, static_library, static_library_dir,
+                       dynamic_library_dir):
+  """Create GHC package using ghc-pkg.
+
+  Args:
+    ctx: Rule context.
+    interfaces_dir: Directory containing interface files.
+    static_library_dir: Directory containing static library.
+    dynamic_library_dir: Directory containing dynamic library.
+  """
+  pkg_db_dir = ctx.actions.declare_directory(get_pkg_id(ctx))
+  conf_file = ctx.actions.declare_file(path_append(pkg_db_dir.basename, "{0}.conf".format(get_pkg_id(ctx))))
+  cache_file = ctx.actions.declare_file("package.cache", sibling=conf_file)
+
+  # Create a file from which ghc-pkg will create the actual package from.
+  registration_file = ctx.actions.declare_file(mk_name(ctx, "registration-file"))
+  registration_file_entries = {
+    "name": ctx.attr.name,
+    "version": ctx.attr.version,
+    "id": get_pkg_id(ctx),
+    "key": get_pkg_id(ctx),
+    "exposed": "True",
+    "exposed-modules":
+      " ".join([path_to_module(ctx, f) for f in get_input_files(ctx)]),
+    "import-dirs": path_append("${pkgroot}", interfaces_dir.basename),
+    "library-dirs": path_append("${pkgroot}", static_library_dir.basename),
+    "dynamic-library-dirs":
+      path_append("${pkgroot}", dynamic_library_dir.basename),
+    "hs-libraries": get_library_name(ctx),
+    "depends":
+      ", ".join([ d[HaskellPackageInfo].pkgName for d in ctx.attr.deps ])
+  }
+  ctx.actions.write(
+    output=registration_file,
+    content="\n".join(['{0}: {1}'.format(k, v)
+                       for k, v in registration_file_entries.items()])
+  )
+
+  pkg_confs = depset([
+    c for dep in ctx.attr.deps
+      for c in dep[HaskellPackageInfo].pkgConfs
+  ])
+
+  # Make the call to ghc-pkg and use the registration file
+  package_path = ":".join([ c.dirname for c in pkg_confs ])
+  ctx.actions.run_shell(
+    inputs = pkg_confs + [static_library, interfaces_dir, registration_file],
+    outputs = [pkg_db_dir, conf_file, cache_file],
+    # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
+    use_default_shell_env = True,
+    command = " ".join(
+      [ "GHC_PACKAGE_PATH={0}".format(package_path),
+        "ghc-pkg",
+        "register",
+        "--package-db={0}".format(pkg_db_dir.path),
+        "--no-expand-pkgroot",
+        registration_file.path,
+      ]
+    )
+  )
+
+  return conf_file, cache_file
+
+def get_pkg_id(ctx):
+  """Get package identifier. This is name-version.
+
+  Args:
+    ctx: Rule context
+  """
+  return "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
+
+def get_library_name(ctx):
+  """Get core library name for this package. This is "HS" followed by package ID.
+
+  See https://ghc.haskell.org/trac/ghc/ticket/9625 .
+
+  Args:
+    ctx: Rule context.
+  """
+  return "HS{0}".format(get_pkg_id(ctx))
 
 def get_input_files(ctx):
   """Get all files we expect to project object files from.
@@ -285,65 +364,6 @@ def get_input_files(ctx):
     ctx: Rule context.
   """
   return ctx.files.srcs + ctx.files.hscs + ctx.files.cpphs
-
-def mk_registration_file(ctx, pkgId, interfaceDir, libDir, dynLibDir, inputFiles, libName):
-  """Prepare a file we'll use to register a package with.
-
-  Args:
-    ctx: Rule context.
-    pkgId: Package ID, usually in name-version format.
-    interfaceDir: Directory with interface files.
-    libDir: Directory containing library archive(s).
-    dynLibDir: Directory containing shared library.
-    libName: Shared library name.
-  """
-  registrationFile = ctx.actions.declare_file(mk_name(ctx, "registration-file"))
-  modules = [path_to_module(ctx, f) for f in inputFiles]
-  registrationFileDict = {
-    "name": ctx.attr.name,
-    "version": ctx.attr.version,
-    "id": pkgId,
-    "key": pkgId,
-    "exposed": "True",
-    # Translate module source paths in Haskell modules. Best effort
-    # without GHC help.
-    "exposed-modules": " ".join(modules),
-    "import-dirs": path_append("${pkgroot}", interfaceDir.basename),
-    "library-dirs": path_append("${pkgroot}", libDir.basename),
-    "dynamic-library-dirs": path_append("${pkgroot}", dynLibDir.basename),
-    "hs-libraries": libName,
-    "depends": ", ".join([ d[HaskellPackageInfo].pkgName for d in ctx.attr.deps ])
-  }
-  ctx.actions.write(
-    output=registrationFile,
-    content="\n".join(['{0}: {1}'.format(k, v)
-                       for k, v in registrationFileDict.items()])
-  )
-  return registrationFile
-
-def register_package(registrationFile, pkgDbDir, pkgConfs):
-  """Initialises, registers and checks ghc DB package.
-
-  Args:
-    registrationFile: File containing package description.
-    pkgDbDir: Directory for GHC package DB.
-    pkgConfs: Package config files of dependencies this package needs.
-  """
-  # TODO: Set GHC_PACKAGE_PATH with ctx.actions.run_shell.env when we
-  # stop using use_default_shell_env! That way we can't forget to set
-  # this.
-  packagePath = ":".join([ conf.dirname for conf in pkgConfs ])
-  ghcPackagePath = "GHC_PACKAGE_PATH={0}".format(packagePath)
-
-  return " ".join(
-    [ ghcPackagePath,
-      "ghc-pkg",
-      "register",
-      "--package-db={0}".format(pkgDbDir.path),
-      "--no-expand-pkgroot",
-      registrationFile.path,
-    ]
-  )
 
 # We might want ranlib like Buck does.
 def ar_args(ctx, pkgLib, objectFiles):

@@ -10,13 +10,13 @@ load(":toolchain.bzl",
      "ghc_bin_obj_args",
      "create_dynamic_library",
      "mk_name",
-     "mk_registration_file",
      "path_append",
-     "register_package",
      "replace_ext",
      "compile_haskell_lib",
      "get_input_files",
      "create_static_library",
+     "get_pkg_id",
+     "create_ghc_package",
 )
 
 load(":path_utils.bzl",
@@ -131,43 +131,28 @@ def _haskell_library_impl(ctx):
   )
 
   c_object_files = c_compile_static(ctx)
-  c_object_dyn_files = c_compile_dynamic(ctx)
-
-  # Make static library archive
-  pkg_id = "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
-  # Haskell lib names have to start with HS
-  # https://ghc.haskell.org/trac/ghc/ticket/9625
-  library_name = "HS{0}".format(pkg_id)
-
   static_library_dir, static_library = create_static_library(
-    ctx, library_name, object_files + c_object_files
+    ctx, object_files + c_object_files
   )
 
+  c_object_dyn_files = c_compile_dynamic(ctx)
   dynamic_library_dir, dynamic_library = create_dynamic_library(
-    ctx, library_name, allExternalLibs, object_dyn_files + c_object_dyn_files
+    ctx, allExternalLibs, object_dyn_files + c_object_dyn_files
   )
 
   # Create and register ghc package.
-  pkgDbDir = ctx.actions.declare_directory(pkg_id)
-  confFile = ctx.actions.declare_file(path_append(pkgDbDir.basename, "{0}.conf".format(pkg_id)))
-  cacheFile = ctx.actions.declare_file("package.cache", sibling=confFile)
-  registrationFile = mk_registration_file(ctx, pkg_id, interfaces_dir, static_library_dir, dynamic_library_dir, get_input_files(ctx), library_name)
-
-  ctx.actions.run_shell(
-    inputs =
-      [ static_library, dynamic_library, interfaces_dir, registrationFile ] +
-      (depPkgConfs + depPkgCaches + depPkgLibs + depImportDirs + depLibDirs + interface_files).to_list(),
-    outputs = [pkgDbDir, confFile, cacheFile],
-    # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
-    use_default_shell_env = True,
-    command = register_package(registrationFile, pkgDbDir, depPkgConfs)
+  conf_file, cache_file = create_ghc_package(
+    ctx,
+    interface_files, interfaces_dir,
+    static_library, static_library_dir,
+    dynamic_library_dir
   )
 
   return [HaskellPackageInfo(
-    pkgName = pkg_id,
-    pkgNames = depPkgNames + depset([pkg_id]),
-    pkgConfs = depPkgConfs + depset ([confFile]),
-    pkgCaches = depPkgCaches + depset([cacheFile]),
+    pkgName = get_pkg_id(ctx),
+    pkgNames = depPkgNames + depset([get_pkg_id(ctx)]),
+    pkgConfs = depPkgConfs + depset ([conf_file]),
+    pkgCaches = depPkgCaches + depset([cache_file]),
     # Keep package libraries in preorder (naive_link) order: this
     # gives us the valid linking order at binary linking time.
     pkgLibs = depset([static_library], order="preorder") + depPkgLibs,
