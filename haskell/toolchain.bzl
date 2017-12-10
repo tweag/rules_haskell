@@ -220,6 +220,63 @@ def create_static_library(ctx, library_name, object_files):
   )
   return static_library_dir, static_library
 
+def create_dynamic_library(ctx, library_name, external_libraries, object_files):
+  """Create a dynamic library for the package using given object files.
+
+  Args:
+    ctx: Rule context.
+    library_name: Name of the library.
+    external_libraries: Any absolute path libraries to link against.
+    object_files: Object files to use for linking.
+  """
+
+  # Make shared library
+  dynamic_library_dir = ctx.actions.declare_directory(mk_name(ctx, "dynlib"))
+  dynamic_library = ctx.actions.declare_file(
+    path_append(dynamic_library_dir.basename,
+                "lib{0}-ghc{1}.so".format(library_name, ctx.attr.ghcVersion))
+  )
+
+  args = ctx.actions.args()
+  args.add(["-shared", "-dynamic", "-o", dynamic_library])
+
+  # We do not add anything to inputs from these as these are supposed
+  # to be absolute paths outside of bazel's control such as system
+  # libraries.
+  for dep_name, dep_dirs in external_libraries.items():
+    args.add("-l{0}".format(dep_name))
+    for d in dep_dirs:
+      args.add("-L{0}".format(d))
+
+  pkg_caches = depset()
+  pkg_names = depset()
+  dep_dyn_lib_dirs = depset()
+  for d in ctx.attr.deps:
+    pkg_caches += d[HaskellPackageInfo].pkgCaches
+    pkg_names += d[HaskellPackageInfo].pkgNames
+    dep_dyn_lib_dirs += d[HaskellPackageInfo].pkgDynLibDirs
+
+  for n in pkg_names + depset(ctx.attr.prebuiltDeps):
+    args.add(["-package", n])
+
+  for c in pkg_caches:
+    args.add(["-package-db", c.dirname])
+
+  args.add(object_files)
+
+  ctx.actions.run(
+    inputs =
+      depset(object_files) +
+      pkg_caches +
+      dep_dyn_lib_dirs,
+    outputs = [dynamic_library_dir, dynamic_library],
+    use_default_shell_env = True,
+    executable = "ghc",
+    arguments = [args]
+  )
+
+  return dynamic_library_dir, dynamic_library
+
 
 def get_input_files(ctx):
   """Get all files we expect to project object files from.
@@ -228,34 +285,6 @@ def get_input_files(ctx):
     ctx: Rule context.
   """
   return ctx.files.srcs + ctx.files.hscs + ctx.files.cpphs
-
-def ghc_dyn_link_args(ctx, dynObjectFiles, pkgDynLib, pkgNames, pkgConfs, allExternalLibs):
-  """Build arguments for Haskell package build.
-
-  Args:
-    ctx: Rule context.
-    dynObjectFiles: Built dynamic object files.
-    pkgDynLib: Output location for the shared library.
-  """
-  args = ctx.actions.args()
-  args.add([
-    "-shared", "-dynamic",
-    "-o", pkgDynLib,
-  ])
-  for depName, depDirs in allExternalLibs.items():
-    args.add("-l{0}".format(depName))
-    for d in depDirs:
-      args.add("-L{0}".format(d))
-
-  packages = pkgNames + depset(ctx.attr.prebuiltDeps)
-  for n in packages:
-    args.add(["-package", n])
-
-  for c in pkgConfs:
-    args.add(["-package-db", c.dirname])
-
-  args.add(dynObjectFiles)
-  return args
 
 def mk_registration_file(ctx, pkgId, interfaceDir, libDir, dynLibDir, inputFiles, libName):
   """Prepare a file we'll use to register a package with.

@@ -8,7 +8,7 @@ load(":toolchain.bzl",
      "get_object_suffix",
      "ghc_bin_link_args",
      "ghc_bin_obj_args",
-     "ghc_dyn_link_args",
+     "create_dynamic_library",
      "mk_name",
      "mk_registration_file",
      "path_append",
@@ -126,7 +126,9 @@ def _haskell_library_impl(ctx):
   # Process cpphs files
   processed_cpphs_files = cpphs(ctx)
 
-  interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(ctx, processed_hsc_files + processed_cpphs_files)
+  interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(
+    ctx, processed_hsc_files + processed_cpphs_files
+  )
 
   c_object_files = c_compile_static(ctx)
   c_object_dyn_files = c_compile_dynamic(ctx)
@@ -137,30 +139,23 @@ def _haskell_library_impl(ctx):
   # https://ghc.haskell.org/trac/ghc/ticket/9625
   library_name = "HS{0}".format(pkg_id)
 
-  static_library_dir, static_library = create_static_library(ctx, library_name, object_files + c_object_files)
+  static_library_dir, static_library = create_static_library(
+    ctx, library_name, object_files + c_object_files
+  )
 
-  # Make shared library
-  dynLibDir = ctx.actions.declare_directory(mk_name(ctx, "dynlib"))
-  pkgDynLib = ctx.actions.declare_file(path_append(dynLibDir.basename, "lib{0}-ghc{1}.so".format(library_name, ctx.attr.ghcVersion)))
-
-  ctx.actions.run(
-    inputs = depPkgConfs + depPkgCaches + object_dyn_files + c_object_dyn_files +
-             depDynLibDirs,
-    outputs = [pkgDynLib, dynLibDir],
-    use_default_shell_env = True,
-    executable = "ghc",
-    arguments = [ghc_dyn_link_args(ctx, object_dyn_files + c_object_dyn_files, pkgDynLib, depPkgNames, depPkgConfs, allExternalLibs)]
+  dynamic_library_dir, dynamic_library = create_dynamic_library(
+    ctx, library_name, allExternalLibs, object_dyn_files + c_object_dyn_files
   )
 
   # Create and register ghc package.
   pkgDbDir = ctx.actions.declare_directory(pkg_id)
   confFile = ctx.actions.declare_file(path_append(pkgDbDir.basename, "{0}.conf".format(pkg_id)))
   cacheFile = ctx.actions.declare_file("package.cache", sibling=confFile)
-  registrationFile = mk_registration_file(ctx, pkg_id, interfaces_dir, static_library_dir, dynLibDir, get_input_files(ctx), library_name)
+  registrationFile = mk_registration_file(ctx, pkg_id, interfaces_dir, static_library_dir, dynamic_library_dir, get_input_files(ctx), library_name)
 
   ctx.actions.run_shell(
     inputs =
-      [ static_library, pkgDynLib, interfaces_dir, registrationFile ] +
+      [ static_library, dynamic_library, interfaces_dir, registrationFile ] +
       (depPkgConfs + depPkgCaches + depPkgLibs + depImportDirs + depLibDirs + interface_files).to_list(),
     outputs = [pkgDbDir, confFile, cacheFile],
     # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
@@ -176,11 +171,11 @@ def _haskell_library_impl(ctx):
     # Keep package libraries in preorder (naive_link) order: this
     # gives us the valid linking order at binary linking time.
     pkgLibs = depset([static_library], order="preorder") + depPkgLibs,
-    pkgDynLibs = depset([pkgDynLib]) + depPkgDynLibs,
+    pkgDynLibs = depset([dynamic_library]) + depPkgDynLibs,
     interfaceFiles = depInterfaceFiles + depset(interface_files),
     pkgImportDirs = depImportDirs + depset([interfaces_dir]),
     pkgLibDirs = depLibDirs + depset([static_library_dir]),
-    pkgDynLibDirs = depLibDirs + depset([dynLibDir]),
+    pkgDynLibDirs = depLibDirs + depset([dynamic_library_dir]),
     prebuiltDeps = depPrebuiltDeps + depset(ctx.attr.prebuiltDeps),
     externalLibs = allExternalLibs
   )]
