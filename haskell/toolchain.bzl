@@ -7,6 +7,7 @@ load(":path_utils.bzl",
      "path_append",
      "replace_ext",
      "path_to_module",
+     "declare_compiled",
 )
 
 HaskellPackageInfo = provider(
@@ -120,17 +121,16 @@ def ghc_bin_link_args(ctx, binObjs, depLibs, prebuiltDeps, externalLibs):
 
   return dummyLib, args
 
-def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
+def compile_haskell_lib(ctx, generated_hs_sources):
   """Build arguments for Haskell package build.
 
   Args:
     ctx: Rule context.
-    objDir: Output directory for object files.
-    ifaceDir: Output directory for interface files.
-    pkgConfs: Package conf files of dependencies.
-    pkgNames: Package names of dependencies.
-    genHsFiles: Generated Haskell files.
+    generated_hs_sources: Generated Haskell files to include in the build.
   """
+
+  objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
+  interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
   args = ctx.actions.args()
   args.add(ctx.attr.compilerFlags)
   args.add([
@@ -142,22 +142,66 @@ def ghc_lib_args(ctx, objDir, ifaceDir, pkgConfs, pkgNames, genHsFiles):
     "-dynosuf", get_dyn_object_suffix(),
     "-hisuf", get_interface_suffix(),
     "-dynhisuf", get_dyn_interface_suffix(),
-    "-odir", objDir, "-hidir", ifaceDir,
+    "-odir", objects_dir, "-hidir", interfaces_dir
   ])
 
-  # Expose every dependency and every prebuilt dependency.
-  packages = pkgNames + depset(ctx.attr.prebuiltDeps)
-  for n in packages:
+
+  pkg_caches = depset()
+  pkg_names = depset()
+  dep_interface_files = depset()
+  dep_dyn_libs = depset()
+  for d in ctx.attr.deps:
+    pkg_caches += d[HaskellPackageInfo].pkgCaches
+    pkg_names += d[HaskellPackageInfo].pkgNames
+    dep_interface_files += d[HaskellPackageInfo].interfaceFiles
+    dep_dyn_libs += d[HaskellPackageInfo].pkgDynLibs
+
+  for n in pkg_names + depset(ctx.attr.prebuiltDeps):
     args.add(["-package", n])
 
   # Only include package DBs for deps, prebuilt deps should be found
   # auto-magically by GHC.
-  for c in pkgConfs:
+  for c in pkg_caches:
     args.add(["-package-db", c.dirname])
 
-  args.add(genHsFiles)
+  args.add(generated_hs_sources)
   args.add(ctx.files.srcs)
-  return args
+
+  external_files = depset([f for dep in ctx.attr.external_deps
+                             for f in dep.files])
+
+  # We want object and dynamic objects from all inputs.
+  object_files = [declare_compiled(ctx, s, get_object_suffix(), directory=objects_dir)
+                  for s in get_input_files(ctx)]
+  object_dyn_files = [declare_compiled(ctx, s, get_dyn_object_suffix(), directory=objects_dir)
+                      for s in get_input_files(ctx)]
+
+  # We need to keep interface files we produce so we can import
+  # modules cross-package.
+  interface_files = [declare_compiled(ctx, s, get_interface_suffix(), directory=interfaces_dir)
+                     for s in get_input_files(ctx)]
+  ctx.actions.run(
+    inputs =
+    ctx.files.srcs + generated_hs_sources +
+    (pkg_caches + external_files + dep_interface_files +
+     dep_dyn_libs).to_list(),
+    outputs = [interfaces_dir, objects_dir] + object_files + interface_files +
+    object_dyn_files,
+    use_default_shell_env = True,
+    progress_message = "Compiling {0}".format(ctx.attr.name),
+    executable = "ghc",
+    arguments = [args]
+  )
+
+  return interfaces_dir, interface_files, object_files, object_dyn_files
+
+def get_input_files(ctx):
+  """Get all files we expect to project object files from.
+
+  Args:
+    ctx: Rule context.
+  """
+  return ctx.files.srcs + ctx.files.hscs + ctx.files.cpphs
 
 def ghc_dyn_link_args(ctx, dynObjectFiles, pkgDynLib, pkgNames, pkgConfs, allExternalLibs):
   """Build arguments for Haskell package build.

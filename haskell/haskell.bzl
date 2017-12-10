@@ -10,12 +10,13 @@ load(":toolchain.bzl",
      "ghc_bin_link_args",
      "ghc_bin_obj_args",
      "ghc_dyn_link_args",
-     "ghc_lib_args",
      "mk_name",
      "mk_registration_file",
      "path_append",
      "register_package",
      "replace_ext",
+     "compile_haskell_lib",
+     "get_input_files",
 )
 
 load(":path_utils.bzl",
@@ -88,18 +89,6 @@ def _haskell_library_impl(ctx):
 
   # Directory used for interface files.
   interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
-  # All input files we're going to be compiling.
-  input_files = ctx.files.srcs + ctx.files.hscs + ctx.files.cpphs
-  # We want object and dynamic objects from all inputs.
-  object_files = [declare_compiled(ctx, s, get_object_suffix(), directory=objects_dir)
-                 for s in input_files]
-  object_dyn_files = [declare_compiled(ctx, s, get_dyn_object_suffix(), directory=objects_dir)
-                    for s in input_files]
-
-  # We need to keep interface files we produce so we can import
-  # modules cross-package.
-  interface_files = [declare_compiled(ctx, s, get_interface_suffix(), directory=interfaces_dir)
-                     for s in input_files]
 
   # Build transitive depsets
   depPkgConfs = depset()
@@ -132,35 +121,15 @@ def _haskell_library_impl(ctx):
   for name, f in ctx.attr.external_libraries.items():
     allExternalLibs[name] = allExternalLibs.get(name, default=depset()) + [f]
 
-  exFiles = depset()
-  for t in ctx.attr.external_deps:
-    exFiles += t.files
-
-  # Directories of external dependencies.
-  includeDirs = depset([ d.dirname for d in exFiles ])
-
   # Process hsc files
   processed_hsc_files = hsc_to_hs(ctx)
   # Process cpphs files
   processed_cpphs_files = cpphs(ctx)
 
-  genHsFiles = processed_hsc_files + processed_cpphs_files
+  (interfaces_dir, interface_files, object_files, object_dyn_files) = compile_haskell_lib(ctx, processed_hsc_files + processed_cpphs_files)
 
   c_object_files = c_compile_static(ctx)
   c_object_dyn_files = c_compile_dynamic(ctx)
-
-  ctx.actions.run(
-    inputs =
-      ctx.files.srcs + genHsFiles +
-      (depPkgDynLibs + depDynLibDirs + exFiles + depPkgConfs + depPkgLibs +
-       depPkgCaches + depInterfaceFiles).to_list(),
-    outputs = [interfaces_dir, objects_dir] + object_files + interface_files +
-              object_dyn_files,
-    use_default_shell_env = True,
-    progress_message = "Compiling {0}".format(ctx.attr.name),
-    executable = "ghc",
-    arguments = [ghc_lib_args(ctx, objects_dir, interfaces_dir, depPkgConfs, depPkgNames, genHsFiles)]
-  )
 
   # Make static library archive
   pkgId = "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
@@ -196,7 +165,7 @@ def _haskell_library_impl(ctx):
   pkgDbDir = ctx.actions.declare_directory(pkgId)
   confFile = ctx.actions.declare_file(path_append(pkgDbDir.basename, "{0}.conf".format(pkgId)))
   cacheFile = ctx.actions.declare_file("package.cache", sibling=confFile)
-  registrationFile = mk_registration_file(ctx, pkgId, interfaces_dir, libDir, dynLibDir, input_files, libName)
+  registrationFile = mk_registration_file(ctx, pkgId, interfaces_dir, libDir, dynLibDir, get_input_files(ctx), libName)
 
   ctx.actions.run_shell(
     inputs =
