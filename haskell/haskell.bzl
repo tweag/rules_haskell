@@ -1,3 +1,5 @@
+"""Entry point to rules_haskell.
+"""
 load(":toolchain.bzl",
      "HaskellPackageInfo",
      "ar_args",
@@ -12,7 +14,6 @@ load(":toolchain.bzl",
      "ghc_cpphs_args",
      "ghc_dyn_link_args",
      "ghc_lib_args",
-     "hsc2hs_args",
      "mk_name",
      "mk_registration_file",
      "path_append",
@@ -24,6 +25,9 @@ load(":path_utils.bzl",
      "declare_compiled",
 )
 
+load(":hsc2hs.bzl",
+     "hsc_to_hs",
+)
 
 def _haskell_binary_impl(ctx):
   depInputs = depset()
@@ -143,20 +147,10 @@ def _haskell_library_impl(ctx):
   includeDirs = depset([ d.dirname for d in exFiles ])
 
   # Process hsc files
-  hscFiles = []
-  for hscFile in ctx.files.hscs:
-    hsOut = declare_compiled(ctx, hscFile, "hs")
-    ctx.actions.run(
-      inputs = exFiles + depset([hscFile]),
-      outputs = [hsOut],
-      use_default_shell_env = True,
-      progress_message = "Processing {0}".format(hscFile.basename),
-      executable = "hsc2hs",
-      arguments = [hsc2hs_args(ctx, hscFile, hsOut, includeDirs)],
-    )
-    hscFiles.append(hsOut)
-
+  processed_hsc_files = hsc_to_hs(ctx)
   # Process cpphs files
+#  processed_cpphs_files = cpphs_to_hs(ctx)
+
   cpphsFiles = []
   for cpphsFile in ctx.files.cpphs:
     hsOut = declare_compiled(ctx, cpphsFile, "hs")
@@ -170,7 +164,7 @@ def _haskell_library_impl(ctx):
     )
     cpphsFiles.append(hsOut)
 
-  genHsFiles = hscFiles + cpphsFiles
+  genHsFiles = processed_hsc_files + cpphsFiles
 
   # Compile C static objects
   ctx.actions.run(

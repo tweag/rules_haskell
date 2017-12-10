@@ -239,14 +239,6 @@ def ghc_dyn_link_args(ctx, dynObjectFiles, pkgDynLib, pkgNames, pkgConfs, allExt
   args.add(dynObjectFiles)
   return args
 
-def hsc2hs_args(ctx, hscFile, hsOut, includeDirs):
-  args = ctx.actions.args()
-  args.add(hscFile)
-  args.add(["-o", hsOut])
-  for includeDir in includeDirs:
-    args.add(["-I", includeDir])
-  return args
-
 def ghc_cpphs_args(ctx, cpphsFile, hsOut, includeDirs):
   args = ctx.actions.args()
   args.add(["-E", "-cpp", "-pgmPcpphs", "-optP--cpp", "-x", "hs"])
