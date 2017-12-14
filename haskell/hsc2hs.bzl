@@ -6,6 +6,10 @@ load(":path_utils.bzl",
      "mk_name",
 )
 
+load(":tools.bzl",
+     "get_hsc2hs",
+)
+
 def hsc_to_hs(ctx):
   """Process all hsc files into Haskell source files.
 
@@ -41,7 +45,7 @@ def __process_hsc_file(ctx, hsc_file):
     outputs = [hs_out, hsc_output_dir],
     use_default_shell_env = True,
     progress_message = "hsc2hs {0}".format(hsc_file.basename),
-    executable = "hsc2hs",
+    executable = get_hsc2hs(ctx),
     arguments = [args],
   )
   return hs_out

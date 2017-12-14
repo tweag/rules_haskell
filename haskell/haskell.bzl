@@ -112,7 +112,15 @@ _haskell_common_attrs = {
     # dynamic-library-dirs content. As currently we're using GHC from
     # nix, there's not really a way to do this. In future we need to
     # expose toolchains that expose a version and use that. I think.
-    doc="Version of GHC used."
+    doc="Version of GHC being used."
+  ),
+  "build_tools": attr.label_list(
+    default= [
+      "@ghc//:bin",
+      "@binutils//:bin",
+    ],
+    allow_files=True,
+    doc="Build tools to use.",
   ),
 }
 

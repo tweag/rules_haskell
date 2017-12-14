@@ -10,6 +10,14 @@ load(":path_utils.bzl",
      "replace_ext",
 )
 
+load(":tools.bzl",
+     "get_ar",
+     "get_compiler",
+     "get_ghc_pkg",
+     "get_build_tools",
+     "get_build_tools_path",
+)
+
 HaskellPackageInfo = provider(
   doc = "Package information exposed by Haskell libraries.",
   fields = {
@@ -23,7 +31,7 @@ HaskellPackageInfo = provider(
     "static_library_dirs": "Library file directories",
     "dynamic_library_dirs": "Dynamic library file directories",
     "prebuilt_dependencies": "Transitive collection of all wired-in Haskell dependencies.",
-    "external_libraries": "Non-Haskell libraries needed for linking. Dict of Name:LinkDir.",
+    "external_libraries": "Non-Haskell libraries needed for linking. List of shared libs.",
   }
 )
 
@@ -53,12 +61,13 @@ def compile_haskell_bin(ctx):
 
   ctx.actions.run(
     inputs = dep_info.interface_files + dep_info.confs + dep_info.caches +
-             dep_info.dynamic_libraries + ctx.files.srcs,
+             dep_info.dynamic_libraries + ctx.files.srcs + get_build_tools(ctx),
     outputs = object_files + [object_dir],
-    # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
-    use_default_shell_env = True,
     progress_message = "Building {0}".format(ctx.attr.name),
-    executable = "ghc",
+    env = {
+      "PATH": get_build_tools_path(ctx)
+    },
+    executable = get_compiler(ctx),
     arguments = [args]
   )
 
@@ -88,8 +97,7 @@ def link_haskell_bin(ctx, object_files):
   ctx.actions.run(
     inputs = [dummy_input],
     outputs = [dummy_object],
-    use_default_shell_env = True,
-    executable = "ghc",
+    executable = get_compiler(ctx),
     arguments = [dummy_args]
   )
   ar_args = ctx.actions.args()
@@ -98,8 +106,7 @@ def link_haskell_bin(ctx, object_files):
   ctx.actions.run(
     inputs = [dummy_object],
     outputs = [dummy_static_lib],
-    use_default_shell_env = True,
-    executable = "ar",
+    executable = get_ar(ctx),
     arguments = [ar_args]
   )
 
@@ -137,11 +144,11 @@ def link_haskell_bin(ctx, object_files):
   # Otherwise we'd end up with meaningless relative rpath.
   rpaths = ["$(realpath {0})".format(lib.path) for lib in external_libraries]
   ctx.actions.run_shell(
-    inputs = dep_info.static_libraries + object_files + [dummy_static_lib] + external_libraries,
+    inputs = dep_info.static_libraries + object_files + [dummy_static_lib] + external_libraries +
+             get_build_tools(ctx), #+ dep_libs,
     outputs = [ctx.outputs.executable],
-    use_default_shell_env = True,
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
-    command = " ".join(["ghc"] + rpaths + link_args),
+    command = " ".join([get_compiler(ctx).path] + rpaths + link_args),
   )
 
 def compile_haskell_lib(ctx, generated_hs_sources):
@@ -193,17 +200,20 @@ def compile_haskell_lib(ctx, generated_hs_sources):
   # modules cross-package.
   interface_files = [declare_compiled(ctx, s, get_interface_suffix(), directory=interfaces_dir)
                      for s in get_input_files(ctx)]
+
   ctx.actions.run(
     inputs =
     ctx.files.srcs + generated_hs_sources +
     (dep_info.caches + external_files + dep_info.interface_files +
-     dep_info.dynamic_libraries).to_list(),
+     dep_info.dynamic_libraries + get_build_tools(ctx)).to_list(),
     outputs = [interfaces_dir, objects_dir] + object_files + interface_files +
-    object_dyn_files,
-    use_default_shell_env = True,
+              object_dyn_files,
     progress_message = "Compiling {0}".format(ctx.attr.name),
-    executable = "ghc",
-    arguments = [args]
+    env = {
+      "PATH": get_build_tools_path(ctx),
+    },
+    executable = get_compiler(ctx),
+    arguments = [args],
   )
 
   return interfaces_dir, interface_files, object_files, object_dyn_files
@@ -227,8 +237,7 @@ def create_static_library(ctx, object_files):
   ctx.actions.run(
     inputs = object_files,
     outputs = [static_library, static_library_dir],
-    use_default_shell_env = True,
-    executable = "ar",
+    executable = get_ar(ctx),
     arguments = [args],
   )
   return static_library_dir, static_library
@@ -256,19 +265,10 @@ def create_dynamic_library(ctx, object_files):
   for libs in dep_info.external_libraries:
     args.add(libs)
 
-  pkg_caches = depset()
-  pkg_names = depset()
-  dep_dyn_lib_dirs = depset()
-  for d in ctx.attr.deps:
-    if HaskellPackageInfo in d:
-      pkg_caches += d[HaskellPackageInfo].caches
-      pkg_names += d[HaskellPackageInfo].names
-      dep_dyn_lib_dirs += d[HaskellPackageInfo].dynamic_libraries
-
   for n in dep_info.names + depset(ctx.attr.prebuilt_dependencies):
     args.add(["-package", n])
 
-  for c in pkg_caches:
+  for c in dep_info.caches:
     args.add(["-package-db", c.dirname])
 
   args.add(object_files)
@@ -276,12 +276,15 @@ def create_dynamic_library(ctx, object_files):
   ctx.actions.run(
     inputs =
       depset(object_files) +
-      pkg_caches +
-      dep_dyn_lib_dirs +
-      dep_info.external_libraries,
+      dep_info.caches +
+      dep_info.dynamic_libraries +
+      dep_info.external_libraries +
+      get_build_tools(ctx),
     outputs = [dynamic_library_dir, dynamic_library],
-    use_default_shell_env = True,
-    executable = "ghc",
+    env = {
+      "PATH": get_build_tools_path(ctx),
+    },
+    executable = get_compiler(ctx),
     arguments = [args]
   )
 
@@ -335,20 +338,20 @@ def create_ghc_package(ctx, interface_files, interfaces_dir, static_library, sta
 
   # Make the call to ghc-pkg and use the registration file
   package_path = ":".join([ c.dirname for c in pkg_confs ])
-  ctx.actions.run_shell(
-    inputs = pkg_confs + [static_library, interfaces_dir, registration_file],
+  ctx.actions.run(
+    inputs = pkg_confs + [static_library, interfaces_dir, registration_file] +
+             get_build_tools(ctx),
     outputs = [pkg_db_dir, conf_file, cache_file],
-    # TODO: use env for GHC_PACKAGE_PATH when use_default_shell_env is removed
-    use_default_shell_env = True,
-    command = " ".join(
-      [ "GHC_PACKAGE_PATH={0}".format(package_path),
-        "ghc-pkg",
-        "register",
-        "--package-db={0}".format(pkg_db_dir.path),
-        "--no-expand-pkgroot",
-        registration_file.path,
-      ]
-    )
+    env = {
+      "GHC_PACKAGE_PATH": package_path,
+      "PATH": get_build_tools_path(ctx),
+    },
+    executable = get_ghc_pkg(ctx),
+    arguments = [
+      "register", "--package-db={0}".format(pkg_db_dir.path),
+      "--no-expand-pkgroot",
+      registration_file.path
+    ]
   )
 
   return conf_file, cache_file
@@ -435,6 +438,4 @@ def gather_dependency_information(ctx):
         prebuilt_dependencies = hpi.prebuilt_dependencies,
         external_libraries = hpi.external_libraries.union(depset(dep.files)),
       )
-
-
   return hpi

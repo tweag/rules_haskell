@@ -9,12 +9,14 @@ load(":path_utils.bzl",
      "get_dyn_object_suffix",
 )
 
-
 load(":toolchain.bzl",
      "HaskellPackageInfo",
      "mk_name",
 )
 
+load(":tools.bzl",
+     "get_compiler",
+)
 
 def c_compile_static(ctx):
   """Compile all C files to static object files.
@@ -92,7 +94,7 @@ def __generic_c_compile(ctx, output_dir_template, output_ext, user_args):
     outputs = [output_dir] + output_files,
     use_default_shell_env = True,
     progress_message = "Compiling C dynamic {0}".format(ctx.attr.name),
-    executable = "ghc",
+    executable = get_compiler(ctx),
     arguments = [user_args, args],
   )
   return output_files
