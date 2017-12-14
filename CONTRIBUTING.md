@@ -28,7 +28,7 @@ again.
    integration bots will test your change automatically on supported
    platforms. Once everything looks good, your change will be merged.
 
-[issue-tracker]: https://github.com/tweag/rules_go/issues
+[issue-tracker]: https://github.com/tweag/rules_haskell/issues
 [tests]: https://github.com/tweag/rules_haskell/tree/master/tests
 
 ## Setting up your development environment
