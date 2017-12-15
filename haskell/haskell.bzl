@@ -69,7 +69,7 @@ def _haskell_library_impl(ctx):
   )]
 
 _haskell_common_attrs = {
-  "sourceDir": attr.string(
+  "src_strip_prefix": attr.string(
     mandatory=False,
     doc="Directory in which module hierarchy starts."
   ),
