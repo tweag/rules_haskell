@@ -8,4 +8,5 @@ load(
 haskell_library(
   name = 'hello-subsublib',
   srcs = glob(['**/*.hs']),
+  prebuilt_dependencies = ["base"]
 )

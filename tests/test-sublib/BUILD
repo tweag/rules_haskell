@@ -9,5 +9,8 @@ haskell_library(
   name = 'test-sublib',
   srcs = [
     'TestSubLib.hs',
-  ]
+  ],
+  prebuilt_dependencies = [
+    "base"
+  ],
 )

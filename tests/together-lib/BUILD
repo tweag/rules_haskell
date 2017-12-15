@@ -6,12 +6,17 @@ load(
 )
 
 haskell_library(
-  name = 'test-lib',
-  srcs = [
-    'TestLib.hs',
-  ],
-  deps = ["//tests/test-sublib"],
+  name = 'one',
+  srcs = [ 'One.hs' ],
   prebuilt_dependencies = [
-    "base",
+    "base"
+  ],
+)
+
+haskell_library(
+  name = 'two',
+  srcs = [ 'Two.hs' ],
+  prebuilt_dependencies = [
+    "base"
   ],
 )
