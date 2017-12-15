@@ -75,8 +75,6 @@ _haskell_common_attrs = {
   ),
   "srcs": attr.label_list(
     allow_files=FileType([".hs"]),
-    # TODO: Figure out how to deal with sources where module hierarchy
-    # doesn't start straight away.
     doc="A list of Haskell sources to be built by this rule."
   ),
   "c_sources": attr.label_list(
