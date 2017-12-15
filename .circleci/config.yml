@@ -1,0 +1,19 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: nixos/nix
+    working_directory: ~/rules_haskell
+    steps:
+      - checkout
+      - run:
+          name: System dependencies
+          command: |
+            apk --no-progress update
+            apk --no-progress add bash ca-certificates
+            nix-channel --update
+            nix-env -iA nixpkgs.bazel nixpkgs.binutils nixpkgs.ghc
+      - run:
+          name: Run tests
+          command: bazel test //...
