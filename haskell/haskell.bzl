@@ -16,10 +16,6 @@ load(":hsc2hs.bzl",
      "hsc_to_hs",
 )
 
-load(":cpphs.bzl",
-     "cpphs",
-)
-
 load(":c_compile.bzl",
      "c_compile_dynamic",
      "c_compile_static",
@@ -32,11 +28,9 @@ def _haskell_binary_impl(ctx):
 def _haskell_library_impl(ctx):
   # Process hsc files
   processed_hsc_files = hsc_to_hs(ctx)
-  # Process cpphs files
-  processed_cpphs_files = cpphs(ctx)
 
   interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(
-    ctx, processed_hsc_files + processed_cpphs_files
+    ctx, processed_hsc_files
   )
 
   c_object_files = c_compile_static(ctx)
@@ -101,10 +95,6 @@ _haskell_common_attrs = {
   "hscs": attr.label_list(
     allow_files=FileType([".hsc"]),
     doc=".hsc files to preprocess and link"
-  ),
-  "cpphs": attr.label_list(
-    allow_files=FileType([".cpphs"]),
-    doc=".cpphs file to preprocess and link",
   ),
   "external_deps": attr.label_list(
     allow_files=True,

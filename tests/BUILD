@@ -56,23 +56,6 @@ haskell_binary(
   deps = [":hsc-lib"],
 )
 
-haskell_library(
-  name = "cpphs-lib",
-  sourceDir = "cpphs",
-  srcs = [],
-  cpphs = ["cpphs/Test.cpphs"],
-  prebuilt_dependencies = ["base"]
-)
-
-# https://github.com/tweag/rules_haskell/issues/13
-haskell_binary(
-  name = "cpphs",
-  sourceDir = "cpphs",
-  srcs = ["cpphs/Main.hs"],
-  prebuilt_dependencies = ["base"],
-  deps = [":cpphs-lib"],
-)
-
 [sh_test(
     name = "Run" + binary,
     srcs = ["test_binary.sh"],
@@ -85,5 +68,4 @@ haskell_binary(
     "non-top-srcs",
     "main-is",
     "hsc",
-    "cpphs",
 ]]
