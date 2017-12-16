@@ -17,9 +17,18 @@ may also be refined if appropriate.
 
 ### Build and test inline-java
 
+* P0. Can build and run inline-java spec and jvm-streaming spec.
+* P0. Can use inline-java packages as dependencies in bigger product
+  (sparkle).
+
 ### Build and test sparkle
 
+* P0. Able to build sparkle executable. This includes building all
+  relevant Java.
+
 ### Build and test Agda
+
+* P0. Produces working `agda` and `agda-mode` executables.
 
 ### 1.0
 
