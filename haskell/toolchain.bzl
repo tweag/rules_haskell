@@ -373,7 +373,7 @@ def get_input_files(ctx):
   Args:
     ctx: Rule context.
   """
-  return ctx.files.srcs + ctx.files.hscs + ctx.files.cpphs
+  return ctx.files.srcs + ctx.files.hscs
 
 def gather_dependency_information(ctx):
   """Walk dependencies and collapse their information into a single
