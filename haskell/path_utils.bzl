@@ -73,7 +73,7 @@ def path_to_module_path(ctx, hsFile):
   """
   # Directory under which module hierarchy starts.
   pkgDir = path_append(path_append(ctx.label.workspace_root, ctx.label.package),
-                       ctx.attr.sourceDir)
+                       ctx.attr.src_strip_prefix)
   # Module path without the workspace and source directories, just
   # relevant hierarchy.
   noPrefixPath = drop_path_prefix(pkgDir, hsFile.path)

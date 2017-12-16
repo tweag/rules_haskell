@@ -37,7 +37,7 @@ def compile_haskell_bin(ctx):
   object_files = [declare_compiled(ctx, s, get_object_suffix(), directory=object_dir)
                   for s in ctx.files.srcs]
   args = ctx.actions.args()
-  args.add(ctx.attr.compilerFlags)
+  args.add(ctx.attr.compiler_flags)
   args.add("-no-link")
   args.add(ctx.files.srcs)
   args.add(["-odir", object_dir])
@@ -149,7 +149,7 @@ def compile_haskell_lib(ctx, generated_hs_sources):
   objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
   interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
   args = ctx.actions.args()
-  args.add(ctx.attr.compilerFlags)
+  args.add(ctx.attr.compiler_flags)
   args.add([
     "-no-link",
     "-hide-all-packages",
@@ -239,7 +239,7 @@ def create_dynamic_library(ctx, object_files):
   dynamic_library_dir = ctx.actions.declare_directory(mk_name(ctx, "dynlib"))
   dynamic_library = ctx.actions.declare_file(
     path_append(dynamic_library_dir.basename,
-                "lib{0}-ghc{1}.so".format(get_library_name(ctx), ctx.attr.ghcVersion))
+                "lib{0}-ghc{1}.so".format(get_library_name(ctx), ctx.attr.ghc_version))
   )
 
   args = ctx.actions.args()

@@ -69,14 +69,12 @@ def _haskell_library_impl(ctx):
   )]
 
 _haskell_common_attrs = {
-  "sourceDir": attr.string(
+  "src_strip_prefix": attr.string(
     mandatory=False,
     doc="Directory in which module hierarchy starts."
   ),
   "srcs": attr.label_list(
     allow_files=FileType([".hs"]),
-    # TODO: Figure out how to deal with sources where module hierarchy
-    # doesn't start straight away.
     doc="A list of Haskell sources to be built by this rule."
   ),
   "c_sources": attr.label_list(
@@ -89,7 +87,7 @@ _haskell_common_attrs = {
   "deps": attr.label_list(
     doc="haskell_library dependencies"
   ),
-  "compilerFlags": attr.string_list(
+  "compiler_flags": attr.string_list(
     doc="Flags to pass to Haskell compiler while compiling this rule's sources."
   ),
   "hscs": attr.label_list(
@@ -111,7 +109,7 @@ _haskell_common_attrs = {
     default="1.0.0",
     doc="Package/binary version"
   ),
-  "ghcVersion": attr.string(
+  "ghc_version": attr.string(
     default="8.2.2",
     # TODO (fuuzetsu): We need this because we have to generate
     # correct suffix for shared libraries that GHC expects for
@@ -126,7 +124,7 @@ haskell_library = rule(
   _haskell_library_impl,
   outputs = {
     "conf": "%{name}-%{version}/%{name}-%{version}.conf",
-    "packageCache": "%{name}-%{version}/package.cache"
+    "package_cache": "%{name}-%{version}/package.cache"
   },
   attrs = _haskell_common_attrs,
 )
