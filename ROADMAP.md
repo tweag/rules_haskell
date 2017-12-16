@@ -23,15 +23,13 @@ may also be refined if appropriate.
 
 ### 1.0
 
-* P0. Support passing compiler flags on command-line.
-* P1. GHC server to amortize cost of invoking `ghc` command.
-* P1. Make object cache available to server to achieve incremental
-  rebuild of `haskell_library` targets.
+* P1. Maximally incremental rebuilds.
 * P1. Import toolchains from `rules_nixpkgs`.
 * P2. Define official GHC bindists as toolchains for each Tier-1
   platform.
 * P2. Define cross-compiler toolchains.
 * P2. Support multiple build flavours: fastbuild, opt, dbg/profiling.
+* P2. Support passing compiler flags on command-line.
 
 ## Previous milestones
 
