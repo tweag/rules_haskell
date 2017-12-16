@@ -124,7 +124,7 @@ haskell_library = rule(
   _haskell_library_impl,
   outputs = {
     "conf": "%{name}-%{version}/%{name}-%{version}.conf",
-    "packageCache": "%{name}-%{version}/package.cache"
+    "package_cache": "%{name}-%{version}/package.cache"
   },
   attrs = _haskell_common_attrs,
 )
