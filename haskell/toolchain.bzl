@@ -239,7 +239,7 @@ def create_dynamic_library(ctx, object_files):
   dynamic_library_dir = ctx.actions.declare_directory(mk_name(ctx, "dynlib"))
   dynamic_library = ctx.actions.declare_file(
     path_append(dynamic_library_dir.basename,
-                "lib{0}-ghc{1}.so".format(get_library_name(ctx), ctx.attr.ghcVersion))
+                "lib{0}-ghc{1}.so".format(get_library_name(ctx), ctx.attr.ghc_version))
   )
 
   args = ctx.actions.args()

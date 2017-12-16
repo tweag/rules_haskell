@@ -109,7 +109,7 @@ _haskell_common_attrs = {
     default="1.0.0",
     doc="Package/binary version"
   ),
-  "ghcVersion": attr.string(
+  "ghc_version": attr.string(
     default="8.2.2",
     # TODO (fuuzetsu): We need this because we have to generate
     # correct suffix for shared libraries that GHC expects for
