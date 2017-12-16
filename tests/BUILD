@@ -5,67 +5,49 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
      "haskell_library",
 )
 
-haskell_binary(
-    name = "hello",
-    srcs = ["Main.hs"],
-    deps = ["//tests/test-lib"]
+load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
+
+rule_test(
+  name = "test-binary-simple",
+  generates = ["binary-simple"],
+  rule = "//tests/binary-simple",
+  size = "small",
 )
 
-haskell_binary(
-  name = "two-libs-one-BUILD",
-  main = "TogetherTest.main",
-  srcs = ["TogetherTest.hs"],
-  deps = [
-    "//tests/together-lib:one",
-    "//tests/together-lib:two"
-  ]
+rule_test(
+  name = "test-binary-with-lib",
+  generates = ["binary-with-lib"],
+  rule = "//tests/binary-with-lib",
+  size = "small",
 )
 
-haskell_binary(
-  name = "non-top-srcs",
-  sourceDir = "non-top-srcs",
-  srcs = [
-    "non-top-srcs/Test.hs",
-    "non-top-srcs/Main.hs"
-  ],
-  prebuilt_dependencies = ["base"]
+rule_test(
+  name = "test-binary-with-prebuilt",
+  generates = ["binary-with-prebuilt"],
+  rule = "//tests/binary-with-prebuilt",
+  size = "small",
 )
 
-haskell_binary(
-  name = "main-is",
-  main = "MainIs.mainIs",
-  srcs = [ "MainIs.hs" ],
-  prebuilt_dependencies = ["base"],
+rule_test(
+  name = "test-binary-with-main",
+  generates = ["binary-with-main"],
+  rule = "//tests/binary-with-main",
+  size = "small",
 )
 
-
-haskell_library(
-  name = "hsc-lib",
-  sourceDir = "hsc",
-  srcs = [],
-  hscs = ["hsc/Test.hsc"],
-  prebuilt_dependencies = ["base"]
+rule_test(
+  name = "test-library-deps",
+  generates =
+    ["library-deps-1.0.0/library-deps-1.0.0.conf",
+     "library-deps-1.0.0/package.cache",
+    ],
+  rule = "//tests/library-deps",
+  size = "small",
 )
 
-# https://github.com/tweag/rules_haskell/issues/13
-haskell_binary(
-  name = "hsc",
-  sourceDir = "hsc",
-  srcs = ["hsc/Main.hs"],
-  prebuilt_dependencies = ["base"],
-  deps = [":hsc-lib"],
+rule_test(
+  name = "test-hsc",
+  generates = ["hsc"],
+  rule = "//tests/hsc",
+  size = "small",
 )
-
-[sh_test(
-    name = "Run" + binary,
-    srcs = ["test_binary.sh"],
-    args = ["$(location %s)" % binary],
-    data = [":%s" % binary],
-    timeout="short",
-) for binary in [
-    "hello",
-    "two-libs-one-BUILD",
-    "non-top-srcs",
-    "main-is",
-    "hsc",
-]]

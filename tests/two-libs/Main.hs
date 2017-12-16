@@ -1,4 +1,4 @@
-module TogetherTest (main) where
+module Main where
 
 import One (one)
 import Two (two)
