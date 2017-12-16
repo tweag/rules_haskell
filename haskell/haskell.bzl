@@ -87,7 +87,7 @@ _haskell_common_attrs = {
   "deps": attr.label_list(
     doc="haskell_library dependencies"
   ),
-  "compilerFlags": attr.string_list(
+  "compiler_flags": attr.string_list(
     doc="Flags to pass to Haskell compiler while compiling this rule's sources."
   ),
   "hscs": attr.label_list(
