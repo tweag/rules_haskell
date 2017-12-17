@@ -1,8 +1,6 @@
-# rules_haskell
+# Haskell rules for [Bazel][bazel]
 
 [![CircleCI](https://circleci.com/gh/tweag/rules_haskell.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell)
-
-Haskell rules for the [Bazel build tool][bazel].
 
 [bazel]: https://bazel.build/
 
