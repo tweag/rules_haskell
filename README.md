@@ -1,5 +1,8 @@
 # rules_haskell
-Haskell rules for Bazel.
+
+Haskell rules for the [Bazel build tool][bazel].
+
+[bazel]: https://bazel.build/
 
 ## Rules
 
