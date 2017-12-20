@@ -121,6 +121,8 @@ def link_haskell_bin(ctx, object_files):
     if HaskellPackageInfo in dep:
       external_libraries = external_libraries.union(dep[HaskellPackageInfo].external_libraries)
     else:
+      # If not a Haskell dependency, collect list of files to be
+      # passed as-is to the linking command.
       external_libraries = external_libraries.union(depset(dep.files))
 
   for lib in external_libraries:

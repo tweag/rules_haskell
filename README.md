@@ -141,13 +141,18 @@ haskell_library(
   </tbody>
 </table>
 
-### haskell_binary
+### haskell_import
 
-Imports a prebuilt shared library.
+Imports a prebuilt shared library. Use this to make `.so`, `.dll`,
+`.dylib` files residing in
+external [external repositories][bazel-ext-repos] available to Haskell
+rules.
 
 ```bzl
 haskell_import(name, shared_library, visibility = None)
 ```
+
+[bazel-ext-repos]: https://docs.bazel.build/versions/master/external.html
 
 #### Example
 
