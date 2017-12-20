@@ -103,39 +103,45 @@ def link_haskell_bin(ctx, object_files):
     arguments = [ar_args]
   )
 
-  link_args = ctx.actions.args()
-  link_args.add(["-o", ctx.outputs.executable, dummy_static_lib])
+  # XXX Use list instead of Args, because no Args -> string conversion
+  # function yet, and need to construct full shell command below as
+  # a string.
+  link_args = []
+  link_args.extend(["-o", ctx.outputs.executable.path, dummy_static_lib.path])
 
   for o in object_files:
-    link_args.add(["-optl", o])
+    link_args.extend(["-optl", o.path])
 
   dep_info = gather_dependency_information(ctx)
   for l in dep_info.static_libraries:
-    link_args.add(["-optl", l])
+    link_args.extend(["-optl", l.path])
 
-  external_libraries = {}
+  external_libraries = depset()
   for dep in ctx.attr.deps:
-    external_libraries.update(
-      dep[HaskellPackageInfo].external_libraries
-    )
+    if HaskellPackageInfo in dep:
+      external_libraries = external_libraries.union(dep[HaskellPackageInfo].external_libraries)
+    else:
+      # If not a Haskell dependency, collect list of files to be
+      # passed as-is to the linking command.
+      external_libraries = external_libraries.union(depset(dep.files))
 
-  for dep_name, dep_dirs in external_libraries.items():
-    link_args.add("-l{0}".format(dep_name))
-    for d in dep_dirs:
-      link_args.add("-L{0}".format(d))
+  for lib in external_libraries:
+    link_args.append(lib.path)
 
   # We have to remember to specify all (transitive) wired-in
   # dependencies or we can't find objects for linking.
   for p in dep_info.prebuilt_dependencies:
-    link_args.add(["-package", p])
+    link_args.extend(["-package", p])
 
-  ctx.actions.run(
-    inputs = dep_info.static_libraries + object_files + [dummy_static_lib],
+  # Resolve symlinks to system libraries to their absolute location.
+  # Otherwise we'd end up with meaningless relative rpath.
+  rpaths = ["$(realpath {0})".format(lib.path) for lib in external_libraries]
+  ctx.actions.run_shell(
+    inputs = dep_info.static_libraries + object_files + [dummy_static_lib] + external_libraries,
     outputs = [ctx.outputs.executable],
     use_default_shell_env = True,
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
-    executable = "ghc",
-    arguments = [link_args],
+    command = " ".join(["ghc"] + rpaths + link_args),
   )
 
 def compile_haskell_lib(ctx, generated_hs_sources):
@@ -247,21 +253,17 @@ def create_dynamic_library(ctx, object_files):
 
   dep_info = gather_dependency_information(ctx)
 
-  # We do not add anything to inputs from these as these are supposed
-  # to be absolute paths outside of bazel's control such as system
-  # libraries.
-  for dep_name, dep_dirs in dep_info.external_libraries.items():
-    args.add("-l{0}".format(dep_name))
-    for d in dep_dirs:
-      args.add("-L{0}".format(d))
+  for libs in dep_info.external_libraries:
+    args.add(libs)
 
   pkg_caches = depset()
   pkg_names = depset()
   dep_dyn_lib_dirs = depset()
   for d in ctx.attr.deps:
-    pkg_caches += d[HaskellPackageInfo].caches
-    pkg_names += d[HaskellPackageInfo].names
-    dep_dyn_lib_dirs += d[HaskellPackageInfo].dynamic_libraries
+    if HaskellPackageInfo in d:
+      pkg_caches += d[HaskellPackageInfo].caches
+      pkg_names += d[HaskellPackageInfo].names
+      dep_dyn_lib_dirs += d[HaskellPackageInfo].dynamic_libraries
 
   for n in dep_info.names + depset(ctx.attr.prebuilt_dependencies):
     args.add(["-package", n])
@@ -275,7 +277,8 @@ def create_dynamic_library(ctx, object_files):
     inputs =
       depset(object_files) +
       pkg_caches +
-      dep_dyn_lib_dirs,
+      dep_dyn_lib_dirs +
+      dep_info.external_libraries,
     outputs = [dynamic_library_dir, dynamic_library],
     use_default_shell_env = True,
     executable = "ghc",
@@ -316,7 +319,7 @@ def create_ghc_package(ctx, interface_files, interfaces_dir, static_library, sta
       path_append("${pkgroot}", dynamic_library_dir.basename),
     "hs-libraries": get_library_name(ctx),
     "depends":
-      ", ".join([ d[HaskellPackageInfo].name for d in ctx.attr.deps ])
+      ", ".join([ d[HaskellPackageInfo].name for d in ctx.attr.deps if HaskellPackageInfo in d])
   }
   ctx.actions.write(
     output=registration_file,
@@ -326,6 +329,7 @@ def create_ghc_package(ctx, interface_files, interfaces_dir, static_library, sta
 
   pkg_confs = depset([
     c for dep in ctx.attr.deps
+      if HaskellPackageInfo in dep
       for c in dep[HaskellPackageInfo].confs
   ])
 
@@ -394,31 +398,43 @@ def gather_dependency_information(ctx):
     static_library_dirs = depset(),
     dynamic_library_dirs = depset(),
     prebuilt_dependencies = depset(ctx.attr.prebuilt_dependencies),
-    external_libraries = {}
+    external_libraries = depset(),
   )
 
   for dep in ctx.attr.deps:
-    pkg = dep[HaskellPackageInfo]
-    new_external_libraries = {}
-    new_external_libraries.update(hpi.external_libraries)
-    new_external_libraries.update(pkg.external_libraries)
-    hpi = HaskellPackageInfo(
-      name = hpi.name,
-      names = hpi.names + pkg.names,
-      confs = hpi.confs + pkg.confs,
-      caches = hpi.caches + pkg.caches,
-      static_libraries = hpi.static_libraries + pkg.static_libraries,
-      dynamic_libraries = hpi.dynamic_libraries + pkg.dynamic_libraries,
-      interface_files = hpi.interface_files + pkg.interface_files,
-      static_library_dirs = hpi.static_library_dirs + pkg.static_library_dirs,
-      dynamic_library_dirs = hpi.dynamic_library_dirs + pkg.dynamic_library_dirs,
-      prebuilt_dependencies = hpi.prebuilt_dependencies + pkg.prebuilt_dependencies,
-      external_libraries = new_external_libraries
-    )
+    if HaskellPackageInfo in dep:
+      pkg = dep[HaskellPackageInfo]
+      new_external_libraries = hpi.external_libraries
+      new_external_libraries = new_external_libraries.union(pkg.external_libraries)
+      hpi = HaskellPackageInfo(
+        name = hpi.name,
+        names = hpi.names + pkg.names,
+        confs = hpi.confs + pkg.confs,
+        caches = hpi.caches + pkg.caches,
+        static_libraries = hpi.static_libraries + pkg.static_libraries,
+        dynamic_libraries = hpi.dynamic_libraries + pkg.dynamic_libraries,
+        interface_files = hpi.interface_files + pkg.interface_files,
+        static_library_dirs = hpi.static_library_dirs + pkg.static_library_dirs,
+        dynamic_library_dirs = hpi.dynamic_library_dirs + pkg.dynamic_library_dirs,
+        prebuilt_dependencies = hpi.prebuilt_dependencies + pkg.prebuilt_dependencies,
+        external_libraries = new_external_libraries,
+      )
+    else:
+      # If not a Haskell dependency, pass it through as-is to the
+      # linking phase.
+      hpi = HaskellPackageInfo(
+        name = hpi.name,
+        names = hpi.names,
+        confs = hpi.confs,
+        caches = hpi.caches,
+        static_libraries = hpi.static_libraries,
+        dynamic_libraries = hpi.dynamic_libraries,
+        interface_files = hpi.interface_files,
+        static_library_dirs = hpi.static_library_dirs,
+        dynamic_library_dirs = hpi.dynamic_library_dirs,
+        prebuilt_dependencies = hpi.prebuilt_dependencies,
+        external_libraries = hpi.external_libraries.union(depset(dep.files)),
+      )
 
-  # Add external_libraries from the user, formatting them in way code
-  # expects.
-  for name, f in ctx.attr.external_libraries.items():
-    hpi.external_libraries[name] = hpi.external_libraries.get(name, default=depset()) + [f]
 
   return hpi

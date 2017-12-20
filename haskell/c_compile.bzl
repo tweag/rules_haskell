@@ -65,8 +65,9 @@ def __generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   pkg_caches = depset()
   pkg_names = depset()
   for d in ctx.attr.deps:
-    pkg_caches += d[HaskellPackageInfo].caches
-    pkg_names += d[HaskellPackageInfo].names
+    if HaskellPackageInfo in d:
+      pkg_caches += d[HaskellPackageInfo].caches
+      pkg_names += d[HaskellPackageInfo].names
 
   # Expose every dependency and every prebuilt dependency.
   for n in pkg_names + depset(ctx.attr.prebuilt_dependencies):

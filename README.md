@@ -2,12 +2,18 @@
 
 [![CircleCI](https://circleci.com/gh/tweag/rules_haskell.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell)
 
+To use these rules, you'll need [Bazel >= 0.8.1][bazel-install]. To
+run tests, you'll furthermore need [Nix][nix] installed.
+
 [bazel]: https://bazel.build/
+[bazel-install]: https://docs.bazel.build/versions/master/install.html
+[nix]: https://nixos.org/nix
 
 ## Rules
 
 * [haskell_binary](#haskell_binary)
 * [haskell_library](#haskell_library)
+* [haskell_import](#haskell_import)
 
 ## Setup
 
@@ -130,6 +136,60 @@ haskell_library(
       <td>
         <p><code>List of labels, required</code></p>
         <p>List of other Haskell libraries to be linked to this target</p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+### haskell_import
+
+Imports a prebuilt shared library. Use this to make `.so`, `.dll`,
+`.dylib` files residing in
+external [external repositories][bazel-ext-repos] available to Haskell
+rules.
+
+```bzl
+haskell_import(name, shared_library, visibility = None)
+```
+
+[bazel-ext-repos]: https://docs.bazel.build/versions/master/external.html
+
+#### Example
+
+```bzl
+haskell_import(name = "zlib", shared_library = "@zlib//:lib")
+
+haskell_binary(
+  name = "crc32sum",
+  srcs = ["Main.hs"],
+  deps = [":zlib"],
+  prebuilt_dependencies = ["base"],
+)
+```
+
+<table class="table table-condensed table-bordered table-params">
+  <colgroup>
+    <col class="col-param" />
+    <col class="param-description" />
+  </colgroup>
+  <thead>
+    <tr>
+      <th colspan="2">Attributes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td>
+        <p><code>Name, required</code></p>
+        <p>A unique name for this target</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>shared_library</code></td>
+      <td>
+        <p><code>Label, required</code></p>
+        <p>A single precompiled shared library.</p>
       </td>
     </tr>
   </tbody>

@@ -98,10 +98,6 @@ _haskell_common_attrs = {
     allow_files=True,
     doc="Non-Haskell dependencies",
   ),
-  # Only supports one per lib for now
-  "external_libraries": attr.string_dict(
-    doc="Non-Haskell libraries that we should link",
-  ),
   "prebuilt_dependencies": attr.string_list(
     doc="Haskell packages which are magically available such as wired-in packages."
   ),
@@ -139,3 +135,6 @@ haskell_binary = rule(
     )
   }
 )
+
+def haskell_import(name, shared_library, visibility = None):
+  native.alias(name = name, actual = shared_library, visibility = visibility)
