@@ -78,4 +78,4 @@ def get_ar(ctx):
   Args:
     ctx: Rule context.
   """
-  return get_build_tool(ctx, "ar")
+  return ctx.host_fragments.cpp.ar_executable

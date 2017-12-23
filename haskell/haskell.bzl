@@ -117,7 +117,6 @@ _haskell_common_attrs = {
   "build_tools": attr.label_list(
     default= [
       "@ghc//:bin",
-      "@binutils//:bin",
     ],
     allow_files=True,
     doc="Build tools to use.",
@@ -131,6 +130,7 @@ haskell_library = rule(
     "package_cache": "%{name}-%{version}/package.cache"
   },
   attrs = _haskell_common_attrs,
+  host_fragments = ["cpp"],
 )
 
 haskell_binary = rule(
@@ -141,7 +141,8 @@ haskell_binary = rule(
       default="Main.main",
       doc="Main function location."
     )
-  }
+  },
+  host_fragments = ["cpp"],
 )
 
 def haskell_import(name, shared_library, visibility = None):

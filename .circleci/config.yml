@@ -13,7 +13,7 @@ jobs:
             apk --no-progress update
             apk --no-progress add bash ca-certificates
             nix-channel --update
-            nix-env -iA nixpkgs.bazel
+            nix-env -iA nixpkgs.bazel nixpkgs.binutils
       - run:
           name: Run tests
           command: bazel test //...
