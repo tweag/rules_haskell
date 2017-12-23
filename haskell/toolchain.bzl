@@ -1,5 +1,6 @@
 load(":path_utils.bzl",
      "declare_compiled",
+     "drop_path_prefix",
      "get_dyn_interface_suffix",
      "get_dyn_object_suffix",
      "get_interface_suffix",
@@ -123,18 +124,6 @@ def link_haskell_bin(ctx, object_files):
   for l in dep_info.static_libraries:
     link_args.extend(["-optl", l.path])
 
-  external_libraries = depset()
-  for dep in ctx.attr.deps:
-    if HaskellPackageInfo in dep:
-      external_libraries = external_libraries.union(dep[HaskellPackageInfo].external_libraries)
-    else:
-      # If not a Haskell dependency, collect list of files to be
-      # passed as-is to the linking command.
-      external_libraries = external_libraries.union(depset(dep.files))
-
-  for lib in external_libraries:
-    link_args.append(lib.path)
-
   # We have to remember to specify all (transitive) wired-in
   # dependencies or we can't find objects for linking.
   for p in dep_info.prebuilt_dependencies:
@@ -142,10 +131,10 @@ def link_haskell_bin(ctx, object_files):
 
   # Resolve symlinks to system libraries to their absolute location.
   # Otherwise we'd end up with meaningless relative rpath.
-  rpaths = ["$(realpath {0})".format(lib.path) for lib in external_libraries]
+  rpaths = ["$(realpath {0})".format(lib.path) for lib in dep_info.external_libraries]
   ctx.actions.run_shell(
-    inputs = dep_info.static_libraries + object_files + [dummy_static_lib] + external_libraries +
-             get_build_tools(ctx), #+ dep_libs,
+    inputs = dep_info.static_libraries + object_files + [dummy_static_lib] +
+             dep_info.external_libraries + get_build_tools(ctx) + dep_info.external_libraries,
     outputs = [ctx.outputs.executable],
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
     command = " ".join([get_compiler(ctx).path] + rpaths + link_args),
@@ -172,7 +161,7 @@ def compile_haskell_lib(ctx, generated_hs_sources):
     "-dynosuf", get_dyn_object_suffix(),
     "-hisuf", get_interface_suffix(),
     "-dynhisuf", get_dyn_interface_suffix(),
-    "-odir", objects_dir, "-hidir", interfaces_dir
+    "-odir", objects_dir.path, "-hidir", interfaces_dir.path
   ])
 
   dep_info = gather_dependency_information(ctx)
@@ -205,12 +194,13 @@ def compile_haskell_lib(ctx, generated_hs_sources):
     inputs =
     ctx.files.srcs + generated_hs_sources +
     (dep_info.caches + external_files + dep_info.interface_files +
-     dep_info.dynamic_libraries + get_build_tools(ctx)).to_list(),
+     dep_info.dynamic_libraries + get_build_tools(ctx) + dep_info.external_libraries).to_list(),
     outputs = [interfaces_dir, objects_dir] + object_files + interface_files +
               object_dyn_files,
     progress_message = "Compiling {0}".format(ctx.attr.name),
     env = {
       "PATH": get_build_tools_path(ctx),
+
     },
     executable = get_compiler(ctx),
     arguments = [args],
@@ -228,7 +218,6 @@ def create_static_library(ctx, object_files):
   args = ctx.actions.args()
   static_library_dir = ctx.actions.declare_directory(mk_name(ctx, "lib"))
   static_library = ctx.actions.declare_file(path_append(static_library_dir.basename, "lib{0}.a".format(get_library_name(ctx))))
-
 
   args = ctx.actions.args()
   args.add(["qc", static_library])
@@ -257,23 +246,27 @@ def create_dynamic_library(ctx, object_files):
                 "lib{0}-ghc{1}.so".format(get_library_name(ctx), ctx.attr.ghc_version))
   )
 
-  args = ctx.actions.args()
-  args.add(["-shared", "-dynamic", "-o", dynamic_library])
+  args = ["-shared", "-dynamic", "-o", dynamic_library.path]
 
   dep_info = gather_dependency_information(ctx)
 
-  for libs in dep_info.external_libraries:
-    args.add(libs)
-
   for n in dep_info.names + depset(ctx.attr.prebuilt_dependencies):
-    args.add(["-package", n])
+    args.extend(["-package", n])
 
   for c in dep_info.caches:
-    args.add(["-package-db", c.dirname])
+    args.extend(["-package-db", c.dirname])
 
-  args.add(object_files)
+  linker_flags = depset()
+  for lib in dep_info.external_libraries:
+    linker_flags += [
+      "-l{0}".format(replace_ext(drop_path_prefix("lib", lib.basename), "")),
+      "-L$(dirname $(realpath {0}))".format(lib.path)
+    ]
+  args.extend(linker_flags.to_list())
 
-  ctx.actions.run(
+  args.extend([ f.path for f in object_files ])
+
+  ctx.actions.run_shell(
     inputs =
       depset(object_files) +
       dep_info.caches +
@@ -284,8 +277,7 @@ def create_dynamic_library(ctx, object_files):
     env = {
       "PATH": get_build_tools_path(ctx),
     },
-    executable = get_compiler(ctx),
-    arguments = [args]
+    command = " ".join([get_compiler(ctx).path] + args)
   )
 
   return dynamic_library_dir, dynamic_library
