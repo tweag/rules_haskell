@@ -15,5 +15,8 @@ jobs:
             nix-channel --update
             nix-env -iA nixpkgs.bazel nixpkgs.binutils
       - run:
+          name: Build
+          command: bazel build //...
+      - run:
           name: Run tests
           command: bazel test //...
