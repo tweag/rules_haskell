@@ -32,7 +32,7 @@ def c_compile_static(ctx):
   """
   args = ctx.actions.args()
   args.add("-c")
-  return __generic_c_compile(ctx, "objects_c", get_dyn_object_suffix(), args)
+  return _generic_c_compile(ctx, "objects_c", get_dyn_object_suffix(), args)
 
 def c_compile_dynamic(ctx):
   """Compile all C files to dynamic object files.
@@ -48,9 +48,9 @@ def c_compile_dynamic(ctx):
   """
   args = ctx.actions.args()
   args.add(["-c", "-dynamic"])
-  return __generic_c_compile(ctx, "objects_c_dyn", get_dyn_object_suffix(), args)
+  return _generic_c_compile(ctx, "objects_c_dyn", get_dyn_object_suffix(), args)
 
-def __generic_c_compile(ctx, output_dir_template, output_ext, user_args):
+def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   # Directory for objects generated from C files.
   output_dir = ctx.actions.declare_directory(mk_name(ctx, output_dir_template))
 

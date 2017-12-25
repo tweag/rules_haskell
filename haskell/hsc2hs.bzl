@@ -16,9 +16,9 @@ def hsc_to_hs(ctx):
   Args:
     ctx: Rule context.
   """
-  return [__process_hsc_file(ctx, f) for f in ctx.files.hscs]
+  return [_process_hsc_file(ctx, f) for f in ctx.files.hscs]
 
-def __process_hsc_file(ctx, hsc_file):
+def _process_hsc_file(ctx, hsc_file):
   """Process a single hsc file.
 
   Args:
