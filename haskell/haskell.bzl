@@ -136,12 +136,12 @@ haskell_library = rule(
 haskell_binary = rule(
   _haskell_binary_impl,
   executable = True,
-  attrs = _haskell_common_attrs + {
-    "main": attr.string(
+  attrs = dict(_haskell_common_attrs,
+    main = attr.string(
       default="Main.main",
       doc="Main function location."
     )
-  },
+  ),
   host_fragments = ["cpp"],
 )
 

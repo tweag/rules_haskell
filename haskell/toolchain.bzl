@@ -54,10 +54,10 @@ def compile_haskell_bin(ctx):
   args.add(["-osuf", get_object_suffix(), "-hisuf", get_interface_suffix()])
 
   dep_info = gather_dependency_information(ctx)
-  for n in dep_info.names:
+  for n in dep_info.names.to_list():
     args.add(["-package", n])
 
-  for db in depset([ c.dirname for c in dep_info.confs ]):
+  for db in [c.dirname for c in dep_info.confs.to_list()]:
     args.add(["-package-db", db])
 
   ctx.actions.run(
@@ -121,17 +121,17 @@ def link_haskell_bin(ctx, object_files):
     link_args.extend(["-optl", o.path])
 
   dep_info = gather_dependency_information(ctx)
-  for l in dep_info.static_libraries:
+  for l in dep_info.static_libraries.to_list():
     link_args.extend(["-optl", l.path])
 
   # We have to remember to specify all (transitive) wired-in
   # dependencies or we can't find objects for linking.
-  for p in dep_info.prebuilt_dependencies:
+  for p in dep_info.prebuilt_dependencies.to_list():
     link_args.extend(["-package", p])
 
   # Resolve symlinks to system libraries to their absolute location.
   # Otherwise we'd end up with meaningless relative rpath.
-  rpaths = ["$(realpath {0})".format(lib.path) for lib in dep_info.external_libraries]
+  rpaths = ["$(realpath {0})".format(lib.path) for lib in dep_info.external_libraries.to_list()]
   ctx.actions.run_shell(
     inputs = dep_info.static_libraries + object_files + [dummy_static_lib] +
              dep_info.external_libraries + get_build_tools(ctx) + dep_info.external_libraries,
@@ -165,12 +165,12 @@ def compile_haskell_lib(ctx, generated_hs_sources):
   ])
 
   dep_info = gather_dependency_information(ctx)
-  for n in dep_info.names + depset(ctx.attr.prebuilt_dependencies):
+  for n in (dep_info.names + depset(ctx.attr.prebuilt_dependencies)).to_list():
     args.add(["-package", n])
 
   # Only include package DBs for deps, prebuilt deps should be found
   # auto-magically by GHC.
-  for c in dep_info.caches:
+  for c in dep_info.caches.to_list():
     args.add(["-package-db", c.dirname])
 
   args.add(generated_hs_sources)
@@ -250,14 +250,14 @@ def create_dynamic_library(ctx, object_files):
 
   dep_info = gather_dependency_information(ctx)
 
-  for n in dep_info.names + depset(ctx.attr.prebuilt_dependencies):
+  for n in dep_info.names.to_list() + ctx.attr.prebuilt_dependencies:
     args.extend(["-package", n])
 
-  for c in dep_info.caches:
+  for c in dep_info.caches.to_list():
     args.extend(["-package-db", c.dirname])
 
   linker_flags = depset()
-  for lib in dep_info.external_libraries:
+  for lib in dep_info.external_libraries.to_list():
     linker_flags += [
       "-l{0}".format(replace_ext(drop_path_prefix("lib", lib.basename), "")),
       "-L$(dirname $(realpath {0}))".format(lib.path)
@@ -322,17 +322,17 @@ def create_ghc_package(ctx, interface_files, interfaces_dir, static_library, sta
                        for k, v in registration_file_entries.items()])
   )
 
-  pkg_confs = depset([
+  pkg_confs = [
     c for dep in ctx.attr.deps
       if HaskellPackageInfo in dep
-      for c in dep[HaskellPackageInfo].confs
-  ])
+      for c in dep[HaskellPackageInfo].confs.to_list()
+  ]
 
   # Make the call to ghc-pkg and use the registration file
-  package_path = ":".join([ c.dirname for c in pkg_confs ])
+  package_path = ":".join([c.dirname for c in pkg_confs])
   ctx.actions.run(
     inputs = pkg_confs + [static_library, interfaces_dir, registration_file] +
-             get_build_tools(ctx),
+             get_build_tools(ctx).to_list(),
     outputs = [pkg_db_dir, conf_file, cache_file],
     env = {
       "GHC_PACKAGE_PATH": package_path,

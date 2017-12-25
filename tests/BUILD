@@ -6,7 +6,11 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
      "haskell_library",
 )
 
-load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
+# Using modified version due to
+# https://github.com/bazelbuild/bazel/issues/4354.
+# TODO revert back to upstream version once fixed.
+# load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
+load("//third_party:test_rules.bzl", "rule_test")
 
 rule_test(
   name = "test-binary-simple",

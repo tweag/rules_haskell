@@ -72,17 +72,17 @@ def __generic_c_compile(ctx, output_dir_template, output_ext, user_args):
       pkg_names += d[HaskellPackageInfo].names
 
   # Expose every dependency and every prebuilt dependency.
-  for n in pkg_names + depset(ctx.attr.prebuilt_dependencies):
+  for n in pkg_names.to_list() + ctx.attr.prebuilt_dependencies:
     args.add(["-package", n])
 
   # Point at every package DB we depend on and know of explicitly.
-  for c in pkg_caches:
+  for c in pkg_caches.to_list():
     args.add(["-package-db", c.dirname])
 
   # Make all external dependency files available.
   external_files = depset([f for dep in ctx.attr.external_deps
                              for f in dep.files])
-  for include_dir in depset([f.dirname for f in external_files]):
+  for include_dir in [f.dirname for f in external_files.to_list()]:
     args.add("-I{0}".format(include_dir))
 
   args.add(ctx.files.c_sources)
