@@ -41,7 +41,7 @@ def __process_hsc_file(ctx, hsc_file):
     args.add(["-I", include_dir])
 
   ctx.actions.run(
-    inputs = external_files + depset([hsc_file]),
+    inputs = depset(transitive = [external_files, depset([hsc_file])]),
     outputs = [hs_out, hsc_output_dir],
     use_default_shell_env = True,
     progress_message = "hsc2hs {0}".format(hsc_file.basename),

@@ -46,25 +46,26 @@ def _haskell_library_impl(ctx):
   # Create and register ghc package.
   conf_file, cache_file = create_ghc_package(
     ctx,
-    interface_files, interfaces_dir,
-    static_library, static_library_dir,
-    dynamic_library_dir
+    interfaces_dir,
+    static_library,
+    static_library_dir,
+    dynamic_library_dir,
   )
 
   dep_info = gather_dependency_information(ctx)
   return [HaskellPackageInfo(
     name = dep_info.name,
-    names = dep_info.names + depset([get_pkg_id(ctx)]), #depPkgNames + depset([get_pkg_id(ctx)]),
-    confs = dep_info.confs + depset([conf_file]),
-    caches = dep_info.caches + depset([cache_file]),
+    names = depset(transitive = [dep_info.names, depset([get_pkg_id(ctx)])]),
+    confs = depset(transitive = [dep_info.confs, depset([conf_file])]),
+    caches = depset(transitive = [dep_info.caches, depset([cache_file])]),
     # Keep package libraries in preorder (naive_link) order: this
     # gives us the valid linking order at binary linking time.
-    static_libraries = depset([static_library], order="preorder") + dep_info.static_libraries,
-    dynamic_libraries = depset([dynamic_library]) + dep_info.dynamic_libraries,
-    interface_files = dep_info.interface_files + depset(interface_files),
-    static_library_dirs = dep_info.static_library_dirs + depset([static_library_dir]),
-    dynamic_library_dirs = dep_info.dynamic_library_dirs + depset([dynamic_library_dir]),
-    prebuilt_dependencies = dep_info.prebuilt_dependencies + depset(ctx.attr.prebuilt_dependencies),
+    static_libraries = depset(transitive = [depset([static_library]), dep_info.static_libraries], order = "preorder"),
+    dynamic_libraries = depset(transitive = [depset([dynamic_library]), dep_info.dynamic_libraries]),
+    interface_files = depset(transitive = [dep_info.interface_files, depset(interface_files)]),
+    static_library_dirs = depset(transitive = [dep_info.static_library_dirs, depset([static_library_dir])]),
+    dynamic_library_dirs = depset(transitive = [dep_info.dynamic_library_dirs, depset([dynamic_library_dir])]),
+    prebuilt_dependencies = depset(transitive = [dep_info.prebuilt_dependencies, depset(ctx.attr.prebuilt_dependencies)]),
     external_libraries = dep_info.external_libraries
   )]
 

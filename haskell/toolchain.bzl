@@ -1,3 +1,5 @@
+"""A Haskell toolchain."""
+
 load(":path_utils.bzl",
      "declare_compiled",
      "drop_path_prefix",
@@ -121,8 +123,8 @@ def link_haskell_bin(ctx, object_files):
     link_args.extend(["-optl", o.path])
 
   dep_info = gather_dependency_information(ctx)
-  for l in dep_info.static_libraries.to_list():
-    link_args.extend(["-optl", l.path])
+  for lib in dep_info.static_libraries.to_list():
+    link_args.extend(["-optl", lib.path])
 
   # We have to remember to specify all (transitive) wired-in
   # dependencies or we can't find objects for linking.
@@ -165,7 +167,7 @@ def compile_haskell_lib(ctx, generated_hs_sources):
   ])
 
   dep_info = gather_dependency_information(ctx)
-  for n in (dep_info.names + depset(ctx.attr.prebuilt_dependencies)).to_list():
+  for n in dep_info.names.to_list() + ctx.attr.prebuilt_dependencies:
     args.add(["-package", n])
 
   # Only include package DBs for deps, prebuilt deps should be found
@@ -192,9 +194,14 @@ def compile_haskell_lib(ctx, generated_hs_sources):
 
   ctx.actions.run(
     inputs =
-    ctx.files.srcs + generated_hs_sources +
-    (dep_info.caches + external_files + dep_info.interface_files +
-     dep_info.dynamic_libraries + get_build_tools(ctx) + dep_info.external_libraries).to_list(),
+    ctx.files.srcs +
+    generated_hs_sources +
+    dep_info.caches.to_list() +
+    external_files.to_list() +
+    dep_info.interface_files.to_list() +
+    dep_info.dynamic_libraries.to_list() +
+    get_build_tools(ctx).to_list() +
+    dep_info.external_libraries.to_list(),
     outputs = [interfaces_dir, objects_dir] + object_files + interface_files +
               object_dyn_files,
     progress_message = "Compiling {0}".format(ctx.attr.name),
@@ -215,7 +222,6 @@ def create_static_library(ctx, object_files):
     ctx: Rule context.
     object_files: All object files to include in the library.
   """
-  args = ctx.actions.args()
   static_library_dir = ctx.actions.declare_directory(mk_name(ctx, "lib"))
   static_library = ctx.actions.declare_file(path_append(static_library_dir.basename, "lib{0}.a".format(get_library_name(ctx))))
 
@@ -256,23 +262,22 @@ def create_dynamic_library(ctx, object_files):
   for c in dep_info.caches.to_list():
     args.extend(["-package-db", c.dirname])
 
-  linker_flags = depset()
+  linker_flags = []
   for lib in dep_info.external_libraries.to_list():
     linker_flags += [
       "-l{0}".format(replace_ext(drop_path_prefix("lib", lib.basename), "")),
       "-L$(dirname $(realpath {0}))".format(lib.path)
     ]
-  args.extend(linker_flags.to_list())
+  args.extend(linker_flags)
 
   args.extend([ f.path for f in object_files ])
 
   ctx.actions.run_shell(
-    inputs =
-      depset(object_files) +
-      dep_info.caches +
-      dep_info.dynamic_libraries +
-      dep_info.external_libraries +
-      get_build_tools(ctx),
+    inputs = depset(transitive = [depset(object_files),
+                                  dep_info.caches,
+                                  dep_info.dynamic_libraries,
+                                  dep_info.external_libraries,
+                                  get_build_tools(ctx)]),
     outputs = [dynamic_library_dir, dynamic_library],
     env = {
       "PATH": get_build_tools_path(ctx),
@@ -282,8 +287,7 @@ def create_dynamic_library(ctx, object_files):
 
   return dynamic_library_dir, dynamic_library
 
-def create_ghc_package(ctx, interface_files, interfaces_dir, static_library, static_library_dir,
-                       dynamic_library_dir):
+def create_ghc_package(ctx, interfaces_dir, static_library, static_library_dir, dynamic_library_dir):
   """Create GHC package using ghc-pkg.
 
   Args:
@@ -375,12 +379,14 @@ def get_input_files(ctx):
   return ctx.files.srcs + ctx.files.hscs
 
 def gather_dependency_information(ctx):
-  """Walk dependencies and collapse their information into a single
-  HaskellPackageInfo. "name", "prebuilt_dependencies" and
-  "external_libraries" fields are fully pre-populated.
+  """Collapse dependencies into a single HaskellPackageInfo.
+
+  "name", "prebuilt_dependencies" and "external_libraries" fields are
+  fully pre-populated.
 
   Args:
     ctx: Rule context.
+
   """
   hpi = HaskellPackageInfo(
     name = get_pkg_id(ctx),

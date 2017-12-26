@@ -12,10 +12,11 @@ def get_build_tools(ctx):
   ])
 
 def get_build_tools_path(ctx):
-  """Get list of build tools suited for PATH. Useful to make sure that
-  GHC can find hsc2hs or cpphs at runtime: even if those files aren't
-  expected, user may just be using OPTIONS_GHC to invoke them so they
-  should be available.
+  """Get list of build tools suited for PATH.
+
+  Useful to make sure that GHC can find hsc2hs or cpphs at runtime:
+  even if those files aren't expected, user may just be using
+  OPTIONS_GHC to invoke them so they should be available.
 
   Args:
     ctx: Rule context.
