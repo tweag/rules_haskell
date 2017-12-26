@@ -59,7 +59,7 @@ def compile_haskell_bin(ctx):
   for n in dep_info.names.to_list():
     args.add(["-package", n])
 
-  for db in [c.dirname for c in dep_info.confs.to_list()]:
+  for db in depset([c.dirname for c in dep_info.confs.to_list()]).to_list():
     args.add(["-package-db", db])
 
   ctx.actions.run(
@@ -167,7 +167,7 @@ def compile_haskell_lib(ctx, generated_hs_sources):
   ])
 
   dep_info = gather_dependency_information(ctx)
-  for n in dep_info.names.to_list() + ctx.attr.prebuilt_dependencies:
+  for n in depset(transitive = [dep_info.names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
     args.add(["-package", n])
 
   # Only include package DBs for deps, prebuilt deps should be found
@@ -256,7 +256,7 @@ def create_dynamic_library(ctx, object_files):
 
   dep_info = gather_dependency_information(ctx)
 
-  for n in dep_info.names.to_list() + ctx.attr.prebuilt_dependencies:
+  for n in depset(transitive = [dep_info.names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
     args.extend(["-package", n])
 
   for c in dep_info.caches.to_list():
@@ -326,16 +326,16 @@ def create_ghc_package(ctx, interfaces_dir, static_library, static_library_dir, 
                        for k, v in registration_file_entries.items()])
   )
 
-  pkg_confs = [
+  pkg_confs = depset([
     c for dep in ctx.attr.deps
       if HaskellPackageInfo in dep
       for c in dep[HaskellPackageInfo].confs.to_list()
-  ]
+  ])
 
   # Make the call to ghc-pkg and use the registration file
-  package_path = ":".join([c.dirname for c in pkg_confs])
+  package_path = ":".join([c.dirname for c in pkg_confs.to_list()])
   ctx.actions.run(
-    inputs = pkg_confs + [static_library, interfaces_dir, registration_file] +
+    inputs = pkg_confs.to_list() + [static_library, interfaces_dir, registration_file] +
              get_build_tools(ctx).to_list(),
     outputs = [pkg_db_dir, conf_file, cache_file],
     env = {

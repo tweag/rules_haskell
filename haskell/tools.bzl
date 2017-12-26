@@ -21,7 +21,7 @@ def get_build_tools_path(ctx):
   Args:
     ctx: Rule context.
   """
-  return ":".join([bt.dirname for bt in get_build_tools(ctx).to_list()])
+  return ":".join(depset([bt.dirname for bt in get_build_tools(ctx).to_list()]).to_list())
 
 def get_build_tool(ctx, tool_name):
 
