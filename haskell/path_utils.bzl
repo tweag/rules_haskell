@@ -1,5 +1,4 @@
-"""Utilities for module and path manipulations.
-"""
+"""Utilities for module and path manipulations."""
 
 load("@bazel_skylib//:lib.bzl", "paths")
 
@@ -33,22 +32,6 @@ def path_to_module(ctx, hs_file):
   """
   return path_to_module_path(ctx, hs_file).replace('/', '.')
 
-def get_object_suffix():
-  """Get the object file suffix that GHC expects for this mode of compilation."""
-  return "o"
-
-def get_dyn_object_suffix():
-  """Get the dynamic object file suffix."""
-  return "dyn_o"
-
-def get_interface_suffix():
-  """Get the interface file suffix that GHC expects for this mode of compilation."""
-  return "hi"
-
-def get_dyn_interface_suffix():
-  """Same as get_interface_suffix(), but for dynamic linking."""
-  return "dyn_hi"
-
 def declare_compiled(ctx, src, ext, directory=None):
   """Given a Haskell-ish source file, declare its output.
 
@@ -58,7 +41,7 @@ def declare_compiled(ctx, src, ext, directory=None):
     ext: New extension.
     directory: Directory the new file should live in.
   """
-  fp = paths.replace_extension(path_to_module_path(ctx, src), "." + ext)
+  fp = paths.replace_extension(path_to_module_path(ctx, src), ext)
   fp_with_dir = fp if directory == None else paths.join(directory.basename, fp)
   return ctx.actions.declare_file(fp_with_dir)
 

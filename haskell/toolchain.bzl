@@ -2,10 +2,6 @@
 
 load(":path_utils.bzl",
      "declare_compiled",
-     "get_dyn_interface_suffix",
-     "get_dyn_object_suffix",
-     "get_interface_suffix",
-     "get_object_suffix",
      "mk_name",
      "path_to_module",
 )
@@ -44,7 +40,7 @@ def compile_haskell_bin(ctx):
     ctx: Rule context.
   """
   object_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
-  object_files = [declare_compiled(ctx, s, get_object_suffix(), directory=object_dir)
+  object_files = [declare_compiled(ctx, s, ".o", directory=object_dir)
                   for s in ctx.files.srcs]
   args = ctx.actions.args()
   args.add(ctx.attr.compiler_flags)
@@ -52,7 +48,6 @@ def compile_haskell_bin(ctx):
   args.add(ctx.files.srcs)
   args.add(["-odir", object_dir])
   args.add(["-main-is", ctx.attr.main])
-  args.add(["-osuf", get_object_suffix(), "-hisuf", get_interface_suffix()])
 
   dep_info = gather_dependency_information(ctx)
   for n in dep_info.names.to_list():
@@ -86,7 +81,7 @@ def link_haskell_bin(ctx, object_files):
   #
   # https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
   dummy_input = ctx.actions.declare_file("BazelDummy.hs")
-  dummy_object = ctx.actions.declare_file(paths.replace_extension("BazelDummy", "." + get_object_suffix()))
+  dummy_object = ctx.actions.declare_file(paths.replace_extension("BazelDummy", ".o"))
 
   ctx.actions.write(output=dummy_input, content="\n".join([
     "{-# LANGUAGE NoImplicitPrelude #-}",
@@ -95,7 +90,7 @@ def link_haskell_bin(ctx, object_files):
 
   dummy_static_lib = ctx.actions.declare_file("libempty.a")
   dummy_args = ctx.actions.args()
-  dummy_args.add(["-no-link", dummy_input, "-osuf", get_object_suffix()])
+  dummy_args.add(["-no-link", dummy_input])
   ctx.actions.run(
     inputs = [dummy_input],
     outputs = [dummy_object],
@@ -158,10 +153,6 @@ def compile_haskell_lib(ctx, generated_hs_sources):
     "-hide-all-packages",
     "-package-name", "{0}-{1}".format(ctx.attr.name, ctx.attr.version),
     "-static", "-dynamic-too",
-    "-osuf", get_object_suffix(),
-    "-dynosuf", get_dyn_object_suffix(),
-    "-hisuf", get_interface_suffix(),
-    "-dynhisuf", get_dyn_interface_suffix(),
     "-odir", objects_dir.path, "-hidir", interfaces_dir.path
   ])
 
@@ -181,14 +172,14 @@ def compile_haskell_lib(ctx, generated_hs_sources):
                              for f in dep.files])
 
   # We want object and dynamic objects from all inputs.
-  object_files = [declare_compiled(ctx, s, get_object_suffix(), directory=objects_dir)
+  object_files = [declare_compiled(ctx, s, ".o", directory=objects_dir)
                   for s in get_input_files(ctx)]
-  object_dyn_files = [declare_compiled(ctx, s, get_dyn_object_suffix(), directory=objects_dir)
+  object_dyn_files = [declare_compiled(ctx, s, ".dyn_o", directory=objects_dir)
                       for s in get_input_files(ctx)]
 
   # We need to keep interface files we produce so we can import
   # modules cross-package.
-  interface_files = [declare_compiled(ctx, s, get_interface_suffix(), directory=interfaces_dir)
+  interface_files = [declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
                      for s in get_input_files(ctx)]
 
   ctx.actions.run(
