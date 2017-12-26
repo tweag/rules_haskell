@@ -2,7 +2,6 @@
 
 load(":path_utils.bzl",
      "declare_compiled",
-     "drop_path_prefix",
      "get_dyn_interface_suffix",
      "get_dyn_object_suffix",
      "get_interface_suffix",
@@ -10,7 +9,6 @@ load(":path_utils.bzl",
      "mk_name",
      "path_append",
      "path_to_module",
-     "replace_ext",
 )
 
 load(":tools.bzl",
@@ -20,6 +18,8 @@ load(":tools.bzl",
      "get_build_tools",
      "get_build_tools_path",
 )
+
+load("@bazel_skylib//:lib.bzl", "paths")
 
 HaskellPackageInfo = provider(
   doc = "Package information exposed by Haskell libraries.",
@@ -87,7 +87,7 @@ def link_haskell_bin(ctx, object_files):
   #
   # https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
   dummy_input = ctx.actions.declare_file("BazelDummy.hs")
-  dummy_object = ctx.actions.declare_file(replace_ext("BazelDummy", get_object_suffix()))
+  dummy_object = ctx.actions.declare_file(paths.replace_extension("BazelDummy", "." + get_object_suffix()))
 
   ctx.actions.write(output=dummy_input, content="\n".join([
     "{-# LANGUAGE NoImplicitPrelude #-}",
@@ -264,8 +264,13 @@ def create_dynamic_library(ctx, object_files):
 
   linker_flags = []
   for lib in dep_info.external_libraries.to_list():
+    lib_name = paths.replace_extension(
+      lib.basename[len("lib"):]
+      if lib.basename[:len("lib")] == "lib"
+      else lib.basename,
+      "")
     linker_flags += [
-      "-l{0}".format(replace_ext(drop_path_prefix("lib", lib.basename), "")),
+      "-l{0}".format(lib_name),
       "-L$(dirname $(realpath {0}))".format(lib.path)
     ]
   args.extend(linker_flags)

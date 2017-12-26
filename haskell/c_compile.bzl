@@ -2,7 +2,6 @@
 
 load(":path_utils.bzl",
      "path_append",
-     "replace_ext",
      "get_dyn_object_suffix",
 )
 
@@ -14,6 +13,8 @@ load(":toolchain.bzl",
 load(":tools.bzl",
      "get_compiler",
 )
+
+load("@bazel_skylib//:lib.bzl", "paths")
 
 def c_compile_static(ctx):
   """Compile all C files to static object files.
@@ -84,7 +85,7 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
 
   args.add(ctx.files.c_sources)
 
-  output_files = [ctx.actions.declare_file(path_append(output_dir.basename, replace_ext(s.path, output_ext)))
+  output_files = [ctx.actions.declare_file(path_append(output_dir.basename, paths.replace_extension(s.path, "." + output_ext)))
                         for s in ctx.files.c_sources]
   ctx.actions.run(
     inputs = ctx.files.c_sources + external_files.to_list() + pkg_caches.to_list(),

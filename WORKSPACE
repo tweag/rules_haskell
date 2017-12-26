@@ -12,6 +12,12 @@ http_archive(
   urls = ["https://github.com/tweag/rules_nixpkgs/archive/a300f574885c50430147e457d21ec22a9fe015f4.tar.gz"],
 )
 
+http_archive(
+  name = "bazel_skylib",
+  strip_prefix = "bazel-skylib-0.2.0",
+  urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.2.0.tar.gz"]
+)
+
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
 # Default toolchain
