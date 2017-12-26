@@ -3,40 +3,6 @@
 
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def path_append(p1, p2):
-  """Concatenate two paths without creating spurious separators.
-
-  This function does not try to normalise the path. None is treated as
-  empty path.
-
-  path_append("foo", "bar") => "foo/bar"
-  path_append("foo", "/bar") => "foo/bar"
-  path_append("foo/", "bar") => "foo/bar"
-  path_append("foo/", "/bar") => "foo//bar"
-  path_append("foo", "") => "foo"
-  path_append("foo/", "") => "foo/"
-  path_append("", "bar") => "bar"
-  path_append("", "/bar") => "/bar"
-  path_append("", "") => ""
-
-  Args:
-    p1: Left side of the path.
-    p2: Right side of the path.
-  """
-  # Front empty
-  if p1 == "" or p1 == None:
-    return p2
-  # Back empty
-  elif p2 == "" or p2 == None:
-    return p1
-  # Neither empty, but if there's a slash at either end of p1 or start
-  # of p2, just append. If there's one at both, too bad.
-  elif p1[:-1] == '/' or p2[0] == '/':
-    return p1 + p2
-  # No slash at join point add one.
-  else:
-    return "{0}/{1}".format(p1, p2)
-
 def path_to_module_path(ctx, hs_file):
   """Map a source file to a module name.
 
@@ -47,8 +13,9 @@ def path_to_module_path(ctx, hs_file):
     hs_file: Haskell source file.
   """
   # Directory under which module hierarchy starts.
-  pkg_dir = path_append(path_append(ctx.label.workspace_root, ctx.label.package),
-                        ctx.attr.src_strip_prefix)
+  pkg_dir = paths.join(ctx.label.workspace_root,
+                       ctx.label.package,
+                       ctx.attr.src_strip_prefix)
   # Module path without the workspace and source directories, just
   # relevant hierarchy.
   path_no_prefix = paths.relativize(hs_file.path, pkg_dir)
@@ -92,7 +59,7 @@ def declare_compiled(ctx, src, ext, directory=None):
     directory: Directory the new file should live in.
   """
   fp = paths.replace_extension(path_to_module_path(ctx, src), "." + ext)
-  fp_with_dir = fp if directory == None else path_append(directory.basename, fp)
+  fp_with_dir = fp if directory == None else paths.join(directory.basename, fp)
   return ctx.actions.declare_file(fp_with_dir)
 
 def mk_name(ctx, name_prefix):

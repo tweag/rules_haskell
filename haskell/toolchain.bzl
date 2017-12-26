@@ -7,7 +7,6 @@ load(":path_utils.bzl",
      "get_interface_suffix",
      "get_object_suffix",
      "mk_name",
-     "path_append",
      "path_to_module",
 )
 
@@ -223,7 +222,7 @@ def create_static_library(ctx, object_files):
     object_files: All object files to include in the library.
   """
   static_library_dir = ctx.actions.declare_directory(mk_name(ctx, "lib"))
-  static_library = ctx.actions.declare_file(path_append(static_library_dir.basename, "lib{0}.a".format(get_library_name(ctx))))
+  static_library = ctx.actions.declare_file(paths.join(static_library_dir.basename, "lib{0}.a".format(get_library_name(ctx))))
 
   args = ctx.actions.args()
   args.add(["qc", static_library])
@@ -248,8 +247,8 @@ def create_dynamic_library(ctx, object_files):
   # Make shared library
   dynamic_library_dir = ctx.actions.declare_directory(mk_name(ctx, "dynlib"))
   dynamic_library = ctx.actions.declare_file(
-    path_append(dynamic_library_dir.basename,
-                "lib{0}-ghc{1}.so".format(get_library_name(ctx), ctx.attr.ghc_version))
+    paths.join(dynamic_library_dir.basename,
+               "lib{0}-ghc{1}.so".format(get_library_name(ctx), ctx.attr.ghc_version))
   )
 
   args = ["-shared", "-dynamic", "-o", dynamic_library.path]
@@ -304,7 +303,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, static_library_dir, 
     dynamic_library_dir: Directory containing dynamic library.
   """
   pkg_db_dir = ctx.actions.declare_directory(get_pkg_id(ctx))
-  conf_file = ctx.actions.declare_file(path_append(pkg_db_dir.basename, "{0}.conf".format(get_pkg_id(ctx))))
+  conf_file = ctx.actions.declare_file(paths.join(pkg_db_dir.basename, "{0}.conf".format(get_pkg_id(ctx))))
   cache_file = ctx.actions.declare_file("package.cache", sibling=conf_file)
 
   # Create a file from which ghc-pkg will create the actual package from.
@@ -317,10 +316,10 @@ def create_ghc_package(ctx, interfaces_dir, static_library, static_library_dir, 
     "exposed": "True",
     "exposed-modules":
       " ".join([path_to_module(ctx, f) for f in get_input_files(ctx)]),
-    "import-dirs": path_append("${pkgroot}", interfaces_dir.basename),
-    "library-dirs": path_append("${pkgroot}", static_library_dir.basename),
+    "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
+    "library-dirs": paths.join("${pkgroot}", static_library_dir.basename),
     "dynamic-library-dirs":
-      path_append("${pkgroot}", dynamic_library_dir.basename),
+      paths.join("${pkgroot}", dynamic_library_dir.basename),
     "hs-libraries": get_library_name(ctx),
     "depends":
       ", ".join([ d[HaskellPackageInfo].name for d in ctx.attr.deps if HaskellPackageInfo in d])

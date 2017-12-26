@@ -1,7 +1,6 @@
 """C file compilation."""
 
 load(":path_utils.bzl",
-     "path_append",
      "get_dyn_object_suffix",
 )
 
@@ -85,7 +84,7 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
 
   args.add(ctx.files.c_sources)
 
-  output_files = [ctx.actions.declare_file(path_append(output_dir.basename, paths.replace_extension(s.path, "." + output_ext)))
+  output_files = [ctx.actions.declare_file(paths.join(output_dir.basename, paths.replace_extension(s.path, "." + output_ext)))
                         for s in ctx.files.c_sources]
   ctx.actions.run(
     inputs = ctx.files.c_sources + external_files.to_list() + pkg_caches.to_list(),
