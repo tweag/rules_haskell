@@ -1,11 +1,8 @@
-"""C file compilation.
-"""
+"""C file compilation."""
 
 load(":path_utils.bzl",
-     "declare_compiled",
      "path_append",
      "replace_ext",
-     "get_object_suffix",
      "get_dyn_object_suffix",
 )
 
@@ -68,21 +65,21 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   pkg_names = depset()
   for d in ctx.attr.deps:
     if HaskellPackageInfo in d:
-      pkg_caches += d[HaskellPackageInfo].caches
-      pkg_names += d[HaskellPackageInfo].names
+      pkg_caches = depset(transitive = [pkg_caches, d[HaskellPackageInfo].caches])
+      pkg_names = depset(transitive = [pkg_names, d[HaskellPackageInfo].names])
 
   # Expose every dependency and every prebuilt dependency.
-  for n in pkg_names + depset(ctx.attr.prebuilt_dependencies):
+  for n in depset(transitive = [pkg_names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
     args.add(["-package", n])
 
   # Point at every package DB we depend on and know of explicitly.
-  for c in pkg_caches:
+  for c in pkg_caches.to_list():
     args.add(["-package-db", c.dirname])
 
   # Make all external dependency files available.
   external_files = depset([f for dep in ctx.attr.external_deps
                              for f in dep.files])
-  for include_dir in depset([f.dirname for f in external_files]):
+  for include_dir in depset([f.dirname for f in external_files.to_list()]).to_list():
     args.add("-I{0}".format(include_dir))
 
   args.add(ctx.files.c_sources)
@@ -90,7 +87,7 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   output_files = [ctx.actions.declare_file(path_append(output_dir.basename, replace_ext(s.path, output_ext)))
                         for s in ctx.files.c_sources]
   ctx.actions.run(
-    inputs = ctx.files.c_sources + (external_files + pkg_caches).to_list(),
+    inputs = ctx.files.c_sources + external_files.to_list() + pkg_caches.to_list(),
     outputs = [output_dir] + output_files,
     use_default_shell_env = True,
     progress_message = "Compiling C dynamic {0}".format(ctx.attr.name),

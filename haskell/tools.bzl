@@ -8,19 +8,20 @@ def get_build_tools(ctx):
   """
   return depset([
     f for bt in ctx.attr.build_tools
-      for f in bt.files
+      for f in bt.files.to_list()
   ])
 
 def get_build_tools_path(ctx):
-  """Get list of build tools suited for PATH. Useful to make sure that
-  GHC can find hsc2hs or cpphs at runtime: even if those files aren't
-  expected, user may just be using OPTIONS_GHC to invoke them so they
-  should be available.
+  """Get list of build tools suited for PATH.
+
+  Useful to make sure that GHC can find hsc2hs or cpphs at runtime:
+  even if those files aren't expected, user may just be using
+  OPTIONS_GHC to invoke them so they should be available.
 
   Args:
     ctx: Rule context.
   """
-  return ":".join(depset([bt.dirname for bt in get_build_tools(ctx)]).to_list())
+  return ":".join(depset([bt.dirname for bt in get_build_tools(ctx).to_list()]).to_list())
 
 def get_build_tool(ctx, tool_name):
 
@@ -30,7 +31,7 @@ def get_build_tool(ctx, tool_name):
     ctx: Rule context.
     tool_name: Name of the binary we want to find.
   """
-  for tool in get_build_tools(ctx):
+  for tool in get_build_tools(ctx).to_list():
     if tool.basename == tool_name:
       return tool
 

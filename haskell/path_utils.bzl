@@ -2,10 +2,10 @@
 """
 
 def path_append(p1, p2):
-  """Append the two given paths with / separator but without creating
-  spurious separators if either path is empty or already has a
-  separator present. It does not try to normalise the path. None is
-  treated as empty path.
+  """Concatenate two paths without creating spurious separators.
+
+  This function does not try to normalise the path. None is treated as
+  empty path.
 
   path_append("foo", "bar") => "foo/bar"
   path_append("foo", "/bar") => "foo/bar"
@@ -35,8 +35,8 @@ def path_append(p1, p2):
   else:
     return "{0}/{1}".format(p1, p2)
 
-def drop_path_prefix(pathPrefix, fullPath):
-  """Drop pathPrefix path prefix from fullPath if it exists.
+def drop_path_prefix(path_prefix, full_path):
+  """Drop path_prefix path prefix from full_path if it exists.
 
   drop_path_prefix("foo/bar", "foo/bar/baz") => "baz"
   drop_path_prefix("", "/foo") => "foo"
@@ -45,76 +45,68 @@ def drop_path_prefix(pathPrefix, fullPath):
   drop_path_prefix("nomatch", "/some/path") => "/some/path"
 
   Args:
-    pathPrefix: Prefix to drop from fullPath.
-    fullPath: Path to drop pathPrefix from.
+    path_prefix: Prefix to drop from full_path.
+    full_path: Path to drop path_prefix from.
 
   """
   # Check if prefix matches
-  if pathPrefix == fullPath[:len(pathPrefix)]:
-    newPath = fullPath[len(pathPrefix):]
+  if path_prefix == full_path[:len(path_prefix)]:
+    new_path = full_path[len(path_prefix):]
     # We cut off the prefix and found a leading path separator, drop
     # it as it was necessary with the prefix. Most likely.
-    if newPath[:1] == '/':
-      return newPath[1:]
+    if new_path[:1] == '/':
+      return new_path[1:]
     else:
-      return newPath
+      return new_path
   else:
-    return fullPath
+    return full_path
 
-def path_to_module_path(ctx, hsFile):
-  """Given Haskell source file path, get the module hierarchy without the
-    extension.
+def path_to_module_path(ctx, hs_file):
+  """Map a source file to a module name.
 
   some-workspace/some-package/src/Foo/Bar/Baz.hs => Foo/Bar/Baz
 
   Args:
     ctx: Rule context.
-    hsFile: Haskell source file.
+    hs_file: Haskell source file.
   """
   # Directory under which module hierarchy starts.
-  pkgDir = path_append(path_append(ctx.label.workspace_root, ctx.label.package),
-                       ctx.attr.src_strip_prefix)
+  pkg_dir = path_append(path_append(ctx.label.workspace_root, ctx.label.package),
+                        ctx.attr.src_strip_prefix)
   # Module path without the workspace and source directories, just
   # relevant hierarchy.
-  noPrefixPath = drop_path_prefix(pkgDir, hsFile.path)
+  path_no_prefix = drop_path_prefix(pkg_dir, hs_file.path)
   # Drop extension.
-  return noPrefixPath[:noPrefixPath.rfind(".")]
+  return path_no_prefix[:path_no_prefix.rfind(".")]
 
-def path_to_module(ctx, hsFile):
+def path_to_module(ctx, hs_file):
   """Given Haskell source file path, turn it to a module name.
 
   some-workspace/some-package/src/Foo/Bar/Baz.hs => Foo.Bar.Baz
 
   Args:
     ctx: Rule context.
-    hsFile: Haskell source file.
+    hs_file: Haskell source file.
   """
-  return path_to_module_path(ctx, hsFile).replace('/', '.')
+  return path_to_module_path(ctx, hs_file).replace('/', '.')
 
 def get_object_suffix():
-  """Get the object file suffix that GHC expects for this mode of compilation.
-  """
+  """Get the object file suffix that GHC expects for this mode of compilation."""
   return "o"
 
 def get_dyn_object_suffix():
-  """Get the dynamic object file suffix.
-  """
+  """Get the dynamic object file suffix."""
   return "dyn_o"
 
 def get_interface_suffix():
-  """Get the interface file suffix that GHC expects for this mode of
-  compilation.
-  """
+  """Get the interface file suffix that GHC expects for this mode of compilation."""
   return "hi"
 
 def get_dyn_interface_suffix():
-  """Get the dynamic interface file suffix that GHC expects for this
-  mode of compilation.
-  """
+  """Same as get_interface_suffix(), but for dynamic linking."""
   return "dyn_hi"
 
-
-def replace_ext(filePath, newExt):
+def replace_ext(file_path, new_ext):
   """Replace an extension in a path with the given one.
 
   replace_ext("foo/bar.hs", "o") => "foo/bar.o"
@@ -124,20 +116,20 @@ def replace_ext(filePath, newExt):
   replace_ext("foo/bar.hs", ".o") => "foo/bar.o"
 
   Args:
-    filePath: Path to replace extension in.
-    newExt: Extension give to the new path.
+    file_path: Path to replace extension in.
+    new_ext: Extension give to the new path.
   """
 
-  dotPos = filePath.rfind(".")
-  noExt = filePath if dotPos < 0 else filePath[:dotPos]
-  if newExt != None and newExt != "":
-    if newExt[:1] == ".":
+  dot_pos = file_path.rfind(".")
+  file_path_no_ext = file_path if dot_pos < 0 else file_path[:dot_pos]
+  if new_ext != None and new_ext != "":
+    if new_ext[:1] == ".":
       # If user passed ext with dot, don't add one ourselves.
-      return "{0}{1}".format(noExt, newExt)
+      return "{0}{1}".format(file_path_no_ext, new_ext)
     else:
-      return "{0}.{1}".format(noExt, newExt)
+      return "{0}.{1}".format(file_path_no_ext, new_ext)
   else:
-    return noExt
+    return file_path_no_ext
 
 def declare_compiled(ctx, src, ext, directory=None):
   """Given a Haskell-ish source file, declare its output.
@@ -147,7 +139,6 @@ def declare_compiled(ctx, src, ext, directory=None):
     src: Haskell source file.
     ext: New extension.
     directory: Directory the new file should live in.
-
   """
   fp = replace_ext(path_to_module_path(ctx, src), ext)
   fp_with_dir = fp if directory == None else path_append(directory.basename, fp)

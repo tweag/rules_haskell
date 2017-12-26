@@ -33,15 +33,15 @@ def _process_hsc_file(ctx, hsc_file):
   external_files = depset([f for dep in ctx.attr.external_deps
                              for f in dep.files])
   # Add all directories of external dependencies to include dirs.
-  include_directories = depset([f.dirname for f in external_files])
+  include_directories = depset([f.dirname for f in external_files.to_list()])
 
   args = ctx.actions.args()
   args.add([hsc_file, "-o", hs_out])
-  for include_dir in include_directories:
+  for include_dir in include_directories.to_list():
     args.add(["-I", include_dir])
 
   ctx.actions.run(
-    inputs = external_files + depset([hsc_file]),
+    inputs = depset(transitive = [external_files, depset([hsc_file])]),
     outputs = [hs_out, hsc_output_dir],
     use_default_shell_env = True,
     progress_message = "hsc2hs {0}".format(hsc_file.basename),
