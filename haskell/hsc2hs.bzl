@@ -1,5 +1,4 @@
-"""hsc file handling.
-"""
+"""hsc file handling."""
 
 load(":path_utils.bzl",
      "declare_compiled",

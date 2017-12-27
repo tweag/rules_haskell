@@ -1,5 +1,5 @@
-"""Entry point to rules_haskell.
-"""
+"""Entry point to rules_haskell."""
+
 load(":toolchain.bzl",
      "HaskellPackageInfo",
      "compile_haskell_bin",

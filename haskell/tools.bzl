@@ -1,5 +1,5 @@
-"""Tools used during build.
-"""
+"""Tools used during build."""
+
 def get_build_tools(ctx):
   """Get the set of all build tools we have available.
 
