@@ -75,7 +75,7 @@ _haskell_common_attrs = {
     doc="Directory in which module hierarchy starts."
   ),
   "srcs": attr.label_list(
-    allow_files=FileType([".hs"]),
+    allow_files=FileType([".hs", ".hsc"]),
     doc="A list of Haskell sources to be built by this rule."
   ),
   "c_sources": attr.label_list(
@@ -90,10 +90,6 @@ _haskell_common_attrs = {
   ),
   "compiler_flags": attr.string_list(
     doc="Flags to pass to Haskell compiler while compiling this rule's sources."
-  ),
-  "hscs": attr.label_list(
-    allow_files=FileType([".hsc"]),
-    doc=".hsc files to preprocess and link"
   ),
   "external_deps": attr.label_list(
     allow_files=True,

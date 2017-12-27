@@ -189,14 +189,14 @@ def compile_haskell_lib(ctx, generated_hs_sources):
 
   # We want object and dynamic objects from all inputs.
   object_files = [declare_compiled(ctx, s, ".o", directory=objects_dir)
-                  for s in get_input_files(ctx)]
+                  for s in ctx.files.srcs]
   object_dyn_files = [declare_compiled(ctx, s, ".dyn_o", directory=objects_dir)
-                      for s in get_input_files(ctx)]
+                      for s in ctx.files.srcs]
 
   # We need to keep interface files we produce so we can import
   # modules cross-package.
   interface_files = [declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
-                     for s in get_input_files(ctx)]
+                     for s in ctx.files.srcs]
 
   ctx.actions.run(
     inputs =
@@ -330,7 +330,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, static_library_dir, 
     "key": get_pkg_id(ctx),
     "exposed": "True",
     "exposed-modules":
-      " ".join([path_to_module(ctx, f) for f in get_input_files(ctx)]),
+      " ".join([path_to_module(ctx, f) for f in ctx.files.srcs]),
     "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
     "library-dirs": paths.join("${pkgroot}", static_library_dir.basename),
     "dynamic-library-dirs":
@@ -394,17 +394,6 @@ def get_library_name(ctx):
     string: Library name suitable for GHC package entry.
   """
   return "HS{0}".format(get_pkg_id(ctx))
-
-def get_input_files(ctx):
-  """Get all files we expect to project object files from.
-
-  Args:
-    ctx: Rule context.
-
-  Returns:
-    list of File: All input Haskell source files.
-  """
-  return ctx.files.srcs + ctx.files.hscs
 
 def gather_dependency_information(ctx):
   """Collapse dependencies into a single HaskellPackageInfo.
