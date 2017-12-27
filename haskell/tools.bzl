@@ -89,14 +89,3 @@ def get_cpphs(ctx):
     File: cpphs to use.
   """
   return get_build_tool(ctx, "cpphs")
-
-def get_ar(ctx):
-  """Get the ar tool.
-
-  Args:
-    ctx: Rule context.
-
-  Returns:
-    File: ar to use.
-  """
-  return ctx.host_fragments.cpp.ar_executable
