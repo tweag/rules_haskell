@@ -1,11 +1,5 @@
 """C file compilation."""
 
-load(":path_utils.bzl",
-     "path_append",
-     "replace_ext",
-     "get_dyn_object_suffix",
-)
-
 load(":toolchain.bzl",
      "HaskellPackageInfo",
      "mk_name",
@@ -14,6 +8,8 @@ load(":toolchain.bzl",
 load(":tools.bzl",
      "get_compiler",
 )
+
+load("@bazel_skylib//:lib.bzl", "paths")
 
 def c_compile_static(ctx):
   """Compile all C files to static object files.
@@ -29,7 +25,7 @@ def c_compile_static(ctx):
   """
   args = ctx.actions.args()
   args.add("-c")
-  return _generic_c_compile(ctx, "objects_c", get_dyn_object_suffix(), args)
+  return _generic_c_compile(ctx, "objects_c", ".o", args)
 
 def c_compile_dynamic(ctx):
   """Compile all C files to dynamic object files.
@@ -45,7 +41,7 @@ def c_compile_dynamic(ctx):
   """
   args = ctx.actions.args()
   args.add(["-c", "-dynamic"])
-  return _generic_c_compile(ctx, "objects_c_dyn", get_dyn_object_suffix(), args)
+  return _generic_c_compile(ctx, "objects_c_dyn", ".dyn_o", args)
 
 def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   # Directory for objects generated from C files.
@@ -54,7 +50,6 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   args = ctx.actions.args()
   args.add([
     "-fPIC",
-    "-osuf", output_ext,
     "-odir", output_dir
   ])
 
@@ -84,7 +79,7 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
 
   args.add(ctx.files.c_sources)
 
-  output_files = [ctx.actions.declare_file(path_append(output_dir.basename, replace_ext(s.path, output_ext)))
+  output_files = [ctx.actions.declare_file(paths.join(output_dir.basename, paths.replace_extension(s.path, output_ext)))
                         for s in ctx.files.c_sources]
   ctx.actions.run(
     inputs = ctx.files.c_sources + external_files.to_list() + pkg_caches.to_list(),
