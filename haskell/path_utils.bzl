@@ -10,6 +10,9 @@ def path_to_module_path(ctx, hs_file):
   Args:
     ctx: Rule context.
     hs_file: Haskell source file.
+
+  Returns:
+    string: Module part of hs_file. See example above.
   """
   # Directory under which module hierarchy starts.
   pkg_dir = paths.join(ctx.label.workspace_root,
@@ -29,6 +32,9 @@ def path_to_module(ctx, hs_file):
   Args:
     ctx: Rule context.
     hs_file: Haskell source file.
+
+  Returns:
+    string: Haskell module name. See example above.
   """
   return path_to_module_path(ctx, hs_file).replace('/', '.')
 
@@ -40,6 +46,9 @@ def declare_compiled(ctx, src, ext, directory=None):
     src: Haskell source file.
     ext: New extension.
     directory: Directory the new file should live in.
+
+  Returns:
+    File: Declared output file living in `directory` with given `ext`.
   """
   fp = paths.replace_extension(path_to_module_path(ctx, src), ext)
   fp_with_dir = fp if directory == None else paths.join(directory.basename, fp)
@@ -48,7 +57,24 @@ def declare_compiled(ctx, src, ext, directory=None):
 def mk_name(ctx, name_prefix):
   """Make a target-unique name.
 
+  `name_prefix` is made target-unique by adding rule name and target
+  version suffix to it. This means that given two different rules, the
+  same `name_prefix` is distinct. Note that this is does not
+  disambiguate two names within the same rule. Given a haskell_library
+  with name foo and version 0.1.0, you could expect:
+
+  mk_name(ctx, "libdir") => "libdir-foo-0.1.0"
+
+  This allows two rules using same name_prefix being built in same
+  environment to avoid name clashes of their output files and
+  directories.
+
   Args:
+    ctx: Rule context.
     name_prefix: Template for the name.
+
+  Returns:
+    string: Target-unique name_prefix.
+
   """
   return "{0}-{1}-{2}".format(name_prefix, ctx.attr.name, ctx.attr.version)

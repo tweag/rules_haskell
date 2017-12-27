@@ -34,10 +34,13 @@ HaskellPackageInfo = provider(
 )
 
 def compile_haskell_bin(ctx):
-  """Build arguments for Haskell binary object building.
+  """Compile a Haskell target into object files suitable for linking.
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    list of File: Compiled object files.
   """
   object_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
   object_files = [declare_compiled(ctx, s, ".o", directory=object_dir)
@@ -76,6 +79,9 @@ def link_haskell_bin(ctx, object_files):
   Args:
     ctx: Rule context.
     object_files: Object files to include during linking.
+
+  Returns:
+    File: Built Haskell executable.
   """
   # Create empty archive so that GHC has some input files to work on during linking
   #
@@ -135,6 +141,7 @@ def link_haskell_bin(ctx, object_files):
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
     command = " ".join([get_compiler(ctx).path] + rpaths + link_args),
   )
+  return ctx.outputs.executable
 
 def compile_haskell_lib(ctx, generated_hs_sources):
   """Build arguments for Haskell package build.
@@ -142,6 +149,15 @@ def compile_haskell_lib(ctx, generated_hs_sources):
   Args:
     ctx: Rule context.
     generated_hs_sources: Generated Haskell files to include in the build.
+
+  Returns:
+    (File, list of File, list of File, list of File):
+      Returns in following order:
+
+        * Directory containing interface files
+        * Interface files
+        * Object files
+        * Dynamic object files
   """
 
   objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
@@ -211,6 +227,9 @@ def create_static_library(ctx, object_files):
   Args:
     ctx: Rule context.
     object_files: All object files to include in the library.
+
+  Returns:
+    (File, File): Directory containing the static library and the library itself.
   """
   static_library_dir = ctx.actions.declare_directory(mk_name(ctx, "lib"))
   static_library = ctx.actions.declare_file(paths.join(static_library_dir.basename, "lib{0}.a".format(get_library_name(ctx))))
@@ -233,6 +252,9 @@ def create_dynamic_library(ctx, object_files):
   Args:
     ctx: Rule context.
     object_files: Object files to use for linking.
+
+  Returns:
+    (File, File): Directory containing the dynamic library and the library itself.
   """
 
   # Make shared library
@@ -287,11 +309,13 @@ def create_ghc_package(ctx, interfaces_dir, static_library, static_library_dir, 
 
   Args:
     ctx: Rule context.
-    interface_files: Interface files of the package.
     interfaces_dir: Directory containing interface files.
     static_library: Static library of the package.
     static_library_dir: Directory containing static library.
     dynamic_library_dir: Directory containing dynamic library.
+
+  Returns:
+    (File, File): GHC package conf file, GHC package cache file
   """
   pkg_db_dir = ctx.actions.declare_directory(get_pkg_id(ctx))
   conf_file = ctx.actions.declare_file(paths.join(pkg_db_dir.basename, "{0}.conf".format(get_pkg_id(ctx))))
@@ -352,6 +376,9 @@ def get_pkg_id(ctx):
 
   Args:
     ctx: Rule context
+
+  Returns:
+    string: GHC package ID to use.
   """
   return "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
 
@@ -362,6 +389,9 @@ def get_library_name(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    string: Library name suitable for GHC package entry.
   """
   return "HS{0}".format(get_pkg_id(ctx))
 
@@ -370,6 +400,9 @@ def get_input_files(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    list of File: All input Haskell source files.
   """
   return ctx.files.srcs + ctx.files.hscs
 
@@ -382,6 +415,8 @@ def gather_dependency_information(ctx):
   Args:
     ctx: Rule context.
 
+  Returns:
+    HaskellPackageInfo: Unified information about all dependencies needed during build.
   """
   hpi = HaskellPackageInfo(
     name = get_pkg_id(ctx),

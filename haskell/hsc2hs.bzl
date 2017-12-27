@@ -15,6 +15,9 @@ def hsc_to_hs(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    list of File: Produced Haskell source files.
   """
   return [_process_hsc_file(ctx, f) for f in ctx.files.hscs]
 
@@ -24,6 +27,9 @@ def _process_hsc_file(ctx, hsc_file):
   Args:
     ctx: Rule context.
     hsc_file: hsc file to process.
+
+  Returns:
+    File: Haskell source file created by processing hsc_file.
   """
   hsc_output_dir = ctx.actions.declare_directory(mk_name(ctx, "hsc_processed"))
 
