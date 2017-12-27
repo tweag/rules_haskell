@@ -10,8 +10,7 @@ def get_build_tools(ctx):
     depset of File: All build tools provided to the rule.
   """
   return depset([
-    f for bt in ctx.attr.build_tools
-      for f in bt.files.to_list()
+    t for t in ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].tools
   ])
 
 def get_build_tools_path(ctx):

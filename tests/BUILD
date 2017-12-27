@@ -12,6 +12,13 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
 # load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("//third_party:test_rules.bzl", "rule_test")
 
+load("//haskell:haskell.bzl", "haskell_toolchain")
+
+haskell_toolchain(
+  name = "toolchain",
+  tools = "@ghc//:bin",
+)
+
 rule_test(
   name = "test-binary-simple",
   generates = ["binary-simple"],

@@ -111,13 +111,6 @@ _haskell_common_attrs = {
     # expose toolchains that expose a version and use that. I think.
     doc="Version of GHC being used."
   ),
-  "build_tools": attr.label_list(
-    default= [
-      "@ghc//:bin",
-    ],
-    allow_files=True,
-    doc="Build tools to use.",
-  ),
 }
 
 haskell_library = rule(
@@ -128,6 +121,7 @@ haskell_library = rule(
   },
   attrs = _haskell_common_attrs,
   host_fragments = ["cpp"],
+  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
 
 haskell_binary = rule(
@@ -140,7 +134,44 @@ haskell_binary = rule(
     )
   ),
   host_fragments = ["cpp"],
+  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
 
 def haskell_import(name, shared_library, visibility = None):
   native.alias(name = name, actual = shared_library, visibility = visibility)
+
+def _haskell_toolchain_impl(ctx):
+  for tool in ["ghc", "ghc-pkg", "hsc2hs"]:
+    if tool not in [t.basename for t in ctx.files.tools]:
+      fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
+  return [platform_common.ToolchainInfo(
+    name = ctx.label.name,
+    tools = ctx.files.tools,
+  )]
+
+_haskell_toolchain = rule(
+  _haskell_toolchain_impl,
+  attrs = {
+    "tools": attr.label(),
+  }
+)
+
+def haskell_toolchain(name, tools, **kwargs):
+  impl_name = name + "-impl"
+  _haskell_toolchain(
+    name = impl_name,
+    tools = tools,
+    visibility = ["//visibility:public"],
+    **kwargs
+  )
+  native.toolchain(
+    name = name,
+    toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
+    toolchain = ":" + impl_name,
+    exec_compatible_with = [
+      '@bazel_tools//platforms:linux',
+      '@bazel_tools//platforms:x86_64'],
+    target_compatible_with = [
+      '@bazel_tools//platforms:linux',
+      '@bazel_tools//platforms:x86_64'],
+  )

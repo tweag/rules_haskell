@@ -19,11 +19,13 @@ http_archive(
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
-# Default toolchain
 nixpkgs_package(
   name = "ghc",
   attribute_path = "haskell.packages.ghc822.ghc"
 )
 
 # For tests
+
 nixpkgs_package(name = "zlib")
+
+register_toolchains("//tests:toolchain")
