@@ -25,7 +25,5 @@ nixpkgs_package(
   attribute_path = "haskell.packages.ghc822.ghc"
 )
 
-nixpkgs_package(name = "binutils")
-
 # For tests
 nixpkgs_package(name = "zlib")
