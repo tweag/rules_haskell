@@ -5,6 +5,9 @@ def get_build_tools(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    depset of File: All build tools provided to the rule.
   """
   return depset([
     f for bt in ctx.attr.build_tools
@@ -20,6 +23,9 @@ def get_build_tools_path(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    string: colon-separated paths to all build tools.
   """
   return ":".join(depset([bt.dirname for bt in get_build_tools(ctx).to_list()]).to_list())
 
@@ -30,6 +36,9 @@ def get_build_tool(ctx, tool_name):
   Args:
     ctx: Rule context.
     tool_name: Name of the binary we want to find.
+
+  Returns:
+    File: Build tool with the name user asked for.
   """
   for tool in get_build_tools(ctx).to_list():
     if tool.basename == tool_name:
@@ -42,9 +51,10 @@ def get_compiler(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    File: Compiler to use.
   """
-  # We use allow_single_file with mandatory so this should always
-  # exist.
   return get_build_tool(ctx, "ghc")
 
 def get_ghc_pkg(ctx):
@@ -52,9 +62,10 @@ def get_ghc_pkg(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    File: ghc-pkg to use.
   """
-  # We use allow_single_file with mandatory so this should always
-  # exist.
   return get_build_tool(ctx, "ghc-pkg")
 
 def get_hsc2hs(ctx):
@@ -62,6 +73,9 @@ def get_hsc2hs(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    File: hsc2hs to use.
   """
   return get_build_tool(ctx, "hsc2hs")
 
@@ -70,6 +84,9 @@ def get_cpphs(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    File: cpphs to use.
   """
   return get_build_tool(ctx, "cpphs")
 
@@ -78,5 +95,8 @@ def get_ar(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    File: ar to use.
   """
   return ctx.host_fragments.cpp.ar_executable

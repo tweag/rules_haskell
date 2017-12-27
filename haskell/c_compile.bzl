@@ -22,6 +22,9 @@ def c_compile_static(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    list of File: Compiled static object files.
   """
   args = ctx.actions.args()
   args.add("-c")
@@ -38,12 +41,26 @@ def c_compile_dynamic(ctx):
 
   Args:
     ctx: Rule context.
+
+  Returns:
+    list of File: Compiled dynamic object files.
   """
   args = ctx.actions.args()
   args.add(["-c", "-dynamic"])
   return _generic_c_compile(ctx, "objects_c_dyn", ".dyn_o", args)
 
 def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
+  """Compile some C files in specified way.
+
+  Args:
+    ctx: Rule context.
+    output_dir_template: Template for object file output directory.
+    output_ext: Expected object file extension that compiled files will have.
+    user_args: User-provided arguments driving compilation mode.
+
+  Returns:
+    list of File: Compiled object files.
+  """
   # Directory for objects generated from C files.
   output_dir = ctx.actions.declare_directory(mk_name(ctx, output_dir_template))
 
