@@ -7,9 +7,8 @@ local_repository(
 
 http_archive(
   name = "io_tweag_rules_nixpkgs",
-  # Commit hash is current latest master.
-  strip_prefix = "rules_nixpkgs-a300f574885c50430147e457d21ec22a9fe015f4",
-  urls = ["https://github.com/tweag/rules_nixpkgs/archive/a300f574885c50430147e457d21ec22a9fe015f4.tar.gz"],
+  strip_prefix = "rules_nixpkgs-0.1",
+  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.1.tar.gz"],
 )
 
 http_archive(
