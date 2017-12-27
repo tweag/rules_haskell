@@ -6,7 +6,7 @@ load(
 
 haskell_library(
   name = "hsc-lib",
-  hscs = ["Test.hsc"],
+  srcs = ["Test.hsc"],
   prebuilt_dependencies = ["base"],
 )
 

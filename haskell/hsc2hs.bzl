@@ -19,7 +19,8 @@ def hsc_to_hs(ctx):
   Returns:
     list of File: Produced Haskell source files.
   """
-  return [_process_hsc_file(ctx, f) for f in ctx.files.hscs]
+  return [_process_hsc_file(ctx, f)
+          for f in ctx.files.srcs if f.extension == "hsc"]
 
 def _process_hsc_file(ctx, hsc_file):
   """Process a single hsc file.
