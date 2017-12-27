@@ -1,4 +1,4 @@
-package(default_visibility = ["//visibility:public"])
+package(default_testonly = 1, default_visibility = ["//visibility:public"])
 
 load(
   "@io_tweag_rules_haskell//haskell:haskell.bzl",
