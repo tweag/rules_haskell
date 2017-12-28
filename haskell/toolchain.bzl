@@ -7,7 +7,6 @@ load(":path_utils.bzl",
 )
 
 load(":tools.bzl",
-     "get_ar",
      "get_compiler",
      "get_ghc_pkg",
      "get_build_tools",
@@ -110,7 +109,7 @@ def link_haskell_bin(ctx, object_files):
   ctx.actions.run(
     inputs = [dummy_object],
     outputs = [dummy_static_lib],
-    executable = get_ar(ctx),
+    executable = ctx.host_fragments.cpp.ar_executable,
     arguments = [ar_args]
   )
 
@@ -243,7 +242,7 @@ def create_static_library(ctx, object_files):
   ctx.actions.run(
     inputs = object_files,
     outputs = [static_library, static_library_dir],
-    executable = get_ar(ctx),
+    executable = ctx.host_fragments.cpp.ar_executable,
     arguments = [args],
   )
   return static_library_dir, static_library

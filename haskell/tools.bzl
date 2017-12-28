@@ -10,16 +10,15 @@ def get_build_tools(ctx):
     depset of File: All build tools provided to the rule.
   """
   return depset([
-    f for bt in ctx.attr.build_tools
-      for f in bt.files.to_list()
+    t for t in ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].tools
   ])
 
 def get_build_tools_path(ctx):
   """Get list of build tools suited for PATH.
 
-  Useful to make sure that GHC can find hsc2hs or cpphs at runtime:
-  even if those files aren't expected, user may just be using
-  OPTIONS_GHC to invoke them so they should be available.
+  Useful to make sure that GHC can find e.g. hsc2hs at runtime: even
+  if those files aren't expected, user may just be using OPTIONS_GHC
+  to invoke them so they should be available.
 
   Args:
     ctx: Rule context.
@@ -78,25 +77,3 @@ def get_hsc2hs(ctx):
     File: hsc2hs to use.
   """
   return get_build_tool(ctx, "hsc2hs")
-
-def get_cpphs(ctx):
-  """Get the cpphs tool.
-
-  Args:
-    ctx: Rule context.
-
-  Returns:
-    File: cpphs to use.
-  """
-  return get_build_tool(ctx, "cpphs")
-
-def get_ar(ctx):
-  """Get the ar tool.
-
-  Args:
-    ctx: Rule context.
-
-  Returns:
-    File: ar to use.
-  """
-  return ctx.host_fragments.cpp.ar_executable

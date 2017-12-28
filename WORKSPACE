@@ -7,9 +7,8 @@ local_repository(
 
 http_archive(
   name = "io_tweag_rules_nixpkgs",
-  # Commit hash is current latest master.
-  strip_prefix = "rules_nixpkgs-a300f574885c50430147e457d21ec22a9fe015f4",
-  urls = ["https://github.com/tweag/rules_nixpkgs/archive/a300f574885c50430147e457d21ec22a9fe015f4.tar.gz"],
+  strip_prefix = "rules_nixpkgs-0.1",
+  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.1.tar.gz"],
 )
 
 http_archive(
@@ -20,13 +19,13 @@ http_archive(
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
-# Default toolchain
 nixpkgs_package(
   name = "ghc",
   attribute_path = "haskell.packages.ghc822.ghc"
 )
 
-nixpkgs_package(name = "binutils")
-
 # For tests
+
 nixpkgs_package(name = "zlib")
+
+register_toolchains("//tests:toolchain")
