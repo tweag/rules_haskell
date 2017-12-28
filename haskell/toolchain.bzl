@@ -46,6 +46,7 @@ def compile_haskell_bin(ctx):
   object_files = [declare_compiled(ctx, s, ".o", directory=object_dir)
                   for s in ctx.files.srcs]
   args = ctx.actions.args()
+  if ctx.var["COMPILATION_MODE"] == "opt": args.add(["-O"])
   args.add(ctx.attr.compiler_flags)
   args.add("-no-link")
   args.add(ctx.files.srcs)
@@ -163,6 +164,7 @@ def compile_haskell_lib(ctx, generated_hs_sources):
   objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
   interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
   args = ctx.actions.args()
+  if ctx.var["COMPILATION_MODE"] == "opt": args.add(["-O"])
   args.add(ctx.attr.compiler_flags)
   args.add([
     "-no-link",
