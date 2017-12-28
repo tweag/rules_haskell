@@ -80,3 +80,23 @@ rule_test(
   rule = "//tests/hsc",
   size = "small",
 )
+
+rule_test(
+  name = "test-haddock",
+  generates =
+    ["doc-haddock-lib-b-1.0.0",
+     "doc-haddock-lib-b-1.0.0/LibB.html",
+     "doc-haddock-lib-b-1.0.0/doc-index.html",
+     "doc-haddock-lib-b-1.0.0/haddock-lib-b-1.0.0.haddock",
+     "doc-haddock-lib-b-1.0.0/haddock-lib-b.txt",
+     "doc-haddock-lib-b-1.0.0/haddock-util.js",
+     "doc-haddock-lib-b-1.0.0/hslogo-16.png",
+     "doc-haddock-lib-b-1.0.0/index.html",
+     "doc-haddock-lib-b-1.0.0/minus.gif",
+     "doc-haddock-lib-b-1.0.0/ocean.css",
+     "doc-haddock-lib-b-1.0.0/plus.gif",
+     "doc-haddock-lib-b-1.0.0/synopsis.png"
+    ],
+  rule = "//tests/haddock",
+  size = "small",
+)

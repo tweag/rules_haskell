@@ -77,3 +77,15 @@ def get_hsc2hs(ctx):
     File: hsc2hs to use.
   """
   return get_build_tool(ctx, "hsc2hs")
+
+
+def get_haddock(ctx):
+  """Get the haddock tool.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    File: haddock to use.
+  """
+  return get_build_tool(ctx, "haddock")

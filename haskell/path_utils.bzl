@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def path_to_module_path(ctx, hs_file):
+def path_to_module_path(ctx, hs_file, prefix=None):
   """Map a source file to a module name.
 
   some-workspace/some-package/src/Foo/Bar/Baz.hs => Foo/Bar/Baz
@@ -10,21 +10,24 @@ def path_to_module_path(ctx, hs_file):
   Args:
     ctx: Rule context.
     hs_file: Haskell source file.
+    prefix: Prefix to strip. ctx.attr.src_strip_prefix used if not set.
 
   Returns:
     string: Module part of hs_file. See example above.
   """
+  strip_prefix = prefix if prefix != None else ctx.attr.src_strip_prefix
+
   # Directory under which module hierarchy starts.
   pkg_dir = paths.join(ctx.label.workspace_root,
                        ctx.label.package,
-                       ctx.attr.src_strip_prefix)
+                       strip_prefix)
   # Module path without the workspace and source directories, just
   # relevant hierarchy.
   path_no_prefix = paths.relativize(hs_file.path, pkg_dir)
   # Drop extension.
   return path_no_prefix[:path_no_prefix.rfind(".")]
 
-def path_to_module(ctx, hs_file):
+def path_to_module(ctx, hs_file, sep='.', prefix=None):
   """Given Haskell source file path, turn it to a module name.
 
   some-workspace/some-package/src/Foo/Bar/Baz.hs => Foo.Bar.Baz
@@ -32,11 +35,13 @@ def path_to_module(ctx, hs_file):
   Args:
     ctx: Rule context.
     hs_file: Haskell source file.
+    sep: Separator to use. By default `.`.
+    prefix: Prefix to strip. ctx.attr.src_strip_prefix used if not set.
 
   Returns:
     string: Haskell module name. See example above.
   """
-  return path_to_module_path(ctx, hs_file).replace('/', '.')
+  return path_to_module_path(ctx, hs_file, prefix = prefix).replace('/', sep)
 
 def declare_compiled(ctx, src, ext, directory=None):
   """Given a Haskell-ish source file, declare its output.

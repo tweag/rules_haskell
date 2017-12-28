@@ -17,6 +17,11 @@ load(":c_compile.bzl",
      "c_compile_static",
 )
 
+# Re-export haskell_haddock
+load (":haddock.bzl",
+      _haskell_haddock = "haskell_haddock",
+)
+
 def _haskell_binary_impl(ctx):
   object_files = compile_haskell_bin(ctx)
   link_haskell_bin(ctx, object_files)
@@ -129,6 +134,8 @@ haskell_binary = rule(
   host_fragments = ["cpp"],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
+
+haskell_haddock = _haskell_haddock
 
 def haskell_import(name, shared_library, visibility = None):
   native.alias(name = name, actual = shared_library, visibility = visibility)
