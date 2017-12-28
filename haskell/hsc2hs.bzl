@@ -16,10 +16,15 @@ def hsc_to_hs(ctx):
     ctx: Rule context.
 
   Returns:
-    list of File: Produced Haskell source files.
+    list of File: New Haskell source files to use.
   """
-  return [_process_hsc_file(ctx, f)
-          for f in ctx.files.srcs if f.extension == "hsc"]
+  sources = []
+  for f in ctx.files.srcs:
+    if f.extension == "hsc":
+      sources.append(_process_hsc_file(ctx, f))
+    else:
+      sources.append(f)
+  return sources
 
 def _process_hsc_file(ctx, hsc_file):
   """Process a single hsc file.

@@ -12,10 +12,6 @@ load(":toolchain.bzl",
      "link_haskell_bin",
 )
 
-load(":hsc2hs.bzl",
-     "hsc_to_hs",
-)
-
 load(":c_compile.bzl",
      "c_compile_dynamic",
      "c_compile_static",
@@ -26,12 +22,7 @@ def _haskell_binary_impl(ctx):
   link_haskell_bin(ctx, object_files)
 
 def _haskell_library_impl(ctx):
-  # Process hsc files
-  processed_hsc_files = hsc_to_hs(ctx)
-
-  interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(
-    ctx, processed_hsc_files
-  )
+  interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(ctx)
 
   c_object_files = c_compile_static(ctx)
   static_library_dir, static_library = create_static_library(
