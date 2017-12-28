@@ -12,7 +12,8 @@ haskell_binary(
   deps = [
     "one",
     "two"
-  ]
+  ],
+  prebuilt_dependencies = ["base"],
 )
 
 haskell_library(

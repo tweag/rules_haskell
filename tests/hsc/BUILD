@@ -15,7 +15,7 @@ haskell_library(
 # https://github.com/tweag/rules_haskell/issues/13
 haskell_binary(
   name = "hsc",
-  srcs = ["Main.hs"],
+  srcs = ["Main.hs", "BinHsc.hsc"],
   prebuilt_dependencies = ["base"],
   deps = [":hsc-lib"],
   visibility = ["//visibility:public"],

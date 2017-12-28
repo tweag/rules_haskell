@@ -13,6 +13,10 @@ load(":tools.bzl",
      "get_build_tools_path",
 )
 
+load(":hsc2hs.bzl",
+     "hsc_to_hs",
+)
+
 load("@bazel_skylib//:lib.bzl", "paths")
 
 HaskellPackageInfo = provider(
@@ -32,6 +36,19 @@ HaskellPackageInfo = provider(
   }
 )
 
+_DefaultCompileInfo = provider(
+  doc = "Default compilation files and configuration.",
+  fields = {
+    "args": "Default argument list.",
+    "inputs": "Default inputs.",
+    "outputs": "Default outputs.",
+    "objects_dir": "Object files directory.",
+    "interfaces_dir": "Interface files directory.",
+    "object_files": "Object files.",
+    "interface_files": "Interface files.",
+  },
+)
+
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
 
@@ -41,37 +58,21 @@ def compile_haskell_bin(ctx):
   Returns:
     list of File: Compiled object files.
   """
-  object_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
-  object_files = [declare_compiled(ctx, s, ".o", directory=object_dir)
-                  for s in ctx.files.srcs]
-  args = ctx.actions.args()
-  if ctx.var["COMPILATION_MODE"] == "opt": args.add(["-O"])
-  args.add(ctx.attr.compiler_flags)
-  args.add("-no-link")
-  args.add(ctx.files.srcs)
-  args.add(["-odir", object_dir])
-  args.add(["-main-is", ctx.attr.main])
-
-  dep_info = gather_dependency_information(ctx)
-  for n in dep_info.names.to_list():
-    args.add(["-package", n])
-
-  for db in depset([c.dirname for c in dep_info.confs.to_list()]).to_list():
-    args.add(["-package-db", db])
+  c = compilation_defaults(ctx)
+  c.args.add(["-main-is", ctx.attr.main])
 
   ctx.actions.run(
-    inputs = dep_info.interface_files + dep_info.confs + dep_info.caches +
-             dep_info.dynamic_libraries + ctx.files.srcs + get_build_tools(ctx),
-    outputs = object_files + [object_dir],
+    inputs = c.inputs,
+    outputs = c.outputs,
     progress_message = "Building {0}".format(ctx.attr.name),
     env = {
       "PATH": get_build_tools_path(ctx)
     },
     executable = get_compiler(ctx),
-    arguments = [args]
+    arguments = [c.args]
   )
 
-  return object_files
+  return c.object_files
 
 def link_haskell_bin(ctx, object_files):
   """Link Haskell binary.
@@ -143,12 +144,11 @@ def link_haskell_bin(ctx, object_files):
   )
   return ctx.outputs.executable
 
-def compile_haskell_lib(ctx, generated_hs_sources):
+def compile_haskell_lib(ctx):
   """Build arguments for Haskell package build.
 
   Args:
     ctx: Rule context.
-    generated_hs_sources: Generated Haskell files to include in the build.
 
   Returns:
     (File, list of File, list of File, list of File):
@@ -159,68 +159,27 @@ def compile_haskell_lib(ctx, generated_hs_sources):
         * Object files
         * Dynamic object files
   """
-
-  objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
-  interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
-  args = ctx.actions.args()
-  if ctx.var["COMPILATION_MODE"] == "opt": args.add(["-O"])
-  args.add(ctx.attr.compiler_flags)
-  args.add([
-    "-no-link",
-    "-hide-all-packages",
+  c = compilation_defaults(ctx)
+  c.args.add([
     "-package-name", "{0}-{1}".format(ctx.attr.name, ctx.attr.version),
     "-static", "-dynamic-too",
-    "-odir", objects_dir.path, "-hidir", interfaces_dir.path
   ])
 
-  dep_info = gather_dependency_information(ctx)
-  for n in depset(transitive = [dep_info.names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
-    args.add(["-package", n])
-
-  # Only include package DBs for deps, prebuilt deps should be found
-  # auto-magically by GHC.
-  for c in dep_info.caches.to_list():
-    args.add(["-package-db", c.dirname])
-
-  args.add(generated_hs_sources)
-  args.add(ctx.files.srcs)
-
-  external_files = depset([f for dep in ctx.attr.external_deps
-                             for f in dep.files])
-
-  # We want object and dynamic objects from all inputs.
-  object_files = [declare_compiled(ctx, s, ".o", directory=objects_dir)
-                  for s in ctx.files.srcs]
-  object_dyn_files = [declare_compiled(ctx, s, ".dyn_o", directory=objects_dir)
+  object_dyn_files = [declare_compiled(ctx, s, ".dyn_o", directory=c.objects_dir)
                       for s in ctx.files.srcs]
 
-  # We need to keep interface files we produce so we can import
-  # modules cross-package.
-  interface_files = [declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
-                     for s in ctx.files.srcs]
-
   ctx.actions.run(
-    inputs =
-    ctx.files.srcs +
-    generated_hs_sources +
-    dep_info.caches.to_list() +
-    external_files.to_list() +
-    dep_info.interface_files.to_list() +
-    dep_info.dynamic_libraries.to_list() +
-    get_build_tools(ctx).to_list() +
-    dep_info.external_libraries.to_list(),
-    outputs = [interfaces_dir, objects_dir] + object_files + interface_files +
-              object_dyn_files,
+    inputs = c.inputs,
+    outputs = c.outputs + object_dyn_files,
     progress_message = "Compiling {0}".format(ctx.attr.name),
     env = {
       "PATH": get_build_tools_path(ctx),
-
     },
     executable = get_compiler(ctx),
-    arguments = [args],
+    arguments = [c.args],
   )
 
-  return interfaces_dir, interface_files, object_files, object_dyn_files
+  return c.interfaces_dir, c.interface_files, c.object_files, object_dyn_files
 
 def create_static_library(ctx, object_files):
   """Create a static library for the package using given object files.
@@ -371,6 +330,75 @@ def create_ghc_package(ctx, interfaces_dir, static_library, static_library_dir, 
   )
 
   return conf_file, cache_file
+
+def compilation_defaults(ctx):
+  """Declare default compilation targets and create default compiler arguments.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    _DefaultCompile: Populated default compilation settings.
+  """
+  args = ctx.actions.args()
+
+  # Preprocess any sources
+  sources = hsc_to_hs(ctx)
+
+  # Declare file directories
+  objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
+  interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
+
+  # Compilation mode and explicit user flags
+  if ctx.var["COMPILATION_MODE"] == "opt": args.add("-O")
+  args.add(ctx.attr.compiler_flags)
+
+  # Common flags
+  args.add([
+    "-no-link",
+    "-hide-all-packages",
+    "-odir", objects_dir, "-hidir", interfaces_dir
+  ])
+
+  dep_info = gather_dependency_information(ctx)
+  for n in depset(transitive = [dep_info.names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
+    args.add(["-package", n])
+
+  # Only include package DBs for deps, prebuilt deps should be found
+  # auto-magically by GHC.
+  for c in dep_info.caches.to_list():
+    args.add(["-package-db", c.dirname])
+
+  # We want object and dynamic objects from all inputs.
+  object_files = [declare_compiled(ctx, s, ".o", directory=objects_dir)
+                  for s in ctx.files.srcs]
+
+  # We need to keep interface files we produce so we can import
+  # modules cross-package.
+  interface_files = [declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
+                     for s in ctx.files.srcs]
+
+  # Include any non-Haskell dependencies in inputs.
+  external_files = depset([f for dep in ctx.attr.external_deps
+                             for f in dep.files])
+
+  # Lastly add all the processed sources.
+  args.add(sources)
+
+  return _DefaultCompileInfo(
+    args = args,
+    inputs = depset(transitive = [
+      depset(sources), external_files, dep_info.confs, dep_info.caches,
+      dep_info.interface_files, dep_info.dynamic_libraries,
+      get_build_tools(ctx),
+      dep_info.external_libraries,
+    ]),
+    outputs = [objects_dir, interfaces_dir] + object_files + interface_files,
+    objects_dir = objects_dir,
+    interfaces_dir = interfaces_dir,
+    object_files = object_files,
+    interface_files = interface_files,
+  )
 
 def get_pkg_id(ctx):
   """Get package identifier. This is name-version.
