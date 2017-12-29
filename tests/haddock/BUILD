@@ -2,9 +2,12 @@ package(default_testonly = 1, default_visibility = ["//visibility:public"])
 
 load(
   "@io_tweag_rules_haskell//haskell:haskell.bzl",
+  "haskell_import",
   "haskell_library",
   "haskell_haddock",
 )
+
+haskell_import(name = "zlib", shared_library = "@zlib//:lib")
 
 haskell_library(
   name = "haddock-lib-a",
@@ -12,14 +15,10 @@ haskell_library(
   prebuilt_dependencies = ["base"],
 )
 
-# TODO: Add system library to deps. I can't do it with something like
-# zlib because bazel freaks out that zlib is a non-test dependency
-# using test toolchain. I have checked once that it works by unsetting
-# testonly in tests/BUILD but it seems like a non-solution.
 haskell_library(
   name = "haddock-lib-b",
   srcs = ["LibB.hs"],
-  deps = [":haddock-lib-a"],
+  deps = [":haddock-lib-a", ":zlib"],
   prebuilt_dependencies = ["base"],
   visibility = ["//visibility:public"],
 )
