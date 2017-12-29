@@ -26,6 +26,13 @@ nixpkgs_package(
 
 # For tests
 
-nixpkgs_package(name = "zlib")
+nixpkgs_package(name = "zlib", build_file_content = """
+filegroup (
+  name = "lib",
+  srcs = glob(["nix/lib/**/*.so"]),
+  visibility = ["//visibility:public"],
+  testonly = 1,
+)""",
+)
 
 register_toolchains("//tests:toolchain")

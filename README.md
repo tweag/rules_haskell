@@ -14,6 +14,7 @@ run tests, you'll furthermore need [Nix][nix] installed.
 * [haskell_binary](#haskell_binary)
 * [haskell_library](#haskell_library)
 * [haskell_import](#haskell_import)
+* [haskell_haddock](#haskell_haddock)
 
 ## Setup
 
@@ -190,6 +191,54 @@ haskell_binary(
       <td>
         <p><code>Label, required</code></p>
         <p>A single precompiled shared library.</p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+### haskell_haddock
+
+Builds [Haddock](http://haskell-haddock.readthedocs.io/en/latest/)
+documentation for given Haskell libraries. It will automatically
+build documentation for any transitive dependencies to allow for
+cross-package documentation linking. Currently linking to
+`prebuilt_deps` is not supported.
+
+```bzl
+haskell_library(
+  name = "my-lib",
+  …
+)
+
+haskell_haddock(
+  name = "my-lib-haddock",
+  deps = [":my-lib"],
+)
+```
+
+<table class="table table-condensed table-bordered table-params">
+  <colgroup>
+    <col class="col-param" />
+    <col class="param-description" />
+  </colgroup>
+  <thead>
+    <tr>
+      <th colspan="2">Attributes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td>
+        <p><code>Name, required</code></p>
+        <p>A unique name for this target</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>deps</code></td>
+      <td>
+        <p><code>List of labels, required</code></p>
+        <p>List of Haskell libraries to generate documentation for.</p>
       </td>
     </tr>
   </tbody>
