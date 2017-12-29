@@ -16,6 +16,7 @@ load("//haskell:haskell.bzl", "haskell_toolchain")
 
 haskell_toolchain(
   name = "toolchain",
+  version = "8.2.2",
   tools = "@ghc//:bin",
 )
 

@@ -8,6 +8,7 @@ load(":path_utils.bzl",
 
 load(":tools.bzl",
      "get_compiler",
+     "get_compiler_version",
      "get_ghc_pkg",
      "get_build_tools",
      "get_build_tools_path",
@@ -218,10 +219,11 @@ def create_dynamic_library(ctx, object_files):
   """
 
   # Make shared library
+  version = get_compiler_version(ctx)
   dynamic_library_dir = ctx.actions.declare_directory(mk_name(ctx, "dynlib"))
   dynamic_library = ctx.actions.declare_file(
     paths.join(dynamic_library_dir.basename,
-               "lib{0}-ghc{1}.so".format(get_library_name(ctx), ctx.attr.ghc_version))
+               "lib{0}-ghc{1}.so".format(get_library_name(ctx), version))
   )
 
   args = ["-shared", "-dynamic", "-o", dynamic_library.path]

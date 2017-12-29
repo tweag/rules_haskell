@@ -13,6 +13,7 @@ run tests, you'll furthermore need [Nix][nix] installed.
 
 * [haskell_binary](#haskell_binary)
 * [haskell_library](#haskell_library)
+* [haskell_toolchain](#haskell_import)
 * [haskell_import](#haskell_import)
 * [haskell_haddock](#haskell_haddock)
 
@@ -31,7 +32,12 @@ http_archive(
 and this to your BUILD files.
 
 ```bzl
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_library")
+load("@io_tweag_rules_haskell//haskell:haskell.bzl",
+  "haskell_binary",
+  "haskell_library",
+  "haskell_toolchain",
+  "haskell_import",
+)
 ```
 
 ## Rules
@@ -137,6 +143,71 @@ haskell_library(
       <td>
         <p><code>List of labels, required</code></p>
         <p>List of other Haskell libraries to be linked to this target</p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+### haskell_toolchain
+
+Generates a Haskell library.
+
+```bzl
+haskell_toolchain(name, version, tools, ...)
+```
+
+Extra arguments forwarded to `toolchain` rule.
+
+#### Example
+
+```bzl
+haskell_toolchain(
+    name = 'ghc',
+    version = '1.2.3'
+    tools = ["@ghc//:bin"]
+)
+```
+
+where `@ghc` is an external repository defined in the `WORKSPACE`,
+e.g. using:
+
+```bzl
+nixpkgs_package(
+    name = 'ghc',
+    attribute_path = 'haskell.compiler.ghc123'
+)
+```
+
+<table class="table table-condensed table-bordered table-params">
+  <colgroup>
+    <col class="col-param" />
+    <col class="param-description" />
+  </colgroup>
+  <thead>
+    <tr>
+      <th colspan="2">Attributes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td>
+        <p><code>Name, required</code></p>
+        <p>A unique name for this toolchain</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>version</code></td>
+      <td>
+        <p><code>String, required</code></p>
+        <p>Version of the compiler.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>tools</code></td>
+      <td>
+        <p><code>Label, required</code></p>
+        <p>A target providing GHC commands (`ghc`, `ghc-pkg`, etc).</p>
       </td>
     </tr>
   </tbody>
