@@ -12,7 +12,6 @@ haskell_library(
   prebuilt_dependencies = ["base"],
 )
 
-# https://github.com/tweag/rules_haskell/issues/13
 haskell_binary(
   name = "hsc",
   srcs = ["Main.hs", "BinHsc.hsc"],
