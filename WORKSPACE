@@ -21,7 +21,7 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
 nixpkgs_package(
   name = "ghc",
-  attribute_path = "haskell.packages.ghc822.ghc"
+  attribute_path = "haskell.compiler.ghc822"
 )
 
 # For tests
