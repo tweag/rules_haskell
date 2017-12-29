@@ -44,6 +44,7 @@ def _haskell_library_impl(ctx):
     ctx,
     interfaces_dir,
     static_library,
+    dynamic_library,
     static_library_dir,
     dynamic_library_dir,
   )
