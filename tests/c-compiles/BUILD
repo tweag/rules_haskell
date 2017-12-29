@@ -7,15 +7,16 @@ load(
 )
 
 haskell_library(
-  name = "hsc-lib",
-  srcs = ["Test.hsc"],
+  name = "c-compiles-lib",
+  srcs = ["Lib.hs"],
+  c_sources = ["c-compiles.c"],
   prebuilt_dependencies = ["base"],
 )
 
 haskell_binary(
-  name = "hsc",
-  srcs = ["Main.hs", "BinHsc.hsc"],
+  name = "c-compiles",
+  srcs = ["Main.hs",],
   prebuilt_dependencies = ["base"],
-  deps = [":hsc-lib"],
+  deps = [":c-compiles-lib"],
   visibility = ["//visibility:public"],
 )

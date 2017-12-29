@@ -108,3 +108,10 @@ rule_test(
   rule = "//tests/haskell_test",
   size = "small",
 )
+
+rule_test(
+  name = "test-extras-included-during-comp",
+  generates = ["extras-included-during-comp"],
+  rule = "//tests/extras-included-during-comp",
+  size = "small",
+)

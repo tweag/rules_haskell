@@ -26,9 +26,7 @@ def c_compile_static(ctx):
   Returns:
     list of File: Compiled static object files.
   """
-  args = ctx.actions.args()
-  args.add("-c")
-  return _generic_c_compile(ctx, "objects_c", ".o", args)
+  return _generic_c_compile(ctx, "objects_c", ".o", [])
 
 def c_compile_dynamic(ctx):
   """Compile all C files to dynamic object files.
@@ -45,9 +43,7 @@ def c_compile_dynamic(ctx):
   Returns:
     list of File: Compiled dynamic object files.
   """
-  args = ctx.actions.args()
-  args.add(["-c", "-dynamic"])
-  return _generic_c_compile(ctx, "objects_c_dyn", ".dyn_o", args)
+  return _generic_c_compile(ctx, "objects_c_dyn", ".dyn_o", ["-dynamic"])
 
 def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   """Compile some C files in specified way.
@@ -56,23 +52,28 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
     ctx: Rule context.
     output_dir_template: Template for object file output directory.
     output_ext: Expected object file extension that compiled files will have.
-    user_args: User-provided arguments driving compilation mode.
+    user_args: List of user-provided arguments driving compilation mode.
 
   Returns:
     list of File: Compiled object files.
   """
   # Directory for objects generated from C files.
   output_dir = ctx.actions.declare_directory(mk_name(ctx, output_dir_template))
-
   args = ctx.actions.args()
   args.add([
+    "-c",
     "-fPIC",
-    "-odir", output_dir
+    "-odir", output_dir,
+    "-osuf", output_ext,
   ])
+  args.add(user_args)
 
   for opt in ctx.attr.c_options:
     args.add("-optc{0}".format(opt))
 
+  # TODO: use gather_dep_info instead, we don't need this. Even
+  # better, factor out -package logic to share it with
+  # compilation_defaults.
   pkg_caches = depset()
   pkg_names = depset()
   for d in ctx.attr.deps:
@@ -99,11 +100,19 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   output_files = [ctx.actions.declare_file(paths.join(output_dir.basename, paths.replace_extension(s.path, output_ext)))
                         for s in ctx.files.c_sources]
   ctx.actions.run(
-    inputs = ctx.files.c_sources + external_files.to_list() + pkg_caches.to_list(),
+    inputs = depset(transitive = [
+      depset(ctx.files.c_sources),
+      external_files,
+      pkg_caches,
+    ]),
     outputs = [output_dir] + output_files,
-    use_default_shell_env = True,
-    progress_message = "Compiling C dynamic {0}".format(ctx.attr.name),
+    progress_message = "Compiling C {0}{1}".format(
+      ctx.attr.name,
+      # Show user-provided flags to user. This way we can tell what
+      # we're actually doing.
+      " ({0})".format(" ".join(user_args)) if user_args != [] else "",
+    ),
     executable = get_compiler(ctx),
-    arguments = [user_args, args],
+    arguments = [args],
   )
   return output_files

@@ -380,9 +380,12 @@ def compilation_defaults(ctx):
   interface_files = [declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
                      for s in ctx.files.srcs]
 
+
   # Include any non-Haskell dependencies in inputs.
-  external_files = depset([f for dep in ctx.attr.external_deps
-                             for f in dep.files])
+  external_files = [f for dep in ctx.attr.external_deps for f in dep.files.to_list()]
+
+  for include_dir in depset([f.dirname for f in external_files]).to_list():
+    args.add("-I{0}".format(include_dir))
 
   # Lastly add all the processed sources.
   args.add(sources)
@@ -390,7 +393,7 @@ def compilation_defaults(ctx):
   return _DefaultCompileInfo(
     args = args,
     inputs = depset(transitive = [
-      depset(sources), external_files, dep_info.confs, dep_info.caches,
+      depset(sources), depset(external_files), dep_info.confs, dep_info.caches,
       dep_info.interface_files, dep_info.dynamic_libraries,
       get_build_tools(ctx),
       dep_info.external_libraries,
