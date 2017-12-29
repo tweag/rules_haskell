@@ -135,17 +135,43 @@ def _haskell_toolchain_impl(ctx):
   for tool in ["ghc", "ghc-pkg", "hsc2hs"]:
     if tool not in [t.basename for t in ctx.files.tools]:
       fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
-  return [platform_common.ToolchainInfo(
-    name = ctx.label.name,
-    tools = ctx.files.tools,
-    version = ctx.attr.version,
-  )]
+
+  # Run a version check on the compiler.
+  for t in ctx.files.tools:
+    if t.basename == "ghc":
+      compiler = t
+  version_file = ctx.actions.declare_file("ghc-version")
+  arguments = ctx.actions.args()
+  arguments.add(compiler)
+  arguments.add(version_file)
+  arguments.add(ctx.attr.version)
+  ctx.actions.run(
+    inputs = [compiler],
+    outputs = [version_file],
+    executable = ctx.file._ghc_version_check,
+    arguments = [arguments],
+  )
+
+  return [
+    platform_common.ToolchainInfo(
+      name = ctx.label.name,
+      tools = ctx.files.tools,
+      version = ctx.attr.version,
+    ),
+    # Make everyone implicitly depend on the version_file, to force
+    # the version check.
+    DefaultInfo(files = depset([version_file])),
+    ]
 
 _haskell_toolchain = rule(
   _haskell_toolchain_impl,
   attrs = {
     "tools": attr.label(mandatory = True),
     "version": attr.string(mandatory = True),
+    "_ghc_version_check": attr.label(
+      allow_single_file = True,
+      default = Label("@io_tweag_rules_haskell//haskell:ghc-version-check.sh")
+    )
   }
 )
 
