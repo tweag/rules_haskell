@@ -10,8 +10,15 @@ load(
 haskell_import(name = "zlib", shared_library = "@zlib//:lib")
 
 haskell_library(
+  name = "haddock-lib-deep",
+  srcs = ["Deep.hs"],
+  prebuilt_dependencies = ["base"],
+)
+
+haskell_library(
   name = "haddock-lib-a",
   srcs = ["LibA.hs", "LibA/A.hs"],
+  deps = [":haddock-lib-deep"],
   prebuilt_dependencies = ["base"],
 )
 
@@ -20,7 +27,6 @@ haskell_library(
   srcs = ["LibB.hs"],
   deps = [":haddock-lib-a", ":zlib"],
   prebuilt_dependencies = ["base"],
-  visibility = ["//visibility:public"],
 )
 
 haskell_haddock(
