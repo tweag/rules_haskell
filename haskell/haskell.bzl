@@ -93,15 +93,6 @@ _haskell_common_attrs = {
     default="1.0.0",
     doc="Package/binary version"
   ),
-  "ghc_version": attr.string(
-    default="8.2.2",
-    # TODO (fuuzetsu): We need this because we have to generate
-    # correct suffix for shared libraries that GHC expects for
-    # dynamic-library-dirs content. As currently we're using GHC from
-    # nix, there's not really a way to do this. In future we need to
-    # expose toolchains that expose a version and use that. I think.
-    doc="Version of GHC being used."
-  ),
 }
 
 haskell_library = rule(
@@ -138,19 +129,22 @@ def _haskell_toolchain_impl(ctx):
   return [platform_common.ToolchainInfo(
     name = ctx.label.name,
     tools = ctx.files.tools,
+    version = ctx.attr.version,
   )]
 
 _haskell_toolchain = rule(
   _haskell_toolchain_impl,
   attrs = {
     "tools": attr.label(mandatory = True),
+    "version": attr.string(mandatory = True),
   }
 )
 
-def haskell_toolchain(name, tools, **kwargs):
+def haskell_toolchain(name, version, tools, **kwargs):
   impl_name = name + "-impl"
   _haskell_toolchain(
     name = impl_name,
+    version = version,
     tools = tools,
     visibility = ["//visibility:public"],
     **kwargs

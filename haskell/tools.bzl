@@ -56,6 +56,17 @@ def get_compiler(ctx):
   """
   return get_build_tool(ctx, "ghc")
 
+def get_compiler_version(ctx):
+  """Get the compiler version.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    String: Version string.
+  """
+  return ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].version
+
 def get_ghc_pkg(ctx):
   """Get the compiler path.
 
