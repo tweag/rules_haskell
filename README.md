@@ -31,7 +31,12 @@ http_archive(
 and this to your BUILD files.
 
 ```bzl
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_library")
+load("@io_tweag_rules_haskell//haskell:haskell.bzl",
+  "haskell_binary",
+  "haskell_library",
+  "haskell_toolchain",
+  "haskell_import",
+)
 ```
 
 ## Rules
@@ -142,13 +147,15 @@ haskell_library(
   </tbody>
 </table>
 
-### haskell_library
+### haskell_toolchain
 
 Generates a Haskell library.
 
 ```bzl
-haskell_library(name, srcs, deps)
+haskell_toolchain(name, version, tools, ...)
 ```
+
+Extra arguments forwarded to `toolchain` rule.
 
 #### Example
 
