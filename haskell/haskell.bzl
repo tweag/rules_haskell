@@ -113,18 +113,35 @@ haskell_library = rule(
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
 
-haskell_binary = rule(
-  _haskell_binary_impl,
-  executable = True,
-  attrs = dict(_haskell_common_attrs,
-    main = attr.string(
-      default="Main.main",
-      doc="Main function location."
-    )
-  ),
-  host_fragments = ["cpp"],
-  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
-)
+def _mk_binary_rule(**kwargs):
+  """Generate a rule that compiles a binary.
+
+  This is useful to create variations of a Haskell binary compilation
+  rule without having to copy and paste the actual `rule` invocation.
+
+  Args:
+    **kwargs: Any additional keyword arguments to pass to `rule`.
+
+  Returns:
+    Rule: Haskell binary compilation rule.
+  """
+  return rule(
+    _haskell_binary_impl,
+    executable = True,
+    attrs = dict(_haskell_common_attrs,
+                 main = attr.string(
+                   default="Main.main",
+                   doc="Main function location."
+                 )
+    ),
+    host_fragments = ["cpp"],
+    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    **kwargs
+  )
+
+haskell_binary = _mk_binary_rule()
+
+haskell_test = _mk_binary_rule(test = True)
 
 haskell_haddock = _haskell_haddock
 

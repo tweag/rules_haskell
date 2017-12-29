@@ -16,6 +16,7 @@ run tests, you'll furthermore need [Nix][nix] installed.
 * [haskell_toolchain](#haskell_import)
 * [haskell_import](#haskell_import)
 * [haskell_haddock](#haskell_haddock)
+* [haskell_test](#haskell_test)
 
 ## Setup
 
@@ -342,3 +343,12 @@ haskell_haddock(
     </tr>
   </tbody>
 </table>
+
+### haskell_test
+
+This is currently a handy alias for [haskell_binary](#haskell_binary)
+so please refer to that for documentation of fields. Additionally, it
+accepts [all common bazel test rule
+fields](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests).
+This allows you to influence things like timeout and resource
+allocation for the test.
