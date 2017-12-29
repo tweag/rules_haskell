@@ -143,7 +143,7 @@ def _haskell_toolchain_impl(ctx):
 _haskell_toolchain = rule(
   _haskell_toolchain_impl,
   attrs = {
-    "tools": attr.label(),
+    "tools": attr.label(mandatory = True),
   }
 )
 
