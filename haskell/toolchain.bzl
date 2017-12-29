@@ -264,13 +264,14 @@ def create_dynamic_library(ctx, object_files):
 
   return dynamic_library_dir, dynamic_library
 
-def create_ghc_package(ctx, interfaces_dir, static_library, static_library_dir, dynamic_library_dir):
+def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, static_library_dir, dynamic_library_dir):
   """Create GHC package using ghc-pkg.
 
   Args:
     ctx: Rule context.
     interfaces_dir: Directory containing interface files.
     static_library: Static library of the package.
+    dynamic_library: Dynamic library of the package.
     static_library_dir: Directory containing static library.
     dynamic_library_dir: Directory containing dynamic library.
 
@@ -305,17 +306,16 @@ def create_ghc_package(ctx, interfaces_dir, static_library, static_library_dir, 
                        for k, v in registration_file_entries.items()])
   )
 
-  pkg_confs = depset([
-    c for dep in ctx.attr.deps
-      if HaskellPackageInfo in dep
-      for c in dep[HaskellPackageInfo].confs.to_list()
-  ])
-
+  dep_info = gather_dependency_information(ctx)
   # Make the call to ghc-pkg and use the registration file
-  package_path = ":".join([c.dirname for c in pkg_confs.to_list()])
+  package_path = ":".join([c.dirname for c in dep_info.confs.to_list()])
   ctx.actions.run(
-    inputs = pkg_confs.to_list() + [static_library, interfaces_dir, registration_file] +
-             get_build_tools(ctx).to_list(),
+    inputs = depset(transitive = [
+      dep_info.confs,
+      dep_info.caches,
+      depset([static_library, interfaces_dir, registration_file, dynamic_library]),
+      get_build_tools(ctx)
+    ]),
     outputs = [pkg_db_dir, conf_file, cache_file],
     env = {
       "GHC_PACKAGE_PATH": package_path,
