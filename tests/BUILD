@@ -101,3 +101,10 @@ rule_test(
   rule = "//tests/haddock",
   size = "small",
 )
+
+rule_test(
+  name = "test-haskell_test",
+  generates = ["haskell_test"],
+  rule = "//tests/haskell_test",
+  size = "small",
+)
