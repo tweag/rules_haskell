@@ -27,6 +27,8 @@ http_archive(
     strip_prefix = "rules_haskell-$COMMIT",
     urls = ["https://github.com/tweag/rules_haskell/archive/$COMMIT.tar.gz"],
 )
+
+register_toolchains("//:ghc")
 ```
 
 and this to your BUILD files.
@@ -38,7 +40,28 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_toolchain",
   "haskell_import",
 )
+
+haskell_toolchain(
+  name = "ghc",
+  version = "8.2.2",
+  tools = "@my_ghc//:bin",
+)
 ```
+
+The `haskell_toolchain` rule instantiation brings a GHC compiler in
+scope. It assumes an [external dependency][external-dependencies]
+called `@my_ghc` was defined, pointing to an installation of GHC. The
+only supported option currently is to provision GHC using Nix. This is
+done by adding the following to your `WORKSPACE` file:
+
+```bzl
+nixpkgs_package(
+  name = "my_ghc",
+  attribute_path = "haskell.compiler.ghc822"
+)
+```
+
+[external-dependencies]: https://docs.bazel.build/versions/master/external.html
 
 ## Rules
 
@@ -150,7 +173,10 @@ haskell_library(
 
 ### haskell_toolchain
 
-Generates a Haskell library.
+Declares a compiler toolchain. You need at least one of these declared
+somewhere in your `BUILD` files for the other rules to work. Once
+declared, you then need to *register* the toolchain using
+`register_toolchain` in your `WORKSPACE` file (see Example below).
 
 ```bzl
 haskell_toolchain(name, version, tools, ...)
@@ -162,9 +188,9 @@ Extra arguments forwarded to `toolchain` rule.
 
 ```bzl
 haskell_toolchain(
-    name = 'ghc',
+    name = 'my_ghc',
     version = '1.2.3'
-    tools = ["@ghc//:bin"]
+    tools = ["@sys_ghc//:bin"]
 )
 ```
 
@@ -173,9 +199,11 @@ e.g. using:
 
 ```bzl
 nixpkgs_package(
-    name = 'ghc',
+    name = 'sys_ghc',
     attribute_path = 'haskell.compiler.ghc123'
 )
+
+register_toolchain("//:sys_ghc")
 ```
 
 <table class="table table-condensed table-bordered table-params">
