@@ -89,6 +89,8 @@ _haskell_common_attrs = {
   "prebuilt_dependencies": attr.string_list(
     doc="Haskell packages which are magically available such as wired-in packages."
   ),
+  # XXX Consider making this private. Blocked on
+  # https://github.com/bazelbuild/bazel/issues/4366.
   "version": attr.string(
     default="1.0.0",
     doc="Package/binary version"
