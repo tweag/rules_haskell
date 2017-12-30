@@ -1,6 +1,6 @@
 """Entry point to rules_haskell."""
 
-load(":toolchain.bzl",
+load(":actions.bzl",
   "HaskellPackageInfo",
   "compile_haskell_bin",
   "compile_haskell_lib",

@@ -1,6 +1,6 @@
 """C file compilation."""
 
-load(":toolchain.bzl",
+load(":actions.bzl",
   "HaskellPackageInfo",
   "mk_name",
 )
