@@ -40,7 +40,7 @@ _haskell_common_attrs = {
     allow_files=FileType([".c"]),
     doc="A list of C source files to be built as part of the package."
   ),
-  "c_options": attr.string_list(
+  "copts": attr.string_list(
     doc="Options to pass to C compiler for any C source files."
   ),
   "deps": attr.label_list(
