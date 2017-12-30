@@ -67,7 +67,7 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   ])
   args.add(user_args)
 
-  for opt in ctx.attr.c_options:
+  for opt in ctx.attr.copts:
     args.add("-optc{0}".format(opt))
 
   # TODO: use gather_dep_info instead, we don't need this. Even

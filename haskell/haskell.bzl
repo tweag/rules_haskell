@@ -36,7 +36,7 @@ _haskell_common_attrs = {
     allow_files=FileType([".hs", ".hsc", ".c"]),
     doc="A list of source files (Haskell, C) to be built by this rule."
   ),
-  "c_options": attr.string_list(
+  "copts": attr.string_list(
     doc="Options to pass to C compiler for any C source files."
   ),
   "deps": attr.label_list(
