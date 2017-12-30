@@ -55,6 +55,7 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   Returns:
     list of File: Compiled object files.
   """
+  c_srcs = [src for src in ctx.files.srcs if src.extension == "c"]
   # Directory for objects generated from C files.
   output_dir = ctx.actions.declare_directory(mk_name(ctx, output_dir_template))
   args = ctx.actions.args()
@@ -93,13 +94,17 @@ def _generic_c_compile(ctx, output_dir_template, output_ext, user_args):
   for include_dir in depset([f.dirname for f in external_files.to_list()]).to_list():
     args.add("-I{0}".format(include_dir))
 
-  args.add(ctx.files.c_sources)
+  args.add(c_srcs)
 
-  output_files = [ctx.actions.declare_file(paths.join(output_dir.basename, paths.replace_extension(s.path, output_ext)))
-                        for s in ctx.files.c_sources]
+  output_files = [
+    ctx.actions.declare_file(
+      paths.join(output_dir.basename, paths.replace_extension(s.path, output_ext))
+    )
+    for s in c_srcs
+  ]
   ctx.actions.run(
     inputs = depset(transitive = [
-      depset(ctx.files.c_sources),
+      depset(c_srcs),
       external_files,
       pkg_caches,
     ]),

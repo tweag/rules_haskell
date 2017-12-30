@@ -33,12 +33,8 @@ _haskell_common_attrs = {
     doc="Directory in which module hierarchy starts."
   ),
   "srcs": attr.label_list(
-    allow_files=FileType([".hs", ".hsc"]),
-    doc="A list of Haskell sources to be built by this rule."
-  ),
-  "c_sources": attr.label_list(
-    allow_files=FileType([".c"]),
-    doc="A list of C source files to be built as part of the package."
+    allow_files=FileType([".hs", ".hsc", ".c"]),
+    doc="A list of source files (Haskell, C) to be built by this rule."
   ),
   "c_options": attr.string_list(
     doc="Options to pass to C compiler for any C source files."

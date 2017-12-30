@@ -8,8 +8,7 @@ load(
 
 haskell_library(
   name = "c-compiles-lib",
-  srcs = ["Lib.hs"],
-  c_sources = ["c-compiles.c"],
+  srcs = ["Lib.hs", "c-compiles.c"],
   prebuilt_dependencies = ["base"],
 )
 
