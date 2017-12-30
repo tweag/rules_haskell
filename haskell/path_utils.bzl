@@ -23,7 +23,7 @@ def path_to_module_path(ctx, hs_file, prefix=None):
                        strip_prefix)
   # Module path without the workspace and source directories, just
   # relevant hierarchy.
-  path_no_prefix = paths.relativize(hs_file.short_path, pkg_dir)
+  path_no_prefix = paths.relativize(hs_file.path, pkg_dir)
   # Drop extension.
   return path_no_prefix[:path_no_prefix.rfind(".")]
 
