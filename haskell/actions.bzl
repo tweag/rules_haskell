@@ -129,7 +129,7 @@ def link_haskell_bin(ctx, object_files):
     link_args.extend(["-optl", o.path])
 
   dep_info = gather_dependency_information(ctx)
-  for lib in dep_info.static_libraries.to_list():
+  for lib in dep_info.static_libraries:
     link_args.extend(["-optl", lib.path])
 
   # We have to remember to specify all (transitive) wired-in
@@ -141,8 +141,13 @@ def link_haskell_bin(ctx, object_files):
   # Otherwise we'd end up with meaningless relative rpath.
   rpaths = ["$(realpath {0})".format(lib.path) for lib in dep_info.external_libraries.to_list()]
   ctx.actions.run_shell(
-    inputs = dep_info.static_libraries + object_files + [dummy_static_lib] +
-             dep_info.external_libraries + get_build_tools(ctx) + dep_info.external_libraries,
+    inputs = depset(transitive = [
+      depset(dep_info.static_libraries),
+      depset(object_files),
+      depset([dummy_static_lib]),
+      dep_info.external_libraries,
+      get_build_tools(ctx),
+    ]),
     outputs = [ctx.outputs.executable],
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
     command = " ".join([get_compiler(ctx).path] + rpaths + link_args),
@@ -455,7 +460,7 @@ def gather_dependency_information(ctx):
     names = depset(),
     confs = depset(),
     caches = depset(),
-    static_libraries = depset(),
+    static_libraries = [],
     dynamic_libraries = depset(),
     interface_files = depset(),
     static_library_dirs = depset(),

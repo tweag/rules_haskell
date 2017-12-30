@@ -123,12 +123,8 @@ def _haskell_library_impl(ctx):
     names = depset(transitive = [dep_info.names, depset([get_pkg_id(ctx)])]),
     confs = depset(transitive = [dep_info.confs, depset([conf_file])]),
     caches = depset(transitive = [dep_info.caches, depset([cache_file])]),
-    # Keep package libraries in preorder (naive_link) order: this
-    # gives us the valid linking order at binary linking time.
-    static_libraries = depset(
-      transitive = [depset([static_library]), dep_info.static_libraries],
-      order = "preorder"
-    ),
+    # Do _not_ use a depset.
+    static_libraries = [static_library] + dep_info.static_libraries,
     dynamic_libraries = depset(
       transitive = [depset([dynamic_library]), dep_info.dynamic_libraries]
     ),
