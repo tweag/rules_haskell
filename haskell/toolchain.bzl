@@ -352,7 +352,7 @@ def compilation_defaults(ctx):
   interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
 
   # Compilation mode and explicit user flags
-  if ctx.var["COMPILATION_MODE"] == "opt": args.add("-O")
+  if ctx.var["COMPILATION_MODE"] == "opt": args.add("-O2")
   args.add(ctx.attr.compiler_flags)
 
   # Common flags
