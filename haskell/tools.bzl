@@ -28,8 +28,7 @@ def get_build_tools_path(ctx):
   """
   return ":".join(depset([bt.dirname for bt in get_build_tools(ctx).to_list()]).to_list())
 
-def get_build_tool(ctx, tool_name):
-
+def _get_build_tool(ctx, tool_name):
   """Find the requested build tool from all the build tools we were given.
 
   Args:
@@ -54,7 +53,7 @@ def get_compiler(ctx):
   Returns:
     File: Compiler to use.
   """
-  return get_build_tool(ctx, "ghc")
+  return _get_build_tool(ctx, "ghc")
 
 def get_compiler_version(ctx):
   """Get the compiler version.
@@ -76,7 +75,7 @@ def get_ghc_pkg(ctx):
   Returns:
     File: ghc-pkg to use.
   """
-  return get_build_tool(ctx, "ghc-pkg")
+  return _get_build_tool(ctx, "ghc-pkg")
 
 def get_hsc2hs(ctx):
   """Get the hsc2hs tool.
@@ -87,7 +86,7 @@ def get_hsc2hs(ctx):
   Returns:
     File: hsc2hs to use.
   """
-  return get_build_tool(ctx, "hsc2hs")
+  return _get_build_tool(ctx, "hsc2hs")
 
 
 def get_haddock(ctx):
@@ -99,4 +98,4 @@ def get_haddock(ctx):
   Returns:
     File: haddock to use.
   """
-  return get_build_tool(ctx, "haddock")
+  return _get_build_tool(ctx, "haddock")
