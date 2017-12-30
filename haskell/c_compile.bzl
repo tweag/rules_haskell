@@ -1,13 +1,11 @@
 """C file compilation."""
 
 load(":toolchain.bzl",
-     "HaskellPackageInfo",
-     "mk_name",
+  "HaskellPackageInfo",
+  "mk_name",
 )
 
-load(":tools.bzl",
-     "get_compiler",
-)
+load(":tools.bzl", "get_compiler")
 
 load("@bazel_skylib//:lib.bzl", "paths")
 

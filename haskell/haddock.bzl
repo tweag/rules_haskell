@@ -1,17 +1,13 @@
 """Haddock suppport."""
 
-load (":path_utils.bzl",
-      "path_to_module",
-)
+load (":path_utils.bzl", "path_to_module")
 
 load(":tools.bzl",
-     "get_haddock",
-     "get_build_tools_path",
+  "get_haddock",
+  "get_build_tools_path",
 )
 
-load(":toolchain.bzl",
-     "HaskellPackageInfo"
-)
+load(":toolchain.bzl", "HaskellPackageInfo")
 
 load("@bazel_skylib//:lib.bzl", "paths")
 
@@ -102,10 +98,16 @@ def _haskell_haddock_aspect_impl(target, ctx):
 
   static_haddock_outputs = [
     ctx.actions.declare_file(f, sibling=haddock_interface)
-    for f in ["doc-index.html", "haddock-util.js",
-              "hslogo-16.png",
-              "index.html", "minus.gif", "ocean.css", "plus.gif",
-              "synopsis.png"]
+    for f in [
+      "doc-index.html",
+      "haddock-util.js",
+      "hslogo-16.png",
+      "index.html",
+      "minus.gif",
+      "ocean.css",
+      "plus.gif",
+      "synopsis.png"
+    ]
   ]
 
   module_htmls = [

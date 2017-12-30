@@ -1,13 +1,11 @@
 """hsc file handling."""
 
 load(":path_utils.bzl",
-     "declare_compiled",
-     "mk_name",
+  "declare_compiled",
+  "mk_name",
 )
 
-load(":tools.bzl",
-     "get_hsc2hs",
-)
+load(":tools.bzl", "get_hsc2hs")
 
 def hsc_to_hs(ctx):
   """Process all hsc files into Haskell source files.

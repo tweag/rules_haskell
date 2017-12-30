@@ -1,25 +1,25 @@
 """Entry point to rules_haskell."""
 
 load(":toolchain.bzl",
-     "HaskellPackageInfo",
-     "compile_haskell_bin",
-     "compile_haskell_lib",
-     "create_dynamic_library",
-     "create_ghc_package",
-     "create_static_library",
-     "gather_dependency_information",
-     "get_pkg_id",
-     "link_haskell_bin",
+  "HaskellPackageInfo",
+  "compile_haskell_bin",
+  "compile_haskell_lib",
+  "create_dynamic_library",
+  "create_ghc_package",
+  "create_static_library",
+  "gather_dependency_information",
+  "get_pkg_id",
+  "link_haskell_bin",
 )
 
 load(":c_compile.bzl",
-     "c_compile_dynamic",
-     "c_compile_static",
+  "c_compile_dynamic",
+  "c_compile_static",
 )
 
 # Re-export haskell_haddock
 load (":haddock.bzl",
-      _haskell_haddock = "haskell_haddock",
+  _haskell_haddock = "haskell_haddock",
 )
 
 def _haskell_binary_impl(ctx):

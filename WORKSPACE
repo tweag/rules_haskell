@@ -2,7 +2,7 @@ workspace(name = "io_tweag_rules_haskell")
 
 local_repository(
   name = "examples",
-  path = "examples"
+  path = "examples",
 )
 
 http_archive(
@@ -21,7 +21,7 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
 nixpkgs_package(
   name = "ghc",
-  attribute_path = "haskell.compiler.ghc822"
+  attribute_path = "haskell.compiler.ghc822",
 )
 
 # For tests
