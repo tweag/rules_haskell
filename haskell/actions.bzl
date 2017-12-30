@@ -50,6 +50,10 @@ _DefaultCompileInfo = provider(
   },
 )
 
+def _hs_srcs(ctx):
+  """Return sources that correspond to a Haskell module."""
+  return [f for f in ctx.files.srcs if f.extension in ["hs", "hsc"]]
+
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
 
@@ -166,8 +170,10 @@ def compile_haskell_lib(ctx):
     "-static", "-dynamic-too",
   ])
 
-  object_dyn_files = [declare_compiled(ctx, s, ".dyn_o", directory=c.objects_dir)
-                      for s in ctx.files.srcs]
+  object_dyn_files = [
+    declare_compiled(ctx, s, ".dyn_o", directory=c.objects_dir)
+    for s in _hs_srcs(ctx)
+  ]
 
   ctx.actions.run(
     inputs = c.inputs,
@@ -293,7 +299,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, sta
     "key": get_pkg_id(ctx),
     "exposed": "True",
     "exposed-modules":
-      " ".join([path_to_module(ctx, f) for f in ctx.files.srcs]),
+      " ".join([path_to_module(ctx, f) for f in _hs_srcs(ctx)]),
     "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
     "library-dirs": paths.join("${pkgroot}", static_library_dir.basename),
     "dynamic-library-dirs":
@@ -372,14 +378,17 @@ def compilation_defaults(ctx):
     args.add(["-package-db", c.dirname])
 
   # We want object and dynamic objects from all inputs.
-  object_files = [declare_compiled(ctx, s, ".o", directory=objects_dir)
-                  for s in ctx.files.srcs]
+  object_files = [
+    declare_compiled(ctx, s, ".o", directory=objects_dir)
+    for s in _hs_srcs(ctx)
+  ]
 
   # We need to keep interface files we produce so we can import
   # modules cross-package.
-  interface_files = [declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
-                     for s in ctx.files.srcs]
-
+  interface_files = [
+    declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
+    for s in _hs_srcs(ctx)
+  ]
 
   # Include any non-Haskell dependencies in inputs.
   external_files = [f for dep in ctx.attr.external_deps for f in dep.files.to_list()]
