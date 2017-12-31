@@ -2,7 +2,6 @@ package(default_testonly = 1)
 
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_binary",
-  "haskell_import",
   "haskell_library",
 )
 
@@ -106,5 +105,15 @@ rule_test(
   name = "test-haskell_test",
   generates = ["haskell_test"],
   rule = "//tests/haskell_test",
+  size = "small",
+)
+
+rule_test(
+  name = "test-library-with-sysincludes",
+  generates =
+    ["library-with-sysincludes-1.0.0/library-with-sysincludes-1.0.0.conf",
+     "library-with-sysincludes-1.0.0/package.cache",
+    ],
+  rule = "//tests/library-with-sysincludes",
   size = "small",
 )

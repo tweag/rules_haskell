@@ -26,13 +26,26 @@ nixpkgs_package(
 
 # For tests
 
+register_toolchains("//tests:toolchain")
+
 nixpkgs_package(name = "zlib", build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
 filegroup (
   name = "lib",
-  srcs = glob(["nix/lib/**/*.so"]),
-  visibility = ["//visibility:public"],
+  srcs = glob(["nix/lib/*.so"]),
   testonly = 1,
-)""",
+)
+""",
 )
 
-register_toolchains("//tests:toolchain")
+nixpkgs_package(name = "zlib.dev", build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup (
+  name = "include",
+  srcs = glob(["nix/include/*.h"]),
+  testonly = 1,
+)
+""",
+)

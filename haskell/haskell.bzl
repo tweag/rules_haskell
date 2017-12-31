@@ -22,6 +22,11 @@ load (":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
 )
 
+load(":cc.bzl",
+  "CcSkylarkApiProviderHacked",
+  _haskell_cc_import = "haskell_cc_import",
+)
+
 _haskell_common_attrs = {
   "src_strip_prefix": attr.string(
     mandatory=False,
@@ -150,5 +155,4 @@ haskell_haddock = _haskell_haddock
 
 haskell_toolchain = _haskell_toolchain
 
-def haskell_import(name, shared_library, visibility = None):
-  native.alias(name = name, actual = shared_library, visibility = visibility)
+haskell_cc_import = _haskell_cc_import

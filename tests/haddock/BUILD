@@ -2,12 +2,12 @@ package(default_testonly = 1, default_visibility = ["//visibility:public"])
 
 load(
   "@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_import",
   "haskell_library",
   "haskell_haddock",
+  "haskell_cc_import",
 )
 
-haskell_import(name = "zlib", shared_library = "@zlib//:lib")
+haskell_cc_import(name = "zlib", shared_library = "@zlib//:lib")
 
 haskell_library(
   name = "haddock-lib-deep",

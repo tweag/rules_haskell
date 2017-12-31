@@ -13,8 +13,8 @@ run tests, you'll furthermore need [Nix][nix] installed.
 
 * [haskell_binary](#haskell_binary)
 * [haskell_library](#haskell_library)
-* [haskell_toolchain](#haskell_import)
-* [haskell_import](#haskell_import)
+* [haskell_toolchain](#haskell_toolchain)
+* [haskell_cc_import](#haskell_cc_import)
 * [haskell_haddock](#haskell_haddock)
 * [haskell_test](#haskell_test)
 
@@ -39,7 +39,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_binary",
   "haskell_library",
   "haskell_toolchain",
-  "haskell_import",
+  "haskell_cc_import",
 )
 
 haskell_toolchain(
@@ -242,15 +242,16 @@ register_toolchain("//:sys_ghc")
   </tbody>
 </table>
 
-### haskell_import
+### haskell_cc_import
 
 Imports a prebuilt shared library. Use this to make `.so`, `.dll`,
 `.dylib` files residing in
 external [external repositories][bazel-ext-repos] available to Haskell
-rules.
+rules. This rule is temporary replacement for [cc_import][cc_import]
+and will be deprecated in the future.
 
 ```bzl
-haskell_import(name, shared_library, visibility = None)
+haskell_cc_import(name, shared_library, hdrs)
 ```
 
 [bazel-ext-repos]: https://docs.bazel.build/versions/master/external.html
@@ -258,7 +259,7 @@ haskell_import(name, shared_library, visibility = None)
 #### Example
 
 ```bzl
-haskell_import(name = "zlib", shared_library = "@zlib//:lib")
+haskell_cc_import(name = "zlib", shared_library = "@zlib//:lib")
 
 haskell_binary(
   name = "crc32sum",
@@ -291,6 +292,13 @@ haskell_binary(
       <td>
         <p><code>Label, required</code></p>
         <p>A single precompiled shared library.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>hdrs</code></td>
+      <td>
+        <p><code>Label list, optional</code></p>
+        <p>Public headers that ship with the library.</p>
       </td>
     </tr>
   </tbody>
