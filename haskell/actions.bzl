@@ -18,6 +18,8 @@ load(":hsc2hs.bzl",
      "hsc_to_hs",
 )
 
+load(":cc.bzl", "cc_headers")
+
 load("@bazel_skylib//:lib.bzl", "paths")
 
 HaskellPackageInfo = provider(
@@ -395,6 +397,8 @@ def compilation_defaults(ctx):
     for s in _hs_srcs(ctx)
   ]
 
+  hdrs, include_args = cc_headers(ctx)
+  args.add(include_args)
 
   # Lastly add all the processed sources.
   args.add(sources)
@@ -403,6 +407,7 @@ def compilation_defaults(ctx):
     args = args,
     inputs = depset(transitive = [
       depset(sources),
+      depset(hdrs),
       dep_info.confs,
       dep_info.caches,
       dep_info.interface_files,
