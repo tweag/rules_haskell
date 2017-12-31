@@ -38,19 +38,11 @@ def _process_hsc_file(ctx, hsc_file):
 
   # Output a Haskell source file.
   hs_out = declare_compiled(ctx, hsc_file, ".hs", directory=hsc_output_dir)
-  # Make all external dependency files available.
-  external_files = depset([f for dep in ctx.attr.external_deps
-                             for f in dep.files])
-  # Add all directories of external dependencies to include dirs.
-  include_directories = depset([f.dirname for f in external_files.to_list()])
-
   args = ctx.actions.args()
   args.add([hsc_file, "-o", hs_out])
-  for include_dir in include_directories.to_list():
-    args.add(["-I", include_dir])
 
   ctx.actions.run(
-    inputs = depset(transitive = [external_files, depset([hsc_file])]),
+    inputs = depset([hsc_file]),
     outputs = [hs_out, hsc_output_dir],
     use_default_shell_env = True,
     progress_message = "hsc2hs {0}".format(hsc_file.basename),

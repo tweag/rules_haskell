@@ -40,10 +40,6 @@ _haskell_common_attrs = {
   "compiler_flags": attr.string_list(
     doc="Flags to pass to Haskell compiler while compiling this rule's sources."
   ),
-  "external_deps": attr.label_list(
-    allow_files=True,
-    doc="Non-Haskell dependencies",
-  ),
   "prebuilt_dependencies": attr.string_list(
     doc="Haskell packages which are magically available such as wired-in packages."
   ),
