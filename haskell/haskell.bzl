@@ -12,11 +12,6 @@ load(":actions.bzl",
   "link_haskell_bin",
 )
 
-load(":c_compile.bzl",
-  "c_compile_dynamic",
-  "c_compile_static",
-)
-
 # Re-export haskell_haddock
 load (":haddock.bzl",
   _haskell_haddock = "haskell_haddock",
@@ -27,14 +22,19 @@ load (":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
 )
 
+load(":cc.bzl",
+  "CcSkylarkApiProviderHacked",
+  _haskell_cc_import = "haskell_cc_import",
+)
+
 _haskell_common_attrs = {
   "src_strip_prefix": attr.string(
     mandatory=False,
     doc="Directory in which module hierarchy starts."
   ),
   "srcs": attr.label_list(
-    allow_files=FileType([".hs", ".hsc", ".c"]),
-    doc="A list of source files (Haskell, C) to be built by this rule."
+    allow_files=FileType([".hs", ".hsc"]),
+    doc="A list of source files to be built by this rule."
   ),
   "copts": attr.string_list(
     doc="Options to pass to C compiler for any C source files."
@@ -44,10 +44,6 @@ _haskell_common_attrs = {
   ),
   "compiler_flags": attr.string_list(
     doc="Flags to pass to Haskell compiler while compiling this rule's sources."
-  ),
-  "external_deps": attr.label_list(
-    allow_files=True,
-    doc="Non-Haskell dependencies",
   ),
   "prebuilt_dependencies": attr.string_list(
     doc="Haskell packages which are magically available such as wired-in packages."
@@ -97,14 +93,12 @@ haskell_binary = _mk_binary_rule()
 def _haskell_library_impl(ctx):
   interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(ctx)
 
-  c_object_files = c_compile_static(ctx)
   static_library_dir, static_library = create_static_library(
-    ctx, object_files + c_object_files
+    ctx, object_files
   )
 
-  c_object_dyn_files = c_compile_dynamic(ctx)
   dynamic_library_dir, dynamic_library = create_dynamic_library(
-    ctx, object_dyn_files + c_object_dyn_files
+    ctx, object_dyn_files
   )
 
   # Create and register ghc package.
@@ -161,5 +155,4 @@ haskell_haddock = _haskell_haddock
 
 haskell_toolchain = _haskell_toolchain
 
-def haskell_import(name, shared_library, visibility = None):
-  native.alias(name = name, actual = shared_library, visibility = visibility)
+haskell_cc_import = _haskell_cc_import

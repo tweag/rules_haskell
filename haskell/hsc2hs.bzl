@@ -7,6 +7,8 @@ load(":path_utils.bzl",
 
 load(":tools.bzl", "get_hsc2hs")
 
+load(":cc.bzl", "cc_headers")
+
 def hsc_to_hs(ctx):
   """Process all hsc files into Haskell source files.
 
@@ -35,22 +37,18 @@ def _process_hsc_file(ctx, hsc_file):
     File: Haskell source file created by processing hsc_file.
   """
   hsc_output_dir = ctx.actions.declare_directory(mk_name(ctx, "hsc_processed"))
+  args = ctx.actions.args()
 
   # Output a Haskell source file.
   hs_out = declare_compiled(ctx, hsc_file, ".hs", directory=hsc_output_dir)
-  # Make all external dependency files available.
-  external_files = depset([f for dep in ctx.attr.external_deps
-                             for f in dep.files])
-  # Add all directories of external dependencies to include dirs.
-  include_directories = depset([f.dirname for f in external_files.to_list()])
-
-  args = ctx.actions.args()
   args.add([hsc_file, "-o", hs_out])
-  for include_dir in include_directories.to_list():
-    args.add(["-I", include_dir])
+
+  # Bring in scope the header files of dependencies, if any.
+  hdrs, include_args = cc_headers(ctx)
+  args.add(include_args)
 
   ctx.actions.run(
-    inputs = depset(transitive = [external_files, depset([hsc_file])]),
+    inputs = depset(transitive = [depset(hdrs), depset([hsc_file])]),
     outputs = [hs_out, hsc_output_dir],
     use_default_shell_env = True,
     progress_message = "hsc2hs {0}".format(hsc_file.basename),
