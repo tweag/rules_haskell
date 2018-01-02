@@ -131,8 +131,22 @@ def link_haskell_bin(ctx, object_files):
     link_args.extend(["-optl", o.path])
 
   dep_info = gather_dependency_information(ctx)
+  # De-duplicate optl calls while preserving ordering: we want last
+  # invocation of an object to remain last. That is `-optl foo -optl
+  # bar -optl foo` becomes `-optl bar -optl foo`. Do this by counting
+  # number of occurences. That way we only build dict and add to args
+  # directly rather than doing multiple reversals with temporary
+  # lists.
+  link_paths = {}
   for lib in dep_info.static_libraries:
-    link_args.extend(["-optl", lib.path])
+    link_paths[lib] = link_paths.get(lib, 0) + 1
+
+  for lib in dep_info.static_libraries:
+    occ = link_paths.get(lib, 0)
+    # This is the last occurrence of the lib, insert it.
+    if occ == 1:
+      link_args.extend(["-optl", lib.path])
+    link_paths[lib] = occ - 1
 
   # We have to remember to specify all (transitive) wired-in
   # dependencies or we can't find objects for linking.
