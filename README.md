@@ -2,6 +2,8 @@
 
 [![CircleCI](https://circleci.com/gh/tweag/rules_haskell.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell)
 
+**NOTE: this is alpha quality software. Please don't publicize widely.**
+
 To use these rules, you'll need [Bazel >= 0.8.1][bazel-install]. To
 run tests, you'll furthermore need [Nix][nix] installed.
 
