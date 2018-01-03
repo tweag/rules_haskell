@@ -54,6 +54,19 @@ _haskell_common_attrs = {
     default="1.0.0",
     doc="Package/binary version"
   ),
+  # Allows us to inject arbitrary files that may be needed at GHC's
+  # runtime.
+  #
+  # TODO: This is not very nice, things just get dumped into the env:
+  # you have to know exactly what you're passing in to make any real
+  # use of it. Apparently java rules &c. manage to put things from
+  # their data fields into tidy data directories. We should do that if
+  # we stick with this.
+  "data": attr.label_list(
+    mandatory=False,
+    default=[],
+    doc="Any additional data needed at compilation time."
+  ),
 }
 
 def _haskell_binary_impl(ctx):

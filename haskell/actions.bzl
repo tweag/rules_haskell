@@ -414,6 +414,7 @@ def compilation_defaults(ctx):
       dep_info.dynamic_libraries,
       get_build_tools(ctx),
       dep_info.external_libraries,
+      depset([ f for data_dep in ctx.attr.data for f in data_dep.files ]),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + interface_files,
     objects_dir = objects_dir,
