@@ -113,7 +113,7 @@ haskell_binary(
       <td><code>deps</code></td>
       <td>
         <p><code>List of labels, required</code></p>
-        <p>List of other Haskell libraries to be linked to this target</p>
+        <p>List of dependencies to of this target</p>
       </td>
     </tr>
   </tbody>
@@ -166,7 +166,7 @@ haskell_library(
       <td><code>deps</code></td>
       <td>
         <p><code>List of labels, required</code></p>
-        <p>List of other Haskell libraries to be linked to this target</p>
+        <p>List of dependencies to of this target</p>
       </td>
     </tr>
   </tbody>
@@ -360,3 +360,17 @@ accepts [all common bazel test rule
 fields](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests).
 This allows you to influence things like timeout and resource
 allocation for the test.
+
+## Language interop
+
+We may be supporting interop with other languages in one way or
+another. Please see languages listed below about how.
+
+### Java
+
+You can supply `java_*` rule targets in `deps` of
+[haskell_binary](#haskell_binary) and
+[haskell_library](#haskell_library). This will make jars produced by
+those dependencies available during Haskell source compilation phase
+(i.e. not during linking &c. but it's subject to change) and set the
+CLASSPATH for that phase as well.

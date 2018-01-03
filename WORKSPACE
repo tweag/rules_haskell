@@ -49,3 +49,8 @@ filegroup (
 )
 """,
 )
+
+maven_jar(
+  name = "org_apache_spark_spark_core_2_10",
+  artifact = "org.apache.spark:spark-core_2.10:1.6.0",
+)
