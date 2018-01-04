@@ -138,14 +138,16 @@ def _haskell_library_impl(ctx):
       ]
     ),
     external_libraries = dep_info.external_libraries
-  )]
+  ),
+  DefaultInfo(files = depset([
+      conf_file,
+      cache_file,
+      dynamic_library,
+  ])),
+  ]
 
 haskell_library = rule(
   _haskell_library_impl,
-  outputs = {
-    "conf": "%{name}-%{version}/%{name}-%{version}.conf",
-    "package_cache": "%{name}-%{version}/package.cache"
-  },
   attrs = _haskell_common_attrs,
   host_fragments = ["cpp"],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],

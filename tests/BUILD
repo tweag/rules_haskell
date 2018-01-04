@@ -59,6 +59,7 @@ rule_test(
   generates =
     ["library-deps-1.0.0/library-deps-1.0.0.conf",
      "library-deps-1.0.0/package.cache",
+     "dynlib-library-deps-1.0.0/libHSlibrary-deps-1.0.0-ghc8.2.2.so",
     ],
   rule = "//tests/library-deps",
   size = "small",
@@ -69,6 +70,7 @@ rule_test(
   generates =
     ["library-with-sysdeps-1.0.0/library-with-sysdeps-1.0.0.conf",
      "library-with-sysdeps-1.0.0/package.cache",
+     "dynlib-library-with-sysdeps-1.0.0/libHSlibrary-with-sysdeps-1.0.0-ghc8.2.2.so",
     ],
   rule = "//tests/library-with-sysdeps",
   size = "small",
@@ -113,6 +115,7 @@ rule_test(
   generates =
     ["library-with-sysincludes-1.0.0/library-with-sysincludes-1.0.0.conf",
      "library-with-sysincludes-1.0.0/package.cache",
+     "dynlib-library-with-sysincludes-1.0.0/libHSlibrary-with-sysincludes-1.0.0-ghc8.2.2.so",
     ],
   rule = "//tests/library-with-sysincludes",
   size = "small",
