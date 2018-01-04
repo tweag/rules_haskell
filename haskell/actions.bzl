@@ -503,7 +503,7 @@ def gather_dependency_information(ctx):
       new_external_libraries = new_external_libraries.union(pkg.external_libraries)
       hpi = HaskellPackageInfo(
         name = hpi.name,
-        names = hpi.names + pkg.names,
+        names = hpi.names + [pkg.name],
         confs = hpi.confs + pkg.confs,
         caches = hpi.caches + pkg.caches,
         static_libraries = hpi.static_libraries + pkg.static_libraries,
