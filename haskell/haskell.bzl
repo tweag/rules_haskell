@@ -93,11 +93,11 @@ haskell_binary = _mk_binary_rule()
 def _haskell_library_impl(ctx):
   interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(ctx)
 
-  static_library_dir, static_library = create_static_library(
+  static_library = create_static_library(
     ctx, object_files
   )
 
-  dynamic_library_dir, dynamic_library = create_dynamic_library(
+  dynamic_library = create_dynamic_library(
     ctx, object_dyn_files
   )
 
@@ -107,8 +107,6 @@ def _haskell_library_impl(ctx):
     interfaces_dir,
     static_library,
     dynamic_library,
-    static_library_dir,
-    dynamic_library_dir,
   )
 
   dep_info = gather_dependency_information(ctx)
@@ -124,12 +122,6 @@ def _haskell_library_impl(ctx):
     ),
     interface_files = depset(
       transitive = [dep_info.interface_files, depset(interface_files)]
-    ),
-    static_library_dirs = depset(
-      transitive = [dep_info.static_library_dirs, depset([static_library_dir])]
-    ),
-    dynamic_library_dirs = depset(
-      transitive = [dep_info.dynamic_library_dirs, depset([dynamic_library_dir])]
     ),
     prebuilt_dependencies = depset(
       transitive = [
