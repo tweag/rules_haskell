@@ -22,6 +22,25 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 nixpkgs_package(
   name = "ghc",
   attribute_path = "haskell.compiler.ghc822",
+  build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "bin",
+  srcs = glob(["nix/bin/*"]),
+)
+
+filegroup(
+  name = "lib",
+  srcs = glob(["nix/lib/**/*.so"]),
+)
+
+cc_library(
+  name = "headers",
+  hdrs = glob(["nix/lib/ghc-*/include/**/*.h"]),
+  strip_include_prefix = glob(["nix/lib/ghc-*/include"], exclude_directories=0)[0],
+)
+""",
 )
 
 # For tests
