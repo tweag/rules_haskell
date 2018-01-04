@@ -37,8 +37,6 @@ HaskellPackageInfo = provider(
     "static_libraries": "Compiled library archives.",
     "dynamic_libraries": "Dynamic libraries.",
     "interface_files": "Interface files belonging to the packages.",
-    "static_library_dirs": "Library file directories",
-    "dynamic_library_dirs": "Dynamic library file directories",
     "prebuilt_dependencies": "Transitive collection of all wired-in Haskell dependencies.",
     "external_libraries": "Non-Haskell libraries needed for linking. List of shared libs.",
   }
@@ -219,10 +217,9 @@ def create_static_library(ctx, object_files):
     object_files: All object files to include in the library.
 
   Returns:
-    (File, File): Directory containing the static library and the library itself.
+    File: Produced static library.
   """
-  static_library_dir = ctx.actions.declare_directory(mk_name(ctx, "lib"))
-  static_library = ctx.actions.declare_file(paths.join(static_library_dir.basename, "lib{0}.a".format(get_library_name(ctx))))
+  static_library = ctx.actions.declare_file("lib{0}.a".format(get_library_name(ctx)))
 
   args = ctx.actions.args()
   args.add(["qc", static_library])
@@ -230,11 +227,11 @@ def create_static_library(ctx, object_files):
 
   ctx.actions.run(
     inputs = object_files,
-    outputs = [static_library, static_library_dir],
+    outputs = [static_library],
     executable = ctx.host_fragments.cpp.ar_executable,
     arguments = [args],
   )
-  return static_library_dir, static_library
+  return static_library
 
 def create_dynamic_library(ctx, object_files):
   """Create a dynamic library for the package using given object files.
@@ -244,17 +241,14 @@ def create_dynamic_library(ctx, object_files):
     object_files: Object files to use for linking.
 
   Returns:
-    (File, File): Directory containing the dynamic library and the library itself.
+    File: Produced dynamic library.
   """
 
   # Make shared library
   version = get_compiler_version(ctx)
-  dynamic_library_dir = ctx.actions.declare_directory(mk_name(ctx, "dynlib"))
   dynamic_library = ctx.actions.declare_file(
-    paths.join(dynamic_library_dir.basename,
-               "lib{0}-ghc{1}.so".format(get_library_name(ctx), version))
+    "lib{0}-ghc{1}.so".format(get_library_name(ctx), version)
   )
-
   args = ["-shared", "-dynamic", "-o", dynamic_library.path]
 
   dep_info = gather_dependency_information(ctx)
@@ -286,16 +280,16 @@ def create_dynamic_library(ctx, object_files):
                                   dep_info.dynamic_libraries,
                                   dep_info.external_libraries,
                                   get_build_tools(ctx)]),
-    outputs = [dynamic_library_dir, dynamic_library],
+    outputs = [dynamic_library],
     env = {
       "PATH": get_build_tools_path(ctx),
     },
     command = " ".join([get_compiler(ctx).path] + args)
   )
 
-  return dynamic_library_dir, dynamic_library
+  return dynamic_library
 
-def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, static_library_dir, dynamic_library_dir):
+def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
   """Create GHC package using ghc-pkg.
 
   Args:
@@ -303,8 +297,6 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, sta
     interfaces_dir: Directory containing interface files.
     static_library: Static library of the package.
     dynamic_library: Dynamic library of the package.
-    static_library_dir: Directory containing static library.
-    dynamic_library_dir: Directory containing dynamic library.
 
   Returns:
     (File, File): GHC package conf file, GHC package cache file
@@ -324,9 +316,8 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, sta
     "exposed-modules":
       " ".join([path_to_module(ctx, f) for f in _hs_srcs(ctx)]),
     "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
-    "library-dirs": paths.join("${pkgroot}", static_library_dir.basename),
-    "dynamic-library-dirs":
-      paths.join("${pkgroot}", dynamic_library_dir.basename),
+    "library-dirs": "${pkgroot}",
+    "dynamic-library-dirs": "${pkgroot}",
     "hs-libraries": get_library_name(ctx),
     "depends":
       ", ".join([ d[HaskellPackageInfo].name for d in ctx.attr.deps if HaskellPackageInfo in d])
@@ -490,8 +481,6 @@ def gather_dependency_information(ctx):
     static_libraries = [],
     dynamic_libraries = depset(),
     interface_files = depset(),
-    static_library_dirs = depset(),
-    dynamic_library_dirs = depset(),
     prebuilt_dependencies = depset(ctx.attr.prebuilt_dependencies),
     external_libraries = depset(),
   )
@@ -509,8 +498,6 @@ def gather_dependency_information(ctx):
         static_libraries = hpi.static_libraries + pkg.static_libraries,
         dynamic_libraries = hpi.dynamic_libraries + pkg.dynamic_libraries,
         interface_files = hpi.interface_files + pkg.interface_files,
-        static_library_dirs = hpi.static_library_dirs + pkg.static_library_dirs,
-        dynamic_library_dirs = hpi.dynamic_library_dirs + pkg.dynamic_library_dirs,
         prebuilt_dependencies = hpi.prebuilt_dependencies + pkg.prebuilt_dependencies,
         external_libraries = new_external_libraries,
       )
@@ -525,8 +512,6 @@ def gather_dependency_information(ctx):
         static_libraries = hpi.static_libraries,
         dynamic_libraries = hpi.dynamic_libraries,
         interface_files = hpi.interface_files,
-        static_library_dirs = hpi.static_library_dirs,
-        dynamic_library_dirs = hpi.dynamic_library_dirs,
         prebuilt_dependencies = hpi.prebuilt_dependencies,
         # Only let through shared objects rather than blindly passing
         # everything through: we only need link targets in
