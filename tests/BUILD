@@ -117,3 +117,10 @@ rule_test(
   rule = "//tests/library-with-sysincludes",
   size = "small",
 )
+
+rule_test(
+  name = "test-java_classpath",
+  generates = ["java_classpath"],
+  rule = "//tests/java_classpath",
+  size = "small",
+)

@@ -20,7 +20,12 @@ load(":hsc2hs.bzl",
 
 load(":cc.bzl", "cc_headers")
 
-load("@bazel_skylib//:lib.bzl", "paths")
+load(":java_interop.bzl",
+     "JavaInteropInfo",
+     "java_interop_info",
+)
+
+load("@bazel_skylib//:lib.bzl", "paths", "dicts")
 
 HaskellPackageInfo = provider(
   doc = "Package information exposed by Haskell libraries.",
@@ -49,6 +54,7 @@ _DefaultCompileInfo = provider(
     "interfaces_dir": "Interface files directory.",
     "object_files": "Object files.",
     "interface_files": "Interface files.",
+    "env": "Default env vars."
   },
 )
 
@@ -72,9 +78,7 @@ def compile_haskell_bin(ctx):
     inputs = c.inputs,
     outputs = c.outputs,
     progress_message = "Building {0}".format(ctx.attr.name),
-    env = {
-      "PATH": get_build_tools_path(ctx)
-    },
+    env = c.env,
     executable = get_compiler(ctx),
     arguments = [c.args]
   )
@@ -200,9 +204,7 @@ def compile_haskell_lib(ctx):
     inputs = c.inputs,
     outputs = c.outputs + object_dyn_files,
     progress_message = "Compiling {0}".format(ctx.attr.name),
-    env = {
-      "PATH": get_build_tools_path(ctx),
-    },
+    env = c.env,
     executable = get_compiler(ctx),
     arguments = [c.args],
   )
@@ -417,6 +419,9 @@ def compilation_defaults(ctx):
   # Lastly add all the processed sources.
   args.add(sources)
 
+  # Add any interop info for other languages.
+  java = java_interop_info(ctx)
+
   return _DefaultCompileInfo(
     args = args,
     inputs = depset(transitive = [
@@ -428,12 +433,17 @@ def compilation_defaults(ctx):
       dep_info.dynamic_libraries,
       get_build_tools(ctx),
       dep_info.external_libraries,
+      java.inputs,
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + interface_files,
     objects_dir = objects_dir,
     interfaces_dir = interfaces_dir,
     object_files = object_files,
     interface_files = interface_files,
+    env = dicts.add(
+      { "PATH": get_build_tools_path(ctx) },
+      java.env,
+    ),
   )
 
 def get_pkg_id(ctx):
@@ -518,6 +528,11 @@ def gather_dependency_information(ctx):
         static_library_dirs = hpi.static_library_dirs,
         dynamic_library_dirs = hpi.dynamic_library_dirs,
         prebuilt_dependencies = hpi.prebuilt_dependencies,
-        external_libraries = hpi.external_libraries.union(depset(dep.files)),
+        # Only let through shared objects rather than blindly passing
+        # everything through: we only need link targets in
+        # external_libraries.
+        external_libraries = hpi.external_libraries.union(depset([
+          f for f in dep.files.to_list() if f.extension == "so"
+        ])),
       )
   return hpi
