@@ -32,13 +32,33 @@ run tests, you'll furthermore need [Nix][nix] installed.
 
 ## Setup
 
-Add the following to your `WORKSPACE` file, and select a `$COMMIT` accordingly.
+### The easy way
+
+In a fresh directory, run:
+
+```console
+$ curl https://haskell.build/start | sh
+```
+
+This will generate initial `WORKSPACE` and `BUILD` files for you. See
+the [examples](./examples) directory and the [API reference](#Rules)
+below to adapt these for you project. Then,
+
+```console
+$ bazel build //...    # Build all targets
+$ bazel test //...     # Run all tests
+```
+
+### Doing it manually
+
+Add the following to your `WORKSPACE` file, and select a `v$VERSION`
+(or even an arbitrary commit hash) accordingly.
 
 ```bzl
 http_archive(
-    name = "io_tweag_rules_haskell",
-    strip_prefix = "rules_haskell-$COMMIT",
-    urls = ["https://github.com/tweag/rules_haskell/archive/$COMMIT.tar.gz"],
+  name = "io_tweag_rules_haskell",
+  strip_prefix = "rules_haskell-$VERSION",
+  urls = ["https://github.com/tweag/rules_haskell/archive/v$VERSION.tar.gz"],
 )
 
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
@@ -47,14 +67,11 @@ haskell_repositories()
 register_toolchains("//:ghc")
 ```
 
-and this to your BUILD files.
+Then, add this to your root `BUILD` file:
 
 ```bzl
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_binary",
-  "haskell_library",
   "haskell_toolchain",
-  "haskell_cc_import",
 )
 
 haskell_toolchain(
@@ -65,15 +82,30 @@ haskell_toolchain(
 ```
 
 The `haskell_toolchain` rule instantiation brings a GHC compiler in
-scope. It assumes an [external repository][external-repositories]
+scope. It assumes that an [external repository][external-repositories]
 called `@my_ghc` was defined, pointing to an installation of GHC. The
-only supported option currently is to provision GHC using Nix. This is
-done by adding the following to your `WORKSPACE` file:
+recommended option is to provision GHC using Nix, but you can also
+point to an existing local installation somewhere in your filesystem.
+Using Nix, this is done by adding the following to your `WORKSPACE`
+file:
 
 ```bzl
 nixpkgs_package(
   name = "my_ghc",
   attribute_path = "haskell.compiler.ghc822"
+)
+```
+
+Alternatively, you can point to an existing global installation:
+
+```bzl
+new_local_package(
+  name = "my_ghc",
+  path = "/usr/local", # Change path accordingly.
+  build_file_content = """
+package(default_visibility = ["//visibility:public"])
+filegroup (name = "bin", srcs = glob(["bin/ghc*"]))
+  """
 )
 ```
 
