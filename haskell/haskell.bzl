@@ -98,6 +98,11 @@ def _haskell_library_impl(ctx):
   dep_info = gather_dependency_information(ctx)
   return [HaskellPackageInfo(
     name = dep_info.name,
+    # TODO this is somewhat useless now, we shouldn't be abusing
+    # HaskellPackageInfo to carry information only relevant during
+    # build just to throw it away later as upstream doesn't need this.
+    # Technically Haddock rule relies on this but it should gather its
+    # own info.
     names = depset(transitive = [dep_info.names, depset([get_pkg_id(ctx)])]),
     confs = depset(transitive = [dep_info.confs, depset([conf_file])]),
     caches = depset(transitive = [dep_info.caches, depset([cache_file])]),
