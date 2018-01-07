@@ -11,11 +11,8 @@ http_archive(
   urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.1.tar.gz"],
 )
 
-http_archive(
-  name = "bazel_skylib",
-  strip_prefix = "bazel-skylib-0.2.0",
-  urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.2.0.tar.gz"]
-)
+load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+haskell_repositories()
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
