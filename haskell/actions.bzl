@@ -233,7 +233,7 @@ def create_static_library(ctx, object_files):
   Returns:
     File: Static library.
   """
-  static_library = "lib{0}.a".format(get_library_name(ctx))
+  static_library = ctx.actions.declare_file("lib{0}.a".format(get_library_name(ctx)))
 
   args = ctx.actions.args()
   args.add(["qc", static_library])
@@ -492,7 +492,7 @@ def gather_dependency_information(ctx):
     name = get_pkg_id(ctx),
     names = [],
     confs = [],
-    Caches = [],
+    caches = [],
     static_libraries = [],
     dynamic_libraries = [],
     interface_files = [],
@@ -517,12 +517,20 @@ def gather_dependency_information(ctx):
     else:
       # If not a Haskell dependency, pass it through as-is to the
       # linking phase.
-
-      # Only let through shared objects rather than blindly passing
-      # everything through: we only need link targets in
-      # external_libraries.
-      hpi.external_libraries = hpi.external_libraries.union(depset([
-        f for f in dep.files.to_list() if f.extension == "so"
-      ]))
-
+      hpi = _HaskellBuildInfo(
+        name = hpi.name,
+        names = hpi.names,
+        confs = hpi.confs,
+        caches = hpi.caches,
+        static_libraries = hpi.static_libraries,
+        dynamic_libraries = hpi.dynamic_libraries,
+        interface_files = hpi.interface_files,
+        prebuilt_dependencies = hpi.prebuilt_dependencies,
+        # Only let through shared objects rather than blindly passing
+        # everything through: we only need link targets in
+        # external_libraries.
+        external_libraries = hpi.external_libraries.union(depset([
+          f for f in dep.files.to_list() if f.extension == "so"
+        ])),
+      )
   return hpi

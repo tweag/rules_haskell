@@ -14,6 +14,8 @@ load("@bazel_skylib//:lib.bzl", "paths")
 HaddockInfo = provider(
   doc = "Haddock information.",
   fields = {
+    "name": "Package name",
+    "cache": "GHC cache file",
     "outputs": "All interesting outputs produced by Haddock.",
     "interface_file": "Haddock interface file.",
     "doc_dir": "Directory where all the documentation files live.",
@@ -59,7 +61,9 @@ def _haskell_haddock_aspect_impl(target, ctx):
     # TODO: --hyperlinked-source or make a ticket
   ])
 
-  dep_interfaces = depset()
+  dep_haddock_interfaces = depset()
+  dep_caches = depset()
+  dep_haskell_interfaces = depset()
   for dep in ctx.rule.attr.deps:
     if HaddockInfo in dep:
       args.add("--read-interface={0},{1}".format(
@@ -71,8 +75,17 @@ def _haskell_haddock_aspect_impl(target, ctx):
         paths.join("..", dep[HaddockInfo].doc_dir.basename),
         dep[HaddockInfo].interface_file.path
       ))
-      dep_interfaces = depset(transitive = [
-        dep_interfaces, depset([dep[HaddockInfo].interface_file])
+      args.add("--optghc=-package {0}".format(dep[HaddockInfo].name))
+      args.add("--optghc=-package-db {0}".format(dep[HaddockInfo].cache.dirname))
+
+      dep_caches = depset(transitive = [
+        dep_caches, depset([dep[HaddockInfo].cache])
+      ])
+      dep_haddock_interfaces = depset(transitive = [
+        dep_haddock_interfaces, depset([dep[HaddockInfo].interface_file])
+      ])
+      dep_haskell_interfaces = depset(transitive = [
+        dep_haskell_interfaces, depset(dep[HaskellPackageInfo].interface_files)
       ])
 
   # Expose all prebuilt packages
@@ -80,15 +93,15 @@ def _haskell_haddock_aspect_impl(target, ctx):
     args.add("--optghc=-package {0}".format(prebuilt_dep))
 
   # Expose all bazel dependencies
-  for pkg_name in target[HaskellPackageInfo].names.to_list():
-    # Don't try to tell GHC to include the target itself.
-    if target[HaskellPackageInfo].name != pkg_name:
-      args.add("--optghc=-package {0}".format(pkg_name))
+  #for pkg_name in target[HaskellPackageInfo].names.to_list():
+  #  # Don't try to tell GHC to include the target itself.
+  #  if target[HaskellPackageInfo].name != pkg_name:
+  #    args.add("--optghc=-package {0}".format(pkg_name))
 
   # Include all package DBs we know of. Technically we shouldn't
   # include the one for target but it shouldn't hurt us.
-  for pkg_cache in target[HaskellPackageInfo].caches.to_list():
-    args.add("--optghc=-package-db {0}".format(pkg_cache.dirname))
+  #for pkg_cache in target[HaskellPackageInfo].caches.to_list():
+  #  args.add("--optghc=-package-db {0}".format(pkg_cache.dirname))
 
   # Pass same flags the user set for the build.
   for ghc_flag in ctx.rule.attr.compiler_flags:
@@ -125,9 +138,15 @@ def _haskell_haddock_aspect_impl(target, ctx):
 
   ctx.actions.run(
     inputs = depset(transitive = [
-      target[HaskellPackageInfo].caches,
-      target[HaskellPackageInfo].interface_files,
-      dep_interfaces,
+      # GHC cache files
+      depset([target[HaskellPackageInfo].cache]),
+      dep_caches,
+      # hi files
+      depset(target[HaskellPackageInfo].interface_files),
+      dep_haskell_interfaces,
+      # Haddock interface files
+      dep_haddock_interfaces,
+      # Actual source files
       depset(input_sources),
     ]),
     outputs = self_outputs,
@@ -140,6 +159,8 @@ def _haskell_haddock_aspect_impl(target, ctx):
   )
 
   return [HaddockInfo(
+    name = target[HaskellPackageInfo].name,
+    cache = target[HaskellPackageInfo].cache,
     outputs = depset(self_outputs),
     interface_file = haddock_interface,
     doc_dir = doc_dir,
