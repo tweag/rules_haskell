@@ -23,7 +23,7 @@ run tests, you'll furthermore need [Nix][nix] installed.
 | [`haskell_haddock`](#haskell_haddock) | Create API documentation. |
 | [`haskell_toolchain`](#haskell_toolchain) | Declare a compiler toolchain. |
 | [`haskell_cc_import`](#haskell_cc_import) | Import a prebuilt shared library. |
-| [`haskell_so`](#haskell_so) | Expose all transitive shared object libraries for haskell dependency. |
+| [`cc_haskell_import`](#cc_haskell_import) | Expose all transitive shared object libraries for haskell dependency. |
 
 [bazel]: https://bazel.build/
 [bazel-install]: https://docs.bazel.build/versions/master/install.html
@@ -257,7 +257,7 @@ haskell_binary(
 | `hdrs` | `Label list, required` | Public headers that ship with the library |
 
 
-### haskell_so
+### cc_haskell_import
 
 Given a [haskell_library](#haskell_library) input, it outputs the
 shared object file produced as well as the object files it depends on
@@ -280,7 +280,7 @@ haskell_library(
   …
 )
 
-haskell_so(
+cc_haskell_import(
   name = "my-lib-objects",
   dep = ":my-lib",
 )
@@ -297,7 +297,6 @@ cc_library(
 | --------: | :--- | :---------- |
 | `name` | `Name, required` | A unique name for this target |
 | `dep` | `Label, required` | Target providing a `HaskellPackageInfo` such as `haskell_library` |
-| `hdrs` | `Label list, required` | Public headers that ship with the library |
 
 ## Language interop
 

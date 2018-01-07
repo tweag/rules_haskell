@@ -2,7 +2,7 @@ package(default_testonly = 1)
 
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
    "haskell_library",
-   "haskell_so",
+   "cc_haskell_import",
 )
 
 haskell_library(
@@ -18,7 +18,7 @@ haskell_library(
   deps = [":hs-lib-a"],
 )
 
-haskell_so(
+cc_haskell_import(
   name = "hs-lib-b-so",
   dep = ":hs-lib-b",
   visibility = ["//tests:__subpackages__"],

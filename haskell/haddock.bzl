@@ -7,7 +7,7 @@ load(":tools.bzl",
   "get_build_tools_path",
 )
 
-load(":actions.bzl", "HaskellPackageInfo")
+load(":providers.bzl", "HaskellPackageInfo")
 
 load("@bazel_skylib//:lib.bzl", "paths")
 

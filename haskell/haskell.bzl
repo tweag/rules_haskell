@@ -25,6 +25,7 @@ load (":toolchain.bzl",
 load(":cc.bzl",
   "CcSkylarkApiProviderHacked",
   _haskell_cc_import = "haskell_cc_import",
+  _cc_haskell_import = "cc_haskell_import",
 )
 
 _haskell_common_attrs = {
@@ -139,17 +140,4 @@ haskell_toolchain = _haskell_toolchain
 
 haskell_cc_import = _haskell_cc_import
 
-def _haskell_so_impl(ctx):
-  if HaskellPackageInfo in ctx.attr.dep:
-    return [DefaultInfo(
-      files = ctx.attr.dep[HaskellPackageInfo].dynamic_libraries
-    )]
-  else:
-    fail("{0} has to provide HaskellPackageInfo".format(ctx.attr.dep.label.name))
-
-haskell_so = rule(
-  _haskell_so_impl,
-  attrs = {
-    "dep": attr.label(),
-  },
-)
+cc_haskell_import = _cc_haskell_import

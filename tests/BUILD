@@ -126,18 +126,18 @@ rule_test(
 )
 
 rule_test(
-  name = "test-haskell_so-output",
+  name = "test-cc_haskell_import-output",
   generates = [
     "libHShs-lib-a-1.0.0-ghc8.2.2.so",
     "libHShs-lib-b-1.0.0-ghc8.2.2.so",
   ],
-  rule = "//tests/haskell_so:hs-lib-b-so",
+  rule = "//tests/cc_haskell_import:hs-lib-b-so",
   size = "small",
 )
 
 rule_test(
-  name = "test-haskell_so-cc-link",
+  name = "test-cc_haskell_import-cc-link",
   generates = ["cc-bin"],
-  rule = "//tests/haskell_so:cc-bin",
+  rule = "//tests/cc_haskell_import:cc-bin",
   size = "small",
 )
