@@ -259,6 +259,10 @@ haskell_binary(
 
 ### cc_haskell_import
 
+**This rule is temporary and only needed until the Bazel C/C++
+"sandwich" (see [bazelbuild/bazel#2163][bazel-cpp-sandwich]) is
+implemented. This rule will be deprecated in the future.**
+
 Given a [haskell_library](#haskell_library) input, it outputs the
 shared object file produced as well as the object files it depends on
 directly and transitively. This is very useful if you want to link in
@@ -271,6 +275,8 @@ they will not be present here. You will have to provide those
 separately to your `cc_library`. If you're getting
 `prebuilt_dependencies` from your toolchain, you will likely want to
 extract those and pass them in as well.
+
+[bazel-cpp-sandwich]: https://github.com/bazelbuild/bazel/issues/2163
 
 #### Example
 
