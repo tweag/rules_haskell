@@ -7,6 +7,14 @@
 To use these rules, you'll need [Bazel >= 0.8.1][bazel-install]. To
 run tests, you'll furthermore need [Nix][nix] installed.
 
+**WORKSPACE rules:**
+
+| Rule | Description |
+| ---: | :--- |
+| [`haskell_repositories`](#haskell_repositories) | Declare [external repositories][external-repositories] needed for rules_haskell |
+
+**BUILD rules:**
+
 | Rule | Description |
 | ---: | :--- |
 | [`haskell_library`](#haskell_library) | Build a library from Haskell source. |
@@ -18,6 +26,7 @@ run tests, you'll furthermore need [Nix][nix] installed.
 
 [bazel]: https://bazel.build/
 [bazel-install]: https://docs.bazel.build/versions/master/install.html
+[external-repositories]: https://docs.bazel.build/versions/master/external.html
 [nix]: https://nixos.org/nix
 
 ## Setup
@@ -30,6 +39,9 @@ http_archive(
     strip_prefix = "rules_haskell-$COMMIT",
     urls = ["https://github.com/tweag/rules_haskell/archive/$COMMIT.tar.gz"],
 )
+
+load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+haskell_repositories()
 
 register_toolchains("//:ghc")
 ```
@@ -52,7 +64,7 @@ haskell_toolchain(
 ```
 
 The `haskell_toolchain` rule instantiation brings a GHC compiler in
-scope. It assumes an [external dependency][external-dependencies]
+scope. It assumes an [external repository][external-repositories]
 called `@my_ghc` was defined, pointing to an installation of GHC. The
 only supported option currently is to provision GHC using Nix. This is
 done by adding the following to your `WORKSPACE` file:
@@ -63,8 +75,6 @@ nixpkgs_package(
   attribute_path = "haskell.compiler.ghc822"
 )
 ```
-
-[external-dependencies]: https://docs.bazel.build/versions/master/external.html
 
 ## Rules
 
