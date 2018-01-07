@@ -77,11 +77,11 @@ haskell_binary = _mk_binary_rule()
 def _haskell_library_impl(ctx):
   interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(ctx)
 
-  static_library_dir, static_library = create_static_library(
+  static_library = create_static_library(
     ctx, object_files
   )
 
-  dynamic_library_dir, dynamic_library = create_dynamic_library(
+  dynamic_library = create_dynamic_library(
     ctx, object_dyn_files
   )
 
@@ -91,41 +91,18 @@ def _haskell_library_impl(ctx):
     interfaces_dir,
     static_library,
     dynamic_library,
-    static_library_dir,
-    dynamic_library_dir,
   )
 
   dep_info = gather_dependency_information(ctx)
   return [HaskellPackageInfo(
-    name = dep_info.name,
-    # TODO this is somewhat useless now, we shouldn't be abusing
-    # HaskellPackageInfo to carry information only relevant during
-    # build just to throw it away later as upstream doesn't need this.
-    # Technically Haddock rule relies on this but it should gather its
-    # own info.
-    names = depset(transitive = [dep_info.names, depset([get_pkg_id(ctx)])]),
-    confs = depset(transitive = [dep_info.confs, depset([conf_file])]),
-    caches = depset(transitive = [dep_info.caches, depset([cache_file])]),
+    name = get_pkg_id(ctx),
+    conf = conf_file,
+    cache = cache_file,
     # Do _not_ use a depset.
-    static_libraries = [static_library] + dep_info.static_libraries,
-    dynamic_libraries = depset(
-      transitive = [depset([dynamic_library]), dep_info.dynamic_libraries]
-    ),
-    interface_files = depset(
-      transitive = [dep_info.interface_files, depset(interface_files)]
-    ),
-    static_library_dirs = depset(
-      transitive = [dep_info.static_library_dirs, depset([static_library_dir])]
-    ),
-    dynamic_library_dirs = depset(
-      transitive = [dep_info.dynamic_library_dirs, depset([dynamic_library_dir])]
-    ),
-    prebuilt_dependencies = depset(
-      transitive = [
-        dep_info.prebuilt_dependencies,
-        depset(ctx.attr.prebuilt_dependencies),
-      ]
-    ),
+    static_library = static_library,
+    dynamic_library = dynamic_library,
+    interface_files = interface_files,
+    prebuilt_dependencies = ctx.attr.prebuilt_dependencies,
     external_libraries = dep_info.external_libraries
   )]
 
