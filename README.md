@@ -23,6 +23,7 @@ run tests, you'll furthermore need [Nix][nix] installed.
 | [`haskell_haddock`](#haskell_haddock) | Create API documentation. |
 | [`haskell_toolchain`](#haskell_toolchain) | Declare a compiler toolchain. |
 | [`haskell_cc_import`](#haskell_cc_import) | Import a prebuilt shared library. |
+| [`cc_haskell_import`](#cc_haskell_import) | Expose all transitive shared object libraries for haskell dependency. |
 
 [bazel]: https://bazel.build/
 [bazel-install]: https://docs.bazel.build/versions/master/install.html
@@ -254,6 +255,54 @@ haskell_binary(
 | `name` | `Name, required` | A unique name for this toolchain |
 | `shared_library` | `Label, required` | Version of the compiler |
 | `hdrs` | `Label list, required` | Public headers that ship with the library |
+
+
+### cc_haskell_import
+
+**This rule is temporary and only needed until the Bazel C/C++
+"sandwich" (see [bazelbuild/bazel#2163][bazel-cpp-sandwich]) is
+implemented. This rule will be deprecated in the future.**
+
+Given a [haskell_library](#haskell_library) input, it outputs the
+shared object file produced as well as the object files it depends on
+directly and transitively. This is very useful if you want to link in
+a Haskell shared library from `cc_library`.
+
+There is a caveat: this will not provide any shared libraries that
+aren't explicitly given to it. This means that if you're using
+`prebuilt_dependencies` and relying on GHC to provide those objects,
+they will not be present here. You will have to provide those
+separately to your `cc_library`. If you're getting
+`prebuilt_dependencies` from your toolchain, you will likely want to
+extract those and pass them in as well.
+
+[bazel-cpp-sandwich]: https://github.com/bazelbuild/bazel/issues/2163
+
+#### Example
+
+```bzl
+haskell_library(
+  name = "my-lib",
+  …
+)
+
+cc_haskell_import(
+  name = "my-lib-objects",
+  dep = ":my-lib",
+)
+
+cc_library(
+  name = "my-cc",
+  srcs = ["main.c", ":my-lib-objects"],
+)
+```
+
+#### Attributes
+
+| Attribute | Type | Description |
+| --------: | :--- | :---------- |
+| `name` | `Name, required` | A unique name for this target |
+| `dep` | `Label, required` | Target providing a `HaskellPackageInfo` such as `haskell_library` |
 
 ## Language interop
 

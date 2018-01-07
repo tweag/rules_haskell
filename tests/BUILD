@@ -124,3 +124,20 @@ rule_test(
   rule = "//tests/java_classpath",
   size = "small",
 )
+
+rule_test(
+  name = "test-cc_haskell_import-output",
+  generates = [
+    "libHShs-lib-a-1.0.0-ghc8.2.2.so",
+    "libHShs-lib-b-1.0.0-ghc8.2.2.so",
+  ],
+  rule = "//tests/cc_haskell_import:hs-lib-b-so",
+  size = "small",
+)
+
+rule_test(
+  name = "test-cc_haskell_import-cc-link",
+  generates = ["cc-bin"],
+  rule = "//tests/cc_haskell_import:cc-bin",
+  size = "small",
+)
