@@ -7,18 +7,18 @@
 To use these rules, you'll need [Bazel >= 0.8.1][bazel-install]. To
 run tests, you'll furthermore need [Nix][nix] installed.
 
+| Rule | Description |
+| ---: | :--- |
+| [`haskell_library`](#haskell_library) | Build a library from Haskell source. |
+| [`haskell_binary`](#haskell_binary) | Build an executable from Haskell source. |
+| [`haskell_test`](#haskell_test) | Run a test suite. |
+| [`haskell_haddock`](#haskell_haddock) | Create API documentation. |
+| [`haskell_toolchain`](#haskell_toolchain) | Declare a compiler toolchain. |
+| [`haskell_cc_import`](#haskell_cc_import) | Import a prebuilt shared library. |
+
 [bazel]: https://bazel.build/
 [bazel-install]: https://docs.bazel.build/versions/master/install.html
 [nix]: https://nixos.org/nix
-
-## Rules
-
-* [haskell_binary](#haskell_binary)
-* [haskell_library](#haskell_library)
-* [haskell_toolchain](#haskell_toolchain)
-* [haskell_cc_import](#haskell_cc_import)
-* [haskell_haddock](#haskell_haddock)
-* [haskell_test](#haskell_test)
 
 ## Setup
 
@@ -70,7 +70,7 @@ nixpkgs_package(
 
 ### haskell_binary
 
-Generates a Haskell binary.
+Build an executable from Haskell source.
 
 ```bzl
 haskell_binary(name, srcs, deps)
@@ -86,44 +86,21 @@ haskell_binary(
 )
 ```
 
-<table class="table table-condensed table-bordered table-params">
-  <colgroup>
-    <col class="col-param" />
-    <col class="param-description" />
-  </colgroup>
-  <thead>
-    <tr>
-      <th colspan="2">Attributes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>name</code></td>
-      <td>
-        <p><code>Name, required</code></p>
-        <p>A unique name for this target</p>
-      </td>
-    </tr>
-    <tr>
-      <td><code>srcs</code></td>
-      <td>
-        <p><code>List of labels, required</code></p>
-        <p>List of Haskell <code>.hs</code> source files used to build the binary</p>
-      </td>
-    </tr>
-    <tr>
-      <td><code>deps</code></td>
-      <td>
-        <p><code>List of labels, required</code></p>
-        <p>List of dependencies to of this target</p>
-      </td>
-    </tr>
-  </tbody>
-</table>
+#### Attributes
+
+| Attribute | Type | Description |
+| --------: | :--- | :---------- |
+| `name` | `Name, required` | A unique name for this target |
+| `srcs` | `Label list, required` | Haskell source files (`.hs` or `.hsc`) |
+| `deps` | `Label list, required` | List of other Haskell libraries to be linked to this target |
+| `src_strip_prefix` | `String, optional` | Directory in which module hierarchy starts |
+| `compiler_flags` | `String list, optional` | Flags to pass to Haskell compiler |
+| `prebuilt_dependencies` | `String list, optional` | Non-Bazel supplied Cabal dependencies |
+| `main` | `String, optional` | Location of `main` function. Default: `"Main.main"` |
 
 ### haskell_library
 
-Generates a Haskell library.
+Build a library from Haskell source.
 
 ```bzl
 haskell_library(name, srcs, deps)
@@ -135,44 +112,57 @@ haskell_library(name, srcs, deps)
 haskell_library(
     name = 'hello_lib',
     srcs = glob(['hello_lib/**/*.hs']),
-    deps = ["//hello_sublib:lib"]
+    deps = ["//hello_sublib:lib"],
+	prebuilt_dependencies = ["base", "bytestring"],
 )
 ```
 
-<table class="table table-condensed table-bordered table-params">
-  <colgroup>
-    <col class="col-param" />
-    <col class="param-description" />
-  </colgroup>
-  <thead>
-    <tr>
-      <th colspan="2">Attributes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>name</code></td>
-      <td>
-        <p><code>Name, required</code></p>
-        <p>A unique name for this target</p>
-      </td>
-    </tr>
-    <tr>
-      <td><code>srcs</code></td>
-      <td>
-        <p><code>List of labels, required</code></p>
-        <p>List of Haskell <code>.hs</code> source files used to build the library</p>
-      </td>
-    </tr>
-    <tr>
-      <td><code>deps</code></td>
-      <td>
-        <p><code>List of labels, required</code></p>
-        <p>List of dependencies to of this target</p>
-      </td>
-    </tr>
-  </tbody>
-</table>
+#### Attributes
+
+| Attribute | Type | Description |
+| --------: | :--- | :---------- |
+| `name` | `Name, required` | A unique name for this target |
+| `srcs` | `Label list, required` | Haskell source files (`.hs` or `.hsc`) |
+| `deps` | `Label list, required` | List of other Haskell libraries to be linked to this target |
+| `src_strip_prefix` | `String, optional` | Directory in which module hierarchy starts |
+| `compiler_flags` | `String list, optional` | Flags to pass to Haskell compiler |
+| `prebuilt_dependencies` | `String list, optional` | Non-Bazel supplied Cabal dependencies |
+
+### haskell_test
+
+This is currently a handy alias for [haskell_binary](#haskell_binary)
+so please refer to that for documentation of fields. Additionally, it
+accepts
+[all common bazel test rule fields](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests).
+This allows you to influence things like timeout and resource
+allocation for the test.
+
+### haskell_haddock
+
+Builds [Haddock](http://haskell-haddock.readthedocs.io/en/latest/)
+documentation for given Haskell libraries. It will automatically
+build documentation for any transitive dependencies to allow for
+cross-package documentation linking. Currently linking to
+`prebuilt_deps` is not supported.
+
+```bzl
+haskell_library(
+  name = "my-lib",
+  …
+)
+
+haskell_haddock(
+  name = "my-lib-haddock",
+  deps = [":my-lib"],
+)
+```
+
+#### Attributes
+
+| Attribute | Type | Description |
+| --------: | :--- | :---------- |
+| `name` | `Name, required` | A unique name for this target |
+| `deps` | `Label list, required` | List of Haskell libraries to generate documentation for. |
 
 ### haskell_toolchain
 
@@ -209,54 +199,30 @@ nixpkgs_package(
 register_toolchain("//:sys_ghc")
 ```
 
-<table class="table table-condensed table-bordered table-params">
-  <colgroup>
-    <col class="col-param" />
-    <col class="param-description" />
-  </colgroup>
-  <thead>
-    <tr>
-      <th colspan="2">Attributes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>name</code></td>
-      <td>
-        <p><code>Name, required</code></p>
-        <p>A unique name for this toolchain</p>
-      </td>
-    </tr>
-    <tr>
-      <td><code>version</code></td>
-      <td>
-        <p><code>String, required</code></p>
-        <p>Version of the compiler.</p>
-      </td>
-    </tr>
-    <tr>
-      <td><code>tools</code></td>
-      <td>
-        <p><code>Label, required</code></p>
-        <p>A target providing GHC commands (`ghc`, `ghc-pkg`, etc).</p>
-      </td>
-    </tr>
-  </tbody>
-</table>
+#### Attributes
+
+| Attribute | Type | Description |
+| --------: | :--- | :---------- |
+| `name` | `Name, required` | A unique name for this toolchain |
+| `version` | `String, required` | Version of the compiler |
+| `tools` | `Label list, required` | A target providing GHC commands (`ghc`, `ghc-pkg`, etc) |
 
 ### haskell_cc_import
+
+**This rule is temporary replacement for [cc_import][cc_import] and
+will be deprecated in the future.**
 
 Imports a prebuilt shared library. Use this to make `.so`, `.dll`,
 `.dylib` files residing in
 external [external repositories][bazel-ext-repos] available to Haskell
-rules. This rule is temporary replacement for [cc_import][cc_import]
-and will be deprecated in the future.
+rules.
 
 ```bzl
 haskell_cc_import(name, shared_library, hdrs)
 ```
 
 [bazel-ext-repos]: https://docs.bazel.build/versions/master/external.html
+[cc_import]: https://docs.bazel.build/versions/master/be/c-cpp.html#cc_import
 
 #### Example
 
@@ -271,97 +237,13 @@ haskell_binary(
 )
 ```
 
-<table class="table table-condensed table-bordered table-params">
-  <colgroup>
-    <col class="col-param" />
-    <col class="param-description" />
-  </colgroup>
-  <thead>
-    <tr>
-      <th colspan="2">Attributes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>name</code></td>
-      <td>
-        <p><code>Name, required</code></p>
-        <p>A unique name for this target</p>
-      </td>
-    </tr>
-    <tr>
-      <td><code>shared_library</code></td>
-      <td>
-        <p><code>Label, required</code></p>
-        <p>A single precompiled shared library.</p>
-      </td>
-    </tr>
-    <tr>
-      <td><code>hdrs</code></td>
-      <td>
-        <p><code>Label list, optional</code></p>
-        <p>Public headers that ship with the library.</p>
-      </td>
-    </tr>
-  </tbody>
-</table>
+#### Attributes
 
-### haskell_haddock
-
-Builds [Haddock](http://haskell-haddock.readthedocs.io/en/latest/)
-documentation for given Haskell libraries. It will automatically
-build documentation for any transitive dependencies to allow for
-cross-package documentation linking. Currently linking to
-`prebuilt_deps` is not supported.
-
-```bzl
-haskell_library(
-  name = "my-lib",
-  …
-)
-
-haskell_haddock(
-  name = "my-lib-haddock",
-  deps = [":my-lib"],
-)
-```
-
-<table class="table table-condensed table-bordered table-params">
-  <colgroup>
-    <col class="col-param" />
-    <col class="param-description" />
-  </colgroup>
-  <thead>
-    <tr>
-      <th colspan="2">Attributes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>name</code></td>
-      <td>
-        <p><code>Name, required</code></p>
-        <p>A unique name for this target</p>
-      </td>
-    </tr>
-    <tr>
-      <td><code>deps</code></td>
-      <td>
-        <p><code>List of labels, required</code></p>
-        <p>List of Haskell libraries to generate documentation for.</p>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-### haskell_test
-
-This is currently a handy alias for [haskell_binary](#haskell_binary)
-so please refer to that for documentation of fields. Additionally, it
-accepts [all common bazel test rule
-fields](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests).
-This allows you to influence things like timeout and resource
-allocation for the test.
+| Attribute | Type | Description |
+| --------: | :--- | :---------- |
+| `name` | `Name, required` | A unique name for this toolchain |
+| `shared_library` | `Label, required` | Version of the compiler |
+| `hdrs` | `Label list, required` | Public headers that ship with the library |
 
 ## Language interop
 

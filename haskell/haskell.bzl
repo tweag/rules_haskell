@@ -28,26 +28,12 @@ load(":cc.bzl",
 )
 
 _haskell_common_attrs = {
-  "src_strip_prefix": attr.string(
-    mandatory=False,
-    doc="Directory in which module hierarchy starts."
-  ),
-  "srcs": attr.label_list(
-    allow_files=FileType([".hs", ".hsc"]),
-    doc="A list of source files to be built by this rule."
-  ),
-  "copts": attr.string_list(
-    doc="Options to pass to C compiler for any C source files."
-  ),
-  "deps": attr.label_list(
-    doc="haskell_library dependencies"
-  ),
-  "compiler_flags": attr.string_list(
-    doc="Flags to pass to Haskell compiler while compiling this rule's sources."
-  ),
-  "prebuilt_dependencies": attr.string_list(
-    doc="Haskell packages which are magically available such as wired-in packages."
-  ),
+  "src_strip_prefix": attr.string(mandatory=False),
+  "srcs": attr.label_list(allow_files=FileType([".hs", ".hsc"])),
+  "copts": attr.string_list(),
+  "deps": attr.label_list(),
+  "compiler_flags": attr.string_list(),
+  "prebuilt_dependencies": attr.string_list(),
   # XXX Consider making this private. Blocked on
   # https://github.com/bazelbuild/bazel/issues/4366.
   "version": attr.string(
@@ -75,11 +61,9 @@ def _mk_binary_rule(**kwargs):
   return rule(
     _haskell_binary_impl,
     executable = True,
-    attrs = dict(_haskell_common_attrs,
-      main = attr.string(
-        default="Main.main",
-        doc="Main function location.",
-      ),
+    attrs = dict(
+      _haskell_common_attrs,
+      main = attr.string(default="Main.main"),
     ),
     host_fragments = ["cpp"],
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
