@@ -65,6 +65,7 @@ def _mk_binary_rule(**kwargs):
     attrs = dict(
       _haskell_common_attrs,
       main = attr.string(default="Main.main"),
+      ghc_link_flags = attr.string_list()
     ),
     host_fragments = ["cpp"],
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
