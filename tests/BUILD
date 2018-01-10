@@ -41,6 +41,13 @@ rule_test(
 )
 
 rule_test(
+  name = "test-binary-with-link-flags",
+  generates = ["binary-with-link-flags"],
+  rule = "//tests/binary-with-link-flags",
+  size = "small",
+)
+
+rule_test(
   name = "test-binary-with-main",
   generates = ["binary-with-main"],
   rule = "//tests/binary-with-main",
@@ -140,4 +147,10 @@ rule_test(
   generates = ["cc-bin"],
   rule = "//tests/cc_haskell_import:cc-bin",
   size = "small",
+)
+
+sh_test(
+  name = "test-haskell_binary-with-link-flags",
+  size = "small",
+  srcs = ["//tests/binary-with-link-flags:test-sh"],
 )
