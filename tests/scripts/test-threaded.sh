@@ -2,5 +2,5 @@
 
 set -e
 
-# Fails if executable was linked without -threaded flags.
+# Fails if executable was linked without -threaded flag.
 $1 +RTS -N
