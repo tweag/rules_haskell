@@ -114,6 +114,7 @@ def link_haskell_bin(ctx, object_files):
   # function yet, and need to construct full shell command below as
   # a string.
   link_args = []
+  link_args.extend(ctx.attr.ghc_link_flags)
   link_args.extend(["-o", ctx.outputs.executable.path, dummy_static_lib.path])
 
   for o in object_files:
