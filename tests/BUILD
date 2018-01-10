@@ -141,3 +141,11 @@ rule_test(
   rule = "//tests/cc_haskell_import:cc-bin",
   size = "small",
 )
+
+sh_test(
+  name = "test-haskell_binary-with-link-flags",
+  size = "small",
+  srcs = ["scripts/test-threaded.sh"],
+  data = ["//tests/binary-with-link-flags:binary-with-link-flags"],
+  args = ["$(location //tests/binary-with-link-flags:binary-with-link-flags)"]
+)
