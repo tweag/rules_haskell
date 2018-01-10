@@ -12,9 +12,9 @@ load(":actions.bzl",
   "link_haskell_bin",
 )
 
-# Re-export haskell_haddock
+# Re-export haskell_doc
 load (":haddock.bzl",
-  _haskell_haddock = "haskell_haddock",
+  _haskell_doc = "haskell_doc",
 )
 
 # Re-export haskell_toolchain
@@ -134,7 +134,7 @@ haskell_library = rule(
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
 
-haskell_haddock = _haskell_haddock
+haskell_doc = _haskell_doc
 
 haskell_toolchain = _haskell_toolchain
 

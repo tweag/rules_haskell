@@ -3,7 +3,7 @@ package(default_testonly = 1, default_visibility = ["//visibility:public"])
 load(
   "@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_library",
-  "haskell_haddock",
+  "haskell_doc",
   "haskell_cc_import",
 )
 
@@ -29,7 +29,7 @@ haskell_library(
   prebuilt_dependencies = ["base"],
 )
 
-haskell_haddock(
+haskell_doc(
   name = "haddock",
   deps = [":haddock-lib-b"],
 )

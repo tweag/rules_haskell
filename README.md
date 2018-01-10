@@ -20,7 +20,7 @@ run tests, you'll furthermore need [Nix][nix] installed.
 | [`haskell_library`](#haskell_library) | Build a library from Haskell source. |
 | [`haskell_binary`](#haskell_binary) | Build an executable from Haskell source. |
 | [`haskell_test`](#haskell_test) | Run a test suite. |
-| [`haskell_haddock`](#haskell_haddock) | Create API documentation. |
+| [`haskell_doc`](#haskell_doc) | Create API documentation. |
 | [`haskell_toolchain`](#haskell_toolchain) | Declare a compiler toolchain. |
 | [`haskell_cc_import`](#haskell_cc_import) | Import a prebuilt shared library. |
 | [`cc_haskell_import`](#cc_haskell_import) | Expose all transitive shared object libraries for haskell dependency. |
@@ -180,13 +180,12 @@ accepts
 This allows you to influence things like timeout and resource
 allocation for the test.
 
-### haskell_haddock
+### haskell_doc
 
-Builds [Haddock](http://haskell-haddock.readthedocs.io/en/latest/)
-documentation for given Haskell libraries. It will automatically
-build documentation for any transitive dependencies to allow for
-cross-package documentation linking. Currently linking to
-`prebuilt_deps` is not supported.
+Builds API documentation (using [Haddock][haddock]) for the given
+Haskell libraries. It will automatically build documentation for any
+transitive dependencies to allow for cross-package documentation
+linking. Currently linking to `prebuilt_deps` is not supported.
 
 ```bzl
 haskell_library(
@@ -194,11 +193,13 @@ haskell_library(
   …
 )
 
-haskell_haddock(
-  name = "my-lib-haddock",
+haskell_doc(
+  name = "my-lib-doc",
   deps = [":my-lib"],
 )
 ```
+
+[haddock]: http://haskell-haddock.readthedocs.io/en/latest/
 
 #### Attributes
 

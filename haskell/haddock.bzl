@@ -20,7 +20,7 @@ HaddockInfo = provider(
   }
 )
 
-def _haskell_haddock_aspect_impl(target, ctx):
+def _haskell_doc_aspect_impl(target, ctx):
   if HaskellPackageInfo not in target:
     return []
 
@@ -145,13 +145,13 @@ def _haskell_haddock_aspect_impl(target, ctx):
     doc_dir = doc_dir,
   )]
 
-haskell_haddock_aspect = aspect(
-  implementation = _haskell_haddock_aspect_impl,
+haskell_doc_aspect = aspect(
+  implementation = _haskell_doc_aspect_impl,
   attr_aspects = ['deps'],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
 
-def _haskell_haddock_rule_impl(ctx):
+def _haskell_doc_rule_impl(ctx):
   interface_files = depset()
   for dep in ctx.attr.deps:
     if HaddockInfo in dep:
@@ -159,9 +159,9 @@ def _haskell_haddock_rule_impl(ctx):
 
   return [DefaultInfo(files = interface_files)]
 
-haskell_haddock = rule(
-  implementation  = _haskell_haddock_rule_impl,
+haskell_doc = rule(
+  implementation  = _haskell_doc_rule_impl,
   attrs = {
-    "deps": attr.label_list(aspects = [haskell_haddock_aspect]),
+    "deps": attr.label_list(aspects = [haskell_doc_aspect]),
   },
 )
