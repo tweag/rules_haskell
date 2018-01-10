@@ -14,9 +14,3 @@ haskell_binary(
   prebuilt_dependencies = ["base"],
   visibility = ["//visibility:public"]
 )
-
-sh_binary(
-  name = "test-sh",
-  srcs = ["test.sh"],
-  data = [":binary-with-link-flags"]
-)
