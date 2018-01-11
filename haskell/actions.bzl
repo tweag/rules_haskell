@@ -155,6 +155,7 @@ def link_haskell_bin(ctx, object_files):
       get_build_tools(ctx),
     ]),
     outputs = [ctx.outputs.executable],
+    env = {"PATH": get_build_tools_path(ctx)},
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
     command = " ".join([get_compiler(ctx).path] + rpaths + link_args),
   )
