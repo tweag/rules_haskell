@@ -149,3 +149,10 @@ sh_test(
   data = ["//tests/binary-with-link-flags:binary-with-link-flags"],
   args = ["$(location //tests/binary-with-link-flags:binary-with-link-flags)"]
 )
+
+rule_test(
+  name = "test-lhs",
+  generates = ["lhs-bin"],
+  rule = "//tests/lhs:lhs-bin",
+  size = "small",
+)

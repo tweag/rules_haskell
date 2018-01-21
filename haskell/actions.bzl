@@ -45,7 +45,7 @@ _DefaultCompileInfo = provider(
 
 def _hs_srcs(ctx):
   """Return sources that correspond to a Haskell module."""
-  return [f for f in ctx.files.srcs if f.extension in ["hs", "hsc"]]
+  return [f for f in ctx.files.srcs if f.extension in ["hs", "hsc", "lhs"]]
 
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
