@@ -1,18 +1,13 @@
 workspace(name = "io_tweag_rules_haskell")
 
-local_repository(
-  name = "examples",
-  path = "examples",
-)
+load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+haskell_repositories()
 
 http_archive(
   name = "io_tweag_rules_nixpkgs",
   strip_prefix = "rules_nixpkgs-0.1",
   urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.1.tar.gz"],
 )
-
-load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
-haskell_repositories()
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
@@ -41,9 +36,7 @@ cc_library(
 """,
 )
 
-# For tests
-
-register_toolchains("//tests:toolchain")
+register_toolchains("//tests:ghc")
 
 nixpkgs_package(name = "zlib", build_file_content = """
 package(default_visibility = ["//visibility:public"])

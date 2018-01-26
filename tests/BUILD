@@ -5,7 +5,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_library",
 )
 
-# Using modified version due to
+# Using a modified version due to
 # https://github.com/bazelbuild/bazel/issues/4354.
 # TODO revert back to upstream version once fixed.
 # load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
@@ -14,7 +14,7 @@ load("//third_party:test_rules.bzl", "rule_test")
 load("//haskell:haskell.bzl", "haskell_toolchain")
 
 haskell_toolchain(
-  name = "toolchain",
+  name = "ghc",
   version = "8.2.2",
   tools = "@ghc//:bin",
 )
