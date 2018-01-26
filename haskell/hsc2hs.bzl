@@ -3,10 +3,10 @@
 load(":path_utils.bzl",
   "declare_compiled",
   "mk_name",
+  "mk_module_name",
 )
 
 load(":tools.bzl", "get_hsc2hs")
-
 load(":cc.bzl", "cc_headers")
 
 def hsc_to_hs(ctx):
@@ -36,7 +36,10 @@ def _process_hsc_file(ctx, hsc_file):
   Returns:
     File: Haskell source file created by processing hsc_file.
   """
-  hsc_output_dir = ctx.actions.declare_directory(mk_name(ctx, "hsc_processed"))
+
+  hsc_output_dir = ctx.actions.declare_directory(
+    mk_module_name(ctx, hsc_file, "hsc_processed")
+  )
   args = ctx.actions.args()
 
   # Output a Haskell source file.

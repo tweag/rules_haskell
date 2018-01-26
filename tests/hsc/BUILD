@@ -8,7 +8,10 @@ load(
 
 haskell_library(
   name = "hsc-lib",
-  srcs = ["Test.hsc"],
+  srcs = [
+      "Test0.hsc",
+      "Test1.hsc",
+  ],
   prebuilt_dependencies = ["base"],
 )
 

@@ -83,3 +83,26 @@ def mk_name(ctx, name_prefix):
 
   """
   return "{0}-{1}-{2}".format(name_prefix, ctx.attr.name, ctx.attr.version)
+
+def mk_module_name(ctx, source_name, name_prefix):
+  """
+  Make a target-unique and `source_name`-unique name.
+
+  This is quite similar to `mk_name` but also uses a path built from
+  `source_name` to prevent clashes with other names produced using the same
+  `name_prefix`.
+
+  Args:
+    ctx: Rule context.
+    source_name: Source file name.
+    name_prefix: Template for the name.
+
+  Returns:
+    string: Target- and source-unique name.
+  """
+  return "{0}-{1}-{2}-{3}__".format(
+    name_prefix,
+    ctx.attr.name,
+    ctx.attr.version,
+    path_to_module_path(ctx, source_name),
+  )
