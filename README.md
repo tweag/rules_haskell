@@ -4,8 +4,27 @@
 
 **NOTE: this is alpha quality software. Please don't publicize widely.**
 
-To use these rules, you'll need [Bazel >= 0.8.1][bazel-install]. To
-run tests, you'll furthermore need [Nix][nix] installed.
+To use these rules, you'll need [Bazel >= 0.8.1][bazel-install]. To run
+tests, you'll furthermore need [Nix][nix] installed. Once Nix is installed,
+this command will bring Bazel into scope:
+
+```
+$ nix-env -iA nixpkgs.bazel
+```
+
+To build all targets, execute this from root of the repo:
+
+```
+$ bazel build //...
+```
+
+To run tests locally, execute:
+
+```
+$ bazel test //...
+```
+
+You can learn more about Bazel's command line syntax [here][bazel-cli].
 
 **WORKSPACE rules:**
 
@@ -27,6 +46,7 @@ run tests, you'll furthermore need [Nix][nix] installed.
 
 [bazel]: https://bazel.build/
 [bazel-install]: https://docs.bazel.build/versions/master/install.html
+[bazel-cli]: https://docs.bazel.build/versions/master/command-line-reference.html
 [external-repositories]: https://docs.bazel.build/versions/master/external.html
 [nix]: https://nixos.org/nix
 
@@ -288,7 +308,6 @@ haskell_binary(
 | `name` | `Name, required` | A unique name for this toolchain |
 | `shared_library` | `Label, required` | Version of the compiler |
 | `hdrs` | `Label list, required` | Public headers that ship with the library |
-
 
 ### cc_haskell_import
 
