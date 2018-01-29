@@ -1,5 +1,7 @@
 """Tools used during build."""
 
+load(":set.bzl", "set")
+
 def get_build_tools(ctx):
   """Get the set of all build tools we have available.
 
@@ -7,11 +9,11 @@ def get_build_tools(ctx):
     ctx: Rule context.
 
   Returns:
-    depset of File: All build tools provided to the rule.
+    set of File: All build tools provided to the rule.
   """
-  return depset([
-    t for t in ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].tools
-  ])
+  return set.from_list(
+    ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].tools
+  )
 
 def get_build_tools_path(ctx):
   """Get list of build tools suited for PATH.
@@ -26,7 +28,14 @@ def get_build_tools_path(ctx):
   Returns:
     string: colon-separated paths to all build tools.
   """
-  return ":".join(depset([bt.dirname for bt in get_build_tools(ctx).to_list()]).to_list())
+  return ":".join(
+    set.to_list(
+      set.map(get_build_tools(ctx), _get_dirname)
+    )
+  )
+
+def _get_dirname(x):
+  return x.dirname
 
 def _get_build_tool(ctx, tool_name):
   """Find the requested build tool from all the build tools we were given.
@@ -38,7 +47,7 @@ def _get_build_tool(ctx, tool_name):
   Returns:
     File: Build tool with the name user asked for.
   """
-  for tool in get_build_tools(ctx).to_list():
+  for tool in set.to_list(get_build_tools(ctx)):
     if tool.basename == tool_name:
       return tool
 
@@ -87,7 +96,6 @@ def get_hsc2hs(ctx):
     File: hsc2hs to use.
   """
   return _get_build_tool(ctx, "hsc2hs")
-
 
 def get_haddock(ctx):
   """Get the haddock tool.

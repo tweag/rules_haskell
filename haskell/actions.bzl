@@ -6,6 +6,10 @@ load(":path_utils.bzl",
      "module_name",
 )
 
+load(":set.bzl",
+     "set"
+)
+
 load(":tools.bzl",
      "get_compiler",
      "get_compiler_version",
@@ -149,7 +153,7 @@ def link_haskell_bin(ctx, object_files):
       depset(object_files),
       depset([dummy_static_lib]),
       dep_info.external_libraries,
-      get_build_tools(ctx),
+      set.to_depset(get_build_tools(ctx)),
     ]),
     outputs = [ctx.outputs.executable],
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
@@ -264,7 +268,7 @@ def create_dynamic_library(ctx, object_files):
       dep_info.caches,
       dep_info.dynamic_libraries,
       dep_info.external_libraries,
-      get_build_tools(ctx)]),
+      set.to_depset(get_build_tools(ctx))]),
     outputs = [dynamic_library],
     progress_message = "Linking dynamic library {0}".format(dynamic_library.basename),
     env = {
@@ -323,7 +327,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
       dep_info.confs,
       dep_info.caches,
       depset([static_library, interfaces_dir, registration_file, dynamic_library]),
-      get_build_tools(ctx)
+      set.to_depset(get_build_tools(ctx))
     ]),
     outputs = [pkg_db_dir, conf_file, cache_file],
     env = {
@@ -411,7 +415,7 @@ def compilation_defaults(ctx):
       dep_info.caches,
       dep_info.interface_files,
       dep_info.dynamic_libraries,
-      get_build_tools(ctx),
+      set.to_depset(get_build_tools(ctx)),
       dep_info.external_libraries,
       java.inputs,
     ]),
