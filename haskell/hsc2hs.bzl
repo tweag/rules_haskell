@@ -2,8 +2,7 @@
 
 load(":path_utils.bzl",
   "declare_compiled",
-  "mk_name",
-  "mk_module_name",
+  "module_unique_name",
 )
 
 load(":tools.bzl", "get_hsc2hs")
@@ -38,7 +37,7 @@ def _process_hsc_file(ctx, hsc_file):
   """
 
   hsc_output_dir = ctx.actions.declare_directory(
-    mk_module_name(ctx, hsc_file, "hsc_processed")
+    module_unique_name(ctx, hsc_file, "hsc_processed")
   )
   args = ctx.actions.args()
 

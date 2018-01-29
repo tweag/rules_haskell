@@ -2,8 +2,8 @@
 
 load(":path_utils.bzl",
      "declare_compiled",
-     "mk_name",
-     "path_to_module",
+     "target_unique_name",
+     "module_name",
 )
 
 load(":tools.bzl",
@@ -295,7 +295,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
   cache_file = ctx.actions.declare_file("package.cache", sibling=conf_file)
 
   # Create a file from which ghc-pkg will create the actual package from.
-  registration_file = ctx.actions.declare_file(mk_name(ctx, "registration-file"))
+  registration_file = ctx.actions.declare_file(target_unique_name(ctx, "registration-file"))
   registration_file_entries = {
     "name": ctx.attr.name,
     "version": ctx.attr.version,
@@ -303,7 +303,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
     "key": get_pkg_id(ctx),
     "exposed": "True",
     "exposed-modules":
-      " ".join([path_to_module(ctx, f) for f in _hs_srcs(ctx)]),
+      " ".join([module_name(ctx, f) for f in _hs_srcs(ctx)]),
     "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
     "library-dirs": "${pkgroot}",
     "dynamic-library-dirs": "${pkgroot}",
@@ -357,8 +357,8 @@ def compilation_defaults(ctx):
   sources = hsc_to_hs(ctx)
 
   # Declare file directories
-  objects_dir = ctx.actions.declare_directory(mk_name(ctx, "objects"))
-  interfaces_dir = ctx.actions.declare_directory(mk_name(ctx, "interfaces"))
+  objects_dir = ctx.actions.declare_directory(target_unique_name(ctx, "objects"))
+  interfaces_dir = ctx.actions.declare_directory(target_unique_name(ctx, "interfaces"))
 
   # Compilation mode and explicit user flags
   if ctx.var["COMPILATION_MODE"] == "opt": args.add("-O2")

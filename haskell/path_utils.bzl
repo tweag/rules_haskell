@@ -2,46 +2,71 @@
 
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def path_to_module_path(ctx, hs_file, prefix=None):
-  """Map a source file to a module name.
+def module_name(ctx, f):
+  """Given Haskell source file path, turn it into a dot-separated module name.
 
-  some-workspace/some-package/src/Foo/Bar/Baz.hs => Foo/Bar/Baz
-
-  Args:
-    ctx: Rule context.
-    hs_file: Haskell source file.
-    prefix: Prefix to strip. ctx.attr.src_strip_prefix used if not set.
-
-  Returns:
-    string: Module part of hs_file. See example above.
-  """
-  strip_prefix = prefix if prefix != None else ctx.attr.src_strip_prefix
-
-  # Directory under which module hierarchy starts.
-  pkg_dir = paths.join(ctx.label.workspace_root,
-                       ctx.label.package,
-                       strip_prefix)
-  # Module path without the workspace and source directories, just
-  # relevant hierarchy.
-  path_no_prefix = paths.relativize(hs_file.path, pkg_dir)
-  # Drop extension.
-  return path_no_prefix[:path_no_prefix.rfind(".")]
-
-def path_to_module(ctx, hs_file, sep='.', prefix=None):
-  """Given Haskell source file path, turn it to a module name.
-
-  some-workspace/some-package/src/Foo/Bar/Baz.hs => Foo.Bar.Baz
+  module_name(
+    ctx,
+    "some-workspace/some-package/src/Foo/Bar/Baz.hs",
+  ) => "Foo.Bar.Baz"
 
   Args:
     ctx: Rule context.
-    hs_file: Haskell source file.
-    sep: Separator to use. By default `.`.
-    prefix: Prefix to strip. ctx.attr.src_strip_prefix used if not set.
+    f:   Haskell source file.
 
   Returns:
-    string: Haskell module name. See example above.
+    string: Haskell module name.
   """
-  return path_to_module_path(ctx, hs_file, prefix = prefix).replace('/', sep)
+  return _drop_extension(_rel_path_to_module(ctx, f).replace('/', '.'))
+
+def target_unique_name(ctx, name_prefix):
+  """Make a target-unique name.
+
+  `name_prefix` is made target-unique by adding rule name and target version
+  suffix to it. This means that given two different rules, the same
+  `name_prefix` is distinct. Note that this is does not disambiguate two
+  names within the same rule. Given a haskell_library with name foo and
+  version 0.1.0, you could expect:
+
+  target_unique_name(ctx, "libdir") => "libdir-foo-0.1.0"
+
+  This allows two rules using same name_prefix being built in same
+  environment to avoid name clashes of their output files and directories.
+
+  Args:
+    ctx:         Rule context.
+    name_prefix: Template for the name.
+
+  Returns:
+    string: Target-unique name_prefix.
+  """
+  return "{0}-{1}-{2}".format(name_prefix, ctx.attr.name, ctx.attr.version)
+
+def module_unique_name(ctx, source_file, name_prefix):
+  """Make a target- and module- unique name.
+
+  module_unique_name(
+    ctx,
+    "some-workspace/some-package/src/Foo/Bar/Baz.hs",
+    "libdir"
+  ) => "libdir-foo-0.1.0-Foo.Bar.Baz"
+
+  This is quite similar to `target_unique_name` but also uses a path built
+  from `source_file` to prevent clashes with other names produced using the
+  same `name_prefix`.
+
+  Args:
+    ctx:         Rule context.
+    source_file: Source file name.
+    name_prefix: Template for the name.
+
+  Returns:
+    string: Target- and source-unique name.
+  """
+  return "{0}-{1}".format(
+    target_unique_name(ctx, name_prefix),
+    module_name(ctx, source_file)
+  )
 
 def declare_compiled(ctx, src, ext, directory=None):
   """Given a Haskell-ish source file, declare its output.
@@ -55,54 +80,47 @@ def declare_compiled(ctx, src, ext, directory=None):
   Returns:
     File: Declared output file living in `directory` with given `ext`.
   """
-  fp = paths.replace_extension(path_to_module_path(ctx, src), ext)
+  fp = paths.replace_extension(_rel_path_to_module(ctx, src), ext)
   fp_with_dir = fp if directory == None else paths.join(directory.basename, fp)
   return ctx.actions.declare_file(fp_with_dir)
 
-def mk_name(ctx, name_prefix):
-  """Make a target-unique name.
+def _rel_path_to_module(ctx, f):
+  """Make given file name relative to the directory where the module hierarchy
+  starts.
 
-  `name_prefix` is made target-unique by adding rule name and target
-  version suffix to it. This means that given two different rules, the
-  same `name_prefix` is distinct. Note that this is does not
-  disambiguate two names within the same rule. Given a haskell_library
-  with name foo and version 0.1.0, you could expect:
-
-  mk_name(ctx, "libdir") => "libdir-foo-0.1.0"
-
-  This allows two rules using same name_prefix being built in same
-  environment to avoid name clashes of their output files and
-  directories.
+  _rel_path_to_module(
+    "some-workspace/some-package/src/Foo/Bar/Baz.hs"
+  ) => "Foo/Bar/Baz.hs"
 
   Args:
     ctx: Rule context.
-    name_prefix: Template for the name.
+    f:   Haskell source file.
 
   Returns:
-    string: Target-unique name_prefix.
-
+    string: Relative path to module file.
   """
-  return "{0}-{1}-{2}".format(name_prefix, ctx.attr.name, ctx.attr.version)
-
-def mk_module_name(ctx, source_name, name_prefix):
-  """
-  Make a target-unique and `source_name`-unique name.
-
-  This is quite similar to `mk_name` but also uses a path built from
-  `source_name` to prevent clashes with other names produced using the same
-  `name_prefix`.
-
-  Args:
-    ctx: Rule context.
-    source_name: Source file name.
-    name_prefix: Template for the name.
-
-  Returns:
-    string: Target- and source-unique name.
-  """
-  return "{0}-{1}-{2}-{3}__".format(
-    name_prefix,
-    ctx.attr.name,
-    ctx.attr.version,
-    path_to_module_path(ctx, source_name),
+  return paths.relativize(
+    f.path,
+    paths.join(
+      ctx.label.workspace_root,
+      ctx.label.package,
+      # Since the src_strip_prefix attribute is always present in rule
+      # attributes, if it's not there, the function is called from aspect
+      # implementation and so we can access ctx.rule.attr.src_strip_prefix.
+      ctx.attr.src_strip_prefix if hasattr(ctx.attr, "src_strip_prefix")
+                                else ctx.rule.attr.src_strip_prefix
+    )
   )
+
+def _drop_extension(f):
+  """Drop extension for a given file name.
+
+  _drop_extension("Foo/Bar/Baz.hs") => "Foo/Bar/Baz"
+
+  Args:
+    f: File path, possibly ending with an extension.
+
+  Returns:
+    string: `f` with extension removed.
+  """
+  return paths.split_extension(f)[0]

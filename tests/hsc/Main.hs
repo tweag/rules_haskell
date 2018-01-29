@@ -1,8 +1,9 @@
 module Main (main) where
 
 import BinHsc ()
-import Test0 (hscFired0)
-import Test1 (hscFired1)
+import Foo (hscFiredFoo)
+import Bar (hscFiredBar)
+import Bar.Baz (hscFiredBaz)
 
 main :: IO ()
-main = putStrLn (hscFired0 ++ hscFired1)
+main = putStrLn (hscFiredFoo ++ hscFiredBar ++ hscFiredBaz)
