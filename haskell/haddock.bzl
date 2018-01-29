@@ -1,6 +1,6 @@
 """Haddock suppport."""
 
-load (":path_utils.bzl", "path_to_module")
+load (":path_utils.bzl", "module_name")
 
 load(":tools.bzl",
   "get_haddock",
@@ -113,7 +113,7 @@ def _haskell_doc_aspect_impl(target, ctx):
   module_htmls = [
     ctx.actions.declare_file(
       paths.replace_extension(
-        path_to_module(ctx, f, sep='-', prefix=ctx.rule.attr.src_strip_prefix),
+        module_name(ctx, f).replace('.', '-'),
         ".html"
       ),
       sibling=haddock_interface
