@@ -104,8 +104,11 @@ def _rel_path_to_module(ctx, f):
     paths.join(
       ctx.label.workspace_root,
       ctx.label.package,
+      # Since the src_strip_prefix attribute is always present in rule
+      # attributes, if it's not there, the function is called from aspect
+      # implementation and so we can access ctx.rule.attr.src_strip_prefix.
       ctx.attr.src_strip_prefix if hasattr(ctx.attr, "src_strip_prefix")
-                                else ""
+                                else ctx.rule.attr.src_strip_prefix
     )
   )
 
