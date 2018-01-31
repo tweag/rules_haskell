@@ -2,8 +2,11 @@
 check.
 """
 
-def _new():
+def _empty():
   """Create an empty set.
+
+  Returns:
+    set, new empty set.
   """
   return struct(_set_items = dict())
 
@@ -29,7 +32,22 @@ def _insert(s, e):
   Result:
     A copy of set `s` with `s` element added.
   """
-  return struct(_set_items = dict(s.set_items, e = None))
+  r = dict(s._set_items)
+  r[e] = None
+  return struct(_set_items = r)
+
+def _mutable_insert(s, e):
+  """The same as `set.insert`, but modifies the first argument in place.
+
+  Args:
+    s: Set to insert new element into.
+    e: The element to insert.
+
+  Result:
+    set `s` with `s` element added.
+  """
+  s._set_items[e] = None
+  return s
 
 def _union(s0, s1):
   """Return union of two sets.
@@ -39,9 +57,24 @@ def _union(s0, s1):
     s1: Another set.
 
   Result:
-    Set, union of the two sets.
+    set, union of the two sets.
   """
-  return struct(_set_items = dict(s0._set_items, **(s1._set_items)))
+  r = dict(s0._set_items)
+  r.update(s1._set_items)
+  return struct(_set_items = r)
+
+def _mutable_union(s0, s1):
+  """Modify set `s0` adding elements from `s1` to it.
+
+  Args:
+    s0: One set.
+    s1: Another set.
+
+  Result:
+    set, union of the two sets.
+  """
+  s0._set_items.update(s1._set_items)
+  return s0
 
 def _map(s, f):
   """Map elements of given set using a function.
@@ -51,7 +84,7 @@ def _map(s, f):
     f: Function to apply to elements of the set.
 
   Result:
-    Set with elements obtained by application of function `f` to the
+    set with elements obtained by application of function `f` to the
     elements of `s`.
   """
   return struct(_set_items = { f(x): None for x in s._set_items.keys()})
@@ -63,7 +96,7 @@ def _from_list(l):
     l: List, source of the elements for the new set.
 
   Result:
-    Set containing elements from given list.
+    set containing elements from given list.
   """
   return (struct(_set_items = { x: None for x in l }))
 
@@ -90,10 +123,12 @@ def _to_depset(s):
   return depset(_to_list(s))
 
 set = struct(
-  new       = _new,
+  empty     = _empty,
   is_member = _is_member,
   insert    = _insert,
+  mutable_insert = _mutable_insert,
   union     = _union,
+  mutable_union = _mutable_union,
   map       = _map,
   from_list = _from_list,
   to_list   = _to_list,
