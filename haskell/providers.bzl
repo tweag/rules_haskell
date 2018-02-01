@@ -9,6 +9,6 @@ HaskellPackageInfo = provider(
     "dynamic_libraries": "Dynamic libraries.",
     "interface_files": "Interface files belonging to the packages.",
     "prebuilt_dependencies": "Transitive collection of all wired-in Haskell dependencies.",
-    "external_libraries": "Non-Haskell libraries needed for linking. List of shared libs.",
+    "external_libraries": "Dynamic shared libraries needed for linking. List of .so files."
   }
 )

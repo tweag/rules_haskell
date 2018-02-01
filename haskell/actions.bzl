@@ -179,7 +179,7 @@ def compile_haskell_lib(ctx):
   c = compilation_defaults(ctx)
   c.args.add([
     "-package-name", "{0}-{1}".format(ctx.attr.name, ctx.attr.version),
-    "-static", "-dynamic-too",
+    "-static", "-dynamic-too"
   ])
 
   object_dyn_files = [
@@ -248,18 +248,12 @@ def create_dynamic_library(ctx, object_files):
   for c in dep_info.caches.to_list():
     args.extend(["-package-db", c.dirname])
 
-  linker_flags = []
   for lib in dep_info.external_libraries.to_list():
-    lib_name = paths.replace_extension(
-      lib.basename[len("lib"):]
-      if lib.basename[:len("lib")] == "lib"
-      else lib.basename,
-      "")
-    linker_flags += [
+    lib_name = get_lib_name(lib)
+    args.extend([
       "-l{0}".format(lib_name),
-      "-L$(dirname $(realpath {0}))".format(lib.path)
-    ]
-  args.extend(linker_flags)
+      "-L$(dirname $(realpath {0}))".format(lib.path),
+    ])
 
   args.extend([ f.path for f in object_files ])
 
@@ -367,8 +361,10 @@ def compilation_defaults(ctx):
   # Common flags
   args.add([
     "-no-link",
+    "-fPIC",
     "-hide-all-packages",
-    "-odir", objects_dir, "-hidir", interfaces_dir
+    "-odir", objects_dir,
+    "-hidir", interfaces_dir,
   ])
 
   dep_info = gather_dependency_information(ctx)
@@ -420,8 +416,10 @@ def compilation_defaults(ctx):
     interfaces_dir = interfaces_dir,
     object_files = object_files,
     interface_files = interface_files,
-    env = dicts.add(
-      { "PATH": get_build_tools_path(ctx) },
+    env = dicts.add({
+      "PATH": get_build_tools_path(ctx),
+      "LD_LIBRARY_PATH": get_external_libs_path(dep_info.external_libraries.to_list()),
+      },
       java.env,
     ),
   )
@@ -477,8 +475,6 @@ def gather_dependency_information(ctx):
   for dep in ctx.attr.deps:
     if HaskellPackageInfo in dep:
       pkg = dep[HaskellPackageInfo]
-      new_external_libraries = hpi.external_libraries
-      new_external_libraries = new_external_libraries.union(pkg.external_libraries)
       hpi = HaskellPackageInfo(
         name = hpi.name,
         names = hpi.names + [pkg.name],
@@ -488,7 +484,7 @@ def gather_dependency_information(ctx):
         dynamic_libraries = hpi.dynamic_libraries + pkg.dynamic_libraries,
         interface_files = hpi.interface_files + pkg.interface_files,
         prebuilt_dependencies = hpi.prebuilt_dependencies + pkg.prebuilt_dependencies,
-        external_libraries = new_external_libraries,
+        external_libraries = hpi.external_libraries.union(pkg.external_libraries),
       )
     else:
       # If not a Haskell dependency, pass it through as-is to the
@@ -502,11 +498,17 @@ def gather_dependency_information(ctx):
         dynamic_libraries = hpi.dynamic_libraries,
         interface_files = hpi.interface_files,
         prebuilt_dependencies = hpi.prebuilt_dependencies,
-        # Only let through shared objects rather than blindly passing
-        # everything through: we only need link targets in
-        # external_libraries.
-        external_libraries = hpi.external_libraries.union(depset([
-          f for f in dep.files.to_list() if f.extension == "so"
-        ])),
+        external_libraries = hpi.external_libraries.union(depset(
+          [f for f in dep.files.to_list() if f.extension == "so"]
+        )),
       )
   return hpi
+
+def get_lib_name(lib):
+  return paths.replace_extension(
+    lib.basename[3:] if lib.basename[:3] == "lib" else lib.basename,
+    "",
+  )
+
+def get_external_libs_path(libs):
+  return ":".join([paths.dirname(lib.path) for lib in libs])
