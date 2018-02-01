@@ -2,11 +2,12 @@
 
 load(":actions.bzl",
   "HaskellPackageInfo",
+  "compile_cbits",
   "compile_haskell_bin",
   "compile_haskell_lib",
-  "create_dynamic_library",
+  "link_dynamic_library",
   "create_ghc_package",
-  "create_static_library",
+  "link_static_library",
   "gather_dependency_information",
   "get_pkg_id",
   "link_haskell_bin",
@@ -33,10 +34,13 @@ load(":set.bzl", "set")
 _haskell_common_attrs = {
   "src_strip_prefix": attr.string(default="",mandatory=False),
   "srcs": attr.label_list(allow_files=FileType([".hs", ".hsc", ".lhs"])),
-  "copts": attr.string_list(),
   "deps": attr.label_list(),
   "compiler_flags": attr.string_list(),
   "prebuilt_dependencies": attr.string_list(),
+  "c_hdrs": attr.label_list(allow_files=FileType([".h"])),
+  "c_srcs": attr.label_list(allow_files=FileType([".c"])),
+  "extra_libraries": attr.string_list(),
+  "c_options": attr.string_list(),
   # XXX Consider making this private. Blocked on
   # https://github.com/bazelbuild/bazel/issues/4366.
   "version": attr.string(
@@ -47,7 +51,8 @@ _haskell_common_attrs = {
 
 def _haskell_binary_impl(ctx):
   object_files = compile_haskell_bin(ctx)
-  link_haskell_bin(ctx, object_files)
+  c_object_files = compile_cbits(ctx, False)
+  link_haskell_bin(ctx, object_files + c_object_files)
 
 def _mk_binary_rule(**kwargs):
   """Generate a rule that compiles a binary.
@@ -78,14 +83,18 @@ haskell_test = _mk_binary_rule(test = True)
 haskell_binary = _mk_binary_rule()
 
 def _haskell_library_impl(ctx):
+
+  c_object_files     = compile_cbits(ctx, False)
+  c_object_dyn_files = compile_cbits(ctx, True)
+
   interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(ctx)
 
-  static_library = create_static_library(
-    ctx, object_files
+  static_library = link_static_library(
+    ctx, object_files + c_object_files
   )
 
-  dynamic_library = create_dynamic_library(
-    ctx, object_dyn_files
+  dynamic_library = link_dynamic_library(
+    ctx, object_dyn_files + c_object_dyn_files
   )
 
   # Create and register ghc package.
