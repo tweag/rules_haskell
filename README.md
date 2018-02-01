@@ -60,9 +60,9 @@ In a fresh directory, run:
 $ curl https://haskell.build/start | sh
 ```
 
-This will generate initial `WORKSPACE` and `BUILD` files for you. See
-the [examples](./examples) directory and the [API reference](#Rules)
-below to adapt these for you project. Then,
+This will generate initial `WORKSPACE` and `BUILD` files for you. See the
+[examples](./tests) and the [API reference](#Rules) below to adapt these for
+you project. Then,
 
 ```console
 $ bazel build //...    # Build all targets
