@@ -71,7 +71,7 @@ $ bazel test //...     # Run all tests
 
 ### Doing it manually
 
-Add the following to your `WORKSPACE` file, and select a `v$VERSION`
+Add the following to your `WORKSPACE` file, and select a `$VERSION`
 (or even an arbitrary commit hash) accordingly.
 
 ```bzl
