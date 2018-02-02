@@ -1,5 +1,7 @@
 load(":providers.bzl", "HaskellPackageInfo")
 
+load(":set.bzl", "set")
+
 # XXX this provider shouldn't be necessary. But since Skylark rules
 # can neither return CcSkylarkApiProvider nor properly test for its
 # existence in a dependency, we're forced to introduce this hack for
@@ -55,7 +57,7 @@ haskell_cc_import = rule(
 def _cc_haskell_import(ctx):
   if HaskellPackageInfo in ctx.attr.dep:
     return [DefaultInfo(
-      files = ctx.attr.dep[HaskellPackageInfo].dynamic_libraries
+      files = set.to_depset(ctx.attr.dep[HaskellPackageInfo].dynamic_libraries)
     )]
   else:
     fail("{0} has to provide HaskellPackageInfo".format(ctx.attr.dep.label.name))

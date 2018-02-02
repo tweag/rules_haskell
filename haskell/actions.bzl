@@ -6,6 +6,8 @@ load(":path_utils.bzl",
      "module_name",
 )
 
+load(":set.bzl", "set")
+
 load(":tools.bzl",
      "get_compiler",
      "get_compiler_version",
@@ -122,14 +124,16 @@ def link_haskell_bin(ctx, object_files):
   # De-duplicate optl calls while preserving ordering: we want last
   # invocation of an object to remain last. That is `-optl foo -optl
   # bar -optl foo` becomes `-optl bar -optl foo`. Do this by counting
-  # number of occurences. That way we only build dict and add to args
+  # number of occurrences. That way we only build dict and add to args
   # directly rather than doing multiple reversals with temporary
   # lists.
   link_paths = {}
-  for lib in dep_info.static_libraries:
+  static_lib_list = set.to_list(dep_info.static_libraries)
+
+  for lib in static_lib_list:
     link_paths[lib] = link_paths.get(lib, 0) + 1
 
-  for lib in dep_info.static_libraries:
+  for lib in static_lib_list:
     occ = link_paths.get(lib, 0)
     # This is the last occurrence of the lib, insert it.
     if occ == 1:
@@ -138,18 +142,18 @@ def link_haskell_bin(ctx, object_files):
 
   # We have to remember to specify all (transitive) wired-in
   # dependencies or we can't find objects for linking.
-  for p in dep_info.prebuilt_dependencies.to_list():
+  for p in set.to_list(dep_info.prebuilt_dependencies):
     args.add(["-package", p])
 
-  args.add([lib.path for lib in dep_info.external_libraries.to_list()])
+  args.add([lib.path for lib in set.to_list(dep_info.external_libraries)])
 
   ctx.actions.run(
     inputs = depset(transitive = [
-      depset(dep_info.static_libraries),
+      set.to_depset(dep_info.static_libraries),
       depset(object_files),
       depset([dummy_static_lib]),
-      dep_info.external_libraries,
-      get_build_tools(ctx),
+      set.to_depset(dep_info.external_libraries),
+      set.to_depset(get_build_tools(ctx)),
     ]),
     outputs = [ctx.outputs.executable],
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
@@ -249,7 +253,7 @@ def create_dynamic_library(ctx, object_files):
   for c in dep_info.caches.to_list():
     args.add(["-package-db", c.dirname])
 
-  for lib in dep_info.external_libraries.to_list():
+  for lib in set.to_list(dep_info.external_libraries):
     lib_name = get_lib_name(lib)
     args.add([
       "-l{0}".format(lib_name),
@@ -262,9 +266,9 @@ def create_dynamic_library(ctx, object_files):
     inputs = depset(transitive = [
       depset(object_files),
       dep_info.caches,
-      dep_info.dynamic_libraries,
-      dep_info.external_libraries,
-      get_build_tools(ctx)]),
+      set.to_depset(dep_info.dynamic_libraries),
+      set.to_depset(dep_info.external_libraries),
+      set.to_depset(get_build_tools(ctx))]),
     outputs = [dynamic_library],
     progress_message = "Linking dynamic library {0}".format(dynamic_library.basename),
     env = {
@@ -323,7 +327,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
       dep_info.confs,
       dep_info.caches,
       depset([static_library, interfaces_dir, registration_file, dynamic_library]),
-      get_build_tools(ctx)
+      set.to_depset(get_build_tools(ctx))
     ]),
     outputs = [pkg_db_dir, conf_file, cache_file],
     env = {
@@ -409,10 +413,10 @@ def compilation_defaults(ctx):
       depset(hdrs),
       dep_info.confs,
       dep_info.caches,
-      dep_info.interface_files,
-      dep_info.dynamic_libraries,
-      get_build_tools(ctx),
-      dep_info.external_libraries,
+      set.to_depset(dep_info.interface_files),
+      set.to_depset(dep_info.dynamic_libraries),
+      set.to_depset(get_build_tools(ctx)),
+      set.to_depset(dep_info.external_libraries),
       java.inputs,
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + interface_files,
@@ -422,7 +426,7 @@ def compilation_defaults(ctx):
     interface_files = interface_files,
     env = dicts.add({
       "PATH": get_build_tools_path(ctx),
-      "LD_LIBRARY_PATH": get_external_libs_path(dep_info.external_libraries.to_list()),
+      "LD_LIBRARY_PATH": get_external_libs_path(set.to_list(dep_info.external_libraries)),
       },
       java.env,
     ),
@@ -469,11 +473,11 @@ def gather_dependency_information(ctx):
     names = depset(),
     confs = depset(),
     caches = depset(),
-    static_libraries = [],
-    dynamic_libraries = depset(),
-    interface_files = depset(),
-    prebuilt_dependencies = depset(ctx.attr.prebuilt_dependencies),
-    external_libraries = depset(),
+    static_libraries = set.empty(),
+    dynamic_libraries = set.empty(),
+    interface_files = set.empty(),
+    prebuilt_dependencies = set.from_list(ctx.attr.prebuilt_dependencies),
+    external_libraries = set.empty(),
   )
 
   for dep in ctx.attr.deps:
@@ -484,11 +488,11 @@ def gather_dependency_information(ctx):
         names = hpi.names + [pkg.name],
         confs = hpi.confs + pkg.confs,
         caches = hpi.caches + pkg.caches,
-        static_libraries = hpi.static_libraries + pkg.static_libraries,
-        dynamic_libraries = hpi.dynamic_libraries + pkg.dynamic_libraries,
-        interface_files = hpi.interface_files + pkg.interface_files,
-        prebuilt_dependencies = hpi.prebuilt_dependencies + pkg.prebuilt_dependencies,
-        external_libraries = hpi.external_libraries.union(pkg.external_libraries),
+        static_libraries = set.mutable_union(hpi.static_libraries, pkg.static_libraries),
+        dynamic_libraries = set.mutable_union(hpi.dynamic_libraries, pkg.dynamic_libraries),
+        interface_files = set.mutable_union(hpi.interface_files, pkg.interface_files),
+        prebuilt_dependencies = set.mutable_union(hpi.prebuilt_dependencies, pkg.prebuilt_dependencies),
+        external_libraries = set.mutable_union(hpi.external_libraries, pkg.external_libraries),
       )
     else:
       # If not a Haskell dependency, pass it through as-is to the
@@ -502,10 +506,10 @@ def gather_dependency_information(ctx):
         dynamic_libraries = hpi.dynamic_libraries,
         interface_files = hpi.interface_files,
         prebuilt_dependencies = hpi.prebuilt_dependencies,
-        external_libraries = hpi.external_libraries.union(depset(
-          [f for f in dep.files.to_list() if f.extension == "so"]
-        )),
-      )
+        external_libraries = set.mutable_union(
+          hpi.external_libraries,
+          set.from_list([f for f in dep.files.to_list() if f.extension == "so"]),
+        ))
   return hpi
 
 def get_lib_name(lib):

@@ -1,6 +1,7 @@
 """Haddock suppport."""
 
 load (":path_utils.bzl", "module_name")
+load (":set.bzl", "set")
 
 load(":tools.bzl",
   "get_haddock",
@@ -59,7 +60,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     # TODO: --hyperlinked-source or make a ticket
   ])
 
-  dep_interfaces = depset()
+  dep_interfaces = set.empty()
   for dep in ctx.rule.attr.deps:
     if HaddockInfo in dep:
       args.add("--read-interface={0},{1}".format(
@@ -71,9 +72,10 @@ def _haskell_doc_aspect_impl(target, ctx):
         paths.join("..", dep[HaddockInfo].doc_dir.basename),
         dep[HaddockInfo].interface_file.path
       ))
-      dep_interfaces = depset(transitive = [
-        dep_interfaces, depset([dep[HaddockInfo].interface_file])
-      ])
+      dep_interfaces = set.mutable_insert(
+        dep_interfaces,
+        dep[HaddockInfo].interface_file
+      )
 
   # Expose all prebuilt packages
   for prebuilt_dep in ctx.rule.attr.prebuilt_dependencies:
@@ -126,8 +128,8 @@ def _haskell_doc_aspect_impl(target, ctx):
   ctx.actions.run(
     inputs = depset(transitive = [
       target[HaskellPackageInfo].caches,
-      target[HaskellPackageInfo].interface_files,
-      dep_interfaces,
+      set.to_depset(target[HaskellPackageInfo].interface_files),
+      set.to_depset(dep_interfaces),
       depset(input_sources),
     ]),
     outputs = self_outputs,

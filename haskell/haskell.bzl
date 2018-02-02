@@ -28,6 +28,8 @@ load(":cc.bzl",
   _cc_haskell_import = "cc_haskell_import",
 )
 
+load(":set.bzl", "set")
+
 _haskell_common_attrs = {
   "src_strip_prefix": attr.string(default="",mandatory=False),
   "srcs": attr.label_list(allow_files=FileType([".hs", ".hsc", ".lhs"])),
@@ -95,6 +97,7 @@ def _haskell_library_impl(ctx):
   )
 
   dep_info = gather_dependency_information(ctx)
+
   return [HaskellPackageInfo(
     name = dep_info.name,
     # TODO this is somewhat useless now, we shouldn't be abusing
@@ -105,19 +108,12 @@ def _haskell_library_impl(ctx):
     names = depset(transitive = [dep_info.names, depset([get_pkg_id(ctx)])]),
     confs = depset(transitive = [dep_info.confs, depset([conf_file])]),
     caches = depset(transitive = [dep_info.caches, depset([cache_file])]),
-    # Do _not_ use a depset.
-    static_libraries = [static_library] + dep_info.static_libraries,
-    dynamic_libraries = depset(
-      transitive = [depset([dynamic_library]), dep_info.dynamic_libraries]
-    ),
-    interface_files = depset(
-      transitive = [dep_info.interface_files, depset(interface_files)]
-    ),
-    prebuilt_dependencies = depset(
-      transitive = [
-        dep_info.prebuilt_dependencies,
-        depset(ctx.attr.prebuilt_dependencies),
-      ]
+    static_libraries = set.insert(dep_info.static_libraries, static_library),
+    dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
+    interface_files = set.union(dep_info.interface_files, set.from_list(interface_files)),
+    prebuilt_dependencies = set.union(
+      dep_info.prebuilt_dependencies,
+      set.from_list(ctx.attr.prebuilt_dependencies)
     ),
     external_libraries = dep_info.external_libraries
   ),
