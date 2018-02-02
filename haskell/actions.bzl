@@ -110,15 +110,13 @@ def link_haskell_bin(ctx, object_files):
     arguments = [ar_args]
   )
 
-  # XXX Use list instead of Args, because no Args -> string conversion
-  # function yet, and need to construct full shell command below as
-  # a string.
-  link_args = []
-  link_args.extend(ctx.attr.compiler_flags)
-  link_args.extend(["-o", ctx.outputs.executable.path, dummy_static_lib.path])
+  args = ctx.actions.args()
+
+  args.add(ctx.attr.compiler_flags)
+  args.add(["-o", ctx.outputs.executable.path, dummy_static_lib.path])
 
   for o in object_files:
-    link_args.extend(["-optl", o.path])
+    args.add(["-optl", o.path])
 
   dep_info = gather_dependency_information(ctx)
   # De-duplicate optl calls while preserving ordering: we want last
@@ -135,18 +133,17 @@ def link_haskell_bin(ctx, object_files):
     occ = link_paths.get(lib, 0)
     # This is the last occurrence of the lib, insert it.
     if occ == 1:
-      link_args.extend(["-optl", lib.path])
+      args.add(["-optl", lib.path])
     link_paths[lib] = occ - 1
 
   # We have to remember to specify all (transitive) wired-in
   # dependencies or we can't find objects for linking.
   for p in dep_info.prebuilt_dependencies.to_list():
-    link_args.extend(["-package", p])
+    args.add(["-package", p])
 
-  # Resolve symlinks to system libraries to their absolute location.
-  # Otherwise we'd end up with meaningless relative rpath.
-  rpaths = ["$(realpath {0})".format(lib.path) for lib in dep_info.external_libraries.to_list()]
-  ctx.actions.run_shell(
+  args.add([lib.path for lib in dep_info.external_libraries.to_list()])
+
+  ctx.actions.run(
     inputs = depset(transitive = [
       depset(dep_info.static_libraries),
       depset(object_files),
@@ -155,9 +152,12 @@ def link_haskell_bin(ctx, object_files):
       get_build_tools(ctx),
     ]),
     outputs = [ctx.outputs.executable],
-    env = {"PATH": get_build_tools_path(ctx)},
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
-    command = " ".join([get_compiler(ctx).path] + rpaths + link_args),
+    env = {
+      "PATH": get_build_tools_path(ctx)
+    },
+    executable = get_compiler(ctx),
+    arguments = [args]
   )
   return ctx.outputs.executable
 
@@ -233,41 +233,45 @@ def create_dynamic_library(ctx, object_files):
     File: Produced dynamic library.
   """
 
-  # Make shared library
   version = get_compiler_version(ctx)
   dynamic_library = ctx.actions.declare_file(
     "lib{0}-ghc{1}.so".format(get_library_name(ctx), version)
   )
-  args = ["-shared", "-dynamic", "-o", dynamic_library.path]
+
+  args = ctx.actions.args()
+  args.add(["-shared", "-dynamic", "-o", dynamic_library.path])
 
   dep_info = gather_dependency_information(ctx)
 
   for n in depset(transitive = [dep_info.names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
-    args.extend(["-package", n])
+    args.add(["-package", n])
 
   for c in dep_info.caches.to_list():
-    args.extend(["-package-db", c.dirname])
+    args.add(["-package-db", c.dirname])
 
   for lib in dep_info.external_libraries.to_list():
     lib_name = get_lib_name(lib)
-    args.extend([
+    args.add([
       "-l{0}".format(lib_name),
-      "-L$(dirname $(realpath {0}))".format(lib.path),
+      "-L{0}".format(paths.dirname(lib.path)),
     ])
 
-  args.extend([ f.path for f in object_files ])
+  args.add([ f.path for f in object_files ])
 
-  ctx.actions.run_shell(
-    inputs = depset(transitive = [depset(object_files),
-                                  dep_info.caches,
-                                  dep_info.dynamic_libraries,
-                                  dep_info.external_libraries,
-                                  get_build_tools(ctx)]),
+  ctx.actions.run(
+    inputs = depset(transitive = [
+      depset(object_files),
+      dep_info.caches,
+      dep_info.dynamic_libraries,
+      dep_info.external_libraries,
+      get_build_tools(ctx)]),
     outputs = [dynamic_library],
+    progress_message = "Linking dynamic library {0}".format(dynamic_library.basename),
     env = {
       "PATH": get_build_tools_path(ctx),
     },
-    command = " ".join([get_compiler(ctx).path] + args)
+    executable = get_compiler(ctx),
+    arguments = [args]
   )
 
   return dynamic_library
