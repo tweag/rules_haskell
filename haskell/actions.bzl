@@ -49,6 +49,15 @@ def _hs_srcs(ctx):
   """Return sources that correspond to a Haskell module."""
   return [f for f in ctx.files.srcs if f.extension in ["hs", "hsc", "lhs"]]
 
+def _get_lib_name(lib):
+  return paths.replace_extension(
+    lib.basename[3:] if lib.basename[:3] == "lib" else lib.basename,
+    "",
+  )
+
+def _get_external_libs_path(libs):
+  return ":".join([paths.dirname(lib.path) for lib in libs])
+
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
 
@@ -254,7 +263,7 @@ def create_dynamic_library(ctx, object_files):
     args.add(["-package-db", c.dirname])
 
   for lib in set.to_list(dep_info.external_libraries):
-    lib_name = get_lib_name(lib)
+    lib_name = _get_lib_name(lib)
     args.add([
       "-l{0}".format(lib_name),
       "-L{0}".format(paths.dirname(lib.path)),
@@ -426,7 +435,7 @@ def compilation_defaults(ctx):
     interface_files = interface_files,
     env = dicts.add({
       "PATH": get_build_tools_path(ctx),
-      "LD_LIBRARY_PATH": get_external_libs_path(set.to_list(dep_info.external_libraries)),
+      "LD_LIBRARY_PATH": _get_external_libs_path(set.to_list(dep_info.external_libraries)),
       },
       java.env,
     ),
@@ -511,12 +520,3 @@ def gather_dependency_information(ctx):
           set.from_list([f for f in dep.files.to_list() if f.extension == "so"]),
         ))
   return hpi
-
-def get_lib_name(lib):
-  return paths.replace_extension(
-    lib.basename[3:] if lib.basename[:3] == "lib" else lib.basename,
-    "",
-  )
-
-def get_external_libs_path(libs):
-  return ":".join([paths.dirname(lib.path) for lib in libs])
