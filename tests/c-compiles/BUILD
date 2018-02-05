@@ -6,16 +6,11 @@ load(
   "haskell_binary",
 )
 
-cc_library(
-  name = "c-lib",
-  srcs = ["c-compiles.c"],
-)
-
 haskell_library(
   name = "hs-lib",
   srcs = ["Lib.hs"],
-  deps = [":c-lib"],
   prebuilt_dependencies = ["base"],
+  c_srcs = ["c-compiles.c"],
 )
 
 haskell_binary(

@@ -58,6 +58,59 @@ def _get_lib_name(lib):
 def _get_external_libs_path(libs):
   return ":".join([paths.dirname(lib.path) for lib in libs])
 
+def _get_include_dirs(headers):
+  r = { paths.dirname(h.path): None for h in headers }
+  return r.keys()
+
+def compile_cbits(ctx, dynamically):
+  """Compile C files for later linking with Haskell object files.
+
+  Args:
+    ctx: Rule context.
+    dynamically: bool, Whether to generate dynamic object files.
+
+  Returns:
+    List of File: (dynamic) objet files.
+  """
+  out_dir = target_unique_name(
+    ctx,
+    "cbits_dynamic" if dynamically else "cbits_static"
+  )
+  out_dir_declared = ctx.actions.declare_directory(out_dir)
+  args = ctx.actions.args()
+  if dynamically:
+    args.add(["-dynamic", "-osuf", "dyn_o"])
+  args.add(["-c", "-fPIC", "-odir", out_dir_declared.path])
+  args.add(["-I{0}".format(idir) for idir in _get_include_dirs(ctx.files.c_hdrs)])
+  args.add(["-I{0}".format(idir) for idir in ctx.host_fragments.cpp.built_in_include_directories])
+  args.add(["-optc{0}".format(opt) for opt in ctx.attr.c_options])
+
+  object_files = []
+
+  for src in ctx.files.c_srcs:
+    object_files.append(
+      ctx.actions.declare_file(
+        paths.join(
+          out_dir,
+          paths.replace_extension(
+            src.path,
+            ".dyn_o" if dynamically else ".o"
+          ))))
+    args.add(src.path)
+
+  ctx.actions.run(
+    inputs = ctx.files.c_srcs + ctx.files.c_hdrs,
+    outputs = [out_dir_declared] + object_files,
+    progress_message = "Compiling C sources for {0} ({1})".format(
+      ctx.attr.name,
+      "dynamic" if dynamically else "static",
+    ),
+    executable = get_compiler(ctx),
+    arguments = [args],
+  )
+
+  return object_files
+
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
 
@@ -211,8 +264,8 @@ def compile_haskell_lib(ctx):
 
   return c.interfaces_dir, c.interface_files, c.object_files, object_dyn_files
 
-def create_static_library(ctx, object_files):
-  """Create a static library for the package using given object files.
+def link_static_library(ctx, object_files):
+  """Link a static library for the package using given object files.
 
   Args:
     ctx: Rule context.
@@ -235,8 +288,8 @@ def create_static_library(ctx, object_files):
   )
   return static_library
 
-def create_dynamic_library(ctx, object_files):
-  """Create a dynamic library for the package using given object files.
+def link_dynamic_library(ctx, object_files):
+  """Link a dynamic library for the package using given object files.
 
   Args:
     ctx: Rule context.
@@ -384,6 +437,8 @@ def compilation_defaults(ctx):
     "-hidir", interfaces_dir,
   ])
 
+  args.add(["-I{0}".format(idir) for idir in _get_include_dirs(ctx.files.c_hdrs)])
+  args.add(["-I{0}".format(idir) for idir in ctx.host_fragments.cpp.built_in_include_directories])
   dep_info = gather_dependency_information(ctx)
   for n in depset(transitive = [dep_info.names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
     args.add(["-package", n])
@@ -427,6 +482,7 @@ def compilation_defaults(ctx):
       set.to_depset(get_build_tools(ctx)),
       set.to_depset(dep_info.external_libraries),
       java.inputs,
+      depset(ctx.files.c_hdrs),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + interface_files,
     objects_dir = objects_dir,
