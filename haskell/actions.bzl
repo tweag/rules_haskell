@@ -68,7 +68,7 @@ def compile_haskell_bin(ctx):
     list of File: Compiled object files.
   """
   c = compilation_defaults(ctx)
-  c.args.add(["-main-is", ctx.attr.main])
+  c.args.add(["-main-is", ctx.attr.main_function])
 
   ctx.actions.run(
     inputs = c.inputs,
@@ -368,8 +368,10 @@ def compilation_defaults(ctx):
   sources = hsc_to_hs(ctx)
 
   # Declare file directories
-  objects_dir = ctx.actions.declare_directory(target_unique_name(ctx, "objects"))
-  interfaces_dir = ctx.actions.declare_directory(target_unique_name(ctx, "interfaces"))
+  objects_dir_raw    = target_unique_name(ctx, "objects")
+  objects_dir        = ctx.actions.declare_directory(objects_dir_raw)
+  interfaces_dir_raw = target_unique_name(ctx, "interfaces")
+  interfaces_dir     = ctx.actions.declare_directory(interfaces_dir_raw)
 
   # Compilation mode and explicit user flags
   if ctx.var["COMPILATION_MODE"] == "opt": args.add("-O2")
@@ -394,17 +396,33 @@ def compilation_defaults(ctx):
     args.add(["-package-db", c.dirname])
 
   # We want object and dynamic objects from all inputs.
-  object_files = [
-    declare_compiled(ctx, s, ".o", directory=objects_dir)
-    for s in _hs_srcs(ctx)
-  ]
+  object_files = []
 
   # We need to keep interface files we produce so we can import
   # modules cross-package.
-  interface_files = [
-    declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
-    for s in _hs_srcs(ctx)
-  ]
+  interface_files = []
+
+  # Output object files are named after modules, not after input file names.
+  # The difference is only visible in the case of Main module because it may
+  # be placed in a file with a name different from "Main.hs". In that case
+  # still Main.o will be produced.
+
+  for s in _hs_srcs(ctx):
+
+    if not hasattr(ctx.file, "main_file") or (s != ctx.file.main_file):
+      object_files.append(
+        declare_compiled(ctx, s, ".o", directory=objects_dir)
+      )
+      interface_files.append(
+        declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
+      )
+    else:
+      object_files.append(
+        ctx.actions.declare_file(paths.join(objects_dir_raw, "Main.o"))
+      )
+      interface_files.append(
+        ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.hi"))
+      )
 
   hdrs, include_args = cc_headers(ctx)
   args.add(include_args)

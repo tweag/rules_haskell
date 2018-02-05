@@ -66,7 +66,10 @@ def _mk_binary_rule(**kwargs):
     executable = True,
     attrs = dict(
       _haskell_common_attrs,
-      main = attr.string(default="Main.main"),
+      main_function = attr.string(default="Main.main"),
+      main_file = attr.label(
+        allow_single_file=FileType([".hs", ".hsc", ".lhs"]),
+      )
     ),
     host_fragments = ["cpp"],
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],

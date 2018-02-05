@@ -159,7 +159,8 @@ haskell_binary(
 | `src_strip_prefix` | `String, optional` | Directory in which module hierarchy starts |
 | `compiler_flags` | `String list, optional` | Flags to pass to Haskell compiler |
 | `prebuilt_dependencies` | `String list, optional` | Non-Bazel supplied Cabal dependencies |
-| `main` | `String, optional` | Location of `main` function. Default: `"Main.main"` |
+| `main_function` | `String, optional` | Location of `main` function. Default: `"Main.main"` |
+| `main_file` | `Label, optional` | File containing `Main` module. Default: `Main.hs` |
 
 ### haskell_library
 
@@ -176,7 +177,7 @@ haskell_library(
     name = 'hello_lib',
     srcs = glob(['hello_lib/**/*.hs']),
     deps = ["//hello_sublib:lib"],
-	prebuilt_dependencies = ["base", "bytestring"],
+    prebuilt_dependencies = ["base", "bytestring"],
 )
 ```
 
