@@ -5,9 +5,9 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
 )
 
 haskell_binary(
-  name = "binary-with-main",
-  srcs = ["MainIsHere.hs"],
-  main_function = "MainIsHere.this",
+  name = "binary-custom-main",
+  srcs = ["foo.hs"],
   prebuilt_dependencies = ["base"],
-  visibility = ["//visibility:public"]
+  visibility = ["//visibility:public"],
+  main_file = "foo.hs"
 )

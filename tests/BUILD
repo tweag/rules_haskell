@@ -27,6 +27,13 @@ rule_test(
 )
 
 rule_test(
+  name = "test-binary-custom-main",
+  generates = ["binary-custom-main"],
+  rule = "//tests/binary-custom-main",
+  size = "small",
+)
+
+rule_test(
   name = "test-binary-with-lib",
   generates = ["binary-with-lib"],
   rule = "//tests/binary-with-lib",
