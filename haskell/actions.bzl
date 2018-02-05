@@ -435,6 +435,8 @@ def compilation_defaults(ctx):
   # modules cross-package.
   interface_files = []
 
+  textual_headers = []
+
   # Output object files are named after modules, not after input file names.
   # The difference is only visible in the case of Main module because it may
   # be placed in a file with a name different from "Main.hs". In that case
@@ -442,7 +444,9 @@ def compilation_defaults(ctx):
 
   for s in _hs_srcs(ctx):
 
-    if not hasattr(ctx.file, "main_file") or (s != ctx.file.main_file):
+    if s.extension == "h":
+      textual_headers.append(s)
+    elif not hasattr(ctx.file, "main_file") or (s != ctx.file.main_file):
       object_files.append(
         declare_compiled(ctx, s, ".o", directory=objects_dir)
       )
@@ -478,6 +482,7 @@ def compilation_defaults(ctx):
       set.to_depset(get_build_tools(ctx)),
       set.to_depset(dep_info.external_libraries),
       java.inputs,
+      depset(textual_headers),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + interface_files,
     objects_dir = objects_dir,
