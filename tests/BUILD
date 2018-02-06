@@ -163,3 +163,10 @@ rule_test(
   rule = "//tests/lhs:lhs-bin",
   size = "small",
 )
+
+rule_test(
+  name = "test-hs-boot",
+  generates = ["hs-boot"],
+  rule = "//tests/hs-boot",
+  size = "small",
+)

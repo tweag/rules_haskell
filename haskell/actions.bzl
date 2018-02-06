@@ -379,12 +379,15 @@ def compilation_defaults(ctx):
 
   # Common flags
   args.add([
-    "-no-link",
+    "-c",
+    "--make",
     "-fPIC",
     "-hide-all-packages",
     "-odir", objects_dir,
     "-hidir", interfaces_dir,
   ])
+
+  args.add(["-i{0}".format(idir) for idir in set.to_list(set.from_list([f.dirname for f in sources]))])
 
   dep_info = gather_dependency_information(ctx)
   for n in depset(transitive = [dep_info.names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
@@ -428,7 +431,7 @@ def compilation_defaults(ctx):
   args.add(include_args)
 
   # Lastly add all the processed sources.
-  args.add(sources)
+  args.add([f for f in sources if f.extension not in ["hs-boot", "lhs-boot"]])
 
   # Add any interop info for other languages.
   java = java_interop_info(ctx)
