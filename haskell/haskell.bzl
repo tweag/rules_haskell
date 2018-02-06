@@ -32,7 +32,9 @@ load(":set.bzl", "set")
 
 _haskell_common_attrs = {
   "src_strip_prefix": attr.string(default="",mandatory=False),
-  "srcs": attr.label_list(allow_files=FileType([".hs", ".hsc", ".lhs"])),
+  "srcs": attr.label_list(allow_files=FileType(
+    [".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot"]
+  )),
   "copts": attr.string_list(),
   "deps": attr.label_list(),
   "compiler_flags": attr.string_list(),
