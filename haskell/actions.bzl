@@ -58,6 +58,36 @@ def _get_lib_name(lib):
 def _get_external_libs_path(libs):
   return ":".join([paths.dirname(lib.path) for lib in libs])
 
+def _mangle_solib(ctx, label, solib):
+  """Create a symlink to a dynamic library, with a longer name.
+
+  The built-in cc_* rules don't link against a shared library
+  directly. They link against a symlink whose name is guaranteed to be
+  unique across the entire workspace. This disambiguates dynamic
+  libraries with the same soname. This process is called "mangling".
+  The built-in rules don't expose mangling functionality directly (see
+  https://github.com/bazelbuild/bazel/issues/4581). But this function
+  emulates the built-in dynamic library mangling.
+
+  Args:
+    ctx: Rule context.
+    label: the label to use as a qualifier for the dynamic library name.
+    solib: the dynamic library.
+
+  Returns:
+    File: the created symlink.
+
+  """
+  components = [c for c in [label.workspace_root, label.package, label.name] if c]
+  qualifier = '/'.join(components).replace('_', '_U').replace('/', '_S')
+  qualsolib = ctx.actions.declare_file("lib" + qualifier + "_" + solib.basename)
+  ctx.actions.run_shell(
+    inputs = [solib],
+    outputs = [qualsolib],
+    command = "ln -s $(realpath {0}) {1}".format(solib.path, qualsolib.path),
+  )
+  return qualsolib
+
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
 
@@ -538,6 +568,6 @@ def gather_dependency_information(ctx):
         prebuilt_dependencies = hpi.prebuilt_dependencies,
         external_libraries = set.mutable_union(
           hpi.external_libraries,
-          set.from_list([f for f in dep.files.to_list() if f.extension == "so"]),
+          set.from_list([_mangle_solib(ctx, dep.label, f) for f in dep.files.to_list() if f.extension == "so"]),
         ))
   return hpi
