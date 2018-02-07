@@ -170,3 +170,10 @@ rule_test(
   rule = "//tests/hs-boot",
   size = "small",
 )
+
+rule_test(
+  name = "test-textual-hdrs",
+  generates = ["textual-hdrs"],
+  rule = "//tests/textual-hdrs",
+  size = "small",
+)
