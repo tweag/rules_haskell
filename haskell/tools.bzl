@@ -1,6 +1,7 @@
 """Tools used during build."""
 
 load(":set.bzl", "set")
+load("@bazel_skylib//:lib.bzl", "paths")
 
 def get_build_tools(ctx):
   """Get the set of all build tools we have available.
@@ -28,10 +29,22 @@ def get_build_tools_path(ctx):
   Returns:
     string: colon-separated paths to all build tools.
   """
+  c_execs = [
+    ctx.host_fragments.cpp.ar_executable,
+    ctx.host_fragments.cpp.compiler_executable,
+    ctx.host_fragments.cpp.ld_executable,
+    ctx.host_fragments.cpp.nm_executable,
+    ctx.host_fragments.cpp.objcopy_executable,
+    ctx.host_fragments.cpp.objdump_executable,
+    ctx.host_fragments.cpp.preprocessor_executable,
+    ctx.host_fragments.cpp.strip_executable,
+  ]
+
   return ":".join(
     set.to_list(
       set.map(get_build_tools(ctx), _get_dirname)
-    )
+    ) +
+    [paths.dirname(f) for f in c_execs]
   )
 
 def _get_dirname(x):

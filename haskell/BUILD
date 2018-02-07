@@ -12,6 +12,12 @@ load(
 
 skylark_doc(
   name = "docs",
-  srcs = ["haskell.bzl", "cc.bzl", "haddock.bzl", "toolchain.bzl"],
+  srcs = [
+    "haskell.bzl",
+    "cc.bzl",
+    "haddock.bzl",
+    "toolchain.bzl",
+    "ghc_bindist.bzl",
+  ],
   format = "html",
 )

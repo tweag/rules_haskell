@@ -117,6 +117,7 @@ haskell_doc_aspect = aspect(
   _haskell_doc_aspect_impl,
   attr_aspects = ['deps'],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+  host_fragments = ["cpp"],
 )
 
 def _haskell_doc_rule_impl(ctx):
@@ -135,6 +136,7 @@ haskell_doc = rule(
     ),
   },
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+  host_fragments = ["cpp"],
 )
 """Create API documentation.
 
