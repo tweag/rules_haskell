@@ -31,6 +31,10 @@ load(":providers.bzl", "HaskellPackageInfo")
 
 load("@bazel_skylib//:lib.bzl", "paths", "dicts")
 
+load(":mode.bzl",
+     "is_profiling_enabled",
+)
+
 _DefaultCompileInfo = provider(
   doc = "Default compilation files and configuration.",
   fields = {
@@ -87,6 +91,19 @@ def _mangle_solib(ctx, label, solib):
     command = "ln -s $(realpath {0}) {1}".format(solib.path, qualsolib.path),
   )
   return qualsolib
+
+def _add_mode_options(ctx, args):
+  """Add mode options to the given args object.
+
+  Args:
+    ctx: Rule context.
+    args: args object.
+
+  Returns:
+    None
+  """
+  if is_profiling_enabled(ctx):
+    args.add("-prof")
 
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
@@ -152,6 +169,8 @@ def link_haskell_bin(ctx, object_files):
   )
 
   args = ctx.actions.args()
+
+  _add_mode_options(ctx, args)
 
   args.add(ctx.attr.compiler_flags)
   args.add(["-o", ctx.outputs.executable.path, dummy_static_lib.path])
@@ -282,6 +301,9 @@ def create_dynamic_library(ctx, object_files):
   )
 
   args = ctx.actions.args()
+
+  _add_mode_options(ctx, args)
+
   args.add(["-shared", "-dynamic", "-o", dynamic_library.path])
 
   dep_info = gather_dependency_information(ctx)
@@ -416,6 +438,8 @@ def compilation_defaults(ctx):
     "-odir", objects_dir,
     "-hidir", interfaces_dir,
   ])
+
+  _add_mode_options(ctx, args)
 
   args.add(["-i{0}".format(idir) for idir in set.to_list(set.from_list([f.dirname for f in sources]))])
 
