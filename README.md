@@ -4,20 +4,10 @@
 
 **NOTE: this is alpha quality software. Please don't publicize widely.**
 
-To use these rules, you'll
-need [Bazel >= 0.8.1][bazel-getting-started]. Then get started with
-the [setup script below](#setup).
-
-To run the test suite for these rules, you'll furthermore
-need [Nix][nix] installed. To build and run tests locally, execute:
-
-```
-$ bazel test //...
-```
-
-You can learn more about Bazel's command line
-syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
-`build`, `test`, `run` and `coverage`.
+Bazel automates building and testing software. It scales to very large
+multi-language projects. This project extends Bazel with build rules
+for Haskell. Get started building your own project using these rules
+wih the [setup script below](#setup).
 
 **WORKSPACE rules:**
 
@@ -40,11 +30,12 @@ syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
 [bazel]: https://bazel.build/
 [bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
 [bazel-cli]: https://docs.bazel.build/versions/master/command-line-reference.html
-[bazel-cli-commands]: https://docs.bazel.build/versions/master/command-line-reference.html#commands
 [external-repositories]: https://docs.bazel.build/versions/master/external.html
 [nix]: https://nixos.org/nix
 
 ## Setup
+
+You'll need [Bazel >= 0.8.1][bazel-getting-started] installed.
 
 ### The easy way
 
@@ -62,6 +53,12 @@ you project. Then,
 $ bazel build //...    # Build all targets
 $ bazel test //...     # Run all tests
 ```
+
+You can learn more about Bazel's command line
+syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
+`build`, `test`, `run` and `coverage`.
+
+[bazel-cli-commands]: https://docs.bazel.build/versions/master/command-line-reference.html#commands
 
 ### Doing it manually
 
@@ -121,6 +118,15 @@ package(default_visibility = ["//visibility:public"])
 filegroup (name = "bin", srcs = glob(["bin/ghc*"]))
   """
 )
+```
+
+## For `rules_haskell` developers
+
+To run the test suite for these rules, you'll need [Nix][nix]
+installed. To build and run tests locally, execute:
+
+```
+$ bazel test //...
 ```
 
 ## Rules
