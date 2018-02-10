@@ -4,27 +4,20 @@
 
 **NOTE: this is alpha quality software. Please don't publicize widely.**
 
-To use these rules, you'll need [Bazel >= 0.8.1][bazel-install]. To run
-tests, you'll furthermore need [Nix][nix] installed. Once Nix is installed,
-this command will bring Bazel into scope:
+To use these rules, you'll
+need [Bazel >= 0.8.1][bazel-getting-started]. Then get started with
+the [setup script below](#setup).
 
-```
-$ nix-env -iA nixpkgs.bazel
-```
-
-To build all targets, execute this from root of the repo:
-
-```
-$ bazel build //...
-```
-
-To run tests locally, execute:
+To run the test suite for these rules, you'll furthermore
+need [Nix][nix] installed. To build and run tests locally, execute:
 
 ```
 $ bazel test //...
 ```
 
-You can learn more about Bazel's command line syntax [here][bazel-cli].
+You can learn more about Bazel's command line
+syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
+`build`, `test`, `run` and `coverage`.
 
 **WORKSPACE rules:**
 
@@ -45,8 +38,9 @@ You can learn more about Bazel's command line syntax [here][bazel-cli].
 | [`cc_haskell_import`](#cc_haskell_import) | Expose all transitive shared object libraries for haskell dependency. |
 
 [bazel]: https://bazel.build/
-[bazel-install]: https://docs.bazel.build/versions/master/install.html
+[bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
 [bazel-cli]: https://docs.bazel.build/versions/master/command-line-reference.html
+[bazel-cli-commands]: https://docs.bazel.build/versions/master/command-line-reference.html#commands
 [external-repositories]: https://docs.bazel.build/versions/master/external.html
 [nix]: https://nixos.org/nix
 
