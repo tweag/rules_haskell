@@ -83,7 +83,7 @@ haskell_test = _mk_binary_rule(test = True)
 haskell_binary = _mk_binary_rule()
 
 def _haskell_library_impl(ctx):
-  interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(ctx)
+  interfaces_dir, interface_files, object_files, object_dyn_files, haddock_args = compile_haskell_lib(ctx)
 
   static_library = create_static_library(
     ctx, object_files
@@ -120,7 +120,8 @@ def _haskell_library_impl(ctx):
       dep_info.prebuilt_dependencies,
       set.from_list(ctx.attr.prebuilt_dependencies)
     ),
-    external_libraries = dep_info.external_libraries
+    external_libraries = dep_info.external_libraries,
+    haddock_ghc_args = haddock_args,
   ),
   DefaultInfo(files = depset([
       conf_file,
