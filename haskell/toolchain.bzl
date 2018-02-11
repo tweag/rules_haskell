@@ -1,7 +1,7 @@
 """Rules for defining toolchains."""
 
 def _haskell_toolchain_impl(ctx):
-  for tool in ["ghc", "ghc-pkg", "hsc2hs"]:
+  for tool in ["ghc", "ghc-pkg", "hsc2hs", "haddock"]:
     if tool not in [t.basename for t in ctx.files.tools]:
       fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 

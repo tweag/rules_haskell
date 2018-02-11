@@ -166,4 +166,5 @@ haskell_doc = rule(
   attrs = {
     "deps": attr.label_list(aspects = [haskell_doc_aspect]),
   },
+  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
