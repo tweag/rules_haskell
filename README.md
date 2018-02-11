@@ -362,6 +362,13 @@ cc_library(
 We may be supporting interop with other languages in one way or
 another. Please see languages listed below about how.
 
+### C/C++
+
+C/C++ libraries can be specified as depnedencies. Importing prebuilt
+libraries and exporting Haskell libraries as C/C++ dependencies
+currently requires the `haskell_cc_import` and `cc_haskell_import`
+rules. These are temporary workarounds to Bazel limitations.
+
 ### Java
 
 You can supply `java_*` rule targets in `deps` of
