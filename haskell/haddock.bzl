@@ -148,7 +148,7 @@ def _haskell_doc_aspect_impl(target, ctx):
   )]
 
 haskell_doc_aspect = aspect(
-  implementation = _haskell_doc_aspect_impl,
+  _haskell_doc_aspect_impl,
   attr_aspects = ['deps'],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
@@ -158,11 +158,10 @@ def _haskell_doc_rule_impl(ctx):
   for dep in ctx.attr.deps:
     if HaddockInfo in dep:
       interface_files = depset(transitive = [interface_files, dep[HaddockInfo].outputs])
-
   return [DefaultInfo(files = interface_files)]
 
 haskell_doc = rule(
-  implementation  = _haskell_doc_rule_impl,
+  _haskell_doc_rule_impl,
   attrs = {
     "deps": attr.label_list(aspects = [haskell_doc_aspect]),
   },

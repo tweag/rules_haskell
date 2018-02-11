@@ -13,12 +13,12 @@ load(":actions.bzl",
 )
 
 # Re-export haskell_doc
-load (":haddock.bzl",
+load(":haddock.bzl",
   _haskell_doc = "haskell_doc",
 )
 
 # Re-export haskell_toolchain
-load (":toolchain.bzl",
+load(":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
 )
 
