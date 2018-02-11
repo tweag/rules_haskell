@@ -1,4 +1,4 @@
-"""Entry point to rules_haskell."""
+"""Core Haskell rules"""
 
 load(":actions.bzl",
   "HaskellPackageInfo",
@@ -31,19 +31,27 @@ load(":cc.bzl",
 load(":set.bzl", "set")
 
 _haskell_common_attrs = {
-  "src_strip_prefix": attr.string(default="",mandatory=False),
-  "srcs": attr.label_list(allow_files=FileType(
-    [".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"]
-  )),
-  "copts": attr.string_list(),
-  "deps": attr.label_list(),
-  "compiler_flags": attr.string_list(),
-  "prebuilt_dependencies": attr.string_list(),
+  "src_strip_prefix": attr.string(
+    doc = "Directory in which module hierarchy starts.",
+  ),
+  "srcs": attr.label_list(
+    allow_files = FileType([".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"]),
+    doc = "Haskell source files",
+  ),
+  "deps": attr.label_list(
+    doc = "List of other Haskell libraries to be linked to this target.",
+  ),
+  "compiler_flags": attr.string_list(
+    doc = "Flags to pass to Haskell compiler.",
+  ),
+  "prebuilt_dependencies": attr.string_list(
+    doc = "Non-Bazel supplied Cabal dependencies.",
+  ),
   # XXX Consider making this private. Blocked on
   # https://github.com/bazelbuild/bazel/issues/4366.
   "version": attr.string(
-    default="1.0.0",
-    doc="Package/binary version"
+    default = "1.0.0",
+    doc = "Library/binary version. Internal - do not use."
   ),
 }
 
@@ -68,9 +76,13 @@ def _mk_binary_rule(**kwargs):
     executable = True,
     attrs = dict(
       _haskell_common_attrs,
-      main_function = attr.string(default="Main.main"),
+      main_function = attr.string(
+        default = "Main.main",
+        doc = "Location of `main` function.",
+      ),
       main_file = attr.label(
-        allow_single_file=FileType([".hs", ".hsc", ".lhs"]),
+        allow_single_file = FileType([".hs", ".hsc", ".lhs"]),
+        doc = "File containing `Main` module.",
       )
     ),
     host_fragments = ["cpp"],
@@ -79,8 +91,27 @@ def _mk_binary_rule(**kwargs):
   )
 
 haskell_test = _mk_binary_rule(test = True)
+"""Build a test suite.
+
+Additionally, it accepts [all common bazel test rule
+fields][bazel-test-attrs]. This allows you to influence things like
+timeout and resource allocation for the test.
+
+[bazel-test-attrs]: https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests
+"""
 
 haskell_binary = _mk_binary_rule()
+"""Build an executable from Haskell source.
+
+Example:
+  ```bzl
+  haskell_binary(
+      name = "main",
+      srcs = ["Main.hs", "Other.hs"],
+      deps = ["//lib:some_lib"]
+  )
+  ```
+"""
 
 def _haskell_library_impl(ctx):
   interfaces_dir, interface_files, object_files, object_dyn_files = compile_haskell_lib(ctx)
@@ -134,6 +165,18 @@ haskell_library = rule(
   host_fragments = ["cpp"],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
+"""Build a library from Haskell source.
+
+Example:
+  ```bzl
+  haskell_library(
+      name = 'hello_lib',
+      srcs = glob(['hello_lib/**/*.hs']),
+      deps = ["//hello_sublib:lib"],
+      prebuilt_dependencies = ["base", "bytestring"],
+  )
+  ```
+"""
 
 haskell_doc = _haskell_doc
 
