@@ -132,7 +132,8 @@ $ bazel test //...
 ## Rules
 
 See https://haskell.build for the reference documentation on provided
-rules.
+rules. Using [./serve-docs.sh](./serve-docs.sh), you can also view
+this documentation locally.
 
 ## Language interop
 
