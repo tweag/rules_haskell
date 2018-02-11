@@ -39,6 +39,7 @@ _DefaultCompileInfo = provider(
   doc = "Default compilation files and configuration.",
   fields = {
     "args": "Default argument list.",
+    "haddock_args": "Default Haddock argument list.",
     "inputs": "Default inputs.",
     "outputs": "Default outputs.",
     "objects_dir": "Object files directory.",
@@ -51,6 +52,9 @@ _DefaultCompileInfo = provider(
 
 def _hs_srcs(ctx):
   """Return sources that correspond to a Haskell module."""
+  # TODO This may be not entirely correct because it does not take into
+  # account sources produced by the hsc2hs tool. This probably leads to
+  # undeclared object files from those inputs.
   return [f for f in ctx.files.srcs if f.extension in ["hs", "hsc", "lhs"]]
 
 def _get_lib_name(lib):
@@ -237,12 +241,22 @@ def compile_haskell_lib(ctx):
         * Interface files
         * Object files
         * Dynamic object files
+        * Haddock args
   """
   c = compilation_defaults(ctx)
   c.args.add([
-    "-package-name", "{0}-{1}".format(ctx.attr.name, ctx.attr.version),
+    "-package-name", get_pkg_id(ctx),
     "-static", "-dynamic-too"
   ])
+
+  # This is absolutely required otherwise GHC doesn't know what package it's
+  # creating `Name`s for to put them in Haddock interface files which then
+  # results in Haddock not being able to find names for linking in
+  # environment after reading its interface file later.
+  unit_id_args = ["-this-unit-id", get_pkg_id(ctx)]
+
+  c.args.add(unit_id_args)
+  c.haddock_args.add(unit_id_args, before_each="--optghc")
 
   object_dyn_files = [
     declare_compiled(ctx, s, ".dyn_o", directory=c.objects_dir)
@@ -258,7 +272,7 @@ def compile_haskell_lib(ctx):
     arguments = [c.args],
   )
 
-  return c.interfaces_dir, c.interface_files, c.object_files, object_dyn_files
+  return c.interfaces_dir, c.interface_files, c.object_files, object_dyn_files, c.haddock_args
 
 def create_static_library(ctx, object_files):
   """Create a static library for the package using given object files.
@@ -415,6 +429,7 @@ def compilation_defaults(ctx):
     _DefaultCompile: Populated default compilation settings.
   """
   args = ctx.actions.args()
+  haddock_args = ctx.actions.args()
 
   # Preprocess any sources
   sources = hsc_to_hs(ctx)
@@ -426,8 +441,11 @@ def compilation_defaults(ctx):
   interfaces_dir     = ctx.actions.declare_directory(interfaces_dir_raw)
 
   # Compilation mode and explicit user flags
-  if ctx.var["COMPILATION_MODE"] == "opt": args.add("-O2")
+  if ctx.var["COMPILATION_MODE"] == "opt":
+    args.add("-O2")
+
   args.add(ctx.attr.compiler_flags)
+  haddock_args.add(ctx.attr.compiler_flags, before_each="--optghc")
 
   # Common flags
   args.add([
@@ -435,22 +453,42 @@ def compilation_defaults(ctx):
     "--make",
     "-fPIC",
     "-hide-all-packages",
+  ])
+  haddock_args.add(["-hide-all-packages"], before_each="--optghc")
+
+  args.add([
     "-odir", objects_dir,
     "-hidir", interfaces_dir,
   ])
 
   _add_mode_options(ctx, args)
 
-  args.add(["-i{0}".format(idir) for idir in set.to_list(set.from_list([f.dirname for f in sources]))])
+  for idir in set.to_list(set.from_list([f.dirname for f in sources])):
+    items = ["-i{0}".format(idir)]
+    args.add(items)
+    haddock_args.add(items, before_each="--optghc")
 
   dep_info = gather_dependency_information(ctx)
-  for n in depset(transitive = [dep_info.names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
-    args.add(["-package", n])
+
+  # Expose all prebuilt dependencies
+  for prebuilt_dep in ctx.attr.prebuilt_dependencies:
+    items = ["-package", prebuilt_dep]
+    args.add(items)
+    haddock_args.add(items, before_each="--optghc")
+
+  # Expose all bazel dependencies
+  for package in dep_info.names.to_list():
+    items = ["-package", package]
+    args.add(items)
+    if package != get_pkg_id(ctx):
+      haddock_args.add(items, before_each="--optghc")
 
   # Only include package DBs for deps, prebuilt deps should be found
   # auto-magically by GHC.
   for c in dep_info.caches.to_list():
-    args.add(["-package-db", c.dirname])
+    items = ["-package-db", c.dirname]
+    args.add(items)
+    haddock_args.add(items, before_each="--optghc")
 
   # We want object and dynamic objects from all inputs.
   object_files = []
@@ -487,15 +525,20 @@ def compilation_defaults(ctx):
 
   hdrs, include_args = cc_headers(ctx)
   args.add(include_args)
+  haddock_args.add(include_args, before_each="--optghc")
 
   # Lastly add all the processed sources.
-  args.add([f for f in sources if f.extension not in ["hs-boot", "lhs-boot"]])
+  for f in sources:
+    if f.extension not in ["hs-boot", "lhs-boot"]:
+      args.add(f)
+      haddock_args.add(f)
 
   # Add any interop info for other languages.
   java = java_interop_info(ctx)
 
   return _DefaultCompileInfo(
     args = args,
+    haddock_args = haddock_args,
     inputs = depset(transitive = [
       depset(sources),
       depset(hdrs),
@@ -567,6 +610,7 @@ def gather_dependency_information(ctx):
     interface_files = set.empty(),
     prebuilt_dependencies = set.from_list(ctx.attr.prebuilt_dependencies),
     external_libraries = set.empty(),
+    haddock_ghc_args = None,
   )
 
   for dep in ctx.attr.deps:
@@ -582,6 +626,7 @@ def gather_dependency_information(ctx):
         interface_files = set.mutable_union(hpi.interface_files, pkg.interface_files),
         prebuilt_dependencies = set.mutable_union(hpi.prebuilt_dependencies, pkg.prebuilt_dependencies),
         external_libraries = set.mutable_union(hpi.external_libraries, pkg.external_libraries),
+        haddock_ghc_args = None,
       )
     else:
       # If not a Haskell dependency, pass it through as-is to the
@@ -598,5 +643,7 @@ def gather_dependency_information(ctx):
         external_libraries = set.mutable_union(
           hpi.external_libraries,
           set.from_list([_mangle_solib(ctx, dep.label, f) for f in dep.files.to_list() if f.extension == "so"]),
-        ))
+        ),
+        haddock_ghc_args = None,
+      )
   return hpi
