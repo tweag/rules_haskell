@@ -64,3 +64,21 @@ maven_jar(
   name = "org_apache_spark_spark_core_2_10",
   artifact = "org.apache.spark:spark-core_2.10:1.6.0",
 )
+
+# For Skydoc
+
+http_archive(
+    name = "io_bazel_rules_sass",
+    strip_prefix = "rules_sass-0.0.3",
+    urls = ["https://github.com/bazelbuild/rules_sass/archive/0.0.3.tar.gz"],
+)
+load("@io_bazel_rules_sass//sass:sass.bzl", "sass_repositories")
+sass_repositories()
+
+http_archive(
+    name = "io_bazel_skydoc",
+    strip_prefix = "skydoc-deef7e7ae262417e7f2633bea6a1246460cd1e7b",
+    urls = ["https://github.com/mboes/skydoc/archive/deef7e7ae262417e7f2633bea6a1246460cd1e7b.tar.gz"],
+)
+load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
+skydoc_repositories()
