@@ -39,7 +39,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     "-o", doc_dir,
     "--html", "--hoogle",
     "--title={0}".format(pkg_id),
-    # TODO: --hyperlinked-source or make a ticket
+    "--hyperlinked-source",
   ])
 
   dep_interfaces = set.empty()
