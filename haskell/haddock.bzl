@@ -1,4 +1,4 @@
-"""Haddock suppport."""
+"""Haddock suppport"""
 
 load (":path_utils.bzl", "module_name")
 load (":set.bzl", "set")
@@ -129,7 +129,32 @@ def _haskell_doc_rule_impl(ctx):
 haskell_doc = rule(
   _haskell_doc_rule_impl,
   attrs = {
-    "deps": attr.label_list(aspects = [haskell_doc_aspect]),
+    "deps": attr.label_list(
+      aspects = [haskell_doc_aspect],
+      doc = "List of Haskell libraries to generate documentation for.",
+    ),
   },
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
+"""Create API documentation.
+
+Builds API documentation (using [Haddock][haddock]) for the given
+Haskell libraries. It will automatically build documentation for any
+transitive dependencies to allow for cross-package documentation
+linking. Currently linking to `prebuilt_deps` is not supported.
+
+Example:
+  ```bzl
+  haskell_library(
+    name = "my-lib",
+    ...
+  )
+
+  haskell_doc(
+    name = "my-lib-doc",
+    deps = [":my-lib"],
+  )
+  ````
+
+[haddock]: http://haskell-haddock.readthedocs.io/en/latest/
+"""

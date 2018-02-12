@@ -1,3 +1,8 @@
+"""Interop with cc_* rules
+
+These rules are temporary and will be deprecated in the future.
+"""
+
 load(":providers.bzl", "HaskellPackageInfo")
 
 load(":set.bzl", "set")
@@ -10,14 +15,18 @@ CcSkylarkApiProviderHacked = provider(
   doc = "Skylark emulation of CcSkylarkApiProvider. Temporary hack.",
   fields = {
     "transitive_headers": """
-      Returns a depset of headers that have been declared in the src
-      or headers attribute(possibly empty but never None).
-    """
+
+Returns a depset of headers that have been declared in the src or
+headers attribute(possibly empty but never None).
+"""
   },
 )
 
 def cc_headers(ctx):
-  # Bring in scope the header files of dependencies, if any.
+  """Bring in scope the header files of dependencies, if any.
+
+  *Internal function - do not use.*
+  """
   hdrs = [
     hdr
     # XXX There's gotta be a better way to test the presence of
@@ -49,10 +58,47 @@ def _cc_import_impl(ctx):
 haskell_cc_import = rule(
   _cc_import_impl,
   attrs = {
-    "shared_library": attr.label(),
-    "hdrs": attr.label_list(allow_files = [".h"])
+    "shared_library": attr.label(
+      allow_files = [".so", ".dll", ".dylib"],
+      doc = """A single precompiled shared library.
+
+Bazel ensures it is available to the binary that depends on it
+during runtime.
+""",
+    ),
+    "hdrs": attr.label_list(
+      allow_files = [".h"],
+      doc = """
+
+The list of header files published by this precompiled library to be
+directly included by sources in dependent rules.
+""",
+    )
   },
 )
+"""Imports a prebuilt shared library.
+
+Use this to make `.so`, `.dll`, `.dylib` files residing in external
+[external repositories][bazel-ext-repos] available to Haskell rules.
+
+*This rule is temporary replacement for [cc_import][cc_import] and
+will be deprecated in the future.*
+
+Example:
+  ```bzl
+  haskell_cc_import(name = "zlib", shared_library = "@zlib//:lib")
+
+  haskell_binary(
+    name = "crc32sum",
+    srcs = ["Main.hs"],
+    deps = [":zlib"],
+    prebuilt_dependencies = ["base"],
+  )
+  ```
+
+[bazel-ext-repos]: https://docs.bazel.build/versions/master/external.html
+[cc_import]: https://docs.bazel.build/versions/master/be/c-cpp.html#cc_import
+"""
 
 def _cc_haskell_import(ctx):
   if HaskellPackageInfo in ctx.attr.dep:
@@ -65,6 +111,48 @@ def _cc_haskell_import(ctx):
 cc_haskell_import = rule(
   _cc_haskell_import,
   attrs = {
-    "dep": attr.label(),
+    "dep": attr.label(
+      doc = "Target providing a `HaskellPackageInfo`, such as `haskell_library`."
+    ),
   },
 )
+"""Exports a Haskell library as a CC library.
+
+Given a [haskell_library](#haskell_library) input, outputs the shared
+object file produced as well as the object files it depends on
+directly and transitively. This is very useful if you want to link in
+a Haskell shared library from `cc_library`.
+
+There is a caveat: this will not provide any shared libraries that
+aren't explicitly given to it. This means that if you're using
+`prebuilt_dependencies` and relying on GHC to provide those objects,
+they will not be present here. You will have to provide those
+separately to your `cc_library`. If you're getting
+`prebuilt_dependencies` from your toolchain, you will likely want to
+extract those and pass them in as well.
+
+*This rule is temporary and only needed until the Bazel C/C++
+"sandwich" (see [bazelbuild/bazel#2163][bazel-cpp-sandwich]) is
+implemented. This rule will be deprecated in the future.*
+
+Example:
+  ```bzl
+  haskell_library(
+    name = "my-lib",
+    ...
+  )
+
+  cc_haskell_import(
+    name = "my-lib-objects",
+    dep = ":my-lib",
+  )
+
+  cc_library(
+    name = "my-cc",
+    srcs = ["main.c", ":my-lib-objects"],
+  )
+  ```
+
+[bazel-cpp-sandwich]: https://github.com/bazelbuild/bazel/issues/2163
+
+"""

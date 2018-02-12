@@ -1,4 +1,4 @@
-"""Rules for defining toolchains."""
+"""Rules for defining toolchains"""
 
 def _haskell_toolchain_impl(ctx):
   for tool in ["ghc", "ghc-pkg", "hsc2hs", "haddock"]:
@@ -45,6 +45,34 @@ _haskell_toolchain = rule(
 )
 
 def haskell_toolchain(name, version, tools, **kwargs):
+  """Declare a compiler toolchain.
+
+  Declares a compiler toolchain. You need at least one of these declared
+  somewhere in your `BUILD` files for the other rules to work. Once
+  declared, you then need to *register* the toolchain using
+  `register_toolchain` in your `WORKSPACE` file (see Example below).
+
+  Example:
+    ```bzl
+    haskell_toolchain(
+        name = 'my_ghc',
+        version = '1.2.3'
+        tools = ["@sys_ghc//:bin"]
+    )
+    ```
+
+    where `@ghc` is an external repository defined in the `WORKSPACE`,
+    e.g. using:
+
+    ```bzl
+    nixpkgs_package(
+        name = 'sys_ghc',
+        attribute_path = 'haskell.compiler.ghc123'
+    )
+
+    register_toolchain("//:sys_ghc")
+    ```
+  """
   impl_name = name + "-impl"
   _haskell_toolchain(
     name = impl_name,
