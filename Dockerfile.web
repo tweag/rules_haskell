@@ -1,0 +1,25 @@
+# Container for https://haskell.build.
+
+FROM ubuntu:xenial
+
+RUN apt-get update && apt-get install -y curl \
+    && echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" \
+    | tee /etc/apt/sources.list.d/bazel.list \
+    && curl https://bazel.build/bazel-release.pub.gpg | apt-key add - \
+    && apt-get update \
+    && apt-get install -y \
+         bazel \
+	 openjdk-8-jdk \
+	 python \
+	 unzip
+
+COPY WORKSPACE /bazel/
+COPY haskell /bazel/haskell/
+COPY tests /bazel/tests/
+COPY third_party /bazel/third_party/
+
+RUN cd /bazel; bazel build //haskell:docs
+RUN cp /bazel/site/start /site \
+    && unzip -d /site /bazel/bazel-bin/haskell/docs-skydoc.zip
+
+CMD cd /site; python -m SimpleHTTPServer $PORT
