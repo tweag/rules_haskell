@@ -16,7 +16,7 @@ function finish {
 
 trap finish EXIT
 
-bazel build //haskell:docs
-unzip -d $SCRATCH bazel-bin/haskell/docs-skydoc.zip
+bazel build //docs:docs
+unzip -d $SCRATCH bazel-bin/docs/docs-skydoc.zip
 cd $SCRATCH
 python -m SimpleHTTPServer $PORT
