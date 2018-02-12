@@ -22,6 +22,10 @@ load(":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
 )
 
+load (":ghc_bindist.bzl",
+  _ghc_bindist = "ghc_bindist",
+)
+
 load(":cc.bzl",
   "CcSkylarkApiProviderHacked",
   _haskell_cc_import = "haskell_cc_import",
@@ -182,6 +186,8 @@ Example:
 haskell_doc = _haskell_doc
 
 haskell_toolchain = _haskell_toolchain
+
+ghc_bindist = _ghc_bindist
 
 haskell_cc_import = _haskell_cc_import
 
