@@ -15,11 +15,12 @@ RUN apt-get update && apt-get install -y curl \
 
 COPY WORKSPACE /bazel/
 COPY haskell /bazel/haskell/
+COPY docs /bazel/docs/
 COPY tests /bazel/tests/
 COPY third_party /bazel/third_party/
 
-RUN cd /bazel; bazel build //haskell:docs
+RUN cd /bazel; bazel build //docs:docs
 RUN cp /bazel/site/start /site \
-    && unzip -d /site /bazel/bazel-bin/haskell/docs-skydoc.zip
+    && unzip -d /site /bazel/bazel-bin/docs/docs-skydoc.zip
 
 CMD cd /site; python -m SimpleHTTPServer $PORT
