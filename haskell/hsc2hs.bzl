@@ -36,6 +36,8 @@ def _process_hsc_file(ctx, hsc_file):
     File: Haskell source file created by processing hsc_file.
   """
 
+  print(ctx.attr.deps)
+
   hsc_output_dir = ctx.actions.declare_directory(
     module_unique_name(ctx, hsc_file, "hsc_processed")
   )

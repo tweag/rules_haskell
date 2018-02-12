@@ -35,6 +35,10 @@ load(":mode.bzl",
      "is_profiling_enabled",
 )
 
+load(":util.bzl",
+     "get_cc_defines",
+)
+
 _DefaultCompileInfo = provider(
   doc = "Default compilation files and configuration.",
   fields = {
@@ -496,7 +500,6 @@ def compilation_defaults(ctx):
   # We need to keep interface files we produce so we can import
   # modules cross-package.
   interface_files = []
-
   textual_headers = []
 
   # Output object files are named after modules, not after input file names.
@@ -526,6 +529,9 @@ def compilation_defaults(ctx):
   hdrs, include_args = cc_headers(ctx)
   args.add(include_args)
   haddock_args.add(include_args, before_each="--optghc")
+
+  # Add defines from C dependencies.
+  print(get_cc_defines(ctx)) # FIXME
 
   # Lastly add all the processed sources.
   for f in sources:
