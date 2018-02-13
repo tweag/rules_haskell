@@ -1,5 +1,9 @@
-# Can't be defined in haskell.bzl due to circular dependencies.
+"""Repository rules"""
+
 def haskell_repositories():
+  """Provide all repositories that are necessary for `rules_haskell` to
+  function.
+  """
   native.http_archive(
     name = "bazel_skylib",
     strip_prefix = "bazel-skylib-0.2.0",
