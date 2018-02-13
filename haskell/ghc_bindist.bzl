@@ -78,7 +78,7 @@ Example:
    In `BUILD` file:
 
    ```bzl
-   # Use binaries from @ghc//:bin to define ghc toolchain.
+   # Use binaries from @ghc//:bin to define //:ghc toolchain.
    haskell_toolchain(
      name = "ghc",
      version = "8.2.2",
