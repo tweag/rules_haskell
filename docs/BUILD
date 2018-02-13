@@ -11,11 +11,11 @@ skylark_doc(
     # sections are presented in the docs.
 
     "//haskell:haskell.bzl",
-    "//haskell:repositories.bzl",
     "//haskell:haddock.bzl",
     "//haskell:toolchain.bzl",
-    "//haskell:ghc_bindist.bzl",
     "//haskell:cc.bzl",
+    "//haskell:repositories.bzl",
+    "//haskell:ghc_bindist.bzl",
 
   ],
   format = "html",

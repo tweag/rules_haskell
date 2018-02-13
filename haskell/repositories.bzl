@@ -1,4 +1,4 @@
-"""Repository rules"""
+"""Workspace rules (repositories)"""
 
 def haskell_repositories():
   """Provide all repositories that are necessary for `rules_haskell` to
