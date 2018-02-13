@@ -24,13 +24,13 @@ The full reference documentation for rules is at https://haskell.build.
 
 | Rule | Description |
 | ---: | :--- |
-| [`haskell_library`](#haskell_library) | Build a library from Haskell source. |
-| [`haskell_binary`](#haskell_binary) | Build an executable from Haskell source. |
-| [`haskell_test`](#haskell_test) | Run a test suite. |
-| [`haskell_doc`](#haskell_doc) | Create API documentation. |
-| [`haskell_toolchain`](#haskell_toolchain) | Declare a compiler toolchain. |
-| [`haskell_cc_import`](#haskell_cc_import) | Import a prebuilt shared library. |
-| [`cc_haskell_import`](#cc_haskell_import) | Expose all transitive shared object libraries for haskell dependency. |
+| [`haskell_library`](https://haskell.build/haskell/haskell.html#haskell_library) | Build a library from Haskell source. |
+| [`haskell_binary`](https://haskell.build/haskell/haskell.html#haskell_binary) | Build an executable from Haskell source. |
+| [`haskell_test`](https://haskell.build/haskell/haskell.html#haskell_test) | Run a test suite. |
+| [`haskell_doc`](https://haskell.build/haskell/haddock.html#haskell_doc) | Create API documentation. |
+| [`haskell_toolchain`](https://haskell.build/haskell/toolchain.html#haskell_toolchain) | Declare a compiler toolchain. |
+| [`haskell_cc_import`](https://haskell.build/haskell/cc.html#haskell_cc_import) | Import a prebuilt shared library. |
+| [`cc_haskell_import`](https://haskell.build/haskell/cc.html#cc_haskell_import) | Expose all transitive shared object libraries for haskell dependency. |
 
 [bazel]: https://bazel.build/
 [bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
