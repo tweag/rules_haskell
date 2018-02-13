@@ -77,8 +77,8 @@ sass_repositories()
 
 http_archive(
     name = "io_bazel_skydoc",
-    strip_prefix = "skydoc-deef7e7ae262417e7f2633bea6a1246460cd1e7b",
-    urls = ["https://github.com/mboes/skydoc/archive/deef7e7ae262417e7f2633bea6a1246460cd1e7b.tar.gz"],
+    strip_prefix = "skydoc-b374449408e759e32e010fa6a20585fe9fabd523",
+    urls = ["https://github.com/mrkkrp/skydoc/archive/b374449408e759e32e010fa6a20585fe9fabd523.tar.gz"],
 )
 load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
 skydoc_repositories()
