@@ -57,6 +57,10 @@ _haskell_common_attrs = {
     default = "1.0.0",
     doc = "Library/binary version. Internal - do not use."
   ),
+  "_ghc_defs_cleanup": attr.label(
+    allow_single_file = True,
+    default = Label("@io_tweag_rules_haskell//haskell:ghc-defs-cleanup.sh"),
+  )
 }
 
 def _haskell_binary_impl(ctx):
