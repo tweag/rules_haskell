@@ -9,6 +9,10 @@ multi-language projects. This project extends Bazel with build rules
 for Haskell. Get started building your own project using these rules
 wih the [setup script below](#setup).
 
+## Rule summary
+
+The full reference documentation for rules is at https://haskell.build.
+
 **WORKSPACE rules:**
 
 | Rule | Description |
