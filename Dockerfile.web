@@ -21,7 +21,7 @@ COPY tests /bazel/tests/
 COPY third_party /bazel/third_party/
 
 RUN cd /bazel; bazel build //docs:docs
-RUN cp /bazel/start /site \
-    && unzip -d /site /bazel/bazel-bin/docs/docs-skydoc.zip
+RUN unzip -d /site /bazel/bazel-bin/docs/docs-skydoc.zip \
+    && cp /bazel/start /site
 
 CMD cd /site; python -m SimpleHTTPServer $PORT
