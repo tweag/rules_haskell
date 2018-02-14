@@ -25,8 +25,8 @@ workspace(name = "YOUR_PROJECT_NAME_HERE")
 
 http_archive(
   name = "io_tweag_rules_haskell",
-  strip_prefix = "rules_haskell-0.2",
-  urls = ["https://github.com/tweag/rules_haskell/archive/v0.2.tar.gz"]
+  strip_prefix = "rules_haskell-0.3",
+  urls = ["https://github.com/tweag/rules_haskell/archive/v0.3.tar.gz"]
 )
 
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
