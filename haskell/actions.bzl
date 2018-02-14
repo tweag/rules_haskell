@@ -35,6 +35,10 @@ load(":mode.bzl",
      "is_profiling_enabled",
 )
 
+load(":utils.bzl",
+     "produce_paths_module",
+)
+
 _DefaultCompileInfo = provider(
   doc = "Default compilation files and configuration.",
   fields = {
@@ -533,6 +537,23 @@ def compilation_defaults(ctx):
       args.add(f)
       haddock_args.add(f)
 
+  # Generate and provide Paths_* module.
+
+  paths_filename, paths_content = produce_paths_module(ctx.attr.name, ctx.attr.version)
+  paths_file = ctx.actions.declare_file(paths_filename)
+
+  ctx.actions.write(paths_file, paths_content)
+  args.add(paths_file)
+  haddock_args.add(paths_file)
+  object_files.append(
+    ctx.actions.declare_file(
+      paths.join(
+        objects_dir_raw,
+        paths.replace_extension(paths_filename, ".o"),
+      )
+    )
+  )
+
   # Add any interop info for other languages.
   java = java_interop_info(ctx)
 
@@ -550,6 +571,7 @@ def compilation_defaults(ctx):
       set.to_depset(dep_info.external_libraries),
       java.inputs,
       depset(textual_headers),
+      depset([paths_file]),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + interface_files,
     objects_dir = objects_dir,
