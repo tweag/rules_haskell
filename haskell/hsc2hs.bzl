@@ -52,15 +52,15 @@ def _make_ghc_defs_dump(ctx):
   ])
 
   ctx.actions.run(
-    inputs     = [dummy_src],
-    outputs    = [ghc_defs_dump_raw],
+    inputs = [dummy_src],
+    outputs = [ghc_defs_dump_raw],
     executable = get_compiler(ctx),
-    arguments  = [args],
+    arguments = [args],
   )
 
   ctx.actions.run(
-    inputs     = [ghc_defs_dump_raw],
-    outputs    = [ghc_defs_dump],
+    inputs = [ghc_defs_dump_raw],
+    outputs = [ghc_defs_dump],
     executable = ctx.file._ghc_defs_cleanup,
     arguments  = [
       ghc_defs_dump_raw.path,
