@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Usage: ghc-defs-cleanup.SH <ORIGINAL-FILE> <OUTPUT-FILE>
 
