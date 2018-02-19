@@ -43,7 +43,10 @@ package(default_visibility = ["//visibility:public"])
 
 filegroup (
   name = "lib",
-  srcs = glob(["nix/lib/*.so"]),
+  srcs = glob([
+    "nix/lib/*.so",
+    "nix/lib/*.so.*",
+  ]),
   testonly = 1,
 )
 """,

@@ -1,4 +1,4 @@
-module Lib (crc) where
+module IntLib (crc) where
 
 import Foreign.Ptr
 import Foreign.C.Types
