@@ -1,7 +1,11 @@
 """Core Haskell rules"""
 
-load(":actions.bzl",
+load(":providers.bzl",
   "HaskellPackageInfo",
+  "CcSkylarkApiProviderHacked",
+)
+
+load(":actions.bzl",
   "compile_haskell_bin",
   "compile_haskell_lib",
   "create_dynamic_library",
@@ -27,7 +31,6 @@ load (":ghc_bindist.bzl",
 )
 
 load(":cc.bzl",
-  "CcSkylarkApiProviderHacked",
   _haskell_cc_import = "haskell_cc_import",
   _cc_haskell_import = "cc_haskell_import",
 )

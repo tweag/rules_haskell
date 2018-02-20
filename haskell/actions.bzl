@@ -27,7 +27,10 @@ load(":java_interop.bzl",
      "java_interop_info",
 )
 
-load(":providers.bzl", "HaskellPackageInfo")
+load(":providers.bzl",
+     "HaskellPackageInfo",
+     "CcSkylarkApiProviderHacked",
+)
 
 load("@bazel_skylib//:lib.bzl", "paths", "dicts")
 
@@ -58,15 +61,35 @@ def _hs_srcs(ctx):
   return [f for f in ctx.files.srcs if f.extension in ["hs", "hsc", "lhs"]]
 
 def _get_lib_name(lib):
-  return paths.replace_extension(
-    lib.basename[3:] if lib.basename[:3] == "lib" else lib.basename,
-    "",
-  )
+  """Return name of library by dropping extension and \"lib\" prefix.
+
+  Args:
+    lib: The library File.
+
+  Returns:
+    String: name of library.
+  """
+
+  base = lib.basename[3:] if lib.basename[:3] == "lib" else lib.basename
+  n = base.find(".so.")
+  end = paths.replace_extension(base, "") if n == -1 else base[:n]
+  return end
 
 def _get_external_libs_path(libs):
-  return ":".join([paths.dirname(lib.path) for lib in libs])
+  """Return a String value for using as LD_LIBRARY_PATH or similar.
 
-def _mangle_solib(ctx, label, solib):
+  Args:
+    libs: Set of File: the libs that should be available.
+
+  Returns:
+    String: paths to the given libs separated by \":\".
+  """
+  return ":".join(set.to_list(set.map(libs, _get_external_lib_path)))
+
+def _get_external_lib_path(lib):
+  return paths.dirname(lib.path)
+
+def _mangle_solib(ctx, label, solib, preserve_name):
   """Create a symlink to a dynamic library, with a longer name.
 
   The built-in cc_* rules don't link against a shared library
@@ -81,11 +104,15 @@ def _mangle_solib(ctx, label, solib):
     ctx: Rule context.
     label: the label to use as a qualifier for the dynamic library name.
     solib: the dynamic library.
+    preserve_name: Bool, whether given `solib` should be returned unchanged.
 
   Returns:
-    File: the created symlink.
-
+    File: the created symlink or the original solib.
   """
+
+  if preserve_name:
+    return solib
+
   components = [c for c in [label.workspace_root, label.package, label.name] if c]
   qualifier = '/'.join(components).replace('_', '_U').replace('/', '_S')
   qualsolib = ctx.actions.declare_file("lib" + qualifier + "_" + solib.basename)
@@ -95,6 +122,17 @@ def _mangle_solib(ctx, label, solib):
     command = "ln -s $(realpath {0}) {1}".format(solib.path, qualsolib.path),
   )
   return qualsolib
+
+def _is_shared_library(f):
+  """Check if the given File is a shared library.
+
+  Args:
+    f: The File to check.
+
+  Returns:
+    Bool: True if the given file `f` is a shared library, False otherwise.
+  """
+  return f.extension == "so" or f.basename.find(".so.") != -1
 
 def _add_mode_options(ctx, args):
   """Add mode options to the given args object.
@@ -328,12 +366,16 @@ def create_dynamic_library(ctx, object_files):
   for c in dep_info.caches.to_list():
     args.add(["-package-db", c.dirname])
 
+  seen_libs = set.empty()
+
   for lib in set.to_list(dep_info.external_libraries):
     lib_name = _get_lib_name(lib)
-    args.add([
-      "-l{0}".format(lib_name),
-      "-L{0}".format(paths.dirname(lib.path)),
-    ])
+    if not set.is_member(seen_libs, lib_name):
+      set.mutable_insert(seen_libs, lib_name)
+      args.add([
+        "-l{0}".format(lib_name),
+        "-L{0}".format(paths.dirname(lib.path)),
+      ])
 
   args.add([ f.path for f in object_files ])
 
@@ -558,7 +600,7 @@ def compilation_defaults(ctx):
     interface_files = interface_files,
     env = dicts.add({
       "PATH": get_build_tools_path(ctx),
-      "LD_LIBRARY_PATH": _get_external_libs_path(set.to_list(dep_info.external_libraries)),
+      "LD_LIBRARY_PATH": _get_external_libs_path(dep_info.external_libraries),
       },
       java.env,
     ),
@@ -642,8 +684,14 @@ def gather_dependency_information(ctx):
         prebuilt_dependencies = hpi.prebuilt_dependencies,
         external_libraries = set.mutable_union(
           hpi.external_libraries,
-          set.from_list([_mangle_solib(ctx, dep.label, f) for f in dep.files.to_list() if f.extension == "so"]),
+          set.from_list([
+            # If the provider is CcSkylarkApiProviderHacked, then the .so
+            # files come from haskell_cc_import.
+            _mangle_solib(ctx, dep.label, f, CcSkylarkApiProviderHacked in dep)
+            for f in dep.files.to_list() if _is_shared_library(f)
+          ]),
         ),
         haddock_ghc_args = None,
       )
+
   return hpi

@@ -3,24 +3,12 @@
 These rules are temporary and will be deprecated in the future.
 """
 
-load(":providers.bzl", "HaskellPackageInfo")
+load(":providers.bzl",
+     "HaskellPackageInfo",
+     "CcSkylarkApiProviderHacked",
+)
 
 load(":set.bzl", "set")
-
-# XXX this provider shouldn't be necessary. But since Skylark rules
-# can neither return CcSkylarkApiProvider nor properly test for its
-# existence in a dependency, we're forced to introduce this hack for
-# now. See https://github.com/bazelbuild/bazel/issues/4370.
-CcSkylarkApiProviderHacked = provider(
-  doc = "Skylark emulation of CcSkylarkApiProvider. Temporary hack.",
-  fields = {
-    "transitive_headers": """
-
-Returns a depset of headers that have been declared in the src or
-headers attribute(possibly empty but never None).
-"""
-  },
-)
 
 def cc_headers(ctx):
   """Bring in scope the header files of dependencies, if any.
@@ -59,7 +47,12 @@ haskell_cc_import = rule(
   _cc_import_impl,
   attrs = {
     "shared_library": attr.label(
-      allow_files = [".so", ".dll", ".dylib"],
+      # NOTE We do not list all extensions here because .so libraries may
+      # have numeric suffixes like foo.so.1.2.3, and if they also have
+      # SONAME with numeric suffix, matching file must be provided, so this
+      # attributes must accept libraries with almost arbitrary extensions.
+      # It would be easier if Skylark supported regexps.
+      allow_files = True,
       doc = """A single precompiled shared library.
 
 Bazel ensures it is available to the binary that depends on it

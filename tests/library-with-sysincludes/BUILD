@@ -13,9 +13,22 @@ haskell_cc_import(
 )
 
 haskell_library(
-  name = "library-with-sysincludes",
-  srcs = ["Lib.hsc"],
+  name = "intermediate-library",
+  srcs = ["IntLib.hsc"],
   deps = [":zlib"],
   prebuilt_dependencies = ["base"],
+)
+
+haskell_library(
+  name = "library-with-sysincludes",
+  srcs = [
+      "Lib.hs",
+      "TH.hs",
+  ],
+  deps = [":intermediate-library"],
+  prebuilt_dependencies = [
+      "base",
+      "template-haskell",
+  ],
   visibility = ["//visibility:public"],
 )
