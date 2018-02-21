@@ -5,8 +5,8 @@ haskell_repositories()
 
 http_archive(
   name = "io_tweag_rules_nixpkgs",
-  strip_prefix = "rules_nixpkgs-0.1",
-  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.1.tar.gz"],
+  strip_prefix = "rules_nixpkgs-0.1.1",
+  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.1.1.tar.gz"],
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
