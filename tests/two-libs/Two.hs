@@ -1,4 +1,6 @@
 module Two (two) where
 
+import One (one)
+
 two :: Int
-two = 2
+two = one + one

@@ -155,7 +155,11 @@ def _haskell_library_impl(ctx):
     names = depset(transitive = [dep_info.names, depset([get_pkg_id(ctx)])]),
     confs = depset(transitive = [dep_info.confs, depset([conf_file])]),
     caches = depset(transitive = [dep_info.caches, depset([cache_file])]),
-    static_libraries = set.insert(dep_info.static_libraries, static_library),
+    # We have to use lists for static libraries because the order is
+    # important for linker. Linker searches for unresolved symbols to the
+    # left, i.e. you first feed a library which has unresolved symbols and
+    # then you feed the library which resolves the symbols.
+    static_libraries = [static_library] + dep_info.static_libraries,
     dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
     interface_files = set.union(dep_info.interface_files, set.from_list(interface_files)),
     prebuilt_dependencies = set.union(
