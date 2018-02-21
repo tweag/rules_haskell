@@ -62,6 +62,7 @@ def _make_ghc_defs_dump(ctx):
     inputs = [ghc_defs_dump_raw],
     outputs = [ghc_defs_dump],
     executable = ctx.file._ghc_defs_cleanup,
+    use_default_shell_env = True,
     arguments  = [
       ghc_defs_dump_raw.path,
       ghc_defs_dump.path,
