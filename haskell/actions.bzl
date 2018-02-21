@@ -228,12 +228,11 @@ def link_haskell_bin(ctx, object_files):
   # directly rather than doing multiple reversals with temporary
   # lists.
   link_paths = {}
-  static_lib_list = set.to_list(dep_info.static_libraries)
 
-  for lib in static_lib_list:
+  for lib in dep_info.static_libraries:
     link_paths[lib] = link_paths.get(lib, 0) + 1
 
-  for lib in static_lib_list:
+  for lib in dep_info.static_libraries:
     occ = link_paths.get(lib, 0)
     # This is the last occurrence of the lib, insert it.
     if occ == 1:
@@ -249,7 +248,7 @@ def link_haskell_bin(ctx, object_files):
 
   ctx.actions.run(
     inputs = depset(transitive = [
-      set.to_depset(dep_info.static_libraries),
+      depset(dep_info.static_libraries),
       depset(object_files),
       depset([dummy_static_lib]),
       set.to_depset(dep_info.external_libraries),
@@ -647,7 +646,7 @@ def gather_dependency_information(ctx):
     names = depset(),
     confs = depset(),
     caches = depset(),
-    static_libraries = set.empty(),
+    static_libraries = [],
     dynamic_libraries = set.empty(),
     interface_files = set.empty(),
     prebuilt_dependencies = set.from_list(ctx.attr.prebuilt_dependencies),
@@ -663,7 +662,7 @@ def gather_dependency_information(ctx):
         names = hpi.names + [pkg.name],
         confs = hpi.confs + pkg.confs,
         caches = hpi.caches + pkg.caches,
-        static_libraries = set.mutable_union(hpi.static_libraries, pkg.static_libraries),
+        static_libraries = hpi.static_libraries + pkg.static_libraries,
         dynamic_libraries = set.mutable_union(hpi.dynamic_libraries, pkg.dynamic_libraries),
         interface_files = set.mutable_union(hpi.interface_files, pkg.interface_files),
         prebuilt_dependencies = set.mutable_union(hpi.prebuilt_dependencies, pkg.prebuilt_dependencies),
