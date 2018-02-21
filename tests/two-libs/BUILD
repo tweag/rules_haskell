@@ -6,16 +6,6 @@ load(
   "haskell_binary",
 )
 
-haskell_binary(
-  name = "two-libs",
-  srcs = ["Main.hs"],
-  deps = [
-    "one",
-    "two"
-  ],
-  prebuilt_dependencies = ["base"],
-)
-
 haskell_library(
   name = 'one',
   srcs = [ 'One.hs' ],
@@ -30,4 +20,12 @@ haskell_library(
   prebuilt_dependencies = [
     "base"
   ],
+  deps = [":one"],
+)
+
+haskell_binary(
+  name = "two-libs",
+  srcs = ["Main.hs"],
+  deps = [":two"],
+  prebuilt_dependencies = ["base"],
 )

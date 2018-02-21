@@ -167,13 +167,20 @@ rule_test(
 rule_test(
   name = "test-hs-boot",
   generates = ["hs-boot"],
-  rule = "//tests/hs-boot",
+  rule = "//tests/hs-boot:hs-boot",
   size = "small",
 )
 
 rule_test(
   name = "test-textual-hdrs",
   generates = ["textual-hdrs"],
-  rule = "//tests/textual-hdrs",
+  rule = "//tests/textual-hdrs:textual-hdrs",
+  size = "small",
+)
+
+rule_test(
+  name = "test-two-libs",
+  generates = ["two-libs"],
+  rule = "//tests/two-libs:two-libs",
   size = "small",
 )
