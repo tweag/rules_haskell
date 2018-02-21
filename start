@@ -1,16 +1,24 @@
 #!/bin/sh
 
-MIN_BAZEL_VERSION=0.8.0
+MIN_BAZEL_MAJOR=0
+MIN_BAZEL_MINOR=8
 
 set -e
 
-expected=$MIN_BAZEL_VERSION
-actual=$(bazel version | egrep '^Build label:' | egrep -o '[0-9.]+')
+actual_raw=$(bazel version | egrep '^Build label:' | egrep -o '[0-9.]+')
+
+IFS=. read actual_major actual_minor actual_patch <<EOF
+$actual_raw
+EOF
+
+expected=$MIN_BAZEL_MAJOR.$MIN_BAZEL_MINOR.0
 cmp=$expected'\n'$actual
 
-if [ "$(echo -e ${cmp})" != "$(echo -e ${cmp} | sort -n -t. -k1 -k2)" ]
+if ! ( [ "$actual_major" -gt "$MIN_BAZEL_MAJOR" ] || (
+           [ "$actual_major" -eq "$MIN_BAZEL_MAJOR" ] &&
+               [ "$actual_minor" -ge "$MIN_BAZEL_MINOR" ] ) )
 then
-    echo Need at least Bazel v${expected}. v${actual} detected. >/dev/stderr
+    echo Need at least Bazel v${expected}. v${actual_raw} detected. >/dev/stderr
     exit 1
 fi
 
