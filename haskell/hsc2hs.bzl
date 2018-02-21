@@ -5,10 +5,10 @@ load(":path_utils.bzl",
   "module_unique_name",
 )
 
-load(":tools.bzl", "get_hsc2hs")
+load(":tools.bzl", "get_hsc2hs", "get_grep")
 load(":cc.bzl", "cc_headers")
 load("@bazel_skylib//:lib.bzl", "paths")
-load(":tools.bzl", "get_compiler")
+load(":tools.bzl", "get_ghc")
 
 def hsc_to_hs(ctx):
   """Process all hsc files into Haskell source files.
@@ -54,7 +54,7 @@ def _make_ghc_defs_dump(ctx):
   ctx.actions.run(
     inputs = [dummy_src],
     outputs = [ghc_defs_dump_raw],
-    executable = get_compiler(ctx),
+    executable = get_ghc(ctx),
     arguments = [args],
   )
 
@@ -62,8 +62,8 @@ def _make_ghc_defs_dump(ctx):
     inputs = [ghc_defs_dump_raw],
     outputs = [ghc_defs_dump],
     executable = ctx.file._ghc_defs_cleanup,
-    use_default_shell_env = True,
     arguments  = [
+      get_grep(ctx),
       ghc_defs_dump_raw.path,
       ghc_defs_dump.path,
     ],

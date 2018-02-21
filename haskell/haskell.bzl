@@ -97,7 +97,10 @@ def _mk_binary_rule(**kwargs):
       )
     ),
     host_fragments = ["cpp"],
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = [
+      "@io_tweag_rules_haskell//haskell:toolchain",
+      "@io_tweag_rules_haskell//haskell:binutils-toolchain",
+    ],
     **kwargs
   )
 
@@ -179,7 +182,10 @@ haskell_library = rule(
   _haskell_library_impl,
   attrs = _haskell_common_attrs,
   host_fragments = ["cpp"],
-  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+  toolchains = [
+    "@io_tweag_rules_haskell//haskell:toolchain",
+    "@io_tweag_rules_haskell//haskell:binutils-toolchain",
+  ],
 )
 """Build a library from Haskell source.
 

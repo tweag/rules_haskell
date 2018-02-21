@@ -3,7 +3,7 @@
 load(":set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def get_build_tools(ctx):
+def get_ghc_build_tools(ctx):
   """Get the set of all build tools we have available.
 
   Args:
@@ -42,7 +42,7 @@ def get_build_tools_path(ctx):
 
   return ":".join(
     set.to_list(
-      set.map(get_build_tools(ctx), _get_dirname)
+      set.map(get_ghc_build_tools(ctx), _get_dirname)
     ) +
     [paths.dirname(f) for f in c_execs]
   )
@@ -50,7 +50,7 @@ def get_build_tools_path(ctx):
 def _get_dirname(x):
   return x.dirname
 
-def _get_build_tool(ctx, tool_name):
+def _get_ghc_build_tool(ctx, tool_name):
   """Find the requested build tool from all the build tools we were given.
 
   Args:
@@ -60,13 +60,13 @@ def _get_build_tool(ctx, tool_name):
   Returns:
     File: Build tool with the name user asked for.
   """
-  for tool in set.to_list(get_build_tools(ctx)):
+  for tool in set.to_list(get_ghc_build_tools(ctx)):
     if tool.basename == tool_name:
       return tool
 
   fail("Could not find the '{0}' tool.".format(tool_name))
 
-def get_compiler(ctx):
+def get_ghc(ctx):
   """Get the compiler path.
 
   Args:
@@ -75,9 +75,9 @@ def get_compiler(ctx):
   Returns:
     File: Compiler to use.
   """
-  return _get_build_tool(ctx, "ghc")
+  return _get_ghc_build_tool(ctx, "ghc")
 
-def get_compiler_version(ctx):
+def get_ghc_version(ctx):
   """Get the compiler version.
 
   Args:
@@ -97,7 +97,7 @@ def get_ghc_pkg(ctx):
   Returns:
     File: ghc-pkg to use.
   """
-  return _get_build_tool(ctx, "ghc-pkg")
+  return _get_ghc_build_tool(ctx, "ghc-pkg")
 
 def get_hsc2hs(ctx):
   """Get the hsc2hs tool.
@@ -108,7 +108,7 @@ def get_hsc2hs(ctx):
   Returns:
     File: hsc2hs to use.
   """
-  return _get_build_tool(ctx, "hsc2hs")
+  return _get_ghc_build_tool(ctx, "hsc2hs")
 
 def get_haddock(ctx):
   """Get the haddock tool.
@@ -119,4 +119,42 @@ def get_haddock(ctx):
   Returns:
     File: haddock to use.
   """
-  return _get_build_tool(ctx, "haddock")
+  return _get_ghc_build_tool(ctx, "haddock")
+
+def _get_binutil_tool(ctx, tool_name):
+  """Find the requested build tool from tools provided by binutils toolchain.
+
+  Args:
+    ctx: Rule context.
+    tool_name: string, name of the binary we want to find.
+
+  Returns:
+    string: Absolute path to executable with requested name.
+  """
+  for tool in ctx.toolchains["@io_tweag_rules_haskell//haskell:binutils-toolchain"].tools:
+    if paths.basename(tool) == tool_name:
+      return tool
+
+  fail("Could not find the '{0}' tool.".format(tool_name))
+
+def get_ln(ctx):
+  """Get location of the ln tool.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    string: Absolute path to ln executable.
+  """
+  return _get_binutil_tool(ctx, "ln")
+
+def get_grep(ctx):
+  """Get location of the grep tool.
+
+  Args:
+    cxt: Rule context.
+
+  Returns:
+    string: Absolute path to grep executable.
+  """
+  return _get_binutil_tool(ctx, "grep")
