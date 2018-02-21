@@ -84,6 +84,25 @@ def declare_compiled(ctx, src, ext, directory=None):
   fp_with_dir = fp if directory == None else paths.join(directory.basename, fp)
   return ctx.actions.declare_file(fp_with_dir)
 
+def import_hierarchy_root(ctx):
+  """Return relative path to root of module hierarchy.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    string: Relative path to root of module hierarchy.
+  """
+  return paths.join(
+    ctx.label.workspace_root,
+    ctx.label.package,
+    # Since the src_strip_prefix attribute is always present in rule
+    # attributes, if it's not there, the function is called from aspect
+    # implementation and so we can access ctx.rule.attr.src_strip_prefix.
+    ctx.attr.src_strip_prefix if hasattr(ctx.attr, "src_strip_prefix")
+                              else ctx.rule.attr.src_strip_prefix
+  )
+
 def _rel_path_to_module(ctx, f):
   """Make given file name relative to the directory where the module hierarchy
   starts.
@@ -99,18 +118,7 @@ def _rel_path_to_module(ctx, f):
   Returns:
     string: Relative path to module file.
   """
-  return paths.relativize(
-    f.path,
-    paths.join(
-      ctx.label.workspace_root,
-      ctx.label.package,
-      # Since the src_strip_prefix attribute is always present in rule
-      # attributes, if it's not there, the function is called from aspect
-      # implementation and so we can access ctx.rule.attr.src_strip_prefix.
-      ctx.attr.src_strip_prefix if hasattr(ctx.attr, "src_strip_prefix")
-                                else ctx.rule.attr.src_strip_prefix
-    )
-  )
+  return paths.relativize(f.path, import_hierarchy_root(ctx))
 
 def _drop_extension(f):
   """Drop extension for a given file name.
