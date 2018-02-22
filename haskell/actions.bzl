@@ -4,6 +4,7 @@ load(":path_utils.bzl",
      "declare_compiled",
      "target_unique_name",
      "module_name",
+     "import_hierarchy_root",
 )
 
 load(":set.bzl", "set")
@@ -504,10 +505,9 @@ def compilation_defaults(ctx):
 
   _add_mode_options(ctx, args)
 
-  for idir in set.to_list(set.from_list([f.dirname for f in sources])):
-    items = ["-i{0}".format(idir)]
-    args.add(items)
-    haddock_args.add(items, before_each="--optghc")
+  ih_root_arg = ["-i{0}".format(import_hierarchy_root(ctx))]
+  args.add(ih_root_arg)
+  haddock_args.add(ih_root_arg, before_each="--optghc")
 
   dep_info = gather_dependency_information(ctx)
 
