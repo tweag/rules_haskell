@@ -5,6 +5,12 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_library",
 )
 
+load("@io_tweag_binutils//:binutils.bzl", "binutils_toolchain")
+
+binutils_toolchain(
+  name = "binutils",
+)
+
 # Using a modified version due to
 # https://github.com/bazelbuild/bazel/issues/4354.
 # TODO revert back to upstream version once fixed.

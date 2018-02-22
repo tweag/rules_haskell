@@ -26,6 +26,7 @@ load(":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
 )
 
+# Re-export ghc_bindist
 load (":ghc_bindist.bzl",
   _ghc_bindist = "ghc_bindist",
 )
