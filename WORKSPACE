@@ -1,14 +1,9 @@
 workspace(name = "io_tweag_rules_haskell")
 
-load("@io_tweag_rules_haskell//haskell:repositories.bzl",
-     "haskell_repositories",
-     # "binutils_repository",
-)
+load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 haskell_repositories()
 
-load("@io_tweag_rules_haskell//haskell:binutils-repo.bzl",
-     "binutils_repository")
-
+load("@io_tweag_rules_haskell//haskell:binutils-repo.bzl", "binutils_repository")
 binutils_repository(name = "io_tweag_binutils")
 
 http_archive(
@@ -44,20 +39,7 @@ cc_library(
 """,
 )
 
-##########################################
-
-# load("@io_tweag_rules_haskell//haskell:binutils-toolchain.bzl", "binutils_toolchain_repository")
-
-# binutils_toolchain_repository(
-#   name = "io_tweag_rules_haskell_binutils",
-#   provide_tools = ["ln", "grep"],
-# )
-
-# register_toolchains("@io_tweag_rules_haskell_binutils//:binutils")
-
-##########################################
-
-register_toolchains("//tests:ghc", "//tests:binutils")
+register_toolchains("//tests:binutils", "//tests:ghc")
 
 nixpkgs_package(name = "zlib", build_file_content = """
 package(default_visibility = ["//visibility:public"])

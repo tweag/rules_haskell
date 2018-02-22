@@ -117,9 +117,6 @@ def _mangle_solib(ctx, label, solib, preserve_name):
   components = [c for c in [label.workspace_root, label.package, label.name] if c]
   qualifier = '/'.join(components).replace('_', '_U').replace('/', '_S')
   qualsolib = ctx.actions.declare_file("lib" + qualifier + "_" + solib.basename)
-
-  print(get_ln(ctx))
-
   ctx.actions.run(
     inputs = [solib],
     outputs = [qualsolib],

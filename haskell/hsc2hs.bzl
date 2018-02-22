@@ -5,10 +5,13 @@ load(":path_utils.bzl",
   "module_unique_name",
 )
 
-load(":tools.bzl", "get_hsc2hs", "get_grep")
+load(":tools.bzl",
+     "get_hsc2hs",
+     "get_grep",
+     "get_ghc"
+)
 load(":cc.bzl", "cc_headers")
 load("@bazel_skylib//:lib.bzl", "paths")
-load(":tools.bzl", "get_ghc")
 
 def hsc_to_hs(ctx):
   """Process all hsc files into Haskell source files.

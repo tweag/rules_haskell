@@ -8,6 +8,8 @@ def _locate_tool(ctx, tool_name):
     return "{}".format(full_path)
 
 def _binutils_repo_impl(ctx):
+  """TODO
+  """
 
   # We have to do it this way, one by one, because the "substitutions"
   # argument to ctx.template must be a dictionary from string to string.

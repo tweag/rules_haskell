@@ -1,4 +1,4 @@
-"""GHC binary distributions"""
+"""Workspace rules (GHC binary distributions)"""
 
 load("@bazel_skylib//:lib.bzl", "paths")
 
