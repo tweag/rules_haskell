@@ -174,7 +174,7 @@ def compile_haskell_bin(ctx):
   Returns:
     list of File: Compiled object files.
   """
-  c = compilation_defaults(ctx)
+  c = _compilation_defaults(ctx)
   c.args.add(["-main-is", ctx.attr.main_function])
 
   ctx.actions.run(
@@ -324,7 +324,7 @@ def compile_haskell_lib(ctx):
         * Dynamic object files
         * Haddock args
   """
-  c = compilation_defaults(ctx)
+  c = _compilation_defaults(ctx)
   c.args.add([
     "-package-name", get_pkg_id(ctx),
     "-static", "-dynamic-too"
@@ -365,7 +365,7 @@ def create_static_library(ctx, object_files):
   Returns:
     File: Produced static library.
   """
-  static_library = ctx.actions.declare_file("lib{0}.a".format(get_library_name(ctx)))
+  static_library = ctx.actions.declare_file("lib{0}.a".format(_get_library_name(ctx)))
 
   args = ctx.actions.args()
   args.add(["qc", static_library])
@@ -392,7 +392,7 @@ def create_dynamic_library(ctx, object_files):
 
   version = get_compiler_version(ctx)
   dynamic_library = ctx.actions.declare_file(
-    "lib{0}-ghc{1}.so".format(get_library_name(ctx), version)
+    "lib{0}-ghc{1}.so".format(_get_library_name(ctx), version)
   )
 
   args = ctx.actions.args()
@@ -460,7 +460,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
     "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
     "library-dirs": "${pkgroot}",
     "dynamic-library-dirs": "${pkgroot}",
-    "hs-libraries": get_library_name(ctx),
+    "hs-libraries": _get_library_name(ctx),
     "depends":
       ", ".join([ d[HaskellPackageInfo].name for d in ctx.attr.deps if HaskellPackageInfo in d])
   }
@@ -495,7 +495,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
 
   return conf_file, cache_file
 
-def compilation_defaults(ctx):
+def _compilation_defaults(ctx):
   """Declare default compilation targets and create default compiler arguments.
 
   Args:
@@ -650,7 +650,7 @@ def get_pkg_id(ctx):
   """
   return "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
 
-def get_library_name(ctx):
+def _get_library_name(ctx):
   """Get core library name for this package. This is "HS" followed by package ID.
 
   See https://ghc.haskell.org/trac/ghc/ticket/9625 .
