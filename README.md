@@ -17,8 +17,8 @@ The full reference documentation for rules is at https://haskell.build.
 
 | Rule | Description |
 | ---: | :--- |
-| [`haskell_repositories`](#haskell_repositories) | Declare [external repositories][external-repositories] needed for rules_haskell |
-| [`ghc_bindist`](#import_ghc_bindist) | Setup a binary distribution of GHC |
+| [`haskell_repositories`](https://haskell.build/haskell/repositories.html#haskell_repositories) | Declare [external repositories][external-repositories] needed for rules_haskell |
+| [`ghc_bindist`](https://haskell.build/haskell/ghc_bindist.html#import_ghc_bindist) | Setup a binary distribution of GHC |
 
 **BUILD rules:**
 
