@@ -135,6 +135,23 @@ def _is_shared_library(f):
   """
   return f.extension == "so" or f.basename.find(".so.") != -1
 
+def _add_external_libraries(args, libs):
+  """Add options to `args` that allow us to link to `libs`.
+
+  Args:
+    args: Args object.
+    libs: set of external shared libraries.
+  """
+  seen_libs = set.empty()
+  for lib in set.to_list(libs):
+    lib_name = _get_lib_name(lib)
+    if not set.is_member(seen_libs, lib_name):
+      set.mutable_insert(seen_libs, lib_name)
+      args.add([
+        "-l{0}".format(lib_name),
+        "-L{0}".format(paths.dirname(lib.path)),
+      ])
+
 def _add_mode_options(ctx, args):
   """Add mode options to the given args object.
 
@@ -245,7 +262,21 @@ def link_haskell_bin(ctx, object_files):
   for p in set.to_list(dep_info.prebuilt_dependencies):
     args.add(["-package", p])
 
-  args.add([lib.path for lib in set.to_list(dep_info.external_libraries)])
+  _add_external_libraries(args, dep_info.external_libraries)
+
+  so_symlink_prefix = paths.relativize(
+    paths.dirname(ctx.outputs.executable.path),
+    ctx.bin_dir.path,
+  )
+
+  # The resulting test executable should be able to find all external
+  # libraries when it is run by Bazel. That is achieved by setting RPATH to
+  # a relative path which when joined with working directory points to
+  # symlinks which in turn point to shared libraries. This is quite similar
+  # to the approach taken by cc_binary, cc_test, etc.:
+  #
+  # https://github.com/bazelbuild/bazel/blob/f98a7a2fedb3e714cef1038dcb85f83731150246/src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java#L587-L605
+  args.add(["-optl-Wl,-rpath," + so_symlink_prefix])
 
   ctx.actions.run(
     inputs = depset(transitive = [
@@ -263,7 +294,19 @@ def link_haskell_bin(ctx, object_files):
     executable = get_compiler(ctx),
     arguments = [args]
   )
-  return ctx.outputs.executable
+
+  # New we have to figure out symlinks to shared libraries to create for
+  # running tests.
+  so_symlinks = {}
+
+  for lib in set.to_list(dep_info.external_libraries):
+    so_symlinks[paths.join(so_symlink_prefix, paths.basename(lib.path))] = lib
+
+  return [DefaultInfo(
+    executable = ctx.outputs.executable,
+    files = depset([ctx.outputs.executable]),
+    runfiles = ctx.runfiles(symlinks=so_symlinks),
+  )]
 
 def compile_haskell_lib(ctx):
   """Build arguments for Haskell package build.
@@ -366,16 +409,7 @@ def create_dynamic_library(ctx, object_files):
   for c in dep_info.caches.to_list():
     args.add(["-package-db", c.dirname])
 
-  seen_libs = set.empty()
-
-  for lib in set.to_list(dep_info.external_libraries):
-    lib_name = _get_lib_name(lib)
-    if not set.is_member(seen_libs, lib_name):
-      set.mutable_insert(seen_libs, lib_name)
-      args.add([
-        "-l{0}".format(lib_name),
-        "-L{0}".format(paths.dirname(lib.path)),
-      ])
+  _add_external_libraries(args, dep_info.external_libraries)
 
   args.add([ f.path for f in object_files ])
 

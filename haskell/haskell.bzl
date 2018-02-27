@@ -68,7 +68,7 @@ _haskell_common_attrs = {
 
 def _haskell_binary_impl(ctx):
   object_files = compile_haskell_bin(ctx)
-  link_haskell_bin(ctx, object_files)
+  return link_haskell_bin(ctx, object_files)
 
 def _mk_binary_rule(**kwargs):
   """Generate a rule that compiles a binary.
