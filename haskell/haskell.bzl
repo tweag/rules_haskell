@@ -30,6 +30,10 @@ load (":ghc_bindist.bzl",
   _ghc_bindist = "ghc_bindist",
 )
 
+load(":ghci-repl.bzl",
+  _haskell_repl = "haskell_repl",
+)
+
 load(":cc.bzl",
   _haskell_cc_import = "haskell_cc_import",
   _cc_haskell_import = "cc_haskell_import",
@@ -171,6 +175,9 @@ def _haskell_library_impl(ctx):
       set.from_list(ctx.attr.prebuilt_dependencies)
     ),
     external_libraries = dep_info.external_libraries,
+    import_dirs = dep_info.import_dirs,
+    exposed_modules = dep_info.exposed_modules,
+    hidden_modules = dep_info.hidden_modules,
     haddock_ghc_args = haddock_args,
   ),
   DefaultInfo(
@@ -210,6 +217,8 @@ haskell_doc = _haskell_doc
 haskell_toolchain = _haskell_toolchain
 
 ghc_bindist = _ghc_bindist
+
+haskell_repl = _haskell_repl
 
 haskell_cc_import = _haskell_cc_import
 

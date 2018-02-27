@@ -117,6 +117,16 @@ rule_test(
 )
 
 rule_test(
+  name = "test-haskell_repl",
+  generates = [
+    "haskell_repl",
+    "ghci-repl-script-haskell_repl-1.0.0",
+  ],
+  rule = "//tests/haskell_repl:haskell_repl",
+  size = "small",
+)
+
+rule_test(
   name = "test-haskell_test",
   generates = ["haskell_test"],
   rule = "//tests/haskell_test:haskell_test",

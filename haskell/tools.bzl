@@ -1,7 +1,7 @@
 """Tools used during build."""
 
 load(":set.bzl", "set")
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//:lib.bzl", "paths", "shell")
 
 def get_build_tools(ctx):
   """Get the set of all build tools we have available.
@@ -120,3 +120,8 @@ def get_haddock(ctx):
     File: haddock to use.
   """
   return _get_build_tool(ctx, "haddock")
+
+def get_ghci(ctx):
+  """Get the GHCi tool.
+  """
+  return _get_build_tool(ctx, "ghci")

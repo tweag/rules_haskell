@@ -1,6 +1,7 @@
 """Utilities for module and path manipulations."""
 
-load("@bazel_skylib//:lib.bzl", "paths")
+load(":set.bzl", "set")
+load("@bazel_skylib//:lib.bzl", "paths", "shell")
 
 def module_name(ctx, f):
   """Given Haskell source file path, turn it into a dot-separated module name.
@@ -102,6 +103,20 @@ def import_hierarchy_root(ctx):
     ctx.attr.src_strip_prefix if hasattr(ctx.attr, "src_strip_prefix")
                               else ctx.rule.attr.src_strip_prefix
   )
+
+def get_external_libs_path(libs):
+  """Return a String value for using as LD_LIBRARY_PATH or similar.
+
+  Args:
+    libs: Set of File: the libs that should be available.
+
+  Returns:
+    String: paths to the given libs separated by \":\".
+  """
+  return ":".join(set.to_list(set.map(libs, _get_external_lib_path)))
+
+def _get_external_lib_path(lib):
+  return paths.dirname(lib.path)
 
 def _rel_path_to_module(ctx, f):
   """Make given file name relative to the directory where the module hierarchy

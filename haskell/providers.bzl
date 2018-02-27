@@ -10,6 +10,9 @@ HaskellPackageInfo = provider(
     "interface_files": "Interface files belonging to the packages.",
     "prebuilt_dependencies": "Transitive collection of all wired-in Haskell dependencies.",
     "external_libraries": "Dynamic shared libraries needed for linking. List of .so files.",
+    "import_dirs": "A set of import directories (useful with GHCi for example)",
+    "exposed_modules": "A set of exposed module names.",
+    "hidden_modules": "A set of hidden module names.",
     "haddock_ghc_args": "Arguments that were used to compile the package, suitable for Haddock."
   }
 )

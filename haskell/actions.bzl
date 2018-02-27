@@ -5,6 +5,7 @@ load(":path_utils.bzl",
      "target_unique_name",
      "module_name",
      "import_hierarchy_root",
+     "get_external_libs_path",
 )
 
 load(":set.bzl", "set")
@@ -39,6 +40,10 @@ load(":mode.bzl",
      "is_profiling_enabled",
 )
 
+load(":utils.bzl",
+     "get_lib_name",
+)
+
 _DefaultCompileInfo = provider(
   doc = "Default compilation files and configuration.",
   fields = {
@@ -60,35 +65,6 @@ def _hs_srcs(ctx):
   # account sources produced by the hsc2hs tool. This probably leads to
   # undeclared object files from those inputs.
   return [f for f in ctx.files.srcs if f.extension in ["hs", "hsc", "lhs"]]
-
-def _get_lib_name(lib):
-  """Return name of library by dropping extension and \"lib\" prefix.
-
-  Args:
-    lib: The library File.
-
-  Returns:
-    String: name of library.
-  """
-
-  base = lib.basename[3:] if lib.basename[:3] == "lib" else lib.basename
-  n = base.find(".so.")
-  end = paths.replace_extension(base, "") if n == -1 else base[:n]
-  return end
-
-def _get_external_libs_path(libs):
-  """Return a String value for using as LD_LIBRARY_PATH or similar.
-
-  Args:
-    libs: Set of File: the libs that should be available.
-
-  Returns:
-    String: paths to the given libs separated by \":\".
-  """
-  return ":".join(set.to_list(set.map(libs, _get_external_lib_path)))
-
-def _get_external_lib_path(lib):
-  return paths.dirname(lib.path)
 
 def _mangle_solib(ctx, label, solib, preserve_name):
   """Create a symlink to a dynamic library, with a longer name.
@@ -144,7 +120,7 @@ def _add_external_libraries(args, libs):
   """
   seen_libs = set.empty()
   for lib in set.to_list(libs):
-    lib_name = _get_lib_name(lib)
+    lib_name = get_lib_name(lib)
     if not set.is_member(seen_libs, lib_name):
       set.mutable_insert(seen_libs, lib_name)
       args.add([
@@ -446,16 +422,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
   pkg_db_dir = ctx.actions.declare_directory(get_pkg_id(ctx))
   conf_file = ctx.actions.declare_file(paths.join(pkg_db_dir.basename, "{0}.conf".format(get_pkg_id(ctx))))
   cache_file = ctx.actions.declare_file("package.cache", sibling=conf_file)
-
-  # Infer collection of public modules in the library.
-
-  hidden_modules = set.from_list(ctx.attr.hidden_modules)
-  public_modules = []
-
-  for f in _hs_srcs(ctx):
-    mname = module_name(ctx, f)
-    if not set.is_member(hidden_modules, mname):
-      public_modules.append(mname)
+  dep_info = gather_dependency_information(ctx)
 
   # Create a file from which ghc-pkg will create the actual package from.
   registration_file = ctx.actions.declare_file(target_unique_name(ctx, "registration-file"))
@@ -465,8 +432,8 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
     "id": get_pkg_id(ctx),
     "key": get_pkg_id(ctx),
     "exposed": "True",
-    "exposed-modules": " ".join(public_modules),
-    "hidden-modules": " ".join(ctx.attr.hidden_modules),
+    "exposed-modules": " ".join(set.to_list(dep_info.exposed_modules)),
+    "hidden-modules": " ".join(set.to_list(dep_info.hidden_modules)),
     "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
     "library-dirs": "${pkgroot}",
     "dynamic-library-dirs": "${pkgroot}",
@@ -480,7 +447,6 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
                        for k, v in registration_file_entries.items()])
   )
 
-  dep_info = gather_dependency_information(ctx)
   # Make the call to ghc-pkg and use the registration file
   package_path = ":".join([c.dirname for c in dep_info.confs.to_list()])
   ctx.actions.run(
@@ -549,11 +515,12 @@ def _compilation_defaults(ctx):
 
   _add_mode_options(ctx, args)
 
-  ih_root_arg = ["-i{0}".format(import_hierarchy_root(ctx))]
-  args.add(ih_root_arg)
-  haddock_args.add(ih_root_arg, before_each="--optghc")
-
   dep_info = gather_dependency_information(ctx)
+
+  for idir in set.to_list(dep_info.import_dirs):
+    ih_root_arg = ["-i{0}".format(idir)]
+    args.add(ih_root_arg)
+    haddock_args.add(ih_root_arg, before_each="--optghc")
 
   # Expose all prebuilt dependencies
   for prebuilt_dep in ctx.attr.prebuilt_dependencies:
@@ -643,7 +610,7 @@ def _compilation_defaults(ctx):
     interface_files = interface_files,
     env = dicts.add({
       "PATH": get_build_tools_path(ctx),
-      "LD_LIBRARY_PATH": _get_external_libs_path(dep_info.external_libraries),
+      "LD_LIBRARY_PATH": get_external_libs_path(dep_info.external_libraries),
       },
       java.env,
     ),
@@ -676,8 +643,8 @@ def _get_library_name(ctx):
 def gather_dependency_information(ctx):
   """Collapse dependencies into a single HaskellPackageInfo.
 
-  "name", "prebuilt_dependencies" and "external_libraries" fields are
-  fully pre-populated.
+  `name`, `prebuilt_dependencies`, `external_libraries`, `import_dirs`,
+  `exposed_modules`, and `hidden_modules` fields are fully pre-populated.
 
   Args:
     ctx: Rule context.
@@ -685,6 +652,15 @@ def gather_dependency_information(ctx):
   Returns:
     HaskellPackageInfo: Unified information about all dependencies needed during build.
   """
+
+  # Infer collection of public modules in the library.
+  hidden_modules = set.from_list(ctx.attr.hidden_modules) if hasattr(ctx.attr, "hidden_modules") else set.empty()
+  exposed_modules = set.empty()
+  for f in _hs_srcs(ctx):
+    mname = module_name(ctx, f)
+    if not set.is_member(hidden_modules, mname):
+      set.mutable_insert(exposed_modules, mname)
+
   hpi = HaskellPackageInfo(
     name = get_pkg_id(ctx),
     names = depset(),
@@ -695,6 +671,9 @@ def gather_dependency_information(ctx):
     interface_files = set.empty(),
     prebuilt_dependencies = set.from_list(ctx.attr.prebuilt_dependencies),
     external_libraries = set.empty(),
+    import_dirs = set.singleton(import_hierarchy_root(ctx)),
+    exposed_modules = exposed_modules,
+    hidden_modules = hidden_modules,
     haddock_ghc_args = None,
   )
 
@@ -711,6 +690,9 @@ def gather_dependency_information(ctx):
         interface_files = set.mutable_union(hpi.interface_files, pkg.interface_files),
         prebuilt_dependencies = set.mutable_union(hpi.prebuilt_dependencies, pkg.prebuilt_dependencies),
         external_libraries = set.mutable_union(hpi.external_libraries, pkg.external_libraries),
+        import_dirs = hpi.import_dirs,
+        exposed_modules = hpi.exposed_modules,
+        hidden_modules = hpi.hidden_modules,
         haddock_ghc_args = None,
       )
     else:
@@ -734,6 +716,9 @@ def gather_dependency_information(ctx):
             for f in dep.files.to_list() if _is_shared_library(f)
           ]),
         ),
+        import_dirs = hpi.import_dirs,
+        exposed_modules = hpi.exposed_modules,
+        hidden_modules = hpi.hidden_modules,
         haddock_ghc_args = None,
       )
 

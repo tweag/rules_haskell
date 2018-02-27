@@ -10,6 +10,19 @@ def _empty():
   """
   return struct(_set_items = dict())
 
+def _singleton(e):
+  """Create a set with single element `e` inside.
+
+  Args:
+    e: The element to put in the set.
+
+  Returns:
+    set, new set.
+  """
+  r = dict()
+  r[e] = None
+  return struct(_set_items = r)
+
 def _is_member(s, e):
   """Return true if `e` is in the set `s`.
 
@@ -124,6 +137,7 @@ def _to_depset(s):
 
 set = struct(
   empty     = _empty,
+  singleton = _singleton,
   is_member = _is_member,
   insert    = _insert,
   mutable_insert = _mutable_insert,
