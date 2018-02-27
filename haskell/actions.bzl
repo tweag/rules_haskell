@@ -447,6 +447,16 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
   conf_file = ctx.actions.declare_file(paths.join(pkg_db_dir.basename, "{0}.conf".format(get_pkg_id(ctx))))
   cache_file = ctx.actions.declare_file("package.cache", sibling=conf_file)
 
+  # Infer collection of public modules in the library.
+
+  hidden_modules = set.from_list(ctx.attr.hidden_modules)
+  public_modules = []
+
+  for f in _hs_srcs(ctx):
+    mname = module_name(ctx, f)
+    if not set.is_member(hidden_modules, mname):
+      public_modules.append(mname)
+
   # Create a file from which ghc-pkg will create the actual package from.
   registration_file = ctx.actions.declare_file(target_unique_name(ctx, "registration-file"))
   registration_file_entries = {
@@ -455,8 +465,8 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
     "id": get_pkg_id(ctx),
     "key": get_pkg_id(ctx),
     "exposed": "True",
-    "exposed-modules":
-      " ".join([module_name(ctx, f) for f in _hs_srcs(ctx)]),
+    "exposed-modules": " ".join(public_modules),
+    "hidden-modules": " ".join(ctx.attr.hidden_modules),
     "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
     "library-dirs": "${pkgroot}",
     "dynamic-library-dirs": "${pkgroot}",

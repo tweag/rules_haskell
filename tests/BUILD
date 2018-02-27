@@ -111,7 +111,17 @@ rule_test(
 rule_test(
   name = "test-haskell_test",
   generates = ["haskell_test"],
-  rule = "//tests/haskell_test",
+  rule = "//tests/haskell_test:haskell_test",
+  size = "small",
+)
+
+rule_test(
+  name = "test-hidden-modules",
+  generates = [
+    "lib-c-1.0.0/lib-c-1.0.0.conf",
+    "lib-c-1.0.0/package.cache"
+  ],
+  rule = "//tests/hidden-modules:lib-c",
   size = "small",
 )
 

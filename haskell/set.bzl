@@ -20,7 +20,7 @@ def _is_member(s, e):
   Result:
     Bool, true if `e` is in `s`, false otherwise.
   """
-  e in s._set_items
+  return e in s._set_items
 
 def _insert(s, e):
   """Insert an element into the set.

@@ -43,7 +43,7 @@ _haskell_common_attrs = {
   ),
   "srcs": attr.label_list(
     allow_files = FileType([".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"]),
-    doc = "Haskell source files",
+    doc = "Haskell source files.",
   ),
   "deps": attr.label_list(
     doc = "List of other Haskell libraries to be linked to this target.",
@@ -177,7 +177,11 @@ def _haskell_library_impl(ctx):
 
 haskell_library = rule(
   _haskell_library_impl,
-  attrs = _haskell_common_attrs,
+  attrs = dict(
+    _haskell_common_attrs,
+    hidden_modules = attr.string_list(
+      doc = "Modules that should be made unavailable for import by dependencies."
+    )),
   host_fragments = ["cpp"],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
