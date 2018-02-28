@@ -2,8 +2,6 @@
 
 [![CircleCI](https://circleci.com/gh/tweag/rules_haskell.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell)
 
-**NOTE: this is alpha quality software. Please don't publicize widely.**
-
 Bazel automates building and testing software. It scales to very large
 multi-language projects. This project extends Bazel with build rules
 for Haskell. Get started building your own project using these rules
