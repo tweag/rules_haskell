@@ -1,4 +1,4 @@
-"""Haddock suppport"""
+"""Haddock support"""
 
 load (":path_utils.bzl", "module_name")
 load (":set.bzl", "set")
