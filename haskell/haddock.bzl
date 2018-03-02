@@ -116,7 +116,10 @@ def _haskell_doc_aspect_impl(target, ctx):
 haskell_doc_aspect = aspect(
   _haskell_doc_aspect_impl,
   attr_aspects = ['deps'],
-  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+  toolchains = [
+    "@io_tweag_rules_haskell//haskell:toolchain",
+    "@io_tweag_rules_haskell//haskell:binutils-toolchain",
+  ],
   host_fragments = ["cpp"],
 )
 
@@ -135,7 +138,10 @@ haskell_doc = rule(
       doc = "List of Haskell libraries to generate documentation for.",
     ),
   },
-  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+  toolchains = [
+    "@io_tweag_rules_haskell//haskell:toolchain",
+    "@io_tweag_rules_haskell//haskell:binutils-toolchain",
+  ],
   host_fragments = ["cpp"],
 )
 """Create API documentation.

@@ -26,6 +26,7 @@ load(":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
 )
 
+# Re-export ghc_bindist
 load (":ghc_bindist.bzl",
   _ghc_bindist = "ghc_bindist",
 )
@@ -97,7 +98,10 @@ def _mk_binary_rule(**kwargs):
       )
     ),
     host_fragments = ["cpp"],
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = [
+      "@io_tweag_rules_haskell//haskell:toolchain",
+      "@io_tweag_rules_haskell//haskell:binutils-toolchain",
+    ],
     **kwargs
   )
 
@@ -183,7 +187,10 @@ haskell_library = rule(
       doc = "Modules that should be made unavailable for import by dependencies."
     )),
   host_fragments = ["cpp"],
-  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+  toolchains = [
+    "@io_tweag_rules_haskell//haskell:toolchain",
+    "@io_tweag_rules_haskell//haskell:binutils-toolchain",
+  ],
 )
 """Build a library from Haskell source.
 
