@@ -55,7 +55,7 @@ def haskell_toolchain(name, version, tools, **kwargs):
   Example:
     ```bzl
     haskell_toolchain(
-        name = 'my_ghc',
+        name = "ghc",
         version = '1.2.3'
         tools = ["@sys_ghc//:bin"]
     )
@@ -70,7 +70,7 @@ def haskell_toolchain(name, version, tools, **kwargs):
         attribute_path = 'haskell.compiler.ghc123'
     )
 
-    register_toolchain("//:sys_ghc")
+    register_toolchain("//:ghc")
     ```
   """
   impl_name = name + "-impl"

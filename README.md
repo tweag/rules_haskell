@@ -113,7 +113,7 @@ nixpkgs_package(
 Alternatively, you can point to an existing global installation:
 
 ```bzl
-new_local_package(
+new_local_repository(
   name = "my_ghc",
   path = "/usr/local", # Change path accordingly.
   build_file_content = """
