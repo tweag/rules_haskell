@@ -305,7 +305,7 @@ def link_haskell_bin(ctx, object_files):
   return [DefaultInfo(
     executable = ctx.outputs.executable,
     files = depset([ctx.outputs.executable]),
-    runfiles = ctx.runfiles(symlinks=so_symlinks),
+    runfiles = ctx.runfiles(symlinks=so_symlinks, collect_data = True),
   )]
 
 def compile_haskell_lib(ctx):

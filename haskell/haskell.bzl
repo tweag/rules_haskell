@@ -48,6 +48,10 @@ _haskell_common_attrs = {
   "deps": attr.label_list(
     doc = "List of other Haskell libraries to be linked to this target.",
   ),
+  "data": attr.label_list(
+    doc = "See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).",
+    cfg = "data",
+  ),
   "compiler_flags": attr.string_list(
     doc = "Flags to pass to Haskell compiler.",
   ),
@@ -169,10 +173,13 @@ def _haskell_library_impl(ctx):
     external_libraries = dep_info.external_libraries,
     haddock_ghc_args = haddock_args,
   ),
-  DefaultInfo(files = depset([
+  DefaultInfo(
+    files = depset([
       conf_file,
       cache_file,
-  ])),
+    ]),
+    runfiles = ctx.runfiles(collect_data = True),
+  ),
   ]
 
 haskell_library = rule(
