@@ -61,6 +61,14 @@ rule_test(
   size = "small",
 )
 
+sh_test(
+  name = "test-binary-with-data",
+  size = "small",
+  srcs = ["//tests/binary-with-data"],
+  data = ["//tests/binary-with-data:bin1"],
+  args = ["$(location //tests/binary-with-data:bin1)"],
+)
+
 rule_test(
   name = "test-library-deps",
   generates =
