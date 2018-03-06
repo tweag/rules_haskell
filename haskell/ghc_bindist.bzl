@@ -16,6 +16,17 @@ _GHC_BINS = {
 
 _GHC_DEFAULT_VERSION = "8.2.2"
 
+def _execute_fail_loudly(ctx, args):
+  """Execute a command and fail loudly if it fails.
+
+  Args:
+    ctx: Repository rule context.
+    args: Command and its arguments.
+  """
+  eresult = ctx.execute(args, quiet=False)
+  if eresult.return_code != 0:
+    fail("{0} failed, aborting creation of GHC bindist".format(" ".join(args)))
+
 def _ghc_bindist_impl(ctx):
 
   if ctx.os.name[:5] != "linux":
@@ -35,8 +46,8 @@ def _ghc_bindist_impl(ctx):
     stripPrefix = "ghc-" + version,
   )
 
-  ctx.execute(["./configure", "--prefix", bindist_dir.realpath])
-  ctx.execute(["make", "install"])
+  _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
+  _execute_fail_loudly(ctx, ["make", "install"])
 
   ctx.template(
     "BUILD",
