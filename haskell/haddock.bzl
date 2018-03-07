@@ -156,7 +156,7 @@ Example:
     name = "my-lib-doc",
     deps = [":my-lib"],
   )
-  ````
+  ```
 
 [haddock]: http://haskell-haddock.readthedocs.io/en/latest/
 """
