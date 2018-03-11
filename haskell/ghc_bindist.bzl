@@ -3,6 +3,9 @@
 load("@bazel_skylib//:lib.bzl", "paths")
 
 _GHC_BINS = {
+  "8.4.1": {
+    "linux-x86_64": ("https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-x86_64-deb8-linux.tar.xz", "427c77a934b30c3f1de992c38c072afb4323fe6fb30dbac919ca8cb6ae98fbd9")
+  },
   "8.2.2": {
     "linux-x86_64": ("https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-deb8-linux.tar.xz", "48e205c62b9dc1ccf6739a4bc15a71e56dde2f891a9d786a1b115f0286111b2a"),
   },
