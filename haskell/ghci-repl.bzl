@@ -35,10 +35,10 @@ def _haskell_repl_impl(ctx):
   args = ["-hide-all-packages"]
   for dep in set.to_list(target.prebuilt_dependencies):
     args += ["-package ", dep]
-  for name in target.names.to_list():
+  for name in set.to_list(target.names):
     if not (ctx.attr.interpreted and name == target.name):
       args += ["-package", name]
-  for cache in target.caches.to_list():
+  for cache in set.to_list(target.caches):
     args += ["-package-db", cache.dirname]
 
   # Import dirs in interpreted mode.
@@ -120,6 +120,9 @@ haskell_repl = rule(
 Whether source files of `target` should interpreted rather than compiled.
 This allows for e.g. reloading of sources on editing, but in this case we
 don't handle boot files and hsc preprocessing.
+
+Note that if you would like to use REPL with a `haskell_binary` target,
+`interpreted` must be set to `True`.
 """
     ),
     "ghci_args": attr.string_list(
