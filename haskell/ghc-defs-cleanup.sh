@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Usage: ghc-defs-cleanup.SH <ORIGINAL-FILE> <OUTPUT-FILE>
+# Usage: ghc-defs-cleanup.sh <ORIGINAL_FILE> <OUTPUT_FILE>
 
 # This is what Cabal sets:
 #
