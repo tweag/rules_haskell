@@ -14,5 +14,6 @@ exports_files([
   "ghc-version-check.sh",
   "ghci-repl-wrapper.sh",
   "ghci-script",
+  "make-bin-symlink.sh",
 
 ])

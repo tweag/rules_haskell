@@ -4,8 +4,8 @@ load (":path_utils.bzl", "module_name")
 load (":set.bzl", "set")
 
 load(":tools.bzl",
-  "get_haddock",
   "get_build_tools_path",
+  "tools",
 )
 
 load(":providers.bzl",
@@ -97,10 +97,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     ]),
     outputs = self_outputs,
     progress_message = "Haddock {0}".format(ctx.rule.attr.name),
-    env = {
-      "PATH": get_build_tools_path(ctx),
-    },
-    executable = get_haddock(ctx),
+    executable = tools(ctx).haddock,
     arguments = [
       args,
       target[HaskellPackageInfo].haddock_ghc_args,

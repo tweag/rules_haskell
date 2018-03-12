@@ -11,11 +11,8 @@ load(":path_utils.bzl",
 load(":set.bzl", "set")
 
 load(":tools.bzl",
-     "get_compiler",
-     "get_compiler_version",
-     "get_ghc_pkg",
-     "get_build_tools",
-     "get_build_tools_path",
+     "get_ghc_version",
+     "tools",
 )
 
 load(":hsc2hs.bzl",
@@ -93,10 +90,18 @@ def _mangle_solib(ctx, label, solib, preserve_name):
   components = [c for c in [label.workspace_root, label.package, label.name] if c]
   qualifier = '/'.join(components).replace('_', '_U').replace('/', '_S')
   qualsolib = ctx.actions.declare_file("lib" + qualifier + "_" + solib.basename)
-  ctx.actions.run_shell(
+
+  # NOTE We only have relative paths at our disposal here, so we must
+  # specify the link target as a path that is relative to the link location.
+  # This allows us to avoid the $(realpath ...) hack and makes the resulting
+  # directory tree movable (at least in theory).
+  relative_solib = paths.relativize(solib.path, qualsolib.dirname)
+
+  ctx.actions.run(
     inputs = [solib],
     outputs = [qualsolib],
-    command = "ln -s $(realpath {0}) {1}".format(solib.path, qualsolib.path),
+    executable = tools(ctx).ln,
+    arguments = ["-s", relative_solib, qualsolib.path],
   )
   return qualsolib
 
@@ -158,7 +163,7 @@ def compile_haskell_bin(ctx):
     outputs = c.outputs,
     progress_message = "Building {0}".format(ctx.attr.name),
     env = c.env,
-    executable = get_compiler(ctx),
+    executable = tools(ctx).ghc,
     arguments = [c.args]
   )
 
@@ -191,7 +196,7 @@ def link_haskell_bin(ctx, object_files):
   ctx.actions.run(
     inputs = [dummy_input],
     outputs = [dummy_object],
-    executable = get_compiler(ctx),
+    executable = tools(ctx).ghc,
     arguments = [dummy_args]
   )
   ar_args = ctx.actions.args()
@@ -200,7 +205,7 @@ def link_haskell_bin(ctx, object_files):
   ctx.actions.run(
     inputs = [dummy_object],
     outputs = [dummy_static_lib],
-    executable = ctx.host_fragments.cpp.ar_executable,
+    executable = tools(ctx).ar,
     arguments = [ar_args]
   )
 
@@ -260,14 +265,10 @@ def link_haskell_bin(ctx, object_files):
       depset(object_files),
       depset([dummy_static_lib]),
       set.to_depset(dep_info.external_libraries),
-      set.to_depset(get_build_tools(ctx)),
     ]),
     outputs = [ctx.outputs.executable],
     progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
-    env = {
-      "PATH": get_build_tools_path(ctx)
-    },
-    executable = get_compiler(ctx),
+    executable = tools(ctx).ghc,
     arguments = [args]
   )
 
@@ -325,7 +326,7 @@ def compile_haskell_lib(ctx):
     outputs = c.outputs + object_dyn_files,
     progress_message = "Compiling {0}".format(ctx.attr.name),
     env = c.env,
-    executable = get_compiler(ctx),
+    executable = tools(ctx).ghc,
     arguments = [c.args],
   )
 
@@ -350,7 +351,7 @@ def create_static_library(ctx, object_files):
   ctx.actions.run(
     inputs = object_files,
     outputs = [static_library],
-    executable = ctx.host_fragments.cpp.ar_executable,
+    executable = tools(ctx).ar,
     arguments = [args],
   )
   return static_library
@@ -366,7 +367,7 @@ def create_dynamic_library(ctx, object_files):
     File: Produced dynamic library.
   """
 
-  version = get_compiler_version(ctx)
+  version = get_ghc_version(ctx)
   dynamic_library = ctx.actions.declare_file(
     "lib{0}-ghc{1}.so".format(_get_library_name(ctx), version)
   )
@@ -395,13 +396,10 @@ def create_dynamic_library(ctx, object_files):
       set.to_depset(dep_info.caches),
       set.to_depset(dep_info.dynamic_libraries),
       set.to_depset(dep_info.external_libraries),
-      set.to_depset(get_build_tools(ctx))]),
+    ]),
     outputs = [dynamic_library],
     progress_message = "Linking dynamic library {0}".format(dynamic_library.basename),
-    env = {
-      "PATH": get_build_tools_path(ctx),
-    },
-    executable = get_compiler(ctx),
+    executable = tools(ctx).ghc,
     arguments = [args]
   )
 
@@ -454,14 +452,12 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
       set.to_depset(dep_info.confs),
       set.to_depset(dep_info.caches),
       depset([static_library, interfaces_dir, registration_file, dynamic_library]),
-      set.to_depset(get_build_tools(ctx))
     ]),
     outputs = [pkg_db_dir, conf_file, cache_file],
     env = {
       "GHC_PACKAGE_PATH": package_path,
-      "PATH": get_build_tools_path(ctx),
     },
-    executable = get_ghc_pkg(ctx),
+    executable = tools(ctx).ghc_pkg,
     arguments = [
       "register", "--package-db={0}".format(pkg_db_dir.path),
       "--no-expand-pkgroot",
@@ -598,10 +594,10 @@ def _compilation_defaults(ctx):
       set.to_depset(dep_info.caches),
       set.to_depset(dep_info.interface_files),
       set.to_depset(dep_info.dynamic_libraries),
-      set.to_depset(get_build_tools(ctx)),
       set.to_depset(dep_info.external_libraries),
       java.inputs,
       depset(textual_headers),
+      depset([tools(ctx).gcc]),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + interface_files,
     objects_dir = objects_dir,
@@ -609,7 +605,6 @@ def _compilation_defaults(ctx):
     object_files = object_files,
     interface_files = interface_files,
     env = dicts.add({
-      "PATH": get_build_tools_path(ctx),
       "LD_LIBRARY_PATH": get_external_libs_path(dep_info.external_libraries),
       },
       java.env,
