@@ -2,6 +2,7 @@ package(default_testonly = 1)
 
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
      "haskell_library",
+     "haskell_binary",
      "haskell_repl",
 )
 
@@ -19,8 +20,20 @@ haskell_library(
 )
 
 haskell_repl(
-  name = "haskell_repl",
+  name = "haskell_lib_repl",
   target = ":hs-lib",
-  # interpreted = False,
+  visibility = ["//visibility:public"],
+)
+
+haskell_binary(
+  name = "hs-bin",
+  srcs = ["Main.hs"],
+  prebuilt_dependencies = ["base"],
+  visibility = ["//visibility:public"],
+)
+
+haskell_repl(
+  name = "haskell_bin_repl",
+  target = ":hs-bin",
   visibility = ["//visibility:public"],
 )

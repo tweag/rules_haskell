@@ -2,9 +2,9 @@ HaskellPackageInfo = provider(
   doc = "Package information exposed by Haskell libraries.",
   fields = {
     "name": "Package name, usually of the form name-version.",
-    "names": "All package names of transitive dependencies. Includes own name.",
-    "confs": "Package conf files.",
-    "caches": "Package cache files.",
+    "names": "A set of all package names of transitive dependencies. Includes own name.",
+    "confs": "A set of package conf files.",
+    "caches": "A set of package cache files.",
     "static_libraries": "Compiled library archives.",
     "dynamic_libraries": "Dynamic libraries.",
     "interface_files": "Interface files belonging to the packages.",

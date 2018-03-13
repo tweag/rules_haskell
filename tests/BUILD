@@ -117,12 +117,22 @@ rule_test(
 )
 
 rule_test(
-  name = "test-haskell_repl",
+  name = "test-haskell_lib_repl",
   generates = [
-    "haskell_repl",
-    "ghci-repl-script-haskell_repl-1.0.0",
+    "haskell_lib_repl",
+    "ghci-repl-script-haskell_lib_repl-1.0.0",
   ],
-  rule = "//tests/haskell_repl:haskell_repl",
+  rule = "//tests/haskell_repl:haskell_lib_repl",
+  size = "small",
+)
+
+rule_test(
+  name = "test-haskell_bin_repl",
+  generates = [
+    "haskell_bin_repl",
+    "ghci-repl-script-haskell_bin_repl-1.0.0",
+  ],
+  rule = "//tests/haskell_repl:haskell_bin_repl",
   size = "small",
 )
 

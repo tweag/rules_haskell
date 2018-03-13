@@ -76,7 +76,27 @@ _haskell_common_attrs = {
 
 def _haskell_binary_impl(ctx):
   object_files = compile_haskell_bin(ctx)
-  return link_haskell_bin(ctx, object_files)
+  default_info = link_haskell_bin(ctx, object_files)
+
+  dep_info = gather_dependency_information(ctx)
+
+  return [HaskellPackageInfo(
+    name = dep_info.name,
+    names = set.insert(dep_info.names, get_pkg_id(ctx)),
+    confs = dep_info.confs,
+    caches = dep_info.caches,
+    static_libraries = dep_info.static_libraries,
+    dynamic_libraries = dep_info.dynamic_libraries,
+    interface_files = dep_info.interface_files,
+    prebuilt_dependencies = dep_info.prebuilt_dependencies,
+    external_libraries = dep_info.external_libraries,
+    import_dirs = dep_info.import_dirs,
+    exposed_modules = dep_info.exposed_modules,
+    hidden_modules = set.empty(),
+    haddock_ghc_args = ctx.actions.args(),
+  ),
+  default_info,
+  ]
 
 def _mk_binary_rule(**kwargs):
   """Generate a rule that compiles a binary.
@@ -160,9 +180,9 @@ def _haskell_library_impl(ctx):
     # build just to throw it away later as upstream doesn't need this.
     # Technically Haddock rule relies on this but it should gather its
     # own info.
-    names = depset(transitive = [dep_info.names, depset([get_pkg_id(ctx)])]),
-    confs = depset(transitive = [dep_info.confs, depset([conf_file])]),
-    caches = depset(transitive = [dep_info.caches, depset([cache_file])]),
+    names = set.insert(dep_info.names, get_pkg_id(ctx)),
+    confs = set.insert(dep_info.confs, conf_file),
+    caches = set.insert(dep_info.caches, cache_file),
     # We have to use lists for static libraries because the order is
     # important for linker. Linker searches for unresolved symbols to the
     # left, i.e. you first feed a library which has unresolved symbols and

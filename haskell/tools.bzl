@@ -123,5 +123,11 @@ def get_haddock(ctx):
 
 def get_ghci(ctx):
   """Get the GHCi tool.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    File: ghci to use.
   """
   return _get_build_tool(ctx, "ghci")

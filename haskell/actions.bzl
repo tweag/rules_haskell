@@ -278,11 +278,11 @@ def link_haskell_bin(ctx, object_files):
   for lib in set.to_list(dep_info.external_libraries):
     so_symlinks[paths.join(so_symlink_prefix, paths.basename(lib.path))] = lib
 
-  return [DefaultInfo(
+  return DefaultInfo(
     executable = ctx.outputs.executable,
     files = depset([ctx.outputs.executable]),
     runfiles = ctx.runfiles(symlinks=so_symlinks, collect_data = True),
-  )]
+  )
 
 def compile_haskell_lib(ctx):
   """Build arguments for Haskell package build.
@@ -379,10 +379,10 @@ def create_dynamic_library(ctx, object_files):
 
   dep_info = gather_dependency_information(ctx)
 
-  for n in depset(transitive = [dep_info.names, depset(ctx.attr.prebuilt_dependencies)]).to_list():
+  for n in set.to_list(set.union(dep_info.names, set.from_list(ctx.attr.prebuilt_dependencies))):
     args.add(["-package", n])
 
-  for c in dep_info.caches.to_list():
+  for c in set.to_list(dep_info.caches):
     args.add(["-package-db", c.dirname])
 
   _add_external_libraries(args, dep_info.external_libraries)
@@ -392,7 +392,7 @@ def create_dynamic_library(ctx, object_files):
   ctx.actions.run(
     inputs = depset(transitive = [
       depset(object_files),
-      dep_info.caches,
+      set.to_depset(dep_info.caches),
       set.to_depset(dep_info.dynamic_libraries),
       set.to_depset(dep_info.external_libraries),
       set.to_depset(get_build_tools(ctx))]),
@@ -448,11 +448,11 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
   )
 
   # Make the call to ghc-pkg and use the registration file
-  package_path = ":".join([c.dirname for c in dep_info.confs.to_list()])
+  package_path = ":".join([c.dirname for c in set.to_list(dep_info.confs)])
   ctx.actions.run(
     inputs = depset(transitive = [
-      dep_info.confs,
-      dep_info.caches,
+      set.to_depset(dep_info.confs),
+      set.to_depset(dep_info.caches),
       depset([static_library, interfaces_dir, registration_file, dynamic_library]),
       set.to_depset(get_build_tools(ctx))
     ]),
@@ -529,7 +529,7 @@ def _compilation_defaults(ctx):
     haddock_args.add(items, before_each="--optghc")
 
   # Expose all bazel dependencies
-  for package in dep_info.names.to_list():
+  for package in set.to_list(dep_info.names):
     items = ["-package", package]
     args.add(items)
     if package != get_pkg_id(ctx):
@@ -537,7 +537,7 @@ def _compilation_defaults(ctx):
 
   # Only include package DBs for deps, prebuilt deps should be found
   # auto-magically by GHC.
-  for c in dep_info.caches.to_list():
+  for c in set.to_list(dep_info.caches):
     items = ["-package-db", c.dirname]
     args.add(items)
     haddock_args.add(items, before_each="--optghc")
@@ -594,8 +594,8 @@ def _compilation_defaults(ctx):
     inputs = depset(transitive = [
       depset(sources),
       depset(hdrs),
-      dep_info.confs,
-      dep_info.caches,
+      set.to_depset(dep_info.confs),
+      set.to_depset(dep_info.caches),
       set.to_depset(dep_info.interface_files),
       set.to_depset(dep_info.dynamic_libraries),
       set.to_depset(get_build_tools(ctx)),
@@ -641,7 +641,7 @@ def _get_library_name(ctx):
   return "HS{0}".format(get_pkg_id(ctx))
 
 def gather_dependency_information(ctx):
-  """Collapse dependencies into a single HaskellPackageInfo.
+  """Collapse dependencies into a single `HaskellPackageInfo`.
 
   `name`, `prebuilt_dependencies`, `external_libraries`, `import_dirs`,
   `exposed_modules`, and `hidden_modules` fields are fully pre-populated.
@@ -663,9 +663,9 @@ def gather_dependency_information(ctx):
 
   hpi = HaskellPackageInfo(
     name = get_pkg_id(ctx),
-    names = depset(),
-    confs = depset(),
-    caches = depset(),
+    names = set.empty(),
+    confs = set.empty(),
+    caches = set.empty(),
     static_libraries = [],
     dynamic_libraries = set.empty(),
     interface_files = set.empty(),
@@ -682,9 +682,9 @@ def gather_dependency_information(ctx):
       pkg = dep[HaskellPackageInfo]
       hpi = HaskellPackageInfo(
         name = hpi.name,
-        names = hpi.names + [pkg.name],
-        confs = hpi.confs + pkg.confs,
-        caches = hpi.caches + pkg.caches,
+        names = set.mutable_insert(hpi.names, pkg.name),
+        confs = set.mutable_union(hpi.confs, pkg.confs),
+        caches = set.mutable_union(hpi.caches, pkg.caches),
         static_libraries = hpi.static_libraries + pkg.static_libraries,
         dynamic_libraries = set.mutable_union(hpi.dynamic_libraries, pkg.dynamic_libraries),
         interface_files = set.mutable_union(hpi.interface_files, pkg.interface_files),

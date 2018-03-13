@@ -90,7 +90,7 @@ def _haskell_doc_aspect_impl(target, ctx):
 
   ctx.actions.run(
     inputs = depset(transitive = [
-      target[HaskellPackageInfo].caches,
+      set.to_depset(target[HaskellPackageInfo].caches),
       set.to_depset(target[HaskellPackageInfo].interface_files),
       set.to_depset(dep_interfaces),
       depset(input_sources),
