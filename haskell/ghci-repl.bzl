@@ -1,7 +1,7 @@
 """GHCi REPL support"""
 
 load(":tools.bzl",
-     "get_ghci",
+     "tools",
 )
 
 load("@bazel_skylib//:lib.bzl",
@@ -89,7 +89,7 @@ def _haskell_repl_impl(ctx):
           target.external_libraries,
         )
       ),
-      "{GHCi}": get_ghci(ctx).path,
+      "{GHCi}": tools(ctx).ghci.path,
       "{SCRIPT_LOCATION}": ctx.outputs.executable.path,
       "{ARGS}": " ".join([shell.quote(a) for a in args]),
     },

@@ -5,10 +5,12 @@ load(":path_utils.bzl",
   "module_unique_name",
 )
 
-load(":tools.bzl", "get_hsc2hs")
 load(":cc.bzl", "cc_headers")
 load("@bazel_skylib//:lib.bzl", "paths")
-load(":tools.bzl", "get_compiler")
+load(":tools.bzl",
+     "get_build_tools_path",
+     "tools",
+)
 
 def hsc_to_hs(ctx):
   """Process all hsc files into Haskell source files.
@@ -54,16 +56,16 @@ def _make_ghc_defs_dump(ctx):
   ctx.actions.run(
     inputs = [dummy_src],
     outputs = [ghc_defs_dump_raw],
-    executable = get_compiler(ctx),
+    executable = tools(ctx).ghc,
     arguments = [args],
   )
 
   ctx.actions.run(
-    inputs = [ghc_defs_dump_raw],
+    inputs = [ghc_defs_dump_raw, tools(ctx).grep],
     outputs = [ghc_defs_dump],
     executable = ctx.file._ghc_defs_cleanup,
-    use_default_shell_env = True,
-    arguments  = [
+    arguments = [
+      tools(ctx).grep.path,
       ghc_defs_dump_raw.path,
       ghc_defs_dump.path,
     ],
@@ -99,12 +101,17 @@ def _process_hsc_file(ctx, ghc_defs_dump, hsc_file):
   args.add("-i{0}".format(ghc_defs_dump.basename))
 
   ctx.actions.run(
-    inputs = depset(transitive =
-                    [depset(hdrs), depset([hsc_file, ghc_defs_dump])]),
+    inputs = depset(transitive = [
+      depset(hdrs),
+      depset([tools(ctx).gcc]),
+      depset([hsc_file, ghc_defs_dump])
+    ]),
     outputs = [hs_out, hsc_output_dir],
-    use_default_shell_env = True,
     progress_message = "hsc2hs {0}".format(hsc_file.basename),
-    executable = get_hsc2hs(ctx),
+    env = {
+      "PATH": get_build_tools_path(ctx),
+    },
+    executable = tools(ctx).hsc2hs,
     arguments = [args],
   )
   return hs_out

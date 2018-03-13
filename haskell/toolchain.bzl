@@ -1,9 +1,27 @@
 """Rules for defining toolchains"""
 
+_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
+
+load("@bazel_skylib//:lib.bzl",
+     "paths",
+)
+
+load(":set.bzl",
+     "set",
+)
+
 def _haskell_toolchain_impl(ctx):
-  for tool in ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]:
+
+  # Check that we have all that we want.
+  for tool in _GHC_BINARIES:
     if tool not in [t.basename for t in ctx.files.tools]:
       fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
+
+  # Store the binaries of interest in ghc_binaries.
+  ghc_binaries = []
+  for tool in ctx.files.tools:
+    if tool.basename in _GHC_BINARIES:
+      ghc_binaries.append(tool.path)
 
   # Run a version check on the compiler.
   for t in ctx.files.tools:
@@ -21,10 +39,75 @@ def _haskell_toolchain_impl(ctx):
     arguments = [arguments],
   )
 
+  # NOTE The only way to let various executables know where other
+  # executables are located is often only via the PATH environment variable.
+  # For example, ghc uses gcc which is found on PATH. This forces us provide
+  # correct PATH value (with e.g. gcc on it) when we call executables such
+  # as ghc. However, this hurts hermeticity because if we construct PATH
+  # naively, i.e. through concatenation of directory names of all
+  # executables of interest, we also make other neighboring executables
+  # visible, and they indeed can influence the building process, which is
+  # undesirable.
+  #
+  # To prevent this, we create a special directory populated with symbolic
+  # links to all executables we want to make visible, and only to them. Then
+  # we make all rules depend on some of these symlinks, and provide PATH
+  # (always the same) that points only to this prepared directory with
+  # symlinks. This helps hermeticity and forces us to be explicit about all
+  # programs we need/use for building. Setting PATH and listing as inputs
+  # are both necessary for a tool to be available with this approach.
+
+  targets = [
+    # CPP host fragments.
+    ctx.host_fragments.cpp.ar_executable,
+    ctx.host_fragments.cpp.compiler_executable,
+    ctx.host_fragments.cpp.ld_executable,
+    ctx.host_fragments.cpp.nm_executable,
+    ctx.host_fragments.cpp.preprocessor_executable,
+    ctx.host_fragments.cpp.strip_executable,
+    # Binutils we grab from the attributes. Hopefully we'll be able to use
+    # fragments for this too once
+    #
+    # https://github.com/bazelbuild/bazel/issues/4681
+    #
+    # is merged.
+    ctx.attr.ln_location,
+    ctx.attr.grep_location,
+  ] + ghc_binaries # Previously collected GHC binaries.
+
+  # Create symlinks to binaries.
+  symlinks = set.empty()
+  for target in targets:
+    symlink = ctx.actions.declare_file(
+      paths.join("visible-binaries", paths.basename(target))
+    )
+    ctx.actions.run(
+      inputs = ctx.files.tools,
+      outputs = [symlink],
+      executable = ctx.file._make_bin_symlink,
+      arguments = [
+        ctx.attr.mkdir_location,
+        ctx.attr.realpath_location,
+        ctx.attr.ln_location,
+        target,
+        symlink.dirname,
+        symlink.path,
+      ],
+    )
+    set.mutable_insert(symlinks, symlink)
+
+  tools_struct_args = {tool.basename.replace("-", "_"): tool
+                       for tool in set.to_list(symlinks)}
+
   return [
     platform_common.ToolchainInfo(
       name = ctx.label.name,
-      tools = ctx.files.tools,
+      tools = struct(**tools_struct_args),
+      # All symlinks are guaranteed to be in the same directory so we just
+      # provide directory name of the first one (the collection cannot be
+      # empty). The rest of the program may rely consider visible_bin_path
+      # as the path to visible binaries, without recalculations.
+      visible_bin_path = set.to_list(symlinks)[0].dirname,
       version = ctx.attr.version,
     ),
     # Make everyone implicitly depend on the version_file, to force
@@ -34,23 +117,45 @@ def _haskell_toolchain_impl(ctx):
 
 _haskell_toolchain = rule(
   _haskell_toolchain_impl,
+  host_fragments = ["cpp"],
   attrs = {
     "tools": attr.label(mandatory = True),
     "version": attr.string(mandatory = True),
+    "mkdir_location": attr.string(mandatory = True),
+    "realpath_location": attr.string(mandatory = True),
+    "ln_location": attr.string(mandatory = True),
+    "grep_location": attr.string(mandatory = True),
     "_ghc_version_check": attr.label(
       allow_single_file = True,
       default = Label("@io_tweag_rules_haskell//haskell:ghc-version-check.sh")
-    )
+    ),
+    "_make_bin_symlink": attr.label(
+      allow_single_file = True,
+      default = Label("@io_tweag_rules_haskell//haskell:make-bin-symlink.sh")
+    ),
   }
 )
 
-def haskell_toolchain(name, version, tools, **kwargs):
+def haskell_toolchain(
+    name,
+    version,
+    tools,
+    mkdir_location="/bin/mkdir",
+    realpath_location="/usr/bin/realpath",
+    ln_location="/bin/ln",
+    grep_location="/bin/grep",
+    **kwargs):
   """Declare a compiler toolchain.
 
   Declares a compiler toolchain. You need at least one of these declared
   somewhere in your `BUILD` files for the other rules to work. Once
   declared, you then need to *register* the toolchain using
-  `register_toolchain` in your `WORKSPACE` file (see Example below).
+  `register_toolchain` in your `WORKSPACE` file (see example below).
+
+  Haskell rules rely on some binary utilities, such as `ln` and `grep`. You
+  can overwrite their locations by specifying argumentents such as
+  `ln_location`, `grep_location`, and/or others, although it should be
+  rarely needed.
 
   Example:
     ```bzl
@@ -78,6 +183,10 @@ def haskell_toolchain(name, version, tools, **kwargs):
     name = impl_name,
     version = version,
     tools = tools,
+    mkdir_location = mkdir_location,
+    realpath_location = realpath_location,
+    ln_location = ln_location,
+    grep_location = grep_location,
     visibility = ["//visibility:public"],
     **kwargs
   )

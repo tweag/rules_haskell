@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Usage: ghc-defs-cleanup.sh <ORIGINAL_FILE> <OUTPUT_FILE>
+# Usage: ghc-defs-cleanup.sh <GREP_PATH> <ORIGINAL_FILE> <OUTPUT_FILE>
 
 # This is what Cabal sets:
 #
@@ -8,6 +8,6 @@
 #
 # so we should be OK too.
 
-grep "#define __GLASGOW_HASKELL__" $1 >  $2
-grep "#define .*_HOST_OS"          $1 >> $2
-grep "#define .*_BUILD_ARCH"       $1 >> $2
+"$1" "#define __GLASGOW_HASKELL__" "$2" >  "$3"
+"$1" "#define .*_HOST_OS"          "$2" >> "$3"
+"$1" "#define .*_BUILD_ARCH"       "$2" >> "$3"
