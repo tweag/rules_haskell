@@ -6,7 +6,7 @@
 # likely that the script is invoked incorrectly, so we need to output a
 # warning with instructions how to invoke it.
 
-GHCI_LOCATION="bazel-$(basename $PWD)/{GHCi}"
+GHCI_LOCATION="{GHCi}"
 SCRIPT_LOCATION="{SCRIPT_LOCATION}"
 
 if ! [ -e "$GHCI_LOCATION" ]

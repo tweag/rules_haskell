@@ -103,7 +103,7 @@ def _haskell_repl_impl(ctx):
       ghci_script,
     ]),
     # This "forces" compilation of target:
-    runfiles = ctx.runfiles(ctx.files.target),
+    runfiles = ctx.runfiles([tools(ctx).ghci] + ctx.files.target),
   )]
 
 haskell_repl = rule(
