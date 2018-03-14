@@ -15,16 +15,22 @@ load(":actions.bzl",
   "link_dynamic_lib",
   "create_ghc_package",
   "gather_dep_info",
-  "infer_lib_info",
-  "infer_bin_info",
+  "get_pkg_id",
 )
 
 load(":set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 
+load(":path_utils.bzl",
+     "import_hierarchy_root",
+)
+
 # For re-exports:
 load(":haddock.bzl",
   _haskell_doc = "haskell_doc",
+)
+load(":lint.bzl",
+  _haskell_lint = "haskell_lint",
 )
 load(":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
@@ -74,10 +80,9 @@ _haskell_common_attrs = {
 }
 
 def _haskell_binary_impl(ctx):
-  object_files, object_dyn_files = compile_haskell_bin(ctx)
+  c = compile_haskell_bin(ctx)
 
-  binary, so_symlink_prefix = link_haskell_bin(ctx, object_dyn_files)
-  bin_info = infer_bin_info(ctx, binary)
+  binary, so_symlink_prefix = link_haskell_bin(ctx, c.object_dyn_files)
   dep_info = gather_dep_info(ctx)
 
   so_symlinks = {}
@@ -87,7 +92,11 @@ def _haskell_binary_impl(ctx):
 
   return [
     dep_info, # HaskellBuildInfo
-    bin_info, # HaskellBinaryInfo
+    HaskellBinaryInfo(
+      source_files = c.source_files,
+      modules = c.modules,
+      binary = binary,
+    ),
     DefaultInfo(
       executable = binary,
       files = depset([binary]),
@@ -112,6 +121,10 @@ def _mk_binary_rule(**kwargs):
     executable = True,
     attrs = dict(
       _haskell_common_attrs,
+      generate_so = attr.bool(
+        default = False,
+        doc = "Whether to generate also a .so version of executable.",
+      ),
       main_function = attr.string(
         default = "Main.main",
         doc = "Location of `main` function.",
@@ -121,7 +134,6 @@ def _mk_binary_rule(**kwargs):
         doc = "File containing `Main` module.",
       )
     ),
-    host_fragments = ["cpp"],
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
     **kwargs
   )
@@ -150,24 +162,32 @@ Example:
 """
 
 def _haskell_library_impl(ctx):
-  interfaces_dir, interface_files, object_files, object_dyn_files, haddock_args = compile_haskell_lib(ctx)
+  c = compile_haskell_lib(ctx)
 
-  static_library = link_static_lib(ctx, object_files)
-  dynamic_library = link_dynamic_lib(ctx, object_dyn_files)
+  static_library = link_static_lib(ctx, c.object_files)
+  dynamic_library = link_dynamic_lib(ctx, c.object_dyn_files)
+
+  dep_info = gather_dep_info(ctx)
+
+  exposed_modules = set.empty()
+  other_modules = set.from_list(ctx.attr.hidden_modules)
+
+  for module in set.to_list(c.modules):
+    if not set.is_member(other_modules, module):
+      set.mutable_insert(exposed_modules, module)
 
   conf_file, cache_file = create_ghc_package(
     ctx,
-    interfaces_dir,
+    c.interfaces_dir,
     static_library,
     dynamic_library,
+    exposed_modules,
+    other_modules,
   )
-
-  dep_info = gather_dep_info(ctx)
-  lib_info = infer_lib_info(ctx, haddock_args=haddock_args)
 
   return [
     HaskellBuildInfo(
-      package_names = set.insert(dep_info.package_names, lib_info.package_name),
+      package_names = set.insert(dep_info.package_names, get_pkg_id(ctx)),
       package_confs = set.insert(dep_info.package_confs, conf_file),
       package_caches = set.insert(dep_info.package_caches, cache_file),
       # NOTE We have to use lists for static libraries because the order is
@@ -176,11 +196,18 @@ def _haskell_library_impl(ctx):
       # then you feed the library which resolves the symbols.
       static_libraries = [static_library] + dep_info.static_libraries,
       dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
-      interface_files = set.union(dep_info.interface_files, set.from_list(interface_files)),
+      interface_files = set.union(dep_info.interface_files, set.from_list(c.interface_files)),
       prebuilt_dependencies = dep_info.prebuilt_dependencies,
       external_libraries = dep_info.external_libraries,
     ),
-    lib_info, # HaskellLibraryInfo
+    HaskellLibraryInfo(
+      package_name = get_pkg_id(ctx),
+      import_dirs = c.import_dirs,
+      exposed_modules = exposed_modules,
+      other_modules = other_modules,
+      haddock_args = c.haddock_args,
+      source_files = c.source_files,
+    ),
     DefaultInfo(
       files = depset([conf_file, cache_file]),
       runfiles = ctx.runfiles(collect_data = True),
@@ -194,7 +221,6 @@ haskell_library = rule(
     hidden_modules = attr.string_list(
       doc = "Modules that should be unavailable for import by dependencies."
     )),
-  host_fragments = ["cpp"],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
 """Build a library from Haskell source.
@@ -211,6 +237,8 @@ Example:
 """
 
 haskell_doc = _haskell_doc
+
+haskell_lint = _haskell_lint
 
 haskell_toolchain = _haskell_toolchain
 
