@@ -34,6 +34,19 @@ cc_library(
 """,
 )
 
+nixpkgs_package(
+  name = "doctest",
+  attribute_path = "haskell.packages.ghc822.doctest",
+  build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "bin",
+  srcs = ["bin/doctest"],
+)
+  """
+)
+
 register_toolchains("//tests:ghc")
 
 nixpkgs_package(name = "zlib", build_file_content = """

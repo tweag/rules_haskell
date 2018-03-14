@@ -31,6 +31,7 @@ load(":haddock.bzl",
 )
 load(":lint.bzl",
   _haskell_lint = "haskell_lint",
+  _haskell_doctest = "haskell_doctest",
 )
 load(":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
@@ -242,6 +243,8 @@ Example:
 haskell_doc = _haskell_doc
 
 haskell_lint = _haskell_lint
+
+haskell_doctest  = _haskell_doctest
 
 haskell_toolchain = _haskell_toolchain
 

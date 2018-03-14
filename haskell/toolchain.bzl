@@ -59,6 +59,8 @@ def _haskell_toolchain_impl(ctx):
 
   visible_binaries = "visible-binaries"
   symlinks = set.empty()
+  inputs = []
+  inputs.extend(ctx.files.tools)
 
   targets_r = [
     # CPP host fragments.
@@ -70,12 +72,16 @@ def _haskell_toolchain_impl(ctx):
     ctx.host_fragments.cpp.strip_executable,
   ] + ghc_binaries # Previously collected GHC binaries.
 
+  if ctx.attr.doctest != None:
+    targets_r.append(ctx.file.doctest.path)
+    inputs.append(ctx.file.doctest)
+
   for target in targets_r:
     symlink = ctx.actions.declare_file(
       paths.join(visible_binaries, paths.basename(target))
     )
     ctx.actions.run(
-      inputs = ctx.files.tools,
+      inputs = inputs,
       outputs = [symlink],
       executable = ctx.file._make_bin_symlink_realpath,
       # FIXME Currently this part of the process is not hermetic. This
@@ -137,7 +143,14 @@ _haskell_toolchain = rule(
   _haskell_toolchain_impl,
   host_fragments = ["cpp"],
   attrs = {
-    "tools": attr.label(mandatory = True),
+    "tools": attr.label(
+      doc = "GHC and executables that come with it",
+      mandatory = True,
+    ),
+    "doctest": attr.label(
+      doc = "Doctest executable",
+      allow_single_file = True,
+    ),
     "version": attr.string(mandatory = True),
     "_ghc_version_check": attr.label(
       allow_single_file = True,

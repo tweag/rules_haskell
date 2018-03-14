@@ -17,6 +17,7 @@ haskell_toolchain(
   name = "ghc",
   version = "8.2.2",
   tools = "@ghc//:bin",
+  doctest = "@doctest//:bin",
 )
 
 rule_test(
@@ -153,6 +154,16 @@ rule_test(
     "lint-log-bin-1.0.0",
   ],
   rule = "//tests/haskell_lint:lint-bin",
+  size = "small",
+)
+
+rule_test(
+  name = "test-haskell_doctest",
+  generates = [
+    "doctest-log-lib-a-1.0.0",
+    "doctest-log-lib-b-1.0.0",
+  ],
+  rule = "//tests/haskell_doctest:haskell_doctest",
   size = "small",
 )
 
