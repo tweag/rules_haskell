@@ -57,7 +57,10 @@ def _haskell_toolchain_impl(ctx):
   # programs we need/use for building. Setting PATH and listing as inputs
   # are both necessary for a tool to be available with this approach.
 
-  targets = [
+  visible_binaries = "visible-binaries"
+  symlinks = set.empty()
+
+  targets_r = [
     # CPP host fragments.
     ctx.host_fragments.cpp.ar_executable,
     ctx.host_fragments.cpp.compiler_executable,
@@ -65,32 +68,46 @@ def _haskell_toolchain_impl(ctx):
     ctx.host_fragments.cpp.nm_executable,
     ctx.host_fragments.cpp.preprocessor_executable,
     ctx.host_fragments.cpp.strip_executable,
-    # Binutils we grab from the attributes. Hopefully we'll be able to use
-    # fragments for this too once
-    #
-    # https://github.com/bazelbuild/bazel/issues/4681
-    #
-    # is merged.
-    ctx.attr.ln_location,
-    ctx.attr.grep_location,
   ] + ghc_binaries # Previously collected GHC binaries.
 
-  # Create symlinks to binaries.
-  symlinks = set.empty()
-  for target in targets:
+  for target in targets_r:
     symlink = ctx.actions.declare_file(
-      paths.join("visible-binaries", paths.basename(target))
+      paths.join(visible_binaries, paths.basename(target))
     )
     ctx.actions.run(
       inputs = ctx.files.tools,
       outputs = [symlink],
-      executable = ctx.file._make_bin_symlink,
+      executable = ctx.file._make_bin_symlink_realpath,
+      # FIXME Currently this part of the process is not hermetic. This
+      # should be adjusted when
+      #
+      # https://github.com/bazelbuild/bazel/issues/4681
+      #
+      # is implemented.
+      use_default_shell_env = True,
       arguments = [
-        ctx.attr.mkdir_location,
-        ctx.attr.realpath_location,
-        ctx.attr.ln_location,
         target,
-        symlink.dirname,
+        symlink.path,
+      ],
+    )
+    set.mutable_insert(symlinks, symlink)
+
+  targets_w = [
+    "ln",
+    "grep",
+  ]
+
+  for target in targets_w:
+    symlink = ctx.actions.declare_file(
+      paths.join(visible_binaries, paths.basename(target))
+    )
+    ctx.actions.run(
+      inputs = ctx.files.tools,
+      outputs = [symlink],
+      executable = ctx.file._make_bin_symlink_which,
+      use_default_shell_env = True, # FIXME see above
+      arguments = [
+        target,
         symlink.path,
       ],
     )
@@ -121,17 +138,17 @@ _haskell_toolchain = rule(
   attrs = {
     "tools": attr.label(mandatory = True),
     "version": attr.string(mandatory = True),
-    "mkdir_location": attr.string(mandatory = True),
-    "realpath_location": attr.string(mandatory = True),
-    "ln_location": attr.string(mandatory = True),
-    "grep_location": attr.string(mandatory = True),
     "_ghc_version_check": attr.label(
       allow_single_file = True,
       default = Label("@io_tweag_rules_haskell//haskell:ghc-version-check.sh")
     ),
-    "_make_bin_symlink": attr.label(
+    "_make_bin_symlink_realpath": attr.label(
       allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:make-bin-symlink.sh")
+      default = Label("@io_tweag_rules_haskell//haskell:make-bin-symlink-realpath.sh")
+    ),
+    "_make_bin_symlink_which": attr.label(
+      allow_single_file = True,
+      default = Label("@io_tweag_rules_haskell//haskell:make-bin-symlink-which.sh")
     ),
   }
 )
@@ -140,10 +157,6 @@ def haskell_toolchain(
     name,
     version,
     tools,
-    mkdir_location="/bin/mkdir",
-    realpath_location="/usr/bin/realpath",
-    ln_location="/bin/ln",
-    grep_location="/bin/grep",
     **kwargs):
   """Declare a compiler toolchain.
 
@@ -183,10 +196,6 @@ def haskell_toolchain(
     name = impl_name,
     version = version,
     tools = tools,
-    mkdir_location = mkdir_location,
-    realpath_location = realpath_location,
-    ln_location = ln_location,
-    grep_location = grep_location,
     visibility = ["//visibility:public"],
     **kwargs
   )
