@@ -20,6 +20,7 @@ load(":actions.bzl",
 )
 
 load(":set.bzl", "set")
+load("@bazel_skylib//:lib.bzl", "paths")
 
 # For re-exports:
 load(":haddock.bzl",
@@ -73,14 +74,25 @@ _haskell_common_attrs = {
 }
 
 def _haskell_binary_impl(ctx):
-  object_files = compile_haskell_bin(ctx)
-  default_info = link_haskell_bin(ctx, object_files)
+  object_files, object_dyn_files = compile_haskell_bin(ctx)
+
+  binary, so_symlink_prefix = link_haskell_bin(ctx, object_dyn_files)
+  bin_info = infer_bin_info(ctx, binary)
   dep_info = gather_dep_info(ctx)
-  bin_info = infer_bin_info(ctx)
+
+  so_symlinks = {}
+
+  for lib in set.to_list(dep_info.external_libraries):
+    so_symlinks[paths.join(so_symlink_prefix, paths.basename(lib.path))] = lib
+
   return [
     dep_info, # HaskellBuildInfo
     bin_info, # HaskellBinaryInfo
-    default_info, # DefaultInfo
+    DefaultInfo(
+      executable = binary,
+      files = depset([binary]),
+      runfiles = ctx.runfiles(symlinks=so_symlinks, collect_data = True),
+    ),
   ]
 
 def _mk_binary_rule(**kwargs):
