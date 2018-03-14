@@ -27,7 +27,8 @@ haskell_repl(
 
 haskell_binary(
   name = "hs-bin",
-  srcs = ["Main.hs"],
+  srcs = ["Quux.hs"],
+  main_file = "Quux.hs",
   prebuilt_dependencies = ["base"],
   visibility = ["//visibility:public"],
 )

@@ -4,7 +4,7 @@ These rules are temporary and will be deprecated in the future.
 """
 
 load(":providers.bzl",
-     "HaskellPackageInfo",
+     "HaskellBuildInfo",
      "CcSkylarkApiProviderHacked",
 )
 
@@ -94,18 +94,18 @@ Example:
 """
 
 def _cc_haskell_import(ctx):
-  if HaskellPackageInfo in ctx.attr.dep:
+  if HaskellBuildInfo in ctx.attr.dep:
     return [DefaultInfo(
-      files = set.to_depset(ctx.attr.dep[HaskellPackageInfo].dynamic_libraries)
+      files = set.to_depset(ctx.attr.dep[HaskellBuildInfo].dynamic_libraries)
     )]
   else:
-    fail("{0} has to provide HaskellPackageInfo".format(ctx.attr.dep.label.name))
+    fail("{0} has to provide HaskellBuildInfo".format(ctx.attr.dep.label.name))
 
 cc_haskell_import = rule(
   _cc_haskell_import,
   attrs = {
     "dep": attr.label(
-      doc = "Target providing a `HaskellPackageInfo`, such as `haskell_library`."
+      doc = "Target providing a `HaskellBuildInfo`, such as `haskell_library`."
     ),
   },
 )

@@ -1,20 +1,34 @@
-HaskellPackageInfo = provider(
-  doc = "Package information exposed by Haskell libraries.",
+HaskellBuildInfo = provider(
+  doc = "Common information about build process: dependencies, etc.",
   fields = {
-    "name": "Package name, usually of the form name-version.",
-    "names": "A set of all package names of transitive dependencies. Includes own name.",
-    "confs": "A set of package conf files.",
-    "caches": "A set of package cache files.",
-    "static_libraries": "Compiled library archives.",
-    "dynamic_libraries": "Dynamic libraries.",
-    "interface_files": "Interface files belonging to the packages.",
-    "prebuilt_dependencies": "Transitive collection of all wired-in Haskell dependencies.",
-    "external_libraries": "Dynamic shared libraries needed for linking. List of .so files.",
-    "import_dirs": "A set of import directories (useful with GHCi for example)",
-    "exposed_modules": "A set of exposed module names.",
-    "hidden_modules": "A set of hidden module names.",
-    "haddock_ghc_args": "Arguments that were used to compile the package, suitable for Haddock."
-  }
+    "package_names": "Set of all package names of transitive dependencies.",
+    "package_confs": "Set of package .conf files.",
+    "package_caches": "Set of package cache files.",
+    "static_libraries": "Ordered collection of compiled library archives.",
+    "dynamic_libraries": "Set of dynamic libraries.",
+    "interface_files": "Set of interface files belonging to the packages.",
+    "prebuilt_dependencies": "Transitive collection of names of wired-in Haskell dependencies.",
+    "external_libraries": "Set of dynamic shared libraries needed for linking.",
+  },
+)
+
+HaskellLibraryInfo = provider(
+  doc = "Library-specific information.",
+  fields = {
+    "package_name": "Package name, usually of the form name-version.",
+    "import_dir": "Import hierarchy root.",
+    "exposed_modules": "Set of exposed module names.",
+    "other_modules": "Set of non-public module names.",
+    "haddock_args": "Arguments that were used to compile the package suitable for Haddock."
+  },
+)
+
+HaskellBinaryInfo = provider(
+  doc = "Binary-specific information.",
+  fields = {
+    "source_files": "Set of source files.",
+    "modules": "Set of module names.",
+  },
 )
 
 HaddockInfo = provider(

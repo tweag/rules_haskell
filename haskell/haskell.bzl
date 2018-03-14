@@ -1,45 +1,43 @@
 """Core Haskell rules"""
 
 load(":providers.bzl",
-  "HaskellPackageInfo",
+  "HaskellBuildInfo",
+  "HaskellLibraryInfo",
+  "HaskellBinaryInfo",
   "CcSkylarkApiProviderHacked",
 )
 
 load(":actions.bzl",
   "compile_haskell_bin",
-  "compile_haskell_lib",
-  "create_dynamic_library",
-  "create_ghc_package",
-  "create_static_library",
-  "gather_dependency_information",
-  "get_pkg_id",
   "link_haskell_bin",
+  "compile_haskell_lib",
+  "link_static_lib",
+  "link_dynamic_lib",
+  "create_ghc_package",
+  "gather_dep_info",
+  "infer_lib_info",
+  "infer_bin_info",
 )
 
-# Re-export haskell_doc
+load(":set.bzl", "set")
+
+# For re-exports:
 load(":haddock.bzl",
   _haskell_doc = "haskell_doc",
 )
-
-# Re-export haskell_toolchain
 load(":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
 )
-
 load (":ghc_bindist.bzl",
   _ghc_bindist = "ghc_bindist",
 )
-
 load(":ghci-repl.bzl",
   _haskell_repl = "haskell_repl",
 )
-
 load(":cc.bzl",
   _haskell_cc_import = "haskell_cc_import",
   _cc_haskell_import = "cc_haskell_import",
 )
-
-load(":set.bzl", "set")
 
 _haskell_common_attrs = {
   "src_strip_prefix": attr.string(
@@ -77,25 +75,12 @@ _haskell_common_attrs = {
 def _haskell_binary_impl(ctx):
   object_files = compile_haskell_bin(ctx)
   default_info = link_haskell_bin(ctx, object_files)
-
-  dep_info = gather_dependency_information(ctx)
-
-  return [HaskellPackageInfo(
-    name = dep_info.name,
-    names = set.insert(dep_info.names, get_pkg_id(ctx)),
-    confs = dep_info.confs,
-    caches = dep_info.caches,
-    static_libraries = dep_info.static_libraries,
-    dynamic_libraries = dep_info.dynamic_libraries,
-    interface_files = dep_info.interface_files,
-    prebuilt_dependencies = dep_info.prebuilt_dependencies,
-    external_libraries = dep_info.external_libraries,
-    import_dirs = dep_info.import_dirs,
-    exposed_modules = dep_info.exposed_modules,
-    hidden_modules = set.empty(),
-    haddock_ghc_args = ctx.actions.args(),
-  ),
-  default_info,
+  dep_info = gather_dep_info(ctx)
+  bin_info = infer_bin_info(ctx)
+  return [
+    dep_info, # HaskellBuildInfo
+    bin_info, # HaskellBinaryInfo
+    default_info, # DefaultInfo
   ]
 
 def _mk_binary_rule(**kwargs):
@@ -155,15 +140,9 @@ Example:
 def _haskell_library_impl(ctx):
   interfaces_dir, interface_files, object_files, object_dyn_files, haddock_args = compile_haskell_lib(ctx)
 
-  static_library = create_static_library(
-    ctx, object_files
-  )
+  static_library = link_static_lib(ctx, object_files)
+  dynamic_library = link_dynamic_lib(ctx, object_dyn_files)
 
-  dynamic_library = create_dynamic_library(
-    ctx, object_dyn_files
-  )
-
-  # Create and register ghc package.
   conf_file, cache_file = create_ghc_package(
     ctx,
     interfaces_dir,
@@ -171,42 +150,29 @@ def _haskell_library_impl(ctx):
     dynamic_library,
   )
 
-  dep_info = gather_dependency_information(ctx)
+  dep_info = gather_dep_info(ctx)
+  lib_info = infer_lib_info(ctx, haddock_args=haddock_args)
 
-  return [HaskellPackageInfo(
-    name = dep_info.name,
-    # TODO this is somewhat useless now, we shouldn't be abusing
-    # HaskellPackageInfo to carry information only relevant during
-    # build just to throw it away later as upstream doesn't need this.
-    # Technically Haddock rule relies on this but it should gather its
-    # own info.
-    names = set.insert(dep_info.names, get_pkg_id(ctx)),
-    confs = set.insert(dep_info.confs, conf_file),
-    caches = set.insert(dep_info.caches, cache_file),
-    # We have to use lists for static libraries because the order is
-    # important for linker. Linker searches for unresolved symbols to the
-    # left, i.e. you first feed a library which has unresolved symbols and
-    # then you feed the library which resolves the symbols.
-    static_libraries = [static_library] + dep_info.static_libraries,
-    dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
-    interface_files = set.union(dep_info.interface_files, set.from_list(interface_files)),
-    prebuilt_dependencies = set.union(
-      dep_info.prebuilt_dependencies,
-      set.from_list(ctx.attr.prebuilt_dependencies)
+  return [
+    HaskellBuildInfo(
+      package_names = set.insert(dep_info.package_names, lib_info.package_name),
+      package_confs = set.insert(dep_info.package_confs, conf_file),
+      package_caches = set.insert(dep_info.package_caches, cache_file),
+      # NOTE We have to use lists for static libraries because the order is
+      # important for linker. Linker searches for unresolved symbols to the
+      # left, i.e. you first feed a library which has unresolved symbols and
+      # then you feed the library which resolves the symbols.
+      static_libraries = [static_library] + dep_info.static_libraries,
+      dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
+      interface_files = set.union(dep_info.interface_files, set.from_list(interface_files)),
+      prebuilt_dependencies = dep_info.prebuilt_dependencies,
+      external_libraries = dep_info.external_libraries,
     ),
-    external_libraries = dep_info.external_libraries,
-    import_dirs = dep_info.import_dirs,
-    exposed_modules = dep_info.exposed_modules,
-    hidden_modules = dep_info.hidden_modules,
-    haddock_ghc_args = haddock_args,
-  ),
-  DefaultInfo(
-    files = depset([
-      conf_file,
-      cache_file,
-    ]),
-    runfiles = ctx.runfiles(collect_data = True),
-  ),
+    lib_info, # HaskellLibraryInfo
+    DefaultInfo(
+      files = depset([conf_file, cache_file]),
+      runfiles = ctx.runfiles(collect_data = True),
+    ),
   ]
 
 haskell_library = rule(
@@ -214,7 +180,7 @@ haskell_library = rule(
   attrs = dict(
     _haskell_common_attrs,
     hidden_modules = attr.string_list(
-      doc = "Modules that should be made unavailable for import by dependencies."
+      doc = "Modules that should be unavailable for import by dependencies."
     )),
   host_fragments = ["cpp"],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],

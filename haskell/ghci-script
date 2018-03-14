@@ -1,2 +1,2 @@
-:add {INTERPRETED_MODULES}
+:add {ADD_MODULES}
 :module + {VISIBLE_MODULES}
