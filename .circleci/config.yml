@@ -20,3 +20,9 @@ jobs:
       - run:
           name: Run tests
           command: bazel test //... --config=ci
+      - run:
+          name: Test REPL for libraries
+          command: bazel-bin/tests/haskell_repl/haskell_lib_repl -e ":quit"
+      - run:
+          name: Test REPL for binaries
+          command: bazel-bin/tests/haskell_repl/haskell_bin_repl -e ":quit"
