@@ -252,8 +252,6 @@ def _pop(checker, mode):
 
 
 def _set_state(checker, state):
-    print("state transition (mode:%s): %s -> %s" % (
-        _MODE_NAMES[_peek_mode(checker)], _STATE_NAMES[checker['state']], _STATE_NAMES[state]))
     checker['state'] = state
 
 
@@ -262,12 +260,13 @@ def _peek_mode(checker):
     return checker['stack'][top]
 
 
-def _create_checker(max_depth = _MAX_DEPTH):
+def _create_checker(max_depth = _MAX_DEPTH, grammar_hooks = {}):
     checker = {
         'stack': [],
         'top': -1,
         'max_depth': max_depth,
-        'state': _STATES['GO']
+        'state': _STATES['GO'],
+        'grammar_hooks' : grammar_hooks,
     }
     _push(checker, _MODES['DONE'])
     return checker
@@ -354,6 +353,18 @@ def _handle_next_char(checker, next_string_char):
     new_state = checker['state']
     new_mode = _peek_mode(checker)
 
+    orig_state_name = _STATE_NAMES[orig_state]
+    orig_mode_name = _MODE_NAMES[orig_mode]
+    new_state_name = _STATE_NAMES[new_state]
+    new_mode_name = _MODE_NAMES[new_mode]
+
+    if new_state_name in checker['grammar_hooks']:
+        checker['grammar_hooks'][new_state_name](
+            orig_state_name, orig_mode_name, new_state_name, new_mode_name, next_string_char)
+    elif '*' in checker['grammar_hooks']:
+        checker['grammar_hooks']['*'](
+            orig_state_name, orig_mode_name, new_state_name, new_mode_name, next_string_char)
+
     return True
 
 
@@ -361,32 +372,18 @@ def _verify_done(checker):
     return checker['state'] == _STATES['OK'] and _peek_mode(checker) == _MODES['DONE']
 
 
+def _print_transition(orig_state, orig_mode, new_state, new_mode, next_string_char):
+    print("state transition: %s:MODE[%s] -> %s:MODE[%s] on '%s'" % (
+        orig_state, orig_mode, new_state, new_mode, next_string_char))
+
+
 def json_checker():
-#     print(_TOKEN_CLASSES)
-#     print(_ASCII_CLASS_LIST)
-#     print(_STATES)
-#     print(_MODES)
-
-#     fd_checker = _create_checker()
-#     print(fd_checker)
-
-#     _push(fd_checker, _MODES['KEY'])
-#     print(fd_checker)
-
-#     _pop(fd_checker, _MODES['KEY'])
-#     print(fd_checker)
-
-#     _pop(fd_checker, _MODES['DONE'])
-#     print(fd_checker)
-
-# #    print("chars: %s" % " ".join(["\U00", "\U01", "\U02"]))
-#     print(_ASCII_CODEPOINT_MAP)
-
-    checker = _create_checker()
+    checker = _create_checker(_MAX_DEPTH, {
+        '*': _print_transition,
+    })
     json = '{"foo": "bar", "biz": [1,2,3]}'
     for i  in range(0, len(json)):
-        print("json char: %s" % json[i])
-        print(_handle_next_char(checker, json[i]))
+        _handle_next_char(checker, json[i])
 
     print("is valid parse: %s" % _verify_done(checker))
 
