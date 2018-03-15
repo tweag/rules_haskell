@@ -76,13 +76,48 @@ _STATES = _enumify_iterable(iterable = [
 ], enum_dict = {})
 _S = _STATES
 
-_MODES = _enumify_iterable(iterable = [
+_STATE_NAMES = [
+    'start',
+    'ok',
+    'object',
+    'key',
+    'colon',
+    'value',
+    'array',
+    'string',
+    'escape',
+    'u1',
+    'u2',
+    'u3',
+    'u4',
+    'minus',
+    'zero',
+    'integer',
+    'fraction',
+    'e',
+    'ex',
+    'exp',
+    'tr',
+    'tru',
+    'true',
+    'fa',
+    'fal',
+    'fals',
+    'false',
+    'nu',
+    'nul',
+    'null',
+]
+
+
+_MODE_NAMES = [
     'ARRAY',
     'DONE',
     'KEY',
     'OBJECT',
-], enum_dict = {})
+]
 
+_MODES = _enumify_iterable(iterable = _MODE_NAMES, enum_dict = {})
 
 _ASCII_CODEPOINT_MAP = {
     # Currenlty non-printable ascii characters are simply not referencable in
@@ -209,7 +244,7 @@ def _pop(checker, mode):
     top = checker['top']
     if (top < 0):
         _reject("invalid top index")
-    elif (not _peek(checker) == mode):
+    elif (not _peek_mode(checker) == mode):
         _reject("cannot pop unexpected mode %s expected %s" % (mode, checker['stack'][top]))
 
     checker['stack'] = checker['stack'][0:checker['top']]
@@ -217,10 +252,12 @@ def _pop(checker, mode):
 
 
 def _set_state(checker, state):
+    print("state transition (mode:%s): %s -> %s" % (
+        _MODE_NAMES[_peek_mode(checker)], _STATE_NAMES[checker['state']], _STATE_NAMES[state]))
     checker['state'] = state
 
 
-def _peek(checker):
+def _peek_mode(checker):
     top = checker['top']
     return checker['stack'][top]
 
@@ -241,11 +278,11 @@ def _handle_next_char(checker, next_string_char):
 
     next_char = _ASCII_CODEPOINT_MAP[next_string_char[0]]
     if (next_char == None):
-        _reject("unprintable Java/skylark char: %s" % next_char)
+        _reject("unprintable Java/skylark char: %s" % next_string_char)
 
     next_class = _ASCII_CLASS_LIST[next_char]
     if (next_class <= __):
-        _reject("unknown character class for char: %s" % next_char)
+        _reject("unknown character class for char: %s" % next_string_char)
 
     next_state = _STATE_TRANSITION_TABLE[checker['state']][next_class]
 
@@ -280,7 +317,7 @@ def _handle_next_char(checker, next_string_char):
             _set_state(checker, AR)
 
         elif next_state == -4: # "
-            current_mode = _peek(checker)
+            current_mode = _peek_mode(checker)
             if current_mode == _MODES['KEY']:
                 _set_state(checker, CO)
             elif current_mode == _MODES['ARRAY'] or current_mode == _MODES['OBJECT']:
@@ -289,7 +326,7 @@ def _handle_next_char(checker, next_string_char):
                 _reject("invalid state transition from mode: %s" % current_mode)
 
         elif next_state == -3: # ,
-            current_mode = _peek(checker)
+            current_mode = _peek_mode(checker)
             if current_mode == _MODES['OBJECT']:
                 # A comma causes a flip from object mode to key mode.
                 _pop(checker, _MODES['OBJECT'])
@@ -315,7 +352,7 @@ def _handle_next_char(checker, next_string_char):
 
 
 def _verify_done(checker):
-    return checker['state'] == _STATES['OK'] and _peek(checker) == _MODES['DONE']
+    return checker['state'] == _STATES['OK'] and _peek_mode(checker) == _MODES['DONE']
 
 
 def json_checker():
