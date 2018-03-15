@@ -10,7 +10,9 @@ load("@bazel_skylib//:lib.bzl",
 )
 
 load(":providers.bzl",
-     "HaskellPackageInfo",
+     "HaskellBuildInfo",
+     "HaskellLibraryInfo",
+     "HaskellBinaryInfo",
 )
 
 load(":path_utils.bzl",
@@ -29,22 +31,23 @@ load(":utils.bzl",
 
 def _haskell_repl_impl(ctx):
 
-  target = ctx.attr.target[HaskellPackageInfo]
+  target = ctx.attr.target[HaskellBuildInfo]
+  lib_target = ctx.attr.target[HaskellLibraryInfo] if HaskellLibraryInfo in ctx.attr.target else None
+  bin_target = ctx.attr.target[HaskellBinaryInfo] if HaskellBinaryInfo in ctx.attr.target else None
 
   # Bring packages in scope.
   args = ["-hide-all-packages"]
   for dep in set.to_list(target.prebuilt_dependencies):
     args += ["-package ", dep]
-  for name in set.to_list(target.names):
-    if not (ctx.attr.interpreted and name == target.name):
-      args += ["-package", name]
-  for cache in set.to_list(target.caches):
+  for package in set.to_list(target.package_names):
+    if not (ctx.attr.interpreted and lib_target != None and package == lib_target.package_name):
+      args += ["-package", package]
+  for cache in set.to_list(target.package_caches):
     args += ["-package-db", cache.dirname]
 
-  # Import dirs in interpreted mode.
-  if ctx.attr.interpreted:
-    for idir in set.to_list(target.import_dirs):
-      args += ["-i{0}".format(idir)]
+  # Specify import directory for library in interpreted mode.
+  if ctx.attr.interpreted and lib_target != None:
+    args += ["-i{0}".format(lib_target.import_dir)]
 
   # External libraries.
   seen_libs = set.empty()
@@ -59,14 +62,33 @@ def _haskell_repl_impl(ctx):
 
   ghci_script = ctx.actions.declare_file(target_unique_name(ctx, "ghci-repl-script"))
 
-  interpreted_modules = set.to_list(target.exposed_modules if ctx.attr.interpreted else set.empty())
-  visible_modules = set.to_list(target.exposed_modules)
+  add_modules = []
+  if lib_target != None:
+    # If we have a library, we put names of its exposed modules here but
+    # only if we're in interpreted mode.
+    add_modules = set.to_list(
+      lib_target.exposed_modules if ctx.attr.interpreted else set.empty()
+    )
+  elif bin_target != None:
+    # Otherwise we put paths to module files, mostly because it also works
+    # and Main module may be in a file with name that's impossible for GHC
+    # to infer.
+    add_modules = [f.path for f in set.to_list(bin_target.source_files)]
+
+  visible_modules = []
+  if lib_target != None:
+    # If we have a library, we put names of its exposed modules here.
+    visible_modules = set.to_list(lib_target.exposed_modules)
+  elif bin_target != None:
+    # Otherwise we do rougly the same by using modules from
+    # HaskellBinaryInfo.
+    visible_modules = set.to_list(bin_target.modules)
 
   ctx.actions.expand_template(
     template = ctx.file._ghci_script,
     output = ghci_script,
     substitutions = {
-      "{INTERPRETED_MODULES}": " ".join(interpreted_modules),
+      "{ADD_MODULES}": " ".join(add_modules),
       "{VISIBLE_MODULES}": " ".join(visible_modules),
     },
   )

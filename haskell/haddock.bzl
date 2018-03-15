@@ -9,14 +9,15 @@ load(":tools.bzl",
 )
 
 load(":providers.bzl",
-     "HaskellPackageInfo",
+     "HaskellBuildInfo",
+     "HaskellLibraryInfo",
      "HaddockInfo",
 )
 
 load("@bazel_skylib//:lib.bzl", "paths")
 
 def _haskell_doc_aspect_impl(target, ctx):
-  if HaskellPackageInfo not in target:
+  if HaskellBuildInfo not in target or HaskellLibraryInfo not in target:
     return []
 
   pkg_id = "{0}-{1}".format(ctx.rule.attr.name, ctx.rule.attr.version)
@@ -90,8 +91,8 @@ def _haskell_doc_aspect_impl(target, ctx):
 
   ctx.actions.run(
     inputs = depset(transitive = [
-      set.to_depset(target[HaskellPackageInfo].caches),
-      set.to_depset(target[HaskellPackageInfo].interface_files),
+      set.to_depset(target[HaskellBuildInfo].package_caches),
+      set.to_depset(target[HaskellBuildInfo].interface_files),
       set.to_depset(dep_interfaces),
       depset(input_sources),
     ]),
@@ -100,7 +101,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     executable = tools(ctx).haddock,
     arguments = [
       args,
-      target[HaskellPackageInfo].haddock_ghc_args,
+      target[HaskellLibraryInfo].haddock_args,
     ],
   )
 

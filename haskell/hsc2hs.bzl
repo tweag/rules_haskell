@@ -39,10 +39,10 @@ def _make_ghc_defs_dump(ctx):
   Returns:
     File: The file with GHC definitions.
   """
-  raw_filename      = "ghc-defs-dump-{0}-{1}.hs".format(ctx.attr.name, ctx.attr.version)
-  dummy_src         = ctx.actions.declare_file(raw_filename)
+  raw_filename = "ghc-defs-dump-{0}-{1}.hs".format(ctx.attr.name, ctx.attr.version)
+  dummy_src = ctx.actions.declare_file(raw_filename)
   ghc_defs_dump_raw = ctx.actions.declare_file(paths.replace_extension(raw_filename, ".hspp"))
-  ghc_defs_dump     = ctx.actions.declare_file(paths.replace_extension(raw_filename, ".h"))
+  ghc_defs_dump = ctx.actions.declare_file(paths.replace_extension(raw_filename, ".h"))
 
   ctx.actions.write(dummy_src, "")
   args = ctx.actions.args()
