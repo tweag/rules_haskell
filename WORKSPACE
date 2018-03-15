@@ -5,8 +5,8 @@ haskell_repositories()
 
 http_archive(
   name = "io_tweag_rules_nixpkgs",
-  strip_prefix = "rules_nixpkgs-0.1.1",
-  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.1.1.tar.gz"],
+  strip_prefix = "rules_nixpkgs-0.2",
+  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.tar.gz"],
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
@@ -19,19 +19,19 @@ package(default_visibility = ["//visibility:public"])
 
 filegroup(
   name = "bin",
-  srcs = glob(["nix/bin/*"]),
+  srcs = glob(["bin/*"]),
 )
 
 filegroup(
   name = "lib",
-  srcs = glob(["nix/lib/**/*.so"]),
+  srcs = glob(["lib/**/*.so"]),
 )
 
 cc_library(
   name = "threaded-rts",
-  srcs = glob(["nix/lib/ghc-*/rts/libHSrts_thr-ghc*.so"]),
-  hdrs = glob(["nix/lib/ghc-*/include/**/*.h"]),
-  strip_include_prefix = glob(["nix/lib/ghc-*/include"], exclude_directories=0)[0],
+  srcs = glob(["lib/ghc-*/rts/libHSrts_thr-ghc*.so"]),
+  hdrs = glob(["lib/ghc-*/include/**/*.h"]),
+  strip_include_prefix = glob(["lib/ghc-*/include"], exclude_directories=0)[0],
 )
 """,
 )
@@ -44,8 +44,8 @@ package(default_visibility = ["//visibility:public"])
 filegroup (
   name = "lib",
   srcs = glob([
-    "nix/lib/*.so",
-    "nix/lib/*.so.*",
+    "lib/*.so",
+    "lib/*.so.*",
   ]),
   testonly = 1,
 )
@@ -57,7 +57,7 @@ package(default_visibility = ["//visibility:public"])
 
 filegroup (
   name = "include",
-  srcs = glob(["nix/include/*.h"]),
+  srcs = glob(["include/*.h"]),
   testonly = 1,
 )
 """,
