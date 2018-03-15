@@ -293,6 +293,9 @@ def _handle_next_char(checker, next_string_char):
     KE = _STATES['KE']
     VA = _STATES['VA']
 
+    orig_state = checker['state']
+    orig_mode = _peek_mode(checker)
+
     if (next_state >= 0):
         _set_state(checker, next_state)
     else:
@@ -347,6 +350,9 @@ def _handle_next_char(checker, next_string_char):
 
         else:
             _reject("invalid action: %s" % next_state)
+
+    new_state = checker['state']
+    new_mode = _peek_mode(checker)
 
     return True
 
