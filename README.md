@@ -123,6 +123,11 @@ filegroup (name = "bin", srcs = glob(["bin/ghc*"]))
 )
 ```
 
+## Examples
+
+See [rules_haskell_examples][rules_haskell_examples] for examples of
+using these rules.
+
 ## For `rules_haskell` developers
 
 To run the test suite for these rules, you'll need [Nix][nix]
