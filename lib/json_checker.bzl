@@ -146,7 +146,8 @@ _ASCII_CODEPOINT_MAP = {
     "`" : 96, "a" : 97, "b" : 98, "c" : 99, "d" : 100, "e" : 101, "f" : 102, "g" : 103,
     "h" : 104, "i" : 105, "j" : 106, "k" : 107, "l" : 108, "m" : 109, "n" : 110, "o" : 111,
     "p" : 112, "q" : 113, "r" : 114, "s" : 115, "t" : 116, "u" : 117, "v" : 118, "w" : 119,
-#    "x" : 120, "y" : 121, "z" : 122, "{" : 123, "|" : 124, "}" : 125, "~" : 126, "\x7F" : 127,
+    # Commented out for the same reason as above, given the backspace code, \x7F
+    #    "x" : 120, "y" : 121, "z" : 122, "{" : 123, "|" : 124, "}" : 125, "~" : 126, "\x7F" : 127,
     "x" : 120, "y" : 121, "z" : 122, "{" : 123, "|" : 124, "}" : 125, "~" : 126,
 }
 
@@ -184,7 +185,6 @@ def _create_ascii_mappings():
 _ASCII_CLASS_LIST = _create_ascii_mappings()
 
 _STATE_TRANSITION_TABLE = [
-#[NR_STATES][NR_CLASSES] = {
 #    The state transition table takes the current state and the current symbol,
 #    and returns either a new state or an action. An action is represented as a
 #    negative number. A JSON text is accepted if at the end of the text the
@@ -233,42 +233,50 @@ def _reject(reason = "unknown reason"):
 
 
 def _push(checker, mode):
-    checker['top'] += 1
-    if (checker['top'] >= checker['max_depth']):
+    checker["top"] += 1
+    if (checker["top"] >= checker["max_depth"]):
         _reject("max depth exceeded")
 
-    checker['stack'].insert(checker['top'], mode)
+    checker["mode_stack"].insert(checker["top"], mode)
+    checker["token_stack"].insert(checker["top"], [])
 
+
+def _add_terminal(checker, string_char):
+    checker["token_stack"][checker["top"]].append(string_char)
 
 def _pop(checker, mode):
-    top = checker['top']
+    top = checker["top"]
     if (top < 0):
         _reject("invalid top index")
     elif (not _peek_mode(checker) == mode):
-        _reject("cannot pop unexpected mode %s expected %s" % (mode, checker['stack'][top]))
+        _reject("cannot pop unexpected mode %s expected %s" % (mode, checker["mode_stack"][top]))
 
-    checker['stack'] = checker['stack'][0:checker['top']]
-    checker['top'] -= 1
+    token = checker["token_stack"][checker["top"]]
+    print("popped token: [%s]" % "".join(token))
 
+    checker["token_stack"] = checker["token_stack"][0:checker["top"]]
+    checker["mode_stack"] = checker["mode_stack"][0:checker["top"]]
+    checker["top"] -= 1
 
 def _set_state(checker, state):
-    checker['state'] = state
+    checker["state"] = state
 
 
 def _peek_mode(checker):
-    top = checker['top']
-    return checker['stack'][top]
+    top = checker["top"]
+    return checker["mode_stack"][top]
 
 
 def _create_checker(max_depth = _MAX_DEPTH, grammar_hooks = {}):
     checker = {
-        'stack': [],
-        'top': -1,
-        'max_depth': max_depth,
-        'state': _STATES['GO'],
-        'grammar_hooks' : grammar_hooks,
+        "mode_stack": [],
+        "token_stack": [],
+        "top": -1,
+        "max_depth": max_depth,
+        "state": _STATES["GO"],
+        "grammar_hooks" : grammar_hooks,
     }
-    _push(checker, _MODES['DONE'])
+    _push(checker, _MODES["DONE"])
     return checker
 
 def _handle_next_char(checker, next_string_char):
@@ -283,59 +291,61 @@ def _handle_next_char(checker, next_string_char):
     if (next_class <= __):
         _reject("unknown character class for char: %s" % next_string_char)
 
-    next_state = _STATE_TRANSITION_TABLE[checker['state']][next_class]
+    next_state = _STATE_TRANSITION_TABLE[checker["state"]][next_class]
 
-    OK = _STATES['OK']
-    OB = _STATES['OB']
-    AR = _STATES['AR']
-    CO = _STATES['CO']
-    KE = _STATES['KE']
-    VA = _STATES['VA']
+    OK = _STATES["OK"]
+    OB = _STATES["OB"]
+    AR = _STATES["AR"]
+    CO = _STATES["CO"]
+    KE = _STATES["KE"]
+    VA = _STATES["VA"]
 
-    orig_state = checker['state']
+    orig_state = checker["state"]
     orig_mode = _peek_mode(checker)
 
     if (next_state >= 0):
+        print("simple set state op: %s" % next_state)
         _set_state(checker, next_state)
     else:
+        print("push/pop + set state op: %s" % next_state)
         if next_state == -9: # empty }
-            _pop(checker, _MODES['KEY'])
+            _pop(checker, _MODES["KEY"])
             _set_state(checker, OK)
 
         elif next_state == -8: # }
-            _pop(checker, _MODES['OBJECT'])
+            _pop(checker, _MODES["OBJECT"])
             _set_state(checker, OK)
 
         elif next_state == -7: # ]
-            _pop(checker, _MODES['ARRAY'])
+            _pop(checker, _MODES["ARRAY"])
             _set_state(checker, OK)
 
         elif next_state == -6: # {
-            _push(checker, _MODES['KEY'])
+            _push(checker, _MODES["KEY"])
             _set_state(checker, OB) # NOT OK, OB
 
         elif next_state == -5: # [
-            _push(checker, _MODES['ARRAY'])
+            _push(checker, _MODES["ARRAY"])
             _set_state(checker, AR)
 
         elif next_state == -4: # "
             current_mode = _peek_mode(checker)
-            if current_mode == _MODES['KEY']:
+            if current_mode == _MODES["KEY"]:
                 _set_state(checker, CO)
-            elif current_mode == _MODES['ARRAY'] or current_mode == _MODES['OBJECT']:
+            elif current_mode == _MODES["ARRAY"] or current_mode == _MODES["OBJECT"]:
                 _set_state(checker, OK)
             else:
                 _reject("invalid state transition from mode: %s" % current_mode)
 
         elif next_state == -3: # ,
             current_mode = _peek_mode(checker)
-            if current_mode == _MODES['OBJECT']:
+            if current_mode == _MODES["OBJECT"]:
                 # A comma causes a flip from object mode to key mode.
-                _pop(checker, _MODES['OBJECT'])
-                _push(checker, _MODES['KEY'])
+                _pop(checker, _MODES["OBJECT"])
+                _push(checker, _MODES["KEY"])
                 _set_state(checker, KE)
 
-            elif current_mode == _MODES['ARRAY']:
+            elif current_mode == _MODES["ARRAY"]:
                 _set_state(checker, VA)
 
             else:
@@ -343,14 +353,16 @@ def _handle_next_char(checker, next_string_char):
 
         elif next_state == -2: # :
             # A colon causes a flip from key mode to object mode.
-            _pop(checker, _MODES['KEY'])
-            _push(checker, _MODES['OBJECT'])
+            _pop(checker, _MODES["KEY"])
+            _push(checker, _MODES["OBJECT"])
             _set_state(checker, VA)
 
         else:
             _reject("invalid action: %s" % next_state)
 
-    new_state = checker['state']
+    _add_terminal(checker, next_string_char)
+
+    new_state = checker["state"]
     new_mode = _peek_mode(checker)
 
     orig_state_name = _STATE_NAMES[orig_state]
@@ -358,30 +370,30 @@ def _handle_next_char(checker, next_string_char):
     new_state_name = _STATE_NAMES[new_state]
     new_mode_name = _MODE_NAMES[new_mode]
 
-    if new_state_name in checker['grammar_hooks']:
-        checker['grammar_hooks'][new_state_name](
+    if new_state_name in checker["grammar_hooks"]:
+        checker["grammar_hooks"][new_state_name](
             orig_state_name, orig_mode_name, new_state_name, new_mode_name, next_string_char)
-    elif '*' in checker['grammar_hooks']:
-        checker['grammar_hooks']['*'](
+    elif "*" in checker["grammar_hooks"]:
+        checker["grammar_hooks"]["*"](
             orig_state_name, orig_mode_name, new_state_name, new_mode_name, next_string_char)
 
     return True
 
 
 def _verify_done(checker):
-    return checker['state'] == _STATES['OK'] and _peek_mode(checker) == _MODES['DONE']
+    return checker["state"] == _STATES["OK"] and _peek_mode(checker) == _MODES["DONE"]
 
 
 def _print_transition(orig_state, orig_mode, new_state, new_mode, next_string_char):
-    print("state transition: %s:MODE[%s] -> %s:MODE[%s] on '%s'" % (
+    print('state transition: %s:MODE[%s] -> %s:MODE[%s] on "%s"' % (
         orig_state, orig_mode, new_state, new_mode, next_string_char))
 
 
 def json_checker():
     checker = _create_checker(_MAX_DEPTH, {
-        '*': _print_transition,
+        "*": _print_transition,
     })
-    json = '{"foo": "bar", "biz": [1,2,3]}'
+    json = '{"foo": "bar", "biz": [1,20,337, true, false, null, 1e17, 0.17]}'
     for i  in range(0, len(json)):
         _handle_next_char(checker, json[i])
 
