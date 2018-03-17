@@ -1,33 +1,19 @@
-# Note: I fully acknowledge that I suck at writing parsers. Nothing in this
-# implementation should be considered a best or even recommended practie. This
-# was simply an exploration into bottom-up JSON parsing in Bazel/Skylark.
-#
 # I do not recommend this for anything. Read more for my full thoughts on the
 # limitations:
 #
-#
 # This is a Skylark/Java adaptation of http://www.json.org/JSON_checker/ a
-# push-down automaton originally design to check JSON syntax.
+# push-down automaton originally design to check JSON syntax, attempting to be
+# extended to a full JSON parser.
 #
-# The goal being to adapt it into a bottom up parser for skylark JSON parsing,
-# Unfortunately the implicit grammar encoded in JSON_checker is rather awkward,
-# making for complicated reduction rules. Additionally the dual JSON_checker
-# concepts of MODE and STATE introduces other complexities, making constructing
-# a parse tree awkward.
-#
-# Also, due to Java/Skylark limitations on unicode character support
-# make any parse attempt a best effort:
+# Due to the (IMO) awkward grammar of JSON_checker and Java/Skylark limitations
+# on unicode character support, any parse attempt is a best effort:
 # https://github.com/bazelbuild/bazel/issues/4862
 #
-# Overall, JSON parsing would be best supported by new skylark/bazel native
-# functions. Short of that, a better any implementation supplied by he bazel
-# user community will be forever limited without full unicode support.
-#
-# I highly suggest reading the implementation at
+# I suggest reading the implementation at
 # http://www.json.org/JSON_checker/JSON_checker.c to get an idea of what's
 # happening here, the formatting there is much easier to read.
 #
-# See `_create_checker` for getting started.
+# See `_create_checker` to get started.
 
 def _enumify_iterable(iterable, enum_dict):
     """A hacky function to turn an iterable into a dict with whose keys are the
@@ -114,8 +100,9 @@ _STATE_NAMES = _STATE_MAP.values()
 _MODE_NAMES = [
     'ARRAY',
     'EMPTY',
-    'KEY',
     'OBJECT',
+    'ENTRY',
+    'KEY',
 ]
 
 _MODES = _enumify_iterable(iterable = _MODE_NAMES, enum_dict = {})
@@ -228,7 +215,7 @@ _STATE_TRANSITION_TABLE = [
 
 
 _MAX_DEPTH = 20
-_DEBUG = True
+_DEBUG = False
 
 def _reject(checker, reason = "unknown reason"):
     if (checker["rejected"]):
@@ -250,46 +237,22 @@ def _push(checker, mode):
     checker["token_stack"].insert(checker["top"], [])
 
 
-def _add_terminal(checker, string_char):
-    if (checker["state_terminals"] == None):
-        checker["state_terminals"] = ""
-    checker["state_terminals"] += string_char
-
-
-def _print_token_stack(checker):
-    print("token stack: [%s]" % str(checker["token_stack"]))
-
-
-def _reduce_tokens(checker):
-    top = checker["top"]
-    tokens = checker["token_stack"][top]
-    state = _get_state(checker)
-    if (not checker["state_terminals"] == None):
-        state_name = _STATE_NAMES[state]
-        mode_name = _MODE_NAMES[_peek_mode(checker)]
-        tokens.append({
-            "mode" : mode_name,
-            "state" : state_name,
-            "terminals" : checker["state_terminals"]
-        })
-        checker["state_terminals"] = None
-
-    return tokens
-
-
 def _pop(checker, mode):
     top = checker["top"]
     if (top < 0):
         return _reject(checker, "invalid top index")
     elif (not _peek_mode(checker) == mode):
-        return _reject(checker, "cannot pop unexpected mode %s expected %s" % (mode, checker["mode_stack"][top]))
+        return _reject(
+            checker,
+            "cannot pop unexpected mode %s expected %s" % (mode, checker["mode_stack"][top]))
 
     tokens = _reduce_tokens(checker)
 
     checker["token_stack"] = checker["token_stack"][0:top]
     for t in tokens:
-        # Reverse the token list as it's flattened.
-        checker["token_stack"][top - 1].insert(0, t)
+        if (not t["reduction"] == None):
+            # Reverse the token list as it's flattened.
+            checker["token_stack"][top - 1].insert(1, t)
 
     checker["mode_stack"] = checker["mode_stack"][0:top]
     checker["top"] -= 1
@@ -303,6 +266,45 @@ def _set_state(checker, state):
 
 def _get_state(checker):
     return checker["state"]
+
+
+def _add_next_char_to_state(checker, next_char):
+    if (checker["state_chars"] == None):
+        checker["state_chars"] = ""
+    checker["state_chars"] += next_char
+
+
+def _reduce_tokens(checker):
+    top = checker["top"]
+    tokens = checker["token_stack"][top]
+    state = _get_state(checker)
+    if (not checker["state_chars"] == None):
+        state_name = _STATE_NAMES[state]
+        mode_name = _MODE_NAMES[_peek_mode(checker)]
+
+        reduction = None
+
+        indent = ""
+        for i in range(0, top):
+            indent += "\t"
+
+        print(indent + "reducing %s/%s" % (state_name, mode_name))
+        if state_name in checker["reduction_rules"]:
+            reduction = checker["reduction_rules"][state_name](
+                checker["state_chars"], checker)
+        elif "*" in checker["reduction_rules"]:
+            checker["reduction_rules"]["*"](checker["state_chars"], checker)
+        else:
+            fail("no reducer found for: %s/%s" % (state_name, mode_name))
+
+        tokens.append({
+            "mode" : mode_name,
+            "state" : state_name,
+            "reduction": reduction
+        })
+        checker["state_chars"] = None
+
+    return tokens
 
 
 def _peek_mode(checker):
@@ -388,7 +390,7 @@ def _handle_next_char(checker, next_string_char):
 
         elif next_state == -6: # {
             _push(checker, _MODES["KEY"])
-            _set_state(checker, OB) # NOT OK, OB
+            _set_state(checker, OB)
 
         elif next_state == -5: # [
             _push(checker, _MODES["ARRAY"])
@@ -426,7 +428,7 @@ def _handle_next_char(checker, next_string_char):
         else:
             return _reject(checker, "invalid action: %s" % next_state)
 
-    _add_terminal(checker, next_string_char)
+    _add_next_char_to_state(checker, next_string_char)
 
     new_state = checker["state"]
     new_mode = _peek_mode(checker)
@@ -442,7 +444,7 @@ def _verify_valid(checker):
             _peek_mode(checker) == _MODES["EMPTY"])
 
 
-def _create_checker(max_depth = _MAX_DEPTH, enter_hooks = {}, exit_hooks = {}):
+def _create_checker(max_depth = _MAX_DEPTH, reduction_rules = {}, enter_hooks = {}, exit_hooks = {}):
     """Creates a new JSON checker. Hook names are in the format <MODE>/<STATE>
     where <MODE> and <STATE> are members of the _MODE_NAME and _STATE_NAME lists
     above. Additionally * rules may be given so that hook '*' is called for all
@@ -458,7 +460,8 @@ def _create_checker(max_depth = _MAX_DEPTH, enter_hooks = {}, exit_hooks = {}):
         "top" : -1,
         "max_depth" : max_depth,
         "state" : _STATES["GO"],
-        "state_terminals"  : None,
+        "state_chars"  : None, # Characters collected in the current state
+        "reduction_rules": reduction_rules,
         "enter_hooks" : enter_hooks,
         "exit_hooks": exit_hooks,
     }
@@ -469,26 +472,62 @@ def _create_checker(max_depth = _MAX_DEPTH, enter_hooks = {}, exit_hooks = {}):
 def _print_transition_hook(orig_state, orig_mode, new_state, new_mode, next_string_char):
     print('mode/state: %s/%s' % (new_mode, new_state))
 
+
+def _reduce_object(collected_chars, checker):
+    print("reduce object: " + collected_chars)
+    return dict()
+
+def _reduce_int(collected_chars, checker):
+    print("reduce int: " + collected_chars)
+    return int(collected_chars[0:len(collected_chars)])
+
+
+def _reduce_string(collected_chars, checker):
+    print("reduce string: " + collected_chars)
+    return collected_chars[1:len(collected_chars)]
+
+
 def json_checker():
     return _create_checker(_MAX_DEPTH, exit_hooks = {
         "*": _print_transition_hook,
     })
 
+
+def _print_reduction(chars, checker):
+    print("reduce *: %s" % chars)
+    return chars
+
+
+def _print_token_stack(checker):
+    print("token stack: [%s]" % str(checker["token_stack"]))
+
+
 def tmp_tmp_tmp_json_checker():
-    checker = _create_checker(_MAX_DEPTH, {
-        "*": _print_transition_hook,
-    })
-    json = '{"foo": "bar", "biz": [1,20,337, true, false, null, 1e17, 0.17, {"a": "b"}]}'
-    for i  in range(0, len(json)):
-        _handle_next_char(checker, json[i])
+    # checker = _create_checker(
+    #     _MAX_DEPTH,
+    #     reduction_rules = { "*" : _print_reduction },
+    #     exit_hooks = {
+    #         "*": _print_transition_hook,
+    #     })
+    # json = '{"foo": "bar", "biz": [1,20,337, true, false, null, 1e17, 0.17, {"a": "b"}]}'
+    # for i  in range(0, len(json)):
+    #     _handle_next_char(checker, json[i])
 
-    print("is valid parse: %s" % _verify_valid(checker))
-    _print_token_stack(checker)
+    # print("is valid parse: %s" % _verify_valid(checker))
+    # _print_token_stack(checker)
 
-    checker2 = _create_checker(_MAX_DEPTH, exit_hooks = {
-        "*": _print_transition_hook,
-    })
-    json = '{"arr1": [1, ["arr2"]]}'
+    checker2 = _create_checker(
+        _MAX_DEPTH,
+        reduction_rules = {
+            "string": _reduce_string,
+            "integer": _reduce_int,
+            "object": _reduce_object,
+            "*" : _print_reduction,
+        },
+        exit_hooks = {
+#            "*": _print_transition_hook,
+        })
+    json = '{"key1": [1, 2, ["nested"]], "key2": "val2", "key3": {"nested_key1" : null}}'
     for i  in range(0, len(json)):
         _handle_next_char(checker2, json[i])
     _print_token_stack(checker2)
