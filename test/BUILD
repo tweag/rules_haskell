@@ -10,7 +10,7 @@ load("//lib:json_rules.bzl",
 )
 
 load("//lib:json_checker.bzl",
-     "json_checker")
+     json_checker = "tmp_tmp_tmp_json_checker")
 json_checker()
 
 
