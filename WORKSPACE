@@ -18,15 +18,11 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 nixpkgs_package(
   name = "ghc",
   nix_file_content = """
-let pkgs = import <nixpkgs> {};
-in pkgs.buildEnv {
-  name = "ghc-rules-haskell-examples";
-  paths = with pkgs; [
-    (haskell.packages.ghc822.ghcWithPackages (p: with p; [primitive semigroupoids]))
-    openjdk
-  ];
-}
-"""
+  let pkgs = import <nixpkgs> {}; in
+  pkgs.haskell.packages.ghc822.ghcWithPackages (p: with p;
+    [primitive semigroupoids]
+  )
+  """,
 )
 
 register_toolchains("//:ghc")
