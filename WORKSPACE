@@ -22,11 +22,6 @@ filegroup(
   srcs = glob(["bin/*"]),
 )
 
-filegroup(
-  name = "lib",
-  srcs = glob(["lib/**/*.so"]),
-)
-
 cc_library(
   name = "threaded-rts",
   srcs = glob(["lib/ghc-*/rts/libHSrts_thr-ghc*.so"]),
