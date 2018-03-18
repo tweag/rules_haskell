@@ -10,9 +10,13 @@ load("//lib:json_rules.bzl",
 )
 
 load("//lib:json_checker.bzl",
-     json_checker = "tmp_tmp_tmp_json_checker")
-json_checker()
+     "json_parse")
 
+print(json_parse('{"key1": [1, 2, ["nested"]], "key2": "val2", "key3": {"nested_key1" : [null, true, false]}}'))
+print(json_parse('["x", "y", 22, [7], {"z": 1, "y": null}]'))
+print(json_parse('{"x": "a", "y" : 9}'))
+print(json_parse('{"foo": "bar", "biz": [1,20,337, true, false, null, 1e17, 0.17, {"a": "b"}]}'))
+print(json_parse('[[[[[[[[[[10]]]]]]]]]]'))
 
 # Default values
 json_type_null(name = "null_check")

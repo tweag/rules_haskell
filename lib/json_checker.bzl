@@ -18,7 +18,7 @@
 # http://www.json.org/JSON_checker/JSON_checker.c to get an idea of what's
 # happening here, the formatting there is much easier to read.
 #
-# See `_create_checker` to get started.
+# See `json_parse` to get started.
 
 def _enumify_iterable(iterable, enum_dict):
     """A hacky function to turn an iterable into a dict with whose keys are the
@@ -100,7 +100,7 @@ _S = _STATES # A short alias
 
 _STATE_NAMES = _STATE_MAP.values()
 
-# Used for debugging and hook names
+# Used for debugging and reduction hook names
 
 _MODE_NAMES = [
     'EMPTY',
@@ -302,8 +302,8 @@ def _tokenize(checker):
     state_name = _STATE_NAMES[state]
     chars = checker["state_chars"]
 
-    if (state_name in checker["tokenizer_rules"]):
-        token = checker["tokenizer_rules"][state_name](chars)
+    if (state_name in checker["tokenizer_hooks"]):
+        token = checker["tokenizer_hooks"][state_name](chars)
         _get_reduction_list(checker).append({
             "mode" : mode_name,
             "state" : state_name,
@@ -326,7 +326,7 @@ def _reduce(checker):
     upstream_reductions = _get_reduction_list(checker)
 
     reducer_name = mode_name.lower()
-    if (not reducer_name in checker["reduction_rules"]):
+    if (not reducer_name in checker["reduction_hooks"]):
         if (_DEBUG):
             print("no reducer found for: %s" % (reducer_name))
         return upstream_reductions
@@ -334,7 +334,7 @@ def _reduce(checker):
 
     if (_DEBUG):
         print("reduce_%s: %s" % (reducer_name, upstream_reductions))
-    reduction = checker["reduction_rules"][reducer_name](upstream_reductions)
+    reduction = checker["reduction_hooks"][reducer_name](upstream_reductions)
 
     if (_DEBUG):
         print("_reduce to: %s" % reduction)
@@ -348,20 +348,6 @@ def _reduce(checker):
 def _peek_mode(checker):
     top = checker["top"]
     return checker["mode_stack"][top]
-
-
-def _call_exit_hook(checker, exiting_mode):
-    mode_name = _MODE_NAMES[exiting_mode]
-
-    exit_hook_names = [
-        "*",
-        "%s/*" % (mode_name),
-    ]
-    for hook_name in exit_hook_names:
-        if hook_name in checker["exit_hooks"]:
-            if (_DEBUG):
-                print("calling exit hook: %s" % hook_name)
-            checker["exit_hooks"][hook_name](checker)
 
 
 def _handle_next_char(checker, next_string_char):
@@ -407,7 +393,10 @@ def _handle_next_char(checker, next_string_char):
             _set_state(checker, OK)
 
         elif next_state == -8: # }
-            _pop(checker, _MODES["ENTRY_VALUE"])
+            current_mode = _peek_mode(checker)
+            if current_mode == _MODES["ENTRY_VALUE"]:
+                _pop(checker, _MODES["ENTRY_VALUE"])
+
             _pop(checker, _MODES["OBJECT"])
             _set_state(checker, OK)
 
@@ -468,8 +457,6 @@ def _handle_next_char(checker, next_string_char):
     new_state = checker["state"]
     new_mode = _peek_mode(checker)
 
-#    _call_hooks(checker, orig_state, orig_mode, new_state, new_mode)
-
     return True
 
 
@@ -479,53 +466,40 @@ def _verify_valid(checker):
             _peek_mode(checker) == _MODES["EMPTY"])
 
 
-def _create_checker(max_depth = _MAX_DEPTH, tokenizer_rules = {}, reduction_rules = {}, enter_hooks = {}, exit_hooks = {}):
-    """Creates a new JSON checker. Hook names are in the format <MODE>/<STATE>
-    where <MODE> and <STATE> are members of the _MODE_NAME and _STATE_NAME lists
-    above. Additionally * rules may be given so that hook '*' is called for all
-    mode/state changes, and hooks like <MODE>/* or */<STATE> will be called for
-    all changes of type <MODE> or <STATE>.
+def _create_checker(max_depth = _MAX_DEPTH, tokenizer_hooks = {}, reduction_hooks = {}):
+    """Creates a new JSON checker, given a proper set of tokenizer_hooks and
+    reduction_hooks, the checker can be extended into a parser.
+
+    tokenizer_hooks - called on state changes
+    reduction_hooks - called on mode exit
 
     """
     checker = {
         "rejected" : False,
         "rejected_reason" : None,
-        "mode_stack" : [],
-
-        "top" : -1,
         "max_depth" : max_depth,
+
+        "mode_stack" : [],
+        "top" : -1,
         "state" : _STATES["GO"],
         "state_chars"  : None, # Characters collected in the current state
 
-        "reduction_rules": reduction_rules,
         "reduction_stack" : [],
-        "tokenizer_rules": tokenizer_rules,
-        "token_stack" : [],
-
-        "enter_hooks" : enter_hooks,
-        "exit_hooks": exit_hooks,
+        "reduction_hooks": reduction_hooks,
+        "tokenizer_hooks": tokenizer_hooks,
     }
     _push(checker, _MODES["EMPTY"])
     return checker
 
 
-#def _exit_transition_hook(orig_state, orig_mode, new_state, new_mode, next_string_char):
-#    print('exit mode/state: %s/%s' % (orig_mode, orig_state))
-def _exit_mode_hook(checker):
-    mode = _MODE_NAMES[_peek_mode(checker)]
-    print('exit mode/state: %s' % (mode))
-
-
-#def _reduce_array(collected_chars, checker):
 def _reduce_array(reductions):
     arr = []
     for r in reductions:
         arr.append(r["reduction"])
     return arr
 
-#def _reduce_object(collected_chars, checker):
-def _reduce_object(reductions):
 
+def _reduce_object(reductions):
     obj = dict()
     for i in range(0, len(reductions) / 2):
         idx = i * 2
@@ -540,6 +514,7 @@ def _reduce_literal(reductions):
 
 
 def _tokenize_int(collected_chars):
+    # TODO: exponents
     return int(collected_chars[0:len(collected_chars)])
 
 
@@ -567,65 +542,31 @@ def _print_reduction_stack(checker):
     print("final reduction stack: %s" % checker["reduction_stack"])
 
 
-def tmp_tmp_tmp_json_checker():
-    # checker = _create_checker(
-    #     _MAX_DEPTH,
-    #     reduction_rules = { "*" : _print_reduction },
-    #     exit_hooks = {
-    #         "*": _print_transition_hook,
-    #     })
-    # json = '{"foo": "bar", "biz": [1,20,337, true, false, null, 1e17, 0.17, {"a": "b"}]}'
-    # for i  in range(0, len(json)):
-    #     _handle_next_char(checker, json[i])
-
-    # print("is valid parse: %s" % _verify_valid(checker))
-    # _print_reduction_stack(checker)
-
-#     checker2 = _create_checker(
-#         _MAX_DEPTH,
-#         reduction_rules = {
-#             "string": _reduce_string,
-#             "integer": _reduce_int,
-#             "object": _reduce_object,
-#             "array": _reduce_array,
-#             "*" : _print_reduction,
-#         },
-#         exit_hooks = {
-# #            "*": _print_transition_hook,
-#         })
-#     json = '{"key1": [1, 2, ["nested"]], "key2": "val2", "key3": {"nested_key1" : null}}'
-#     for i  in range(0, len(json)):
-#         _handle_next_char(checker2, json[i])
-#     _print_reduction_stack(checker2)
-
-    checker3 = _create_checker(
+def _json_parser():
+    return _create_checker(
         _MAX_DEPTH,
-        tokenizer_rules = {
-#            "array": _tokenize_array,
+        tokenizer_hooks = {
             "string": _tokenize_string,
             "integer": _tokenize_int,
             "null": _tokenize_null,
             "true": _tokenize_true,
             "false": _tokenize_false,
         },
-        reduction_rules = {
+        reduction_hooks = {
             "entry_key" : _reduce_literal,
             "entry_value" : _reduce_literal,
             "object": _reduce_object,
             "array": _reduce_array,
-        },
-        exit_hooks = {
-            "*": _exit_mode_hook,
         })
-#    json = '["x", "y", 22, [7], {"z": 1, "y": null}]'
-#    json = '{"x": "a", "y" : 9}'
 
-    json = '{"key1": [1, 2, ["nested"]], "key2": "val2", "key3": {"nested_key1" : null}}'
 
-    for i  in range(0, len(json)):
-        _handle_next_char(checker3, json[i])
-#    _reduce(checker3)
-#    _pop(checker3, _MODES["OBJECT"])
+def json_parse(json_string):
+    parser = _json_parser()
 
-    _print_reduction_stack(checker3)
+    for i  in range(0, len(json_string)):
+        _handle_next_char(parser, json_string[i])
 
+    if (not _verify_valid(parser)):
+        fail("parsing JSON failed: " + parser["rejected_reason"])
+
+    return parser["reduction_stack"][0][0]["reduction"]
