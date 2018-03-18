@@ -20,6 +20,13 @@
 #
 # See `json_parse` to get started.
 
+# TODO: (lots, this is non-exhaustive)
+# - Give names to these actions instead of negative numbers
+# - parsing exponents from ints
+# - figure out decimals
+# - normalize number reductions (minus/exp/fractions etc..) this probably means
+#   changing the grammar to add a new mode, ugh...
+
 def _enumify_iterable(iterable, enum_dict):
     """A hacky function to turn an iterable into a dict with whose keys are the
     members of the iterable, and value is the index."""
@@ -189,7 +196,7 @@ _STATE_TRANSITION_TABLE = [
     [_S['GO'],_S['GO'],-6,__,-5,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # start  GO
     [_S['OK'],_S['OK'],__,-8,__,-7,__,-3,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # ok     OK
     [_S['OB'],_S['OB'],__,-9,__,__,__,__,_S['ST'],__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # object OB
-    [_S['KE'],_S['KE'],__,__,__,__,__,__,-4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # key    KE
+    [_S['KE'],_S['KE'],__,-9,__,__,__,__,-4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # key    KE
     [_S['CO'],_S['CO'],__,__,__,__,-2,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # colon  CO
     [_S['VA'],_S['VA'],-6,__,-5,__,__,__,_S['ST'],__,__,__,_S['MI'],__,_S['ZE'],_S['IN'],__,__,__,__,__,_S['F1'],__,_S['N1'],__,__,_S['T1'],__,__,__,__], # value  VA
     [_S['AR'],_S['AR'],-6,__,-5,-7,__,__,_S['ST'],__,__,__,_S['MI'],__,_S['ZE'],_S['IN'],__,__,__,__,__,_S['F1'],__,_S['N1'],__,__,_S['T1'],__,__,__,__], # array  AR
@@ -235,7 +242,7 @@ def _reject(checker, reason = "unknown reason"):
 
 def _push(checker, mode):
     checker["top"] += 1
-    if (checker["top"] >= checker["max_depth"]):
+    if (checker["top"] > checker["max_depth"]):
         return _reject(checker, "max depth exceeded")
 
     checker["mode_stack"].insert(checker["top"], mode)
@@ -351,11 +358,11 @@ def _peek_mode(checker):
 
 
 def _handle_next_char(checker, next_string_char):
-    if (_DEBUG):
-        print("handling char: " + next_string_char)
-
     if (checker["rejected"]):
         return False
+
+    if (_DEBUG):
+        print("handling char: " + next_string_char)
 
     next_class = None
     next_state = None
@@ -387,7 +394,6 @@ def _handle_next_char(checker, next_string_char):
         if (_DEBUG):
             print("action: %s" % next_state)
 
-        # TODO: Give names to these actions instead of negative numbers
         if next_state == -9: # empty }
             _pop(checker, _MODES["OBJECT"])
             _set_state(checker, OK)
@@ -452,6 +458,9 @@ def _handle_next_char(checker, next_string_char):
         else:
             return _reject(checker, "invalid action: %s : %s" % (next_state, checker))
 
+    if (checker["rejected"]):
+        return False
+
     _add_next_char_to_state(checker, next_string_char)
 
     new_state = checker["state"]
@@ -494,8 +503,14 @@ def _create_checker(max_depth = _MAX_DEPTH, tokenizer_hooks = {}, reduction_hook
 
 def _reduce_array(reductions):
     arr = []
-    for r in reductions:
-        arr.append(r["reduction"])
+    for i in range(0, len(reductions)):
+        r = reductions[i]
+        if r["state"] == "minus":
+            r = -1 * reductions[i + 1]["reduction"]
+            arr.append(r)
+            i += 1
+        else:
+            arr.append(r["reduction"])
     return arr
 
 
@@ -509,13 +524,23 @@ def _reduce_object(reductions):
     return obj
 
 
+def _reduce_entry_value(reductions):
+    # Need to collapse negative integers
+    if len(reductions) == 2 and reductions[0]["state"] == "minus":
+        return -1 * reductions[1]["reduction"]
+    return reductions[0]["reduction"]
+
+
 def _reduce_literal(reductions):
     return reductions[0]["reduction"]
 
 
 def _tokenize_int(collected_chars):
-    # TODO: exponents
     return int(collected_chars[0:len(collected_chars)])
+
+
+def _tokenize_minus(collected_chars):
+    return "-"
 
 
 def _tokenize_null(collected_chars):
@@ -542,11 +567,14 @@ def _print_reduction_stack(checker):
     print("final reduction stack: %s" % checker["reduction_stack"])
 
 
-def _json_parser():
+def _json_parser(**kwargs):
+    args = {
+        "max_depth" : kwargs.get("max_depth", _MAX_DEPTH)
+    }
     return _create_checker(
-        _MAX_DEPTH,
         tokenizer_hooks = {
             "string": _tokenize_string,
+            "minus": _tokenize_minus,
             "integer": _tokenize_int,
             "null": _tokenize_null,
             "true": _tokenize_true,
@@ -554,19 +582,27 @@ def _json_parser():
         },
         reduction_hooks = {
             "entry_key" : _reduce_literal,
-            "entry_value" : _reduce_literal,
+            "entry_value" : _reduce_entry_value,
             "object": _reduce_object,
             "array": _reduce_array,
-        })
+        },
+        **args
+    )
 
 
-def json_parse(json_string):
-    parser = _json_parser()
+def json_parse(json_string, fail_on_invalid = True, **kwargs):
+    parser = _json_parser(**kwargs)
 
     for i  in range(0, len(json_string)):
         _handle_next_char(parser, json_string[i])
 
-    if (not _verify_valid(parser)):
-        fail("parsing JSON failed: " + parser["rejected_reason"])
+    is_valid = _verify_valid(parser)
+    if (not is_valid):
+        invalid_msg = "parsing JSON failed: %s" % parser["rejected_reason"]
+        if (fail_on_invalid):
+            fail(invalid_msg)
+        else:
+            print(invalid_msg)
+            return None
 
     return parser["reduction_stack"][0][0]["reduction"]

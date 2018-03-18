@@ -9,14 +9,14 @@ load("//lib:json_rules.bzl",
      "json",
 )
 
-load("//lib:json_parser.bzl",
-     "json_parse")
+load(":json_parse_tests.bzl", "json_parse_test_suite")
 
-print(json_parse('{"key1": [1, 2, ["nested"]], "key2": "val2", "key3": {"nested_key1" : [null, true, false]}}'))
-print(json_parse('["x", "y", 22, [7], {"z": 1, "y": null}]'))
-print(json_parse('{"x": "a", "y" : 9}'))
-print(json_parse('{"foo": "bar", "biz": [1,20,337, true, false, null, 1e17, 0.17, {"a": "b"}]}'))
-print(json_parse('[[[[[[[[[[10]]]]]]]]]]'))
+load("//lib:json_parser.bzl", "json_parse")
+
+json_parse_test_suite()
+
+
+
 
 # Default values
 json_type_null(name = "null_check")
