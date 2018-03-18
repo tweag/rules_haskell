@@ -1,0 +1,44 @@
+workspace(name = "library_with_nix_dependencies")
+
+http_archive(
+  name = "io_tweag_rules_haskell",
+  strip_prefix = "rules_haskell-0.4",
+  urls = ["https://github.com/tweag/rules_haskell/archive/v0.4.tar.gz"]
+)
+
+load("@io_tweag_rules_haskell//haskell:repositories.bzl",
+     "haskell_repositories")
+haskell_repositories()
+
+http_archive(
+  name = "io_tweag_rules_nixpkgs",
+  strip_prefix = "rules_nixpkgs-0.2",
+  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.tar.gz"],
+)
+
+load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_git_repository", "nixpkgs_package")
+
+nixpkgs_git_repository(
+  name = "nixpkgs",
+  revision = "4026ea9c8afd09b60896b861a04cc5748fdcdfb4",
+)
+
+nixpkgs_package(
+  name = "ghc-nix-packages-toolchain",
+  repository = "@nixpkgs",
+  nix_file_content = """
+let pkgs = import <nixpkgs> {};
+in pkgs.buildEnv {
+  name = "ghc-nix-packages-toolchain";
+  paths = with pkgs; [
+    (haskell.packages.ghc822.ghcWithPackages (p: with p;
+       [ vector
+       ]
+     ))
+  ];
+}
+
+"""
+)
+
+register_toolchains("//:ghc-nix-packages-toolchain")
