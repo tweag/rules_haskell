@@ -5,10 +5,11 @@
 # Unfortunately due to several reasons there are severe limitations for this
 # parser, and I do not recommend this for anything serious.
 #
-# Due to the (IMO) awkward grammar of JSON_checker (namely the root object is of
-# a different mode than nested objects, no mode pushed on the stack for object
-# key/value entries (instead a pop/push cycle happens around colons)... the
-# reduction rules are quite hacky.
+# Due to the (IMO) original awkward grammar of JSON_checker (namely the root
+# object is of a different mode than nested objects, no mode pushed on the stack
+# for object key/value entries (instead a pop/push cycle happens around
+# colons)... this grammar has been hacked to make reduction rules possible, but
+# it's all still quite hacky.
 #
 # Also due to Java/Skylark limitations on unicode character support, any parse
 # attempt is a best effort: https://github.com/bazelbuild/bazel/issues/4862
@@ -219,7 +220,7 @@ _STATE_TRANSITION_TABLE = [
 
 
 _MAX_DEPTH = 20
-_DEBUG = True
+_DEBUG = False
 
 def _reject(checker, reason = "unknown reason"):
     if (checker["rejected"]):
@@ -253,22 +254,12 @@ def _pop(checker, mode):
             checker,
             "cannot pop unexpected mode %s expected %s" % (mode, checker["mode_stack"][top]))
 
-    print("reducing " + _MODE_NAMES[mode])
+    if (_DEBUG):
+        print("reducing " + _MODE_NAMES[mode])
     reduction = _reduce(checker)
-
-#    checker["reduction_stack"] = checker["reduction_stack"][0:top]
-#    for t in reductions:
-#        if (not t["reduction"] == None):
-        # Reverse the token list as it's flattened.
-#        checker["reduction_stack"][top - 1].append(t)
-#        checker["reduction_stack"][top - 1].insert(1, t)
-#        checker["reduction_stack"][top - 1].insert(0, t)
 
     checker["reduction_stack"] = checker["reduction_stack"][0:top]
     checker["reduction_stack"][top - 1].append(reduction)
-
-#    mode_name = _peek_mode(checker)
-#    _call_exit_hook(checker, mode_name)
 
     checker["mode_stack"] = checker["mode_stack"][0:top]
     checker["top"] -= 1
@@ -281,7 +272,6 @@ def _pop(checker, mode):
 def _set_state(checker, state):
     if (not state == _get_state(checker)):
         _tokenize(checker)
-#        _reduce(checker)
 
     if (_DEBUG):
         print("set_state: %s" % _STATE_NAMES[state])
@@ -320,7 +310,8 @@ def _tokenize(checker):
             "reduction" : token
         })
     else:
-        print("no tokenizer for state '%s' with chars '%s'" % (state_name, chars))
+        if (_DEBUG):
+            print("no tokenizer for state '%s' with chars '%s'" % (state_name, chars))
 
     checker["state_chars"] = None
 
@@ -332,57 +323,26 @@ def _reduce(checker):
     mode_name = _MODE_NAMES[_peek_mode(checker)]
 
     top = checker["top"]
-#    reductions = checker["reduction_stack"][top]["reductions"]
     upstream_reductions = _get_reduction_list(checker)
 
-    #    reducer_name = "%s_%s" % (mode_name, state_name)
     reducer_name = mode_name.lower()
     if (not reducer_name in checker["reduction_rules"]):
-        print("no reducer found for: %s" % (reducer_name))
+        if (_DEBUG):
+            print("no reducer found for: %s" % (reducer_name))
         return upstream_reductions
 
 
-    print("reduce_%s: %s" % (reducer_name, upstream_reductions))
+    if (_DEBUG):
+        print("reduce_%s: %s" % (reducer_name, upstream_reductions))
     reduction = checker["reduction_rules"][reducer_name](upstream_reductions)
 
-    print("_reduce to: %s" % reduction)
+    if (_DEBUG):
+        print("_reduce to: %s" % reduction)
     return {
         "mode" : mode_name,
         "state" : state_name,
         "reduction": reduction
     }
-
-
-    # if (not checker["state_chars"] == None):
-    #     state_name = _STATE_NAMES[state]
-    #     mode_name = _MODE_NAMES[_peek_mode(checker)]
-
-    #     reduction = None
-
-    #     indent = ""
-    #     for i in range(0, top):
-    #         indent += "\t"
-
-    #     print(indent + "reducing %s/%s" % (state_name, mode_name))
-    #     if state_name in checker["reduction_rules"]:
-    #         reduction = checker["reduction_rules"][state_name](
-    #             checker["state_chars"], checker)
-    #     elif "*" in checker["reduction_rules"]:
-    #         checker["reduction_rules"]["*"](checker["state_chars"], checker)
-    #     else:
-    #         fail("no reducer found for: %s/%s" % (state_name, mode_name))
-
-    #     if (not reduction == None):
-    #         print("before reduce:" + str(reductions))
-    #         reductions.append({
-    #             "mode" : mode_name,
-    #             "state" : state_name,
-    #             "reduction": reduction
-    #         })
-    #         print("after reduce:" + str(reductions))
-
-
-    #return reduction
 
 
 def _peek_mode(checker):
@@ -396,8 +356,6 @@ def _call_exit_hook(checker, exiting_mode):
     exit_hook_names = [
         "*",
         "%s/*" % (mode_name),
-#        "*/%s" % (orig_state_name),
-#        "%s/%s" % (orig_mode_name, orig_state_name),
     ]
     for hook_name in exit_hook_names:
         if hook_name in checker["exit_hooks"]:
@@ -406,41 +364,10 @@ def _call_exit_hook(checker, exiting_mode):
             checker["exit_hooks"][hook_name](checker)
 
 
-# def _call_hooks(checker, orig_state, orig_mode, new_state, new_mode):
-#     orig_state_name = _STATE_NAMES[orig_state]
-#     orig_mode_name = _MODE_NAMES[orig_mode]
-#     new_state_name = _STATE_NAMES[new_state]
-#     new_mode_name = _MODE_NAMES[new_mode]
-
-#     exit_hook_names = [
-#         "*",
-#         "%s/*" % (orig_mode_name),
-#         "*/%s" % (orig_state_name),
-#         "%s/%s" % (orig_mode_name, orig_state_name),
-#     ]
-#     for hook_name in exit_hook_names:
-#         if hook_name in checker["exit_hooks"]:
-#             if (_DEBUG):
-#                 print("calling exit hook: %s" % hook_name)
-#             checker["exit_hooks"][hook_name](
-#                 checker, orig_state_name, orig_mode_name, new_state_name, new_mode_name)
-
-#     enter_hook_names = [
-#         "*",
-#         "%s/*" % (new_mode_name),
-#         "*/%s" % (new_state_name),
-#         "%s/%s" % (new_mode_name, new_state_name),
-#     ]
-#     for hook_name in enter_hook_names:
-#         if hook_name in checker["enter_hooks"]:
-#             if (_DEBUG):
-#                 print("calling enter hook: %s" % hook_name)
-#             checker["enter_hooks"][hook_name](
-#                 checker, orig_state_name, orig_mode_name, new_state_name, new_mode_name)
-
-
 def _handle_next_char(checker, next_string_char):
-    print("handling char: " + next_string_char)
+    if (_DEBUG):
+        print("handling char: " + next_string_char)
+
     if (checker["rejected"]):
         return False
 
@@ -471,10 +398,11 @@ def _handle_next_char(checker, next_string_char):
     if (next_state >= 0):
         _set_state(checker, next_state)
     else:
-        print("action: %s" % next_state)
+        if (_DEBUG):
+            print("action: %s" % next_state)
+
         # TODO: Give names to these actions instead of negative numbers
         if next_state == -9: # empty }
-#            _pop(checker, _MODES["KEY"])
             _pop(checker, _MODES["OBJECT"])
             _set_state(checker, OK)
 
@@ -488,8 +416,6 @@ def _handle_next_char(checker, next_string_char):
             _set_state(checker, OK)
 
         elif next_state == -6: # {
-            # _push(checker, _MODES["KEY"])
-            # _set_state(checker, OB)
             _push(checker, _MODES["OBJECT"])
             _set_state(checker, KE)
 
@@ -500,7 +426,6 @@ def _handle_next_char(checker, next_string_char):
         elif next_state == -4: # "
             current_mode = _peek_mode(checker)
             if current_mode == _MODES["OBJECT"]:
-#                _set_state(checker, CO)
                 _push(checker, _MODES["ENTRY_KEY"])
                 _set_state(checker, ST)
             elif current_mode == _MODES["ENTRY_KEY"]:
@@ -521,10 +446,6 @@ def _handle_next_char(checker, next_string_char):
                 _set_state(checker, KE)
 
             elif current_mode == _MODES["OBJECT"]:
-                # A comma causes a flip from object mode to key mode.
-#                _pop(checker, _MODES["OBJECT"])
-#               _push(checker, _MODES["KEY"])
-#                _push(checker, _MODES["ENTRY_KEY"])
                 _set_state(checker, KE)
 
             elif current_mode == _MODES["ARRAY"]:
@@ -534,17 +455,10 @@ def _handle_next_char(checker, next_string_char):
                 return _reject(checker, "invalid state transition from mode: %s : %s" % (current_mode, checker))
 
         elif next_state == -2: # :
-            # A colon causes a flip from key mode to object mode.
-#            _pop(checker, _MODES["KEY"])
-#            _push(checker, _MODES["OBJECT"])
             current_mode = _peek_mode(checker)
-#            if current_mode == _MODES["ENTRY_KEY"]:
             _pop(checker, _MODES["ENTRY_KEY"])
             _push(checker, _MODES["ENTRY_VALUE"])
             _set_state(checker, VA)
-
-#            else:
-#                return _reject(checker, "invalid transition, expected OBJECT mode: %s" % current_mode)
 
         else:
             return _reject(checker, "invalid action: %s : %s" % (next_state, checker))
