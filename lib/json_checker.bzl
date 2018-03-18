@@ -102,11 +102,11 @@ _STATE_NAMES = _STATE_MAP.values()
 # Used for debugging and hook names
 
 _MODE_NAMES = [
-    'ARRAY',
     'EMPTY',
+    'ARRAY',
     'OBJECT',
-    'ENTRY',
-    'KEY',
+    'ENTRY_KEY',
+    'ENTRY_VALUE',
 ]
 
 _MODES = _enumify_iterable(iterable = _MODE_NAMES, enum_dict = {})
@@ -183,12 +183,12 @@ _STATE_TRANSITION_TABLE = [
 #   See the table at http://www.json.org/JSON_checker/JSON_checker.c for better
 #   readability.
 #
-#        white                                      1-9                                   ABCDF  etc
-#    space |  {  }  [  ]  :  ,  "  \  /  +  -  .  0  |  a  b  c  d  e  f  l  n  r  s  t  u  |  E  |
+#                  white                                      1-9                                   ABCDF  etc
+#       space        |  {  }  [  ]  :  ,  "  \  /  +  -  .  0  |  a  b  c  d  e  f  l  n  r  s  t  u  |  E  |
     [_S['GO'],_S['GO'],-6,__,-5,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # start  GO
     [_S['OK'],_S['OK'],__,-8,__,-7,__,-3,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # ok     OK
     [_S['OB'],_S['OB'],__,-9,__,__,__,__,_S['ST'],__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # object OB
-    [_S['KE'],_S['KE'],__,__,__,__,__,__,_S['ST'],__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # key    KE
+    [_S['KE'],_S['KE'],__,__,__,__,__,__,-4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # key    KE
     [_S['CO'],_S['CO'],__,__,__,__,-2,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # colon  CO
     [_S['VA'],_S['VA'],-6,__,-5,__,__,__,_S['ST'],__,__,__,_S['MI'],__,_S['ZE'],_S['IN'],__,__,__,__,__,_S['F1'],__,_S['N1'],__,__,_S['T1'],__,__,__,__], # value  VA
     [_S['AR'],_S['AR'],-6,__,-5,-7,__,__,_S['ST'],__,__,__,_S['MI'],__,_S['ZE'],_S['IN'],__,__,__,__,__,_S['F1'],__,_S['N1'],__,__,_S['T1'],__,__,__,__], # array  AR
@@ -314,11 +314,10 @@ def _tokenize(checker):
 
     if (state_name in checker["tokenizer_rules"]):
         token = checker["tokenizer_rules"][state_name](chars)
-        if (not token == None):
-            _get_reduction_list(checker).append({
-                "mode" : mode_name,
-                "state" : state_name,
-                "reduction" : token
+        _get_reduction_list(checker).append({
+            "mode" : mode_name,
+            "state" : state_name,
+            "reduction" : token
         })
     else:
         print("no tokenizer for state '%s' with chars '%s'" % (state_name, chars))
@@ -346,6 +345,7 @@ def _reduce(checker):
     print("reduce_%s: %s" % (reducer_name, upstream_reductions))
     reduction = checker["reduction_rules"][reducer_name](upstream_reductions)
 
+    print("_reduce to: %s" % reduction)
     return {
         "mode" : mode_name,
         "state" : state_name,
@@ -463,6 +463,7 @@ def _handle_next_char(checker, next_string_char):
     CO = _STATES["CO"]
     KE = _STATES["KE"]
     VA = _STATES["VA"]
+    ST = _STATES["ST"]
 
     orig_state = checker["state"]
     orig_mode = _peek_mode(checker)
@@ -470,12 +471,15 @@ def _handle_next_char(checker, next_string_char):
     if (next_state >= 0):
         _set_state(checker, next_state)
     else:
+        print("action: %s" % next_state)
         # TODO: Give names to these actions instead of negative numbers
         if next_state == -9: # empty }
-            _pop(checker, _MODES["KEY"])
+#            _pop(checker, _MODES["KEY"])
+            _pop(checker, _MODES["OBJECT"])
             _set_state(checker, OK)
 
         elif next_state == -8: # }
+            _pop(checker, _MODES["ENTRY_VALUE"])
             _pop(checker, _MODES["OBJECT"])
             _set_state(checker, OK)
 
@@ -484,8 +488,10 @@ def _handle_next_char(checker, next_string_char):
             _set_state(checker, OK)
 
         elif next_state == -6: # {
-            _push(checker, _MODES["KEY"])
-            _set_state(checker, OB)
+            # _push(checker, _MODES["KEY"])
+            # _set_state(checker, OB)
+            _push(checker, _MODES["OBJECT"])
+            _set_state(checker, KE)
 
         elif next_state == -5: # [
             _push(checker, _MODES["ARRAY"])
@@ -493,35 +499,55 @@ def _handle_next_char(checker, next_string_char):
 
         elif next_state == -4: # "
             current_mode = _peek_mode(checker)
-            if current_mode == _MODES["KEY"]:
+            if current_mode == _MODES["OBJECT"]:
+#                _set_state(checker, CO)
+                _push(checker, _MODES["ENTRY_KEY"])
+                _set_state(checker, ST)
+            elif current_mode == _MODES["ENTRY_KEY"]:
                 _set_state(checker, CO)
-            elif current_mode == _MODES["ARRAY"] or current_mode == _MODES["OBJECT"]:
+            elif current_mode == _MODES["ENTRY_VALUE"]:
+                _pop(checker, _MODES["ENTRY_VALUE"])
+                _set_state(checker, OK)
+            elif current_mode == _MODES["ARRAY"]: # or current_mode == _MODES["OBJECT"]:
                 _set_state(checker, OK)
             else:
                 return _reject(checker, "invalid state transition from mode: %s" % current_mode)
 
         elif next_state == -3: # ,
             current_mode = _peek_mode(checker)
-            if current_mode == _MODES["OBJECT"]:
+
+            if current_mode == _MODES["ENTRY_VALUE"]:
+                _pop(checker, _MODES["ENTRY_VALUE"])
+                _set_state(checker, KE)
+
+            elif current_mode == _MODES["OBJECT"]:
                 # A comma causes a flip from object mode to key mode.
-                _pop(checker, _MODES["OBJECT"])
-                _push(checker, _MODES["KEY"])
+#                _pop(checker, _MODES["OBJECT"])
+#               _push(checker, _MODES["KEY"])
+#                _push(checker, _MODES["ENTRY_KEY"])
                 _set_state(checker, KE)
 
             elif current_mode == _MODES["ARRAY"]:
                 _set_state(checker, VA)
 
             else:
-                return _reject(checker, "invalid state transition from mode: %s" % current_mode)
+                return _reject(checker, "invalid state transition from mode: %s : %s" % (current_mode, checker))
 
         elif next_state == -2: # :
             # A colon causes a flip from key mode to object mode.
-            _pop(checker, _MODES["KEY"])
-            _push(checker, _MODES["OBJECT"])
+#            _pop(checker, _MODES["KEY"])
+#            _push(checker, _MODES["OBJECT"])
+            current_mode = _peek_mode(checker)
+#            if current_mode == _MODES["ENTRY_KEY"]:
+            _pop(checker, _MODES["ENTRY_KEY"])
+            _push(checker, _MODES["ENTRY_VALUE"])
             _set_state(checker, VA)
 
+#            else:
+#                return _reject(checker, "invalid transition, expected OBJECT mode: %s" % current_mode)
+
         else:
-            return _reject(checker, "invalid action: %s" % next_state)
+            return _reject(checker, "invalid action: %s : %s" % (next_state, checker))
 
     _add_next_char_to_state(checker, next_string_char)
 
@@ -585,14 +611,34 @@ def _reduce_array(reductions):
 
 #def _reduce_object(collected_chars, checker):
 def _reduce_object(reductions):
-    return dict()
+
+    obj = dict()
+    for i in range(0, len(reductions) / 2):
+        idx = i * 2
+        key = reductions[idx]["reduction"]
+        val = reductions[idx + 1]["reduction"]
+        obj[key] = val
+    return obj
+
+
+def _reduce_literal(reductions):
+    return reductions[0]["reduction"]
+
 
 def _tokenize_int(collected_chars):
     return int(collected_chars[0:len(collected_chars)])
 
 
 def _tokenize_null(collected_chars):
-    return "_NULL_"
+    return None
+
+
+def _tokenize_true(collected_chars):
+    return True
+
+
+def _tokenize_false(collected_chars):
+    return False
 
 
 def _tokenize_array(collected_chars):
@@ -601,19 +647,6 @@ def _tokenize_array(collected_chars):
 def _tokenize_string(collected_chars):
     # Trim the leading "
     return collected_chars[1:len(collected_chars)]
-
-
-#def _reduce_ok(collected_chars, checker):
-def _reduce_ok(tokens):
-#    if (collected_chars == "]"):
-#        return _MODE_NAMES[_peek_mode(checker)]
-    return None
-
-
-def _print_reduction(chars, checker):
-    True
-#    print("reduce *: %s" % checker["reduction_stack"])
-#    return chars
 
 
 def _print_reduction_stack(checker):
@@ -658,19 +691,27 @@ def tmp_tmp_tmp_json_checker():
             "string": _tokenize_string,
             "integer": _tokenize_int,
             "null": _tokenize_null,
+            "true": _tokenize_true,
+            "false": _tokenize_false,
         },
         reduction_rules = {
+            "entry_key" : _reduce_literal,
+            "entry_value" : _reduce_literal,
             "object": _reduce_object,
             "array": _reduce_array,
-            "ok": _reduce_ok,
-            "*" : _print_reduction,
         },
         exit_hooks = {
             "*": _exit_mode_hook,
         })
-    json = '["x", "y", 22, [7], {"z": 1, "y": null}]'
+#    json = '["x", "y", 22, [7], {"z": 1, "y": null}]'
+#    json = '{"x": "a", "y" : 9}'
+
+    json = '{"key1": [1, 2, ["nested"]], "key2": "val2", "key3": {"nested_key1" : null}}'
+
     for i  in range(0, len(json)):
         _handle_next_char(checker3, json[i])
-    _reduce(checker3)
+#    _reduce(checker3)
+#    _pop(checker3, _MODES["OBJECT"])
+
     _print_reduction_stack(checker3)
 
