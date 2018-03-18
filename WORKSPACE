@@ -17,11 +17,29 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
 nixpkgs_package(
   name = "ghc",
+  # For vector example. Just use `attribute_path = haskell.packages.ghc822`
+  # when no extra packages needed.
   nix_file_content = """
   let pkgs = import <nixpkgs> {}; in
   pkgs.haskell.packages.ghc822.ghcWithPackages (p: with p;
     [primitive semigroupoids]
   )
+  """,
+  # For rts example. Not needed if you're using the RTS directly.
+  build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "bin",
+  srcs = glob(["bin/*"]),
+)
+
+cc_library(
+  name = "threaded-rts",
+  srcs = glob(["lib/ghc-8.2.2/rts/libHSrts_thr-ghc*.so"]),
+  hdrs = glob(["lib/ghc-8.2.2/include/**/*.h"]),
+  strip_include_prefix = "lib/ghc-8.2.2/include",
+)
   """,
 )
 
