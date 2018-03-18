@@ -9,7 +9,7 @@ load("//lib:json_rules.bzl",
      "json",
 )
 
-load("//lib:json_checker.bzl",
+load("//lib:json_parser.bzl",
      "json_parse")
 
 print(json_parse('{"key1": [1, 2, ["nested"]], "key2": "val2", "key3": {"nested_key1" : [null, true, false]}}'))
