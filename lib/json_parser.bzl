@@ -22,8 +22,8 @@
 
 # TODO: (lots, this is non-exhaustive)
 # - Give names to these actions instead of negative numbers
-# - parsing exponents from ints
-# - figure out decimals
+# - More descriptive errors, currently the "invalid action -1" error
+# - is extremely unhelpful.
 # - normalize number reductions (minus/exp/fractions etc..) this probably means
 #   changing the grammar to add a new mode, ugh...
 
@@ -104,6 +104,10 @@ _STATE_MAP = {
 
 _STATES = _enumify_iterable(iterable = _STATE_MAP.keys(), enum_dict = {})
 _S = _STATES # A short alias
+
+_TOKENIZER_STATE = {
+    _S["ES"] : _S["ST"],
+}
 
 _STATE_NAMES = _STATE_MAP.values()
 
@@ -235,7 +239,7 @@ def _reject(checker, reason = "unknown reason"):
 
     checker["rejected"] = True
     checker["rejected_reason"] = reason
-    if (_DEBUG):
+    if (checker["_DEBUG"]):
         fail("failed to parse JSON: %s" % reason)
     return False
 
@@ -248,7 +252,7 @@ def _push(checker, mode):
     checker["mode_stack"].insert(checker["top"], mode)
     checker["reduction_stack"].insert(checker["top"], [])
 
-    if (_DEBUG):
+    if (checker["_DEBUG"]):
         print("push mode: %s" % [_MODE_NAMES[m] for m in checker["mode_stack"]])
 
 
@@ -261,7 +265,7 @@ def _pop(checker, mode):
             checker,
             "cannot pop unexpected mode %s expected %s" % (mode, checker["mode_stack"][top]))
 
-    if (_DEBUG):
+    if (checker["_DEBUG"]):
         print("reducing " + _MODE_NAMES[mode])
     reduction = _reduce(checker)
 
@@ -271,22 +275,32 @@ def _pop(checker, mode):
     checker["mode_stack"] = checker["mode_stack"][0:top]
     checker["top"] -= 1
 
-    if (_DEBUG):
+    if (checker["_DEBUG"]):
         print("after pop token stack: %s" % checker["reduction_stack"])
         print("pop mode: %s" % [_MODE_NAMES[m] for m in checker["mode_stack"]])
 
 
 def _set_state(checker, state):
-    if (not state == _get_state(checker)):
+    if (_get_tokenizer_state(state) != _get_tokenizer_state_from_checker(checker)):
         _tokenize(checker)
 
-    if (_DEBUG):
+    if (checker["_DEBUG"]):
         print("set_state: %s" % _STATE_NAMES[state])
     checker["state"] = state
 
 
 def _get_state(checker):
     return checker["state"]
+
+
+def _get_tokenizer_state_from_checker(checker):
+    return _get_tokenizer_state(checker["state"])
+
+
+def _get_tokenizer_state(state):
+    if state in _TOKENIZER_STATE:
+        state = _TOKENIZER_STATE[state]
+    return state
 
 
 def _add_next_char_to_state(checker, next_char):
@@ -305,19 +319,21 @@ def _tokenize(checker):
         return
 
     mode_name = _MODE_NAMES[_peek_mode(checker)]
-    state = _get_state(checker)
+    state = _get_tokenizer_state_from_checker(checker)
     state_name = _STATE_NAMES[state]
     chars = checker["state_chars"]
 
     if (state_name in checker["tokenizer_hooks"]):
         token = checker["tokenizer_hooks"][state_name](chars)
+        if (checker["_DEBUG"]):
+            print("tokenizing state '%s' with chars '%s'" % (state_name, chars))
         _get_reduction_list(checker).append({
             "mode" : mode_name,
             "state" : state_name,
             "reduction" : token
         })
     else:
-        if (_DEBUG):
+        if (checker["_DEBUG"]):
             print("no tokenizer for state '%s' with chars '%s'" % (state_name, chars))
 
     checker["state_chars"] = None
@@ -334,16 +350,16 @@ def _reduce(checker):
 
     reducer_name = mode_name.lower()
     if (not reducer_name in checker["reduction_hooks"]):
-        if (_DEBUG):
+        if (checker["_DEBUG"]):
             print("no reducer found for: %s" % (reducer_name))
         return upstream_reductions
 
 
-    if (_DEBUG):
+    if (checker["_DEBUG"]):
         print("reduce_%s: %s" % (reducer_name, upstream_reductions))
     reduction = checker["reduction_hooks"][reducer_name](upstream_reductions)
 
-    if (_DEBUG):
+    if (checker["_DEBUG"]):
         print("_reduce to: %s" % reduction)
     return {
         "mode" : mode_name,
@@ -357,23 +373,37 @@ def _peek_mode(checker):
     return checker["mode_stack"][top]
 
 
-def _handle_next_char(checker, next_string_char):
+def _handle_next_char(checker, json_string, char_index):
     if (checker["rejected"]):
         return False
 
-    if (_DEBUG):
-        print("handling char: " + next_string_char)
+    next_json_char = json_string[char_index]
+    if (checker["_DEBUG"]):
+        print("handling char: %s (%d/%d): " % (next_json_char, char_index, len(json_string) - 1))
 
     next_class = None
     next_state = None
+    next_char = None
 
-    next_char = _ASCII_CODEPOINT_MAP[next_string_char[0]]
+    if (not next_json_char in _ASCII_CODEPOINT_MAP):
+        if (not checker["hacky_treatment_unknown_chars_as_etc"]):
+            return _reject(
+                checker,
+                "unable to map character: %s (%d/%d)" %
+                (next_json_char, char_index, len(json_string) - 1))
+        else:
+            print("trying to treat unknown char as C_ETC...",
+                  "hoping for the best: char (%d/%d)" % (char_index, len(json_string) - 1))
+            next_char = 127 # my hardcoded hack for C_ETC resolution
+    else:
+        next_char = _ASCII_CODEPOINT_MAP[next_json_char]
+
     if (next_char == None):
-        return _reject(checker, "unprintable Java/skylark char: %s" % next_string_char)
+        return _reject(checker, "unprintable Java/skylark char: %s" % next_json_char)
 
     next_class = _ASCII_CLASS_LIST[next_char]
     if (next_class <= __):
-        return _reject(checker, "unknown character class for char: %s" % next_string_char)
+        return _reject(checker, "unknown character class for char: %s" % next_json_char)
 
     next_state = _STATE_TRANSITION_TABLE[checker["state"]][next_class]
 
@@ -391,7 +421,7 @@ def _handle_next_char(checker, next_string_char):
     if (next_state >= 0):
         _set_state(checker, next_state)
     else:
-        if (_DEBUG):
+        if (checker["_DEBUG"]):
             print("action: %s" % next_state)
 
         if next_state == -9: # empty }
@@ -447,7 +477,7 @@ def _handle_next_char(checker, next_string_char):
                 _set_state(checker, VA)
 
             else:
-                return _reject(checker, "invalid state transition from mode: %s : %s" % (current_mode, checker))
+                return _reject(checker, "invalid state transition from mode: %s" % current_mode)
 
         elif next_state == -2: # :
             current_mode = _peek_mode(checker)
@@ -456,17 +486,13 @@ def _handle_next_char(checker, next_string_char):
             _set_state(checker, VA)
 
         else:
-            return _reject(checker, "invalid action: %s : %s" % (next_state, checker))
+            return _reject(
+                checker,
+                "invalid action: %s  on input '%s'" % (next_state, next_json_char))
 
-    if (checker["rejected"]):
-        return False
+    _add_next_char_to_state(checker, next_json_char)
 
-    _add_next_char_to_state(checker, next_string_char)
-
-    new_state = checker["state"]
-    new_mode = _peek_mode(checker)
-
-    return True
+    return checker["rejected"]
 
 
 def _verify_valid(checker):
@@ -475,7 +501,11 @@ def _verify_valid(checker):
             _peek_mode(checker) == _MODES["EMPTY"])
 
 
-def _create_checker(max_depth = _MAX_DEPTH, tokenizer_hooks = {}, reduction_hooks = {}):
+def _create_checker(
+        max_depth = _MAX_DEPTH,
+        debug = _DEBUG,
+        tokenizer_hooks = {},
+        reduction_hooks = {}):
     """Creates a new JSON checker, given a proper set of tokenizer_hooks and
     reduction_hooks, the checker can be extended into a parser.
 
@@ -496,6 +526,13 @@ def _create_checker(max_depth = _MAX_DEPTH, tokenizer_hooks = {}, reduction_hook
         "reduction_stack" : [],
         "reduction_hooks": reduction_hooks,
         "tokenizer_hooks": tokenizer_hooks,
+
+        # This is a big frowny face. This hack will treat double byte
+        # unicode characters at 2 separate chars. I /think/ this is
+        # safe for the parse itself, but it probably just means that
+        # the content will be f'd.
+        "hacky_treatment_unknown_chars_as_etc" : True,
+        "_DEBUG" : debug
     }
     _push(checker, _MODES["EMPTY"])
     return checker
@@ -558,6 +595,7 @@ def _tokenize_false(collected_chars):
 def _tokenize_array(collected_chars):
     return []
 
+
 def _tokenize_string(collected_chars):
     # Trim the leading "
     return collected_chars[1:len(collected_chars)]
@@ -569,7 +607,8 @@ def _print_reduction_stack(checker):
 
 def _json_parser(**kwargs):
     args = {
-        "max_depth" : kwargs.get("max_depth", _MAX_DEPTH)
+        "max_depth" : kwargs.get("max_depth", _MAX_DEPTH),
+        "debug": kwargs.get("debug", _DEBUG),
     }
     return _create_checker(
         tokenizer_hooks = {
@@ -594,15 +633,15 @@ def json_parse(json_string, fail_on_invalid = True, **kwargs):
     parser = _json_parser(**kwargs)
 
     for i  in range(0, len(json_string)):
-        _handle_next_char(parser, json_string[i])
+        _handle_next_char(parser, json_string = json_string, char_index = i)
 
     is_valid = _verify_valid(parser)
     if (not is_valid):
-        invalid_msg = "parsing JSON failed: %s" % parser["rejected_reason"]
+        invalid_msgs = [parser["rejected_reason"]]
         if (fail_on_invalid):
-            fail(invalid_msg)
+            fail("parsing JSON failed:\n%s\n\nparser:\n%s" % ("\n".join(invalid_msgs), parser))
         else:
-            print(invalid_msg)
+            print("parsing JSON failed:\n%s" % "\n".join(invalid_msgs))
             return None
 
     return parser["reduction_stack"][0][0]["reduction"]

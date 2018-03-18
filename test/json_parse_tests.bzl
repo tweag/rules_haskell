@@ -1,5 +1,6 @@
 load("@bazel_skylib//:lib.bzl", "asserts", "unittest")
 load("//lib:json_parser.bzl", "json_parse")
+load(":json_parse_test_data.bzl", "get_pkg_jsons")
 
 
 def _valid_json_parse_test(ctx):
@@ -31,6 +32,24 @@ def _valid_json_parse_test(ctx):
                 "nested_key1" : [None, True, False]
             }
         })
+
+    asserts.equals(
+        env,
+        json_parse('{"key:with:colon" : [{ "nested:with:colon" : true }]}'),
+        { "key:with:colon" : [{ "nested:with:colon" : True }] },
+    )
+
+    expected_escapes = { "escaped" : r'\"quotes\"'}
+    # Ughh... need to double escape the escape.
+    asserts.equals(env, expected_escapes, json_parse('{"escaped" : "\\"quotes\\""}'))
+    # Unless it's a raw literal
+    asserts.equals(env, expected_escapes, json_parse(r'{"escaped" : "\"quotes\""}'))
+    asserts.equals(
+        env,
+        expected_escapes,
+        json_parse(r'''
+{"escaped" : "\"quotes\""}
+'''))
 
     unittest.end(env)
 
@@ -70,9 +89,30 @@ def _max_depth_json_parse_test(ctx):
 
     unittest.end(env)
 
+
+def _package_json_parse_test(ctx):
+    env = unittest.begin(ctx)
+
+    pkg_jsons_for_testing = get_pkg_jsons()
+
+    # Use rollup to spot check specific values.
+    rollup_pkg_json = json_parse(pkg_jsons_for_testing["rollup"])
+    asserts.equals(env, "0.57.1", rollup_pkg_json["version"])
+    asserts.equals(env, "dist/rollup.browser.js", rollup_pkg_json["files"][0])
+    asserts.equals(env, "Oskar Segersvärd <victorystick@gmail.com>", rollup_pkg_json["contributors"][0])
+
+    for project in pkg_jsons_for_testing:
+        print("checking %s/package.json" % project)
+        parsed_pkg_json = json_parse(pkg_jsons_for_testing[project])
+        asserts.equals(env, "dict", type(parsed_pkg_json))
+
+    unittest.end(env)
+
+
 valid_json_parse_test = unittest.make(_valid_json_parse_test)
 json_scalar_types_test = unittest.make(_json_scalar_types_test)
 max_depth_json_parse_test = unittest.make(_max_depth_json_parse_test)
+package_json_parse_test = unittest.make(_package_json_parse_test)
 
 def json_parse_test_suite():
     """Creates the test targets and test suite for //lib:json_parse.bzl."""
@@ -81,4 +121,5 @@ def json_parse_test_suite():
         valid_json_parse_test,
         json_scalar_types_test,
         max_depth_json_parse_test,
+        package_json_parse_test,
     )
