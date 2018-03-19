@@ -54,7 +54,7 @@ def _valid_json_parse_test(ctx):
     unittest.end(env)
 
 
-def _json_scalar_types_test(ctx):
+def _scalar_types_test(ctx):
     env = unittest.begin(ctx)
 
     asserts.equals(env, json_parse('[""]')[0], "")
@@ -65,9 +65,24 @@ def _json_scalar_types_test(ctx):
     asserts.equals(env, json_parse('[100]')[0], 100)
     asserts.equals(env, json_parse('[-100]')[0], -100)
 
-    print("TODO: find a solution for non-integer reductions, see TODO in json_parser.bzl")
-    asserts.equals(env, json_parse('[1e100]')[0], 1)
-    asserts.equals(env, json_parse('[1.11]')[0], 1)
+    unittest.end(env)
+
+
+def _number_parse_test(ctx):
+    env = unittest.begin(ctx)
+
+    # :( this sucks, but technically it's legal JSON:
+    # https://tools.ietf.org/html/rfc8259#section-6
+    # "This specification allows implementations to set limits on the range
+    # and precision of numbers accepted."
+    asserts.equals(env, 2147483647, json_parse('[99e100]')[0]) # MAX int
+    asserts.equals(env, -2147483647, json_parse('[-99e100]')[0]) # MIN int
+    asserts.equals(env, 0, json_parse('[99e-10]')[0])
+    asserts.equals(env, 9, json_parse('[999e-2]')[0])
+
+    asserts.equals(env, 43, json_parse('[43.11]')[0])
+    asserts.equals(env, 0, json_parse('[0.12345]')[0])
+    asserts.equals(env, -120, json_parse('[-120.12345]')[0])
 
     unittest.end(env)
 
@@ -110,7 +125,8 @@ def _package_json_parse_test(ctx):
 
 
 valid_json_parse_test = unittest.make(_valid_json_parse_test)
-json_scalar_types_test = unittest.make(_json_scalar_types_test)
+scalar_types_test = unittest.make(_scalar_types_test)
+number_parse_test = unittest.make(_number_parse_test)
 max_depth_json_parse_test = unittest.make(_max_depth_json_parse_test)
 package_json_parse_test = unittest.make(_package_json_parse_test)
 
@@ -119,7 +135,8 @@ def json_parse_test_suite():
     unittest.suite(
         "json_parse_tests",
         valid_json_parse_test,
-        json_scalar_types_test,
+        scalar_types_test,
+        number_parse_test,
         max_depth_json_parse_test,
         package_json_parse_test,
     )

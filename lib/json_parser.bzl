@@ -23,9 +23,7 @@
 # TODO: (lots, this is non-exhaustive)
 # - Give names to these actions instead of negative numbers
 # - More descriptive errors, currently the "invalid action -1" error
-# - is extremely unhelpful.
-# - normalize number reductions (minus/exp/fractions etc..) this probably means
-#   changing the grammar to add a new mode, ugh...
+#   is extremely unhelpful.
 
 def _enumify_iterable(iterable, enum_dict):
     """A hacky function to turn an iterable into a dict with whose keys are the
@@ -105,8 +103,16 @@ _STATE_MAP = {
 _STATES = _enumify_iterable(iterable = _STATE_MAP.keys(), enum_dict = {})
 _S = _STATES # A short alias
 
+# Tread some states as another for tokenizing. This is a hack to avoid
+# introducing new modes for parsing things like escaped string,
+# negative numbers, exponents, floats, etc...
 _TOKENIZER_STATE = {
     _S["ES"] : _S["ST"],
+    _S["MI"] : _S["IN"],
+    _S["FR"] : _S["IN"],
+    _S["E1"] : _S["IN"],
+    _S["E2"] : _S["IN"],
+    _S["E3"] : _S["IN"],
 }
 
 _STATE_NAMES = _STATE_MAP.values()
@@ -541,13 +547,7 @@ def _create_checker(
 def _reduce_array(reductions):
     arr = []
     for i in range(0, len(reductions)):
-        r = reductions[i]
-        if r["state"] == "minus":
-            r = -1 * reductions[i + 1]["reduction"]
-            arr.append(r)
-            i += 1
-        else:
-            arr.append(r["reduction"])
+        arr.append(reductions[i]["reduction"])
     return arr
 
 
@@ -562,9 +562,6 @@ def _reduce_object(reductions):
 
 
 def _reduce_entry_value(reductions):
-    # Need to collapse negative integers
-    if len(reductions) == 2 and reductions[0]["state"] == "minus":
-        return -1 * reductions[1]["reduction"]
     return reductions[0]["reduction"]
 
 
@@ -572,12 +569,47 @@ def _reduce_literal(reductions):
     return reductions[0]["reduction"]
 
 
+# https://docs.bazel.build/versions/master/skylark/lib/int.html
+_MAX_INT = 2147483647
+_MIN_INT = -2147483647
 def _tokenize_int(collected_chars):
-    return int(collected_chars[0:len(collected_chars)])
+    # Drops precision due to no decimals in Skylark.
+    #
+    # https://tools.ietf.org/html/rfc8259#section-6
+    # "This specification allows implementations to set limits on the range
+    # and precision of numbers accepted."
+    if collected_chars.lower().find("e") >= 0:
+        print("crappily handling JSON exponents: %s" % collected_chars)
+        sig, exp = collected_chars.split("e", 2)
+        sign = "+"
+        if exp[0] == "-":
+            sign = "-"
+            exp = exp[1:len(exp)]
+        elif exp[0] == "+":
+            exp = exp[1:len(exp)]
 
+        sig = int(sig)
+        for i in range(0, int(exp)):
+            if sign == "+":
+                if _MAX_INT / 10 <= sig:
+                    return _MAX_INT
+                elif _MIN_INT / 10 >= sig:
+                    return _MIN_INT
+                sig *= 10
+            elif sign == "-":
+                if sig < 0:
+                    return 0
+                sig /= 10
 
-def _tokenize_minus(collected_chars):
-    return "-"
+        return sig
+    elif collected_chars.find(".") >= 0:
+        print("crappily handling JSON decimal: %s" % collected_chars)
+        integer, fraction = collected_chars.split(".", 2)
+        if integer == "":
+            integer = 0
+        return int(integer)
+
+    return int(collected_chars)
 
 
 def _tokenize_null(collected_chars):
@@ -613,7 +645,6 @@ def _json_parser(**kwargs):
     return _create_checker(
         tokenizer_hooks = {
             "string": _tokenize_string,
-            "minus": _tokenize_minus,
             "integer": _tokenize_int,
             "null": _tokenize_null,
             "true": _tokenize_true,
