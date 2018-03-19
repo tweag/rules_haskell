@@ -201,6 +201,8 @@ _STATE_TRANSITION_TABLE = [
 #   See the table at http://www.json.org/JSON_checker/JSON_checker.c for better
 #   readability.
 #
+#   This one has been modified to simplify reductions.
+#
 #                  white                                      1-9                                   ABCDF  etc
 #       space        |  {  }  [  ]  :  ,  "  \  /  +  -  .  0  |  a  b  c  d  e  f  l  n  r  s  t  u  |  E  |
     [_S['GO'],_S['GO'],-6,__,-5,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__], # start  GO
@@ -561,10 +563,6 @@ def _reduce_object(reductions):
     return obj
 
 
-def _reduce_entry_value(reductions):
-    return reductions[0]["reduction"]
-
-
 def _reduce_literal(reductions):
     return reductions[0]["reduction"]
 
@@ -624,10 +622,6 @@ def _tokenize_false(collected_chars):
     return False
 
 
-def _tokenize_array(collected_chars):
-    return []
-
-
 def _tokenize_string(collected_chars):
     # Trim the leading "
     return collected_chars[1:len(collected_chars)]
@@ -652,7 +646,7 @@ def _json_parser(**kwargs):
         },
         reduction_hooks = {
             "entry_key" : _reduce_literal,
-            "entry_value" : _reduce_entry_value,
+            "entry_value" : _reduce_literal,
             "object": _reduce_object,
             "array": _reduce_array,
         },
