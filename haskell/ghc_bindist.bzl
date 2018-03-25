@@ -80,6 +80,7 @@ Example:
 
    ```bzl
    # This repository rule creates @ghc repository.
+   load("@io_tweag_rules_haskell//haskell:ghc_bindist.bzl", "ghc_bindist")
    ghc_bindist(
      name    = "ghc",
      version = "8.2.2",
