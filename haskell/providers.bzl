@@ -19,7 +19,7 @@ HaskellLibraryInfo = provider(
     "import_dir": "Import hierarchy root.",
     "exposed_modules": "Set of exposed module names.",
     "other_modules": "Set of non-public module names.",
-    "haddock_args": "Arguments that were used to compile the package suitable for Haddock."
+    "haddock_args": "Arguments that were used to compile the package suitable for Haddock.",
   },
 )
 
@@ -28,6 +28,7 @@ HaskellBinaryInfo = provider(
   fields = {
     "source_files": "Set of source files.",
     "modules": "Set of module names.",
+    "binary": "File, compiled binary.",
   },
 )
 

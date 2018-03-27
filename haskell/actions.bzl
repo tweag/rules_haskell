@@ -53,6 +53,7 @@ _DefaultCompileInfo = provider(
     "objects_dir": "Object files directory.",
     "interfaces_dir": "Interface files directory.",
     "object_files": "Object files.",
+    "object_dyn_files": "Dynamic object files.",
     "interface_files": "Interface files.",
     "env": "Default env vars."
   },
@@ -155,7 +156,9 @@ def compile_haskell_bin(ctx):
     ctx: Rule context.
 
   Returns:
-    list of File: Compiled object files.
+    (list of File, list of File):
+      * Object files
+      * Dynamic object files
   """
   c = _compilation_defaults(ctx)
   c.args.add(["-main-is", ctx.attr.main_function])
@@ -169,38 +172,38 @@ def compile_haskell_bin(ctx):
     arguments = [c.args]
   )
 
-  return c.object_files
+  return c.object_files, c.object_dyn_files
 
-def link_haskell_bin(ctx, object_files):
-  """Link Haskell binary.
+def _create_dummy_archive(ctx):
+  """Create empty archive so that GHC has some input files to work on during
+  linking.
+
+  See: https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
 
   Args:
     ctx: Rule context.
-    object_files: Object files to include during linking.
 
   Returns:
-    File: Built Haskell executable.
+    File, the created dummy archive.
   """
-  # Create empty archive so that GHC has some input files to work on during linking
-  #
-  # https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
-  dummy_input = ctx.actions.declare_file("BazelDummy.hs")
-  dummy_object = ctx.actions.declare_file(paths.replace_extension("BazelDummy", ".o"))
 
-  ctx.actions.write(output=dummy_input, content="\n".join([
-    "{-# LANGUAGE NoImplicitPrelude #-}",
-    "module BazelDummy () where"
-  ]))
+  dummy_raw = "BazelDummy.hs"
+  dummy_input = ctx.actions.declare_file(dummy_raw)
+  dummy_object = ctx.actions.declare_file(paths.replace_extension(dummy_raw, ".o"))
+
+  ctx.actions.write(output=dummy_input, content="""
+{-# LANGUAGE NoImplicitPrelude #-}
+module BazelDummy () where
+""")
 
   dummy_static_lib = ctx.actions.declare_file("libempty.a")
-  dummy_args = ctx.actions.args()
-  dummy_args.add(["-no-link", dummy_input])
   ctx.actions.run(
     inputs = [dummy_input],
     outputs = [dummy_object],
     executable = tools(ctx).ghc,
-    arguments = [dummy_args]
+    arguments = ["-c", dummy_input.path],
   )
+
   ar_args = ctx.actions.args()
   ar_args.add(["qc", dummy_static_lib, dummy_object])
 
@@ -211,34 +214,47 @@ def link_haskell_bin(ctx, object_files):
     arguments = [ar_args]
   )
 
+  return dummy_static_lib
+
+def link_haskell_bin(ctx, object_files):
+  """Link Haskell binary from static object files.
+
+  Args:
+    ctx: Rule context.
+    object_files: Dynamic object files.
+
+  Returns:
+    (File, String):
+      * Executable
+      * .so symlink prefix, relative path where the executable will search
+        for .so files at runtime
+  """
+
+  dummy_static_lib = _create_dummy_archive(ctx)
+
   args = ctx.actions.args()
-
   _add_mode_options(ctx, args)
-
   args.add(ctx.attr.compiler_flags)
+
+  args.add(["-dynamic", "-pie"])
   args.add(["-o", ctx.outputs.executable.path, dummy_static_lib.path])
 
-  for o in object_files:
-    args.add(["-optl", o.path])
-
   dep_info = gather_dep_info(ctx)
+
   # De-duplicate optl calls while preserving ordering: we want last
   # invocation of an object to remain last. That is `-optl foo -optl
   # bar -optl foo` becomes `-optl bar -optl foo`. Do this by counting
   # number of occurrences. That way we only build dict and add to args
   # directly rather than doing multiple reversals with temporary
   # lists.
-  link_paths = {}
 
-  for lib in dep_info.static_libraries:
-    link_paths[lib] = link_paths.get(lib, 0) + 1
+  args.add([f.path for f in object_files])
 
-  for lib in dep_info.static_libraries:
-    occ = link_paths.get(lib, 0)
-    # This is the last occurrence of the lib, insert it.
-    if occ == 1:
-      args.add(["-optl", lib.path])
-    link_paths[lib] = occ - 1
+  for package in set.to_list(dep_info.package_names):
+    args.add(["-package", package])
+
+  for cache in set.to_list(dep_info.package_caches):
+    args.add(["-package-db", cache.dirname])
 
   # We have to remember to specify all (transitive) wired-in
   # dependencies or we can't find objects for linking.
@@ -247,11 +263,6 @@ def link_haskell_bin(ctx, object_files):
 
   _add_external_libraries(args, dep_info.external_libraries)
 
-  so_symlink_prefix = paths.relativize(
-    paths.dirname(ctx.outputs.executable.path),
-    ctx.bin_dir.path,
-  )
-
   # The resulting test executable should be able to find all external
   # libraries when it is run by Bazel. That is achieved by setting RPATH to
   # a relative path which when joined with working directory points to
@@ -259,33 +270,27 @@ def link_haskell_bin(ctx, object_files):
   # to the approach taken by cc_binary, cc_test, etc.:
   #
   # https://github.com/bazelbuild/bazel/blob/f98a7a2fedb3e714cef1038dcb85f83731150246/src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java#L587-L605
+  so_symlink_prefix = paths.relativize(
+    paths.dirname(ctx.outputs.executable.path),
+    ctx.bin_dir.path,
+  )
   args.add(["-optl-Wl,-rpath," + so_symlink_prefix])
 
   ctx.actions.run(
     inputs = depset(transitive = [
-      depset(dep_info.static_libraries),
+      set.to_depset(dep_info.package_caches),
+      set.to_depset(dep_info.dynamic_libraries),
       depset(object_files),
       depset([dummy_static_lib]),
       set.to_depset(dep_info.external_libraries),
     ]),
     outputs = [ctx.outputs.executable],
-    progress_message = "Linking {0}".format(ctx.outputs.executable.basename),
+    progress_message = "Linking {0}".format(ctx.attr.name),
     executable = tools(ctx).ghc,
     arguments = [args]
   )
 
-  # New we have to figure out symlinks to shared libraries to create for
-  # running tests.
-  so_symlinks = {}
-
-  for lib in set.to_list(dep_info.external_libraries):
-    so_symlinks[paths.join(so_symlink_prefix, paths.basename(lib.path))] = lib
-
-  return DefaultInfo(
-    executable = ctx.outputs.executable,
-    files = depset([ctx.outputs.executable]),
-    runfiles = ctx.runfiles(symlinks=so_symlinks, collect_data = True),
-  )
+  return ctx.outputs.executable, so_symlink_prefix
 
 def compile_haskell_lib(ctx):
   """Build arguments for Haskell package build.
@@ -306,7 +311,6 @@ def compile_haskell_lib(ctx):
   c = _compilation_defaults(ctx)
   c.args.add([
     "-package-name", _get_pkg_id(ctx),
-    "-static", "-dynamic-too"
   ])
 
   # This is absolutely required otherwise GHC doesn't know what package it's
@@ -318,21 +322,16 @@ def compile_haskell_lib(ctx):
   c.args.add(unit_id_args)
   c.haddock_args.add(unit_id_args, before_each="--optghc")
 
-  object_dyn_files = [
-    declare_compiled(ctx, s, ".dyn_o", directory=c.objects_dir)
-    for s in _hs_srcs(ctx)
-  ]
-
   ctx.actions.run(
     inputs = c.inputs,
-    outputs = c.outputs + object_dyn_files,
+    outputs = c.outputs,
     progress_message = "Compiling {0}".format(ctx.attr.name),
     env = c.env,
     executable = tools(ctx).ghc,
     arguments = [c.args],
   )
 
-  return c.interfaces_dir, c.interface_files, c.object_files, object_dyn_files, c.haddock_args
+  return c.interfaces_dir, c.interface_files, c.object_files, c.object_dyn_files, c.haddock_args
 
 def link_static_lib(ctx, object_files):
   """Link a static library for the package using given object files.
@@ -383,15 +382,15 @@ def link_dynamic_lib(ctx, object_files):
 
   dep_info = gather_dep_info(ctx)
 
-  for n in set.to_list(
+  for package in set.to_list(
       set.union(
         dep_info.package_names,
         set.from_list(ctx.attr.prebuilt_dependencies)
       )):
-    args.add(["-package", n])
+    args.add(["-package", package])
 
-  for c in set.to_list(dep_info.package_caches):
-    args.add(["-package-db", c.dirname])
+  for cache in set.to_list(dep_info.package_caches):
+    args.add(["-package-db", cache.dirname])
 
   _add_external_libraries(args, dep_info.external_libraries)
 
@@ -504,6 +503,9 @@ def _compilation_defaults(ctx):
   args.add(ctx.attr.compiler_flags)
   haddock_args.add(ctx.attr.compiler_flags, before_each="--optghc")
 
+  # Output static and dynamic object files.
+  args.add(["-static", "-dynamic-too"])
+
   # Common flags
   args.add([
     "-c",
@@ -549,6 +551,7 @@ def _compilation_defaults(ctx):
 
   # We want object and dynamic objects from all inputs.
   object_files = []
+  object_dyn_files = []
 
   # We need to keep interface files we produce so we can import
   # modules cross-package.
@@ -569,12 +572,18 @@ def _compilation_defaults(ctx):
       object_files.append(
         declare_compiled(ctx, s, ".o", directory=objects_dir)
       )
+      object_dyn_files.append(
+        declare_compiled(ctx, s, ".dyn_o", directory=objects_dir)
+      )
       interface_files.append(
         declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
       )
     else:
       object_files.append(
         ctx.actions.declare_file(paths.join(objects_dir_raw, "Main.o"))
+      )
+      object_dyn_files.append(
+        ctx.actions.declare_file(paths.join(objects_dir_raw, "Main.dyn_o"))
       )
       interface_files.append(
         ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.hi"))
@@ -608,10 +617,11 @@ def _compilation_defaults(ctx):
       depset(textual_headers),
       depset([tools(ctx).gcc]),
     ]),
-    outputs = [objects_dir, interfaces_dir] + object_files + interface_files,
+    outputs = [objects_dir, interfaces_dir] + object_files + object_dyn_files + interface_files,
     objects_dir = objects_dir,
     interfaces_dir = interfaces_dir,
     object_files = object_files,
+    object_dyn_files = object_dyn_files,
     interface_files = interface_files,
     env = dicts.add({
       "LD_LIBRARY_PATH": get_external_libs_path(dep_info.external_libraries),
@@ -735,14 +745,15 @@ def infer_lib_info(ctx, haddock_args=[]):
     import_dir = import_hierarchy_root(ctx),
     exposed_modules = exposed_modules,
     other_modules = other_modules,
-    haddock_args = haddock_args
+    haddock_args = haddock_args,
   )
 
-def infer_bin_info(ctx):
+def infer_bin_info(ctx, binary):
   """Return populated `HaskellBinaryInfo` provider.
 
   Args:
     ctx: Rule context.
+    binary: File, binary compiled from dynamic object files.
 
   Returns:
     HaskellBinaryInfo: binary-specific information.
@@ -759,4 +770,5 @@ def infer_bin_info(ctx):
   return HaskellBinaryInfo(
     source_files = set.from_list(ctx.files.srcs),
     modules = set.from_list(modules),
+    binary = binary,
   )

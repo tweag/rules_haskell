@@ -5,10 +5,14 @@ These rules are temporary and will be deprecated in the future.
 
 load(":providers.bzl",
      "HaskellBuildInfo",
+     "HaskellLibraryInfo",
+     "HaskellBinaryInfo",
      "CcSkylarkApiProviderHacked",
 )
 
 load(":set.bzl", "set")
+load("@bazel_skylib//:lib.bzl", "paths")
+load(":tools.bzl", "tools")
 
 def cc_headers(ctx):
   """Bring in scope the header files of dependencies, if any.
@@ -94,27 +98,51 @@ Example:
 """
 
 def _cc_haskell_import(ctx):
+
+  dyn_libs = set.empty()
+
   if HaskellBuildInfo in ctx.attr.dep:
-    return [DefaultInfo(
-      files = set.to_depset(ctx.attr.dep[HaskellBuildInfo].dynamic_libraries)
-    )]
+    set.mutable_union(dyn_libs, ctx.attr.dep[HaskellBuildInfo].dynamic_libraries)
   else:
-    fail("{0} has to provide HaskellBuildInfo".format(ctx.attr.dep.label.name))
+    fail("{0} has to provide `HaskellBuildInfo`".format(ctx.attr.dep.label.name))
+
+  if HaskellBinaryInfo in ctx.attr.dep:
+    bin = ctx.attr.dep[HaskellBinaryInfo].binary
+    dyn_lib = ctx.actions.declare_file("lib{0}.so".format(bin.basename))
+    relative_bin = paths.relativize(bin.path, dyn_lib.dirname)
+    ctx.actions.run(
+      inputs = [bin],
+      outputs = [dyn_lib],
+      executable = tools(ctx).ln,
+      arguments = ["-s", relative_bin, dyn_lib.path],
+    )
+    set.mutable_insert(dyn_libs, dyn_lib)
+
+  return [
+    DefaultInfo(
+      files = set.to_depset(dyn_libs)
+    )
+  ]
 
 cc_haskell_import = rule(
   _cc_haskell_import,
   attrs = {
     "dep": attr.label(
-      doc = "Target providing a `HaskellBuildInfo`, such as `haskell_library`."
+      doc = """
+Target providing a `HaskellLibraryInfo` or `HaskellBinaryInfo`, such as
+`haskell_library` or `haskell_binary`.
+"""
     ),
   },
+  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
 """Exports a Haskell library as a CC library.
 
-Given a [haskell_library](#haskell_library) input, outputs the shared
-object file produced as well as the object files it depends on
-directly and transitively. This is very useful if you want to link in
-a Haskell shared library from `cc_library`.
+Given a [haskell_library](#haskell_library) or
+[haskell_binary](#haskell_binary) input, outputs the shared object files
+produced as well as the object files it depends on directly and
+transitively. This is very useful if you want to link in a Haskell shared
+library from `cc_library`.
 
 There is a caveat: this will not provide any shared libraries that
 aren't explicitly given to it. This means that if you're using
@@ -147,5 +175,4 @@ Example:
   ```
 
 [bazel-cpp-sandwich]: https://github.com/bazelbuild/bazel/issues/2163
-
 """
