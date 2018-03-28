@@ -137,6 +137,16 @@ rule_test(
 )
 
 rule_test(
+  name = "test-haskell_lint",
+  generates = [
+    "lint-log-lib-a-1.0.0",
+    "lint-log-lib-b-1.0.0",
+  ],
+  rule = "//tests/haskell_lint:haskell_lint",
+  size = "small",
+)
+
+rule_test(
   name = "test-haskell_test",
   generates = ["haskell_test"],
   rule = "//tests/haskell_test:haskell_test",

@@ -47,7 +47,8 @@ def _haskell_repl_impl(ctx):
 
   # Specify import directory for library in interpreted mode.
   if ctx.attr.interpreted and lib_target != None:
-    args += ["-i{0}".format(lib_target.import_dir)]
+    for idir in set.to_list(lib_target.import_dirs):
+      args += ["-i{0}".format(idir)]
 
   # External libraries.
   seen_libs = set.empty()

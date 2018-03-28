@@ -4,6 +4,7 @@ load(":path_utils.bzl",
      "declare_compiled",
      "target_unique_name",
      "module_name",
+     "module_unique_name",
      "import_hierarchy_root",
      "get_external_libs_path",
 )
@@ -11,12 +12,9 @@ load(":path_utils.bzl",
 load(":set.bzl", "set")
 
 load(":tools.bzl",
+     "get_build_tools_path",
      "get_ghc_version",
      "tools",
-)
-
-load(":hsc2hs.bzl",
-     "hsc_to_hs",
 )
 
 load(":cc.bzl", "cc_headers")
@@ -55,16 +53,12 @@ _DefaultCompileInfo = provider(
     "object_files": "Object files.",
     "object_dyn_files": "Dynamic object files.",
     "interface_files": "Interface files.",
+    "modules": "Set of all module names.",
+    "source_files": "Set of files that contain Haskell modules",
+    "import_dirs": "Import hierarchy roots.",
     "env": "Default env vars."
   },
 )
-
-def _hs_srcs(ctx):
-  """Return sources that correspond to a Haskell module."""
-  # TODO This may be not entirely correct because it does not take into
-  # account sources produced by the hsc2hs tool. This probably leads to
-  # undeclared object files from those inputs.
-  return [f for f in ctx.files.srcs if f.extension in ["hs", "hsc", "lhs"]]
 
 def _mangle_solib(ctx, label, solib, preserve_name):
   """Create a symlink to a dynamic library, with a longer name.
@@ -149,6 +143,92 @@ def _add_mode_options(ctx, args):
   if is_profiling_enabled(ctx):
     args.add("-prof")
 
+def _make_ghc_defs_dump(ctx):
+  """Generate a file containing GHC default pre-processor definitions.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    File: The file with GHC definitions.
+  """
+  raw_filename = "ghc-defs-dump-{0}-{1}.hs".format(ctx.attr.name, ctx.attr.version)
+  dummy_src = ctx.actions.declare_file(raw_filename)
+  ghc_defs_dump_raw = ctx.actions.declare_file(paths.replace_extension(raw_filename, ".hspp"))
+  ghc_defs_dump = ctx.actions.declare_file(paths.replace_extension(raw_filename, ".h"))
+
+  ctx.actions.write(dummy_src, "")
+  args = ctx.actions.args()
+  args.add([
+    "-E",
+    "-optP-dM",
+    "-cpp",
+    dummy_src.path,
+  ])
+
+  ctx.actions.run(
+    inputs = [dummy_src],
+    outputs = [ghc_defs_dump_raw],
+    executable = tools(ctx).ghc,
+    arguments = [args],
+  )
+
+  ctx.actions.run(
+    inputs = [ghc_defs_dump_raw, tools(ctx).grep],
+    outputs = [ghc_defs_dump],
+    executable = ctx.file._ghc_defs_cleanup,
+    arguments = [
+      tools(ctx).grep.path,
+      ghc_defs_dump_raw.path,
+      ghc_defs_dump.path,
+    ],
+  )
+
+  return ghc_defs_dump
+
+def _process_hsc_file(ctx, ghc_defs_dump, hsc_file):
+  """Process a single hsc file.
+
+  Args:
+    ctx: Rule context.
+    ghc_defs_dump: File with GHC definitions.
+    hsc_file: hsc file to process.
+
+  Returns:
+    File: Haskell source file created by processing hsc_file.
+  """
+
+  hsc_output_dir = ctx.actions.declare_directory(
+    module_unique_name(ctx, hsc_file, "hsc_processed")
+  )
+  args = ctx.actions.args()
+
+  # Output a Haskell source file.
+  hs_out = declare_compiled(ctx, hsc_file, ".hs", directory=hsc_output_dir)
+  args.add([hsc_file, "-o", hs_out])
+
+  # Bring in scope the header files of dependencies, if any.
+  hdrs, include_args = cc_headers(ctx)
+  args.add(include_args)
+  args.add("-I{0}".format(ghc_defs_dump.dirname))
+  args.add("-i{0}".format(ghc_defs_dump.basename))
+
+  ctx.actions.run(
+    inputs = depset(transitive = [
+      depset(hdrs),
+      depset([tools(ctx).gcc]),
+      depset([hsc_file, ghc_defs_dump])
+    ]),
+    outputs = [hs_out, hsc_output_dir],
+    progress_message = "hsc2hs {0}".format(hsc_file.basename),
+    env = {
+      "PATH": get_build_tools_path(ctx),
+    },
+    executable = tools(ctx).hsc2hs,
+    arguments = [args],
+  )
+  return hs_out
+
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
 
@@ -156,9 +236,11 @@ def compile_haskell_bin(ctx):
     ctx: Rule context.
 
   Returns:
-    (list of File, list of File):
-      * Object files
-      * Dynamic object files
+    struct with the following fields:
+      object_files: list of static object files
+      object_dyn_files: list of dynamic object files
+      modules: set of module names
+      source_files: set of Haskell source files
   """
   c = _compilation_defaults(ctx)
   c.args.add(["-main-is", ctx.attr.main_function])
@@ -172,7 +254,12 @@ def compile_haskell_bin(ctx):
     arguments = [c.args]
   )
 
-  return c.object_files, c.object_dyn_files
+  return struct(
+    object_files = c.object_files,
+    object_dyn_files = c.object_dyn_files,
+    modules = c.modules,
+    source_files = c.source_files,
+  )
 
 def _create_dummy_archive(ctx):
   """Create empty archive so that GHC has some input files to work on during
@@ -299,25 +386,26 @@ def compile_haskell_lib(ctx):
     ctx: Rule context.
 
   Returns:
-    (File, list of File, list of File, list of File):
-      Returns in following order:
-
-        * Directory containing interface files
-        * Interface files
-        * Object files
-        * Dynamic object files
-        * Haddock args
+    struct with the following fields:
+      interfaces_dir: directory containing interface files
+      interface_files: list of interface files
+      object_files: list of static object files
+      object_dyn_files: list of dynamic object files
+      haddock_args: list of string arguments suitable for Haddock
+      modules: set of module names
+      source_files: set of Haskell module files
+      import_dirs: import directories that should make all modules visible (for GHCi)
   """
   c = _compilation_defaults(ctx)
   c.args.add([
-    "-package-name", _get_pkg_id(ctx),
+    "-package-name", get_pkg_id(ctx),
   ])
 
   # This is absolutely required otherwise GHC doesn't know what package it's
   # creating `Name`s for to put them in Haddock interface files which then
   # results in Haddock not being able to find names for linking in
   # environment after reading its interface file later.
-  unit_id_args = ["-this-unit-id", _get_pkg_id(ctx)]
+  unit_id_args = ["-this-unit-id", get_pkg_id(ctx)]
 
   c.args.add(unit_id_args)
   c.haddock_args.add(unit_id_args, before_each="--optghc")
@@ -331,7 +419,16 @@ def compile_haskell_lib(ctx):
     arguments = [c.args],
   )
 
-  return c.interfaces_dir, c.interface_files, c.object_files, c.object_dyn_files, c.haddock_args
+  return struct(
+    interfaces_dir = c.interfaces_dir,
+    interface_files = c.interface_files,
+    object_files = c.object_files,
+    object_dyn_files = c.object_dyn_files,
+    haddock_args = c.haddock_args,
+    modules = c.modules,
+    source_files = c.source_files,
+    import_dirs = c.import_dirs,
+  )
 
 def link_static_lib(ctx, object_files):
   """Link a static library for the package using given object files.
@@ -411,7 +508,7 @@ def link_dynamic_lib(ctx, object_files):
 
   return dynamic_library
 
-def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
+def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules):
   """Create GHC package using ghc-pkg.
 
   Args:
@@ -423,22 +520,21 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library):
   Returns:
     (File, File): GHC package conf file, GHC package cache file
   """
-  pkg_db_dir = ctx.actions.declare_directory(_get_pkg_id(ctx))
-  conf_file = ctx.actions.declare_file(paths.join(pkg_db_dir.basename, "{0}.conf".format(_get_pkg_id(ctx))))
+  pkg_db_dir = ctx.actions.declare_directory(get_pkg_id(ctx))
+  conf_file = ctx.actions.declare_file(paths.join(pkg_db_dir.basename, "{0}.conf".format(get_pkg_id(ctx))))
   cache_file = ctx.actions.declare_file("package.cache", sibling=conf_file)
   dep_info = gather_dep_info(ctx)
-  lib_info = infer_lib_info(ctx)
 
   # Create a file from which ghc-pkg will create the actual package from.
   registration_file = ctx.actions.declare_file(target_unique_name(ctx, "registration-file"))
   registration_file_entries = {
     "name": ctx.attr.name,
     "version": ctx.attr.version,
-    "id": _get_pkg_id(ctx),
-    "key": _get_pkg_id(ctx),
+    "id": get_pkg_id(ctx),
+    "key": get_pkg_id(ctx),
     "exposed": "True",
-    "exposed-modules": " ".join(set.to_list(lib_info.exposed_modules)),
-    "hidden-modules": " ".join(set.to_list(lib_info.other_modules)),
+    "exposed-modules": " ".join(set.to_list(exposed_modules)),
+    "hidden-modules": " ".join(set.to_list(other_modules)),
     "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
     "library-dirs": "${pkgroot}",
     "dynamic-library-dirs": "${pkgroot}",
@@ -486,9 +582,6 @@ def _compilation_defaults(ctx):
   """
   args = ctx.actions.args()
   haddock_args = ctx.actions.args()
-
-  # Preprocess any sources
-  sources = hsc_to_hs(ctx)
 
   # Declare file directories
   objects_dir_raw = target_unique_name(ctx, "objects")
@@ -539,7 +632,7 @@ def _compilation_defaults(ctx):
   for package in set.to_list(dep_info.package_names):
     items = ["-package", package]
     args.add(items)
-    if package != _get_pkg_id(ctx):
+    if package != get_pkg_id(ctx):
       haddock_args.add(items, before_each="--optghc")
 
   # Only include package DBs for deps, prebuilt deps should be found
@@ -556,48 +649,63 @@ def _compilation_defaults(ctx):
   # We need to keep interface files we produce so we can import
   # modules cross-package.
   interface_files = []
-
-  textual_headers = []
+  other_sources = []
+  modules = set.empty()
+  source_files = set.empty()
+  import_dirs = set.singleton(import_hierarchy_root(ctx))
 
   # Output object files are named after modules, not after input file names.
   # The difference is only visible in the case of Main module because it may
   # be placed in a file with a name different from "Main.hs". In that case
   # still Main.o will be produced.
 
-  for s in _hs_srcs(ctx):
+  ghc_defs_dump = _make_ghc_defs_dump(ctx)
 
-    if s.extension == "h":
-      textual_headers.append(s)
-    elif not hasattr(ctx.file, "main_file") or (s != ctx.file.main_file):
-      object_files.append(
-        declare_compiled(ctx, s, ".o", directory=objects_dir)
-      )
-      object_dyn_files.append(
-        declare_compiled(ctx, s, ".dyn_o", directory=objects_dir)
-      )
-      interface_files.append(
-        declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
-      )
-    else:
-      object_files.append(
-        ctx.actions.declare_file(paths.join(objects_dir_raw, "Main.o"))
-      )
-      object_dyn_files.append(
-        ctx.actions.declare_file(paths.join(objects_dir_raw, "Main.dyn_o"))
-      )
-      interface_files.append(
-        ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.hi"))
-      )
+  for s in ctx.files.srcs:
+
+    if s.extension in ["h", "hs-boot", "lhs-boot"]:
+      other_sources.append(s)
+    elif s.extension in ["hs", "lhs", "hsc"]:
+      if not hasattr(ctx.file, "main_file") or (s != ctx.file.main_file):
+        if s.extension == "hsc":
+          s0 = _process_hsc_file(ctx, ghc_defs_dump, s)
+          set.mutable_insert(source_files, s0)
+        else:
+          set.mutable_insert(source_files, s)
+        set.mutable_insert(modules, module_name(ctx, s))
+        object_files.append(
+          declare_compiled(ctx, s, ".o", directory=objects_dir)
+        )
+        object_dyn_files.append(
+          declare_compiled(ctx, s, ".dyn_o", directory=objects_dir)
+        )
+        interface_files.append(
+          declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
+        )
+      else:
+        if s.extension == "hsc":
+          s0 = _process_hsc_file(ctx, ghc_defs_dump, s)
+          set.mutable_insert(source_files, s0)
+        else:
+          set.mutable_insert(source_files, s)
+        set.mutable_insert(modules, "Main")
+        object_files.append(
+          ctx.actions.declare_file(paths.join(objects_dir_raw, "Main.o"))
+        )
+        object_dyn_files.append(
+          ctx.actions.declare_file(paths.join(objects_dir_raw, "Main.dyn_o"))
+        )
+        interface_files.append(
+          ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.hi"))
+        )
 
   hdrs, include_args = cc_headers(ctx)
   args.add(include_args)
   haddock_args.add(include_args, before_each="--optghc")
 
-  # Lastly add all the processed sources.
-  for f in sources:
-    if f.extension not in ["hs-boot", "lhs-boot"]:
-      args.add(f)
-      haddock_args.add(f)
+  for f in set.to_list(source_files):
+    args.add(f)
+    haddock_args.add(f)
 
   # Add any interop info for other languages.
   java = java_interop_info(ctx)
@@ -606,7 +714,7 @@ def _compilation_defaults(ctx):
     args = args,
     haddock_args = haddock_args,
     inputs = depset(transitive = [
-      depset(sources),
+      set.to_depset(source_files),
       depset(hdrs),
       set.to_depset(dep_info.package_confs),
       set.to_depset(dep_info.package_caches),
@@ -614,7 +722,7 @@ def _compilation_defaults(ctx):
       set.to_depset(dep_info.dynamic_libraries),
       set.to_depset(dep_info.external_libraries),
       java.inputs,
-      depset(textual_headers),
+      depset(other_sources),
       depset([tools(ctx).gcc]),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + object_dyn_files + interface_files,
@@ -623,6 +731,9 @@ def _compilation_defaults(ctx):
     object_files = object_files,
     object_dyn_files = object_dyn_files,
     interface_files = interface_files,
+    modules = modules,
+    source_files = source_files,
+    import_dirs = import_dirs,
     env = dicts.add({
       "LD_LIBRARY_PATH": get_external_libs_path(dep_info.external_libraries),
       },
@@ -630,7 +741,7 @@ def _compilation_defaults(ctx):
     ),
   )
 
-def _get_pkg_id(ctx):
+def get_pkg_id(ctx):
   """Get package identifier. This is name-version.
 
   Args:
@@ -652,7 +763,7 @@ def _get_library_name(ctx):
   Returns:
     string: Library name suitable for GHC package entry.
   """
-  return "HS{0}".format(_get_pkg_id(ctx))
+  return "HS{0}".format(get_pkg_id(ctx))
 
 def gather_dep_info(ctx):
   """Collapse dependencies into a single `HaskellBuildInfo`.
@@ -719,56 +830,3 @@ def gather_dep_info(ctx):
       )
 
   return acc
-
-def infer_lib_info(ctx, haddock_args=[]):
-  """Return populated `HaskellLibraryInfo` provider.
-
-  Args:
-    ctx: Rule context.
-    haddock_args: Value to use in corresponding field.
-
-  Returns:
-    HaskellLibraryInfo: library-specific information.
-  """
-
-  # Infer collection of public modules in the library.
-  exposed_modules = set.empty()
-  other_modules = set.from_list(ctx.attr.hidden_modules) if hasattr(ctx.attr, "hidden_modules") else set.empty()
-
-  for f in _hs_srcs(ctx):
-    mname = module_name(ctx, f)
-    if not set.is_member(other_modules, mname):
-      set.mutable_insert(exposed_modules, mname)
-
-  return HaskellLibraryInfo(
-    package_name = _get_pkg_id(ctx),
-    import_dir = import_hierarchy_root(ctx),
-    exposed_modules = exposed_modules,
-    other_modules = other_modules,
-    haddock_args = haddock_args,
-  )
-
-def infer_bin_info(ctx, binary):
-  """Return populated `HaskellBinaryInfo` provider.
-
-  Args:
-    ctx: Rule context.
-    binary: File, binary compiled from dynamic object files.
-
-  Returns:
-    HaskellBinaryInfo: binary-specific information.
-  """
-
-  modules = []
-
-  for f in _hs_srcs(ctx):
-    if f == ctx.file.main_file:
-      modules.append("Main")
-    else:
-      modules.append(module_name(ctx, f))
-
-  return HaskellBinaryInfo(
-    source_files = set.from_list(ctx.files.srcs),
-    modules = set.from_list(modules),
-    binary = binary,
-  )

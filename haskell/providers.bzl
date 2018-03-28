@@ -16,10 +16,11 @@ HaskellLibraryInfo = provider(
   doc = "Library-specific information.",
   fields = {
     "package_name": "Package name, usually of the form name-version.",
-    "import_dir": "Import hierarchy root.",
+    "import_dirs": "Import hierarchy roots.",
     "exposed_modules": "Set of exposed module names.",
     "other_modules": "Set of non-public module names.",
     "haddock_args": "Arguments that were used to compile the package suitable for Haddock.",
+    "source_files": "Set of files that contain Haskell modules.",
   },
 )
 
@@ -38,6 +39,13 @@ HaddockInfo = provider(
     "outputs": "All interesting outputs produced by Haddock.",
     "interface_file": "Haddock interface file.",
     "doc_dir": "Directory where all the documentation files live.",
+  }
+)
+
+HaskellLintInfo = provider(
+  doc = "Provider that collects files produced by linters",
+  fields = {
+    "outputs": "Set of linter log files."
   }
 )
 
