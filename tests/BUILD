@@ -137,12 +137,22 @@ rule_test(
 )
 
 rule_test(
-  name = "test-haskell_lint",
+  name = "test-haskell_lint-library",
   generates = [
     "lint-log-lib-a-1.0.0",
     "lint-log-lib-b-1.0.0",
   ],
-  rule = "//tests/haskell_lint:haskell_lint",
+  rule = "//tests/haskell_lint:lint-lib-b",
+  size = "small",
+)
+
+rule_test(
+  name = "test-haskell_lint-binary",
+  generates = [
+    "lint-log-lib-a-1.0.0",
+    "lint-log-bin-1.0.0",
+  ],
+  rule = "//tests/haskell_lint:lint-bin",
   size = "small",
 )
 
