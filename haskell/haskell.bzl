@@ -88,7 +88,10 @@ def _haskell_binary_impl(ctx):
   so_symlinks = {}
 
   for lib in set.to_list(dep_info.external_libraries):
-    so_symlinks[paths.join(so_symlink_prefix, paths.basename(lib.path))] = lib
+    so_symlinks[paths.join(so_symlink_prefix, lib.basename)] = lib
+
+  for lib in set.to_list(dep_info.dynamic_libraries):
+    so_symlinks[paths.join(so_symlink_prefix, lib.basename)] = lib
 
   return [
     dep_info, # HaskellBuildInfo
