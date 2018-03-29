@@ -242,3 +242,21 @@ rule_test(
   rule = "//tests/two-libs:two-libs",
   size = "small",
 )
+
+genrule(
+  name = "run-bin-with-lib",
+  outs = ["dummy"],
+  tools = ["//tests/binary-with-lib:binary-with-lib"],
+  cmd = """sh -c '
+    set -e
+    $(location //tests/binary-with-lib:binary-with-lib)
+    touch dummy
+'""",
+)
+
+rule_test(
+  name = "test-run-bin-with-lib",
+  generates = ["dummy"],
+  rule = "//tests:run-bin-with-lib",
+  size = "small",
+)
