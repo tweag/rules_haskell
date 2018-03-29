@@ -53,7 +53,7 @@ def _haskell_lint_aspect_impl(target, ctx):
 
   # Expose all bazel dependencies
   for package in set.to_list(build_info.package_names):
-    if lib_info != None or package != lib_info.package_name:
+    if lib_info == None or package != lib_info.package_name:
       args.add(["-package", package])
 
   for cache in set.to_list(build_info.package_caches):
