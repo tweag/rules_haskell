@@ -136,3 +136,15 @@ haskell_lint = rule(
   },
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
+"""Check source code of targets in `deps` using a restrictive set of GHC
+flags.
+
+The following flags will be used:
+
+* `-Wall`
+* `-Werror`
+* `-Wcompat`
+* `-Wincomplete-record-updates`
+* `-Wincomplete-uni-patterns`
+* `-Wredundant-constraints`
+"""
