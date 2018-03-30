@@ -82,16 +82,13 @@ _haskell_common_attrs = {
 def _haskell_binary_impl(ctx):
   c = compile_haskell_bin(ctx)
 
-  binary, so_symlink_prefix = link_haskell_bin(ctx, c.object_dyn_files)
+  binary = link_haskell_bin(ctx, c.object_dyn_files)
   dep_info = gather_dep_info(ctx)
 
-  so_symlinks = {}
-
-  for lib in set.to_list(dep_info.external_libraries):
-    so_symlinks[paths.join(so_symlink_prefix, lib.basename)] = lib
-
-  for lib in set.to_list(dep_info.dynamic_libraries):
-    so_symlinks[paths.join(so_symlink_prefix, lib.basename)] = lib
+  solibs = set.union(
+    dep_info.external_libraries,
+    dep_info.dynamic_libraries,
+  )
 
   return [
     dep_info, # HaskellBuildInfo
@@ -103,7 +100,10 @@ def _haskell_binary_impl(ctx):
     DefaultInfo(
       executable = binary,
       files = depset([binary]),
-      runfiles = ctx.runfiles(symlinks=so_symlinks, collect_data = True),
+      runfiles = ctx.runfiles(
+        files = set.to_list(solibs),
+        collect_data = True,
+      ),
     ),
   ]
 

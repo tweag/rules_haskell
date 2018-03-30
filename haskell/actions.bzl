@@ -229,6 +229,31 @@ def _process_hsc_file(ctx, ghc_defs_dump, hsc_file):
   )
   return hs_out
 
+def _infer_rpaths(target, solibs):
+  """Return set of RPATH values to be added to target so it can find all
+  solibs.
+
+  Args:
+    target: File, executable or library we're linking.
+    solibs: A set of Files, shared objects that the target needs.
+
+  Returns:
+    Set of strings: rpaths to add to target.
+  """
+  r = set.empty()
+
+  for solib in set.to_list(solibs):
+    n = len(target.dirname.split("/"))
+    rpath = paths.normalize(
+      paths.join(
+        "/".join([".."] * n),
+        solib.dirname,
+      )
+    )
+    set.mutable_insert(r, "$ORIGIN/" + rpath)
+
+  return r
+
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
 
@@ -311,10 +336,7 @@ def link_haskell_bin(ctx, object_files):
     object_files: Dynamic object files.
 
   Returns:
-    (File, String):
-      * Executable
-      * .so symlink prefix, relative path where the executable will search
-        for .so files at runtime
+    File: produced executable
   """
 
   dummy_static_lib = _create_dummy_archive(ctx)
@@ -350,18 +372,13 @@ def link_haskell_bin(ctx, object_files):
 
   _add_external_libraries(args, dep_info.external_libraries)
 
-  # The resulting test executable should be able to find all external
-  # libraries when it is run by Bazel. That is achieved by setting RPATH to
-  # a relative path which when joined with working directory points to
-  # symlinks which in turn point to shared libraries. This is quite similar
-  # to the approach taken by cc_binary, cc_test, etc.:
-  #
-  # https://github.com/bazelbuild/bazel/blob/f98a7a2fedb3e714cef1038dcb85f83731150246/src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java#L587-L605
-  so_symlink_prefix = paths.relativize(
-    paths.dirname(ctx.outputs.executable.path),
-    ctx.bin_dir.path,
+  solibs = set.union(
+    dep_info.external_libraries,
+    dep_info.dynamic_libraries,
   )
-  args.add(["-optl-Wl,-rpath," + so_symlink_prefix])
+
+  for rpath in set.to_list(_infer_rpaths(ctx.outputs.executable, solibs)):
+    args.add(["-optl-Wl,-rpath," + rpath])
 
   ctx.actions.run(
     inputs = depset(transitive = [
@@ -377,7 +394,7 @@ def link_haskell_bin(ctx, object_files):
     arguments = [args]
   )
 
-  return ctx.outputs.executable, so_symlink_prefix
+  return ctx.outputs.executable
 
 def compile_haskell_lib(ctx):
   """Build arguments for Haskell package build.
@@ -492,6 +509,14 @@ def link_dynamic_lib(ctx, object_files):
   _add_external_libraries(args, dep_info.external_libraries)
 
   args.add([ f.path for f in object_files ])
+
+  solibs = set.union(
+    dep_info.external_libraries,
+    dep_info.dynamic_libraries,
+  )
+
+  for rpath in set.to_list(_infer_rpaths(dynamic_library, solibs)):
+    args.add(["-optl-Wl,-rpath," + rpath])
 
   ctx.actions.run(
     inputs = depset(transitive = [
