@@ -707,6 +707,9 @@ def _compilation_defaults(ctx):
         interface_files.append(
           declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
         )
+        interface_files.append(
+          declare_compiled(ctx, s, ".dyn_hi", directory=interfaces_dir)
+        )
       else:
         if s.extension == "hsc":
           s0 = _process_hsc_file(ctx, ghc_defs_dump, s)
@@ -722,6 +725,9 @@ def _compilation_defaults(ctx):
         )
         interface_files.append(
           ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.hi"))
+        )
+        interface_files.append(
+          ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.dyn_hi"))
         )
 
   hdrs, include_args = cc_headers(ctx)
