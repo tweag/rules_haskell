@@ -174,22 +174,18 @@ def haskell_toolchain(
     **kwargs):
   """Declare a compiler toolchain.
 
-  Declares a compiler toolchain. You need at least one of these declared
-  somewhere in your `BUILD` files for the other rules to work. Once
-  declared, you then need to *register* the toolchain using
-  `register_toolchain` in your `WORKSPACE` file (see example below).
-
-  Haskell rules rely on some binary utilities, such as `ln` and `grep`. You
-  can overwrite their locations by specifying argumentents such as
-  `ln_location`, `grep_location`, and/or others, although it should be
-  rarely needed.
+  You need at least one of these declared somewhere in your `BUILD` files
+  for the other rules to work. Once declared, you then need to *register*
+  the toolchain using `register_toolchain` in your `WORKSPACE` file (see
+  example below).
 
   Example:
     ```bzl
     haskell_toolchain(
         name = "ghc",
         version = '1.2.3'
-        tools = ["@sys_ghc//:bin"]
+        tools = ["@sys_ghc//:bin"],
+        doctest = "@doctest//:bin", # optional
     )
     ```
 
@@ -199,10 +195,19 @@ def haskell_toolchain(
     ```bzl
     nixpkgs_package(
         name = 'sys_ghc',
-        attribute_path = 'haskell.compiler.ghc123'
+        attribute_path = 'haskell.compiler.ghc822'
     )
 
     register_toolchain("//:ghc")
+    ```
+
+    similarly for `@doctest`:
+
+    ```bzl
+    nixpkgs_package(
+        name = "doctest",
+        attribute_path = "haskell.packages.ghc822.doctest",
+    )
     ```
   """
   impl_name = name + "-impl"
