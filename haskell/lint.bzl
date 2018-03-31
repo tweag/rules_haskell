@@ -136,6 +136,18 @@ haskell_lint = rule(
   },
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
+"""Check source code of targets in `deps` using a restrictive set of GHC
+flags.
+
+The following flags will be used:
+
+* `-Wall`
+* `-Werror`
+* `-Wcompat`
+* `-Wincomplete-record-updates`
+* `-Wincomplete-uni-patterns`
+* `-Wredundant-constraints`
+"""
 
 def _haskell_doctest_aspect_impl(target, ctx):
   if HaskellBuildInfo not in target:
@@ -228,15 +240,9 @@ haskell_doctest = rule(
   },
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
-"""Check source code of targets in `deps` using a restrictive set of GHC
-flags.
+"""Run doctest test on targets in `deps`.
 
-The following flags will be used:
-
-* `-Wall`
-* `-Werror`
-* `-Wcompat`
-* `-Wincomplete-record-updates`
-* `-Wincomplete-uni-patterns`
-* `-Wredundant-constraints`
+Note that your toolchain must be equipped with `doctest` executable, i.e.
+you should specify location of the executable using the `doctest` attribute
+when you invoke `haskell_toolchain`.
 """
