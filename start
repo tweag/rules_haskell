@@ -33,7 +33,7 @@ workspace(name = "YOUR_PROJECT_NAME_HERE")
 
 http_archive(
   name = "io_tweag_rules_haskell",
-  strip_prefix = "rules_haskell-0.3",
+  strip_prefix = "rules_haskell-0.4",
   urls = ["https://github.com/tweag/rules_haskell/archive/v0.4.tar.gz"]
 )
 
