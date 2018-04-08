@@ -26,3 +26,10 @@ jobs:
       - run:
           name: Test REPL for binaries
           command: bazel-bin/tests/haskell_repl/haskell_bin_repl -e ":quit"
+      - run:
+          name: Test start script
+          command: |
+            pwd=$(pwd)
+            cd $(mktemp -d)
+            $pwd/start
+            bazel fetch //... --config=ci
