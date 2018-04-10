@@ -125,8 +125,9 @@ filegroup (name = "bin", srcs = glob(["bin/ghc*"]))
 
 ## Examples
 
-See [rules_haskell_examples][rules_haskell_examples] for examples of
-using these rules.
+See [rules_haskell_examples][] for examples of using these rules.
+
+[rules_haskell_examples]: https://github.com/tweag/rules_haskell_examples
 
 ## For `rules_haskell` developers
 
