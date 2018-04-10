@@ -14,6 +14,8 @@ load(":set.bzl", "set")
 load(":tools.bzl",
      "get_build_tools_path",
      "get_ghc_version",
+     "is_darwin",
+     "so_extension",
      "tools",
 )
 
@@ -111,17 +113,17 @@ def _is_shared_library(f):
   Returns:
     Bool: True if the given file `f` is a shared library, False otherwise.
   """
-  return f.extension == "so" or f.basename.find(".so.") != -1
+  return f.extension in ["so", "dylib"] or f.basename.find(".so.") != -1
 
 def _add_external_libraries(args, libs):
   """Add options to `args` that allow us to link to `libs`.
 
   Args:
     args: Args object.
-    libs: set of external shared libraries.
+    libs: list of external shared libraries.
   """
   seen_libs = set.empty()
-  for lib in set.to_list(libs):
+  for lib in libs:
     lib_name = get_lib_name(lib)
     if not set.is_member(seen_libs, lib_name):
       set.mutable_insert(seen_libs, lib_name)
@@ -320,7 +322,7 @@ module BazelDummy () where
   ar_args.add(["qc", dummy_static_lib, dummy_object])
 
   ctx.actions.run(
-    inputs = [dummy_object],
+    inputs = [dummy_object] + tools(ctx).ar_runfiles,
     outputs = [dummy_static_lib],
     executable = tools(ctx).ar,
     arguments = [ar_args]
@@ -341,14 +343,41 @@ def link_haskell_bin(ctx, object_files):
 
   dummy_static_lib = _create_dummy_archive(ctx)
 
+  dep_info = gather_dep_info(ctx)
+
+  # On macOS, in order to simulate "relpath" behavior and make the binary load
+  # shared libaries from relative paths, we need to postprocess it with
+  # install_name_tool.  (This is what the Bazel-provided `cc_wrapper.sh` does
+  # for cc rules.)
+  # For details: https://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
+  if not is_darwin(ctx):
+    compile_output = ctx.outputs.executable
+  else:
+    compile_output = ctx.actions.declare_file(ctx.outputs.executable.basename + ".temp")
+    ctx.actions.run_shell(
+        inputs=[compile_output],
+        outputs=[ctx.outputs.executable],
+        progress_message =
+            "Fixing install paths for {0}".format(ctx.outputs.executable.basename),
+        command = " &&\n    ".join(
+            ["cp {} {}".format(compile_output.path, ctx.outputs.executable.path),
+             "chmod +w {}".format(ctx.outputs.executable.path)]
+            + ["/usr/bin/install_name_tool -change {} {} {}"
+               .format(f.path,
+                       "@executable_path/" + dep_info.external_libraries[f].basename,
+                       ctx.outputs.executable.path)
+                       for f in dep_info.external_libraries]),
+    )
+
   args = ctx.actions.args()
   _add_mode_options(ctx, args)
   args.add(ctx.attr.compiler_flags)
 
-  args.add(["-dynamic", "-pie"])
-  args.add(["-o", ctx.outputs.executable.path, dummy_static_lib.path])
+  # TODO: enable dynamic linking of Haskell dependencies for macOS.
+  if not is_darwin(ctx):
+    args.add(["-dynamic", "-pie"])
 
-  dep_info = gather_dep_info(ctx)
+  args.add(["-o", compile_output.path, dummy_static_lib.path])
 
   # De-duplicate optl calls while preserving ordering: we want last
   # invocation of an object to remain last. That is `-optl foo -optl
@@ -370,25 +399,27 @@ def link_haskell_bin(ctx, object_files):
   for p in set.to_list(dep_info.prebuilt_dependencies):
     args.add(["-package", p])
 
-  _add_external_libraries(args, dep_info.external_libraries)
+  _add_external_libraries(args, dep_info.external_libraries.values())
 
   solibs = set.union(
-    dep_info.external_libraries,
+    set.from_list(dep_info.external_libraries),
     dep_info.dynamic_libraries,
   )
 
-  for rpath in set.to_list(_infer_rpaths(ctx.outputs.executable, solibs)):
-    args.add(["-optl-Wl,-rpath," + rpath])
+  if not is_darwin(ctx):
+    for rpath in set.to_list(_infer_rpaths(ctx.outputs.executable, solibs)):
+      args.add(["-optl-Wl,-rpath," + rpath])
 
   ctx.actions.run(
     inputs = depset(transitive = [
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.dynamic_libraries),
+      depset(dep_info.static_libraries),
       depset(object_files),
       depset([dummy_static_lib]),
-      set.to_depset(dep_info.external_libraries),
+      depset(dep_info.external_libraries.values()),
     ]),
-    outputs = [ctx.outputs.executable],
+    outputs = [compile_output],
     progress_message = "Linking {0}".format(ctx.attr.name),
     executable = tools(ctx).ghc,
     arguments = [args]
@@ -464,7 +495,7 @@ def link_static_lib(ctx, object_files):
   args.add(object_files)
 
   ctx.actions.run(
-    inputs = object_files,
+    inputs = object_files + tools(ctx).ar_runfiles,
     outputs = [static_library],
     progress_message = "Linking static library {0}".format(static_library.basename),
     executable = tools(ctx).ar,
@@ -485,7 +516,7 @@ def link_dynamic_lib(ctx, object_files):
 
   version = get_ghc_version(ctx)
   dynamic_library = ctx.actions.declare_file(
-    "lib{0}-ghc{1}.so".format(_get_library_name(ctx), version)
+    "lib{0}-ghc{1}.{2}".format(_get_library_name(ctx), version, so_extension(ctx))
   )
 
   args = ctx.actions.args()
@@ -506,24 +537,25 @@ def link_dynamic_lib(ctx, object_files):
   for cache in set.to_list(dep_info.package_caches):
     args.add(["-package-db", cache.dirname])
 
-  _add_external_libraries(args, dep_info.external_libraries)
+  _add_external_libraries(args, dep_info.external_libraries.values())
 
   args.add([ f.path for f in object_files ])
 
   solibs = set.union(
-    dep_info.external_libraries,
+    set.from_list(dep_info.external_libraries),
     dep_info.dynamic_libraries,
   )
 
-  for rpath in set.to_list(_infer_rpaths(dynamic_library, solibs)):
-    args.add(["-optl-Wl,-rpath," + rpath])
+  if not is_darwin(ctx):
+    for rpath in set.to_list(_infer_rpaths(dynamic_library, solibs)):
+      args.add(["-optl-Wl,-rpath," + rpath])
 
   ctx.actions.run(
     inputs = depset(transitive = [
       depset(object_files),
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.dynamic_libraries),
-      set.to_depset(dep_info.external_libraries),
+      depset(dep_info.external_libraries.values()),
     ]),
     outputs = [dynamic_library],
     progress_message = "Linking dynamic library {0}".format(dynamic_library.basename),
@@ -751,7 +783,7 @@ def _compilation_defaults(ctx):
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.interface_files),
       set.to_depset(dep_info.dynamic_libraries),
-      set.to_depset(dep_info.external_libraries),
+      depset(dep_info.external_libraries.values()),
       java.inputs,
       depset(other_sources),
       depset([tools(ctx).gcc]),
@@ -766,7 +798,7 @@ def _compilation_defaults(ctx):
     source_files = source_files,
     import_dirs = import_dirs,
     env = dicts.add({
-      "LD_LIBRARY_PATH": get_external_libs_path(dep_info.external_libraries),
+      "LD_LIBRARY_PATH": get_external_libs_path(set.from_list(dep_info.external_libraries.values())),
       },
       java.env,
     ),
@@ -796,6 +828,7 @@ def _get_library_name(ctx):
   """
   return "HS{0}".format(get_pkg_id(ctx))
 
+
 def gather_dep_info(ctx):
   """Collapse dependencies into a single `HaskellBuildInfo`.
 
@@ -817,7 +850,7 @@ def gather_dep_info(ctx):
     dynamic_libraries = set.empty(),
     interface_files = set.empty(),
     prebuilt_dependencies = set.from_list(ctx.attr.prebuilt_dependencies),
-    external_libraries = set.empty(),
+    external_libraries = {},
   )
 
   for dep in ctx.attr.deps:
@@ -836,7 +869,7 @@ def gather_dep_info(ctx):
         dynamic_libraries = set.mutable_union(acc.dynamic_libraries, binfo.dynamic_libraries),
         interface_files = set.mutable_union(acc.interface_files, binfo.interface_files),
         prebuilt_dependencies = set.mutable_union(acc.prebuilt_dependencies, binfo.prebuilt_dependencies),
-        external_libraries = set.mutable_union(acc.external_libraries, binfo.external_libraries),
+        external_libraries = dicts.add(acc.external_libraries, binfo.external_libraries)
       )
     else:
       # If not a Haskell dependency, pass it through as-is to the
@@ -849,15 +882,14 @@ def gather_dep_info(ctx):
         dynamic_libraries = acc.dynamic_libraries,
         interface_files = acc.interface_files,
         prebuilt_dependencies = acc.prebuilt_dependencies,
-        external_libraries = set.mutable_union(
+        external_libraries = dicts.add(
           acc.external_libraries,
-          set.from_list([
+          {f:
             # If the provider is CcSkylarkApiProviderHacked, then the .so
             # files come from haskell_cc_import.
             _mangle_solib(ctx, dep.label, f, CcSkylarkApiProviderHacked in dep)
-            for f in dep.files.to_list() if _is_shared_library(f)
-          ]),
-        ),
+            for f in dep.files.to_list() if _is_shared_library(f)}
+          ),
       )
 
   return acc

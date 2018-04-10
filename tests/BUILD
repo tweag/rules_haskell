@@ -203,10 +203,15 @@ rule_test(
 
 rule_test(
   name = "test-cc_haskell_import-output",
-  generates = [
-    "libHShs-lib-a-1.0.0-ghc8.2.2.so",
-    "libHShs-lib-b-1.0.0-ghc8.2.2.so",
-  ],
+  generates = select({
+      "@bazel_tools//src/conditions:darwin":
+          [ "libHShs-lib-a-1.0.0-ghc8.2.2.dylib",
+          "libHShs-lib-b-1.0.0-ghc8.2.2.dylib",
+        ],
+      "//conditions:default":
+          [ "libHShs-lib-a-1.0.0-ghc8.2.2.so",
+          "libHShs-lib-b-1.0.0-ghc8.2.2.so",
+        ]}),
   rule = "//tests/cc_haskell_import:hs-lib-b-so",
   size = "small",
 )

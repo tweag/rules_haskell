@@ -24,10 +24,18 @@ filegroup(
 
 cc_library(
   name = "threaded-rts",
-  srcs = glob([
-    "lib/ghc-*/rts/libHSrts_thr-ghc*.so",
-    "lib/ghc-*/rts/libffi.so.6",
-  ]),
+  srcs = select({
+      "@bazel_tools//src/conditions:darwin":
+          glob([
+            "lib/ghc-*/rts/libHSrts_thr-ghc*.dylib",
+            "lib/ghc-*/rts/libffi.dylib",
+          ]),
+      "//conditions:default":
+          glob([
+            "lib/ghc-*/rts/libHSrts_thr-ghc*.so",
+            "lib/ghc-*/rts/libffi.so.6",
+          ]),
+  }),
   hdrs = glob(["lib/ghc-*/include/**/*.h"]),
   strip_include_prefix = glob(["lib/ghc-*/include"], exclude_directories=0)[0],
 )
@@ -57,6 +65,7 @@ filegroup (
   srcs = glob([
     "lib/*.so",
     "lib/*.so.*",
+    "lib/*.dylib",
   ]),
   testonly = 1,
 )

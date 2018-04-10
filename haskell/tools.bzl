@@ -38,3 +38,25 @@ def tools(ctx):
     struct with Files inside.
   """
   return ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].tools
+
+def is_darwin(ctx):
+  """Returns whether the current build is using macOS.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    Boolean which is true when we're building on macOS.
+  """
+  return ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].is_darwin
+
+def so_extension(ctx):
+  """Returns the extension for shared libraries.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    string of extension.
+  """
+  return "dylib" if is_darwin(ctx) else "so"

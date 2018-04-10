@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "HsFFI.h"
 
-extern HsInt add_one_hs(HsInt a0);
+extern HsInt32 add_one_hs(HsInt32 a0);
 
 int main(int argc, char *argv[]) {
   hs_init(&argc, &argv);
