@@ -1,0 +1,40 @@
+# Template for a GHC bindist that is compatible with Hazel.
+package(default_visibility = [ "//visibility:public" ])
+
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_toolchain")
+
+
+filegroup(
+    name = "bin",
+    srcs = glob(["bin/*"]),
+)
+
+# Provide the GHC executable separately, so that it can be used in a
+# repository rule to compile Hazel.  (Repository rules can't use "generated" files,
+# including filegroups, but are allowed to use files provided via
+# `exports_files`.
+exports_files(["bin/ghc"])
+
+filegroup(
+  name = "lib",
+  srcs = glob(["lib/**/*.so*", "lib/**/*.a"]),
+)
+
+
+filegroup(
+  name = "include",
+  srcs = glob(["include/*.h"]),
+)
+
+cc_library(
+  name = "threaded-rts",
+  srcs = glob(["lib/ghc-*/rts/libHSrts_thr-ghc*." + ext for ext in ["so", "dylib"]]),
+  hdrs = glob(["lib/ghc-*/include/**/*.h"]),
+  strip_include_prefix = glob(["lib/ghc-*/include"], exclude_directories=0)[0],
+)
+
+haskell_toolchain(
+    name = "ghc",
+    version = "8.2.2",
+    tools = ":bin",
+)
