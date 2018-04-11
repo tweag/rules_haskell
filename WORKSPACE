@@ -13,10 +13,19 @@ http_archive(
   strip_prefix = "rules_nixpkgs-0.2",
   urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.tar.gz"],
 )
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
+load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+  "nixpkgs_git_repository",
+  "nixpkgs_package",
+)
+
+nixpkgs_git_repository(
+  name = "nixpkgs",
+  revision = "18.03",
+)
 
 nixpkgs_package(
   name = "ghc",
+  repository = "@nixpkgs",
   # For vector example. Just use `attribute_path = haskell.packages.ghc822`
   # when no extra packages needed.
   nix_file_content = """
