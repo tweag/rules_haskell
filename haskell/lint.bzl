@@ -48,6 +48,7 @@ def _haskell_lint_aspect_impl(target, ctx):
 
   args.add([
     "-O0",
+    "-v0",
     "-fno-code",
     "-Wall",
     "-Werror",
