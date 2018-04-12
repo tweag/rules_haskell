@@ -11,17 +11,16 @@ load(":set.bzl",
 )
 
 def _haskell_toolchain_impl(ctx):
-
   # Check that we have all that we want.
   for tool in _GHC_BINARIES:
     if tool not in [t.basename for t in ctx.files.tools]:
       fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 
   # Store the binaries of interest in ghc_binaries.
-  ghc_binaries = []
+  ghc_binaries = {}
   for tool in ctx.files.tools:
     if tool.basename in _GHC_BINARIES:
-      ghc_binaries.append(tool.path)
+      ghc_binaries[tool.basename] = tool.path
 
   # Run a version check on the compiler.
   for t in ctx.files.tools:
@@ -61,29 +60,43 @@ def _haskell_toolchain_impl(ctx):
   symlinks = set.empty()
   inputs = []
   inputs.extend(ctx.files.tools)
+  inputs.extend(ctx.files._crosstool)
 
-  targets_r = [
-    # CPP host fragments.
-    ctx.host_fragments.cpp.ar_executable,
-    ctx.host_fragments.cpp.compiler_executable,
-    ctx.host_fragments.cpp.ld_executable,
-    ctx.host_fragments.cpp.nm_executable,
-    ctx.host_fragments.cpp.preprocessor_executable,
-    ctx.host_fragments.cpp.strip_executable,
-  ] + ghc_binaries # Previously collected GHC binaries.
+
+  targets_r = {
+      "ar": ctx.host_fragments.cpp.ar_executable,
+      "gcc": ctx.host_fragments.cpp.compiler_executable,
+      "ld": ctx.host_fragments.cpp.ld_executable,
+      "nm": ctx.host_fragments.cpp.nm_executable,
+      "cpp": ctx.host_fragments.cpp.preprocessor_executable,
+      "strip": ctx.host_fragments.cpp.strip_executable,
+  } + ghc_binaries
+
+  ar_runfiles = []
+
+  # "xcrunwrapper.sh" is a Bazel-generated dependency of the `ar` program on macOS.
+  xcrun_candidates = [f for f in ctx.files._crosstool if paths.basename(f.path) == "xcrunwrapper.sh"]
+  if xcrun_candidates:
+    xcrun = xcrun_candidates[0]
+    ar_runfiles += [xcrun]
+    targets_r["xcrunwrapper.sh"] = xcrun.path
 
   if ctx.attr.doctest != None:
-    targets_r.append(ctx.file.doctest.path)
+    targets_r["doctest"] = ctx.file.doctest.path
     inputs.append(ctx.file.doctest)
 
   for target in targets_r:
     symlink = ctx.actions.declare_file(
-      paths.join(visible_binaries, paths.basename(target))
+      paths.join(visible_binaries, target)
     )
+    symlink_target = targets_r[target]
+    if not paths.is_absolute(symlink_target):
+
+      symlink_target = paths.join("/".join([".."] * len(symlink.dirname.split("/"))), symlink_target)
     ctx.actions.run(
       inputs = inputs,
       outputs = [symlink],
-      executable = ctx.file._make_bin_symlink_realpath,
+      executable = "ln",
       # FIXME Currently this part of the process is not hermetic. This
       # should be adjusted when
       #
@@ -92,10 +105,14 @@ def _haskell_toolchain_impl(ctx):
       # is implemented.
       use_default_shell_env = True,
       arguments = [
-        target,
+        "-s",
+        symlink_target,
         symlink.path,
       ],
     )
+    if target == "xcrunwrapper.sh":
+      ar_runfiles += [symlink]
+
     set.mutable_insert(symlinks, symlink)
 
   targets_w = [
@@ -120,8 +137,10 @@ def _haskell_toolchain_impl(ctx):
     )
     set.mutable_insert(symlinks, symlink)
 
-  tools_struct_args = {tool.basename.replace("-", "_"): tool
+
+  tools_struct_args = ({tool.basename.replace("-", "_"): tool
                        for tool in set.to_list(symlinks)}
+                       + {"ar_runfiles": ar_runfiles})
 
   return [
     platform_common.ToolchainInfo(
@@ -132,6 +151,7 @@ def _haskell_toolchain_impl(ctx):
       # empty). The rest of the program may rely consider visible_bin_path
       # as the path to visible binaries, without recalculations.
       visible_bin_path = set.to_list(symlinks)[0].dirname,
+      is_darwin = ctx.attr.is_darwin,
       version = ctx.attr.version,
     ),
     # Make everyone implicitly depend on the version_file, to force
@@ -152,17 +172,17 @@ _haskell_toolchain = rule(
       allow_single_file = True,
     ),
     "version": attr.string(mandatory = True),
+    "is_darwin":  attr.bool(mandatory = True),
     "_ghc_version_check": attr.label(
       allow_single_file = True,
       default = Label("@io_tweag_rules_haskell//haskell:ghc-version-check.sh")
     ),
-    "_make_bin_symlink_realpath": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:make-bin-symlink-realpath.sh")
-    ),
     "_make_bin_symlink_which": attr.label(
       allow_single_file = True,
       default = Label("@io_tweag_rules_haskell//haskell:make-bin-symlink-which.sh")
+    ),
+    "_crosstool": attr.label(
+        default = Label("//tools/defaults:crosstool")
     ),
   }
 )
@@ -216,16 +236,20 @@ def haskell_toolchain(
     version = version,
     tools = tools,
     visibility = ["//visibility:public"],
+    is_darwin = select({
+        "@bazel_tools//src/conditions:darwin": True,
+        "//conditions:default": False,
+    }),
     **kwargs
   )
+
   native.toolchain(
     name = name,
     toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
     toolchain = ":" + impl_name,
     exec_compatible_with = [
-      '@bazel_tools//platforms:linux',
       '@bazel_tools//platforms:x86_64'],
     target_compatible_with = [
-      '@bazel_tools//platforms:linux',
       '@bazel_tools//platforms:x86_64'],
   )
+  # TODO: perhaps make a toolchain for darwin?

@@ -93,7 +93,7 @@ def _haskell_lint_aspect_impl(target, ctx):
       set.to_depset(build_info.package_caches),
       set.to_depset(build_info.interface_files),
       set.to_depset(build_info.dynamic_libraries),
-      set.to_depset(build_info.external_libraries),
+      depset(build_info.external_libraries.values()),
       depset([
         tools(ctx).ghc,
         tools(ctx).gcc,
@@ -198,7 +198,7 @@ def _haskell_doctest_aspect_impl(target, ctx):
       set.to_depset(build_info.package_caches),
       set.to_depset(build_info.interface_files),
       set.to_depset(build_info.dynamic_libraries),
-      set.to_depset(build_info.external_libraries),
+      depset(build_info.external_libraries.values()),
       depset([
         tools(ctx).doctest,
         tools(ctx).tee,

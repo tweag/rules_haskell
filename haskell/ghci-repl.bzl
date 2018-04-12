@@ -52,7 +52,7 @@ def _haskell_repl_impl(ctx):
 
   # External libraries.
   seen_libs = set.empty()
-  for lib in set.to_list(target.external_libraries):
+  for lib in target.external_libraries.values():
     lib_name = get_lib_name(lib)
     if not set.is_member(seen_libs, lib_name):
       set.mutable_insert(seen_libs, lib_name)
@@ -109,7 +109,7 @@ def _haskell_repl_impl(ctx):
       "{LDLIBPATH}": get_external_libs_path(
         set.union(
           target.dynamic_libraries,
-          target.external_libraries,
+          set.from_list(target.external_libraries.values()),
         )
       ),
       "{GHCi}": tools(ctx).ghci.path,

@@ -1,4 +1,6 @@
 module LibA (add_one) where
 
-add_one :: Int -> Int
+import Data.Int (Int32)
+
+add_one :: Int32 -> Int32
 add_one x = x + 1

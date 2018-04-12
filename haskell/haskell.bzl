@@ -87,7 +87,7 @@ def _haskell_binary_impl(ctx):
   dep_info = gather_dep_info(ctx)
 
   solibs = set.union(
-    dep_info.external_libraries,
+    set.from_list(dep_info.external_libraries.values()),
     dep_info.dynamic_libraries,
   )
 
