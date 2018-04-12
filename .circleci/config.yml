@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  build:
+  build-linux:
     docker:
       - image: nixos/nix
     working_directory: ~/rules_haskell
@@ -33,3 +33,33 @@ jobs:
             cd $(mktemp -d)
             $pwd/start
             bazel fetch //... --config=ci
+
+  build-darwin:
+    macos:
+      xcode: "9.0"
+    steps:
+      - checkout
+      - run:
+          name: Install Nix
+          command: |
+            curl https://nixos.org/nix/install | sh
+      - run:
+          name: System dependencies
+          command: |
+            brew update
+            brew install bazel
+      - run:
+          name: Build
+          shell: /bin/bash -eilo pipefail
+          command: bazel build --jobs=2 //...
+      - run:
+          name: Run tests
+          shell: /bin/bash -eilo pipefail
+          command: bazel test //... --config=ci
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build-linux
+      - build-darwin
