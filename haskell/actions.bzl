@@ -588,6 +588,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exp
     executable = tools(ctx).ghc_pkg,
     arguments = [
       "register", "--package-db={0}".format(pkg_db_dir.path),
+      "-v0",
       "--no-expand-pkgroot",
       registration_file.path
     ]
@@ -626,12 +627,14 @@ def _compilation_defaults(ctx):
 
   # Common flags
   args.add([
+    "-v0",
     "-c",
     "--make",
     "-fPIC",
     "-hide-all-packages",
   ])
   haddock_args.add(["-hide-all-packages"], before_each="--optghc")
+  haddock_args.add(["-v0"])
 
   args.add([
     "-odir", objects_dir,
