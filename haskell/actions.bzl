@@ -345,10 +345,10 @@ def link_haskell_bin(ctx, object_files):
 
   dep_info = gather_dep_info(ctx)
 
-  # On macOS, in order to simulate "relpath" behavior and make the binary load
-  # shared libaries from relative paths, we need to postprocess it with
-  # install_name_tool.  (This is what the Bazel-provided `cc_wrapper.sh` does
-  # for cc rules.)
+  # On macOS, in order to simulate the linker "rpath" behavior and make the
+  # binary load shared libaries from relative paths, we need to postprocess it
+  # with install_name_tool.  (This is what the Bazel-provided `cc_wrapper.sh`
+  # does for cc rules.)
   # For details: https://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
   if not is_darwin(ctx):
     compile_output = ctx.outputs.executable
@@ -827,7 +827,6 @@ def _get_library_name(ctx):
     string: Library name suitable for GHC package entry.
   """
   return "HS{0}".format(get_pkg_id(ctx))
-
 
 def gather_dep_info(ctx):
   """Collapse dependencies into a single `HaskellBuildInfo`.

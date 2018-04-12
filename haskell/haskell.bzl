@@ -136,7 +136,7 @@ def _mk_binary_rule(**kwargs):
       main_file = attr.label(
         allow_single_file = FileType([".hs", ".hsc", ".lhs"]),
         doc = "File containing `Main` module.",
-      ),
+      )
     ),
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
     **kwargs
@@ -222,7 +222,6 @@ haskell_library = rule(
   _haskell_library_impl,
   attrs = dict(
     _haskell_common_attrs,
-
     hidden_modules = attr.string_list(
       doc = "Modules that should be unavailable for import by dependencies."
     )),
