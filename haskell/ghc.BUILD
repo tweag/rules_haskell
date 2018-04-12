@@ -9,7 +9,7 @@ filegroup(
 
 cc_library(
   name = "threaded-rts",
-  srcs = glob(["lib/ghc-*/rts/libHSrts_thr-ghc*. + ext for ext in ["so", "dylib"]]),
+  srcs = glob(["lib/ghc-*/rts/libHSrts_thr-ghc*." + ext for ext in ["so", "dylib"]]),
   hdrs = glob(["lib/ghc-*/include/**/*.h"]),
   strip_include_prefix = glob(["lib/ghc-*/include"], exclude_directories=0)[0],
 )
