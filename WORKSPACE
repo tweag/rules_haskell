@@ -9,10 +9,19 @@ http_archive(
   urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.tar.gz"],
 )
 
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
+load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+  "nixpkgs_git_repository",
+  "nixpkgs_package",
+)
+
+nixpkgs_git_repository(
+  name = "nixpkgs",
+  revision = "18.03",
+)
 
 nixpkgs_package(
   name = "ghc",
+  repository = "@nixpkgs",
   attribute_path = "haskell.compiler.ghc822",
   build_file_content = """
 package(default_visibility = ["//visibility:public"])
@@ -44,6 +53,7 @@ cc_library(
 
 nixpkgs_package(
   name = "doctest",
+  repository = "@nixpkgs",
   attribute_path = "haskell.packages.ghc822.doctest",
   build_file_content = """
 package(default_visibility = ["//visibility:public"])
@@ -57,7 +67,10 @@ filegroup(
 
 register_toolchains("//tests:ghc")
 
-nixpkgs_package(name = "zlib", build_file_content = """
+nixpkgs_package(
+  name = "zlib",
+  repository = "@nixpkgs",
+  build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
 filegroup (
@@ -72,7 +85,10 @@ filegroup (
 """,
 )
 
-nixpkgs_package(name = "zlib.dev", build_file_content = """
+nixpkgs_package(
+  name = "zlib.dev",
+  repository = "@nixpkgs",
+  build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
 filegroup (

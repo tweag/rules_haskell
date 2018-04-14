@@ -133,7 +133,14 @@ def _rel_path_to_module(ctx, f):
   Returns:
     string: Relative path to module file.
   """
-  return paths.relativize(f.path, import_hierarchy_root(ctx))
+  # If it's a generated file, strip off the bin or genfiles prefix.
+  path = f.path
+  if path.startswith(ctx.bin_dir.path):
+    path = paths.relativize(path, ctx.bin_dir.path)
+  elif path.startswith(ctx.genfiles_dir.path):
+    path = paths.relativize(path, ctx.genfiles_dir.path)
+
+  return paths.relativize(path, import_hierarchy_root(ctx))
 
 def _drop_extension(f):
   """Drop extension for a given file name.
