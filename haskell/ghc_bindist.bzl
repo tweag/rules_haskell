@@ -22,7 +22,7 @@ _GHC_BINS = {
   },
 }
 
-_GHC_DEFAULT_VERSION = "8.2.2"
+_GHC_DEFAULT_VERSION = "8.4.1"
 
 def _execute_fail_loudly(ctx, args):
   """Execute a command and fail loudly if it fails.
