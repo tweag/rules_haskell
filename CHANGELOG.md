@@ -2,7 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/).
+
+## [0.5] - 2018-04-15
+
+### Added
+
+* Support for MacOS, courtesy of Judah Jacobson. See
+  [#165](https://github.com/tweag/rules_haskell/issues/165).
+
+* Support for `data` attributes in `haskell_binary` and `haskell_library`
+  rules. See [#167](https://github.com/tweag/rules_haskell/issues/167).
+
+* Output on building of GHC bindists so it's clearer what went wrong in case
+  of a failure.
+
+* `haskell_repl` rule allowing to interact with GHCi. See
+  [#82](https://github.com/tweag/rules_haskell/issues/82).
+
+* Support for GHC 8.4.1 bindist. See
+  [#175](https://github.com/tweag/rules_haskell/issues/175).
+
+* `haskell_lint` rule. See
+  [#181](https://github.com/tweag/rules_haskell/issues/181).
+
+* `haskell_doctest` rule. See
+  [#194](https://github.com/tweag/rules_haskell/issues/194).
+
+### Changed
+
+* Improved hermeticity of builds. See
+  [#180](https://github.com/tweag/rules_haskell/pull/180).
+
+* `cc_haskell_import` now works with `haskell_binary` targets as well. See
+  [#179](https://github.com/tweag/rules_haskell/issues/179).
 
 ## [0.4] - 2018-02-27
 
