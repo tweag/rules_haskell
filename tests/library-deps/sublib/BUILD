@@ -10,4 +10,10 @@ haskell_library(
   srcs = ["TestSubLib.hs"],
   prebuilt_dependencies = ["base"],
   visibility = ["//visibility:public"],
+  deps = [":sublib-c"],
+)
+
+cc_library(
+  name = "sublib-c",
+  srcs = ["sublib-c.c"],
 )
