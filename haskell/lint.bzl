@@ -56,6 +56,7 @@ def _haskell_lint_aspect_impl(target, ctx):
     "-Wincomplete-record-updates",
     "-Wincomplete-uni-patterns",
     "-Wredundant-constraints",
+    "-Wnoncanonical-monad-instances",
     "--make",
     "-hide-all-packages",
   ])
