@@ -406,7 +406,15 @@ def link_haskell_bin(ctx, object_files):
     dep_info.dynamic_libraries,
   )
 
-  if not is_darwin(ctx):
+  if is_darwin(ctx):
+    # Suppress a warning that Clang prints due to GHC automatically passing
+    # "-pie" or "-no-pie" to the C compiler.
+    # This particular invocation of GHC is a little unusual; e.g., we're
+    # passing an empty archive so that GHC has some input files to work on
+    # during linking.
+    args.add(["-optc-Wno-unused-command-line-argument",
+              "-optl-Wno-unused-command-line-argument"])
+  else:
     for rpath in set.to_list(_infer_rpaths(ctx.outputs.executable, solibs)):
       args.add(["-optl-Wl,-rpath," + rpath])
 
