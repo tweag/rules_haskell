@@ -231,6 +231,19 @@ def _process_hsc_file(ctx, ghc_defs_dump, hsc_file):
   )
   return hs_out
 
+def _backup_path(target):
+  """Return a path from the directory this is in to the Bazel root.
+
+  Args:
+    target: File
+
+  Returns:
+    A path of the form "../../.."
+  """
+  n = len(target.dirname.split("/"))
+
+  return "/".join([".."] * n)
+
 def _infer_rpaths(target, solibs):
   """Return set of RPATH values to be added to target so it can find all
   solibs.
@@ -245,10 +258,9 @@ def _infer_rpaths(target, solibs):
   r = set.empty()
 
   for solib in set.to_list(solibs):
-    n = len(target.dirname.split("/"))
     rpath = paths.normalize(
       paths.join(
-        "/".join([".."] * n),
+        _backup_path(target),
         solib.dirname,
       )
     )
@@ -523,7 +535,7 @@ def link_dynamic_lib(ctx, object_files):
 
   _add_mode_options(ctx, args)
 
-  args.add(["-shared", "-dynamic", "-o", dynamic_library.path])
+  args.add(["-shared", "-dynamic"])
 
   dep_info = gather_dep_info(ctx)
 
@@ -546,9 +558,28 @@ def link_dynamic_lib(ctx, object_files):
     dep_info.dynamic_libraries,
   )
 
-  if not is_darwin(ctx):
+  if is_darwin(ctx):
+    dynamic_library_tmp = ctx.actions.declare_file(dynamic_library.basename + ".temp")
+    ctx.actions.run_shell(
+        inputs=[dynamic_library_tmp],
+        outputs=[dynamic_library],
+        progress_message =
+            "Fixing install paths for {0}".format(dynamic_library.basename),
+        command = " &&\n    ".join(
+            ["cp {} {}".format(dynamic_library_tmp.path, dynamic_library.path),
+             "chmod +w {}".format(dynamic_library.path),
+            ] + ["/usr/bin/install_name_tool -change {} {} {}"
+                 .format(f.path,
+                         paths.join("@loader_path", _backup_path(dynamic_library),
+                                    f.path),
+                         dynamic_library.path)
+                 for f in dep_info.external_libraries]))
+  else:
+    dynamic_library_tmp = dynamic_library
     for rpath in set.to_list(_infer_rpaths(dynamic_library, solibs)):
       args.add(["-optl-Wl,-rpath," + rpath])
+
+  args.add(["-o", dynamic_library_tmp.path])
 
   ctx.actions.run(
     inputs = depset(transitive = [
@@ -557,7 +588,7 @@ def link_dynamic_lib(ctx, object_files):
       set.to_depset(dep_info.dynamic_libraries),
       depset(dep_info.external_libraries.values()),
     ]),
-    outputs = [dynamic_library],
+    outputs = [dynamic_library_tmp],
     progress_message = "Linking dynamic library {0}".format(dynamic_library.basename),
     executable = tools(ctx).ghc,
     arguments = [args]
