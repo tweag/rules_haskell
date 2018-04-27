@@ -53,3 +53,5 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, cabal_path, output):
   if res.return_code != 0:
     fail("Error running hazel on {}:\n{}\n{}".format(
         cabal_path, res.stdout, res.stderr))
+  if res.stderr:
+    print(res.stderr)

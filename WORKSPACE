@@ -14,9 +14,7 @@ nixpkgs_git_repository(
     revision = "c33c5239f62b4855b14dc5b01dfa3e2a885cf9ca",
 )
 
-# Custom branch that fixes a macOS issue with TemplateHaskell
-# TODO: merge that upstream.
-RULES_HASKELL_SHA = "3356930298b1f08a006f6c6c1cb5623002f3219f"
+RULES_HASKELL_SHA = "83f3f04bd9f5fba49636768001997a5550518dd4"
 http_archive(
     name = "io_tweag_rules_haskell",
     urls = ["https://github.com/tweag/rules_haskell/archive/"
