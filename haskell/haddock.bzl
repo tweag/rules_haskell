@@ -3,6 +3,10 @@
 load (":path_utils.bzl", "module_name")
 load (":set.bzl", "set")
 
+load(":actions.bzl",
+  "get_pkg_name",
+)
+
 load(":tools.bzl",
   "get_build_tools_path",
   "tools",
@@ -20,7 +24,7 @@ def _haskell_doc_aspect_impl(target, ctx):
   if HaskellBuildInfo not in target or HaskellLibraryInfo not in target:
     return []
 
-  pkg_id = "{0}-{1}".format(ctx.rule.attr.name, ctx.rule.attr.version)
+  pkg_id = target[HaskellLibraryInfo].package_name
 
   doc_dir = ctx.actions.declare_directory("doc-{0}".format(pkg_id))
   haddock_interface = ctx.actions.declare_file(
@@ -28,14 +32,14 @@ def _haskell_doc_aspect_impl(target, ctx):
 
   )
   hoogle_file = ctx.actions.declare_file(
-    paths.replace_extension(ctx.rule.attr.name, ".txt"),
+    pkg_id + ".txt",
     sibling = haddock_interface
   )
 
   args = ctx.actions.args()
   args.add([
     "-D", haddock_interface,
-    "--package-name={0}".format(ctx.rule.attr.name),
+    "--package-name={0}".format(pkg_id),
     "--package-version={0}".format(ctx.rule.attr.version),
     "-o", doc_dir,
     "--html", "--hoogle",
@@ -87,7 +91,10 @@ def _haskell_doc_aspect_impl(target, ctx):
     for f in input_sources
   ]
 
-  self_outputs = [doc_dir, haddock_interface, hoogle_file] + static_haddock_outputs + module_htmls
+  self_outputs = [
+    doc_dir,
+    haddock_interface,
+    hoogle_file] + static_haddock_outputs + module_htmls
 
   ctx.actions.run(
     inputs = depset(transitive = [

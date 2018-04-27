@@ -73,8 +73,8 @@ sh_test(
 rule_test(
   name = "test-library-deps",
   generates =
-    ["library-deps-1.0.0/library-deps-1.0.0.conf",
-     "library-deps-1.0.0/package.cache",
+    ["0Rtests0Slibrary-deps0Dlibrary-deps-1.0.0/0Rtests0Slibrary-deps0Dlibrary-deps-1.0.0.conf",
+     "0Rtests0Slibrary-deps0Dlibrary-deps-1.0.0/package.cache",
     ],
   rule = "//tests/library-deps",
   size = "small",
@@ -83,8 +83,8 @@ rule_test(
 rule_test(
   name = "test-library-with-sysdeps",
   generates =
-    ["library-with-sysdeps-1.0.0/library-with-sysdeps-1.0.0.conf",
-     "library-with-sysdeps-1.0.0/package.cache",
+    ["0Rtests0Slibrary-with-sysdeps0Dlibrary-with-sysdeps-1.0.0/0Rtests0Slibrary-with-sysdeps0Dlibrary-with-sysdeps-1.0.0.conf",
+     "0Rtests0Slibrary-with-sysdeps0Dlibrary-with-sysdeps-1.0.0/package.cache",
     ],
   rule = "//tests/library-with-sysdeps",
   size = "small",
@@ -100,18 +100,18 @@ rule_test(
 rule_test(
   name = "test-haddock",
   generates = [
-    "doc-haddock-lib-b-1.0.0",
-    "doc-haddock-lib-b-1.0.0/LibB.html",
-    "doc-haddock-lib-b-1.0.0/doc-index.html",
-    "doc-haddock-lib-b-1.0.0/haddock-lib-b-1.0.0.haddock",
-    "doc-haddock-lib-b-1.0.0/haddock-lib-b.txt",
-    "doc-haddock-lib-b-1.0.0/haddock-util.js",
-    "doc-haddock-lib-b-1.0.0/hslogo-16.png",
-    "doc-haddock-lib-b-1.0.0/index.html",
-    "doc-haddock-lib-b-1.0.0/minus.gif",
-    "doc-haddock-lib-b-1.0.0/ocean.css",
-    "doc-haddock-lib-b-1.0.0/plus.gif",
-    "doc-haddock-lib-b-1.0.0/synopsis.png",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/LibB.html",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/doc-index.html",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/0Rtests0Shaddock0Dhaddock-lib-b-1.0.0.haddock",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/0Rtests0Shaddock0Dhaddock-lib-b-1.0.0.txt",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/haddock-util.js",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/hslogo-16.png",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/index.html",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/minus.gif",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/ocean.css",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/plus.gif",
+    "doc-0Rtests0Shaddock0Dhaddock-lib-b-1.0.0/synopsis.png",
     ],
   rule = "//tests/haddock",
   size = "small",
@@ -177,8 +177,8 @@ rule_test(
 rule_test(
   name = "test-hidden-modules",
   generates = [
-    "lib-c-1.0.0/lib-c-1.0.0.conf",
-    "lib-c-1.0.0/package.cache"
+    "0Rtests0Shidden-modules0Dlib-c-1.0.0/0Rtests0Shidden-modules0Dlib-c-1.0.0.conf",
+    "0Rtests0Shidden-modules0Dlib-c-1.0.0/package.cache"
   ],
   rule = "//tests/hidden-modules:lib-c",
   size = "small",
@@ -187,10 +187,20 @@ rule_test(
 rule_test(
   name = "test-library-with-sysincludes",
   generates =
-    ["library-with-sysincludes-1.0.0/library-with-sysincludes-1.0.0.conf",
-     "library-with-sysincludes-1.0.0/package.cache",
+    ["0Rtests0Slibrary-with-sysincludes0Dlibrary-with-sysincludes-1.0.0/0Rtests0Slibrary-with-sysincludes0Dlibrary-with-sysincludes-1.0.0.conf",
+     "0Rtests0Slibrary-with-sysincludes0Dlibrary-with-sysincludes-1.0.0/package.cache",
     ],
   rule = "//tests/library-with-sysincludes",
+  size = "small",
+)
+
+rule_test(
+  name = "test-package-id-clash",
+  generates =
+    ["0Rtests0Spackage-id-clash0Dlib-1.0.0/0Rtests0Spackage-id-clash0Dlib-1.0.0.conf",
+     "0Rtests0Spackage-id-clash0Dlib-1.0.0/package.cache",
+    ],
+  rule = "//tests/package-id-clash:lib",
   size = "small",
 )
 
@@ -205,13 +215,13 @@ rule_test(
   name = "test-cc_haskell_import-output",
   generates = select({
       "@bazel_tools//src/conditions:darwin":
-          [ "libHShs-lib-a-1.0.0-ghc8.2.2.dylib",
-          "libHShs-lib-b-1.0.0-ghc8.2.2.dylib",
-        ],
+          ["libHS0Rtests0Scc0Uhaskell0Uimport0Dhs-lib-a-1.0.0-ghc8.2.2.dylib",
+           "libHS0Rtests0Scc0Uhaskell0Uimport0Dhs-lib-b-1.0.0-ghc8.2.2.dylib",
+          ],
       "//conditions:default":
-          [ "libHShs-lib-a-1.0.0-ghc8.2.2.so",
-          "libHShs-lib-b-1.0.0-ghc8.2.2.so",
-        ]}),
+          ["libHS0Rtests0Scc0Uhaskell0Uimport0Dhs-lib-a-1.0.0-ghc8.2.2.so",
+           "libHS0Rtests0Scc0Uhaskell0Uimport0Dhs-lib-b-1.0.0-ghc8.2.2.so",
+          ]}),
   rule = "//tests/cc_haskell_import:hs-lib-b-so",
   size = "small",
 )

@@ -45,5 +45,5 @@ haskell_test(
     src_strip_prefix = "src",
     prebuilt_dependencies = ["base"],
     deps = [":GenModule", ":BinModule"],
+    size = "small",
 )
-
