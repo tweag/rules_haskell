@@ -342,6 +342,35 @@ module BazelDummy () where
 
   return dummy_static_lib
 
+def _fix_linker_paths(ctx, inp, out, external_libraries):
+  """Postprocess a macOS binary to make shared library references relative.
+
+  On macOS, in order to simulate the linker "rpath" behavior and make the
+  binary load shared libraries from relative paths, (or dynamic libraries
+  load other libraries) we need to postprocess it with install_name_tool.
+  (This is what the Bazel-provided `cc_wrapper.sh` does for cc rules.)
+  For details: https://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
+
+  Args:
+    ctx: Rule context.
+    inp: An input file.
+    out: An output file.
+    external_libraries: A list of C library dependencies to make relative.
+  """
+  ctx.actions.run_shell(
+      inputs=[inp],
+      outputs=[out],
+      progress_message =
+          "Fixing install paths for {0}".format(out.basename),
+      command = " &&\n    ".join(
+          ["cp {} {}".format(inp.path, out.path),
+           "chmod +w {}".format(out.path)]
+          + ["/usr/bin/install_name_tool -change {} {} {}"
+             .format(f.path,
+                     paths.join("@loader_path", _backup_path(out), f.path),
+                     out.path)
+                     for f in external_libraries]))
+
 def link_haskell_bin(ctx, object_files):
   """Link Haskell binary from static object files.
 
@@ -357,29 +386,12 @@ def link_haskell_bin(ctx, object_files):
 
   dep_info = gather_dep_info(ctx)
 
-  # On macOS, in order to simulate the linker "rpath" behavior and make the
-  # binary load shared libaries from relative paths, we need to postprocess it
-  # with install_name_tool.  (This is what the Bazel-provided `cc_wrapper.sh`
-  # does for cc rules.)
-  # For details: https://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
   if not is_darwin(ctx):
     compile_output = ctx.outputs.executable
   else:
     compile_output = ctx.actions.declare_file(ctx.outputs.executable.basename + ".temp")
-    ctx.actions.run_shell(
-        inputs=[compile_output],
-        outputs=[ctx.outputs.executable],
-        progress_message =
-            "Fixing install paths for {0}".format(ctx.outputs.executable.basename),
-        command = " &&\n    ".join(
-            ["cp {} {}".format(compile_output.path, ctx.outputs.executable.path),
-             "chmod +w {}".format(ctx.outputs.executable.path)]
-            + ["/usr/bin/install_name_tool -change {} {} {}"
-               .format(f.path,
-                       "@executable_path/" + dep_info.external_libraries[f].basename,
-                       ctx.outputs.executable.path)
-                       for f in dep_info.external_libraries]),
-    )
+    _fix_linker_paths(ctx, compile_output, ctx.outputs.executable,
+                      dep_info.external_libraries)
 
   args = ctx.actions.args()
   _add_mode_options(ctx, args)
@@ -568,20 +580,8 @@ def link_dynamic_lib(ctx, object_files):
 
   if is_darwin(ctx):
     dynamic_library_tmp = ctx.actions.declare_file(dynamic_library.basename + ".temp")
-    ctx.actions.run_shell(
-        inputs=[dynamic_library_tmp],
-        outputs=[dynamic_library],
-        progress_message =
-            "Fixing install paths for {0}".format(dynamic_library.basename),
-        command = " &&\n    ".join(
-            ["cp {} {}".format(dynamic_library_tmp.path, dynamic_library.path),
-             "chmod +w {}".format(dynamic_library.path),
-            ] + ["/usr/bin/install_name_tool -change {} {} {}"
-                 .format(f.path,
-                         paths.join("@loader_path", _backup_path(dynamic_library),
-                                    f.path),
-                         dynamic_library.path)
-                 for f in dep_info.external_libraries]))
+    _fix_linker_paths(ctx, dynamic_library_tmp, dynamic_library,
+                      dep_info.external_libraries)
   else:
     dynamic_library_tmp = dynamic_library
     for rpath in set.to_list(_infer_rpaths(dynamic_library, solibs)):
