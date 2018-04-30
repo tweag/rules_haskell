@@ -22,10 +22,14 @@ jobs:
           command: bazel test //... --config=ci
       - run:
           name: Test REPL for libraries
-          command: bazel-bin/tests/haskell_repl/haskell_lib_repl -e ":quit"
+          command: |
+            bazel build //tests/repl-targets:hs-lib-repl
+            bazel-bin/tests/repl-targets/hs-lib-repl -e ":quit"
       - run:
           name: Test REPL for binaries
-          command: bazel-bin/tests/haskell_repl/haskell_bin_repl -e ":quit"
+          command: |
+            bazel build //tests/repl-targets:hs-bin-repl
+            bazel-bin/tests/repl-targets/hs-bin-repl -e ":quit"
       - run:
           name: Test start script
           command: |

@@ -24,6 +24,9 @@ load("@bazel_skylib//:lib.bzl", "paths")
 load(":path_utils.bzl",
      "import_hierarchy_root",
 )
+load(":ghci-repl.bzl",
+  _build_haskell_repl = "build_haskell_repl",
+)
 
 # For re-exports:
 load(":haddock.bzl",
@@ -38,9 +41,6 @@ load(":toolchain.bzl",
 )
 load (":ghc_bindist.bzl",
   _ghc_bindist = "ghc_bindist",
-)
-load(":ghci-repl.bzl",
-  _haskell_repl = "haskell_repl",
 )
 load(":cc.bzl",
   _haskell_cc_import = "haskell_cc_import",
@@ -68,6 +68,19 @@ _haskell_common_attrs = {
   "prebuilt_dependencies": attr.string_list(
     doc = "Non-Bazel supplied Cabal dependencies.",
   ),
+  "repl_interpreted": attr.bool(
+    default=True,
+    doc = """
+Whether source files should be interpreted rather than compiled. This allows
+for e.g. reloading of sources on editing, but in this case we don't handle
+boot files and hsc processing.
+
+For `haskell_binary` targets, `repl_interpreted` must be set to `True` for
+REPL to work.
+"""),
+  "repl_ghci_args": attr.string_list(
+    doc = "Arbitrary extra arguments to pass to GHCi.",
+  ),
   # XXX Consider making this private. Blocked on
   # https://github.com/bazelbuild/bazel/issues/4366.
   "version": attr.string(
@@ -77,7 +90,15 @@ _haskell_common_attrs = {
   "_ghc_defs_cleanup": attr.label(
     allow_single_file = True,
     default = Label("@io_tweag_rules_haskell//haskell:ghc-defs-cleanup.sh"),
-  )
+  ),
+  "_ghci_script": attr.label(
+    allow_single_file = True,
+    default = Label("@io_tweag_rules_haskell//haskell:ghci-script"),
+  ),
+  "_ghci_repl_wrapper": attr.label(
+    allow_single_file = True,
+    default = Label("@io_tweag_rules_haskell//haskell:ghci-repl-wrapper.sh"),
+  ),
 }
 
 def _haskell_binary_impl(ctx):
@@ -91,13 +112,22 @@ def _haskell_binary_impl(ctx):
     dep_info.dynamic_libraries,
   )
 
+  build_info = dep_info # HaskellBuildInfo
+  bin_info = HaskellBinaryInfo(
+    source_files = c.source_files,
+    modules = c.modules,
+    binary = binary,
+  )
+
+  _build_haskell_repl(
+    ctx,
+    build_info=build_info,
+    bin_info=bin_info,
+  )
+
   return [
-    dep_info, # HaskellBuildInfo
-    HaskellBinaryInfo(
-      source_files = c.source_files,
-      modules = c.modules,
-      binary = binary,
-    ),
+    build_info,
+    bin_info,
     DefaultInfo(
       executable = binary,
       files = depset([binary]),
@@ -138,6 +168,9 @@ def _mk_binary_rule(**kwargs):
         doc = "File containing `Main` module.",
       )
     ),
+    outputs = {
+      "repl": "%{name}-repl",
+    },
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
     **kwargs
   )
@@ -163,6 +196,11 @@ Example:
       deps = ["//lib:some_lib"]
   )
   ```
+
+Every `haskell_binary` target also defines an optional REPL target that is
+not built by default, but can be built on request. The name of the REPL
+target is the same as the name of binary with `"-repl"` added at the end.
+For example, the target above also defines `main-repl`.
 """
 
 def _haskell_library_impl(ctx):
@@ -189,29 +227,38 @@ def _haskell_library_impl(ctx):
     other_modules,
   )
 
+  build_info = HaskellBuildInfo(
+    package_names = set.insert(dep_info.package_names, get_pkg_id(ctx)),
+    package_confs = set.insert(dep_info.package_confs, conf_file),
+    package_caches = set.insert(dep_info.package_caches, cache_file),
+    # NOTE We have to use lists for static libraries because the order is
+    # important for linker. Linker searches for unresolved symbols to the
+    # left, i.e. you first feed a library which has unresolved symbols and
+    # then you feed the library which resolves the symbols.
+    static_libraries = [static_library] + dep_info.static_libraries,
+    dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
+    interface_files = set.union(dep_info.interface_files, set.from_list(c.interface_files)),
+    prebuilt_dependencies = dep_info.prebuilt_dependencies,
+    external_libraries = dep_info.external_libraries,
+  )
+  lib_info = HaskellLibraryInfo(
+    package_name = get_pkg_id(ctx),
+    import_dirs = c.import_dirs,
+    exposed_modules = exposed_modules,
+    other_modules = other_modules,
+    haddock_args = c.haddock_args,
+    source_files = c.source_files,
+  )
+
+  _build_haskell_repl(
+    ctx,
+    build_info=build_info,
+    lib_info=lib_info,
+  )
+
   return [
-    HaskellBuildInfo(
-      package_names = set.insert(dep_info.package_names, get_pkg_id(ctx)),
-      package_confs = set.insert(dep_info.package_confs, conf_file),
-      package_caches = set.insert(dep_info.package_caches, cache_file),
-      # NOTE We have to use lists for static libraries because the order is
-      # important for linker. Linker searches for unresolved symbols to the
-      # left, i.e. you first feed a library which has unresolved symbols and
-      # then you feed the library which resolves the symbols.
-      static_libraries = [static_library] + dep_info.static_libraries,
-      dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
-      interface_files = set.union(dep_info.interface_files, set.from_list(c.interface_files)),
-      prebuilt_dependencies = dep_info.prebuilt_dependencies,
-      external_libraries = dep_info.external_libraries,
-    ),
-    HaskellLibraryInfo(
-      package_name = get_pkg_id(ctx),
-      import_dirs = c.import_dirs,
-      exposed_modules = exposed_modules,
-      other_modules = other_modules,
-      haddock_args = c.haddock_args,
-      source_files = c.source_files,
-    ),
+    build_info,
+    lib_info,
     DefaultInfo(
       files = depset([conf_file, cache_file]),
       runfiles = ctx.runfiles(collect_data = True),
@@ -225,6 +272,9 @@ haskell_library = rule(
     hidden_modules = attr.string_list(
       doc = "Modules that should be unavailable for import by dependencies."
     )),
+  outputs = {
+    "repl": "%{name}-repl",
+  },
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
 """Build a library from Haskell source.
@@ -232,12 +282,17 @@ haskell_library = rule(
 Example:
   ```bzl
   haskell_library(
-      name = 'hello_lib',
+      name = 'hello-lib',
       srcs = glob(['hello_lib/**/*.hs']),
-      deps = ["//hello_sublib:lib"],
+      deps = ["//hello-sublib:lib"],
       prebuilt_dependencies = ["base", "bytestring"],
   )
   ```
+
+Every `haskell_library` target also defines an optional REPL target that is
+not built by default, but can be built on request. The name of the REPL
+target is the same as the name of library with `"-repl"` added at the end.
+For example, the target above also defines `hello-lib-repl`.
 """
 
 haskell_doc = _haskell_doc
@@ -249,8 +304,6 @@ haskell_doctest  = _haskell_doctest
 haskell_toolchain = _haskell_toolchain
 
 ghc_bindist = _ghc_bindist
-
-haskell_repl = _haskell_repl
 
 haskell_cc_import = _haskell_cc_import
 
