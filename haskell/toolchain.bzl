@@ -76,7 +76,7 @@ def _haskell_toolchain_impl(ctx):
   # Line Tools are available), then Bazel will make ar_executable point to
   # "/usr/bin/libtool".  Since we call ar directly, override it.
   # TODO: remove this if Bazel fixes its behavior.
-  if targets_r["ar"].find("libtool"):
+  if targets_r["ar"].find("libtool") >= 0:
     targets_r["ar"] = "/usr/bin/ar"
 
   ar_runfiles = []
