@@ -72,6 +72,13 @@ def _haskell_toolchain_impl(ctx):
       "strip": ctx.host_fragments.cpp.strip_executable,
   } + ghc_binaries
 
+  # If running on darwin but XCode is not installed (i.e., only the Command
+  # Line Tools are available), then Bazel will make ar_executable point to
+  # "/usr/bin/libtool".  Since we call ar directly, override it.
+  # TODO: remove this if Bazel fixes its behavior.
+  if targets_r["ar"].find("libtool"):
+    targets_r["ar"] = "/usr/bin/ar"
+
   ar_runfiles = []
 
   # "xcrunwrapper.sh" is a Bazel-generated dependency of the `ar` program on macOS.
