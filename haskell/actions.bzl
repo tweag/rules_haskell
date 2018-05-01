@@ -868,12 +868,11 @@ def get_pkg_name(ctx):
   Returns:
     string: GHC package name to use.
   """
-  return _zencode("%s/%s/%s" %
-                  [ctx.label.workspace_root,
-                   ctx.label.package,
-                   ctx.attr.name,
-                  ]
-  )
+  return _zencode("/".join([i for i in [
+    ctx.label.workspace_root,
+    ctx.label.package,
+    ctx.attr.name,
+  ] if i != ""]))
 
 def get_pkg_id(ctx):
   """Get package identifier of the form `name-version`.
