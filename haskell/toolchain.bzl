@@ -74,8 +74,9 @@ def _haskell_toolchain_impl(ctx):
 
   # If running on darwin but XCode is not installed (i.e., only the Command
   # Line Tools are available), then Bazel will make ar_executable point to
-  # "/usr/bin/libtool".  Since we call ar directly, override it.
+  # "/usr/bin/libtool". Since we call ar directly, override it.
   # TODO: remove this if Bazel fixes its behavior.
+  # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
   if targets_r["ar"].find("libtool") >= 0:
     targets_r["ar"] = "/usr/bin/ar"
 
