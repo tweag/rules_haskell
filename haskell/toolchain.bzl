@@ -1,7 +1,5 @@
 """Rules for defining toolchains"""
 
-_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
-
 load("@bazel_skylib//:lib.bzl",
      "paths",
 )
@@ -9,6 +7,8 @@ load("@bazel_skylib//:lib.bzl",
 load(":set.bzl",
      "set",
 )
+
+_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 
 def _haskell_toolchain_impl(ctx):
   # Check that we have all that we want.
@@ -63,14 +63,16 @@ def _haskell_toolchain_impl(ctx):
   inputs.extend(ctx.files._crosstool)
 
 
-  targets_r = {
+  targets_r = {}
+  targets_r.update({
       "ar": ctx.host_fragments.cpp.ar_executable,
       "gcc": ctx.host_fragments.cpp.compiler_executable,
       "ld": ctx.host_fragments.cpp.ld_executable,
       "nm": ctx.host_fragments.cpp.nm_executable,
       "cpp": ctx.host_fragments.cpp.preprocessor_executable,
       "strip": ctx.host_fragments.cpp.strip_executable,
-  } + ghc_binaries
+  })
+  targets_r.update(ghc_binaries)
 
   ar_runfiles = []
 
@@ -137,10 +139,11 @@ def _haskell_toolchain_impl(ctx):
     )
     set.mutable_insert(symlinks, symlink)
 
-
-  tools_struct_args = ({tool.basename.replace("-", "_"): tool
-                       for tool in set.to_list(symlinks)}
-                       + {"ar_runfiles": ar_runfiles})
+  tools_struct_args = {
+    tool.basename.replace("-", "_"): tool
+    for tool in set.to_list(symlinks)
+  }
+  tools_struct_args.update({"ar_runfiles": ar_runfiles})
 
   return [
     platform_common.ToolchainInfo(
