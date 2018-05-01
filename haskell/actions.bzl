@@ -624,7 +624,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exp
   # Create a file from which ghc-pkg will create the actual package from.
   registration_file = ctx.actions.declare_file(target_unique_name(ctx, "registration-file"))
   registration_file_entries = {
-    "name": ctx.attr.name,
+    "name": get_pkg_name(ctx),
     "version": ctx.attr.version,
     "id": get_pkg_id(ctx),
     "key": get_pkg_id(ctx),
@@ -846,8 +846,36 @@ def _compilation_defaults(ctx):
     ),
   )
 
+def _zencode(s):
+  """Zero-escape a given string.
+
+  Args:
+    s: inputs string.
+
+  Returns:
+    string: zero-escaped string.
+  """
+  return s.replace("Z", "ZZ").replace("_", "ZU").replace("/", "ZS")
+
+def get_pkg_name(ctx):
+  """Get package name. Package name includes Bazel package and name of the
+  component. We can't use just the latter because then two components with
+  the same names in different packages would clash.
+
+  Args:
+    ctx: Rule context
+
+  Returns:
+    string: GHC package name to use.
+  """
+  return _zencode("/".join([i for i in [
+    ctx.label.workspace_root,
+    ctx.label.package,
+    ctx.attr.name,
+  ] if i != ""]))
+
 def get_pkg_id(ctx):
-  """Get package identifier. This is name-version.
+  """Get package identifier of the form `name-version`.
 
   Args:
     ctx: Rule context
@@ -855,7 +883,10 @@ def get_pkg_id(ctx):
   Returns:
     string: GHC package ID to use.
   """
-  return "{0}-{1}".format(ctx.attr.name, ctx.attr.version)
+  return "{0}-{1}".format(
+    get_pkg_name(ctx),
+    ctx.attr.version,
+  )
 
 def _get_library_name(ctx):
   """Get core library name for this package. This is "HS" followed by package ID.
