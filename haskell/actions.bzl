@@ -846,7 +846,7 @@ def _compilation_defaults(ctx):
     ),
   )
 
-def _zero_escape(s):
+def _zencode(s):
   """Zero-escape a given string.
 
   Args:
@@ -855,7 +855,7 @@ def _zero_escape(s):
   Returns:
     string: zero-escaped string.
   """
-  return s.replace("0", "00").replace("_", "0U").replace("/", "0S")
+  return s.replace("Z", "ZZ").replace("_", "ZU").replace("/", "ZS")
 
 def get_pkg_name(ctx):
   """Get package name. Package name includes Bazel package and name of the
@@ -868,10 +868,11 @@ def get_pkg_name(ctx):
   Returns:
     string: GHC package name to use.
   """
-  return "{0}0R{1}0D{2}".format(
-    _zero_escape(ctx.label.workspace_root),
-    _zero_escape(ctx.label.package),
-    ctx.attr.name,
+  return _zencode("%s/%s/%s" %
+                  [ctx.label.workspace_root,
+                   ctx.label.package,
+                   ctx.attr.name,
+                  ]
   )
 
 def get_pkg_id(ctx):
