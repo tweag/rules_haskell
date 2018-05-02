@@ -118,10 +118,12 @@ def _haskell_binary_impl(ctx):
     modules = c.modules,
     binary = binary,
   )
+  target_files = depset([binary])
 
   _build_haskell_repl(
     ctx,
     build_info=build_info,
+    target_files=target_files,
     bin_info=bin_info,
   )
 
@@ -130,7 +132,7 @@ def _haskell_binary_impl(ctx):
     bin_info,
     DefaultInfo(
       executable = binary,
-      files = depset([binary]),
+      files = target_files,
       runfiles = ctx.runfiles(
         files = set.to_list(solibs),
         collect_data = True,
@@ -262,10 +264,12 @@ def _haskell_library_impl(ctx):
     haddock_args = c.haddock_args,
     source_files = c.source_files,
   )
+  target_files = depset([conf_file, cache_file])
 
   _build_haskell_repl(
     ctx,
     build_info=build_info,
+    target_files=target_files,
     lib_info=lib_info,
   )
 
@@ -273,7 +277,7 @@ def _haskell_library_impl(ctx):
     build_info,
     lib_info,
     DefaultInfo(
-      files = depset([conf_file, cache_file]),
+      files = target_files,
       runfiles = ctx.runfiles(collect_data = True),
     ),
   ]

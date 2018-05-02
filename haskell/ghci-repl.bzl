@@ -29,7 +29,12 @@ load(":utils.bzl",
      "get_lib_name",
 )
 
-def build_haskell_repl(ctx, build_info, lib_info=None, bin_info=None):
+def build_haskell_repl(
+    ctx,
+    build_info,
+    target_files,
+    lib_info=None,
+    bin_info=None):
   """Build REPL script.
 
   Args:
@@ -40,6 +45,10 @@ def build_haskell_repl(ctx, build_info, lib_info=None, bin_info=None):
               HaskellLibraryInfo here, otherwise it should be None.
     bin_info: If we're building REPL for a binary target, pass
               HaskellBinaryInfo here, otherwise it should be None.
+
+    target_files: Output files of the target we're generating REPL for.
+                  These are passed so we can force their building on REPL
+                  building.
 
   Returns:
     None.
@@ -135,15 +144,14 @@ def build_haskell_repl(ctx, build_info, lib_info=None, bin_info=None):
   relative_target = paths.relativize(repl_file.path, ctx.outputs.repl.dirname)
 
   ctx.actions.run(
-    inputs = [
+    inputs = depset(transitive = [
       # XXX We create a symlink here because we need to force
       # tools(ctx).ghci and ghci_script and the best way to do that is to
       # use ctx.actions.run. That action, it turn must produce a result, so
       # using ln seems to be the only sane choice.
-      tools(ctx).ghci,
-      ghci_script,
-      repl_file,
-    ],
+      depset([tools(ctx).ghci, ghci_script, repl_file]),
+      target_files,
+    ]),
     outputs = [ctx.outputs.repl],
     executable = tools(ctx).ln,
     arguments = ["-s", relative_target, ctx.outputs.repl.path],
