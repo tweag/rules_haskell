@@ -201,6 +201,13 @@ Every `haskell_binary` target also defines an optional REPL target that is
 not built by default, but can be built on request. The name of the REPL
 target is the same as the name of binary with `"-repl"` added at the end.
 For example, the target above also defines `main-repl`.
+
+You can call the REPL like this:
+
+```
+$ bazel build //:hello-bin-repl # build the script
+$ bazel-bin/.../hello-bin-repl  # run the script
+```
 """
 
 def _haskell_library_impl(ctx):
@@ -293,6 +300,13 @@ Every `haskell_library` target also defines an optional REPL target that is
 not built by default, but can be built on request. The name of the REPL
 target is the same as the name of library with `"-repl"` added at the end.
 For example, the target above also defines `hello-lib-repl`.
+
+You can call the REPL like this:
+
+```
+$ bazel build //:hello-lib-repl # build the script
+$ bazel-bin/.../hello-lib-repl  # run the script
+```
 """
 
 haskell_doc = _haskell_doc
