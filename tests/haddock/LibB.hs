@@ -5,5 +5,5 @@ import LibA.A (a)
 import LibA (f)
 
 -- | Doc for 'x' using 'f' and 'a' and 'Int'.
-x :: ()
+x :: Int
 x = const f a

@@ -1,4 +1,6 @@
 -- | "Lib" header
+{-# LANGUAGE TemplateHaskell #-}
+
 module LibA where
 
 import LibA.A (a)
@@ -10,5 +12,5 @@ data A =
   A
 
 -- | Doc for 'f' using 'a' and 'deep_lib'.
-f :: ()
-f = const a deep_lib
+f :: Int
+f = const $a deep_lib
