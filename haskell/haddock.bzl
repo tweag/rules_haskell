@@ -100,6 +100,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     inputs = depset(transitive = [
       set.to_depset(target[HaskellBuildInfo].package_caches),
       set.to_depset(target[HaskellBuildInfo].interface_files),
+      set.to_depset(target[HaskellBuildInfo].dynamic_libraries),
       set.to_depset(dep_interfaces),
       depset(input_sources),
     ]),
