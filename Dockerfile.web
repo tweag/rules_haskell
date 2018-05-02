@@ -18,7 +18,6 @@ COPY start /bazel/
 COPY haskell /bazel/haskell/
 COPY docs /bazel/docs/
 COPY tests /bazel/tests/
-COPY third_party /bazel/third_party/
 
 RUN cd /bazel; bazel build //docs:docs
 RUN unzip -d /site /bazel/bazel-bin/docs/docs-skydoc.zip \
