@@ -29,30 +29,51 @@ load(":utils.bzl",
      "get_lib_name",
 )
 
-def _haskell_repl_impl(ctx):
+def build_haskell_repl(
+    ctx,
+    build_info,
+    target_files,
+    lib_info=None,
+    bin_info=None):
+  """Build REPL script.
 
-  target = ctx.attr.target[HaskellBuildInfo]
-  lib_target = ctx.attr.target[HaskellLibraryInfo] if HaskellLibraryInfo in ctx.attr.target else None
-  bin_target = ctx.attr.target[HaskellBinaryInfo] if HaskellBinaryInfo in ctx.attr.target else None
+  Args:
+    ctx: Rule context.
+    build_info: HaskellBuildInfo.
+
+    lib_info: If we're building REPL for a library target, pass
+              HaskellLibraryInfo here, otherwise it should be None.
+    bin_info: If we're building REPL for a binary target, pass
+              HaskellBinaryInfo here, otherwise it should be None.
+
+    target_files: Output files of the target we're generating REPL for.
+                  These are passed so we can force their building on REPL
+                  building.
+
+  Returns:
+    None.
+  """
+
+  interpreted = ctx.attr.repl_interpreted
 
   # Bring packages in scope.
   args = ["-hide-all-packages"]
-  for dep in set.to_list(target.prebuilt_dependencies):
+  for dep in set.to_list(build_info.prebuilt_dependencies):
     args += ["-package ", dep]
-  for package in set.to_list(target.package_names):
-    if not (ctx.attr.interpreted and lib_target != None and package == lib_target.package_name):
+  for package in set.to_list(build_info.package_names):
+    if not (interpreted and lib_info != None and package == lib_info.package_name):
       args += ["-package", package]
-  for cache in set.to_list(target.package_caches):
+  for cache in set.to_list(build_info.package_caches):
     args += ["-package-db", cache.dirname]
 
   # Specify import directory for library in interpreted mode.
-  if ctx.attr.interpreted and lib_target != None:
-    for idir in set.to_list(lib_target.import_dirs):
+  if interpreted and lib_info != None:
+    for idir in set.to_list(lib_info.import_dirs):
       args += ["-i{0}".format(idir)]
 
   # External libraries.
   seen_libs = set.empty()
-  for lib in target.external_libraries.values():
+  for lib in build_info.external_libraries.values():
     lib_name = get_lib_name(lib)
     if not set.is_member(seen_libs, lib_name):
       set.mutable_insert(seen_libs, lib_name)
@@ -62,28 +83,29 @@ def _haskell_repl_impl(ctx):
       ]
 
   ghci_script = ctx.actions.declare_file(target_unique_name(ctx, "ghci-repl-script"))
+  repl_file = ctx.actions.declare_file(target_unique_name(ctx, "repl"))
 
   add_modules = []
-  if lib_target != None:
+  if lib_info != None:
     # If we have a library, we put names of its exposed modules here but
     # only if we're in interpreted mode.
     add_modules = set.to_list(
-      lib_target.exposed_modules if ctx.attr.interpreted else set.empty()
+      lib_info.exposed_modules if interpreted else set.empty()
     )
-  elif bin_target != None:
+  elif bin_info != None:
     # Otherwise we put paths to module files, mostly because it also works
     # and Main module may be in a file with name that's impossible for GHC
     # to infer.
-    add_modules = [f.path for f in set.to_list(bin_target.source_files)]
+    add_modules = [f.path for f in set.to_list(bin_info.source_files)]
 
   visible_modules = []
-  if lib_target != None:
+  if lib_info != None:
     # If we have a library, we put names of its exposed modules here.
-    visible_modules = set.to_list(lib_target.exposed_modules)
-  elif bin_target != None:
+    visible_modules = set.to_list(lib_info.exposed_modules)
+  elif bin_info != None:
     # Otherwise we do rougly the same by using modules from
     # HaskellBinaryInfo.
-    visible_modules = set.to_list(bin_target.modules)
+    visible_modules = set.to_list(bin_info.modules)
 
   ctx.actions.expand_template(
     template = ctx.file._ghci_script,
@@ -97,83 +119,40 @@ def _haskell_repl_impl(ctx):
   args += ["-ghci-script", ghci_script.path]
 
   # Extra arguments.
-  args += ctx.attr.ghci_args
+  args += ctx.attr.repl_ghci_args
 
   ctx.actions.expand_template(
     template = ctx.file._ghci_repl_wrapper,
-    output = ctx.outputs.executable,
+    output = repl_file,
     substitutions = {
       # XXX I'm not 100% sure if this is necessary, I think it may be
       # necessary for dynamic Haskell libraries to see other dynamic Haskell
       # libraries they are linked with.
       "{LDLIBPATH}": get_external_libs_path(
         set.union(
-          target.dynamic_libraries,
-          set.from_list(target.external_libraries.values()),
+          build_info.dynamic_libraries,
+          set.from_list(build_info.external_libraries.values()),
         )
       ),
       "{GHCi}": tools(ctx).ghci.path,
-      "{SCRIPT_LOCATION}": ctx.outputs.executable.path,
+      "{SCRIPT_LOCATION}": ctx.outputs.repl.path,
       "{ARGS}": " ".join([shell.quote(a) for a in args]),
     },
     is_executable = True,
   )
 
-  return [DefaultInfo(
-    executable = ctx.outputs.executable,
-    files = depset([
-      ctx.outputs.executable,
-      ghci_script,
+  relative_target = paths.relativize(repl_file.path, ctx.outputs.repl.dirname)
+
+  ctx.actions.run(
+    inputs = depset(transitive = [
+      # XXX We create a symlink here because we need to force
+      # tools(ctx).ghci and ghci_script and the best way to do that is to
+      # use ctx.actions.run. That action, it turn must produce a result, so
+      # using ln seems to be the only sane choice.
+      depset([tools(ctx).ghci, ghci_script, repl_file]),
+      target_files,
     ]),
-    # This "forces" compilation of target:
-    runfiles = ctx.runfiles([tools(ctx).ghci] + ctx.files.target),
-  )]
-
-haskell_repl = rule(
-  _haskell_repl_impl,
-  executable = True,
-  attrs = {
-    "target": attr.label(
-      mandatory = True,
-      doc = "Target that should be available in the REPL.",
-    ),
-    "interpreted": attr.bool(
-      default = True,
-      doc = """
-Whether source files of `target` should interpreted rather than compiled.
-This allows for e.g. reloading of sources on editing, but in this case we
-don't handle boot files and hsc preprocessing.
-
-Note that if you would like to use REPL with a `haskell_binary` target,
-`interpreted` must be set to `True`.
-"""
-    ),
-    "ghci_args": attr.string_list(
-      doc = "Arbitrary extra arguments to pass to GHCi.",
-    ),
-    # XXX Consider making this private. Blocked on
-    # https://github.com/bazelbuild/bazel/issues/4366.
-    "version": attr.string(
-      default = "1.0.0",
-      doc = "Library/binary version. Internal - do not use."
-    ),
-    "_ghci_script": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:ghci-script"),
-    ),
-    "_ghci_repl_wrapper": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:ghci-repl-wrapper.sh"),
-    ),
-  },
-  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
-)
-"""Produce a script that calls GHCi for working with `target`.
-
-Example of use:
-
-```
-$ bazel build //test:my-repl
-$ bazel-bin/test/my-repl
-```
-"""
+    outputs = [ctx.outputs.repl],
+    executable = tools(ctx).ln,
+    arguments = ["-s", relative_target, ctx.outputs.repl.path],
+  )
