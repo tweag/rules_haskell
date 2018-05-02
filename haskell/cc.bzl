@@ -19,20 +19,29 @@ def cc_headers(ctx):
 
   *Internal function - do not use.*
   """
-  hdrs = [
-    hdr
+  hdrs = depset()
+
+  for dep in ctx.attr.deps:
     # XXX There's gotta be a better way to test the presence of
     # CcSkylarkApiProvider.
-    for dep in ctx.attr.deps if hasattr(dep, "cc")
-    for hdr in dep.cc.transitive_headers.to_list()
-  ] + [
-    hdr
-    # XXX cc_import doesn't produce a cc field, so we emulate it with
-    # a custom provider.
-    for dep in ctx.attr.deps if CcSkylarkApiProviderHacked in dep
-    for hdr in dep[CcSkylarkApiProviderHacked].transitive_headers.to_list()
-  ]
-  return hdrs, ["-I" + hdr.dirname for hdr in hdrs]
+    if hasattr(dep, "cc"):
+      hdrs = depset(transitive = [
+        hdrs,
+        dep.cc.transitive_headers,
+      ])
+
+  for dep in ctx.attr.deps:
+    # XXX cc_import doesn't produce a cc field, so we emulate it with a
+    # custom provider.
+    if CcSkylarkApiProviderHacked in dep:
+      hdrs = depset(transitive = [
+        hdrs,
+        dep[CcSkylarkApiProviderHacked].transitive_headers,
+      ])
+
+  dirs = set.to_list(set.from_list([hdr.dirname for hdr in hdrs]))
+
+  return hdrs.to_list(), ["-I" + dir for dir in dirs]
 
 def _cc_import_impl(ctx):
   return [
