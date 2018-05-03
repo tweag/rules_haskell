@@ -20,15 +20,42 @@ load(":providers.bzl",
 
 load("@bazel_skylib//:lib.bzl", "paths")
 
+def _truly_relativize(target, relative_to):
+  """Return a relative path to `target` from `relative_to`.
+
+  Args:
+    target: File, path to directory we want to get relative path to.
+    relative_to: File, path to directory from which we are starting.
+
+  Returns:
+    string: relative path to `target`.
+  """
+  t_pieces = target.path.split('/')
+  r_pieces = relative_to.path.split('/')
+  common_part_len = 0
+
+  for tp, rp in zip(t_pieces, r_pieces):
+    if tp == rp:
+      common_part_len += 1
+    else:
+      break
+
+  result = [".."] * (len(r_pieces) - common_part_len)
+  result += t_pieces[common_part_len:]
+
+  return "/".join(result)
+
 def _haskell_doc_aspect_impl(target, ctx):
   if HaskellBuildInfo not in target or HaskellLibraryInfo not in target:
     return []
 
   pkg_id = target[HaskellLibraryInfo].package_name
 
-  doc_dir = ctx.actions.declare_directory("doc-{0}".format(pkg_id))
+  doc_dir_raw = "doc-{0}".format(pkg_id)
+
+  doc_dir = ctx.actions.declare_directory(doc_dir_raw)
   haddock_interface = ctx.actions.declare_file(
-    paths.join(doc_dir.basename, "{0}.haddock".format(pkg_id)),
+    paths.join(doc_dir_raw, "{0}.haddock".format(pkg_id)),
 
   )
   hoogle_file = ctx.actions.declare_file(
@@ -48,15 +75,14 @@ def _haskell_doc_aspect_impl(target, ctx):
   ])
 
   dep_interfaces = set.empty()
+
   for dep in ctx.rule.attr.deps:
     if HaddockInfo in dep:
       args.add("--read-interface={0},{1}".format(
-        # Is this the best we can do? We have to tell haddock where the
-        # docs for the given interface are and it has to be relative
-        # because bazel moves these things around but is relying on
-        # these always being in the same directory for the target the
-        # right thing to do? Feels too hacky.
-        paths.join("..", dep[HaddockInfo].doc_dir.basename),
+        _truly_relativize(
+          dep[HaddockInfo].doc_dir,
+          doc_dir,
+          ),
         dep[HaddockInfo].interface_file.path
       ))
       dep_interfaces = set.mutable_insert(
