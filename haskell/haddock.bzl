@@ -129,14 +129,25 @@ def _haskell_doc_aspect_impl(target, ctx):
       set.to_depset(target[HaskellBuildInfo].dynamic_libraries),
       set.to_depset(dep_interfaces),
       depset(input_sources),
+      depset([
+        tools(ctx).ghc_pkg,
+        tools(ctx).haddock,
+      ]),
     ]),
     outputs = self_outputs,
     progress_message = "Haddock {0}".format(ctx.rule.attr.name),
-    executable = tools(ctx).haddock,
+    executable = ctx.file._haddock_wrapper,
     arguments = [
       args,
       target[HaskellLibraryInfo].haddock_args,
     ],
+    env = {
+      "RULES_HASKELL_GHC_PKG": tools(ctx).ghc_pkg.path,
+      "RULES_HASKELL_HADDOCK": tools(ctx).haddock.path,
+      "RULES_HASKELL_PREBUILT_DEPS": " ".join(
+        set.to_list(target[HaskellBuildInfo].prebuilt_dependencies)
+      ),
+    },
   )
 
   return [HaddockInfo(
@@ -147,6 +158,12 @@ def _haskell_doc_aspect_impl(target, ctx):
 
 haskell_doc_aspect = aspect(
   _haskell_doc_aspect_impl,
+  attrs = {
+    "_haddock_wrapper": attr.label(
+      allow_single_file = True,
+      default = Label("@io_tweag_rules_haskell//haskell:haddock-wrapper.sh"),
+    ),
+  },
   attr_aspects = ['deps'],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
