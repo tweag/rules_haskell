@@ -5,8 +5,8 @@ haskell_repositories()
 
 http_archive(
   name = "io_tweag_rules_nixpkgs",
-  strip_prefix = "rules_nixpkgs-0.2",
-  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.tar.gz"],
+  strip_prefix = "rules_nixpkgs-1ec08ee8fbb64fcc05e3d4bde3d942afb083f34e",
+  urls = ["https://github.com/tweag/rules_nixpkgs/archive/1ec08ee8fbb64fcc05e3d4bde3d942afb083f34e.tar.gz"],
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
@@ -16,13 +16,16 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
 
 nixpkgs_git_repository(
   name = "nixpkgs",
-  revision = "18.03",
+  # To make protobuf support work we need packages such as
+  # lens-labels_0_2_0_0 to be available in nixpkgs. This means we need to
+  # use a version of nixpkgs that is newer than 18.03.
+  revision = "7c3dc2f53fc837be79426f11c9133f73d15a05c4",
 )
 
 nixpkgs_package(
   name = "ghc",
   repository = "@nixpkgs",
-  attribute_path = "haskell.compiler.ghc822",
+  nix_file = "//tests:ghc.nix",
   build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
@@ -51,6 +54,19 @@ cc_library(
 """,
 )
 
+http_archive(
+  name = "com_google_protobuf",
+  sha256 = "cef7f1b5a7c5fba672bec2a319246e8feba471f04dcebfe362d55930ee7c1c30",
+  strip_prefix = "protobuf-3.5.0",
+  urls = ["https://github.com/google/protobuf/archive/v3.5.0.zip"],
+)
+
+nixpkgs_package(
+  name = "protoc_gen_haskell",
+  repository = "@nixpkgs",
+  nix_file = "//tests:protoc_gen_haskell.nix",
+)
+
 nixpkgs_package(
   name = "doctest",
   repository = "@nixpkgs",
@@ -65,7 +81,10 @@ filegroup(
   """
 )
 
-register_toolchains("//tests:ghc")
+register_toolchains(
+  "//tests:ghc",
+  "//tests:protobuf-toolchain",
+)
 
 nixpkgs_package(
   name = "zlib",

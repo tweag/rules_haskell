@@ -3,7 +3,6 @@
 load("@bazel_skylib//:lib.bzl",
      "paths",
 )
-
 load(":set.bzl",
      "set",
 )
@@ -61,7 +60,6 @@ def _haskell_toolchain_impl(ctx):
   inputs = []
   inputs.extend(ctx.files.tools)
   inputs.extend(ctx.files._crosstool)
-
 
   targets_r = {}
   targets_r.update({
@@ -211,6 +209,9 @@ def haskell_toolchain(
   example below).
 
   Example:
+
+    In a `BUILD` file:
+
     ```bzl
     haskell_toolchain(
         name = "ghc",

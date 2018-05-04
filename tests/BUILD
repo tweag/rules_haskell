@@ -3,17 +3,34 @@ package(default_testonly = 1)
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_binary",
   "haskell_library",
+  "haskell_toolchain",
+  "haskell_proto_toolchain",
 )
 
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
-
-load("//haskell:haskell.bzl", "haskell_toolchain")
 
 haskell_toolchain(
   name = "ghc",
   version = "8.2.2",
   tools = "@ghc//:bin",
   doctest = "@doctest//:bin",
+)
+
+haskell_proto_toolchain(
+  name = "protobuf-toolchain",
+  protoc = "@com_google_protobuf//:protoc",
+  protoc_gen_haskell = "@protoc_gen_haskell//:bin/proto-lens-protoc",
+  haskell_prebuilt_deps = [
+    "base",
+    "bytestring",
+    "containers",
+    "data-default-class",
+    "lens-family",
+    "lens-labels",
+    "proto-lens",
+    "text",
+  ],
+  testonly = 0,
 )
 
 rule_test(
@@ -130,6 +147,16 @@ rule_test(
     "lint-log-bin-1.0.0",
   ],
   rule = "//tests/haskell_lint:lint-bin",
+  size = "small",
+)
+
+rule_test(
+  name = "test-haskell_proto_library",
+  generates = [
+    "testsZShaskellZUprotoZUlibraryZShs-lib-1.0.0/package.cache",
+    "testsZShaskellZUprotoZUlibraryZShs-lib-1.0.0/testsZShaskellZUprotoZUlibraryZShs-lib-1.0.0.conf"
+  ],
+  rule = "//tests/haskell_proto_library:hs-lib",
   size = "small",
 )
 

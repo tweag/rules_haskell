@@ -31,6 +31,11 @@ jobs:
             bazel build //tests/repl-targets:hs-bin-repl
             bazel-bin/tests/repl-targets/hs-bin-repl -e ":quit"
       - run:
+          name: Test proto library REPL
+          command: |
+            bazel build //tests/haskell_proto_library:person_haskell_proto
+            bazel-bin/tests/haskell_proto_library/person_haskell_proto-repl -e ":quit"
+      - run:
           name: Test start script
           command: |
             pwd=$(pwd)

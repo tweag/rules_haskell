@@ -4,6 +4,7 @@ load(":providers.bzl",
   "HaskellBuildInfo",
   "HaskellLibraryInfo",
   "HaskellBinaryInfo",
+  "HaskellProtobufInfo",
   "CcSkylarkApiProviderHacked",
 )
 
@@ -29,6 +30,10 @@ load(":ghci-repl.bzl",
 )
 
 # For re-exports:
+load(":protobuf.bzl",
+  _haskell_proto_aspect = "haskell_proto_aspect",
+  _haskell_proto_toolchain = "haskell_proto_toolchain",
+)
 load(":haddock.bzl",
   _haskell_doc = "haskell_doc",
 )
@@ -219,8 +224,9 @@ $ bazel-bin/.../hello-bin-repl  # run the script
 ```
 """
 
-def _haskell_library_impl(ctx):
-  c = compile_haskell_lib(ctx)
+def _haskell_library_impl(ctx, use_these_srcs=None):
+
+  c = compile_haskell_lib(ctx, use_these_srcs = use_these_srcs)
 
   static_library = link_static_lib(ctx, c.object_files)
   dynamic_library = link_dynamic_lib(ctx, c.object_dyn_files)
@@ -326,6 +332,61 @@ $ bazel-bin/.../hello-lib-repl  # run the script
 ```
 """
 
+def _haskell_proto_library_impl(ctx):
+
+  source_files = depset()
+  for dep in ctx.attr.deps:
+    if HaskellProtobufInfo in dep:
+      source_files = depset(transitive = [
+        source_files,
+        dep[HaskellProtobufInfo].source_files,
+      ])
+
+  return _haskell_library_impl(
+    ctx,
+    use_these_srcs=source_files,
+  )
+
+haskell_proto_library = rule(
+  _haskell_proto_library_impl,
+  attrs = dict(
+    _haskell_common_attrs,
+    hidden_modules = attr.string_list(
+      doc = "Modules that should be unavailable for import by dependencies."
+    ),
+    deps = attr.label_list(
+      aspects = [_haskell_proto_aspect],
+      doc = "List of `proto_library` targets to use for generation.",
+    ),
+  ),
+  outputs = {
+    "repl": "%{name}-repl",
+  },
+  toolchains = [
+    "@io_tweag_rules_haskell//haskell:toolchain",
+    "@io_tweag_rules_haskell//protobuf:toolchain",
+  ]
+)
+"""Generate Haskell library allowing to use protobuf definitions with help
+of [`proto-lens`](https://github.com/google/proto-lens#readme).
+
+Example:
+  ```bzl
+  proto_library(
+    name = "foo_proto",
+    srcs = ["foo.proto"],
+  )
+
+  haskell_proto_library(
+    name = "foo_haskell_proto",
+    deps = [":foo_proto"],
+  )
+  ```
+
+`haskell_proto_library` targets require `haskell_proto_toolchain` to be
+registered.
+"""
+
 haskell_doc = _haskell_doc
 
 haskell_lint = _haskell_lint
@@ -333,6 +394,8 @@ haskell_lint = _haskell_lint
 haskell_doctest  = _haskell_doctest
 
 haskell_toolchain = _haskell_toolchain
+
+haskell_proto_toolchain = _haskell_proto_toolchain
 
 ghc_bindist = _ghc_bindist
 

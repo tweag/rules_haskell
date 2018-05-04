@@ -15,6 +15,7 @@ skylark_doc(
     "//haskell:lint.bzl",
     "//haskell:ghci-repl.bzl",
     "//haskell:toolchain.bzl",
+    "//haskell:protobuf.bzl",
     "//haskell:cc.bzl",
     "//haskell:repositories.bzl",
     "//haskell:ghc_bindist.bzl",

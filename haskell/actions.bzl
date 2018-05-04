@@ -17,6 +17,8 @@ load(":tools.bzl",
      "is_darwin",
      "so_extension",
      "tools",
+     "protobuf_haskell_deps",
+     "protobuf_haskell_prebuilt_deps",
 )
 
 load(":cc.bzl", "cc_headers")
@@ -268,6 +270,28 @@ def _infer_rpaths(target, solibs):
 
   return r
 
+def _infer_deps(ctx):
+  """Return a list of Haskell dependencies.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    list of labels: Haskell dependencies.
+  """
+  return (protobuf_haskell_deps(ctx) or ctx.attr.deps)
+
+def _infer_prebuilt_deps(ctx):
+  """Return a list of prebuilt Haskell dependencies.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    list of strings: prebuilt Haskell dependencies.
+  """
+  return (protobuf_haskell_prebuilt_deps(ctx) or ctx.attr.prebuilt_dependencies)
+
 def compile_haskell_bin(ctx):
   """Compile a Haskell target into object files suitable for linking.
 
@@ -459,11 +483,13 @@ def link_haskell_bin(ctx, object_files):
 
   return ctx.outputs.executable
 
-def compile_haskell_lib(ctx):
+def compile_haskell_lib(ctx, use_these_srcs=None):
   """Build arguments for Haskell package build.
 
   Args:
     ctx: Rule context.
+    use_these_srcs: Source files to use instead of those that comes from
+                    rule attributes.
 
   Returns:
     struct with the following fields:
@@ -476,7 +502,7 @@ def compile_haskell_lib(ctx):
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(ctx)
+  c = _compilation_defaults(ctx, use_these_srcs = use_these_srcs)
   c.args.add([
     "-package-name", get_pkg_id(ctx),
   ])
@@ -562,7 +588,7 @@ def link_dynamic_lib(ctx, object_files):
   for package in set.to_list(
       set.union(
         dep_info.package_names,
-        set.from_list(ctx.attr.prebuilt_dependencies)
+        set.from_list(_infer_prebuilt_deps(ctx)),
       )):
     args.add(["-package", package])
 
@@ -636,7 +662,9 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exp
     "dynamic-library-dirs": "${pkgroot}",
     "hs-libraries": _get_library_name(ctx),
     "depends":
-      ", ".join([ d[HaskellLibraryInfo].package_name for d in ctx.attr.deps if HaskellLibraryInfo in d])
+      ", ".join([ d[HaskellLibraryInfo].package_name for d in
+                  _infer_deps(ctx)
+                  if HaskellLibraryInfo in d])
   }
   ctx.actions.write(
     output=registration_file,
@@ -667,12 +695,13 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exp
 
   return conf_file, cache_file
 
-def _compilation_defaults(ctx):
+def _compilation_defaults(ctx, use_these_srcs=None):
   """Declare default compilation targets and create default compiler arguments.
 
   Args:
     ctx: Rule context.
-    for_binary: We're compiling a binary target.
+    use_these_srcs: Source files to use instead of those that comes from
+                    rule attributes.
 
   Returns:
     _DefaultCompileInfo: Populated default compilation settings.
@@ -716,13 +745,23 @@ def _compilation_defaults(ctx):
 
   dep_info = gather_dep_info(ctx)
 
+  # If we have alternative source files given to us, it's likely that they
+  # are auto-generated. So we need to take their root path into account
+  # here.
+  import_root = import_hierarchy_root(ctx)
+  if use_these_srcs and use_these_srcs.to_list()[0]:
+    import_root = paths.join(
+      use_these_srcs.to_list()[0].root.path,
+      import_hierarchy_root(ctx),
+    )
+
   # Add import hierarchy root.
-  ih_root_arg = ["-i{0}".format(import_hierarchy_root(ctx))]
+  ih_root_arg = ["-i{0}".format(import_root)]
   args.add(ih_root_arg)
   haddock_args.add(ih_root_arg, before_each="--optghc")
 
   # Expose all prebuilt dependencies
-  for prebuilt_dep in ctx.attr.prebuilt_dependencies:
+  for prebuilt_dep in _infer_prebuilt_deps(ctx):
     items = ["-package", prebuilt_dep]
     args.add(items)
     haddock_args.add(items, before_each="--optghc")
@@ -751,7 +790,7 @@ def _compilation_defaults(ctx):
   other_sources = []
   modules = set.empty()
   source_files = set.empty()
-  import_dirs = set.singleton(import_hierarchy_root(ctx))
+  import_dirs = set.singleton(import_root)
 
   # Output object files are named after modules, not after input file names.
   # The difference is only visible in the case of Main module because it may
@@ -760,7 +799,7 @@ def _compilation_defaults(ctx):
 
   ghc_defs_dump = _make_ghc_defs_dump(ctx)
 
-  for s in ctx.files.srcs:
+  for s in (use_these_srcs or ctx.files.srcs):
 
     if s.extension in ["h", "hs-boot", "lhs-boot"]:
       other_sources.append(s)
@@ -921,11 +960,11 @@ def gather_dep_info(ctx):
     static_libraries = [],
     dynamic_libraries = set.empty(),
     interface_files = set.empty(),
-    prebuilt_dependencies = set.from_list(ctx.attr.prebuilt_dependencies),
+    prebuilt_dependencies = set.from_list(_infer_prebuilt_deps(ctx)),
     external_libraries = {},
   )
 
-  for dep in ctx.attr.deps:
+  for dep in _infer_deps(ctx):
     if HaskellBuildInfo in dep:
       binfo = dep[HaskellBuildInfo]
       package_names = acc.package_names
