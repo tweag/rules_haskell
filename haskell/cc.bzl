@@ -120,7 +120,9 @@ def _cc_haskell_import(ctx):
 
   return [
     DefaultInfo(
-      files = set.to_depset(dyn_libs)
+      files = set.to_depset(dyn_libs),
+      default_runfiles = ctx.attr.dep[DefaultInfo].default_runfiles,
+      data_runfiles = ctx.attr.dep[DefaultInfo].data_runfiles,
     )
   ]
 
