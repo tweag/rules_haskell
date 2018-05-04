@@ -49,6 +49,13 @@ HaskellLintInfo = provider(
   }
 )
 
+HaskellProtobufInfo = provider(
+  doc = "Provider that wraps providers of auto-generated Haskell libraries",
+  fields = {
+    "files": "files",
+  }
+)
+
 # XXX this provider shouldn't be necessary. But since Skylark rules
 # can neither return CcSkylarkApiProvider nor properly test for its
 # existence in a dependency, we're forced to introduce this hack for

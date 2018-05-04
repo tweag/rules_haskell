@@ -562,7 +562,7 @@ def link_dynamic_lib(ctx, object_files):
   for package in set.to_list(
       set.union(
         dep_info.package_names,
-        set.from_list(ctx.attr.prebuilt_dependencies)
+        set.from_list(ctx.attr.prebuilt_dependencies),
       )):
     args.add(["-package", package])
 
@@ -636,7 +636,8 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exp
     "dynamic-library-dirs": "${pkgroot}",
     "hs-libraries": _get_library_name(ctx),
     "depends":
-      ", ".join([ d[HaskellLibraryInfo].package_name for d in ctx.attr.deps if HaskellLibraryInfo in d])
+      ", ".join([ d[HaskellLibraryInfo].package_name for d in
+                  ctx.attr.deps if HaskellLibraryInfo in d])
   }
   ctx.actions.write(
     output=registration_file,
@@ -672,7 +673,6 @@ def _compilation_defaults(ctx):
 
   Args:
     ctx: Rule context.
-    for_binary: We're compiling a binary target.
 
   Returns:
     _DefaultCompileInfo: Populated default compilation settings.
@@ -721,10 +721,10 @@ def _compilation_defaults(ctx):
   # to be in the same directory as the corresponding .hs file.  Thus
   # the two must both have the same root; i.e., both plain files,
   # both in bin_dir, or both in genfiles_dir.
-  root = import_hierarchy_root(ctx)
-  ih_root_arg = ["-i{0}".format(root),
-                 "-i{0}".format(paths.join(ctx.bin_dir.path, root)),
-                 "-i{0}".format(paths.join(ctx.genfiles_dir.path, root))]
+  import_root = import_hierarchy_root(ctx)
+  ih_root_arg = ["-i{0}".format(import_root),
+                 "-i{0}".format(paths.join(ctx.bin_dir.path, import_root)),
+                 "-i{0}".format(paths.join(ctx.genfiles_dir.path, import_root))]
   args.add(ih_root_arg)
   haddock_args.add(ih_root_arg, before_each="--optghc")
 
@@ -758,7 +758,7 @@ def _compilation_defaults(ctx):
   other_sources = []
   modules = set.empty()
   source_files = set.empty()
-  import_dirs = set.singleton(import_hierarchy_root(ctx))
+  import_dirs = set.singleton(import_root)
 
   # Output object files are named after modules, not after input file names.
   # The difference is only visible in the case of Main module because it may
@@ -968,6 +968,7 @@ def gather_dep_info(ctx):
             # files come from haskell_cc_import.
             _mangle_solib(ctx, dep.label, f, CcSkylarkApiProviderHacked in dep)
             for f in dep.files.to_list() if _is_shared_library(f)}
+
           ),
       )
 
