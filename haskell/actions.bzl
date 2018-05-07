@@ -717,7 +717,14 @@ def _compilation_defaults(ctx):
   dep_info = gather_dep_info(ctx)
 
   # Add import hierarchy root.
-  ih_root_arg = ["-i{0}".format(import_hierarchy_root(ctx))]
+  # Note that this is not perfect, since GHC requires hs-boot files
+  # to be in the same directory as the corresponding .hs file.  Thus
+  # the two must both have the same root; i.e., both plain files,
+  # both in bin_dir, or both in genfiles_dir.
+  root = import_hierarchy_root(ctx)
+  ih_root_arg = ["-i{0}".format(root),
+                 "-i{0}".format(paths.join(ctx.bin_dir.path, root)),
+                 "-i{0}".format(paths.join(ctx.genfiles_dir.path, root))]
   args.add(ih_root_arg)
   haddock_args.add(ih_root_arg, before_each="--optghc")
 
