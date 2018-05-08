@@ -16,10 +16,14 @@ jobs:
             nix-env -iA nixpkgs.bazel nixpkgs.binutils nixpkgs.python
       - run:
           name: Build
-          command: bazel build --jobs=2 //...
+          command: |
+            export NIX_PATH=
+            bazel build --jobs=2 //...
       - run:
           name: Run tests
-          command: bazel test //... --config=ci
+          command: |
+            export NIX_PATH=
+            bazel test //... --config=ci
       - run:
           name: Test REPL for libraries
           command: |
