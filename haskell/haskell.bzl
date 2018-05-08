@@ -60,6 +60,7 @@ _haskell_common_attrs = {
   ),
   "data": attr.label_list(
     doc = "See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).",
+    allow_files = True,
     cfg = "data",
   ),
   "compiler_flags": attr.string_list(
