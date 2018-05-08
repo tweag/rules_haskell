@@ -34,6 +34,6 @@ def genhappy(src, out):
       name = src + ".hs_happy",
       srcs = [src],
       outs = [out],
-      tools = ["//third_party/haskell/happy:happy_bin"],
-      cmd = "$(location //third_party/haskell/happy:happy_bin) -g -a -c -o $(OUTS) $(SRCS)",
+      tools = ["@haskell_happy//:happy_bin"],
+      cmd = "$(location @haskell_happy//:happy_bin) -g -a -c -o $(OUTS) $(SRCS)",
   )

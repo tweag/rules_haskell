@@ -33,6 +33,6 @@ def genalex(src, out):
       name=src + ".hs_alex",
       srcs=[src],
       outs=[out],
-      tools=["//third_party/haskell/alex:alex_bin"],
-      cmd="//third_party/haskell/alex:alex_bin -g -o $(OUTS) $(SRCS)",
+      tools=["@haskell_alex//:alex_bin"],
+      cmd="$(location @haskell_alex//:alex_bin) -g -o $(OUTS) $(SRCS)",
   )

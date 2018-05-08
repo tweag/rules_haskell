@@ -1,15 +1,26 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE ImplicitPrelude #-}
-module {MODULE_NAME} where
+module %{module} (
+    version,
+    getDataDir,
+    getDataFileName,
+    ) where
 
-import Data.Version (Version(..))
+import Data.Version (Version, makeVersion)
+import Prelude
+import System.FilePath ((</>), takeDirectory)
+import System.Environment (getExecutablePath)
 
-version :: Version
-version = Version {VERSION_NUMBER_LIST} []
+-- TODO: automatically locate root directory
+getDataDir :: IO FilePath
+getDataDir = do
+    exePath <- getExecutablePath
+    return $ takeDirectory exePath </> "%{base_dir}"
 
 getDataFileName :: FilePath -> IO FilePath
-getDataFileName f = (\d -> d ++ "/" ++ f) <$> getDataDir
+getDataFileName name = do
+    dir <- getDataDir
+    return (dir </> name)
 
-getDataDir :: IO FilePath
-getDataDir = {DATADIR_IMPL} -- TODO
-
+-- TODO:
+version :: Version
+version = makeVersion %{version}

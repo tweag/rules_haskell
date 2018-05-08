@@ -8,10 +8,9 @@ module Skylark
     , expr
     , (=:)
     , renderStatements
+    , renderExpr
     ) where
 
-import Data.Bifunctor (second)
-import Distribution.Text (Text, display)
 import Text.PrettyPrint
     ( Doc
     , (<>)
@@ -31,8 +30,10 @@ data Statement
 data Expr
     = ExprInt Int
     | ExprBool Bool
+    | ExprNone
     | ExprString String
     | ExprList [Expr]
+    | ExprTuple [Expr]
     | ExprDict [(Expr, Expr)]
     | ExprCall String [(String, Expr)]
     | ExprOp Expr String Expr
@@ -87,18 +88,17 @@ call name = wrap (Pretty.text name <> Pretty.lparen) Pretty.rparen
 
 renderExpr :: Expr -> Doc
 renderExpr (ExprInt n) = Pretty.int n
+renderExpr (ExprBool e) = Pretty.text (show e) -- Haskell Show matches up with Python
+renderExpr ExprNone = Pretty.text "None"
 renderExpr (ExprString s) = Pretty.text (show s)
 renderExpr (ExprList es) = wrap Pretty.lbrack Pretty.rbrack $ map renderExpr es
+renderExpr (ExprTuple es) = wrap Pretty.lparen Pretty.rparen $ map renderExpr es
 renderExpr (ExprDict es) = wrap Pretty.lbrace Pretty.rbrace $ map entry es
   where
     entry (k, v) = Pretty.sep [renderExpr k <> Pretty.colon, Pretty.nest 2 $ renderExpr v]
-renderExpr (ExprBool e) = Pretty.text (show e) -- Haskell Show matches up with Python
 renderExpr (ExprCall f args) = call f $ map (uncurry assign) args
 renderExpr (ExprOp a op b) = renderExpr a <+> Pretty.text op <+> renderExpr b
 
 wrap :: Doc -> Doc -> [Doc] -> Doc
 wrap begin end inner = Pretty.sep
     [begin, Pretty.nest 2 $ Pretty.sep $ map (<> Pretty.comma) inner, end]
-
-displayExpr :: Text a => a -> Expr
-displayExpr = expr . display

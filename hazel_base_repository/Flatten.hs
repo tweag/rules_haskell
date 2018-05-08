@@ -12,7 +12,6 @@ import Distribution.PackageDescription
     , CondTree(..)
     , ConfVar(..)
     , exeName
-    , Flag
     , FlagName
     , flagName
     , flagDefault

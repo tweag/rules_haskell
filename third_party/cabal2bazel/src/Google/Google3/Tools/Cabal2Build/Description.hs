@@ -11,33 +11,43 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-
+--
 -- | This module generates the package_description.bzl file from the .cabal
 -- file.  The contents of that file are a straightforward syntactic translation
 -- of Cabal's PackageDescription type.
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-module Google.Google3.Tools.Cabal2Build.Description
-    (descriptionFileContents) where
+
+module Description (packageDescriptionExpr) where
 
 import Data.Map (Map)
 import qualified Data.Map as Map
-import qualified Data.Text as Text
 import Distribution.Compiler (CompilerFlavor)
 import Distribution.License (License(..))
 import Distribution.ModuleName (ModuleName)
 import qualified Distribution.PackageDescription as PackageDescription
+#if MIN_VERSION_Cabal(2,0,0)
+import Distribution.Types.ExecutableScope (ExecutableScope(..))
+import Distribution.Types.ExeDependency (ExeDependency(..))
+import Distribution.Types.ForeignLib
+    ( ForeignLib(..)
+    , LibVersionInfo
+    , libVersionInfoCRA
+    )
+import Distribution.Types.ForeignLibOption (ForeignLibOption(..))
+import Distribution.Types.ForeignLibType (ForeignLibType(..))
+import Distribution.Types.IncludeRenaming (IncludeRenaming(..))
+import Distribution.Types.LegacyExeDependency (LegacyExeDependency(..))
+import Distribution.Types.Mixin (Mixin(..))
+import Distribution.Types.PkgconfigDependency (PkgconfigDependency(..))
+import Distribution.Types.PkgconfigName (PkgconfigName)
+import Distribution.Types.UnqualComponentName (UnqualComponentName)
+#endif
 import Distribution.PackageDescription
     ( BuildType(..)
-    , FlagAssignment
-    , FlagName(..)
     , PackageDescription
     , RepoKind(..)
     , RepoType(..)
@@ -45,11 +55,11 @@ import Distribution.PackageDescription
     )
 import Distribution.Package
     ( Dependency(..)
-    , PackageName(..)
+    , PackageName
     , PackageIdentifier(..)
     )
 import Distribution.Text (display)
-import Distribution.Version (Version(..), VersionRange(..))
+import Distribution.Version (Version, VersionRange(..))
 import Language.Haskell.Extension (Extension(..), Language(..))
 import GHC.Generics
     ( Generic(..)
@@ -61,30 +71,12 @@ import GHC.Generics
     , S
     , (:*:)(..)
     )
-import Google.Google3.Package (Expr(..), Stmt(..), pPrint)
 
-import Text.PrettyPrint (Doc, ($$), (<+>), (<>), vcat, text)
+import Skylark (Expr(..))
 
-descriptionFileContents :: FlagAssignment -> PackageDescription -> String
-descriptionFileContents flags pkg
-    = show $ descriptionFile name flags $ expr pkg
-  where PackageName name = pkgName $ PackageDescription.package pkg
-
-descriptionFile :: String -> FlagAssignment -> Expr -> Doc
-descriptionFile name flags e =
-    "\"\"\"Package description auto-generated from"
-        <+> text name <> ".cabal by cabal2build."
-    $$ ""
-    $$ vcat (map text flagsDesc)
-    $$ "\"\"\""
-    $$ pPrint (SAssign "description" e)
-    $$ ""  -- Ensure newline at end of file
-  where
-    flagsDesc = case flags of
-        [] -> []
-        _ -> "Configured with Cabal flags:" : map flagDesc flags
-    flagDesc (FlagName flag, value)
-        = "  " ++ flag ++ ": " ++ show value
+-- | A Skylark expression reifying an entire Cabal PackageDescription.
+packageDescriptionExpr :: PackageDescription -> Expr
+packageDescriptionExpr = expr
 
 -------------------------------------------------------------------------------
 
@@ -100,23 +92,29 @@ class Exprable a where
 
 -- Trivial instances:
 instance {-# OVERLAPPING #-} Exprable String where
-    expr = LitString . Text.pack
+    expr = ExprString
 
 instance Exprable Bool where
-    expr = Var . Text.pack . show
+    expr = ExprBool
+
+instance Exprable Int where
+    expr = ExprInt
 
 instance {-# OVERLAPPABLE #-} Exprable a => Exprable [a] where
-    expr = LitList . map expr
+    expr = ExprList . map expr
 
 instance (Exprable a, Exprable b) => Exprable (a, b) where
-    expr (x,y) = LitTuple [expr x, expr y]
+   expr (x,y) = ExprTuple [expr x, expr y]
+
+instance (Exprable a, Exprable b, Exprable c) => Exprable (a, b, c) where
+   expr (x,y,z) = ExprTuple [expr x, expr y, expr z]
 
 instance Exprable a => Exprable (Maybe a) where
-    expr Nothing = Var "None"
+    expr Nothing = ExprNone
     expr (Just x) = expr x
 
 instance (Exprable a, Exprable b) => Exprable (Map a b) where
-    expr = LitList . map expr . Map.toList
+      expr = ExprDict . map (\(x,y) -> (expr x, expr y)) . Map.toList
 
 -- | Helper class to get an Expr from the generic representation of a datatype.
 class GenExprable f where
@@ -138,24 +136,24 @@ instance Exprable a => GenExprable (K1 i a) where
 -- list of fields.
 class StructFields f where
     structFields :: f a -- ^ Generic representation of a datatype
-          -> [(Text.Text, Expr)]  -- ^ Field/value pairs in this datatype.
+          -> [(String, Expr)]  -- ^ Field/value pairs in this datatype.
 
 instance (StructFields f, StructFields g) => StructFields (f :*: g) where
     structFields (f :*: g) = structFields f ++ structFields g
 
 instance (Selector x, GenExprable f) => StructFields (M1 S x f) where
-    structFields x = [(Text.pack (selName x), gexpr (unM1 x))]
+    structFields x = [(selName x, gexpr (unM1 x))]
 
 -- A Haskell record constructor.
 instance StructFields f => GenExprable (M1 C x f) where
     gexpr x = struct $ structFields $ unM1 x
 
 -- | A Skylark struct(..) expression.
-struct :: [(Text.Text, Expr)] -> Expr
-struct = Call "struct" []
+struct :: [(String, Expr)] -> Expr
+struct = ExprCall "struct"
 
 stringE :: String -> Expr
-stringE = LitString . Text.pack
+stringE = ExprString
 
 ------
 
@@ -203,7 +201,7 @@ instance Exprable PackageDescription.SetupBuildInfo where
 
 -- TODO(judahjacobson): Support the benchmark type.  For now, it's not useful.
 instance Exprable PackageDescription.BenchmarkInterface where
-    expr _ = Var "None"
+    expr _ = ExprNone
 
 instance Exprable Dependency where
     expr (Dependency name version)
@@ -211,16 +209,21 @@ instance Exprable Dependency where
 
 instance Exprable TestSuiteInterface where
     expr (TestSuiteExeV10 version path)
-        = struct [("type", LitString "exitcode-stdio-1.0"), ("version", expr version), ("mainIs", expr path)]
+        = struct [("type", ExprString "exitcode-stdio-1.0"), ("version", expr version), ("mainIs", expr path)]
     -- TODO(judahjacobson): If useful, support other types of tests.
     expr t = stringE $ show t
 
 instance Exprable (PackageDescription.ModuleRenaming) where
+#if MIN_VERSION_Cabal(2,0,0)
+    expr m = error $ "The module-renaming cabal option is not supported yet. "
+                      ++ show m
+#else
     expr m@(PackageDescription.ModuleRenaming flag xs) =
         -- TODO: Move this check out of Exprable
         if flag && null xs
         then expr (flag, xs)
         else error $ "The module-renaming cabal option is not supported yet. " ++ show m
+#endif
 
 instance Exprable PackageDescription.Benchmark
 instance Exprable PackageDescription.BuildInfo
@@ -234,4 +237,45 @@ instance Exprable PackageIdentifier
 
 -- Currently we ignore "Either"s, since they're not needed for anything useful.
 instance Exprable (Either a b) where
-    expr _ = Var "None"
+    expr _ = ExprNone
+
+#if MIN_VERSION_Cabal(2,0,0)
+instance Exprable UnqualComponentName where
+    expr = stringE . display
+
+instance Exprable ExeDependency where
+    expr (ExeDependency pkg comp version)
+        = struct [ ("packageName", expr pkg)
+                 , ("comp", expr comp)
+                 , ("version", expr version)
+                 ]
+
+instance Exprable LegacyExeDependency where
+    expr (LegacyExeDependency name version)
+        = struct [("name", expr name), ("version", expr version)]
+
+instance Exprable ExecutableScope where
+    expr = stringE . display
+
+instance Exprable ForeignLib
+
+instance Exprable ForeignLibOption where
+    expr = stringE . display
+
+instance Exprable ForeignLibType where
+    expr = stringE . display
+
+instance Exprable LibVersionInfo where
+    expr = expr . libVersionInfoCRA
+
+instance Exprable PkgconfigDependency where
+    expr (PkgconfigDependency name version)
+        = struct [("name", expr name), ("version", expr version)]
+
+instance Exprable PkgconfigName where
+    expr = stringE . display
+
+instance Exprable IncludeRenaming
+instance Exprable Mixin
+#endif
+

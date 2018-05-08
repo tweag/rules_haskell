@@ -33,28 +33,16 @@
 module Main where
 
 import Control.Monad (unless)
-import qualified Data.Map as Map
 import Distribution.Compat.ReadP (look, pfail, readP_to_S, ReadP)
-import Distribution.Package (PackageIdentifier(..), PackageName(..))
+import Distribution.Package (PackageIdentifier(..))
 import Distribution.Text (parse)
 import Distribution.Simple.Build.Macros (generatePackageVersionMacros)
 import System.Environment (getArgs)
 
+main :: IO ()
 main = do
-    packageKey:defaultPackagesFile:packageStrings <- getArgs
-    -- Parse the versions in the default-packages file.
-    -- Ignore builtin_rts since it doesn't have a version number.
-    defaultPackages <- map parsePackage . filter (/= "builtin_rts")
-                          . words <$> readFile defaultPackagesFile
-    let defaultPackagesByName = Map.fromList
-          [ (pkgName p, p) | p <- defaultPackages ]
-    let getPackage s
-          -- Default package: look it up in the defaultPackagesFile.
-          | Just p <- Map.lookup (PackageName s) defaultPackagesByName = p
-          -- Non-default package: parse the command-line argument directly.
-          | otherwise = parsePackage s
-    putStrLn $ generatePackageVersionMacros $ map getPackage packageStrings
-    putStrLn $ "#define CURRENT_PACKAGE_KEY \"" ++ packageKey ++ "\"\n"
+    packageStrings <- getArgs
+    putStrLn $ generatePackageVersionMacros $ map parsePackage packageStrings
 
 -- | Parse a package id like "base-4.8.2.0" or
 -- "base-4.8.2.0-0d6d1084fbc041e1cded9228e80e264d"
