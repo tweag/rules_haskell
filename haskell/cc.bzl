@@ -35,9 +35,11 @@ def cc_headers(ctx):
     for dep in ctx.attr.deps if CcSkylarkApiProviderHacked in dep
   ])
 
-  dirs = set.to_list(set.from_list([hdr.dirname for hdr in hdrs]))
+  flags = set.to_list(set.from_list(
+      [f for dep in ctx.attr.deps if hasattr(dep, "cc")
+         for f in dep.cc.compile_flags]))
 
-  return hdrs.to_list(), ["-I" + dir for dir in dirs]
+  return hdrs.to_list(), [f for flag in flags for f in ctx.tokenize(flag)]
 
 def _cc_import_impl(ctx):
   return [
