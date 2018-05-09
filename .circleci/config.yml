@@ -3,7 +3,7 @@ version: 2
 jobs:
   build-linux:
     docker:
-      - image: nixos/nix
+      - image: nixos/nix:1.11.14
     working_directory: ~/rules_haskell
     steps:
       - checkout

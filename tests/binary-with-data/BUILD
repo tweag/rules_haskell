@@ -10,6 +10,8 @@ haskell_binary(
   main_file = "bin1.hs",
   prebuilt_dependencies = ["base"],
   visibility = ["//visibility:public"],
+  # Regular file input:
+  data = ["bin1-input"],
 )
 
 haskell_binary(
