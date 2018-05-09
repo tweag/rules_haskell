@@ -5,9 +5,24 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_binary",
 )
 
+genrule(
+    name = "gen-A-boot",
+    srcs = ["A.hs-boot.in"],
+    outs = ["srcs/A.hs-boot"],
+    cmd = "cp $< $@",
+)
+
+genrule(
+    name = "gen-A",
+    srcs = ["A.hs.in"],
+    outs = ["srcs/A.hs"],
+    cmd = "cp $< $@",
+)
+
 haskell_library(
   name = "hs-boot-lib",
-  srcs = ["A.hs", "A.hs-boot", "B.hs"],
+  srcs = [":gen-A", ":gen-A-boot", "srcs/B.hs"],
+  src_strip_prefix = "srcs",
   prebuilt_dependencies = ["base"],
   visibility = ["//visibility:public"],
 )
