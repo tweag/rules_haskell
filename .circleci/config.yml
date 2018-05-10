@@ -46,7 +46,13 @@ jobs:
       - run:
           name: Install Nix
           command: |
-            curl https://nixos.org/nix/install | sh
+            # XXX Workaround a Nix 2.0 bug by sticking to Nix 1.11 for
+            # now. See https://github.com/NixOS/nix/issues/1988.
+            nixurl=https://nixos.org/releases/nix/nix-1.11.16/nix-1.11.16-x86_64-darwin.tar.bz2
+            curl -s $nixurl | tar xf - -C /tmp
+            # XXX Even when script runs correctly, it still returns non-zero rc.
+            # So ignore it for now.
+            yes | /tmp/nix-1.11.16-x86_64-darwin/install || true
       - run:
           name: System dependencies
           command: |
