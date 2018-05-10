@@ -2,57 +2,7 @@ load("//hazel_base_repository:hazel_base_repository.bzl",
      "hazel_base_repository",
      "symlink_and_invoke_hazel")
 
-def _hazel_paths_module_impl(ctx):
-  ctx.actions.expand_template(
-      template=ctx.file._template,
-      output=ctx.outputs.module,
-      substitutions={
-          "{MODULE_NAME}": ctx.label.name,
-          "{VERSION_NUMBER_LIST}": str(ctx.attr.version_number),
-          "{DATADIR_IMPL}": "return \"\"",
-      })
-
-hazel_paths_module = rule(
-    implementation = _hazel_paths_module_impl,
-    attrs={
-        "version_number": attr.int_list(mandatory=True),
-        "_template": attr.label(
-            default=Label("//:paths-template.hs"),
-            allow_files=True,
-            single_file=True),
-    },
-    outputs={"module": "hazel.paths/%{name}.hs"})
-
-def _hazel_writefile_impl(ctx):
-  ctx.actions.write(ctx.outputs.out, ctx.attr.contents, is_executable=False)
-
-hazel_writefile = rule(
-    implementation = _hazel_writefile_impl,
-    attrs = {
-        "contents": attr.string(mandatory=True),
-        "output": attr.string(mandatory=True),
-    },
-    outputs={"out": "%{output}"})
-
-def _hazel_symlink_impl(ctx):
-  ctx.actions.run(
-      outputs=[ctx.outputs.out],
-      inputs=[ctx.file.src],
-      executable="ln",
-      arguments=["-s",
-                  "/".join([".."] * len(ctx.outputs.out.dirname.split("/")))
-                    + "/" + ctx.file.src.path,
-                  ctx.outputs.out.path])
-
-hazel_symlink = rule(
-    implementation = _hazel_symlink_impl,
-    attrs = {
-        "src": attr.label(mandatory=True, allow_files=True, single_file=True),
-        "out": attr.string(mandatory=True),
-    },
-    outputs={"out": "%{out}"})
-
-def _cabal_haskell_package_impl(ctx):
+def _cabal_haskell_repository_impl(ctx):
   pkg = "{}-{}".format(ctx.attr.package_name, ctx.attr.package_version)
   url = "https://hackage.haskell.org/package/{}.tar.gz".format(pkg)
   # If the SHA is wrong, the error message is very unhelpful:
@@ -70,11 +20,11 @@ def _cabal_haskell_package_impl(ctx):
       sha256=ctx.attr.sha256,
       output="")
 
-  symlink_and_invoke_hazel(ctx, ctx.attr.hazel_base_repo_name, ctx.attr.package_name + ".cabal", "BUILD")
+  symlink_and_invoke_hazel(ctx, ctx.attr.hazel_base_repo_name, ctx.attr.package_name + ".cabal",
+                           "package.bzl")
 
-
-_cabal_haskell_package = repository_rule(
-    implementation=_cabal_haskell_package_impl,
+_cabal_haskell_repository = repository_rule(
+    implementation=_cabal_haskell_repository_impl,
     attrs={
         "package_name": attr.string(mandatory=True),
         "package_version": attr.string(mandatory=True),
@@ -126,12 +76,11 @@ def hazel_repositories(prebuilt_dependencies, packages):
       name = hazel_base_repo_name,
       # TODO: don't hard-code this in
       ghc="@ghc//:bin/ghc",
-      versions = [n + "-" + packages[n].version for n in packages],
-      prebuilt_dependencies = [n + "-" + prebuilt_dependencies[n]
-                               for n in prebuilt_dependencies],
+      prebuilt_dependencies = prebuilt_dependencies,
+      packages = {n: packages[n].version for n in packages},
   )
   for p in packages:
-    _cabal_haskell_package(
+    _cabal_haskell_repository(
         name = "haskell_" + p,
         package_name = p,
         package_version = packages[p].version,
@@ -145,4 +94,4 @@ def hazel_repositories(prebuilt_dependencies, packages):
 
 def hazel_library(name):
   """Returns the label of the haskell_library rule for the given package."""
-  return "@haskell_{}//:lib-{}".format(name,name)
+  return "@haskell_{}//:{}-lib".format(name,name)
