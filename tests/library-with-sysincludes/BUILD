@@ -10,6 +10,7 @@ haskell_cc_import(
   name = "zlib",
   shared_library = "@zlib//:lib",
   hdrs = ["@zlib.dev//:include"],
+  strip_include_prefix = "external/zlib.dev/include",
 )
 
 haskell_library(

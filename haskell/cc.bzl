@@ -37,16 +37,29 @@ def cc_headers(ctx):
 
   flags = set.to_list(set.from_list(
       [f for dep in ctx.attr.deps if hasattr(dep, "cc")
-         for f in dep.cc.compile_flags]))
+         for f in dep.cc.compile_flags]
+      + [f for dep in ctx.attr.deps if CcSkylarkApiProviderHacked in dep
+         for f in dep[CcSkylarkApiProviderHacked].compile_flags]
+      ))
 
   return hdrs.to_list(), [f for flag in flags for f in ctx.tokenize(flag)]
 
 def _cc_import_impl(ctx):
+  prefix = ctx.attr.strip_include_prefix
+  roots = set.empty()
+  for f in ctx.files.hdrs:
+    if not f.path.startswith(prefix):
+      fail("Header {} does not have expected prefix {}".format(
+          f.path, prefix))
+    roots = set.insert(roots, f.root.path if f.root.path else ".")
+
+  flags = ["-I" + paths.join(root, prefix) for root in set.to_list(roots)]
   return [
     DefaultInfo(files = depset(ctx.attr.shared_library.files)),
-    CcSkylarkApiProviderHacked(transitive_headers =
-      depset(transitive = [l.files for l in ctx.attr.hdrs]),
-    )
+    CcSkylarkApiProviderHacked(
+        transitive_headers =
+            depset(transitive = [l.files for l in ctx.attr.hdrs]),
+        compile_flags = flags),
   ]
 
 # XXX This is meant as a drop-in replacement for the native cc_import,
@@ -77,7 +90,14 @@ during runtime.
 The list of header files published by this precompiled library to be
 directly included by sources in dependent rules.
 """,
-    )
+    ),
+    "strip_include_prefix": attr.string(
+      doc = """
+The prefix to strip from the paths of the headers of this rule.
+When set, the headers in the `hdrs` attribute of this rule are
+accessible at their path (relative to the repository) with this
+prefix cut off.
+"""),
   },
 )
 """Imports a prebuilt shared library.
