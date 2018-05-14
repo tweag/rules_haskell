@@ -32,4 +32,11 @@ haskell_library(
 haskell_doc(
   name = "haddock",
   deps = [":haddock-lib-b"],
+  index_transitive_deps = False,
+)
+
+haskell_doc(
+  name = "haddock-transitive",
+  deps = [":haddock-lib-b"],
+  index_transitive_deps = True,
 )
