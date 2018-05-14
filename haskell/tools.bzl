@@ -60,3 +60,18 @@ def so_extension(ctx):
     string of extension.
   """
   return "dylib" if is_darwin(ctx) else "so"
+
+def protobuf_tools(ctx):
+  """Similarly to `tools`, return a structure containing all protobuf-related
+  tools such as `protoc` or `protoc_gen_haskell`.
+
+  Requires `@io_tweag_rules_haskell//protobuf:toolchain` toolchain to be
+  registered.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    struct with Files inside.
+  """
+  return ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].tools

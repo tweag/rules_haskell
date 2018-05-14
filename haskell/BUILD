@@ -3,6 +3,7 @@ package(default_visibility = ["//visibility:public"])
 exports_files([
 
   "haskell.bzl",
+  "protobuf.bzl",
   "repositories.bzl",
   "cc.bzl",
   "haddock.bzl",
