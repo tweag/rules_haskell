@@ -67,6 +67,9 @@ CcSkylarkApiProviderHacked = provider(
 
 Returns a depset of headers that have been declared in the src or
 headers attribute(possibly empty but never None).
-"""
+""",
+    "include_directories": """
+Returns the list of include directories used to compile this target.
+""",
   },
 )

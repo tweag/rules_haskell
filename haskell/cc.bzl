@@ -21,12 +21,11 @@ def cc_headers(ctx):
   """
   hdrs = depset()
 
-  hdrs = depset(transitive = [
-    # XXX There's gotta be a better way to test the presence of
-    # CcSkylarkApiProvider.
-    dep.cc.transitive_headers
-    for dep in ctx.attr.deps if hasattr(dep, "cc")
-  ])
+  # XXX There's gotta be a better way to test the presence of
+  # CcSkylarkApiProvider.
+  ccs = [dep.cc for dep in ctx.attr.deps if hasattr(dep, "cc")]
+
+  hdrs = depset(transitive = [cc.transitive_headers for cc in ccs])
 
   hdrs = depset(transitive = [hdrs] + [
     # XXX cc_import doesn't produce a cc field, so we emulate it with a
@@ -35,16 +34,49 @@ def cc_headers(ctx):
     for dep in ctx.attr.deps if CcSkylarkApiProviderHacked in dep
   ])
 
-  dirs = set.to_list(set.from_list([hdr.dirname for hdr in hdrs]))
+  include_directories = set.to_list(set.from_list(
+      [f for cc in ccs for f in cc.include_directories]
+      + [f for dep in ctx.attr.deps if CcSkylarkApiProviderHacked in dep
+         for f in dep[CcSkylarkApiProviderHacked].include_directories]))
+  quote_include_directories = set.to_list(set.from_list(
+      [f for cc in ccs for f in cc.quote_include_directories]))
+  system_include_directories = set.to_list(set.from_list(
+      [f for cc in ccs for f in cc.system_include_directories]))
 
-  return hdrs.to_list(), ["-I" + dir for dir in dirs]
+  flags = (
+      ["-D" + define for cc in ccs for define in cc.defines]
+      + ["-I" + include for include in include_directories]
+      + [f for include in quote_include_directories
+         for f in ["-iquote", include]]
+      + [f for include in system_include_directories
+         for f in ["-isystem", include]])
+
+  return hdrs.to_list(), flags
 
 def _cc_import_impl(ctx):
+  strip_prefix = ctx.attr.strip_include_prefix
+  # cc_library's strip_include_prefix attribute accepts both absolute and
+  # relative paths.  For simplicity we currently only implement absolute
+  # paths.
+  if strip_prefix.startswith("/"):
+    prefix = strip_prefix[1:]
+  else:
+    prefix = paths.join(ctx.label.workspace_root, ctx.label.package, strip_prefix)
+
+  roots = set.empty()
+  for f in ctx.files.hdrs:
+    if not f.path.startswith(prefix):
+      fail("Header {} does not have expected prefix {}".format(
+          f.path, prefix))
+    roots = set.insert(roots, f.root.path if f.root.path else ".")
+
+  include_directories = [paths.join(root, prefix) for root in set.to_list(roots)]
   return [
     DefaultInfo(files = depset(ctx.attr.shared_library.files)),
-    CcSkylarkApiProviderHacked(transitive_headers =
-      depset(transitive = [l.files for l in ctx.attr.hdrs]),
-    )
+    CcSkylarkApiProviderHacked(
+        transitive_headers =
+            depset(transitive = [l.files for l in ctx.attr.hdrs]),
+        include_directories = include_directories),
   ]
 
 # XXX This is meant as a drop-in replacement for the native cc_import,
@@ -75,7 +107,17 @@ during runtime.
 The list of header files published by this precompiled library to be
 directly included by sources in dependent rules.
 """,
-    )
+    ),
+    "strip_include_prefix": attr.string(
+      doc = """
+The prefix to strip from the paths of the headers of this rule.
+When set, the headers in the `hdrs` attribute of this rule are
+accessible at their path (relative to the repository) with this
+prefix cut off.
+
+If it's a relative path, it's taken as a package-relative one. If it's an
+absolute one, it's understood as a repository-relative path.
+"""),
   },
 )
 """Imports a prebuilt shared library.
