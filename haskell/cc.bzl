@@ -21,12 +21,11 @@ def cc_headers(ctx):
   """
   hdrs = depset()
 
-  hdrs = depset(transitive = [
-    # XXX There's gotta be a better way to test the presence of
-    # CcSkylarkApiProvider.
-    dep.cc.transitive_headers
-    for dep in ctx.attr.deps if hasattr(dep, "cc")
-  ])
+  # XXX There's gotta be a better way to test the presence of
+  # CcSkylarkApiProvider.
+  ccs = [dep.cc for dep in ctx.attr.deps if hasattr(dep, "cc")]
+
+  hdrs = depset(transitive = [cc.transitive_headers for cc in ccs])
 
   hdrs = depset(transitive = [hdrs] + [
     # XXX cc_import doesn't produce a cc field, so we emulate it with a
@@ -35,14 +34,24 @@ def cc_headers(ctx):
     for dep in ctx.attr.deps if CcSkylarkApiProviderHacked in dep
   ])
 
-  flags = set.to_list(set.from_list(
-      [f for dep in ctx.attr.deps if hasattr(dep, "cc")
-         for f in dep.cc.compile_flags]
+  include_directories = set.to_list(set.from_list(
+      [f for cc in ccs for f in cc.include_directories]
       + [f for dep in ctx.attr.deps if CcSkylarkApiProviderHacked in dep
-         for f in dep[CcSkylarkApiProviderHacked].compile_flags]
-      ))
+         for f in dep[CcSkylarkApiProviderHacked].include_directories]))
+  quote_include_directories = set.to_list(set.from_list(
+      [f for cc in ccs for f in cc.quote_include_directories]))
+  system_include_directories = set.to_list(set.from_list(
+      [f for cc in ccs for f in cc.system_include_directories]))
 
-  return hdrs.to_list(), [f for flag in flags for f in ctx.tokenize(flag)]
+  flags = (
+      ["-D" + define for cc in ccs for define in cc.defines]
+      + ["-I" + include for include in include_directories]
+      + [f for include in quote_include_directories
+         for f in ["-iquote", include]]
+      + [f for include in system_include_directories
+         for f in ["-isystem", include]])
+
+  return hdrs.to_list(), flags
 
 def _cc_import_impl(ctx):
   prefix = ctx.attr.strip_include_prefix
@@ -53,13 +62,13 @@ def _cc_import_impl(ctx):
           f.path, prefix))
     roots = set.insert(roots, f.root.path if f.root.path else ".")
 
-  flags = ["-I" + paths.join(root, prefix) for root in set.to_list(roots)]
+  include_directories = [paths.join(root, prefix) for root in set.to_list(roots)]
   return [
     DefaultInfo(files = depset(ctx.attr.shared_library.files)),
     CcSkylarkApiProviderHacked(
         transitive_headers =
             depset(transitive = [l.files for l in ctx.attr.hdrs]),
-        compile_flags = flags),
+        include_directories = include_directories),
   ]
 
 # XXX This is meant as a drop-in replacement for the native cc_import,

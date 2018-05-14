@@ -61,9 +61,8 @@ CcSkylarkApiProviderHacked = provider(
 Returns a depset of headers that have been declared in the src or
 headers attribute(possibly empty but never None).
 """,
-    "compile_flags": """
-Returns a list of flags which can be used to run a compilation step
-using the transitive_headers.
+    "include_directories": """
+Returns the list of include directories used to compile this target.
 """,
   },
 )
