@@ -89,12 +89,21 @@ nixpkgs_package(
   name = "zlib.dev",
   repository = "@nixpkgs",
   build_file_content = """
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
 package(default_visibility = ["//visibility:public"])
 
 filegroup (
   name = "include",
   srcs = glob(["include/*.h"]),
   testonly = 1,
+)
+
+haskell_cc_import(
+    name = "zlib",
+    shared_library = "@zlib//:lib",
+    hdrs = [":include"],
+    testonly = 1,
+    strip_include_prefix = "include",
 )
 """,
 )

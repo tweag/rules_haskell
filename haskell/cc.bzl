@@ -54,7 +54,15 @@ def cc_headers(ctx):
   return hdrs.to_list(), flags
 
 def _cc_import_impl(ctx):
-  prefix = ctx.attr.strip_include_prefix
+  strip_prefix = ctx.attr.strip_include_prefix
+  # cc_library's strip_include_prefix attribute accepts both absolute and
+  # relative paths.  For simplicity we currently only implement absolute
+  # paths.
+  if strip_prefix.startswith("/"):
+    prefix = strip_prefix[1:]
+  else:
+    prefix = paths.join(ctx.label.workspace_root, ctx.label.package, strip_prefix)
+
   roots = set.empty()
   for f in ctx.files.hdrs:
     if not f.path.startswith(prefix):
@@ -106,6 +114,9 @@ The prefix to strip from the paths of the headers of this rule.
 When set, the headers in the `hdrs` attribute of this rule are
 accessible at their path (relative to the repository) with this
 prefix cut off.
+
+If it's a relative path, it's taken as a package-relative one. If it's an
+absolute one, it's understood as a repository-relative path.
 """),
   },
 )
