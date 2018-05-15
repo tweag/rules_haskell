@@ -87,7 +87,7 @@ def haskell_library_impl(ctx):
   )
 
   build_info = HaskellBuildInfo(
-    package_names = set.insert(dep_info.package_names, get_pkg_id(ctx)),
+    package_ids = set.insert(dep_info.package_ids, get_pkg_id(ctx)),
     package_confs = set.insert(dep_info.package_confs, conf_file),
     package_caches = set.insert(dep_info.package_caches, cache_file),
     # NOTE We have to use lists for static libraries because the order is
@@ -101,7 +101,7 @@ def haskell_library_impl(ctx):
     external_libraries = dep_info.external_libraries,
   )
   lib_info = HaskellLibraryInfo(
-    package_name = get_pkg_id(ctx),
+    package_id = get_pkg_id(ctx),
     import_dirs = c.import_dirs,
     exposed_modules = exposed_modules,
     other_modules = other_modules,

@@ -66,9 +66,9 @@ def _haskell_lint_aspect_impl(target, ctx):
     args.add(["-package", prebuilt_dep])
 
   # Expose all bazel dependencies
-  for package in set.to_list(build_info.package_names):
-    if lib_info == None or package != lib_info.package_name:
-      args.add(["-package", package])
+  for package in set.to_list(build_info.package_ids):
+    if lib_info == None or package != lib_info.package_id:
+      args.add(["-package-id", package])
 
   for cache in set.to_list(build_info.package_caches):
     args.add(["-package-db", cache.dirname])
@@ -171,9 +171,9 @@ def _haskell_doctest_aspect_impl(target, ctx):
     args.add(["-package", prebuilt_dep])
 
   # Expose all bazel dependencies
-  for package in set.to_list(build_info.package_names):
-    if lib_info != None or package != lib_info.package_name:
-      args.add(["-package", package])
+  for package in set.to_list(build_info.package_ids):
+    if lib_info != None or package != lib_info.package_id:
+      args.add(["-package-id", package])
 
   for cache in set.to_list(build_info.package_caches):
     args.add(["-package-db", cache.dirname])

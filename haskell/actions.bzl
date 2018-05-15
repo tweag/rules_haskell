@@ -412,8 +412,8 @@ def link_haskell_bin(ctx, object_files):
 
   args.add([f.path for f in object_files])
 
-  for package in set.to_list(dep_info.package_names):
-    args.add(["-package", package])
+  for package in set.to_list(dep_info.package_ids):
+    args.add(["-package-id", package])
 
   for cache in set.to_list(dep_info.package_caches):
     args.add(["-package-db", cache.dirname])
@@ -477,9 +477,6 @@ def compile_haskell_lib(ctx):
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
   c = _compilation_defaults(ctx)
-  c.args.add([
-    "-package-name", get_pkg_id(ctx),
-  ])
 
   # This is absolutely required otherwise GHC doesn't know what package it's
   # creating `Name`s for to put them in Haddock interface files which then
@@ -559,12 +556,11 @@ def link_dynamic_lib(ctx, object_files):
 
   dep_info = gather_dep_info(ctx)
 
-  for package in set.to_list(
-      set.union(
-        dep_info.package_names,
-        set.from_list(ctx.attr.prebuilt_dependencies),
-      )):
+  for package in set.to_list(dep_info.package_ids):
+    args.add(["-package-id", package])
+  for package in set.to_list(set.from_list(ctx.attr.prebuilt_dependencies)):
     args.add(["-package", package])
+
 
   for cache in set.to_list(dep_info.package_caches):
     args.add(["-package-db", cache.dirname])
@@ -636,7 +632,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exp
     "dynamic-library-dirs": "${pkgroot}",
     "hs-libraries": _get_library_name(ctx),
     "depends":
-      ", ".join([ d[HaskellLibraryInfo].package_name for d in
+      ", ".join([ d[HaskellLibraryInfo].package_id for d in
                   ctx.attr.deps if HaskellLibraryInfo in d])
   }
   ctx.actions.write(
@@ -735,8 +731,8 @@ def _compilation_defaults(ctx):
     haddock_args.add(items, before_each="--optghc")
 
   # Expose all bazel dependencies
-  for package in set.to_list(dep_info.package_names):
-    items = ["-package", package]
+  for package in set.to_list(dep_info.package_ids):
+    items = ["-package-id", package]
     args.add(items)
     if package != get_pkg_id(ctx):
       haddock_args.add(items, before_each="--optghc")
@@ -866,9 +862,12 @@ def _zencode(s):
   return s.replace("Z", "ZZ").replace("_", "ZU").replace("/", "ZS")
 
 def get_pkg_name(ctx):
-  """Get package name. Package name includes Bazel package and name of the
-  component. We can't use just the latter because then two components with
-  the same names in different packages would clash.
+  """Get package name.
+
+  The name is not required to be unique/injective; however it must be a valid
+  GHC package name (i.e., no underscores).  This encoding is not aims to
+  change as little as possible since it is used for display and also for the
+  "PackageImports" extension.
 
   Args:
     ctx: Rule context
@@ -876,14 +875,15 @@ def get_pkg_name(ctx):
   Returns:
     string: GHC package name to use.
   """
-  return _zencode("/".join([i for i in [
-    ctx.label.workspace_root,
-    ctx.label.package,
-    ctx.attr.name,
-  ] if i != ""]))
+  return ctx.attr.name.replace("_", "ZU")
 
 def get_pkg_id(ctx):
   """Get package identifier of the form `name-version`.
+
+  The identifier is required to be unique for each Haskell rule.
+  It includes the Bazel package and the name of the this component.
+  We can't use just the latter because then two components with
+  the same names in different packages would clash.
 
   Args:
     ctx: Rule context
@@ -892,9 +892,11 @@ def get_pkg_id(ctx):
     string: GHC package ID to use.
   """
   return "{0}-{1}".format(
-    get_pkg_name(ctx),
-    ctx.attr.version,
-  )
+    _zencode(paths.join(
+        ctx.label.workspace_root,
+        ctx.label.package,
+        ctx.attr.name)),
+    ctx.attr.version)
 
 def _get_library_name(ctx):
   """Get core library name for this package. This is "HS" followed by package ID.
@@ -923,7 +925,7 @@ def gather_dep_info(ctx):
   """
 
   acc = HaskellBuildInfo(
-    package_names = set.empty(),
+    package_ids = set.empty(),
     package_confs = set.empty(),
     package_caches = set.empty(),
     static_libraries = [],
@@ -936,13 +938,13 @@ def gather_dep_info(ctx):
   for dep in ctx.attr.deps:
     if HaskellBuildInfo in dep:
       binfo = dep[HaskellBuildInfo]
-      package_names = acc.package_names
+      package_ids = acc.package_ids
       if HaskellBinaryInfo in dep:
         fail("Target {0} cannot depend on binary".format(ctx.attr.name))
       if HaskellLibraryInfo in dep:
-        set.mutable_insert(package_names, dep[HaskellLibraryInfo].package_name)
+        set.mutable_insert(package_ids, dep[HaskellLibraryInfo].package_id)
       acc = HaskellBuildInfo(
-        package_names = package_names,
+        package_ids = package_ids,
         package_confs = set.mutable_union(acc.package_confs, binfo.package_confs),
         package_caches = set.mutable_union(acc.package_caches, binfo.package_caches),
         static_libraries = acc.static_libraries + binfo.static_libraries,
@@ -955,7 +957,7 @@ def gather_dep_info(ctx):
       # If not a Haskell dependency, pass it through as-is to the
       # linking phase.
       acc = HaskellBuildInfo(
-        package_names = acc.package_names,
+        package_ids = acc.package_ids,
         package_confs = acc.package_confs,
         package_caches = acc.package_caches,
         static_libraries = acc.static_libraries,
