@@ -9,6 +9,7 @@ load(
 cc_library(
   name = "c-lib",
   srcs = ["c-compiles.c"],
+  visibility = ["//visibility:public"],
 )
 
 haskell_library(
