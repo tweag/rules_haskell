@@ -561,7 +561,6 @@ def link_dynamic_lib(ctx, object_files):
   for package in set.to_list(set.from_list(ctx.attr.prebuilt_dependencies)):
     args.add(["-package", package])
 
-
   for cache in set.to_list(dep_info.package_caches):
     args.add(["-package-db", cache.dirname])
 
@@ -865,7 +864,7 @@ def get_pkg_name(ctx):
   """Get package name.
 
   The name is not required to be unique/injective; however it must be a valid
-  GHC package name (i.e., no underscores).  This encoding is not aims to
+  GHC package name (i.e., no underscores).  This encoding does not aim to
   change as little as possible since it is used for display and also for the
   "PackageImports" extension.
 
