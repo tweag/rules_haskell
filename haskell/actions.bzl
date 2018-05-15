@@ -875,7 +875,7 @@ def get_pkg_name(ctx):
   Returns:
     string: GHC package name to use.
   """
-  return ctx.attr.name.replace("_", "ZU")
+  return ctx.attr.name.replace("_", "-")
 
 def get_pkg_id(ctx):
   """Get package identifier of the form `name-version`.

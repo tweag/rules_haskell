@@ -8,8 +8,9 @@ load(
 )
 
 haskell_library(
-    # A package with the character "Z" in it shouldn't change its name
-    name = "lib-aZ",
+    # The character "Z" should be untouched in the GHC package name.
+    # However, underscores (which are not legal) should be turned into dashes.
+    name = "lib-a_Z",
     srcs = ["Lib.hs"],
     prebuilt_dependencies = ["base"],
     version = "1.2.3.4",
@@ -20,5 +21,5 @@ haskell_test(
     srcs = ["Main.hs"],
     main_file = "Main.hs",
     prebuilt_dependencies = ["base"],
-    deps = [":lib-aZ"],
+    deps = [":lib-a_Z"],
 )
