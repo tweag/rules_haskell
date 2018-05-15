@@ -24,7 +24,6 @@ load("@bazel_skylib//:lib.bzl", "paths")
 load(":haskell-impl.bzl",
   _haskell_binary_impl = "haskell_binary_impl",
   _haskell_library_impl = "haskell_library_impl",
-  _haskell_common_attrs = "haskell_common_attrs",
 )
 
 # For re-exports:
@@ -49,6 +48,61 @@ load(":cc.bzl",
   _haskell_cc_import = "haskell_cc_import",
   _cc_haskell_import = "cc_haskell_import",
 )
+
+_haskell_common_attrs = {
+  "src_strip_prefix": attr.string(
+    doc = "Directory in which module hierarchy starts.",
+  ),
+  "srcs": attr.label_list(
+    allow_files = FileType([".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"]),
+    doc = "Haskell source files.",
+  ),
+  "deps": attr.label_list(
+    doc = "List of other Haskell libraries to be linked to this target.",
+  ),
+  "data": attr.label_list(
+    doc = "See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).",
+    allow_files = True,
+    cfg = "data",
+  ),
+  "compiler_flags": attr.string_list(
+    doc = "Flags to pass to Haskell compiler.",
+  ),
+  "prebuilt_dependencies": attr.string_list(
+    doc = "Non-Bazel supplied Cabal dependencies.",
+  ),
+  "repl_interpreted": attr.bool(
+    default=True,
+    doc = """
+Whether source files should be interpreted rather than compiled. This allows
+for e.g. reloading of sources on editing, but in this case we don't handle
+boot files and hsc processing.
+
+For `haskell_binary` targets, `repl_interpreted` must be set to `True` for
+REPL to work.
+"""),
+  "repl_ghci_args": attr.string_list(
+    doc = "Arbitrary extra arguments to pass to GHCi.",
+  ),
+  # XXX Consider making this private. Blocked on
+  # https://github.com/bazelbuild/bazel/issues/4366.
+  "version": attr.string(
+    default = "1.0.0",
+    doc = "Library/binary version. Internal - do not use."
+  ),
+  "_ghc_defs_cleanup": attr.label(
+    allow_single_file = True,
+    default = Label("@io_tweag_rules_haskell//haskell:ghc-defs-cleanup.sh"),
+  ),
+  "_ghci_script": attr.label(
+    allow_single_file = True,
+    default = Label("@io_tweag_rules_haskell//haskell:ghci-script"),
+  ),
+  "_ghci_repl_wrapper": attr.label(
+    allow_single_file = True,
+    default = Label("@io_tweag_rules_haskell//haskell:ghci-repl-wrapper.sh"),
+  ),
+}
 
 def _mk_binary_rule(**kwargs):
   """Generate a rule that compiles a binary.
