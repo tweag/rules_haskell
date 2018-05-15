@@ -10,7 +10,6 @@ load(":tools.bzl", "protobuf_tools")
 load(":path_utils.bzl", "target_unique_name")
 load(":haskell-impl.bzl",
   _haskell_library_impl = "haskell_library_impl",
-  _haskell_common_attrs = "haskell_common_attrs",
 )
 
 def _capitalize_first_letter(c):
