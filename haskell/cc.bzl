@@ -187,7 +187,6 @@ def _cc_haskell_import(ctx):
     if dbin != None:
       set.mutable_insert(dyn_libs, dbin)
 
-  print(dyn_libs)
   return [
     DefaultInfo(
       files = set.to_depset(dyn_libs)
