@@ -60,9 +60,9 @@ def build_haskell_repl(
   args = ["-hide-all-packages"]
   for dep in set.to_list(build_info.prebuilt_dependencies):
     args += ["-package ", dep]
-  for package in set.to_list(build_info.package_names):
-    if not (interpreted and lib_info != None and package == lib_info.package_name):
-      args += ["-package", package]
+  for package in set.to_list(build_info.package_ids):
+    if not (interpreted and lib_info != None and package == lib_info.package_id):
+      args += ["-package-id", package]
   for cache in set.to_list(build_info.package_caches):
     args += ["-package-db", cache.dirname]
 

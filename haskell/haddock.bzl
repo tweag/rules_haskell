@@ -49,7 +49,7 @@ def _haskell_doc_aspect_impl(target, ctx):
   if HaskellBuildInfo not in target or HaskellLibraryInfo not in target:
     return []
 
-  pkg_id = target[HaskellLibraryInfo].package_name
+  pkg_id = target[HaskellLibraryInfo].package_id
 
   doc_dir_raw = "doc-{0}".format(pkg_id)
 

@@ -1,7 +1,7 @@
 HaskellBuildInfo = provider(
   doc = "Common information about build process: dependencies, etc.",
   fields = {
-    "package_names": "Set of all package names of transitive dependencies.",
+    "package_ids": "Set of all package ids of transitive dependencies.",
     "package_confs": "Set of package .conf files.",
     "package_caches": "Set of package cache files.",
     "static_libraries": "Ordered collection of compiled library archives.",
@@ -15,7 +15,7 @@ HaskellBuildInfo = provider(
 HaskellLibraryInfo = provider(
   doc = "Library-specific information.",
   fields = {
-    "package_name": "Package name, usually of the form name-version.",
+    "package_id": "Package id, usually of the form name-version.",
     "import_dirs": "Import hierarchy roots.",
     "exposed_modules": "Set of exposed module names.",
     "other_modules": "Set of non-public module names.",
