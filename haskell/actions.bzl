@@ -422,8 +422,10 @@ def link_haskell_bin(ctx, object_files):
   _add_mode_options(ctx, args)
   args.add(ctx.attr.compiler_flags)
 
-  # TODO: enable dynamic linking of Haskell dependencies for macOS.
-  if not is_darwin(ctx):
+  if is_darwin(ctx):
+    args.add(["-optl-Wl,-headerpad_max_install_names"])
+  else:
+    # TODO: enable dynamic linking of Haskell dependencies for macOS.
     args.add(["-dynamic", "-pie"])
 
   args.add(["-o", compile_output.path, dummy_static_lib.path])
@@ -607,6 +609,7 @@ def link_dynamic_lib(ctx, object_files):
     dynamic_library_tmp = ctx.actions.declare_file(dynamic_library.basename + ".temp")
     _fix_linker_paths(ctx, dynamic_library_tmp, dynamic_library,
                       dep_info.external_libraries)
+    args.add(["-optl-Wl,-headerpad_max_install_names"])
   else:
     dynamic_library_tmp = dynamic_library
     for rpath in set.to_list(_infer_rpaths(dynamic_library, solibs)):
