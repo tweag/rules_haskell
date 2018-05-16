@@ -1,0 +1,3 @@
+aeson
+language-c
+lens

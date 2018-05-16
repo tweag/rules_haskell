@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: nixos/nix
+      - image: nixos/nix:1.11.14
     working_directory: ~/rules_haskell
     steps:
       - checkout
@@ -12,8 +12,10 @@ jobs:
           command: |
             apk --no-progress update
             apk --no-progress add bash ca-certificates
-            nix-channel --update
-            nix-env -iA nixpkgs.bazel nixpkgs.binutils nixpkgs.python
+            # nixpkgs release 18.03:
+            REVISION=120b013e0c082d58a5712cde0a7371ae8b25a601
+            nix-env -f https://github.com/NixOS/nixpkgs/archive/$REVISION.tar.gz \
+              -iA bazel binutils python
       - run:
           name: Build
           command: bazel build --jobs=2 //...
@@ -21,6 +23,10 @@ jobs:
           name: Run tests
           command: bazel test //...
       - run:
-          name: Test some package repositories
-          command: bazel build --jobs=2 \
-              @haskell_{aeson,language-c,lens,network}//...
+          name: Test some third-party packages
+          command: |
+              bazel build --jobs=2 \
+                  $(for p in $(cat test-packages.txt)
+                    do
+                       echo @haskell_$p//...
+                    done)
