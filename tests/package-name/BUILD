@@ -22,4 +22,5 @@ haskell_test(
     main_file = "Main.hs",
     prebuilt_dependencies = ["base"],
     deps = [":lib-a_Z"],
+    size = "small",
 )
