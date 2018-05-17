@@ -43,15 +43,16 @@ def cc_headers(ctx):
   system_include_directories = set.to_list(set.from_list(
       [f for cc in ccs for f in cc.system_include_directories]))
 
-  flags = (
+  cpp_flags = (
       ["-D" + define for cc in ccs for define in cc.defines]
-      + ["-I" + include for include in include_directories]
       + [f for include in quote_include_directories
          for f in ["-iquote", include]]
       + [f for include in system_include_directories
          for f in ["-isystem", include]])
 
-  return hdrs.to_list(), flags
+  include_args = ["-I" + include for include in include_directories]
+
+  return hdrs.to_list(), cpp_flags, include_args
 
 def _cc_import_impl(ctx):
   strip_prefix = ctx.attr.strip_include_prefix

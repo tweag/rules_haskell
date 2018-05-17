@@ -131,7 +131,6 @@ haskell_cc_import(
 
 new_http_archive(
   name = "haskell_zlib",
-  # version = "0.6.2",
   build_file = "tests/BUILD.zlib",
   strip_prefix = "zlib-0.6.2",
   urls = ["https://hackage.haskell.org/package/zlib-0.6.2/zlib-0.6.2.tar.gz"],
