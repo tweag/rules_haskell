@@ -17,8 +17,18 @@ Hazel is still experimental, and its API is subject to change.  Most Hackage
 packages will not yet build with it; however, a small number have been
 verified so far as a proof of concept.
 
-## Setup
-First, add some `rules_haskell`-related boilerplate to your `WORKSPACE` file,
+## Setting up a new project
+First, run the `Stackage.hs` script to generate a list of all packages in a
+particular LTS release:
+
+```
+./Stackage.hs lts-10.5 packages.bzl
+```
+
+That `packages.bzl` file should be checked into your repository.
+
+
+Then, add some `rules_haskell`-related boilerplate to your `WORKSPACE` file,
 as described in their
 [`README`](https://github.com/tweag/rules_nixpkgs/blob/master/README.md):
 
@@ -66,17 +76,7 @@ haskell_repositories()
 register_toolchains("@ghc//:ghc")
 ```
 
-### Using Hazel in Build Rules
-First, run the `Stackage.hs` script to generate a list of all packages in a
-particular LTS release:
-
-```
-./Stackage.hs lts-10.5 packages.bzl
-```
-
-(That `packages.bzl` file should be checked into your repository.)
-
-Then, in `WORKSPACE`, load that file and feed its contents to `haskell_repositories` macro:
+Finally, in `WORKSPACE`, load `packages.bzl` and feed its contents to `haskell_repositories` macro:
 
 ```
 load("@ai_formation_hazel//:hazel.bzl", "hazel_repositories")
@@ -87,7 +87,8 @@ hazel_repositories(
     packages=packages)
 ```
 
-That macro creates a separate [external
+## Using Hazel in build rules
+The `hazel_repositories` macro creates a separate [external
 dependency](https://docs.bazel.build/versions/master/external.html) for each
 package.  It downloads the corresponding Cabal tarball from Hackage
 and construct build rules for compiling the components of that package.
