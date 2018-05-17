@@ -235,7 +235,8 @@ def _process_hsc_file(ctx, ghc_defs_dump, hsc_file):
   args.add([hsc_file, "-o", hs_out])
 
   # Bring in scope the header files of dependencies, if any.
-  hdrs, include_args = cc_headers(ctx)
+  hdrs, cpp_flags, include_args = cc_headers(ctx)
+  args.add(["--cflag=" + f for f in cpp_flags])
   args.add(["--cflag=" + f for f in include_args])
   args.add("-I{0}".format(ghc_defs_dump.dirname))
   args.add("-i{0}".format(ghc_defs_dump.basename))
@@ -834,10 +835,12 @@ def _compilation_defaults(ctx):
           ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.dyn_hi"))
         )
 
-  hdrs, include_args = cc_headers(ctx)
-  preprocessor_args = ["-optP" + f for f in include_args]
+  hdrs, cpp_flags, include_args = cc_headers(ctx)
+  preprocessor_args = ["-optP" + f for f in cpp_flags]
   args.add(preprocessor_args)
+  args.add(include_args)
   haddock_args.add(preprocessor_args, before_each="--optghc")
+  haddock_args.add(include_args, before_each="-optghc")
 
   for f in set.to_list(source_files):
     args.add(f)

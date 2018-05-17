@@ -127,6 +127,15 @@ haskell_cc_import(
 """,
 )
 
+# zlib as a Haskell library
+
+new_http_archive(
+  name = "haskell_zlib",
+  build_file = "tests/BUILD.zlib",
+  strip_prefix = "zlib-0.6.2",
+  urls = ["https://hackage.haskell.org/package/zlib-0.6.2/zlib-0.6.2.tar.gz"],
+)
+
 maven_jar(
   name = "org_apache_spark_spark_core_2_10",
   artifact = "org.apache.spark:spark-core_2.10:1.6.0",
