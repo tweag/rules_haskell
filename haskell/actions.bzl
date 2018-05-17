@@ -201,15 +201,21 @@ def _make_ghc_defs_dump(ctx):
     arguments = [args],
   )
 
-  ctx.actions.run(
-    inputs = [ghc_defs_dump_raw, tools(ctx).grep],
+  ctx.actions.run_shell(
+    inputs = [ghc_defs_dump_raw, ctx.file._cpp_defines, tools(ctx).grep],
     outputs = [ghc_defs_dump],
-    executable = ctx.file._ghc_defs_cleanup,
-    arguments = [
-      tools(ctx).grep.path,
-      ghc_defs_dump_raw.path,
-      ghc_defs_dump.path,
-    ],
+    command = """
+    grep "^[^#]" {cpp_defines} | while IFS= read -r patt; do
+      grep "$patt" {raw} >> {filtered}
+    done
+    """.format(
+      cpp_defines = ctx.file._cpp_defines.path,
+      raw = ghc_defs_dump_raw.path,
+      filtered = ghc_defs_dump.path,
+    ),
+    env = {
+      "PATH": get_build_tools_path(ctx),
+    },
   )
 
   return ghc_defs_dump

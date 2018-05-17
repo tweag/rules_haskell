@@ -90,9 +90,9 @@ REPL to work.
     default = "1.0.0",
     doc = "Library/binary version. Internal - do not use."
   ),
-  "_ghc_defs_cleanup": attr.label(
+  "_cpp_defines": attr.label(
     allow_single_file = True,
-    default = Label("@io_tweag_rules_haskell//haskell:ghc-defs-cleanup.sh"),
+    default = Label("@io_tweag_rules_haskell//haskell:cpp_defines"),
   ),
   "_ghci_script": attr.label(
     allow_single_file = True,

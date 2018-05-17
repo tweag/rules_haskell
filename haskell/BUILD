@@ -10,8 +10,9 @@ exports_files([
   "ghc_bindist.bzl",
   "ghci-repl.bzl",
 
+  "cpp_defines",
+
   "copy-dep-haddock.sh",
-  "ghc-defs-cleanup.sh",
   "ghc-lint-wrapper.sh",
   "ghci-repl-wrapper.sh",
   "ghci-script",

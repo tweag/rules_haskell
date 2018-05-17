@@ -116,7 +116,7 @@ def _haskell_proto_aspect_impl(target, ctx):
     "repl_interpreted": True,
     "repl_ghci_args": [],
     "version": "1.0.0",
-    "_ghc_defs_cleanup": ctx.attr._ghc_defs_cleanup,
+    "_cpp_defines": ctx.attr._cpp_defines,
     "_ghci_script": ctx.attr._ghci_script,
     "_ghci_repl_wrapper": ctx.attr._ghci_repl_wrapper,
     "hidden_modules": [],
@@ -153,9 +153,9 @@ def _haskell_proto_aspect_impl(target, ctx):
 _haskell_proto_aspect = aspect(
   _haskell_proto_aspect_impl,
   attrs = {
-    "_ghc_defs_cleanup": attr.label(
+    "_cpp_defines": attr.label(
       allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:ghc-defs-cleanup.sh"),
+      default = Label("@io_tweag_rules_haskell//haskell:cpp_defines"),
     ),
     "_ghci_script": attr.label(
       allow_single_file = True,

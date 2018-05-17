@@ -1,0 +1,8 @@
+# CPP directives to set when compiling source files.
+#
+# Syntax of this file: same as .gitignore. Each line is a (regular
+# expression) pattern.
+
+__GLASGOW_HASKELL__
+.*_HOST_OS
+.*_BUILD_ARCH
