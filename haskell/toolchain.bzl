@@ -141,15 +141,17 @@ def _haskell_toolchain_impl(ctx):
     symlink = ctx.actions.declare_file(
       paths.join(visible_binaries, paths.basename(target))
     )
-    ctx.actions.run(
+    ctx.actions.run_shell(
       inputs = ctx.files.tools,
       outputs = [symlink],
-      executable = ctx.file._make_bin_symlink_which,
-      use_default_shell_env = True, # FIXME see above
-      arguments = [
-        target,
-        symlink.path,
-      ],
+      command = """
+      mkdir -p $(dirname "{symlink}")
+      ln -s $(which "{target}") "{symlink}"
+      """.format(
+        target = target,
+        symlink = symlink.path,
+      ),
+      use_default_shell_env = True,
     )
     set.mutable_insert(symlinks, symlink)
 
@@ -190,10 +192,6 @@ _haskell_toolchain = rule(
     ),
     "version": attr.string(mandatory = True),
     "is_darwin":  attr.bool(mandatory = True),
-    "_make_bin_symlink_which": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:make-bin-symlink-which.sh")
-    ),
     "_crosstool": attr.label(
         default = Label("//tools/defaults:crosstool")
     ),
