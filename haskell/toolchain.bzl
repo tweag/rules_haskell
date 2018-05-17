@@ -26,15 +26,21 @@ def _haskell_toolchain_impl(ctx):
     if t.basename == "ghc":
       compiler = t
   version_file = ctx.actions.declare_file("ghc-version")
-  arguments = ctx.actions.args()
-  arguments.add(compiler)
-  arguments.add(version_file)
-  arguments.add(ctx.attr.version)
-  ctx.actions.run(
+  ctx.actions.run_shell(
     inputs = [compiler],
     outputs = [version_file],
-    executable = ctx.file._ghc_version_check,
-    arguments = [arguments],
+    command = """
+    {compiler} --numeric-version > {version_file}
+    if [[ {expected_version} != $(< {version_file}) ]]
+    then
+        echo GHC version $(< {version_file}) does not match expected version {expected_version}.
+        exit 1
+    fi
+    """.format(
+      compiler = compiler.path,
+      version_file = version_file.path,
+      expected_version = ctx.attr.version,
+    ),
   )
 
   # NOTE The only way to let various executables know where other
@@ -184,10 +190,6 @@ _haskell_toolchain = rule(
     ),
     "version": attr.string(mandatory = True),
     "is_darwin":  attr.bool(mandatory = True),
-    "_ghc_version_check": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:ghc-version-check.sh")
-    ),
     "_make_bin_symlink_which": attr.label(
       allow_single_file = True,
       default = Label("@io_tweag_rules_haskell//haskell:make-bin-symlink-which.sh")

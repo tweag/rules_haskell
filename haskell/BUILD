@@ -13,7 +13,6 @@ exports_files([
   "copy-dep-haddock.sh",
   "ghc-defs-cleanup.sh",
   "ghc-lint-wrapper.sh",
-  "ghc-version-check.sh",
   "ghci-repl-wrapper.sh",
   "ghci-script",
   "haddock-wrapper.sh",
