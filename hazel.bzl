@@ -94,4 +94,4 @@ def hazel_repositories(prebuilt_dependencies, packages):
 
 def hazel_library(name):
   """Returns the label of the haskell_library rule for the given package."""
-  return "@haskell_{}//:{}-lib".format(name,name)
+  return "@haskell_{}//:{}".format(name,name)

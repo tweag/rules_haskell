@@ -8,11 +8,7 @@ def _hazel_base_repository_impl(ctx):
       "@ai_formation_hazel//third_party/cabal2bazel:src/Google/Google3/Tools/Cabal2Build/Description.hs",
   ]
 
-  generate_cabal_macros_srcs = [
-      "@ai_formation_hazel//third_party/cabal2bazel:bzl/cabal/GenerateCabalMacros.hs",
-  ]
-
-  for f in cabal2bazel_srcs + generate_cabal_macros_srcs:
+  for f in cabal2bazel_srcs:
     l = Label(f)
     ctx.symlink(Label(f), l.name)
 
@@ -20,11 +16,6 @@ def _hazel_base_repository_impl(ctx):
                     + [Label(f).name for f in cabal2bazel_srcs])
   if res.return_code != 0:
     fail("Couldn't build cabal2bazel:\n{}\n{}".format(res.stdout,res.stderr))
-
-  res = ctx.execute(["./ghc", "-Wall", "-Werror", "--make", "-o", "generate-cabal-macros"]
-                    + [Label(f).name for f in generate_cabal_macros_srcs])
-  if res.return_code != 0:
-    fail("Couldn't build generate-cabal-macros:\n{}\n{}".format(res.stdout,res.stderr))
 
   res = ctx.execute(["./ghc", "--numeric-version"])
   if res.return_code != 0:
@@ -42,7 +33,7 @@ packages = {}
 
   ctx.file(
       "BUILD",
-      content="""exports_files(["cabal2bazel", "generate-cabal-macros", "ghc-version"])""",
+      content="""exports_files(["cabal2bazel", "ghc-version"])""",
       executable=False)
 
 hazel_base_repository = repository_rule(
@@ -55,7 +46,7 @@ hazel_base_repository = repository_rule(
 
 # TODO: don't reload all package names into every repository.
 def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, cabal_path, output):
-  for f in ["cabal2bazel", "ghc-version", "generate-cabal-macros"]:
+  for f in ["cabal2bazel", "ghc-version"]:
     ctx.symlink(Label("@" + hazel_base_repo_name + "//:" + f), f)
 
   ghc_version = ctx.execute(["cat", "ghc-version"]).stdout
@@ -70,7 +61,7 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, cabal_path, output):
 load("@ai_formation_hazel//third_party/cabal2bazel:bzl/cabal_package.bzl",
      "cabal_haskell_package",
      "hazel_symlink")
-load("@hazel_base_repository//:packages.bzl", "prebuilt_dependencies", "packages")
+load("@hazel_base_repository//:packages.bzl", "prebuilt_dependencies")
 load("//:package.bzl", "package")
 # Make a buildable target for easier debugging of the package.bzl file
 hazel_symlink(
@@ -78,5 +69,5 @@ hazel_symlink(
   src = "package.bzl",
   out = "package-bzl",
 )
-cabal_haskell_package(package, prebuilt_dependencies, packages)
+cabal_haskell_package(package, prebuilt_dependencies)
 """)

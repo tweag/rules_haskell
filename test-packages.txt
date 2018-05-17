@@ -1,3 +1,4 @@
 aeson
 language-c
 lens
+network
