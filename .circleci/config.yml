@@ -16,7 +16,7 @@ jobs:
             nix-env -iA nixpkgs.bazel nixpkgs.binutils nixpkgs.python
       - run:
           name: Build
-          command: bazel build --jobs=2 //...
+          command: bazel build --jobs=2 //... @haskell_zlib//...
       - run:
           name: Run tests
           command: bazel test //... --config=ci
