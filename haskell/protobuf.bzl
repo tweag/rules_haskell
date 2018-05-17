@@ -42,6 +42,12 @@ def _proto_lens_output_file(path):
 
   return "Proto/" + result
 
+def _proto_path(proto):
+  """A path to the proto file which matches any import statements."""
+  return paths.relativize(
+      proto.path,
+      paths.join(proto.root.path, proto.owner.workspace_root))
+
 def _haskell_proto_aspect_impl(target, ctx):
 
   args = ctx.actions.args()
@@ -58,13 +64,12 @@ def _haskell_proto_aspect_impl(target, ctx):
   hs_files = []
   inputs = []
 
-  args.add(["-I{0}={1}".format(s.short_path, s.path)
+  args.add(["-I{0}={1}".format(_proto_path(s), s.path)
             for s in target.proto.transitive_sources])
 
   inputs.extend(target.proto.transitive_sources.to_list())
 
   for src in target.proto.direct_sources:
-
     inputs.append(src)
 
     # As with the native rules, require the .proto file to be in the same
@@ -72,24 +77,21 @@ def _haskell_proto_aspect_impl(target, ctx):
     # output .hs file next to the input .proto file. Unfortunately Skylark
     # doesn't let us check the package of the file directly, so instead we
     # just look at its short_path and rely on the proto_library rule itself
-    # to check for consistency. We use the file's short_path rather than its
+    # to check for consistency. We use the file's path rather than its
     # dirname/basename in case it's in a subdirectory; for example, if the
     # proto_library rule is in "foo/BUILD" but the .proto file is
     # "foo/bar/baz.proto".
 
-    if not src.short_path.startswith(src_prefix):
+    if not src.path.startswith(paths.join(src.root.path, src_prefix)):
       fail("Mismatch between rule context " + str(ctx.label.package)
            + " and source file " + src.short_path)
     if src.basename[-6:] != ".proto":
       fail("bad extension for proto file " + src)
 
-    relative_path = src.short_path
-
-    args.add([relative_path])
-
+    args.add([src.path])
     hs_files.append(ctx.actions.declare_file(
-      _proto_lens_output_file(relative_path),
-    ))
+      _proto_lens_output_file(_proto_path(src)
+    )))
 
   args.add([
     "--haskell_out=no-reexports:" + paths.join(

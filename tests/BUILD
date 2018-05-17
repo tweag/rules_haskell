@@ -14,6 +14,7 @@ haskell_toolchain(
   version = "8.2.2",
   tools = "@ghc//:bin",
   doctest = "@doctest//:bin",
+  testonly = 0,
 )
 
 haskell_proto_toolchain(

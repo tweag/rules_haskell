@@ -19,7 +19,10 @@ proto_library(
 proto_library(
   name = "person_proto",
   srcs = ["person.proto"],
-  deps = [":address_proto"],
+  deps = [
+      ":address_proto",
+      "@com_google_protobuf//:timestamp_proto",
+  ],
 )
 
 haskell_proto_library(
