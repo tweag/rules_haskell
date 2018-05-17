@@ -12,6 +12,7 @@ exports_files([
   "ghc_bindist.bzl",
   "ghci-repl.bzl",
 
+  "copy-dep-haddock.sh",
   "ghc-defs-cleanup.sh",
   "ghc-lint-wrapper.sh",
   "ghc-version-check.sh",
