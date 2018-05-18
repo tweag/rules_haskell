@@ -105,6 +105,7 @@ def _haskell_doc_aspect_impl(target, ctx):
       # HaskellLibraryInfo provider contains files that are already
       # pre-processed by hsc2hs and these should be visible to Haddock.
       set.to_depset(target[HaskellLibraryInfo].source_files),
+      set.to_depset(target[HaskellLibraryInfo].header_files),
       depset([
         tools(ctx).ghc_pkg,
         tools(ctx).haddock,
