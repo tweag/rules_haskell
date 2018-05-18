@@ -840,7 +840,7 @@ def _compilation_defaults(ctx):
   args.add(preprocessor_args)
   args.add(include_args)
   haddock_args.add(preprocessor_args, before_each="--optghc")
-  haddock_args.add(include_args, before_each="-optghc")
+  haddock_args.add(include_args, before_each="--optghc")
 
   for f in set.to_list(source_files):
     args.add(f)
