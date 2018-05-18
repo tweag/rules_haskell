@@ -7,11 +7,14 @@ load(
   "haskell_cc_import",
 )
 
-haskell_cc_import(name = "zlib", shared_library = "@zlib//:lib")
+haskell_cc_import(
+  name = "zlib",
+  shared_library = "@zlib//:lib"
+)
 
 haskell_library(
   name = "haddock-lib-deep",
-  srcs = ["Deep.hs"],
+  srcs = ["Deep.hsc"],
   prebuilt_dependencies = ["base"],
 )
 
