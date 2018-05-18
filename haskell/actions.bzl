@@ -56,7 +56,8 @@ _DefaultCompileInfo = provider(
     "object_dyn_files": "Dynamic object files.",
     "interface_files": "Interface files.",
     "modules": "Set of all module names.",
-    "source_files": "Set of files that contain Haskell modules",
+    "source_files": "Set of files that contain Haskell modules.",
+    "header_files": "Set of header files.",
     "import_dirs": "Import hierarchy roots.",
     "env": "Default env vars."
   },
@@ -532,6 +533,7 @@ def compile_haskell_lib(ctx):
     haddock_args = c.haddock_args,
     modules = c.modules,
     source_files = c.source_files,
+    header_files = c.header_files,
     import_dirs = c.import_dirs,
   )
 
@@ -872,6 +874,7 @@ def _compilation_defaults(ctx):
     interface_files = interface_files,
     modules = modules,
     source_files = source_files,
+    header_files = set.from_list(hdrs),
     import_dirs = import_dirs,
     env = dicts.add({
       "LD_LIBRARY_PATH": get_external_libs_path(set.from_list(dep_info.external_libraries.values())),

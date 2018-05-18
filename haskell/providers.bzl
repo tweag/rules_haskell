@@ -21,6 +21,7 @@ HaskellLibraryInfo = provider(
     "other_modules": "Set of non-public module names.",
     "haddock_args": "Arguments that were used to compile the package suitable for Haddock.",
     "source_files": "Set of files that contain Haskell modules.",
+    "header_files": "Set of header files.",
   },
 )
 
