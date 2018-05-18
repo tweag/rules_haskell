@@ -511,7 +511,9 @@ def compile_haskell_lib(ctx):
   # creating `Name`s for to put them in Haddock interface files which then
   # results in Haddock not being able to find names for linking in
   # environment after reading its interface file later.
-  unit_id_args = ["-this-unit-id", get_pkg_id(ctx)]
+  pkg_id = get_pkg_id(ctx)
+  unit_id_args = ["-this-unit-id", pkg_id,
+                  "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id)]
 
   c.args.add(unit_id_args)
   c.haddock_args.add(unit_id_args, before_each="--optghc")
