@@ -87,7 +87,7 @@ def _haskell_doc_aspect_impl(target, ctx):
       ),
       sibling=haddock_interface
     )
-    for f in input_sources
+    for f in input_sources if f not in ctx.rule.files.hidden_haddock_modules
   ]
 
   self_outputs = [
