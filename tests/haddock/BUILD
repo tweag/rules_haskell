@@ -27,7 +27,8 @@ haskell_library(
 
 haskell_library(
   name = "haddock-lib-b",
-  srcs = ["LibB.hs"],
+  srcs = ["LibB.hs", "LibBHidden.hs"],
+  hidden_haddock_modules = ["LibBHidden.hs"],
   deps = [":haddock-lib-a", ":zlib"],
   prebuilt_dependencies = ["base"],
 )

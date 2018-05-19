@@ -188,7 +188,12 @@ haskell_library = rule(
     _haskell_common_attrs,
     hidden_modules = attr.string_list(
       doc = "Modules that should be unavailable for import by dependencies."
-    )),
+    ),
+    hidden_haddock_modules = attr.label_list(
+      allow_files = FileType([".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot"]),
+      doc = "List of source files that have hiding haddock option declaration inside.",
+    ),
+  ),
   outputs = {
     "repl": "%{name}-repl",
   },
