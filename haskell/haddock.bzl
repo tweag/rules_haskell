@@ -65,6 +65,11 @@ def _haskell_doc_aspect_impl(target, ctx):
 
   input_sources = [ f for t in ctx.rule.attr.srcs for f in t.files.to_list() ]
 
+  prebuilt_deps = ctx.actions.args()
+  for dep in set.to_list(target[HaskellBuildInfo].prebuilt_dependencies):
+    prebuilt_deps.add(dep)
+  prebuilt_deps.use_param_file(param_file_arg = "%s", use_always = True)
+
   ctx.actions.run(
     inputs = depset(transitive = [
       set.to_depset(target[HaskellBuildInfo].package_caches),
@@ -86,15 +91,13 @@ def _haskell_doc_aspect_impl(target, ctx):
     progress_message = "Haddock {0}".format(ctx.rule.attr.name),
     executable = ctx.file._haddock_wrapper,
     arguments = [
+      prebuilt_deps,
       args,
       target[HaskellLibraryInfo].haddock_args,
     ],
     env = {
       "RULES_HASKELL_GHC_PKG": tools(ctx).ghc_pkg.path,
       "RULES_HASKELL_HADDOCK": tools(ctx).haddock.path,
-      "RULES_HASKELL_PREBUILT_DEPS": " ".join(
-        set.to_list(target[HaskellBuildInfo].prebuilt_dependencies)
-      ),
     },
   )
 
