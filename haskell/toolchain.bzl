@@ -157,12 +157,13 @@ def _haskell_toolchain_impl(ctx):
     tool.basename.replace("-", "_"): tool
     for tool in set.to_list(symlinks)
   }
-  tools_struct_args.update({"ar_runfiles": ar_runfiles})
+  tools_runfiles_struct_args = {"ar": ar_runfiles}
 
   return [
     platform_common.ToolchainInfo(
       name = ctx.label.name,
       tools = struct(**tools_struct_args),
+      tools_runfiles = struct(**tools_runfiles_struct_args),
       # All symlinks are guaranteed to be in the same directory so we just
       # provide directory name of the first one (the collection cannot be
       # empty). The rest of the program may rely consider visible_bin_path

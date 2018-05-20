@@ -39,6 +39,17 @@ def tools(ctx):
   """
   return ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].tools
 
+def tools_runfiles(ctx):
+  """Return a structure containing the runfiles for all available tools.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    struct with fields of lists of Files.
+  """
+  return ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].tools_runfiles
+
 def is_darwin(ctx):
   """Returns whether the current build is using macOS.
 

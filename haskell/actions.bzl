@@ -17,6 +17,7 @@ load(":tools.bzl",
      "is_darwin",
      "so_extension",
      "tools",
+     "tools_runfiles",
 )
 
 load(":cc.bzl", "cc_headers")
@@ -367,7 +368,7 @@ module BazelDummy () where
   ar_args.add(["qc", dummy_static_lib, dummy_object])
 
   ctx.actions.run(
-    inputs = [dummy_object] + tools(ctx).ar_runfiles,
+    inputs = [dummy_object] + tools_runfiles(ctx).ar,
     outputs = [dummy_static_lib],
     executable = tools(ctx).ar,
     arguments = [ar_args]
@@ -562,7 +563,7 @@ def link_static_lib(ctx, object_files):
   args.add(object_files)
 
   ctx.actions.run(
-    inputs = object_files + tools(ctx).ar_runfiles,
+    inputs = object_files + tools_runfiles(ctx).ar,
     outputs = [static_library],
     progress_message = "Linking static library {0}".format(static_library.basename),
     executable = tools(ctx).ar,
