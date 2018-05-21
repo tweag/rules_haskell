@@ -1,8 +1,9 @@
 aeson
+entropy
+fuzzyset
+htaglib
 language_c
 lens
 network
-zlib
 text_metrics
-fuzzyset
-htaglib
+zlib

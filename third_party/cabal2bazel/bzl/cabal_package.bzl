@@ -207,7 +207,7 @@ def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
       [paths.join(d, f) for d in build_info.includeDirs
        for f in build_info.installIncludes])
   headers = depset(
-      native.glob(desc.extraSrcFiles)
+      native.glob([paths.normalize(f) for f in desc.extraSrcFiles])
       + install_includes)
   ghcopts += ["-I" + native.package_name() + "/" + d for d in build_info.includeDirs]
   lib_name = name + "-cbits"
