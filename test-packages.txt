@@ -2,6 +2,7 @@ aeson
 entropy
 fuzzyset
 htaglib
+http_client
 language_c
 lens
 network

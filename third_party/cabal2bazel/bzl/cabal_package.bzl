@@ -185,17 +185,18 @@ def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
 
   # Collect the dependencies.
   prebuilt_deps = []
-  for condition, ps in _conditions_dict(depset(build_info.targetBuildDepends).to_list()).items():
+  for condition, ps in _conditions_dict(depset(
+      [p.name for p in build_info.targetBuildDepends]).to_list()).items():
     if condition not in deps:
       deps[condition] = []
     for p in ps:
-      if p.name in prebuilt_dependencies:
-        prebuilt_deps += [p.name]
-      elif p.name == desc.package.pkgName:
+      if p in prebuilt_dependencies:
+        prebuilt_deps += [p]
+      elif p == desc.package.pkgName:
         # Allow executables to depend on the library in the same package.
-        deps[condition] += [":" + p.name + "-lib"]
+        deps[condition] += [":" + p + "-lib"]
       else:
-        deps[condition] += ["@haskell_{}//:{}".format(p.name.replace("-", "_"), p.name)]
+        deps[condition] += ["@haskell_{}//:{}".format(p.replace("-", "_"), p)]
 
   ghcopts += ["-optP" + o for o in build_info.cppOptions]
 
