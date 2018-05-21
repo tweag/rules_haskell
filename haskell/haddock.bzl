@@ -162,21 +162,22 @@ def _haskell_doc_rule_impl(ctx):
 
     html_dict_copied[package_id] = output_dir
 
-    ctx.actions.run(
+    ctx.actions.run_shell(
       inputs = [
         tools(ctx).cp,
         tools(ctx).mkdir,
         html_dir,
       ],
       outputs = [output_dir],
-      executable = ctx.file._copy_dep_haddock,
-      env = {
-        "RULES_HASKELL_CP": tools(ctx).cp.path,
-        "RULES_HASKELL_MKDIR": tools(ctx).mkdir.path,
-        "RULES_HASKELL_HTML_DIR": html_dir.path,
-        "RULES_HASKELL_DOC_DIR": doc_root_path,
-        "RULES_HASKELL_TARGET_DIR": output_dir.path,
-      },
+      command = """
+      mkdir -p "{doc_dir}"
+      # Copy Haddocks of a dependency.
+      cp -r "{html_dir}" "{target_dir}"
+      """.format(
+        doc_dir = doc_root_path,
+        html_dir = html_dir.path,
+        target_dir = output_dir.path,
+      ),
     )
 
   # Do one more Haddock call to generate the unified index
@@ -249,10 +250,6 @@ haskell_doc = rule(
     "index_transitive_deps": attr.bool(
       default = False,
       doc = "Whether to include documentation of transitive dependencies in index.",
-    ),
-    "_copy_dep_haddock": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:copy-dep-haddock.sh"),
     ),
   },
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],

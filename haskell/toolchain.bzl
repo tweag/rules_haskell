@@ -132,8 +132,9 @@ def _haskell_toolchain_impl(ctx):
   targets_w = [
     "bash",
     "ln",
-    "grep",
     "cp",
+    "grep",
+    "mkdir",
   ]
 
   for target in targets_w:

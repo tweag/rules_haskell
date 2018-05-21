@@ -12,7 +12,6 @@ exports_files([
 
   "cpp_defines",
 
-  "copy-dep-haddock.sh",
   "ghci-repl-wrapper.sh",
   "ghci-script",
   "haddock-wrapper.sh",
