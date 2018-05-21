@@ -5,3 +5,4 @@ network
 zlib
 text_metrics
 fuzzyset
+htaglib

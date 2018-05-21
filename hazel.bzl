@@ -59,7 +59,11 @@ def _fixup_package_name(package_name):
   """
   return package_name.replace("-", "_")
 
-def hazel_repositories(prebuilt_dependencies, packages, exclude_packages=[]):
+def hazel_repositories(
+  prebuilt_dependencies,
+  packages,
+  extra_libs={},
+  exclude_packages=[]):
   """Generates external dependencies for a set of Haskell packages.
 
   This macro should be invoked in the WORKSPACE.  It generates a set of
@@ -82,6 +86,8 @@ def hazel_repositories(prebuilt_dependencies, packages, exclude_packages=[]):
       - version: A version string
       - sha256: A hex-encoded SHA of the Cabal distribution (*.tar.gz).
     exclude_packages: names of packages to exclude.
+    extra_libs: A dictionary that maps from name of extra libraries to Bazel
+      targets that provide them.
   """
   hazel_base_repo_name = "hazel_base_repository"
 
@@ -93,6 +99,7 @@ def hazel_repositories(prebuilt_dependencies, packages, exclude_packages=[]):
       ghc="@ghc//:bin/ghc",
       prebuilt_dependencies = prebuilt_dependencies,
       packages = {n: pkgs[n].version for n in pkgs},
+      extra_libs = extra_libs,
   )
   for p in pkgs:
     _cabal_haskell_repository(
