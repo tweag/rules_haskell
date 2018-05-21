@@ -20,11 +20,10 @@ load(":providers.bzl",
 
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def _get_haddock_path(html_dir, package_id):
+def _get_haddock_path(package_id):
   """TODO
   """
   return paths.join(
-    html_dir.path,
     package_id + ".haddock",
   )
 
@@ -36,9 +35,11 @@ def _haskell_doc_aspect_impl(target, ctx):
   html_dir_raw = "doc-{0}".format(package_id)
   html_dir = ctx.actions.declare_directory(html_dir_raw)
 
+  iface_file = ctx.actions.declare_file(_get_haddock_path(package_id))
+
   args = ctx.actions.args()
   args.add([
-    "-D", _get_haddock_path(html_dir, package_id),
+    "-D", iface_file.path,
     "--package-name={0}".format(package_id),
     "--package-version={0}".format(ctx.rule.attr.version),
     "-o", html_dir,
@@ -51,23 +52,21 @@ def _haskell_doc_aspect_impl(target, ctx):
   transitive_deps = {
     package_id: html_dir,
   }
+  transitive_ifaces = {}
 
   for dep in ctx.rule.attr.deps:
     if HaddockInfo in dep:
-      args.add("--read-interface=../{0},{1}".format(
-        dep[HaddockInfo].package_id,
-        _get_haddock_path(
-          dep[HaddockInfo].html_dir,
-          dep[HaddockInfo].package_id
-        ),
-      ))
       dep_html_dirs = set.mutable_insert(
         dep_html_dirs,
         dep[HaddockInfo].html_dir
       )
       transitive_deps.update(dep[HaddockInfo].transitive_deps)
+      transitive_ifaces.update(dep[HaddockInfo].transitive_ifaces)
 
   input_sources = [ f for t in ctx.rule.attr.srcs for f in t.files.to_list() ]
+  for f in transitive_ifaces:
+    args.add("--read-interface=../{0},{1}".format(
+        f, transitive_ifaces[f].path))
 
   ctx.actions.run(
     inputs = depset(transitive = [
@@ -80,12 +79,13 @@ def _haskell_doc_aspect_impl(target, ctx):
       # pre-processed by hsc2hs and these should be visible to Haddock.
       set.to_depset(target[HaskellLibraryInfo].source_files),
       set.to_depset(target[HaskellLibraryInfo].header_files),
+      depset(transitive_ifaces.values()),
       depset([
         tools(ctx).ghc_pkg,
         tools(ctx).haddock,
       ]),
     ]),
-    outputs = [html_dir],
+    outputs = [html_dir, iface_file],
     progress_message = "Haddock {0}".format(ctx.rule.attr.name),
     executable = ctx.file._haddock_wrapper,
     arguments = [
@@ -105,6 +105,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     package_id = package_id,
     html_dir = html_dir,
     transitive_deps = transitive_deps,
+    transitive_ifaces = transitive_ifaces + {package_id: iface_file},
   )]
 
 haskell_doc_aspect = aspect(
@@ -131,10 +132,13 @@ def _haskell_doc_rule_impl(ctx):
   # interface_files = depset()
   all_caches = set.empty()
 
+  transitive_ifaces = {}
+
   for dep in ctx.attr.deps:
     if HaddockInfo in dep:
       # interface_files = depset(transitive = [interface_files, dep[HaddockInfo].outputs])
       deps_dict_original.update(dep[HaddockInfo].transitive_deps)
+      transitive_ifaces.update(dep[HaddockInfo].transitive_ifaces)
     if HaskellBuildInfo in dep:
       set.mutable_union(
         all_caches,
@@ -188,30 +192,34 @@ def _haskell_doc_rule_impl(ctx):
     "--gen-contents",
   ])
 
+  # TODO: switch on index_transitive_deps
+  args.add(["--read-interface=./{0},{1}".format(
+      p, transitive_ifaces[p].path)
+            for p in transitive_ifaces])
   if ctx.attr.index_transitive_deps:
     # Include all packages in the unified index.
     for package_id in deps_dict_copied:
       copied_html_dir = deps_dict_copied[package_id].path
-      args.add("--read-interface=./{0},{1}".format(
-        package_id,
-        paths.join(
-          copied_html_dir,
-          package_id + ".haddock",
-        )
-      ))
+      #args.add("--read-interface=./{0},{1}".format(
+      #  package_id,
+      #  paths.join(
+      #    copied_html_dir,
+      #    package_id + ".haddock",
+      #  )
+      #))
   else:
     # Include only direct dependencies.
     for dep in ctx.attr.deps:
       if HaddockInfo in dep:
         package_id = dep[HaddockInfo].package_id
         copied_html_dir = deps_dict_copied[package_id].path
-        args.add("--read-interface=./{0},{1}".format(
-          package_id,
-          paths.join(
-            copied_html_dir,
-            package_id + ".haddock",
-          )
-        ))
+        #args.add("--read-interface=./{0},{1}".format(
+        #  package_id,
+        #  paths.join(
+        #    copied_html_dir,
+        #    package_id + ".haddock",
+        #  )
+        #))
 
   for cache in set.to_list(all_caches):
     args.add(["--optghc=-package-db={0}".format(cache.dirname)])
@@ -234,6 +242,8 @@ def _haskell_doc_rule_impl(ctx):
     inputs = depset(transitive = [
       set.to_depset(all_caches),
       depset(deps_dict_copied.values()),
+      # TODO: switch on index attr
+      depset(transitive_ifaces.values()),
 
     ]),
     outputs = static_haddock_outputs,
