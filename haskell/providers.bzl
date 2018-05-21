@@ -38,8 +38,8 @@ HaddockInfo = provider(
   doc = "Haddock information.",
   fields = {
     "package_id": "Package id, usually of the form name-version.",
-    "html_dir": "Directory where all the documentation files live.",
-    "transitive_deps": "Dictionary from package id to html dir for transitive Bazel dependencies.",
+    "transitive_html": "Dictionary from package id to html dirs.",
+    "transitive_haddocks": "Dictionary from package id to Haddock files.",
   }
 )
 
