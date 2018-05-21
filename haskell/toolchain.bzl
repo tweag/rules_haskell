@@ -130,6 +130,7 @@ def _haskell_toolchain_impl(ctx):
     set.mutable_insert(symlinks, symlink)
 
   targets_w = [
+    "bash",
     "ln",
     "grep",
     "cp",

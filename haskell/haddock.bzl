@@ -83,6 +83,7 @@ def _haskell_doc_aspect_impl(target, ctx):
       set.to_depset(target[HaskellLibraryInfo].source_files),
       set.to_depset(target[HaskellLibraryInfo].header_files),
       depset([
+        tools(ctx).bash,
         tools(ctx).ghc_pkg,
         tools(ctx).haddock,
       ]),
@@ -96,8 +97,7 @@ def _haskell_doc_aspect_impl(target, ctx):
       target[HaskellLibraryInfo].haddock_args,
     ],
     env = {
-      "RULES_HASKELL_GHC_PKG": tools(ctx).ghc_pkg.path,
-      "RULES_HASKELL_HADDOCK": tools(ctx).haddock.path,
+      "PATH": get_build_tools_path(ctx),
     },
   )
 
