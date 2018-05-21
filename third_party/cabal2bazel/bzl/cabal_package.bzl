@@ -203,9 +203,6 @@ def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
         if p in _PREBUILT_INCLUDES:
           cdeps += [_PREBUILT_INCLUDES[p]]
           deps[condition] += [_PREBUILT_INCLUDES[p]]
-      elif p == desc.package.pkgName:
-        # Allow executables to depend on the library in the same package.
-        deps[condition] += [":" + p + "-lib"]
       else:
         deps[condition] += ["@haskell_{}//:{}".format(p.replace("-", "_"), p)]
 

@@ -6,6 +6,7 @@ http_client
 language_c
 lens
 network
+pretty_show
 text_metrics
 unix_compat
 zlib
