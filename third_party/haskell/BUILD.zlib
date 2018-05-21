@@ -1,0 +1,28 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@io_tweag_rules_haskell//haskell:haskell.bzl",
+  "haskell_library",
+  "haskell_cc_import",
+)
+
+cc_library(
+  name = "cbits",
+  hdrs = glob(["cbits/*.h"]),
+  srcs = glob(["cbits/*.c"]),
+  strip_include_prefix = "cbits",
+)
+
+haskell_library(
+  name = "zlib",
+  srcs = glob([
+    "Codec/Compression/*.hs",
+    "Codec/Compression/Zlib/*.hs",
+    "Codec/Compression/Zlib/*.hsc",
+  ]),
+  deps = [":cbits"],
+  prebuilt_dependencies = [
+    "base",
+    "bytestring",
+    "ghc-prim",
+  ],
+)

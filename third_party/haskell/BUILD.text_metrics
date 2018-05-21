@@ -1,0 +1,18 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@io_tweag_rules_haskell//haskell:haskell.bzl",
+  "haskell_library",
+)
+
+haskell_library(
+  name = "text-metrics",
+  srcs = ["Data/Text/Metrics.hs"],
+  deps = [
+    "@haskell_text//:text",
+    "@haskell_vector//:vector",
+  ],
+  prebuilt_dependencies = [
+    "base",
+    "containers",
+  ],
+)

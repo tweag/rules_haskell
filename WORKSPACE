@@ -14,7 +14,7 @@ nixpkgs_git_repository(
     revision = "c33c5239f62b4855b14dc5b01dfa3e2a885cf9ca",
 )
 
-RULES_HASKELL_SHA = "e1eba61f145b5203c748fc53e77e0862e2fc2554"
+RULES_HASKELL_SHA = "b55ca991a9e58108932ff6c8b86fd141897391c1"
 http_archive(
     name = "io_tweag_rules_haskell",
     urls = ["https://github.com/tweag/rules_haskell/archive/"
@@ -34,9 +34,27 @@ nixpkgs_package(
 
 register_toolchains("@ghc//:ghc")
 
-load("//:hazel.bzl", "hazel_repositories")
+load("//:hazel.bzl", "hazel_repositories",
+     "hazel_custom_package_hackage",
+     "hazel_custom_package_github",
+)
+
+hazel_custom_package_hackage(
+  package_name = "zlib",
+  version = "0.6.2",
+)
+
+hazel_custom_package_github(
+  package_name = "text-metrics",
+  github_user = "mrkkrp",
+  github_repo = "text-metrics",
+  repo_sha = "5d10b6f6ec4ff4b014e5e512f82d23e7606cc260",
+)
+
 load("//:packages.bzl", "packages", "prebuilt_dependencies")
 
 hazel_repositories(
     packages=packages,
-    prebuilt_dependencies=prebuilt_dependencies)
+    prebuilt_dependencies=prebuilt_dependencies,
+    exclude_packages = ["zlib", "text-metrics"],
+)

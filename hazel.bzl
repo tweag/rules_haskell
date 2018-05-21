@@ -47,8 +47,19 @@ _all_hazel_packages = repository_rule(
         "files": attr.label_list(mandatory=True),
     })
 
+def _fixup_package_name(package_name):
+  """Fixup package name by replacing dashes with underscores to get a valid
+  workspace name from it.
 
-def hazel_repositories(prebuilt_dependencies, packages):
+  Args:
+    package_name: string: Package name.
+
+  Returns:
+    string: fixed package name.
+  """
+  return package_name.replace("-", "_")
+
+def hazel_repositories(prebuilt_dependencies, packages, exclude_packages=[]):
   """Generates external dependencies for a set of Haskell packages.
 
   This macro should be invoked in the WORKSPACE.  It generates a set of
@@ -70,28 +81,86 @@ def hazel_repositories(prebuilt_dependencies, packages):
     packages: A dict mapping strings to structs, where each struct has two fields:
       - version: A version string
       - sha256: A hex-encoded SHA of the Cabal distribution (*.tar.gz).
+    exclude_packages: names of packages to exclude.
   """
   hazel_base_repo_name = "hazel_base_repository"
+
+  pkgs = {n: packages[n] for n in packages if n not in exclude_packages}
+
   hazel_base_repository(
       name = hazel_base_repo_name,
       # TODO: don't hard-code this in
       ghc="@ghc//:bin/ghc",
       prebuilt_dependencies = prebuilt_dependencies,
-      packages = {n: packages[n].version for n in packages},
+      packages = {n: pkgs[n].version for n in pkgs},
   )
-  for p in packages:
+  for p in pkgs:
     _cabal_haskell_repository(
-        name = "haskell_" + p,
+        name = "haskell_" + _fixup_package_name(p),
         package_name = p,
-        package_version = packages[p].version,
-        sha256 = packages[p].sha256 if hasattr(packages[p], "sha256") else None,
+        package_version = pkgs[p].version,
+        sha256 = pkgs[p].sha256 if hasattr(pkgs[p], "sha256") else None,
         hazel_base_repo_name = hazel_base_repo_name,
     )
 
   _all_hazel_packages(
       name = "all_hazel_packages",
-      files = ["@haskell_{}//:files".format(p) for p in packages])
+      files = ["@haskell_{}//:files".format(p) for p in pkgs])
 
 def hazel_library(name):
   """Returns the label of the haskell_library rule for the given package."""
-  return "@haskell_{}//:{}".format(name,name)
+  return "@haskell_{}//:{}".format(_fixup_package_name(name), name)
+
+def hazel_custom_package_hackage(
+    package_name,
+    version,
+    sha256=None):
+  """Generate a repo for a Haskell package fetched from Hackage.
+
+  Args:
+    package_name: string, package name.
+    version: string, package version.
+    sha256: string, SHA256 hash of archive.
+  """
+  package_id = package_name + "-" + version
+  url = "https://hackage.haskell.org/package/{0}/{1}.tar.gz".format(
+    package_id,
+    package_id,
+  )
+  fixed_package_name = _fixup_package_name(package_name)
+  native.new_http_archive(
+    name = "haskell_{0}".format(fixed_package_name),
+    build_file = "third_party/haskell/BUILD.{0}".format(fixed_package_name),
+    sha256 = sha256,
+    strip_prefix = package_id,
+    urls = [url],
+  )
+
+def hazel_custom_package_github(
+    package_name,
+    github_user,
+    github_repo,
+    repo_sha,
+    archive_sha256=None):
+  """Generate a repo for a Haskell package coming from a GitHub repo.
+
+  Args:
+    package_name: string, package name.
+    github_user: string, GitHub user.
+    github_repo: string, repo name under `github_user` account.
+    repo_sha: SHA1 of commit in the repo.
+    archive_sha256: hash of the actual archive to download.
+  """
+  url = "https://github.com/{0}/{1}/archive/{2}.tar.gz".format(
+    github_user,
+    github_repo,
+    repo_sha,
+  )
+  fixed_package_name = _fixup_package_name(package_name)
+  native.new_http_archive(
+    name = "haskell_{0}".format(fixed_package_name),
+    build_file = "third_party/haskell/BUILD.{0}".format(fixed_package_name),
+    sha256 = archive_sha256,
+    strip_prefix = "{0}-{1}".format(github_repo, repo_sha),
+    urls = [url],
+  )

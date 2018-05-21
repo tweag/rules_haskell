@@ -139,7 +139,6 @@ def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
           out = boot_module_map[m],
       )
 
-
   # Collect the source files for each module in this Cabal component.
   # srcs is a mapping from "select()" conditions (e.g. //third_party/haskell/ghc:ghc-8.0.2) to a list of source files.
   # Turn "boot_srcs" and others to dicts if there is a use case.
@@ -195,7 +194,7 @@ def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
         # Allow executables to depend on the library in the same package.
         deps[condition] += [":" + p.name + "-lib"]
       else:
-        deps[condition] += ["@haskell_{}//:{}".format(p.name, p.name)]
+        deps[condition] += ["@haskell_{}//:{}".format(p.name.replace("-", "_"), p.name)]
 
   ghcopts += ["-optP" + o for o in build_info.cppOptions]
 
