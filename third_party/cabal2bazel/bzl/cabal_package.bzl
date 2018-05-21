@@ -29,6 +29,13 @@ load("//templates:templates.bzl", "templates")
 
 _conditions_default = "//conditions:default"
 
+# Include files that are exported by prebuilt dependencies
+# (That is, their "install-includes".)
+# TODO: detect this more automatically.
+_PREBUILT_INCLUDES = {
+    "unix": "@ghc//:unix-includes",
+}
+
 def _paths_module(desc):
   return "Paths_" + desc.package.pkgName.replace("-","_")
 
@@ -149,6 +156,7 @@ def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
   # corresponding .hs files.
   boot_srcs = []
   deps = {}
+  cdeps = []
   paths_module = _paths_module(desc)
   extra_modules_dict = _conditions_dict(extra_modules)
   other_modules_dict = _conditions_dict(build_info.otherModules)
@@ -192,6 +200,9 @@ def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
     for p in ps:
       if p in prebuilt_dependencies:
         prebuilt_deps += [p]
+        if p in _PREBUILT_INCLUDES:
+          cdeps += [_PREBUILT_INCLUDES[p]]
+          deps[condition] += [_PREBUILT_INCLUDES[p]]
       elif p == desc.package.pkgName:
         # Allow executables to depend on the library in the same package.
         deps[condition] += [":" + p + "-lib"]
@@ -222,7 +233,7 @@ def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
                + ["-w"]),
       defines = [o[2:] for o in build_info.ccOptions if o.startswith("-D")],
       textual_hdrs = list(headers),
-      deps = ["@ghc//:threaded-rts"] + cc_deps,
+      deps = ["@ghc//:threaded-rts"] + cdeps + cc_deps,
   )
 
   return {

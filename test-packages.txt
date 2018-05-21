@@ -7,4 +7,5 @@ language_c
 lens
 network
 text_metrics
+unix_compat
 zlib
