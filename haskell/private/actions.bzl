@@ -302,7 +302,7 @@ def _infer_rpaths(target, solibs):
 
   return r
 
-def compile_haskell_bin(ctx):
+def compile_haskell_bin(ctx, dep_info):
   """Compile a Haskell target into object files suitable for linking.
 
   Args:
@@ -315,7 +315,7 @@ def compile_haskell_bin(ctx):
       modules: set of module names
       source_files: set of Haskell source files
   """
-  c = _compilation_defaults(ctx)
+  c = _compilation_defaults(ctx, dep_info)
   c.args.add(["-main-is", ctx.attr.main_function])
 
   ctx.actions.run(
@@ -405,7 +405,7 @@ def _fix_linker_paths(ctx, inp, out, external_libraries):
                      out.path)
                      for f in external_libraries]))
 
-def link_haskell_bin(ctx, object_files):
+def link_haskell_bin(ctx, dep_info, object_files):
   """Link Haskell binary from static object files.
 
   Args:
@@ -417,8 +417,6 @@ def link_haskell_bin(ctx, object_files):
   """
 
   dummy_static_lib = _create_dummy_archive(ctx)
-
-  dep_info = gather_dep_info(ctx)
 
   if not is_darwin(ctx):
     compile_output = ctx.outputs.executable
@@ -495,7 +493,7 @@ def link_haskell_bin(ctx, object_files):
 
   return ctx.outputs.executable
 
-def compile_haskell_lib(ctx):
+def compile_haskell_lib(ctx, dep_info):
   """Build arguments for Haskell package build.
 
   Args:
@@ -512,7 +510,7 @@ def compile_haskell_lib(ctx):
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(ctx)
+  c = _compilation_defaults(ctx, dep_info)
 
   # This is absolutely required otherwise GHC doesn't know what package it's
   # creating `Name`s for to put them in Haddock interface files which then
@@ -546,7 +544,7 @@ def compile_haskell_lib(ctx):
     import_dirs = c.import_dirs,
   )
 
-def link_static_lib(ctx, object_files):
+def link_static_lib(ctx, dep_info, object_files):
   """Link a static library for the package using given object files.
 
   Args:
@@ -571,7 +569,7 @@ def link_static_lib(ctx, object_files):
   )
   return static_library
 
-def link_dynamic_lib(ctx, object_files):
+def link_dynamic_lib(ctx, dep_info, object_files):
   """Link a dynamic library for the package using given object files.
 
   Args:
@@ -592,8 +590,6 @@ def link_dynamic_lib(ctx, object_files):
   _add_mode_options(ctx, args)
 
   args.add(["-shared", "-dynamic"])
-
-  dep_info = gather_dep_info(ctx)
 
   for package in set.to_list(dep_info.package_ids):
     args.add(["-package-id", package])
@@ -639,7 +635,7 @@ def link_dynamic_lib(ctx, object_files):
 
   return dynamic_library
 
-def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules):
+def create_ghc_package(ctx, dep_info, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules):
   """Create GHC package using ghc-pkg.
 
   Args:
@@ -654,7 +650,6 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exp
   pkg_db_dir = ctx.actions.declare_directory(get_pkg_id(ctx))
   conf_file = ctx.actions.declare_file(paths.join(pkg_db_dir.basename, "{0}.conf".format(get_pkg_id(ctx))))
   cache_file = ctx.actions.declare_file("package.cache", sibling=conf_file)
-  dep_info = gather_dep_info(ctx)
 
   # Create a file from which ghc-pkg will create the actual package from.
   registration_file = ctx.actions.declare_file(target_unique_name(ctx, "registration-file"))
@@ -703,7 +698,7 @@ def create_ghc_package(ctx, interfaces_dir, static_library, dynamic_library, exp
 
   return conf_file, cache_file
 
-def _compilation_defaults(ctx):
+def _compilation_defaults(ctx, dep_info):
   """Declare default compilation targets and create default compiler arguments.
 
   Args:
@@ -748,8 +743,6 @@ def _compilation_defaults(ctx):
   ])
 
   _add_mode_options(ctx, args)
-
-  dep_info = gather_dep_info(ctx)
 
   # Add import hierarchy root.
   # Note that this is not perfect, since GHC requires hs-boot files

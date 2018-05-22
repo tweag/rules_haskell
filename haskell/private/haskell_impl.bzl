@@ -23,10 +23,10 @@ load(":ghci_repl.bzl",
 )
 
 def haskell_binary_impl(ctx):
-  c = compile_haskell_bin(ctx)
-
-  binary = link_haskell_bin(ctx, c.object_dyn_files)
   dep_info = gather_dep_info(ctx)
+  c = compile_haskell_bin(ctx, dep_info)
+
+  binary = link_haskell_bin(ctx, dep_info, c.object_dyn_files)
 
   solibs = set.union(
     set.from_list(dep_info.external_libraries.values()),
@@ -62,13 +62,11 @@ def haskell_binary_impl(ctx):
   ]
 
 def haskell_library_impl(ctx):
-
-  c = compile_haskell_lib(ctx)
-
-  static_library = link_static_lib(ctx, c.object_files)
-  dynamic_library = link_dynamic_lib(ctx, c.object_dyn_files)
-
   dep_info = gather_dep_info(ctx)
+  c = compile_haskell_lib(ctx, dep_info)
+
+  static_library = link_static_lib(ctx, dep_info, c.object_files)
+  dynamic_library = link_dynamic_lib(ctx, dep_info, c.object_dyn_files)
 
   exposed_modules = set.empty()
   other_modules = set.from_list(ctx.attr.hidden_modules)
@@ -79,6 +77,7 @@ def haskell_library_impl(ctx):
 
   conf_file, cache_file = create_ghc_package(
     ctx,
+    dep_info,
     c.interfaces_dir,
     static_library,
     dynamic_library,
