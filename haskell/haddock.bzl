@@ -70,6 +70,7 @@ def _haskell_doc_aspect_impl(target, ctx):
       set.to_depset(target[HaskellBuildInfo].package_caches),
       set.to_depset(target[HaskellBuildInfo].interface_files),
       set.to_depset(target[HaskellBuildInfo].dynamic_libraries),
+      depset(target[HaskellBuildInfo].external_libraries.values()),
       depset(transitive_haddocks.values()),
       depset(transitive_html.values()),
       # Need to give source files this way because the source_files field of
