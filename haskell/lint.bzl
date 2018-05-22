@@ -87,7 +87,7 @@ def _haskell_lint_aspect_impl(target, ctx):
     ctx.rule.attr.deps
   )
 
-  ctx.actions.run(
+  ctx.actions.run_shell(
     inputs = depset(transitive = [
       depset(sources),
       set.to_depset(build_info.package_confs),
@@ -95,20 +95,16 @@ def _haskell_lint_aspect_impl(target, ctx):
       set.to_depset(build_info.interface_files),
       set.to_depset(build_info.dynamic_libraries),
       depset(build_info.external_libraries.values()),
-      depset([
-        tools(ctx).ghc,
-        tools(ctx).gcc,
-        tools(ctx).tee,
-      ]),
+      depset([tools(ctx).ghc]),
     ]),
     outputs = [lint_log],
     progress_message = "Linting {0}".format(ctx.rule.attr.name),
-    executable = ctx.file._ghc_lint_wrapper,
-    env = {
-      "RULES_HASKELL_GHC": tools(ctx).ghc.path,
-      "RULES_HASKELL_TEE": tools(ctx).tee.path,
-      "RULES_HASKELL_LINT_OUTPUT": lint_log.path,
-    },
+    command = """
+    {ghc} "$@" > {output} 2>&1
+    """.format(
+      ghc = tools(ctx).ghc.path,
+      output = lint_log.path,
+    ),
     arguments = [args],
   )
 
@@ -120,12 +116,6 @@ haskell_lint_aspect = aspect(
   _haskell_lint_aspect_impl,
   attr_aspects = ["deps"],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
-  attrs = {
-    "_ghc_lint_wrapper": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:ghc-lint-wrapper.sh"),
-    ),
-  }
 )
 
 haskell_lint = rule(
@@ -192,7 +182,7 @@ def _haskell_doctest_aspect_impl(target, ctx):
     ctx.rule.attr.deps
   )
 
-  ctx.actions.run(
+  ctx.actions.run_shell(
     inputs = depset(transitive = [
       depset(sources),
       set.to_depset(build_info.package_confs),
@@ -200,20 +190,17 @@ def _haskell_doctest_aspect_impl(target, ctx):
       set.to_depset(build_info.interface_files),
       set.to_depset(build_info.dynamic_libraries),
       depset(build_info.external_libraries.values()),
-      depset([
-        tools(ctx).doctest,
-        tools(ctx).tee,
-      ]),
+      depset([tools(ctx).doctest]),
     ]),
     outputs = [lint_log],
     progress_message = "Doctesting {0}".format(ctx.rule.attr.name),
-    executable = ctx.file._ghc_lint_wrapper,
-    env = {
-      "RULES_HASKELL_GHC": tools(ctx).doctest.path,
-      "RULES_HASKELL_TEE": tools(ctx).tee.path,
-      "RULES_HASKELL_LINT_OUTPUT": lint_log.path,
-    },
+    command = """
+    doctest "$@" > {output} 2>&1
+    """.format(output = lint_log.path),
     arguments = [args],
+    env = {
+      "PATH": get_build_tools_path(ctx),
+    },
   )
 
   return [HaskellLintInfo(
@@ -224,12 +211,6 @@ haskell_doctest_aspect = aspect(
   _haskell_doctest_aspect_impl,
   attr_aspects = ["deps"],
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
-  attrs = {
-    "_ghc_lint_wrapper": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:ghc-lint-wrapper.sh"),
-    ),
-  }
 )
 
 haskell_doctest = rule(

@@ -65,6 +65,11 @@ def _haskell_doc_aspect_impl(target, ctx):
 
   input_sources = [ f for t in ctx.rule.attr.srcs for f in t.files.to_list() ]
 
+  prebuilt_deps = ctx.actions.args()
+  for dep in set.to_list(target[HaskellBuildInfo].prebuilt_dependencies):
+    prebuilt_deps.add(dep)
+  prebuilt_deps.use_param_file(param_file_arg = "%s", use_always = True)
+
   ctx.actions.run(
     inputs = depset(transitive = [
       set.to_depset(target[HaskellBuildInfo].package_caches),
@@ -79,6 +84,7 @@ def _haskell_doc_aspect_impl(target, ctx):
       set.to_depset(target[HaskellLibraryInfo].source_files),
       set.to_depset(target[HaskellLibraryInfo].header_files),
       depset([
+        tools(ctx).bash,
         tools(ctx).ghc_pkg,
         tools(ctx).haddock,
       ]),
@@ -87,15 +93,12 @@ def _haskell_doc_aspect_impl(target, ctx):
     progress_message = "Haddock {0}".format(ctx.rule.attr.name),
     executable = ctx.file._haddock_wrapper,
     arguments = [
+      prebuilt_deps,
       args,
       target[HaskellLibraryInfo].haddock_args,
     ],
     env = {
-      "RULES_HASKELL_GHC_PKG": tools(ctx).ghc_pkg.path,
-      "RULES_HASKELL_HADDOCK": tools(ctx).haddock.path,
-      "RULES_HASKELL_PREBUILT_DEPS": " ".join(
-        set.to_list(target[HaskellBuildInfo].prebuilt_dependencies)
-      ),
+      "PATH": get_build_tools_path(ctx),
     },
   )
 
@@ -160,21 +163,22 @@ def _haskell_doc_rule_impl(ctx):
 
     html_dict_copied[package_id] = output_dir
 
-    ctx.actions.run(
+    ctx.actions.run_shell(
       inputs = [
         tools(ctx).cp,
         tools(ctx).mkdir,
         html_dir,
       ],
       outputs = [output_dir],
-      executable = ctx.file._copy_dep_haddock,
-      env = {
-        "RULES_HASKELL_CP": tools(ctx).cp.path,
-        "RULES_HASKELL_MKDIR": tools(ctx).mkdir.path,
-        "RULES_HASKELL_HTML_DIR": html_dir.path,
-        "RULES_HASKELL_DOC_DIR": doc_root_path,
-        "RULES_HASKELL_TARGET_DIR": output_dir.path,
-      },
+      command = """
+      mkdir -p "{doc_dir}"
+      # Copy Haddocks of a dependency.
+      cp -r "{html_dir}" "{target_dir}"
+      """.format(
+        doc_dir = doc_root_path,
+        html_dir = html_dir.path,
+        target_dir = output_dir.path,
+      ),
     )
 
   # Do one more Haddock call to generate the unified index
@@ -247,10 +251,6 @@ haskell_doc = rule(
     "index_transitive_deps": attr.bool(
       default = False,
       doc = "Whether to include documentation of transitive dependencies in index.",
-    ),
-    "_copy_dep_haddock": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:copy-dep-haddock.sh"),
     ),
   },
   toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],

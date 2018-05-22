@@ -26,15 +26,21 @@ def _haskell_toolchain_impl(ctx):
     if t.basename == "ghc":
       compiler = t
   version_file = ctx.actions.declare_file("ghc-version")
-  arguments = ctx.actions.args()
-  arguments.add(compiler)
-  arguments.add(version_file)
-  arguments.add(ctx.attr.version)
-  ctx.actions.run(
+  ctx.actions.run_shell(
     inputs = [compiler],
     outputs = [version_file],
-    executable = ctx.file._ghc_version_check,
-    arguments = [arguments],
+    command = """
+    {compiler} --numeric-version > {version_file}
+    if [[ {expected_version} != $(< {version_file}) ]]
+    then
+        echo GHC version $(< {version_file}) does not match expected version {expected_version}.
+        exit 1
+    fi
+    """.format(
+      compiler = compiler.path,
+      version_file = version_file.path,
+      expected_version = ctx.attr.version,
+    ),
   )
 
   # NOTE The only way to let various executables know where other
@@ -124,26 +130,28 @@ def _haskell_toolchain_impl(ctx):
     set.mutable_insert(symlinks, symlink)
 
   targets_w = [
+    "bash",
     "ln",
-    "grep",
-    "tee",
-    "mkdir",
     "cp",
+    "grep",
+    "mkdir",
   ]
 
   for target in targets_w:
     symlink = ctx.actions.declare_file(
       paths.join(visible_binaries, paths.basename(target))
     )
-    ctx.actions.run(
+    ctx.actions.run_shell(
       inputs = ctx.files.tools,
       outputs = [symlink],
-      executable = ctx.file._make_bin_symlink_which,
-      use_default_shell_env = True, # FIXME see above
-      arguments = [
-        target,
-        symlink.path,
-      ],
+      command = """
+      mkdir -p $(dirname "{symlink}")
+      ln -s $(which "{target}") "{symlink}"
+      """.format(
+        target = target,
+        symlink = symlink.path,
+      ),
+      use_default_shell_env = True,
     )
     set.mutable_insert(symlinks, symlink)
 
@@ -151,12 +159,13 @@ def _haskell_toolchain_impl(ctx):
     tool.basename.replace("-", "_"): tool
     for tool in set.to_list(symlinks)
   }
-  tools_struct_args.update({"ar_runfiles": ar_runfiles})
+  tools_runfiles_struct_args = {"ar": ar_runfiles}
 
   return [
     platform_common.ToolchainInfo(
       name = ctx.label.name,
       tools = struct(**tools_struct_args),
+      tools_runfiles = struct(**tools_runfiles_struct_args),
       # All symlinks are guaranteed to be in the same directory so we just
       # provide directory name of the first one (the collection cannot be
       # empty). The rest of the program may rely consider visible_bin_path
@@ -184,14 +193,6 @@ _haskell_toolchain = rule(
     ),
     "version": attr.string(mandatory = True),
     "is_darwin":  attr.bool(mandatory = True),
-    "_ghc_version_check": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:ghc-version-check.sh")
-    ),
-    "_make_bin_symlink_which": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:make-bin-symlink-which.sh")
-    ),
     "_crosstool": attr.label(
         default = Label("//tools/defaults:crosstool")
     ),

@@ -1,5 +1,3 @@
-package(default_visibility = ["//visibility:public"])
-
 exports_files([
 
   "haskell.bzl",
@@ -12,13 +10,10 @@ exports_files([
   "ghc_bindist.bzl",
   "ghci-repl.bzl",
 
-  "copy-dep-haddock.sh",
-  "ghc-defs-cleanup.sh",
-  "ghc-lint-wrapper.sh",
-  "ghc-version-check.sh",
+  "cpp_defines",
+
   "ghci-repl-wrapper.sh",
   "ghci-script",
   "haddock-wrapper.sh",
-  "make-bin-symlink-which.sh",
 
 ])
