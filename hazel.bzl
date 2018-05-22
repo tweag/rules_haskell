@@ -148,6 +148,7 @@ def hazel_custom_package_github(
     github_user,
     github_repo,
     repo_sha,
+    strip_prefix=None,
     archive_sha256=None):
   """Generate a repo for a Haskell package coming from a GitHub repo.
 
@@ -156,6 +157,8 @@ def hazel_custom_package_github(
     github_user: string, GitHub user.
     github_repo: string, repo name under `github_user` account.
     repo_sha: SHA1 of commit in the repo.
+    strip_prefix: strip this path prefix from directory repo, useful when a
+                  repo contains several packages.
     archive_sha256: hash of the actual archive to download.
   """
   url = "https://github.com/{0}/{1}/archive/{2}.tar.gz".format(
@@ -164,10 +167,13 @@ def hazel_custom_package_github(
     repo_sha,
   )
   fixed_package_name = _fixup_package_name(package_name)
+  strip_prefix_combined = "{0}-{1}".format(github_repo, repo_sha)
+  if strip_prefix:
+    strip_prefix_combined += "/" + strip_prefix
   native.new_http_archive(
     name = "haskell_{0}".format(fixed_package_name),
     build_file = "third_party/haskell/BUILD.{0}".format(fixed_package_name),
     sha256 = archive_sha256,
-    strip_prefix = "{0}-{1}".format(github_repo, repo_sha),
+    strip_prefix = strip_prefix_combined,
     urls = [url],
   )

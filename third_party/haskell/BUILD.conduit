@@ -1,0 +1,34 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@io_tweag_rules_haskell//haskell:haskell.bzl",
+  "haskell_library",
+)
+
+haskell_library(
+  name = "conduit",
+  srcs = glob([
+    "Data/*.hs",
+    "Data/**/*.hs",
+    "fusion-macros.h",
+  ]),
+  compiler_flags = ["-Iexternal/haskell_conduit"],
+  deps = [
+    "@haskell_exceptions//:exceptions",
+    "@haskell_lifted_base//:lifted-base",
+    "@haskell_mmorph//:mmorph",
+    "@haskell_monad_control//:monad-control",
+    "@haskell_mono_traversable//:mono-traversable",
+    "@haskell_mtl//:mtl",
+    "@haskell_primitive//:primitive",
+    "@haskell_resourcet//:resourcet",
+    "@haskell_text//:text",
+    "@haskell_transformers_base//:transformers-base",
+    "@haskell_transformers_compat//:transformers-compat",
+    "@haskell_vector//:vector",
+  ],
+  prebuilt_dependencies = [
+    "base",
+    "bytestring",
+    "transformers",
+  ],
+)

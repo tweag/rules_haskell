@@ -76,12 +76,20 @@ hazel_custom_package_github(
   repo_sha = "5d10b6f6ec4ff4b014e5e512f82d23e7606cc260",
 )
 
+hazel_custom_package_github(
+  package_name = "conduit",
+  github_user = "snoyberg",
+  github_repo = "conduit",
+  strip_prefix = "conduit",
+  repo_sha = "34db9267bb4f9dbdee45623944900062e7995d09",
+)
+
 load("//:packages.bzl", "packages", "prebuilt_dependencies")
 
 hazel_repositories(
     packages=packages,
     prebuilt_dependencies=prebuilt_dependencies,
-    exclude_packages = ["zlib", "text-metrics"],
+    exclude_packages = ["zlib", "text-metrics", "conduit"],
     extra_libs = {
       "tag_c": "@taglib//:lib",
     },

@@ -1,4 +1,5 @@
 aeson
+conduit
 entropy
 fuzzyset
 htaglib
