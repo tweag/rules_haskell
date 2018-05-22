@@ -92,11 +92,11 @@ REPL to work.
   ),
   "_cpp_defines": attr.label(
     allow_single_file = True,
-    default = Label("@io_tweag_rules_haskell//haskell:cpp_defines"),
+    default = Label("@io_tweag_rules_haskell//haskell:assets/cpp_defines"),
   ),
   "_ghci_script": attr.label(
     allow_single_file = True,
-    default = Label("@io_tweag_rules_haskell//haskell:ghci-script"),
+    default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
   ),
   "_ghci_repl_wrapper": attr.label(
     allow_single_file = True,
