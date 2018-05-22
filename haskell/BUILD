@@ -11,9 +11,9 @@ exports_files([
   "ghci-repl.bzl",
 
   "cpp_defines",
-
-  "ghci-repl-wrapper.sh",
   "ghci-script",
-  "haddock-wrapper.sh",
+
+  "private/ghci_repl_wrapper.sh",
+  "private/haddock_wrapper.sh",
 
 ])

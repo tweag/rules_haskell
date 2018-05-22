@@ -1,6 +1,6 @@
 """Tools used during build."""
 
-load(":set.bzl", "set")
+load(":private/set.bzl", "set")
 
 def get_build_tools_path(ctx):
   """Get list of build tools suited for PATH.

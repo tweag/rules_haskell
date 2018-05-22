@@ -1,24 +1,24 @@
 """Linting"""
 
-load(":set.bzl", "set")
+load(":private/set.bzl", "set")
 
-load(":path_utils.bzl",
+load(":private/path_utils.bzl",
      "target_unique_name"
 )
 
-load(":tools.bzl",
+load(":private/tools.bzl",
   "get_build_tools_path",
   "tools",
 )
 
-load(":providers.bzl",
+load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",
      "HaskellBinaryInfo",
      "HaskellLintInfo",
 )
 
-load(":java_interop.bzl",
+load(":private/java.bzl",
      "java_interop_info",
 )
 

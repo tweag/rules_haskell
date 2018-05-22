@@ -3,16 +3,16 @@
 These rules are temporary and will be deprecated in the future.
 """
 
-load(":providers.bzl",
+load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",
      "HaskellBinaryInfo",
      "CcSkylarkApiProviderHacked",
 )
 
-load(":set.bzl", "set")
+load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
-load(":tools.bzl", "tools")
+load(":private/tools.bzl", "tools")
 
 def cc_headers(ctx):
   """Bring in scope the header files of dependencies, if any.
