@@ -199,8 +199,9 @@ haskell_library = rule(
 Example:
   ```bzl
   haskell_library(
-      name = 'hello-lib',
-      srcs = glob(['hello_lib/**/*.hs']),
+      name = "hello-lib",
+      srcs = glob(["src/**/*.hs"]),
+      src_strip_prefix = "src",
       deps = ["//hello-sublib:lib"],
       prebuilt_dependencies = ["base", "bytestring"],
   )
