@@ -8,7 +8,7 @@ exports_files([
   "lint.bzl",
   "toolchain.bzl",
   "ghc_bindist.bzl",
-  "ghci-repl.bzl",
+  "ghci_repl.bzl",
 
   "assets/cpp_defines",
   "assets/ghci_script",

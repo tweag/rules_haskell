@@ -18,7 +18,7 @@ load(":private/providers.bzl",
   "HaskellBinaryInfo",
   "HaskellLibraryInfo",
 )
-load(":ghci-repl.bzl",
+load(":ghci_repl.bzl",
   _build_haskell_repl = "build_haskell_repl",
 )
 
