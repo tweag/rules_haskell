@@ -1,26 +1,27 @@
 """Implementation of core Haskell rules"""
 
-load(":private/actions.bzl",
+load(":private/actions/compile.bzl",
   "compile_haskell_bin",
+  "compile_haskell_lib"
+)
+load(":private/actions/link.bzl",
   "link_haskell_bin",
-  "compile_haskell_lib",
   "link_static_lib",
   "link_dynamic_lib",
+)
+load(":private/actions/package.bzl",
   "create_ghc_package",
-  "gather_dep_info",
+  "get_pkg_name",
   "get_pkg_id",
 )
-load(":private/set.bzl",
-  "set",
-)
+load(":private/dependencies.bzl", "gather_dep_info")
+load(":private/set.bzl", "set")
 load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellBinaryInfo",
   "HaskellLibraryInfo",
 )
-load(":ghci_repl.bzl",
-  _build_haskell_repl = "build_haskell_repl",
-)
+load(":ghci_repl.bzl", _build_haskell_repl = "build_haskell_repl")
 
 def haskell_binary_impl(ctx):
   dep_info = gather_dep_info(ctx)

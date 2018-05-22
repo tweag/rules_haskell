@@ -8,17 +8,6 @@ load(":private/providers.bzl",
   "CcSkylarkApiProviderHacked",
 )
 
-load(":private/actions.bzl",
-  "compile_haskell_bin",
-  "link_haskell_bin",
-  "compile_haskell_lib",
-  "link_static_lib",
-  "link_dynamic_lib",
-  "create_ghc_package",
-  "gather_dep_info",
-  "get_pkg_id",
-)
-
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 load(":private/haskell_impl.bzl",

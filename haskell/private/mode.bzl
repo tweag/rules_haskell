@@ -22,3 +22,16 @@ def is_profiling_enabled(ctx):
     bool: True if the mode is enabled, False otherwise.
   """
   return _is_mode_enabled(ctx, "dbg")
+
+def add_mode_options(ctx, args):
+  """Add mode options to the given args object.
+
+  Args:
+    ctx: Rule context.
+    args: args object.
+
+  Returns:
+    None
+  """
+  if is_profiling_enabled(ctx):
+    args.add("-prof")
