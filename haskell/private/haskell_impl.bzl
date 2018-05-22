@@ -1,6 +1,6 @@
 """Implementation of core Haskell rules"""
 
-load(":actions.bzl",
+load(":private/actions.bzl",
   "compile_haskell_bin",
   "link_haskell_bin",
   "compile_haskell_lib",
@@ -10,15 +10,15 @@ load(":actions.bzl",
   "gather_dep_info",
   "get_pkg_id",
 )
-load(":set.bzl",
+load(":private/set.bzl",
   "set",
 )
-load(":providers.bzl",
+load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellBinaryInfo",
   "HaskellLibraryInfo",
 )
-load(":ghci-repl.bzl",
+load(":ghci_repl.bzl",
   _build_haskell_repl = "build_haskell_repl",
 )
 

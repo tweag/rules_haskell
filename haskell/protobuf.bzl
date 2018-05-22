@@ -1,14 +1,14 @@
 """Support for protocol buffers"""
 
-load(":providers.bzl",
+load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellLibraryInfo",
   "HaskellProtobufInfo",
 )
 load("@bazel_skylib//:lib.bzl", "dicts", "paths")
-load(":tools.bzl", "protobuf_tools")
-load(":path_utils.bzl", "target_unique_name")
-load(":haskell-impl.bzl",
+load(":private/tools.bzl", "protobuf_tools")
+load(":private/path_utils.bzl", "target_unique_name")
+load(":private/haskell_impl.bzl",
   _haskell_library_impl = "haskell_library_impl",
 )
 
@@ -155,15 +155,15 @@ _haskell_proto_aspect = aspect(
   attrs = {
     "_cpp_defines": attr.label(
       allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:cpp_defines"),
+      default = Label("@io_tweag_rules_haskell//haskell:assets/cpp_defines"),
     ),
     "_ghci_script": attr.label(
       allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:ghci-script"),
+      default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
     ),
     "_ghci_repl_wrapper": attr.label(
       allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:ghci-repl-wrapper.sh"),
+      default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
     ),
   },
   attr_aspects = ['deps'],

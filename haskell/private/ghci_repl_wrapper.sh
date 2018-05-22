@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: ghci-repl-wrapper.sh <ARGS>
+# Usage: ghci_repl_wrapper.sh <ARGS>
 
 # First test if ghci can be found where we expect it to be. If not, it's
 # likely that the script is invoked incorrectly, so we need to output a

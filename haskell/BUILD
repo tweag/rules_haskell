@@ -1,19 +1,8 @@
-exports_files([
+exports_files(
+  glob(["*.bzl"]) + [
+  "assets/cpp_defines",
+  "assets/ghci_script",
 
-  "haskell.bzl",
-  "protobuf.bzl",
-  "repositories.bzl",
-  "cc.bzl",
-  "haddock.bzl",
-  "lint.bzl",
-  "toolchain.bzl",
-  "ghc_bindist.bzl",
-  "ghci-repl.bzl",
-
-  "cpp_defines",
-
-  "ghci-repl-wrapper.sh",
-  "ghci-script",
-  "haddock-wrapper.sh",
-
+  "private/ghci_repl_wrapper.sh",
+  "private/haddock_wrapper.sh",
 ])

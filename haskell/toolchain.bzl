@@ -3,7 +3,7 @@
 load("@bazel_skylib//:lib.bzl",
      "paths",
 )
-load(":set.bzl",
+load(":private/set.bzl",
      "set",
 )
 

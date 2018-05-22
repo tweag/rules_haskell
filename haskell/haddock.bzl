@@ -1,18 +1,18 @@
 """Haddock support"""
 
-load (":path_utils.bzl", "module_name")
-load (":set.bzl", "set")
+load (":private/path_utils.bzl", "module_name")
+load (":private/set.bzl", "set")
 
-load(":actions.bzl",
+load(":private/actions.bzl",
   "get_pkg_name",
 )
 
-load(":tools.bzl",
+load(":private/tools.bzl",
   "get_build_tools_path",
   "tools",
 )
 
-load(":providers.bzl",
+load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",
      "HaddockInfo",
@@ -116,7 +116,7 @@ haskell_doc_aspect = aspect(
   attrs = {
     "_haddock_wrapper": attr.label(
       allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:haddock-wrapper.sh"),
+      default = Label("@io_tweag_rules_haskell//haskell:private/haddock_wrapper.sh"),
     ),
   },
   attr_aspects = ['deps'],

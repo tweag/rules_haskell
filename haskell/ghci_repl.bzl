@@ -1,6 +1,6 @@
 """GHCi REPL support"""
 
-load(":tools.bzl",
+load(":private/tools.bzl",
      "tools",
 )
 
@@ -9,23 +9,23 @@ load("@bazel_skylib//:lib.bzl",
      "shell",
 )
 
-load(":providers.bzl",
+load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",
      "HaskellBinaryInfo",
 )
 
-load(":path_utils.bzl",
+load(":private/path_utils.bzl",
      "target_unique_name",
      "get_external_libs_path",
      "import_hierarchy_root",
 )
 
-load(":set.bzl",
+load(":private/set.bzl",
      "set",
 )
 
-load(":utils.bzl",
+load(":private/utils.bzl",
      "get_lib_name",
 )
 

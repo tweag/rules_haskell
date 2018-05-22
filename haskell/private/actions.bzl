@@ -1,6 +1,6 @@
 """A Haskell toolchain."""
 
-load(":path_utils.bzl",
+load(":private/path_utils.bzl",
      "declare_compiled",
      "target_unique_name",
      "module_name",
@@ -9,9 +9,9 @@ load(":path_utils.bzl",
      "get_external_libs_path",
 )
 
-load(":set.bzl", "set")
+load(":private/set.bzl", "set")
 
-load(":tools.bzl",
+load(":private/tools.bzl",
      "get_build_tools_path",
      "get_ghc_version",
      "is_darwin",
@@ -22,12 +22,12 @@ load(":tools.bzl",
 
 load(":cc.bzl", "cc_headers")
 
-load(":java_interop.bzl",
+load(":private/java.bzl",
      "JavaInteropInfo",
      "java_interop_info",
 )
 
-load(":providers.bzl",
+load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",
      "HaskellBinaryInfo",
@@ -36,11 +36,11 @@ load(":providers.bzl",
 
 load("@bazel_skylib//:lib.bzl", "paths", "dicts")
 
-load(":mode.bzl",
+load(":private/mode.bzl",
      "is_profiling_enabled",
 )
 
-load(":utils.bzl",
+load(":private/utils.bzl",
      "get_lib_name",
 )
 

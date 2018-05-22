@@ -1,6 +1,6 @@
 """Core Haskell rules"""
 
-load(":providers.bzl",
+load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellLibraryInfo",
   "HaskellBinaryInfo",
@@ -8,7 +8,7 @@ load(":providers.bzl",
   "CcSkylarkApiProviderHacked",
 )
 
-load(":actions.bzl",
+load(":private/actions.bzl",
   "compile_haskell_bin",
   "link_haskell_bin",
   "compile_haskell_lib",
@@ -19,9 +19,9 @@ load(":actions.bzl",
   "get_pkg_id",
 )
 
-load(":set.bzl", "set")
+load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
-load(":haskell-impl.bzl",
+load(":private/haskell_impl.bzl",
   _haskell_binary_impl = "haskell_binary_impl",
   _haskell_library_impl = "haskell_library_impl",
 )
@@ -92,15 +92,15 @@ REPL to work.
   ),
   "_cpp_defines": attr.label(
     allow_single_file = True,
-    default = Label("@io_tweag_rules_haskell//haskell:cpp_defines"),
+    default = Label("@io_tweag_rules_haskell//haskell:assets/cpp_defines"),
   ),
   "_ghci_script": attr.label(
     allow_single_file = True,
-    default = Label("@io_tweag_rules_haskell//haskell:ghci-script"),
+    default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
   ),
   "_ghci_repl_wrapper": attr.label(
     allow_single_file = True,
-    default = Label("@io_tweag_rules_haskell//haskell:ghci-repl-wrapper.sh"),
+    default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
   ),
 }
 

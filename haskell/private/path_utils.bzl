@@ -1,6 +1,6 @@
 """Utilities for module and path manipulations."""
 
-load(":set.bzl", "set")
+load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths", "shell")
 
 def module_name(ctx, f):
