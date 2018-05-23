@@ -14,6 +14,15 @@ load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 load(":private/tools.bzl", "tools")
 
+CcInteropInfo = provider(
+  doc = "Information needed for interop with cc rules.",
+  fields = {
+    "hdrs": "CC headers",
+    "cpp_flags": "Preprocessor flags",
+    "include_args": "Extra include dirs",
+  }
+)
+
 def cc_headers(ctx):
   """Bring in scope the header files of dependencies, if any.
 
@@ -52,7 +61,11 @@ def cc_headers(ctx):
 
   include_args = ["-I" + include for include in include_directories]
 
-  return hdrs.to_list(), cpp_flags, include_args
+  return CcInteropInfo(
+    hdrs = hdrs.to_list(),
+    cpp_flags = cpp_flags,
+    include_args = include_args,
+  )
 
 def _cc_import_impl(ctx):
   strip_prefix = ctx.attr.strip_include_prefix

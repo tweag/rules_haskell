@@ -91,15 +91,15 @@ def _process_hsc_file(ctx, ghc_defs_dump, hsc_file):
   args.add([hsc_file, "-o", hs_out])
 
   # Bring in scope the header files of dependencies, if any.
-  hdrs, cpp_flags, include_args = cc_headers(ctx)
-  args.add(["--cflag=" + f for f in cpp_flags])
-  args.add(["--cflag=" + f for f in include_args])
+  cc = cc_headers(ctx)
+  args.add(["--cflag=" + f for f in cc.cpp_flags])
+  args.add(["--cflag=" + f for f in cc.include_args])
   args.add("-I{0}".format(ghc_defs_dump.dirname))
   args.add("-i{0}".format(ghc_defs_dump.basename))
 
   ctx.actions.run(
     inputs = depset(transitive = [
-      depset(hdrs),
+      depset(cc.hdrs),
       depset([tools(ctx).gcc]),
       depset([hsc_file, ghc_defs_dump])
     ]),
@@ -254,12 +254,12 @@ def _compilation_defaults(ctx, dep_info):
           ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.dyn_hi"))
         )
 
-  hdrs, cpp_flags, include_args = cc_headers(ctx)
-  preprocessor_args = ["-optP" + f for f in cpp_flags]
+  cc = cc_headers(ctx)
+  preprocessor_args = ["-optP" + f for f in cc.cpp_flags]
   args.add(preprocessor_args)
-  args.add(include_args)
+  args.add(cc.include_args)
   haddock_args.add(preprocessor_args, before_each="--optghc")
-  haddock_args.add(include_args, before_each="--optghc")
+  haddock_args.add(cc.include_args, before_each="--optghc")
 
   for f in set.to_list(source_files):
     args.add(f)
@@ -273,7 +273,7 @@ def _compilation_defaults(ctx, dep_info):
     haddock_args = haddock_args,
     inputs = depset(transitive = [
       set.to_depset(source_files),
-      depset(hdrs),
+      depset(cc.hdrs),
       set.to_depset(dep_info.package_confs),
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.interface_files),
@@ -291,7 +291,7 @@ def _compilation_defaults(ctx, dep_info):
     interface_files = interface_files,
     modules = modules,
     source_files = source_files,
-    header_files = set.from_list(hdrs),
+    header_files = set.from_list(cc.hdrs),
     import_dirs = import_dirs,
     env = dicts.add({
       "LD_LIBRARY_PATH": get_external_libs_path(set.from_list(dep_info.external_libraries.values())),
