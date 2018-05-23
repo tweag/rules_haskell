@@ -13,7 +13,6 @@ skylark_doc(
     "//haskell:haskell.bzl",
     "//haskell:haddock.bzl",
     "//haskell:lint.bzl",
-    "//haskell:ghci_repl.bzl",
     "//haskell:toolchain.bzl",
     "//haskell:protobuf.bzl",
     "//haskell:cc.bzl",

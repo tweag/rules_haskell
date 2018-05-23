@@ -14,6 +14,7 @@ load(":private/actions/package.bzl",
   "get_pkg_name",
   "get_pkg_id",
 )
+load(":private/actions/repl.bzl", "build_haskell_repl")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/set.bzl", "set")
 load(":private/providers.bzl",
@@ -21,7 +22,6 @@ load(":private/providers.bzl",
   "HaskellBinaryInfo",
   "HaskellLibraryInfo",
 )
-load(":ghci_repl.bzl", _build_haskell_repl = "build_haskell_repl")
 
 def haskell_binary_impl(ctx):
   dep_info = gather_dep_info(ctx)
@@ -42,7 +42,7 @@ def haskell_binary_impl(ctx):
   )
   target_files = depset([binary])
 
-  _build_haskell_repl(
+  build_haskell_repl(
     ctx,
     build_info=build_info,
     target_files=target_files,
@@ -112,7 +112,7 @@ def haskell_library_impl(ctx):
   target_files = depset([conf_file, cache_file])
 
   if hasattr(ctx, "outputs"):
-    _build_haskell_repl(
+    build_haskell_repl(
       ctx,
       build_info=build_info,
       target_files=target_files,
