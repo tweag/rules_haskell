@@ -79,9 +79,17 @@ def _cc_import_impl(ctx):
 
   roots = set.empty()
   for f in ctx.files.hdrs:
-    if not f.path.startswith(prefix):
+
+    # If it's a generated file, strip off the bin or genfiles prefix.
+    path = f.path
+    if path.startswith(ctx.bin_dir.path):
+      path = paths.relativize(path, ctx.bin_dir.path)
+    elif path.startswith(ctx.genfiles_dir.path):
+      path = paths.relativize(path, ctx.genfiles_dir.path)
+
+    if not path.startswith(prefix):
       fail("Header {} does not have expected prefix {}".format(
-          f.path, prefix))
+          path, prefix))
     roots = set.insert(roots, f.root.path if f.root.path else ".")
 
   include_directories = [paths.join(root, prefix) for root in set.to_list(roots)]

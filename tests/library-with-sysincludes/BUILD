@@ -6,6 +6,14 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_cc_import",
 )
 
+genrule(
+  name = "genrule-header",
+  outs = [
+    "include/foo.h",
+  ],
+  cmd = "touch $(location include/foo.h)",
+)
+
 # A locally-defined replica of @zlib.dev//:zlib.
 # Since that shared library lives in another package, we must
 # use an absolute path for strip_include_prefix.
@@ -16,10 +24,20 @@ haskell_cc_import(
   strip_include_prefix = "/external/zlib.dev/include",
 )
 
+haskell_cc_import(
+  name = "zlib-with-genrule-header",
+  shared_library = "@zlib//:lib", # just use zlib because this field is required
+  hdrs = [":genrule-header"],
+  strip_include_prefix = "include",
+)
+
 haskell_library(
   name = "intermediate-library",
   srcs = ["IntLib.hsc"],
-  deps = [":zlib"],
+  deps = [
+    ":zlib",
+    ":zlib-with-genrule-header",
+  ],
   prebuilt_dependencies = ["base"],
 )
 
@@ -37,12 +55,15 @@ haskell_library(
   visibility = ["//visibility:public"],
 )
 
-# Replicate the above example, but use the externall-defined haskell_cc_import
-# rule.
+# Replicate the above example, but use the externally-defined
+# haskell_cc_import rule.
 haskell_library(
   name = "intermediate-library-other",
   srcs = ["IntLib.hsc"],
-  deps = ["@zlib.dev//:zlib"],
+  deps = [
+    "@zlib.dev//:zlib",
+    ":zlib-with-genrule-header",
+  ],
   prebuilt_dependencies = ["base"],
 )
 
