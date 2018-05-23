@@ -1,3 +1,23 @@
+DefaultCompileInfo = provider(
+  doc = "Default compilation files and configuration.",
+  fields = {
+    "args": "Default argument list.",
+    "haddock_args": "Default Haddock argument list.",
+    "inputs": "Default inputs.",
+    "outputs": "Default outputs.",
+    "objects_dir": "Object files directory.",
+    "interfaces_dir": "Interface files directory.",
+    "object_files": "Object files.",
+    "object_dyn_files": "Dynamic object files.",
+    "interface_files": "Interface files.",
+    "modules": "Set of all module names.",
+    "source_files": "Set of files that contain Haskell modules.",
+    "header_files": "Set of header files.",
+    "import_dirs": "Import hierarchy roots.",
+    "env": "Default env vars."
+  },
+)
+
 HaskellBuildInfo = provider(
   doc = "Common information about build process: dependencies, etc.",
   fields = {
