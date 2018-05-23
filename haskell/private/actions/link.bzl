@@ -3,13 +3,7 @@
 load(":private/actions/package.bzl", "get_library_name")
 load(":private/mode.bzl", "add_mode_options")
 load(":private/set.bzl", "set")
-load(":private/tools.bzl",
-     "get_ghc_version",
-     "is_darwin",
-     "so_extension",
-     "tools",
-     "tools_runfiles",
-)
+load(":private/tools.bzl", "so_extension")
 load(":private/utils.bzl", "get_lib_name")
 load("@bazel_skylib//:lib.bzl", "paths")
 
@@ -26,49 +20,49 @@ def _backup_path(target):
 
   return "/".join([".."] * n)
 
-def _create_dummy_archive(ctx):
+def _create_dummy_archive(hs):
   """Create empty archive so that GHC has some input files to work on during
   linking.
 
   See: https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
 
   Args:
-    ctx: Rule context.
+    hs: Haskell context.
 
   Returns:
     File, the created dummy archive.
   """
 
   dummy_raw = "BazelDummy.hs"
-  dummy_input = ctx.actions.declare_file(dummy_raw)
-  dummy_object = ctx.actions.declare_file(paths.replace_extension(dummy_raw, ".o"))
+  dummy_input = hs.actions.declare_file(dummy_raw)
+  dummy_object = hs.actions.declare_file(paths.replace_extension(dummy_raw, ".o"))
 
-  ctx.actions.write(output=dummy_input, content="""
+  hs.actions.write(output=dummy_input, content="""
 {-# LANGUAGE NoImplicitPrelude #-}
 module BazelDummy () where
 """)
 
-  dummy_static_lib = ctx.actions.declare_file("libempty.a")
-  ctx.actions.run(
+  dummy_static_lib = hs.actions.declare_file("libempty.a")
+  hs.actions.run(
     inputs = [dummy_input],
     outputs = [dummy_object],
-    executable = tools(ctx).ghc,
+    executable = hs.tools.ghc,
     arguments = ["-c", dummy_input.path],
   )
 
-  ar_args = ctx.actions.args()
+  ar_args = hs.actions.args()
   ar_args.add(["qc", dummy_static_lib, dummy_object])
 
-  ctx.actions.run(
-    inputs = [dummy_object] + tools_runfiles(ctx).ar,
+  hs.actions.run(
+    inputs = [dummy_object] + hs.tools_runfiles.ar,
     outputs = [dummy_static_lib],
-    executable = tools(ctx).ar,
+    executable = hs.tools.ar,
     arguments = [ar_args]
   )
 
   return dummy_static_lib
 
-def _fix_linker_paths(ctx, inp, out, external_libraries):
+def _fix_linker_paths(hs, inp, out, external_libraries):
   """Postprocess a macOS binary to make shared library references relative.
 
   On macOS, in order to simulate the linker "rpath" behavior and make the
@@ -78,12 +72,12 @@ def _fix_linker_paths(ctx, inp, out, external_libraries):
   For details: https://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
 
   Args:
-    ctx: Rule context.
+    hs: Haskell context.
     inp: An input file.
     out: An output file.
     external_libraries: A list of C library dependencies to make relative.
   """
-  ctx.actions.run_shell(
+  hs.actions.run_shell(
       inputs=[inp],
       outputs=[out],
       progress_message =
@@ -97,31 +91,32 @@ def _fix_linker_paths(ctx, inp, out, external_libraries):
                      out.path)
                      for f in external_libraries]))
 
-def link_haskell_bin(ctx, dep_info, object_files):
+def link_binary(hs, dep_info, compiler_flags, object_files):
   """Link Haskell binary from static object files.
-
-  Args:
-    ctx: Rule context.
-    object_files: Dynamic object files.
 
   Returns:
     File: produced executable
   """
 
-  dummy_static_lib = _create_dummy_archive(ctx)
+  dummy_static_lib = _create_dummy_archive(hs)
 
-  if not is_darwin(ctx):
-    compile_output = ctx.outputs.executable
+  executable = hs.actions.declare_file(hs.name)
+  if not hs.toolchain.is_darwin:
+    compile_output = executable
   else:
-    compile_output = ctx.actions.declare_file(ctx.outputs.executable.basename + ".temp")
-    _fix_linker_paths(ctx, compile_output, ctx.outputs.executable,
-                      dep_info.external_libraries)
+    compile_output = hs.actions.declare_file(hs.name + ".temp")
+    _fix_linker_paths(
+      hs,
+      compile_output,
+      executable,
+      dep_info.external_libraries,
+    )
 
-  args = ctx.actions.args()
-  add_mode_options(ctx, args)
-  args.add(ctx.attr.compiler_flags)
+  args = hs.actions.args()
+  add_mode_options(hs, args)
+  args.add(compiler_flags)
 
-  if is_darwin(ctx):
+  if hs.toolchain.is_darwin:
     args.add(["-optl-Wl,-headerpad_max_install_names"])
   else:
     # TODO: enable dynamic linking of Haskell dependencies for macOS.
@@ -156,7 +151,7 @@ def link_haskell_bin(ctx, dep_info, object_files):
     dep_info.dynamic_libraries,
   )
 
-  if is_darwin(ctx):
+  if hs.toolchain.is_darwin:
     # Suppress a warning that Clang prints due to GHC automatically passing
     # "-pie" or "-no-pie" to the C compiler.
     # This particular invocation of GHC is a little unusual; e.g., we're
@@ -165,10 +160,10 @@ def link_haskell_bin(ctx, dep_info, object_files):
     args.add(["-optc-Wno-unused-command-line-argument",
               "-optl-Wno-unused-command-line-argument"])
   else:
-    for rpath in set.to_list(_infer_rpaths(ctx.outputs.executable, solibs)):
+    for rpath in set.to_list(_infer_rpaths(executable, solibs)):
       args.add(["-optl-Wl,-rpath," + rpath])
 
-  ctx.actions.run(
+  hs.actions.run(
     inputs = depset(transitive = [
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.dynamic_libraries),
@@ -178,12 +173,12 @@ def link_haskell_bin(ctx, dep_info, object_files):
       depset(dep_info.external_libraries.values()),
     ]),
     outputs = [compile_output],
-    progress_message = "Linking {0}".format(ctx.attr.name),
-    executable = tools(ctx).ghc,
-    arguments = [args]
+    progress_message = "Linking {0}".format(hs.name),
+    executable = hs.tools.ghc,
+    arguments = [args],
   )
 
-  return ctx.outputs.executable
+  return executable
 
 def _add_external_libraries(args, libs):
   """Add options to `args` that allow us to link to `libs`.
@@ -226,50 +221,46 @@ def _infer_rpaths(target, solibs):
 
   return r
 
-def link_static_lib(ctx, dep_info, object_files):
+def link_library_static(hs, dep_info, object_files, pkg_id):
   """Link a static library for the package using given object files.
-
-  Args:
-    ctx: Rule context.
-    object_files: All object files to include in the library.
 
   Returns:
     File: Produced static library.
   """
-  static_library = ctx.actions.declare_file("lib{0}.a".format(get_library_name(ctx)))
+  library_name = get_library_name(pkg_id)
+  static_library = hs.actions.declare_file("lib{0}.a".format(library_name))
 
-  args = ctx.actions.args()
+  args = hs.actions.args()
   args.add(["qc", static_library])
   args.add(object_files)
 
-  ctx.actions.run(
-    inputs = object_files + tools_runfiles(ctx).ar,
+  hs.actions.run(
+    inputs = object_files + hs.tools_runfiles.ar,
     outputs = [static_library],
     progress_message = "Linking static library {0}".format(static_library.basename),
-    executable = tools(ctx).ar,
+    executable = hs.tools.ar,
     arguments = [args],
   )
   return static_library
 
-def link_dynamic_lib(ctx, dep_info, object_files):
+def link_library_dynamic(hs, dep_info, object_files, pkg_id):
   """Link a dynamic library for the package using given object files.
-
-  Args:
-    ctx: Rule context.
-    object_files: Object files to use for linking.
 
   Returns:
     File: Produced dynamic library.
   """
 
-  version = get_ghc_version(ctx)
-  dynamic_library = ctx.actions.declare_file(
-    "lib{0}-ghc{1}.{2}".format(get_library_name(ctx), version, so_extension(ctx))
+  dynamic_library = hs.actions.declare_file(
+    "lib{0}-ghc{1}.{2}".format(
+      get_library_name(pkg_id),
+      hs.toolchain.version,
+      so_extension(hs),
+    )
   )
 
-  args = ctx.actions.args()
+  args = hs.actions.args()
 
-  add_mode_options(ctx, args)
+  add_mode_options(hs, args)
 
   args.add(["-shared", "-dynamic"])
 
@@ -290,10 +281,14 @@ def link_dynamic_lib(ctx, dep_info, object_files):
     dep_info.dynamic_libraries,
   )
 
-  if is_darwin(ctx):
-    dynamic_library_tmp = ctx.actions.declare_file(dynamic_library.basename + ".temp")
-    _fix_linker_paths(ctx, dynamic_library_tmp, dynamic_library,
-                      dep_info.external_libraries)
+  if hs.toolchain.is_darwin:
+    dynamic_library_tmp = hs.actions.declare_file(dynamic_library.basename + ".temp")
+    _fix_linker_paths(
+      hs,
+      dynamic_library_tmp,
+      dynamic_library,
+      dep_info.external_libraries
+    )
     args.add(["-optl-Wl,-headerpad_max_install_names"])
   else:
     dynamic_library_tmp = dynamic_library
@@ -302,7 +297,7 @@ def link_dynamic_lib(ctx, dep_info, object_files):
 
   args.add(["-o", dynamic_library_tmp.path])
 
-  ctx.actions.run(
+  hs.actions.run(
     inputs = depset(transitive = [
       depset(object_files),
       set.to_depset(dep_info.package_caches),
@@ -311,7 +306,7 @@ def link_dynamic_lib(ctx, dep_info, object_files):
     ]),
     outputs = [dynamic_library_tmp],
     progress_message = "Linking dynamic library {0}".format(dynamic_library.basename),
-    executable = tools(ctx).ghc,
+    executable = hs.tools.ghc,
     arguments = [args]
   )
 

@@ -61,7 +61,7 @@ def is_darwin(ctx):
   """
   return ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].is_darwin
 
-def so_extension(ctx):
+def so_extension(hs):
   """Returns the extension for shared libraries.
 
   Args:
@@ -70,7 +70,7 @@ def so_extension(ctx):
   Returns:
     string of extension.
   """
-  return "dylib" if is_darwin(ctx) else "so"
+  return "dylib" if hs.toolchain.is_darwin else "so"
 
 def protobuf_tools(ctx):
   """Similarly to `tools`, return a structure containing all protobuf-related

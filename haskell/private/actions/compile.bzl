@@ -1,6 +1,5 @@
 """Actions for compiling Haskell source code"""
 
-load(":cc.bzl", "cc_headers")
 load(":private/actions/package.bzl", "get_pkg_id")
 load(":private/java.bzl", "java_interop_info")
 load(":private/path_utils.bzl",
@@ -8,34 +7,31 @@ load(":private/path_utils.bzl",
   "target_unique_name",
   "module_name",
   "module_unique_name",
-  "import_hierarchy_root",
   "get_external_libs_path",
 )
 load(":private/mode.bzl", "add_mode_options")
 load(":private/providers.bzl", "DefaultCompileInfo")
 load(":private/set.bzl", "set")
-load(":private/tools.bzl",
-  "get_build_tools_path",
-  "tools",
-)
 load("@bazel_skylib//:lib.bzl", "dicts", "paths")
 
-def _make_ghc_defs_dump(ctx):
+def _make_ghc_defs_dump(hs, cpp_defines, version):
   """Generate a file containing GHC default pre-processor definitions.
 
   Args:
-    ctx: Rule context.
+    hs: Haskell context.
+    cpp_defines: Location of cpp_defines pattern file.
+    version: package version.
 
   Returns:
     File: The file with GHC definitions.
   """
-  raw_filename = "ghc-defs-dump-{0}-{1}.hs".format(ctx.attr.name, ctx.attr.version)
-  dummy_src = ctx.actions.declare_file(raw_filename)
-  ghc_defs_dump_raw = ctx.actions.declare_file(paths.replace_extension(raw_filename, ".hspp"))
-  ghc_defs_dump = ctx.actions.declare_file(paths.replace_extension(raw_filename, ".h"))
+  raw_filename = "ghc-defs-dump-{0}-{1}.hs".format(hs.name, version)
+  dummy_src = hs.actions.declare_file(raw_filename)
+  ghc_defs_dump_raw = hs.actions.declare_file(paths.replace_extension(raw_filename, ".hspp"))
+  ghc_defs_dump = hs.actions.declare_file(paths.replace_extension(raw_filename, ".h"))
 
-  ctx.actions.write(dummy_src, "")
-  args = ctx.actions.args()
+  hs.actions.write(dummy_src, "")
+  args = hs.actions.args()
   args.add([
     "-E",
     "-optP-dM",
@@ -43,37 +39,35 @@ def _make_ghc_defs_dump(ctx):
     dummy_src.path,
   ])
 
-  ctx.actions.run(
+  hs.actions.run(
     inputs = [dummy_src],
     outputs = [ghc_defs_dump_raw],
-    executable = tools(ctx).ghc,
+    executable = hs.tools.ghc,
     arguments = [args],
   )
 
-  ctx.actions.run_shell(
-    inputs = [ghc_defs_dump_raw, ctx.file._cpp_defines, tools(ctx).grep],
+  hs.actions.run_shell(
+    inputs = [ghc_defs_dump_raw, cpp_defines, hs.tools.grep],
     outputs = [ghc_defs_dump],
     command = """
     grep "^[^#]" {cpp_defines} | while IFS= read -r patt; do
       grep "$patt" {raw} >> {filtered}
     done
     """.format(
-      cpp_defines = ctx.file._cpp_defines.path,
+      cpp_defines = cpp_defines.path,
       raw = ghc_defs_dump_raw.path,
       filtered = ghc_defs_dump.path,
     ),
-    env = {
-      "PATH": get_build_tools_path(ctx),
-    },
+    env = hs.env,
   )
 
   return ghc_defs_dump
 
-def _process_hsc_file(ctx, ghc_defs_dump, hsc_file):
+def _process_hsc_file(hs, cc, ghc_defs_dump, version, hsc_file):
   """Process a single hsc file.
 
   Args:
-    ctx: Rule context.
+    hs: Haskell context.
     ghc_defs_dump: File with GHC definitions.
     hsc_file: hsc file to process.
 
@@ -81,62 +75,55 @@ def _process_hsc_file(ctx, ghc_defs_dump, hsc_file):
     File: Haskell source file created by processing hsc_file.
   """
 
-  hsc_output_dir = ctx.actions.declare_directory(
-    module_unique_name(ctx, hsc_file, "hsc_processed")
+  hsc_output_dir = hs.actions.declare_directory(
+    module_unique_name(hs, hsc_file, "hsc_processed", version)
   )
-  args = ctx.actions.args()
+  args = hs.actions.args()
 
   # Output a Haskell source file.
-  hs_out = declare_compiled(ctx, hsc_file, ".hs", directory=hsc_output_dir)
+  hs_out = declare_compiled(hs, hsc_file, ".hs", directory=hsc_output_dir)
   args.add([hsc_file, "-o", hs_out])
 
-  # Bring in scope the header files of dependencies, if any.
-  cc = cc_headers(ctx)
   args.add(["--cflag=" + f for f in cc.cpp_flags])
   args.add(["--cflag=" + f for f in cc.include_args])
   args.add("-I{0}".format(ghc_defs_dump.dirname))
   args.add("-i{0}".format(ghc_defs_dump.basename))
 
-  ctx.actions.run(
+  hs.actions.run(
     inputs = depset(transitive = [
       depset(cc.hdrs),
-      depset([tools(ctx).gcc]),
+      depset([hs.tools.gcc]),
       depset([hsc_file, ghc_defs_dump])
     ]),
     outputs = [hs_out, hsc_output_dir],
     progress_message = "hsc2hs {0}".format(hsc_file.basename),
-    env = {
-      "PATH": get_build_tools_path(ctx),
-    },
-    executable = tools(ctx).hsc2hs,
+    executable = hs.tools.hsc2hs,
     arguments = [args],
+    env = hs.env,
   )
   return hs_out
 
-def _compilation_defaults(ctx, dep_info):
+def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, main_file = None, pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
-
-  Args:
-    ctx: Rule context.
 
   Returns:
     DefaultCompileInfo: Populated default compilation settings.
   """
-  args = ctx.actions.args()
-  haddock_args = ctx.actions.args()
+  args = hs.actions.args()
+  haddock_args = hs.actions.args()
 
   # Declare file directories
-  objects_dir_raw = target_unique_name(ctx, "objects")
-  objects_dir = ctx.actions.declare_directory(objects_dir_raw)
-  interfaces_dir_raw = target_unique_name(ctx, "interfaces")
-  interfaces_dir = ctx.actions.declare_directory(interfaces_dir_raw)
+  objects_dir_raw = target_unique_name(hs, "objects", version)
+  objects_dir = hs.actions.declare_directory(objects_dir_raw)
+  interfaces_dir_raw = target_unique_name(hs, "interfaces", version)
+  interfaces_dir = hs.actions.declare_directory(interfaces_dir_raw)
 
   # Compilation mode and explicit user flags
-  if ctx.var["COMPILATION_MODE"] == "opt":
+  if hs.mode == "opt":
     args.add("-O2")
 
-  args.add(ctx.attr.compiler_flags)
-  haddock_args.add(ctx.attr.compiler_flags, before_each="--optghc")
+  args.add(compiler_flags)
+  haddock_args.add(compiler_flags, before_each="--optghc")
 
   # Output static and dynamic object files.
   args.add(["-static", "-dynamic-too"])
@@ -157,22 +144,21 @@ def _compilation_defaults(ctx, dep_info):
     "-hidir", interfaces_dir,
   ])
 
-  add_mode_options(ctx, args)
+  add_mode_options(hs, args)
 
   # Add import hierarchy root.
   # Note that this is not perfect, since GHC requires hs-boot files
   # to be in the same directory as the corresponding .hs file.  Thus
   # the two must both have the same root; i.e., both plain files,
   # both in bin_dir, or both in genfiles_dir.
-  import_root = import_hierarchy_root(ctx)
-  ih_root_arg = ["-i{0}".format(import_root),
-                 "-i{0}".format(paths.join(ctx.bin_dir.path, import_root)),
-                 "-i{0}".format(paths.join(ctx.genfiles_dir.path, import_root))]
+  ih_root_arg = ["-i{0}".format(hs.src_root),
+                 "-i{0}".format(paths.join(hs.bin_dir.path, hs.src_root)),
+                 "-i{0}".format(paths.join(hs.genfiles_dir.path, hs.src_root))]
   args.add(ih_root_arg)
   haddock_args.add(ih_root_arg, before_each="--optghc")
 
   # Expose all prebuilt dependencies
-  for prebuilt_dep in ctx.attr.prebuilt_dependencies:
+  for prebuilt_dep in prebuilt_dependencies:
     items = ["-package", prebuilt_dep]
     args.add(items)
     haddock_args.add(items, before_each="--optghc")
@@ -181,7 +167,7 @@ def _compilation_defaults(ctx, dep_info):
   for package in set.to_list(dep_info.package_ids):
     items = ["-package-id", package]
     args.add(items)
-    if package != get_pkg_id(ctx):
+    if package != pkg_id:
       haddock_args.add(items, before_each="--optghc")
 
   # Only include package DBs for deps, prebuilt deps should be found
@@ -202,62 +188,61 @@ def _compilation_defaults(ctx, dep_info):
   header_files = []
   modules = set.empty()
   source_files = set.empty()
-  import_dirs = set.singleton(import_root)
+  import_dirs = set.singleton(hs.src_root)
 
   # Output object files are named after modules, not after input file names.
   # The difference is only visible in the case of Main module because it may
   # be placed in a file with a name different from "Main.hs". In that case
   # still Main.o will be produced.
 
-  ghc_defs_dump = _make_ghc_defs_dump(ctx)
+  ghc_defs_dump = _make_ghc_defs_dump(hs, cpp_defines, version)
 
-  for s in ctx.files.srcs:
+  for s in srcs:
 
     if s.extension == "h":
       header_files.append(s)
     if s.extension in ["hs-boot", "lhs-boot"]:
       other_sources.append(s)
     elif s.extension in ["hs", "lhs", "hsc"]:
-      if not hasattr(ctx.file, "main_file") or (s != ctx.file.main_file):
+      if not main_file or s != main_file:
         if s.extension == "hsc":
-          s0 = _process_hsc_file(ctx, ghc_defs_dump, s)
+          s0 = _process_hsc_file(hs, cc, ghc_defs_dump, version, s)
           set.mutable_insert(source_files, s0)
         else:
           set.mutable_insert(source_files, s)
-        set.mutable_insert(modules, module_name(ctx, s))
+        set.mutable_insert(modules, module_name(hs, s))
         object_files.append(
-          declare_compiled(ctx, s, ".o", directory=objects_dir)
+          declare_compiled(hs, s, ".o", directory=objects_dir)
         )
         object_dyn_files.append(
-          declare_compiled(ctx, s, ".dyn_o", directory=objects_dir)
+          declare_compiled(hs, s, ".dyn_o", directory=objects_dir)
         )
         interface_files.append(
-          declare_compiled(ctx, s, ".hi", directory=interfaces_dir)
+          declare_compiled(hs, s, ".hi", directory=interfaces_dir)
         )
         interface_files.append(
-          declare_compiled(ctx, s, ".dyn_hi", directory=interfaces_dir)
+          declare_compiled(hs, s, ".dyn_hi", directory=interfaces_dir)
         )
       else:
         if s.extension == "hsc":
-          s0 = _process_hsc_file(ctx, ghc_defs_dump, s)
+          s0 = _process_hsc_file(hs, cc, ghc_defs_dump, version, s)
           set.mutable_insert(source_files, s0)
         else:
           set.mutable_insert(source_files, s)
         set.mutable_insert(modules, "Main")
         object_files.append(
-          ctx.actions.declare_file(paths.join(objects_dir_raw, "Main.o"))
+          hs.actions.declare_file(paths.join(objects_dir_raw, "Main.o"))
         )
         object_dyn_files.append(
-          ctx.actions.declare_file(paths.join(objects_dir_raw, "Main.dyn_o"))
+          hs.actions.declare_file(paths.join(objects_dir_raw, "Main.dyn_o"))
         )
         interface_files.append(
-          ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.hi"))
+          hs.actions.declare_file(paths.join(interfaces_dir_raw, "Main.hi"))
         )
         interface_files.append(
-          ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.dyn_hi"))
+          hs.actions.declare_file(paths.join(interfaces_dir_raw, "Main.dyn_hi"))
         )
 
-  cc = cc_headers(ctx)
   preprocessor_args = ["-optP" + f for f in cc.cpp_flags]
   args.add(preprocessor_args)
   args.add(cc.include_args)
@@ -267,9 +252,6 @@ def _compilation_defaults(ctx, dep_info):
   for f in set.to_list(source_files):
     args.add(f)
     haddock_args.add(f)
-
-  # Add any interop info for other languages.
-  java = java_interop_info(ctx)
 
   return DefaultCompileInfo(
     args = args,
@@ -285,7 +267,7 @@ def _compilation_defaults(ctx, dep_info):
       set.to_depset(dep_info.dynamic_libraries),
       depset(dep_info.external_libraries.values()),
       java.inputs,
-      depset([tools(ctx).gcc]),
+      depset([hs.tools.gcc]),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + object_dyn_files + interface_files,
     objects_dir = objects_dir,
@@ -304,11 +286,8 @@ def _compilation_defaults(ctx, dep_info):
     ),
   )
 
-def compile_haskell_bin(ctx, dep_info):
+def compile_binary(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, main_file, main_function):
   """Compile a Haskell target into object files suitable for linking.
-
-  Args:
-    ctx: Rule context.
 
   Returns:
     struct with the following fields:
@@ -317,15 +296,15 @@ def compile_haskell_bin(ctx, dep_info):
       modules: set of module names
       source_files: set of Haskell source files
   """
-  c = _compilation_defaults(ctx, dep_info)
-  c.args.add(["-main-is", ctx.attr.main_function])
+  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, main_file = main_file)
+  c.args.add(["-main-is", main_function])
 
-  ctx.actions.run(
+  hs.actions.run(
     inputs = c.inputs,
     outputs = c.outputs,
-    progress_message = "Building {0}".format(ctx.attr.name),
+    progress_message = "Building {0}".format(hs.name),
     env = c.env,
-    executable = tools(ctx).ghc,
+    executable = hs.tools.ghc,
     arguments = [c.args]
   )
 
@@ -336,11 +315,8 @@ def compile_haskell_bin(ctx, dep_info):
     source_files = c.source_files,
   )
 
-def compile_haskell_lib(ctx, dep_info):
+def compile_library(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, pkg_id):
   """Build arguments for Haskell package build.
-
-  Args:
-    ctx: Rule context.
 
   Returns:
     struct with the following fields:
@@ -353,25 +329,24 @@ def compile_haskell_lib(ctx, dep_info):
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(ctx, dep_info)
+  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, pkg_id = pkg_id)
 
   # This is absolutely required otherwise GHC doesn't know what package it's
   # creating `Name`s for to put them in Haddock interface files which then
   # results in Haddock not being able to find names for linking in
   # environment after reading its interface file later.
-  pkg_id = get_pkg_id(ctx)
   unit_id_args = ["-this-unit-id", pkg_id,
                   "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id)]
 
   c.args.add(unit_id_args)
   c.haddock_args.add(unit_id_args, before_each="--optghc")
 
-  ctx.actions.run(
+  hs.actions.run(
     inputs = c.inputs,
     outputs = c.outputs,
-    progress_message = "Compiling {0}".format(ctx.attr.name),
+    progress_message = "Compiling {0}".format(hs.name),
     env = c.env,
-    executable = tools(ctx).ghc,
+    executable = hs.tools.ghc,
     arguments = [c.args],
   )
 

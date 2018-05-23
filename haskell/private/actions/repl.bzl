@@ -30,15 +30,21 @@ load(":private/utils.bzl",
 )
 
 def build_haskell_repl(
-    ctx,
+    hs,
+    ghci_script,
+    ghci_repl_wrapper,
+    repl_ghci_args,
     build_info,
+    version,
     target_files,
+    interpreted,
+    output,
     lib_info=None,
     bin_info=None):
   """Build REPL script.
 
   Args:
-    ctx: Rule context.
+    hs: Haskell context.
     build_info: HaskellBuildInfo.
 
     lib_info: If we're building REPL for a library target, pass
@@ -53,8 +59,6 @@ def build_haskell_repl(
   Returns:
     None.
   """
-
-  interpreted = ctx.attr.repl_interpreted
 
   # Bring packages in scope.
   args = ["-hide-all-packages"]
@@ -82,8 +86,8 @@ def build_haskell_repl(
         "-L{0}".format(paths.dirname(lib.path)),
       ]
 
-  ghci_script = ctx.actions.declare_file(target_unique_name(ctx, "ghci-repl-script"))
-  repl_file = ctx.actions.declare_file(target_unique_name(ctx, "repl"))
+  ghci_repl_script = hs.actions.declare_file(target_unique_name(hs, "ghci-repl-script", version))
+  repl_file = hs.actions.declare_file(target_unique_name(hs, "repl", version))
 
   add_modules = []
   if lib_info != None:
@@ -107,9 +111,9 @@ def build_haskell_repl(
     # HaskellBinaryInfo.
     visible_modules = set.to_list(bin_info.modules)
 
-  ctx.actions.expand_template(
-    template = ctx.file._ghci_script,
-    output = ghci_script,
+  hs.actions.expand_template(
+    template = ghci_script,
+    output = ghci_repl_script,
     substitutions = {
       "{ADD_MODULES}": " ".join(add_modules),
       "{VISIBLE_MODULES}": " ".join(visible_modules),
@@ -119,10 +123,10 @@ def build_haskell_repl(
   args += ["-ghci-script", ghci_script.path]
 
   # Extra arguments.
-  args += ctx.attr.repl_ghci_args
+  args += repl_ghci_args
 
-  ctx.actions.expand_template(
-    template = ctx.file._ghci_repl_wrapper,
+  hs.actions.expand_template(
+    template = ghci_repl_wrapper,
     output = repl_file,
     substitutions = {
       # XXX I'm not 100% sure if this is necessary, I think it may be
@@ -134,25 +138,25 @@ def build_haskell_repl(
           set.from_list(build_info.external_libraries.values()),
         )
       ),
-      "{GHCi}": tools(ctx).ghci.path,
-      "{SCRIPT_LOCATION}": ctx.outputs.repl.path,
+      "{GHCi}": hs.tools.ghci.path,
+      "{SCRIPT_LOCATION}": output.path,
       "{ARGS}": " ".join([shell.quote(a) for a in args]),
     },
     is_executable = True,
   )
 
-  relative_target = paths.relativize(repl_file.path, ctx.outputs.repl.dirname)
+  relative_target = paths.relativize(repl_file.path, output.dirname)
 
-  ctx.actions.run(
+  hs.actions.run(
     inputs = depset(transitive = [
       # XXX We create a symlink here because we need to force
-      # tools(ctx).ghci and ghci_script and the best way to do that is to
-      # use ctx.actions.run. That action, it turn must produce a result, so
-      # using ln seems to be the only sane choice.
-      depset([tools(ctx).ghci, ghci_script, repl_file]),
+      # hs.tools.ghci and ghci_script and the best way to do that is
+      # to use hs.actions.run. That action, it turn must produce
+      # a result, so using ln seems to be the only sane choice.
+      depset([hs.tools.ghci, ghci_script, repl_file]),
       target_files,
     ]),
-    outputs = [ctx.outputs.repl],
-    executable = tools(ctx).ln,
-    arguments = ["-s", relative_target, ctx.outputs.repl.path],
+    outputs = [output],
+    executable = hs.tools.ln,
+    arguments = ["-s", relative_target, output.path],
   )

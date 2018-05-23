@@ -3,24 +3,27 @@
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths", "shell")
 
-def module_name(ctx, f):
+def module_name(hs, f):
   """Given Haskell source file path, turn it into a dot-separated module name.
 
   module_name(
-    ctx,
+    hs,
     "some-workspace/some-package/src/Foo/Bar/Baz.hs",
   ) => "Foo.Bar.Baz"
 
   Args:
-    ctx: Rule context.
+    hs:  Haskell context.
     f:   Haskell source file.
 
   Returns:
     string: Haskell module name.
   """
-  return _drop_extension(_rel_path_to_module(ctx, f).replace('/', '.'))
+  (hsmod, _) = paths.split_extension(
+    _rel_path_to_module(hs, f).replace('/', '.')
+  )
+  return hsmod
 
-def target_unique_name(ctx, name_prefix):
+def target_unique_name(hs, name_prefix, version):
   """Make a target-unique name.
 
   `name_prefix` is made target-unique by adding rule name and target version
@@ -29,25 +32,25 @@ def target_unique_name(ctx, name_prefix):
   names within the same rule. Given a haskell_library with name foo and
   version 0.1.0, you could expect:
 
-  target_unique_name(ctx, "libdir") => "libdir-foo-0.1.0"
+  target_unique_name(hs, "libdir") => "libdir-foo-0.1.0"
 
   This allows two rules using same name_prefix being built in same
   environment to avoid name clashes of their output files and directories.
 
   Args:
-    ctx:         Rule context.
+    hs:          Haskell context.
     name_prefix: Template for the name.
 
   Returns:
     string: Target-unique name_prefix.
   """
-  return "{0}-{1}-{2}".format(name_prefix, ctx.attr.name, ctx.attr.version)
+  return "{0}-{1}-{2}".format(name_prefix, hs.name, version)
 
-def module_unique_name(ctx, source_file, name_prefix):
+def module_unique_name(hs, source_file, name_prefix, version):
   """Make a target- and module- unique name.
 
   module_unique_name(
-    ctx,
+    hs,
     "some-workspace/some-package/src/Foo/Bar/Baz.hs",
     "libdir"
   ) => "libdir-foo-0.1.0-Foo.Bar.Baz"
@@ -57,7 +60,7 @@ def module_unique_name(ctx, source_file, name_prefix):
   same `name_prefix`.
 
   Args:
-    ctx:         Rule context.
+    hs:          Haskell context.
     source_file: Source file name.
     name_prefix: Template for the name.
 
@@ -65,15 +68,15 @@ def module_unique_name(ctx, source_file, name_prefix):
     string: Target- and source-unique name.
   """
   return "{0}-{1}".format(
-    target_unique_name(ctx, name_prefix),
-    module_name(ctx, source_file)
+    target_unique_name(hs, name_prefix, version),
+    module_name(hs, source_file)
   )
 
-def declare_compiled(ctx, src, ext, directory=None):
+def declare_compiled(hs, src, ext, directory=None):
   """Given a Haskell-ish source file, declare its output.
 
   Args:
-    ctx: Rule context.
+    hs: Haskell context.
     src: Haskell source file.
     ext: New extension.
     directory: Directory the new file should live in.
@@ -81,9 +84,9 @@ def declare_compiled(ctx, src, ext, directory=None):
   Returns:
     File: Declared output file living in `directory` with given `ext`.
   """
-  fp = paths.replace_extension(_rel_path_to_module(ctx, src), ext)
+  fp = paths.replace_extension(_rel_path_to_module(hs, src), ext)
   fp_with_dir = fp if directory == None else paths.join(directory.basename, fp)
-  return ctx.actions.declare_file(fp_with_dir)
+  return hs.actions.declare_file(fp_with_dir)
 
 def import_hierarchy_root(ctx):
   """Return relative path to root of module hierarchy.
@@ -118,7 +121,7 @@ def get_external_libs_path(libs):
 def _get_external_lib_path(lib):
   return paths.dirname(lib.path)
 
-def _rel_path_to_module(ctx, f):
+def _rel_path_to_module(hs, f):
   """Make given file name relative to the directory where the module hierarchy
   starts.
 
@@ -127,7 +130,7 @@ def _rel_path_to_module(ctx, f):
   ) => "Foo/Bar/Baz.hs"
 
   Args:
-    ctx: Rule context.
+    hs:  Haskell context.
     f:   Haskell source file.
 
   Returns:
@@ -135,22 +138,9 @@ def _rel_path_to_module(ctx, f):
   """
   # If it's a generated file, strip off the bin or genfiles prefix.
   path = f.path
-  if path.startswith(ctx.bin_dir.path):
-    path = paths.relativize(path, ctx.bin_dir.path)
-  elif path.startswith(ctx.genfiles_dir.path):
-    path = paths.relativize(path, ctx.genfiles_dir.path)
+  if path.startswith(hs.bin_dir.path):
+    path = paths.relativize(path, hs.bin_dir.path)
+  elif path.startswith(hs.genfiles_dir.path):
+    path = paths.relativize(path, hs.genfiles_dir.path)
 
-  return paths.relativize(path, import_hierarchy_root(ctx))
-
-def _drop_extension(f):
-  """Drop extension for a given file name.
-
-  _drop_extension("Foo/Bar/Baz.hs") => "Foo/Bar/Baz"
-
-  Args:
-    f: File path, possibly ending with an extension.
-
-  Returns:
-    string: `f` with extension removed.
-  """
-  return paths.split_extension(f)[0]
+  return paths.relativize(path, hs.src_root)

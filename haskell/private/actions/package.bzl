@@ -1,12 +1,7 @@
 """Action for creating packages and registering them with ghc-pkg"""
 
-load(":private/providers.bzl",
-  "HaskellBuildInfo",
-  "HaskellLibraryInfo",
-)
 load(":private/path_utils.bzl", "target_unique_name")
 load(":private/set.bzl", "set")
-load(":private/tools.bzl", "tools")
 load("@bazel_skylib//:lib.bzl", "paths")
 
 def _zencode(s):
@@ -20,7 +15,7 @@ def _zencode(s):
   """
   return s.replace("Z", "ZZ").replace("_", "ZU").replace("/", "ZS")
 
-def get_pkg_name(ctx):
+def get_pkg_name(hs):
   """Get package name.
 
   The name is not required to be unique/injective; however it must be a valid
@@ -29,12 +24,12 @@ def get_pkg_name(ctx):
   "PackageImports" extension.
 
   Args:
-    ctx: Rule context
+    hs: Haskell context.
 
   Returns:
     string: GHC package name to use.
   """
-  return ctx.attr.name.replace("_", "-")
+  return hs.name.replace("_", "-")
 
 def get_pkg_id(ctx):
   """Get package identifier of the form `name-version`.
@@ -57,24 +52,24 @@ def get_pkg_id(ctx):
         ctx.attr.name)),
     ctx.attr.version)
 
-def get_library_name(ctx):
+def get_library_name(pkg_id):
   """Get core library name for this package. This is "HS" followed by package ID.
 
   See https://ghc.haskell.org/trac/ghc/ticket/9625 .
 
   Args:
-    ctx: Rule context.
+    pkg_id: Package ID string.
 
   Returns:
     string: Library name suitable for GHC package entry.
   """
-  return "HS{0}".format(get_pkg_id(ctx))
+  return "HS{0}".format(pkg_id)
 
-def create_ghc_package(ctx, dep_info, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules):
+def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules, pkg_id, version, pkg_deps):
   """Create GHC package using ghc-pkg.
 
   Args:
-    ctx: Rule context.
+    hs: Haskell context.
     interfaces_dir: Directory containing interface files.
     static_library: Static library of the package.
     dynamic_library: Dynamic library of the package.
@@ -82,29 +77,28 @@ def create_ghc_package(ctx, dep_info, interfaces_dir, static_library, dynamic_li
   Returns:
     (File, File): GHC package conf file, GHC package cache file
   """
-  pkg_db_dir = ctx.actions.declare_directory(get_pkg_id(ctx))
-  conf_file = ctx.actions.declare_file(paths.join(pkg_db_dir.basename, "{0}.conf".format(get_pkg_id(ctx))))
-  cache_file = ctx.actions.declare_file("package.cache", sibling=conf_file)
+  pkg_db_dir = hs.actions.declare_directory(pkg_id)
+  conf_file = hs.actions.declare_file(paths.join(pkg_db_dir.basename, "{0}.conf".format(pkg_id)))
+  cache_file = hs.actions.declare_file("package.cache", sibling=conf_file)
 
   # Create a file from which ghc-pkg will create the actual package from.
-  registration_file = ctx.actions.declare_file(target_unique_name(ctx, "registration-file"))
+  registration_file = hs.actions.declare_file(target_unique_name(hs, "registration-file", version))
   registration_file_entries = {
-    "name": get_pkg_name(ctx),
-    "version": ctx.attr.version,
-    "id": get_pkg_id(ctx),
-    "key": get_pkg_id(ctx),
+    "name": get_pkg_name(hs),
+    "version": version,
+    "id": pkg_id,
+    "key": pkg_id,
     "exposed": "True",
     "exposed-modules": " ".join(set.to_list(exposed_modules)),
     "hidden-modules": " ".join(set.to_list(other_modules)),
     "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
     "library-dirs": "${pkgroot}",
     "dynamic-library-dirs": "${pkgroot}",
-    "hs-libraries": get_library_name(ctx),
+    "hs-libraries": get_library_name(pkg_id),
     "depends":
-      ", ".join([ d[HaskellLibraryInfo].package_id for d in
-                  ctx.attr.deps if HaskellLibraryInfo in d])
+      ", ".join([d.package_id for d in pkg_deps]),
   }
-  ctx.actions.write(
+  hs.actions.write(
     output=registration_file,
     content="\n".join(['{0}: {1}'.format(k, v)
                        for k, v in registration_file_entries.items()])
@@ -112,7 +106,7 @@ def create_ghc_package(ctx, dep_info, interfaces_dir, static_library, dynamic_li
 
   # Make the call to ghc-pkg and use the registration file
   package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_confs)])
-  ctx.actions.run(
+  hs.actions.run(
     inputs = depset(transitive = [
       set.to_depset(dep_info.package_confs),
       set.to_depset(dep_info.package_caches),
@@ -122,7 +116,7 @@ def create_ghc_package(ctx, dep_info, interfaces_dir, static_library, dynamic_li
     env = {
       "GHC_PACKAGE_PATH": package_path,
     },
-    executable = tools(ctx).ghc_pkg,
+    executable = hs.tools.ghc_pkg,
     arguments = [
       "register", "--package-db={0}".format(pkg_db_dir.path),
       "-v0",

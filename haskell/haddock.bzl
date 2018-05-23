@@ -3,10 +3,6 @@
 load (":private/path_utils.bzl", "module_name")
 load (":private/set.bzl", "set")
 
-load(":private/actions/package.bzl",
-  "get_pkg_name",
-)
-
 load(":private/tools.bzl",
   "get_build_tools_path",
   "tools",
