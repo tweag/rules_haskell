@@ -275,7 +275,7 @@ def link_dynamic_lib(ctx, dep_info, object_files):
 
   for package in set.to_list(dep_info.package_ids):
     args.add(["-package-id", package])
-  for package in set.to_list(set.from_list(ctx.attr.prebuilt_dependencies)):
+  for package in set.to_list(dep_info.prebuilt_dependencies):
     args.add(["-package", package])
 
   for cache in set.to_list(dep_info.package_caches):
