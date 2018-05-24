@@ -102,7 +102,7 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
   )
   return hs_out
 
-def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
+def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
 
   Returns:
@@ -157,7 +157,7 @@ def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, c
   haddock_args.add(ih_root_arg, before_each="--optghc")
 
   # Expose all prebuilt dependencies
-  for prebuilt_dep in prebuilt_dependencies:
+  for prebuilt_dep in set.to_list(dep_info.prebuilt_dependencies):
     items = ["-package", prebuilt_dep]
     args.add(items)
     haddock_args.add(items, before_each="--optghc")
@@ -285,7 +285,7 @@ def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, c
     ),
   )
 
-def compile_binary(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, main_file, main_function):
+def compile_binary(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, main_file, main_function):
   """Compile a Haskell target into object files suitable for linking.
 
   Returns:
@@ -295,7 +295,7 @@ def compile_binary(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defi
       modules: set of module names
       source_files: set of Haskell source files
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, main_file = main_file)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, main_file = main_file)
   c.args.add(["-main-is", main_function])
 
   hs.actions.run(
@@ -314,7 +314,7 @@ def compile_binary(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defi
     source_files = c.source_files,
   )
 
-def compile_library(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, my_pkg_id):
+def compile_library(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, my_pkg_id):
   """Build arguments for Haskell package build.
 
   Returns:
@@ -328,7 +328,7 @@ def compile_library(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_def
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, my_pkg_id)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, my_pkg_id)
 
   # This is absolutely required otherwise GHC doesn't know what package it's
   # creating `Name`s for to put them in Haddock interface files which then
