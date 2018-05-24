@@ -20,8 +20,9 @@ haskell_library(
 
 haskell_library(
   name = "haddock-lib-a",
-  srcs = ["LibA.hs", "LibA/A.hs"],
+  srcs = ["LibA.hs", "LibA/A.hs", "header.h"],
   deps = [":haddock-lib-deep"],
+  compiler_flags = ["-I."],
   prebuilt_dependencies = ["base", "template-haskell"],
 )
 
