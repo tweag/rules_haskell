@@ -18,12 +18,11 @@ def _to_string(my_pkg_id):
   We can't use just the latter because then two components with
   the same names in different packages would clash.
   """
-  return "{0}-{1}".format(
+  return "{0}".format(
     _zencode(paths.join(
       my_pkg_id.label.workspace_root,
       my_pkg_id.label.package,
-      my_pkg_id.name)),
-    my_pkg_id.version)
+      my_pkg_id.name)))
 
 def _new(label, version):
   """Create a new package identifier.
