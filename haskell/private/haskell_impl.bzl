@@ -8,10 +8,8 @@ load(":private/actions/link.bzl",
   "link_library_dynamic",
   "link_library_static",
 )
-load(":private/actions/package.bzl",
-  "package",
-  "get_pkg_id",
-)
+load(":private/actions/package.bzl", "package")
+load(":private/pkg_id.bzl", "pkg_id")
 load(":private/actions/repl.bzl", "build_haskell_repl")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/java.bzl", "java_interop_info")
@@ -86,7 +84,7 @@ def haskell_binary_impl(ctx):
 def haskell_library_impl(ctx):
   hs = haskell_context(ctx)
   dep_info = gather_dep_info(ctx)
-  pkg_id = get_pkg_id(ctx)
+  my_pkg_id = pkg_id.new(ctx.label, ctx.attr.version)
 
   # Add any interop info for other languages.
   cc = cc_headers(ctx)
@@ -97,24 +95,24 @@ def haskell_library_impl(ctx):
     cc,
     java,
     dep_info,
-    pkg_id = pkg_id,
     prebuilt_dependencies = ctx.attr.prebuilt_dependencies,
     cpp_defines = ctx.file._cpp_defines,
     compiler_flags = ctx.attr.compiler_flags,
     srcs = ctx.files.srcs,
+    my_pkg_id = my_pkg_id,
   )
 
   static_library = link_library_static(
     hs,
     dep_info,
     c.object_files,
-    pkg_id,
+    my_pkg_id,
   )
   dynamic_library = link_library_dynamic(
     hs,
     dep_info,
     c.object_dyn_files,
-    pkg_id,
+    my_pkg_id,
   )
 
   exposed_modules = set.empty()
@@ -136,13 +134,12 @@ def haskell_library_impl(ctx):
     dynamic_library,
     exposed_modules,
     other_modules,
-    pkg_id,
-    ctx.attr.version,
+    my_pkg_id,
     pkg_deps,
   )
 
   build_info = HaskellBuildInfo(
-    package_ids = set.insert(dep_info.package_ids, get_pkg_id(ctx)),
+    package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
     package_confs = set.insert(dep_info.package_confs, conf_file),
     package_caches = set.insert(dep_info.package_caches, cache_file),
     # NOTE We have to use lists for static libraries because the order is
@@ -156,7 +153,7 @@ def haskell_library_impl(ctx):
     external_libraries = dep_info.external_libraries,
   )
   lib_info = HaskellLibraryInfo(
-    package_id = get_pkg_id(ctx),
+    package_id = pkg_id.to_string(my_pkg_id),
     import_dirs = c.import_dirs,
     exposed_modules = exposed_modules,
     other_modules = other_modules,

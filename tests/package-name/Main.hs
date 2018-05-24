@@ -28,6 +28,6 @@ main :: IO ()
 main = do
     check foo 42
     check VERSION_lib_a_Z "1.2.3.4"
-    check libPackageKey "testsZSpackage-nameZSlib-aZUZZ-1.2.3.4"
+    check libPackageKey "testsZSpackage-nameZSlib-a-ZZ-1.2.3.4"
     check versionHighEnoughTest True
     check versionTooLowTest True
