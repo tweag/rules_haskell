@@ -137,8 +137,8 @@ rule_test(
 rule_test(
   name = "test-haskell_lint-library",
   generates = [
-    "lint-log-lib-a-1.0.0",
-    "lint-log-lib-b-1.0.0",
+    "lint-log-lib-a",
+    "lint-log-lib-b",
   ],
   rule = "//tests/haskell_lint:lint-lib-b",
   size = "small",
@@ -147,8 +147,8 @@ rule_test(
 rule_test(
   name = "test-haskell_lint-binary",
   generates = [
-    "lint-log-lib-a-1.0.0",
-    "lint-log-bin-1.0.0",
+    "lint-log-lib-a",
+    "lint-log-bin",
   ],
   rule = "//tests/haskell_lint:lint-bin",
   size = "small",
@@ -167,8 +167,8 @@ rule_test(
 rule_test(
   name = "test-haskell_doctest",
   generates = [
-    "doctest-log-lib-a-1.0.0",
-    "doctest-log-lib-b-1.0.0",
+    "doctest-log-lib-a",
+    "doctest-log-lib-b",
   ],
   rule = "//tests/haskell_doctest:haskell_doctest",
   size = "small",

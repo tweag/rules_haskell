@@ -14,18 +14,17 @@ load(":private/providers.bzl", "DefaultCompileInfo")
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "dicts", "paths")
 
-def _make_ghc_defs_dump(hs, cpp_defines, version):
+def _make_ghc_defs_dump(hs, cpp_defines):
   """Generate a file containing GHC default pre-processor definitions.
 
   Args:
     hs: Haskell context.
     cpp_defines: Location of cpp_defines pattern file.
-    version: package version.
 
   Returns:
     File: The file with GHC definitions.
   """
-  raw_filename = "ghc-defs-dump-{0}-{1}.hs".format(hs.name, version)
+  raw_filename = "ghc-defs-dump-{0}.hs".format(hs.name)
   dummy_src = hs.actions.declare_file(raw_filename)
   ghc_defs_dump_raw = hs.actions.declare_file(paths.replace_extension(raw_filename, ".hspp"))
   ghc_defs_dump = hs.actions.declare_file(paths.replace_extension(raw_filename, ".h"))
@@ -63,7 +62,7 @@ def _make_ghc_defs_dump(hs, cpp_defines, version):
 
   return ghc_defs_dump
 
-def _process_hsc_file(hs, cc, ghc_defs_dump, version, hsc_file):
+def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
   """Process a single hsc file.
 
   Args:
@@ -76,7 +75,7 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, version, hsc_file):
   """
 
   hsc_output_dir = hs.actions.declare_directory(
-    module_unique_name(hs, hsc_file, "hsc_processed", version)
+    module_unique_name(hs, hsc_file, "hsc_processed")
   )
   args = hs.actions.args()
 
@@ -103,7 +102,7 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, version, hsc_file):
   )
   return hs_out
 
-def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, main_file = None, pkg_id = None):
+def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, main_file = None, pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
 
   Returns:
@@ -113,9 +112,9 @@ def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, c
   haddock_args = hs.actions.args()
 
   # Declare file directories
-  objects_dir_raw = target_unique_name(hs, "objects", version)
+  objects_dir_raw = target_unique_name(hs, "objects")
   objects_dir = hs.actions.declare_directory(objects_dir_raw)
-  interfaces_dir_raw = target_unique_name(hs, "interfaces", version)
+  interfaces_dir_raw = target_unique_name(hs, "interfaces")
   interfaces_dir = hs.actions.declare_directory(interfaces_dir_raw)
 
   # Compilation mode and explicit user flags
@@ -195,7 +194,7 @@ def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, c
   # be placed in a file with a name different from "Main.hs". In that case
   # still Main.o will be produced.
 
-  ghc_defs_dump = _make_ghc_defs_dump(hs, cpp_defines, version)
+  ghc_defs_dump = _make_ghc_defs_dump(hs, cpp_defines)
 
   for s in srcs:
 
@@ -206,7 +205,7 @@ def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, c
     elif s.extension in ["hs", "lhs", "hsc"]:
       if not main_file or s != main_file:
         if s.extension == "hsc":
-          s0 = _process_hsc_file(hs, cc, ghc_defs_dump, version, s)
+          s0 = _process_hsc_file(hs, cc, ghc_defs_dump, s)
           set.mutable_insert(source_files, s0)
         else:
           set.mutable_insert(source_files, s)
@@ -225,7 +224,7 @@ def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, c
         )
       else:
         if s.extension == "hsc":
-          s0 = _process_hsc_file(hs, cc, ghc_defs_dump, version, s)
+          s0 = _process_hsc_file(hs, cc, ghc_defs_dump, s)
           set.mutable_insert(source_files, s0)
         else:
           set.mutable_insert(source_files, s)
@@ -286,7 +285,7 @@ def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, c
     ),
   )
 
-def compile_binary(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, main_file, main_function):
+def compile_binary(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, main_file, main_function):
   """Compile a Haskell target into object files suitable for linking.
 
   Returns:
@@ -296,7 +295,7 @@ def compile_binary(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defi
       modules: set of module names
       source_files: set of Haskell source files
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, main_file = main_file)
+  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, main_file = main_file)
   c.args.add(["-main-is", main_function])
 
   hs.actions.run(
@@ -315,7 +314,7 @@ def compile_binary(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defi
     source_files = c.source_files,
   )
 
-def compile_library(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, pkg_id):
+def compile_library(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, pkg_id):
   """Build arguments for Haskell package build.
 
   Returns:
@@ -329,7 +328,7 @@ def compile_library(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_def
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, version, pkg_id = pkg_id)
+  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, pkg_id = pkg_id)
 
   # This is absolutely required otherwise GHC doesn't know what package it's
   # creating `Name`s for to put them in Haddock interface files which then

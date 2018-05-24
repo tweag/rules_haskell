@@ -82,7 +82,7 @@ def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, expos
   cache_file = hs.actions.declare_file("package.cache", sibling=conf_file)
 
   # Create a file from which ghc-pkg will create the actual package from.
-  registration_file = hs.actions.declare_file(target_unique_name(hs, "registration-file", version))
+  registration_file = hs.actions.declare_file(target_unique_name(hs, "registration-file"))
   registration_file_entries = {
     "name": get_pkg_name(hs),
     "version": version,
