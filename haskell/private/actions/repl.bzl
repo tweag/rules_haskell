@@ -35,7 +35,6 @@ def build_haskell_repl(
     ghci_repl_wrapper,
     repl_ghci_args,
     build_info,
-    version,
     target_files,
     interpreted,
     output,
@@ -86,8 +85,8 @@ def build_haskell_repl(
         "-L{0}".format(paths.dirname(lib.path)),
       ]
 
-  ghci_repl_script = hs.actions.declare_file(target_unique_name(hs, "ghci-repl-script", version))
-  repl_file = hs.actions.declare_file(target_unique_name(hs, "repl", version))
+  ghci_repl_script = hs.actions.declare_file(target_unique_name(hs, "ghci-repl-script"))
+  repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
 
   add_modules = []
   if lib_info != None:

@@ -38,7 +38,6 @@ def haskell_binary_impl(ctx):
     prebuilt_dependencies = ctx.attr.prebuilt_dependencies,
     cpp_defines = ctx.file._cpp_defines,
     compiler_flags = ctx.attr.compiler_flags,
-    version = ctx.attr.version,
     srcs = ctx.files.srcs,
     main_file = ctx.file.main_file,
     main_function = ctx.attr.main_function,
@@ -67,7 +66,6 @@ def haskell_binary_impl(ctx):
     output = ctx.outputs.repl,
     interpreted = ctx.attr.repl_interpreted,
     build_info = build_info,
-    version = ctx.attr.version,
     target_files = target_files,
     bin_info = bin_info,
   )
@@ -99,12 +97,11 @@ def haskell_library_impl(ctx):
     cc,
     java,
     dep_info,
+    pkg_id = pkg_id,
     prebuilt_dependencies = ctx.attr.prebuilt_dependencies,
     cpp_defines = ctx.file._cpp_defines,
     compiler_flags = ctx.attr.compiler_flags,
-    version = ctx.attr.version,
     srcs = ctx.files.srcs,
-    pkg_id = pkg_id,
   )
 
   static_library = link_library_static(
@@ -178,7 +175,6 @@ def haskell_library_impl(ctx):
       output = ctx.outputs.repl,
       interpreted = ctx.attr.repl_interpreted,
       build_info = build_info,
-      version = ctx.attr.version,
       target_files = target_files,
       lib_info = lib_info,
     )

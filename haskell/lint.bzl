@@ -75,7 +75,7 @@ def _haskell_lint_aspect_impl(target, ctx):
   args.add(sources)
 
   lint_log = ctx.actions.declare_file(
-    target_unique_name(hs, "lint-log", ctx.rule.attr.version)
+    target_unique_name(hs, "lint-log")
   )
 
   lint_logs = _collect_lint_logs(
@@ -172,7 +172,7 @@ def _haskell_doctest_aspect_impl(target, ctx):
   args.add(sources)
 
   lint_log = ctx.actions.declare_file(
-    target_unique_name(hs, "doctest-log", ctx.rule.attr.version)
+    target_unique_name(hs, "doctest-log")
   )
 
   lint_logs = _collect_lint_logs(

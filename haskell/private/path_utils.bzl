@@ -1,7 +1,7 @@
 """Utilities for module and path manipulations."""
 
 load(":private/set.bzl", "set")
-load("@bazel_skylib//:lib.bzl", "paths", "shell")
+load("@bazel_skylib//:lib.bzl", "paths")
 
 def module_name(hs, f):
   """Given Haskell source file path, turn it into a dot-separated module name.
@@ -23,16 +23,16 @@ def module_name(hs, f):
   )
   return hsmod
 
-def target_unique_name(hs, name_prefix, version):
+def target_unique_name(hs, name_prefix):
   """Make a target-unique name.
 
-  `name_prefix` is made target-unique by adding rule name and target version
+  `name_prefix` is made target-unique by adding a rule name
   suffix to it. This means that given two different rules, the same
   `name_prefix` is distinct. Note that this is does not disambiguate two
-  names within the same rule. Given a haskell_library with name foo and
-  version 0.1.0, you could expect:
+  names within the same rule. Given a haskell_library with name foo
+  you could expect:
 
-  target_unique_name(hs, "libdir") => "libdir-foo-0.1.0"
+  target_unique_name(hs, "libdir") => "libdir-foo"
 
   This allows two rules using same name_prefix being built in same
   environment to avoid name clashes of their output files and directories.
@@ -44,16 +44,16 @@ def target_unique_name(hs, name_prefix, version):
   Returns:
     string: Target-unique name_prefix.
   """
-  return "{0}-{1}-{2}".format(name_prefix, hs.name, version)
+  return "{0}-{1}".format(name_prefix, hs.name)
 
-def module_unique_name(hs, source_file, name_prefix, version):
+def module_unique_name(hs, source_file, name_prefix):
   """Make a target- and module- unique name.
 
   module_unique_name(
     hs,
     "some-workspace/some-package/src/Foo/Bar/Baz.hs",
     "libdir"
-  ) => "libdir-foo-0.1.0-Foo.Bar.Baz"
+  ) => "libdir-foo-Foo.Bar.Baz"
 
   This is quite similar to `target_unique_name` but also uses a path built
   from `source_file` to prevent clashes with other names produced using the
@@ -68,7 +68,7 @@ def module_unique_name(hs, source_file, name_prefix, version):
     string: Target- and source-unique name.
   """
   return "{0}-{1}".format(
-    target_unique_name(hs, name_prefix, version),
+    target_unique_name(hs, name_prefix),
     module_name(hs, source_file)
   )
 
