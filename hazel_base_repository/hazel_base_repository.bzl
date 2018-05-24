@@ -12,8 +12,17 @@ def _hazel_base_repository_impl(ctx):
     l = Label(f)
     ctx.symlink(Label(f), l.name)
 
-  res = ctx.execute(["./ghc", "-Wall", "-Werror", "--make", "-o", "cabal2bazel"]
-                    + [Label(f).name for f in cabal2bazel_srcs])
+  res = ctx.execute([
+            "./ghc",
+            "-Wall",
+            "-Werror",
+            # Only use core packages of GHC, nothing from the the user level:
+            "-clear-package-db",
+            "-global-package-db",
+            "--make",
+            "-o",
+            "cabal2bazel"]
+            + [Label(f).name for f in cabal2bazel_srcs])
   if res.return_code != 0:
     fail("Couldn't build cabal2bazel:\n{}\n{}".format(res.stdout,res.stderr))
 
