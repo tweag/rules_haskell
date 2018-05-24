@@ -9,3 +9,13 @@ haskell_test(
     prebuilt_dependencies = ["base"],
 )
 
+haskell_test(
+    name = "old-time-test",
+    srcs = ["old-time-test.hs"],
+    main_file = "old-time-test.hs",
+    deps = [
+        hazel_library("old-time"),
+    ],
+    prebuilt_dependencies = ["base"],
+)
+

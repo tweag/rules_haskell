@@ -84,6 +84,7 @@ def _fix_source_dirs(dirs):
   return [""]
 
 def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
+                     ghc_version,
                      prebuilt_dependencies,
                      cc_deps=[], version_overrides=None, ghcopts=[]):
   """Get the attributes for a particular library or binary rule.
@@ -216,18 +217,27 @@ def _get_build_attrs(name, build_info, desc, generated_srcs_dir, extra_modules,
       [paths.join(d, f) for d in build_info.includeDirs
        for f in build_info.installIncludes])
   headers = depset(
-      native.glob([paths.normalize(f) for f in desc.extraSrcFiles])
+      native.glob([paths.normalize(f) for f in desc.extraSrcFiles + desc.extraTmpFiles])
       + install_includes)
   ghcopts += ["-I" + native.package_name() + "/" + d for d in build_info.includeDirs]
   lib_name = name + "-cbits"
   for xs in deps.values():
     xs.append(":" + lib_name)
+
+  ghc_version_components = ghc_version.split(".")
+  ghc_version_string = (
+      ghc_version_components[0] +
+      ("0" if int(ghc_version_components[1]) <= 9 else "")
+      + ghc_version_components[1])
+
   native.cc_library(
       name = lib_name,
       srcs = build_info.cSources,
       includes = build_info.includeDirs,
       copts = ([o for o in build_info.ccOptions if not o.startswith("-D")]
-               + ["-w"]),
+               + ["-D__GLASGOW_HASKELL__=" + ghc_version_string,
+                  "-w",
+                 ]),
       defines = [o[2:] for o in build_info.ccOptions if o.startswith("-D")],
       textual_hdrs = list(headers),
       deps = ["@ghc//:threaded-rts"] + cdeps + cc_deps,
@@ -256,7 +266,7 @@ def _collect_data_files(description):
   else:
     return native.glob([paths.join(description.dataDir, d) for d in description.dataFiles])
 
-def cabal_haskell_package(description, prebuilt_dependencies, extra_libs):
+def cabal_haskell_package(description, prebuilt_dependencies, ghc_version, extra_libs):
   """Create rules for building a Cabal package.
 
   Args:
@@ -287,6 +297,7 @@ def cabal_haskell_package(description, prebuilt_dependencies, extra_libs):
       lib_attrs = _get_build_attrs(name, lib.libBuildInfo, description,
                                    "dist/build",
                                    lib.exposedModules,
+                                   ghc_version,
                                    prebuilt_dependencies)
       srcs = lib_attrs.pop("srcs")
       deps = lib_attrs.pop("deps")
@@ -318,6 +329,7 @@ def cabal_haskell_package(description, prebuilt_dependencies, extra_libs):
                              # Paths_ module explicitly.
                              [paths_mod] if paths_mod not in exe.buildInfo.otherModules
                                         else [],
+                             ghc_version,
                              prebuilt_dependencies)
     srcs = attrs.pop("srcs")
     deps = attrs.pop("deps")

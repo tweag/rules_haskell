@@ -75,5 +75,5 @@ hazel_symlink(
   src = "package.bzl",
   out = "package-bzl",
 )
-cabal_haskell_package(package, prebuilt_dependencies, extra_libs)
-""")
+cabal_haskell_package(package, prebuilt_dependencies, "{}", extra_libs)
+""".format(ghc_version))
