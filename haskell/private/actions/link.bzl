@@ -1,7 +1,7 @@
 """Actions for linking object code produced by compilation"""
 
-load(":private/actions/package.bzl", "get_library_name")
 load(":private/mode.bzl", "add_mode_options")
+load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/tools.bzl", "so_extension")
 load(":private/utils.bzl", "get_lib_name")
@@ -221,13 +221,13 @@ def _infer_rpaths(target, solibs):
 
   return r
 
-def link_library_static(hs, dep_info, object_files, pkg_id):
+def link_library_static(hs, dep_info, object_files, my_pkg_id):
   """Link a static library for the package using given object files.
 
   Returns:
     File: Produced static library.
   """
-  library_name = get_library_name(pkg_id)
+  library_name = "HS" + pkg_id.to_string(my_pkg_id)
   static_library = hs.actions.declare_file("lib{0}.a".format(library_name))
 
   args = hs.actions.args()
@@ -243,7 +243,7 @@ def link_library_static(hs, dep_info, object_files, pkg_id):
   )
   return static_library
 
-def link_library_dynamic(hs, dep_info, object_files, pkg_id):
+def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
   """Link a dynamic library for the package using given object files.
 
   Returns:
@@ -252,7 +252,7 @@ def link_library_dynamic(hs, dep_info, object_files, pkg_id):
 
   dynamic_library = hs.actions.declare_file(
     "lib{0}-ghc{1}.{2}".format(
-      get_library_name(pkg_id),
+      "HS" + pkg_id.to_string(my_pkg_id),
       hs.toolchain.version,
       so_extension(hs),
     )
