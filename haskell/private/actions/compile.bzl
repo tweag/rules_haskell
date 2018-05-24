@@ -199,6 +199,7 @@ def _compilation_defaults(ctx, dep_info):
   # modules cross-package.
   interface_files = []
   other_sources = []
+  header_files = []
   modules = set.empty()
   source_files = set.empty()
   import_dirs = set.singleton(import_root)
@@ -212,7 +213,9 @@ def _compilation_defaults(ctx, dep_info):
 
   for s in ctx.files.srcs:
 
-    if s.extension in ["h", "hs-boot", "lhs-boot"]:
+    if s.extension == "h":
+      header_files.append(s)
+    if s.extension in ["hs-boot", "lhs-boot"]:
       other_sources.append(s)
     elif s.extension in ["hs", "lhs", "hsc"]:
       if not hasattr(ctx.file, "main_file") or (s != ctx.file.main_file):
@@ -273,6 +276,8 @@ def _compilation_defaults(ctx, dep_info):
     haddock_args = haddock_args,
     inputs = depset(transitive = [
       set.to_depset(source_files),
+      depset(header_files),
+      depset(other_sources),
       depset(cc.hdrs),
       set.to_depset(dep_info.package_confs),
       set.to_depset(dep_info.package_caches),
@@ -280,7 +285,6 @@ def _compilation_defaults(ctx, dep_info):
       set.to_depset(dep_info.dynamic_libraries),
       depset(dep_info.external_libraries.values()),
       java.inputs,
-      depset(other_sources),
       depset([tools(ctx).gcc]),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + object_dyn_files + interface_files,
@@ -291,7 +295,7 @@ def _compilation_defaults(ctx, dep_info):
     interface_files = interface_files,
     modules = modules,
     source_files = source_files,
-    header_files = set.from_list(cc.hdrs),
+    header_files = set.from_list(cc.hdrs + header_files),
     import_dirs = import_dirs,
     env = dicts.add({
       "LD_LIBRARY_PATH": get_external_libs_path(set.from_list(dep_info.external_libraries.values())),

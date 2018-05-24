@@ -1,5 +1,8 @@
 -- | "Lib" header
+{-# LANGUAGE CPP             #-}
 {-# LANGUAGE TemplateHaskell #-}
+
+#include "header.h"
 
 module LibA where
 
@@ -13,4 +16,4 @@ data A =
 
 -- | Doc for 'f' using 'a' and 'deep_lib'.
 f :: Int
-f = const $a deep_lib
+f = const $a deep_lib + MAGIC_NUMBER
