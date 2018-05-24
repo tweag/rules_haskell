@@ -1,7 +1,7 @@
 """Actions for compiling Haskell source code"""
 
-load(":private/actions/package.bzl", "get_pkg_id")
 load(":private/java.bzl", "java_interop_info")
+load(":private/mode.bzl", "add_mode_options")
 load(":private/path_utils.bzl",
   "declare_compiled",
   "target_unique_name",
@@ -9,7 +9,7 @@ load(":private/path_utils.bzl",
   "module_unique_name",
   "get_external_libs_path",
 )
-load(":private/mode.bzl", "add_mode_options")
+load(":private/pkg_id.bzl", "pkg_id")
 load(":private/providers.bzl", "DefaultCompileInfo")
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "dicts", "paths")
@@ -102,7 +102,7 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
   )
   return hs_out
 
-def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, main_file = None, pkg_id = None):
+def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
 
   Returns:
@@ -166,7 +166,7 @@ def _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, c
   for package in set.to_list(dep_info.package_ids):
     items = ["-package-id", package]
     args.add(items)
-    if package != pkg_id:
+    if package != my_pkg_id:
       haddock_args.add(items, before_each="--optghc")
 
   # Only include package DBs for deps, prebuilt deps should be found
@@ -314,7 +314,7 @@ def compile_binary(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defi
     source_files = c.source_files,
   )
 
-def compile_library(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, pkg_id):
+def compile_library(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, my_pkg_id):
   """Build arguments for Haskell package build.
 
   Returns:
@@ -328,14 +328,16 @@ def compile_library(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_def
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, pkg_id = pkg_id)
+  c = _compilation_defaults(hs, cc, java, dep_info, prebuilt_dependencies, srcs, cpp_defines, compiler_flags, my_pkg_id)
 
   # This is absolutely required otherwise GHC doesn't know what package it's
   # creating `Name`s for to put them in Haddock interface files which then
   # results in Haddock not being able to find names for linking in
   # environment after reading its interface file later.
-  unit_id_args = ["-this-unit-id", pkg_id,
-                  "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id)]
+  unit_id_args = [
+    "-this-unit-id", pkg_id.to_string(my_pkg_id),
+    "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id.to_string(my_pkg_id))
+  ]
 
   c.args.add(unit_id_args)
   c.haddock_args.add(unit_id_args, before_each="--optghc")
