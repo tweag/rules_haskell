@@ -1,28 +1,21 @@
 """Linting"""
 
+load(":cc.bzl", "cc_headers")
+load(":private/context.bzl", "haskell_context")
 load(":private/set.bzl", "set")
-
 load(":private/path_utils.bzl",
      "target_unique_name"
 )
-
 load(":private/tools.bzl",
   "get_build_tools_path",
   "tools",
 )
-
 load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",
      "HaskellBinaryInfo",
      "HaskellLintInfo",
 )
-
-load(":private/java.bzl",
-     "java_interop_info",
-)
-
-load(":cc.bzl", "cc_headers")
 
 def _collect_lint_logs(deps):
   lint_logs = set.empty()
@@ -37,6 +30,8 @@ def _haskell_lint_rule_impl(ctx):
   )]
 
 def _haskell_lint_aspect_impl(target, ctx):
+  hs = haskell_context(ctx, ctx.rule.attr)
+
   if HaskellBuildInfo not in target:
     return []
 
@@ -80,7 +75,7 @@ def _haskell_lint_aspect_impl(target, ctx):
   args.add(sources)
 
   lint_log = ctx.actions.declare_file(
-    target_unique_name(ctx.rule, "lint-log")
+    target_unique_name(hs, "lint-log", ctx.rule.attr.version)
   )
 
   lint_logs = _collect_lint_logs(
@@ -95,7 +90,7 @@ def _haskell_lint_aspect_impl(target, ctx):
       set.to_depset(build_info.interface_files),
       set.to_depset(build_info.dynamic_libraries),
       depset(build_info.external_libraries.values()),
-      depset([tools(ctx).ghc]),
+      depset([hs.tools.ghc]),
     ]),
     outputs = [lint_log],
     progress_message = "Linting {0}".format(ctx.rule.attr.name),
@@ -142,6 +137,8 @@ The following flags will be used:
 """
 
 def _haskell_doctest_aspect_impl(target, ctx):
+  hs = haskell_context(ctx, ctx.rule.attr)
+
   if HaskellBuildInfo not in target:
     return []
 
@@ -175,7 +172,7 @@ def _haskell_doctest_aspect_impl(target, ctx):
   args.add(sources)
 
   lint_log = ctx.actions.declare_file(
-    target_unique_name(ctx.rule, "doctest-log")
+    target_unique_name(hs, "doctest-log", ctx.rule.attr.version)
   )
 
   lint_logs = _collect_lint_logs(

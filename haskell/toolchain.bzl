@@ -1,11 +1,17 @@
 """Rules for defining toolchains"""
 
-load("@bazel_skylib//:lib.bzl",
-     "paths",
+load(":private/actions/compile.bzl",
+  "compile_binary",
+  "compile_library",
 )
-load(":private/set.bzl",
-     "set",
+load(":private/actions/link.bzl",
+  "link_binary",
+  "link_library_dynamic",
+  "link_library_static",
 )
+load(":private/actions/package.bzl", "package")
+load(":private/set.bzl", "set")
+load("@bazel_skylib//:lib.bzl", "paths")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 
@@ -166,6 +172,15 @@ def _haskell_toolchain_impl(ctx):
       name = ctx.label.name,
       tools = struct(**tools_struct_args),
       tools_runfiles = struct(**tools_runfiles_struct_args),
+      mode = ctx.var["COMPILATION_MODE"],
+      actions = struct(
+        compile_binary = compile_binary,
+        compile_library = compile_library,
+        link_binary = link_binary,
+        link_library_dynamic = link_library_dynamic,
+        link_library_static = link_library_static,
+        package = package,
+      ),
       # All symlinks are guaranteed to be in the same directory so we just
       # provide directory name of the first one (the collection cannot be
       # empty). The rest of the program may rely consider visible_bin_path

@@ -1,21 +1,20 @@
 """Implementation of core Haskell rules"""
 
-load(":private/actions/compile.bzl",
-  "compile_haskell_bin",
-  "compile_haskell_lib"
-)
+load(":cc.bzl", "cc_headers")
+load(":private/context.bzl", "haskell_context")
+load(":private/actions/compile.bzl", "compile_library")
 load(":private/actions/link.bzl",
-  "link_haskell_bin",
-  "link_static_lib",
-  "link_dynamic_lib",
+  "link_binary",
+  "link_library_dynamic",
+  "link_library_static",
 )
 load(":private/actions/package.bzl",
-  "create_ghc_package",
-  "get_pkg_name",
+  "package",
   "get_pkg_id",
 )
 load(":private/actions/repl.bzl", "build_haskell_repl")
 load(":private/dependencies.bzl", "gather_dep_info")
+load(":private/java.bzl", "java_interop_info")
 load(":private/set.bzl", "set")
 load(":private/providers.bzl",
   "HaskellBuildInfo",
@@ -24,10 +23,28 @@ load(":private/providers.bzl",
 )
 
 def haskell_binary_impl(ctx):
+  hs = haskell_context(ctx)
   dep_info = gather_dep_info(ctx)
-  c = compile_haskell_bin(ctx, dep_info)
 
-  binary = link_haskell_bin(ctx, dep_info, c.object_dyn_files)
+  # Add any interop info for other languages.
+  cc = cc_headers(ctx)
+  java = java_interop_info(ctx)
+
+  c = hs.toolchain.actions.compile_binary(
+    hs,
+    cc,
+    java,
+    dep_info,
+    prebuilt_dependencies = ctx.attr.prebuilt_dependencies,
+    cpp_defines = ctx.file._cpp_defines,
+    compiler_flags = ctx.attr.compiler_flags,
+    version = ctx.attr.version,
+    srcs = ctx.files.srcs,
+    main_file = ctx.file.main_file,
+    main_function = ctx.attr.main_function,
+  )
+
+  binary = link_binary(hs, dep_info, ctx.attr.compiler_flags, c.object_dyn_files)
 
   solibs = set.union(
     set.from_list(dep_info.external_libraries.values()),
@@ -43,10 +60,16 @@ def haskell_binary_impl(ctx):
   target_files = depset([binary])
 
   build_haskell_repl(
-    ctx,
-    build_info=build_info,
-    target_files=target_files,
-    bin_info=bin_info,
+    hs,
+    ghci_script = ctx.file._ghci_script,
+    ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
+    repl_ghci_args = ctx.attr.repl_ghci_args,
+    output = ctx.outputs.repl,
+    interpreted = ctx.attr.repl_interpreted,
+    build_info = build_info,
+    version = ctx.attr.version,
+    target_files = target_files,
+    bin_info = bin_info,
   )
 
   return [
@@ -63,11 +86,39 @@ def haskell_binary_impl(ctx):
   ]
 
 def haskell_library_impl(ctx):
+  hs = haskell_context(ctx)
   dep_info = gather_dep_info(ctx)
-  c = compile_haskell_lib(ctx, dep_info)
+  pkg_id = get_pkg_id(ctx)
 
-  static_library = link_static_lib(ctx, dep_info, c.object_files)
-  dynamic_library = link_dynamic_lib(ctx, dep_info, c.object_dyn_files)
+  # Add any interop info for other languages.
+  cc = cc_headers(ctx)
+  java = java_interop_info(ctx)
+
+  c = hs.toolchain.actions.compile_library(
+    hs,
+    cc,
+    java,
+    dep_info,
+    prebuilt_dependencies = ctx.attr.prebuilt_dependencies,
+    cpp_defines = ctx.file._cpp_defines,
+    compiler_flags = ctx.attr.compiler_flags,
+    version = ctx.attr.version,
+    srcs = ctx.files.srcs,
+    pkg_id = pkg_id,
+  )
+
+  static_library = link_library_static(
+    hs,
+    dep_info,
+    c.object_files,
+    pkg_id,
+  )
+  dynamic_library = link_library_dynamic(
+    hs,
+    dep_info,
+    c.object_dyn_files,
+    pkg_id,
+  )
 
   exposed_modules = set.empty()
   other_modules = set.from_list(ctx.attr.hidden_modules)
@@ -76,14 +127,21 @@ def haskell_library_impl(ctx):
     if not set.is_member(other_modules, module):
       set.mutable_insert(exposed_modules, module)
 
-  conf_file, cache_file = create_ghc_package(
-    ctx,
+  pkg_deps = [
+    d[HaskellLibraryInfo] for d in ctx.attr.deps
+    if HaskellLibraryInfo in d
+  ]
+  conf_file, cache_file = package(
+    hs,
     dep_info,
     c.interfaces_dir,
     static_library,
     dynamic_library,
     exposed_modules,
     other_modules,
+    pkg_id,
+    ctx.attr.version,
+    pkg_deps,
   )
 
   build_info = HaskellBuildInfo(
@@ -113,10 +171,16 @@ def haskell_library_impl(ctx):
 
   if hasattr(ctx, "outputs"):
     build_haskell_repl(
-      ctx,
-      build_info=build_info,
-      target_files=target_files,
-      lib_info=lib_info,
+      hs,
+      ghci_script = ctx.file._ghci_script,
+      ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
+      repl_ghci_args = ctx.attr.repl_ghci_args,
+      output = ctx.outputs.repl,
+      interpreted = ctx.attr.repl_interpreted,
+      build_info = build_info,
+      version = ctx.attr.version,
+      target_files = target_files,
+      lib_info = lib_info,
     )
 
   default_info = None
