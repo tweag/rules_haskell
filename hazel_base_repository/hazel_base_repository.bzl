@@ -42,7 +42,13 @@ packages = {}
 
   ctx.file("extra-libs.bzl", """
 extra_libs = {}
-""".format(str(ctx.attr.extra_libs)))
+extra_libs_hdrs = {}
+extra_libs_strip_include_prefix = {}
+""".format(
+  str(ctx.attr.extra_libs),
+  str(ctx.attr.extra_libs_hdrs),
+  str(ctx.attr.extra_libs_strip_include_prefix),
+))
 
   ctx.file(
       "BUILD",
@@ -56,6 +62,8 @@ hazel_base_repository = repository_rule(
         "packages": attr.string_dict(mandatory=True),
         "prebuilt_dependencies": attr.string_dict(mandatory=True),
         "extra_libs": attr.string_dict(mandatory=True),
+        "extra_libs_hdrs": attr.string_dict(mandatory=True),
+        "extra_libs_strip_include_prefix": attr.string_dict(mandatory=True),
     })
 
 # TODO: don't reload all package names into every repository.
@@ -76,7 +84,11 @@ load("@ai_formation_hazel//third_party/cabal2bazel:bzl/cabal_package.bzl",
      "cabal_haskell_package",
      "hazel_symlink")
 load("@hazel_base_repository//:packages.bzl", "prebuilt_dependencies")
-load("@hazel_base_repository//:extra-libs.bzl", "extra_libs")
+load("@hazel_base_repository//:extra-libs.bzl",
+  "extra_libs",
+  "extra_libs_hdrs",
+  "extra_libs_strip_include_prefix",
+)
 load("//:package.bzl", "package")
 # Make a buildable target for easier debugging of the package.bzl file
 hazel_symlink(
@@ -84,5 +96,12 @@ hazel_symlink(
   src = "package.bzl",
   out = "package-bzl",
 )
-cabal_haskell_package(package, prebuilt_dependencies, "{}", extra_libs)
+cabal_haskell_package(
+  package,
+  prebuilt_dependencies,
+  "{}",
+  extra_libs,
+  extra_libs_hdrs,
+  extra_libs_strip_include_prefix,
+)
 """.format(ghc_version))

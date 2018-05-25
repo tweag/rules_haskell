@@ -63,6 +63,8 @@ def hazel_repositories(
   prebuilt_dependencies,
   packages,
   extra_libs={},
+  extra_libs_hdrs={},
+  extra_libs_strip_include_prefix={},
   exclude_packages=[]):
   """Generates external dependencies for a set of Haskell packages.
 
@@ -87,7 +89,10 @@ def hazel_repositories(
       - sha256: A hex-encoded SHA of the Cabal distribution (*.tar.gz).
     exclude_packages: names of packages to exclude.
     extra_libs: A dictionary that maps from name of extra libraries to Bazel
-      targets that provide them.
+      targets that provide the shared library.
+    extra_libs_hdrs: Similar to extra_libs, but provides header files.
+    extra_libs_strip_include_prefix: Similar to extra_libs, but allows to
+      get include prefix to strip.
   """
   hazel_base_repo_name = "hazel_base_repository"
 
@@ -100,6 +105,8 @@ def hazel_repositories(
       prebuilt_dependencies = prebuilt_dependencies,
       packages = {n: pkgs[n].version for n in pkgs},
       extra_libs = extra_libs,
+      extra_libs_hdrs = extra_libs_hdrs,
+      extra_libs_strip_include_prefix = extra_libs_strip_include_prefix,
   )
   for p in pkgs:
     _cabal_haskell_repository(

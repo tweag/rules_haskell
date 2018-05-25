@@ -7,6 +7,7 @@ http_client
 language_c
 lens
 network
+postgresql_libpq
 pretty_show
 text_metrics
 unix_compat

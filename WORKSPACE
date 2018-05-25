@@ -42,19 +42,38 @@ package(default_visibility = ["//visibility:public"])
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
 
 filegroup (
-  name = "lib_so",
+  name = "lib",
   srcs = glob([
-    "lib/*.so",
-    "lib/*.so.*",
-    "lib/*.dylib",
+    "lib/libtag_c.so",
+    "lib/libtag_c.dylib",
+  ]),
+)
+""",
+)
+
+nixpkgs_package(
+  name = "postgresql",
+  repository = "@nixpkgs",
+  build_file_content = """
+package(default_visibility = ["//visibility:public"])
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
+
+filegroup (
+  name = "lib",
+  srcs = glob([
+    "lib/libecpg.so",
+    "lib/libecpg.dylib",
   ]),
 )
 
-haskell_cc_import(
-  name = "lib",
-  shared_library = ":lib_so",
+filegroup (
+  name = "headers",
+  srcs = glob([
+    "include/*.h",
+    "include/**/*.h",
+  ]),
 )
-""",
+"""
 )
 
 register_toolchains("@ghc//:ghc")
@@ -92,5 +111,12 @@ hazel_repositories(
     exclude_packages = ["zlib", "text-metrics", "conduit"],
     extra_libs = {
       "tag_c": "@taglib//:lib",
+      "pq": "@postgresql//:lib",
+    },
+    extra_libs_hdrs = {
+      "pq": "@postgresql//:headers",
+    },
+    extra_libs_strip_include_prefix = {
+      "pq": "/external/postgresql/include",
     },
 )
