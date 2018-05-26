@@ -199,7 +199,7 @@ def _haskell_doctest_aspect_impl(target, ctx):
     outputs = [lint_log],
     progress_message = "Doctesting {0}".format(ctx.rule.attr.name),
     command = """
-    (doctest "$@" > {output} 2>&1) || (last_code=$? && cat {output} && exit $last_code)
+    doctest "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
     """.format(output = lint_log.path),
     arguments = [args],
     env = hs.env,
