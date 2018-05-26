@@ -52,10 +52,11 @@ def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, expos
       set.to_depset(dep_info.package_caches),
       depset([static_library, interfaces_dir, registration_file, dynamic_library]),
     ]),
-    outputs = [pkg_db_dir, conf_file, cache_file],
+    outputs = [conf_file, pkg_db_dir, cache_file],
     env = {
       "GHC_PACKAGE_PATH": package_path,
     },
+    mnemonic = "HaskellRegisterPackage",
     executable = hs.tools.ghc_pkg,
     arguments = [
       "register", "--package-db={0}".format(pkg_db_dir.path),

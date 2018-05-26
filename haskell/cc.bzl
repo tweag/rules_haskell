@@ -182,6 +182,7 @@ def _cc_haskell_import(ctx):
     ctx.actions.run(
       inputs = [bin],
       outputs = [dyn_lib],
+      mnemonic = "Symlink",
       executable = tools(ctx).ln,
       arguments = ["-s", relative_bin, dyn_lib.path],
     )

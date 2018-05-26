@@ -56,6 +56,7 @@ def _mangle_solib(ctx, label, solib, preserve_name):
   ctx.actions.run(
     inputs = [solib],
     outputs = [qualsolib],
+    mnemonic = "Symlink",
     executable = tools(ctx).ln,
     arguments = ["-s", relative_solib, qualsolib.path],
   )

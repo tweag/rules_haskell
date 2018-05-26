@@ -106,6 +106,7 @@ def _haskell_proto_aspect_impl(target, ctx):
       protobuf_tools(ctx).plugin,
     ] + inputs),
     outputs = hs_files,
+    mnemonic = "HaskellProtoc",
     executable = protobuf_tools(ctx).protoc,
     arguments = [args],
   )
