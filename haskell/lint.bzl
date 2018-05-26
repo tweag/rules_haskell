@@ -98,9 +98,9 @@ def _haskell_lint_aspect_impl(target, ctx):
     outputs = [lint_log],
     progress_message = "Linting {0}".format(ctx.rule.attr.name),
     command = """
-    (ghc "$@" > {output} 2>&1) || (last_code=$? && cat {output} && exit $last_code)
+    ghc "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
     """.format(
-      ghc = tools(ctx).ghc.path,
+      ghc = hs.tools.ghc.path,
       output = lint_log.path,
     ),
     arguments = [args],
