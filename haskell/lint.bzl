@@ -90,17 +90,21 @@ def _haskell_lint_aspect_impl(target, ctx):
       set.to_depset(build_info.interface_files),
       set.to_depset(build_info.dynamic_libraries),
       depset(build_info.external_libraries.values()),
-      depset([hs.tools.ghc]),
+      depset([
+        hs.tools.ghc,
+        hs.tools.cat,
+      ]),
     ]),
     outputs = [lint_log],
     progress_message = "Linting {0}".format(ctx.rule.attr.name),
     command = """
-    {ghc} "$@" > {output} 2>&1
+    ghc "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
     """.format(
-      ghc = tools(ctx).ghc.path,
+      ghc = hs.tools.ghc.path,
       output = lint_log.path,
     ),
     arguments = [args],
+    env = hs.env,
   )
 
   return [HaskellLintInfo(
@@ -187,17 +191,18 @@ def _haskell_doctest_aspect_impl(target, ctx):
       set.to_depset(build_info.interface_files),
       set.to_depset(build_info.dynamic_libraries),
       depset(build_info.external_libraries.values()),
-      depset([tools(ctx).doctest]),
+      depset([
+        hs.tools.doctest,
+        hs.tools.cat,
+      ]),
     ]),
     outputs = [lint_log],
     progress_message = "Doctesting {0}".format(ctx.rule.attr.name),
     command = """
-    doctest "$@" > {output} 2>&1
+    (doctest "$@" > {output} 2>&1) || (last_code=$? && cat {output} && exit $last_code)
     """.format(output = lint_log.path),
     arguments = [args],
-    env = {
-      "PATH": get_build_tools_path(ctx),
-    },
+    env = hs.env,
   )
 
   return [HaskellLintInfo(
