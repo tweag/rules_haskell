@@ -1,7 +1,5 @@
-load(
-    "@io_bazel_skydoc//skylark:skylark.bzl",
-    "skylark_doc",
-)
+load("@io_bazel_skydoc//skylark:skylark.bzl", "skylark_doc")
+load("//skylark:lint.bzl", "skylark_lint")
 
 skylark_doc(
   name = "docs",
@@ -22,3 +20,5 @@ skylark_doc(
   ],
   format = "html",
 )
+
+skylark_lint()

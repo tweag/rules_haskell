@@ -6,8 +6,8 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_toolchain",
   "haskell_proto_toolchain",
 )
-
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
+load("//skylark:lint.bzl", "skylark_lint")
 
 haskell_toolchain(
   name = "ghc",
@@ -311,3 +311,5 @@ rule_test(
   rule = "//tests:run-bin-with-c-lib",
   size = "small",
 )
+
+skylark_lint()
