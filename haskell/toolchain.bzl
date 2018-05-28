@@ -13,7 +13,7 @@ load(":private/actions/package.bzl", "package")
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 
-_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
+_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "cpphs"]
 
 def _haskell_toolchain_impl(ctx):
   # Check that we have all that we want.
