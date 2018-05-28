@@ -156,6 +156,7 @@ def build_haskell_repl(
       target_files,
     ]),
     outputs = [output],
+    mnemonic = "Symlink",
     executable = hs.tools.ln,
     arguments = ["-s", relative_target, output.path],
   )

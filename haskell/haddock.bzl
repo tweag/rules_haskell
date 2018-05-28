@@ -85,8 +85,9 @@ def _haskell_doc_aspect_impl(target, ctx):
         tools(ctx).haddock,
       ]),
     ]),
-    outputs = [html_dir, haddock_file],
-    progress_message = "Haddock {0}".format(ctx.rule.attr.name),
+    outputs = [haddock_file, html_dir],
+    mnemonic = "HaskellHaddock",
+    progress_message = "HaskellHaddock {}".format(ctx.label),
     executable = ctx.file._haddock_wrapper,
     arguments = [
       prebuilt_deps,
@@ -210,10 +211,10 @@ def _haskell_doc_rule_impl(ctx):
   static_haddock_outputs = [
     ctx.actions.declare_file(paths.join(doc_root_raw, f))
     for f in [
+      "index.html",
       "doc-index.html",
       "haddock-util.js",
       "hslogo-16.png",
-      "index.html",
       "minus.gif",
       "ocean.css",
       "plus.gif",
@@ -228,7 +229,7 @@ def _haskell_doc_rule_impl(ctx):
       depset(haddock_dict.values()),
     ]),
     outputs = static_haddock_outputs,
-    progress_message = "Creating unified Haddock index {0}".format(ctx.attr.name),
+    mnemonic = "HaskellHaddockIndex",
     executable = tools(ctx).haddock,
     arguments = [args],
   )

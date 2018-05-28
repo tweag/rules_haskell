@@ -35,6 +35,7 @@ def _haskell_toolchain_impl(ctx):
   ctx.actions.run_shell(
     inputs = [compiler],
     outputs = [version_file],
+    mnemonic = "HaskellVersionCheck",
     command = """
     {compiler} --numeric-version > {version_file}
     if [[ {expected_version} != $(< {version_file}) ]]
@@ -116,6 +117,7 @@ def _haskell_toolchain_impl(ctx):
     ctx.actions.run(
       inputs = inputs,
       outputs = [symlink],
+      mnemonic = "Symlink",
       executable = "ln",
       # FIXME Currently this part of the process is not hermetic. This
       # should be adjusted when
@@ -151,6 +153,7 @@ def _haskell_toolchain_impl(ctx):
     ctx.actions.run_shell(
       inputs = ctx.files.tools,
       outputs = [symlink],
+      mnemonic = "Symlink",
       command = """
       mkdir -p $(dirname "{symlink}")
       ln -s $(which "{target}") "{symlink}"

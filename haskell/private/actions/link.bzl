@@ -46,6 +46,7 @@ module BazelDummy () where
   hs.actions.run(
     inputs = [dummy_input],
     outputs = [dummy_object],
+    mnemonic = "HaskellDummyObjectGhc",
     executable = hs.tools.ghc,
     arguments = ["-c", dummy_input.path],
   )
@@ -56,6 +57,7 @@ module BazelDummy () where
   hs.actions.run(
     inputs = [dummy_object] + hs.tools_runfiles.ar,
     outputs = [dummy_static_lib],
+    mnemonic = "HaskellDummyObjectAr",
     executable = hs.tools.ar,
     arguments = [ar_args]
   )
@@ -80,8 +82,8 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
   hs.actions.run_shell(
       inputs=[inp],
       outputs=[out],
-      progress_message =
-          "Fixing install paths for {0}".format(out.basename),
+      mnemonic = "HaskellFixupLoaderPath",
+      progress_message = "Fixing install paths for {0}".format(out.basename),
       command = " &&\n    ".join(
           ["cp {} {}".format(inp.path, out.path),
            "chmod +w {}".format(out.path)]
@@ -173,7 +175,7 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
       depset(dep_info.external_libraries.values()),
     ]),
     outputs = [compile_output],
-    progress_message = "Linking {0}".format(hs.name),
+    mnemonic = "HaskellLinkBinary",
     executable = hs.tools.ghc,
     arguments = [args],
   )
@@ -237,7 +239,7 @@ def link_library_static(hs, dep_info, object_files, my_pkg_id):
   hs.actions.run(
     inputs = object_files + hs.tools_runfiles.ar,
     outputs = [static_library],
-    progress_message = "Linking static library {0}".format(static_library.basename),
+    mnemonic = "HaskellLinkStaticLibrary",
     executable = hs.tools.ar,
     arguments = [args],
   )
@@ -305,7 +307,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
       depset(dep_info.external_libraries.values()),
     ]),
     outputs = [dynamic_library_tmp],
-    progress_message = "Linking dynamic library {0}".format(dynamic_library.basename),
+    mnemonic = "HaskellLinkDynamicLibrary",
     executable = hs.tools.ghc,
     arguments = [args]
   )

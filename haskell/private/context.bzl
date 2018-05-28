@@ -23,6 +23,7 @@ def haskell_context(ctx, attr=None):
   return HaskellContext(
     # Fields
     name = attr.name,
+    label = ctx.label,
     toolchain = toolchain,
     tools = toolchain.tools,
     tools_runfiles = toolchain.tools_runfiles,

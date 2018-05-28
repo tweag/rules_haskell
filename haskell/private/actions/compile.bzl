@@ -41,6 +41,7 @@ def _make_ghc_defs_dump(hs, cpp_defines):
   hs.actions.run(
     inputs = [dummy_src],
     outputs = [ghc_defs_dump_raw],
+    mnemonic = "HaskellCppDefines",
     executable = hs.tools.ghc,
     arguments = [args],
   )
@@ -95,7 +96,7 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
       depset([hsc_file, ghc_defs_dump])
     ]),
     outputs = [hs_out, hsc_output_dir],
-    progress_message = "hsc2hs {0}".format(hsc_file.basename),
+    mnemonic = "HaskellHsc2hs",
     executable = hs.tools.hsc2hs,
     arguments = [args],
     env = hs.env,
@@ -301,7 +302,8 @@ def compile_binary(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, ma
   hs.actions.run(
     inputs = c.inputs,
     outputs = c.outputs,
-    progress_message = "Building {0}".format(hs.name),
+    mnemonic = "HaskellBuildBinary",
+    progress_message = "HaskellBuildBinary {}".format(hs.label),
     env = c.env,
     executable = hs.tools.ghc,
     arguments = [c.args]
@@ -345,7 +347,8 @@ def compile_library(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, m
   hs.actions.run(
     inputs = c.inputs,
     outputs = c.outputs,
-    progress_message = "Compiling {0}".format(hs.name),
+    mnemonic = "HaskellBuildLibrary",
+    progress_message = "HaskellBuildLibrary {}".format(hs.label),
     env = c.env,
     executable = hs.tools.ghc,
     arguments = [c.args],

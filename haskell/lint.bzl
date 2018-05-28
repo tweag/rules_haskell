@@ -96,7 +96,8 @@ def _haskell_lint_aspect_impl(target, ctx):
       ]),
     ]),
     outputs = [lint_log],
-    progress_message = "Linting {0}".format(ctx.rule.attr.name),
+    mnemonic = "HaskellLint",
+    progress_message = "HaskellLint {}".format(ctx.label),
     command = """
     ghc "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
     """.format(
@@ -197,7 +198,8 @@ def _haskell_doctest_aspect_impl(target, ctx):
       ]),
     ]),
     outputs = [lint_log],
-    progress_message = "Doctesting {0}".format(ctx.rule.attr.name),
+    mnemonic = "HaskellDoctest",
+    progress_message = "HaskellDoctest {}".format(ctx.label),
     command = """
     doctest "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
     """.format(output = lint_log.path),
