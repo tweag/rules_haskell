@@ -16,10 +16,11 @@ RUN apt-get update && apt-get install -y curl \
 COPY WORKSPACE /bazel/
 COPY start /bazel/
 COPY haskell /bazel/haskell/
+COPY skylark /bazel/skylark/
 COPY docs /bazel/docs/
 COPY tests /bazel/tests/
 
-RUN cd /bazel; bazel build //docs:docs
+RUN cd /bazel; bazel build //docs
 RUN unzip -d /site /bazel/bazel-bin/docs/docs-skydoc.zip \
     && cp /bazel/start /site
 
