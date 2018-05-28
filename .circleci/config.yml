@@ -13,7 +13,7 @@ jobs:
             apk --no-progress update
             apk --no-progress add bash ca-certificates
             nix-channel --update
-            nix-env -iA nixpkgs.bazel nixpkgs.binutils nixpkgs.python
+            nix-env -iA nixpkgs.bazel nixpkgs.binutils nixpkgs.python nixpkgs.go
       - run:
           name: Build
           command: bazel build --jobs=2 //... @haskell_zlib//...
@@ -58,6 +58,7 @@ jobs:
           command: |
             brew update
             brew install bazel
+            brew install go
       - run:
           name: Build
           shell: /bin/bash -eilo pipefail

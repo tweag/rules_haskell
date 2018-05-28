@@ -158,3 +158,32 @@ http_archive(
 )
 load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
 skydoc_repositories()
+
+# For buildifier
+
+# XXX Need a patched version of rules_go to workaround warnings fixed
+# by https://github.com/NixOS/nixpkgs/pull/28029 on NixOS. Revert to
+# official release once fix hits Nixpkgs master.
+http_archive(
+  name = "io_bazel_rules_go",
+  strip_prefix = "rules_go-6a2b1f780b475a75a7baae5b441635c566f0ed8a",
+  urls = ["https://github.com/mboes/rules_go/archive/6a2b1f780b475a75a7baae5b441635c566f0ed8a.tar.gz"],
+)
+
+http_archive(
+  name = "com_github_bazelbuild_buildtools",
+  strip_prefix = "buildtools-588d90030bc8054b550967aa45a8a8d170deba0b",
+  urls = ["https://github.com/bazelbuild/buildtools/archive/588d90030bc8054b550967aa45a8a8d170deba0b.tar.gz"],
+)
+
+load(
+  "@io_bazel_rules_go//go:def.bzl",
+  "go_rules_dependencies",
+  "go_register_toolchains",
+)
+
+go_rules_dependencies()
+
+# Use host version because none of the SDK's that rules_go knows about
+# are compatible with NixOS.
+go_register_toolchains(go_version = "host")
