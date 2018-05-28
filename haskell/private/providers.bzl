@@ -11,8 +11,9 @@ DefaultCompileInfo = provider(
     "object_dyn_files": "Dynamic object files.",
     "interface_files": "Interface files.",
     "modules": "Set of all module names.",
-    "source_files": "Set of files that contain Haskell modules.",
     "header_files": "Set of header files.",
+    "boot_files": "Set of boot files.",
+    "source_files": "Set of files that contain Haskell modules.",
     "import_dirs": "Import hierarchy roots.",
     "env": "Default env vars."
   },
@@ -40,8 +41,9 @@ HaskellLibraryInfo = provider(
     "exposed_modules": "Set of exposed module names.",
     "other_modules": "Set of non-public module names.",
     "haddock_args": "Arguments that were used to compile the package suitable for Haddock.",
-    "source_files": "Set of files that contain Haskell modules.",
     "header_files": "Set of header files.",
+    "boot_files": "Set of boot files.",
+    "source_files": "Set of files that contain Haskell modules.",
   },
 )
 

@@ -183,10 +183,10 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
   # We need to keep interface files we produce so we can import
   # modules cross-package.
   interface_files = []
-  other_sources = []
   header_files = []
-  modules = set.empty()
+  boot_files = []
   source_files = set.empty()
+  modules = set.empty()
   import_dirs = set.singleton(hs.src_root)
 
   # Output object files are named after modules, not after input file names.
@@ -201,7 +201,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
     if s.extension == "h":
       header_files.append(s)
     if s.extension in ["hs-boot", "lhs-boot"]:
-      other_sources.append(s)
+      boot_files.append(s)
     elif s.extension in ["hs", "lhs", "hsc"]:
       if not main_file or s != main_file:
         if s.extension == "hsc":
@@ -256,9 +256,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
     args = args,
     haddock_args = haddock_args,
     inputs = depset(transitive = [
-      set.to_depset(source_files),
       depset(header_files),
-      depset(other_sources),
+      depset(boot_files),
+      set.to_depset(source_files),
       depset(cc.hdrs),
       set.to_depset(dep_info.package_confs),
       set.to_depset(dep_info.package_caches),
@@ -275,8 +275,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
     object_dyn_files = object_dyn_files,
     interface_files = interface_files,
     modules = modules,
-    source_files = source_files,
     header_files = set.from_list(cc.hdrs + header_files),
+    boot_files = set.from_list(boot_files),
+    source_files = source_files,
     import_dirs = import_dirs,
     env = dicts.add({
       "LD_LIBRARY_PATH": get_external_libs_path(set.from_list(dep_info.external_libraries.values())),
@@ -358,7 +359,8 @@ def compile_library(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, m
     object_dyn_files = c.object_dyn_files,
     haddock_args = c.haddock_args,
     modules = c.modules,
-    source_files = c.source_files,
     header_files = c.header_files,
+    boot_files = c.boot_files,
+    source_files = c.source_files,
     import_dirs = c.import_dirs,
   )
