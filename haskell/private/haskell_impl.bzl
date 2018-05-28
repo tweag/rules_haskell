@@ -156,8 +156,9 @@ def haskell_library_impl(ctx):
     exposed_modules = exposed_modules,
     other_modules = other_modules,
     haddock_args = c.haddock_args,
-    source_files = c.source_files,
     header_files = c.header_files,
+    boot_files = c.boot_files,
+    source_files = c.source_files,
   )
   target_files = depset([conf_file, cache_file])
 
