@@ -37,6 +37,7 @@ HaskellLibraryInfo = provider(
   doc = "Library-specific information.",
   fields = {
     "package_id": "Package id, usually of the form name-version.",
+    "version": "Package version.",
     "import_dirs": "Import hierarchy roots.",
     "exposed_modules": "Set of exposed module names.",
     "other_modules": "Set of non-public module names.",

@@ -40,7 +40,7 @@ def _haskell_doc_aspect_impl(target, ctx):
   args.add([
     "-D", haddock_file.path,
     "--package-name={0}".format(package_id),
-    "--package-version={0}".format(ctx.rule.attr.version),
+    "--package-version={0}".format(target[HaskellLibraryInfo].version),
     "-o", html_dir,
     "--html", "--hoogle",
     "--title={0}".format(package_id),
@@ -58,8 +58,6 @@ def _haskell_doc_aspect_impl(target, ctx):
   for pid in transitive_haddocks:
     args.add("--read-interface=../{0},{1}".format(
       pid, transitive_haddocks[pid].path))
-
-  input_sources = [ f for t in ctx.rule.attr.srcs for f in t.files.to_list() ]
 
   prebuilt_deps = ctx.actions.args()
   for dep in set.to_list(target[HaskellBuildInfo].prebuilt_dependencies):
