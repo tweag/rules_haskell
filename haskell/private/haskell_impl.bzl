@@ -152,6 +152,7 @@ def haskell_library_impl(ctx):
   )
   lib_info = HaskellLibraryInfo(
     package_id = pkg_id.to_string(my_pkg_id),
+    version = ctx.attr.version,
     import_dirs = c.import_dirs,
     exposed_modules = exposed_modules,
     other_modules = other_modules,
