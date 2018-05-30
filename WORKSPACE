@@ -71,14 +71,12 @@ nixpkgs_package(
   name = "doctest",
   repository = "@nixpkgs",
   attribute_path = "haskell.packages.ghc822.doctest",
-  build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-  name = "bin",
-  srcs = ["bin/doctest"],
 )
-  """
+
+nixpkgs_package(
+  name = "c2hs",
+  repository = "@nixpkgs",
+  attribute_path = "haskell.packages.ghc822.c2hs",
 )
 
 register_toolchains(

@@ -106,6 +106,10 @@ def _haskell_toolchain_impl(ctx):
     targets_r["doctest"] = ctx.file.doctest.path
     inputs.append(ctx.file.doctest)
 
+  if ctx.attr.c2hs != None:
+    targets_r["c2hs"] = ctx.file.c2hs.path
+    inputs.append(ctx.file.c2hs)
+
   for target in targets_r:
     symlink = ctx.actions.declare_file(
       paths.join(visible_binaries, target)
@@ -210,6 +214,10 @@ _haskell_toolchain = rule(
       doc = "Doctest executable",
       allow_single_file = True,
     ),
+    "c2hs": attr.label(
+      doc = "c2hs executable",
+      allow_single_file = True,
+    ),
     "version": attr.string(mandatory = True),
     "is_darwin":  attr.bool(mandatory = True),
     "_crosstool": attr.label(
@@ -240,6 +248,7 @@ def haskell_toolchain(
         version = '1.2.3'
         tools = ["@sys_ghc//:bin"],
         doctest = "@doctest//:bin", # optional
+        c2hs = "@c2hs//:bin", # optional
     )
     ```
 
@@ -261,6 +270,14 @@ def haskell_toolchain(
     nixpkgs_package(
         name = "doctest",
         attribute_path = "haskell.packages.ghc822.doctest",
+    )
+
+    and for `@c2hs`:
+
+    ```bzl
+    nixpkgs_package(
+        name = "c2hs",
+        attribute_path = "haskell.packages.ghc822.c2hs",
     )
     ```
   """

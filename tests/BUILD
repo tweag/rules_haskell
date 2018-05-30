@@ -14,6 +14,7 @@ haskell_toolchain(
   version = "8.2.2",
   tools = "@ghc//:bin",
   doctest = "@doctest//:bin",
+  c2hs = "@c2hs//:bin",
   # This toolchain is morally testonly.  However, that would break
   # our tests of haskell_library_rules: aspects of non-testonly
   # proto_library rules (from com_google_protobuf) can't themselves
