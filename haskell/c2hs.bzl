@@ -15,8 +15,8 @@ def _haskell_c2hs_impl(ctx):
   args.add(["-C-E", "-C-I."])
 
   # cc executable
-  args.add(["--cpp", tools(ctx).cpp.path])
-  common_inputs.append(tools(ctx).cpp)
+  args.add(["--cpp", tools(ctx).gcc.path])
+  common_inputs.append(tools(ctx).gcc)
 
   # user-supplied C options
   args.add(["-C" + opt for opt in ctx.attr.copts])
