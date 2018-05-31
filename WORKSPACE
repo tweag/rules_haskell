@@ -99,6 +99,15 @@ filegroup (
   ]),
   testonly = 1,
 )
+
+filegroup (
+  name = "lib-single",
+  srcs = glob([
+    "lib/libz.so",
+    "lib/libz.dylib",
+  ]),
+  testonly = 1,
+)
 """,
 )
 

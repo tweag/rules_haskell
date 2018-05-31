@@ -1,4 +1,6 @@
 module Foo (foo) where
 
+#include <zlib.h>
+
 foo :: Int
-foo = 5
+foo = {# sizeof gz_header_s #}

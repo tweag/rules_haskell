@@ -4,25 +4,31 @@ load(":private/tools.bzl",
      "get_build_tools_path",
      "tools",
 )
+load(":cc.bzl",
+     "cc_headers",
+)
+
 load("@bazel_skylib//:lib.bzl", "paths")
 
 def _haskell_c2hs_impl(ctx):
 
   args = ctx.actions.args()
-  common_inputs = []
 
   # some common options
-  args.add(["-C-E", "-C-I."])
+  args.add(["-C-E"])
+
+  h = cc_headers(ctx)
+  common_inputs = h.hdrs
 
   # cc executable
   args.add(["--cpp", tools(ctx).gcc.path])
   common_inputs.append(tools(ctx).gcc)
-
+  # detected cpp flags
+  args.add(["-C" + x for x in h.cpp_flags])
+  # detected include args
+  args.add(["-C" + x for x in h.include_args])
   # user-supplied C options
-  args.add(["-C" + opt for opt in ctx.attr.copts])
-
-  for x in ctx.attr.deps:
-    common_inputs.extend(x.cc.transitive_headers.to_list())
+  args.add(["-C" + x for x in ctx.attr.copts])
 
   outputs = []
   for src in ctx.files.srcs:
@@ -46,7 +52,6 @@ def _haskell_c2hs_impl(ctx):
       outputs = [output],
       executable = tools(ctx).c2hs,
       mnemonic = "HaskellC2Hs",
-      progress_message = "c2hs generating Haskell file for " + ctx.label.name,
       arguments = [args, "-o", output.path, src.path],
     )
 

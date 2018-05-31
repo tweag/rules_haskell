@@ -6,12 +6,20 @@ load(
   "haskell_library",
 )
 
+cc_import(
+  name = "zlib-cc",
+  hdrs = ["@zlib.dev//:include"],
+  shared_library = "@zlib//:lib-single",
+)
+
 haskell_c2hs(
   name = "c2hs",
   srcs = [
     "Foo.chs",
     "Bar.chs",
   ],
+  copts = ["-Iexternal/zlib.dev/include"],
+  deps = [":zlib-cc"],
 )
 
 haskell_library(
