@@ -10,6 +10,7 @@ exports_files([
 
 haskell_toolchain(
     name = "ghc",
+    c2hs = "@c2hs//:bin",
     version = "8.2.2",
     tools = "@ghc//:bin",
 )

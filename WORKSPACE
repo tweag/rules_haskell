@@ -14,7 +14,7 @@ nixpkgs_git_repository(
     revision = "c33c5239f62b4855b14dc5b01dfa3e2a885cf9ca",
 )
 
-RULES_HASKELL_SHA = "b55ca991a9e58108932ff6c8b86fd141897391c1"
+RULES_HASKELL_SHA = "a7ed28171ff9e4dfad23c4669eead8c170bc8e0c"
 http_archive(
     name = "io_tweag_rules_haskell",
     urls = ["https://github.com/tweag/rules_haskell/archive/"
@@ -30,6 +30,12 @@ nixpkgs_package(
     repository = "@nixpkgs",
     attribute_path = "haskell.packages.ghc822.ghc",
     build_file = "@ai_formation_hazel//:BUILD.ghc",
+)
+
+nixpkgs_package(
+  name = "c2hs",
+  repository = "@nixpkgs",
+  attribute_path = "haskell.packages.ghc822.c2hs",
 )
 
 nixpkgs_package(
@@ -52,11 +58,41 @@ filegroup (
 )
 
 nixpkgs_package(
+    name = "libsndfile.out",
+    repository = "@nixpkgs",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "lib",
+  srcs = glob([
+    "lib/libsndfile.so",
+    "lib/libsndfile.dylib",
+  ]),
+)
+"""
+)
+
+nixpkgs_package(
+    name = "libsndfile.dev",
+    repository = "@nixpkgs",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "headers",
+  srcs = glob([
+    "include/*.h",
+  ]),
+)
+"""
+)
+
+nixpkgs_package(
   name = "postgresql",
   repository = "@nixpkgs",
   build_file_content = """
 package(default_visibility = ["//visibility:public"])
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
 
 filegroup (
   name = "lib",
@@ -112,11 +148,14 @@ hazel_repositories(
     extra_libs = {
       "tag_c": "@taglib//:lib",
       "pq": "@postgresql//:lib",
+      "sndfile": "@libsndfile.out//:lib",
     },
     extra_libs_hdrs = {
       "pq": "@postgresql//:headers",
+      "sndfile": "@libsndfile.dev//:headers",
     },
     extra_libs_strip_include_prefix = {
       "pq": "/external/postgresql/include",
+      "sndfile": "/external/libsndfile.dev/include",
     },
 )

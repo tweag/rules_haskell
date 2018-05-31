@@ -2,6 +2,7 @@ aeson
 conduit
 entropy
 fuzzyset
+hsndfile
 htaglib
 http_client
 language_c

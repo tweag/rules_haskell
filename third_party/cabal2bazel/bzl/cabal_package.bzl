@@ -147,7 +147,8 @@ def _get_build_attrs(
     # Foo.hs).
     for f,m,out in (_glob_modules(d, ".hs", ".hs")
                      + _glob_modules(d, ".lhs", ".lhs")
-                     + _glob_modules(d, ".hsc", ".hsc")):
+                     + _glob_modules(d, ".hsc", ".hsc")
+                     + _glob_modules(d, ".chs", ".chs")):
       if m not in module_map:
         module_map[m] = srcs_dir + out
         hazel_symlink(
@@ -357,6 +358,7 @@ def cabal_haskell_package(
       deps = lib_attrs.pop("deps")
 
       elibs_targets = []
+
       for elib in lib.libBuildInfo.extraLibs:
         elib_target_name = elib + "-haskell-cc-import"
         haskell_cc_import(

@@ -3,7 +3,6 @@ package(default_visibility = [ "//visibility:public" ])
 
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_toolchain")
 
-
 filegroup(
     name = "bin",
     srcs = glob(["bin/*"]),
@@ -19,7 +18,6 @@ filegroup(
   name = "lib",
   srcs = glob(["lib/**/*.so*", "lib/**/*.a"]),
 )
-
 
 filegroup(
   name = "include",
@@ -42,6 +40,7 @@ cc_library(
 
 haskell_toolchain(
     name = "ghc",
+    c2hs = "@c2hs//:bin",
     version = "8.2.2",
     tools = ":bin",
 )
