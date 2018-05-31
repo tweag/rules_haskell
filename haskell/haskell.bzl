@@ -43,7 +43,7 @@ _haskell_common_attrs = {
     doc = "Directory in which module hierarchy starts.",
   ),
   "srcs": attr.label_list(
-    allow_files = FileType([".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"]),
+    allow_files = FileType([".hs", ".hsc", ".chs", ".lhs", ".hs-boot", ".lhs-boot", ".h"]),
     doc = "Haskell source files.",
   ),
   "deps": attr.label_list(

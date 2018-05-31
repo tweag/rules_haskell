@@ -68,6 +68,7 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
 
   Args:
     hs: Haskell context.
+    cc: CcInteropInfo, information about C dependencies.
     ghc_defs_dump: File with GHC definitions.
     hsc_file: hsc file to process.
 
@@ -75,14 +76,12 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
     File: Haskell source file created by processing hsc_file.
   """
 
-  hsc_output_dir = hs.actions.declare_directory(
-    module_unique_name(hs, hsc_file, "hsc_processed")
-  )
   args = hs.actions.args()
 
   # Output a Haskell source file.
-  hs_out = declare_compiled(hs, hsc_file, ".hs", directory=hsc_output_dir)
-  args.add([hsc_file, "-o", hs_out])
+  hsc_dir_raw = target_unique_name(hs, "hsc")
+  hs_out = declare_compiled(hs, hsc_file, ".hs", directory=hsc_dir_raw)
+  args.add([hsc_file.path, "-o", hs_out.path])
 
   args.add(["--cflag=" + f for f in cc.cpp_flags])
   args.add(["--cflag=" + f for f in cc.include_args])
@@ -93,15 +92,69 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
     inputs = depset(transitive = [
       depset(cc.hdrs),
       depset([hs.tools.gcc]),
-      depset([hsc_file, ghc_defs_dump])
+      depset([hsc_file, ghc_defs_dump]),
     ]),
-    outputs = [hs_out, hsc_output_dir],
+    outputs = [hs_out],
     mnemonic = "HaskellHsc2hs",
     executable = hs.tools.hsc2hs,
     arguments = [args],
     env = hs.env,
   )
   return hs_out
+
+def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
+  """Process a single chs file.
+
+  Args:
+    hs: Haskell context.
+    cc: CcInteropInfo, information about C dependencies.
+    ghc_defs_dump: File with GHC definitions.
+    chs_file: chs file to process.
+    chi_files: .chi files that should be available to c2hs.
+
+  Returns:
+    (File, File): Haskell source file created by processing chs_file
+                  and .chi file produced by the same file.
+  """
+
+  args = hs.actions.args()
+
+  # Output a Haskell source file.
+  chs_dir_raw = target_unique_name(hs, "chs")
+  hs_out = declare_compiled(hs, chs_file, ".hs", directory=chs_dir_raw)
+  chi_out = declare_compiled(hs, chs_file, ".chi", directory=chs_dir_raw)
+  args.add([chs_file.path, "-o", hs_out.path])
+
+  args.add(["-C-E"])
+  args.add(["--cpp", hs.tools.gcc.path])
+  args.add(["-C-I{0}".format(ghc_defs_dump.dirname)])
+  args.add(["-C-include{0}".format(ghc_defs_dump.basename)])
+  args.add(["-C" + x for x in cc.cpp_flags])
+  args.add(["-C" + x for x in cc.include_args])
+
+  chi_include_root = paths.join(
+    hs.bin_dir.path,
+    hs.label.workspace_root,
+    hs.label.package,
+    chs_dir_raw,
+  )
+  args.add(["-i" + chi_include_root])
+
+  hs.actions.run(
+    inputs = depset(transitive = [
+      depset(cc.hdrs),
+      depset([hs.tools.gcc]),
+      depset([chs_file, ghc_defs_dump]),
+      depset(chi_files),
+    ]),
+    outputs = [hs_out, chi_out],
+    executable = hs.tools.c2hs,
+    mnemonic = "HaskellC2Hs",
+    arguments = [args],
+    env = hs.env,
+  )
+
+  return hs_out, chi_out
 
 def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
@@ -196,6 +249,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
   # still Main.o will be produced.
 
   ghc_defs_dump = _make_ghc_defs_dump(hs, cpp_defines)
+  chi_files_so_far = []
 
   for s in srcs:
 
@@ -203,30 +257,38 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
       header_files.append(s)
     if s.extension in ["hs-boot", "lhs-boot"]:
       boot_files.append(s)
-    elif s.extension in ["hs", "lhs", "hsc"]:
+    elif s.extension in ["hs", "lhs", "hsc", "chs"]:
       if not main_file or s != main_file:
         if s.extension == "hsc":
           s0 = _process_hsc_file(hs, cc, ghc_defs_dump, s)
           set.mutable_insert(source_files, s0)
+        elif s.extension == "chs":
+          s0, chi = _process_chs_file(hs, cc, ghc_defs_dump, s, chi_files_so_far)
+          set.mutable_insert(source_files, s0)
+          chi_files_so_far.append(chi)
         else:
           set.mutable_insert(source_files, s)
         set.mutable_insert(modules, module_name(hs, s))
         object_files.append(
-          declare_compiled(hs, s, ".o", directory=objects_dir)
+          declare_compiled(hs, s, ".o", directory=objects_dir_raw)
         )
         object_dyn_files.append(
-          declare_compiled(hs, s, ".dyn_o", directory=objects_dir)
+          declare_compiled(hs, s, ".dyn_o", directory=objects_dir_raw)
         )
         interface_files.append(
-          declare_compiled(hs, s, ".hi", directory=interfaces_dir)
+          declare_compiled(hs, s, ".hi", directory=interfaces_dir_raw)
         )
         interface_files.append(
-          declare_compiled(hs, s, ".dyn_hi", directory=interfaces_dir)
+          declare_compiled(hs, s, ".dyn_hi", directory=interfaces_dir_raw)
         )
       else:
         if s.extension == "hsc":
           s0 = _process_hsc_file(hs, cc, ghc_defs_dump, s)
           set.mutable_insert(source_files, s0)
+        elif s.extension == "chs":
+          s0, chi = _process_chs_file(hs, cc, ghc_defs_dump, s, chi_files_so_far)
+          set.mutable_insert(source_files, s0)
+          chi_files_so_far.append(chi)
         else:
           set.mutable_insert(source_files, s)
         set.mutable_insert(modules, "Main")
