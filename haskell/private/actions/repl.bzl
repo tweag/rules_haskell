@@ -119,7 +119,7 @@ def build_haskell_repl(
     },
   )
 
-  args += ["-ghci-script", ghci_script.path]
+  args += ["-ghci-script", ghci_repl_script.path]
 
   # Extra arguments.
   args += repl_ghci_args
@@ -152,7 +152,7 @@ def build_haskell_repl(
       # hs.tools.ghci and ghci_script and the best way to do that is
       # to use hs.actions.run. That action, it turn must produce
       # a result, so using ln seems to be the only sane choice.
-      depset([hs.tools.ghci, ghci_script, repl_file]),
+      depset([hs.tools.ghci, ghci_repl_script, repl_file]),
       target_files,
     ]),
     outputs = [output],
