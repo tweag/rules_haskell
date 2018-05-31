@@ -24,12 +24,12 @@ jobs:
           name: Test REPL for libraries
           command: |
             bazel build //tests/repl-targets:hs-lib-repl
-            bazel-bin/tests/repl-targets/hs-lib-repl -e ":quit"
+            bazel-bin/tests/repl-targets/hs-lib-repl -e "foo 10"
       - run:
           name: Test REPL for binaries
           command: |
             bazel build //tests/repl-targets:hs-bin-repl
-            bazel-bin/tests/repl-targets/hs-bin-repl -e ":quit"
+            bazel-bin/tests/repl-targets/hs-bin-repl -e ":main"
       - run:
           name: Test start script
           command: |
