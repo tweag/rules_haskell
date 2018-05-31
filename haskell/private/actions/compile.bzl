@@ -102,7 +102,7 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
   )
   return hs_out
 
-def _process_chs_file(hs, cc, ghc_defs_dump, chs_file):
+def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
   """Process a single chs file.
 
   Args:
@@ -110,9 +110,11 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file):
     cc: CcInteropInfo, information about C dependencies.
     ghc_defs_dump: File with GHC definitions.
     chs_file: chs file to process.
+    chi_files: .chi files that should be available to c2hs.
 
   Returns:
-    File: Haskell source file created by processing chs_file.
+    (File, File): Haskell source file created by processing chs_file
+                  and .chi file produced by the same file.
   """
 
   args = hs.actions.args()
@@ -120,30 +122,39 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file):
   # Output a Haskell source file.
   chs_dir_raw = target_unique_name(hs, "chs")
   hs_out = declare_compiled(hs, chs_file, ".hs", directory=chs_dir_raw)
+  chi_out = declare_compiled(hs, chs_file, ".chi", directory=chs_dir_raw)
   args.add([chs_file.path, "-o", hs_out.path])
 
   args.add(["-C-E"])
   args.add(["--cpp", hs.tools.gcc.path])
-  # XXX c2hs doesn't seem to support direct inclusion of arbitrary headers
   args.add(["-C-I{0}".format(ghc_defs_dump.dirname)])
   args.add(["-C-include{0}".format(ghc_defs_dump.basename)])
   args.add(["-C" + x for x in cc.cpp_flags])
   args.add(["-C" + x for x in cc.include_args])
 
+  chi_include_root = paths.join(
+    hs.bin_dir.path,
+    hs.label.workspace_root,
+    hs.label.package,
+    chs_dir_raw,
+  )
+  args.add(["-i" + chi_include_root])
+
   hs.actions.run(
     inputs = depset(transitive = [
       depset(cc.hdrs),
       depset([hs.tools.gcc]),
-      depset([chs_file, ghc_defs_dump])
+      depset([chs_file, ghc_defs_dump]),
+      depset(chi_files),
     ]),
-    outputs = [hs_out],
+    outputs = [hs_out, chi_out],
     executable = hs.tools.c2hs,
     mnemonic = "HaskellC2Hs",
     arguments = [args],
     env = hs.env,
   )
 
-  return hs_out
+  return hs_out, chi_out
 
 def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
@@ -238,6 +249,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
   # still Main.o will be produced.
 
   ghc_defs_dump = _make_ghc_defs_dump(hs, cpp_defines)
+  chi_files_so_far = []
 
   for s in srcs:
 
@@ -251,8 +263,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
           s0 = _process_hsc_file(hs, cc, ghc_defs_dump, s)
           set.mutable_insert(source_files, s0)
         elif s.extension == "chs":
-          s0 = _process_chs_file(hs, cc, ghc_defs_dump, s)
+          s0, chi = _process_chs_file(hs, cc, ghc_defs_dump, s, chi_files_so_far)
           set.mutable_insert(source_files, s0)
+          chi_files_so_far.append(chi)
         else:
           set.mutable_insert(source_files, s)
         set.mutable_insert(modules, module_name(hs, s))
@@ -273,8 +286,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
           s0 = _process_hsc_file(hs, cc, ghc_defs_dump, s)
           set.mutable_insert(source_files, s0)
         elif s.extension == "chs":
-          s0 = _process_chs_file(hs, cc, ghc_defs_dump, s)
+          s0, chi = _process_chs_file(hs, cc, ghc_defs_dump, s, chi_files_so_far)
           set.mutable_insert(source_files, s0)
+          chi_files_so_far.append(chi)
         else:
           set.mutable_insert(source_files, s)
         set.mutable_insert(modules, "Main")
