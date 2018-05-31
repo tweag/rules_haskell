@@ -79,13 +79,13 @@ def declare_compiled(hs, src, ext, directory=None):
     hs: Haskell context.
     src: Haskell source file.
     ext: New extension.
-    directory: Directory the new file should live in.
+    directory: String, directory prefix the new file should live in.
 
   Returns:
     File: Declared output file living in `directory` with given `ext`.
   """
   fp = paths.replace_extension(_rel_path_to_module(hs, src), ext)
-  fp_with_dir = fp if directory == None else paths.join(directory.basename, fp)
+  fp_with_dir = fp if directory == None else paths.join(directory, fp)
   return hs.actions.declare_file(fp_with_dir)
 
 def import_hierarchy_root(ctx):

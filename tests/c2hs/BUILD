@@ -2,29 +2,26 @@ package(default_testonly = 1)
 
 load(
   "@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_c2hs",
   "haskell_library",
+  "haskell_cc_import",
 )
 
-cc_import(
-  name = "zlib-cc",
+haskell_cc_import(
+  name = "zlib",
+  shared_library = "@zlib//:lib",
   hdrs = ["@zlib.dev//:include"],
-  shared_library = "@zlib//:lib-single",
+  strip_include_prefix = "/external/zlib.dev/include",
 )
 
-haskell_c2hs(
+haskell_library(
   name = "c2hs",
   srcs = [
     "Foo.chs",
     "Bar.chs",
   ],
-  copts = ["-Iexternal/zlib.dev/include"],
-  deps = [":zlib-cc"],
-)
-
-haskell_library(
-  name = "c2hs-consumer",
-  srcs = [":c2hs"],
+  deps = [
+    ":zlib",
+  ],
   prebuilt_dependencies = [
     "base",
   ],
