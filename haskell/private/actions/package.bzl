@@ -5,7 +5,7 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules, my_pkg_id, pkg_deps):
+def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules, my_pkg_id):
   """Create GHC package using ghc-pkg.
 
   Args:
@@ -36,7 +36,11 @@ def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, expos
     "dynamic-library-dirs": "${pkgroot}",
     "hs-libraries": "HS" + pkg_id.to_string(my_pkg_id),
     "depends":
-      ", ".join([d.package_id for d in pkg_deps]),
+      ", ".join(
+        # XXX Ideally we would like to specify here prebuilt dependencies
+        # too, but we don't know their versions, and package ids without
+        # versions will be rejected as unknown.
+        set.to_list(dep_info.direct_package_ids)),
   }
   hs.actions.write(
     output=registration_file,

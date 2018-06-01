@@ -30,6 +30,8 @@ HaskellBuildInfo = provider(
     "interface_files": "Set of interface files belonging to the packages.",
     "prebuilt_dependencies": "Transitive collection of names of wired-in Haskell dependencies.",
     "external_libraries": "Set of dynamic shared libraries needed for linking.",
+    "direct_prebuilt_deps": "Set of direct prebuilt dependencies.",
+    "direct_package_ids": "Set of package ids of direct dependencies.",
   },
 )
 

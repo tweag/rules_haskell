@@ -109,6 +109,8 @@ def gather_dep_info(ctx):
     interface_files = set.empty(),
     prebuilt_dependencies = set.from_list(ctx.attr.prebuilt_dependencies),
     external_libraries = {},
+    direct_prebuilt_deps = set.from_list(ctx.attr.prebuilt_dependencies),
+    direct_package_ids = set.empty(),
   )
 
   for dep in ctx.attr.deps:
@@ -127,7 +129,12 @@ def gather_dep_info(ctx):
         dynamic_libraries = set.mutable_union(acc.dynamic_libraries, binfo.dynamic_libraries),
         interface_files = set.mutable_union(acc.interface_files, binfo.interface_files),
         prebuilt_dependencies = set.mutable_union(acc.prebuilt_dependencies, binfo.prebuilt_dependencies),
-        external_libraries = dicts.add(acc.external_libraries, binfo.external_libraries)
+        external_libraries = dicts.add(acc.external_libraries, binfo.external_libraries),
+        direct_prebuilt_deps = acc.direct_prebuilt_deps,
+        direct_package_ids = set.mutable_insert(
+          acc.direct_package_ids,
+          dep[HaskellLibraryInfo].package_id,
+        )
       )
     else:
       # If not a Haskell dependency, pass it through as-is to the
@@ -149,6 +156,8 @@ def gather_dep_info(ctx):
             for f in dep.files.to_list() if _is_shared_library(f)}
 
           ),
+        direct_prebuilt_deps = acc.direct_prebuilt_deps,
+        direct_package_ids = acc.direct_package_ids,
       )
 
   return acc

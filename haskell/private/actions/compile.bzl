@@ -217,13 +217,13 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
   haddock_args.add(ih_root_arg, before_each="--optghc")
 
   # Expose all prebuilt dependencies
-  for prebuilt_dep in set.to_list(dep_info.prebuilt_dependencies):
+  for prebuilt_dep in set.to_list(dep_info.direct_prebuilt_deps):
     items = ["-package", prebuilt_dep]
     args.add(items)
     haddock_args.add(items, before_each="--optghc")
 
   # Expose all bazel dependencies
-  for package in set.to_list(dep_info.package_ids):
+  for package in set.to_list(dep_info.direct_package_ids):
     items = ["-package-id", package]
     args.add(items)
     if package != my_pkg_id:
