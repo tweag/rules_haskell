@@ -199,6 +199,12 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
 
   add_mode_options(hs, args)
 
+  # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
+  # not yet in a release; plus, we still want to support older versions of
+  # GHC.  For details, see: https://phabricator.haskell.org/D4714
+  if hs.toolchain.is_darwin:
+    args.add(["-optl-Wl,-dead_strip_dylibs"])
+
   # Add import hierarchy root.
   # Note that this is not perfect, since GHC requires hs-boot files
   # to be in the same directory as the corresponding .hs file.  Thus
