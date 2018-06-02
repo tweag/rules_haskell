@@ -266,6 +266,12 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
 
   args.add(["-shared", "-dynamic"])
 
+  # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
+  # not yet in a release; plus, we still want to support older versions of
+  # GHC.  For details, see: https://phabricator.haskell.org/D4714
+  if hs.toolchain.is_darwin:
+    args.add(["-optl-Wl,-dead_strip_dylibs"])
+
   for package in set.to_list(dep_info.package_ids):
     args.add(["-package-id", package])
   for package in set.to_list(dep_info.prebuilt_dependencies):
