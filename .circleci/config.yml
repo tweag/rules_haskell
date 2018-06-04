@@ -21,6 +21,9 @@ jobs:
           name: Run tests
           command: bazel test //... --config=ci
       - run:
+          name: Test targets that must fail
+          command: tests/targets-that-must-fail/run-tests.sh
+      - run:
           name: Test REPL for libraries
           command: |
             bazel build //tests/repl-targets:hs-lib-repl
@@ -67,6 +70,10 @@ jobs:
           name: Run tests
           shell: /bin/bash -eilo pipefail
           command: bazel test //... --config=ci
+      - run:
+          name: Test targets that must fail
+          shell: /bin/bash -eilo pipefail
+          command: tests/targets-that-must-fail/run-tests.sh
 
 workflows:
   version: 2
