@@ -14,6 +14,7 @@ DefaultCompileInfo = provider(
     "header_files": "Set of header files.",
     "boot_files": "Set of boot files.",
     "source_files": "Set of files that contain Haskell modules.",
+    "extra_source_files": "A depset of non-Haskell source files.",
     "import_dirs": "Import hierarchy roots.",
     "env": "Default env vars."
   },
@@ -45,6 +46,7 @@ HaskellLibraryInfo = provider(
     "header_files": "Set of header files.",
     "boot_files": "Set of boot files.",
     "source_files": "Set of files that contain Haskell modules.",
+    "extra_source_files": "A depset of non-Haskell source files.",
   },
 )
 

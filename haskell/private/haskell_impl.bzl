@@ -36,6 +36,7 @@ def haskell_binary_impl(ctx):
     cpp_defines = ctx.file._cpp_defines,
     compiler_flags = ctx.attr.compiler_flags,
     srcs = ctx.files.srcs,
+    extra_srcs = depset(ctx.files.extra_srcs),
     main_file = ctx.file.main_file,
     main_function = ctx.attr.main_function,
   )
@@ -97,6 +98,7 @@ def haskell_library_impl(ctx):
     cpp_defines = ctx.file._cpp_defines,
     compiler_flags = ctx.attr.compiler_flags,
     srcs = ctx.files.srcs,
+    extra_srcs = depset(ctx.files.extra_srcs),
     my_pkg_id = my_pkg_id,
   )
 
@@ -160,6 +162,7 @@ def haskell_library_impl(ctx):
     header_files = c.header_files,
     boot_files = c.boot_files,
     source_files = c.source_files,
+    extra_source_files = c.extra_source_files,
   )
   target_files = depset([conf_file, cache_file])
 
