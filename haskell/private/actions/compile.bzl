@@ -156,7 +156,7 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
 
   return hs_out, chi_out
 
-def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
+def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
 
   Returns:
@@ -328,6 +328,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
       depset(header_files),
       depset(boot_files),
       set.to_depset(source_files),
+      extra_srcs,
       depset(cc.hdrs),
       set.to_depset(dep_info.package_confs),
       set.to_depset(dep_info.package_caches),
@@ -347,6 +348,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
     header_files = set.from_list(cc.hdrs + header_files),
     boot_files = set.from_list(boot_files),
     source_files = source_files,
+    extra_source_files = extra_srcs,
     import_dirs = import_dirs,
     env = dicts.add({
       "LD_LIBRARY_PATH": get_external_libs_path(set.from_list(dep_info.external_libraries.values())),
@@ -355,7 +357,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
     ),
   )
 
-def compile_binary(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, main_file, main_function):
+def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, main_file, main_function):
   """Compile a Haskell target into object files suitable for linking.
 
   Returns:
@@ -365,7 +367,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, ma
       modules: set of module names
       source_files: set of Haskell source files
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, main_file = main_file)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, main_file = main_file)
   c.args.add(["-main-is", main_function])
 
   hs.actions.run(
@@ -385,7 +387,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, ma
     source_files = c.source_files,
   )
 
-def compile_library(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, my_pkg_id):
+def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, my_pkg_id):
   """Build arguments for Haskell package build.
 
   Returns:
@@ -399,7 +401,7 @@ def compile_library(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, m
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, my_pkg_id)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, my_pkg_id)
 
   # This is absolutely required otherwise GHC doesn't know what package it's
   # creating `Name`s for to put them in Haddock interface files which then
@@ -433,5 +435,6 @@ def compile_library(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, m
     header_files = c.header_files,
     boot_files = c.boot_files,
     source_files = c.source_files,
+    extra_source_files = c.extra_source_files,
     import_dirs = c.import_dirs,
   )

@@ -139,6 +139,7 @@ def _haskell_proto_aspect_impl(target, ctx):
     file = ctx.file,
     files = struct(
       srcs = hs_files,
+      extra_srcs = depset(),
     ),
   )
 

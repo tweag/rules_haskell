@@ -78,6 +78,7 @@ def _haskell_doc_aspect_impl(target, ctx):
       set.to_depset(target[HaskellLibraryInfo].header_files),
       set.to_depset(target[HaskellLibraryInfo].boot_files),
       set.to_depset(target[HaskellLibraryInfo].source_files),
+      target[HaskellLibraryInfo].extra_source_files,
       depset([
         tools(ctx).bash,
         tools(ctx).ghc_pkg,
