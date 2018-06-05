@@ -142,10 +142,11 @@ The following flags will be used:
 """
 
 def _haskell_doctest_aspect_impl(target, ctx):
-  hs = haskell_context(ctx, ctx.rule.attr)
 
   if HaskellBuildInfo not in target:
     return []
+
+  hs = haskell_context(ctx, ctx.rule.attr)
 
   build_info = target[HaskellBuildInfo]
   lib_info = target[HaskellLibraryInfo] if HaskellLibraryInfo in target else None
