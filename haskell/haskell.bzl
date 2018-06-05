@@ -48,7 +48,7 @@ _haskell_common_attrs = {
   ),
   "extra_srcs": attr.label_list(
     allow_files = True,
-    doc = "Extra (non-Haskell) source files that will be needed at compile time (e.g. by TH).",
+    doc = "Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).",
   ),
   "deps": attr.label_list(
     doc = "List of other Haskell libraries to be linked to this target.",
