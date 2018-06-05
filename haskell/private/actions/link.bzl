@@ -274,6 +274,10 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
 
   for package in set.to_list(dep_info.package_ids):
     args.add(["-package-id", package])
+  # XXX This should be really dep_info.direct_prebuilt_deps, but since we
+  # cannot add prebuilt_dependencies to the "depends" field on package
+  # registration (see a comment there), we have to pass all transitive
+  # prebuilt_dependencies on linking like this.
   for package in set.to_list(dep_info.prebuilt_dependencies):
     args.add(["-package", package])
 

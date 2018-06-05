@@ -1,0 +1,1 @@
+workspace(name = "targets_that_must_fail")

@@ -122,10 +122,6 @@ def haskell_library_impl(ctx):
     if not set.is_member(other_modules, module):
       set.mutable_insert(exposed_modules, module)
 
-  pkg_deps = [
-    d[HaskellLibraryInfo] for d in ctx.attr.deps
-    if HaskellLibraryInfo in d
-  ]
   conf_file, cache_file = package(
     hs,
     dep_info,
@@ -135,7 +131,6 @@ def haskell_library_impl(ctx):
     exposed_modules,
     other_modules,
     my_pkg_id,
-    pkg_deps,
   )
 
   build_info = HaskellBuildInfo(

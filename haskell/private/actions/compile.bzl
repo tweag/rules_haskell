@@ -217,7 +217,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   haddock_args.add(ih_root_arg, before_each="--optghc")
 
   # Expose all prebuilt dependencies
-  for prebuilt_dep in set.to_list(dep_info.prebuilt_dependencies):
+  for prebuilt_dep in set.to_list(dep_info.direct_prebuilt_deps):
     items = ["-package", prebuilt_dep]
     args.add(items)
     haddock_args.add(items, before_each="--optghc")
