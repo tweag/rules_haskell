@@ -22,7 +22,7 @@ DefaultCompileInfo = provider(
 HaskellBuildInfo = provider(
   doc = "Common information about build process: dependencies, etc.",
   fields = {
-    "package_ids": "Set of all package ids of transitive dependencies.",
+    "package_ids": "Set of all package ids of direct (non-prebuilt) dependencies.",
     "package_confs": "Set of package .conf files.",
     "package_caches": "Set of package cache files.",
     "static_libraries": "Ordered collection of compiled library archives.",
@@ -31,7 +31,6 @@ HaskellBuildInfo = provider(
     "prebuilt_dependencies": "Transitive collection of names of wired-in Haskell dependencies.",
     "external_libraries": "Set of dynamic shared libraries needed for linking.",
     "direct_prebuilt_deps": "Set of direct prebuilt dependencies.",
-    "direct_package_ids": "Set of package ids of direct dependencies.",
   },
 )
 

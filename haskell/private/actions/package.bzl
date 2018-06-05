@@ -40,7 +40,7 @@ def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, expos
         # XXX Ideally we would like to specify here prebuilt dependencies
         # too, but we don't know their versions, and package ids without
         # versions will be rejected as unknown.
-        set.to_list(dep_info.direct_package_ids)),
+        set.to_list(dep_info.package_ids)),
   }
   hs.actions.write(
     output=registration_file,

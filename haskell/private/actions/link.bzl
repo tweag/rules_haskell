@@ -272,7 +272,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
   if hs.toolchain.is_darwin:
     args.add(["-optl-Wl,-dead_strip_dylibs"])
 
-  for package in set.to_list(dep_info.direct_package_ids):
+  for package in set.to_list(dep_info.package_ids):
     args.add(["-package-id", package])
   # XXX This should be really dep_info.direct_prebuilt_deps, but since we
   # cannot add prebuilt_dependencies to the "depends" field on package
