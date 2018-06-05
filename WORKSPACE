@@ -39,6 +39,12 @@ nixpkgs_package(
 )
 
 nixpkgs_package(
+  name = "doctest",
+  repository = "@nixpkgs",
+  attribute_path = "haskell.packages.ghc822.doctest",
+)
+
+nixpkgs_package(
     name = "taglib",
     repository = "@nixpkgs",
     attribute_path = "taglib",
