@@ -13,4 +13,5 @@ pretty_show
 text_metrics
 unix_compat
 unix_time
+wai_app_static
 zlib
