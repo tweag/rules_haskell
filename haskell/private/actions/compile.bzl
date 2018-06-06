@@ -204,6 +204,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   # GHC.  For details, see: https://phabricator.haskell.org/D4714
   if hs.toolchain.is_darwin:
     args.add(["-optl-Wl,-dead_strip_dylibs"])
+    haddock_args.add(["-optl-Wl,-dead_strip_dylibs"], before_each="--optghc")
 
   # Add import hierarchy root.
   # Note that this is not perfect, since GHC requires hs-boot files
