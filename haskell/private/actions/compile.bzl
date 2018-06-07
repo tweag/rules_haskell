@@ -41,9 +41,11 @@ def _make_ghc_defs_dump(hs, cpp_defines):
   hs.actions.run(
     inputs = [dummy_src],
     outputs = [ghc_defs_dump_raw],
+    tools = hs.extra_binaries,
     mnemonic = "HaskellCppDefines",
     executable = hs.tools.ghc,
     arguments = [args],
+    env = hs.env,
   )
 
   hs.actions.run_shell(
@@ -355,6 +357,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
       "LD_LIBRARY_PATH": get_external_libs_path(set.from_list(dep_info.external_libraries.values())),
       },
       java.env,
+      hs.env,
     ),
   )
 
@@ -374,6 +377,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compil
   hs.actions.run(
     inputs = c.inputs,
     outputs = c.outputs,
+    tools = hs.extra_binaries,
     mnemonic = "HaskellBuildBinary",
     progress_message = "HaskellBuildBinary {}".format(hs.label),
     env = c.env,
@@ -418,6 +422,7 @@ def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compi
 
   hs.actions.run(
     inputs = c.inputs,
+    tools = hs.extra_binaries,
     outputs = c.outputs,
     mnemonic = "HaskellBuildLibrary",
     progress_message = "HaskellBuildLibrary {}".format(hs.label),

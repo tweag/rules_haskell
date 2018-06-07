@@ -110,6 +110,14 @@ def _haskell_toolchain_impl(ctx):
     targets_r["c2hs"] = ctx.file.c2hs.path
     inputs.append(ctx.file.c2hs)
 
+  extra_binaries_names = set.empty()
+  for binaries in ctx.attr.extra_binaries:
+    for binary in binaries.files:
+      targets_r[binary.basename] = binary.path
+      inputs.append(binary)
+      set.mutable_insert(extra_binaries_names, binary.basename)
+
+  extra_binaries_files = []
   for target in targets_r:
     symlink = ctx.actions.declare_file(
       paths.join(visible_binaries, target)
@@ -138,6 +146,9 @@ def _haskell_toolchain_impl(ctx):
     )
     if target == "xcrunwrapper.sh":
       ar_runfiles += [symlink]
+
+    if set.is_member(extra_binaries_names, target):
+      extra_binaries_files += [symlink]
 
     set.mutable_insert(symlinks, symlink)
 
@@ -180,6 +191,7 @@ def _haskell_toolchain_impl(ctx):
       name = ctx.label.name,
       tools = struct(**tools_struct_args),
       tools_runfiles = struct(**tools_runfiles_struct_args),
+      extra_binaries = extra_binaries_files,
       mode = ctx.var["COMPILATION_MODE"],
       actions = struct(
         compile_binary = compile_binary,
@@ -222,6 +234,10 @@ _haskell_toolchain = rule(
     "is_darwin":  attr.bool(mandatory = True),
     "_crosstool": attr.label(
         default = Label("//tools/defaults:crosstool")
+    ),
+    "extra_binaries": attr.label_list(
+        doc = "Additional binaries necessary for building",
+        default = [],
     ),
   }
 )
