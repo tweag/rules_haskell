@@ -24,7 +24,7 @@ haskell_library(
 
 haskell_library(
   # Should fail because it doesn't specify "base" explicitly.
-  name = "lib-c",
+  name = "lib-cFailure",
   srcs = ["LibC.hs"],
   deps = [":lib-b"],
   prebuilt_dependencies = [],
@@ -32,10 +32,24 @@ haskell_library(
 )
 
 haskell_library(
+  name = "lib-c",
+  srcs = ["LibC.hs"],
+  deps = [":lib-b"],
+  prebuilt_dependencies = ["base"],
+)
+
+haskell_library(
   # Should fail because it doesn't specify "lib-a" explicitly.
-  name = "lib-d",
+  name = "lib-dFailure",
   srcs = ["LibD.hs"],
   deps = [":lib-b"],
   prebuilt_dependencies = ["base"],
   tags = ["manual"],
+)
+
+haskell_library(
+  name = "lib-d",
+  srcs = ["LibD.hs"],
+  deps = [":lib-b"],
+  prebuilt_dependencies = ["base", "lib-a"],
 )
