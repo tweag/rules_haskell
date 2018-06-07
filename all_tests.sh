@@ -1,11 +1,31 @@
 #!/bin/sh
+
+## Tools
+assertBuildFailure() {
+    set +e
+
+    bazel build "$1"
+    if [ $? -eq 0 ]; then
+        echo "bazel build {$1} should have failed."
+        exit 1
+    fi
+
+    set -e
+}
+
+## Setup
 set -e
+
+## Tests
 
 # Bazel tests
 bazel test //... --config=ci
 
 # Test targets that must fail
-tests/targets-that-must-fail/run-tests.sh
+for i in $(bazel query 'kind(rule, //tests/targets-that-must-fail/...) intersect attr("tags", "manual", //tests/targets-that-must-fail/...)')
+do
+   assertBuildFailure "$i"
+done
 
 # Test REPL for libraries
 bazel build //tests/repl-targets:hs-lib-repl
