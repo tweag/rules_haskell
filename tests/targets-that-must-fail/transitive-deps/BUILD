@@ -15,8 +15,12 @@ haskell_library(
   name = "lib-b",
   srcs = ["LibB.hs"],
   deps = [":lib-a"],
+  visibility = ["//visibility:private"],
   prebuilt_dependencies = ["base"],
 )
+
+## Targets that must FAILS
+# tagged as manual so bazel build //... do not fail
 
 haskell_library(
   # Should fail because it doesn't specify "base" explicitly.
@@ -24,6 +28,7 @@ haskell_library(
   srcs = ["LibC.hs"],
   deps = [":lib-b"],
   prebuilt_dependencies = [],
+  tags = ["manual"],
 )
 
 haskell_library(
@@ -32,4 +37,5 @@ haskell_library(
   srcs = ["LibD.hs"],
   deps = [":lib-b"],
   prebuilt_dependencies = ["base"],
+  tags = ["manual"],
 )
