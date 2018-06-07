@@ -79,6 +79,31 @@ jobs:
           name: Test targets that must fail
           shell: /bin/bash -eilo pipefail
           command: tests/targets-that-must-fail/run-tests.sh
+      - run:
+          name: Test REPL for libraries
+          shell: /bin/bash -eilo pipefail
+          command: |
+            bazel build //tests/repl-targets:hs-lib-repl
+            bazel-bin/tests/repl-targets/hs-lib-repl -e "foo 10"
+      - run:
+          name: Test REPL for binaries
+          shell: /bin/bash -eilo pipefail
+          command: |
+            bazel build //tests/repl-targets:hs-bin-repl
+            bazel-bin/tests/repl-targets/hs-bin-repl -e ":main"
+      - run:
+          name: Test start script
+          shell: /bin/bash -eilo pipefail
+          command: |
+            pwd=$(pwd)
+            cd $(mktemp -d)
+            $pwd/start
+
+            # Copy the bazel configuration, this is only useful for CI
+            mkdir tools
+            cp $pwd/tools/bazel.rc tools/bazel.rc
+
+            bazel fetch //... --config=ci
 
 workflows:
   version: 2
