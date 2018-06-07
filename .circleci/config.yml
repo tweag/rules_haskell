@@ -39,6 +39,11 @@ jobs:
             pwd=$(pwd)
             cd $(mktemp -d)
             $pwd/start
+
+            # Copy the bazel configuration, this is only useful for CI
+            mkdir tools
+            cp $pwd/tools/bazel.rc tools/bazel.rc
+
             bazel fetch //... --config=ci
 
   build-darwin:
