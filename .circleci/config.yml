@@ -17,29 +17,10 @@ jobs:
       - run:
           name: Build
           command: bazel build --jobs=2 //... @haskell_zlib//...
+
       - run:
           name: Run tests
-          command: bazel test //... --config=ci
-      - run:
-          name: Test targets that must fail
-          command: tests/targets-that-must-fail/run-tests.sh
-      - run:
-          name: Test REPL for libraries
-          command: |
-            bazel build //tests/repl-targets:hs-lib-repl
-            bazel-bin/tests/repl-targets/hs-lib-repl -e "foo 10"
-      - run:
-          name: Test REPL for binaries
-          command: |
-            bazel build //tests/repl-targets:hs-bin-repl
-            bazel-bin/tests/repl-targets/hs-bin-repl -e ":main"
-      - run:
-          name: Test start script
-          command: |
-            pwd=$(pwd)
-            cd $(mktemp -d)
-            $pwd/start
-            bazel fetch //... --config=ci
+          command: ./all_tests.sh
 
   build-darwin:
     macos:
@@ -69,11 +50,7 @@ jobs:
       - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
-          command: bazel test //... --config=ci
-      - run:
-          name: Test targets that must fail
-          shell: /bin/bash -eilo pipefail
-          command: tests/targets-that-must-fail/run-tests.sh
+          command: ./all_tests.sh
 
 workflows:
   version: 2

@@ -22,11 +22,6 @@ nixpkgs_git_repository(
   revision = "7c3dc2f53fc837be79426f11c9133f73d15a05c4",
 )
 
-local_repository(
-  name = "targets_that_must_fail",
-  path = "tests/targets-that-must-fail",
-)
-
 nixpkgs_package(
   name = "ghc",
   repository = "@nixpkgs",
