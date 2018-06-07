@@ -11,9 +11,12 @@ jobs:
           name: System dependencies
           command: |
             apk --no-progress update
-            apk --no-progress add bash ca-certificates
+            apk --no-progress add bash ca-certificates zip g++ unzip python
             nix-channel --update
-            nix-env -iA nixpkgs.bazel nixpkgs.binutils nixpkgs.python nixpkgs.go
+            nix-env -iA nixpkgs.binutils nixpkgs.python nixpkgs.go
+            wget https://github.com/bazelbuild/bazel/releases/download/0.14.0/bazel-0.14.0-installer-linux-x86_64.sh
+            chmod +x bazel-0.14.0-installer-linux-x86_64.sh
+            ./bazel-0.14.0-installer-linux-x86_64.sh
       - run:
           name: Build
           command: bazel build --jobs=2 //... @haskell_zlib//...
