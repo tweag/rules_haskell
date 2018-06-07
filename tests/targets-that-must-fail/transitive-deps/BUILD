@@ -19,8 +19,11 @@ haskell_library(
   prebuilt_dependencies = ["base"],
 )
 
-## Targets that must FAILS
-# tagged as manual so bazel build //... do not fail
+# Targets that must FAIL. These are tagged as manual so that
+#
+# $ bazel build //...
+#
+# does not fail.
 
 haskell_library(
   # Should fail because it doesn't specify "base" explicitly.
