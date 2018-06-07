@@ -22,7 +22,7 @@ set -e
 bazel test //... --config=ci
 
 # Test targets that must fail
-for i in $(bazel query 'kind(rule, //tests/targets-that-must-fail/...) intersect attr("tags", "manual", //tests/targets-that-must-fail/...)')
+for i in $(bazel query 'kind(rule, //tests/failures/...) intersect attr("tags", "manual", //tests/failures/...)')
 do
    assertBuildFailure "$i"
 done
