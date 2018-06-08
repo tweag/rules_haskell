@@ -27,6 +27,7 @@ def haskell_context(ctx, attr=None):
     toolchain = toolchain,
     tools = toolchain.tools,
     tools_runfiles = toolchain.tools_runfiles,
+    extra_binaries = toolchain.extra_binaries,
     src_root = src_root,
     env = env,
     mode = ctx.var["COMPILATION_MODE"],
