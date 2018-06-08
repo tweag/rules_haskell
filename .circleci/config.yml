@@ -20,7 +20,7 @@ jobs:
 
       - run:
           name: Run tests
-          command: ./all_tests.sh
+          command: ./run_tests.sh
 
   build-darwin:
     macos:
@@ -50,7 +50,7 @@ jobs:
       - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
-          command: ./all_tests.sh
+          command: ./run_tests.sh
 
 workflows:
   version: 2
