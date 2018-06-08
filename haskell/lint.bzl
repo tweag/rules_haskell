@@ -78,10 +78,6 @@ def _haskell_lint_aspect_impl(target, ctx):
     target_unique_name(hs, "lint-log")
   )
 
-  lint_logs = _collect_lint_logs(
-    ctx.rule.attr.deps
-  )
-
   ctx.actions.run_shell(
     inputs = depset(transitive = [
       depset(sources),
@@ -109,7 +105,7 @@ def _haskell_lint_aspect_impl(target, ctx):
   )
 
   return [HaskellLintInfo(
-    outputs = set.mutable_insert(lint_logs, lint_log)
+    outputs = set.singleton(lint_log)
   )]
 
 haskell_lint_aspect = aspect(
@@ -181,10 +177,6 @@ def _haskell_doctest_aspect_impl(target, ctx):
     target_unique_name(hs, "doctest-log")
   )
 
-  lint_logs = _collect_lint_logs(
-    ctx.rule.attr.deps
-  )
-
   ctx.actions.run_shell(
     inputs = depset(transitive = [
       depset(sources),
@@ -209,7 +201,7 @@ def _haskell_doctest_aspect_impl(target, ctx):
   )
 
   return [HaskellLintInfo(
-    outputs = set.mutable_insert(lint_logs, lint_log)
+    outputs = set.singleton(lint_log)
   )]
 
 haskell_doctest_aspect = aspect(
