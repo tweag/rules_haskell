@@ -111,11 +111,10 @@ def _haskell_toolchain_impl(ctx):
     inputs.append(ctx.file.c2hs)
 
   extra_binaries_names = set.empty()
-  for binaries in ctx.attr.extra_binaries:
-    for binary in binaries.files:
-      targets_r[binary.basename] = binary.path
-      inputs.append(binary)
-      set.mutable_insert(extra_binaries_names, binary.basename)
+  for binary in ctx.files.extra_binaries:
+    targets_r[binary.basename] = binary.path
+    inputs.append(binary)
+    set.mutable_insert(extra_binaries_names, binary.basename)
 
   extra_binaries_files = []
   for target in targets_r:
