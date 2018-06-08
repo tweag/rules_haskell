@@ -39,9 +39,8 @@ def _make_ghc_defs_dump(hs, cpp_defines):
   ])
 
   hs.actions.run(
-    inputs = [dummy_src],
+    inputs = [dummy_src] + hs.extra_binaries,
     outputs = [ghc_defs_dump_raw],
-    tools = hs.extra_binaries,
     mnemonic = "HaskellCppDefines",
     executable = hs.tools.ghc,
     arguments = [args],
@@ -375,9 +374,8 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compil
   c.args.add(["-main-is", main_function])
 
   hs.actions.run(
-    inputs = c.inputs,
+    inputs = c.inputs + hs.extra_binaries,
     outputs = c.outputs,
-    tools = hs.extra_binaries,
     mnemonic = "HaskellBuildBinary",
     progress_message = "HaskellBuildBinary {}".format(hs.label),
     env = c.env,
@@ -421,8 +419,7 @@ def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compi
   c.haddock_args.add(unit_id_args, before_each="--optghc")
 
   hs.actions.run(
-    inputs = c.inputs,
-    tools = hs.extra_binaries,
+    inputs = c.inputs + hs.extra_binaries,
     outputs = c.outputs,
     mnemonic = "HaskellBuildLibrary",
     progress_message = "HaskellBuildLibrary {}".format(hs.label),
