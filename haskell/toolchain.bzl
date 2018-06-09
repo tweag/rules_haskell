@@ -77,7 +77,7 @@ def _haskell_toolchain_impl(ctx):
   targets_r = {}
   targets_r.update({
       "ar": ctx.host_fragments.cpp.ar_executable,
-      "gcc": ctx.host_fragments.cpp.compiler_executable,
+      "cc": ctx.host_fragments.cpp.compiler_executable,
       "ld": ctx.host_fragments.cpp.ld_executable,
       "nm": ctx.host_fragments.cpp.nm_executable,
       "cpp": ctx.host_fragments.cpp.preprocessor_executable,

@@ -84,6 +84,7 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
   hs_out = declare_compiled(hs, hsc_file, ".hs", directory=hsc_dir_raw)
   args.add([hsc_file.path, "-o", hs_out.path])
 
+  args.add(["-c", hs.tools.cc])
   args.add(["--cflag=" + f for f in cc.cpp_flags])
   args.add(["--cflag=" + f for f in cc.include_args])
   args.add("-I{0}".format(ghc_defs_dump.dirname))
@@ -92,7 +93,7 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
   hs.actions.run(
     inputs = depset(transitive = [
       depset(cc.hdrs),
-      depset([hs.tools.gcc]),
+      depset([hs.tools.cc]),
       depset([hsc_file, ghc_defs_dump]),
     ]),
     outputs = [hs_out],
@@ -127,7 +128,7 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
   args.add([chs_file.path, "-o", hs_out.path])
 
   args.add(["-C-E"])
-  args.add(["--cpp", hs.tools.gcc.path])
+  args.add(["--cpp", hs.tools.cc.path])
   args.add(["-C-I{0}".format(ghc_defs_dump.dirname)])
   args.add(["-C-include{0}".format(ghc_defs_dump.basename)])
   args.add(["-C" + x for x in cc.cpp_flags])
@@ -144,7 +145,7 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
   hs.actions.run(
     inputs = depset(transitive = [
       depset(cc.hdrs),
-      depset([hs.tools.gcc]),
+      depset([hs.tools.cc]),
       depset([chs_file, ghc_defs_dump]),
       depset(chi_files),
     ]),
@@ -342,7 +343,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
       set.to_depset(dep_info.dynamic_libraries),
       depset(dep_info.external_libraries.values()),
       java.inputs,
-      depset([hs.tools.gcc]),
+      depset([hs.tools.cc]),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + object_dyn_files + interface_files,
     objects_dir = objects_dir,
