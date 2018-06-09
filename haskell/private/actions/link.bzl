@@ -4,7 +4,7 @@ load(":private/mode.bzl", "add_mode_options")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/tools.bzl", "so_extension")
-load(":private/utils.bzl", "get_lib_name")
+load(":private/path_utils.bzl", "get_lib_name")
 load("@bazel_skylib//:lib.bzl", "paths")
 
 def _backup_path(target):

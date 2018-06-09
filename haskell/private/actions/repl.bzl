@@ -16,16 +16,13 @@ load(":private/providers.bzl",
 )
 
 load(":private/path_utils.bzl",
-     "target_unique_name",
+     "get_lib_name",
      "get_external_libs_path",
+     "target_unique_name",
 )
 
 load(":private/set.bzl",
      "set",
-)
-
-load(":private/utils.bzl",
-     "get_lib_name",
 )
 
 def build_haskell_repl(
