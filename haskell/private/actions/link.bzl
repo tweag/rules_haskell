@@ -3,7 +3,6 @@
 load(":private/mode.bzl", "add_mode_options")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":private/tools.bzl", "so_extension")
 load(":private/path_utils.bzl", "get_lib_name")
 load("@bazel_skylib//:lib.bzl", "paths")
 
@@ -223,6 +222,18 @@ def _infer_rpaths(target, solibs):
 
   return r
 
+def _so_extension(hs):
+  """Returns the extension for shared libraries.
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    string of extension.
+  """
+  return "dylib" if hs.toolchain.is_darwin else "so"
+
+
 def link_library_static(hs, dep_info, object_files, my_pkg_id):
   """Link a static library for the package using given object files.
 
@@ -256,7 +267,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
     "lib{0}-ghc{1}.{2}".format(
       "HS" + pkg_id.to_string(my_pkg_id),
       hs.toolchain.version,
-      so_extension(hs),
+      _so_extension(hs),
     )
   )
 

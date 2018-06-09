@@ -3,10 +3,6 @@
 load (":private/context.bzl", "haskell_context")
 load (":private/path_utils.bzl", "module_name")
 load (":private/set.bzl", "set")
-load(":private/tools.bzl",
-  "get_build_tools_path",
-  "tools",
-)
 load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",

@@ -6,10 +6,6 @@ load(":private/set.bzl", "set")
 load(":private/path_utils.bzl",
      "target_unique_name"
 )
-load(":private/tools.bzl",
-  "get_build_tools_path",
-  "tools",
-)
 load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",

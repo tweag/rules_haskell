@@ -6,7 +6,6 @@ load(":private/providers.bzl",
   "CcSkylarkApiProviderHacked",
 )
 load(":private/set.bzl", "set")
-load(":private/tools.bzl", "tools")
 load("@bazel_skylib//:lib.bzl", "dicts", "paths")
 
 def _is_shared_library(f):
