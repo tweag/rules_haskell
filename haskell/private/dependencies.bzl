@@ -1,3 +1,4 @@
+load(":private/path_utils.bzl", "ln")
 load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellBinaryInfo",
@@ -47,45 +48,9 @@ def _mangle_solib(ctx, label, solib, preserve_name):
   qualifier = '/'.join(components).replace('_', '_U').replace('/', '_S')
   qualsolib = ctx.actions.declare_file("lib" + qualifier + "_" + solib.basename)
 
-  # NOTE We only have relative paths at our disposal here, so we must
-  # specify the link target as a path that is relative to the link location.
-  # This allows us to avoid the $(realpath ...) hack and makes the resulting
-  # directory tree movable (at least in theory).
-  relative_solib = _truly_relativize(solib.path, qualsolib.dirname)
+  ln(ctx, solib, qualsolib)
 
-  ctx.actions.run(
-    inputs = [solib],
-    outputs = [qualsolib],
-    mnemonic = "Symlink",
-    executable = tools(ctx).ln,
-    arguments = ["-s", relative_solib, qualsolib.path],
-  )
   return qualsolib
-
-def _truly_relativize(target, relative_to):
-  """Return a relative path to `target` from `relative_to`.
-
-  Args:
-    target: string, path to directory we want to get relative path to.
-    relative_to: string, path to directory from which we are starting.
-
-  Returns:
-    string: relative path to `target`.
-  """
-  t_pieces = target.split('/')
-  r_pieces = relative_to.split('/')
-  common_part_len = 0
-
-  for tp, rp in zip(t_pieces, r_pieces):
-    if tp == rp:
-      common_part_len += 1
-    else:
-      break
-
-  result = [".."] * (len(r_pieces) - common_part_len)
-  result += t_pieces[common_part_len:]
-
-  return "/".join(result)
 
 def gather_dep_info(ctx):
   """Collapse dependencies into a single `HaskellBuildInfo`.
