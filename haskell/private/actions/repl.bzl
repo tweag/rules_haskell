@@ -18,7 +18,6 @@ load(":private/providers.bzl",
 load(":private/path_utils.bzl",
      "target_unique_name",
      "get_external_libs_path",
-     "import_hierarchy_root",
 )
 
 load(":private/set.bzl",

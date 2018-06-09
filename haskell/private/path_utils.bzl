@@ -88,25 +88,6 @@ def declare_compiled(hs, src, ext, directory=None):
   fp_with_dir = fp if directory == None else paths.join(directory, fp)
   return hs.actions.declare_file(fp_with_dir)
 
-def import_hierarchy_root(ctx):
-  """Return relative path to root of module hierarchy.
-
-  Args:
-    ctx: Rule context.
-
-  Returns:
-    string: Relative path to root of module hierarchy.
-  """
-  return paths.join(
-    ctx.label.workspace_root,
-    ctx.label.package,
-    # Since the src_strip_prefix attribute is always present in rule
-    # attributes, if it's not there, the function is called from aspect
-    # implementation and so we can access ctx.rule.attr.src_strip_prefix.
-    ctx.attr.src_strip_prefix if hasattr(ctx.attr, "src_strip_prefix")
-                              else ctx.rule.attr.src_strip_prefix
-  )
-
 def get_external_libs_path(libs):
   """Return a String value for using as LD_LIBRARY_PATH or similar.
 
