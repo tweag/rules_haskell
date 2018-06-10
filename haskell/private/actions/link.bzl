@@ -42,11 +42,11 @@ module BazelDummy () where
 """)
 
   dummy_static_lib = hs.actions.declare_file("libempty.a")
-  hs.actions.run(
+  hs.toolchain.actions.run_ghc(
+    hs,
     inputs = [dummy_input],
     outputs = [dummy_object],
     mnemonic = "HaskellDummyObjectGhc",
-    executable = hs.tools.ghc,
     arguments = ["-c", dummy_input.path],
   )
 
@@ -165,7 +165,8 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
     for rpath in set.to_list(_infer_rpaths(executable, solibs)):
       args.add(["-optl-Wl,-rpath," + rpath])
 
-  hs.actions.run(
+  hs.toolchain.actions.run_ghc(
+    hs,
     inputs = depset(transitive = [
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.dynamic_libraries),
@@ -176,7 +177,6 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
     ]),
     outputs = [compile_output],
     mnemonic = "HaskellLinkBinary",
-    executable = hs.tools.ghc,
     arguments = [args],
   )
 
@@ -321,7 +321,8 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
 
   args.add(["-o", dynamic_library_tmp.path])
 
-  hs.actions.run(
+  hs.toolchain.actions.run_ghc(
+    hs,
     inputs = depset(transitive = [
       depset(object_files),
       set.to_depset(dep_info.package_caches),
@@ -330,8 +331,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
     ]),
     outputs = [dynamic_library_tmp],
     mnemonic = "HaskellLinkDynamicLibrary",
-    executable = hs.tools.ghc,
-    arguments = [args]
+    arguments = [args],
   )
 
   return dynamic_library

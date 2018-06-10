@@ -15,6 +15,42 @@ load("@bazel_skylib//:lib.bzl", "paths")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 
+def _run_ghc(hs, inputs, outputs, mnemonic, arguments, env = None, progress_message = None):
+  if not env:
+    env = hs.env
+
+  args = hs.actions.args()
+  args.add([
+    # GHC uses C compiler for assemly, linking and preprocessing as well.
+    "-pgma", hs.tools.cc.path,
+    "-pgmc", hs.tools.cc.path,
+    "-pgml", hs.tools.cc.path,
+    "-pgmP", hs.tools.cc.path,
+    # Setting -pgm* flags explicitly has the unfortunate side effect
+    # of resetting any program flags in the GHC settings file. So we
+    # restore them here. See
+    # https://ghc.haskell.org/trac/ghc/ticket/7929.
+    "-optc-fno-stack-protector",
+    "-optP-E", "-optP-undef", "-optP-traditional",
+  ])
+
+  if type(inputs) == type(depset()):
+    inputs = depset([hs.tools.cc], transitive = [inputs])
+  else:
+    inputs += [hs.tools.cc]
+
+  hs.actions.run(
+    inputs = inputs,
+    outputs = outputs,
+    executable = hs.tools.ghc,
+    mnemonic = mnemonic,
+    progress_message = progress_message,
+    env = env,
+    arguments = [args] + arguments,
+  )
+
+  return args
+
 def _haskell_toolchain_impl(ctx):
   # Check that we have all that we want.
   for tool in _GHC_BINARIES:
@@ -196,6 +232,7 @@ def _haskell_toolchain_impl(ctx):
         link_library_dynamic = link_library_dynamic,
         link_library_static = link_library_static,
         package = package,
+        run_ghc = _run_ghc,
       ),
       # All symlinks are guaranteed to be in the same directory so we just
       # provide directory name of the first one (the collection cannot be
