@@ -18,6 +18,7 @@ load(":private/providers.bzl",
 load(":private/path_utils.bzl",
      "get_lib_name",
      "get_external_libs_path",
+     "ln",
      "target_unique_name",
 )
 
@@ -140,19 +141,13 @@ def build_haskell_repl(
     is_executable = True,
   )
 
-  relative_target = paths.relativize(repl_file.path, output.dirname)
-
-  hs.actions.run(
-    inputs = depset(transitive = [
-      # XXX We create a symlink here because we need to force
-      # hs.tools.ghci and ghci_script and the best way to do that is
-      # to use hs.actions.run. That action, it turn must produce
-      # a result, so using ln seems to be the only sane choice.
+  # XXX We create a symlink here because we need to force
+  # hs.tools.ghci and ghci_script and the best way to do that is
+  # to use hs.actions.run. That action, it turn must produce
+  # a result, so using ln seems to be the only sane choice.
+  extra_inputs = depset(
+    transitive = [
       depset([hs.tools.ghci, ghci_repl_script, repl_file]),
       target_files,
-    ]),
-    outputs = [output],
-    mnemonic = "Symlink",
-    executable = hs.tools.ln,
-    arguments = ["-s", relative_target, output.path],
-  )
+    ])
+  ln(hs, repl_file, output, extra_inputs)

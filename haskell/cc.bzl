@@ -12,7 +12,7 @@ load(":private/providers.bzl",
 
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
-load(":private/tools.bzl", "tools")
+load(":private/path_utils.bzl", "ln")
 
 CcInteropInfo = provider(
   doc = "Information needed for interop with cc rules.",
@@ -178,14 +178,7 @@ def _cc_haskell_import(ctx):
   if HaskellBinaryInfo in ctx.attr.dep:
     bin = ctx.attr.dep[HaskellBinaryInfo].binary
     dyn_lib = ctx.actions.declare_file("lib{0}.so".format(bin.basename))
-    relative_bin = paths.relativize(bin.path, dyn_lib.dirname)
-    ctx.actions.run(
-      inputs = [bin],
-      outputs = [dyn_lib],
-      mnemonic = "Symlink",
-      executable = tools(ctx).ln,
-      arguments = ["-s", relative_bin, dyn_lib.path],
-    )
+    ln(ctx, bin, dyn_lib)
     set.mutable_insert(dyn_libs, dyn_lib)
 
   return [

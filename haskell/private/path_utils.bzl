@@ -140,3 +140,52 @@ def _rel_path_to_module(hs, f):
     path = paths.relativize(path, hs.genfiles_dir.path)
 
   return paths.relativize(path, hs.src_root)
+
+# TODO Consider merging with paths.relativize. See
+# https://github.com/bazelbuild/bazel-skylib/pull/44.
+def _truly_relativize(target, relative_to):
+  """Return a relative path to `target` from `relative_to`.
+
+  Args:
+    target: string, path to directory we want to get relative path to.
+    relative_to: string, path to directory from which we are starting.
+
+  Returns:
+    string: relative path to `target`.
+  """
+  t_pieces = target.split('/')
+  r_pieces = relative_to.split('/')
+  common_part_len = 0
+
+  for tp, rp in zip(t_pieces, r_pieces):
+    if tp == rp:
+      common_part_len += 1
+    else:
+      break
+
+  result = [".."] * (len(r_pieces) - common_part_len)
+  result += t_pieces[common_part_len:]
+
+  return "/".join(result)
+
+def ln(hs, target, link, extra_inputs = depset()):
+  """Create a symlink to target.
+
+  Args:
+    hs: Haskell context.
+    extra_inputs: extra phony dependencies of symlink.
+
+  Returns:
+    None
+  """
+  relative_target = _truly_relativize(target.path, link.dirname)
+  hs.actions.run_shell(
+    inputs = depset([target], transitive = [extra_inputs]),
+    outputs = [link],
+    mnemonic = "Symlink",
+    command = "ln -s {target} {link}".format(
+      target = relative_target,
+      link = link.path,
+    ),
+    use_default_shell_env = True,
+  )
