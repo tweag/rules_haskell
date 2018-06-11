@@ -2,6 +2,10 @@ load("//hazel_base_repository:hazel_base_repository.bzl",
      "hazel_base_repository",
      "symlink_and_invoke_hazel")
 
+load("@bazel_tools//tools/build_defs/repo:git.bzl",
+     "new_git_repository",
+)
+
 def _cabal_haskell_repository_impl(ctx):
   pkg = "{}-{}".format(ctx.attr.package_name, ctx.attr.package_version)
   url = "https://hackage.haskell.org/package/{}.tar.gz".format(pkg)
@@ -156,7 +160,8 @@ def hazel_custom_package_github(
     github_repo,
     repo_sha,
     strip_prefix=None,
-    archive_sha256=None):
+    archive_sha256=None,
+    clone_via_ssh=False):
   """Generate a repo for a Haskell package coming from a GitHub repo.
 
   Args:
@@ -167,20 +172,19 @@ def hazel_custom_package_github(
     strip_prefix: strip this path prefix from directory repo, useful when a
                   repo contains several packages.
     archive_sha256: hash of the actual archive to download.
+    clone_via_ssh: whether to clone the repo using SSH (useful for private
+                   repos).
   """
-  url = "https://github.com/{0}/{1}/archive/{2}.tar.gz".format(
-    github_user,
-    github_repo,
-    repo_sha,
-  )
+
   fixed_package_name = _fixup_package_name(package_name)
-  strip_prefix_combined = "{0}-{1}".format(github_repo, repo_sha)
-  if strip_prefix:
-    strip_prefix_combined += "/" + strip_prefix
-  native.new_http_archive(
+  build_file = "//third_party/haskell:BUILD.{0}".format(fixed_package_name)
+  url = "https://github.com/{0}/{1}".format(github_user, github_repo)
+  ssh_url = "git@github.com:{0}/{1}".format(github_user, github_repo)
+
+  new_git_repository(
     name = "haskell_{0}".format(fixed_package_name),
-    build_file = "third_party/haskell/BUILD.{0}".format(fixed_package_name),
-    sha256 = archive_sha256,
-    strip_prefix = strip_prefix_combined,
-    urls = [url],
+    remote = ssh_url if clone_via_ssh else url,
+    build_file = build_file,
+    commit = repo_sha,
+    strip_prefix = strip_prefix,
   )
