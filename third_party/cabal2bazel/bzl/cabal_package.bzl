@@ -370,9 +370,12 @@ def cabal_haskell_package(
         )
         elibs_targets.append(":" + elib_target_name)
 
+      hidden_modules = [m for m in lib.libBuildInfo.otherModules if not m.startswith("Paths_")]
+
       haskell_library(
           name = name,
           srcs = select(srcs),
+          hidden_modules = hidden_modules,
           version = description.package.pkgVersion,
           deps = select(deps) + elibs_targets,
           visibility = ["//visibility:public"],
