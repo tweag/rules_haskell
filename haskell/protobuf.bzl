@@ -6,7 +6,6 @@ load(":private/providers.bzl",
   "HaskellProtobufInfo",
 )
 load("@bazel_skylib//:lib.bzl", "dicts", "paths")
-load(":private/tools.bzl", "protobuf_tools")
 load(":private/path_utils.bzl", "target_unique_name")
 load(":private/haskell_impl.bzl",
   _haskell_library_impl = "haskell_library_impl",
@@ -49,6 +48,7 @@ def _proto_path(proto):
       paths.join(proto.root.path, proto.owner.workspace_root))
 
 def _haskell_proto_aspect_impl(target, ctx):
+  pb = ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].tools
 
   args = ctx.actions.args()
 
@@ -57,9 +57,7 @@ def _haskell_proto_aspect_impl(target, ctx):
     ctx.label.package,
   )
 
-  args.add(["--plugin=protoc-gen-haskell=" +
-            protobuf_tools(ctx).plugin.path,
-  ])
+  args.add("--plugin=protoc-gen-haskell=" + pb.plugin.path)
 
   hs_files = []
   inputs = []
@@ -101,13 +99,10 @@ def _haskell_proto_aspect_impl(target, ctx):
   ])
 
   ctx.actions.run(
-    inputs = depset([
-      protobuf_tools(ctx).protoc,
-      protobuf_tools(ctx).plugin,
-    ] + inputs),
+    inputs = depset([pb.protoc, pb.plugin] + inputs),
     outputs = hs_files,
     mnemonic = "HaskellProtoc",
-    executable = protobuf_tools(ctx).protoc,
+    executable = pb.protoc,
     arguments = [args],
   )
 

@@ -1,19 +1,13 @@
 """Haddock support"""
 
+load (":private/context.bzl", "haskell_context")
 load (":private/path_utils.bzl", "module_name")
 load (":private/set.bzl", "set")
-
-load(":private/tools.bzl",
-  "get_build_tools_path",
-  "tools",
-)
-
 load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",
      "HaddockInfo",
 )
-
 load("@bazel_skylib//:lib.bzl", "paths")
 
 def _get_haddock_path(package_id):
@@ -30,6 +24,8 @@ def _get_haddock_path(package_id):
 def _haskell_doc_aspect_impl(target, ctx):
   if HaskellBuildInfo not in target or HaskellLibraryInfo not in target:
     return []
+
+  hs = haskell_context(ctx, ctx.rule.attr)
 
   package_id = target[HaskellLibraryInfo].package_id
   html_dir_raw = "doc-{0}".format(package_id)
@@ -80,9 +76,9 @@ def _haskell_doc_aspect_impl(target, ctx):
       set.to_depset(target[HaskellLibraryInfo].source_files),
       target[HaskellLibraryInfo].extra_source_files,
       depset([
-        tools(ctx).bash,
-        tools(ctx).ghc_pkg,
-        tools(ctx).haddock,
+        hs.tools.bash,
+        hs.tools.ghc_pkg,
+        hs.tools.haddock,
       ]),
     ]),
     outputs = [haddock_file, html_dir],
@@ -94,9 +90,7 @@ def _haskell_doc_aspect_impl(target, ctx):
       args,
       target[HaskellLibraryInfo].haddock_args,
     ],
-    env = {
-      "PATH": get_build_tools_path(ctx),
-    },
+    env = hs.env,
   )
 
   transitive_html.update({ package_id: html_dir })
@@ -121,6 +115,7 @@ haskell_doc_aspect = aspect(
 )
 
 def _haskell_doc_rule_impl(ctx):
+  hs = haskell_context(ctx)
 
   # Reject cases when number of dependencies is 0.
 
@@ -162,8 +157,8 @@ def _haskell_doc_rule_impl(ctx):
 
     ctx.actions.run_shell(
       inputs = [
-        tools(ctx).cp,
-        tools(ctx).mkdir,
+        hs.tools.cp,
+        hs.tools.mkdir,
         html_dir,
       ],
       outputs = [output_dir],
@@ -230,7 +225,7 @@ def _haskell_doc_rule_impl(ctx):
     ]),
     outputs = static_haddock_outputs,
     mnemonic = "HaskellHaddockIndex",
-    executable = tools(ctx).haddock,
+    executable = hs.tools.haddock,
     arguments = [args],
   )
 

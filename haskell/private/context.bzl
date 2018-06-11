@@ -10,10 +10,15 @@ def haskell_context(ctx, attr=None):
   if not attr:
     attr = ctx.attr
 
+  if hasattr(attr, "src_strip_prefix"):
+    src_strip_prefix = attr.src_strip_prefix
+  else:
+    src_strip_prefix = ""
+
   src_root = paths.join(
     ctx.label.workspace_root,
     ctx.label.package,
-    attr.src_strip_prefix,
+    src_strip_prefix,
   )
 
   env = {

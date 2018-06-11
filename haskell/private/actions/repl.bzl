@@ -1,9 +1,5 @@
 """GHCi REPL support"""
 
-load(":private/tools.bzl",
-     "tools",
-)
-
 load("@bazel_skylib//:lib.bzl",
      "paths",
      "shell",
