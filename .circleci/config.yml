@@ -13,14 +13,13 @@ jobs:
             apk --no-progress update
             apk --no-progress add bash ca-certificates
             nix-channel --update
-            nix-env -iA nixpkgs.bazel nixpkgs.binutils nixpkgs.python nixpkgs.go
       - run:
           name: Build
-          command: bazel build --jobs=2 //... @haskell_zlib//...
+          command: nix-shell --command "bazel build --jobs=2 //... @haskell_zlib//..."
 
       - run:
           name: Run tests
-          command: ./run_tests.sh
+          command: nix-shell --command "./run_tests.sh"
 
   build-darwin:
     macos:
