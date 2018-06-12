@@ -183,7 +183,15 @@ def _cc_haskell_import(ctx):
 
   return [
     DefaultInfo(
-      files = set.to_depset(dyn_libs)
+      files = set.to_depset(dyn_libs),
+      default_runfiles = ctx.runfiles(
+        files = ctx.attr.dep.default_runfiles.files.to_list(),
+        collect_default = True,
+      ),
+      data_runfiles = ctx.runfiles(
+        files = ctx.attr.dep.data_runfiles.files.to_list(),
+        collect_data = True,
+      ),
     )
   ]
 
