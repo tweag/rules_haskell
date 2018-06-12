@@ -10,9 +10,9 @@
 -- Additionally, this is not yet supported by the REPL.
 module Bazel.Runfiles
     ( Runfiles
-    , getRunfiles
+    , create
     , rlocation
-    , runfilesEnv
+    , env
     ) where
 
 import System.Directory (doesDirectoryExist)
@@ -32,23 +32,25 @@ rlocation (Runfiles f) g = f </> g
 -- | Set environmental variables for locating the given runfiles directory.
 --
 -- Note that Bazel will set these automatically when it runs tests
--- (@bazel test@).
-runfilesEnv :: Runfiles -> [(String, String)]
-runfilesEnv (Runfiles f) = [(runfilesDirEnv, f)]
+-- (@bazel test@).  However, it will not automatically set them
+-- during "bazel run"; thus, non-test binaries should set the
+-- environment manually for processes that they call.
+env :: Runfiles -> [(String, String)]
+env (Runfiles f) = [(runfilesDirEnv, f)]
 
 runfilesDirEnv :: String
 runfilesDirEnv = "RUNFILES_DIR"
 
 -- | Locate the runfiles directory for the current binary.
 --
--- This behaves according ot the specification in:
+-- This behaves according to the specification in:
 -- https://docs.google.com/document/d/e/2PACX-1vSDIrFnFvEYhKsCMdGdD40wZRBX3m3aZ5HhVj4CtHPmiXKDCxioTUbYsDydjKtFDAzER5eg7OjJWs3V/pub
 --
 -- Note: it does not currently support the @RUNFILES_MANIFEST@ environmental
 -- variable.  However, that's only necessary on Windows, which rules_haskell
 -- doesn't support yet anyway.
-getRunfiles :: IO Runfiles
-getRunfiles = do
+create :: IO Runfiles
+create = do
     exeRunfilesPath <- fmap (<.> "runfiles") getExecutablePath
     exeRunfilesExists <- doesDirectoryExist exeRunfilesPath
     if exeRunfilesExists
