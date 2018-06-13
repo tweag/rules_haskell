@@ -133,6 +133,60 @@ The following flags will be used:
 * `-Wredundant-constraints`
 """
 
+def _doctest_toolchain_impl(ctx):
+  return platform_common.ToolchainInfo(
+      name = ctx.label.name,
+      doctest = ctx.files.doctest)
+
+_doctest_toolchain = rule(
+  _doctest_toolchain_impl,
+  attrs = {
+    "doctest": attr.label(
+      doc = "Doctest executable",
+      cfg = "host",
+      executable = True,
+      single_file = True,
+      mandatory = True,
+    ),
+  }
+)
+
+def haskell_doctest_toolchain(name, doctest, **kwargs):
+  """Declare a toolchain for the `haskell_doctest` rule.
+
+  You need at least one of these declared somewhere in your `BUILD`files
+  for `haskell_doctest` to work.  Once declared, you then need to *register*
+  the toolchain using `register_toolchain` in your `WORKSPACE` file.
+
+  Example:
+
+    In a `BUILD` file:
+
+    ```bzl
+    haskell_doctest_toolchain(
+      name = "doctest",
+      doctest = "@doctest//:bin",
+    )
+    ```
+    And in `WORKSPACE`:
+    ```
+    register_toolchain("//:doctest")
+    ```
+  """
+  impl_name = name + "-impl"
+  _doctest_toolchain(
+      name = impl_name,
+      doctest = doctest,
+      visibility = ["//visibility:public"],
+      **kwargs
+  )
+
+  native.toolchain(
+      name = name,
+      toolchain_type = "@io_tweag_rules_haskell//haskell:doctest-toolchain",
+      toolchain = ":" + impl_name,
+  )
+
 def _haskell_doctest_aspect_impl(target, ctx):
 
   if HaskellBuildInfo not in target:
@@ -173,6 +227,8 @@ def _haskell_doctest_aspect_impl(target, ctx):
     target_unique_name(hs, "doctest-log")
   )
 
+  toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:doctest-toolchain"]
+
   ctx.actions.run_shell(
     inputs = depset(transitive = [
       depset(sources),
@@ -181,17 +237,16 @@ def _haskell_doctest_aspect_impl(target, ctx):
       set.to_depset(build_info.interface_files),
       set.to_depset(build_info.dynamic_libraries),
       depset(build_info.external_libraries.values()),
-      depset([
-        hs.tools.doctest,
-        hs.tools.cat,
-      ]),
+      depset(
+        toolchain.doctest
+        + [hs.tools.cat, hs.tools.ghc]),
     ]),
     outputs = [lint_log],
     mnemonic = "HaskellDoctest",
     progress_message = "HaskellDoctest {}".format(ctx.label),
     command = """
-    doctest "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
-    """.format(output = lint_log.path),
+    {doctest} "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
+    """.format(doctest = toolchain.doctest[0].path, output = lint_log.path),
     arguments = [args],
     env = hs.env,
   )
@@ -203,7 +258,10 @@ def _haskell_doctest_aspect_impl(target, ctx):
 haskell_doctest_aspect = aspect(
   _haskell_doctest_aspect_impl,
   attr_aspects = ["deps"],
-  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+  toolchains = [
+      "@io_tweag_rules_haskell//haskell:toolchain",
+      "@io_tweag_rules_haskell//haskell:doctest-toolchain",
+  ],
 )
 
 haskell_doctest = rule(
@@ -214,7 +272,10 @@ haskell_doctest = rule(
       doc = "List of Haskell targets to lint.",
     ),
   },
-  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+  toolchains = [
+      "@io_tweag_rules_haskell//haskell:toolchain",
+      "@io_tweag_rules_haskell//haskell:doctest-toolchain",
+  ],
 )
 """Run doctest test on targets in `deps`.
 

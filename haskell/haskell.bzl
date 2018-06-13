@@ -26,6 +26,7 @@ load(":haddock.bzl",
 load(":lint.bzl",
   _haskell_lint = "haskell_lint",
   _haskell_doctest = "haskell_doctest",
+  _haskell_doctest_toolchain = "haskell_doctest_toolchain",
 )
 load(":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",
@@ -224,6 +225,8 @@ haskell_doc = _haskell_doc
 haskell_lint = _haskell_lint
 
 haskell_doctest  = _haskell_doctest
+
+haskell_doctest_toolchain  = _haskell_doctest_toolchain
 
 haskell_toolchain = _haskell_toolchain
 

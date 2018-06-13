@@ -4,6 +4,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_binary",
   "haskell_library",
   "haskell_toolchain",
+  "haskell_doctest_toolchain",
   "haskell_proto_toolchain",
 )
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
@@ -13,13 +14,17 @@ haskell_toolchain(
   name = "ghc",
   version = "8.2.2",
   tools = "@ghc//:bin",
-  doctest = "@doctest//:bin",
   c2hs = "@c2hs//:bin",
   # This toolchain is morally testonly.  However, that would break
   # our tests of haskell_library_rules: aspects of non-testonly
   # proto_library rules (from com_google_protobuf) can't themselves
   # be testonly.
   testonly = 0,
+)
+
+haskell_doctest_toolchain(
+  name = "doctest-toolchain",
+  doctest = "@doctest//:bin",
 )
 
 haskell_proto_toolchain(

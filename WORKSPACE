@@ -81,6 +81,7 @@ nixpkgs_package(
 
 register_toolchains(
   "//tests:ghc",
+  "//tests:doctest-toolchain",
   "//tests:protobuf-toolchain",
 )
 
