@@ -15,11 +15,17 @@ jobs:
             nix-channel --update
       - run:
           name: Build
-          command: nix-shell --command "bazel build --jobs=2 //... @haskell_zlib//..."
+          command: |
+            # XXX Workaround https://github.com/NixOS/nix/issues/1969.
+            nix-build nixpkgs.nix -A haskell.compiler.ghc822
+            nix-shell --command "bazel build --jobs=2 //... @haskell_zlib//..."
 
       - run:
           name: Run tests
-          command: nix-shell --command "./run_tests.sh"
+          command: |
+            # XXX Workaround https://github.com/NixOS/nix/issues/1969.
+            nix-build '<nixpkgs>' -A haskell.compiler.ghc822
+            nix-shell --command "./run_tests.sh"
 
   build-darwin:
     macos:
