@@ -8,7 +8,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
 haskell_library(
   name = "lib-a",
   srcs = ["Foo.hs"],
-  deps = ["@zlib.dev//:zlib"],
+  deps = ["@zlib_dev//:zlib"],
   prebuilt_dependencies = ["base"],
   visibility = ["//visibility:public"],
 )

@@ -14,14 +14,14 @@ genrule(
   cmd = "touch $(location include/foo.h)",
 )
 
-# A locally-defined replica of @zlib.dev//:zlib.
+# A locally-defined replica of @zlib_dev//:zlib.
 # Since that shared library lives in another package, we must
 # use an absolute path for strip_include_prefix.
 haskell_cc_import(
   name = "zlib",
   shared_library = "@zlib//:lib",
-  hdrs = ["@zlib.dev//:include"],
-  strip_include_prefix = "/external/zlib.dev/include",
+  hdrs = ["@zlib_dev//:include"],
+  strip_include_prefix = "/external/zlib_dev/include",
 )
 
 haskell_cc_import(
@@ -61,7 +61,7 @@ haskell_library(
   name = "intermediate-library-other",
   srcs = ["IntLib.hsc"],
   deps = [
-    "@zlib.dev//:zlib",
+    "@zlib_dev//:zlib",
     ":zlib-with-genrule-header",
   ],
   prebuilt_dependencies = ["base"],
