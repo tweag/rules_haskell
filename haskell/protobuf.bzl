@@ -41,6 +41,15 @@ def _proto_lens_output_file(path):
 
   return "Proto/" + result
 
+def _proto_lens_fields_file(path):
+  """The fields file from `proto-lens-protoc` when run on the given `path`.
+  """
+
+  path = path[:-len(".proto")]
+  result = "/".join([_camel_case(p) for p in path.split("/")]) + "_Fields.hs"
+
+  return "Proto/" + result
+
 def _proto_path(proto):
   """A path to the proto file which matches any import statements."""
   return paths.relativize(
@@ -89,6 +98,9 @@ def _haskell_proto_aspect_impl(target, ctx):
     args.add([src.path])
     hs_files.append(ctx.actions.declare_file(
       _proto_lens_output_file(_proto_path(src)
+    )))
+    hs_files.append(ctx.actions.declare_file(
+      _proto_lens_fields_file(_proto_path(src)
     )))
 
   args.add([
