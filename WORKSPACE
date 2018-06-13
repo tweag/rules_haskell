@@ -3,56 +3,8 @@ workspace(name = "io_tweag_rules_haskell")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 haskell_repositories()
 
-http_archive(
-  name = "io_tweag_rules_nixpkgs",
-  strip_prefix = "rules_nixpkgs-0.2.2",
-  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.2.tar.gz"],
-)
-
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-  "nixpkgs_git_repository",
-  "nixpkgs_package",
-)
-
-nixpkgs_git_repository(
-  name = "nixpkgs",
-  # To make protobuf support work we need packages such as
-  # lens-labels_0_2_0_0 to be available in nixpkgs. This means we need to
-  # use a version of nixpkgs that is newer than 18.03.
-  revision = "7c3dc2f53fc837be79426f11c9133f73d15a05c4",
-)
-
-nixpkgs_package(
-  name = "ghc",
-  repository = "@nixpkgs",
-  nix_file = "//tests:ghc.nix",
-  build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-  name = "bin",
-  srcs = glob(["bin/*"]),
-)
-
-cc_library(
-  name = "threaded-rts",
-  srcs = select({
-      "@bazel_tools//src/conditions:darwin":
-          glob([
-            "lib/ghc-*/rts/libHSrts_thr-ghc*.dylib",
-            "lib/ghc-*/rts/libffi.dylib",
-          ]),
-      "//conditions:default":
-          glob([
-            "lib/ghc-*/rts/libHSrts_thr-ghc*.so",
-            "lib/ghc-*/rts/libffi.so.6",
-          ]),
-  }),
-  hdrs = glob(["lib/ghc-*/include/**/*.h"]),
-  strip_include_prefix = glob(["lib/ghc-*/include"], exclude_directories=0)[0],
-)
-""",
-)
+load(":nix-workspace.bzl", "nix_packages")
+nix_packages()
 
 http_archive(
   name = "com_google_protobuf",
@@ -61,69 +13,11 @@ http_archive(
   urls = ["https://github.com/google/protobuf/archive/v3.5.0.zip"],
 )
 
-nixpkgs_package(
-  name = "protoc_gen_haskell",
-  repository = "@nixpkgs",
-  nix_file = "//tests:protoc_gen_haskell.nix",
-)
-
-nixpkgs_package(
-  name = "doctest",
-  repository = "@nixpkgs",
-  attribute_path = "haskell.packages.ghc822.doctest",
-)
-
-nixpkgs_package(
-  name = "c2hs",
-  repository = "@nixpkgs",
-  attribute_path = "haskell.packages.ghc822.c2hs",
-)
-
 register_toolchains(
   "//tests:ghc",
   "//tests:protobuf-toolchain",
 )
 
-nixpkgs_package(
-  name = "zlib",
-  repository = "@nixpkgs",
-  build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup (
-  name = "lib",
-  srcs = glob([
-    "lib/*.so",
-    "lib/*.so.*",
-    "lib/*.dylib",
-  ]),
-  testonly = 1,
-)
-""",
-)
-
-nixpkgs_package(
-  name = "zlib.dev",
-  repository = "@nixpkgs",
-  build_file_content = """
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
-package(default_visibility = ["//visibility:public"])
-
-filegroup (
-  name = "include",
-  srcs = glob(["include/*.h"]),
-  testonly = 1,
-)
-
-haskell_cc_import(
-    name = "zlib",
-    shared_library = "@zlib//:lib",
-    hdrs = [":include"],
-    testonly = 1,
-    strip_include_prefix = "include",
-)
-""",
-)
 
 # zlib as a Haskell library
 
