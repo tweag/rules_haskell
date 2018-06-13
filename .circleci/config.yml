@@ -5,6 +5,7 @@ jobs:
     docker:
       - image: nixos/nix:2.0
     working_directory: ~/rules_haskell
+    resource_class: large
     steps:
       - checkout
       - run:
