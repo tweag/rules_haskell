@@ -19,6 +19,8 @@ nixpkgs_git_repository(
   # To make protobuf support work we need packages such as
   # lens-labels_0_2_0_0 to be available in nixpkgs. This means we need to
   # use a version of nixpkgs that is newer than 18.03.
+
+  # Keep this value in sync with `nixpkgs.nix`
   revision = "7c3dc2f53fc837be79426f11c9133f73d15a05c4",
 )
 
