@@ -102,10 +102,6 @@ def _haskell_toolchain_impl(ctx):
     ar_runfiles += [xcrun]
     targets_r["xcrunwrapper.sh"] = xcrun.path
 
-  if ctx.attr.doctest != None:
-    targets_r["doctest"] = ctx.file.doctest.path
-    inputs.append(ctx.file.doctest)
-
   if ctx.attr.c2hs != None:
     targets_r["c2hs"] = ctx.file.c2hs.path
     inputs.append(ctx.file.c2hs)
@@ -221,10 +217,6 @@ _haskell_toolchain = rule(
       doc = "GHC and executables that come with it",
       mandatory = True,
     ),
-    "doctest": attr.label(
-      doc = "Doctest executable",
-      allow_single_file = True,
-    ),
     "c2hs": attr.label(
       doc = "c2hs executable",
       allow_single_file = True,
@@ -318,4 +310,3 @@ def haskell_toolchain(
     target_compatible_with = [
       '@bazel_tools//platforms:x86_64'],
   )
-  # TODO: perhaps make a toolchain for darwin?
