@@ -14,7 +14,7 @@ nixpkgs_git_repository(
     revision = "c33c5239f62b4855b14dc5b01dfa3e2a885cf9ca",
 )
 
-RULES_HASKELL_SHA = "7dba3375a7b6f595f92defa8807cd292c608036c"
+RULES_HASKELL_SHA = "1d3daac33f90b0e2fec8114fd4599782494471d0"
 http_archive(
     name = "io_tweag_rules_haskell",
     urls = ["https://github.com/tweag/rules_haskell/archive/"
@@ -36,12 +36,6 @@ nixpkgs_package(
   name = "c2hs",
   repository = "@nixpkgs",
   attribute_path = "haskell.packages.ghc822.c2hs",
-)
-
-nixpkgs_package(
-  name = "doctest",
-  repository = "@nixpkgs",
-  attribute_path = "haskell.packages.ghc822.doctest",
 )
 
 nixpkgs_package(
@@ -118,7 +112,10 @@ filegroup (
 """
 )
 
-register_toolchains("@ghc//:ghc")
+register_toolchains(
+    "@ghc//:ghc",
+    "//:doctest",
+)
 
 load("//:hazel.bzl", "hazel_repositories",
      "hazel_custom_package_hackage",
@@ -133,6 +130,11 @@ hazel_custom_package_hackage(
 hazel_custom_package_hackage(
   package_name = "vault",
   version = "0.3.1.1",
+)
+
+hazel_custom_package_hackage(
+  package_name = "ghc-paths",
+  version = "0.1.0.9",
 )
 
 hazel_custom_package_github(
@@ -165,6 +167,7 @@ hazel_repositories(
     prebuilt_dependencies=prebuilt_dependencies,
     exclude_packages = [
       "conduit",
+      "ghc-paths",
       "text-metrics",
       "vault",
       "wai-app-static",

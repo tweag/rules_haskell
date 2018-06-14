@@ -1,4 +1,8 @@
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_test")
+load("@io_tweag_rules_haskell//haskell:haskell.bzl",
+     "haskell_doctest",
+     "haskell_library",
+     "haskell_test",
+)
 load("@ai_formation_hazel//:hazel.bzl", "hazel_library")
 
 haskell_test(
@@ -19,3 +23,13 @@ haskell_test(
     prebuilt_dependencies = ["base"],
 )
 
+haskell_library(
+    name = "DoctestExample",
+    srcs = ["DoctestExample.hs"],
+    prebuilt_dependencies = ["base"],
+)
+
+haskell_doctest(
+    name = "doctest-test",
+    deps = [":DoctestExample"],
+)
