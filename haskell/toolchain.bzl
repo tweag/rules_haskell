@@ -187,7 +187,7 @@ def _haskell_toolchain_impl(ctx):
       tools = struct(**tools_struct_args),
       tools_runfiles = struct(**tools_runfiles_struct_args),
       extra_binaries = extra_binaries_files,
-      default_compiler_flags = ctx.attr.default_compiler_flags,
+      compiler_flags = ctx.attr.compiler_flags,
       mode = ctx.var["COMPILATION_MODE"],
       actions = struct(
         compile_binary = compile_binary,
@@ -218,7 +218,7 @@ _haskell_toolchain = rule(
       doc = "GHC and executables that come with it",
       mandatory = True,
     ),
-    "default_compiler_flags": attr.string_list(
+    "compiler_flags": attr.string_list(
       doc = "A collection of flags that will be passed to GHC on every invocation.",
     ),
     "c2hs": attr.label(
@@ -241,7 +241,7 @@ def haskell_toolchain(
     name,
     version,
     tools,
-    default_compiler_flags=[],
+    compiler_flags=[],
     **kwargs):
   """Declare a compiler toolchain.
 
@@ -259,7 +259,7 @@ def haskell_toolchain(
         name = "ghc",
         version = '1.2.3'
         tools = ["@sys_ghc//:bin"],
-        default_compiler_flags = ["-Wall"],
+        compiler_flags = ["-Wall"],
         c2hs = "@c2hs//:bin", # optional
     )
     ```
@@ -290,7 +290,7 @@ def haskell_toolchain(
     name = impl_name,
     version = version,
     tools = tools,
-    default_compiler_flags = default_compiler_flags,
+    compiler_flags = compiler_flags,
     visibility = ["//visibility:public"],
     is_darwin = select({
         "@bazel_tools//src/conditions:darwin": True,
