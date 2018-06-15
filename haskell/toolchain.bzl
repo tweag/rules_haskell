@@ -187,6 +187,7 @@ def _haskell_toolchain_impl(ctx):
       tools = struct(**tools_struct_args),
       tools_runfiles = struct(**tools_runfiles_struct_args),
       extra_binaries = extra_binaries_files,
+      compiler_flags = ctx.attr.compiler_flags,
       mode = ctx.var["COMPILATION_MODE"],
       actions = struct(
         compile_binary = compile_binary,
@@ -217,6 +218,9 @@ _haskell_toolchain = rule(
       doc = "GHC and executables that come with it",
       mandatory = True,
     ),
+    "compiler_flags": attr.string_list(
+      doc = "A collection of flags that will be passed to GHC on every invocation.",
+    ),
     "c2hs": attr.label(
       doc = "c2hs executable",
       allow_single_file = True,
@@ -237,6 +241,7 @@ def haskell_toolchain(
     name,
     version,
     tools,
+    compiler_flags=[],
     **kwargs):
   """Declare a compiler toolchain.
 
@@ -254,7 +259,7 @@ def haskell_toolchain(
         name = "ghc",
         version = '1.2.3'
         tools = ["@sys_ghc//:bin"],
-        doctest = "@doctest//:bin", # optional
+        compiler_flags = ["-Wall"],
         c2hs = "@c2hs//:bin", # optional
     )
     ```
@@ -271,14 +276,6 @@ def haskell_toolchain(
     register_toolchain("//:ghc")
     ```
 
-    similarly for `@doctest`:
-
-    ```bzl
-    nixpkgs_package(
-        name = "doctest",
-        attribute_path = "haskell.packages.ghc822.doctest",
-    )
-
     and for `@c2hs`:
 
     ```bzl
@@ -293,6 +290,7 @@ def haskell_toolchain(
     name = impl_name,
     version = version,
     tools = tools,
+    compiler_flags = compiler_flags,
     visibility = ["//visibility:public"],
     is_darwin = select({
         "@bazel_tools//src/conditions:darwin": True,

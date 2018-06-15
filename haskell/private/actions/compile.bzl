@@ -172,6 +172,10 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   interfaces_dir_raw = target_unique_name(hs, "interfaces")
   interfaces_dir = hs.actions.declare_directory(interfaces_dir_raw)
 
+  # Default compiler flags.
+  args.add(hs.toolchain.compiler_flags)
+  haddock_args.add(hs.toolchain.compiler_flags, before_each="--optghc")
+
   # Compilation mode and explicit user flags
   if hs.mode == "opt":
     args.add("-O2")
