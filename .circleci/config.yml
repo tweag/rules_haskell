@@ -45,13 +45,18 @@ jobs:
       - run:
           name: Install Nix
           command: |
-            # XXX Workaround a Nix 2.0 bug by sticking to Nix 1.11 for
-            # now. See https://github.com/NixOS/nix/issues/1988.
-            nixurl=https://nixos.org/releases/nix/nix-1.11.16/nix-1.11.16-x86_64-darwin.tar.bz2
-            curl -s $nixurl | tar xf - -C /tmp
-            # XXX Even when script runs correctly, it still returns non-zero rc.
-            # So ignore it for now.
-            yes | /tmp/nix-1.11.16-x86_64-darwin/install || true
+            curl https://nixos.org/nix/install | sh
+
+            # XXX Workaround for https://github.com/cachix/cachix/issues/26.
+            echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf
+            sudo launchctl unload /Library/LaunchDaemons/org.nixos.nix-daemon.plist
+            sudo launchctl load /Library/LaunchDaemons/org.nixos.nix-daemon.plist
+      - run:
+          name: Install Cachix
+          shell: /bin/bash -eilo pipefail
+          command: |
+            nix-env -if https://github.com/cachix/cachix/tarball/master --substituters https://cachix.cachix.org --trusted-public-keys cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=
+            cachix use tweag
       - run:
           name: System dependencies
           command: |
@@ -61,7 +66,9 @@ jobs:
       - run:
           name: Build
           shell: /bin/bash -eilo pipefail
-          command: bazel build --jobs=2 //...
+          command: |
+            nix-build ./tests/protoc_gen_haskell.nix | cachix push tweag
+            bazel build --jobs=2 //...
       - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
@@ -73,4 +80,5 @@ workflows:
     jobs:
       - build-linux:
           context: org-global
-      - build-darwin
+      - build-darwin:
+          context: org-global
