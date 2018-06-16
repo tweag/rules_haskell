@@ -29,7 +29,7 @@ jobs:
       - run:
          name: Cachix push
          command: |
-           nix-build ./tests/protoc_gen_haskell.nix --arg pkgs "import ./nixpkgs.nix {}" | cachix push tweag
+           nix-build ./tests/protoc_gen_haskell.nix | cachix push tweag
       - run:
           name: Run tests
           command: |
