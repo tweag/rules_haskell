@@ -14,13 +14,22 @@ jobs:
             apk --no-progress update
             apk --no-progress add bash ca-certificates
             nix-channel --update
+
+            # cachix install
+            nix-env -if https://github.com/cachix/cachix/tarball/master --substituters https://cachix.cachix.org --trusted-public-keys cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=
+
+            # XXX Workaround: it complains about no USER, so let set a dummy USER
+            USER=dummy cachix use tweag
       - run:
           name: Build
           command: |
             # XXX Workaround https://github.com/NixOS/nix/issues/1969.
             nix-build nixpkgs.nix -A haskell.compiler.ghc822
             nix-shell --command "bazel build --jobs=2 //... @haskell_zlib//..."
-
+      - run:
+         name: Cachix push
+         command: |
+           nix-build ./tests/protoc_gen_haskell.nix --arg pkgs "import ./nixpkgs.nix {}" | cachix push tweag
       - run:
           name: Run tests
           command: |
@@ -62,5 +71,6 @@ workflows:
   version: 2
   build:
     jobs:
-      - build-linux
+      - build-linux:
+          context: org-global
       - build-darwin
