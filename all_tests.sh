@@ -39,5 +39,7 @@ test_startup_script() {
     mkdir tools
     cp $pwd/tools/bazel.rc tools/bazel.rc
 
-    bazel fetch //... --config=ci
+    # Set Nixpkgs in environment variable to avoid hardcoding it in
+    # start script itself.
+    NIX_PATH=nixpkgs=$pwd/nixpkgs.nix bazel fetch //... --config=ci
 }
