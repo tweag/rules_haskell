@@ -20,6 +20,10 @@ haskell_toolchain(
   # proto_library rules (from com_google_protobuf) can't themselves
   # be testonly.
   testonly = 0,
+  compiler_flags = [
+      "-XStandaloneDeriving", # Flag used at compile time
+      "-threaded",            # Flag used at link time
+  ],
 )
 
 haskell_doctest_toolchain(
