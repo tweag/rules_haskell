@@ -115,6 +115,7 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
 
   args = hs.actions.args()
   add_mode_options(hs, args)
+  args.add(hs.toolchain.compiler_flags)
   args.add(compiler_flags)
 
   if hs.toolchain.is_darwin:
