@@ -6,6 +6,7 @@ mkShell {
   buildInputs = [
     binutils
     go
+    nix
     which
     python
     nix

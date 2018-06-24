@@ -25,7 +25,7 @@ jobs:
           command: |
             # XXX Workaround https://github.com/NixOS/nix/issues/1969.
             nix-build nixpkgs.nix -A haskell.compiler.ghc822
-            nix-shell --run "bazel build --jobs=2 //... @haskell_zlib//..."
+            nix-shell --pure --run "bazel build --jobs=2 //... @haskell_zlib//..."
       - run:
          name: Cachix push
          command: |
@@ -35,7 +35,7 @@ jobs:
           command: |
             # XXX Workaround https://github.com/NixOS/nix/issues/1969.
             nix-build '<nixpkgs>' -A haskell.compiler.ghc822
-            nix-shell --run "./run_tests.sh"
+            nix-shell --pure --run "./run_tests.sh"
 
   build-darwin:
     macos:
