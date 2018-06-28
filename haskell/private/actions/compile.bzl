@@ -39,7 +39,7 @@ def _make_ghc_defs_dump(hs, cpp_defines):
   ])
 
   hs.actions.run(
-    inputs = [dummy_src] + hs.extra_binaries,
+    inputs = [hs.tools.gcc, dummy_src] + hs.extra_binaries,
     outputs = [ghc_defs_dump_raw],
     mnemonic = "HaskellCppDefines",
     executable = hs.tools.ghc,
