@@ -65,6 +65,13 @@ def _ghc_bindist_impl(ctx):
   _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
   _execute_fail_loudly(ctx, ["make", "install"])
 
+  # XXX Workaround https://github.com/bazelbuild/bazel/issues/5494.
+  as_executable = ctx.which("as")
+  ctx.symlink(
+    as_executable.realpath,
+    bindist_dir.realpath.get_child("bin").get_child("as"),
+  )
+
   ctx.template(
     "BUILD",
     Label("//haskell:ghc.BUILD"),
