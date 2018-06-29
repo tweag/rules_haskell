@@ -26,6 +26,9 @@ def _haskell_toolchain_impl(ctx):
   for tool in ctx.files.tools:
     if tool.basename in _GHC_BINARIES:
       ghc_binaries[tool.basename] = tool.path
+    # XXX Workaround https://github.com/bazelbuild/bazel/issues/5494.
+    if tool.basename == "as":
+      ghc_binaries[tool.basename] = tool.path
 
   # Run a version check on the compiler.
   for t in ctx.files.tools:

@@ -323,6 +323,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
 
   hs.actions.run(
     inputs = depset(transitive = [
+      depset([hs.tools.gcc]),
       depset(object_files),
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.dynamic_libraries),
@@ -331,7 +332,8 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
     outputs = [dynamic_library_tmp],
     mnemonic = "HaskellLinkDynamicLibrary",
     executable = hs.tools.ghc,
-    arguments = [args]
+    arguments = [args],
+    env = hs.env,
   )
 
   return dynamic_library
