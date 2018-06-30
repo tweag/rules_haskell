@@ -19,14 +19,22 @@ CcInteropInfo = provider(
   fields = {
     "hdrs": "CC headers",
     "cpp_flags": "Preprocessor flags",
+    "compiler_flags": "Flags for compilation",
+    "linker_flags": "Flags to forward to the linker",
     "include_args": "Extra include dirs",
   }
 )
 
-def cc_headers(ctx):
-  """Bring in scope the header files of dependencies, if any.
+def cc_interop_info(ctx):
+  """Gather information from any CC dependencies.
 
   *Internal function - do not use.*
+
+  Args:
+    ctx: Rule context.
+
+  Returns:
+    CcInteropInfo: Information needed for CC interop.
   """
   hdrs = depset()
 
@@ -61,10 +69,19 @@ def cc_headers(ctx):
 
   include_args = ["-I" + include for include in include_directories]
 
+  # TODO Replace with https://github.com/bazelbuild/bazel/issues/4571
+  # when ready.
+  cc_toolchain = ctx.toolchains["@bazel_tools//tools/cpp:toolchain_type"]
+
   return CcInteropInfo(
     hdrs = hdrs.to_list(),
     cpp_flags = cpp_flags,
     include_args = include_args,
+    compiler_flags = cc_toolchain.compiler_options(),
+    # XXX this might not be the right set of flags for all situations,
+    # but this will anyways all be replaced (once implemented) by
+    # https://github.com/bazelbuild/bazel/issues/4571.
+    linker_flags = cc_toolchain.mostly_static_link_options(True),
   )
 
 def _cc_import_impl(ctx):

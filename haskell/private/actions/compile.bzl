@@ -87,7 +87,9 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
   args.add(["-c", hs.tools.cc])
   args.add(["-l", hs.tools.cc])
   args.add(["--cflag=" + f for f in cc.cpp_flags])
+  args.add(["--cflag=" + f for f in cc.compiler_flags])
   args.add(["--cflag=" + f for f in cc.include_args])
+  args.add(["--lflag=" + f for f in cc.linker_flags])
   args.add("-I{0}".format(ghc_defs_dump.dirname))
   args.add("-i{0}".format(ghc_defs_dump.basename))
 
@@ -167,6 +169,17 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   """
   args = hs.actions.args()
   haddock_args = hs.actions.args()
+
+  # GHC expects the CC compiler as the assembler, but segregates the
+  # set of flags to pass to it when used as an assembler. So we have
+  # to set both -optc and -opta.
+  cc_args = [
+    "-optc" + f for f in cc.compiler_flags
+  ] + [
+    "-opta" + f for f in cc.compiler_flags
+  ]
+  args.add(cc_args)
+  haddock_args.add(cc_args, before_each="--optghc")
 
   # Declare file directories
   objects_dir_raw = target_unique_name(hs, "objects")

@@ -1,6 +1,6 @@
 """Implementation of core Haskell rules"""
 
-load(":cc.bzl", "cc_headers")
+load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context")
 load(":private/actions/compile.bzl", "compile_library")
 load(":private/actions/link.bzl",
@@ -25,7 +25,7 @@ def haskell_binary_impl(ctx):
   dep_info = gather_dep_info(ctx)
 
   # Add any interop info for other languages.
-  cc = cc_headers(ctx)
+  cc = cc_interop_info(ctx)
   java = java_interop_info(ctx)
 
   c = hs.toolchain.actions.compile_binary(
@@ -41,7 +41,7 @@ def haskell_binary_impl(ctx):
     main_function = ctx.attr.main_function,
   )
 
-  binary = link_binary(hs, dep_info, ctx.attr.compiler_flags, c.object_dyn_files)
+  binary = link_binary(hs, cc, dep_info, ctx.attr.compiler_flags, c.object_dyn_files)
 
   solibs = set.union(
     set.from_list(dep_info.external_libraries.values()),
@@ -87,7 +87,7 @@ def haskell_library_impl(ctx):
   my_pkg_id = pkg_id.new(ctx.label, ctx.attr.version)
 
   # Add any interop info for other languages.
-  cc = cc_headers(ctx)
+  cc = cc_interop_info(ctx)
   java = java_interop_info(ctx)
 
   c = hs.toolchain.actions.compile_library(
@@ -104,12 +104,14 @@ def haskell_library_impl(ctx):
 
   static_library = link_library_static(
     hs,
+    cc,
     dep_info,
     c.object_files,
     my_pkg_id,
   )
   dynamic_library = link_library_dynamic(
     hs,
+    cc,
     dep_info,
     c.object_dyn_files,
     my_pkg_id,

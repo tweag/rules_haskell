@@ -19,7 +19,7 @@ def _backup_path(target):
 
   return "/".join([".."] * n)
 
-def _create_dummy_archive(hs):
+def _create_dummy_archive(hs, cc):
   """Create empty archive so that GHC has some input files to work on during
   linking.
 
@@ -47,7 +47,9 @@ module BazelDummy () where
     inputs = [dummy_input],
     outputs = [dummy_object],
     mnemonic = "HaskellDummyObjectGhc",
-    arguments = ["-c", dummy_input.path],
+    arguments = [
+      "-optc" + f for f in cc.compiler_flags
+    ] + ["-c", dummy_input.path],
   )
 
   ar_args = hs.actions.args()
@@ -92,14 +94,14 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
                      out.path)
                      for f in external_libraries]))
 
-def link_binary(hs, dep_info, compiler_flags, object_files):
+def link_binary(hs, cc, dep_info, compiler_flags, object_files):
   """Link Haskell binary from static object files.
 
   Returns:
     File: produced executable
   """
 
-  dummy_static_lib = _create_dummy_archive(hs)
+  dummy_static_lib = _create_dummy_archive(hs, cc)
 
   executable = hs.actions.declare_file(hs.name)
   if not hs.toolchain.is_darwin:
@@ -114,6 +116,7 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
     )
 
   args = hs.actions.args()
+  args.add(["-optl" + f for f in cc.linker_flags])
   add_mode_options(hs, args)
   args.add(hs.toolchain.compiler_flags)
   args.add(compiler_flags)
@@ -241,7 +244,7 @@ def _so_extension(hs):
   return "dylib" if hs.toolchain.is_darwin else "so"
 
 
-def link_library_static(hs, dep_info, object_files, my_pkg_id):
+def link_library_static(hs, cc, dep_info, object_files, my_pkg_id):
   """Link a static library for the package using given object files.
 
   Returns:
@@ -263,7 +266,7 @@ def link_library_static(hs, dep_info, object_files, my_pkg_id):
   )
   return static_library
 
-def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
+def link_library_dynamic(hs, cc, dep_info, object_files, my_pkg_id):
   """Link a dynamic library for the package using given object files.
 
   Returns:
@@ -279,6 +282,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
   )
 
   args = hs.actions.args()
+  args.add(["-optl" + f for f in cc.linker_flags])
 
   add_mode_options(hs, args)
 
