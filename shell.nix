@@ -33,7 +33,6 @@ mkShell {
     nix
     which
     python
-    nix
   ]
   # TODO use Bazel from Nixpkgs even on Darwin. Blocked by
   # https://github.com/NixOS/nixpkgs/issues/30590.
