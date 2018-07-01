@@ -120,6 +120,12 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
 
   if hs.toolchain.is_darwin:
     args.add(["-optl-Wl,-headerpad_max_install_names"])
+    # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
+    # Darwin. We don't currently handle NIX_LDFLAGS in any special
+    # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
+    # should do always when using a toolchain from Nixpkgs.
+    # TODO remove this gross hack.
+    args.add("-liconv")
   else:
     # TODO: enable dynamic linking of Haskell dependencies for macOS.
     args.add(["-dynamic", "-pie"])
