@@ -66,7 +66,7 @@ test_failures() {
 # Test REPL for libraries
 test_repl_libraries() {
     bazel build --config=ci //tests/repl-targets:hs-lib-repl
-    bazel-bin/tests/repl-targets/hs-lib-repl -e "foo 10"
+    bazel-bin/tests/repl-targets/hs-lib-repl -e "show (foo 10) ++ bar ++ baz"
 }
 
 # Test REPL for binaries

@@ -20,7 +20,11 @@ haskell_cc_import(
 
 haskell_library(
   name = "hs-lib",
-  srcs = ["Foo.hs"],
+  srcs = [
+    "Foo.hs",
+    "Hsc.hsc",
+    "Chs.chs",
+  ],
   prebuilt_dependencies = ["base", "array"],
   deps = [
     ":cbits",

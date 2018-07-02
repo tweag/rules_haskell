@@ -74,9 +74,9 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
     hsc_file: hsc file to process.
 
   Returns:
-    File: Haskell source file created by processing hsc_file.
+    (File, string): Haskell source file created by processing hsc_file and
+       new import directory containing the produced file.
   """
-
   args = hs.actions.args()
 
   # Output a Haskell source file.
@@ -105,7 +105,14 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
     arguments = [args],
     env = hs.env,
   )
-  return hs_out
+
+  idir = paths.join(
+    hs.bin_dir.path,
+    hs.label.package,
+    hsc_dir_raw,
+  )
+
+  return hs_out, idir
 
 def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
   """Process a single chs file.
@@ -118,8 +125,9 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
     chi_files: .chi files that should be available to c2hs.
 
   Returns:
-    (File, File): Haskell source file created by processing chs_file
-                  and .chi file produced by the same file.
+    (File, File, string): Haskell source file created by processing
+       chs_file, .chi file produced by the same file, and new import
+       directory containing the generated source file.
   """
 
   args = hs.actions.args()
@@ -159,7 +167,13 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
     env = hs.env,
   )
 
-  return hs_out, chi_out
+  idir = paths.join(
+    hs.bin_dir.path,
+    hs.label.package,
+    chs_dir_raw,
+  )
+
+  return hs_out, chi_out, idir
 
 def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
@@ -287,11 +301,13 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
     elif s.extension in ["hs", "lhs", "hsc", "chs"]:
       if not main_file or s != main_file:
         if s.extension == "hsc":
-          s0 = _process_hsc_file(hs, cc, ghc_defs_dump, s)
+          s0, idir = _process_hsc_file(hs, cc, ghc_defs_dump, s)
           set.mutable_insert(source_files, s0)
+          set.mutable_insert(import_dirs, idir)
         elif s.extension == "chs":
-          s0, chi = _process_chs_file(hs, cc, ghc_defs_dump, s, chi_files_so_far)
+          s0, chi, idir = _process_chs_file(hs, cc, ghc_defs_dump, s, chi_files_so_far)
           set.mutable_insert(source_files, s0)
+          set.mutable_insert(import_dirs, idir)
           chi_files_so_far.append(chi)
         else:
           set.mutable_insert(source_files, s)
