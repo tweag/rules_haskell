@@ -7,7 +7,6 @@ test_bazel_test()
     bazel test //... --config=ci
 }
 
-
 test_failures() {
     # Test targets that must fail
     for i in $(bazel query 'kind(rule, //tests/failures/...) intersect attr("tags", "manual", //tests/failures/...)')
@@ -18,16 +17,15 @@ test_failures() {
 
 # Test REPL for libraries
 test_repl_libraries() {
-    bazel build //tests/repl-targets:hs-lib-repl
+    bazel build --config=ci //tests/repl-targets:hs-lib-repl
     bazel-bin/tests/repl-targets/hs-lib-repl -e "foo 10"
 }
 
 # Test REPL for binaries
 test_repl_binaries() {
-    bazel build //tests/repl-targets:hs-bin-repl
+    bazel build --config=ci //tests/repl-targets:hs-bin-repl
     bazel-bin/tests/repl-targets/hs-bin-repl -e ":main"
 }
-
 
 # Test start script
 test_startup_script() {

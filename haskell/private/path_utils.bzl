@@ -88,16 +88,25 @@ def declare_compiled(hs, src, ext, directory=None):
   fp_with_dir = fp if directory == None else paths.join(directory, fp)
   return hs.actions.declare_file(fp_with_dir)
 
-def get_external_libs_path(libs):
+def get_external_libs_path(libs, prefix=None):
   """Return a String value for using as LD_LIBRARY_PATH or similar.
 
   Args:
     libs: Set of File: the libs that should be available.
+    prefix: String, an optional prefix to add to every path.
 
   Returns:
     String: paths to the given libs separated by \":\".
   """
-  return ":".join(set.to_list(set.map(libs, _get_external_lib_path)))
+  r = []
+
+  for lib in set.to_list(set.map(libs, _get_external_lib_path)):
+    if prefix:
+      lib = paths.join(prefix, lib)
+
+    r += [lib]
+
+  return ":".join(r)
 
 def _get_external_lib_path(lib):
   return paths.dirname(lib.path)

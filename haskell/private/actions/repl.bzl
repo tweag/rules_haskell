@@ -73,10 +73,7 @@ def build_haskell_repl(
     lib_name = get_lib_name(lib)
     if not set.is_member(seen_libs, lib_name):
       set.mutable_insert(seen_libs, lib_name)
-      args += [
-        "-l{0}".format(lib_name),
-        "-L{0}".format(paths.dirname(lib.path)),
-      ]
+      args += ["-l{0}".format(lib_name)]
 
   ghci_repl_script = hs.actions.declare_file(target_unique_name(hs, "ghci-repl-script"))
   repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
@@ -121,14 +118,12 @@ def build_haskell_repl(
     template = ghci_repl_wrapper,
     output = repl_file,
     substitutions = {
-      # XXX I'm not 100% sure if this is necessary, I think it may be
-      # necessary for dynamic Haskell libraries to see other dynamic Haskell
-      # libraries they are linked with.
       "{LDLIBPATH}": get_external_libs_path(
         set.union(
           build_info.dynamic_libraries,
           set.from_list(build_info.external_libraries.values()),
-        )
+        ),
+        prefix = "$RULES_HASKELL_EXEC_ROOT",
       ),
       "{GHCi}": hs.tools.ghci.path,
       "{SCRIPT_LOCATION}": output.path,
