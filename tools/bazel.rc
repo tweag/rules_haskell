@@ -6,8 +6,8 @@ build:ci --sandbox_debug
 build:ci --spawn_strategy=standalone
 build:ci --verbose_failures
 build:ci --jobs=0 # avoid OOM condition caused by high levels of concurrency on Circle CI
-# Make sure we don't rely on names convenience symlinks because those can be
-# changed by user.
+# Make sure we don't rely on the names of convenience symlinks because those
+# can be changed by user.
 build:ci --symlink_prefix=foobar
 common:ci --color=no
 test:ci --test_output=errors
