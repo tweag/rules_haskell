@@ -19,7 +19,7 @@ def _backup_path(target):
 
   return "/".join([".."] * n)
 
-def _create_dummy_archive(hs):
+def _create_dummy_archive(hs, cc):
   """Create empty archive so that GHC has some input files to work on during
   linking.
 
@@ -42,12 +42,14 @@ module BazelDummy () where
 """)
 
   dummy_static_lib = hs.actions.declare_file("libempty.a")
-  hs.actions.run(
+  hs.toolchain.actions.run_ghc(
+    hs,
     inputs = [dummy_input],
     outputs = [dummy_object],
     mnemonic = "HaskellDummyObjectGhc",
-    executable = hs.tools.ghc,
-    arguments = ["-c", dummy_input.path],
+    arguments = [
+      "-optc" + f for f in cc.compiler_flags
+    ] + ["-c", dummy_input.path],
   )
 
   ar_args = hs.actions.args()
@@ -92,14 +94,14 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
                      out.path)
                      for f in external_libraries]))
 
-def link_binary(hs, dep_info, compiler_flags, object_files):
+def link_binary(hs, cc, dep_info, compiler_flags, object_files):
   """Link Haskell binary from static object files.
 
   Returns:
     File: produced executable
   """
 
-  dummy_static_lib = _create_dummy_archive(hs)
+  dummy_static_lib = _create_dummy_archive(hs, cc)
 
   executable = hs.actions.declare_file(hs.name)
   if not hs.toolchain.is_darwin:
@@ -114,12 +116,19 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
     )
 
   args = hs.actions.args()
+  args.add(["-optl" + f for f in cc.linker_flags])
   add_mode_options(hs, args)
   args.add(hs.toolchain.compiler_flags)
   args.add(compiler_flags)
 
   if hs.toolchain.is_darwin:
     args.add(["-optl-Wl,-headerpad_max_install_names"])
+    # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
+    # Darwin. We don't currently handle NIX_LDFLAGS in any special
+    # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
+    # should do always when using a toolchain from Nixpkgs.
+    # TODO remove this gross hack.
+    args.add("-liconv")
   else:
     # TODO: enable dynamic linking of Haskell dependencies for macOS.
     args.add(["-dynamic", "-pie"])
@@ -165,7 +174,8 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
     for rpath in set.to_list(_infer_rpaths(executable, solibs)):
       args.add(["-optl-Wl,-rpath," + rpath])
 
-  hs.actions.run(
+  hs.toolchain.actions.run_ghc(
+    hs,
     inputs = depset(transitive = [
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.dynamic_libraries),
@@ -176,7 +186,6 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
     ]),
     outputs = [compile_output],
     mnemonic = "HaskellLinkBinary",
-    executable = hs.tools.ghc,
     arguments = [args],
   )
 
@@ -235,7 +244,7 @@ def _so_extension(hs):
   return "dylib" if hs.toolchain.is_darwin else "so"
 
 
-def link_library_static(hs, dep_info, object_files, my_pkg_id):
+def link_library_static(hs, cc, dep_info, object_files, my_pkg_id):
   """Link a static library for the package using given object files.
 
   Returns:
@@ -257,7 +266,7 @@ def link_library_static(hs, dep_info, object_files, my_pkg_id):
   )
   return static_library
 
-def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
+def link_library_dynamic(hs, cc, dep_info, object_files, my_pkg_id):
   """Link a dynamic library for the package using given object files.
 
   Returns:
@@ -273,6 +282,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
   )
 
   args = hs.actions.args()
+  args.add(["-optl" + f for f in cc.linker_flags])
 
   add_mode_options(hs, args)
 
@@ -321,7 +331,8 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
 
   args.add(["-o", dynamic_library_tmp.path])
 
-  hs.actions.run(
+  hs.toolchain.actions.run_ghc(
+    hs,
     inputs = depset(transitive = [
       depset(object_files),
       set.to_depset(dep_info.package_caches),
@@ -330,8 +341,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
     ]),
     outputs = [dynamic_library_tmp],
     mnemonic = "HaskellLinkDynamicLibrary",
-    executable = hs.tools.ghc,
-    arguments = [args]
+    arguments = [args],
   )
 
   return dynamic_library

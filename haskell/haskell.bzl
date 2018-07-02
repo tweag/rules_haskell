@@ -131,7 +131,10 @@ def _mk_binary_rule(**kwargs):
     outputs = {
       "repl": "%{name}-repl",
     },
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = [
+      "@io_tweag_rules_haskell//haskell:toolchain",
+      "@bazel_tools//tools/cpp:toolchain_type",
+    ],
     **kwargs
   )
 
@@ -186,7 +189,10 @@ haskell_library = rule(
   outputs = {
     "repl": "%{name}-repl",
   },
-  toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+  toolchains = [
+    "@io_tweag_rules_haskell//haskell:toolchain",
+    "@bazel_tools//tools/cpp:toolchain_type",
+  ],
 )
 """Build a library from Haskell source.
 

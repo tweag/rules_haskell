@@ -62,17 +62,16 @@ jobs:
           command: |
             brew update
             brew install bazel
-            brew install go
       - run:
           name: Build
           shell: /bin/bash -eilo pipefail
           command: |
             nix-build ./tests/protoc_gen_haskell.nix | cachix push tweag
-            bazel build --jobs=2 //...
+            nix-shell --run 'CC=$(which clang) bazel build --jobs=2 //...'
       - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
-          command: ./run_tests.sh
+          command: nix-shell --run 'CC=$(which clang) ./run_tests.sh'
 
 workflows:
   version: 2

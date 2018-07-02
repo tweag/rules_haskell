@@ -5,8 +5,8 @@ haskell_repositories()
 
 http_archive(
   name = "io_tweag_rules_nixpkgs",
-  strip_prefix = "rules_nixpkgs-0.2.2",
-  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.2.tar.gz"],
+  strip_prefix = "rules_nixpkgs-0.2.3",
+  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.3.tar.gz"],
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
@@ -21,7 +21,10 @@ nixpkgs_git_repository(
   # use a version of nixpkgs that is newer than 18.03.
 
   # Keep this value in sync with `nixpkgs.nix`
-  revision = "7c3dc2f53fc837be79426f11c9133f73d15a05c4",
+  revision = "8d5f06cbeedcfb4a88c111754baf2d7e315e74de",
+  # TODO Using a fork with Bazel v0.15. Switch to mainline once
+  # https://github.com/NixOS/nixpkgs/pull/42735 merged.
+  remote = "https://github.com/mboes/nixpkgs",
 )
 
 nixpkgs_package(

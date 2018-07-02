@@ -38,11 +38,11 @@ def _make_ghc_defs_dump(hs, cpp_defines):
     dummy_src.path,
   ])
 
-  hs.actions.run(
+  hs.toolchain.actions.run_ghc(
+    hs,
     inputs = [dummy_src] + hs.extra_binaries,
     outputs = [ghc_defs_dump_raw],
     mnemonic = "HaskellCppDefines",
-    executable = hs.tools.ghc,
     arguments = [args],
     env = hs.env,
   )
@@ -84,15 +84,19 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
   hs_out = declare_compiled(hs, hsc_file, ".hs", directory=hsc_dir_raw)
   args.add([hsc_file.path, "-o", hs_out.path])
 
+  args.add(["-c", hs.tools.cc])
+  args.add(["-l", hs.tools.cc])
   args.add(["--cflag=" + f for f in cc.cpp_flags])
+  args.add(["--cflag=" + f for f in cc.compiler_flags])
   args.add(["--cflag=" + f for f in cc.include_args])
+  args.add(["--lflag=" + f for f in cc.linker_flags])
   args.add("-I{0}".format(ghc_defs_dump.dirname))
   args.add("-i{0}".format(ghc_defs_dump.basename))
 
   hs.actions.run(
     inputs = depset(transitive = [
       depset(cc.hdrs),
-      depset([hs.tools.gcc]),
+      depset([hs.tools.cc]),
       depset([hsc_file, ghc_defs_dump]),
     ]),
     outputs = [hs_out],
@@ -127,7 +131,7 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
   args.add([chs_file.path, "-o", hs_out.path])
 
   args.add(["-C-E"])
-  args.add(["--cpp", hs.tools.gcc.path])
+  args.add(["--cpp", hs.tools.cc.path])
   args.add(["-C-I{0}".format(ghc_defs_dump.dirname)])
   args.add(["-C-include{0}".format(ghc_defs_dump.basename)])
   args.add(["-C" + x for x in cc.cpp_flags])
@@ -144,7 +148,7 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
   hs.actions.run(
     inputs = depset(transitive = [
       depset(cc.hdrs),
-      depset([hs.tools.gcc]),
+      depset([hs.tools.cc]),
       depset([chs_file, ghc_defs_dump]),
       depset(chi_files),
     ]),
@@ -165,6 +169,17 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   """
   args = hs.actions.args()
   haddock_args = hs.actions.args()
+
+  # GHC expects the CC compiler as the assembler, but segregates the
+  # set of flags to pass to it when used as an assembler. So we have
+  # to set both -optc and -opta.
+  cc_args = [
+    "-optc" + f for f in cc.compiler_flags
+  ] + [
+    "-opta" + f for f in cc.compiler_flags
+  ]
+  args.add(cc_args)
+  haddock_args.add(cc_args, before_each="--optghc")
 
   # Declare file directories
   objects_dir_raw = target_unique_name(hs, "objects")
@@ -342,7 +357,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
       set.to_depset(dep_info.dynamic_libraries),
       depset(dep_info.external_libraries.values()),
       java.inputs,
-      depset([hs.tools.gcc]),
+      depset([hs.tools.cc]),
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + object_dyn_files + interface_files,
     objects_dir = objects_dir,
@@ -377,13 +392,13 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compil
   c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, main_file = main_file)
   c.args.add(["-main-is", main_function])
 
-  hs.actions.run(
+  hs.toolchain.actions.run_ghc(
+    hs,
     inputs = c.inputs + hs.extra_binaries,
     outputs = c.outputs,
     mnemonic = "HaskellBuildBinary",
     progress_message = "HaskellBuildBinary {}".format(hs.label),
     env = c.env,
-    executable = hs.tools.ghc,
     arguments = [c.args]
   )
 
@@ -422,13 +437,13 @@ def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compi
   c.args.add(unit_id_args)
   c.haddock_args.add(unit_id_args, before_each="--optghc")
 
-  hs.actions.run(
+  hs.toolchain.actions.run_ghc(
+    hs,
     inputs = c.inputs + hs.extra_binaries,
     outputs = c.outputs,
     mnemonic = "HaskellBuildLibrary",
     progress_message = "HaskellBuildLibrary {}".format(hs.label),
     env = c.env,
-    executable = hs.tools.ghc,
     arguments = [c.args],
   )
 

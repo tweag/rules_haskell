@@ -1,6 +1,5 @@
 """Linting"""
 
-load(":cc.bzl", "cc_headers")
 load(":private/context.bzl", "haskell_context")
 load(":private/set.bzl", "set")
 load(":private/path_utils.bzl",
