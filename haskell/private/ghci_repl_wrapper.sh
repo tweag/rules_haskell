@@ -7,8 +7,15 @@
 # warning with instructions how to invoke it.
 
 if [ ! -d "bazel-out" ]; then
-  echo "The bazel-out symlink must be present in workspace directory."
-  exit 1
+    cat <<EOF
+The bazel-out symlink must be present in workspace directory.
+
+If you have built your project using a custom symlink prefix
+(with the --symlink_prefix option) and bazel-out was not created,
+it may mean that you're using a version of Bazel that is not yet
+supported by rules_haskell.
+EOF
+    exit 1
 fi
 
 # This is a workaround for https://github.com/bazelbuild/bazel/issues/5506
@@ -18,7 +25,7 @@ fi
 #
 # It seems that we can't locate the files of interest/build outputs in
 # general. However, due to “internal issues” in Bazel mentioned e.g.
-# https://github.com/bazelbuild/bazel/issues/5506, the directory bazel-out
+# https://github.com/bazelbuild/bazel/issues/3796, the directory bazel-out
 # is always created under the workspace directory. We exploit this to get
 # location of exec root reliably and then prefix locations of various
 # components, such as shared libraries with that exec root.
@@ -33,7 +40,8 @@ then
 It looks like you are trying to invoke the REPL incorrectly.
 Due to limitations in Bazel, "bazel run" should not be used
 for that (because it closes stdin), although the newer
---direct-run option lifts that limitation.
+--direct-run option (available since Bazel 0.12) lifts that
+limitation.
 
 Instead please execute the following from workspace root:
 

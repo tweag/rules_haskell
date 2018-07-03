@@ -104,7 +104,7 @@ def get_external_libs_path(libs, prefix=None):
     if prefix:
       lib = paths.join(prefix, lib)
 
-    r += [lib]
+    r.append(lib)
 
   return ":".join(r)
 
