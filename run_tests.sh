@@ -9,7 +9,6 @@
 # * Run some tests.sh:
 # $ ./run_tests.sh test_bar test_foo
 
-
 assertBuildFailure() {
     set +e
 
@@ -48,13 +47,52 @@ run_test() {
   fi
 }
 
+############################################################################
+# Tests
 
-# Load the file which contains the tests
-source ./all_tests.sh
+test_bazel_test()
+{
+    bazel test //... --config=ci
+}
+
+test_failures() {
+    # Test targets that must fail
+    for i in $(bazel query 'kind(rule, //tests/failures/...) intersect attr("tags", "manual", //tests/failures/...)')
+    do
+        assertBuildFailure "$i"
+    done
+}
+
+# Test REPL for libraries
+test_repl_libraries() {
+    bazel build --config=ci //tests/repl-targets:hs-lib-repl
+    bazel-bin/tests/repl-targets/hs-lib-repl -e "foo 10"
+}
+
+# Test REPL for binaries
+test_repl_binaries() {
+    bazel build --config=ci //tests/repl-targets:hs-bin-repl
+    bazel-bin/tests/repl-targets/hs-bin-repl -e ":main"
+}
+
+# Test start script
+test_startup_script() {
+    pwd=$(pwd)
+    cd $(mktemp -d)
+    $pwd/start
+
+    # Copy the bazel configuration, this is only useful for CI
+    mkdir tools
+    cp $pwd/tools/bazel.rc tools/bazel.rc
+
+    # Set Nixpkgs in environment variable to avoid hardcoding it in
+    # start script itself.
+    NIX_PATH=nixpkgs=$pwd/nixpkgs.nix bazel fetch //... --config=ci
+}
 
 if [ "$#" -eq 0 ]; then
     # Auto detect tests starting with "test_" and run them
-    TESTS=$(grep -o '^test_[_[:alnum:]]\+' all_tests.sh)
+    TESTS=$(grep -o '^test_[_[:alnum:]]\+' run_tests.sh)
 else
     # runs test specified on the command line
     TESTS=$@
