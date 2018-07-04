@@ -18,9 +18,26 @@ haskell_cc_import(
   strip_include_prefix = "/external/zlib.dev/include",
 )
 
+genrule(
+  name = "codegen",
+  outs = [
+    "Gen.hs",
+  ],
+  cmd = """
+  echo "module Gen (gen) where" >> $(location :Gen.hs)
+  echo "gen :: String" >> $(location :Gen.hs)
+  echo "gen = \\"gen\\"" >> $(location :Gen.hs)
+""",
+)
+
 haskell_library(
   name = "hs-lib",
-  srcs = ["Foo.hs"],
+  srcs = [
+    "Foo.hs",
+    "Hsc.hsc",
+    "Chs.chs",
+    ":codegen",
+  ],
   prebuilt_dependencies = ["base", "array"],
   deps = [
     ":cbits",
