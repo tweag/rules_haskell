@@ -282,7 +282,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   boot_files = []
   source_files = set.empty()
   modules = set.empty()
-  import_dirs = set.singleton(hs.src_root)
+  import_dirs = set.from_list([hs.src_root, hs.genfile_src_root])
 
   # Output object files are named after modules, not after input file names.
   # The difference is only visible in the case of Main module because it may
