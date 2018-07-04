@@ -175,9 +175,12 @@ def _haskell_doc_rule_impl(ctx):
 
   # Do one more Haddock call to generate the unified index
 
+  index_root_raw = paths.join(doc_root_raw, "index")
+  index_root = ctx.actions.declare_directory(index_root_raw)
+
   args = ctx.actions.args()
   args.add([
-    "-o", doc_root_path,
+    "-o", index_root.path,
     "--title={0}".format(ctx.attr.name),
     "--gen-index",
     "--gen-contents",
@@ -186,7 +189,7 @@ def _haskell_doc_rule_impl(ctx):
   if ctx.attr.index_transitive_deps:
     # Include all packages in the unified index.
     for package_id in html_dict_copied:
-      args.add("--read-interface=./{0},{1}".format(
+      args.add("--read-interface=../{0},{1}".format(
         package_id,
         haddock_dict[package_id].path,
       ))
@@ -195,7 +198,7 @@ def _haskell_doc_rule_impl(ctx):
     for dep in ctx.attr.deps:
       if HaddockInfo in dep:
         package_id = dep[HaddockInfo].package_id
-        args.add("--read-interface=./{0},{1}".format(
+        args.add("--read-interface=../{0},{1}".format(
           package_id,
           haddock_dict[package_id].path,
         ))
@@ -203,34 +206,20 @@ def _haskell_doc_rule_impl(ctx):
   for cache in set.to_list(all_caches):
     args.add(["--optghc=-package-db={0}".format(cache.dirname)])
 
-  static_haddock_outputs = [
-    ctx.actions.declare_file(paths.join(doc_root_raw, f))
-    for f in [
-      "index.html",
-      "doc-index.html",
-      "haddock-util.js",
-      "hslogo-16.png",
-      "minus.gif",
-      "ocean.css",
-      "plus.gif",
-      "synopsis.png",
-    ]
-  ]
-
   ctx.actions.run(
     inputs = depset(transitive = [
       set.to_depset(all_caches),
       depset(html_dict_copied.values()),
       depset(haddock_dict.values()),
     ]),
-    outputs = static_haddock_outputs,
+    outputs = [index_root],
     mnemonic = "HaskellHaddockIndex",
     executable = hs.tools.haddock,
     arguments = [args],
   )
 
   return [DefaultInfo(
-    files = depset(html_dict_copied.values() + static_haddock_outputs),
+    files = depset(html_dict_copied.values() + [index_root]),
   )]
 
 haskell_doc = rule(

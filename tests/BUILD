@@ -128,14 +128,7 @@ rule_test(
 rule_test(
   name = "test-haddock",
   generates = [
-    "haddock/doc-index.html",
-    "haddock/haddock-util.js",
-    "haddock/hslogo-16.png",
-    "haddock/index.html",
-    "haddock/minus.gif",
-    "haddock/ocean.css",
-    "haddock/plus.gif",
-    "haddock/synopsis.png",
+    "haddock/index",
     "haddock/testsZShaddockZShaddock-lib-a-1.0.0",
     "haddock/testsZShaddockZShaddock-lib-b-1.0.0",
     "haddock/testsZShaddockZShaddock-lib-deep-1.0.0"
