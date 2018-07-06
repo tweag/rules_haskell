@@ -1,6 +1,5 @@
 """Actions for linking object code produced by compilation"""
 
-load(":private/mode.bzl", "add_mode_options")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/path_utils.bzl", "get_lib_name")
@@ -94,7 +93,7 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
                      out.path)
                      for f in external_libraries]))
 
-def link_binary(hs, cc, dep_info, compiler_flags, object_files):
+def link_binary(hs, cc, dep_info, compiler_flags, object_files, with_profiling):
   """Link Haskell binary from static object files.
 
   Returns:
@@ -117,7 +116,8 @@ def link_binary(hs, cc, dep_info, compiler_flags, object_files):
 
   args = hs.actions.args()
   args.add(["-optl" + f for f in cc.linker_flags])
-  add_mode_options(hs, args)
+  if with_profiling:
+    args.add("-prof")
   args.add(hs.toolchain.compiler_flags)
   args.add(compiler_flags)
 
@@ -128,10 +128,11 @@ def link_binary(hs, cc, dep_info, compiler_flags, object_files):
     # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
     # should do always when using a toolchain from Nixpkgs.
     # TODO remove this gross hack.
+    # TODO: enable dynamic linking of Haskell dependencies for macOS.
     args.add("-liconv")
   else:
-    # TODO: enable dynamic linking of Haskell dependencies for macOS.
-    args.add(["-dynamic", "-pie"])
+    if not with_profiling:
+      args.add(["-pie", "-dynamic"])
 
   args.add(["-o", compile_output.path, dummy_static_lib.path])
 
@@ -180,6 +181,7 @@ def link_binary(hs, cc, dep_info, compiler_flags, object_files):
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.dynamic_libraries),
       depset(dep_info.static_libraries),
+      depset(dep_info.static_libraries_prof),
       depset(object_files),
       depset([dummy_static_lib]),
       depset(dep_info.external_libraries.values()),
@@ -243,15 +245,15 @@ def _so_extension(hs):
   """
   return "dylib" if hs.toolchain.is_darwin else "so"
 
-
-def link_library_static(hs, cc, dep_info, object_files, my_pkg_id):
+def link_library_static(hs, cc, dep_info, object_files, my_pkg_id, with_profiling):
   """Link a static library for the package using given object files.
 
   Returns:
     File: Produced static library.
   """
-  library_name = "HS" + pkg_id.to_string(my_pkg_id)
-  static_library = hs.actions.declare_file("lib{0}.a".format(library_name))
+  static_library = hs.actions.declare_file(
+    "lib{0}.a".format(pkg_id.library_name(hs, my_pkg_id, prof_suffix=with_profiling))
+  )
 
   args = hs.actions.args()
   args.add(["qc", static_library])
@@ -272,10 +274,9 @@ def link_library_dynamic(hs, cc, dep_info, object_files, my_pkg_id):
   Returns:
     File: Produced dynamic library.
   """
-
   dynamic_library = hs.actions.declare_file(
     "lib{0}-ghc{1}.{2}".format(
-      "HS" + pkg_id.to_string(my_pkg_id),
+      pkg_id.library_name(hs, my_pkg_id),
       hs.toolchain.version,
       _so_extension(hs),
     )
@@ -283,8 +284,6 @@ def link_library_dynamic(hs, cc, dep_info, object_files, my_pkg_id):
 
   args = hs.actions.args()
   args.add(["-optl" + f for f in cc.linker_flags])
-
-  add_mode_options(hs, args)
 
   args.add(["-shared", "-dynamic"])
 

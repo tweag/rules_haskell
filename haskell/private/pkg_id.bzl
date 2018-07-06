@@ -1,6 +1,7 @@
 """Package identifiers"""
 
 load("@bazel_skylib//:lib.bzl", "paths")
+load(":private/mode.bzl", "is_profiling_enabled")
 
 def _zencode(s):
   """Z-escape special characters to make a valid GHC package identifier.
@@ -44,7 +45,21 @@ def _new(label, version):
     version = version,
   )
 
+def _library_name(hs, my_pkg_id, prof_suffix=False):
+  """Get library name.
+
+  Args:
+    hs: Haskell context.
+    my_pkg_id: pkg_id struct.
+    prof_suffix: whether to automatically add profiling suffix.
+  """
+  library_name = "HS" + _to_string(my_pkg_id)
+  if is_profiling_enabled(hs) and prof_suffix:
+    library_name += "_p"
+  return library_name
+
 pkg_id = struct(
   new = _new,
   to_string = _to_string,
+  library_name = _library_name,
 )

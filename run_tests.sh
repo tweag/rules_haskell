@@ -55,6 +55,11 @@ test_bazel_test()
     bazel test //... --config=ci
 }
 
+test_bazel_prof()
+{
+    bazel build -c dbg //... --config=ci
+}
+
 test_failures() {
     # Test targets that must fail
     for i in $(bazel query 'kind(rule, //tests/failures/...) intersect attr("tags", "manual", //tests/failures/...)')
