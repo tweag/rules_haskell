@@ -22,7 +22,8 @@ def haskell_context(ctx, attr=None):
   )
 
   env = {
-    "PATH": toolchain.visible_bin_path
+    "PATH": toolchain.visible_bin_path,
+    "LANG": "en_US.UTF-8",
   }
 
   return HaskellContext(
