@@ -24,6 +24,7 @@ def haskell_context(ctx, attr=None):
   env = {
     "PATH": toolchain.visible_bin_path,
     "LANG": "en_US.UTF-8",
+    "LOCALE_ARCHIVE": "/oot/12345",
   }
 
   return HaskellContext(
