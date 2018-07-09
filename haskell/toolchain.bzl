@@ -217,6 +217,11 @@ def _haskell_toolchain_impl(ctx):
   }
   tools_runfiles_struct_args = {"ar": ar_runfiles}
 
+  locale_archive = None
+
+  if ctx.attr.locale_archive != None:
+    locale_archive = ctx.file.locale_archive
+
   return [
     platform_common.ToolchainInfo(
       name = ctx.label.name,
@@ -224,6 +229,8 @@ def _haskell_toolchain_impl(ctx):
       tools_runfiles = struct(**tools_runfiles_struct_args),
       extra_binaries = extra_binaries_files,
       compiler_flags = ctx.attr.compiler_flags,
+      locale = ctx.attr.locale,
+      locale_archive = locale_archive,
       mode = ctx.var["COMPILATION_MODE"],
       actions = struct(
         compile_binary = compile_binary,
@@ -271,6 +278,14 @@ _haskell_toolchain = rule(
         doc = "Additional binaries necessary for building",
         default = [],
     ),
+    "locale": attr.string(
+      default = "en_US.UTF-8",
+      doc = "Locale that will be set during compiler invocations.",
+    ),
+    "locale_archive": attr.label(
+      allow_single_file = True,
+      doc = "Label pointing to the locale archive file to use.",
+    )
   }
 )
 

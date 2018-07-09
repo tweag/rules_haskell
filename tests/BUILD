@@ -24,6 +24,7 @@ haskell_toolchain(
       "-XStandaloneDeriving", # Flag used at compile time
       "-threaded",            # Flag used at link time
   ],
+  locale_archive = "@glib_locales//:locale-archive",
 )
 
 haskell_doctest_toolchain(

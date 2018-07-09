@@ -28,8 +28,12 @@ def haskell_context(ctx, attr=None):
   )
 
   env = {
-    "PATH": toolchain.visible_bin_path
+    "PATH": toolchain.visible_bin_path,
+    "LANG": toolchain.locale,
   }
+
+  if toolchain.locale_archive != None:
+    env["LOCALE_ARCHIVE"] = toolchain.locale_archive.path
 
   return HaskellContext(
     # Fields

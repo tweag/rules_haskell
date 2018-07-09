@@ -131,6 +131,20 @@ haskell_cc_import(
 """,
 )
 
+nixpkgs_package(
+  name = "glib_locales",
+  repository = "@nixpkgs",
+  attribute_path = "glibcLocales",
+  build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "locale-archive",
+  srcs = ["lib/locale/locale-archive"],
+)
+"""
+)
+
 # zlib as a Haskell library
 
 new_http_archive(
