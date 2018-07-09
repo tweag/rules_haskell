@@ -284,7 +284,9 @@ _haskell_toolchain = rule(
     ),
     "locale_archive": attr.label(
       allow_single_file = True,
-      doc = "Label pointing to the locale archive file to use.",
+      doc = """
+Label pointing to the locale archive file to use. Mostly useful on NixOS.
+""",
     )
   }
 )
