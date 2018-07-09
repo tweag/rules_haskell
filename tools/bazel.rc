@@ -1,6 +1,8 @@
 # See https://docs.bazel.build/versions/master/user-manual.html#bazelrc.
 
 #build:ci --all_incompatible_changes
+build --action_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+
 build:ci --genrule_strategy=standalone
 build:ci --sandbox_debug
 build:ci --spawn_strategy=standalone
