@@ -1,5 +1,7 @@
 workspace(name = "io_tweag_rules_haskell")
 
+load("//:cc_configure_custom.bzl", "cc_configure_custom")
+
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 haskell_repositories()
 
@@ -25,6 +27,24 @@ nixpkgs_git_repository(
   # TODO Using a fork with Bazel v0.15. Switch to mainline once
   # https://github.com/NixOS/nixpkgs/pull/42735 merged.
   remote = "https://github.com/mboes/nixpkgs",
+)
+
+nixpkgs_package(
+    name = "gcc",
+    repository = "@nixpkgs",
+    attribute_path = "gcc",
+)
+
+nixpkgs_package(
+    name = "binutils",
+    repository = "@nixpkgs",
+    attribute_path = "binutils"
+)
+
+cc_configure_custom(
+    name = "local_config_cc",
+    gcc = "@gcc//:bin/gcc",
+    ld = "@binutils//:bin/ld",
 )
 
 nixpkgs_package(
