@@ -32,7 +32,8 @@ nixpkgs_git_repository(
 nixpkgs_package(
     name = "gcc",
     repository = "@nixpkgs",
-    attribute_path = "gcc",
+    #attribute_path = "gcc",
+    attribute_path = "clang",
 )
 
 nixpkgs_package(
@@ -43,7 +44,7 @@ nixpkgs_package(
 
 cc_configure_custom(
     name = "local_config_cc",
-    gcc = "@gcc//:bin/gcc",
+    gcc = "@gcc//:bin/clang",
     ld = "@binutils//:bin/ld",
 )
 
