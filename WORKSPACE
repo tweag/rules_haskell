@@ -37,6 +37,12 @@ nixpkgs_package(
 )
 
 nixpkgs_package(
+    name = "wrapwrap",
+    repository = "@nixpkgs",
+    nix_file = "//:darwinfix.nix",
+)
+
+nixpkgs_package(
     name = "binutils",
     repository = "@nixpkgs",
     attribute_path = "binutils"
@@ -44,7 +50,8 @@ nixpkgs_package(
 
 cc_configure_custom(
     name = "local_config_cc",
-    gcc = "@gcc//:bin/clang",
+    #gcc = "@gcc//:bin/clang",
+    gcc = "@wrapwrap//:bin/clang",
     ld = "@binutils//:bin/ld",
 )
 
