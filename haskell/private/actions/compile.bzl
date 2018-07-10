@@ -217,7 +217,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
 
   # Common flags
   args.add([
-    "-v3", "-keep-tmp-files",
+    "-v0",
     "-c",
     "--make",
     "-fPIC",
