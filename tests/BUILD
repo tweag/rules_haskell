@@ -24,6 +24,11 @@ haskell_toolchain(
       "-XStandaloneDeriving", # Flag used at compile time
       "-threaded",            # Flag used at link time
   ],
+  locale_archive = select({
+    # For some reason glibcLocales is not available on Darwin.
+    "@bazel_tools//src/conditions:darwin": None,
+    "//conditions:default": "@glib_locales//:locale-archive",
+  }),
 )
 
 haskell_doctest_toolchain(

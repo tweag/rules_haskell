@@ -358,6 +358,11 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
     args.add(f)
     haddock_args.add(f)
 
+  locale_archive_depset = (
+    depset([hs.toolchain.locale_archive])
+    if hs.toolchain.locale_archive != None else depset()
+  )
+
   return DefaultCompileInfo(
     args = args,
     haddock_args = haddock_args,
@@ -374,6 +379,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
       depset(dep_info.external_libraries.values()),
       java.inputs,
       depset([hs.tools.cc]),
+      locale_archive_depset,
     ]),
     outputs = [objects_dir, interfaces_dir] + object_files + object_dyn_files + interface_files,
     objects_dir = objects_dir,
