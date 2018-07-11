@@ -1,5 +1,7 @@
 # Hazel: Automatic Bazel rules for third-party Haskell dependencies
 
+[![CircleCI](https://circleci.com/gh/FormationAI/hazel/tree/master.svg?style=svg)](https://circleci.com/gh/FormationAI/hazel/tree/master)
+
 Hazel is a Bazel framework that manages build rules for third-party Haskell
 dependencies.
 
