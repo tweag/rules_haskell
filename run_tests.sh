@@ -55,9 +55,9 @@ test_bazel_test()
     bazel test //... --config=ci
 }
 
-test_bazel_prof()
+test_bazel_test_prof()
 {
-    bazel build -c dbg //... --config=ci
+    bazel test -c dbg //... --config=ci
 }
 
 test_failures() {
