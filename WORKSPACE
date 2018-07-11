@@ -1,5 +1,9 @@
 workspace(name = "ai_formation_hazel")
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl",
+     "http_archive",
+)
+
 http_archive(
     name = "io_tweag_rules_nixpkgs",
     strip_prefix = "rules_nixpkgs-cd2ed701127ebf7f8f21d37feb1d678e4fdf85e5",

@@ -5,6 +5,9 @@ load("//hazel_base_repository:hazel_base_repository.bzl",
 load("@bazel_tools//tools/build_defs/repo:git.bzl",
      "new_git_repository",
 )
+load("@bazel_tools//tools/build_defs/repo:http.bzl",
+     "http_archive",
+)
 
 def _cabal_haskell_repository_impl(ctx):
   pkg = "{}-{}".format(ctx.attr.package_name, ctx.attr.package_version)
@@ -146,9 +149,9 @@ def hazel_custom_package_hackage(
     package_id,
   )
   fixed_package_name = _fixup_package_name(package_name)
-  native.new_http_archive(
+  http_archive(
     name = "haskell_{0}".format(fixed_package_name),
-    build_file = "third_party/haskell/BUILD.{0}".format(fixed_package_name),
+    build_file = "//third_party/haskell:BUILD.{0}".format(fixed_package_name),
     sha256 = sha256,
     strip_prefix = package_id,
     urls = [url],
