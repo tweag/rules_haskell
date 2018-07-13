@@ -21,12 +21,6 @@ def haskell_context(ctx, attr=None):
     src_strip_prefix,
   )
 
-  genfile_src_root = paths.join(
-    ctx.genfiles_dir.path,
-    ctx.label.package,
-    src_strip_prefix,
-  )
-
   env = {
     "PATH": toolchain.visible_bin_path,
     "LANG": toolchain.locale,
@@ -44,7 +38,6 @@ def haskell_context(ctx, attr=None):
     tools_runfiles = toolchain.tools_runfiles,
     extra_binaries = toolchain.extra_binaries,
     src_root = src_root,
-    genfile_src_root = genfile_src_root,
     env = env,
     mode = ctx.var["COMPILATION_MODE"],
     actions = ctx.actions,

@@ -83,9 +83,12 @@ def haskell_binary_impl(ctx):
 
   build_info = dep_info # HaskellBuildInfo
   bin_info = HaskellBinaryInfo(
+    import_dirs = c.import_dirs,
     source_files = c.source_files,
     modules = c.modules,
     binary = binary,
+    ghc_args = c.ghc_args,
+    header_files = c.header_files,
   )
   target_files = depset([binary])
 
@@ -243,7 +246,7 @@ def haskell_library_impl(ctx):
     import_dirs = c.import_dirs,
     exposed_modules = exposed_modules,
     other_modules = other_modules,
-    haddock_args = c.haddock_args,
+    ghc_args = c.ghc_args,
     header_files = c.header_files,
     boot_files = c.boot_files,
     source_files = c.source_files,
