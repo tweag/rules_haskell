@@ -81,6 +81,12 @@ test_repl_compiler_flags() {
     bazel run --config=ci //tests/repl-flags:compiler_flags-repl -- -e ":main"
 }
 
+# Test `repl_ghci_args` from toolchain and rule for REPL
+test_repl_flags() {
+    # `compiler_flags` from toolchain are correctly used
+    bazel run --config=ci //tests/repl-flags:repl_flags-repl -- -e "foo"
+}
+
 # Test start script
 test_startup_script() {
     pwd=$(pwd)
