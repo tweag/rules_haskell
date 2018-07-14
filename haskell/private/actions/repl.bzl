@@ -26,6 +26,7 @@ def build_haskell_repl(
     hs,
     ghci_script,
     ghci_repl_wrapper,
+    compiler_flags,
     repl_ghci_args,
     build_info,
     target_files,
@@ -112,7 +113,17 @@ def build_haskell_repl(
   args += ["-ghci-script", ghci_repl_script.path]
 
   # Extra arguments.
-  args += repl_ghci_args
+  # `compiler flags` is the default set of arguments for the repl,
+  # augmented by `repl_ghci_args`.
+  # The ordering is important, first compiler flags (from toolchain
+  # and local rule), then from `repl_ghci_args`. This way the more
+  # specific arguments are listed last, and then have more priority in
+  # GHC.
+  # Note that most flags for GHCI do have their negative value, so a
+  # negative flag in `repl_ghci_args` can disable a positive flag set
+  # in `compiler_flags`, such as `-XNoOverloadedStrings` will disable
+  # `-XOverloadedStrings`.
+  args += hs.toolchain.compiler_flags + compiler_flags + repl_ghci_args
 
   hs.actions.expand_template(
     template = ghci_repl_wrapper,
