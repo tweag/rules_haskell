@@ -75,6 +75,12 @@ test_repl_binaries() {
     bazel-bin/tests/repl-targets/hs-bin-repl -e ":main"
 }
 
+# Test `compiler_flags` from toolchain and rule for REPL
+test_repl_compiler_flags() {
+    # `compiler_flags` from toolchain are correctly used
+    bazel run --config=ci //tests/repl-flags:compiler_flags-repl -- -e ":main"
+}
+
 # Test start script
 test_startup_script() {
     pwd=$(pwd)

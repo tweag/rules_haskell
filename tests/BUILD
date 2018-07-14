@@ -23,6 +23,10 @@ haskell_toolchain(
   compiler_flags = [
       "-XStandaloneDeriving", # Flag used at compile time
       "-threaded",            # Flag used at link time
+
+     # Used by `tests/repl-flags`
+      "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+      "-XNoOverloadedStrings", # this is the default, so it does not harm other tests
   ],
   locale_archive = select({
     # For some reason glibcLocales is not available on Darwin.
