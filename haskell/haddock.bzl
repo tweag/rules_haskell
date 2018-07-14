@@ -55,9 +55,12 @@ def _haskell_doc_aspect_impl(target, ctx):
     args.add("--read-interface=../{0},{1}".format(
       pid, transitive_haddocks[pid].path))
 
+  hs = haskell_context(ctx, ctx.rule.attr)
+
   prebuilt_deps = ctx.actions.args()
   for dep in set.to_list(target[HaskellBuildInfo].prebuilt_dependencies):
-    prebuilt_deps.add(dep)
+    if dep not in hs.toolchain.haddock_ignore_prebuilts:
+        prebuilt_deps.add(dep)
   prebuilt_deps.use_param_file(param_file_arg = "%s", use_always = True)
 
   ctx.actions.run(

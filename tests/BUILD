@@ -29,6 +29,7 @@ haskell_toolchain(
     "@bazel_tools//src/conditions:darwin": None,
     "//conditions:default": "@glib_locales//:locale-archive",
   }),
+  haddock_ignore_prebuilts = ["mtl"],
 )
 
 haskell_doctest_toolchain(
