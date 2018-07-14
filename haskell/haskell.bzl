@@ -76,7 +76,7 @@ For `haskell_binary` targets, `repl_interpreted` must be set to `True` for
 REPL to work.
 """),
   "repl_ghci_args": attr.string_list(
-    doc = "Arbitrary extra arguments to pass to GHCi.",
+    doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
   ),
   # XXX Consider making this private. Blocked on
   # https://github.com/bazelbuild/bazel/issues/4366.

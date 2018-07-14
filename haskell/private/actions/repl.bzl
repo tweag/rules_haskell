@@ -123,7 +123,7 @@ def build_haskell_repl(
   # negative flag in `repl_ghci_args` can disable a positive flag set
   # in `compiler_flags`, such as `-XNoOverloadedStrings` will disable
   # `-XOverloadedStrings`.
-  args += hs.toolchain.compiler_flags + compiler_flags + repl_ghci_args
+  args += hs.toolchain.compiler_flags + compiler_flags + hs.toolchain.repl_ghci_args + repl_ghci_args
 
   hs.actions.expand_template(
     template = ghci_repl_wrapper,
