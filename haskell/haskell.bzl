@@ -4,6 +4,7 @@ load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellLibraryInfo",
   "HaskellBinaryInfo",
+  "HaskellPrebuiltPackageInfo",
   "HaskellProtobufInfo",
   "CcSkylarkApiProviderHacked",
 )
@@ -225,6 +226,18 @@ $ bazel build //:hello-lib-repl # build the script
 $ bazel-bin/.../hello-lib-repl  # run the script
 ```
 """
+
+def _haskell_prebuilt_package(ctx):
+  # TODO: double-check it actually exists in ghc-pkg?
+  return [HaskellPrebuiltPackageInfo(
+            package = ctx.attr.package)]
+
+haskell_prebuilt_package = rule(
+  _haskell_prebuilt_package,
+  attrs = dict(
+    package = attr.string(doc = "A non-Bazel-supplied GHC package name."),
+  ),
+)
 
 haskell_doc = _haskell_doc
 
