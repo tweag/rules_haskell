@@ -5,7 +5,7 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules, my_pkg_id):
+def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules, my_pkg_id, static_library_prof, interface_files):
   """Create GHC package using ghc-pkg.
 
   Args:
@@ -13,6 +13,7 @@ def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, expos
     interfaces_dir: Directory containing interface files.
     static_library: Static library of the package.
     dynamic_library: Dynamic library of the package.
+    static_library_prof: Static library compiled with profiling or None.
 
   Returns:
     (File, File): GHC package conf file, GHC package cache file
@@ -31,10 +32,10 @@ def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, expos
     "exposed": "True",
     "exposed-modules": " ".join(set.to_list(exposed_modules)),
     "hidden-modules": " ".join(set.to_list(other_modules)),
-    "import-dirs": paths.join("${pkgroot}", interfaces_dir.basename),
+    "import-dirs": paths.join("${pkgroot}", paths.basename(interfaces_dir)),
     "library-dirs": "${pkgroot}",
     "dynamic-library-dirs": "${pkgroot}",
-    "hs-libraries": "HS" + pkg_id.to_string(my_pkg_id),
+    "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
     "depends":
       ", ".join(
         # XXX Ideally we would like to specify here prebuilt dependencies
@@ -54,7 +55,9 @@ def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, expos
     inputs = depset(transitive = [
       set.to_depset(dep_info.package_confs),
       set.to_depset(dep_info.package_caches),
-      depset([static_library, interfaces_dir, registration_file, dynamic_library]),
+      depset(interface_files),
+      depset([static_library, registration_file, dynamic_library]
+             + ([static_library_prof] if static_library_prof != None else [])),
     ]),
     outputs = [conf_file, pkg_db_dir, cache_file],
     env = {

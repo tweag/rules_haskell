@@ -14,6 +14,7 @@ load(":private/actions/repl.bzl", "build_haskell_repl")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/java.bzl", "java_interop_info")
 load(":private/set.bzl", "set")
+load(":private/mode.bzl", "is_profiling_enabled")
 load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellBinaryInfo",
@@ -27,21 +28,53 @@ def haskell_binary_impl(ctx):
   # Add any interop info for other languages.
   cc = cc_interop_info(ctx)
   java = java_interop_info(ctx)
+  with_profiling = is_profiling_enabled(hs)
 
   c = hs.toolchain.actions.compile_binary(
     hs,
     cc,
     java,
     dep_info,
-    cpp_defines = ctx.file._cpp_defines,
-    compiler_flags = ctx.attr.compiler_flags,
     srcs = ctx.files.srcs,
     extra_srcs = depset(ctx.files.extra_srcs),
+    cpp_defines = ctx.file._cpp_defines,
+    compiler_flags = ctx.attr.compiler_flags,
+    with_profiling = False,
     main_file = ctx.file.main_file,
     main_function = ctx.attr.main_function,
   )
 
-  binary = link_binary(hs, cc, dep_info, ctx.attr.compiler_flags, c.object_dyn_files)
+  c_p = None
+
+  if with_profiling:
+    c_p = hs.toolchain.actions.compile_binary(
+      hs,
+      cc,
+      java,
+      dep_info,
+      srcs = ctx.files.srcs,
+      # NOTE We must make the object files compiled without profiling
+      # available to this step for TH to work, presumably because GHC is
+      # linked against RTS without profiling.
+      extra_srcs = depset(transitive = [
+        depset(ctx.files.extra_srcs),
+        depset(c.object_dyn_files),
+      ]),
+      cpp_defines = ctx.file._cpp_defines,
+      compiler_flags = ctx.attr.compiler_flags,
+      with_profiling = True,
+      main_file = ctx.file.main_file,
+      main_function = ctx.attr.main_function,
+    )
+
+  binary = link_binary(
+    hs,
+    cc,
+    dep_info,
+    ctx.attr.compiler_flags,
+    c_p.object_files if with_profiling else c.object_dyn_files,
+    with_profiling,
+  )
 
   solibs = set.union(
     set.from_list(dep_info.external_libraries.values()),
@@ -85,6 +118,7 @@ def haskell_library_impl(ctx):
   hs = haskell_context(ctx)
   dep_info = gather_dep_info(ctx)
   my_pkg_id = pkg_id.new(ctx.label, ctx.attr.version)
+  with_profiling = is_profiling_enabled(hs)
 
   # Add any interop info for other languages.
   cc = cc_interop_info(ctx)
@@ -95,12 +129,35 @@ def haskell_library_impl(ctx):
     cc,
     java,
     dep_info,
-    cpp_defines = ctx.file._cpp_defines,
-    compiler_flags = ctx.attr.compiler_flags,
     srcs = ctx.files.srcs,
     extra_srcs = depset(ctx.files.extra_srcs),
+    cpp_defines = ctx.file._cpp_defines,
+    compiler_flags = ctx.attr.compiler_flags,
+    with_profiling = False,
     my_pkg_id = my_pkg_id,
   )
+
+  c_p = None
+
+  if with_profiling:
+    c_p = hs.toolchain.actions.compile_library(
+      hs,
+      cc,
+      java,
+      dep_info,
+      srcs = ctx.files.srcs,
+      # NOTE We must make the object files compiled without profiling
+      # available to this step for TH to work, presumably because GHC is
+      # linked against RTS without profiling.
+      extra_srcs = depset(transitive = [
+        depset(ctx.files.extra_srcs),
+        depset(c.object_dyn_files),
+      ]),
+      cpp_defines = ctx.file._cpp_defines,
+      compiler_flags = ctx.attr.compiler_flags,
+      with_profiling = True,
+      my_pkg_id = my_pkg_id,
+    )
 
   static_library = link_library_static(
     hs,
@@ -108,6 +165,7 @@ def haskell_library_impl(ctx):
     dep_info,
     c.object_files,
     my_pkg_id,
+    with_profiling = False,
   )
   dynamic_library = link_library_dynamic(
     hs,
@@ -116,6 +174,17 @@ def haskell_library_impl(ctx):
     c.object_dyn_files,
     my_pkg_id,
   )
+
+  static_library_prof = None
+  if with_profiling:
+    static_library_prof = link_library_static(
+      hs,
+      cc,
+      dep_info,
+      c_p.object_files,
+      my_pkg_id,
+      with_profiling = True,
+    )
 
   exposed_modules = set.empty()
   other_modules = set.from_list(ctx.attr.hidden_modules)
@@ -133,7 +202,25 @@ def haskell_library_impl(ctx):
     exposed_modules,
     other_modules,
     my_pkg_id,
+    static_library_prof = static_library_prof,
+    interface_files = c.interface_files,
   )
+
+  static_libraries_prof = dep_info.static_libraries_prof
+
+  if static_library_prof != None:
+    static_libraries_prof = [static_library_prof] + dep_info.static_libraries_prof
+
+  interface_files = set.union(
+    dep_info.interface_files,
+    set.from_list(c.interface_files),
+  )
+
+  if c_p != None:
+    interface_files = set.mutable_union(
+      interface_files,
+      set.from_list(c_p.interface_files),
+    )
 
   build_info = HaskellBuildInfo(
     package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
@@ -144,8 +231,9 @@ def haskell_library_impl(ctx):
     # left, i.e. you first feed a library which has unresolved symbols and
     # then you feed the library which resolves the symbols.
     static_libraries = [static_library] + dep_info.static_libraries,
+    static_libraries_prof = static_libraries_prof,
     dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
-    interface_files = set.union(dep_info.interface_files, set.from_list(c.interface_files)),
+    interface_files = interface_files,
     prebuilt_dependencies = dep_info.prebuilt_dependencies,
     external_libraries = dep_info.external_libraries,
   )

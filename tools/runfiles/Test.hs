@@ -2,9 +2,7 @@ module Main (main) where
 
 import qualified Bazel.Runfiles as Runfiles
 import Control.Monad (when)
-import System.FilePath ((</>))
 import System.Process (callProcess)
-
 
 main :: IO ()
 main = do

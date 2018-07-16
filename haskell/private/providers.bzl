@@ -27,6 +27,7 @@ HaskellBuildInfo = provider(
     "package_confs": "Set of package .conf files.",
     "package_caches": "Set of package cache files.",
     "static_libraries": "Ordered collection of compiled library archives.",
+    "static_libraries_prof": "Ordered collection of static libraries with profiling.",
     "dynamic_libraries": "Set of dynamic libraries.",
     "interface_files": "Set of interface files belonging to the packages.",
     "prebuilt_dependencies": "Transitive collection of names of wired-in Haskell dependencies.",

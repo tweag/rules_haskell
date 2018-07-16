@@ -1,7 +1,6 @@
 """Actions for compiling Haskell source code"""
 
 load(":private/java.bzl", "java_interop_info")
-load(":private/mode.bzl", "add_mode_options")
 load(":private/path_utils.bzl",
   "declare_compiled",
   "target_unique_name",
@@ -175,7 +174,36 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
 
   return hs_out, chi_out, idir
 
-def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
+def _output_file_ext(base, dynamic, profiling_enabled):
+  """Return extension that output of compilation should have depending on the
+  following inputs:
+
+  Args:
+    base: usually "o" for object files and "hi" for interface files. Preceding
+      dot "." will be preserved in the output.
+    dynamic: bool, whether we're compiling dynamic object files.
+    profiling_enabled: bool, whether profiling is enabled.
+
+  Returns:
+    String, extension of Haskell object file.
+  """
+
+  with_dot = False
+  ext = ""
+
+  if base[0] == '.':
+    with_dot = True
+    ext = base[1:]
+  else:
+    ext = base
+
+  if dynamic:
+    ext = "dyn_" + ext
+  if profiling_enabled:
+    ext = "p_" + ext
+  return ("." if with_dot else "") + ext
+
+def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
 
   Returns:
@@ -197,9 +225,19 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
 
   # Declare file directories
   objects_dir_raw = target_unique_name(hs, "objects")
-  objects_dir = hs.actions.declare_directory(objects_dir_raw)
+  objects_dir = paths.join(
+    hs.bin_dir.path,
+    hs.label.workspace_root,
+    hs.label.package,
+    objects_dir_raw,
+  )
   interfaces_dir_raw = target_unique_name(hs, "interfaces")
-  interfaces_dir = hs.actions.declare_directory(interfaces_dir_raw)
+  interfaces_dir = paths.join(
+    hs.bin_dir.path,
+    hs.label.workspace_root,
+    hs.label.package,
+    interfaces_dir_raw,
+  )
 
   # Default compiler flags.
   args.add(hs.toolchain.compiler_flags)
@@ -212,8 +250,14 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   args.add(compiler_flags)
   haddock_args.add(compiler_flags, before_each="--optghc")
 
-  # Output static and dynamic object files.
-  args.add(["-static", "-dynamic-too"])
+  args.add(["-static"])
+
+  # NOTE We can't have profiling and dynamic code at the same time, see:
+  # https://ghc.haskell.org/trac/ghc/ticket/15394
+  if with_profiling:
+    args.add("-prof")
+  else:
+    args.add(["-dynamic-too"])
 
   # Common flags
   args.add([
@@ -231,7 +275,12 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
     "-hidir", interfaces_dir,
   ])
 
-  add_mode_options(hs, args)
+  args.add([
+    "-osuf", _output_file_ext("o", False, with_profiling),
+    "-dynosuf", _output_file_ext("o", True, with_profiling),
+    "-hisuf", _output_file_ext("hi", False, with_profiling),
+    "-dynhisuf", _output_file_ext("hi", True, with_profiling),
+  ])
 
   # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
   # not yet in a release; plus, we still want to support older versions of
@@ -313,17 +362,39 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
           set.mutable_insert(source_files, s)
         set.mutable_insert(modules, module_name(hs, s))
         object_files.append(
-          declare_compiled(hs, s, ".o", directory=objects_dir_raw)
+          declare_compiled(
+            hs,
+            s,
+            _output_file_ext(".o", False, with_profiling),
+            directory=objects_dir_raw
+          )
         )
-        object_dyn_files.append(
-          declare_compiled(hs, s, ".dyn_o", directory=objects_dir_raw)
-        )
+        if not with_profiling:
+          object_dyn_files.append(
+            declare_compiled(
+              hs,
+              s,
+              _output_file_ext(".o", True, with_profiling),
+              directory=objects_dir_raw
+            )
+          )
         interface_files.append(
-          declare_compiled(hs, s, ".hi", directory=interfaces_dir_raw)
+          declare_compiled(
+            hs,
+            s,
+            _output_file_ext(".hi", False, with_profiling),
+            directory=interfaces_dir_raw
+          )
         )
-        interface_files.append(
-          declare_compiled(hs, s, ".dyn_hi", directory=interfaces_dir_raw)
-        )
+        if not with_profiling:
+          interface_files.append(
+            declare_compiled(
+              hs,
+              s,
+              _output_file_ext(".hi", True, with_profiling),
+              directory=interfaces_dir_raw
+            )
+          )
       else:
         if s.extension == "hsc":
           s0 = _process_hsc_file(hs, cc, ghc_defs_dump, s)
@@ -336,17 +407,51 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
           set.mutable_insert(source_files, s)
         set.mutable_insert(modules, "Main")
         object_files.append(
-          hs.actions.declare_file(paths.join(objects_dir_raw, "Main.o"))
+          hs.actions.declare_file(
+            paths.join(
+              objects_dir_raw,
+              paths.replace_extension(
+                "Main",
+                _output_file_ext(".o", False, with_profiling)
+              )
+            )
+          )
         )
-        object_dyn_files.append(
-          hs.actions.declare_file(paths.join(objects_dir_raw, "Main.dyn_o"))
-        )
+        if not with_profiling:
+          object_dyn_files.append(
+            hs.actions.declare_file(
+              paths.join(
+                objects_dir_raw,
+                paths.replace_extension(
+                  "Main",
+                  _output_file_ext(".o", True, with_profiling),
+                )
+              )
+            )
+          )
         interface_files.append(
-          hs.actions.declare_file(paths.join(interfaces_dir_raw, "Main.hi"))
+          hs.actions.declare_file(
+            paths.join(
+              interfaces_dir_raw,
+              paths.replace_extension(
+                "Main",
+                _output_file_ext(".hi", False, with_profiling),
+              )
+            )
+          )
         )
-        interface_files.append(
-          hs.actions.declare_file(paths.join(interfaces_dir_raw, "Main.dyn_hi"))
-        )
+        if not with_profiling:
+          interface_files.append(
+            hs.actions.declare_file(
+              paths.join(
+                interfaces_dir_raw,
+                paths.replace_extension(
+                  "Main",
+                  _output_file_ext(".hi", True, with_profiling),
+                )
+              )
+            )
+          )
 
   preprocessor_args = ["-optP" + f for f in cc.cpp_flags]
   args.add(preprocessor_args)
@@ -375,15 +480,17 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
       set.to_depset(dep_info.package_confs),
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.interface_files),
+      depset(dep_info.static_libraries),
+      depset(dep_info.static_libraries_prof),
       set.to_depset(dep_info.dynamic_libraries),
       depset(dep_info.external_libraries.values()),
       java.inputs,
       depset([hs.tools.cc]),
       locale_archive_depset,
     ]),
-    outputs = [objects_dir, interfaces_dir] + object_files + object_dyn_files + interface_files,
     objects_dir = objects_dir,
     interfaces_dir = interfaces_dir,
+    outputs = object_files + object_dyn_files + interface_files,
     object_files = object_files,
     object_dyn_files = object_dyn_files,
     interface_files = interface_files,
@@ -401,7 +508,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
     ),
   )
 
-def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, main_file, main_function):
+def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, main_file, main_function):
   """Compile a Haskell target into object files suitable for linking.
 
   Returns:
@@ -411,7 +518,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compil
       modules: set of module names
       source_files: set of Haskell source files
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, main_file = main_file)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, main_file = main_file)
   c.args.add(["-main-is", main_function])
 
   hs.toolchain.actions.run_ghc(
@@ -431,7 +538,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compil
     source_files = c.source_files,
   )
 
-def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, my_pkg_id):
+def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, my_pkg_id):
   """Build arguments for Haskell package build.
 
   Returns:
@@ -445,7 +552,7 @@ def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compi
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, my_pkg_id)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, my_pkg_id)
 
   # This is absolutely required otherwise GHC doesn't know what package it's
   # creating `Name`s for to put them in Haddock interface files which then

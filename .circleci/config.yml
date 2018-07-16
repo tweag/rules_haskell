@@ -27,7 +27,8 @@ jobs:
             nix-build nixpkgs.nix -A haskell.compiler.ghc822
             # TODO Remove this once bazel-0.15 is merged in Nixpkgs.
             nix-build nixpkgs.nix -A bazel | cachix push tweag
-            nix-shell --pure --run "bazel build --jobs=2 //... @haskell_zlib//..."
+            nix-shell --pure --run "bazel build --jobs=2 //... @haskell_zlib//... --config=ci"
+            nix-shell --pure --run "bazel build -c dbg --jobs=2 //... --config=ci"
       - run:
          name: Cachix push
          command: |

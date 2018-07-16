@@ -3,7 +3,6 @@
 #build:ci --all_incompatible_changes
 build:ci --genrule_strategy=standalone
 build:ci --sandbox_debug
-build:ci --spawn_strategy=standalone
 build:ci --verbose_failures
 build:ci --jobs=0 # avoid OOM condition caused by high levels of concurrency on Circle CI
 # Make sure we don't rely on the names of convenience symlinks because those
@@ -11,7 +10,6 @@ build:ci --jobs=0 # avoid OOM condition caused by high levels of concurrency on 
 build:ci --symlink_prefix=foobar
 common:ci --color=no
 test:ci --test_output=errors
-test:ci --test_strategy=standalone
 # TODO remove following line once branch passes lint.
 test:ci --test_tag_filters=-lint
 
