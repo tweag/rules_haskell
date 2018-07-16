@@ -251,6 +251,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   haddock_args.add(compiler_flags, before_each="--optghc")
 
   args.add(["-static"])
+
+  # NOTE We can't have profiling and dynamic code at the same time, see:
+  # https://ghc.haskell.org/trac/ghc/ticket/15394
   if with_profiling:
     args.add("-prof")
   else:
