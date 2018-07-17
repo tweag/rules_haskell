@@ -3,15 +3,15 @@ package(default_testonly = 1)
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
-    "haskell_prebuilt_library",
+    "haskell_import",
     "haskell_test",
 )
 
-haskell_prebuilt_library(
+haskell_import(
   name = "bytestring",
 )
 
-haskell_prebuilt_library(
+haskell_import(
   name = "text_pkg",
   package = "text",
 )

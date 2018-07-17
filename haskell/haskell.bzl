@@ -227,7 +227,7 @@ $ bazel-bin/.../hello-lib-repl  # run the script
 ```
 """
 
-def _haskell_prebuilt_library(ctx):
+def _haskell_import_impl(ctx):
   if ctx.attr.package:
     package = ctx.attr.package
   else:
@@ -238,7 +238,7 @@ def _haskell_prebuilt_library(ctx):
 
 Example:
   ```bzl
-  haskell_prebuilt_library(
+  haskell_import(
       name = "base_pkg",
       package = "base",
   )
@@ -259,8 +259,8 @@ the package name in prebuilt_dependencies.
 Often, rules of this type will be generated automatically by frameworks such
 as Hazel.
 """
-haskell_prebuilt_library = rule(
-  _haskell_prebuilt_library,
+haskell_import = rule(
+  _haskell_import_impl,
   attrs = dict(
     package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
   ),
