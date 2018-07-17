@@ -117,7 +117,14 @@ def _mk_binary_rule(**kwargs):
       main_file = attr.label(
         allow_single_file = FileType([".hs", ".hsc", ".lhs"]),
         doc = "File containing `Main` module.",
-      )
+      ),
+      _dummy_static_lib = attr.label(
+        default = Label("@io_tweag_rules_haskell//haskell:dummy_static_lib"),
+        allow_single_file = True,
+        doc = """
+A dummy library needed for the GHC linking process.
+""",
+      ),
     ),
     outputs = {
       "repl": "%{name}-repl",
