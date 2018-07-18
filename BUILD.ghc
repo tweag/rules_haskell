@@ -43,4 +43,9 @@ haskell_toolchain(
     c2hs = "@c2hs//:bin",
     version = "8.2.2",
     tools = ":bin",
+    locale_archive = select({
+      # For some reason glibcLocales is not available on Darwin.
+      "@bazel_tools//src/conditions:darwin": None,
+      "//conditions:default": "@glib_locales//:locale-archive",
+    }),
 )

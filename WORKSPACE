@@ -18,7 +18,7 @@ nixpkgs_git_repository(
     revision = "c33c5239f62b4855b14dc5b01dfa3e2a885cf9ca",
 )
 
-RULES_HASKELL_SHA = "1d3daac33f90b0e2fec8114fd4599782494471d0"
+RULES_HASKELL_SHA = "3e68a0f3420f7589b1afa6afd3b9e37741978edc"
 http_archive(
     name = "io_tweag_rules_haskell",
     urls = ["https://github.com/tweag/rules_haskell/archive/"
@@ -112,6 +112,20 @@ filegroup (
     "include/*.h",
     "include/**/*.h",
   ]),
+)
+"""
+)
+
+nixpkgs_package(
+  name = "glib_locales",
+  repository = "@nixpkgs",
+  attribute_path = "glibcLocales",
+  build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "locale-archive",
+  srcs = ["lib/locale/locale-archive"],
 )
 """
 )
