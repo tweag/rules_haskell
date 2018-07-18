@@ -4,6 +4,7 @@ load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellLibraryInfo",
   "HaskellBinaryInfo",
+  "HaskellPrebuiltPackageInfo",
   "HaskellProtobufInfo",
   "CcSkylarkApiProviderHacked",
 )
@@ -227,6 +228,45 @@ $ bazel build //:hello-lib-repl # build the script
 $ bazel-bin/.../hello-lib-repl  # run the script
 ```
 """
+
+def _haskell_import_impl(ctx):
+  if ctx.attr.package:
+    package = ctx.attr.package
+  else:
+    package = ctx.label.name
+  return [HaskellPrebuiltPackageInfo(package = package)]
+
+"""Wrap a prebuilt dependency as a rule.
+
+Example:
+  ```bzl
+  haskell_import(
+      name = "base_pkg",
+      package = "base",
+  )
+  haskell_library(
+      name = "hello-lib",
+      srcs = ["Lib.hs"],
+      deps = [
+          ":base_pkg",
+          "//hello-sublib:lib",
+      ],
+  )
+  ```
+
+This rule may wrap any prebuilt dependencies, i.e., GHC packages that aren't
+supplied by Bazel.  Depending on the wrapped rule eliminates the need to list
+the package name in prebuilt_dependencies.
+
+Often, rules of this type will be generated automatically by frameworks such
+as Hazel.
+"""
+haskell_import = rule(
+  _haskell_import_impl,
+  attrs = dict(
+    package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
+  ),
+)
 
 haskell_doc = _haskell_doc
 

@@ -3,6 +3,7 @@ load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellBinaryInfo",
   "HaskellLibraryInfo",
+  "HaskellPrebuiltPackageInfo",
   "CcSkylarkApiProviderHacked",
 )
 load(":private/set.bzl", "set")
@@ -96,6 +97,19 @@ def gather_dep_info(ctx):
         prebuilt_dependencies = set.mutable_union(acc.prebuilt_dependencies, binfo.prebuilt_dependencies),
         external_libraries = dicts.add(acc.external_libraries, binfo.external_libraries),
         direct_prebuilt_deps = acc.direct_prebuilt_deps,
+      )
+    elif HaskellPrebuiltPackageInfo in dep:
+      pkg = dep[HaskellPrebuiltPackageInfo].package
+      acc = HaskellBuildInfo(
+        package_ids = acc.package_ids,
+        package_confs = acc.package_confs,
+        package_caches = acc.package_caches,
+        static_libraries = acc.static_libraries,
+        dynamic_libraries = acc.dynamic_libraries,
+        interface_files = acc.interface_files,
+        prebuilt_dependencies = set.mutable_insert(acc.prebuilt_dependencies, pkg),
+        external_libraries = acc.external_libraries,
+        direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
       )
     else:
       # If not a Haskell dependency, pass it through as-is to the

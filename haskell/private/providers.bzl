@@ -64,6 +64,13 @@ HaskellBinaryInfo = provider(
   },
 )
 
+HaskellPrebuiltPackageInfo = provider(
+  doc = "Information about a prebuilt GHC package.",
+  fields = {
+    "package": "Package name",
+  },
+)
+
 HaddockInfo = provider(
   doc = "Haddock information.",
   fields = {
