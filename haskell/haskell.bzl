@@ -79,9 +79,9 @@ REPL to work.
     default = "1.0.0",
     doc = "Library/binary version. Internal - do not use."
   ),
-  "_cpp_defines": attr.label(
+  "_chs_wrapper": attr.label(
     allow_single_file = True,
-    default = Label("@io_tweag_rules_haskell//haskell:assets/cpp_defines"),
+    default = Label("@io_tweag_rules_haskell//haskell:private/c2hs_wrapper.sh"),
   ),
   "_ghci_script": attr.label(
     allow_single_file = True,
