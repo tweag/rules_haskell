@@ -20,13 +20,15 @@ load(":protobuf.bzl",
   _haskell_proto_library = "haskell_proto_library",
   _haskell_proto_toolchain = "haskell_proto_toolchain",
 )
+load(":doctest.bzl",
+  _haskell_doctest = "haskell_doctest",
+  _haskell_doctest_toolchain = "haskell_doctest_toolchain",
+)
 load(":haddock.bzl",
   _haskell_doc = "haskell_doc",
 )
 load(":lint.bzl",
   _haskell_lint = "haskell_lint",
-  _haskell_doctest = "haskell_doctest",
-  _haskell_doctest_toolchain = "haskell_doctest_toolchain",
 )
 load(":toolchain.bzl",
   _haskell_toolchain = "haskell_toolchain",

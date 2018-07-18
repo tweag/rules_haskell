@@ -60,6 +60,12 @@ def _haskell_doc_aspect_impl(target, ctx):
     prebuilt_deps.add(dep)
   prebuilt_deps.use_param_file(param_file_arg = "%s", use_always = True)
 
+  ghc_args = ctx.actions.args()
+  for x in target[HaskellLibraryInfo].ghc_args:
+    ghc_args.add(["--optghc", x])
+  ghc_args.add([x.path for x in set.to_list(target[HaskellLibraryInfo].source_files)])
+  ghc_args.add(["-v0"])
+
   ctx.actions.run(
     inputs = depset(transitive = [
       set.to_depset(target[HaskellBuildInfo].package_caches),
@@ -88,7 +94,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     arguments = [
       prebuilt_deps,
       args,
-      target[HaskellLibraryInfo].haddock_args,
+      ghc_args,
     ],
     env = hs.env,
   )

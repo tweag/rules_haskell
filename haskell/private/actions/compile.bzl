@@ -209,8 +209,8 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   Returns:
     DefaultCompileInfo: Populated default compilation settings.
   """
-  args = hs.actions.args()
-  haddock_args = hs.actions.args()
+
+  ghc_args = []
 
   # GHC expects the CC compiler as the assembler, but segregates the
   # set of flags to pass to it when used as an assembler. So we have
@@ -220,8 +220,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   ] + [
     "-opta" + f for f in cc.compiler_flags
   ]
-  args.add(cc_args)
-  haddock_args.add(cc_args, before_each="--optghc")
+  ghc_args += cc_args
 
   # Declare file directories
   objects_dir_raw = target_unique_name(hs, "objects")
@@ -240,85 +239,29 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   )
 
   # Default compiler flags.
-  args.add(hs.toolchain.compiler_flags)
-  haddock_args.add(hs.toolchain.compiler_flags, before_each="--optghc")
-
-  # Compilation mode and explicit user flags
-  if hs.mode == "opt":
-    args.add("-O2")
-
-  args.add(compiler_flags)
-  haddock_args.add(compiler_flags, before_each="--optghc")
-
-  args.add(["-static"])
-
-  # NOTE We can't have profiling and dynamic code at the same time, see:
-  # https://ghc.haskell.org/trac/ghc/ticket/15394
-  if with_profiling:
-    args.add("-prof")
-  else:
-    args.add(["-dynamic-too"])
-
-  # Common flags
-  args.add([
-    "-v0",
-    "-c",
-    "--make",
-    "-fPIC",
-    "-hide-all-packages",
-  ])
-  haddock_args.add(["-hide-all-packages"], before_each="--optghc")
-  haddock_args.add(["-v0"])
-
-  args.add([
-    "-odir", objects_dir,
-    "-hidir", interfaces_dir,
-  ])
-
-  args.add([
-    "-osuf", _output_file_ext("o", False, with_profiling),
-    "-dynosuf", _output_file_ext("o", True, with_profiling),
-    "-hisuf", _output_file_ext("hi", False, with_profiling),
-    "-dynhisuf", _output_file_ext("hi", True, with_profiling),
-  ])
+  ghc_args += hs.toolchain.compiler_flags
+  ghc_args += compiler_flags
+  ghc_args.append("-hide-all-packages")
 
   # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
   # not yet in a release; plus, we still want to support older versions of
   # GHC.  For details, see: https://phabricator.haskell.org/D4714
   if hs.toolchain.is_darwin:
-    args.add(["-optl-Wl,-dead_strip_dylibs"])
-    haddock_args.add(["-optl-Wl,-dead_strip_dylibs"], before_each="--optghc")
-
-  # Add import hierarchy root.
-  # Note that this is not perfect, since GHC requires hs-boot files
-  # to be in the same directory as the corresponding .hs file.  Thus
-  # the two must both have the same root; i.e., both plain files,
-  # both in bin_dir, or both in genfiles_dir.
-  ih_root_arg = ["-i{0}".format(hs.src_root),
-                 "-i{0}".format(paths.join(hs.bin_dir.path, hs.src_root)),
-                 "-i{0}".format(paths.join(hs.genfiles_dir.path, hs.src_root))]
-  args.add(ih_root_arg)
-  haddock_args.add(ih_root_arg, before_each="--optghc")
+    ghc_args += ["-optl-Wl,-dead_strip_dylibs"]
 
   # Expose all prebuilt dependencies
   for prebuilt_dep in set.to_list(dep_info.direct_prebuilt_deps):
-    items = ["-package", prebuilt_dep]
-    args.add(items)
-    haddock_args.add(items, before_each="--optghc")
+    ghc_args += ["-package", prebuilt_dep]
 
   # Expose all bazel dependencies
   for package in set.to_list(dep_info.package_ids):
-    items = ["-package-id", package]
-    args.add(items)
     if package != my_pkg_id:
-      haddock_args.add(items, before_each="--optghc")
+      ghc_args += ["-package-id", package]
 
   # Only include package DBs for deps, prebuilt deps should be found
   # auto-magically by GHC.
   for cache in set.to_list(dep_info.package_caches):
-    items = ["-package-db", cache.dirname]
-    args.add(items)
-    haddock_args.add(items, before_each="--optghc")
+    ghc_args += ["-package-db", cache.dirname]
 
   # We want object and dynamic objects from all inputs.
   object_files = []
@@ -331,7 +274,18 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   boot_files = []
   source_files = set.empty()
   modules = set.empty()
-  import_dirs = set.from_list([hs.src_root, hs.genfile_src_root])
+
+  # Add import hierarchy root.
+  # Note that this is not perfect, since GHC requires hs-boot files
+  # to be in the same directory as the corresponding .hs file.  Thus
+  # the two must both have the same root; i.e., both plain files,
+  # both in bin_dir, or both in genfiles_dir.
+
+  import_dirs = set.from_list([
+    hs.src_root,
+    paths.join(hs.bin_dir.path, hs.src_root),
+    paths.join(hs.genfiles_dir.path, hs.src_root),
+  ])
 
   # Output object files are named after modules, not after input file names.
   # The difference is only visible in the case of Main module because it may
@@ -453,24 +407,72 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
             )
           )
 
-  preprocessor_args = ["-optP" + f for f in cc.cpp_flags]
-  args.add(preprocessor_args)
-  args.add(cc.include_args)
-  haddock_args.add(preprocessor_args, before_each="--optghc")
-  haddock_args.add(cc.include_args, before_each="--optghc")
-
-  for f in set.to_list(source_files):
-    args.add(f)
-    haddock_args.add(f)
+  ghc_args += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
+  ghc_args += ["-optP" + f for f in cc.cpp_flags]
+  ghc_args += cc.include_args
 
   locale_archive_depset = (
     depset([hs.toolchain.locale_archive])
     if hs.toolchain.locale_archive != None else depset()
   )
 
+  # This is absolutely required otherwise GHC doesn't know what package it's
+  # creating `Name`s for to put them in Haddock interface files which then
+  # results in Haddock not being able to find names for linking in
+  # environment after reading its interface file later.
+  if my_pkg_id != None:
+    unit_id_args = [
+      "-this-unit-id", pkg_id.to_string(my_pkg_id),
+      "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id.to_string(my_pkg_id))
+    ]
+    ghc_args += unit_id_args
+
+  args = hs.actions.args()
+  args.add(ghc_args)
+
+  # Compilation mode and explicit user flags
+  if hs.mode == "opt":
+    args.add("-O2")
+
+  args.add(["-static"])
+
+  # NOTE We can't have profiling and dynamic code at the same time, see:
+  # https://ghc.haskell.org/trac/ghc/ticket/15394
+  if with_profiling:
+    args.add("-prof")
+  else:
+    args.add(["-dynamic-too"])
+
+  # Common flags
+  args.add([
+    "-v0",
+    "-c",
+    "--make",
+    "-fPIC",
+    "-hide-all-packages",
+  ])
+
+  # Output directories
+  args.add([
+    "-odir", objects_dir,
+    "-hidir", interfaces_dir,
+  ])
+
+  # Output file extensions
+  args.add([
+    "-osuf", _output_file_ext("o", False, with_profiling),
+    "-dynosuf", _output_file_ext("o", True, with_profiling),
+    "-hisuf", _output_file_ext("hi", False, with_profiling),
+    "-dynhisuf", _output_file_ext("hi", True, with_profiling),
+  ])
+
+  # Pass source files
+  for f in set.to_list(source_files):
+    args.add(f)
+
   return DefaultCompileInfo(
     args = args,
-    haddock_args = haddock_args,
+    ghc_args = ghc_args,
     inputs = depset(transitive = [
       depset(header_files),
       depset(boot_files),
@@ -536,6 +538,9 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compil
     object_dyn_files = c.object_dyn_files,
     modules = c.modules,
     source_files = c.source_files,
+    import_dirs = c.import_dirs,
+    ghc_args = c.ghc_args,
+    header_files = c.header_files,
   )
 
 def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, my_pkg_id):
@@ -547,24 +552,12 @@ def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compi
       interface_files: list of interface files
       object_files: list of static object files
       object_dyn_files: list of dynamic object files
-      haddock_args: list of string arguments suitable for Haddock
+      ghc_args: list of string arguments suitable for Haddock
       modules: set of module names
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, my_pkg_id)
-
-  # This is absolutely required otherwise GHC doesn't know what package it's
-  # creating `Name`s for to put them in Haddock interface files which then
-  # results in Haddock not being able to find names for linking in
-  # environment after reading its interface file later.
-  unit_id_args = [
-    "-this-unit-id", pkg_id.to_string(my_pkg_id),
-    "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id.to_string(my_pkg_id))
-  ]
-
-  c.args.add(unit_id_args)
-  c.haddock_args.add(unit_id_args, before_each="--optghc")
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, my_pkg_id=my_pkg_id)
 
   hs.toolchain.actions.run_ghc(
     hs,
@@ -581,7 +574,7 @@ def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compi
     interface_files = c.interface_files,
     object_files = c.object_files,
     object_dyn_files = c.object_dyn_files,
-    haddock_args = c.haddock_args,
+    ghc_args = c.ghc_args,
     modules = c.modules,
     header_files = c.header_files,
     boot_files = c.boot_files,

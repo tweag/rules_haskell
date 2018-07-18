@@ -183,9 +183,9 @@ rule_test(
 rule_test(
   name = "test-haskell_doctest",
   generates = [
-    "doctest-log-lib-b",
+    "doctest-log-doctest-lib-testsZShaskellZUdoctestZSlib-b-1.0.0",
   ],
-  rule = "//tests/haskell_doctest:haskell_doctest",
+  rule = "//tests/haskell_doctest:doctest-lib",
   size = "small",
 )
 
