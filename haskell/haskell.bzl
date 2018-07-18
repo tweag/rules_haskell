@@ -1,14 +1,6 @@
 """Core Haskell rules"""
 
-load(":private/providers.bzl",
-  "HaskellBuildInfo",
-  "HaskellLibraryInfo",
-  "HaskellBinaryInfo",
-  "HaskellPrebuiltPackageInfo",
-  "HaskellProtobufInfo",
-  "CcSkylarkApiProviderHacked",
-)
-
+load(":private/providers.bzl", "HaskellPrebuiltPackageInfo")
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 load(":private/haskell_impl.bzl",
