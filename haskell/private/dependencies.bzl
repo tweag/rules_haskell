@@ -105,6 +105,7 @@ def gather_dep_info(ctx):
         package_confs = acc.package_confs,
         package_caches = acc.package_caches,
         static_libraries = acc.static_libraries,
+        static_libraries_prof = acc.static_libraries_prof,
         dynamic_libraries = acc.dynamic_libraries,
         interface_files = acc.interface_files,
         prebuilt_dependencies = set.mutable_insert(acc.prebuilt_dependencies, pkg),
