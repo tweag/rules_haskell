@@ -209,7 +209,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   Returns:
     DefaultCompileInfo: Populated default compilation settings.
   """
-  args = hs.actions.args()
+
   ghc_args = []
 
   # GHC expects the CC compiler as the assembler, but segregates the
@@ -220,7 +220,6 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   ] + [
     "-opta" + f for f in cc.compiler_flags
   ]
-  args.add(cc_args)
   ghc_args += cc_args
 
   # Declare file directories
@@ -240,73 +239,29 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   )
 
   # Default compiler flags.
-  args.add(hs.toolchain.compiler_flags)
   ghc_args += hs.toolchain.compiler_flags
-
-  # Compilation mode and explicit user flags
-  if hs.mode == "opt":
-    args.add("-O2")
-
-  args.add(compiler_flags)
   ghc_args += compiler_flags
-
-  args.add(["-static"])
-
-  # NOTE We can't have profiling and dynamic code at the same time, see:
-  # https://ghc.haskell.org/trac/ghc/ticket/15394
-  if with_profiling:
-    args.add("-prof")
-  else:
-    args.add(["-dynamic-too"])
-
-  # Common flags
-  args.add([
-    "-v0",
-    "-c",
-    "--make",
-    "-fPIC",
-    "-hide-all-packages",
-  ])
   ghc_args.append("-hide-all-packages")
-
-  args.add([
-    "-odir", objects_dir,
-    "-hidir", interfaces_dir,
-  ])
-
-  args.add([
-    "-osuf", _output_file_ext("o", False, with_profiling),
-    "-dynosuf", _output_file_ext("o", True, with_profiling),
-    "-hisuf", _output_file_ext("hi", False, with_profiling),
-    "-dynhisuf", _output_file_ext("hi", True, with_profiling),
-  ])
 
   # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
   # not yet in a release; plus, we still want to support older versions of
   # GHC.  For details, see: https://phabricator.haskell.org/D4714
   if hs.toolchain.is_darwin:
-    args.add(["-optl-Wl,-dead_strip_dylibs"])
     ghc_args += ["-optl-Wl,-dead_strip_dylibs"]
 
   # Expose all prebuilt dependencies
   for prebuilt_dep in set.to_list(dep_info.direct_prebuilt_deps):
-    items = ["-package", prebuilt_dep]
-    args.add(items)
-    ghc_args += items
+    ghc_args += ["-package", prebuilt_dep]
 
   # Expose all bazel dependencies
   for package in set.to_list(dep_info.package_ids):
-    items = ["-package-id", package]
-    args.add(items)
     if package != my_pkg_id:
-      ghc_args += items
+      ghc_args += ["-package-id", package]
 
   # Only include package DBs for deps, prebuilt deps should be found
   # auto-magically by GHC.
   for cache in set.to_list(dep_info.package_caches):
-    items = ["-package-db", cache.dirname]
-    args.add(items)
-    ghc_args += items
+    ghc_args += ["-package-db", cache.dirname]
 
   # We want object and dynamic objects from all inputs.
   object_files = []
@@ -452,18 +407,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
             )
           )
 
-  import_dirs_args = ["-i{0}".format(d) for d in set.to_list(import_dirs)]
-  args.add(import_dirs_args)
-  ghc_args += import_dirs_args
-
-  preprocessor_args = ["-optP" + f for f in cc.cpp_flags]
-  args.add(preprocessor_args)
-  args.add(cc.include_args)
-  ghc_args += preprocessor_args
+  ghc_args += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
+  ghc_args += ["-optP" + f for f in cc.cpp_flags]
   ghc_args += cc.include_args
-
-  for f in set.to_list(source_files):
-    args.add(f)
 
   locale_archive_depset = (
     depset([hs.toolchain.locale_archive])
@@ -479,8 +425,50 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
       "-this-unit-id", pkg_id.to_string(my_pkg_id),
       "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id.to_string(my_pkg_id))
     ]
-    args.add(unit_id_args)
     ghc_args += unit_id_args
+
+  args = hs.actions.args()
+  args.add(ghc_args)
+
+  # Compilation mode and explicit user flags
+  if hs.mode == "opt":
+    args.add("-O2")
+
+  args.add(["-static"])
+
+  # NOTE We can't have profiling and dynamic code at the same time, see:
+  # https://ghc.haskell.org/trac/ghc/ticket/15394
+  if with_profiling:
+    args.add("-prof")
+  else:
+    args.add(["-dynamic-too"])
+
+  # Common flags
+  args.add([
+    "-v0",
+    "-c",
+    "--make",
+    "-fPIC",
+    "-hide-all-packages",
+  ])
+
+  # Output directories
+  args.add([
+    "-odir", objects_dir,
+    "-hidir", interfaces_dir,
+  ])
+
+  # Output file extensions
+  args.add([
+    "-osuf", _output_file_ext("o", False, with_profiling),
+    "-dynosuf", _output_file_ext("o", True, with_profiling),
+    "-hisuf", _output_file_ext("hi", False, with_profiling),
+    "-dynhisuf", _output_file_ext("hi", True, with_profiling),
+  ])
+
+  # Pass source files
+  for f in set.to_list(source_files):
+    args.add(f)
 
   return DefaultCompileInfo(
     args = args,

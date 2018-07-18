@@ -197,7 +197,7 @@ haskell_doctest = rule(
     ),
     "modules": attr.string_list(
       doc = """List of names of modules that will be tested. If the list is
-omitted, all modules provided by `deps` will be tested.
+omitted, all exposed modules provided by `deps` will be tested.
 """),
   },
   toolchains = [
@@ -209,5 +209,5 @@ omitted, all modules provided by `deps` will be tested.
 
 Note that your toolchain must be equipped with `doctest` executable, i.e.
 you should specify location of the executable using the `doctest` attribute
-when you invoke `haskell_toolchain`.
+of `haskell_doctest_toolchain`.
 """
