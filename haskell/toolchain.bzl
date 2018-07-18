@@ -232,6 +232,8 @@ def _haskell_toolchain_impl(ctx):
       repl_ghci_args = ctx.attr.repl_ghci_args,
       locale = ctx.attr.locale,
       locale_archive = locale_archive,
+      # XXX: bazel have no builtin set, so we use a dict here for later O(1) query of `haddock_ignore_prebuilts`
+      haddock_ignore_prebuilts = {i:None for i in ctx.attr.haddock_ignore_prebuilts},
       mode = ctx.var["COMPILATION_MODE"],
       actions = struct(
         compile_binary = compile_binary,
@@ -291,7 +293,11 @@ _haskell_toolchain = rule(
       doc = """
 Label pointing to the locale archive file to use. Mostly useful on NixOS.
 """,
-    )
+    ),
+    "haddock_ignore_prebuilts": attr.string_list(
+      doc = "A list of prebuilt dependencies ignored by haddock. Use it when theses dependencies does not have an haddock documentation.",
+      default = [],
+    ),
   }
 )
 

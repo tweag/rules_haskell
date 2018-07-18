@@ -44,3 +44,16 @@ haskell_doc(
   deps = [":haddock-lib-b"],
   index_transitive_deps = True,
 )
+
+# the package `mtl` have no documentation (see `ghc.nix`)
+# but the following `haskell_doc` call must not fail
+haskell_library(
+  name = "lib_with_a_dep_without_haddock",
+  srcs = ["Deep.hsc"],
+  prebuilt_dependencies = ["base", "mtl"],
+)
+
+haskell_doc(
+  name = "doc_broken_deps",
+  deps = [":lib_with_a_dep_without_haddock"]
+)

@@ -17,4 +17,7 @@ in haskellPackages.ghcWithPackages (p: with p; [
   lens-labels
   proto-lens
   text
+
+  # mtl is imported without documentation for testing purpose (see //tests/haddock:doc_broken_deps)
+  (haskell.lib.dontCheck (haskell.lib.dontHaddock mtl))
   ])
