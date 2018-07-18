@@ -111,3 +111,11 @@ Returns the list of include directories used to compile this target.
 """,
   },
 )
+
+C2hsLibraryInfo = provider(
+  doc = "Information about c2hs dependencies.",
+  fields = {
+    "chi_file": "c2hs interface file",
+    "import_dir": "Import directory containing generated Haskell source file.",
+  }
+)

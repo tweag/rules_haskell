@@ -9,7 +9,10 @@ load(":private/path_utils.bzl",
   "get_external_libs_path",
 )
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/providers.bzl", "DefaultCompileInfo")
+load(":private/providers.bzl",
+     "DefaultCompileInfo",
+     "C2hsLibraryInfo",
+)
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "dicts", "paths")
 
@@ -61,65 +64,6 @@ def _process_hsc_file(hs, cc, hsc_file):
 
   return hs_out, idir
 
-def _process_chs_file(hs, cc, chs_wrapper, chs_file, chi_files=[]):
-  """Process a single chs file.
-
-  Args:
-    hs: Haskell context.
-    cc: CcInteropInfo, information about C dependencies.
-    chs_file: chs file to process.
-    chi_files: .chi files that should be available to c2hs.
-
-  Returns:
-    (File, File, string): Haskell source file created by processing
-       chs_file, .chi file produced by the same file, and new import
-       directory containing the generated source file.
-  """
-
-  args = hs.actions.args()
-
-  # Output a Haskell source file.
-  chs_dir_raw = target_unique_name(hs, "chs")
-  hs_out = declare_compiled(hs, chs_file, ".hs", directory=chs_dir_raw)
-  chi_out = declare_compiled(hs, chs_file, ".chi", directory=chs_dir_raw)
-  args.add([chs_file.path, "-o", hs_out.path])
-
-  args.add(["-C-E"])
-  args.add(["--cpp", hs.tools.cc.path])
-  args.add("-C-includeghcplatform.h")
-  args.add("-C-includeghcversion.h")
-  args.add(["-C" + x for x in cc.cpp_flags])
-  args.add(["-C" + x for x in cc.include_args])
-
-  chi_include_root = paths.join(
-    hs.bin_dir.path,
-    hs.label.workspace_root,
-    hs.label.package,
-    chs_dir_raw,
-  )
-  args.add(["-i" + chi_include_root])
-
-  hs.actions.run(
-    inputs = depset(transitive = [
-      depset(cc.hdrs),
-      depset([hs.tools.cc, hs.tools.ghc, hs.tools.c2hs, chs_file]),
-      depset(chi_files),
-    ]),
-    outputs = [hs_out, chi_out],
-    executable = chs_wrapper,
-    mnemonic = "HaskellC2Hs",
-    arguments = [args],
-    env = hs.env,
-  )
-
-  idir = paths.join(
-    hs.bin_dir.path,
-    hs.label.package,
-    chs_dir_raw,
-  )
-
-  return hs_out, chi_out, idir
-
 def _output_file_ext(base, dynamic, profiling_enabled):
   """Return extension that output of compilation should have depending on the
   following inputs:
@@ -149,7 +93,7 @@ def _output_file_ext(base, dynamic, profiling_enabled):
     ext = "p_" + ext
   return ("." if with_dot else "") + ext
 
-def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, main_file = None, my_pkg_id = None):
+def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
 
   Returns:
@@ -238,8 +182,6 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper,
   # be placed in a file with a name different from "Main.hs". In that case
   # still Main.o will be produced.
 
-  chi_files_so_far = []
-
   for s in srcs:
 
     if s.extension == "h":
@@ -252,20 +194,28 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper,
           s0, idir = _process_hsc_file(hs, cc, s)
           set.mutable_insert(source_files, s0)
           set.mutable_insert(import_dirs, idir)
-        elif s.extension == "chs":
-          s0, chi, idir = _process_chs_file(hs, cc, chs_wrapper, s, chi_files_so_far)
-          set.mutable_insert(source_files, s0)
-          set.mutable_insert(import_dirs, idir)
-          chi_files_so_far.append(chi)
         else:
           set.mutable_insert(source_files, s)
-        set.mutable_insert(modules, module_name(hs, s))
+
+        rel_path = None
+
+        if s in import_dir_map:
+          idir = import_dir_map[s]
+          set.mutable_insert(import_dirs, idir)
+          rel_path = paths.relativize(s.path, idir)
+          mname = module_name(hs, s, rel_path=rel_path)
+        else:
+          mname = module_name(hs, s)
+
+        set.mutable_insert(modules, mname)
+
         object_files.append(
           declare_compiled(
             hs,
             s,
             _output_file_ext(".o", False, with_profiling),
-            directory=objects_dir_raw
+            directory=objects_dir_raw,
+            rel_path=rel_path,
           )
         )
         if not with_profiling:
@@ -274,7 +224,8 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper,
               hs,
               s,
               _output_file_ext(".o", True, with_profiling),
-              directory=objects_dir_raw
+              directory=objects_dir_raw,
+              rel_path=rel_path,
             )
           )
         interface_files.append(
@@ -282,7 +233,8 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper,
             hs,
             s,
             _output_file_ext(".hi", False, with_profiling),
-            directory=interfaces_dir_raw
+            directory=interfaces_dir_raw,
+            rel_path=rel_path,
           )
         )
         if not with_profiling:
@@ -291,17 +243,14 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper,
               hs,
               s,
               _output_file_ext(".hi", True, with_profiling),
-              directory=interfaces_dir_raw
+              directory=interfaces_dir_raw,
+              rel_path=rel_path,
             )
           )
       else:
         if s.extension == "hsc":
           s0 = _process_hsc_file(hs, cc, s)
           set.mutable_insert(source_files, s0)
-        elif s.extension == "chs":
-          s0, chi = _process_chs_file(hs, cc, s, chi_files_so_far)
-          set.mutable_insert(source_files, s0)
-          chi_files_so_far.append(chi)
         else:
           set.mutable_insert(source_files, s)
         set.mutable_insert(modules, "Main")
@@ -455,7 +404,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper,
     ),
   )
 
-def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, main_file, main_function):
+def compile_binary(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_file, main_function):
   """Compile a Haskell target into object files suitable for linking.
 
   Returns:
@@ -465,7 +414,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compil
       modules: set of module names
       source_files: set of Haskell source files
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, main_file = main_file)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_file = main_file)
   c.args.add(["-main-is", main_function])
 
   hs.toolchain.actions.run_ghc(
@@ -488,7 +437,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compil
     header_files = c.header_files,
   )
 
-def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, my_pkg_id):
+def compile_library(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id):
   """Build arguments for Haskell package build.
 
   Returns:
@@ -502,7 +451,7 @@ def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compi
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, my_pkg_id=my_pkg_id)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id=my_pkg_id)
 
   hs.toolchain.actions.run_ghc(
     hs,

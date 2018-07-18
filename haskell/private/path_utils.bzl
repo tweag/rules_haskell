@@ -3,7 +3,7 @@
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def module_name(hs, f):
+def module_name(hs, f, rel_path=None):
   """Given Haskell source file path, turn it into a dot-separated module name.
 
   module_name(
@@ -14,13 +14,19 @@ def module_name(hs, f):
   Args:
     hs:  Haskell context.
     f:   Haskell source file.
+    rel_path: Explicit relative path from import root to the module, or None
+      if it should be deduced.
 
   Returns:
     string: Haskell module name.
   """
-  (hsmod, _) = paths.split_extension(
-    _rel_path_to_module(hs, f).replace('/', '.')
-  )
+
+  rpath = rel_path
+
+  if not rpath:
+    rpath = _rel_path_to_module(hs, f)
+
+  (hsmod, _) = paths.split_extension(rpath.replace('/', '.'))
   return hsmod
 
 def target_unique_name(hs, name_prefix):
@@ -72,7 +78,7 @@ def module_unique_name(hs, source_file, name_prefix):
     module_name(hs, source_file)
   )
 
-def declare_compiled(hs, src, ext, directory=None):
+def declare_compiled(hs, src, ext, directory=None, rel_path=None):
   """Given a Haskell-ish source file, declare its output.
 
   Args:
@@ -80,12 +86,21 @@ def declare_compiled(hs, src, ext, directory=None):
     src: Haskell source file.
     ext: New extension.
     directory: String, directory prefix the new file should live in.
+    rel_path: Explicit relative path from import root to the module, or None
+      if it should be deduced.
 
   Returns:
     File: Declared output file living in `directory` with given `ext`.
   """
-  fp = paths.replace_extension(_rel_path_to_module(hs, src), ext)
+
+  rpath = rel_path
+
+  if not rpath:
+    rpath = _rel_path_to_module(hs, src)
+
+  fp = paths.replace_extension(rpath, ext)
   fp_with_dir = fp if directory == None else paths.join(directory, fp)
+
   return hs.actions.declare_file(fp_with_dir)
 
 def get_external_libs_path(libs, prefix=None):

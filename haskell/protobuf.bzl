@@ -124,7 +124,6 @@ def _haskell_proto_aspect_impl(target, ctx):
     "repl_interpreted": True,
     "repl_ghci_args": [],
     "version": "1.0.0",
-    "_chs_wrapper": ctx.attr._chs_wrapper,
     "_ghci_script": ctx.attr._ghci_script,
     "_ghci_repl_wrapper": ctx.attr._ghci_repl_wrapper,
     "hidden_modules": [],
@@ -162,10 +161,6 @@ def _haskell_proto_aspect_impl(target, ctx):
 _haskell_proto_aspect = aspect(
   _haskell_proto_aspect_impl,
   attrs = {
-    "_chs_wrapper": attr.label(
-      allow_single_file = True,
-      default = Label("@io_tweag_rules_haskell//haskell:private/c2hs_wrapper.sh"),
-    ),
     "_ghci_script": attr.label(
       allow_single_file = True,
       default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
