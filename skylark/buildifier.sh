@@ -8,7 +8,7 @@ function die() {
   exit 1
 }
 
-if [[ -n "$BUILD_WORKING_DIRECTORY" ]]
+if [[ -z "$BUILD_WORKING_DIRECTORY" ]]
 then
     die "Error: script must be called using bazel run --direct_run."
 fi
