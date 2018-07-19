@@ -50,6 +50,11 @@ run_test() {
 ############################################################################
 # Tests
 
+test_skylark_lint()
+{
+    bazel test //... --config=ci --build_tests_only --test_tag_filters=lint
+}
+
 test_bazel_test()
 {
     bazel test //... --config=ci
