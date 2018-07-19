@@ -1,7 +1,7 @@
 load("//skylark:lint.bzl", "skylark_lint")
-load(":private/create_dummy_archive.bzl", "create_dummy_archive")
+load(":private/dummy_linker_archive.bzl", "dummy_linker_archive")
 
-create_dummy_archive(
+dummy_linker_archive(
   name = "dummy_static_lib",
   visibility = ["//visibility:public"]
 )

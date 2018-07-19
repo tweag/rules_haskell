@@ -46,7 +46,7 @@ module BazelDummy () where
   )
 
 
-create_dummy_archive = rule(
+dummy_linker_archive = rule(
   implementation = _impl,
   toolchains = [
     "@io_tweag_rules_haskell//haskell:toolchain",
