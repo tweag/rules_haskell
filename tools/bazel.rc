@@ -3,7 +3,6 @@
 #build:ci --all_incompatible_changes
 build:ci --sandbox_debug
 build:ci --verbose_failures
-build:ci --jobs=0 # avoid OOM condition caused by high levels of concurrency on Circle CI
 # Make sure we don't rely on the names of convenience symlinks because those
 # can be changed by user.
 build:ci --symlink_prefix=foobar
