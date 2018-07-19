@@ -36,8 +36,6 @@ jobs:
       - run:
           name: Run tests
           command: |
-            # XXX Workaround https://github.com/NixOS/nix/issues/1969.
-            nix-build '<nixpkgs>' -A haskell.compiler.ghc822
             nix-shell --pure --run "./run_tests.sh"
 
   build-darwin:
