@@ -1,7 +1,6 @@
 # See https://docs.bazel.build/versions/master/user-manual.html#bazelrc.
 
 #build:ci --all_incompatible_changes
-build:ci --genrule_strategy=standalone
 build:ci --sandbox_debug
 build:ci --verbose_failures
 build:ci --jobs=0 # avoid OOM condition caused by high levels of concurrency on Circle CI
