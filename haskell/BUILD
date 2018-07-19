@@ -1,4 +1,10 @@
 load("//skylark:lint.bzl", "skylark_lint")
+load(":private/dummy_linker_archive.bzl", "dummy_linker_archive")
+
+dummy_linker_archive(
+  name = "dummy_static_lib",
+  visibility = ["//visibility:public"]
+)
 
 exports_files(
   glob(["*.bzl"]) + [

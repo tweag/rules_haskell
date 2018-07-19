@@ -18,52 +18,6 @@ def _backup_path(target):
 
   return "/".join([".."] * n)
 
-def _create_dummy_archive(hs, cc):
-  """Create empty archive so that GHC has some input files to work on during
-  linking.
-
-  See: https://github.com/facebook/buck/blob/126d576d5c07ce382e447533b57794ae1a358cc2/src/com/facebook/buck/haskell/HaskellDescriptionUtils.java#L295
-
-  Args:
-    hs: Haskell context.
-
-  Returns:
-    File, the created dummy archive.
-  """
-
-  dummy_raw = "BazelDummy.hs"
-  dummy_input = hs.actions.declare_file(dummy_raw)
-  dummy_object = hs.actions.declare_file(paths.replace_extension(dummy_raw, ".o"))
-
-  hs.actions.write(output=dummy_input, content="""
-{-# LANGUAGE NoImplicitPrelude #-}
-module BazelDummy () where
-""")
-
-  dummy_static_lib = hs.actions.declare_file("libempty.a")
-  hs.toolchain.actions.run_ghc(
-    hs,
-    inputs = [dummy_input],
-    outputs = [dummy_object],
-    mnemonic = "HaskellDummyObjectGhc",
-    arguments = [
-      "-optc" + f for f in cc.compiler_flags
-    ] + ["-c", dummy_input.path],
-  )
-
-  ar_args = hs.actions.args()
-  ar_args.add(["qc", dummy_static_lib, dummy_object])
-
-  hs.actions.run(
-    inputs = [dummy_object] + hs.tools_runfiles.ar,
-    outputs = [dummy_static_lib],
-    mnemonic = "HaskellDummyObjectAr",
-    executable = hs.tools.ar,
-    arguments = [ar_args]
-  )
-
-  return dummy_static_lib
-
 def _fix_linker_paths(hs, inp, out, external_libraries):
   """Postprocess a macOS binary to make shared library references relative.
 
@@ -93,14 +47,13 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
                      out.path)
                      for f in external_libraries]))
 
-def link_binary(hs, cc, dep_info, extra_srcs, compiler_flags, object_files, with_profiling):
+def link_binary(hs, cc, dep_info, extra_srcs, compiler_flags,
+                object_files, with_profiling, dummy_static_lib):
   """Link Haskell binary from static object files.
 
   Returns:
     File: produced executable
   """
-
-  dummy_static_lib = _create_dummy_archive(hs, cc)
 
   executable = hs.actions.declare_file(hs.name)
   if not hs.toolchain.is_darwin:
