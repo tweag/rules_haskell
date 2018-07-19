@@ -132,7 +132,16 @@ See [rules_haskell_examples][] for examples of using these rules.
 ## For `rules_haskell` developers
 
 To run the test suite for these rules, you'll need [Nix][nix]
-installed. To build and run tests locally, execute:
+installed. First, from the project’s folder start a pure nix shell:
+
+```
+$ nix-shell --pure shell.nix
+```
+
+This will make sure that bazel has the exact same environment
+on every development system (`python`, `ghc`, `go`, …).
+
+To build and run tests locally, execute:
 
 ```
 $ bazel test //...
@@ -188,3 +197,27 @@ recommend [Hazel][hazel] for generating rules to build packages
 published on Hackage, or part of Stackage snapshots, using Bazel.
 
 [hazel]: https://github.com/formationai/hazel
+
+## Troubleshooting `rules_haskell` development
+
+### `bazel` fails because some executable cannot be found
+
+Make sure you run your build in a pure nix shell
+(`nix-shell --pure shell.nix`). If it still doesn’t build,
+it is likely a bug.
+
+### A Haskell dependency fails with strange error messages
+
+If you get cabal error messages the likes of:
+
+```
+CallStack (from HasCallStack):
+  dieNoWrap, called at libraries/Cabal/Cabal/Distribution/Utils/LogProgress.hs:61:9 in Cabal-2.0.1.0:Distribution.Utils.LogProgress
+Error:
+    The following packages are broken because other packages they depend on are missing. These broken packages must be rebuilt before they can be used.
+installed package lens-labels-0.2.0.1 is broken due to missing package profunctors-5.2.2-HzcVdviprlKb7Ap1woZu4, tagged-0.8.5-HviTdonkllN1ZD6he1Zn8I
+```
+
+you’ve most likely hit GHC’s
+[infamous non-deterministic library ID bug](https://nixos.org/nixpkgs/manual/#how-to-recover-from-ghcs-infamous-non-deterministic-library-id-bug).
+
