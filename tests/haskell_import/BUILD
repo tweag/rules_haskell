@@ -2,18 +2,18 @@ package(default_testonly = 1)
 
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_library",
     "haskell_import",
+    "haskell_library",
     "haskell_test",
 )
 
 haskell_import(
-  name = "bytestring",
+    name = "bytestring",
 )
 
 haskell_import(
-  name = "text_pkg",
-  package = "text",
+    name = "text_pkg",
+    package = "text",
 )
 
 haskell_library(
@@ -29,7 +29,7 @@ haskell_test(
     main_file = "Bin.hs",
     prebuilt_dependencies = ["base"],
     deps = [
-        ":text_pkg",
         ":Lib",
+        ":text_pkg",
     ],
 )

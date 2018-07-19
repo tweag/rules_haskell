@@ -1,25 +1,28 @@
 package(default_testonly = 1)
 
 load(
-  "@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_library",
-  "haskell_binary",
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_binary",
+    "haskell_library",
 )
 
 haskell_library(
-  name = "hsc-lib",
-  srcs = [
-      "Foo.hsc",
-      "Bar.hsc",
-      "Bar/Baz.hsc",
-  ],
-  prebuilt_dependencies = ["base"],
+    name = "hsc-lib",
+    srcs = [
+        "Bar.hsc",
+        "Bar/Baz.hsc",
+        "Foo.hsc",
+    ],
+    prebuilt_dependencies = ["base"],
 )
 
 haskell_binary(
-  name = "hsc",
-  srcs = ["Main.hs", "BinHsc.hsc"],
-  prebuilt_dependencies = ["base"],
-  deps = [":hsc-lib"],
-  visibility = ["//visibility:public"],
+    name = "hsc",
+    srcs = [
+        "BinHsc.hsc",
+        "Main.hs",
+    ],
+    prebuilt_dependencies = ["base"],
+    visibility = ["//visibility:public"],
+    deps = [":hsc-lib"],
 )

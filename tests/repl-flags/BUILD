@@ -2,8 +2,6 @@ package(default_visibility = ["//visibility:public"])
 
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_toolchain")
 
-
-
 # This test the `compiler` flags in many ways:
 # - the test needs to be built with `-DTESTS_TOOLCHAIN_COMPILER_FLAGS`, provided by the toolchain attribute `compiler_flags`
 # - the test needs `-XOverloadedStrings`, provided by this rule `compiler_flags`
@@ -12,15 +10,17 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_
 
 # This rule must build correctly (using `bazel build`), but also as a repl (using `bazel run //tests/repl-flags:compiler_flags-repl`)
 haskell_binary(
-   name = "compiler_flags",
-   srcs = ["CompilerFlags.hs"],
-   main_file = "CompilerFlags.hs",
-   visibility = ["//visibility:public"],
+    name = "compiler_flags",
+    srcs = ["CompilerFlags.hs"],
 
-   # This also ensure that local `compiler_flags` does not override the `global ones`
-   compiler_flags = ["-XOverloadedStrings"],
-
-   prebuilt_dependencies = ["base", "bytestring"],
+    # This also ensure that local `compiler_flags` does not override the `global ones`
+    compiler_flags = ["-XOverloadedStrings"],
+    main_file = "CompilerFlags.hs",
+    prebuilt_dependencies = [
+        "base",
+        "bytestring",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 # This test the `repl_ghci_args` flags in a similar way
@@ -33,13 +33,15 @@ haskell_binary(
 
 # This rule must build correctly (using `bazel build`), but also as a repl (using `bazel run //tests/repl-flags:compiler_flags-repl`). The final result between the repl and the binary must be different
 haskell_binary(
-   name = "repl_flags",
-   srcs = ["ReplFlags.hs"],
-   main_file = "ReplFlags.hs",
-   visibility = ["//visibility:public"],
+    name = "repl_flags",
+    srcs = ["ReplFlags.hs"],
+    main_file = "ReplFlags.hs",
+    prebuilt_dependencies = [
+        "base",
+        "bytestring",
+    ],
 
-   # This also ensure that local `repl_flags` does not override the `global ones`
-   repl_ghci_args = ["-DTESTS_TOOLCHAIN_REPL_FLAGS"],
-
-   prebuilt_dependencies = ["base", "bytestring"],
+    # This also ensure that local `repl_flags` does not override the `global ones`
+    repl_ghci_args = ["-DTESTS_TOOLCHAIN_REPL_FLAGS"],
+    visibility = ["//visibility:public"],
 )

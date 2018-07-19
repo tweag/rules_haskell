@@ -1,8 +1,12 @@
-package(default_testonly = 1, default_visibility = ["//visibility:public"])
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
+)
 
-load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-     "haskell_library",
-     "haskell_test",
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_library",
+    "haskell_test",
 )
 
 genrule(
@@ -14,8 +18,8 @@ genrule(
 haskell_library(
     name = "GenModule",
     srcs = [":generate-genmodule"],
-    src_strip_prefix = "src",
     prebuilt_dependencies = ["base"],
+    src_strip_prefix = "src",
 )
 
 genrule(
@@ -28,22 +32,25 @@ genrule(
 haskell_library(
     name = "BinModule",
     srcs = [":generate-binmodule"],
-    src_strip_prefix = "src",
     prebuilt_dependencies = ["base"],
+    src_strip_prefix = "src",
 )
 
 genrule(
     name = "generate-main",
     outs = ["src/Main.hs"],
-    cmd = "printf 'module Main where\nimport GenModule\nimport BinModule\n"
-          + "main = print (a+b) :: IO ()' > $@",
+    cmd = "printf 'module Main where\nimport GenModule\nimport BinModule\n" +
+          "main = print (a+b) :: IO ()' > $@",
 )
 
 haskell_test(
     name = "generated-modules",
-    srcs = [":generate-main"],
-    src_strip_prefix = "src",
-    prebuilt_dependencies = ["base"],
-    deps = [":GenModule", ":BinModule"],
     size = "small",
+    srcs = [":generate-main"],
+    prebuilt_dependencies = ["base"],
+    src_strip_prefix = "src",
+    deps = [
+        ":BinModule",
+        ":GenModule",
+    ],
 )

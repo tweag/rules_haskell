@@ -1,8 +1,9 @@
 package(default_testonly = 1)
 
-load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_binary",
-  "haskell_library",
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_binary",
+    "haskell_library",
 )
 
 genrule(
@@ -13,11 +14,15 @@ genrule(
 
 cc_library(
     name = "clib",
-    hdrs = [":gen-a", "b.h"],
+    hdrs = [
+        "b.h",
+        ":gen-a",
+    ],
 )
 
 haskell_library(
     name = "library-with-includes",
     srcs = ["Lib.hs"],
+    prebuilt_dependencies = ["base"],
     deps = [":clib"],
-    prebuilt_dependencies = ["base"])
+)

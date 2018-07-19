@@ -1,13 +1,14 @@
 package(default_testonly = 1)
 
-load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_binary",
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_binary",
 )
 
 haskell_binary(
-  name = "binary-custom-main",
-  srcs = ["foo.hs"],
-  prebuilt_dependencies = ["base"],
-  visibility = ["//visibility:public"],
-  main_file = "foo.hs"
+    name = "binary-custom-main",
+    srcs = ["foo.hs"],
+    main_file = "foo.hs",
+    prebuilt_dependencies = ["base"],
+    visibility = ["//visibility:public"],
 )

@@ -1,20 +1,21 @@
 package(default_testonly = 1)
 
-load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_binary",
-  "haskell_library",
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_binary",
+    "haskell_library",
 )
 
 haskell_library(
-  name = "lib",
-  srcs = glob(["src/*.hs"]),
-  src_strip_prefix = "src",
+    name = "lib",
+    srcs = glob(["src/*.hs"]),
+    src_strip_prefix = "src",
 )
 
 haskell_binary(
-  name = "binary-with-lib",
-  srcs = ["Main.hs"],
-  deps = ["lib"],
-  prebuilt_dependencies = ["base"],
-  visibility = ["//visibility:public"],
+    name = "binary-with-lib",
+    srcs = ["Main.hs"],
+    prebuilt_dependencies = ["base"],
+    visibility = ["//visibility:public"],
+    deps = ["lib"],
 )
