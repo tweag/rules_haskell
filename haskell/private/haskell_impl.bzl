@@ -176,6 +176,7 @@ def haskell_library_impl(ctx):
     hs,
     cc,
     dep_info,
+    ctx.files.extra_srcs,
     c.object_dyn_files,
     my_pkg_id,
   )
