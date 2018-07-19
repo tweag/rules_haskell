@@ -19,7 +19,28 @@ load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellBinaryInfo",
   "HaskellLibraryInfo",
+  "C2hsLibraryInfo",
 )
+
+def _prepare_srcs(srcs):
+
+  srcs_files = []
+  import_dir_map = {}
+
+  for src in srcs:
+    # If it has the "files" attribute, it must be a Target
+    if hasattr(src, "files"):
+      if C2hsLibraryInfo in src:
+        srcs_files += src.files.to_list()
+        for f in src.files:
+          import_dir_map[f] = src[C2hsLibraryInfo].import_dir
+      else:
+        srcs_files += src.files.to_list()
+    # otherwise it's just a file
+    else:
+      srcs_files.append(src)
+
+  return srcs_files, import_dir_map
 
 def haskell_binary_impl(ctx):
   hs = haskell_context(ctx)
@@ -30,14 +51,16 @@ def haskell_binary_impl(ctx):
   java = java_interop_info(ctx)
   with_profiling = is_profiling_enabled(hs)
 
+  srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+
   c = hs.toolchain.actions.compile_binary(
     hs,
     cc,
     java,
     dep_info,
-    srcs = ctx.files.srcs,
+    srcs = srcs_files,
+    import_dir_map = import_dir_map,
     extra_srcs = depset(ctx.files.extra_srcs),
-    chs_wrapper = ctx.file._chs_wrapper,
     compiler_flags = ctx.attr.compiler_flags,
     with_profiling = False,
     main_file = ctx.file.main_file,
@@ -52,7 +75,8 @@ def haskell_binary_impl(ctx):
       cc,
       java,
       dep_info,
-      srcs = ctx.files.srcs,
+      srcs = srcs_files,
+      import_dir_map = import_dir_map,
       # NOTE We must make the object files compiled without profiling
       # available to this step for TH to work, presumably because GHC is
       # linked against RTS without profiling.
@@ -60,7 +84,6 @@ def haskell_binary_impl(ctx):
         depset(ctx.files.extra_srcs),
         depset(c.object_dyn_files),
       ]),
-      chs_wrapper = ctx.file._chs_wrapper,
       compiler_flags = ctx.attr.compiler_flags,
       with_profiling = True,
       main_file = ctx.file.main_file,
@@ -129,14 +152,16 @@ def haskell_library_impl(ctx):
   cc = cc_interop_info(ctx)
   java = java_interop_info(ctx)
 
+  srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+
   c = hs.toolchain.actions.compile_library(
     hs,
     cc,
     java,
     dep_info,
-    srcs = ctx.files.srcs,
+    srcs = srcs_files,
+    import_dir_map = import_dir_map,
     extra_srcs = depset(ctx.files.extra_srcs),
-    chs_wrapper = ctx.file._chs_wrapper,
     compiler_flags = ctx.attr.compiler_flags,
     with_profiling = False,
     my_pkg_id = my_pkg_id,
@@ -150,7 +175,8 @@ def haskell_library_impl(ctx):
       cc,
       java,
       dep_info,
-      srcs = ctx.files.srcs,
+      srcs = srcs_files,
+      import_dir_map = import_dir_map,
       # NOTE We must make the object files compiled without profiling
       # available to this step for TH to work, presumably because GHC is
       # linked against RTS without profiling.
@@ -158,7 +184,6 @@ def haskell_library_impl(ctx):
         depset(ctx.files.extra_srcs),
         depset(c.object_dyn_files),
       ]),
-      chs_wrapper = ctx.file._chs_wrapper,
       compiler_flags = ctx.attr.compiler_flags,
       with_profiling = True,
       my_pkg_id = my_pkg_id,

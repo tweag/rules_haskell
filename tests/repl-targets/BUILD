@@ -1,5 +1,6 @@
 package(default_testonly = 1)
 
+load("@io_tweag_rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
      "haskell_library",
      "haskell_binary",
@@ -30,12 +31,17 @@ genrule(
 """,
 )
 
+c2hs_library(
+  name = "chs",
+  srcs = ["Chs.chs"],
+)
+
 haskell_library(
   name = "hs-lib",
   srcs = [
     "Foo.hs",
     "Hsc.hsc",
-    "Chs.chs",
+    ":chs",
     ":codegen",
   ],
   prebuilt_dependencies = ["base", "array"],
