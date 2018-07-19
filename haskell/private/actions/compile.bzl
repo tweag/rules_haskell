@@ -13,63 +13,12 @@ load(":private/providers.bzl", "DefaultCompileInfo")
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "dicts", "paths")
 
-def _make_ghc_defs_dump(hs, cpp_defines):
-  """Generate a file containing GHC default pre-processor definitions.
-
-  Args:
-    hs: Haskell context.
-    cpp_defines: Location of cpp_defines pattern file.
-
-  Returns:
-    File: The file with GHC definitions.
-  """
-  raw_filename = "ghc-defs-dump-{0}.hs".format(hs.name)
-  dummy_src = hs.actions.declare_file(raw_filename)
-  ghc_defs_dump_raw = hs.actions.declare_file(paths.replace_extension(raw_filename, ".hspp"))
-  ghc_defs_dump = hs.actions.declare_file(paths.replace_extension(raw_filename, ".h"))
-
-  hs.actions.write(dummy_src, "")
-  args = hs.actions.args()
-  args.add([
-    "-E",
-    "-optP-dM",
-    "-cpp",
-    dummy_src.path,
-  ])
-
-  hs.toolchain.actions.run_ghc(
-    hs,
-    inputs = [dummy_src] + hs.extra_binaries,
-    outputs = [ghc_defs_dump_raw],
-    mnemonic = "HaskellCppDefines",
-    arguments = [args],
-    env = hs.env,
-  )
-
-  hs.actions.run_shell(
-    inputs = [ghc_defs_dump_raw, cpp_defines, hs.tools.grep],
-    outputs = [ghc_defs_dump],
-    command = """
-    grep "^[^#]" {cpp_defines} | while IFS= read -r patt; do
-      grep "$patt" {raw} >> {filtered}
-    done
-    """.format(
-      cpp_defines = cpp_defines.path,
-      raw = ghc_defs_dump_raw.path,
-      filtered = ghc_defs_dump.path,
-    ),
-    env = hs.env,
-  )
-
-  return ghc_defs_dump
-
-def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
+def _process_hsc_file(hs, cc, hsc_file):
   """Process a single hsc file.
 
   Args:
     hs: Haskell context.
     cc: CcInteropInfo, information about C dependencies.
-    ghc_defs_dump: File with GHC definitions.
     hsc_file: hsc file to process.
 
   Returns:
@@ -85,18 +34,17 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
 
   args.add(["-c", hs.tools.cc])
   args.add(["-l", hs.tools.cc])
+  args.add("-ighcplatform.h")
+  args.add("-ighcversion.h")
   args.add(["--cflag=" + f for f in cc.cpp_flags])
   args.add(["--cflag=" + f for f in cc.compiler_flags])
   args.add(["--cflag=" + f for f in cc.include_args])
   args.add(["--lflag=" + f for f in cc.linker_flags])
-  args.add("-I{0}".format(ghc_defs_dump.dirname))
-  args.add("-i{0}".format(ghc_defs_dump.basename))
 
   hs.actions.run(
     inputs = depset(transitive = [
       depset(cc.hdrs),
-      depset([hs.tools.cc]),
-      depset([hsc_file, ghc_defs_dump]),
+      depset([hs.tools.cc, hsc_file]),
     ]),
     outputs = [hs_out],
     mnemonic = "HaskellHsc2hs",
@@ -113,13 +61,12 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
 
   return hs_out, idir
 
-def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
+def _process_chs_file(hs, cc, chs_wrapper, chs_file, chi_files=[]):
   """Process a single chs file.
 
   Args:
     hs: Haskell context.
     cc: CcInteropInfo, information about C dependencies.
-    ghc_defs_dump: File with GHC definitions.
     chs_file: chs file to process.
     chi_files: .chi files that should be available to c2hs.
 
@@ -139,8 +86,8 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
 
   args.add(["-C-E"])
   args.add(["--cpp", hs.tools.cc.path])
-  args.add(["-C-I{0}".format(ghc_defs_dump.dirname)])
-  args.add(["-C-include{0}".format(ghc_defs_dump.basename)])
+  args.add("-C-includeghcplatform.h")
+  args.add("-C-includeghcversion.h")
   args.add(["-C" + x for x in cc.cpp_flags])
   args.add(["-C" + x for x in cc.include_args])
 
@@ -155,12 +102,11 @@ def _process_chs_file(hs, cc, ghc_defs_dump, chs_file, chi_files=[]):
   hs.actions.run(
     inputs = depset(transitive = [
       depset(cc.hdrs),
-      depset([hs.tools.cc]),
-      depset([chs_file, ghc_defs_dump]),
+      depset([hs.tools.cc, hs.tools.ghc, hs.tools.c2hs, chs_file]),
       depset(chi_files),
     ]),
     outputs = [hs_out, chi_out],
-    executable = hs.tools.c2hs,
+    executable = chs_wrapper,
     mnemonic = "HaskellC2Hs",
     arguments = [args],
     env = hs.env,
@@ -203,7 +149,7 @@ def _output_file_ext(base, dynamic, profiling_enabled):
     ext = "p_" + ext
   return ("." if with_dot else "") + ext
 
-def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, main_file = None, my_pkg_id = None):
+def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
 
   Returns:
@@ -292,7 +238,6 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
   # be placed in a file with a name different from "Main.hs". In that case
   # still Main.o will be produced.
 
-  ghc_defs_dump = _make_ghc_defs_dump(hs, cpp_defines)
   chi_files_so_far = []
 
   for s in srcs:
@@ -304,11 +249,11 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
     elif s.extension in ["hs", "lhs", "hsc", "chs"]:
       if not main_file or s != main_file:
         if s.extension == "hsc":
-          s0, idir = _process_hsc_file(hs, cc, ghc_defs_dump, s)
+          s0, idir = _process_hsc_file(hs, cc, s)
           set.mutable_insert(source_files, s0)
           set.mutable_insert(import_dirs, idir)
         elif s.extension == "chs":
-          s0, chi, idir = _process_chs_file(hs, cc, ghc_defs_dump, s, chi_files_so_far)
+          s0, chi, idir = _process_chs_file(hs, cc, chs_wrapper, s, chi_files_so_far)
           set.mutable_insert(source_files, s0)
           set.mutable_insert(import_dirs, idir)
           chi_files_so_far.append(chi)
@@ -351,10 +296,10 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
           )
       else:
         if s.extension == "hsc":
-          s0 = _process_hsc_file(hs, cc, ghc_defs_dump, s)
+          s0 = _process_hsc_file(hs, cc, s)
           set.mutable_insert(source_files, s0)
         elif s.extension == "chs":
-          s0, chi = _process_chs_file(hs, cc, ghc_defs_dump, s, chi_files_so_far)
+          s0, chi = _process_chs_file(hs, cc, s, chi_files_so_far)
           set.mutable_insert(source_files, s0)
           chi_files_so_far.append(chi)
         else:
@@ -510,7 +455,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines,
     ),
   )
 
-def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, main_file, main_function):
+def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, main_file, main_function):
   """Compile a Haskell target into object files suitable for linking.
 
   Returns:
@@ -520,7 +465,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compil
       modules: set of module names
       source_files: set of Haskell source files
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, main_file = main_file)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, main_file = main_file)
   c.args.add(["-main-is", main_function])
 
   hs.toolchain.actions.run_ghc(
@@ -543,7 +488,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compil
     header_files = c.header_files,
   )
 
-def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, my_pkg_id):
+def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, my_pkg_id):
   """Build arguments for Haskell package build.
 
   Returns:
@@ -557,7 +502,7 @@ def compile_library(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compi
       source_files: set of Haskell module files
       import_dirs: import directories that should make all modules visible (for GHCi)
   """
-  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, cpp_defines, compiler_flags, with_profiling, my_pkg_id=my_pkg_id)
+  c = _compilation_defaults(hs, cc, java, dep_info, srcs, extra_srcs, chs_wrapper, compiler_flags, with_profiling, my_pkg_id=my_pkg_id)
 
   hs.toolchain.actions.run_ghc(
     hs,
