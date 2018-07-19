@@ -71,6 +71,7 @@ def haskell_binary_impl(ctx):
     hs,
     cc,
     dep_info,
+    ctx.files.extra_srcs,
     ctx.attr.compiler_flags,
     c_p.object_files if with_profiling else c.object_dyn_files,
     with_profiling,

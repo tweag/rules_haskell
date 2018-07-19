@@ -93,7 +93,7 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
                      out.path)
                      for f in external_libraries]))
 
-def link_binary(hs, cc, dep_info, compiler_flags, object_files, with_profiling):
+def link_binary(hs, cc, dep_info, extra_srcs, compiler_flags, object_files, with_profiling):
   """Link Haskell binary from static object files.
 
   Returns:
@@ -178,6 +178,7 @@ def link_binary(hs, cc, dep_info, compiler_flags, object_files, with_profiling):
   hs.toolchain.actions.run_ghc(
     hs,
     inputs = depset(transitive = [
+      depset(extra_srcs),
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.dynamic_libraries),
       depset(dep_info.static_libraries),
