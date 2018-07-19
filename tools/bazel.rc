@@ -8,8 +8,6 @@ build:ci --verbose_failures
 build:ci --symlink_prefix=foobar
 common:ci --color=no
 test:ci --test_output=errors
-# TODO remove following line once branch passes lint.
-test:ci --test_tag_filters=-lint
 
 test:lint --build_tests_only
 test:lint --test_tag_filters=lint
