@@ -7,6 +7,7 @@ exports_files([
     "hazel.bzl",
     "BUILD.ghc",
     "paths-template.hs",
+    "cc_configure_custom.bzl",
 ])
 
 haskell_doctest_toolchain(

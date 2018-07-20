@@ -3,24 +3,43 @@ version: 2
 jobs:
   build:
     docker:
-      - image: nixos/nix:1.11.14
-    working_directory: ~/rules_haskell
+      - image: circleci/python:3.7.0-stretch-browsers
     steps:
       - checkout
+
       - run:
-          name: System dependencies
+          name: Set up environment
           command: |
-            apk --no-progress update
-            apk --no-progress add bash ca-certificates
-            REVISION=696c6bed4e8e2d9fd9b956dea7e5d49531e9d13f
-            nix-env -f https://github.com/NixOS/nixpkgs/archive/$REVISION.tar.gz \
-              -iA bazel binutils python git
+            echo "export USER=circleci" >> "${BASH_ENV}"
+            echo "export PATH=$HOME/.nix-profile/bin:$HOME/bin:$PATH" >> "${BASH_ENV}"
+
       - run:
-          name: Build
-          command: bazel build --jobs=2 //...
+          name: Install Bazel
+          command: |
+            set -x
+            export USER=circleci
+            VERSION=0.15.2
+            INSTALLER=bazel-$VERSION-installer-linux-x86_64.sh
+            wget https://github.com/bazelbuild/bazel/releases/download/$VERSION/$INSTALLER
+            chmod +x $INSTALLER
+            ./$INSTALLER --user
+
       - run:
-          name: Run tests
-          command: bazel test //...
+          name: Install Nix
+          command: |
+            sudo mkdir -p /nix
+            sudo chown -R circleci /nix
+            NIX_RELEASE=1.11.14
+            ARCH=x86_64
+            wget https://nixos.org/releases/nix/nix-${NIX_RELEASE}/nix-${NIX_RELEASE}-${ARCH}-linux.tar.bz2
+            tar -xjvf nix-${NIX_RELEASE}-${ARCH}-linux.tar.bz2
+            mkdir -p /nix/var/nix/profiles/per-user/${USER}
+            nix-${NIX_RELEASE}-${ARCH}-linux/install
+
+      - run:
+          name: Build and test
+          command: bazel test --test_output=errors --jobs=2 //...
+
       - run:
           name: Test some third-party packages
           command: |

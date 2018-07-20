@@ -14,14 +14,34 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_git_repository", "
 
 nixpkgs_git_repository(
     name = "nixpkgs",
-    # A revision of 17.09 that contains ghc-8.2.2:
-    revision = "c33c5239f62b4855b14dc5b01dfa3e2a885cf9ca",
+    revision = "ee80654b5267b07ba10d62d143f211e0be81549e",
 )
 
-RULES_HASKELL_SHA = "3e68a0f3420f7589b1afa6afd3b9e37741978edc"
+load("//:cc_configure_custom.bzl", "cc_configure_custom")
+nixpkgs_package(
+    name = "gcc",
+    repository = "@nixpkgs",
+    attribute_path = "gcc",
+)
+
+nixpkgs_package(
+    name = "binutils",
+    repository = "@nixpkgs",
+    attribute_path = "binutils"
+)
+
+cc_configure_custom(
+    name = "local_config_cc",
+    gcc = "@gcc//:bin/gcc",
+    ld = "@binutils//:bin/ld",
+)
+
+
+RULES_HASKELL_SHA = "f724288c61ea637e53561208d021df79d003c537"
+
 http_archive(
     name = "io_tweag_rules_haskell",
-    urls = ["https://github.com/tweag/rules_haskell/archive/"
+    urls = ["https://github.com/FormationAI/rules_haskell/archive/"
             + RULES_HASKELL_SHA + ".tar.gz"],
     strip_prefix = "rules_haskell-" + RULES_HASKELL_SHA,
 )
