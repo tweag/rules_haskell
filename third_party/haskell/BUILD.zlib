@@ -4,6 +4,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_library",
   "haskell_cc_import",
 )
+load("@ai_formation_hazel//:hazel.bzl", "hazel_library")
 
 cc_library(
   name = "cbits",
@@ -19,10 +20,10 @@ haskell_library(
     "Codec/Compression/Zlib/*.hs",
     "Codec/Compression/Zlib/*.hsc",
   ]),
-  deps = [":cbits"],
-  prebuilt_dependencies = [
-    "base",
-    "bytestring",
-    "ghc-prim",
+  deps = [
+      ":cbits",
+      hazel_library("base"),
+      hazel_library("bytestring"),
+      hazel_library("ghc-prim"),
   ],
 )

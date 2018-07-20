@@ -198,11 +198,11 @@ hazel_custom_package_github(
   repo_sha = "aaa0dca56231c060372004cda46d719ec6cc3ec5",
 )
 
-load("//:packages.bzl", "packages", "prebuilt_dependencies")
+load("//:packages.bzl", "packages", "core_packages")
 
 hazel_repositories(
-    packages=packages,
-    prebuilt_dependencies=prebuilt_dependencies,
+    packages = packages,
+    core_packages = core_packages,
     exclude_packages = [
       "conduit",
       "ghc-paths",

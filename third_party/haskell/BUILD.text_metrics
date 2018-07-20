@@ -3,16 +3,15 @@ package(default_visibility = ["//visibility:public"])
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_library",
 )
+load("@ai_formation_hazel//:hazel.bzl", "hazel_library")
 
 haskell_library(
   name = "text-metrics",
   srcs = ["Data/Text/Metrics.hs"],
   deps = [
-    "@haskell_text//:text",
-    "@haskell_vector//:vector",
-  ],
-  prebuilt_dependencies = [
-    "base",
-    "containers",
+    hazel_library("base"),
+    hazel_library("containers"),
+    hazel_library("text"),
+    hazel_library("vector"),
   ],
 )

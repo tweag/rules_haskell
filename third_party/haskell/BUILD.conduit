@@ -13,6 +13,8 @@ haskell_library(
   ]),
   compiler_flags = ["-Iexternal/haskell_conduit"],
   deps = [
+    "@haskell_base//:base",
+    "@haskell_bytestring//:bytestring",
     "@haskell_exceptions//:exceptions",
     "@haskell_lifted_base//:lifted-base",
     "@haskell_mmorph//:mmorph",
@@ -22,13 +24,9 @@ haskell_library(
     "@haskell_primitive//:primitive",
     "@haskell_resourcet//:resourcet",
     "@haskell_text//:text",
+    "@haskell_transformers//:transformers",
     "@haskell_transformers_base//:transformers-base",
     "@haskell_transformers_compat//:transformers-compat",
     "@haskell_vector//:vector",
-  ],
-  prebuilt_dependencies = [
-    "base",
-    "bytestring",
-    "transformers",
   ],
 )

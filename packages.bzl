@@ -1,4 +1,5 @@
-prebuilt_dependencies = (
+# Generated from resolver: lts-10.5
+core_packages = (
 { "array": "0.5.2.0",
   "base": "4.10.1.0",
   "binary": "0.8.5.1",

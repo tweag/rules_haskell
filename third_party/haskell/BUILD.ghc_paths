@@ -5,6 +5,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
 )
 
 load("@ai_formation_hazel//:ghc_paths.bzl", "ghc_paths_module")
+load("@ai_formation_hazel//:hazel.bzl", "hazel_library")
 
 ghc_paths_module(
     name = "paths_module")
@@ -12,5 +13,7 @@ ghc_paths_module(
 haskell_library(
     name = "ghc-paths",
     srcs = [":paths_module"],
-    prebuilt_dependencies = ["base"],
+    deps = [
+        hazel_library("base"),
+    ],
 )

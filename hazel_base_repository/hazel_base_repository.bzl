@@ -35,11 +35,6 @@ def _hazel_base_repository_impl(ctx):
       res.stdout.split("\n")[0],
       executable=False)
 
-  ctx.file("packages.bzl", """
-prebuilt_dependencies = {}
-packages = {}
-""".format(str(ctx.attr.prebuilt_dependencies), str(ctx.attr.packages)))
-
   ctx.file("extra-libs.bzl", """
 extra_libs = {}
 extra_libs_hdrs = {}
@@ -59,8 +54,6 @@ hazel_base_repository = repository_rule(
     implementation=_hazel_base_repository_impl,
     attrs={
         "ghc": attr.label(mandatory=True),
-        "packages": attr.string_dict(mandatory=True),
-        "prebuilt_dependencies": attr.string_dict(mandatory=True),
         "extra_libs": attr.string_dict(mandatory=True),
         "extra_libs_hdrs": attr.string_dict(mandatory=True),
         "extra_libs_strip_include_prefix": attr.string_dict(mandatory=True),
@@ -83,7 +76,6 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, cabal_path, output):
 load("@ai_formation_hazel//third_party/cabal2bazel:bzl/cabal_package.bzl",
      "cabal_haskell_package",
      "hazel_symlink")
-load("@hazel_base_repository//:packages.bzl", "prebuilt_dependencies")
 load("@hazel_base_repository//:extra-libs.bzl",
   "extra_libs",
   "extra_libs_hdrs",
@@ -98,7 +90,6 @@ hazel_symlink(
 )
 cabal_haskell_package(
   package,
-  prebuilt_dependencies,
   "{}",
   extra_libs,
   extra_libs_hdrs,

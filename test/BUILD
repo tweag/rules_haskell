@@ -9,8 +9,10 @@ haskell_test(
     name = "vector-test",
     srcs = ["vector-test.hs"],
     main_file = "vector-test.hs",
-    deps = [hazel_library("vector")],
-    prebuilt_dependencies = ["base"],
+    deps = [
+        hazel_library("base"),
+        hazel_library("vector"),
+    ],
 )
 
 haskell_test(
@@ -18,15 +20,15 @@ haskell_test(
     srcs = ["old-time-test.hs"],
     main_file = "old-time-test.hs",
     deps = [
+        hazel_library("base"),
         hazel_library("old-time"),
     ],
-    prebuilt_dependencies = ["base"],
 )
 
 haskell_library(
     name = "DoctestExample",
     srcs = ["DoctestExample.hs"],
-    prebuilt_dependencies = ["base"],
+    deps = [hazel_library("base")],
 )
 
 haskell_doctest(

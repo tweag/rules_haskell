@@ -23,12 +23,10 @@ haskell_library(
     "-DUseGHC",
   ],
   deps = [
+    hazel_library("base"),
+    hazel_library("containers"),
     hazel_library("hashable"),
     hazel_library("semigroups"),
     hazel_library("unordered-containers"),
-  ],
-  prebuilt_dependencies = [
-    "base",
-    "containers",
   ],
 )

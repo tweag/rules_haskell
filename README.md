@@ -82,11 +82,11 @@ Finally, in `WORKSPACE`, load `packages.bzl` and feed its contents to `haskell_r
 
 ```
 load("@ai_formation_hazel//:hazel.bzl", "hazel_repositories")
-load("//:packages.bzl", "prebuilt_dependencies", "packages")
+load("//:packages.bzl", "core_packages", "packages")
 
 hazel_repositories(
-    prebuilt_dependencies=prebuilt_dependencies,
-    packages=packages)
+    core_packages = core_packages,
+    packages = packages)
 ```
 
 ## Using Hazel in build rules
@@ -114,7 +114,9 @@ load("@ai_formation_hazel//:hazel.bzl", "hazel_library")
 haskell_library(
     name = "Foo",
     srcs = ["Foo.hs"],
-    prebuilt_dependencies = ["base"],
+    deps = [
+        hazel_library("base"),
+    ],
 )
 
 haskell_test(
@@ -122,8 +124,8 @@ haskell_test(
     srcs = ["Main.hs"],
     deps = [
         ":Foo",
+        hazel_library("base"),
         hazel_library("vector"),
     ],
-    prebuilt_dependencies = ["base"],
 )
 ```

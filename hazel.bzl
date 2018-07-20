@@ -39,6 +39,25 @@ _cabal_haskell_repository = repository_rule(
         "sha256": attr.string(mandatory=True),
     })
 
+def _core_library_repository_impl(ctx):
+  ctx.file(
+    "BUILD",
+    executable=False,
+    content="""
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_import")
+haskell_import(
+    name = "{pkg}",
+    package = "{pkg}",
+    visibility = ["//visibility:public"],
+)
+""".format(pkg=ctx.attr.package))
+
+_core_library_repository = repository_rule(
+    implementation=_core_library_repository_impl,
+    attrs={
+        "package": attr.string(mandatory=True),
+    })
+
 def _all_hazel_packages_impl(ctx):
   ctx.file("BUILD", """
 filegroup(
@@ -67,7 +86,7 @@ def _fixup_package_name(package_name):
   return package_name.replace("-", "_")
 
 def hazel_repositories(
-  prebuilt_dependencies,
+  core_packages,
   packages,
   extra_libs={},
   extra_libs_hdrs={},
@@ -88,9 +107,8 @@ def hazel_repositories(
     measuring our coverage of the full package set.
 
   Args:
-    prebuilt_dependencies: A dict mapping Haskell package names to version
-      numbers.  These packages are assumed to be provided by GHC, and we do
-      not generate repositories for them.
+    core_packages: A dict mapping Haskell package names to version
+      numbers.  These packages are assumed to be provided by GHC.
     packages: A dict mapping strings to structs, where each struct has two fields:
       - version: A version string
       - sha256: A hex-encoded SHA of the Cabal distribution (*.tar.gz).
@@ -109,8 +127,6 @@ def hazel_repositories(
       name = hazel_base_repo_name,
       # TODO: don't hard-code this in
       ghc="@ghc//:bin/ghc",
-      prebuilt_dependencies = prebuilt_dependencies,
-      packages = {n: pkgs[n].version for n in pkgs},
       extra_libs = extra_libs,
       extra_libs_hdrs = extra_libs_hdrs,
       extra_libs_strip_include_prefix = extra_libs_strip_include_prefix,
@@ -122,6 +138,12 @@ def hazel_repositories(
         package_version = pkgs[p].version,
         sha256 = pkgs[p].sha256 if hasattr(pkgs[p], "sha256") else None,
         hazel_base_repo_name = hazel_base_repo_name,
+    )
+
+  for p in core_packages:
+    _core_library_repository(
+        name = "haskell_" + _fixup_package_name(p),
+        package = p,
     )
 
   _all_hazel_packages(

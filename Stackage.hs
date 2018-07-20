@@ -24,6 +24,7 @@ import System.Environment (getArgs)
 import Control.Exception (throw)
 import System.IO
 import System.IO.Temp
+import Text.PrettyPrint (($$), (<+>), text)
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
@@ -37,10 +38,10 @@ import Skylark
 
 main :: IO ()
 main = do
-    [revision, out] <- getArgs
+    [resolver, out] <- getArgs
     manager <- newManager tlsManagerSettings
     let ltsUrl = "https://raw.githubusercontent.com/fpco/lts-haskell/master/"
-                ++ revision ++ ".yaml"
+                ++ resolver ++ ".yaml"
     ltsYaml <- downloadUrl manager ltsUrl
     plan <- case decodeEither' $ L.toStrict ltsYaml of
         Left err -> throw err
@@ -52,8 +53,10 @@ main = do
         tar <- downloadUrl manager hackageUrl
         putStrLn (Cabal.display n)
         return $! SHA256.hashlazy tar
-    writeFile out $ show $ renderStatements
-          [ Assign "prebuilt_dependencies" $ expr $ prebuiltDeps plan
+    writeFile out $ show $
+        "# Generated from resolver:" <+> text resolver
+        $$ renderStatements
+          [ Assign "core_packages" $ expr $ corePackageList plan
           , Assign "packages" $ expr $ packageList shas plan
           ]
 
@@ -65,8 +68,8 @@ packageList shas = map mk . Map.toList . planPackages
                     , "sha256" =: BC.unpack (Base16.encode (shas Map.! n))
                     ])
 
-prebuiltDeps :: BuildPlan -> [(String, String)]
-prebuiltDeps = map mk . Map.toList . corePackageVersions
+corePackageList :: BuildPlan -> [(String, String)]
+corePackageList = map mk . Map.toList . corePackageVersions
   where
     mk (n, v) = (Cabal.display n, Cabal.display v)
 

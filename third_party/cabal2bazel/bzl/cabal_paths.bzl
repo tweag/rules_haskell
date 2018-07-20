@@ -105,6 +105,9 @@ def cabal_paths(name=None, package=None, data_dir='',data=[], version=[], **kwar
       name=name,
       srcs = [paths_file],
       data = data,
-      prebuilt_dependencies = ["base", "filepath"],
+      deps = [
+          "@haskell_base//:base",
+          "@haskell_filepath//:filepath",
+      ],
       # TODO: run directory resolution.
       **kwargs)
