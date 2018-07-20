@@ -1,3 +1,5 @@
+<p align="left"><img src="logo/horizontal.png" alt="rules_haskell" height="100px"></p>
+
 # Haskell rules for [Bazel][bazel]
 
 [![CircleCI](https://circleci.com/gh/tweag/rules_haskell.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell)
