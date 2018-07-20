@@ -30,8 +30,6 @@ def build_haskell_repl(
         compiler_flags,
         repl_ghci_args,
         build_info,
-        target_files,
-        interpreted,
         output,
         lib_info = None,
         bin_info = None):
@@ -46,10 +44,6 @@ def build_haskell_repl(
       bin_info: If we're building REPL for a binary target, pass
                 HaskellBinaryInfo here, otherwise it should be None.
 
-      target_files: Output files of the target we're generating REPL for.
-                    These are passed so we can force their building on REPL
-                    building.
-
     Returns:
       None.
     """
@@ -59,13 +53,12 @@ def build_haskell_repl(
     for dep in set.to_list(build_info.prebuilt_dependencies):
         args += ["-package ", dep]
     for package in set.to_list(build_info.package_ids):
-        if not (interpreted and lib_info != None and package == lib_info.package_id):
+        if not (lib_info != None and package == lib_info.package_id):
             args += ["-package-id", package]
     for cache in set.to_list(build_info.package_caches):
         args += ["-package-db", cache.dirname]
 
-    # Specify import directory for library in interpreted mode.
-    if interpreted and lib_info != None:
+    if lib_info != None:
         for idir in set.to_list(lib_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
@@ -82,10 +75,9 @@ def build_haskell_repl(
 
     add_modules = []
     if lib_info != None:
-        # If we have a library, we put names of its exposed modules here but
-        # only if we're in interpreted mode.
+        # If we have a library, we put names of its exposed modules here.
         add_modules = set.to_list(
-            lib_info.exposed_modules if interpreted else set.empty(),
+            lib_info.exposed_modules,
         )
     elif bin_info != None:
         # Otherwise we put paths to module files, mostly because it also works
@@ -148,10 +140,5 @@ def build_haskell_repl(
     # hs.tools.ghci and ghci_script and the best way to do that is
     # to use hs.actions.run. That action, it turn must produce
     # a result, so using ln seems to be the only sane choice.
-    extra_inputs = depset(
-        transitive = [
-            depset([hs.tools.ghci, ghci_repl_script, repl_file]),
-            target_files,
-        ],
-    )
+    extra_inputs = depset([hs.tools.ghci, ghci_repl_script, repl_file])
     ln(hs, repl_file, output, extra_inputs)

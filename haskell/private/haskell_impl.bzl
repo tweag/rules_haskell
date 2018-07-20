@@ -127,9 +127,7 @@ def haskell_binary_impl(ctx):
         compiler_flags = ctx.attr.compiler_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
-        interpreted = ctx.attr.repl_interpreted,
         build_info = build_info,
-        target_files = target_files,
         bin_info = bin_info,
     )
 
@@ -294,9 +292,7 @@ def haskell_library_impl(ctx):
             repl_ghci_args = ctx.attr.repl_ghci_args,
             compiler_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.repl,
-            interpreted = ctx.attr.repl_interpreted,
             build_info = build_info,
-            target_files = target_files,
             lib_info = lib_info,
         )
 
