@@ -68,17 +68,6 @@ _haskell_common_attrs = {
     "prebuilt_dependencies": attr.string_list(
         doc = "Non-Bazel supplied Cabal dependencies.",
     ),
-    "repl_interpreted": attr.bool(
-        default = True,
-        doc = """
-Whether source files should be interpreted rather than compiled. This allows
-for e.g. reloading of sources on editing, but in this case we don't handle
-boot files and hsc processing.
-
-For `haskell_binary` targets, `repl_interpreted` must be set to `True` for
-REPL to work.
-""",
-    ),
     "repl_ghci_args": attr.string_list(
         doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
     ),
