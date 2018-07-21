@@ -16,15 +16,8 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
 
 nixpkgs_git_repository(
   name = "nixpkgs",
-  # To make protobuf support work we need packages such as
-  # lens-labels_0_2_0_0 to be available in nixpkgs. This means we need to
-  # use a version of nixpkgs that is newer than 18.03.
-
   # Keep this value in sync with `nixpkgs.nix`
-  revision = "8d5f06cbeedcfb4a88c111754baf2d7e315e74de",
-  # TODO Using a fork with Bazel v0.15. Switch to mainline once
-  # https://github.com/NixOS/nixpkgs/pull/42735 merged.
-  remote = "https://github.com/mboes/nixpkgs",
+  revision = "9a787af6bc75a19ac9f02077ade58ddc248e674a",
 )
 
 nixpkgs_package(
@@ -69,7 +62,7 @@ http_archive(
 nixpkgs_package(
   name = "protoc_gen_haskell",
   repository = "@nixpkgs",
-  nix_file = "//tests:protoc_gen_haskell.nix",
+  attribute_path = "haskell.packages.ghc822.proto-lens-protoc"
 )
 
 nixpkgs_package(
