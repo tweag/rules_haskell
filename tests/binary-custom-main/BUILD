@@ -9,6 +9,6 @@ haskell_binary(
     name = "binary-custom-main",
     srcs = ["foo.hs"],
     main_file = "foo.hs",
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )

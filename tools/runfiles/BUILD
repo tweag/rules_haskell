@@ -8,12 +8,12 @@ load(
 haskell_library(
     name = "runfiles",
     srcs = ["Bazel/Runfiles.hs"],
-    prebuilt_dependencies = [
-        "base",
-        "directory",
-        "filepath",
-    ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//tests:base",
+        "//tests:directory",
+        "//tests:filepath",
+    ],
 )
 
 haskell_binary(
@@ -22,11 +22,11 @@ haskell_binary(
     srcs = ["Bin.hs"],
     data = ["bin-data.txt"],
     main_file = "Bin.hs",
-    prebuilt_dependencies = [
-        "base",
-        "filepath",
+    deps = [
+        ":runfiles",
+        "//tests:base",
+        "//tests:filepath",
     ],
-    deps = [":runfiles"],
 )
 
 haskell_test(
@@ -37,10 +37,10 @@ haskell_test(
         ":bin",
     ],
     main_file = "Test.hs",
-    prebuilt_dependencies = [
-        "base",
-        "filepath",
-        "process",
+    deps = [
+        ":runfiles",
+        "//tests:base",
+        "//tests:filepath",
+        "//tests:process",
     ],
-    deps = [":runfiles"],
 )

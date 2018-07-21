@@ -12,6 +12,6 @@ haskell_binary(
         "include/main_definition.h",
     ],
     compiler_flags = ["-Itests/textual-hdrs/include"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )

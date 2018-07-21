@@ -15,14 +15,18 @@ cc_library(
 haskell_library(
     name = "hs-lib",
     srcs = ["Lib.hs"],
-    prebuilt_dependencies = ["base"],
-    deps = [":c-lib"],
+    deps = [
+        ":c-lib",
+        "//tests:base",
+    ],
 )
 
 haskell_binary(
     name = "c-compiles",
     srcs = ["Main.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":hs-lib"],
+    deps = [
+        ":hs-lib",
+        "//tests:base",
+    ],
 )

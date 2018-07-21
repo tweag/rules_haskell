@@ -32,5 +32,5 @@ haskell_library(
         ":bar",
         ":foo",
     ],
-    prebuilt_dependencies = ["base"],
+    deps = ["//tests:base"],
 )

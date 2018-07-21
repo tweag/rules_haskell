@@ -10,14 +10,16 @@ load(
 haskell_library(
     name = "hs-lib-a",
     srcs = ["LibA.hs"],
-    prebuilt_dependencies = ["base"],
+    deps = ["//tests:base"],
 )
 
 haskell_library(
     name = "hs-lib-b",
     srcs = ["LibB.hs"],
-    prebuilt_dependencies = ["base"],
-    deps = [":hs-lib-a"],
+    deps = [
+        ":hs-lib-a",
+        "//tests:base",
+    ],
 )
 
 cc_haskell_import(

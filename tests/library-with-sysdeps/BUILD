@@ -15,14 +15,18 @@ haskell_cc_import(
 haskell_library(
     name = "library-with-sysdeps",
     srcs = ["Lib.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":zlib"],
+    deps = [
+        ":zlib",
+        "//tests:base",
+    ],
 )
 
 haskell_binary(
     name = "bin",
     srcs = ["Main.hs"],
-    prebuilt_dependencies = ["base"],
-    deps = [":library-with-sysdeps"],
+    deps = [
+        ":library-with-sysdeps",
+        "//tests:base",
+    ],
 )

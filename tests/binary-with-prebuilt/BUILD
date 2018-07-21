@@ -8,9 +8,9 @@ load(
 haskell_binary(
     name = "binary-with-prebuilt",
     srcs = ["Main.hs"],
-    prebuilt_dependencies = [
-        "base",
-        "template-haskell",
-    ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//tests:base",
+        "//tests:template-haskell",
+    ],
 )

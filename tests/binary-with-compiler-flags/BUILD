@@ -12,5 +12,5 @@ haskell_test(
     # compiler_flags:
     compiler_flags = ["-with-rtsopts=-qg"],
     main_file = "Main.hs",
-    prebuilt_dependencies = ["base"],
+    deps = ["//tests:base"],
 )

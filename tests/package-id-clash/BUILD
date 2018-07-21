@@ -8,17 +8,17 @@ load(
 haskell_library(
     name = "sublib",
     srcs = ["Foo.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )
 
 haskell_library(
     name = "lib",
     srcs = ["Baz.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
     deps = [
         ":sublib",
+        "//tests:base",
         "//tests/package-id-clash/sublib",
     ],
 )

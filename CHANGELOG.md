@@ -113,6 +113,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   tested, pass custom flags to `doctest` executable. See
   [#342](https://github.com/tweag/rules_haskell/pull/342).
 
+* The `prebuilt_dependencies` attribute of `haskell_binary` and
+  `haskell_library` has been deprecated. See
+  [#355](https://github.com/tweag/rules_haskell/pull/355).
+
 ## [0.5] - 2018-04-15
 
 ### Added

@@ -4,6 +4,7 @@ load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
     "haskell_doctest_toolchain",
+    "haskell_import",
     "haskell_library",
     "haskell_proto_toolchain",
     "haskell_toolchain",
@@ -50,17 +51,115 @@ haskell_proto_toolchain(
     name = "protobuf-toolchain",
     testonly = 0,
     plugin = "@protoc_gen_haskell//:bin/proto-lens-protoc",
-    prebuilt_deps = [
-        "base",
-        "bytestring",
-        "containers",
-        "data-default-class",
-        "lens-family",
-        "lens-labels",
-        "proto-lens",
-        "text",
-    ],
     protoc = "@com_google_protobuf//:protoc",
+    deps = [
+        "//tests:base",
+        "//tests:bytestring",
+        "//tests:containers",
+        "//tests:data-default-class",
+        "//tests:lens-family",
+        "//tests:lens-labels",
+        "//tests:proto-lens",
+        "//tests:text",
+    ],
+)
+
+haskell_import(
+    name = "base",
+    testonly = 0,
+    package = "base",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "bytestring",
+    testonly = 0,
+    package = "bytestring",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "containers",
+    testonly = 0,
+    package = "containers",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "directory",
+    testonly = 0,
+    package = "directory",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "data-default-class",
+    testonly = 0,
+    package = "data-default-class",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "filepath",
+    testonly = 0,
+    package = "filepath",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "ghc-prim",
+    testonly = 0,
+    package = "ghc-prim",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "process",
+    testonly = 0,
+    package = "process",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "template-haskell",
+    testonly = 0,
+    package = "template-haskell",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "lens-family",
+    testonly = 0,
+    package = "lens-family",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "lens-labels",
+    testonly = 0,
+    package = "lens-labels",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "array",
+    testonly = 0,
+    package = "array",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "text",
+    testonly = 0,
+    package = "text",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "proto-lens",
+    testonly = 0,
+    package = "proto-lens",
+    visibility = ["//visibility:public"],
 )
 
 rule_test(

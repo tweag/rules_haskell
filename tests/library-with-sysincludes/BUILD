@@ -35,10 +35,10 @@ haskell_cc_import(
 haskell_library(
     name = "intermediate-library",
     srcs = ["IntLib.hsc"],
-    prebuilt_dependencies = ["base"],
     deps = [
         ":zlib",
         ":zlib-with-genrule-header",
+        "//tests:base",
     ],
 )
 
@@ -48,12 +48,12 @@ haskell_library(
         "Lib.hs",
         "TH.hs",
     ],
-    prebuilt_dependencies = [
-        "base",
-        "template-haskell",
-    ],
     visibility = ["//visibility:public"],
-    deps = [":intermediate-library"],
+    deps = [
+        ":intermediate-library",
+        "//tests:base",
+        "//tests:template-haskell",
+    ],
 )
 
 # Replicate the above example, but use the externally-defined
@@ -61,9 +61,9 @@ haskell_library(
 haskell_library(
     name = "intermediate-library-other",
     srcs = ["IntLib.hsc"],
-    prebuilt_dependencies = ["base"],
     deps = [
         ":zlib-with-genrule-header",
+        "//tests:base",
         "@zlib.dev//:zlib",
     ],
 )
@@ -74,10 +74,10 @@ haskell_library(
         "Lib.hs",
         "TH.hs",
     ],
-    prebuilt_dependencies = [
-        "base",
-        "template-haskell",
-    ],
     visibility = ["//visibility:public"],
-    deps = [":intermediate-library-other"],
+    deps = [
+        ":intermediate-library-other",
+        "//tests:base",
+        "//tests:template-haskell",
+    ],
 )

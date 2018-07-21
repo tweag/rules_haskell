@@ -9,9 +9,11 @@ load(
 haskell_library(
     name = "library-deps",
     srcs = ["TestLib.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = ["//tests/library-deps/sublib"],
+    deps = [
+        "//tests:base",
+        "//tests/library-deps/sublib",
+    ],
 )
 
 haskell_test(
@@ -19,7 +21,9 @@ haskell_test(
     size = "small",
     srcs = ["Bin.hs"],
     main_file = "Bin.hs",
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = ["//tests/library-deps/sublib"],
+    deps = [
+        "//tests:base",
+        "//tests/library-deps/sublib",
+    ],
 )

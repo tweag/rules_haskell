@@ -13,7 +13,7 @@ haskell_library(
         "Bar/Baz.hsc",
         "Foo.hsc",
     ],
-    prebuilt_dependencies = ["base"],
+    deps = ["//tests:base"],
 )
 
 haskell_binary(
@@ -22,7 +22,9 @@ haskell_binary(
         "BinHsc.hsc",
         "Main.hs",
     ],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":hsc-lib"],
+    deps = [
+        ":hsc-lib",
+        "//tests:base",
+    ],
 )

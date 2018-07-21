@@ -8,6 +8,6 @@ load(
 haskell_binary(
     name = "binary-simple",
     srcs = ["Main.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )

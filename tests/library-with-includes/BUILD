@@ -23,6 +23,8 @@ cc_library(
 haskell_library(
     name = "library-with-includes",
     srcs = ["Lib.hs"],
-    prebuilt_dependencies = ["base"],
-    deps = [":clib"],
+    deps = [
+        ":clib",
+        "//tests:base",
+    ],
 )

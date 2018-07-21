@@ -40,11 +40,11 @@ haskell_proto_library(
 haskell_library(
     name = "hs-lib",
     srcs = ["Bar.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
     deps = [
         ":address_haskell_proto",
         ":person_haskell_proto",
+        "//tests:base",
     ],
 )
 

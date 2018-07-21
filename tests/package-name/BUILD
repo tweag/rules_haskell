@@ -12,8 +12,8 @@ haskell_library(
     # However, underscores (which are not legal) should be turned into dashes.
     name = "lib-a_Z",
     srcs = ["Lib.hs"],
-    prebuilt_dependencies = ["base"],
     version = "1.2.3.4",
+    deps = ["//tests:base"],
 )
 
 haskell_test(
@@ -21,6 +21,8 @@ haskell_test(
     size = "small",
     srcs = ["Main.hs"],
     main_file = "Main.hs",
-    prebuilt_dependencies = ["base"],
-    deps = [":lib-a_Z"],
+    deps = [
+        ":lib-a_Z",
+        "//tests:base",
+    ],
 )

@@ -12,23 +12,25 @@ load(
 haskell_library(
     name = "one",
     srcs = ["One.hs"],
-    prebuilt_dependencies = [
-        "base",
+    deps = [
+        "//tests:base",
     ],
 )
 
 haskell_library(
     name = "two",
     srcs = ["Two.hs"],
-    prebuilt_dependencies = [
-        "base",
+    deps = [
+        ":one",
+        "//tests:base",
     ],
-    deps = [":one"],
 )
 
 haskell_binary(
     name = "two-libs",
     srcs = ["Main.hs"],
-    prebuilt_dependencies = ["base"],
-    deps = [":two"],
+    deps = [
+        ":two",
+        "//tests:base",
+    ],
 )

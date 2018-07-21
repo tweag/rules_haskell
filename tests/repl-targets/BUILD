@@ -45,28 +45,28 @@ haskell_library(
         ":chs",
         ":codegen",
     ],
-    prebuilt_dependencies = [
-        "base",
-        "array",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":cbits",
         ":zlib",
+        "//tests:array",
+        "//tests:base",
     ],
 )
 
 haskell_library(
     name = "QuuxLib",
     srcs = ["QuuxLib.hs"],
-    prebuilt_dependencies = ["base"],
+    deps = ["//tests:base"],
 )
 
 haskell_binary(
     name = "hs-bin",
     srcs = ["Quux.hs"],
     main_file = "Quux.hs",
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":QuuxLib"],
+    deps = [
+        ":QuuxLib",
+        "//tests:base",
+    ],
 )
