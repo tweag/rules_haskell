@@ -168,6 +168,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     boot_files = []
     source_files = set.empty()
     modules = set.empty()
+    signatures = set.empty()
 
     # Add import hierarchy root.
     # Note that this is not perfect, since GHC requires hs-boot files
@@ -191,7 +192,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             header_files.append(s)
         if s.extension in ["hs-boot", "lhs-boot"]:
             boot_files.append(s)
-        elif s.extension in ["hs", "lhs", "hsc", "chs"]:
+        elif s.extension in ["hs", "lhs", "hsc", "chs", "hsig"]:
             if not main_file or s != main_file:
                 if s.extension == "hsc":
                     s0, idir = _process_hsc_file(hs, cc, s)
@@ -212,9 +213,13 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
 
                 set.mutable_insert(modules, mname)
 
+                if s.extension == "hsig":
+                    set.mutable_insert(signatures, mname)
+                    ghc_args += ["-fno-code", "-fwrite-interface"]
                 for dynamic in [False] if with_profiling else [True, False]:
                     file_sets = [
-                        (interface_files, interfaces_dir_raw, ".hi"),
+                        (interface_files, interfaces_dir_raw, ".hi")
+                    ] + [] if s.extension == "hsig" else [
                         (object_dyn_files if dynamic else object_files, objects_dir_raw, ".o"),
                     ]
                     for (file_set, dir_raw, file_ext) in file_sets:
@@ -239,7 +244,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
                 for dynamic in [False] if with_profiling else [True, False]:
                     file_sets = [
                         (interface_files, interfaces_dir_raw, ".hi"),
-                        (object_dyn_files if dynamic else object_files, objects_dir_raw, ".o"),
+                        (object_dyn_files if dynamic else object_files, objects_dir_raw, ".o")
                     ]
                     for (file_set, dir_raw, file_ext) in file_sets:
                         file_set.append(
@@ -270,9 +275,13 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         unit_id_args = [
             "-this-unit-id",
             pkg_id.to_string(my_pkg_id),
+            "-this-component-id",
+            pkg_id.to_string(my_pkg_id),
             "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id.to_string(my_pkg_id)),
         ]
         ghc_args += unit_id_args
+        for sig in set.to_list(signatures):
+            ghc_args += ["-instantiated-with", "{}=<{}>".format(sig, sig)]
 
     args = hs.actions.args()
     args.add(ghc_args)
@@ -320,8 +329,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     ])
 
     # Pass source files
-    for f in set.to_list(source_files):
-        args.add(f)
+    for f in set.to_list(modules):
+      args.add(f)
+    # [args.add(f) for f in set.to_list(source_files) if f.extension != "hsig"]
 
     return DefaultCompileInfo(
         args = args,
