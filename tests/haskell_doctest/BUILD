@@ -15,9 +15,9 @@ cc_library(
 haskell_library(
     name = "lib-a",
     srcs = ["Foo.hs"],
-    prebuilt_dependencies = ["base"],
     deps = [
         ":cbits",
+        "//tests:base",
         "@zlib.dev//:zlib",
     ],
 )
@@ -29,8 +29,10 @@ haskell_library(
         "Baz.hs",
         "Quux.hsc",
     ],
-    prebuilt_dependencies = ["base"],
-    deps = [":lib-a"],
+    deps = [
+        ":lib-a",
+        "//tests:base",
+    ],
 )
 
 haskell_doctest(
@@ -57,8 +59,10 @@ haskell_doctest(
 haskell_binary(
     name = "bin",
     srcs = ["Main.hs"],
-    prebuilt_dependencies = ["base"],
-    deps = [":lib-a"],
+    deps = [
+        ":lib-a",
+        "//tests:base",
+    ],
 )
 
 haskell_doctest(

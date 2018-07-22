@@ -9,13 +9,15 @@ load(
 haskell_library(
     name = "lhs-lib",
     srcs = ["Lib.lhs"],
-    prebuilt_dependencies = ["base"],
+    deps = ["//tests:base"],
 )
 
 haskell_binary(
     name = "lhs-bin",
     srcs = ["Main.lhs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":lhs-lib"],
+    deps = [
+        ":lhs-lib",
+        "//tests:base",
+    ],
 )

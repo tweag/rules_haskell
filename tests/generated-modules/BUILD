@@ -18,8 +18,8 @@ genrule(
 haskell_library(
     name = "GenModule",
     srcs = [":generate-genmodule"],
-    prebuilt_dependencies = ["base"],
     src_strip_prefix = "src",
+    deps = ["//tests:base"],
 )
 
 genrule(
@@ -32,8 +32,8 @@ genrule(
 haskell_library(
     name = "BinModule",
     srcs = [":generate-binmodule"],
-    prebuilt_dependencies = ["base"],
     src_strip_prefix = "src",
+    deps = ["//tests:base"],
 )
 
 genrule(
@@ -47,10 +47,10 @@ haskell_test(
     name = "generated-modules",
     size = "small",
     srcs = [":generate-main"],
-    prebuilt_dependencies = ["base"],
     src_strip_prefix = "src",
     deps = [
         ":BinModule",
         ":GenModule",
+        "//tests:base",
     ],
 )

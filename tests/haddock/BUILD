@@ -18,7 +18,7 @@ haskell_cc_import(
 haskell_library(
     name = "haddock-lib-deep",
     srcs = ["Deep.hsc"],
-    prebuilt_dependencies = ["base"],
+    deps = ["//tests:base"],
 )
 
 haskell_library(
@@ -29,20 +29,20 @@ haskell_library(
         "header.h",
     ],
     compiler_flags = ["-I."],
-    prebuilt_dependencies = [
-        "base",
-        "template-haskell",
+    deps = [
+        ":haddock-lib-deep",
+        "//tests:base",
+        "//tests:template-haskell",
     ],
-    deps = [":haddock-lib-deep"],
 )
 
 haskell_library(
     name = "haddock-lib-b",
     srcs = ["LibB.hs"],
-    prebuilt_dependencies = ["base"],
     deps = [
         ":haddock-lib-a",
         ":zlib",
+        "//tests:base",
     ],
 )
 

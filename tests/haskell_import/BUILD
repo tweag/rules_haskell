@@ -19,17 +19,19 @@ haskell_import(
 haskell_library(
     name = "Lib",
     srcs = ["Lib.hs"],
-    prebuilt_dependencies = ["base"],
-    deps = [":bytestring"],
+    deps = [
+        ":bytestring",
+        "//tests:base",
+    ],
 )
 
 haskell_test(
     name = "binary",
     srcs = ["Bin.hs"],
     main_file = "Bin.hs",
-    prebuilt_dependencies = ["base"],
     deps = [
         ":Lib",
         ":text_pkg",
+        "//tests:base",
     ],
 )

@@ -12,6 +12,6 @@ haskell_binary(
     name = "binary-with-link-flags",
     srcs = ["Main.hs"],
     compiler_flags = ["-threaded"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )

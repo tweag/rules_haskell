@@ -14,8 +14,8 @@ haskell_binary(
     extra_srcs = [
         "unicode.txt",
     ],
-    prebuilt_dependencies = [
-        "base",
-        "template-haskell",
+    deps = [
+        "//tests:base",
+        "//tests:template-haskell",
     ],
 )

@@ -11,16 +11,18 @@ load(
 haskell_library(
     name = "lib-a",
     srcs = ["Foo.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )
 
 haskell_library(
     name = "lib-b",
     srcs = ["Bar.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":lib-a"],
+    deps = [
+        ":lib-a",
+        "//tests:base",
+    ],
 )
 
 haskell_lint(
@@ -32,9 +34,11 @@ haskell_lint(
 haskell_binary(
     name = "bin",
     srcs = ["Main.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":lib-a"],
+    deps = [
+        ":lib-a",
+        "//tests:base",
+    ],
 )
 
 haskell_lint(

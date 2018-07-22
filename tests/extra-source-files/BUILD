@@ -18,17 +18,17 @@ haskell_library(
         "file.txt",
         "ld-options.txt",
     ],
-    prebuilt_dependencies = [
-        "base",
-        "template-haskell",
+    deps = [
+        "//tests:base",
+        "//tests:template-haskell",
     ],
 )
 
 haskell_binary(
     name = "extra-source-files-bin",
     srcs = [
-        "FooTH.hs",
         "Foo.hs",
+        "FooTH.hs",
         "Main.hs",
     ],
     # Test that the linker can also see the extra_srcs.
@@ -37,8 +37,8 @@ haskell_binary(
         "file.txt",
         "ld-options.txt",
     ],
-    prebuilt_dependencies = [
-        "base",
-        "template-haskell",
+    deps = [
+        "//tests:base",
+        "//tests:template-haskell",
     ],
 )

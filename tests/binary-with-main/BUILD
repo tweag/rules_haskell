@@ -9,6 +9,6 @@ haskell_binary(
     name = "binary-with-main",
     srcs = ["MainIsHere.hs"],
     main_function = "MainIsHere.this",
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )

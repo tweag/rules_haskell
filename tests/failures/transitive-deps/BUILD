@@ -8,15 +8,17 @@ load(
 haskell_library(
     name = "lib-a",
     srcs = ["LibA.hs"],
-    prebuilt_dependencies = ["base"],
+    deps = ["//tests:base"],
 )
 
 haskell_library(
     name = "lib-b",
     srcs = ["LibB.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:private"],
-    deps = [":lib-a"],
+    deps = [
+        ":lib-a",
+        "//tests:base",
+    ],
 )
 
 # Targets that must FAIL. These are tagged as manual so that
@@ -29,7 +31,6 @@ haskell_library(
     # Should fail because it doesn't specify "base" explicitly.
     name = "lib-cFailure",
     srcs = ["LibC.hs"],
-    prebuilt_dependencies = [],
     tags = ["manual"],
     deps = [":lib-b"],
 )
@@ -37,25 +38,29 @@ haskell_library(
 haskell_library(
     name = "lib-c",
     srcs = ["LibC.hs"],
-    prebuilt_dependencies = ["base"],
-    deps = [":lib-b"],
+    deps = [
+        ":lib-b",
+        "//tests:base",
+    ],
 )
 
 haskell_library(
     # Should fail because it doesn't specify "lib-a" explicitly.
     name = "lib-dFailure",
     srcs = ["LibD.hs"],
-    prebuilt_dependencies = ["base"],
     tags = ["manual"],
-    deps = [":lib-b"],
+    deps = [
+        ":lib-b",
+        "//tests:base",
+    ],
 )
 
 haskell_library(
     name = "lib-d",
     srcs = ["LibD.hs"],
-    prebuilt_dependencies = [
-        "base",
-        "lib-a",
+    deps = [
+        ":lib-a",
+        ":lib-b",
+        "//tests:base",
     ],
-    deps = [":lib-b"],
 )

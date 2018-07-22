@@ -15,7 +15,9 @@ haskell_library(
 haskell_binary(
     name = "binary-with-lib",
     srcs = ["Main.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = ["lib"],
+    deps = [
+        ":lib",
+        "//tests:base",
+    ],
 )

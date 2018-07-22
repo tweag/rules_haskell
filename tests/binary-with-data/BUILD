@@ -11,8 +11,8 @@ haskell_binary(
     # Regular file input:
     data = ["bin1-input"],
     main_file = "bin1.hs",
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )
 
 haskell_binary(
@@ -21,9 +21,9 @@ haskell_binary(
     args = ["$(location :bin1)"],
     data = [":bin1"],
     main_file = "bin2.hs",
-    prebuilt_dependencies = [
-        "base",
-        "process",
-    ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//tests:base",
+        "//tests:process",
+    ],
 )

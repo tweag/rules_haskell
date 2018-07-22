@@ -14,7 +14,9 @@ haskell_cc_import(
 haskell_binary(
     name = "binary-with-sysdeps",
     srcs = ["Main.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":zlib"],
+    deps = [
+        ":zlib",
+        "//tests:base",
+    ],
 )

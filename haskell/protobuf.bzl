@@ -235,6 +235,11 @@ registered.
 """
 
 def _protobuf_toolchain_impl(ctx):
+    if ctx.attr.prebuilt_deps:
+        print("""The attribute 'prebuilt_deps' has been deprecated,
+use the 'deps' attribute instead.
+""")
+
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,

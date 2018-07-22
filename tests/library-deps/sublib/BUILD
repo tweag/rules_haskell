@@ -8,9 +8,11 @@ load(
 haskell_library(
     name = "sublib",
     srcs = ["TestSubLib.hs"],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":sublib-c"],
+    deps = [
+        ":sublib-c",
+        "//tests:base",
+    ],
 )
 
 cc_library(

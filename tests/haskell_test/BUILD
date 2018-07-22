@@ -14,7 +14,7 @@ cc_library(
 haskell_library(
     name = "mylib",
     srcs = ["Lib.hs"],
-    prebuilt_dependencies = ["base"],
+    deps = ["//tests:base"],
 )
 
 haskell_test(
@@ -25,10 +25,10 @@ haskell_test(
     srcs = ["Test.hs"],
     flaky = False,
     main_function = "Test.test",
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
     deps = [
         ":cbits",
         ":mylib",
+        "//tests:base",
     ],
 )

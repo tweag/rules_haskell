@@ -27,9 +27,9 @@ haskell_library(
         ":gen-A",
         ":gen-A-boot",
     ],
-    prebuilt_dependencies = ["base"],
     src_strip_prefix = "srcs",
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )
 
 haskell_binary(
@@ -40,7 +40,9 @@ haskell_binary(
         "MB.hs",
         "Main.hs",
     ],
-    prebuilt_dependencies = ["base"],
     visibility = ["//visibility:public"],
-    deps = [":hs-boot-lib"],
+    deps = [
+        ":hs-boot-lib",
+        "//tests:base",
+    ],
 )

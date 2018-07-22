@@ -8,6 +8,8 @@ load(
 haskell_library(
     name = "foo",
     srcs = ["Foo.hs"],
-    prebuilt_dependencies = ["base"],
-    deps = ["//tests/c-compiles:c-lib"],
+    deps = [
+        "//tests:base",
+        "//tests/c-compiles:c-lib",
+    ],
 )

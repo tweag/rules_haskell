@@ -1,4 +1,4 @@
-package(default_visibility = ["//visibility:public"])
+package(default_testonly = 1)
 
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_toolchain")
 
@@ -16,11 +16,11 @@ haskell_binary(
     # This also ensure that local `compiler_flags` does not override the `global ones`
     compiler_flags = ["-XOverloadedStrings"],
     main_file = "CompilerFlags.hs",
-    prebuilt_dependencies = [
-        "base",
-        "bytestring",
-    ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//tests:base",
+        "//tests:bytestring",
+    ],
 )
 
 # This test the `repl_ghci_args` flags in a similar way
@@ -36,12 +36,12 @@ haskell_binary(
     name = "repl_flags",
     srcs = ["ReplFlags.hs"],
     main_file = "ReplFlags.hs",
-    prebuilt_dependencies = [
-        "base",
-        "bytestring",
-    ],
 
     # This also ensure that local `repl_flags` does not override the `global ones`
     repl_ghci_args = ["-DTESTS_TOOLCHAIN_REPL_FLAGS"],
     visibility = ["//visibility:public"],
+    deps = [
+        "//tests:base",
+        "//tests:bytestring",
+    ],
 )

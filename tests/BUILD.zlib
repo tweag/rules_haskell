@@ -33,10 +33,10 @@ haskell_library(
     "Codec/Compression/Zlib/*.hs",
     "Codec/Compression/Zlib/*.hsc",
   ]),
-  deps = ["zlib-import"],
-  prebuilt_dependencies = [
-    "base",
-    "bytestring",
-    "ghc-prim",
+  deps = [
+    ":zlib-import",
+    "@io_tweag_rules_haskell//tests:base",
+    "@io_tweag_rules_haskell//tests:bytestring",
+    "@io_tweag_rules_haskell//tests:ghc-prim",
   ],
 )
