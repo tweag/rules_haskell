@@ -75,14 +75,18 @@ test_failures() {
 
 # Test REPL for libraries
 test_repl_libraries() {
-    bazel build --config=ci //tests/repl-targets:hs-lib-repl
-    bazel-bin/tests/repl-targets/hs-lib-repl -e "show (foo 10) ++ bar ++ baz ++ gen"
+    # Test whether building of repl forces all runtime dependencies by
+    # itself:
+    bazel clean
+    bazel run --config=ci //tests/repl-targets:hs-lib-repl -- -e "show (foo 10) ++ bar ++ baz ++ gen"
 }
 
 # Test REPL for binaries
 test_repl_binaries() {
-    bazel build --config=ci //tests/repl-targets:hs-bin-repl
-    bazel-bin/tests/repl-targets/hs-bin-repl -e ":main"
+    # Test whether building of repl forces all runtime dependencies by
+    # itself:
+    bazel clean
+    bazel run --config=ci //tests/repl-targets:hs-bin-repl -- -e ":main"
 }
 
 # Test `compiler_flags` from toolchain and rule for REPL
