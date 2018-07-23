@@ -1,3 +1,3 @@
 module Main where
 
-main = return ()
+main = putStrLn "hello world"
