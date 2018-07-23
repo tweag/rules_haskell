@@ -5,6 +5,7 @@ package(
 
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import",
     "haskell_cc_import",
     "haskell_doc",
     "haskell_library",
@@ -36,11 +37,18 @@ haskell_library(
     ],
 )
 
+haskell_import(
+    name = "haddock-lib-c",
+    package = "libc",
+    visibility = ["//visibility:public"],
+)
+
 haskell_library(
     name = "haddock-lib-b",
     srcs = ["LibB.hs"],
     deps = [
         ":haddock-lib-a",
+        ":haddock-lib-c",
         ":zlib",
         "//tests:base",
     ],
