@@ -32,6 +32,7 @@ haskell_library(
     deps = [
         ":lib-a",
         "//tests:base",
+        "//tests:text",
     ],
 )
 
