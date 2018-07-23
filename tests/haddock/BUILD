@@ -40,7 +40,6 @@ haskell_library(
 haskell_import(
     name = "haddock-lib-c",
     package = "libc",
-    visibility = ["//visibility:public"],
 )
 
 haskell_library(

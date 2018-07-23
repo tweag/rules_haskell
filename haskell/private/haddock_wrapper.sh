@@ -11,9 +11,29 @@ extra_args=()
 
 for pkg in $(< $PREBUILT_DEPS_FILE)
 do
+    # Assumption: the `haddock-interfaces` field always only contains
+    # exactly one file name. This seems to hold in practice, though the
+    # ghc documentation defines it as:
+    # > (string list) A list of filenames containing Haddock interface files
+    # > (.haddock files) for this package.
+    # If there were more than one file, going by the output for the `depends`,
+    # the file names would be separated by a space character.
+    # https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html#installedpackageinfo-a-package-specification
     haddock_interfaces=$(ghc-pkg --simple-output field $pkg haddock-interfaces)
     haddock_html=$(ghc-pkg --simple-output field $pkg haddock-html)
-    extra_args+=("--read-interface=$haddock_html,$haddock_interfaces")
+
+    # Sometimes the referenced `.haddock` file does not exist
+    # (e.g. for `nixpkgs.haskellPackages` deps with haddock disabled).
+    # In that case, skip this package with a warning.
+    if [[ -f "$haddock_interfaces" ]]
+    then
+        # TODO: link source code,
+        # `--read-interface=$haddock_html,$pkg_src,$haddock_interfaces
+        # https://haskell-haddock.readthedocs.io/en/latest/invoking.html#cmdoption-read-interface
+        extra_args+=("--read-interface=$haddock_html,$haddock_interfaces")
+    else
+        echo "Warning: haddock missing for package $pkg" 1>&2
+    fi
 done
 
 haddock "${extra_args[@]}" "$@"

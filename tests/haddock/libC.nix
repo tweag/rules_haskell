@@ -1,3 +1,4 @@
+# A trivial `haskellPackages` library that has haddock generation disabled
 self: pkgs:
 let
   # pkgs = import ../../nixpkgs.nix {};
@@ -31,7 +32,11 @@ let
    '';
 
 in
+  # This call means the `.haddock` file is not generated,
+  # even though the ghc package still references the location
+  # where it would ordinarily be.
   pkgs.haskell.lib.dontHaddock
+
     (self.callPackage
       ({ mkDerivation }: mkDerivation {
         pname = "libc";
