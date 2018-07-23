@@ -212,97 +212,47 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
 
                 set.mutable_insert(modules, mname)
 
-                object_files.append(
-                    declare_compiled(
-                        hs,
-                        s,
-                        _output_file_ext(".o", False, with_profiling),
-                        directory = objects_dir_raw,
-                        rel_path = rel_path,
-                    ),
-                )
-                if not with_profiling:
-                    object_dyn_files.append(
-                        declare_compiled(
-                            hs,
-                            s,
-                            _output_file_ext(".o", True, with_profiling),
-                            directory = objects_dir_raw,
-                            rel_path = rel_path,
-                        ),
-                    )
-                interface_files.append(
-                    declare_compiled(
-                        hs,
-                        s,
-                        _output_file_ext(".hi", False, with_profiling),
-                        directory = interfaces_dir_raw,
-                        rel_path = rel_path,
-                    ),
-                )
-                if not with_profiling:
-                    interface_files.append(
-                        declare_compiled(
-                            hs,
-                            s,
-                            _output_file_ext(".hi", True, with_profiling),
-                            directory = interfaces_dir_raw,
-                            rel_path = rel_path,
-                        ),
-                    )
+                for dynamic in [False] if with_profiling else [True, False]:
+                    file_sets = [
+                        (interface_files, interfaces_dir_raw, ".hi"),
+                        (object_dyn_files if dynamic else object_files, objects_dir_raw, ".o"),
+                    ]
+                    for (file_set, dir_raw, file_ext) in file_sets:
+                        file_set.append(
+                            declare_compiled(
+                                hs,
+                                s,
+                                _output_file_ext(file_ext, dynamic, with_profiling),
+                                directory = dir_raw,
+                                rel_path = rel_path,
+                            ),
+                        )
             else:
                 if s.extension == "hsc":
                     s0 = _process_hsc_file(hs, cc, s)
                     set.mutable_insert(source_files, s0)
                 else:
                     set.mutable_insert(source_files, s)
+
                 set.mutable_insert(modules, "Main")
-                object_files.append(
-                    hs.actions.declare_file(
-                        paths.join(
-                            objects_dir_raw,
-                            paths.replace_extension(
-                                "Main",
-                                _output_file_ext(".o", False, with_profiling),
-                            ),
-                        ),
-                    ),
-                )
-                if not with_profiling:
-                    object_dyn_files.append(
-                        hs.actions.declare_file(
-                            paths.join(
-                                objects_dir_raw,
-                                paths.replace_extension(
-                                    "Main",
-                                    _output_file_ext(".o", True, with_profiling),
+
+                for dynamic in [False] if with_profiling else [True, False]:
+                    file_sets = [
+                        (interface_files, interfaces_dir_raw, ".hi"),
+                        (object_dyn_files if dynamic else object_files, objects_dir_raw, ".o"),
+                    ]
+                    for (file_set, dir_raw, file_ext) in file_sets:
+                        file_set.append(
+                            hs.actions.declare_file(
+                                paths.join(
+                                    dir_raw,
+                                    paths.replace_extension(
+                                        "Main",
+                                        _output_file_ext(file_ext, dynamic, with_profiling),
+                                    ),
                                 ),
                             ),
-                        ),
-                    )
-                interface_files.append(
-                    hs.actions.declare_file(
-                        paths.join(
-                            interfaces_dir_raw,
-                            paths.replace_extension(
-                                "Main",
-                                _output_file_ext(".hi", False, with_profiling),
-                            ),
-                        ),
-                    ),
-                )
-                if not with_profiling:
-                    interface_files.append(
-                        hs.actions.declare_file(
-                            paths.join(
-                                interfaces_dir_raw,
-                                paths.replace_extension(
-                                    "Main",
-                                    _output_file_ext(".hi", True, with_profiling),
-                                ),
-                            ),
-                        ),
-                    )
+                        )
 
     ghc_args += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
     ghc_args += ["-optP" + f for f in cc.cpp_flags]
