@@ -14,25 +14,13 @@ jobs:
             apk --no-progress update
             apk --no-progress add bash ca-certificates
             nix-channel --update
-
-            # cachix install
-            nix-env -if https://github.com/cachix/cachix/tarball/master --substituters https://cachix.cachix.org --trusted-public-keys cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=
-
-            # XXX Workaround: it complains about no USER, so let set a dummy USER
-            USER=dummy cachix use tweag
       - run:
           name: Build
           command: |
             # XXX Workaround https://github.com/NixOS/nix/issues/1969.
             nix-build nixpkgs.nix -A haskell.compiler.ghc822
-            # TODO Remove this once bazel-0.15 is merged in Nixpkgs.
-            nix-build nixpkgs.nix -A bazel | cachix push tweag
             nix-shell --pure --run "bazel build --jobs=2 //... @haskell_zlib//... --config=ci"
             nix-shell --pure --run "bazel build -c dbg --jobs=2 //... --config=ci"
-      - run:
-         name: Cachix push
-         command: |
-           nix-build ./tests/protoc_gen_haskell.nix | cachix push tweag
       - run:
           name: Run tests
           command: |
@@ -47,17 +35,6 @@ jobs:
           name: Install Nix
           command: |
             curl https://nixos.org/nix/install | sh
-
-            # XXX Workaround for https://github.com/cachix/cachix/issues/26.
-            echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf
-            sudo launchctl unload /Library/LaunchDaemons/org.nixos.nix-daemon.plist
-            sudo launchctl load /Library/LaunchDaemons/org.nixos.nix-daemon.plist
-      - run:
-          name: Install Cachix
-          shell: /bin/bash -eilo pipefail
-          command: |
-            nix-env -if https://github.com/cachix/cachix/tarball/master --substituters https://cachix.cachix.org --trusted-public-keys cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=
-            cachix use tweag
       - run:
           name: System dependencies
           command: |
@@ -67,7 +44,6 @@ jobs:
           name: Build
           shell: /bin/bash -eilo pipefail
           command: |
-            nix-build ./tests/protoc_gen_haskell.nix | cachix push tweag
             nix-shell --run 'CC=$(which clang) bazel build --jobs=2 //...'
       - run:
           name: Run tests
@@ -78,7 +54,5 @@ workflows:
   version: 2
   build:
     jobs:
-      - build-linux:
-          context: org-global
-      - build-darwin:
-          context: org-global
+      - build-linux
+      - build-darwin
