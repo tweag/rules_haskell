@@ -12,6 +12,7 @@ haskell_cc_import(
     hdrs = ["@zlib.dev//:include"],
     shared_library = "@zlib//:lib",
     strip_include_prefix = "/external/zlib.dev/include",
+    visibility = ["@c2hs_repo//:__pkg__"],
 )
 
 c2hs_library(
@@ -31,6 +32,7 @@ haskell_library(
     srcs = [
         ":bar",
         ":foo",
+        "@c2hs_repo//:baz",
     ],
     deps = ["//tests:base"],
 )
