@@ -44,6 +44,8 @@ jobs:
           name: Build
           shell: /bin/bash -eilo pipefail
           command: |
+            # XXX Workaround https://github.com/NixOS/nix/issues/1969.
+            nix-build tests/ghc.nix
             nix-shell --run 'CC=$(which clang) bazel build --jobs=2 //...'
       - run:
           name: Run tests
