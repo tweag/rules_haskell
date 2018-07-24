@@ -2,18 +2,20 @@
 #
 # Usage: ghci_repl_wrapper.sh <ARGS>
 
-# First test if ghci can be found where we expect it to be. If not, it's
-# likely that the script is invoked incorrectly, so we need to output a
-# warning with instructions how to invoke it.
-
-if [ ! -d "bazel-out" ]; then
+# this variable is set by `bazel run`
+if ! test -v BUILD_WORKSPACE_DIRECTORY
+then
     cat <<EOF
-The bazel-out symlink must be present in workspace directory.
+It looks like you are trying to invoke the REPL incorrectly.
+We only support calling the repl script with
 
-If you have built your project using a custom symlink prefix
-(with the --symlink_prefix option) and bazel-out was not created,
-it may mean that you're using a version of Bazel that is not yet
-supported by rules_haskell.
+$ bazel run <target>
+
+for now.
+
+If you are on bazel < 0.15 you must invoke as follows:
+
+$ bazel run --direct_run <target>
 EOF
     exit 1
 fi
@@ -30,25 +32,11 @@ fi
 # location of exec root reliably and then prefix locations of various
 # components, such as shared libraries with that exec root.
 
-RULES_HASKELL_EXEC_ROOT=$(dirname $(readlink bazel-out))
+
+RULES_HASKELL_EXEC_ROOT=$(dirname $(readlink ${BUILD_WORKSPACE_DIRECTORY}/bazel-out))
 GHCI_LOCATION="$RULES_HASKELL_EXEC_ROOT/{GHCi}"
 SCRIPT_LOCATION="$RULES_HASKELL_EXEC_ROOT/{SCRIPT_LOCATION}"
 
-if ! [ -e "$GHCI_LOCATION" ]
-then
-    cat <<EOF
-It looks like you are trying to invoke the REPL incorrectly.
-Due to limitations in Bazel, "bazel run" should not be used
-for that (because it closes stdin), although the newer
---direct-run option (available since Bazel 0.12) lifts that
-limitation.
-
-Instead please execute the following from workspace root:
-
-$ $SCRIPT_LOCATION
-EOF
-    exit 1
-fi
 
 export LD_LIBRARY_PATH={LDLIBPATH}
 "$GHCI_LOCATION" {ARGS} "$@"
