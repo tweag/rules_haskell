@@ -161,13 +161,19 @@ not built by default, but can be built on request. The name of the REPL
 target is the same as the name of binary with `"-repl"` added at the end.
 For example, the target above also defines `main-repl`.
 
-You can call the REPL like this (requires Bazel 0.12 or later):
+You can call the REPL like this (requires Bazel 0.15 or later):
+
+```
+$ bazel run //:hello-bin-repl
+```
+
+With Bazel > 0.12:
 
 ```
 $ bazel run --direct_run //:hello-bin-repl
 ```
 
-With older Bazel versions:
+Even older Bazel versions:
 
 ```
 $ bazel build //:hello-bin-repl # build the script

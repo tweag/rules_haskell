@@ -16,8 +16,18 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
 
 nixpkgs_git_repository(
   name = "nixpkgs",
+  # To make protobuf support work we need packages such as
+  # lens-labels_0_2_0_0 to be available in nixpkgs. This means we need to
+  # use a version of nixpkgs that is newer than 18.03.
+
+  # You need to be in an environment that is on the same commit
+  # as the one below. Use `nix-shell shell.nix`.
+
   # Keep this value in sync with `nixpkgs.nix`
   revision = "9a787af6bc75a19ac9f02077ade58ddc248e674a",
+  # TODO Using a fork with Bazel v0.15. Switch to mainline once
+  # https://github.com/NixOS/nixpkgs/pull/42735 merged.
+  remote = "https://github.com/mboes/nixpkgs",
 )
 
 nixpkgs_package(
