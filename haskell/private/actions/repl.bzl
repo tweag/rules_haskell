@@ -103,6 +103,8 @@ def build_haskell_repl(
         },
     )
 
+    source_files = lib_info.source_files if lib_info != None else bin_info.source_files
+
     args += ["-ghci-script", ghci_repl_script.path]
 
     # Extra arguments.
@@ -140,5 +142,14 @@ def build_haskell_repl(
     # hs.tools.ghci and ghci_script and the best way to do that is
     # to use hs.actions.run. That action, it turn must produce
     # a result, so using ln seems to be the only sane choice.
-    extra_inputs = depset([hs.tools.ghci, ghci_repl_script, repl_file])
+    extra_inputs = depset(transitive = [
+        depset([
+            hs.tools.ghci,
+            ghci_repl_script,
+            repl_file,
+        ]),
+        set.to_depset(build_info.package_caches),
+        depset(build_info.external_libraries.values()),
+        set.to_depset(source_files),
+    ])
     ln(hs, repl_file, output, extra_inputs)
