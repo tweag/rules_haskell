@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.7] - ???
+
+* Don’t crash on inputs missing `.haddock` interface files. See
+  [#362](https://github.com/tweag/rules_haskell/pull/362)
+
 ## [0.6] - 2018-07-21
 
 ### Added
