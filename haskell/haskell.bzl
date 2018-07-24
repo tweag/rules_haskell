@@ -172,13 +172,6 @@ With Bazel > 0.12:
 ```
 $ bazel run --direct_run //:hello-bin-repl
 ```
-
-Even older Bazel versions:
-
-```
-$ bazel build //:hello-bin-repl # build the script
-$ bazel-bin/.../hello-bin-repl  # run the script
-```
 """
 
 haskell_library = rule(
@@ -211,22 +204,8 @@ Example:
   ```
 
 Every `haskell_library` target also defines an optional REPL target that is
-not built by default, but can be built on request. The name of the REPL
-target is the same as the name of library with `"-repl"` added at the end.
-For example, the target above also defines `hello-lib-repl`.
-
-You can call the REPL like this (requires Bazel 0.12 or later):
-
-```
-$ bazel run --direct_run //:hello-lib-repl
-```
-
-With older Bazel versions:
-
-```
-$ bazel build //:hello-lib-repl # build the script
-$ bazel-bin/.../hello-lib-repl  # run the script
-```
+not built by default, but can be built on request. It works the same way as
+for `haskell_binary`.
 """
 
 def _haskell_import_impl(ctx):
