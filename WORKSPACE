@@ -162,6 +162,12 @@ maven_jar(
   artifact = "org.apache.spark:spark-core_2.10:1.6.0",
 )
 
+# c2hs rule in its own repository
+local_repository(
+    name = "c2hs_repo",
+    path = "tests/c2hs/repo",
+)
+
 # For Skydoc
 
 http_archive(
