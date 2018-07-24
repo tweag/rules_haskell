@@ -58,6 +58,7 @@ def _c2hs_library_impl(ctx):
 
     idir = paths.join(
         hs.bin_dir.path,
+        hs.label.workspace_root,
         hs.label.package,
         chs_dir_raw,
     )
