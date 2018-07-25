@@ -1,4 +1,4 @@
-module Foo (foo) where
+module Foo.Foo (foo) where
 
 #include <zlib.h>
 
