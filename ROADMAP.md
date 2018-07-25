@@ -15,30 +15,13 @@ may also be refined if appropriate.
 
 ## Planned feature list
 
-### Build and test inline-java
-
-* P0. Can build and run inline-java spec and jvm-streaming spec.
-* P0. Can use inline-java packages as dependencies in bigger product
-  (sparkle).
-
-### Build and test sparkle
-
-* P0. Able to build sparkle executable. This includes building all
-  relevant Java.
-
-### Build and test Agda
-
-* P0. Produces working `agda` and `agda-mode` executables.
-
 ### 1.0
 
-* P1. Maximally incremental rebuilds.
-* P1. Import toolchains from `rules_nixpkgs`.
+* P1. Backpack support.
 * P2. Define official GHC bindists as toolchains for each Tier-1
   platform.
 * P2. Define cross-compiler toolchains.
 * P2. Support multiple build flavours: fastbuild, opt, dbg/profiling.
-* P2. Support passing compiler flags on command-line.
 
 ## Previous milestones
 
@@ -51,3 +34,14 @@ may also be refined if appropriate.
 * P1. Basic binary build with a library dependency.
 * P2. Transitive library dependencies.
 * P2. Basic documentation with rule descriptions.
+
+### Build and test inline-java
+
+* P0. Can build and run inline-java spec and jvm-streaming spec.
+* P0. Can use inline-java packages as dependencies in bigger product
+  (sparkle).
+
+### Build and test sparkle
+
+* P0. Able to build sparkle executable. This includes building all
+  relevant Java.
