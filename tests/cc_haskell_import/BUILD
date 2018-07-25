@@ -39,3 +39,26 @@ cc_binary(
     visibility = ["//tests:__subpackages__"],
     deps = ["@ghc//:threaded-rts"],
 )
+
+# shared library which python will dlopen
+cc_binary(
+    name = "libadd_one.so",
+    srcs = [
+        ":hs-lib-b-so",
+    ],
+    visibility = ["//tests:__subpackages__"],
+    deps = ["@ghc//:threaded-rts"],
+    linkstatic = 1,
+    linkshared = 1,
+)
+
+# just dlopens libadd_one.so and prints it
+py_binary(
+    name = "python_add_one",
+    srcs = ["python_add_one.py"],
+    data = [
+        "libadd_one.so",
+    ],
+    srcs_version = "PY3ONLY",
+    default_python_version = "PY3"
+)
