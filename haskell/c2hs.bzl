@@ -40,7 +40,12 @@ def _c2hs_library_impl(ctx):
         for dep in ctx.attr.deps
         if C2hsLibraryInfo in dep
     ]
-    chi_includes = ["-i" + chi.dirname for chi in dep_chi_files]
+
+    chi_includes = [
+        "-i" + dep[C2hsLibraryInfo].import_dir
+        for dep in ctx.attr.deps
+        if C2hsLibraryInfo in dep
+    ]
     args.add(chi_includes)
 
     hs.actions.run(

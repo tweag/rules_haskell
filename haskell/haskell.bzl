@@ -41,13 +41,17 @@ load(
     _cc_haskell_import = "cc_haskell_import",
     _haskell_cc_import = "haskell_cc_import",
 )
+load(
+    ":c2hs.bzl",
+    _c2hs_library = "c2hs_library",
+)
 
 _haskell_common_attrs = {
     "src_strip_prefix": attr.string(
         doc = "Directory in which module hierarchy starts.",
     ),
     "srcs": attr.label_list(
-        allow_files = FileType([".hs", ".hsc", ".chs", ".lhs", ".hs-boot", ".lhs-boot", ".h"]),
+        allow_files = FileType([".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"]),
         doc = "Haskell source files.",
     ),
     "extra_srcs": attr.label_list(
@@ -266,3 +270,5 @@ ghc_bindist = _ghc_bindist
 haskell_cc_import = _haskell_cc_import
 
 cc_haskell_import = _cc_haskell_import
+
+c2hs_library = _c2hs_library

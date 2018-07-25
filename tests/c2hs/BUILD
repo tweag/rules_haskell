@@ -17,7 +17,8 @@ haskell_cc_import(
 
 c2hs_library(
     name = "foo",
-    srcs = ["Foo.chs"],
+    srcs = ["src/Foo/Foo.chs"],
+    src_strip_prefix = "src",
     deps = [":zlib"],
 )
 
