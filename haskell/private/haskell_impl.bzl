@@ -22,6 +22,7 @@ load(
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
+    "HaskellPrebuiltPackageInfo",
 )
 
 def _prepare_srcs(srcs):
@@ -230,6 +231,7 @@ use the 'haskell_import' rule instead.
         )
 
     exposed_modules = set.empty()
+    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
     other_modules = set.from_list(ctx.attr.hidden_modules)
 
     for module in set.to_list(c.modules):
@@ -243,6 +245,7 @@ use the 'haskell_import' rule instead.
         static_library,
         dynamic_library,
         exposed_modules,
+        exposed_modules_reexports,
         other_modules,
         my_pkg_id,
         static_library_prof = static_library_prof,
@@ -323,3 +326,57 @@ use the 'haskell_import' rule instead.
         lib_info,
         default_info,
     ]
+
+def _exposed_modules_reexports(exports):
+    """Creates a ghc-pkg-compatible list of reexport declarations.
+
+    A ghc-pkg registration file declares reexports as part of the
+    exposed-modules field in the following format:
+
+    exposed-modules: A, B, C from pkg-c:C, D from pkg-d:Original.D
+
+    Here, the Original.D module from pkg-d is renamed by virtue of a
+    different name being used before the "from" keyword.
+
+    This function creates a ghc-pkg-compatible list of reexport declarations
+    (as shown above) from a dictionary mapping package targets to "Cabal-style"
+    reexported-modules declarations. That is, something like:
+
+    {
+      ":pkg-c": "C",
+      ":pkg-d": "Original.D as D",
+      ":pkg-e": "E1, Original.E2 as E2",
+    }
+
+    Args:
+      exports: a dictionary mapping package targets to "Cabal-style"
+               reexported-modules declarations.
+
+    Returns:
+      a ghc-pkg-compatible list of reexport declarations.
+    """
+    exposed_reexports = []
+    for dep, cabal_decls in exports.items():
+        for cabal_decl in cabal_decls.split(","):
+          stripped_cabal_decl = cabal_decl.strip()
+          cabal_decl_parts = stripped_cabal_decl.split(" as ")
+          original = cabal_decl_parts[0]
+          if len(cabal_decl_parts) == 2:
+              reexported = cabal_decl_parts[1]
+          else:
+              reexported = cabal_decl_parts[0]
+
+          if HaskellPrebuiltPackageInfo in dep:
+              pkg = dep[HaskellPrebuiltPackageInfo].package_id
+          elif HaskellLibraryInfo in dep:
+              pkg = dep[HaskellLibraryInfo].package_id
+
+          exposed_reexport = "{reexported} from {pkg}:{original}".format(
+              reexported = reexported,
+              pkg = pkg,
+              original = original,
+          )
+
+          exposed_reexports.append(exposed_reexport)
+
+    return exposed_reexports

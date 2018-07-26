@@ -67,7 +67,8 @@ HaskellBinaryInfo = provider(
 HaskellPrebuiltPackageInfo = provider(
     doc = "Information about a prebuilt GHC package.",
     fields = {
-        "package": "Package name",
+        "package": "Package name.",
+        "package_id": "Package id, usually of the form name-version.",
     },
 )
 
