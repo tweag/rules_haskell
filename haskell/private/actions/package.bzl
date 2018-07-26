@@ -5,7 +5,7 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, dynamic_library, exposed_modules_file, other_modules, my_pkg_id, static_library_prof):
+def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, dynamic_library, exposed_modules_file, exposed_modules_reexports, other_modules, my_pkg_id, static_library_prof):
     """Create GHC package using ghc-pkg.
 
     Args:
@@ -74,7 +74,11 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
     hs.actions.run_shell(
         inputs = [metadata_file, exposed_modules_file],
         outputs = [registration_file],
-        command = "cat $1 > $3; echo exposed-modules: $(< $2) >> $3",
+        command = """
+        cat $1 > $3
+        echo "exposed-modules: $(< $2)" >> $3
+        echo "exposed-modules: {reexports}" >> $3
+        """.format(", ".join(exposed_modules_reexports)),
         arguments = [
             metadata_file.path,
             exposed_modules_file.path,
@@ -84,7 +88,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
     )
 
     # Make the call to ghc-pkg and use the registration file
-    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_confs)])
+    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_confs)]) + ":"
     hs.actions.run(
         inputs = depset(transitive = [
             set.to_depset(dep_info.package_confs),

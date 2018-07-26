@@ -190,6 +190,9 @@ haskell_library = rule(
         hidden_modules = attr.string_list(
             doc = "Modules that should be unavailable for import by dependencies.",
         ),
+        exports = attr.label_keyed_string_dict(
+            doc = "A dictionary mapping dependencies to module reexports that should be available for import by dependencies.",
+        ),
     ),
     outputs = {
         "repl": "%{name}-repl",
@@ -207,8 +210,12 @@ Example:
       name = "hello-lib",
       srcs = glob(["src/**/*.hs"]),
       src_strip_prefix = "src",
-      deps = ["//hello-sublib:lib"],
-      prebuilt_dependencies = ["base", "bytestring"],
+      deps = [
+          "//hello-sublib:lib",
+      ],
+      exports = {
+          "//hello-sublib:lib": "Lib1 as HelloLib1, Lib2",
+      },
   )
   ```
 
@@ -222,7 +229,12 @@ def _haskell_import_impl(ctx):
         package = ctx.attr.package
     else:
         package = ctx.label.name
-    return [HaskellPrebuiltPackageInfo(package = package)]
+
+    if ctx.attr.version:
+        package_id = "{}-{}".format(package, ctx.attr.version)
+    else:
+        package_id = package
+    return [HaskellPrebuiltPackageInfo(package = package, package_id = package_id)]
 
 """Wrap a prebuilt dependency as a rule.
 
@@ -231,6 +243,7 @@ Example:
   haskell_import(
       name = "base_pkg",
       package = "base",
+      version = "4.9.0.0",
   )
   haskell_library(
       name = "hello-lib",
@@ -253,6 +266,7 @@ haskell_import = rule(
     _haskell_import_impl,
     attrs = dict(
         package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
+        version = attr.string(doc = "A non-Bazel-supplied GHC package version.", mandatory = True)
     ),
 )
 
