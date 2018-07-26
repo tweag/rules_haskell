@@ -3,7 +3,7 @@
 # Usage: ghci_repl_wrapper.sh <ARGS>
 
 # this variable is set by `bazel run`
-if ! test -v BUILD_WORKSPACE_DIRECTORY
+if [ "$BUILD_WORKSPACE_DIRECTORY" = "" ]
 then
     cat <<EOF
 It looks like you are trying to invoke the REPL incorrectly.
