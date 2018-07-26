@@ -9,6 +9,6 @@ load(
 c2hs_library(
     name = "baz",
     srcs = ["Baz.chs"],
-    deps = ["@io_tweag_rules_haskell//tests/c2hs:zlib"],
     visibility = ["//visibility:public"],
+    deps = ["@io_tweag_rules_haskell//tests/c2hs:zlib"],
 )

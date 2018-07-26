@@ -5,9 +5,9 @@ package(
 
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_import",
     "haskell_cc_import",
     "haskell_doc",
+    "haskell_import",
     "haskell_library",
 )
 
@@ -44,12 +44,19 @@ haskell_import(
 
 haskell_library(
     name = "haddock-lib-b",
-    srcs = ["LibB.hs"],
+    srcs = [
+        "LibB.hs",
+        "TH.hs",
+    ],
+    extra_srcs = [
+        "unicode.txt",
+    ],
     deps = [
         ":haddock-lib-a",
         ":haddock-lib-c",
         ":zlib",
         "//tests:base",
+        "//tests:template-haskell",
     ],
 )
 

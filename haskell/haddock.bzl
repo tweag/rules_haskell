@@ -72,6 +72,10 @@ def _haskell_doc_aspect_impl(target, ctx):
     ghc_args.add([x.path for x in set.to_list(target[HaskellLibraryInfo].source_files)])
     ghc_args.add(["-v0"])
 
+    locale_archive_depset = (
+        depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
+    )
+
     ctx.actions.run(
         inputs = depset(transitive = [
             set.to_depset(target[HaskellBuildInfo].package_caches),
@@ -92,6 +96,7 @@ def _haskell_doc_aspect_impl(target, ctx):
                 hs.tools.ghc_pkg,
                 hs.tools.haddock,
             ]),
+            locale_archive_depset,
         ]),
         outputs = [haddock_file, html_dir],
         mnemonic = "HaskellHaddock",
@@ -219,11 +224,16 @@ def _haskell_doc_rule_impl(ctx):
     for cache in set.to_list(all_caches):
         args.add(["--optghc=-package-db={0}".format(cache.dirname)])
 
+    locale_archive_depset = (
+        depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
+    )
+
     ctx.actions.run(
         inputs = depset(transitive = [
             set.to_depset(all_caches),
             depset(html_dict_copied.values()),
             depset(haddock_dict.values()),
+            locale_archive_depset,
         ]),
         outputs = [index_root],
         mnemonic = "HaskellHaddockIndex",
