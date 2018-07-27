@@ -275,11 +275,12 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         ghc_args += unit_id_args
 
     args = hs.actions.args()
-    args.add(ghc_args)
 
-    # Compilation mode and explicit user flags
+    # Compilation mode.  Allow rule-supplied compiler flags to override it.
     if hs.mode == "opt":
         args.add("-O2")
+
+    args.add(ghc_args)
 
     args.add(["-static"])
 
