@@ -133,11 +133,6 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     )
 
     # Default compiler flags.
-
-    # Compilation mode.  Allow rule-supplied compiler flags to override it.
-    if hs.mode == "opt":
-      ghc_args += ["-O2"]
-
     ghc_args += hs.toolchain.compiler_flags
     ghc_args += compiler_flags
     ghc_args.append("-hide-all-packages")
@@ -280,6 +275,11 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         ghc_args += unit_id_args
 
     args = hs.actions.args()
+
+    # Compilation mode.  Allow rule-supplied compiler flags to override it.
+    if hs.mode == "opt":
+        args.add("-O2")
+
     args.add(ghc_args)
 
     args.add(["-static"])
