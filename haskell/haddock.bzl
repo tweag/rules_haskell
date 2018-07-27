@@ -95,6 +95,8 @@ def _haskell_doc_aspect_impl(target, ctx):
                 hs.tools.bash,
                 hs.tools.ghc_pkg,
                 hs.tools.haddock,
+                hs.tools.mkdir,
+                hs.tools.rmdir,
             ]),
             locale_archive_depset,
         ]),
