@@ -7,6 +7,8 @@
 --    package = struct(...)
 --
 -- which can be loaded into Bazel BUILD files.
+{-# LANGUAGE LambdaCase #-}
+
 module Main (main) where
 
 import Distribution.PackageDescription.Parse
@@ -17,6 +19,7 @@ import System.Environment (getArgs)
 import System.FilePath ((<.>))
 import System.Process (callProcess)
 
+import qualified Data.Map.Strict as Map
 import qualified Distribution.Package as P
 import qualified Distribution.PackageDescription as P
 import qualified System.Directory as Directory
@@ -27,14 +30,21 @@ import Skylark
 
 main :: IO ()
 main = do
-    [ghcVersionStr, cabalFile, outFile] <- getArgs
+    ghcVersionStr:cabalFile:outFile:flagArgs <- getArgs
     gdesc <- readGenericPackageDescription normal cabalFile
     let ghcVersion = case simpleParse ghcVersionStr of
                       Nothing -> error $ "Error parsing ghc version: " ++ show ghcVersionStr
                       Just v -> v
-    desc <- maybeConfigure $ flattenToDefaultFlags ghcVersion gdesc
+        packageFlags = parseFlags flagArgs
+    desc <- maybeConfigure $ flattenToDefaultFlags ghcVersion packageFlags gdesc
     writeFile outFile $ show $ renderStatements
         [Assign "package" $ packageDescriptionExpr desc]
+
+parseFlags :: [String] -> Map.Map P.FlagName Bool
+parseFlags = \case
+  "-flag-on":flag:etc -> Map.insert (P.mkFlagName flag) True (parseFlags etc)
+  "-flag-off":flag:etc -> Map.insert (P.mkFlagName flag) False (parseFlags etc)
+  _ -> Map.empty
 
 maybeConfigure :: P.PackageDescription -> IO P.PackageDescription
 maybeConfigure desc = case P.buildType desc of

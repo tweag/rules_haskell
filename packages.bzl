@@ -380,6 +380,7 @@ packages = (
       version = "0.11.4.12",
       sha256 =
         "356a526263d988254d5830dd5a368380163975174dfc9230b697e6129e5c15a2",
+      flags = { "fast-bignum": False, },
     ),
   "HsOpenSSL-x509-system":
     struct(
@@ -506,6 +507,7 @@ packages = (
       version = "0.0.2.1",
       sha256 =
         "4bb1516b9fb340118960043e0c72aa62316be8ff3f78cc8c1354e2fac96dd8cc",
+      flags = { "bytestring-in-base": False, },
     ),
   "NoHoed":
     struct(
@@ -1034,6 +1036,7 @@ packages = (
       version = "0.1.0.6",
       sha256 =
         "d5b5553678adca16770e45fa8d0f9e8378b31962ba8dd1baab600af6d035e6b5",
+      flags = { "servant-client-core": False, },
     ),
   "alerts":
     struct(
@@ -2474,6 +2477,7 @@ packages = (
       version = "0.29.1",
       sha256 =
         "3fa5118b7f7ff8039eb3eb9386bd06500adb7b7184c44f7a3ae3e587b5c354cb",
+      flags = { "demos": True, },
     ),
   "brittany":
     struct(
@@ -2636,6 +2640,7 @@ packages = (
       version = "0.12",
       sha256 =
         "0e092375d137916ffe0b788b6cb88e2f8f26b36e03b81665c0cafcc638ce6516",
+      flags = { "old-locale": False, },
     ),
   "cabal-toolkit":
     struct(
@@ -2714,6 +2719,7 @@ packages = (
       version = "0.5.1.0",
       sha256 =
         "762c8aaea2cdad61f52bad1b9f1f3b32764b4b6da03371aba6e5017f69614277",
+      flags = { "bytestring--lt-0_10_4": False, },
     ),
   "cassava-conduit":
     struct(
@@ -3602,6 +3608,7 @@ packages = (
       version = "1.3.8",
       sha256 =
         "9087c936bfcdb865bad3166baa3f12bf37acf076fa76010e3b5f82a1d485446e",
+      flags = { "new-base": True, },
     ),
   "currencies":
     struct(
@@ -5204,6 +5211,7 @@ packages = (
       version = "1",
       sha256 =
         "ef11f94f44a74d6657ee61dcd2cfbc6d0889d233a2fb4caae6a29d9c59a1366f",
+      flags = { "containers": True, },
     ),
   "fuzzcheck":
     struct(
@@ -7256,6 +7264,7 @@ packages = (
       version = "0.9.0.5",
       sha256 =
         "118df7aaf296d59989b24c68a614f12f45a16260504890ed088d16761415364c",
+      flags = { "test-hlint": False, },
     ),
   "hpp":
     struct(
@@ -7814,6 +7823,7 @@ packages = (
       version = "9.3.1.16",
       sha256 =
         "0d55e35cc718891d0987b7c8e6c43499efa727c68bc92e88e8b99461dff403e3",
+      flags = { "network-uri": True, },
     ),
   "hxt-charproperties":
     struct(
@@ -7844,6 +7854,7 @@ packages = (
       version = "9.1.5.2",
       sha256 =
         "6fa19d03991d53c34f4525a4fdfaafde56dd48459093b4502832a1fdd9dfdd0b",
+      flags = { "network-uri": True, },
     ),
   "hxt-pickle-utils":
     struct(
@@ -9230,6 +9241,7 @@ packages = (
       version = "0.2.2.0",
       sha256 =
         "ef1400ddc1ddafb0b98d4331a58bdbe3b5209a81579e17f85f180731a96d75d1",
+      flags = { "small_base": False, },
     ),
   "messagepack":
     struct(
@@ -9374,6 +9386,7 @@ packages = (
       version = "0.3.2",
       sha256 =
         "249b5b22bf9758d4a7e88382aa6533a610cf9c39b773df6101f008feecb6d079",
+      flags = { "live-test": False, },
     ),
   "miniutter":
     struct(
@@ -9386,6 +9399,7 @@ packages = (
       version = "0.1.1",
       sha256 =
         "c87f349f1999e8dee25f636428fc1742f50bcd2b51c9288578c60c58102e9f83",
+      flags = { "win32-2-5": True, },
     ),
   "misfortune":
     struct(
@@ -10100,6 +10114,7 @@ packages = (
       version = "1.0.1",
       sha256 =
         "ab37163bc2970ea16c2eb6e091d1e99ab50b8e2ba93c23d24dac761803e509f8",
+      flags = { "allow-relative-paths": True, },
     ),
   "non-empty":
     struct(
@@ -10412,6 +10427,7 @@ packages = (
       version = "2.0.6",
       sha256 =
         "f2f236e91986b522510c7ea8212c1641da6006d0acec3e6b587a4e4faf3612ee",
+      flags = { "old-locale": False, },
     ),
   "pandoc-citeproc":
     struct(
@@ -10538,6 +10554,7 @@ packages = (
       version = "0.8",
       sha256 =
         "14e3b9d03c222a061ffeb40ecc0940d980e25fddd70339d04ec86dbae6f27897",
+      flags = { "old-time": False, },
     ),
   "pathwalk":
     struct(
@@ -13364,6 +13381,7 @@ packages = (
       version = "0.5.0.3",
       sha256 =
         "d8d9ad876365f88bdccd02073049e58715cd5ba94de06eb98e21d595244918a3",
+      flags = { "old-time": False, },
     ),
   "tar-conduit":
     struct(
@@ -13622,6 +13640,7 @@ packages = (
       version = "1.2.2.2",
       sha256 =
         "31465106360a7d7e214d96f1d1b4303a113ffce1bde44a4e614053a1e5072df9",
+      flags = { "integer-simple": False, },
     ),
   "text-all":
     struct(
@@ -13754,6 +13773,8 @@ packages = (
       version = "0.0.2.5",
       sha256 =
         "1aafbc567069748daf49334cf3ee91e673e5dc2fac0238ac9e49a71fd97b4fe0",
+      flags =
+        { "template-haskell-210": False, "template-haskell-212": True, },
     ),
   "th-desugar":
     struct(
@@ -13796,6 +13817,7 @@ packages = (
       version = "0.0.1.3",
       sha256 =
         "1f41be23a2935c9ffcd1d832749ef2ec23bef91227a8e9a7e8bb14498115d42f",
+      flags = { "template-haskell-210": False, },
     ),
   "th-reify-many":
     struct(
@@ -13940,6 +13962,7 @@ packages = (
       version = "0.1.1.3",
       sha256 =
         "9144bf68b47791a2ac73f45aeadbc5910be2da9ad174909e1a10a70b4576aced",
+      flags = { "old-locale": False, },
     ),
   "time-locale-vietnamese":
     struct(
@@ -13994,6 +14017,7 @@ packages = (
       version = "0.1.8",
       sha256 =
         "8119d90e4e78fdb662e83f2a350e30678e5e9078737ee90b6c121b62c1a3cdf6",
+      flags = { "time_1_6_and_1_7": False, "time_pre_1_6": False, },
     ),
   "tinylog":
     struct(

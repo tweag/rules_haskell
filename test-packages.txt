@@ -1,5 +1,6 @@
 aeson
 aeson_extra
+cassava
 conduit
 entropy
 fuzzyset

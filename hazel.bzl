@@ -27,14 +27,20 @@ def _cabal_haskell_repository_impl(ctx):
       sha256=ctx.attr.sha256,
       output="")
 
-  symlink_and_invoke_hazel(ctx, ctx.attr.hazel_base_repo_name, ctx.attr.package_name + ".cabal",
-                           "package.bzl")
+  symlink_and_invoke_hazel(
+    ctx,
+    ctx.attr.hazel_base_repo_name,
+    ctx.attr.package_flags,
+    ctx.attr.package_name + ".cabal",
+    "package.bzl"
+  )
 
 _cabal_haskell_repository = repository_rule(
     implementation=_cabal_haskell_repository_impl,
     attrs={
         "package_name": attr.string(mandatory=True),
         "package_version": attr.string(mandatory=True),
+        "package_flags": attr.string_dict(mandatory=True),
         "hazel_base_repo_name": attr.string(mandatory=True),
         "sha256": attr.string(mandatory=True),
     })
@@ -132,10 +138,21 @@ def hazel_repositories(
       extra_libs_strip_include_prefix = extra_libs_strip_include_prefix,
   )
   for p in pkgs:
+
+    flags = {}
+
+    if hasattr(pkgs[p], "flags"):
+      items = pkgs[p].flags
+      # NOTE We have to convert booleans to strings in order to pass them as
+      # attributes of the _cabal_haskell_repository rule because there is no
+      # attribute type for dictionary of booleans at the moment.
+      flags = {flag: str(items[flag]) for flag in items}
+
     _cabal_haskell_repository(
         name = "haskell_" + _fixup_package_name(p),
         package_name = p,
         package_version = pkgs[p].version,
+        package_flags = flags,
         sha256 = pkgs[p].sha256 if hasattr(pkgs[p], "sha256") else None,
         hazel_base_repo_name = hazel_base_repo_name,
     )

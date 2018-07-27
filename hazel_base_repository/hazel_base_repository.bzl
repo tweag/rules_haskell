@@ -60,13 +60,27 @@ hazel_base_repository = repository_rule(
     })
 
 # TODO: don't reload all package names into every repository.
-def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, cabal_path, output):
+def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, package_flags, cabal_path, output):
   for f in ["cabal2bazel", "ghc-version"]:
     ctx.symlink(Label("@" + hazel_base_repo_name + "//:" + f), f)
 
   ghc_version = ctx.execute(["cat", "ghc-version"]).stdout
 
-  res = ctx.execute(["./cabal2bazel", ghc_version, cabal_path, "package.bzl"])
+  flag_args = []
+
+  for flag in package_flags:
+    if package_flags[flag] == "True":
+      flag_args += ["-flag-on", flag]
+    elif package_flags[flag] == "False":
+      flag_args += ["-flag-off", flag]
+
+  res = ctx.execute([
+    "./cabal2bazel",
+    ghc_version,
+    cabal_path,
+    "package.bzl"
+  ] + flag_args, quiet=False)
+
   if res.return_code != 0:
     fail("Error running hazel on {}:\n{}\n{}".format(
         cabal_path, res.stdout, res.stderr))

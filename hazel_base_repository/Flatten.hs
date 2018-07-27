@@ -25,11 +25,14 @@ import qualified Data.Map as Map
 
 -- | Resolve the flags and conditionals for the given package,
 -- assuming the given GHC version.
---
--- TODO: Also take optional flag overrides.
-flattenToDefaultFlags :: Version -> GenericPackageDescription -> PackageDescription
-flattenToDefaultFlags ghcVersion gdesc = let
-    flags = Map.fromList [(flagName f, flagDefault f) | f <- genPackageFlags gdesc]
+flattenToDefaultFlags
+  :: Version
+  -> Map.Map FlagName Bool
+  -> GenericPackageDescription
+  -> PackageDescription
+flattenToDefaultFlags ghcVersion flagOverrides gdesc = let
+    flags = Map.union flagOverrides $
+            Map.fromList [(flagName f, flagDefault f) | f <- genPackageFlags gdesc]
     in (packageDescription gdesc)
           { library = resolve ghcVersion flags <$> condLibrary gdesc
           , executables = map (\(n, e) -> (resolve ghcVersion flags e) { exeName = n })

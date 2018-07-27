@@ -13,9 +13,10 @@ module Main (main) where
 import qualified Crypto.Hash.SHA256 as SHA256
 import Control.Monad (forM_, unless)
 import Data.Aeson.Types
+import Data.Bifunctor
 import Data.Yaml
 import Distribution.Package
-import Distribution.PackageDescription (FlagName, mkFlagName)
+import Distribution.PackageDescription (FlagName, mkFlagName, unFlagName)
 import Distribution.Version
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
@@ -63,15 +64,26 @@ main = do
 packageList :: Map.Map PackageName B.ByteString -> BuildPlan -> [(String, Expr)]
 packageList shas = map mk . Map.toList . planPackages
   where
-    mk (n, p) = (Cabal.display n, ExprCall "struct"
-                    [ "version" =: (Cabal.display $ planPackageVersion p)
-                    , "sha256" =: BC.unpack (Base16.encode (shas Map.! n))
-                    ])
+    mk (n, p) =
+      ( Cabal.display n
+      , ExprCall "struct" $
+        [ "version" =: (Cabal.display $ planPackageVersion p)
+        , "sha256" =: BC.unpack (Base16.encode (shas Map.! n))
+        ] ++
+        let flags = planPackageFlags p
+        in if Map.null flags
+           then []
+           else ["flags" =: flagsExpr flags]
+      )
 
 corePackageList :: BuildPlan -> [(String, String)]
 corePackageList = map mk . Map.toList . corePackageVersions
   where
     mk (n, v) = (Cabal.display n, Cabal.display v)
+
+flagsExpr :: Flags -> Expr
+flagsExpr m = ExprDict $
+  bimap (ExprString . unFlagName) ExprBool <$> Map.toList m
 
 downloadUrl :: Manager -> String -> IO L.ByteString
 downloadUrl manager url = do
