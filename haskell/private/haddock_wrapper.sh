@@ -42,4 +42,4 @@ TEMP=$(mktemp -d 2>/dev/null || mktemp -d -t 'haddock_wrapper')
 trap cleanup 1 2 3 6
 cleanup() { rmdir "$TEMP"; }
 TMPDIR=$TEMP haddock "${extra_args[@]}" "$@"
-rmdir "$TEMP"
+cleanup
