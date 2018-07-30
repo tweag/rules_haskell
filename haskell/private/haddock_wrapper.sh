@@ -37,7 +37,9 @@ do
 done
 
 # Override TMPDIR to prevent race conditions on certain platforms.
-mkdir haddock-tmp
-TMPDIR=haddock-tmp
-haddock "${extra_args[@]}" "$@"
-rmdir haddock-tmp
+# BSD and GNU mktemp are very different; attempt GNU first
+TEMP=$(mktemp -d 2>/dev/null || mktemp -d -t 'haddock_wrapper')
+trap cleanup 1 2 3 6
+cleanup() { rmdir "$TEMP"; }
+TMPDIR=$TEMP haddock "${extra_args[@]}" "$@"
+rmdir "$TEMP"
