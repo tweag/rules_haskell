@@ -8,7 +8,6 @@ load(
 haskell_binary(
     name = "binary-custom-main",
     srcs = ["foo.hs"],
-    main_file = "foo.hs",
     visibility = ["//visibility:public"],
     deps = ["//tests:base"],
 )

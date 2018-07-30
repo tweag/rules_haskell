@@ -21,7 +21,6 @@ haskell_binary(
     testonly = 1,
     srcs = ["Bin.hs"],
     data = ["bin-data.txt"],
-    main_file = "Bin.hs",
     deps = [
         ":runfiles",
         "//tests:base",
@@ -36,7 +35,6 @@ haskell_test(
         "test-data.txt",
         ":bin",
     ],
-    main_file = "Test.hs",
     deps = [
         ":runfiles",
         "//tests:base",

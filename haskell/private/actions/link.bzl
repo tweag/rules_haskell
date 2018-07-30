@@ -54,13 +54,34 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
         ),
     )
 
+def _create_objects_dir_manifest(hs, objects_dir, with_profiling):
+    objects_dir_manifest = hs.actions.declare_file(
+        objects_dir.basename + ".manifest",
+        sibling = objects_dir,
+    )
+
+    hs.actions.run_shell(
+        inputs = [objects_dir],
+        outputs = [objects_dir_manifest],
+        command = """
+        find {dir} -name '*.{ext}' > {out}
+        """.format(
+            dir = objects_dir.path,
+            ext = "p_o" if with_profiling else "dyn_o",
+            out = objects_dir_manifest.path,
+        ),
+        use_default_shell_env = True,
+    )
+
+    return objects_dir_manifest
+
 def link_binary(
         hs,
         cc,
         dep_info,
         extra_srcs,
         compiler_flags,
-        object_files,
+        objects_dir,
         with_profiling,
         dummy_static_lib):
     """Link Haskell binary from static object files.
@@ -110,8 +131,6 @@ def link_binary(
     # directly rather than doing multiple reversals with temporary
     # lists.
 
-    args.add([f.path for f in object_files])
-
     for package in set.to_list(dep_info.package_ids):
         args.add(["-package-id", package])
 
@@ -144,6 +163,7 @@ def link_binary(
         for rpath in set.to_list(_infer_rpaths(executable, solibs)):
             args.add(["-optl-Wl,-rpath," + rpath])
 
+    objects_dir_manifest = _create_objects_dir_manifest(hs, objects_dir, with_profiling)
     hs.toolchain.actions.run_ghc(
         hs,
         inputs = depset(transitive = [
@@ -152,7 +172,7 @@ def link_binary(
             set.to_depset(dep_info.dynamic_libraries),
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
-            depset(object_files),
+            depset([objects_dir]),
             depset([dummy_static_lib]),
             depset(dep_info.external_libraries.values()),
             depset(hs.extra_binaries),
@@ -160,6 +180,7 @@ def link_binary(
         outputs = [compile_output],
         mnemonic = "HaskellLinkBinary",
         arguments = [args],
+        params_file = objects_dir_manifest,
     )
 
     return executable
@@ -216,7 +237,7 @@ def _so_extension(hs):
     """
     return "dylib" if hs.toolchain.is_darwin else "so"
 
-def link_library_static(hs, cc, dep_info, object_files, my_pkg_id, with_profiling):
+def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling):
     """Link a static library for the package using given object files.
 
     Returns:
@@ -225,21 +246,44 @@ def link_library_static(hs, cc, dep_info, object_files, my_pkg_id, with_profilin
     static_library = hs.actions.declare_file(
         "lib{0}.a".format(pkg_id.library_name(hs, my_pkg_id, prof_suffix = with_profiling)),
     )
-
+    objects_dir_manifest = _create_objects_dir_manifest(hs, objects_dir, with_profiling)
     args = hs.actions.args()
-    args.add(["qc", static_library])
-    args.add(object_files)
+    inputs = ([objects_dir, objects_dir_manifest, hs.tools.ar] +
+              hs.tools_runfiles.ar + hs.extra_binaries)
 
-    hs.actions.run(
-        inputs = object_files + hs.tools_runfiles.ar + hs.extra_binaries,
-        outputs = [static_library],
-        mnemonic = "HaskellLinkStaticLibrary",
-        executable = hs.tools.ar,
-        arguments = [args],
-    )
+    if hs.toolchain.is_darwin:
+        # ar is deprecated on Darwin, so we have to use libtool instead.
+        args.add([
+            "-static",
+            "-o",
+            static_library.path,
+            "-filelist",
+            objects_dir_manifest,
+        ])
+        hs.actions.run(
+            inputs = inputs,
+            outputs = [static_library],
+            mnemonic = "HaskellLinkStaticLibrary",
+            executable = "/usr/bin/libtool",
+            arguments = [args],
+        )
+    else:
+        args.add([
+            "qc",
+            static_library,
+            "@" + objects_dir_manifest.path,
+        ])
+        hs.actions.run(
+            inputs = inputs,
+            outputs = [static_library],
+            mnemonic = "HaskellLinkStaticLibrary",
+            executable = hs.tools.ar,
+            arguments = [args],
+        )
+
     return static_library
 
-def link_library_dynamic(hs, cc, dep_info, extra_srcs, object_files, my_pkg_id):
+def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -279,8 +323,6 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, object_files, my_pkg_id):
 
     _add_external_libraries(args, dep_info.external_libraries.values())
 
-    args.add([f.path for f in object_files])
-
     solibs = set.union(
         set.from_list(dep_info.external_libraries),
         dep_info.dynamic_libraries,
@@ -302,12 +344,14 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, object_files, my_pkg_id):
 
     args.add(["-o", dynamic_library_tmp.path])
 
+    # Profiling not supported for dynamic libraries.
+    objects_dir_manifest = _create_objects_dir_manifest(hs, objects_dir, False)
+
     hs.toolchain.actions.run_ghc(
         hs,
-        inputs = depset(transitive = [
+        inputs = depset([objects_dir], transitive = [
             depset(hs.extra_binaries),
             depset(extra_srcs),
-            depset(object_files),
             set.to_depset(dep_info.package_caches),
             set.to_depset(dep_info.dynamic_libraries),
             depset(dep_info.external_libraries.values()),
@@ -315,6 +359,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, object_files, my_pkg_id):
         outputs = [dynamic_library_tmp],
         mnemonic = "HaskellLinkDynamicLibrary",
         arguments = [args],
+        params_file = objects_dir_manifest,
     )
 
     return dynamic_library

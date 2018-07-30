@@ -15,4 +15,10 @@ exports_files(
     ],
 )
 
+py_binary(
+    name = "ls_modules",
+    srcs = ["private/ls_modules.py"],
+    visibility = ["//visibility:public"],
+)
+
 skylark_lint()

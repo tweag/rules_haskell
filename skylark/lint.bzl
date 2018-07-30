@@ -41,7 +41,7 @@ _buildifier_generate = rule(
     },
 )
 
-def skylark_lint(name = "lint", data = None):
+def skylark_lint(name = "lint", data = None, size = "small"):
     """Add a lint test to check style of BUILD and *.bzl files."""
     if not data:
         data = native.glob(["**/*.bzl", "**/BUILD"])
@@ -55,4 +55,5 @@ def skylark_lint(name = "lint", data = None):
         srcs = [script_name],
         data = data,
         tags = ["lint"],
+        size = size,
     )

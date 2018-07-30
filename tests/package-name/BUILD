@@ -20,7 +20,6 @@ haskell_test(
     name = "bin",
     size = "small",
     srcs = ["Main.hs"],
-    main_file = "Main.hs",
     deps = [
         ":lib-a_Z",
         "//tests:base",

@@ -46,6 +46,9 @@ def _prepare_srcs(srcs):
     return srcs_files, import_dir_map
 
 def haskell_binary_impl(ctx):
+    if ctx.attr.main_file:
+        print("""The attribute 'main_file' has been deprecated,
+and can be safely dropped in all cases.""")
     if ctx.attr.prebuilt_dependencies:
         print("""The attribute 'prebuilt_dependencies' has been deprecated,
 use the 'haskell_import' rule instead.
@@ -67,11 +70,11 @@ use the 'haskell_import' rule instead.
         java,
         dep_info,
         srcs = srcs_files,
+        ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         compiler_flags = ctx.attr.compiler_flags,
         with_profiling = False,
-        main_file = ctx.file.main_file,
         main_function = ctx.attr.main_function,
     )
 
@@ -84,17 +87,17 @@ use the 'haskell_import' rule instead.
             java,
             dep_info,
             srcs = srcs_files,
+            ls_modules = ctx.executable._ls_modules,
             import_dir_map = import_dir_map,
             # NOTE We must make the object files compiled without profiling
             # available to this step for TH to work, presumably because GHC is
             # linked against RTS without profiling.
             extra_srcs = depset(transitive = [
                 depset(ctx.files.extra_srcs),
-                depset(c.object_dyn_files),
+                depset([c.objects_dir]),
             ]),
             compiler_flags = ctx.attr.compiler_flags,
             with_profiling = True,
-            main_file = ctx.file.main_file,
             main_function = ctx.attr.main_function,
         )
 
@@ -104,7 +107,7 @@ use the 'haskell_import' rule instead.
         dep_info,
         ctx.files.extra_srcs,
         ctx.attr.compiler_flags,
-        c_p.object_files if with_profiling else c.object_dyn_files,
+        c_p.objects_dir if with_profiling else c.objects_dir,
         with_profiling,
         ctx.file._dummy_static_lib,
     )
@@ -118,10 +121,10 @@ use the 'haskell_import' rule instead.
     bin_info = HaskellBinaryInfo(
         import_dirs = c.import_dirs,
         source_files = c.source_files,
-        modules = c.modules,
         binary = binary,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
+        exposed_modules_file = c.exposed_modules_file,
     )
     target_files = depset([binary])
 
@@ -129,6 +132,7 @@ use the 'haskell_import' rule instead.
         hs,
         ghci_script = ctx.file._ghci_script,
         ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
+        exposed_modules_file = c.exposed_modules_file,
         compiler_flags = ctx.attr.compiler_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
@@ -165,6 +169,7 @@ use the 'haskell_import' rule instead.
     java = java_interop_info(ctx)
 
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+    other_modules = ctx.attr.hidden_modules
 
     c = hs.toolchain.actions.compile_library(
         hs,
@@ -172,6 +177,8 @@ use the 'haskell_import' rule instead.
         java,
         dep_info,
         srcs = srcs_files,
+        ls_modules = ctx.executable._ls_modules,
+        other_modules = other_modules,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         compiler_flags = ctx.attr.compiler_flags,
@@ -188,13 +195,15 @@ use the 'haskell_import' rule instead.
             java,
             dep_info,
             srcs = srcs_files,
+            ls_modules = ctx.executable._ls_modules,
+            other_modules = other_modules,
             import_dir_map = import_dir_map,
             # NOTE We must make the object files compiled without profiling
             # available to this step for TH to work, presumably because GHC is
             # linked against RTS without profiling.
             extra_srcs = depset(transitive = [
                 depset(ctx.files.extra_srcs),
-                depset(c.object_dyn_files),
+                depset([c.objects_dir]),
             ]),
             compiler_flags = ctx.attr.compiler_flags,
             with_profiling = True,
@@ -205,7 +214,7 @@ use the 'haskell_import' rule instead.
         hs,
         cc,
         dep_info,
-        c.object_files,
+        c.objects_dir,
         my_pkg_id,
         with_profiling = False,
     )
@@ -213,8 +222,8 @@ use the 'haskell_import' rule instead.
         hs,
         cc,
         dep_info,
-        ctx.files.extra_srcs,
-        c.object_dyn_files,
+        depset(ctx.files.extra_srcs),
+        c.objects_dir,
         my_pkg_id,
     )
 
@@ -224,29 +233,23 @@ use the 'haskell_import' rule instead.
             hs,
             cc,
             dep_info,
-            c_p.object_files,
+            c_p.objects_dir,
             my_pkg_id,
             with_profiling = True,
         )
 
-    exposed_modules = set.empty()
-    other_modules = set.from_list(ctx.attr.hidden_modules)
-
-    for module in set.to_list(c.modules):
-        if not set.is_member(other_modules, module):
-            set.mutable_insert(exposed_modules, module)
-
     conf_file, cache_file = package(
         hs,
         dep_info,
+        ctx.executable._ls_modules,
         c.interfaces_dir,
+        c_p.interfaces_dir if c_p != None else None,
         static_library,
         dynamic_library,
-        exposed_modules,
+        c.exposed_modules_file,
         other_modules,
         my_pkg_id,
         static_library_prof = static_library_prof,
-        interface_files = c.interface_files,
     )
 
     static_libraries_prof = dep_info.static_libraries_prof
@@ -254,15 +257,15 @@ use the 'haskell_import' rule instead.
     if static_library_prof != None:
         static_libraries_prof = [static_library_prof] + dep_info.static_libraries_prof
 
-    interface_files = set.union(
-        dep_info.interface_files,
-        set.from_list(c.interface_files),
+    interface_dirs = set.union(
+        dep_info.interface_dirs,
+        set.singleton(c.interfaces_dir),
     )
 
     if c_p != None:
-        interface_files = set.mutable_union(
-            interface_files,
-            set.from_list(c_p.interface_files),
+        interface_dirs = set.mutable_union(
+            interface_dirs,
+            set.singleton(c_p.interfaces_dir),
         )
 
     build_info = HaskellBuildInfo(
@@ -276,7 +279,7 @@ use the 'haskell_import' rule instead.
         static_libraries = [static_library] + dep_info.static_libraries,
         static_libraries_prof = static_libraries_prof,
         dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
-        interface_files = interface_files,
+        interface_dirs = interface_dirs,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
         external_libraries = dep_info.external_libraries,
     )
@@ -284,8 +287,6 @@ use the 'haskell_import' rule instead.
         package_id = pkg_id.to_string(my_pkg_id),
         version = ctx.attr.version,
         import_dirs = c.import_dirs,
-        exposed_modules = exposed_modules,
-        other_modules = other_modules,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
         boot_files = c.boot_files,
@@ -299,6 +300,7 @@ use the 'haskell_import' rule instead.
             hs,
             ghci_script = ctx.file._ghci_script,
             ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
+            exposed_modules_file = c.exposed_modules_file,
             repl_ghci_args = ctx.attr.repl_ghci_args,
             compiler_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.repl,

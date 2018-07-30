@@ -11,6 +11,5 @@ haskell_test(
     # A flag that requires -threaded, which we should get from the toolchain's
     # compiler_flags:
     compiler_flags = ["-with-rtsopts=-qg"],
-    main_file = "Main.hs",
     deps = ["//tests:base"],
 )

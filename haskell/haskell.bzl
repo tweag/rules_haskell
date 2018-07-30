@@ -70,7 +70,7 @@ _haskell_common_attrs = {
         doc = "Flags to pass to Haskell compiler.",
     ),
     "prebuilt_dependencies": attr.string_list(
-        doc = "Non-Bazel supplied Cabal dependencies.",
+        doc = "Non-Bazel supplied Cabal dependencies (deprecated).",
     ),
     "repl_ghci_args": attr.string_list(
         doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
@@ -88,6 +88,11 @@ _haskell_common_attrs = {
     "_ghci_repl_wrapper": attr.label(
         allow_single_file = True,
         default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
+    ),
+    "_ls_modules": attr.label(
+        executable = True,
+        cfg = "host",
+        default = Label("@io_tweag_rules_haskell//haskell:ls_modules"),
     ),
 }
 
@@ -118,7 +123,7 @@ def _mk_binary_rule(**kwargs):
             ),
             main_file = attr.label(
                 allow_single_file = FileType([".hs", ".hsc", ".lhs"]),
-                doc = "File containing `Main` module.",
+                doc = "File containing `Main` module (deprecated).",
             ),
             _dummy_static_lib = attr.label(
                 default = Label("@io_tweag_rules_haskell//haskell:dummy_static_lib"),

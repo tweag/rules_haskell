@@ -28,7 +28,6 @@ haskell_library(
 haskell_test(
     name = "binary",
     srcs = ["Bin.hs"],
-    main_file = "Bin.hs",
     deps = [
         ":Lib",
         ":text_pkg",

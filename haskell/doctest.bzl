@@ -131,27 +131,14 @@ def _haskell_doctest_single(target, ctx):
         lib_info.source_files if lib_info != None else bin_info.source_files,
     )
 
-    all_modules = set.to_list(
-        lib_info.exposed_modules if lib_info != None else bin_info.modules,
-    )
-
-    selected_modules = []
-
-    if ctx.attr.modules:
-        for m in all_modules:
-            if m in ctx.attr.modules:
-                selected_modules.append(m)
-    else:
-        selected_modules = all_modules
-
-    args.add(selected_modules)
+    args.add(ctx.attr.modules)
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
             depset(sources),
             set.to_depset(build_info.package_confs),
             set.to_depset(build_info.package_caches),
-            set.to_depset(build_info.interface_files),
+            set.to_depset(build_info.interface_dirs),
             set.to_depset(build_info.dynamic_libraries),
             set.to_depset(header_files),
             set.to_depset(external_libs),

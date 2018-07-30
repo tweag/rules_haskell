@@ -7,10 +7,6 @@ DefaultCompileInfo = provider(
         "outputs": "Default outputs.",
         "objects_dir": "Object files directory.",
         "interfaces_dir": "Interface files directory.",
-        "object_files": "Object files.",
-        "object_dyn_files": "Dynamic object files.",
-        "interface_files": "Interface files.",
-        "modules": "Set of all module names.",
         "header_files": "Set of header files.",
         "boot_files": "Set of boot files.",
         "source_files": "Set of files that contain Haskell modules.",
@@ -29,7 +25,7 @@ HaskellBuildInfo = provider(
         "static_libraries": "Ordered collection of compiled library archives.",
         "static_libraries_prof": "Ordered collection of static libraries with profiling.",
         "dynamic_libraries": "Set of dynamic libraries.",
-        "interface_files": "Set of interface files belonging to the packages.",
+        "interface_dirs": "Set of interface dirs belonging to the packages.",
         "prebuilt_dependencies": "Transitive collection of names of wired-in Haskell dependencies.",
         "external_libraries": "Set of dynamic shared libraries needed for linking.",
         "direct_prebuilt_deps": "Set of direct prebuilt dependencies.",
@@ -42,13 +38,12 @@ HaskellLibraryInfo = provider(
         "package_id": "Package id, usually of the form name-version.",
         "version": "Package version.",
         "import_dirs": "Import hierarchy roots.",
-        "exposed_modules": "Set of exposed module names.",
-        "other_modules": "Set of non-public module names.",
         "header_files": "Set of header files.",
         "boot_files": "Set of boot files.",
         "source_files": "Set of files that contain Haskell modules.",
         "extra_source_files": "A depset of non-Haskell source files.",
         "ghc_args": "Arguments that were used to compile the package.",
+        "exposed_modules_file": "File containing a list of exposed module names.",
     },
 )
 
@@ -57,10 +52,10 @@ HaskellBinaryInfo = provider(
     fields = {
         "import_dirs": "Import hierarchy roots.",
         "source_files": "Set of source files.",
-        "modules": "Set of module names.",
         "binary": "File, compiled binary.",
         "header_files": "Set of header files.",
         "ghc_args": "Arguments that were used to compile the binary.",
+        "exposed_modules_file": "File containing a list of exposed module names.",
     },
 )
 
