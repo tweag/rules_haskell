@@ -5,7 +5,7 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 
-def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, exposed_modules, other_modules, my_pkg_id, static_library_prof, interface_files):
+def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, exposed_modules, exposed_modules_reexports, other_modules, my_pkg_id, static_library_prof, interface_files):
     """Create GHC package using ghc-pkg.
 
     Args:
@@ -30,18 +30,13 @@ def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, expos
         "id": pkg_id.to_string(my_pkg_id),
         "key": pkg_id.to_string(my_pkg_id),
         "exposed": "True",
-        "exposed-modules": " ".join(set.to_list(exposed_modules)),
+        "exposed-modules": ", ".join(set.to_list(exposed_modules) + exposed_modules_reexports),
         "hidden-modules": " ".join(set.to_list(other_modules)),
         "import-dirs": paths.join("${pkgroot}", paths.basename(interfaces_dir)),
         "library-dirs": "${pkgroot}",
         "dynamic-library-dirs": "${pkgroot}",
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
-        "depends": ", ".join(
-            # XXX Ideally we would like to specify here prebuilt dependencies
-            # too, but we don't know their versions, and package ids without
-            # versions will be rejected as unknown.
-            set.to_list(dep_info.package_ids),
-        ),
+        "depends": ", ".join(set.to_list(dep_info.package_ids)),
     }
     hs.actions.write(
         output = registration_file,
@@ -52,7 +47,7 @@ def package(hs, dep_info, interfaces_dir, static_library, dynamic_library, expos
     )
 
     # Make the call to ghc-pkg and use the registration file
-    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_confs)])
+    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_confs)]) + ":"
     hs.actions.run(
         inputs = depset(transitive = [
             set.to_depset(dep_info.package_confs),
