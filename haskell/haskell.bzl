@@ -25,6 +25,10 @@ load(
     _haskell_doc = "haskell_doc",
 )
 load(
+    ":hoogle.bzl",
+    _haskell_hoogle_toolchain = "haskell_hoogle_toolchain",
+)
+load(
     ":lint.bzl",
     _haskell_lint = "haskell_lint",
 )
@@ -258,6 +262,8 @@ haskell_lint = _haskell_lint
 haskell_doctest = _haskell_doctest
 
 haskell_doctest_toolchain = _haskell_doctest_toolchain
+
+haskell_hoogle_toolchain = _haskell_hoogle_toolchain
 
 haskell_toolchain = _haskell_toolchain
 

@@ -133,6 +133,7 @@ haskell_doc_aspect = aspect(
 
 def _haskell_doc_rule_impl(ctx):
     hs = haskell_context(ctx)
+    hoogle_toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:hoogle-toolchain"]
 
     # Reject cases when number of dependencies is 0.
 
@@ -241,8 +242,33 @@ def _haskell_doc_rule_impl(ctx):
         arguments = [args],
     )
 
+    # Generate the hoogle db
+    hoogle_db_files = []
+    if ctx.attr.create_hoogle_db:
+      db_file = ctx.actions.declare_file(paths.join(doc_root_raw, "hoogle.hoo"))
+      args = ctx.actions.args()
+      args.add("generate")
+      for package_id in html_dict_copied:
+        args.add("--local={0}".format(html_dict_copied[package_id].path))
+      args.add("--database={0}".format(db_file.path))
+      hoogle_db_files.append(db_file)
+      ctx.actions.run(
+        inputs = depset(transitive = [
+            set.to_depset(all_caches),
+            depset(html_dict_copied.values()),
+            depset(haddock_dict.values()),
+            locale_archive_depset,
+            depset(hoogle_toolchain.hoogle),
+        ]
+        ),
+        outputs = [db_file],
+        mnemonic = "HaskellHoogleDB",
+        executable = hoogle_toolchain.hoogle[0].path,
+        arguments = [args],
+      )
+
     return [DefaultInfo(
-        files = depset(html_dict_copied.values() + [index_root]),
+        files = depset(html_dict_copied.values() + [index_root] + hoogle_db_files),
     )]
 
 haskell_doc = rule(
@@ -256,8 +282,15 @@ haskell_doc = rule(
             default = False,
             doc = "Whether to include documentation of transitive dependencies in index.",
         ),
+        "create_hoogle_db": attr.bool(
+            default = False,
+            doc = "Whether to generate a hoogle database",
+        ),
     },
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = [
+        "@io_tweag_rules_haskell//haskell:toolchain",
+        "@io_tweag_rules_haskell//haskell:hoogle-toolchain"
+    ],
 )
 """Create API documentation.
 
