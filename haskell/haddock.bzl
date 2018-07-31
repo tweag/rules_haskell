@@ -252,18 +252,34 @@ def _haskell_doc_rule_impl(ctx):
         args.add("--local={0}".format(html_dict_copied[package_id].path))
       args.add("--database={0}".format(db_file.path))
       hoogle_db_files.append(db_file)
-      ctx.actions.run(
+      ctx.actions.run_shell(
         inputs = depset(transitive = [
             set.to_depset(all_caches),
             depset(html_dict_copied.values()),
             depset(haddock_dict.values()),
             locale_archive_depset,
             depset(hoogle_toolchain.hoogle),
+            depset([
+                hs.tools.xargs,
+                hs.tools.ghc_pkg,
+                hs.tools.bash,
+            ]),
         ]
         ),
         outputs = [db_file],
         mnemonic = "HaskellHoogleDB",
-        executable = hoogle_toolchain.hoogle[0].path,
+        command = """
+          prebuilt_haddock=$({ghc_pkg} dump | \
+            sed -n -e '/haddock-html:/s/haddock-html: *//p' | \
+            {xargs} -I[] {bash} -c "ls -d [] 2>/dev/null || true" | \
+            sed 's/^/--local=/')
+          {hoogle} "$@" $prebuilt_haddock
+        """.format(
+            hoogle = hoogle_toolchain.hoogle[0].path,
+            ghc_pkg = hs.tools.ghc_pkg.path,
+            xargs = hs.tools.xargs.path,
+            bash = hs.tools.bash.path,
+            ),
         arguments = [args],
       )
 
