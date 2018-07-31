@@ -27,6 +27,7 @@ load(
 load(
     ":hoogle.bzl",
     _haskell_hoogle_toolchain = "haskell_hoogle_toolchain",
+    _hoogle = "hoogle",
 )
 load(
     ":lint.bzl",
@@ -264,6 +265,8 @@ haskell_doctest = _haskell_doctest
 haskell_doctest_toolchain = _haskell_doctest_toolchain
 
 haskell_hoogle_toolchain = _haskell_hoogle_toolchain
+
+hoogle = _hoogle
 
 haskell_toolchain = _haskell_toolchain
 

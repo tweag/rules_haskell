@@ -6,6 +6,7 @@ load(":private/set.bzl", "set")
 load(
     ":private/providers.bzl",
     "HaddockInfo",
+    "CombinedHaddockInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
 )
@@ -133,7 +134,6 @@ haskell_doc_aspect = aspect(
 
 def _haskell_doc_rule_impl(ctx):
     hs = haskell_context(ctx)
-    hoogle_toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:hoogle-toolchain"]
 
     # Reject cases when number of dependencies is 0.
 
@@ -242,50 +242,17 @@ def _haskell_doc_rule_impl(ctx):
         arguments = [args],
     )
 
-    # Generate the hoogle db
-    hoogle_db_files = []
-    if ctx.attr.create_hoogle_db:
-      db_file = ctx.actions.declare_file(paths.join(doc_root_raw, "hoogle.hoo"))
-      args = ctx.actions.args()
-      args.add("generate")
-      for package_id in html_dict_copied:
-        args.add("--local={0}".format(html_dict_copied[package_id].path))
-      args.add("--database={0}".format(db_file.path))
-      hoogle_db_files.append(db_file)
-      ctx.actions.run_shell(
-        inputs = depset(transitive = [
-            set.to_depset(all_caches),
-            depset(html_dict_copied.values()),
-            depset(haddock_dict.values()),
-            locale_archive_depset,
-            depset(hoogle_toolchain.hoogle),
-            depset([
-                hs.tools.xargs,
-                hs.tools.ghc_pkg,
-                hs.tools.bash,
-            ]),
-        ]
-        ),
-        outputs = [db_file],
-        mnemonic = "HaskellHoogleDB",
-        command = """
-          prebuilt_haddock=$({ghc_pkg} dump | \
-            sed -n -e '/haddock-html:/s/haddock-html: *//p' | \
-            {xargs} -I[] {bash} -c "ls -d [] 2>/dev/null || true" | \
-            sed 's/^/--local=/')
-          {hoogle} "$@" $prebuilt_haddock
-        """.format(
-            hoogle = hoogle_toolchain.hoogle[0].path,
-            ghc_pkg = hs.tools.ghc_pkg.path,
-            xargs = hs.tools.xargs.path,
-            bash = hs.tools.bash.path,
-            ),
-        arguments = [args],
-      )
-
-    return [DefaultInfo(
-        files = depset(html_dict_copied.values() + [index_root] + hoogle_db_files),
-    )]
+    default_info = DefaultInfo(
+        files = depset(html_dict_copied.values() + [index_root]),
+    )
+    haddock_info = CombinedHaddockInfo(
+        html_dirs = html_dict_copied,
+        index_root = index_root,
+    )
+    return [
+        default_info,
+        haddock_info,
+    ]
 
 haskell_doc = rule(
     _haskell_doc_rule_impl,
@@ -298,14 +265,9 @@ haskell_doc = rule(
             default = False,
             doc = "Whether to include documentation of transitive dependencies in index.",
         ),
-        "create_hoogle_db": attr.bool(
-            default = False,
-            doc = "Whether to generate a hoogle database",
-        ),
     },
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
-        "@io_tweag_rules_haskell//haskell:hoogle-toolchain"
     ],
 )
 """Create API documentation.

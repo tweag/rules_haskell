@@ -80,6 +80,14 @@ HaddockInfo = provider(
     },
 )
 
+CombinedHaddockInfo = provider(
+    doc = "Information for a bundled haddock documentation.",
+    fields = {
+        "html_dirs": "Dictionary from package id to html dirs.",
+        "index_root": "Directory containing the haddock index",
+    },
+)
+
 HaskellLintInfo = provider(
     doc = "Provider that collects files produced by linters",
     fields = {
