@@ -200,7 +200,64 @@ published on Hackage, or part of Stackage snapshots, using Bazel.
 
 [hazel]: https://github.com/formationai/hazel
 
-## Troubleshooting `rules_haskell` development
+## Troubleshooting
+
+### No such file or directory
+
+If you see error messages complaining about missing `as` (`ld` or indeed
+some other executable):
+
+```
+cc: error trying to exec 'as': execvp: No such file or directory
+`cc' failed in phase `Assembler'. (Exit code: 1)
+```
+
+It means that your `gcc` cannot find `as` by itself. This happens only on
+certain operating systems which have `gcc` compiled without `--with-as` and
+`--with-ld` flags. We need to make `as` visible manually in that case:
+
+```bzl
+# Create a symlink to system executable 'as'
+genrule(
+    name = "toolchain_as",
+    outs = ["as"],
+    cmd = "ln -s /usr/bin/as $@",
+)
+
+# Make it visible to rules_haskell rules:
+haskell_toolchain(
+    name = "ghc",
+    tools = "@ghc//:bin",
+    version = "8.4.1",
+    extra_binaries = [":toolchain_as"], # <----
+)
+```
+
+### `__STDC_VERSION__` does not advertise C99 or later
+
+If you see an error message like this:
+
+```
+/root/.cache/bazel/_bazel_root/b8b1b1d6144a88c698a010767d2217af/external/ghc/lib/ghc-8.4.1/include/Stg.h:29:3: error:
+     error: #error __STDC_VERSION__ does not advertise C99 or later
+     # error __STDC_VERSION__ does not advertise C99 or later
+       ^
+   |
+29 | # error __STDC_VERSION__ does not advertise C99 or later
+   |   ^
+```
+
+It means that your `gcc` selects incorrect flavor of C by default. We need
+C99 or later, as the error message says, so try this:
+
+```bzl
+haskell_toolchain(
+    name = "ghc",
+    tools = "@ghc//:bin",
+    version = "8.4.1",
+    compiler_flags = ["-optc-std=c99"], # <----
+)
+```
 
 ### `bazel` fails because some executable cannot be found
 
@@ -222,4 +279,3 @@ installed package lens-labels-0.2.0.1 is broken due to missing package profuncto
 
 you’ve most likely hit GHC’s
 [infamous non-deterministic library ID bug](https://nixos.org/nixpkgs/manual/#how-to-recover-from-ghcs-infamous-non-deterministic-library-id-bug).
-

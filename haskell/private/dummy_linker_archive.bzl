@@ -26,7 +26,7 @@ module BazelDummy () where
 
     hs.toolchain.actions.run_ghc(
         hs,
-        inputs = [dummy_input],
+        inputs = [dummy_input] + hs.extra_binaries,
         outputs = [dummy_object],
         mnemonic = "HaskellDummyObjectGhc",
         arguments = [

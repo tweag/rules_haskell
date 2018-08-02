@@ -155,6 +155,7 @@ def link_binary(
             depset(object_files),
             depset([dummy_static_lib]),
             depset(dep_info.external_libraries.values()),
+            depset(hs.extra_binaries),
         ]),
         outputs = [compile_output],
         mnemonic = "HaskellLinkBinary",
@@ -230,7 +231,7 @@ def link_library_static(hs, cc, dep_info, object_files, my_pkg_id, with_profilin
     args.add(object_files)
 
     hs.actions.run(
-        inputs = object_files + hs.tools_runfiles.ar,
+        inputs = object_files + hs.tools_runfiles.ar + hs.extra_binaries,
         outputs = [static_library],
         mnemonic = "HaskellLinkStaticLibrary",
         executable = hs.tools.ar,
@@ -304,6 +305,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, object_files, my_pkg_id):
     hs.toolchain.actions.run_ghc(
         hs,
         inputs = depset(transitive = [
+            depset(hs.extra_binaries),
             depset(extra_srcs),
             depset(object_files),
             set.to_depset(dep_info.package_caches),
