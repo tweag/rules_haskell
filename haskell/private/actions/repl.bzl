@@ -27,6 +27,7 @@ def build_haskell_repl(
         hs,
         ghci_script,
         ghci_repl_wrapper,
+        exposed_modules_file,
         compiler_flags,
         repl_ghci_args,
         build_info,
@@ -70,37 +71,42 @@ def build_haskell_repl(
             set.mutable_insert(seen_libs, lib_name)
             args += ["-l{0}".format(lib_name)]
 
-    ghci_repl_script = hs.actions.declare_file(target_unique_name(hs, "ghci-repl-script"))
     repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
 
-    add_modules = []
+    add_sources = []
     if lib_info != None:
-        # If we have a library, we put names of its exposed modules here.
-        add_modules = set.to_list(
-            lib_info.exposed_modules,
-        )
+        add_sources = [f.path for f in set.to_list(lib_info.source_files)]
     elif bin_info != None:
         # Otherwise we put paths to module files, mostly because it also works
         # and Main module may be in a file with name that's impossible for GHC
         # to infer.
-        add_modules = [f.path for f in set.to_list(bin_info.source_files)]
+        add_sources = [f.path for f in set.to_list(bin_info.source_files)]
 
-    visible_modules = []
-    if lib_info != None:
-        # If we have a library, we put names of its exposed modules here.
-        visible_modules = set.to_list(lib_info.exposed_modules)
-    elif bin_info != None:
-        # Otherwise we do rougly the same by using modules from
-        # HaskellBinaryInfo.
-        visible_modules = set.to_list(bin_info.modules)
-
+    ghci_repl_script_no_modules = hs.actions.declare_file(
+        target_unique_name(hs, "ghci-repl-script-no-modules"),
+    )
     hs.actions.expand_template(
         template = ghci_script,
-        output = ghci_repl_script,
+        output = ghci_repl_script_no_modules,
         substitutions = {
-            "{ADD_MODULES}": " ".join(add_modules),
-            "{VISIBLE_MODULES}": " ".join(visible_modules),
+            "{ADD_SOURCES}": " ".join(add_sources),
         },
+    )
+
+    # Add exposed modules to the GHCi script.
+    ghci_repl_script = hs.actions.declare_file(
+        target_unique_name(hs, "ghci-repl-script"),
+    )
+    hs.actions.run_shell(
+        inputs = [ghci_repl_script_no_modules, exposed_modules_file],
+        outputs = [ghci_repl_script],
+        command = "cat $1 > $3; echo \":module +\" $(< $2) >> $3",
+        arguments = [
+            ghci_repl_script_no_modules.path,
+            exposed_modules_file.path,
+            ghci_repl_script.path,
+        ],
+        use_default_shell_env = True,
     )
 
     source_files = lib_info.source_files if lib_info != None else bin_info.source_files

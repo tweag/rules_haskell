@@ -20,7 +20,6 @@ haskell_test(
     name = "bin-deps",
     size = "small",
     srcs = ["Bin.hs"],
-    main_file = "Bin.hs",
     visibility = ["//visibility:public"],
     deps = [
         "//tests:base",

@@ -15,7 +15,6 @@ haskell_binary(
 
     # This also ensure that local `compiler_flags` does not override the `global ones`
     compiler_flags = ["-XOverloadedStrings"],
-    main_file = "CompilerFlags.hs",
     visibility = ["//visibility:public"],
     deps = [
         "//tests:base",
@@ -35,7 +34,6 @@ haskell_binary(
 haskell_binary(
     name = "repl_flags",
     srcs = ["ReplFlags.hs"],
-    main_file = "ReplFlags.hs",
 
     # This also ensure that local `repl_flags` does not override the `global ones`
     repl_ghci_args = ["-DTESTS_TOOLCHAIN_REPL_FLAGS"],

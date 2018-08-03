@@ -5,8 +5,6 @@ load(
     ":private/path_utils.bzl",
     "declare_compiled",
     "get_external_libs_path",
-    "module_name",
-    "module_unique_name",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
@@ -33,7 +31,7 @@ def _process_hsc_file(hs, cc, hsc_file):
     args = hs.actions.args()
 
     # Output a Haskell source file.
-    hsc_dir_raw = target_unique_name(hs, "hsc")
+    hsc_dir_raw = paths.join("_hsc", hs.name)
     hs_out = declare_compiled(hs, hsc_file, ".hs", directory = hsc_dir_raw)
     args.add([hsc_file.path, "-o", hs_out.path])
 
@@ -66,36 +64,7 @@ def _process_hsc_file(hs, cc, hsc_file):
 
     return hs_out, idir
 
-def _output_file_ext(base, dynamic, profiling_enabled):
-    """Return extension that output of compilation should have depending on the
-    following inputs:
-
-    Args:
-      base: usually "o" for object files and "hi" for interface files. Preceding
-        dot "." will be preserved in the output.
-      dynamic: bool, whether we're compiling dynamic object files.
-      profiling_enabled: bool, whether profiling is enabled.
-
-    Returns:
-      String, extension of Haskell object file.
-    """
-
-    with_dot = False
-    ext = ""
-
-    if base[0] == ".":
-        with_dot = True
-        ext = base[1:]
-    else:
-        ext = base
-
-    if dynamic:
-        ext = "dyn_" + ext
-    if profiling_enabled:
-        ext = "p_" + ext
-    return ("." if with_dot else "") + ext
-
-def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_file = None, my_pkg_id = None):
+def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = None):
     """Declare default compilation targets and create default compiler arguments.
 
     Returns:
@@ -116,20 +85,31 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     ]
     ghc_args += cc_args
 
-    # Declare file directories
-    objects_dir_raw = target_unique_name(hs, "objects")
-    objects_dir = paths.join(
-        hs.bin_dir.path,
-        hs.label.workspace_root,
-        hs.label.package,
-        objects_dir_raw,
-    )
-    interfaces_dir_raw = target_unique_name(hs, "interfaces")
-    interfaces_dir = paths.join(
-        hs.bin_dir.path,
-        hs.label.workspace_root,
-        hs.label.package,
-        interfaces_dir_raw,
+    interface_dir_raw = "_iface_prof" if with_profiling else "_iface"
+    object_dir_raw = "_obj_prof" if with_profiling else "_obj"
+
+    # Declare file directories.
+    #
+    # NOTE: We could have used -outputdir here and a single output
+    # directory. But keeping interface and object files separate has
+    # one advantage: if interface files are invariant under
+    # a particular code change, then we don't need to rebuild
+    # downstream.
+    if my_pkg_id:
+        # If we're compiling a package, put the interfaces inside the
+        # package directory.
+        interfaces_dir = hs.actions.declare_directory(
+            paths.join(
+                pkg_id.to_string(my_pkg_id),
+                interface_dir_raw,
+            ),
+        )
+    else:
+        interfaces_dir = hs.actions.declare_directory(
+            paths.join(interface_dir_raw, hs.name),
+        )
+    objects_dir = hs.actions.declare_directory(
+        paths.join(object_dir_raw, hs.name),
     )
 
     # Default compiler flags.
@@ -157,17 +137,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     for cache in set.to_list(dep_info.package_caches):
         ghc_args += ["-package-db", cache.dirname]
 
-    # We want object and dynamic objects from all inputs.
-    object_files = []
-    object_dyn_files = []
-
-    # We need to keep interface files we produce so we can import
-    # modules cross-package.
-    interface_files = []
     header_files = []
     boot_files = []
     source_files = set.empty()
-    modules = set.empty()
 
     # Add import hierarchy root.
     # Note that this is not perfect, since GHC requires hs-boot files
@@ -181,78 +153,21 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         paths.join(hs.genfiles_dir.path, hs.src_root),
     ])
 
-    # Output object files are named after modules, not after input file names.
-    # The difference is only visible in the case of Main module because it may
-    # be placed in a file with a name different from "Main.hs". In that case
-    # still Main.o will be produced.
-
     for s in srcs:
         if s.extension == "h":
             header_files.append(s)
-        if s.extension in ["hs-boot", "lhs-boot"]:
+        elif s.extension == "hsc":
+            s0, idir = _process_hsc_file(hs, cc, s)
+            set.mutable_insert(source_files, s0)
+            set.mutable_insert(import_dirs, idir)
+        elif s.extension in ["hs-boot", "lhs-boot"]:
             boot_files.append(s)
-        elif s.extension in ["hs", "lhs", "hsc", "chs"]:
-            if not main_file or s != main_file:
-                if s.extension == "hsc":
-                    s0, idir = _process_hsc_file(hs, cc, s)
-                    set.mutable_insert(source_files, s0)
-                    set.mutable_insert(import_dirs, idir)
-                else:
-                    set.mutable_insert(source_files, s)
+        else:
+            set.mutable_insert(source_files, s)
 
-                rel_path = None
-
-                if s in import_dir_map:
-                    idir = import_dir_map[s]
-                    set.mutable_insert(import_dirs, idir)
-                    rel_path = paths.relativize(s.path, idir)
-                    mname = module_name(hs, s, rel_path = rel_path)
-                else:
-                    mname = module_name(hs, s)
-
-                set.mutable_insert(modules, mname)
-
-                for dynamic in [False] if with_profiling else [True, False]:
-                    file_sets = [
-                        (interface_files, interfaces_dir_raw, ".hi"),
-                        (object_dyn_files if dynamic else object_files, objects_dir_raw, ".o"),
-                    ]
-                    for (file_set, dir_raw, file_ext) in file_sets:
-                        file_set.append(
-                            declare_compiled(
-                                hs,
-                                s,
-                                _output_file_ext(file_ext, dynamic, with_profiling),
-                                directory = dir_raw,
-                                rel_path = rel_path,
-                            ),
-                        )
-            else:
-                if s.extension == "hsc":
-                    s0 = _process_hsc_file(hs, cc, s)
-                    set.mutable_insert(source_files, s0)
-                else:
-                    set.mutable_insert(source_files, s)
-
-                set.mutable_insert(modules, "Main")
-
-                for dynamic in [False] if with_profiling else [True, False]:
-                    file_sets = [
-                        (interface_files, interfaces_dir_raw, ".hi"),
-                        (object_dyn_files if dynamic else object_files, objects_dir_raw, ".o"),
-                    ]
-                    for (file_set, dir_raw, file_ext) in file_sets:
-                        file_set.append(
-                            hs.actions.declare_file(
-                                paths.join(
-                                    dir_raw,
-                                    paths.replace_extension(
-                                        "Main",
-                                        _output_file_ext(file_ext, dynamic, with_profiling),
-                                    ),
-                                ),
-                            ),
-                        )
+        if s in import_dir_map:
+            idir = import_dir_map[s]
+            set.mutable_insert(import_dirs, idir)
 
     ghc_args += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
     ghc_args += ["-optP" + f for f in cc.cpp_flags]
@@ -287,7 +202,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     # NOTE We can't have profiling and dynamic code at the same time, see:
     # https://ghc.haskell.org/trac/ghc/ticket/15394
     if with_profiling:
-        args.add("-prof")
+        args.add("-prof", "-fexternal-interpreter")
     else:
         args.add(["-dynamic-too"])
 
@@ -308,17 +223,16 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         interfaces_dir,
     ])
 
-    # Output file extensions
-    args.add([
-        "-osuf",
-        _output_file_ext("o", False, with_profiling),
-        "-dynosuf",
-        _output_file_ext("o", True, with_profiling),
-        "-hisuf",
-        _output_file_ext("hi", False, with_profiling),
-        "-dynhisuf",
-        _output_file_ext("hi", True, with_profiling),
-    ])
+    # Interface files with profiling have to have the extension "p_hi":
+    # https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html#installedpackageinfo-a-package-specification
+    # otherwise we won't be able to register them with ghc-pkg.
+    if with_profiling:
+        args.add([
+            "-hisuf",
+            "p_hi",
+            "-osuf",
+            "p_o",
+        ])
 
     # Pass source files
     for f in set.to_list(source_files):
@@ -335,7 +249,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             depset(cc.hdrs),
             set.to_depset(dep_info.package_confs),
             set.to_depset(dep_info.package_caches),
-            set.to_depset(dep_info.interface_files),
+            set.to_depset(dep_info.interface_dirs),
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             set.to_depset(dep_info.dynamic_libraries),
@@ -346,11 +260,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         ]),
         objects_dir = objects_dir,
         interfaces_dir = interfaces_dir,
-        outputs = object_files + object_dyn_files + interface_files,
-        object_files = object_files,
-        object_dyn_files = object_dyn_files,
-        interface_files = interface_files,
-        modules = modules,
+        outputs = [objects_dir, interfaces_dir],
         header_files = set.from_list(cc.hdrs + header_files),
         boot_files = set.from_list(boot_files),
         source_files = source_files,
@@ -365,7 +275,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         ),
     )
 
-def compile_binary(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_file, main_function):
+def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_function):
     """Compile a Haskell target into object files suitable for linking.
 
     Returns:
@@ -375,7 +285,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, com
         modules: set of module names
         source_files: set of Haskell source files
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_file = main_file)
+    c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling)
     c.args.add(["-main-is", main_function])
 
     hs.toolchain.actions.run_ghc(
@@ -388,17 +298,30 @@ def compile_binary(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, com
         arguments = [c.args],
     )
 
+    if with_profiling:
+        exposed_modules_file = None
+    else:
+        exposed_modules_file = hs.actions.declare_file(
+            target_unique_name(hs, "exposed-modules"),
+        )
+        hs.actions.run(
+            inputs = [c.interfaces_dir],
+            outputs = [exposed_modules_file],
+            executable = ls_modules,
+            arguments = [c.interfaces_dir.path, exposed_modules_file.path],
+            use_default_shell_env = True,
+        )
+
     return struct(
-        object_files = c.object_files,
-        object_dyn_files = c.object_dyn_files,
-        modules = c.modules,
+        objects_dir = c.objects_dir,
         source_files = c.source_files,
         import_dirs = c.import_dirs,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
+        exposed_modules_file = exposed_modules_file,
     )
 
-def compile_library(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id):
+def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id):
     """Build arguments for Haskell package build.
 
     Returns:
@@ -424,16 +347,28 @@ def compile_library(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, co
         arguments = [c.args],
     )
 
+    if with_profiling:
+        exposed_modules_file = None
+    else:
+        exposed_modules_file = hs.actions.declare_file(
+            target_unique_name(hs, "exposed-modules"),
+        )
+        hs.actions.run(
+            inputs = [c.interfaces_dir],
+            outputs = [exposed_modules_file],
+            executable = ls_modules,
+            arguments = [c.interfaces_dir.path, exposed_modules_file.path] + other_modules,
+            use_default_shell_env = True,
+        )
+
     return struct(
         interfaces_dir = c.interfaces_dir,
-        interface_files = c.interface_files,
-        object_files = c.object_files,
-        object_dyn_files = c.object_dyn_files,
+        objects_dir = c.objects_dir,
         ghc_args = c.ghc_args,
-        modules = c.modules,
         header_files = c.header_files,
         boot_files = c.boot_files,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
+        exposed_modules_file = exposed_modules_file,
     )

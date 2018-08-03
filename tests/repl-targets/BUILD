@@ -63,7 +63,6 @@ haskell_library(
 haskell_binary(
     name = "hs-bin",
     srcs = ["Quux.hs"],
-    main_file = "Quux.hs",
     visibility = ["//visibility:public"],
     deps = [
         ":QuuxLib",

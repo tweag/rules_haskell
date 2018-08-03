@@ -17,11 +17,12 @@ load("@bazel_skylib//:lib.bzl", "paths")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 
-def _run_ghc(hs, inputs, outputs, mnemonic, arguments, env = None, progress_message = None):
+def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
     if not env:
         env = hs.env
 
     args = hs.actions.args()
+    args.add([hs.tools.ghc])
     args.add([
         # GHC uses C compiler for assemly, linking and preprocessing as well.
         "-pgma",
@@ -42,15 +43,22 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, env = None, progress_mess
         "-optP-traditional",
     ])
 
-    if type(inputs) == type(depset()):
-        inputs = depset([hs.tools.cc], transitive = [inputs])
+    extra_inputs = [hs.tools.ghc, hs.tools.cc]
+    if params_file:
+        command = '${1+"$@"} $(< %s)' % params_file.path
+        extra_inputs.append(params_file)
     else:
-        inputs += [hs.tools.cc]
+        command = '${1+"$@"}'
 
-    hs.actions.run(
+    if type(inputs) == type(depset()):
+        inputs = depset(extra_inputs, transitive = [inputs])
+    else:
+        inputs += extra_inputs
+
+    hs.actions.run_shell(
         inputs = inputs,
         outputs = outputs,
-        executable = hs.tools.ghc,
+        command = command,
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,

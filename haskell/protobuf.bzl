@@ -160,6 +160,9 @@ def _haskell_proto_aspect_impl(target, ctx):
             srcs = hs_files,
             extra_srcs = depset(),
         ),
+        executable = struct(
+            _ls_modules = ctx.executable._ls_modules,
+        ),
     )
 
     [build_info, library_info, default_info] = _haskell_library_impl(patched_ctx)
@@ -181,6 +184,11 @@ _haskell_proto_aspect = aspect(
         "_ghci_repl_wrapper": attr.label(
             allow_single_file = True,
             default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
+        ),
+        "_ls_modules": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@io_tweag_rules_haskell//haskell:ls_modules"),
         ),
     },
     attr_aspects = ["deps"],

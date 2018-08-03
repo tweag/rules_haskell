@@ -80,7 +80,7 @@ def _haskell_lint_aspect_impl(target, ctx):
             depset(sources),
             set.to_depset(build_info.package_confs),
             set.to_depset(build_info.package_caches),
-            set.to_depset(build_info.interface_files),
+            set.to_depset(build_info.interface_dirs),
             set.to_depset(build_info.dynamic_libraries),
             depset(build_info.external_libraries.values()),
             depset([
