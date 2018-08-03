@@ -205,6 +205,8 @@ def _haskell_toolchain_impl(ctx):
         "grep",
         "ln",
         "mkdir",
+        "mktemp",
+        "rmdir",
     ]
 
     for target in targets_w:
