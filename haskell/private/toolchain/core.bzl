@@ -1,18 +1,10 @@
-"""Rules for defining toolchains"""
+"""Core toolchain definitions"""
 
-load(
-    ":private/actions/compile.bzl",
-    "compile_binary",
-    "compile_library",
-)
-load(
-    ":private/actions/link.bzl",
-    "link_binary",
-    "link_library_dynamic",
-    "link_library_static",
-)
+load(":private/actions/compile.bzl", "compile_binary", "compile_library")
+load(":private/actions/link.bzl", "link_binary", "link_library_dynamic", "link_library_static")
 load(":private/actions/package.bzl", "package")
 load(":private/set.bzl", "set")
+
 load("@bazel_skylib//:lib.bzl", "paths")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
