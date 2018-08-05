@@ -241,7 +241,6 @@ use the 'haskell_import' rule instead.
     conf_file, cache_file = package(
         hs,
         dep_info,
-        ctx.executable._ls_modules,
         c.interfaces_dir,
         c_p.interfaces_dir if c_p != None else None,
         static_library,
