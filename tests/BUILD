@@ -66,7 +66,6 @@ haskell_proto_toolchain(
 
 haskell_import(
     name = "base",
-    version = "4.10.1.0",
     testonly = 0,
     package = "base",
     visibility = ["//visibility:public"],
@@ -74,7 +73,6 @@ haskell_import(
 
 haskell_import(
     name = "bytestring",
-    version = "0.10.8.2",
     testonly = 0,
     package = "bytestring",
     visibility = ["//visibility:public"],
@@ -82,7 +80,6 @@ haskell_import(
 
 haskell_import(
     name = "containers",
-    version = "0.5.10.2",
     testonly = 0,
     package = "containers",
     visibility = ["//visibility:public"],
@@ -90,7 +87,6 @@ haskell_import(
 
 haskell_import(
     name = "directory",
-    version = "1.3.0.2",
     testonly = 0,
     package = "directory",
     visibility = ["//visibility:public"],
@@ -98,7 +94,6 @@ haskell_import(
 
 haskell_import(
     name = "data-default-class",
-    version = "0.1.2.0",
     testonly = 0,
     package = "data-default-class",
     visibility = ["//visibility:public"],
@@ -106,7 +101,6 @@ haskell_import(
 
 haskell_import(
     name = "filepath",
-    version = "1.4.1.2",
     testonly = 0,
     package = "filepath",
     visibility = ["//visibility:public"],
@@ -114,7 +108,6 @@ haskell_import(
 
 haskell_import(
     name = "ghc-prim",
-    version = "0.5.1.1",
     testonly = 0,
     package = "ghc-prim",
     visibility = ["//visibility:public"],
@@ -122,7 +115,6 @@ haskell_import(
 
 haskell_import(
     name = "process",
-    version = "1.6.1.0",
     testonly = 0,
     package = "process",
     visibility = ["//visibility:public"],
@@ -130,7 +122,6 @@ haskell_import(
 
 haskell_import(
     name = "template-haskell",
-    version = "2.12.0.0",
     testonly = 0,
     package = "template-haskell",
     visibility = ["//visibility:public"],
@@ -138,7 +129,6 @@ haskell_import(
 
 haskell_import(
     name = "lens-family",
-    version = "1.2.2",
     testonly = 0,
     package = "lens-family",
     visibility = ["//visibility:public"],
@@ -146,7 +136,6 @@ haskell_import(
 
 haskell_import(
     name = "lens-labels",
-    version = "0.2.0.1",
     testonly = 0,
     package = "lens-labels",
     visibility = ["//visibility:public"],
@@ -154,7 +143,6 @@ haskell_import(
 
 haskell_import(
     name = "array",
-    version = "0.5.2.0",
     testonly = 0,
     package = "array",
     visibility = ["//visibility:public"],
@@ -162,7 +150,6 @@ haskell_import(
 
 haskell_import(
     name = "text",
-    version = "1.2.3.0",
     testonly = 0,
     package = "text",
     visibility = ["//visibility:public"],
@@ -170,7 +157,6 @@ haskell_import(
 
 haskell_import(
     name = "proto-lens",
-    version = "0.3.1.0",
     testonly = 0,
     package = "proto-lens",
     visibility = ["//visibility:public"],

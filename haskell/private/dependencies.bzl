@@ -101,9 +101,8 @@ def gather_dep_info(ctx):
             )
         elif HaskellPrebuiltPackageInfo in dep:
             pkg = dep[HaskellPrebuiltPackageInfo].package
-            pkg_id = dep[HaskellPrebuiltPackageInfo].package_id
             acc = HaskellBuildInfo(
-                package_ids = set.mutable_insert(acc.package_ids, pkg_id),
+                package_ids = acc.package_ids,
                 package_confs = acc.package_confs,
                 package_caches = acc.package_caches,
                 static_libraries = acc.static_libraries,

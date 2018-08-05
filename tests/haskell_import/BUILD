@@ -9,13 +9,11 @@ load(
 
 haskell_import(
     name = "bytestring",
-    version = "0.10.8.2",
 )
 
 haskell_import(
     name = "text_pkg",
     package = "text",
-    version = "1.2.3.0",
 )
 
 haskell_library(

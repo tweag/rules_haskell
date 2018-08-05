@@ -40,7 +40,6 @@ haskell_library(
 haskell_import(
     name = "haddock-lib-c",
     package = "libc",
-    version = "0.1.0.0",
 )
 
 haskell_library(

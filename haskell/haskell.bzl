@@ -229,12 +229,7 @@ def _haskell_import_impl(ctx):
         package = ctx.attr.package
     else:
         package = ctx.label.name
-
-    if ctx.attr.version:
-        package_id = "{}-{}".format(package, ctx.attr.version)
-    else:
-        package_id = package
-    return [HaskellPrebuiltPackageInfo(package = package, package_id = package_id)]
+    return [HaskellPrebuiltPackageInfo(package = package)]
 
 """Wrap a prebuilt dependency as a rule.
 
@@ -243,7 +238,6 @@ Example:
   haskell_import(
       name = "base_pkg",
       package = "base",
-      version = "4.9.0.0",
   )
   haskell_library(
       name = "hello-lib",
@@ -266,7 +260,6 @@ haskell_import = rule(
     _haskell_import_impl,
     attrs = dict(
         package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
-        version = attr.string(doc = "A non-Bazel-supplied GHC package version.", mandatory = True)
     ),
 )
 

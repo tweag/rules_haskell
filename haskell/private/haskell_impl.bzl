@@ -369,7 +369,7 @@ def _exposed_modules_reexports(exports):
                 reexported = cabal_decl_parts[0]
 
             if HaskellPrebuiltPackageInfo in dep:
-                pkg = dep[HaskellPrebuiltPackageInfo].package_id
+                pkg = dep[HaskellPrebuiltPackageInfo].package
             elif HaskellLibraryInfo in dep:
                 pkg = dep[HaskellLibraryInfo].package_id
 
