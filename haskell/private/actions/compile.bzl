@@ -321,7 +321,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         exposed_modules_file = exposed_modules_file,
     )
 
-def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id):
+def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exposed_modules_reexports, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id):
     """Build arguments for Haskell package build.
 
     Returns:
@@ -350,14 +350,37 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, imp
     if with_profiling:
         exposed_modules_file = None
     else:
+        hidden_modules_file = hs.actions.declare_file(
+            target_unique_name(hs, "hidden-modules"),
+        )
+        hs.actions.write(
+            output = hidden_modules_file,
+            content = ", ".join(other_modules),
+        )
+        reexported_modules_file = hs.actions.declare_file(
+            target_unique_name(hs, "reexported-modules"),
+        )
+        hs.actions.write(
+            output = reexported_modules_file,
+            content = ", ".join(exposed_modules_reexports),
+        )
         exposed_modules_file = hs.actions.declare_file(
             target_unique_name(hs, "exposed-modules"),
         )
         hs.actions.run(
-            inputs = [c.interfaces_dir],
+            inputs = [
+                c.interfaces_dir,
+                hidden_modules_file,
+                reexported_modules_file,
+            ],
             outputs = [exposed_modules_file],
             executable = ls_modules,
-            arguments = [c.interfaces_dir.path, exposed_modules_file.path] + other_modules,
+            arguments = [
+                c.interfaces_dir.path,
+                hidden_modules_file.path,
+                reexported_modules_file.path,
+                exposed_modules_file.path,
+            ],
             use_default_shell_env = True,
         )
 

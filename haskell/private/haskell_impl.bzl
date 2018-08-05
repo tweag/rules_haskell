@@ -171,6 +171,7 @@ use the 'haskell_import' rule instead.
 
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     other_modules = ctx.attr.hidden_modules
+    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
 
     c = hs.toolchain.actions.compile_library(
         hs,
@@ -180,6 +181,7 @@ use the 'haskell_import' rule instead.
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
         other_modules = other_modules,
+        exposed_modules_reexports = exposed_modules_reexports,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         compiler_flags = ctx.attr.compiler_flags,
@@ -198,6 +200,7 @@ use the 'haskell_import' rule instead.
             srcs = srcs_files,
             ls_modules = ctx.executable._ls_modules,
             other_modules = other_modules,
+            exposed_modules_reexports = exposed_modules_reexports,
             import_dir_map = import_dir_map,
             # NOTE We must make the object files compiled without profiling
             # available to this step for TH to work, presumably because GHC is
@@ -239,7 +242,6 @@ use the 'haskell_import' rule instead.
             with_profiling = True,
         )
 
-    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
     conf_file, cache_file = package(
         hs,
         dep_info,
@@ -248,7 +250,6 @@ use the 'haskell_import' rule instead.
         static_library,
         dynamic_library,
         c.exposed_modules_file,
-        exposed_modules_reexports,
         other_modules,
         my_pkg_id,
         static_library_prof = static_library_prof,
