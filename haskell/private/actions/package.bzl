@@ -66,6 +66,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         content = "\n".join([
             "{0}: {1}".format(k, v)
             for k, v in metadata_entries.items()
+            if v
         ]) + "\n",
     )
 

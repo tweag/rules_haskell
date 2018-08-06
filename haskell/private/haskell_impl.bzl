@@ -161,7 +161,8 @@ use the 'haskell_import' rule instead.
 
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx)
-    my_pkg_id = pkg_id.new(ctx.label, ctx.attr.version)
+    version = ctx.attr.version if ctx.attr.version else None
+    my_pkg_id = pkg_id.new(ctx.label, version)
     with_profiling = is_profiling_enabled(hs)
 
     # Add any interop info for other languages.
@@ -284,7 +285,7 @@ use the 'haskell_import' rule instead.
     )
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
-        version = ctx.attr.version,
+        version = version,
         import_dirs = c.import_dirs,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
