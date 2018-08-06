@@ -217,8 +217,8 @@ rule_test(
     size = "small",
     generates =
         [
-            "testsZSlibrary-depsZSlibrary-deps-1.0.0/testsZSlibrary-depsZSlibrary-deps-1.0.0.conf",
-            "testsZSlibrary-depsZSlibrary-deps-1.0.0/package.cache",
+            "testsZSlibrary-depsZSlibrary-deps/testsZSlibrary-depsZSlibrary-deps.conf",
+            "testsZSlibrary-depsZSlibrary-deps/package.cache",
         ],
     rule = "//tests/library-deps",
 )
@@ -228,8 +228,8 @@ rule_test(
     size = "small",
     generates =
         [
-            "testsZSlibrary-with-sysdepsZSlibrary-with-sysdeps-1.0.0/testsZSlibrary-with-sysdepsZSlibrary-with-sysdeps-1.0.0.conf",
-            "testsZSlibrary-with-sysdepsZSlibrary-with-sysdeps-1.0.0/package.cache",
+            "testsZSlibrary-with-sysdepsZSlibrary-with-sysdeps/testsZSlibrary-with-sysdepsZSlibrary-with-sysdeps.conf",
+            "testsZSlibrary-with-sysdepsZSlibrary-with-sysdeps/package.cache",
         ],
     rule = "//tests/library-with-sysdeps",
 )
@@ -246,9 +246,9 @@ rule_test(
     size = "small",
     generates = [
         "haddock/index",
-        "haddock/testsZShaddockZShaddock-lib-a-1.0.0",
-        "haddock/testsZShaddockZShaddock-lib-b-1.0.0",
-        "haddock/testsZShaddockZShaddock-lib-deep-1.0.0",
+        "haddock/testsZShaddockZShaddock-lib-a",
+        "haddock/testsZShaddockZShaddock-lib-b",
+        "haddock/testsZShaddockZShaddock-lib-deep",
     ],
     rule = "//tests/haddock",
 )
@@ -275,8 +275,8 @@ rule_test(
     name = "test-haskell_proto_library",
     size = "small",
     generates = [
-        "testsZShaskellZUprotoZUlibraryZShs-lib-1.0.0/package.cache",
-        "testsZShaskellZUprotoZUlibraryZShs-lib-1.0.0/testsZShaskellZUprotoZUlibraryZShs-lib-1.0.0.conf",
+        "testsZShaskellZUprotoZUlibraryZShs-lib/package.cache",
+        "testsZShaskellZUprotoZUlibraryZShs-lib/testsZShaskellZUprotoZUlibraryZShs-lib.conf",
     ],
     rule = "//tests/haskell_proto_library:hs-lib",
 )
@@ -285,7 +285,7 @@ rule_test(
     name = "test-haskell_doctest",
     size = "small",
     generates = [
-        "doctest-log-doctest-lib-testsZShaskellZUdoctestZSlib-b-1.0.0",
+        "doctest-log-doctest-lib-testsZShaskellZUdoctestZSlib-b",
     ],
     rule = "//tests/haskell_doctest:doctest-lib",
 )
@@ -301,8 +301,8 @@ rule_test(
     name = "test-hidden-modules",
     size = "small",
     generates = [
-        "testsZShidden-modulesZSlib-c-1.0.0/testsZShidden-modulesZSlib-c-1.0.0.conf",
-        "testsZShidden-modulesZSlib-c-1.0.0/package.cache",
+        "testsZShidden-modulesZSlib-c/testsZShidden-modulesZSlib-c.conf",
+        "testsZShidden-modulesZSlib-c/package.cache",
     ],
     rule = "//tests/hidden-modules:lib-c",
 )
@@ -312,8 +312,8 @@ rule_test(
     size = "small",
     generates =
         [
-            "testsZSlibrary-with-sysincludesZSlibrary-with-sysincludes-1.0.0/testsZSlibrary-with-sysincludesZSlibrary-with-sysincludes-1.0.0.conf",
-            "testsZSlibrary-with-sysincludesZSlibrary-with-sysincludes-1.0.0/package.cache",
+            "testsZSlibrary-with-sysincludesZSlibrary-with-sysincludes/testsZSlibrary-with-sysincludesZSlibrary-with-sysincludes.conf",
+            "testsZSlibrary-with-sysincludesZSlibrary-with-sysincludes/package.cache",
         ],
     rule = "//tests/library-with-sysincludes",
 )
@@ -323,8 +323,8 @@ rule_test(
     size = "small",
     generates =
         [
-            "testsZSpackage-id-clashZSlib-1.0.0/testsZSpackage-id-clashZSlib-1.0.0.conf",
-            "testsZSpackage-id-clashZSlib-1.0.0/package.cache",
+            "testsZSpackage-id-clashZSlib/testsZSpackage-id-clashZSlib.conf",
+            "testsZSpackage-id-clashZSlib/package.cache",
         ],
     rule = "//tests/package-id-clash:lib",
 )
@@ -341,12 +341,12 @@ rule_test(
     size = "small",
     generates = select({
         "@bazel_tools//src/conditions:darwin": [
-            "libHStestsZSccZUhaskellZUimportZShs-lib-a-1.0.0-ghc8.2.2.dylib",
-            "libHStestsZSccZUhaskellZUimportZShs-lib-b-1.0.0-ghc8.2.2.dylib",
+            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc8.2.2.dylib",
+            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc8.2.2.dylib",
         ],
         "//conditions:default": [
-            "libHStestsZSccZUhaskellZUimportZShs-lib-a-1.0.0-ghc8.2.2.so",
-            "libHStestsZSccZUhaskellZUimportZShs-lib-b-1.0.0-ghc8.2.2.so",
+            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc8.2.2.so",
+            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc8.2.2.so",
         ],
     }),
     rule = "//tests/cc_haskell_import:hs-lib-b-so",

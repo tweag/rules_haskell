@@ -75,12 +75,6 @@ _haskell_common_attrs = {
     "repl_ghci_args": attr.string_list(
         doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
     ),
-    # XXX Consider making this private. Blocked on
-    # https://github.com/bazelbuild/bazel/issues/4366.
-    "version": attr.string(
-        default = "1.0.0",
-        doc = "Library/binary version. Internal - do not use.",
-    ),
     "_ghci_script": attr.label(
         allow_single_file = True,
         default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
@@ -192,6 +186,10 @@ haskell_library = rule(
         ),
         exports = attr.label_keyed_string_dict(
             doc = "A dictionary mapping dependencies to module reexports that should be available for import by dependencies.",
+        ),
+        version = attr.string(
+            doc = """Library version. Not normally necessary unless to build a library
+            originally defined as a Cabal package.""",
         ),
     ),
     outputs = {

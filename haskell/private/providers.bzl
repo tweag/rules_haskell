@@ -35,7 +35,7 @@ HaskellBuildInfo = provider(
 HaskellLibraryInfo = provider(
     doc = "Library-specific information.",
     fields = {
-        "package_id": "Package id, usually of the form name-version.",
+        "package_id": "Workspace unique package identifier.",
         "version": "Package version.",
         "import_dirs": "Import hierarchy roots.",
         "header_files": "Set of header files.",

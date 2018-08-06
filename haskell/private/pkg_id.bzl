@@ -12,23 +12,22 @@ def _zencode(s):
     return s.replace("Z", "ZZ").replace("_", "ZU").replace("/", "ZS")
 
 def _to_string(my_pkg_id):
-    """Get package identifier of the form `name-version`.
+    """Get a globally unique package identifier.
 
     The identifier is required to be unique for each Haskell rule.
-    It includes the Bazel package and the name of the this component.
+    It includes the Bazel package and the name of this component.
     We can't use just the latter because then two components with
     the same names in different packages would clash.
     """
-    return "{0}-{1}".format(
-        _zencode(paths.join(
+    return _zencode(
+        paths.join(
             my_pkg_id.label.workspace_root,
             my_pkg_id.label.package,
             my_pkg_id.name,
-        )),
-        my_pkg_id.version,
+        ),
     )
 
-def _new(label, version):
+def _new(label, version = None):
     """Create a new package identifier.
 
     Package identifiers should be globally unique. This is why we use
@@ -36,6 +35,7 @@ def _new(label, version):
 
     Args:
       label: The label of the rule declaring the package.
+      version: an optional version annotation.
 
     Returns:
       string: GHC package ID to use.

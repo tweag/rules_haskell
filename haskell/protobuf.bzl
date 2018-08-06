@@ -136,7 +136,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         "src_strip_prefix": "",
         "repl_interpreted": True,
         "repl_ghci_args": [],
-        "version": "1.0.0",
+        "version": "",
         "_ghci_script": ctx.attr._ghci_script,
         "_ghci_repl_wrapper": ctx.attr._ghci_repl_wrapper,
         "hidden_modules": [],
