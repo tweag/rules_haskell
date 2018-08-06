@@ -308,7 +308,12 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
             inputs = [c.interfaces_dir],
             outputs = [exposed_modules_file],
             executable = ls_modules,
-            arguments = [c.interfaces_dir.path, exposed_modules_file.path],
+            arguments = [
+                c.interfaces_dir.path,
+                "/dev/null",  # no hidden modules
+                "/dev/null",  # no reexported modules
+                exposed_modules_file.path,
+            ],
             use_default_shell_env = True,
         )
 
