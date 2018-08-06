@@ -100,7 +100,11 @@ def build_haskell_repl(
     hs.actions.run_shell(
         inputs = [ghci_repl_script_no_modules, exposed_modules_file],
         outputs = [ghci_repl_script],
-        command = "cat $1 > $3; echo \":module +\" $(< $2) >> $3",
+        command = """
+        cat $1 > $3;
+        # Remove commas and provenance from module list.
+        echo ":module +" $(cat $2 | sed "s/from [^,]*//g; s/,//g") >> $3
+        """,
         arguments = [
             ghci_repl_script_no_modules.path,
             exposed_modules_file.path,

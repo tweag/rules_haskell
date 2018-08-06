@@ -70,43 +70,66 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         ]) + "\n",
     )
 
-    # Combine exposed modules and other metadata into a single file.
-    registration_file = hs.actions.declare_file(target_unique_name(hs, "registration-file"))
+    # Combine exposed modules and other metadata to form the package
+    # configuration file.
     hs.actions.run_shell(
         inputs = [metadata_file, exposed_modules_file],
-        outputs = [registration_file],
-        command = "cat $1 > $3; echo exposed-modules: $(< $2) >> $3",
+        outputs = [conf_file],
+        command = """
+        cat $1 > $3
+        echo "exposed-modules: $(< $2)" >> $3
+        """,
         arguments = [
             metadata_file.path,
             exposed_modules_file.path,
-            registration_file.path,
+            conf_file.path,
         ],
         use_default_shell_env = True,
     )
 
-    # Make the call to ghc-pkg and use the registration file
-    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_confs)])
+    # Make the call to ghc-pkg and use the package configuration file
+    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_confs)]) + ":"
     hs.actions.run(
         inputs = depset(transitive = [
             set.to_depset(dep_info.package_confs),
             set.to_depset(dep_info.package_caches),
             depset(interfaces_dirs),
-            depset([static_library, registration_file, dynamic_library] +
+            depset([static_library, conf_file, dynamic_library] +
                    ([static_library_prof] if static_library_prof != None else [])),
         ]),
-        outputs = [conf_file, cache_file],
+        outputs = [cache_file],
         env = {
             "GHC_PACKAGE_PATH": package_path,
         },
         mnemonic = "HaskellRegisterPackage",
         progress_message = "HaskellRegisterPackage {}".format(hs.label),
         executable = hs.tools.ghc_pkg,
+        # Registration of a new package consists in,
+        #
+        # 1. copying the registration file into the package db,
+        # 2. performing some validation on the registration file content,
+        # 3. recaching, i.e. regenerating the package db cache file.
+        #
+        # Normally, this is all done by `ghc-pkg register`. But in our
+        # case, `ghc-pkg register` is painful, because the validation
+        # it performs is slow, somewhat redundant but especially, too
+        # strict (see e.g.
+        # https://ghc.haskell.org/trac/ghc/ticket/15478). So we do (1)
+        # and (3) manually, by copying then calling `ghc-pkg recache`
+        # directly.
+        #
+        # The downside is that we do lose the few validations that
+        # `ghc-pkg register` was doing that was useful. e.g. when
+        # reexporting modules, validation checks that the source
+        # module does exist.
+        #
+        # TODO Go back to using `ghc-pkg register`. Blocked by
+        # https://ghc.haskell.org/trac/ghc/ticket/15478
         arguments = [
-            "register",
+            "recache",
             "--package-db={0}".format(conf_file.dirname),
             "-v0",
             "--no-expand-pkgroot",
-            registration_file.path,
         ],
     )
 

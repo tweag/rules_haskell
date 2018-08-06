@@ -184,6 +184,9 @@ haskell_library = rule(
         hidden_modules = attr.string_list(
             doc = "Modules that should be unavailable for import by dependencies.",
         ),
+        exports = attr.label_keyed_string_dict(
+            doc = "A dictionary mapping dependencies to module reexports that should be available for import by dependencies.",
+        ),
         version = attr.string(
             doc = """Library version. Not normally necessary unless to build a library
             originally defined as a Cabal package.""",
@@ -205,8 +208,12 @@ Example:
       name = "hello-lib",
       srcs = glob(["src/**/*.hs"]),
       src_strip_prefix = "src",
-      deps = ["//hello-sublib:lib"],
-      prebuilt_dependencies = ["base", "bytestring"],
+      deps = [
+          "//hello-sublib:lib",
+      ],
+      exports = {
+          "//hello-sublib:lib": "Lib1 as HelloLib1, Lib2",
+      },
   )
   ```
 
