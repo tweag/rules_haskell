@@ -1,7 +1,7 @@
 module Main (main) where
 
 import TestSubLib (messageEnd)
-import Lib.List
+import Lib.Map
 
 main :: IO ()
-main = putStrLn $ Lib.List.tail messageEnd
+main = print $ Lib.Map.singleton 1 messageEnd

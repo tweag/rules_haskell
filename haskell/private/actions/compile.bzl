@@ -305,11 +305,12 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
             target_unique_name(hs, "exposed-modules"),
         )
         hs.actions.run(
-            inputs = [c.interfaces_dir],
+            inputs = [c.interfaces_dir, hs.toolchain.global_pkg_db],
             outputs = [exposed_modules_file],
             executable = ls_modules,
             arguments = [
                 c.interfaces_dir.path,
+                hs.toolchain.global_pkg_db.path,
                 "/dev/null",  # no hidden modules
                 "/dev/null",  # no reexported modules
                 exposed_modules_file.path,
@@ -375,6 +376,7 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
         hs.actions.run(
             inputs = [
                 c.interfaces_dir,
+                hs.toolchain.global_pkg_db,
                 hidden_modules_file,
                 reexported_modules_file,
             ],
@@ -382,6 +384,7 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
             executable = ls_modules,
             arguments = [
                 c.interfaces_dir.path,
+                hs.toolchain.global_pkg_db.path,
                 hidden_modules_file.path,
                 reexported_modules_file.path,
                 exposed_modules_file.path,

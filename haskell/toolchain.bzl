@@ -102,6 +102,21 @@ def _haskell_toolchain_impl(ctx):
         ),
     )
 
+    # Get the versions of every prebuilt package.
+    for t in ctx.files.tools:
+        if t.basename == "ghc-pkg":
+            ghc_pkg = t
+    pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
+    ctx.actions.run_shell(
+        inputs = [ghc_pkg],
+        outputs = [pkgdb_file],
+        mnemonic = "HaskellPackageDatabaseDump",
+        command = "{ghc_pkg} dump --global > {output}".format(
+            ghc_pkg = ghc_pkg.path,
+            output = pkgdb_file.path,
+        ),
+    )
+
     # NOTE The only way to let various executables know where other
     # executables are located is often only via the PATH environment variable.
     # For example, ghc uses gcc which is found on PATH. This forces us provide
@@ -266,6 +281,7 @@ def _haskell_toolchain_impl(ctx):
             visible_bin_path = set.to_list(symlinks)[0].dirname,
             is_darwin = ctx.attr.is_darwin,
             version = ctx.attr.version,
+            global_pkg_db = pkgdb_file,
         ),
         # Make everyone implicitly depend on the version_file, to force
         # the version check.
