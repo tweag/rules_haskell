@@ -230,28 +230,6 @@ def _cc_haskell_import(ctx):
         ),
     ]
 
-    if HaskellBinaryInfo in ctx.attr.dep:
-        dbin = ctx.attr.dep[HaskellBinaryInfo].dynamic_bin
-        if dbin != None:
-            set.mutable_insert(dyn_libs, dbin)
-
-    return [
-        DefaultInfo(
-            files = set.to_depset(dyn_libs),
-        ),
-    ]
-
-    if HaskellBinaryInfo in ctx.attr.dep:
-        dbin = ctx.attr.dep[HaskellBinaryInfo].dynamic_bin
-        if dbin != None:
-            set.mutable_insert(dyn_libs, dbin)
-
-    return [
-        DefaultInfo(
-            files = set.to_depset(dyn_libs),
-        ),
-    ]
-
 cc_haskell_import = rule(
     _cc_haskell_import,
     attrs = {
