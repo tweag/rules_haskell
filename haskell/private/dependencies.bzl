@@ -125,6 +125,19 @@ def gather_dep_info(ctx):
                 direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
             )
         else:
+            # The final link of a library must include all static
+            # libraries we depend on, including transitives ones.
+            # Theses libs are provided in `dep.cc.libs` attribute.
+            transitive_static_deps = {}
+
+            # Transitives static dependencies
+            if hasattr(dep, "cc"):
+                transitive_static_deps = {
+                    name: _mangle_lib(ctx, dep.label, name, CcSkylarkApiProviderHacked in dep)
+                    for name in dep.cc.libs.to_list()
+                    if _is_static_library(name)
+                }
+
             # If not a Haskell dependency, pass it through as-is to the
             # linking phase.
             acc = HaskellBuildInfo(
@@ -146,6 +159,7 @@ def gather_dep_info(ctx):
                         for f in dep.files.to_list()
                         if _is_shared_library(f)
                     },
+                    transitive_static_deps,
                 ),
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
             )
