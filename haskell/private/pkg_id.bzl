@@ -11,7 +11,7 @@ def _zencode(s):
     """
     return s.replace("Z", "ZZ").replace("_", "ZU").replace("/", "ZS")
 
-def _to_string(my_pkg_id):
+def _to_string(label):
     """Get a globally unique package identifier.
 
     The identifier is required to be unique for each Haskell rule.
@@ -21,9 +21,9 @@ def _to_string(my_pkg_id):
     """
     return _zencode(
         paths.join(
-            my_pkg_id.label.workspace_root,
-            my_pkg_id.label.package,
-            my_pkg_id.name,
+            label.workspace_root,
+            label.package,
+            label.name,
         ),
     )
 
@@ -43,7 +43,7 @@ def _new(label, version = None):
     """
     return struct(
         label = label,
-        name = label.name.replace("_", "-"),
+        name = _to_string(label),
         version = version,
     )
 
@@ -55,13 +55,12 @@ def _library_name(hs, my_pkg_id, prof_suffix = False):
       my_pkg_id: pkg_id struct.
       prof_suffix: whether to automatically add profiling suffix.
     """
-    library_name = "HS" + _to_string(my_pkg_id)
+    library_name = "HS" + my_pkg_id.name
     if is_profiling_enabled(hs) and prof_suffix:
         library_name += "_p"
     return library_name
 
 pkg_id = struct(
     new = _new,
-    to_string = _to_string,
     library_name = _library_name,
 )

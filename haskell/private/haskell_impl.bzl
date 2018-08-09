@@ -273,7 +273,7 @@ use the 'haskell_import' rule instead.
         )
 
     build_info = HaskellBuildInfo(
-        package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
+        package_ids = set.insert(dep_info.package_ids, my_pkg_id.name),
         package_confs = set.insert(dep_info.package_confs, conf_file),
         package_caches = set.insert(dep_info.package_caches, cache_file),
         # NOTE We have to use lists for static libraries because the order is
@@ -288,7 +288,7 @@ use the 'haskell_import' rule instead.
         external_libraries = dep_info.external_libraries,
     )
     lib_info = HaskellLibraryInfo(
-        package_id = pkg_id.to_string(my_pkg_id),
+        package_id = my_pkg_id.name,
         version = version,
         import_dirs = c.import_dirs,
         ghc_args = c.ghc_args,

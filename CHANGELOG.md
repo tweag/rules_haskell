@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.7] - ???
 
+* Package name change. See
+  [#396](https://github.com/tweag/rules_haskell/pull/396)
+
 * Don’t crash on inputs missing `.haddock` interface files. See
   [#362](https://github.com/tweag/rules_haskell/pull/362)
 
