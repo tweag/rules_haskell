@@ -252,19 +252,21 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
               hs.tools_runfiles.ar + hs.extra_binaries)
 
     if hs.toolchain.is_darwin:
-        # ar is deprecated on Darwin, so we have to use libtool instead.
+        # On Darwin, ar doesn't support params files.
         args.add([
-            "-static",
-            "-o",
-            static_library.path,
-            "-filelist",
-            objects_dir_manifest,
+            static_library,
+            objects_dir_manifest.path,
         ])
-        hs.actions.run(
+
+        # TODO Get ar location from the CC toolchain. This is
+        # complicated by the fact that the CC toolchain does not
+        # always use ar, and libtool has an entirely different CLI.
+        # See https://github.com/bazelbuild/bazel/issues/5127
+        hs.actions.run_shell(
             inputs = inputs,
             outputs = [static_library],
             mnemonic = "HaskellLinkStaticLibrary",
-            executable = "/usr/bin/libtool",
+            command = "{ar} qc $1 $(< $2)".format(ar = hs.tools.ar.path),
             arguments = [args],
         )
     else:
