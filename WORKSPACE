@@ -19,9 +19,9 @@ nixpkgs_git_repository(
 
 load("//:cc_configure_custom.bzl", "cc_configure_custom")
 nixpkgs_package(
-    name = "gcc",
+    name = "compiler",
     repository = "@nixpkgs",
-    attribute_path = "gcc",
+    nix_file = "//:compiler.nix",
 )
 
 nixpkgs_package(
@@ -32,7 +32,7 @@ nixpkgs_package(
 
 cc_configure_custom(
     name = "local_config_cc",
-    gcc = "@gcc//:bin/gcc",
+    gcc = "@compiler//:bin/cc",
     ld = "@binutils//:bin/ld",
 )
 
