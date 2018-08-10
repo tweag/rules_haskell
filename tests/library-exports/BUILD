@@ -9,8 +9,8 @@ load(
 haskell_library(
     name = "sublib",
     srcs = ["TestSubLib.hs"],
-    exports = {"//tests:base": "Data.List as SubLib.List"},
-    deps = ["//tests:base"],
+    exports = {"//tests:containers": "Data.Map as SubLib.Map"},
+    deps = ["//tests:base", "//tests:containers"],
 )
 
 haskell_library(
@@ -19,7 +19,7 @@ haskell_library(
     deps = ["//tests:base", ":sublib"],
     exports = {
         ":sublib": "TestSubLib",
-        "//tests:base": "Data.List as Lib.List",
+        "//tests:containers": "Data.Map as Lib.Map",
     },
 )
 

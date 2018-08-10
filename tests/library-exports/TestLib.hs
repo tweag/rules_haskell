@@ -1,7 +1,7 @@
 module TestLib (testMessage) where
 
 import TestSubLib (messageEnd)
-import SubLib.List
+import SubLib.Map
 
 testMessage :: String
-testMessage = "hello " ++ SubLib.List.nub messageEnd
+testMessage = "hello " ++ messageEnd
