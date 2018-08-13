@@ -14,14 +14,7 @@ def haskell_nixpkgs_toolchain(
     **kwargs):
 
     namespace = namespace + "_" if namespace else name + "_"
-    defaults = _haskell_nixpkgs_toolchain_defaults(ghc_version)
-    config = {}
-    for key, value in defaults.items():
-        config[key] = kwargs.pop(key, value)
-
-    if kwargs:
-        fail("Invalid keyword arguments passed to haskell_nixpkgs_toolchain: {}".format(
-            ", ".join(kwargs.keys())))
+    config = _haskell_nixpkgs_toolchain_defaults(ghc_version, kwargs)
 
     nixpkgs_package(
         name = config["patchelf_package_name"],
@@ -50,8 +43,8 @@ sh_binary(
         build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
-load("@io_tweag_rules_nixpkgs://nixpkgs:nixpkgs.bzl", "nixpkgs_patched_solib")
-nixpkgs_patched_solib(
+load("@io_tweag_rules_haskell://haskell:toolchain/nixpkgs.bzl", "haskell_nixpkgs_patched_solib")
+haskell_nixpkgs_patched_solib(
     name = "patched_stdcpp",
     lib_name = "stdc++",
     patchelf = {patchelf},
@@ -163,11 +156,101 @@ _HASKELL_NIXPKGS_TOOLCHAIN_DEFAULTS_BY_VERSION = {
     },
 }
 
-def _haskell_nixpkgs_toolchain_defaults(ghc_version):
-    if ghc_version not in _HASKELL_NIXPKGS_TOOLCHAIN_DEFAULTS_BY_VERSION:
-        fail("Invalid GHC version passed to haskell_nixpkgs_toolchain: {}".format(ghc_version))
+def _haskell_nixpkgs_toolchain_defaults(ghc_version, overrides):
+    config = {}
+    config.update(_HASKELL_NIXPKGS_TOOLCHAIN_DEFAULTS)
 
-    configurables = {}
-    configurables.update(_HASKELL_NIXPKGS_TOOLCHAIN_DEFAULTS)
-    configurables.update(_HASKELL_NIXPKGS_TOOLCHAIN_DEFAULTS_BY_VERSION[ghc_version])
-    return configurables
+    if ghc_version in _HASKELL_NIXPKGS_TOOLCHAIN_DEFAULTS_BY_VERSION:
+        config.update(_HASKELL_NIXPKGS_TOOLCHAIN_DEFAULTS_BY_VERSION[ghc_version])
+
+    for key, value in config.items():
+        config[key] = overrides.pop(key, value)
+
+    if overrides:
+        fail("Invalid keyword arguments passed to haskell_nixpkgs_toolchain: {}".format(
+            ", ".join(overrides.keys())))
+
+    if "c2hs_attribute_path" not in config or "ghc_version" not in config:
+        fail("""
+
+You must either call haskell_nixpkgs_toolchain with a supported ghc_version or
+explicitly provide nixpkgs attribute paths for c2hs and GHC.
+
+* You can provide a supported ghc_version as follows:
+
+  haskell_nixpkgs_toolchain(
+      ...,
+      ghc_version = "8.2.2",
+      ...,
+  )
+
+  Supported versions are:
+      * {supported_ghc_versions}
+
+* You can provide explicit nixpkgs attribute paths for c2hs and GHC as follows:
+
+  haskell_nixpkgs_toolchain(
+      ...,
+      c2hs_attribute_path = "haskell.packages.ghc822.c2hs",
+      ghc_attribute_path = "haskell.packages.ghc822.ghc",
+      ...,
+  )
+
+""".format(
+                supported_ghc_versions = "\n      * ".join(_HASKELL_NIXPKGS_TOOLCHAIN_DEFAULTS_BY_VERSION.keys())
+            ))
+
+    return config
+
+def _haskell_nixpkgs_patched_solib_impl(ctx):
+    src = ctx.file.src
+    if ctx.attr.is_darwin:
+        output = ctx.actions.declare_file("lib" + ctx.attr.name + ".dylib")
+        ctx.actions.run_shell(
+            inputs = [src],
+            outputs = [output],
+            progress_message = "Patching dylib %s" % ctx.label,
+            command = "cp {src} {out}".format(
+                src = src.path,
+                out = output.path,
+                ),
+            )
+    else:
+        output = ctx.actions.declare_file("lib" + ctx.label.name + ".so")
+        ctx.actions.run_shell(
+            inputs = [src, ctx.executable._patchelf],
+            outputs = [output],
+            progress_message = "Patching solib %s" % ctx.label,
+            command = ("cp {src} {out} && chmod +w {out} && "
+                      + "{patchelf} --set-soname {outname} {out}").format(
+                        src = src.path,
+                        out = output.path,
+                        patchelf = ctx.executable._patchelf.path,
+                        outname = output.basename,
+                        ),
+            )
+
+    return [DefaultInfo(files=depset([output]))]
+
+_haskell_nixpkgs_patched_solib = rule(
+    _haskell_nixpkgs_patched_solib_impl,
+    attrs = {
+        "src": attr.label(allow_files = True, single_file = True),
+        "_patchelf": attr.label(
+            default = Label("@patchelf//:patchelf"),
+            executable = True,
+            cfg = "host",
+            ),
+        "is_darwin": attr.bool(),
+        },
+    )
+
+def haskell_nixpkgs_patched_solib(name, lib_name):
+    _haskell_nixpkgs_patched_solib(
+        name = name,
+        src = native.glob(["lib/lib" + lib_name + ext for ext in [".so", ".dylib"]])[0],
+        is_darwin = select({
+            "@bazel_tools//src/conditions:darwin": True,
+            "//conditions:default": False,
+            }),
+        )
