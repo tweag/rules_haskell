@@ -1,13 +1,16 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "cc_haskell_import",
+    "haskell_import",
     "haskell_library",
 )
+
+haskell_import(name = "base")
 
 haskell_library(
     name = "add-one-hs",
     srcs = ["One.hs"],
-    prebuilt_dependencies = ["base"],
+    deps = [":base"],
 )
 
 cc_haskell_import(
