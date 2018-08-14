@@ -30,9 +30,13 @@ mkShell {
   buildInputs = [
     binutils
     go
+    graphviz
     nix
     which
     python
+    python36Packages.sphinx
+    zip
+    unzip
   ]
   # TODO use Bazel from Nixpkgs even on Darwin. Blocked by
   # https://github.com/NixOS/nixpkgs/issues/30590.
