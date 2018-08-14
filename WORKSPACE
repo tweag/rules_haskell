@@ -29,7 +29,7 @@ nixpkgs_git_repository(
 
 nixpkgs_package(
     name = "ghc",
-    # For rts example. Not needed if you're using the RTS directly.
+    # For rts example. Not needed if you're not using the RTS directly.
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
@@ -45,7 +45,7 @@ cc_library(
     strip_include_prefix = "lib/ghc-8.2.2/include",
 )
   """,
-    # For vector example. Just use `attribute_path = haskell.packages.ghc822`
+    # For vector example. Just use `attribute_path = haskell.compiler.ghc822`
     # when no extra packages needed.
     nix_file_content = """
   let pkgs = import <nixpkgs> {}; in
