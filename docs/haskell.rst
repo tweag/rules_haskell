@@ -214,7 +214,7 @@ import them as regular targets, we use the `haskell_import`_ rule.
 
 Let's build this new version of our project::
 
-  $ bazel build //stage2/main:hello-world
+  $ bazel build //main:demorgan
 
 Bazel produces output similar to the following::
 
