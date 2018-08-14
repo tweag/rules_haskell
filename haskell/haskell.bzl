@@ -235,7 +235,7 @@ haskell_import = rule(
         package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
     ),
 )
-"""Wrap a prebuilt dependency as a rule.
+"""Import packages that are prebuilt outside of Bazel.
 
 Example:
   ```bzl
@@ -243,6 +243,7 @@ Example:
       name = "base_pkg",
       package = "base",
   )
+
   haskell_library(
       name = "hello-lib",
       srcs = ["Lib.hs"],
@@ -253,12 +254,13 @@ Example:
   )
   ```
 
-This rule may wrap any prebuilt dependencies, i.e., GHC packages that aren't
-supplied by Bazel.  Depending on the wrapped rule eliminates the need to list
-the package name in prebuilt_dependencies.
+Use this rule to make dependencies that are prebuilt (supplied as part
+of the compiler toolchain or elsewhere in the environment) available
+as targets.
 
-Often, rules of this type will be generated automatically by frameworks such
-as Hazel.
+Often, targets of this type will be generated automatically by
+frameworks such as Hazel.
+
 """
 
 haskell_doc = _haskell_doc
