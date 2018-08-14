@@ -1,5 +1,10 @@
 workspace(name = "io_tweag_rules_haskell_examples")
 
+local_repository(
+    name = "tutorial",
+    path = "tutorial",
+)
+
 http_archive(
     name = "io_tweag_rules_haskell",
     strip_prefix = "rules_haskell-0.6",

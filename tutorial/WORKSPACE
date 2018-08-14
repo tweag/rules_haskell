@@ -1,0 +1,39 @@
+workspace(name = "tutorial")
+
+http_archive(
+    name = "io_tweag_rules_haskell",
+    strip_prefix = "rules_haskell-0.6",
+    urls = ["https://github.com/tweag/rules_haskell/archive/v0.6.tar.gz"],
+    sha256 = "ab0411a7907074e15bc959914eb0642fd44016b89cf1b92e7e6bc9719398e725",
+)
+
+load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+
+haskell_repositories()
+
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    strip_prefix = "rules_nixpkgs-0.2.3",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.3.tar.gz"],
+    sha256 = "2647bc9d5476fba95d9b4cc300be1ba9ad353e4e33bee01e041886aa4f4b554a",
+)
+
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_git_repository",
+    "nixpkgs_package",
+)
+
+nixpkgs_git_repository(
+    name = "nixpkgs",
+    revision = "18.03",
+    sha256 = "954724605f72b9800207f28dd247b04a4b7cc5c923f33e38426f0a4ba60d6444",
+)
+
+nixpkgs_package(
+    name = "ghc",
+    attribute_path = "haskell.compiler.ghc822",
+    repository = "@nixpkgs",
+)
+
+register_toolchains("//:ghc")
