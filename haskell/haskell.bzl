@@ -229,6 +229,12 @@ def _haskell_import_impl(ctx):
         package = ctx.label.name
     return [HaskellPrebuiltPackageInfo(package = package)]
 
+haskell_import = rule(
+    _haskell_import_impl,
+    attrs = dict(
+        package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
+    ),
+)
 """Wrap a prebuilt dependency as a rule.
 
 Example:
@@ -254,12 +260,6 @@ the package name in prebuilt_dependencies.
 Often, rules of this type will be generated automatically by frameworks such
 as Hazel.
 """
-haskell_import = rule(
-    _haskell_import_impl,
-    attrs = dict(
-        package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
-    ),
-)
 
 haskell_doc = _haskell_doc
 
