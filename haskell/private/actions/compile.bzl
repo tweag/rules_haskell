@@ -100,7 +100,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         # package directory.
         interfaces_dir = hs.actions.declare_directory(
             paths.join(
-                pkg_id.to_string(my_pkg_id),
+                my_pkg_id.name,
                 interface_dir_raw,
             ),
         )
@@ -184,8 +184,8 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     if my_pkg_id != None:
         unit_id_args = [
             "-this-unit-id",
-            pkg_id.to_string(my_pkg_id),
-            "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id.to_string(my_pkg_id)),
+            my_pkg_id.name,
+            "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(my_pkg_id.name),
         ]
         ghc_args += unit_id_args
 

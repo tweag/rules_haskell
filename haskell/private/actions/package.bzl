@@ -18,7 +18,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
     Returns:
       (File, File): GHC package conf file, GHC package cache file
     """
-    pkg_db_dir = pkg_id.to_string(my_pkg_id)
+    pkg_db_dir = my_pkg_id.name
     conf_file = hs.actions.declare_file(
         paths.join(pkg_db_dir, "{0}.conf".format(pkg_db_dir)),
     )
@@ -42,8 +42,8 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
     metadata_entries = {
         "name": my_pkg_id.name,
         "version": my_pkg_id.version,
-        "id": pkg_id.to_string(my_pkg_id),
-        "key": pkg_id.to_string(my_pkg_id),
+        "id": my_pkg_id.name,
+        "key": my_pkg_id.name,
         "exposed": "True",
         "hidden-modules": " ".join(other_modules),
         "import-dirs": " ".join([import_dir, import_dir_prof]),
