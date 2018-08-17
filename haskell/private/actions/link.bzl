@@ -124,6 +124,13 @@ def link_binary(
 
     args.add(["-o", compile_output.path, dummy_static_lib.path])
 
+    # In compile.bzl, we pass this just before all -package-id
+    # arguments. Not doing so leads to bizarre compile-time failures.
+    # It turns out that equally, not doing so leads to bizarre
+    # link-time failures. See
+    # https://github.com/tweag/rules_haskell/issues/395.
+    args.add("-hide-all-packages")
+
     # De-duplicate optl calls while preserving ordering: we want last
     # invocation of an object to remain last. That is `-optl foo -optl
     # bar -optl foo` becomes `-optl bar -optl foo`. Do this by counting
@@ -310,6 +317,8 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     if hs.toolchain.is_darwin:
         args.add(["-optl-Wl,-dead_strip_dylibs"])
 
+    # See comment in link_binary about the importance of this.
+    args.add("-hide-all-packages")
     for package in set.to_list(dep_info.package_ids):
         args.add(["-package-id", package])
 
