@@ -4,6 +4,6 @@ set -eux
 
 export PATH=$HOME/bin:$PATH
 
-bazel build //docs
-unzip -d public bazel-bin/docs/docs-skydoc.zip
+bazel build //haskell:doc_html
+unzip -d public bazel-bin/haskell/doc_html-skydoc.zip
 cp start public
