@@ -122,7 +122,7 @@ new_local_repository(
 package(default_visibility = ["//visibility:public"])
 filegroup(
     name = "bin",
-    srcs = glob(["bin/ghc*"]) + ["bin/hsc2hs", "bin/haddock"],
+    srcs = glob(["bin/*"]),
 )
 """
 )
