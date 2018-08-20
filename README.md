@@ -120,8 +120,11 @@ new_local_repository(
   path = "/usr/local", # Change path accordingly.
   build_file_content = """
 package(default_visibility = ["//visibility:public"])
-filegroup (name = "bin", srcs = glob(["bin/ghc*"]))
-  """
+filegroup(
+    name = "bin",
+    srcs = glob(["bin/*"]),
+)
+"""
 )
 ```
 
