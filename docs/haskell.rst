@@ -93,7 +93,7 @@ Take a look at the ``BUILD`` file in the ``tutorial/lib`` directory::
       srcs = ["Bool.hs"],
   )
 
-In our example, the ``boolean`` target instantiates the
+In our example, the ``booleans`` target instantiates the
 `haskell_library`_ rule. The rule tells Bazel to build a reusable
 (statically or dynamically linked) library from the ``Bool.hs`` source
 file with no dependencies.
