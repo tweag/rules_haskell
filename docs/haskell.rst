@@ -44,6 +44,10 @@ directory and is structured as follows::
         ├── BUILD
         └── Bool.hs
 
+The first thing to do is to::
+
+  $ cd tutorial
+
 Build with Bazel
 ----------------
 
@@ -105,7 +109,7 @@ Build the project
 
 Let's build your sample project. Run the following command::
 
-  bazel build //lib:booleans
+  $ bazel build //lib:booleans
 
 Notice the target label - the ``//lib:`` part is the location of our
 ``BUILD`` file relative to the root of the workspace, and ``booleans``
