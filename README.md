@@ -11,26 +11,26 @@ wih the [setup script below](#setup).
 
 ## Rule summary
 
-The full reference documentation for rules is at https://haskell.build.
+The full reference documentation for rules is at https://api.haskell.build.
 
 **WORKSPACE rules:**
 
 | Rule | Description |
 | ---: | :--- |
-| [`haskell_repositories`](https://haskell.build/haskell/repositories.html#haskell_repositories) | Declare [external repositories][external-repositories] needed for rules_haskell |
-| [`ghc_bindist`](https://haskell.build/haskell/ghc_bindist.html#import_ghc_bindist) | Setup a binary distribution of GHC |
+| [`haskell_repositories`](https://api.haskell.build/haskell/repositories.html#haskell_repositories) | Declare [external repositories][external-repositories] needed for rules_haskell |
+| [`ghc_bindist`](https://api.haskell.build/haskell/ghc_bindist.html#import_ghc_bindist) | Setup a binary distribution of GHC |
 
 **BUILD rules:**
 
 | Rule | Description |
 | ---: | :--- |
-| [`haskell_library`](https://haskell.build/haskell/haskell.html#haskell_library) | Build a library from Haskell source. |
-| [`haskell_binary`](https://haskell.build/haskell/haskell.html#haskell_binary) | Build an executable from Haskell source. |
-| [`haskell_test`](https://haskell.build/haskell/haskell.html#haskell_test) | Run a test suite. |
-| [`haskell_doc`](https://haskell.build/haskell/haddock.html#haskell_doc) | Create API documentation. |
-| [`haskell_toolchain`](https://haskell.build/haskell/toolchain.html#haskell_toolchain) | Declare a compiler toolchain. |
-| [`haskell_cc_import`](https://haskell.build/haskell/cc.html#haskell_cc_import) | Import a prebuilt shared library. |
-| [`cc_haskell_import`](https://haskell.build/haskell/cc.html#cc_haskell_import) | Expose all transitive shared object libraries for haskell dependency. |
+| [`haskell_library`](https://api.haskell.build/haskell/haskell.html#haskell_library) | Build a library from Haskell source. |
+| [`haskell_binary`](https://api.haskell.build/haskell/haskell.html#haskell_binary) | Build an executable from Haskell source. |
+| [`haskell_test`](https://api.haskell.build/haskell/haskell.html#haskell_test) | Run a test suite. |
+| [`haskell_doc`](https://api.haskell.build/haskell/haddock.html#haskell_doc) | Create API documentation. |
+| [`haskell_toolchain`](https://api.haskell.build/haskell/toolchain.html#haskell_toolchain) | Declare a compiler toolchain. |
+| [`haskell_cc_import`](https://api.haskell.build/haskell/cc.html#haskell_cc_import) | Import a prebuilt shared library. |
+| [`cc_haskell_import`](https://api.haskell.build/haskell/cc.html#cc_haskell_import) | Expose all transitive shared object libraries for haskell dependency. |
 
 [bazel]: https://bazel.build/
 [bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
@@ -169,7 +169,7 @@ $ bazel run --direct_run //skylark:buildifier **/*.bzl **/BUILD
 
 ## Rules
 
-See https://haskell.build for the reference documentation on provided
+See https://api.haskell.build for the reference documentation on provided
 rules. Using [./serve-docs.sh](./serve-docs.sh), you can also view
 this documentation locally.
 
