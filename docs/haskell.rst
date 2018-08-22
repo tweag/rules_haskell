@@ -76,8 +76,11 @@ the same workspace. Files residing in different workspaces are
 independent of one another unless linked, which is beyond the scope of
 this tutorial.
 
-Understand the BUILD.bazel file
+Understand the BUILD file
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is recommended to use a ``.bazel`` extension for each ``BUILD`` file to
+avoid clashing with files or folders already using that name.
 
 A ``BUILD.bazel`` file contains several different types of instructions for
 Bazel. The most important type is the *build rule*, which tells Bazel
