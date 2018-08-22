@@ -6,7 +6,7 @@ Introduction to Bazel: Building a Haskell project
 In this tutorial, you'll learn the basics of building Haskell
 applications with Bazel. You will set up your workspace and build
 a simple Haskell project that illustrates key Bazel concepts, such as
-targets and ``BUILD`` files. After completing this tutorial, take
+targets and ``BUILD.bazel`` files. After completing this tutorial, take
 a look at :ref:`Common Haskell build use cases <use-cases>` for
 information on more advanced concepts such as writing and running
 Haskell tests.
@@ -38,10 +38,10 @@ directory and is structured as follows::
   └── tutorial
      ├── WORKSPACE
      ├── main
-     │  ├── BUILD
+     │  ├── BUILD.bazel
      │  └── Main.hs
      └── lib
-        ├── BUILD
+        ├── BUILD.bazel
         └── Bool.hs
 
 The first thing to do is to::
@@ -63,9 +63,9 @@ special:
   contents as a Bazel workspace and lives at the root of the project's
   directory structure,
 
-* one or more ``BUILD`` files, which tell Bazel how to build different
+* one or more ``BUILD.bazel`` files, which tell Bazel how to build different
   parts of the project. (A directory within the workspace that
-  contains a ``BUILD`` file is a *package*. You will learn about
+  contains a ``BUILD.bazel`` file is a *package*. You will learn about
   packages later in this tutorial.)
 
 To designate a directory as a Bazel workspace, create an empty file
@@ -79,14 +79,17 @@ this tutorial.
 Understand the BUILD file
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A ``BUILD`` file contains several different types of instructions for
+It is recommended to use a ``.bazel`` extension for each ``BUILD`` file to
+avoid clashing with files or folders already using that name.
+
+A ``BUILD.bazel`` file contains several different types of instructions for
 Bazel. The most important type is the *build rule*, which tells Bazel
 how to build the desired outputs, such as executable binaries or
-libraries. Each instance of a build rule in the ``BUILD`` file is
+libraries. Each instance of a build rule in the ``BUILD.bazel`` file is
 called a *target* and points to a specific set of source files and
 dependencies. A target can also point to other targets.
 
-Take a look at the ``BUILD`` file in the ``tutorial/lib`` directory::
+Take a look at the ``BUILD.bazel`` file in the ``tutorial/lib`` directory::
 
   haskell_library(
       name = "booleans",
@@ -112,8 +115,8 @@ Let's build your sample project. Run the following command::
   $ bazel build //lib:booleans
 
 Notice the target label - the ``//lib:`` part is the location of our
-``BUILD`` file relative to the root of the workspace, and ``booleans``
-is what we named that target in the ``BUILD`` file. (You will learn
+``BUILD.bazel`` file relative to the root of the workspace, and ``booleans``
+is what we named that target in the ``BUILD.bazel`` file. (You will learn
 about target labels in more detail at the end of this tutorial.)
 
 Bazel produces output similar to the following::
@@ -133,7 +136,7 @@ Review the dependency graph
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A successful build has all of its dependencies explicitly stated in
-the ``BUILD`` file. Bazel uses those statements to create the
+the ``BUILD.bazel`` file. Bazel uses those statements to create the
 project's dependency graph, which enables accurate incremental builds.
 
 Let's visualize our sample project's dependencies. First, generate
@@ -187,9 +190,9 @@ Specify multiple build targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Let's split our sample project build into two targets. Take a look at
-the ``BUILD`` files in the ``tutorial/lib`` and ``tutorial/main``
+the ``BUILD.bazel`` files in the ``tutorial/lib`` and ``tutorial/main``
 directories. The contents of both files could have been kept in
-a single ``BUILD`` as follows::
+a single ``BUILD.bazel`` as follows::
 
   haskell_library(
       name = "booleans",
@@ -205,7 +208,7 @@ a single ``BUILD`` as follows::
       deps = [":base", ":booleans"],
   )
 
-With this single ``BUILD`` file, Bazel first builds the ``booleans``
+With this single ``BUILD.bazel`` file, Bazel first builds the ``booleans``
 library (using the `haskell_library`_ rule), then the ``demorgan``
 binary (which as an example uses the ``booleans`` library to check one
 of the De Morgan laws). The ``deps`` attribute in the ``demorgan``
@@ -261,10 +264,10 @@ Use multiple packages
 Let’s now split the project into multiple packages.
 
 Notice that we actually have two sub-directories, and each contains
-a ``BUILD`` file. Therefore, to Bazel, the workspace contains two
+a ``BUILD.bazel`` file. Therefore, to Bazel, the workspace contains two
 packages, ``lib`` and ``main``.
 
-Take a look at the ``lib/BUILD`` file::
+Take a look at the ``lib/BUILD.bazel`` file::
 
   haskell_library(
       name = "booleans",
@@ -272,7 +275,7 @@ Take a look at the ``lib/BUILD`` file::
       visibility = ["//main:__pkg__"],
   )
 
-And at the ``main/BUILD`` file::
+And at the ``main/BUILD.bazel`` file::
 
   haskell_import(name = "base")
 
@@ -289,10 +292,10 @@ target label ``//lib:booleans``) - Bazel knows this through the
 ``deps`` attribute.
 
 Notice that for the build to succeed, we make the ``//lib:booleans``
-target in ``lib/BUILD`` explicitly visible to targets in
-``main/BUILD`` using the ``visibility`` attribute. This is because by
+target in ``lib/BUILD.bazel`` explicitly visible to targets in
+``main/BUILD.bazel`` using the ``visibility`` attribute. This is because by
 default targets are only visible to other targets in the same
-``BUILD`` file. (Bazel uses target visibility to prevent issues such
+``BUILD.bazel`` file. (Bazel uses target visibility to prevent issues such
 as libraries containing implementation details leaking into public
 APIs.)
 
@@ -302,22 +305,22 @@ understand the dependencies between them.
 Use labels to reference targets
 -------------------------------
 
-In ``BUILD`` files and at the command line, Bazel uses *labels* to
+In ``BUILD.bazel`` files and at the command line, Bazel uses *labels* to
 reference targets - for example, ``//main:demorgan`` or
 ``//lib:booleans``. Their syntax is::
 
   //path/to/package:target-name
 
 If the target is a rule target, then ``path/to/package`` is the path
-to the directory containing the ``BUILD`` file, and ``target-name`` is
-what you named the target in the ``BUILD`` file (the ``name``
+to the directory containing the ``BUILD.bazel`` file, and ``target-name`` is
+what you named the target in the ``BUILD.bazel`` file (the ``name``
 attribute). If the target is a file target, then ``path/to/package``
 is the path to the root of the package, and ``target-name`` is the
 name of the target file, including its full path.
 
 When referencing targets within the same package, you can skip the
 package path and just use ``//:target-name``. When referencing targets
-within the same ``BUILD`` file, you can even skip the ``//`` workspace
+within the same ``BUILD.bazel`` file, you can even skip the ``//`` workspace
 root identifier and just use ``:target-name``.
 
 Further reading
