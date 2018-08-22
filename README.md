@@ -11,7 +11,7 @@ wih the [setup script below](#setup).
 
 ## Rule summary
 
-The full reference documentation for rules is at https://api.haskell.build.
+The full reference documentation for rules is at https://haskell.build.
 
 **WORKSPACE rules:**
 
