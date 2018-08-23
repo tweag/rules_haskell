@@ -7,7 +7,7 @@ for building Haskell code.
   found on Hackage, using a Nix provided compiler toolchain.
 * [**rts:**](./rts/) demonstrates foreign exports and shows how to
   link against GHC's RTS library, i.e. `libHSrts.so`.
-* [**tutorial:**](./tutorial/) a separate workspace for the [tutorial](tutorial).
+* [**tutorial:**](./tutorial/) a separate workspace for the [tutorial][tutorial].
 
 ## Root Workspace
 
