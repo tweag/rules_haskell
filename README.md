@@ -47,7 +47,7 @@ $ bazel build //rts:add-one-hs
 Build everything in the tutorial workspace with;
 
 ```
-> bazel build @tutorial//...
+$ bazel build @tutorial//...
 ```
 
 Show everything in the tutorial;
