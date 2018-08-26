@@ -35,21 +35,7 @@ nixpkgs_git_repository(
 nixpkgs_package(
     name = "ghc",
     # For rts example. Not needed if you're not using the RTS directly.
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "bin",
-    srcs = glob(["bin/*"]),
-)
-
-cc_library(
-    name = "threaded-rts",
-    srcs = glob(["lib/ghc-8.2.2/rts/libHSrts_thr-ghc*.so"]),
-    hdrs = glob(["lib/ghc-8.2.2/include/**/*.h"]),
-    strip_include_prefix = "lib/ghc-8.2.2/include",
-)
-  """,
+    build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
     # For vector example. Just use `attribute_path = haskell.compiler.ghc822`
     # when no extra packages needed.
     nix_file_content = """
