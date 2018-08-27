@@ -34,32 +34,7 @@ nixpkgs_package(
     name = "ghc",
     repository = "@nixpkgs",
     nix_file = "//tests:ghc.nix",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "bin",
-    srcs = glob(["bin/*"]),
-)
-
-cc_library(
-    name = "threaded-rts",
-    srcs = select({
-            "@bazel_tools//src/conditions:darwin":
-                    glob([
-                        "lib/ghc-*/rts/libHSrts_thr-ghc*.dylib",
-                        "lib/ghc-*/rts/libffi.dylib",
-                    ]),
-            "//conditions:default":
-                    glob([
-                        "lib/ghc-*/rts/libHSrts_thr-ghc*.so",
-                        "lib/ghc-*/rts/libffi.so.6",
-                    ]),
-    }),
-    hdrs = glob(["lib/ghc-*/include/**/*.h"]),
-    strip_include_prefix = glob(["lib/ghc-*/include"], exclude_directories=0)[0],
-)
-""",
+    build_file = "//haskell:ghc.BUILD",
 )
 
 http_archive(
