@@ -37,6 +37,11 @@ haskell_proto_library(
     deps = [":person_proto"],
 )
 
+haskell_proto_library(
+    name = "all_haskell_proto",
+    deps = [":address_proto", ":person_proto"],
+)
+
 haskell_library(
     name = "hs-lib",
     srcs = ["Bar.hs"],
@@ -44,6 +49,16 @@ haskell_library(
     deps = [
         ":address_haskell_proto",
         ":person_haskell_proto",
+        "//tests:base",
+    ],
+)
+
+haskell_library(
+    name = "hs-lib-b",
+    srcs = ["Bar.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":all_haskell_proto",
         "//tests:base",
     ],
 )
