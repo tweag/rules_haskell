@@ -206,7 +206,7 @@ def _haskell_proto_library_impl(ctx):
     for dep in ctx.attr.deps:
         res.append(dep[HaskellBuildInfo])
         res.append(dep[HaskellLibraryInfo])
-        defaultInfoFilesDepset = depset(transitive = [defaultInfoFilesDepset, dep[HaskellProtobufInfo].files])                
+        defaultInfoFilesDepset = depset(transitive = [defaultInfoFilesDepset, dep[HaskellProtobufInfo].files])
     res.append(DefaultInfo(files = defaultInfoFilesDepset))
     return res
 
