@@ -201,12 +201,14 @@ _haskell_proto_aspect = aspect(
 )
 
 def _haskell_proto_library_impl(ctx):
-    dep = ctx.attr.deps[0]  # FIXME
-    return [
-        dep[HaskellBuildInfo],
-        dep[HaskellLibraryInfo],
-        DefaultInfo(files = dep[HaskellProtobufInfo].files),
-    ]
+    res = []
+    defaultInfoFilesDepset = depset()
+    for dep in ctx.attr.deps:
+        res.append(dep[HaskellBuildInfo])
+        res.append(dep[HaskellLibraryInfo])
+        defaultInfoFilesDepset = depset(transitive = [defaultInfoFilesDepset, dep[HaskellProtobufInfo].files])                
+    res.append(DefaultInfo(files = defaultInfoFilesDepset))
+    return res
 
 haskell_proto_library = rule(
     _haskell_proto_library_impl,
