@@ -23,6 +23,7 @@ load(
 load(
     ":haddock.bzl",
     _haskell_doc = "haskell_doc",
+    _haskell_doc_aspect = "haskell_doc_aspect",
 )
 load(
     ":lint.bzl",
@@ -262,6 +263,8 @@ frameworks such as Hazel.
 """
 
 haskell_doc = _haskell_doc
+
+haskell_doc_aspect = _haskell_doc_aspect
 
 haskell_lint = _haskell_lint
 
