@@ -15,6 +15,7 @@ Bazel.
    :maxdepth: 2
    :caption: Contents:
 
+   why-bazel
    haskell
    haskell-use-cases
 
