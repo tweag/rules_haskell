@@ -122,11 +122,14 @@ def _haskell_doc_aspect_impl(target, ctx):
     transitive_html.update({package_id: html_dir})
     transitive_haddocks.update({package_id: haddock_file})
 
-    return [HaddockInfo(
+    haddockInfo = HaddockInfo(
         package_id = package_id,
         transitive_html = transitive_html,
         transitive_haddocks = transitive_haddocks,
-    )]
+    )
+    outputFiles = OutputGroupInfo(default = transitive_html.values())
+
+    return [haddockInfo, outputFiles]
 
 haskell_doc_aspect = aspect(
     _haskell_doc_aspect_impl,
