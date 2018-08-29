@@ -21,10 +21,14 @@ verified so far as a proof of concept.
 
 ## Setting up a new project
 First, run the `Stackage.hs` script to generate a list of all packages in a
-particular LTS release:
+particular LTS release or nightly snapshot:
 
 ```
 ./Stackage.hs lts-10.5 packages.bzl
+```
+
+```
+./Stackage.hs nightly-2018-07-09 packages.bzl
 ```
 
 That `packages.bzl` file should be checked into your repository.

@@ -41,8 +41,11 @@ main :: IO ()
 main = do
     [resolver, out] <- getArgs
     manager <- newManager tlsManagerSettings
-    let ltsUrl = "https://raw.githubusercontent.com/fpco/lts-haskell/master/"
-                ++ resolver ++ ".yaml"
+    let ltsUrl = case resolver of
+          'l' : 't' : 's' : _ ->
+            "https://raw.githubusercontent.com/fpco/lts-haskell/master/" ++ resolver ++ ".yaml"
+          _ ->
+            "https://raw.githubusercontent.com/fpco/stackage-nightly/master/" ++ resolver ++ ".yaml"
     ltsYaml <- downloadUrl manager ltsUrl
     plan <- case decodeEither' $ L.toStrict ltsYaml of
         Left err -> throw err
