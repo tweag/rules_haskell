@@ -16,13 +16,13 @@ function finish {
 
 trap finish EXIT
 
-bazel build //haskell:doc_html
+bazel build //docs:api_html
 mkdir $SCRATCH/api
-unzip -d $SCRATCH/api bazel-bin/haskell/doc_html-skydoc.zip
+unzip -d $SCRATCH/api bazel-bin/docs/api_html-skydoc.zip
 
-bazel build //docs
-mkdir $SCRATCH/docs
-unzip -d $SCRATCH/docs bazel-genfiles/docs/docs.zip
+bazel build //docs:guide_html
+mkdir $SCRATCH/guide
+unzip -d $SCRATCH/guide bazel-genfiles/docs/guide_html.zip
 
 cd $SCRATCH
 python -m SimpleHTTPServer $PORT
