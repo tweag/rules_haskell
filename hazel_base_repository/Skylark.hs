@@ -1,4 +1,5 @@
 -- | Datatypes for constructing and rendering BUILD file contents.
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module Skylark
@@ -16,6 +17,10 @@ import Text.PrettyPrint
     , (<>)
     , (<+>)
     )
+
+#if MIN_VERSION_base(4,11,0)
+import Prelude hiding ((<>))
+#endif
 
 import qualified Text.PrettyPrint as Pretty
 

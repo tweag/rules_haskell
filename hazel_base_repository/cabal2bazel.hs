@@ -7,12 +7,19 @@
 --    package = struct(...)
 --
 -- which can be loaded into Bazel BUILD files.
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
-
 module Main (main) where
 
+#if MIN_VERSION_Cabal(2,2,0)
+import Distribution.PackageDescription.Parsec
+    (readGenericPackageDescription, parseHookedBuildInfo, runParseResult)
+import qualified Data.ByteString.Char8 as BS.C8
+#else
 import Distribution.PackageDescription.Parse
     (readGenericPackageDescription, parseHookedBuildInfo, ParseResult(..))
+#endif
+
 import Distribution.Text (display, simpleParse)
 import Distribution.Verbosity (normal)
 import System.Environment (getArgs)
@@ -47,17 +54,35 @@ parseFlags = \case
   _ -> Map.empty
 
 maybeConfigure :: P.PackageDescription -> IO P.PackageDescription
-maybeConfigure desc = case P.buildType desc of
-    Just P.Configure -> do
-        callProcess "./configure" []
-        let buildInfoFile = display (P.packageName desc) <.> "buildinfo"
-        buildInfoExists <- Directory.doesFileExist buildInfoFile
-        if buildInfoExists
-          then do
-              hookedBIParse <- parseHookedBuildInfo <$> readFile buildInfoFile
-              case hookedBIParse of
-                  ParseFailed e -> error $ "Error reading buildinfo " ++ show buildInfoFile
-                                              ++ ": " ++ show e
-                  ParseOk _ hookedBI -> return $ P.updatePackageDescription hookedBI desc
-          else return desc
-    _ -> return desc
+maybeConfigure desc = whenConfiguring $ do
+    callProcess "./configure" []
+    let buildInfoFile = display (P.packageName desc) <.> "buildinfo"
+    buildInfoExists <- Directory.doesFileExist buildInfoFile
+    if buildInfoExists
+      then processBuildInfoFile buildInfoFile
+      else return desc
+  where
+#if MIN_VERSION_Cabal(2,2,0)
+    whenConfiguring m = case P.buildType desc of
+      P.Configure -> m
+      _           -> return desc
+
+    processBuildInfoFile buildInfoFile = do
+      cs <- BS.C8.readFile buildInfoFile
+      case runParseResult (parseHookedBuildInfo cs) of
+        (_warnings, Left (_maybeVersion, es)) ->
+          error $ "Error reading buildinfo " ++ show buildInfoFile ++ ": " ++ show es
+        (_warnings, Right hookedBI) ->
+          return $ P.updatePackageDescription hookedBI desc
+#else
+    whenConfiguring m = case P.buildType desc of
+      Just P.Configure -> m
+      _                -> return desc
+
+    processBuildInfoFile buildInfoFile = do
+      cs <- readFile buildInfoFile
+      case parseHookedBuildInfo cs of
+          ParseFailed e -> error $ "Error reading buildinfo " ++ show buildInfoFile
+                                      ++ ": " ++ show e
+          ParseOk _ hookedBI -> return $ P.updatePackageDescription hookedBI desc
+#endif
