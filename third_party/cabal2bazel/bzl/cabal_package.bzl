@@ -19,6 +19,7 @@ bazel query --output=build @haskell_{package}//:all
 """
 load("@bazel_skylib//:lib.bzl", "paths")
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
+     "c2hs_library",
      "haskell_library",
      "haskell_binary",
      "haskell_cc_import",
@@ -127,6 +128,8 @@ def _get_build_attrs(
   boot_module_map = {}
 
   srcs_dir = "gen-srcs-" + name + "/"
+  clib_name = name + "-cbits"
+
 
   for d in _fix_source_dirs(build_info.hsSourceDirs) + [generated_srcs_dir]:
     for f,m,out in _glob_modules(d, ".x", ".hs"):
@@ -141,13 +144,34 @@ def _get_build_attrs(
           src = f,
           out = module_map[m],
       )
+
+    for f,m,out in _glob_modules(d, ".chs", ".chs"):
+      chs_rule = name + "-" + m
+      symlink_rule = name + "-" + m + "-symlink"
+      hazel_symlink(
+          name = symlink_rule,
+          src = f,
+          out = srcs_dir + out,
+      )
+      # TODO: this will not work if one .chs file imports another.
+      # To mimic Cabal's behavior we should assume the module names are
+      # topologically ordered; i.e., make each one depend on all previous
+      # modules.  However, that's not easy the way the code is currently
+      # structured.
+      c2hs_library(
+          name = chs_rule,
+          srcs = [symlink_rule],
+          deps = [_haskell_cc_import_name(elib) for elib in build_info.extraLibs]
+              + [clib_name],
+      )
+
+      module_map[m] = chs_rule
     # Raw source files.  Include them last, to override duplicates (e.g. if a
     # package contains both a Happy Foo.y file and the corresponding generated
     # Foo.hs).
     for f,m,out in (_glob_modules(d, ".hs", ".hs")
                      + _glob_modules(d, ".lhs", ".lhs")
-                     + _glob_modules(d, ".hsc", ".hsc")
-                     + _glob_modules(d, ".chs", ".chs")):
+                     + _glob_modules(d, ".hsc", ".hsc")):
       if m not in module_map:
         module_map[m] = srcs_dir + out
         hazel_symlink(
@@ -232,9 +256,8 @@ def _get_build_attrs(
       native.glob([paths.normalize(f) for f in desc.extraSrcFiles + desc.extraTmpFiles])
       + install_includes)
   ghcopts += ["-I" + native.package_name() + "/" + d for d in build_info.includeDirs]
-  lib_name = name + "-cbits"
   for xs in deps.values():
-    xs.append(":" + lib_name)
+    xs.append(":" + clib_name)
 
   ghc_version_components = ghc_version.split(".")
   ghc_version_string = (
@@ -263,7 +286,7 @@ def _get_build_attrs(
       elibs_includes.append(i)
 
   native.cc_library(
-      name = lib_name,
+      name = clib_name,
       srcs = build_info.cSources,
       includes = build_info.includeDirs,
       copts = ([o for o in build_info.ccOptions if not o.startswith("-D")]
@@ -297,6 +320,9 @@ def _collect_data_files(description):
     return files
   else:
     return native.glob([paths.join(description.dataDir, d) for d in description.dataFiles])
+
+def _haskell_cc_import_name(clib_name):
+  return clib_name + "-haskell-cc-import"
 
 def cabal_haskell_package(
     description,
@@ -351,7 +377,7 @@ def cabal_haskell_package(
       elibs_targets = []
 
       for elib in lib.libBuildInfo.extraLibs:
-        elib_target_name = elib + "-haskell-cc-import"
+        elib_target_name = _haskell_cc_import_name(elib)
         haskell_cc_import(
           name = elib_target_name,
           shared_library = extra_libs[elib],
@@ -416,7 +442,6 @@ def cabal_haskell_package(
     haskell_binary(
         name = exe_name,
         srcs = select(srcs),
-        main_file = full_module_out,
         deps = select(deps),
         visibility = ["//visibility:public"],
         **attrs
