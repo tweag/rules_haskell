@@ -6,12 +6,15 @@
 # dependencies). The exposed modules are filtered using a provided
 # list of hidden modules, and augmented with reexport declarations.
 
+from __future__ import unicode_literals
+
 import collections
 import fnmatch
 import itertools
 import os
 import re
 import sys
+import io
 
 if len(sys.argv) != 6:
     sys.exit("Usage: %s <DIRECTORY> <GLOBAL_PKG_DB> <HIDDEN_MODS_FILE> <REEXPORTED_MODS_FILE> <RESULT_FILE>" % sys.argv[0])
@@ -22,7 +25,7 @@ hidden_modules_file = sys.argv[3]
 reexported_modules_file = sys.argv[4]
 results_file = sys.argv[5]
 
-with open(global_pkg_db_dump, "r") as f:
+with io.open(global_pkg_db_dump, "r", encoding='utf8') as f:
     names = [line.split()[1] for line in f if line.startswith("name:")]
     f.seek(0)
     ids = [line.split()[1] for line in f if line.startswith("id:")]
@@ -44,10 +47,10 @@ with open(global_pkg_db_dump, "r") as f:
 
     pkg_ids_map = dict(zip(names, ids))
 
-with open(hidden_modules_file, "r") as f:
+with io.open(hidden_modules_file, "r", encoding='utf8') as f:
     hidden_modules = [mod.strip() for mod in f.read().split(",")]
 
-with open(reexported_modules_file, "r") as f:
+with io.open(reexported_modules_file, "r", encoding='utf8') as f:
     raw_reexported_modules = (
         mod.strip() for mod in f.read().split(",") if mod.strip()
     )
@@ -76,6 +79,5 @@ exposed_modules = (
     if m not in hidden_modules
 )
 
-with open(results_file, "w") as f:
-    sys.stdout = f
-    print(", ".join(itertools.chain(exposed_modules, reexported_modules)))
+with io.open(results_file, "w", encoding='utf8') as f:
+    f.write(", ".join(itertools.chain(exposed_modules, reexported_modules)))
