@@ -29,8 +29,12 @@ load(
     _haskell_lint = "haskell_lint",
 )
 load(
-    ":toolchain.bzl",
+    ":private/toolchain/core.bzl",
     _haskell_toolchain = "haskell_toolchain",
+)
+load(
+    ":private/toolchain/nixpkgs.bzl",
+    _haskell_nixpkgs_toolchain = "haskell_nixpkgs_toolchain",
 )
 load(
     ":ghc_bindist.bzl",
@@ -272,6 +276,8 @@ haskell_doctest = _haskell_doctest
 haskell_doctest_toolchain = _haskell_doctest_toolchain
 
 haskell_toolchain = _haskell_toolchain
+
+haskell_nixpkgs_toolchain = _haskell_nixpkgs_toolchain
 
 haskell_proto_library = _haskell_proto_library
 
