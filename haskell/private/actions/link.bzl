@@ -7,8 +7,13 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/providers.bzl", "external_libraries_get_mangled")
 
-def _backup_path(target):
-    """Return a path from the directory this is in to the Bazel root.
+def backup_path(target):
+    """Return a path from the directory this `target` is in
+    to its runfile directory.
+
+    foo => .
+    foo/bar => ..
+    foo/bar/baz => ../..
 
     Args:
       target: File
@@ -16,9 +21,15 @@ def _backup_path(target):
     Returns:
       A path of the form "../../.."
     """
-    n = len(target.dirname.split("/"))
-
-    return "/".join([".."] * n)
+    short_path_dir = paths.normalize(paths.dirname(target.short_path))
+    # dirname returns "" if there is no parent directory
+    # and normalize returns "." for "". In that case we
+    # return the identity path, which is ".".
+    if short_path_dir == ".":
+        return "."
+    else:
+        n = len(short_path_dir.split("/"))
+        return "/".join([".."] * n)
 
 def _fix_darwin_linker_paths(hs, inp, out, external_libraries):
     """Postprocess a macOS binary to make shared library references relative.
@@ -48,7 +59,7 @@ def _fix_darwin_linker_paths(hs, inp, out, external_libraries):
             [
                 "/usr/bin/install_name_tool -change {} {} {}".format(
                     f.lib.path,
-                    paths.join("@loader_path", _backup_path(out), f.lib.path),
+                    paths.join("@loader_path", backup_path(out), f.lib.short_path),
                     out.path,
                 )
                 # we use the unmangled lib (f.lib) for this instead of a mangled lib name
@@ -232,7 +243,12 @@ def _add_external_libraries(args, ext_libs):
 
 def _infer_rpaths(target, solibs):
     """Return set of RPATH values to be added to target so it can find all
-    solibs.
+    solibs
+
+    The resulting paths look like:
+    $ORIGIN/../../path/to/solib/dir
+    This means: "go upwards to your runfiles directory, then descend into
+    the parent folder of the solib".
 
     Args:
       target: File, executable or library we're linking.
@@ -246,8 +262,8 @@ def _infer_rpaths(target, solibs):
     for solib in set.to_list(solibs):
         rpath = paths.normalize(
             paths.join(
-                _backup_path(target),
-                solib.dirname,
+                backup_path(target),
+                paths.dirname(solib.short_path),
             ),
         )
         set.mutable_insert(r, "$ORIGIN/" + rpath)
