@@ -113,7 +113,7 @@ def _mk_binary_rule(**kwargs):
             ),
             main_function = attr.string(
                 default = "Main.main",
-                doc = "Location of `main` function.",
+                doc = "A qualified function of any name with a type of `IO _` or the qualified name of a module exposing a `main` function.",
             ),
             main_file = attr.label(
                 allow_single_file = FileType([".hs", ".hsc", ".lhs"]),
