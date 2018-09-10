@@ -339,7 +339,7 @@ def haskell_toolchain(
 
     You need at least one of these declared somewhere in your `BUILD` files
     for the other rules to work. Once declared, you then need to *register*
-    the toolchain using `register_toolchain` in your `WORKSPACE` file (see
+    the toolchain using `register_toolchains` in your `WORKSPACE` file (see
     example below).
 
     Example:
@@ -365,7 +365,7 @@ def haskell_toolchain(
           attribute_path = 'haskell.compiler.ghc822'
       )
 
-      register_toolchain("//:ghc")
+      register_toolchains("//:ghc")
       ```
 
       and for `@c2hs`:

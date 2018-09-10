@@ -298,7 +298,7 @@ def haskell_proto_toolchain(
 
     You need at least one of these declared somewhere in your `BUILD` files
     for the `haskell_proto_library` rules to work. Once declared, you then
-    need to *register* the toolchain using `register_toolchain` in your
+    need to *register* the toolchain using `register_toolchains` in your
     `WORKSPACE` file (see example below).
 
     Example:
