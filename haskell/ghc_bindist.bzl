@@ -98,7 +98,7 @@ Example:
    )
 
    # Register the toolchain defined locally in BUILD file:
-   register_toolchain("//:ghc")
+   register_toolchains("//:ghc")
    ```
 
    In `BUILD` file:

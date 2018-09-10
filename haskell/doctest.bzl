@@ -40,7 +40,7 @@ def haskell_doctest_toolchain(name, doctest, **kwargs):
 
     You need at least one of these declared somewhere in your `BUILD`files
     for `haskell_doctest` to work.  Once declared, you then need to *register*
-    the toolchain using `register_toolchain` in your `WORKSPACE` file.
+    the toolchain using `register_toolchains` in your `WORKSPACE` file.
 
     Example:
 
@@ -54,7 +54,7 @@ def haskell_doctest_toolchain(name, doctest, **kwargs):
       ```
       And in `WORKSPACE`:
       ```
-      register_toolchain("//:doctest")
+      register_toolchains("//:doctest")
       ```
     """
     impl_name = name + "-impl"
