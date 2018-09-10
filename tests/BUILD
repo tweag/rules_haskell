@@ -256,7 +256,7 @@ rule_test(
             "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc{version}.so".format(version = ghc_version),
         ],
     }),
-    rule = "//tests/cc_haskell_import:hs-lib-b-so",
+    rule = "//tests/cc_haskell_import:hs-lib-b.so",
 )
 
 rule_test(

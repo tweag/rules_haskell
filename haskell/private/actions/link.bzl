@@ -22,6 +22,7 @@ def backup_path(target):
       A path of the form "../../.."
     """
     short_path_dir = paths.normalize(paths.dirname(target.short_path))
+
     # dirname returns "" if there is no parent directory
     # and normalize returns "." for "". In that case we
     # return the identity path, which is ".".
