@@ -133,10 +133,10 @@ use the 'haskell_import' rule instead.
         hs,
         ghci_script = ctx.file._ghci_script,
         ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
-        exposed_modules_file = c.exposed_modules_file,
         compiler_flags = ctx.attr.compiler_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
+        package_caches = dep_info.package_caches,
         build_info = build_info,
         bin_info = bin_info,
     )
@@ -304,10 +304,10 @@ use the 'haskell_import' rule instead.
             hs,
             ghci_script = ctx.file._ghci_script,
             ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
-            exposed_modules_file = c.exposed_modules_file,
             repl_ghci_args = ctx.attr.repl_ghci_args,
             compiler_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.repl,
+            package_caches = dep_info.package_caches,
             build_info = build_info,
             lib_info = lib_info,
         )

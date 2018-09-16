@@ -27,11 +27,11 @@ def build_haskell_repl(
         hs,
         ghci_script,
         ghci_repl_wrapper,
-        exposed_modules_file,
         compiler_flags,
         repl_ghci_args,
         build_info,
         output,
+        package_caches,
         lib_info = None,
         bin_info = None):
     """Build REPL script.
@@ -40,6 +40,8 @@ def build_haskell_repl(
       hs: Haskell context.
       build_info: HaskellBuildInfo.
 
+      package_caches: package caches excluding the cache file of the package
+                      we're creating a REPL for.
       lib_info: If we're building REPL for a library target, pass
                 HaskellLibraryInfo here, otherwise it should be None.
       bin_info: If we're building REPL for a binary target, pass
@@ -56,7 +58,7 @@ def build_haskell_repl(
     for package in set.to_list(build_info.package_ids):
         if not (lib_info != None and package == lib_info.package_id):
             args += ["-package-id", package]
-    for cache in set.to_list(build_info.package_caches):
+    for cache in set.to_list(package_caches):
         args += ["-package-db", cache.dirname]
 
     if lib_info != None:
@@ -75,42 +77,19 @@ def build_haskell_repl(
 
     add_sources = []
     if lib_info != None:
-        add_sources = [f.path for f in set.to_list(lib_info.source_files)]
+        add_sources = ["*" + f.path for f in set.to_list(lib_info.source_files)]
     elif bin_info != None:
-        # Otherwise we put paths to module files, mostly because it also works
-        # and Main module may be in a file with name that's impossible for GHC
-        # to infer.
-        add_sources = [f.path for f in set.to_list(bin_info.source_files)]
+        add_sources = ["*" + f.path for f in set.to_list(bin_info.source_files)]
 
-    ghci_repl_script_no_modules = hs.actions.declare_file(
-        target_unique_name(hs, "ghci-repl-script-no-modules"),
-    )
-    hs.actions.expand_template(
-        template = ghci_script,
-        output = ghci_repl_script_no_modules,
-        substitutions = {
-            "{ADD_SOURCES}": " ".join(add_sources),
-        },
-    )
-
-    # Add exposed modules to the GHCi script.
     ghci_repl_script = hs.actions.declare_file(
         target_unique_name(hs, "ghci-repl-script"),
     )
-    hs.actions.run_shell(
-        inputs = [ghci_repl_script_no_modules, exposed_modules_file],
-        outputs = [ghci_repl_script],
-        command = """
-        cat $1 > $3;
-        # Remove commas and provenance from module list.
-        echo ":module +" $(cat $2 | sed "s/from [^,]*//g; s/,//g") >> $3
-        """,
-        arguments = [
-            ghci_repl_script_no_modules.path,
-            exposed_modules_file.path,
-            ghci_repl_script.path,
-        ],
-        use_default_shell_env = True,
+    hs.actions.expand_template(
+        template = ghci_script,
+        output = ghci_repl_script,
+        substitutions = {
+            "{ADD_SOURCES}": " ".join(add_sources),
+        },
     )
 
     source_files = lib_info.source_files if lib_info != None else bin_info.source_files
@@ -150,7 +129,7 @@ def build_haskell_repl(
 
     # XXX We create a symlink here because we need to force
     # hs.tools.ghci and ghci_script and the best way to do that is
-    # to use hs.actions.run. That action, it turn must produce
+    # to use hs.actions.run. That action, in turn must produce
     # a result, so using ln seems to be the only sane choice.
     extra_inputs = depset(transitive = [
         depset([
@@ -158,7 +137,7 @@ def build_haskell_repl(
             ghci_repl_script,
             repl_file,
         ]),
-        set.to_depset(build_info.package_caches),
+        set.to_depset(package_caches),
         depset(build_info.external_libraries.values()),
         set.to_depset(source_files),
     ])
