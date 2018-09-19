@@ -25,6 +25,8 @@ def _get_haddock_path(package_id):
 def _haskell_doc_aspect_impl(target, ctx):
     if HaskellBuildInfo not in target or HaskellLibraryInfo not in target:
         return []
+    if HaddockInfo in target:
+        return target[HaddockInfo]
 
     hs = haskell_context(ctx, ctx.rule.attr)
 
@@ -194,7 +196,7 @@ def _haskell_doc_rule_impl(ctx):
             command = """
       mkdir -p "{doc_dir}"
       # Copy Haddocks of a dependency.
-      cp -r "{html_dir}" "{target_dir}"
+      cp -R -L "{html_dir}" "{target_dir}"
       """.format(
                 doc_dir = doc_root_path,
                 html_dir = html_dir.path,
@@ -219,10 +221,11 @@ def _haskell_doc_rule_impl(ctx):
     if ctx.attr.index_transitive_deps:
         # Include all packages in the unified index.
         for package_id in html_dict_copied:
-            args.add("--read-interface=../{0},{1}".format(
-                package_id,
-                haddock_dict[package_id].path,
-            ))
+            if package_id in haddock_dict:
+              args.add("--read-interface=../{0},{1}".format(
+                  package_id,
+                  haddock_dict[package_id].path,
+              ))
     else:
         # Include only direct dependencies.
         for dep in ctx.attr.deps:
