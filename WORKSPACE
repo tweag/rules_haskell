@@ -114,6 +114,47 @@ filegroup(
 """
 )
 
+nixpkgs_package(
+    name = "template-haskell",
+    repository = "@nixpkgs",
+    nix_file = "//tests:ghc.nix",
+    attribute_path = "ghc",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "import_dirs",
+  srcs = ["lib/ghc-8.2.2/template-haskell-2.12.0.0"],
+)
+
+filegroup(
+  name = "package_conf",
+  srcs = ["lib/ghc-8.2.2/package.conf.d/template-haskell-2.12.0.0.conf"],
+)
+
+"""
+)
+nixpkgs_package(
+    name = "void",
+    repository = "@nixpkgs",
+    nix_file = "//tests:ghc.nix",
+    attribute_path = "ghc",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "import_dirs",
+  srcs = ["lib/ghc-8.2.2/void-0.7.2"],
+)
+
+filegroup(
+  name = "package_conf",
+  srcs = ["lib/ghc-8.2.2/package.conf.d/void-0.7.2-BaCvWtelk6X2yBHg8R7RQm.conf"],
+)
+
+"""
+)
+
 # zlib as a Haskell library
 
 new_http_archive(

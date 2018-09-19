@@ -11,6 +11,7 @@ load(
 )
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("//skylark:lint.bzl", "skylark_lint")
+load("@io_tweag_rules_haskell//haskell:import.bzl", haskell_import_new = "haskell_import")
 
 ghc_version = "8.4.4"
 
@@ -140,10 +141,35 @@ haskell_import(
     visibility = ["//visibility:public"],
 )
 
-haskell_import(
+haskell_import_new(
     name = "template-haskell",
     testonly = 0,
-    package = "template-haskell",
+    boot_files = [],
+    exposed_modules_file = "@template-haskell//:package_conf",
+    extra_source_files = [],
+    ghc_args = [],
+    header_files = [],
+    import_dirs = ["@template-haskell//:import_dirs"],
+    package_conf = "@template-haskell//:package_conf",
+    package_id = "template-haskell-2.12.0.0",
+    source_files = [],
+    version = "2.12.0.0",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import_new(
+    name = "void",
+    testonly = 0,
+    boot_files = [],
+    exposed_modules_file = "@void//:package_conf",
+    extra_source_files = [],
+    ghc_args = [],
+    header_files = [],
+    import_dirs = ["@void//:import_dirs"],
+    package_conf = "@void//:package_conf",
+    package_id = "void-0.7.2-BaCvWtelk6X2yBHg8R7RQm",
+    source_files = [],
+    version = "0.7.2",
     visibility = ["//visibility:public"],
 )
 
