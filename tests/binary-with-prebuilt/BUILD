@@ -11,9 +11,9 @@ haskell_binary(
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
     deps = [
+        "//tests:base",
         "//tests:template-haskell",
         "//tests:void",
-        "//tests:base",
     ],
 )
 

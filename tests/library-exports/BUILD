@@ -10,17 +10,23 @@ haskell_library(
     name = "sublib",
     srcs = ["TestSubLib.hs"],
     exports = {"//tests:containers": "Data.Map as SubLib.Map"},
-    deps = ["//tests:base", "//tests:containers"],
+    deps = [
+        "//tests:base",
+        "//tests:containers",
+    ],
 )
 
 haskell_library(
     name = "lib",
     srcs = ["TestLib.hs"],
-    deps = ["//tests:base", ":sublib"],
     exports = {
         ":sublib": "TestSubLib",
         "//tests:containers": "Data.Map as Lib.Map",
     },
+    deps = [
+        ":sublib",
+        "//tests:base",
+    ],
 )
 
 haskell_test(
@@ -28,5 +34,8 @@ haskell_test(
     size = "small",
     srcs = ["Bin.hs"],
     visibility = ["//visibility:public"],
-    deps = [":lib", "//tests:base"],
+    deps = [
+        ":lib",
+        "//tests:base",
+    ],
 )

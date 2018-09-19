@@ -8,6 +8,6 @@ load(
 haskell_library(
     name = "sublib",
     srcs = ["Bar.hs"],
-    deps = ["//tests:base"],
     visibility = ["//visibility:public"],
+    deps = ["//tests:base"],
 )
