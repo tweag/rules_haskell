@@ -8,20 +8,23 @@ let haskellPackages = pkgs.haskell.packages.ghc844.override {
       };
     };
 
-in haskellPackages.ghcWithPackages (p: with p; [
+in {
+  ghc = haskellPackages.ghcWithPackages (p: with p; [
 
-  # haskell_proto_library inputs
-  bytestring
-  containers
-  data-default-class
-  lens-family
-  lens-labels
-  proto-lens
-  text
+    # haskell_proto_library inputs
+    bytestring
+    containers
+    data-default-class
+    lens-family
+    lens-labels
+    proto-lens
+    text
 
   # test inputs
   libc
 
   # for test runner
   hspec
-])
+  ]);
+  inherit haskellPackages;
+}

@@ -22,6 +22,7 @@ nixpkgs_package(
     # TODO(Profpatsch)
     repository = "//nixpkgs:NOTUSED",
     nix_file = "//tests:ghc.nix",
+    attribute_path = "ghc",
     build_file = "//haskell:ghc.BUILD",
 )
 
