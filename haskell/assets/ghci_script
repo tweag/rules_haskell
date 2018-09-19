@@ -1,1 +1,35 @@
 :add {ADD_SOURCES}
+:module + System.IO GHC.IO.Handle Control.Exception System.Directory
+rules_haskell_stdout_dupe <- hDuplicate stdout
+:{
+(rules_haskell_stdout_copy_file, rules_haskell_stdout_copy_h) <- do
+  tmpDir <- getTemporaryDirectory >>= canonicalizePath
+  (fn, h) <- openTempFile tmpDir "rules-haskell-ghci-repl"
+  hDuplicateTo h stdout
+  return (fn, h)
+:}
+:show modules
+:{
+rules_haskell_loaded_modules <- do
+  hClose rules_haskell_stdout_copy_h
+  -- I had to do it like this because flushing and then searching in the
+  -- stream at offset 0 did not work (no data is there, although the
+  -- corresponding file certainly contained it after flushing). Couldn't
+  -- figure this one out, so we first close the file and then read from it.
+  h <- openFile rules_haskell_stdout_copy_file ReadMode
+  xs <- hGetContents h
+  removeFile rules_haskell_stdout_copy_file
+  return $ takeWhile (/= ' ') <$> lines xs
+:}
+hDuplicateTo rules_haskell_stdout_dupe stdout
+:{
+let rules_haskell_add_loaded_modules _ =
+      return $ ":module + " ++
+        Data.List.intercalate " " (("*" ++) <$> rules_haskell_loaded_modules)
+:}
+:module - System.IO GHC.IO.Handle Control.Exception System.Directory
+:def rules_haskell_add_loaded_modules rules_haskell_add_loaded_modules
+:rules_haskell_add_loaded_modules
+:undef rules_haskell_add_loaded_modules
+-- reload modules to drop the rules_haskell* definitions
+:reload

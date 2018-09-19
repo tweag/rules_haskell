@@ -79,6 +79,7 @@ test_repl_libraries() {
     # itself:
     bazel clean
     bazel run --config=ci //tests/repl-targets:hs-lib-repl -- -e "show (foo 10) ++ bar ++ baz ++ gen"
+    bazel run --config=ci //tests/repl-targets:hs-lib-bad-repl -- -e "1 + 2"
 }
 
 # Test REPL for binaries

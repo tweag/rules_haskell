@@ -55,6 +55,21 @@ haskell_library(
 )
 
 haskell_library(
+    name = "hs-lib-bad",
+    srcs = [
+        "Bad.hs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":cbits",
+        ":zlib",
+        "//tests:array",
+        "//tests:base",
+    ],
+    tags = ["manual"],
+)
+
+haskell_library(
     name = "QuuxLib",
     srcs = ["QuuxLib.hs"],
     deps = ["//tests:base"],

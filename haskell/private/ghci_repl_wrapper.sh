@@ -32,11 +32,11 @@ fi
 # location of exec root reliably and then prefix locations of various
 # components, such as shared libraries with that exec root.
 
-
 RULES_HASKELL_EXEC_ROOT=$(dirname $(readlink ${BUILD_WORKSPACE_DIRECTORY}/bazel-out))
 GHCI_LOCATION="$RULES_HASKELL_EXEC_ROOT/{GHCi}"
 SCRIPT_LOCATION="$RULES_HASKELL_EXEC_ROOT/{SCRIPT_LOCATION}"
 
-
 export LD_LIBRARY_PATH={LDLIBPATH}
-"$GHCI_LOCATION" {ARGS} "$@"
+# The base and directory packages are necessary for the GHCi script we use
+# (loads source files and brings in scope the corresponding modules).
+"$GHCI_LOCATION" -package base -package directory {ARGS} "$@"
