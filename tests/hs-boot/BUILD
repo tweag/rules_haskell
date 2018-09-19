@@ -29,7 +29,7 @@ haskell_library(
     ],
     src_strip_prefix = "srcs",
     visibility = ["//visibility:public"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )
 
 haskell_binary(
@@ -43,6 +43,6 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":hs-boot-lib",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )

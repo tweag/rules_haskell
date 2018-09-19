@@ -11,7 +11,7 @@ haskell_library(
     name = "hs-lib-a",
     srcs = ["LibA.hs"],
     deps = [
-        "//tests:base",
+        "@hackage//:base",
         "//tests/data:ourclibrary",
     ],
 )
@@ -21,7 +21,7 @@ haskell_library(
     srcs = ["LibB.hs"],
     deps = [
         ":hs-lib-a",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 

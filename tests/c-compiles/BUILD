@@ -10,7 +10,7 @@ haskell_library(
     name = "hs-lib",
     srcs = ["Lib.hs"],
     deps = [
-        "//tests:base",
+        "@hackage//:base",
         "//tests/data:ourclibrary",
     ],
 )
@@ -20,7 +20,7 @@ haskell_binary(
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
     deps = [
-        "//tests:base",
         ":hs-lib",
+        "@hackage//:base",
     ],
 )

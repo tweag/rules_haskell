@@ -19,7 +19,7 @@ def haskell_nixpkgs_package(
     `genBazelBuild.nix`
     """
     repositories = {
-        "@io_tweag_rules_haskell//haskell:nix/default.nix": "bazel_haskell_wrapper",
+        "bazel_haskell_wrapper": "@io_tweag_rules_haskell//haskell:nix/default.nix",
     } + repositories
 
     nixpkgs_args = dict(
@@ -152,7 +152,7 @@ def haskell_nixpkgs_packages(name, base_attribute_path, packages, *args, **kwarg
 def gen_packages_list(name, base_attribute_path, repositories = {}, *args, **kwargs):
     """Generate a list of all the available haskell packages"""
     repositories = {
-        "@io_tweag_rules_haskell//haskell:nix/default.nix": "bazel_haskell_wrapper",
+        "bazel_haskell_wrapper": "@io_tweag_rules_haskell//haskell:nix/default.nix",
     } + repositories
     nixpkgs_package(
         name = name,

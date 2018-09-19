@@ -10,8 +10,8 @@ haskell_binary(
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
     deps = [
-        "//tests:base",
-        "//tests:template-haskell",
+        "@hackage//:base",
+        "@hackage//:template-haskell",
         "@org_apache_spark_spark_core_2_10//jar",
     ],
 )

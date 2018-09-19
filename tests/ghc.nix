@@ -7,8 +7,10 @@ let haskellPackages = pkgs.haskell.packages.ghc844.override {
         libc = import ./haddock/libC.nix self pkgs;
       };
     };
+    genBazelBuild = callPackage <bazel_haskell_wrapper> { };
 
-in {
+in
+  {
   ghc = haskellPackages.ghcWithPackages (p: with p; [
 
     # haskell_proto_library inputs
@@ -26,5 +28,5 @@ in {
   # for test runner
   hspec
   ]);
-  inherit haskellPackages;
+  haskellPackages = genBazelBuild haskellPackages;
 }

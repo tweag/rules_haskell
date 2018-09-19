@@ -35,5 +35,5 @@ haskell_library(
         ":foo",
         "@c2hs_repo//:baz",
     ],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )

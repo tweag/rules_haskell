@@ -10,5 +10,5 @@ haskell_binary(
     srcs = ["MainIsHere.hs"],
     main_function = "MainIsHere.this",
     visibility = ["//visibility:public"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )

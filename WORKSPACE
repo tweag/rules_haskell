@@ -5,24 +5,28 @@ haskell_repositories()
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
-    strip_prefix = "rules_nixpkgs-0.2.3",
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.3.tar.gz"],
-    sha256 = "2647bc9d5476fba95d9b4cc300be1ba9ad353e4e33bee01e041886aa4f4b554a",
+    strip_prefix = "rules_nixpkgs-0.3.1",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.3.1.tar.gz"],
+    sha256 = "1dc7ad9d4e0e7e690962317fa70bf5ab3bac5b4944e4f40eff3c2d6f5255eb20",
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_git_repository",
     "nixpkgs_package",
 )
+load("@io_tweag_rules_haskell//haskell:nix.bzl",
+     "haskell_nixpkgs_packages",
+     "haskell_nixpkgs_package",
+     "gen_packages_list")
 
-nixpkgs_package(
+haskell_nixpkgs_package(
     name = "ghc",
     # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly
     # if `repository` is not set, but our nix_file uses `./nixpkgs/`.
     # TODO(Profpatsch)
-    repository = "//nixpkgs:NOTUSED",
+    repositories = { "nixpkgs": "//nixpkgs:NOTUSED" },
     nix_file = "//tests:ghc.nix",
-    attribute_path = "ghc",
+    attribute_path = "haskellPackages.ghc",
     build_file = "//haskell:ghc.BUILD",
 )
 
@@ -33,26 +37,6 @@ http_archive(
     urls = ["https://github.com/google/protobuf/archive/v3.5.0.zip"],
 )
 
-nixpkgs_package(
-    name = "protoc_gen_haskell",
-    # this is a trick to set <nixpkgs> to reference a nix file
-    # TODO(Profpatsch) document & fix upstream
-    repository = "//nixpkgs:default.nix",
-    attribute_path = "haskell.packages.ghc844.proto-lens-protoc"
-)
-
-nixpkgs_package(
-    name = "doctest",
-    repository = "//nixpkgs:default.nix",
-    attribute_path = "haskell.packages.ghc844.doctest",
-)
-
-nixpkgs_package(
-    name = "c2hs",
-    repository = "//nixpkgs:default.nix",
-    attribute_path = "haskell.packages.ghc844.c2hs",
-)
-
 register_toolchains(
     "//tests:ghc",
     "//tests:doctest-toolchain",
@@ -61,7 +45,7 @@ register_toolchains(
 
 nixpkgs_package(
     name = "zlib",
-    repository = "//nixpkgs:default.nix",
+    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
@@ -79,7 +63,7 @@ filegroup (
 
 nixpkgs_package(
     name = "zlib.dev",
-    repository = "//nixpkgs:default.nix",
+    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
     build_file_content = """
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
 package(default_visibility = ["//visibility:public"])
@@ -102,7 +86,7 @@ haskell_cc_import(
 
 nixpkgs_package(
     name = "glib_locales",
-    repository = "//nixpkgs:default.nix",
+    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
     attribute_path = "glibcLocales",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
@@ -114,45 +98,20 @@ filegroup(
 """
 )
 
-nixpkgs_package(
-    name = "template-haskell",
-    repository = "@nixpkgs",
+gen_packages_list(
+    name = "hackage-packages",
+    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
     nix_file = "//tests:ghc.nix",
-    attribute_path = "ghc",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-  name = "import_dirs",
-  srcs = ["lib/ghc-8.2.2/template-haskell-2.12.0.0"],
+    base_attribute_path = "haskellPackages",
 )
+load("@hackage-packages//:all-haskell-packages.bzl", "packages")
 
-filegroup(
-  name = "package_conf",
-  srcs = ["lib/ghc-8.2.2/package.conf.d/template-haskell-2.12.0.0.conf"],
-)
-
-"""
-)
-nixpkgs_package(
-    name = "void",
-    repository = "@nixpkgs",
+haskell_nixpkgs_packages(
+    name = "hackage",
+    packages = packages,
+    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
     nix_file = "//tests:ghc.nix",
-    attribute_path = "ghc",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-  name = "import_dirs",
-  srcs = ["lib/ghc-8.2.2/void-0.7.2"],
-)
-
-filegroup(
-  name = "package_conf",
-  srcs = ["lib/ghc-8.2.2/package.conf.d/void-0.7.2-BaCvWtelk6X2yBHg8R7RQm.conf"],
-)
-
-"""
+    base_attribute_path = "haskellPackages",
 )
 
 # zlib as a Haskell library

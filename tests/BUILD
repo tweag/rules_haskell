@@ -22,7 +22,7 @@ haskell_toolchain(
     # proto_library rules (from com_google_protobuf) can't themselves
     # be testonly.
     testonly = 0,
-    c2hs = "@c2hs//:bin",
+    c2hs = "@hackage-c2hs//:bin",
     compiler_flags = [
         "-XStandaloneDeriving",  # Flag used at compile time
         "-threaded",  # Flag used at link time
@@ -41,160 +41,33 @@ haskell_toolchain(
         "-UTESTS_TOOLCHAIN_REPL_FLAGS",  # The repl test will need this flag, but set by the local `repl_ghci_args`.
         "-XOverloadedStrings",  # The repl test will need OverloadedString
     ],
-    tools = "@ghc//:bin",
+    tools = "@hackage-ghc//:bin",
     version = ghc_version,
 )
 
 haskell_doctest_toolchain(
     name = "doctest-toolchain",
-    doctest = "@doctest//:bin",
+    doctest = "@hackage-doctest//:bin",
 )
 
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
     testonly = 0,
-    plugin = "@protoc_gen_haskell//:bin/proto-lens-protoc",
+    plugin = "@hackage-proto-lens-protoc//:bin/proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     deps = [
-        "//tests:base",
-        "//tests:bytestring",
-        "//tests:containers",
-        "//tests:data-default-class",
-        "//tests:lens-family",
-        "//tests:lens-labels",
-        "//tests:proto-lens",
-        "//tests:text",
+        "@hackage//:base",
+        "@hackage//:bytestring",
+        "@hackage//:containers",
+        "@hackage//:data-default-class",
+        "@hackage//:lens-family",
+        "@hackage//:lens-family-core",
+        "@hackage//:lens-labels",
+        "@hackage//:mtl",
+        "@hackage//:proto-lens",
+        "@hackage//:text",
     ],
 )
-
-# Haskell packages
-# `testonly = 0`, because they are also used to build
-# the Haskell Protobuf Toolchain
-
-haskell_import(
-    name = "base",
-    testonly = 0,
-    package = "base",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "bytestring",
-    testonly = 0,
-    package = "bytestring",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "containers",
-    testonly = 0,
-    package = "containers",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "directory",
-    testonly = 0,
-    package = "directory",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "data-default-class",
-    testonly = 0,
-    package = "data-default-class",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "filepath",
-    testonly = 0,
-    package = "filepath",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "ghc-prim",
-    testonly = 0,
-    package = "ghc-prim",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "hspec",
-    testonly = 0,
-    package = "hspec",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "hspec-core",
-    testonly = 0,
-    package = "hspec-core",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "process",
-    testonly = 0,
-    package = "process",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import_new(
-    name = "template-haskell",
-    testonly = 0,
-    package_conf = "@template-haskell//:package_conf",
-    package_id = "template-haskell-2.12.0.0",
-    version = "2.12.0.0",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import_new(
-    name = "void",
-    testonly = 0,
-    package_conf = "@void//:package_conf",
-    package_id = "void-0.7.2-BaCvWtelk6X2yBHg8R7RQm",
-    version = "0.7.2",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "lens-family",
-    testonly = 0,
-    package = "lens-family",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "lens-labels",
-    testonly = 0,
-    package = "lens-labels",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "array",
-    testonly = 0,
-    package = "array",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "text",
-    testonly = 0,
-    package = "text",
-    visibility = ["//visibility:public"],
-)
-
-haskell_import(
-    name = "proto-lens",
-    testonly = 0,
-    package = "proto-lens",
-    visibility = ["//visibility:public"],
-)
-
-# All tests
 
 rule_test(
     name = "test-binary-simple",
@@ -279,7 +152,10 @@ rule_test(
     name = "test-haddock",
     size = "small",
     generates = [
+        "haddock/base-4.10.1.0",
         "haddock/index",
+        "haddock/libc-0.1.0.0-EVO6Oykky1f6gqLBIdWpeE",
+        "haddock/template-haskell-2.12.0.0",
         "haddock/testsZShaddockZShaddock-lib-a",
         "haddock/testsZShaddockZShaddock-lib-b",
         "haddock/testsZShaddockZShaddock-lib-deep",
@@ -471,9 +347,9 @@ haskell_binary(
     name = "run-tests",
     srcs = ["RunTests.hs"],
     deps = [
-        ":base",
-        ":hspec",
-        ":hspec-core",
-        ":process",
+        "@hackage//:base",
+        "@hackage//:hspec",
+        "@hackage//:hspec-core",
+        "@hackage//:process",
     ],
 )

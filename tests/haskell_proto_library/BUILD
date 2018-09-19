@@ -44,7 +44,7 @@ haskell_library(
     deps = [
         ":address_haskell_proto",
         ":person_haskell_proto",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 

@@ -11,7 +11,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":sublib-c",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 

@@ -11,7 +11,7 @@ haskell_binary(
     # Regular file input:
     data = ["bin1-input"],
     visibility = ["//visibility:public"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )
 
 haskell_binary(
@@ -21,7 +21,7 @@ haskell_binary(
     data = [":bin1"],
     visibility = ["//visibility:public"],
     deps = [
-        "//tests:base",
-        "//tests:process",
+        "@hackage//:base",
+        "@hackage//:process",
     ],
 )

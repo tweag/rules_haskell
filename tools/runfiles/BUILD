@@ -10,9 +10,9 @@ haskell_library(
     srcs = ["src/Bazel/Runfiles.hs"],
     visibility = ["//visibility:public"],
     deps = [
-        "//tests:base",
-        "//tests:directory",
-        "//tests:filepath",
+        "@hackage//:base",
+        "@hackage//:directory",
+        "@hackage//:filepath",
     ],
 )
 
@@ -23,8 +23,8 @@ haskell_binary(
     data = ["bin-data.txt"],
     deps = [
         ":runfiles",
-        "//tests:base",
-        "//tests:filepath",
+        "@hackage//:base",
+        "@hackage//:filepath",
     ],
 )
 
@@ -37,8 +37,8 @@ haskell_test(
     ],
     deps = [
         ":runfiles",
-        "//tests:base",
-        "//tests:filepath",
-        "//tests:process",
+        "@hackage//:base",
+        "@hackage//:filepath",
+        "@hackage//:process",
     ],
 )

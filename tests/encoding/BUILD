@@ -15,7 +15,7 @@ haskell_binary(
         "unicode.txt",
     ],
     deps = [
-        "//tests:base",
-        "//tests:template-haskell",
+        "@hackage//:base",
+        "@hackage//:template-haskell",
     ],
 )
