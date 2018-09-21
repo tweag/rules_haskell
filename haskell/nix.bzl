@@ -96,7 +96,7 @@ def haskell_nixpkgs_packages(name, base_attribute_path, packages, *args, **kwarg
       with import <nixpkgs> {};
 
       let wrapPackages = callPackage <bazel_haskell_wrapper> { }; in
-      { haskellPackages = genBazelBuild haskell.packages.ghc822; }
+      { haskellPackages = wrapPackages haskell.packages.ghc822; }
       ```
 
       In your `WORKSPACE`
