@@ -53,6 +53,10 @@ def _haskell_doc_aspect_impl(target, ctx):
         "--title={0}".format(package_id),
         "--hyperlinked-source",
     ])
+    if ctx.attr.flags:
+        # XXX: hack: bazel API constraints flags to be a string
+        # we use split to get back a real list of flags
+        args.add(ctx.attr.flags.split(' '))
 
     transitive_haddocks = {}
     transitive_html = {}
@@ -134,6 +138,18 @@ haskell_doc_aspect = aspect(
         "_haddock_wrapper": attr.label(
             allow_single_file = True,
             default = Label("@io_tweag_rules_haskell//haskell:private/haddock_wrapper.sh"),
+        ),
+        "flags": attr.string(
+            doc = '''Extra flags to pass to Haddock. Currently only '-U' and '--ignore-all-exports' are possible, provided as a string and seperated by a space. '-U --ignore-all-exports' for example.''',
+            # XXX: hack: yes, that's a list of all the permutations of all the possible flag
+            # I care about.
+            # Bazel only allows a fixed input string, so we need to list everything
+            values = ["",
+                      "-U",
+                      "--ignore-all-exports",
+                      "-U --ignore-all-exports",
+                      "--ignore-all-exports -U"
+                      ],
         ),
     },
     attr_aspects = ["deps"],
@@ -260,6 +276,11 @@ haskell_doc = rule(
         "deps": attr.label_list(
             aspects = [haskell_doc_aspect],
             doc = "List of Haskell libraries to generate documentation for.",
+        ),
+        "flags": attr.string(
+            doc = '''Extra flags to pass to Haddock. Currently only '-U' and '--ignore-all-exports' are possible, provided as a string and separated by a space. '-U --ignore-all-exports' for example.''',
+            # XXX: hack: see 'flags' in the haskell_doc_aspect
+            default = "",
         ),
         "index_transitive_deps": attr.bool(
             default = False,
