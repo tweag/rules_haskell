@@ -21,6 +21,17 @@ def _is_shared_library(f):
     """
     return f.extension in ["so", "dylib"] or f.basename.find(".so.") != -1
 
+def _is_static_library(f):
+    """Check if the given File is a static library.
+
+    Args:
+      f: The File to check.
+
+    Returns:
+      Bool: True if the given file `f` is a static library, False otherwise.
+    """
+    return f.extension in ["a"]
+
 def _mangle_solib(ctx, label, solib, preserve_name):
     """Create a symlink to a dynamic library, with a longer name.
 
@@ -114,6 +125,16 @@ def gather_dep_info(ctx):
                 direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
             )
         else:
+            transitive_deps = {}
+
+            # Transitives static dependencies
+            if hasattr(dep, "cc"):
+                transitive_deps = {
+                    name: _mangle_solib(ctx, dep.label, name, CcSkylarkApiProviderHacked in dep)
+                    for name in dep.cc.libs.to_list()
+                    if _is_static_library(name)
+                }
+
             # If not a Haskell dependency, pass it through as-is to the
             # linking phase.
             acc = HaskellBuildInfo(
@@ -135,6 +156,7 @@ def gather_dep_info(ctx):
                         for f in dep.files.to_list()
                         if _is_shared_library(f)
                     },
+                    transitive_deps,
                 ),
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
             )
