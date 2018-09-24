@@ -40,3 +40,39 @@ reloaded using the ``:r`` GHCi command when source files change.
 
 .. _haskell_binary: http://api.haskell.build/haskell/haskell.html#haskell_binary
 .. _haskell_library: http://api.haskell.build/haskell/haskell.html#haskell_library
+
+Generating API documentation
+----------------------------
+
+The `haskell_doc`_ rule can be used to build API documentation for
+a given library (using Haddock). Building a target called
+``//my/pkg:mylib_docs`` would make the documentation available at
+``bazel-bin/my/pkg/mylib_docs/index/index.html``.
+
+Alternatively, you can use the
+``@io_tweag_rules_haskell//haskell:haskell.bzl%haskell_doc_aspect``
+aspect to ask Bazel from the command-line to build documentation for
+any given target (or indeed all targets), like in the following:
+
+.. code-block:: console
+
+  $ bazel build //my/pkg:mylib \
+      --aspects @io_tweag_rules_haskell//haskell:haskell.bzl%haskell_doc_aspect
+
+.. _haskell_doc: http://api.haskell.build/haskell/haddock.html#haskell_doc
+
+Linting your code
+-----------------
+
+The `haskell_lint`_ rule does not build code but runs the GHC
+typechecker on all listed dependencies. Warnings are treated as
+errors.
+
+Alternatively, you can directly check a target using
+
+.. code-block:: console
+
+  $ bazel build //my/haskell:target \
+      --aspects @io_tweag_rules_haskell//haskell:haskell.bzl%haskell_lint_aspect
+
+.. _haskell_lint: http://api.haskell.build/haskell/lint.html#haskell_lint
