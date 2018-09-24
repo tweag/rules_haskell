@@ -43,7 +43,11 @@ let
         echo -n "["
         for DEP in $(query_field depends); do
           DEPNAME=$(echo $DEP | sed 's/-[0-9].*//')
-          if [[ -n $DEPNAME ]]; then
+          # Because of cabal's "internal libraries", we may have a package
+          # apparently depending on itself, so we have to filter out this
+          # corner-case (see
+          # https://github.com/tweag/rules_haskell/pull/442#discussion_r219859467)
+          if [[ -n $DEPNAME && $DEPNAME != $(query_field name) ]]; then
             echo -n "\"@hackage-$DEPNAME\","
           fi
         done
