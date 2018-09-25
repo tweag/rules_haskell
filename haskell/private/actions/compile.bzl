@@ -65,7 +65,7 @@ def _process_hsc_file(hs, cc, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = None):
+def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id, version):
     """Declare default compilation targets and create default compiler arguments.
 
     Returns:
@@ -129,6 +129,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         use_direct = True,
         use_my_pkg_id = my_pkg_id,
         custom_package_caches = None,
+        version = version,
     ))
 
     header_files = []
@@ -269,7 +270,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         ),
     )
 
-def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_function):
+def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_function, version):
     """Compile a Haskell target into object files suitable for linking.
 
     Returns:
@@ -279,7 +280,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         modules: set of module names
         source_files: set of Haskell source files
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling)
+    c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = None, version = version)
     c.args.add(["-main-is", main_function])
 
     hs.toolchain.actions.run_ghc(
@@ -335,7 +336,7 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
         source_files: set of Haskell module files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = my_pkg_id)
+    c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version)
 
     hs.toolchain.actions.run_ghc(
         hs,

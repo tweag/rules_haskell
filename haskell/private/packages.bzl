@@ -2,12 +2,13 @@
 
 load(":private/set.bzl", "set")
 
-def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_package_caches):
+def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_package_caches, version):
     """
     Returns the list of command line argument which should be passed
     to GHC in order to enable haskell packages.
 
     build_info: is common to all builds
+    version: if the rule contains a version, we will export the CPP version macro
 
     All the other arguments are not understood well:
 
@@ -16,7 +17,6 @@ def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_pack
     use_my_pkg_id: only used for one specific task in compile.bzl
     custom_package_caches: override the package_caches of build_info, used only by the repl
     """
-
     args = [
         # In compile.bzl, we pass this just before all -package-id
         # arguments. Not doing so leads to bizarre compile-time failures.
@@ -26,11 +26,21 @@ def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_pack
         "-hide-all-packages",
     ]
 
-    # Expose all prebuilt dependencies
+    has_version = version != None and version != ""
 
+    if not has_version:
+        args.extend([
+            # Macro version are disabled for all packages by default
+            # and enabled for package with version
+            # see https://github.com/tweag/rules_haskell/issues/414
+            "-fno-version-macros",
+        ])
+
+    # Expose all prebuilt dependencies
+    #
     # We have to remember to specify all (transitive) wired-in
     # dependencies or we can't find objects for linking
-
+    #
     # XXX: This should be really dep_info.direct_prebuilt_deps, but since we
     # cannot add prebuilt_dependencies to the "depends" field on package
     # registration (see a comment there), we have to pass all transitive

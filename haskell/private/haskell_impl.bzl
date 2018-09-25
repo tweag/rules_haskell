@@ -77,6 +77,7 @@ use the 'haskell_import' rule instead.
         compiler_flags = ctx.attr.compiler_flags,
         with_profiling = False,
         main_function = ctx.attr.main_function,
+        version = ctx.attr.version,
     )
 
     c_p = None
@@ -100,6 +101,7 @@ use the 'haskell_import' rule instead.
             compiler_flags = ctx.attr.compiler_flags,
             with_profiling = True,
             main_function = ctx.attr.main_function,
+            version = ctx.attr.version,
         )
 
     binary = link_binary(
@@ -111,6 +113,7 @@ use the 'haskell_import' rule instead.
         c_p.objects_dir if with_profiling else c.objects_dir,
         with_profiling,
         ctx.file._dummy_static_lib,
+        version = ctx.attr.version,
     )
 
     solibs = set.union(
@@ -137,6 +140,7 @@ use the 'haskell_import' rule instead.
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
         package_caches = dep_info.package_caches,
+        version = ctx.attr.version,
         build_info = build_info,
         bin_info = bin_info,
     )
@@ -308,6 +312,7 @@ use the 'haskell_import' rule instead.
             compiler_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.repl,
             package_caches = dep_info.package_caches,
+            version = ctx.attr.version,
             build_info = build_info,
             lib_info = lib_info,
         )

@@ -33,6 +33,7 @@ def build_haskell_repl(
         build_info,
         output,
         package_caches,
+        version,
         lib_info = None,
         bin_info = None):
     """Build REPL script.
@@ -58,6 +59,7 @@ def build_haskell_repl(
         use_direct = False,
         use_my_pkg_id = None,
         custom_package_caches = package_caches,
+        version = version,
     )
 
     if lib_info != None:

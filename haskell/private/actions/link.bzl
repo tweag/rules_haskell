@@ -84,7 +84,8 @@ def link_binary(
         compiler_flags,
         objects_dir,
         with_profiling,
-        dummy_static_lib):
+        dummy_static_lib,
+        version):
     """Link Haskell binary from static object files.
 
     Returns:
@@ -138,6 +139,7 @@ def link_binary(
         use_direct = False,
         use_my_pkg_id = None,
         custom_package_caches = None,
+        version = version,
     ))
 
     _add_external_libraries(args, dep_info.external_libraries.values())
@@ -314,6 +316,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         use_direct = False,
         use_my_pkg_id = None,
         custom_package_caches = None,
+        version = my_pkg_id.version if my_pkg_id else None,
     ))
 
     _add_external_libraries(args, dep_info.external_libraries.values())

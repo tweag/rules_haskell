@@ -20,6 +20,7 @@ haskell_test(
     name = "bin",
     size = "small",
     srcs = ["Main.hs"],
+    version = "0.0.0", # This flags triggers the `MIN_VERSION` macro generation
     deps = [
         ":lib-a_Z",
         "//tests:base",
