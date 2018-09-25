@@ -13,6 +13,7 @@ load(
     "HaskellLibraryInfo",
     "HaskellLintInfo",
 )
+load(":private/packages.bzl", "expose_packages")
 
 def _collect_lint_logs(deps):
     lint_logs = set.empty()
@@ -50,20 +51,15 @@ def _haskell_lint_aspect_impl(target, ctx):
         "-Wredundant-constraints",
         "-Wnoncanonical-monad-instances",
         "--make",
-        "-hide-all-packages",
     ])
 
-    # Expose all prebuilt dependencies
-    for prebuilt_dep in set.to_list(build_info.prebuilt_dependencies):
-        args.add(["-package", prebuilt_dep])
-
-    # Expose all bazel dependencies
-    for package in set.to_list(build_info.package_ids):
-        if lib_info == None or package != lib_info.package_id:
-            args.add(["-package-id", package])
-
-    for cache in set.to_list(build_info.package_caches):
-        args.add(["-package-db", cache.dirname])
+    args.add(expose_packages(
+        build_info,
+        lib_info,
+        use_direct = False,
+        use_my_pkg_id = None,
+        custom_package_caches = None,
+    ))
 
     sources = set.to_list(
         lib_info.source_files if lib_info != None else bin_info.source_files,
