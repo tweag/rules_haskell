@@ -1,0 +1,20 @@
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_library")
+
+cc_library(
+    name = "everything",
+    srcs = ["everything.c"],
+)
+
+cc_library(
+    name = "indirect",
+    deps = [":everything"],
+)
+
+haskell_library(
+    name = "testing",
+    srcs = ["Tox.hs"],
+    deps = [
+        ":indirect",
+        "@hackage//:base",
+    ],
+)
