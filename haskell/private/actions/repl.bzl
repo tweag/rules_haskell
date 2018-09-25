@@ -22,6 +22,7 @@ load(
     ":private/set.bzl",
     "set",
 )
+load(":private/packages.bzl", "expose_packages")
 
 def build_haskell_repl(
         hs,
@@ -51,15 +52,13 @@ def build_haskell_repl(
       None.
     """
 
-    # Bring packages in scope.
-    args = ["-hide-all-packages"]
-    for dep in set.to_list(build_info.prebuilt_dependencies):
-        args += ["-package ", dep]
-    for package in set.to_list(build_info.package_ids):
-        if not (lib_info != None and package == lib_info.package_id):
-            args += ["-package-id", package]
-    for cache in set.to_list(package_caches):
-        args += ["-package-db", cache.dirname]
+    args = expose_packages(
+        build_info,
+        lib_info,
+        use_direct = False,
+        use_my_pkg_id = None,
+        custom_package_caches = package_caches,
+    )
 
     if lib_info != None:
         for idir in set.to_list(lib_info.import_dirs):

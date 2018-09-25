@@ -4,6 +4,7 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/path_utils.bzl", "get_lib_name")
 load("@bazel_skylib//:lib.bzl", "paths")
+load(":private/packages.bzl", "expose_packages")
 
 def _backup_path(target):
     """Return a path from the directory this is in to the Bazel root.
@@ -124,13 +125,6 @@ def link_binary(
 
     args.add(["-o", compile_output.path, dummy_static_lib.path])
 
-    # In compile.bzl, we pass this just before all -package-id
-    # arguments. Not doing so leads to bizarre compile-time failures.
-    # It turns out that equally, not doing so leads to bizarre
-    # link-time failures. See
-    # https://github.com/tweag/rules_haskell/issues/395.
-    args.add("-hide-all-packages")
-
     # De-duplicate optl calls while preserving ordering: we want last
     # invocation of an object to remain last. That is `-optl foo -optl
     # bar -optl foo` becomes `-optl bar -optl foo`. Do this by counting
@@ -138,16 +132,13 @@ def link_binary(
     # directly rather than doing multiple reversals with temporary
     # lists.
 
-    for package in set.to_list(dep_info.package_ids):
-        args.add(["-package-id", package])
-
-    for cache in set.to_list(dep_info.package_caches):
-        args.add(["-package-db", cache.dirname])
-
-    # We have to remember to specify all (transitive) wired-in
-    # dependencies or we can't find objects for linking.
-    for p in set.to_list(dep_info.prebuilt_dependencies):
-        args.add(["-package", p])
+    args.add(expose_packages(
+        dep_info,
+        lib_info = None,
+        use_direct = False,
+        use_my_pkg_id = None,
+        custom_package_caches = None,
+    ))
 
     _add_external_libraries(args, dep_info.external_libraries.values())
 
@@ -317,20 +308,13 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     if hs.toolchain.is_darwin:
         args.add(["-optl-Wl,-dead_strip_dylibs"])
 
-    # See comment in link_binary about the importance of this.
-    args.add("-hide-all-packages")
-    for package in set.to_list(dep_info.package_ids):
-        args.add(["-package-id", package])
-
-    # XXX This should be really dep_info.direct_prebuilt_deps, but since we
-    # cannot add prebuilt_dependencies to the "depends" field on package
-    # registration (see a comment there), we have to pass all transitive
-    # prebuilt_dependencies on linking like this.
-    for package in set.to_list(dep_info.prebuilt_dependencies):
-        args.add(["-package", package])
-
-    for cache in set.to_list(dep_info.package_caches):
-        args.add(["-package-db", cache.dirname])
+    args.add(expose_packages(
+        dep_info,
+        lib_info = None,
+        use_direct = False,
+        use_my_pkg_id = None,
+        custom_package_caches = None,
+    ))
 
     _add_external_libraries(args, dep_info.external_libraries.values())
 

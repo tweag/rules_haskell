@@ -15,6 +15,7 @@ load(
 )
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "dicts", "paths")
+load(":private/packages.bzl", "expose_packages")
 
 def _process_hsc_file(hs, cc, hsc_file):
     """Process a single hsc file.
@@ -115,7 +116,6 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     # Default compiler flags.
     ghc_args += hs.toolchain.compiler_flags
     ghc_args += compiler_flags
-    ghc_args.append("-hide-all-packages")
 
     # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
     # not yet in a release; plus, we still want to support older versions of
@@ -123,19 +123,13 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     if hs.toolchain.is_darwin:
         ghc_args += ["-optl-Wl,-dead_strip_dylibs"]
 
-    # Expose all prebuilt dependencies
-    for prebuilt_dep in set.to_list(dep_info.direct_prebuilt_deps):
-        ghc_args += ["-package", prebuilt_dep]
-
-    # Expose all bazel dependencies
-    for package in set.to_list(dep_info.package_ids):
-        if package != my_pkg_id:
-            ghc_args += ["-package-id", package]
-
-    # Only include package DBs for deps, prebuilt deps should be found
-    # auto-magically by GHC.
-    for cache in set.to_list(dep_info.package_caches):
-        ghc_args += ["-package-db", cache.dirname]
+    ghc_args.extend(expose_packages(
+        dep_info,
+        lib_info = None,
+        use_direct = True,
+        use_my_pkg_id = my_pkg_id,
+        custom_package_caches = None,
+    ))
 
     header_files = []
     boot_files = []
