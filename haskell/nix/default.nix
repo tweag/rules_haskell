@@ -68,7 +68,7 @@ let
               deps_ids = deps_ids,
               package_id = "$(query_field id)",
               version = "$(query_field version)",
-              package_conf = ":lib/${ghc.name}/package.conf.d/$(query_field id).conf",
+              package_confs = "//:package_conf",
               haddock_interfaces = "//:interfaces",
               haddock_html = "//:html",
           )
@@ -80,10 +80,13 @@ let
             name = "interfaces",
             srcs = native.glob($(query_haddock haddock-interfaces), exclude_directories=0),
           )
-
           native.filegroup(
             name = "bin",
             srcs = native.glob(["bin/*"]),
+          )
+          native.filegroup(
+            name = "package_conf",
+            srcs = native.glob(["lib*/${ghc.name}/package.conf.d/$(query_field name)*.conf"]),
           )
       EOF
     '';

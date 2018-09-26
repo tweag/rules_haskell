@@ -52,7 +52,7 @@ def _haskell_import_impl(ctx):
 
     local_package_confs = link_forest(
         ctx = ctx,
-        srcs = ctx.attr.package_conf.files,
+        srcs = ctx.attr.package_confs.files,
         sibling = package_cache,
     )
 
@@ -131,9 +131,7 @@ haskell_import = rule(
         deps_caches = attr.label(),
         haddock_interfaces = attr.label(doc = "List of haddock interfaces"),
         haddock_html = attr.label(doc = "List of haddock html dirs"),
-        package_conf = attr.label(
-            allow_single_file = True,
-        ),
+        package_confs = attr.label(),
     ),
     outputs = {
         "cache": "%{name}-cache",
