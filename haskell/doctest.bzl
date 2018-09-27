@@ -132,14 +132,12 @@ def _haskell_doctest_single(target, ctx):
     )
 
     if not ctx.attr.modules:
-      exposed_modules_file = lib_info.exposed_modules_file if lib_info != None \
-            else bin_info.exposed_modules_file
+        exposed_modules_file = lib_info.exposed_modules_file if lib_info != None else bin_info.exposed_modules_file
     else:
-      exposed_modules_file = ctx.actions.declare_file("doctest_modules")
-      exposed_args = ctx.actions.args()
-      exposed_args.add(ctx.attr.modules)
-      ctx.actions.write(exposed_modules_file, exposed_args)
-
+        exposed_modules_file = ctx.actions.declare_file("doctest_modules")
+        exposed_args = ctx.actions.args()
+        exposed_args.add(ctx.attr.modules)
+        ctx.actions.write(exposed_modules_file, exposed_args)
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
