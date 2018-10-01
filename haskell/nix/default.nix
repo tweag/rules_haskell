@@ -10,7 +10,7 @@ let
   /* Generate the BUILD file for the package */
   genBuildFile =
     { package_name, package, ghc }:
-    runCommand "${package.name}-BUILD" {
+    runCommand "${package_name}-BUILD" {
       ghc_pkg = "${ghc}/bin/ghc-pkg --simple-output -v0";
       GHC_PACKAGE_PATH = "${package}/lib/${ghc.name}/package.conf.d";
       inherit package_name;
@@ -94,9 +94,9 @@ let
     let newSet =
       lib.mapAttrs (package_name: package:
       let
-        # Some nix packages are actuall `null` because the haskell package is
+        # Some nix packages are actually `null` because the haskell package is
         # bundled with ghc (so it doesn't have a custom derivation of its own).
-        # For these, we simply pass the ghc derivation instead of their.
+        # For these, we simply pass the ghc derivation instead of theirs.
         real_package = if builtins.isNull package then pkgSet.ghc else package;
         buildFile = genBuildFile {
           inherit (pkgSet) ghc;
