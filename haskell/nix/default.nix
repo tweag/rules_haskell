@@ -16,31 +16,31 @@ let
       inherit package_name;
     } ''
       query_field () {
-        $ghc_pkg field ${package_name} $@
+        $ghc_pkg field ${package_name} "$@"
       }
 
       query_haddock () {
-        echo -n "["
-        for FIELD in $(query_field $@); do
+        echo -n '['
+        for FIELD in $(query_field "$@"); do
           echo -n '"'
           echo -n $(echo "$FIELD" | cut -d/ -f5-)
           echo -n '*",'
         done
-        echo -n "]"
+        echo -n ']'
       }
 
       query_list () {
-        echo -n "["
-        for FIELD in $(query_field $@); do
+        echo -n '['
+        for FIELD in $(query_field "$@"); do
           echo -n '"'
           echo -n $(echo "$FIELD" | cut -d/ -f5-)
           echo -n '",'
         done
-        echo -n "]"
+        echo -n ']'
       }
 
       get_deps () {
-        echo -n "["
+        echo -n '['
         for DEP in $(query_field depends); do
           DEPNAME=$(echo $DEP | sed 's/-[0-9].*//')
           # Because of cabal's "internal libraries", we may have a package
@@ -51,7 +51,7 @@ let
             echo -n "\"@hackage-$DEPNAME\","
           fi
         done
-        echo -n "]"
+        echo -n ']'
       }
 
       mkdir -p $out
