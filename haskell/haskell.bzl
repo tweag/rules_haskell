@@ -119,6 +119,9 @@ def _mk_binary_rule(**kwargs):
                 allow_single_file = FileType([".hs", ".hsc", ".lhs"]),
                 doc = "File containing `Main` module (deprecated).",
             ),
+            version = attr.string(
+                doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
+            ),
             _dummy_static_lib = attr.label(
                 default = Label("@io_tweag_rules_haskell//haskell:dummy_static_lib"),
                 allow_single_file = True,
@@ -189,7 +192,7 @@ haskell_library = rule(
         ),
         version = attr.string(
             doc = """Library version. Not normally necessary unless to build a library
-            originally defined as a Cabal package.""",
+            originally defined as a Cabal package. If this is specified, CPP version macro will be generated.""",
         ),
     ),
     outputs = {

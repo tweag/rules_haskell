@@ -59,6 +59,7 @@ def _haskell_lint_aspect_impl(target, ctx):
         use_direct = False,
         use_my_pkg_id = None,
         custom_package_caches = None,
+        version = ctx.rule.attr.version,
     ))
 
     sources = set.to_list(
