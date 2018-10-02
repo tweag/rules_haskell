@@ -9,4 +9,5 @@ def is_profiling_enabled(hs):
     Returns:
       bool: True if the mode is enabled, False otherwise.
     """
-    return hs.mode == "dbg"
+    return False
+    # return hs.mode == "dbg"
