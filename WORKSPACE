@@ -17,7 +17,7 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
 load("@io_tweag_rules_haskell//haskell:nix.bzl",
      "haskell_nixpkgs_packages",
      "haskell_nixpkgs_package",
-     "gen_packages_list")
+     "haskell_nixpkgs_package_list")
 
 haskell_nixpkgs_package(
     name = "ghc",
@@ -98,7 +98,7 @@ filegroup(
 """
 )
 
-gen_packages_list(
+haskell_nixpkgs_package_list(
     name = "hackage-packages",
     repositories = { "nixpkgs": "//nixpkgs:default.nix" },
     nix_file = "//tests:ghc.nix",

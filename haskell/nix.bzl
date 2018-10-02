@@ -115,7 +115,7 @@ def haskell_nixpkgs_packages(name, base_attribute_path, packages, *args, **kwarg
           "gen_packages_list")
 
       # Generate a list of all the available haskell packages
-      gen_packages_list(
+      haskell_nixpkgs_package_list(
           name = "hackage-packages",
           repositories = {"@nixpkgs": "nixpkgs"},
           nix_file = "//haskellPackages.nix",
@@ -149,8 +149,13 @@ def haskell_nixpkgs_packages(name, base_attribute_path, packages, *args, **kwarg
         base_repository = name,
     )
 
-def gen_packages_list(name, base_attribute_path, repositories = {}, *args, **kwargs):
-    """Generate a list of all the available haskell packages"""
+def haskell_nixpkgs_package_list(name, base_attribute_path, repositories = {}, *args, **kwargs):
+    """Generate a list of all the available haskell packages.
+    The arguments are the same as the arguments of ``nixpkgs_package``, except
+    for the ``base_attribute_path`` which should point to an `haskellPackages`
+    set in the nix expression
+    """
+
     repositories = {
         "bazel_haskell_wrapper": "@io_tweag_rules_haskell//haskell:nix/default.nix",
     } + repositories
