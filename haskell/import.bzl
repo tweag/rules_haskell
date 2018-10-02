@@ -31,11 +31,6 @@ def _haskell_import_impl(ctx):
         srcs = ctx.attr.haddock_html.files,
         dest = local_haddock_html,
     )
-    local_haddock_interfaces = link_forest(
-        ctx = ctx,
-        srcs = ctx.attr.haddock_interfaces.files,
-        basePath = "haddock-interfaces",
-    )
 
     ctx.actions.run(
         outputs = [package_cache],
