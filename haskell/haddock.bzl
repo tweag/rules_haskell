@@ -25,6 +25,7 @@ def _get_haddock_path(package_id):
 def _haskell_doc_aspect_impl(target, ctx):
     if HaskellBuildInfo not in target or HaskellLibraryInfo not in target:
         return []
+
     # Packages imported via `//haskell:import.bzl%haskell_import` already
     # contain an `HaddockInfo` provider, so we just forward it
     if HaddockInfo in target:

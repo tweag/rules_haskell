@@ -11,8 +11,8 @@ haskell_library(
     name = "Lib",
     srcs = ["Lib.hs"],
     deps = [
-        "@hackage//:bytestring",
         "@hackage//:base",
+        "@hackage//:bytestring",
     ],
 )
 
