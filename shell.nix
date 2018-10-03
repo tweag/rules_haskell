@@ -52,8 +52,6 @@ mkShell {
     python36Packages.sphinx
     zip
     unzip
-  ]
-  # TODO use Bazel from Nixpkgs even on Darwin. Blocked by
-  # https://github.com/NixOS/nixpkgs/issues/30590.
-  ++ lib.optional stdenv.isLinux bazel;
+    bazel
+  ];
 }
