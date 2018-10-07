@@ -268,6 +268,9 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
             mnemonic = "HaskellLinkStaticLibrary",
             command = "{ar} qc $1 $(< $2)".format(ar = hs.tools.ar.path),
             arguments = [args],
+
+            # Use the default macosx toolchain
+            env = {"SDKROOT": "macosx"},
         )
     else:
         args.add([
