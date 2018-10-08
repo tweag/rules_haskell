@@ -44,6 +44,9 @@ module BazelDummy () where
         mnemonic = "HaskellDummyObjectAr",
         executable = hs.tools.ar,
         arguments = [ar_args],
+
+        # Use the default macosx toolchain if needed
+        env = {"SDKROOT": "macosx"} if hs.toolchain.is_darwin else {},
     )
 
 dummy_linker_archive = rule(
