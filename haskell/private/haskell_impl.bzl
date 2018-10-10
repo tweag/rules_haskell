@@ -111,6 +111,7 @@ use the 'haskell_import' rule instead.
         ctx.files.extra_srcs,
         ctx.attr.compiler_flags,
         c_p.objects_dir if with_profiling else c.objects_dir,
+        ctx.attr.linkstatic,
         with_profiling,
         ctx.file._dummy_static_lib,
         version = ctx.attr.version,

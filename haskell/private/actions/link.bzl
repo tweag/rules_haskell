@@ -83,6 +83,7 @@ def link_binary(
         extra_srcs,
         compiler_flags,
         objects_dir,
+        linkstatic,
         with_profiling,
         dummy_static_lib,
         version):
@@ -111,18 +112,18 @@ def link_binary(
     args.add(hs.toolchain.compiler_flags)
     args.add(compiler_flags)
 
-    if hs.toolchain.is_darwin:
-        args.add(["-optl-Wl,-headerpad_max_install_names"])
-
-        # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
-        # Darwin. We don't currently handle NIX_LDFLAGS in any special
-        # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
-        # should do always when using a toolchain from Nixpkgs.
-        # TODO remove this gross hack.
-        # TODO: enable dynamic linking of Haskell dependencies for macOS.
-        args.add("-liconv")
-    elif not with_profiling:
-        args.add(["-pie", "-dynamic"])
+    # By default, GHC will produce mostly-static binaries, i.e. in which all
+    # Haskell code is statically linked and foreign libraries and system
+    # dependencies are dynamically linked. If linkstatic is false, i.e. the user
+    # has requested fully dynamic linking, we must therefore add flags to make
+    # sure that GHC dynamically links Haskell code too. The one exception to
+    # this is when we are compiling for profiling, which currently does not play
+    # nicely with dynamic linking.
+    if not linkstatic:
+        if hs.toolchain.is_darwin:
+            args.add(["-optl-Wl,-headerpad_max_install_names"])
+        elif not with_profiling:
+            args.add(["-pie", "-dynamic"])
 
     args.add(["-o", compile_output.path, dummy_static_lib.path])
 
@@ -159,6 +160,14 @@ def link_binary(
             "-optc-Wno-unused-command-line-argument",
             "-optl-Wno-unused-command-line-argument",
         ])
+
+        # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
+        # Darwin. We don't currently handle NIX_LDFLAGS in any special
+        # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
+        # should do always when using a toolchain from Nixpkgs.
+        # TODO remove this gross hack.
+        # TODO: enable dynamic linking of Haskell dependencies for macOS.
+        args.add("-liconv")
     else:
         for rpath in set.to_list(_infer_rpaths(executable, solibs)):
             args.add(["-optl-Wl,-rpath," + rpath])
