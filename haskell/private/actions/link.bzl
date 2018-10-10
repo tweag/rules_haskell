@@ -122,14 +122,6 @@ def link_binary(
     if not linkstatic:
         if hs.toolchain.is_darwin:
             args.add(["-optl-Wl,-headerpad_max_install_names"])
-
-            # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
-            # Darwin. We don't currently handle NIX_LDFLAGS in any special
-            # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
-            # should do always when using a toolchain from Nixpkgs.
-            # TODO remove this gross hack.
-            # TODO: enable dynamic linking of Haskell dependencies for macOS.
-            args.add("-liconv")
         elif not with_profiling:
             args.add(["-pie", "-dynamic"])
 
@@ -168,6 +160,14 @@ def link_binary(
             "-optc-Wno-unused-command-line-argument",
             "-optl-Wno-unused-command-line-argument",
         ])
+
+        # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
+        # Darwin. We don't currently handle NIX_LDFLAGS in any special
+        # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
+        # should do always when using a toolchain from Nixpkgs.
+        # TODO remove this gross hack.
+        # TODO: enable dynamic linking of Haskell dependencies for macOS.
+        args.add("-liconv")
     else:
         for rpath in set.to_list(_infer_rpaths(executable, solibs)):
             args.add(["-optl-Wl,-rpath," + rpath])
