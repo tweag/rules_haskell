@@ -17,8 +17,3 @@ haskell_binary(
         "@hackage//:void",
     ],
 )
-
-haskell_doctest(
-    name = "doctest",
-    deps = [":binary-with-prebuilt"],
-)
