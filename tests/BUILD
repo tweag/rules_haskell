@@ -154,7 +154,6 @@ rule_test(
     generates = [
         "haddock/base-4.10.1.0",
         "haddock/index",
-        "haddock/libc-0.1.0.0-EVO6Oykky1f6gqLBIdWpeE",
         "haddock/template-haskell-2.12.0.0",
         "haddock/testsZShaddockZShaddock-lib-a",
         "haddock/testsZShaddockZShaddock-lib-b",

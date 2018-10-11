@@ -224,11 +224,10 @@ def _haskell_doc_rule_impl(ctx):
     if ctx.attr.index_transitive_deps:
         # Include all packages in the unified index.
         for package_id in html_dict_copied:
-            if package_id in haddock_dict:
-                args.add("--read-interface=../{0},{1}".format(
-                    package_id,
-                    haddock_dict[package_id].path,
-                ))
+            args.add("--read-interface=../{0},{1}".format(
+                package_id,
+                haddock_dict[package_id].path,
+            ))
     else:
         # Include only direct dependencies.
         for dep in ctx.attr.deps:
