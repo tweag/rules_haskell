@@ -1,4 +1,10 @@
-{ pkgs ? import ../nixpkgs {} }:
+{ pkgs ? import ../nixpkgs {}
+# Whether we want to wrap the packages using <bazel_haskell_wrapper>.
+# When this is called from inside bazel, we need to wrap the haskell package
+# set using <bazel_haskell_wrapper>. Otherwise we don't need (and don't want)
+# to.
+, wrapPackages ? (builtins.tryEval <bazel_haskell_wrapper>).success
+}:
 
 with pkgs;
 
@@ -7,7 +13,10 @@ let haskellPackages = pkgs.haskell.packages.ghc844.override {
         libc = import ./haddock/libC.nix self pkgs;
       };
     };
-    genBazelBuild = callPackage <bazel_haskell_wrapper> { };
+    genBazelBuild =
+      if wrapPackages
+      then callPackage <bazel_haskell_wrapper> {}
+      else (x: x);
 
 in
   {
