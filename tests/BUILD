@@ -12,6 +12,8 @@ load(
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("//skylark:lint.bzl", "skylark_lint")
 
+ghc_version = "8.2.2"
+
 haskell_toolchain(
     name = "ghc",
     # This toolchain is morally testonly.  However, that would break
@@ -39,7 +41,7 @@ haskell_toolchain(
         "-XOverloadedStrings",  # The repl test will need OverloadedString
     ],
     tools = "@ghc//:bin",
-    version = "8.2.2",
+    version = ghc_version,
 )
 
 haskell_doctest_toolchain(
@@ -341,12 +343,12 @@ rule_test(
     size = "small",
     generates = select({
         "@bazel_tools//src/conditions:darwin": [
-            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc8.2.2.dylib",
-            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc8.2.2.dylib",
+            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc{version}.dylib".format(version = ghc_version),
+            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc{version}.dylib".format(version = ghc_version),
         ],
         "//conditions:default": [
-            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc8.2.2.so",
-            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc8.2.2.so",
+            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc{version}.so".format(version = ghc_version),
+            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc{version}.so".format(version = ghc_version),
         ],
     }),
     rule = "//tests/cc_haskell_import:hs-lib-b-so",
