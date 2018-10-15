@@ -1,4 +1,4 @@
-{ pkgs ? import ./nixpkgs.nix {} }:
+{ pkgs ? import ./nixpkgs {} }:
 
 with pkgs;
 with darwin.apple_sdk.frameworks;

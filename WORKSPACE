@@ -15,25 +15,12 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_package",
 )
 
-nixpkgs_git_repository(
-    name = "nixpkgs",
-    # To make protobuf support work we need packages such as
-    # lens-labels_0_2_0_0 to be available in nixpkgs. This means we need to
-    # use a version of nixpkgs that is newer than 18.03.
-
-    # You need to be in an environment that is on the same commit
-    # as the one below. Use `nix-shell shell.nix`.
-
-    # Keep this value in sync with `nixpkgs.nix`
-    revision = "9a787af6bc75a19ac9f02077ade58ddc248e674a",
-    # TODO Using a fork with Bazel v0.15. Switch to mainline once
-    # https://github.com/NixOS/nixpkgs/pull/42735 merged.
-    remote = "https://github.com/mboes/nixpkgs",
-)
-
 nixpkgs_package(
     name = "ghc",
-    repository = "@nixpkgs",
+    # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly
+    # if `repository` is not set, but our nix_file uses `./nixpkgs/`.
+    # TODO(Profpatsch)
+    repository = "//nixpkgs:NOTUSED",
     nix_file = "//tests:ghc.nix",
     build_file = "//haskell:ghc.BUILD",
 )
@@ -47,20 +34,22 @@ http_archive(
 
 nixpkgs_package(
     name = "protoc_gen_haskell",
-    repository = "@nixpkgs",
-    attribute_path = "haskell.packages.ghc822.proto-lens-protoc"
+    # this is a trick to set <nixpkgs> to reference a nix file
+    # TODO(Profpatsch) document & fix upstream
+    repository = "//nixpkgs:default.nix",
+    attribute_path = "haskell.packages.ghc843.proto-lens-protoc"
 )
 
 nixpkgs_package(
     name = "doctest",
-    repository = "@nixpkgs",
-    attribute_path = "haskell.packages.ghc822.doctest",
+    repository = "//nixpkgs:default.nix",
+    attribute_path = "haskell.packages.ghc843.doctest",
 )
 
 nixpkgs_package(
     name = "c2hs",
-    repository = "@nixpkgs",
-    attribute_path = "haskell.packages.ghc822.c2hs",
+    repository = "//nixpkgs:default.nix",
+    attribute_path = "haskell.packages.ghc843.c2hs",
 )
 
 register_toolchains(
@@ -71,7 +60,7 @@ register_toolchains(
 
 nixpkgs_package(
     name = "zlib",
-    repository = "@nixpkgs",
+    repository = "//nixpkgs:default.nix",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
@@ -89,7 +78,7 @@ filegroup (
 
 nixpkgs_package(
     name = "zlib.dev",
-    repository = "@nixpkgs",
+    repository = "//nixpkgs:default.nix",
     build_file_content = """
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
 package(default_visibility = ["//visibility:public"])
@@ -112,7 +101,7 @@ haskell_cc_import(
 
 nixpkgs_package(
     name = "glib_locales",
-    repository = "@nixpkgs",
+    repository = "//nixpkgs:default.nix",
     attribute_path = "glibcLocales",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
