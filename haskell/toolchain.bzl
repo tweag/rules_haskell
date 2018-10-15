@@ -43,7 +43,13 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
         "-optP-traditional",
     ])
 
-    extra_inputs = [hs.tools.ghc, hs.tools.cc]
+    extra_inputs = [
+        hs.tools.ghc,
+        hs.tools.cc,
+        # Depend on the version file of the Haskell toolchain,
+        # to ensure the version comparison check is run first.
+        hs.toolchain.version_file,
+    ]
     if params_file:
         command = '${1+"$@"} $(< %s)' % params_file.path
         extra_inputs.append(params_file)
@@ -80,8 +86,11 @@ def _haskell_toolchain_impl(ctx):
             ghc_binaries[tool.basename] = tool.path
 
     # Run a version check on the compiler.
+    compiler = None
     for t in ctx.files.tools:
         if t.basename == "ghc":
+            if compiler:
+                fail("There can only be one tool named `ghc` in scope")
             compiler = t
     version_file = ctx.actions.declare_file("ghc-version")
     ctx.actions.run_shell(
@@ -90,9 +99,9 @@ def _haskell_toolchain_impl(ctx):
         mnemonic = "HaskellVersionCheck",
         command = """
     {compiler} --numeric-version > {version_file}
-    if [[ {expected_version} != $(< {version_file}) ]]
+    if [[ "{expected_version}" != "$(< {version_file})" ]]
     then
-        echo GHC version $(< {version_file}) does not match expected version {expected_version}.
+        echo ERROR: GHC version does not match expected version. Your haskell_toolchain specifies {expected_version}, but you have $(< {version_file}) in your environment.
         exit 1
     fi
     """.format(
@@ -281,11 +290,12 @@ def _haskell_toolchain_impl(ctx):
             visible_bin_path = set.to_list(symlinks)[0].dirname,
             is_darwin = ctx.attr.is_darwin,
             version = ctx.attr.version,
+            # Pass through the version_file, that it can be required as
+            # input in _run_ghc, to make every call to GHC depend on a
+            # successful version check.
+            version_file = version_file,
             global_pkg_db = pkgdb_file,
         ),
-        # Make everyone implicitly depend on the version_file, to force
-        # the version check.
-        DefaultInfo(files = depset([version_file])),
     ]
 
 _haskell_toolchain = rule(
@@ -306,8 +316,15 @@ _haskell_toolchain = rule(
             doc = "c2hs executable",
             allow_single_file = True,
         ),
-        "version": attr.string(mandatory = True),
-        "is_darwin": attr.bool(mandatory = True),
+        "version": attr.string(
+            doc = "Version of your GHC compiler. It has to match the version reported by the GHC used by bazel.",
+            mandatory = True,
+        ),
+        "is_darwin": attr.bool(
+            doc = "Whether compile on and for Darwin (macOS).",
+            mandatory = True,
+        ),
+        # TODO: document
         "_crosstool": attr.label(
             default = Label("//tools/defaults:crosstool"),
         ),
