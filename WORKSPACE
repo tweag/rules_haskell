@@ -7,6 +7,7 @@ http_archive(
     name = "io_tweag_rules_nixpkgs",
     strip_prefix = "rules_nixpkgs-0.2.3",
     urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.3.tar.gz"],
+    sha256 = "2647bc9d5476fba95d9b4cc300be1ba9ad353e4e33bee01e041886aa4f4b554a",
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
@@ -149,6 +150,7 @@ http_archive(
         name = "io_bazel_rules_sass",
         strip_prefix = "rules_sass-0.0.3",
         urls = ["https://github.com/bazelbuild/rules_sass/archive/0.0.3.tar.gz"],
+        sha256 = "14536292b14b5d36d1d72ae68ee7384a51e304fa35a3c4e4db0f4590394f36ad",
 )
 load("@io_bazel_rules_sass//sass:sass.bzl", "sass_repositories")
 sass_repositories()
@@ -157,6 +159,7 @@ http_archive(
         name = "io_bazel_skydoc",
         strip_prefix = "skydoc-b374449408e759e32e010fa6a20585fe9fabd523",
         urls = ["https://github.com/mrkkrp/skydoc/archive/b374449408e759e32e010fa6a20585fe9fabd523.tar.gz"],
+        sha256 = "12b96f74de7a6002de69a92959e476bd8c9ed95cb969354ee1af750f9961203b",
 )
 load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
 skydoc_repositories()
