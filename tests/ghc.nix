@@ -1,8 +1,8 @@
-{ pkgs ? import ../nixpkgs.nix {} }:
+{ pkgs ? import ../nixpkgs {} }:
 
 with pkgs;
 
-let haskellPackages = pkgs.haskell.packages.ghc822.override {
+let haskellPackages = pkgs.haskell.packages.ghc843.override {
       overrides = with pkgs.haskell.lib; self: super: rec {
         libc = import ./haddock/libC.nix self pkgs;
       };

@@ -17,7 +17,7 @@ let
   cabal = pkgs.writeText "libc.cabal" ''
     name: libc
     version: 0.1.0.0
-    build-type: simple
+    build-type: Simple
     cabal-version: >=1.10
 
     library

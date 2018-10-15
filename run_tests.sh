@@ -114,7 +114,7 @@ test_startup_script() {
 
     # Set Nixpkgs in environment variable to avoid hardcoding it in
     # start script itself.
-    NIX_PATH=nixpkgs=$pwd/nixpkgs.nix bazel fetch //... --config=ci
+    NIX_PATH=nixpkgs=$pwd/nixpkgs/default.nix bazel fetch //... --config=ci
 }
 
 if [ "$#" -eq 0 ]; then
