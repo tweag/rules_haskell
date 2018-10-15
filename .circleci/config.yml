@@ -3,7 +3,7 @@ version: 2
 jobs:
   build-linux:
     docker:
-      - image: nixos/nix:2.0
+      - image: nixos/nix:2.1.3
     working_directory: ~/rules_haskell
     resource_class: large
     steps:
@@ -17,8 +17,6 @@ jobs:
       - run:
           name: Build
           command: |
-            # XXX Workaround https://github.com/NixOS/nix/issues/1969.
-            nix-build nixpkgs.nix -A haskell.compiler.ghc822
             nix-shell --pure --run "bazel build --jobs=2 //... @haskell_zlib//... --config=ci"
             nix-shell --pure --run "bazel build -c dbg --jobs=2 //... --config=ci"
       - run:
@@ -44,8 +42,6 @@ jobs:
           name: Build
           shell: /bin/bash -eilo pipefail
           command: |
-            # XXX Workaround https://github.com/NixOS/nix/issues/1969.
-            nix-build tests/ghc.nix
             nix-shell --run 'CC=$(which clang) bazel build --jobs=2 //...'
       - run:
           name: Run tests
