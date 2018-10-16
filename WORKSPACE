@@ -155,29 +155,43 @@ skydoc_repositories()
 
 # For buildifier
 
-# XXX Need a patched version of rules_go to workaround warnings fixed
-# by https://github.com/NixOS/nixpkgs/pull/28029 on NixOS. Revert to
-# official release once fix hits Nixpkgs master.
 http_archive(
     name = "io_bazel_rules_go",
-    strip_prefix = "rules_go-6a2b1f780b475a75a7baae5b441635c566f0ed8a",
-    urls = ["https://github.com/mboes/rules_go/archive/6a2b1f780b475a75a7baae5b441635c566f0ed8a.tar.gz"],
+    strip_prefix = "rules_go-0.15.1",
+    urls = ["https://github.com/bazelbuild/rules_go/archive/0.15.1.tar.gz"],
+    sha256 = "168330e27e30dc1344cc49dfe7383e4566f67d555365ebd494d1ce8f48812f3e",
 )
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    strip_prefix = "buildtools-588d90030bc8054b550967aa45a8a8d170deba0b",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/588d90030bc8054b550967aa45a8a8d170deba0b.tar.gz"],
+    strip_prefix = "buildtools-0.17.2",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/0.17.2.tar.gz"],
+    sha256 = "5186fcecb2762a1a3f2978b01dd5825aad91369c2646bc5b42fe1be774aff351",
 )
 
 load(
     "@io_bazel_rules_go//go:def.bzl",
+    "go_wrap_sdk",
     "go_rules_dependencies",
     "go_register_toolchains",
 )
 
+nixpkgs_package(
+    name = "go",
+    attribute_path = "go",
+    repository = "//nixpkgs:default.nix",
+)
+
+# Use the go distribution from nixpkgs instead of letting rules_go
+# download some arbitrary binary distribution. This fixes buildifier
+# on both NixOS and Darwin.
+go_wrap_sdk(
+    name = "go_sdk",
+    # root_file should point to a file in the go distribution folder,
+    # which is `share/go` in the nixpkgs package.
+    root_file = "@go//:share/go/README.md",
+)
+
 go_rules_dependencies()
 
-# Use host version because none of the SDK's that rules_go knows about
-# are compatible with NixOS.
-go_register_toolchains(go_version = "host")
+go_register_toolchains()
