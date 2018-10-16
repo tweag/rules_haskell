@@ -125,6 +125,12 @@ def link_binary(
         elif not with_profiling:
             args.add(["-pie", "-dynamic"])
 
+    # When compiling with `-threaded`, GHC needs to link against
+    # the pthread library when linking against static archives (.a).
+    # We assume it’s not a problem to pass it for other cases,
+    # so we just default to passing it.
+    args.add("-optl-pthread")
+
     args.add(["-o", compile_output.path, dummy_static_lib.path])
 
     # De-duplicate optl calls while preserving ordering: we want last
