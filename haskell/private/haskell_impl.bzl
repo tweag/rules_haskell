@@ -299,6 +299,7 @@ use the 'haskell_import' rule instead.
         header_files = c.header_files,
         boot_files = c.boot_files,
         source_files = c.source_files,
+        exposed_modules_file = c.exposed_modules_file,
         extra_source_files = c.extra_source_files,
     )
     target_files = depset([conf_file, cache_file])

@@ -131,7 +131,13 @@ def _haskell_doctest_single(target, ctx):
         lib_info.source_files if lib_info != None else bin_info.source_files,
     )
 
-    args.add(ctx.attr.modules)
+    if not ctx.attr.modules:
+        exposed_modules_file = lib_info.exposed_modules_file if lib_info != None else bin_info.exposed_modules_file
+    else:
+        exposed_modules_file = ctx.actions.declare_file("doctest_modules")
+        exposed_args = ctx.actions.args()
+        exposed_args.add(ctx.attr.modules)
+        ctx.actions.write(exposed_modules_file, exposed_args)
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
@@ -142,6 +148,7 @@ def _haskell_doctest_single(target, ctx):
             set.to_depset(build_info.dynamic_libraries),
             set.to_depset(header_files),
             set.to_depset(external_libs),
+            depset([exposed_modules_file]),
             depset(
                 toolchain.doctest +
                 [hs.tools.cat, hs.tools.ghc],
@@ -151,8 +158,8 @@ def _haskell_doctest_single(target, ctx):
         mnemonic = "HaskellDoctest",
         progress_message = "HaskellDoctest {}".format(ctx.label),
         command = """
-    {doctest} "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
-    """.format(doctest = toolchain.doctest[0].path, output = doctest_log.path),
+    {doctest} "$@" $(cat {module_list} | tr , ' ') > {output} 2>&1 || rc=$? && cat {output} && exit $rc
+    """.format(doctest = toolchain.doctest[0].path, output = doctest_log.path, module_list = exposed_modules_file.path),
         arguments = [args],
         # NOTE It looks like we must specify the paths here as well as via -L
         # flags because there are at least two different "consumers" of the info
