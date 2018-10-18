@@ -85,7 +85,6 @@ def link_binary(
         objects_dir,
         linkstatic,
         with_profiling,
-        dummy_static_lib,
         version):
     """Link Haskell binary from static object files.
 
@@ -131,7 +130,7 @@ def link_binary(
     # so we just default to passing it.
     args.add("-optl-pthread")
 
-    args.add(["-o", compile_output.path, dummy_static_lib.path])
+    args.add(["-o", compile_output.path])
 
     # De-duplicate optl calls while preserving ordering: we want last
     # invocation of an object to remain last. That is `-optl foo -optl
@@ -188,7 +187,6 @@ def link_binary(
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             depset([objects_dir]),
-            depset([dummy_static_lib]),
             depset(dep_info.external_libraries.values()),
             depset(hs.extra_binaries),
         ]),

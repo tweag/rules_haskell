@@ -126,13 +126,6 @@ def _mk_binary_rule(**kwargs):
             version = attr.string(
                 doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
             ),
-            _dummy_static_lib = attr.label(
-                default = Label("@io_tweag_rules_haskell//haskell:dummy_static_lib"),
-                allow_single_file = True,
-                doc = """
-A dummy library needed for the GHC linking process.
-""",
-            ),
         ),
         outputs = {
             "repl": "%{name}-repl",
