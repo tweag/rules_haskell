@@ -17,6 +17,10 @@ load(":private/java.bzl", "java_interop_info")
 load(":private/set.bzl", "set")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
+    ":private/path_utils.bzl",
+    "ln",
+)
+load(
     ":private/providers.bzl",
     "C2hsLibraryInfo",
     "HaskellBinaryInfo",
@@ -145,6 +149,10 @@ use the 'haskell_import' rule instead.
         build_info = build_info,
         bin_info = bin_info,
     )
+
+    # XXX Temporary backwards compatibility hack. Remove eventually.
+    # See https://github.com/tweag/rules_haskell/pull/460.
+    ln(hs, ctx.outputs.repl, ctx.outputs.repl_deprecated)
 
     return [
         build_info,
@@ -317,6 +325,10 @@ use the 'haskell_import' rule instead.
             build_info = build_info,
             lib_info = lib_info,
         )
+
+        # XXX Temporary backwards compatibility hack. Remove eventually.
+        # See https://github.com/tweag/rules_haskell/pull/460.
+        ln(hs, ctx.outputs.repl, ctx.outputs.repl_deprecated)
 
     default_info = None
 

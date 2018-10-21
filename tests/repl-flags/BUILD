@@ -8,7 +8,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_
 # - toolchain and rule `compiler_flags` are additive, else one of the previous test will fail
 # - the ordering is as such as rule flags are more important that toolchain flags
 
-# This rule must build correctly (using `bazel build`), but also as a repl (using `bazel run //tests/repl-flags:compiler_flags-repl`)
+# This rule must build correctly (using `bazel build`), but also as a repl (using `bazel run //tests/repl-flags:compiler_flags@repl`)
 haskell_binary(
     name = "compiler_flags",
     srcs = ["CompilerFlags.hs"],
@@ -30,7 +30,7 @@ haskell_binary(
 #    toolchain flags and that repl flags are more important that
 #    copmiler flags
 
-# This rule must build correctly (using `bazel build`), but also as a repl (using `bazel run //tests/repl-flags:compiler_flags-repl`). The final result between the repl and the binary must be different
+# This rule must build correctly (using `bazel build`), but also as a repl (using `bazel run //tests/repl-flags:compiler_flags@repl`). The final result between the repl and the binary must be different
 haskell_binary(
     name = "repl_flags",
     srcs = ["ReplFlags.hs"],

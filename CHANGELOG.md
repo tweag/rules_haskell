@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.7] - ???
 
+### Changed
+
+* REPL targets have changed name. If you have a library target `foo`,
+  then the corresponding REPL target is now called `foo@repl`. It was
+  previously called `foo-repl`. The old name is still supported but is
+  deprecated.
+
+### Fixed
+
 * Don’t crash on inputs missing `.haddock` interface files. See
   [#362](https://github.com/tweag/rules_haskell/pull/362)
 

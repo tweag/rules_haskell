@@ -135,7 +135,8 @@ A dummy library needed for the GHC linking process.
             ),
         ),
         outputs = {
-            "repl": "%{name}-repl",
+            "repl": "%{name}@repl",
+            "repl_deprecated": "%{name}-repl",
         },
         toolchains = [
             "@io_tweag_rules_haskell//haskell:toolchain",
@@ -160,7 +161,7 @@ haskell_binary = _mk_binary_rule()
 Example:
   ```bzl
   haskell_binary(
-      name = "main",
+      name = "hello",
       srcs = ["Main.hs", "Other.hs"],
       deps = ["//lib:some_lib"]
   )
@@ -168,20 +169,15 @@ Example:
 
 Every `haskell_binary` target also defines an optional REPL target that is
 not built by default, but can be built on request. The name of the REPL
-target is the same as the name of binary with `"-repl"` added at the end.
-For example, the target above also defines `main-repl`.
+target is the same as the name of binary with `"@repl"` added at the end.
+For example, the target above also defines `main@repl`.
 
 You can call the REPL like this (requires Bazel 0.15 or later):
 
 ```
-$ bazel run //:hello-bin-repl
+$ bazel run //:hello@repl
 ```
 
-With Bazel > 0.12:
-
-```
-$ bazel run --direct_run //:hello-bin-repl
-```
 """
 
 haskell_library = rule(
@@ -200,7 +196,8 @@ haskell_library = rule(
         ),
     ),
     outputs = {
-        "repl": "%{name}-repl",
+        "repl": "%{name}@repl",
+        "repl_deprecated": "%{name}-repl",
     },
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",

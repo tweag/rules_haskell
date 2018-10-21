@@ -78,8 +78,8 @@ test_repl_libraries() {
     # Test whether building of repl forces all runtime dependencies by
     # itself:
     bazel clean
-    bazel run --config=ci //tests/repl-targets:hs-lib-repl -- -e "show (foo 10) ++ bar ++ baz ++ gen"
-    bazel run --config=ci //tests/repl-targets:hs-lib-bad-repl -- -e "1 + 2"
+    bazel run --config=ci //tests/repl-targets:hs-lib@repl -- -e "show (foo 10) ++ bar ++ baz ++ gen"
+    bazel run --config=ci //tests/repl-targets:hs-lib-bad@repl -- -e "1 + 2"
 }
 
 # Test REPL for binaries
@@ -87,19 +87,19 @@ test_repl_binaries() {
     # Test whether building of repl forces all runtime dependencies by
     # itself:
     bazel clean
-    bazel run --config=ci //tests/repl-targets:hs-bin-repl -- -e ":main"
+    bazel run --config=ci //tests/repl-targets:hs-bin@repl -- -e ":main"
 }
 
 # Test `compiler_flags` from toolchain and rule for REPL
 test_repl_compiler_flags() {
     # `compiler_flags` from toolchain are correctly used
-    bazel run --config=ci //tests/repl-flags:compiler_flags-repl -- -e ":main"
+    bazel run --config=ci //tests/repl-flags:compiler_flags@repl -- -e ":main"
 }
 
 # Test `repl_ghci_args` from toolchain and rule for REPL
 test_repl_flags() {
     # `compiler_flags` from toolchain are correctly used
-    bazel run --config=ci //tests/repl-flags:repl_flags-repl -- -e "foo"
+    bazel run --config=ci //tests/repl-flags:repl_flags@repl -- -e "foo"
 }
 
 # Test start script
