@@ -115,7 +115,7 @@ def import_packages(name):
     """.format(
         repo_name = repository_ctx.attr.packages_list_file,
         extra_args_raw = extra_args_raw,
-        )
+    )
 
     repository_ctx.file("packages.bzl", bzl_file_content)
 
@@ -126,7 +126,7 @@ _gen_imports_str = repository_rule(
         # We pass the extra arguments to `haskell_nixpkgs_packages` as strings
         # since we can't forward arbitrary arguments in a rule and they will be
         # converted to strings anyways.
-        extra_args = attr.string_dict(doc = "Extra arguments for `haskell_nixpkgs_packages`")
+        extra_args = attr.string_dict(doc = "Extra arguments for `haskell_nixpkgs_packages`"),
     ),
 )
 """
@@ -139,11 +139,11 @@ def _gen_imports(name, packages_list_file, extra_args):
     A wrapper around `_gen_imports_str` which allows passing an arbitrary set of
     `extra_args` instead of a set of strings
     """
-    extra_args_str = { label: repr(value) for (label, value) in extra_args.items() }
+    extra_args_str = {label: repr(value) for (label, value) in extra_args.items()}
     _gen_imports_str(
         name = name,
         packages_list_file = packages_list_file,
-        extra_args = extra_args_str
+        extra_args = extra_args_str,
     )
 
 def haskell_nixpkgs_packageset(name, base_attribute_path, repositories = {}, **kwargs):

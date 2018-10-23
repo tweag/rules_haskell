@@ -50,11 +50,11 @@ def _haskell_import_impl(ctx):
         if HaskellBuildInfo in dep:
             set.mutable_union(dependencies_caches, dep[HaskellBuildInfo].package_caches)
 
-    deps_ids = [ \
-        dep[HaskellLibraryInfo].package_id \
-        for dep in ctx.attr.deps \
-        if HaskellLibraryInfo in dep \
-        ]
+    deps_ids = [
+        dep[HaskellLibraryInfo].package_id
+        for dep in ctx.attr.deps
+        if HaskellLibraryInfo in dep
+    ]
 
     libInfo = HaskellLibraryInfo(
         package_id = ctx.attr.package_id,
@@ -79,11 +79,9 @@ def _haskell_import_impl(ctx):
         direct_prebuilt_deps = set.empty(),
     )
     html_files = list(ctx.attr.haddock_html.files)
-    transitive_html = {ctx.attr.package_id: local_haddock_html} \
-        if html_files != [] else {}
+    transitive_html = {ctx.attr.package_id: local_haddock_html} if html_files != [] else {}
     interface_files = list(ctx.attr.haddock_interfaces.files)
-    transitive_haddocks = {ctx.attr.package_id: interface_files[0]} \
-        if interface_files != [] else {}
+    transitive_haddocks = {ctx.attr.package_id: interface_files[0]} if interface_files != [] else {}
 
     haddockInfo = HaddockInfo(
         package_id = ctx.attr.package_id,
