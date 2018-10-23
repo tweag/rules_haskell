@@ -17,7 +17,7 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
 load("@io_tweag_rules_haskell//haskell:nix.bzl",
      "haskell_nixpkgs_packages",
      "haskell_nixpkgs_package",
-     "haskell_nixpkgs_package_list")
+     "haskell_nixpkgs_packageset")
 
 haskell_nixpkgs_package(
     name = "ghc",
@@ -98,21 +98,14 @@ filegroup(
 """
 )
 
-haskell_nixpkgs_package_list(
+haskell_nixpkgs_packageset(
     name = "hackage-packages",
     repositories = { "nixpkgs": "//nixpkgs:default.nix" },
     nix_file = "//tests:ghc.nix",
     base_attribute_path = "haskellPackages",
 )
-load("@hackage-packages//:all-haskell-packages.bzl", "packages")
-
-haskell_nixpkgs_packages(
-    name = "hackage",
-    packages = packages,
-    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
-    nix_file = "//tests:ghc.nix",
-    base_attribute_path = "haskellPackages",
-)
+load("@hackage-packages//:packages.bzl", "import_packages")
+import_packages(name = "hackage")
 
 # zlib as a Haskell library
 
