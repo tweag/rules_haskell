@@ -102,6 +102,18 @@ test_repl_flags() {
     bazel run --config=ci //tests/repl-flags:repl_flags@repl -- -e "foo"
 }
 
+# Test that the repl still works if we shadow some Prelude functions
+test_repl_name_shadowing() {
+    # Get the raw ghci output
+    GHCI_OUTPUT="$(bazel run --config=ci //tests/repl-name-conflicts:lib@repl -- -e stdin 2>&1)"
+    # Check whether we encountered a type error
+    echo $GHCI_OUTPUT | grep -q "error"
+    if [[ $? -eq 0 ]]; then
+      echo $GHCI_OUTPUT
+      exit 1
+    fi
+}
+
 # Test start script
 test_startup_script() {
     pwd=$(pwd)
