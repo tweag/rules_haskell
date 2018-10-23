@@ -171,9 +171,11 @@ http_archive(
 
 load(
     "@io_bazel_rules_go//go:def.bzl",
-    "go_wrap_sdk",
     "go_rules_dependencies",
-    "go_register_toolchains",
+)
+load(
+    "//skylark:go_wrap_sdk_unless_env.bzl",
+    "go_wrap_sdk_unless_env",
 )
 
 nixpkgs_package(
@@ -185,13 +187,12 @@ nixpkgs_package(
 # Use the go distribution from nixpkgs instead of letting rules_go
 # download some arbitrary binary distribution. This fixes buildifier
 # on both NixOS and Darwin.
-go_wrap_sdk(
+# If the environment variable DONT_WRAP_GO_SDK is set, it will
+# instead use the normal rules_go mechanism and download a go sdk.
+go_wrap_sdk_unless_env(
     name = "go_sdk",
     # root_file should point to a file in the go distribution folder,
     # which is `share/go` in the nixpkgs package.
     root_file = "@go//:share/go/README.md",
 )
 
-go_rules_dependencies()
-
-go_register_toolchains()
