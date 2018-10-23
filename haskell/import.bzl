@@ -50,6 +50,12 @@ def _haskell_import_impl(ctx):
         if HaskellBuildInfo in dep:
             set.mutable_union(dependencies_caches, dep[HaskellBuildInfo].package_caches)
 
+    deps_ids = [ \
+        dep[HaskellLibraryInfo].package_id \
+        for dep in ctx.attr.deps \
+        if HaskellLibraryInfo in dep \
+        ]
+
     libInfo = HaskellLibraryInfo(
         package_id = ctx.attr.package_id,
         version = ctx.attr.version,
@@ -61,12 +67,12 @@ def _haskell_import_impl(ctx):
         ghc_args = [],
     )
     buildInfo = HaskellBuildInfo(
-        package_ids = set.from_list([ctx.attr.package_id] + ctx.attr.deps_ids),
+        package_ids = set.from_list([ctx.attr.package_id] + deps_ids),
         package_confs = set.from_list(local_package_confs),
         package_caches = dependencies_caches,
         static_libraries = [],
         static_libraries_prof = [],
-        dynamic_libraries = set.from_list(ctx.attr.dynamic_libraries),
+        dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
         prebuilt_dependencies = set.empty(),
         external_libraries = {},
@@ -90,14 +96,11 @@ haskell_import = rule(
     _haskell_import_impl,
     attrs = dict(
         package_id = attr.string(doc = "Workspace unique package identifier"),
-        deps_ids = attr.string_list(),
         deps = attr.label_list(doc = "Haskell dependencies for the package"),
-        dynamic_libraries = attr.label_list(),
         version = attr.string(doc = "Package version."),
-        deps_caches = attr.label(),
         haddock_interfaces = attr.label(doc = "List of haddock interfaces"),
         haddock_html = attr.label(doc = "List of haddock html dirs"),
-        package_confs = attr.label(),
+        package_confs = attr.label(doc = "List of ghc-pkg package.conf files"),
     ),
     outputs = {
         "cache": "%{name}-cache",

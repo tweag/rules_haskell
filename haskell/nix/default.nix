@@ -57,7 +57,6 @@ let
       mkdir -p $out
       cat <<EOF > $out/BUILD.bzl
       load("@io_tweag_rules_haskell//haskell:import.bzl", haskell_import_new = "haskell_import")
-      deps_ids = $(query_list depends)
       deps_repos = $(get_deps)
 
       def targets():
@@ -65,7 +64,6 @@ let
           haskell_import_new(
               name = "pkg",
               deps = [ dep + "//:pkg" for dep in deps_repos],
-              deps_ids = deps_ids,
               package_id = "$(query_field id)",
               version = "$(query_field version)",
               package_confs = "//:package_conf",
