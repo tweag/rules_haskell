@@ -225,6 +225,7 @@ def _haskell_toolchain_impl(ctx):
     targets_w = [
         "bash",
         "cat",
+        "tr",
         "cp",
         "grep",
         "ln",
