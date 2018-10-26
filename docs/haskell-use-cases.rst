@@ -61,6 +61,15 @@ the repository that includes the following::
     tools = "@ghc//:bin",
   )
 
+.. _Bazel+Nix blog post: https://www.tweag.io/posts/2018-03-15-bazel-nix.html
+.. _Nix package manager: https://nixos.org/nix
+.. _Nixpkgs: https://nixos.org/nixpkgs/manual/
+.. _ghc_bindist: http://api.haskell.build/haskell/ghc_bindist.html#ghc_bindist
+.. _haskell.org: https://haskell.org
+.. _haskell_binary: http://api.haskell.build/haskell/haskell.html#haskell_binary
+.. _haskell_library: http://api.haskell.build/haskell/haskell.html#haskell_library
+.. _rules_nixpkgs: https://github.com/tweag/rules_nixpkgs
+
 Loading targets in a REPL
 -------------------------
 
@@ -96,8 +105,58 @@ This works for any ``haskell_binary`` or ``haskell_library`` target.
 Modules of all libraries will be loaded in interpreted mode and can be
 reloaded using the ``:r`` GHCi command when source files change.
 
-.. _haskell_binary: http://api.haskell.build/haskell/haskell.html#haskell_binary
-.. _haskell_library: http://api.haskell.build/haskell/haskell.html#haskell_library
+Building code with Hackage dependencies (using Nix)
+---------------------------------------------------
+
+Each Haskell library or binary needs a simple build description to
+tell Bazel what source files to use and what the dependencies are, if
+any. Packages on Hackage don't usually ship with `BUILD.bazel` files.
+So if your code depends on them, you either need to write a build
+description for each package, generate one (see next section), or
+decide not to use Bazel to build packages published on Hackage. This
+section documents one way to do the latter.
+
+Nix is a package manager. The set of package definitions is called
+Nixpkgs. This repository contains definitions for most actively
+maintained Cabal packages published on Hackage. Where these packages
+depend on system libraries like zlib, ncurses or libpng, Nixpkgs also
+contains package descriptions for those, and declares those as
+dependencies of the Cabal packages. Since these definitions already
+exist, we can reuse them instead of rewriting these definitions as
+build definitions in Bazel. See the `Bazel+Nix blog post`_ for a more
+detailed rationale.
+
+To use Nixpkgs in Bazel, we need `rules_nixpkgs`_. See `Picking
+a compiler`_ for how to import Nixpkgs rules into your workspace and
+how to use a compiler from Nixpkgs. To use Cabal packages from
+Nixpkgs, replace the compiler definition with the following::
+
+  nixpkgs_package(
+      name = "ghc",
+      repositories = { "nixpkgs": "@nixpkgs//:default.nix" }
+      nix_file = "//:ghc.nix",
+      build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
+  )
+
+This definition assumes a ``ghc.nix`` file at the root of the
+repository. In this file, you can use the Nix expression language to
+construct a compiler with all the packages you depend on in scope::
+
+  with (import <nixpkgs> {});
+
+  haskellPackages.ghcWithPackages (p: with p; [
+    containers
+    lens
+    text
+  ])
+
+Building code with Hackage dependencies (using Hazel)
+-----------------------------------------------------
+
+.. todo
+
+   Explain how to use Hazel instead of Nix
+
 
 Generating API documentation
 ----------------------------
