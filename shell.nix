@@ -13,7 +13,7 @@ let cc = stdenv.mkDerivation {
   postFixup = ''
     mkdir -p $out/bin
     makeWrapper ${stdenv.cc}/bin/clang $out/bin/clang \
-      --add-flags "-isystem ${llvmPackages.libcxx}/include \
+      --add-flags "-isystem ${llvmPackages.libcxx}/include/c++/v1 \
                    -F${CoreFoundation}/Library/Frameworks \
                    -F${CoreServices}/Library/Frameworks \
                    -F${Security}/Library/Frameworks \
