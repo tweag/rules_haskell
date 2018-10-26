@@ -3,6 +3,64 @@
 Common Haskell Build Use Cases
 ==============================
 
+Picking a compiler
+------------------
+
+Unlike Bazel's native C++ rules, rules_haskell does not auto-detect
+a Haskell compiler toolchain from the environment. This is by design.
+We require that you declare a compiler to use in your ``WORKSPACE``
+file.
+
+There are two common sources for a compiler. One is to use the
+official binary distributions from `haskell.org`_. This is done using
+the `ghc_bindist`_ rule.
+
+The compiler can also be pulled from Nixpkgs_, a set of package
+definitions for the `Nix package manager`_. Pulling the compiler from
+Nixpkgs makes the build more hermetic, because the transitive closure
+of the compiler and all its dependencies is precisely defined in the
+``WORKSPACE`` file. Use `rules_nixpkgs`_ to do so (where ``X.Y.Z``
+stands for any recent release)::
+
+  http_archive(
+      name = "io_tweag_rules_nixpkgs",
+      strip_prefix = "rules_nixpkgs-X.Y.Z",
+      urls = ["https://github.com/tweag/rules_nixpkgs/archive/vX.Y.Z.tar.gz"],
+  )
+
+  load(
+      "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+      "nixpkgs_git_repository",
+      "nixpkgs_package"
+  )
+
+  nixpkgs_git_repository(
+      name = "nixpkgs",
+      revision = "18.09", # Any tag or commit hash
+  )
+
+  nixpkgs_package(
+      name = "ghc",
+      repositories = { "nixpkgs": "@nixpkgs//:default.nix" }
+      attribute_path = "haskell.compiler.ghc843", # Any compiler version
+      build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
+  )
+
+  register_toolchains("//:ghc")
+
+This workspace description specifies which Nixpkgs version to use,
+then exposes a Nixpkgs package containing the GHC compiler. The
+description assumes that there exists a ``BUILD`` file at the root of
+the repository that includes the following::
+
+  haskell_toolchain(
+    name = "ghc",
+    # Versions here and in WORKSPACE must match.
+    version = "8.4.3",
+    # Use binaries from @ghc//:bin to define //:ghc toolchain.
+    tools = "@ghc//:bin",
+  )
+
 Loading targets in a REPL
 -------------------------
 
