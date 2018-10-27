@@ -24,6 +24,7 @@ html_theme_options = {
     'github_user': 'tweag',
     'github_repo': 'rules_haskell',
     'github_banner': True,
+    'github_type': "star",
     'show_related': False,
     'note_bg': '#FFF59C',
 }
