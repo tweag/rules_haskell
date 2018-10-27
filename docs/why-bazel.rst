@@ -54,6 +54,38 @@ build caching, test result caching or distributed builds for faster
 build and test times. Those features start to matter for larger
 projects, and become essential for very large monorepos_.
 
+Why exactly do these features matter?
+
+* **Hermetic builds** are builds that do not take any part of the
+  host's system configuration (set of installed system libraries and
+  their versions, content of ``/etc``, OS version, etc) as an input.
+  If all build actions are deterministic, hermeticity guarantees that
+  builds are reproducible anywhere, anytime. More developers on
+  a project means more subtly different system configurations to cope
+  with. The more system configurations, the more likely that the build
+  will fail in one of these configurations but not in others... Unless
+  the build is completely hermetic.
+* **Sandboxing build actions** guarantees that all inputs to all build
+  actions are properly declared. This helps prevent build system
+  correctness bugs, which are surprisingly and exceedingly common in
+  most non-sandboxing build systems, especially as the build system
+  becomes more complex. When a build system *might* be incorrect,
+  users regularly have to wipe the entire build cache to work around
+  issues. As the codebase becomes very large, rebuilding from scratch
+  can cost a lot of CPU time.
+* **Distributed build caches** make building the code from a fresh
+  checkout trivially fast. Continuous integration populates the build
+  cache at every branch push, so that building all artifacts from
+  fresh checkouts seldom needs to actually build anything at all
+  locally. In the common case, builds become network-bound instead of
+  CPU-bound.
+* **Distributed build action execution** mean that average build times
+  can stay constant even as the codebase grows, because you can
+  seamlessly distribute the build on more machines.
+* **Test result caching** is the key to keeping continuous
+  integration times very low. Only those tests that depend on code
+  that was modified need be rerun.
+
 .. _Autotools: https://en.wikipedia.org/wiki/GNU_Build_System
 .. _Make: https://en.wikipedia.org/wiki/Make_(software)
 .. _CMake: https://cmake.org/
