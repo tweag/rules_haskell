@@ -11,6 +11,16 @@ let cc = runCommand "cc-wrapper-bazel" {
   }
   ''
     mkdir -p $out/bin
+
+    # Copy the content of stdenv.cc
+    for i in ${stdenv.cc}/bin/*
+    do
+      ln -sf $i $out/bin
+    done
+
+    # Override clang
+    rm $out/bin/clang
+
     makeWrapper ${stdenv.cc}/bin/clang $out/bin/clang \
       --add-flags "-isystem ${llvmPackages.libcxx}/include/c++/v1 \
                    -F${CoreFoundation}/Library/Frameworks \
