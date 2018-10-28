@@ -98,9 +98,10 @@ def _haskell_lint_aspect_impl(target, ctx):
         env = hs.env,
     )
 
-    return [HaskellLintInfo(
-        outputs = set.singleton(lint_log),
-    )]
+    lint_info = HaskellLintInfo(outputs = set.singleton(lint_log))
+    output_files = OutputGroupInfo(default = [lint_log])
+
+    return [lint_info, output_files]
 
 haskell_lint_aspect = aspect(
     _haskell_lint_aspect_impl,
