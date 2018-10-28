@@ -34,11 +34,6 @@ jobs:
           command: |
             curl https://nixos.org/nix/install | sh
       - run:
-          name: System dependencies
-          command: |
-            brew update
-            brew install bazel
-      - run:
           name: Build
           shell: /bin/bash -eilo pipefail
           command: |
