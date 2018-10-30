@@ -1,5 +1,6 @@
 # See https://docs.bazel.build/versions/master/user-manual.html#bazelrc.
 
+common:ci --loading_phase_threads=4
 #build:ci --all_incompatible_changes
 build:ci --sandbox_debug
 build:ci --verbose_failures
