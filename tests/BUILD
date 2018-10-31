@@ -152,9 +152,9 @@ rule_test(
     name = "test-haddock",
     size = "small",
     generates = [
-        "haddock/base-4.10.1.0",
+        "haddock/base-4.11.1.0",
         "haddock/index",
-        "haddock/template-haskell-2.12.0.0",
+        "haddock/template-haskell-2.13.0.0",
         "haddock/testsZShaddockZShaddock-lib-a",
         "haddock/testsZShaddockZShaddock-lib-b",
         "haddock/testsZShaddockZShaddock-lib-deep",
