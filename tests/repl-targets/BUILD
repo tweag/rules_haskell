@@ -58,8 +58,8 @@ haskell_library(
     deps = [
         "//tests/data:ourclibrary",
         ":zlib",
-        "//tests:array",
-        "//tests:base",
+        "@hackage//:array",
+        "@hackage//:base",
     ],
     tags = ["manual"],
 )
