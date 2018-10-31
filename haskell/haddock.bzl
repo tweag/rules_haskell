@@ -29,7 +29,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     # Packages imported via `//haskell:import.bzl%haskell_import` already
     # contain an `HaddockInfo` provider, so we just forward it
     if HaddockInfo in target:
-        return target[HaddockInfo]
+        return []
 
     hs = haskell_context(ctx, ctx.rule.attr)
 

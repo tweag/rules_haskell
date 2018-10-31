@@ -22,9 +22,8 @@ let
       query_haddock () {
         echo -n '['
         for FIELD in $(query_field "$@"); do
-          echo -n '"'
-          echo -n $(echo "$FIELD" | cut -d/ -f5-)
-          echo -n '*",'
+          echo -n "\"$(echo "$FIELD" | cut -d/ -f5-)*\","
+          echo -n "\"$(echo "$FIELD" | cut -d/ -f5-)/*\","
         done
         echo -n ']'
       }
@@ -72,7 +71,7 @@ let
           )
           native.filegroup(
             name = "html",
-            srcs = native.glob($(query_haddock haddock-html), exclude_directories=0),
+            srcs = native.glob($(query_haddock haddock-html), exclude_directories=1),
           )
           native.filegroup(
             name = "interfaces",
