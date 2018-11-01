@@ -7,7 +7,7 @@ load(
 
 haskell_library(
     name = "runfiles",
-    srcs = ["Bazel/Runfiles.hs"],
+    srcs = ["src/Bazel/Runfiles.hs"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests:base",
@@ -19,7 +19,7 @@ haskell_library(
 haskell_binary(
     name = "bin",
     testonly = 1,
-    srcs = ["Bin.hs"],
+    srcs = ["bin/Bin.hs"],
     data = ["bin-data.txt"],
     deps = [
         ":runfiles",
@@ -30,7 +30,7 @@ haskell_binary(
 
 haskell_test(
     name = "test",
-    srcs = ["Test.hs"],
+    srcs = ["test/Test.hs"],
     data = [
         "test-data.txt",
         ":bin",
