@@ -2,12 +2,12 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2450630b07cf519c172182a5ebfcd5ba04c7f1358a6314f0cee822f222b31243
+-- hash: bd1c2ce5b0ffa0157650e1c2409d31b818889736ef09aaf51de71e54d9a7d3fc
 
 name:           bazel-runfiles
-version:        0.7.0.0
+version:        0.7.0.1
 synopsis:       Locate Bazel runfiles location
-description:    Please see the README on GitHub at <https://github.com/tweag/rules_haskell/tools/runfiles#readme>
+description:    Please see the README on GitHub at <https://github.com/tweag/rules_haskell/blob/master/tools/runfiles/README.md>
 category:       Build Tool
 homepage:       https://github.com/tweag/rules_haskell#readme
 bug-reports:    https://github.com/tweag/rules_haskell/issues
