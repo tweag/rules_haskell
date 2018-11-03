@@ -150,6 +150,39 @@ timeout and resource allocation for the test.
 [bazel-test-attrs]: https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests
 """
 
+def haskell_criterion(
+    tags = [],
+    args = [],
+    size = "enormous",
+    **kwargs
+  ):
+  """Build a benchmark suite using [criterion][criterion].
+
+This rule accepts the same arguments as [haskell_test][haskell_test_rule]
+The resulting benchmark is internally considered as a test because bazel has
+no primitive notion of benchmark.
+
+[criterion]: http://www.serpentine.com/criterion/
+[haskell_test_rule]: /haskell/haskell.html#haskell_test
+  """
+  default_criterion_args = \
+    [
+     "--csv=result.csv",
+     "--json=result.json",
+     "--output=result.html",
+     "--junit=result.xml",
+     # Needed because the tests don't run with an utf8-aware locale, and this
+     # causes a crash in criterion because of of
+     # https://github.com/bos/criterion/issues/205
+     "--verbosity=0",
+     ]
+  return haskell_test(
+    tags = tags + ["benchmark", "exclusive"],
+    args = default_criterion_args + args,
+    size = size,
+    **kwargs
+  )
+
 haskell_binary = _mk_binary_rule()
 """Build an executable from Haskell source.
 
