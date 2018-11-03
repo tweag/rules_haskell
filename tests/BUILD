@@ -164,6 +164,13 @@ haskell_import(
     visibility = ["//visibility:public"],
 )
 
+haskell_import(
+    name = "criterion",
+    testonly = 0,
+    package = "criterion",
+    visibility = ["//visibility:public"],
+)
+
 rule_test(
     name = "test-binary-simple",
     size = "small",

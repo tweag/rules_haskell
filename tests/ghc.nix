@@ -13,6 +13,7 @@ in haskellPackages.ghcWithPackages (p: with p; [
   # haskell_proto_library inputs
   bytestring
   containers
+  criterion
   data-default-class
   lens-family
   lens-labels
