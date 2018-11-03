@@ -76,3 +76,36 @@ Alternatively, you can directly check a target using
       --aspects @io_tweag_rules_haskell//haskell:haskell.bzl%haskell_lint_aspect
 
 .. _haskell_lint: http://api.haskell.build/haskell/lint.html#haskell_lint
+
+Benchmarking your code with Criterion
+-------------------------------------
+
+`Criterion`_ is the reference testing framework for haskell and is
+integated into ruless_haskell thanks to the `haskell_criterion`_ rule.
+This rule is similar to the `haskell_test`_ one.
+You can then run it with
+
+.. code-block:: console
+
+  $ bazel test //my/library:benchmark
+
+Since the benchmark targets are internally defined as test targets (because
+bazel has no builtin notion of "benchmark"), your benchmarks will be included
+in wildcards such as ``bazel test //...``.
+
+Fortunately, bazel provides some ways to filter them out easily:
+
+- You can tag them as ``manual`` (by passing ``tags = ["manual"]`` to the
+  target definition). That way bazel will know that they should be excluded
+  from wildcards.
+- Alternatively, you can use the fact that they are implicitely tagged as
+  ``benchmark``. This means that you can filter them out by using the
+  ``--test_tag_filters=-benchmark`` argument.
+  You can also make this the default by adding ``test
+  --test_tag_filters=-benchmark`` to your ``bazelrc``.
+  If you do so, you need to pass ``--test_tag_filters=benchmark`` to re-include
+  them.
+
+.. _criterion: http://www.serpentine.com/criterion/
+.. _haskell_criterion: http://api.haskell.build/haskell/haskell.html#haskell_criterion
+.. _haskell_test: http://api.haskell.build/haskell/haskell.html#haskell_test
