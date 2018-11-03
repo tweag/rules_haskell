@@ -37,19 +37,19 @@ nixpkgs_package(
     # this is a trick to set <nixpkgs> to reference a nix file
     # TODO(Profpatsch) document & fix upstream
     repository = "//nixpkgs:default.nix",
-    attribute_path = "haskell.packages.ghc843.proto-lens-protoc"
+    attribute_path = "haskell.packages.ghc844.proto-lens-protoc"
 )
 
 nixpkgs_package(
     name = "doctest",
     repository = "//nixpkgs:default.nix",
-    attribute_path = "haskell.packages.ghc843.doctest",
+    attribute_path = "haskell.packages.ghc844.doctest",
 )
 
 nixpkgs_package(
     name = "c2hs",
     repository = "//nixpkgs:default.nix",
-    attribute_path = "haskell.packages.ghc843.c2hs",
+    attribute_path = "haskell.packages.ghc844.c2hs",
 )
 
 register_toolchains(
