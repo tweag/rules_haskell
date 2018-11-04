@@ -1,5 +1,5 @@
 name:                bazel-runfiles
-version:             0.7.0.0
+version:             0.7.0.1
 github:              "tweag/rules_haskell"
 license:             Apache-2.0
 author:              "Tweag I/O Limited"
@@ -8,6 +8,7 @@ copyright:           "2018 Tweag I/O Limited"
 
 extra-source-files:
 - README.md
+- LICENSE
 
 synopsis:            Locate Bazel runfiles location
 category:            Build Tool
@@ -15,7 +16,7 @@ category:            Build Tool
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/tweag/rules_haskell/tools/runfiles#readme>
+description:         Please see the README on GitHub at <https://github.com/tweag/rules_haskell/blob/master/tools/runfiles/README.md>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -23,7 +24,6 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-  - base
   - directory
   - filepath
   exposed-modules:
