@@ -86,6 +86,10 @@ Why exactly do these features matter?
   integration times very low. Only those tests that depend on code
   that was modified need be rerun.
 
+On their own hermetic and sandboxed builds can already save quite
+a few headaches. But crucially, without them one can't even hope to
+have any of the other features that follow them above.
+
 .. _Autotools: https://en.wikipedia.org/wiki/GNU_Build_System
 .. _Make: https://en.wikipedia.org/wiki/Make_(software)
 .. _CMake: https://cmake.org/
