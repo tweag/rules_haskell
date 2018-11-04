@@ -12,7 +12,7 @@ load(
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("//skylark:lint.bzl", "skylark_lint")
 
-ghc_version = "8.4.3"
+ghc_version = "8.4.4"
 
 haskell_toolchain(
     name = "ghc",
