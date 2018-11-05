@@ -7,16 +7,11 @@ load(
     "haskell_library",
 )
 
-cc_library(
-    name = "cbits",
-    srcs = ["cbits.c"],
-)
-
 haskell_library(
     name = "lib-a",
     srcs = ["Foo.hs"],
     deps = [
-        ":cbits",
+        "//tests/data:ourclibrary",
         "//tests:base",
         "@zlib.dev//:zlib",
     ],

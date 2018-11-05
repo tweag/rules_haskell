@@ -6,11 +6,6 @@ load(
     "haskell_test",
 )
 
-cc_library(
-    name = "cbits",
-    srcs = ["cbits.c"],
-)
-
 haskell_library(
     name = "mylib",
     srcs = ["Lib.hs"],
@@ -27,7 +22,7 @@ haskell_test(
     main_function = "Test.test",
     visibility = ["//visibility:public"],
     deps = [
-        ":cbits",
+        "//tests/data:ourclibrary",
         ":mylib",
         "//tests:base",
     ],

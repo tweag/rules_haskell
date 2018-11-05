@@ -6,18 +6,12 @@ load(
     "haskell_library",
 )
 
-cc_library(
-    name = "c-lib",
-    srcs = ["c-compiles.c"],
-    visibility = ["//visibility:public"],
-)
-
 haskell_library(
     name = "hs-lib",
     srcs = ["Lib.hs"],
     deps = [
-        ":c-lib",
         "//tests:base",
+        "//tests/data:ourclibrary",
     ],
 )
 
@@ -26,7 +20,7 @@ haskell_binary(
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
     deps = [
-        ":hs-lib",
         "//tests:base",
+        ":hs-lib",
     ],
 )

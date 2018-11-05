@@ -10,7 +10,10 @@ load(
 haskell_library(
     name = "hs-lib-a",
     srcs = ["LibA.hs"],
-    deps = ["//tests:base"],
+    deps = [
+        "//tests:base",
+        "//tests/data:ourclibrary",
+    ],
 )
 
 haskell_library(

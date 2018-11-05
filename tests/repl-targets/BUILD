@@ -8,11 +8,6 @@ load(
     "haskell_library",
 )
 
-cc_library(
-    name = "cbits",
-    srcs = ["cbits/Lib.c"],
-)
-
 haskell_cc_import(
     name = "zlib",
     hdrs = ["@zlib.dev//:include"],
@@ -47,7 +42,7 @@ haskell_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":cbits",
+        "//tests/data:ourclibrary",
         ":zlib",
         "//tests:array",
         "//tests:base",
@@ -61,7 +56,7 @@ haskell_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":cbits",
+        "//tests/data:ourclibrary",
         ":zlib",
         "//tests:array",
         "//tests:base",
