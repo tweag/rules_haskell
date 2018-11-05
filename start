@@ -50,7 +50,7 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
 nixpkgs_package(
   name = "ghc",
-  attribute_path = "haskell.compiler.ghc822",
+  attribute_path = "haskell.compiler.ghc844",
 )
 
 register_toolchains("//:ghc")
@@ -67,7 +67,7 @@ load(
 
 haskell_toolchain(
   name = "ghc",
-  version = "8.2.2",
+  version = "8.4.4",
   tools = "@ghc//:bin",
 )
 

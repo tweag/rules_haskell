@@ -122,7 +122,7 @@ test_startup_script() {
 
     # Copy the bazel configuration, this is only useful for CI
     mkdir tools
-    cp $pwd/tools/bazel.rc tools/bazel.rc
+    cp $pwd/.bazelrc .bazelrc
 
     # Set Nixpkgs in environment variable to avoid hardcoding it in
     # start script itself.
