@@ -77,17 +77,21 @@ test_failures() {
 test_repl_libraries() {
     # Test whether building of repl forces all runtime dependencies by
     # itself:
-    bazel clean
-    bazel run --config=ci //tests/repl-targets:hs-lib@repl -- -e "show (foo 10) ++ bar ++ baz ++ gen"
-    bazel run --config=ci //tests/repl-targets:hs-lib-bad@repl -- -e "1 + 2"
+    # TODO(Profpatsch) remove clean once repl uses runfiles
+    # && because otherwise the test runner succeeds if the first test fails
+    # TODO(guibou) ^
+    bazel clean \
+      && bazel run --config=ci //tests/repl-targets:hs-lib@repl -- -e "show (foo 10) ++ bar ++ baz ++ gen" \
+      && bazel run --config=ci //tests/repl-targets:hs-lib-bad@repl -- -e "1 + 2"
 }
 
 # Test REPL for binaries
 test_repl_binaries() {
     # Test whether building of repl forces all runtime dependencies by
     # itself:
-    bazel clean
-    bazel run --config=ci //tests/repl-targets:hs-bin@repl -- -e ":main"
+    # TODO(Profpatsch) remove clean once repl uses runfiles
+    bazel clean \
+      && bazel run --config=ci //tests/repl-targets:hs-bin@repl -- -e ":main"
 }
 
 # Test `compiler_flags` from toolchain and rule for REPL
