@@ -66,6 +66,10 @@ haskell_proto_toolchain(
     ],
 )
 
+# Haskell packages
+# `testonly = 0`, because they are also used to build
+# the Haskell Protobuf Toolchain
+
 haskell_import(
     name = "base",
     testonly = 0,
@@ -163,6 +167,8 @@ haskell_import(
     package = "proto-lens",
     visibility = ["//visibility:public"],
 )
+
+# All tests
 
 rule_test(
     name = "test-binary-simple",
