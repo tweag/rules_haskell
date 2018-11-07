@@ -21,8 +21,11 @@ jobs:
             nix-shell --pure --run "bazel build -c dbg --jobs=2 //... --config=ci"
       - run:
           name: Run tests
+          # bazel does not support recursive bazel call, so we
+          # cannot use bazel run here because the test runner uses
+          # bazel
           command: |
-            nix-shell --pure --run "./run_tests.sh"
+            nix-shell --pure --run "bazel build //tests:run-tests && ./bazel-bin/tests/run-tests"
 
   build-darwin:
     macos:
@@ -41,7 +44,10 @@ jobs:
       - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
-          command: nix-shell --run 'CC=$(which clang) ./run_tests.sh'
+          # bazel does not support recursive bazel call, so we
+          # cannot use bazel run here because the test runner uses
+          # bazel
+          command: nix-shell --run 'CC=$(which clang) bazel build //tests:run-tests && ./bazel-bin/tests/run-tests'
 
 workflows:
   version: 2

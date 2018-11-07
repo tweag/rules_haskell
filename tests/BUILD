@@ -120,6 +120,20 @@ haskell_import(
 )
 
 haskell_import(
+    name = "hspec",
+    testonly = 0,
+    package = "hspec",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
+    name = "hspec-core",
+    testonly = 0,
+    package = "hspec-core",
+    visibility = ["//visibility:public"],
+)
+
+haskell_import(
     name = "process",
     testonly = 0,
     package = "process",
@@ -440,3 +454,14 @@ rule_test(
 )
 
 skylark_lint()
+
+haskell_binary(
+    name = "run-tests",
+    srcs = ["RunTests.hs"],
+    deps = [
+        ":base",
+        ":hspec",
+        ":hspec-core",
+        ":process",
+    ],
+)

@@ -22,4 +22,6 @@ in haskellPackages.ghcWithPackages (p: with p; [
   # test inputs
   libc
 
+  # for test runner
+  hspec
 ])
