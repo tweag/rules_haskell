@@ -5,12 +5,13 @@ haskell_repositories()
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
-    strip_prefix = "rules_nixpkgs-0.4.0",
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.4.0.tar.gz"],
-    sha256 = "a4aefad582fcc22301b8696df7d6f55ac3183593f7efa693583f3a5d79a0aa58",
+    strip_prefix = "rules_nixpkgs-0.4.1",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.4.1.tar.gz"],
+    sha256 = "e08bfff0e3413cae8549df72e3fce36f7b0e2369e864dfe41d3307ef100500f8",
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_cc_configure",
     "nixpkgs_git_repository",
     "nixpkgs_local_repository",
     "nixpkgs_package",
@@ -47,6 +48,11 @@ register_toolchains(
     "//tests:ghc",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
+)
+
+nixpkgs_cc_configure(
+    repository = "@nixpkgs",
+    nix_file = "//nixpkgs:cc-toolchain.nix",
 )
 
 nixpkgs_package(
