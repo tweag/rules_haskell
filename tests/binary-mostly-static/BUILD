@@ -9,6 +9,6 @@ haskell_binary(
     name = "binary-mostly-static",
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
     linkstatic = True,
 )

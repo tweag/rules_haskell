@@ -12,7 +12,7 @@ haskell_library(
     srcs = ["Foo.hs"],
     deps = [
         "//tests/data:ourclibrary",
-        "//tests:base",
+        "@hackage//:base",
         "@zlib.dev//:zlib",
     ],
 )
@@ -26,7 +26,7 @@ haskell_library(
     ],
     deps = [
         ":lib-a",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 
@@ -56,7 +56,7 @@ haskell_binary(
     srcs = ["Main.hs"],
     deps = [
         ":lib-a",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 

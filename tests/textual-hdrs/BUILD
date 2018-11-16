@@ -13,5 +13,5 @@ haskell_binary(
     ],
     compiler_flags = ["-Itests/textual-hdrs/include"],
     visibility = ["//visibility:public"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )

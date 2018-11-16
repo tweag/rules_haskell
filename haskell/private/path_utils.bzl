@@ -214,3 +214,34 @@ def ln(hs, target, link, extra_inputs = depset()):
         ),
         use_default_shell_env = True,
     )
+
+def link_forest(ctx, srcs, basePath = ".", **kwargs):
+    """Write a symlink to each file in `srcs` into a destination directory
+    defined using the same arguments as `ctx.actions.declare_directory`"""
+    local_files = []
+    for src in srcs:
+        dest = ctx.actions.declare_file(
+            paths.join(basePath, src.basename),
+            **kwargs
+        )
+        local_files.append(dest)
+        ln(ctx, src, dest)
+    return local_files
+
+def copy_all(ctx, srcs, dest):
+    """Copy all the files in `srcs` into `dest`"""
+    if list(srcs) == []:
+        ctx.actions.run_shell(
+            command = "mkdir -p {dest}".format(dest = dest.path),
+            outputs = [dest],
+        )
+    else:
+        args = ctx.actions.args()
+        args.add_all(srcs)
+        ctx.actions.run_shell(
+            inputs = depset(srcs),
+            outputs = [dest],
+            mnemonic = "Copy",
+            command = "mkdir -p {dest} && cp -L -R \"$@\" {dest}".format(dest = dest.path),
+            arguments = [args],
+        )

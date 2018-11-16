@@ -7,21 +7,12 @@ load(
     "haskell_test",
 )
 
-haskell_import(
-    name = "bytestring",
-)
-
-haskell_import(
-    name = "text_pkg",
-    package = "text",
-)
-
 haskell_library(
     name = "Lib",
     srcs = ["Lib.hs"],
     deps = [
-        ":bytestring",
-        "//tests:base",
+        "@hackage//:base",
+        "@hackage//:bytestring",
     ],
 )
 
@@ -30,7 +21,7 @@ haskell_test(
     srcs = ["Bin.hs"],
     deps = [
         ":Lib",
-        ":text_pkg",
-        "//tests:base",
+        "@hackage//:base",
+        "@hackage//:text",
     ],
 )

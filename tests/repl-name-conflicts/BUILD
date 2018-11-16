@@ -9,7 +9,7 @@ haskell_library(
     name = "lib",
     srcs = ["PreludeShadowing.hs"],
     deps = [
-        "//tests:base",
-        "//tests:bytestring",
+        "@hackage//:base",
+        "@hackage//:bytestring",
     ],
 )

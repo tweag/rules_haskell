@@ -44,8 +44,8 @@ haskell_library(
     deps = [
         "//tests/data:ourclibrary",
         ":zlib",
-        "//tests:array",
-        "//tests:base",
+        "@hackage//:array",
+        "@hackage//:base",
     ],
 )
 
@@ -58,8 +58,8 @@ haskell_library(
     deps = [
         "//tests/data:ourclibrary",
         ":zlib",
-        "//tests:array",
-        "//tests:base",
+        "@hackage//:array",
+        "@hackage//:base",
     ],
     tags = ["manual"],
 )
@@ -67,7 +67,7 @@ haskell_library(
 haskell_library(
     name = "QuuxLib",
     srcs = ["QuuxLib.hs"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )
 
 haskell_binary(
@@ -76,6 +76,6 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":QuuxLib",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )

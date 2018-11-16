@@ -12,7 +12,7 @@ haskell_library(
     name = "lib-a",
     srcs = ["Foo.hs"],
     visibility = ["//visibility:public"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )
 
 haskell_library(
@@ -21,7 +21,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":lib-a",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 
@@ -37,7 +37,7 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":lib-a",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 

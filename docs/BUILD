@@ -29,6 +29,7 @@ skylark_doc(
         "//haskell:cc.bzl",
         "//haskell:repositories.bzl",
         "//haskell:ghc_bindist.bzl",
+        "//haskell:nix.bzl",
     ],
     format = "html",
 )

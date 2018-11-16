@@ -9,7 +9,7 @@ haskell_library(
     name = "sublib",
     srcs = ["Foo.hs"],
     visibility = ["//visibility:public"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )
 
 haskell_library(
@@ -18,7 +18,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":sublib",
-        "//tests:base",
         "//tests/package-id-clash/sublib",
+        "@hackage//:base",
     ],
 )

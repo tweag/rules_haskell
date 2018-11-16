@@ -26,6 +26,11 @@ def _haskell_doc_aspect_impl(target, ctx):
     if HaskellBuildInfo not in target or HaskellLibraryInfo not in target:
         return []
 
+    # Packages imported via `//haskell:import.bzl%haskell_import` already
+    # contain an `HaddockInfo` provider, so we just forward it
+    if HaddockInfo in target:
+        return []
+
     hs = haskell_context(ctx, ctx.rule.attr)
 
     package_id = target[HaskellLibraryInfo].package_id
@@ -194,7 +199,7 @@ def _haskell_doc_rule_impl(ctx):
             command = """
       mkdir -p "{doc_dir}"
       # Copy Haddocks of a dependency.
-      cp -r "{html_dir}" "{target_dir}"
+      cp -R -L "{html_dir}" "{target_dir}"
       """.format(
                 doc_dir = doc_root_path,
                 html_dir = html_dir.path,

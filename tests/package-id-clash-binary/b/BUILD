@@ -9,6 +9,6 @@ haskell_import(name = "base")
 haskell_library(
     name = "foo",
     srcs = ["Baz.hs"],
-    deps = [":base"],
     visibility = ["//visibility:public"],
+    deps = [":base"],
 )

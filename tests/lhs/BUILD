@@ -9,7 +9,7 @@ load(
 haskell_library(
     name = "lhs-lib",
     srcs = ["Lib.lhs"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )
 
 haskell_binary(
@@ -18,6 +18,6 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":lhs-lib",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )

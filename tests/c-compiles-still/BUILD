@@ -9,7 +9,7 @@ haskell_library(
     name = "foo",
     srcs = ["Foo.hs"],
     deps = [
-        "//tests:base",
         "//tests/data:ourclibrary",
+        "@hackage//:base",
     ],
 )

@@ -13,5 +13,5 @@ haskell_binary(
     srcs = ["Main.hs"],
     compiler_flags = ["-threaded"],
     visibility = ["//visibility:public"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )

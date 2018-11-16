@@ -9,5 +9,5 @@ haskell_binary(
     name = "binary-simple",
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )

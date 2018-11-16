@@ -17,6 +17,6 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":zlib",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )

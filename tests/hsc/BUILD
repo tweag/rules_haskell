@@ -13,7 +13,7 @@ haskell_library(
         "Bar/Baz.hsc",
         "Foo.hsc",
     ],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )
 
 haskell_binary(
@@ -25,6 +25,6 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":hsc-lib",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )

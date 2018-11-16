@@ -8,7 +8,7 @@ load(
 haskell_library(
     name = "lib-a",
     srcs = ["LibA.hs"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )
 
 haskell_library(
@@ -17,7 +17,7 @@ haskell_library(
     visibility = ["//visibility:private"],
     deps = [
         ":lib-a",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 
@@ -40,7 +40,7 @@ haskell_library(
     srcs = ["LibC.hs"],
     deps = [
         ":lib-b",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 
@@ -51,7 +51,7 @@ haskell_library(
     tags = ["manual"],
     deps = [
         ":lib-b",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 
@@ -61,6 +61,6 @@ haskell_library(
     deps = [
         ":lib-a",
         ":lib-b",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )

@@ -38,7 +38,7 @@ haskell_library(
     deps = [
         ":zlib",
         ":zlib-with-genrule-header",
-        "//tests:base",
+        "@hackage//:base",
     ],
 )
 
@@ -51,8 +51,8 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":intermediate-library",
-        "//tests:base",
-        "//tests:template-haskell",
+        "@hackage//:base",
+        "@hackage//:template-haskell",
     ],
 )
 
@@ -63,7 +63,7 @@ haskell_library(
     srcs = ["IntLib.hsc"],
     deps = [
         ":zlib-with-genrule-header",
-        "//tests:base",
+        "@hackage//:base",
         "@zlib.dev//:zlib",
     ],
 )
@@ -77,7 +77,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":intermediate-library-other",
-        "//tests:base",
-        "//tests:template-haskell",
+        "@hackage//:base",
+        "@hackage//:template-haskell",
     ],
 )

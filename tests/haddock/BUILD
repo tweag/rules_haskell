@@ -19,7 +19,7 @@ haskell_cc_import(
 haskell_library(
     name = "haddock-lib-deep",
     srcs = ["Deep.hsc"],
-    deps = ["//tests:base"],
+    deps = ["@hackage//:base"],
 )
 
 haskell_library(
@@ -32,8 +32,8 @@ haskell_library(
     compiler_flags = ["-I."],
     deps = [
         ":haddock-lib-deep",
-        "//tests:base",
-        "//tests:template-haskell",
+        "@hackage//:base",
+        "@hackage//:template-haskell",
     ],
 )
 
@@ -53,10 +53,10 @@ haskell_library(
     ],
     deps = [
         ":haddock-lib-a",
-        ":haddock-lib-c",
         ":zlib",
-        "//tests:base",
-        "//tests:template-haskell",
+        "@hackage//:base",
+        "@hackage//:libc",
+        "@hackage//:template-haskell",
     ],
 )
 
