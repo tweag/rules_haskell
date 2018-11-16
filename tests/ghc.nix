@@ -30,6 +30,7 @@ in
     lens-labels
     proto-lens
     text
+    glib
 
   # test inputs
   libc

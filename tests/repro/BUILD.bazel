@@ -1,0 +1,15 @@
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_test",
+    "haskell_import",
+)
+haskell_test(
+    name = "foo",
+    srcs = [
+        "Foo.hs"
+    ],
+    deps = [
+        "@hackage//:base",
+        "@hackage//:glib",
+    ],
+)

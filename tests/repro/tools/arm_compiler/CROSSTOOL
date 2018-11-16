@@ -1,0 +1,30 @@
+major_version: "local"
+minor_version: ""
+default_target_cpu: "stm32f405"
+
+default_toolchain {
+  cpu: "k8"
+  toolchain_identifier: "local"
+}
+
+toolchain {
+  toolchain_identifier: "local"
+  abi_libc_version: "local"
+  abi_version: "local"
+  builtin_sysroot: ""
+  compiler: "gcc"
+  host_system_name: "local"
+  target_cpu: "k8"
+  target_libc: "local"
+  target_system_name: "local"
+  tool_path {name: "ar" path: "/bin/false"}
+  tool_path {name: "cpp" path: "/bin/false"}
+  tool_path {name: "dwp" path: "/bin/false"}
+  tool_path {name: "gcc" path: "/nix/store/kbzrrfix320x71icljxg0vpgiqq8f55a-gcc-wrapper-7.3.0/bin/gcc" }
+  tool_path {name: "gcov" path: "/bin/false"}
+  tool_path {name: "ld" path: "/bin/false"}
+  tool_path {name: "nm" path: "/bin/false"}
+  tool_path {name: "objcopy" path: "/bin/false"}
+  tool_path {name: "objdump" path: "/bin/false"}
+  tool_path {name: "strip" path: "/bin/false"}
+}
