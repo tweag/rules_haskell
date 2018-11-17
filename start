@@ -42,17 +42,31 @@ haskell_repositories()
 
 http_archive(
   name = "io_tweag_rules_nixpkgs",
-  strip_prefix = "rules_nixpkgs-0.2.3",
-  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.2.3.tar.gz"],
+  strip_prefix = "rules_nixpkgs-0.4.0",
+  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.4.0.tar.gz"],
 )
 
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_package",
+    "nixpkgs_git_repository",
+    "nixpkgs_cc_configure",
+)
+
+nixpkgs_git_repository(
+    name = "nixpkgs",
+    remote = "https://github.com/NixOS/nixpkgs",
+    revision = "18.09",
+    sha256 = "6451af4083485e13daa427f745cbf859bc23cb8b70454c017887c006a13bd65e",
+)
 
 nixpkgs_package(
   name = "ghc",
-  attribute_path = "haskell.compiler.ghc844",
+  attribute_path = "haskell.compiler.ghc843",
+  repository = "@nixpkgs",
 )
 
+nixpkgs_cc_configure(repository = "@nixpkgs")
 register_toolchains("//:ghc")
 EOF
 
@@ -67,7 +81,7 @@ load(
 
 haskell_toolchain(
   name = "ghc",
-  version = "8.4.4",
+  version = "8.4.3",
   tools = "@ghc//:bin",
 )
 

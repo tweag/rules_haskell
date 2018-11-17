@@ -5,13 +5,15 @@ haskell_repositories()
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
-    strip_prefix = "rules_nixpkgs-0.3.1",
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.3.1.tar.gz"],
-    sha256 = "1dc7ad9d4e0e7e690962317fa70bf5ab3bac5b4944e4f40eff3c2d6f5255eb20",
+    strip_prefix = "rules_nixpkgs-0.4.1",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.4.1.tar.gz"],
+    sha256 = "e08bfff0e3413cae8549df72e3fce36f7b0e2369e864dfe41d3307ef100500f8",
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_cc_configure",
     "nixpkgs_git_repository",
+    "nixpkgs_local_repository",
     "nixpkgs_package",
 )
 load("@io_tweag_rules_haskell//haskell:nix.bzl",
@@ -37,15 +39,25 @@ http_archive(
     urls = ["https://github.com/google/protobuf/archive/v3.5.0.zip"],
 )
 
+nixpkgs_local_repository(
+    name = "nixpkgs",
+    nix_file = "//nixpkgs:default.nix",
+)
+
 register_toolchains(
     "//tests:ghc",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
 )
 
+nixpkgs_cc_configure(
+    repository = "@nixpkgs",
+    nix_file = "//nixpkgs:cc-toolchain.nix",
+)
+
 nixpkgs_package(
     name = "zlib",
-    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
+    repository = "@nixpkgs",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
@@ -63,7 +75,7 @@ filegroup (
 
 nixpkgs_package(
     name = "zlib.dev",
-    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
+    repository = "@nixpkgs",
     build_file_content = """
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
 package(default_visibility = ["//visibility:public"])
@@ -86,7 +98,7 @@ haskell_cc_import(
 
 nixpkgs_package(
     name = "glib_locales",
-    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
+    repository = "@nixpkgs",
     attribute_path = "glibcLocales",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
@@ -100,7 +112,7 @@ filegroup(
 
 haskell_nixpkgs_packageset(
     name = "hackage-packages",
-    repositories = { "nixpkgs": "//nixpkgs:default.nix" },
+    repositories = { "nixpkgs": "@nixpkgs" },
     nix_file = "//tests:ghc.nix",
     base_attribute_path = "haskellPackages",
 )
