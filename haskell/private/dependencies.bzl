@@ -21,37 +21,48 @@ def _is_shared_library(f):
     """
     return f.extension in ["so", "dylib"] or f.basename.find(".so.") != -1
 
-def _mangle_solib(ctx, label, solib, preserve_name):
-    """Create a symlink to a dynamic library, with a longer name.
+def _is_static_library(f):
+    """Check if the given File is a static library.
 
-    The built-in cc_* rules don't link against a shared library
+    Args:
+      f: The File to check.
+
+    Returns:
+      Bool: True if the given file `f` is a static library, False otherwise.
+    """
+    return f.extension in ["a"]
+
+def _mangle_lib(ctx, label, lib, preserve_name):
+    """Create a symlink to a library, with a longer name.
+
+    The built-in cc_* rules don't link against a library
     directly. They link against a symlink whose name is guaranteed to be
-    unique across the entire workspace. This disambiguates dynamic
-    libraries with the same soname. This process is called "mangling".
+    unique across the entire workspace. This disambiguates
+    libraries with the same name. This process is called "mangling".
     The built-in rules don't expose mangling functionality directly (see
     https://github.com/bazelbuild/bazel/issues/4581). But this function
     emulates the built-in dynamic library mangling.
 
     Args:
       ctx: Rule context.
-      label: the label to use as a qualifier for the dynamic library name.
-      solib: the dynamic library.
-      preserve_name: Bool, whether given `solib` should be returned unchanged.
+      label: the label to use as a qualifier for the library name.
+      solib: the library.
+      preserve_name: Bool, whether given `lib` should be returned unchanged.
 
     Returns:
-      File: the created symlink or the original solib.
+      File: the created symlink or the original lib.
     """
 
     if preserve_name:
-        return solib
+        return lib
 
     components = [c for c in [label.workspace_root, label.package, label.name] if c]
     qualifier = "/".join(components).replace("_", "_U").replace("/", "_S")
-    qualsolib = ctx.actions.declare_file("lib" + qualifier + "_" + solib.basename)
+    quallib = ctx.actions.declare_file("lib" + qualifier + "_" + lib.basename)
 
-    ln(ctx, solib, qualsolib)
+    ln(ctx, lib, quallib)
 
-    return qualsolib
+    return quallib
 
 def gather_dep_info(ctx):
     """Collapse dependencies into a single `HaskellBuildInfo`.
@@ -131,7 +142,7 @@ def gather_dep_info(ctx):
                         f:
                         # If the provider is CcSkylarkApiProviderHacked, then the .so
                         # files come from haskell_cc_import.
-                        _mangle_solib(ctx, dep.label, f, CcSkylarkApiProviderHacked in dep)
+                        _mangle_lib(ctx, dep.label, f, CcSkylarkApiProviderHacked in dep)
                         for f in dep.files.to_list()
                         if _is_shared_library(f)
                     },
