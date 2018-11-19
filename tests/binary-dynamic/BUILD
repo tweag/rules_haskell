@@ -10,5 +10,5 @@ haskell_binary(
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
     deps = ["@hackage//:base"],
-    linkstatic = True,
+    linkstatic = False,
 )

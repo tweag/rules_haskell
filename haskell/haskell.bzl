@@ -110,8 +110,8 @@ def _mk_binary_rule(**kwargs):
         attrs = dict(
             _haskell_common_attrs,
             linkstatic = attr.bool(
-                default = False,
-                doc = "If enabled, this option tells GHC to link statically whenever possible. While this captures all Haskell code built, some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.",
+                default = True,
+                doc = "Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.",
             ),
             generate_so = attr.bool(
                 default = False,
