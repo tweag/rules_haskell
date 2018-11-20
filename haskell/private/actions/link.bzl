@@ -126,9 +126,7 @@ def link_binary(
     # this is when we are compiling for profiling, which currently does not play
     # nicely with dynamic linking.
     if not linkstatic:
-        if hs.toolchain.is_darwin:
-            args.add(["-optl-Wl,-headerpad_max_install_names"])
-        elif not with_profiling:
+        if not with_profiling:
             args.add(["-pie", "-dynamic"])
 
     # When compiling with `-threaded`, GHC needs to link against
@@ -163,6 +161,7 @@ def link_binary(
     )
 
     if hs.toolchain.is_darwin:
+        args.add(["-optl-Wl,-headerpad_max_install_names"])
         # Suppress a warning that Clang prints due to GHC automatically passing
         # "-pie" or "-no-pie" to the C compiler.
         # This particular invocation of GHC is a little unusual; e.g., we're
