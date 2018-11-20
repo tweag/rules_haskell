@@ -55,12 +55,19 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
         ),
     )
 
-def _create_objects_dir_manifest(hs, objects_dir, with_profiling):
+def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
+    suffix = ".dynamic.manifest" if dynamic else ".static.manifest"
     objects_dir_manifest = hs.actions.declare_file(
-        objects_dir.basename + ".manifest",
+        objects_dir.basename + suffix,
         sibling = objects_dir,
     )
 
+    if dynamic:
+        ext = "dyn_o"
+    elif with_profiling:
+        ext = "p_o"
+    else:
+        ext = "o"
     hs.actions.run_shell(
         inputs = [objects_dir],
         outputs = [objects_dir_manifest],
@@ -68,7 +75,7 @@ def _create_objects_dir_manifest(hs, objects_dir, with_profiling):
         find {dir} -name '*.{ext}' > {out}
         """.format(
             dir = objects_dir.path,
-            ext = "p_o" if with_profiling else "dyn_o",
+            ext = ext,
             out = objects_dir_manifest.path,
         ),
         use_default_shell_env = True,
@@ -177,7 +184,12 @@ def link_binary(
         for rpath in set.to_list(_infer_rpaths(executable, solibs)):
             args.add(["-optl-Wl,-rpath," + rpath])
 
-    objects_dir_manifest = _create_objects_dir_manifest(hs, objects_dir, with_profiling)
+    objects_dir_manifest = _create_objects_dir_manifest(
+        hs,
+        objects_dir,
+        dynamic = False,
+        with_profiling = with_profiling,
+    )
     hs.toolchain.actions.run_ghc(
         hs,
         inputs = depset(transitive = [
@@ -259,7 +271,12 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
     static_library = hs.actions.declare_file(
         "lib{0}.a".format(pkg_id.library_name(hs, my_pkg_id, prof_suffix = with_profiling)),
     )
-    objects_dir_manifest = _create_objects_dir_manifest(hs, objects_dir, with_profiling)
+    objects_dir_manifest = _create_objects_dir_manifest(
+        hs,
+        objects_dir,
+        dynamic = False,
+        with_profiling = with_profiling
+    )
     args = hs.actions.args()
     inputs = ([objects_dir, objects_dir_manifest, hs.tools.ar] +
               hs.tools_runfiles.ar + hs.extra_binaries)
@@ -317,7 +334,6 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
 
     args = hs.actions.args()
     args.add(["-optl" + f for f in cc.linker_flags])
-
     args.add(["-shared", "-dynamic"])
 
     # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
@@ -359,7 +375,12 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     args.add(["-o", dynamic_library_tmp.path])
 
     # Profiling not supported for dynamic libraries.
-    objects_dir_manifest = _create_objects_dir_manifest(hs, objects_dir, False)
+    objects_dir_manifest = _create_objects_dir_manifest(
+        hs,
+        objects_dir,
+        dynamic = True,
+        with_profiling = False,
+    )
 
     hs.toolchain.actions.run_ghc(
         hs,
