@@ -191,15 +191,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         args.add("-O2")
 
     args.add(ghc_args)
-
     args.add(["-static"])
-
-    # NOTE We can't have profiling and dynamic code at the same time, see:
-    # https://ghc.haskell.org/trac/ghc/ticket/15394
     if with_profiling:
         args.add("-prof", "-fexternal-interpreter")
-    else:
-        args.add(["-dynamic-too"])
 
     # Common flags
     args.add([
@@ -270,7 +264,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         ),
     )
 
-def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, with_profiling, main_function, version):
+def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, dynamic, with_profiling, main_function, version):
     """Compile a Haskell target into object files suitable for linking.
 
     Returns:
@@ -282,6 +276,12 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
     """
     c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = None, version = version)
     c.args.add(["-main-is", main_function])
+    if dynamic:
+        # For binaries, GHC creates .o files even for code to be
+        # linked dynamically. So we have to force the object suffix to
+        # be consistent with the dynamic object suffix in the library
+        # case.
+        c.args.add(["-dynamic", "-osuf dyn_o"])
 
     hs.toolchain.actions.run_ghc(
         hs,
@@ -322,7 +322,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         exposed_modules_file = exposed_modules_file,
     )
 
-def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exposed_modules_reexports, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id):
+def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exposed_modules_reexports, import_dir_map, extra_srcs, compiler_flags, with_shared, with_profiling, my_pkg_id):
     """Build arguments for Haskell package build.
 
     Returns:
@@ -337,6 +337,8 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
     c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version)
+    if with_shared:
+        c.args.add(["-dynamic-too"])
 
     hs.toolchain.actions.run_ghc(
         hs,

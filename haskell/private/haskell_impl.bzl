@@ -65,9 +65,10 @@ use the 'haskell_import' rule instead.
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
-    with_profiling = is_profiling_enabled(hs)
 
+    with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+    compiler_flags = ctx.attr.compiler_flags
 
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -79,6 +80,7 @@ use the 'haskell_import' rule instead.
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         compiler_flags = ctx.attr.compiler_flags,
+        dynamic = not ctx.attr.linkstatic,
         with_profiling = False,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
@@ -103,6 +105,10 @@ use the 'haskell_import' rule instead.
                 depset([c.objects_dir]),
             ]),
             compiler_flags = ctx.attr.compiler_flags,
+            # NOTE We can't have profiling and dynamic code at the
+            # same time, see:
+            # https://ghc.haskell.org/trac/ghc/ticket/15394
+            dynamic = False,
             with_profiling = True,
             main_function = ctx.attr.main_function,
             version = ctx.attr.version,
@@ -115,8 +121,8 @@ use the 'haskell_import' rule instead.
         ctx.files.extra_srcs,
         ctx.attr.compiler_flags,
         c_p.objects_dir if with_profiling else c.objects_dir,
-        ctx.attr.linkstatic,
-        with_profiling,
+        dynamic = not ctx.attr.linkstatic,
+        with_profiling = with_profiling,
         version = ctx.attr.version,
     )
 
@@ -177,6 +183,7 @@ use the 'haskell_import' rule instead.
     version = ctx.attr.version if ctx.attr.version else None
     my_pkg_id = pkg_id.new(ctx.label, version)
     with_profiling = is_profiling_enabled(hs)
+    with_shared = not ctx.attr.linkstatic
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -198,6 +205,7 @@ use the 'haskell_import' rule instead.
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         compiler_flags = ctx.attr.compiler_flags,
+        with_shared = with_shared,
         with_profiling = False,
         my_pkg_id = my_pkg_id,
     )
@@ -223,6 +231,10 @@ use the 'haskell_import' rule instead.
                 depset([c.objects_dir]),
             ]),
             compiler_flags = ctx.attr.compiler_flags,
+            # NOTE We can't have profiling and dynamic code at the
+            # same time, see:
+            # https://ghc.haskell.org/trac/ghc/ticket/15394
+            with_shared = False,
             with_profiling = True,
             my_pkg_id = my_pkg_id,
         )
@@ -235,14 +247,23 @@ use the 'haskell_import' rule instead.
         my_pkg_id,
         with_profiling = False,
     )
-    dynamic_library = link_library_dynamic(
-        hs,
-        cc,
-        dep_info,
-        depset(ctx.files.extra_srcs),
-        c.objects_dir,
-        my_pkg_id,
-    )
+
+    if with_shared:
+        dynamic_library = link_library_dynamic(
+            hs,
+            cc,
+            dep_info,
+            depset(ctx.files.extra_srcs),
+            c.objects_dir,
+            my_pkg_id,
+        )
+        dynamic_libraries = set.insert(
+            dep_info.dynamic_libraries,
+            dynamic_library
+        )
+    else:
+        dynamic_library = None
+        dynamic_libraries = dep_info.dynamic_libraries
 
     static_library_prof = None
     if with_profiling:
@@ -294,7 +315,7 @@ use the 'haskell_import' rule instead.
         # then you feed the library which resolves the symbols.
         static_libraries = [static_library] + dep_info.static_libraries,
         static_libraries_prof = static_libraries_prof,
-        dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
+        dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
         external_libraries = dep_info.external_libraries,
