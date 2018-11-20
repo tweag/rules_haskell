@@ -259,7 +259,7 @@ use the 'haskell_import' rule instead.
         )
         dynamic_libraries = set.insert(
             dep_info.dynamic_libraries,
-            dynamic_library
+            dynamic_library,
         )
     else:
         dynamic_library = None

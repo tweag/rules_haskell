@@ -188,7 +188,7 @@ haskell_library = rule(
         linkstatic = attr.bool(
             default = False,
             doc = "Create a static library, not both a static and a shared library.",
-            ),
+        ),
         version = attr.string(
             doc = """Library version. Not normally necessary unless to build a library
             originally defined as a Cabal package. If this is specified, CPP version macro will be generated.""",

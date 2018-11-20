@@ -161,6 +161,7 @@ def link_binary(
 
     if hs.toolchain.is_darwin:
         args.add(["-optl-Wl,-headerpad_max_install_names"])
+
         # Suppress a warning that Clang prints due to GHC automatically passing
         # "-pie" or "-no-pie" to the C compiler.
         # This particular invocation of GHC is a little unusual; e.g., we're
@@ -273,7 +274,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
         hs,
         objects_dir,
         dynamic = False,
-        with_profiling = with_profiling
+        with_profiling = with_profiling,
     )
     args = hs.actions.args()
     inputs = ([objects_dir, objects_dir_manifest, hs.tools.ar] +
