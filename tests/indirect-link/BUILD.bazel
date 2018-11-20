@@ -22,7 +22,7 @@ haskell_library(
 )
 
 haskell_binary(
-    name = "mytest",
+    name = "indirect-link",
     srcs = ["test/Main.hs"],
     src_strip_prefix = "test",
     deps = [":mypkg", ":base"],
