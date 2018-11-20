@@ -62,10 +62,10 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
         sibling = objects_dir,
     )
 
-    if dynamic:
-        ext = "dyn_o"
-    elif with_profiling:
+    if with_profiling:
         ext = "p_o"
+    elif dynamic:
+        ext = "dyn_o"
     else:
         ext = "o"
     hs.actions.run_shell(
@@ -125,9 +125,7 @@ def link_binary(
     # sure that GHC dynamically links Haskell code too. The one exception to
     # this is when we are compiling for profiling, which currently does not play
     # nicely with dynamic linking.
-    if dynamic:
-        if with_profiling:
-            fail("GHC does not support linking binaries with -dynamic and -prof at the same time.\nSee https://ghc.haskell.org/trac/ghc/ticket/15394.")
+    if dynamic and not with_profiling:
         args.add(["-pie", "-dynamic"])
 
     # When compiling with `-threaded`, GHC needs to link against
