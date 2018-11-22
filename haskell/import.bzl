@@ -3,7 +3,7 @@
 load(":private/context.bzl", "haskell_context")
 load(":private/actions/package.bzl", "package")
 load(
-    ":private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaddockInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",

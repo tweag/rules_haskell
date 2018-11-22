@@ -1,6 +1,6 @@
 load(":private/path_utils.bzl", "ln")
 load(
-    ":private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "CcSkylarkApiProviderHacked",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",

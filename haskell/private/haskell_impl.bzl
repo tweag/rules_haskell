@@ -21,7 +21,7 @@ load(
     "ln",
 )
 load(
-    ":private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "C2hsLibraryInfo",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",

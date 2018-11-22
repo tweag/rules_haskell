@@ -1,7 +1,7 @@
 """Support for protocol buffers"""
 
 load(
-    ":private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",

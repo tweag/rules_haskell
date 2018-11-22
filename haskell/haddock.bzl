@@ -4,7 +4,7 @@ load(":private/context.bzl", "haskell_context")
 load(":private/path_utils.bzl", "module_name")
 load(":private/set.bzl", "set")
 load(
-    ":private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaddockInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
