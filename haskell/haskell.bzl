@@ -2,9 +2,6 @@
 
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
-    "HaskellBinaryInfo",
-    "HaskellBuildInfo",
-    "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
 )
 load(":private/set.bzl", "set")
@@ -143,10 +140,6 @@ def _mk_binary_rule(**kwargs):
             "@io_tweag_rules_haskell//haskell:toolchain",
             "@bazel_tools//tools/cpp:toolchain_type",
         ],
-        provides = [
-            HaskellBuildInfo,
-            HaskellBinaryInfo,
-        ],
         **kwargs
     )
 
@@ -211,10 +204,6 @@ haskell_library = rule(
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
         "@bazel_tools//tools/cpp:toolchain_type",
-    ],
-    provides = [
-        HaskellBuildInfo,
-        HaskellLibraryInfo,
     ],
 )
 """Build a library from Haskell source.
