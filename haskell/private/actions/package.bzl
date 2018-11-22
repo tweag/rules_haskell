@@ -94,8 +94,16 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
             set.to_depset(dep_info.package_confs),
             set.to_depset(dep_info.package_caches),
             depset(interfaces_dirs),
-            depset([static_library, conf_file, dynamic_library] +
-                   ([static_library_prof] if static_library_prof != None else [])),
+            depset([
+                input
+                for input in [
+                    static_library,
+                    conf_file,
+                    dynamic_library,
+                    static_library_prof,
+                ]
+                if input
+            ]),
         ]),
         outputs = [cache_file],
         env = {
