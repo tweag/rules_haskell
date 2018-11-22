@@ -1,4 +1,7 @@
-exports_files(["lint.bzl"])
+exports_files([
+    "lint.bzl",
+    "sh_inline_test.bzl",
+])
 
 sh_binary(
     name = "buildifier",

@@ -11,6 +11,7 @@ load(
 )
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("//skylark:lint.bzl", "skylark_lint")
+load("//skylark:sh_inline_test.bzl", "sh_inline_test")
 load("@io_tweag_rules_haskell//haskell:import.bzl", haskell_import_new = "haskell_import")
 
 ghc_version = "8.4.4"
@@ -268,12 +269,17 @@ rule_test(
     rule = "//tests/cc_haskell_import:cc-bin",
 )
 
-sh_test(
+sh_inline_test(
     name = "test-haskell_binary-with-link-flags",
     size = "small",
-    srcs = ["scripts/test-threaded.sh"],
     args = ["$(location //tests/binary-with-link-flags:binary-with-link-flags)"],
     data = ["//tests/binary-with-link-flags"],
+    script = """\
+set -e
+
+# Fails if executable was linked without -threaded flag.
+$1 +RTS -N
+""",
 )
 
 rule_test(
