@@ -125,8 +125,11 @@ def link_binary(
     # sure that GHC dynamically links Haskell code too. The one exception to
     # this is when we are compiling for profiling, which currently does not play
     # nicely with dynamic linking.
-    if dynamic and not with_profiling:
-        args.add(["-pie", "-dynamic"])
+    if dynamic:
+        if with_profiling:
+            print("WARNING: dynamic linking and profiling don't mix. Omitting -dynamic.\nSee https://ghc.haskell.org/trac/ghc/ticket/15394")
+        else:
+            args.add(["-pie", "-dynamic"])
 
     # When compiling with `-threaded`, GHC needs to link against
     # the pthread library when linking against static archives (.a).
