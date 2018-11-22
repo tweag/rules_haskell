@@ -11,7 +11,7 @@ load(
     ":private/providers.bzl",
     "C2hsLibraryInfo",
 )
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _c2hs_library_impl(ctx):
     hs = haskell_context(ctx)

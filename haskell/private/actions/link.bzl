@@ -3,7 +3,7 @@
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/path_utils.bzl", "get_lib_name")
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "expose_packages")
 
 def _backup_path(target):

@@ -1,6 +1,6 @@
 """Workspace rules (GHC binary distributions)"""
 
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 _GHC_BINS = {
     "8.4.1": {

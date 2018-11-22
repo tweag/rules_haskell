@@ -143,18 +143,21 @@ local_repository(
 
 http_archive(
         name = "io_bazel_rules_sass",
-        strip_prefix = "rules_sass-0.0.3",
-        urls = ["https://github.com/bazelbuild/rules_sass/archive/0.0.3.tar.gz"],
-        sha256 = "14536292b14b5d36d1d72ae68ee7384a51e304fa35a3c4e4db0f4590394f36ad",
+        strip_prefix = "rules_sass-1.15.1",
+        urls = ["https://github.com/bazelbuild/rules_sass/archive/1.15.1.tar.gz"],
+        sha256 = "438b26d1047fd51169c95e2a473140065cf34d3726ce2c23ebc5a953785df998",
 )
-load("@io_bazel_rules_sass//sass:sass.bzl", "sass_repositories")
+load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
+rules_sass_dependencies()
+
+load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
 sass_repositories()
 
 http_archive(
         name = "io_bazel_skydoc",
-        strip_prefix = "skydoc-b374449408e759e32e010fa6a20585fe9fabd523",
-        urls = ["https://github.com/mrkkrp/skydoc/archive/b374449408e759e32e010fa6a20585fe9fabd523.tar.gz"],
-        sha256 = "12b96f74de7a6002de69a92959e476bd8c9ed95cb969354ee1af750f9961203b",
+        strip_prefix = "skydoc-9bbdf62c03b5c3fed231604f78d3976f47753d79",
+        urls = ["https://github.com/mrkkrp/skydoc/archive/9bbdf62c03b5c3fed231604f78d3976f47753d79.tar.gz"],
+        sha256 = "12a82b494a40c4ef96230bc66aeff654420dd39a537eb3064ff18ce1838f1fb7",
 )
 load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
 skydoc_repositories()

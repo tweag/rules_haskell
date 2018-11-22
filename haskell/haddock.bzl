@@ -9,7 +9,7 @@ load(
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
 )
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _get_haddock_path(package_id):
     """Get path to Haddock file of a package given its id.

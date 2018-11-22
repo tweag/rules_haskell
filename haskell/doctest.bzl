@@ -14,7 +14,8 @@ load(
     "get_lib_name",
     "target_unique_name",
 )
-load("@bazel_skylib//:lib.bzl", "dicts", "paths")
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _doctest_toolchain_impl(ctx):
     return platform_common.ToolchainInfo(

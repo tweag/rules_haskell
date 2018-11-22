@@ -1,7 +1,7 @@
 """Utilities for module and path manipulations."""
 
 load(":private/set.bzl", "set")
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def module_name(hs, f, rel_path = None):
     """Given Haskell source file path, turn it into a dot-separated module name.
