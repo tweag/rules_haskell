@@ -7,7 +7,7 @@ load(
     "target_unique_name",
 )
 load(
-    ":private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",

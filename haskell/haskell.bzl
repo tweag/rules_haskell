@@ -1,6 +1,9 @@
 """Core Haskell rules"""
 
-load(":private/providers.bzl", "HaskellPrebuiltPackageInfo")
+load(
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
+    "HaskellPrebuiltPackageInfo",
+)
 load(":private/set.bzl", "set")
 load("@bazel_skylib//:lib.bzl", "paths")
 load(

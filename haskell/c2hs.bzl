@@ -8,7 +8,7 @@ load(
     "target_unique_name",
 )
 load(
-    ":private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "C2hsLibraryInfo",
 )
 load("@bazel_skylib//:lib.bzl", "paths")

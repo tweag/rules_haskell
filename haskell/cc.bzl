@@ -4,7 +4,7 @@ These rules are temporary and will be deprecated in the future.
 """
 
 load(
-    ":private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "CcSkylarkApiProviderHacked",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",

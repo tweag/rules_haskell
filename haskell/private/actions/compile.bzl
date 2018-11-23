@@ -9,7 +9,7 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(
-    ":private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "C2hsLibraryInfo",
     "DefaultCompileInfo",
 )
