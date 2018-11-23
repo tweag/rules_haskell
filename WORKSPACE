@@ -34,9 +34,9 @@ haskell_nixpkgs_package(
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "cef7f1b5a7c5fba672bec2a319246e8feba471f04dcebfe362d55930ee7c1c30",
-    strip_prefix = "protobuf-3.5.0",
-    urls = ["https://github.com/google/protobuf/archive/v3.5.0.zip"],
+    strip_prefix = "protobuf-7b28271a61a3da0a37f6fda399b0c4c86464e5b3",
+    sha256 = "d625beb4a43304409429a0466bb4fb44c89f7e7d90aeced972b8a61dbe92c80b",
+    urls = ["https://github.com/google/protobuf/archive/7b28271a61a3da0a37f6fda399b0c4c86464e5b3.zip"], # 2018-11-16
 )
 
 nixpkgs_local_repository(
