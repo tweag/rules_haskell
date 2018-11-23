@@ -143,14 +143,12 @@ local_repository(
 
 http_archive(
         name = "io_bazel_rules_sass",
-        strip_prefix = "rules_sass-1.15.1",
-        urls = ["https://github.com/bazelbuild/rules_sass/archive/1.15.1.tar.gz"],
-        sha256 = "438b26d1047fd51169c95e2a473140065cf34d3726ce2c23ebc5a953785df998",
+        strip_prefix = "rules_sass-0.0.3",
+        urls = ["https://github.com/bazelbuild/rules_sass/archive/0.0.3.tar.gz"],
+        sha256 = "14536292b14b5d36d1d72ae68ee7384a51e304fa35a3c4e4db0f4590394f36ad",
 )
-load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
-rules_sass_dependencies()
 
-load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
+load("@io_bazel_rules_sass//sass:sass.bzl", "sass_repositories")
 sass_repositories()
 
 http_archive(
