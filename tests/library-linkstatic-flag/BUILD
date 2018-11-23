@@ -1,7 +1,7 @@
 # test whether `linkstatic` works as expected
 package(default_testonly = 1)
 
-load("//skylark:sh_inline_test.bzl", "sh_inline_test")
+load("//tests:sh_inline_test.bzl", "sh_inline_test")
 load(":get_library_files.bzl", "get_libraries_as_runfiles")
 
 load(
