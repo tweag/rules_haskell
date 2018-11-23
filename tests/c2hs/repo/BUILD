@@ -1,10 +1,6 @@
-package(default_testonly = 1)
-
 load("@io_tweag_rules_haskell//haskell:c2hs.bzl", "c2hs_library")
-load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_cc_import",
-)
+
+package(default_testonly = 1)
 
 c2hs_library(
     name = "baz",

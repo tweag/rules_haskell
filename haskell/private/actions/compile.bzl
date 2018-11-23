@@ -1,6 +1,12 @@
 """Actions for compiling Haskell source code"""
 
-load(":private/java.bzl", "java_interop_info")
+load(":private/packages.bzl", "expose_packages")
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load(
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
+    "DefaultCompileInfo",
+)
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
@@ -8,15 +14,7 @@ load(
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
-load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
-    "C2hsLibraryInfo",
-    "DefaultCompileInfo",
-)
 load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/packages.bzl", "expose_packages")
 
 def _process_hsc_file(hs, cc, hsc_file):
     """Process a single hsc file.

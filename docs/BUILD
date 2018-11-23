@@ -1,5 +1,5 @@
-load("@io_bazel_skydoc//skylark:skylark.bzl", "skylark_doc")
 load("//skylark:lint.bzl", "skylark_lint")
+load("@io_bazel_skydoc//skylark:skylark.bzl", "skylark_doc")
 
 genrule(
     name = "guide_html",

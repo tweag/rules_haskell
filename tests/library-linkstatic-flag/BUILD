@@ -1,36 +1,35 @@
-# test whether `linkstatic` works as expected
-package(default_testonly = 1)
-
-load("//tests:sh_inline_test.bzl", "sh_inline_test")
-load(":get_library_files.bzl", "get_libraries_as_runfiles")
-
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
 )
+load("//tests:sh_inline_test.bzl", "sh_inline_test")
+load(":get_library_files.bzl", "get_libraries_as_runfiles")
+
+# test whether `linkstatic` works as expected
+package(default_testonly = 1)
 
 # only .a files
 haskell_library(
     name = "library-static-only",
     srcs = ["Lib.hs"],
+    linkstatic = True,  # <--
     visibility = ["//visibility:public"],
     deps = [
         "@hackage//:base",
         "@hackage//:bytestring",
     ],
-    linkstatic = True, # <--
 )
 
 # both .a and .so files
 haskell_library(
     name = "library-static-and-dynamic",
     srcs = ["Lib.hs"],
+    linkstatic = False,  # <--
     visibility = ["//visibility:public"],
     deps = [
         "@hackage//:base",
         "@hackage//:bytestring",
     ],
-    linkstatic = False, # <--
 )
 
 # extract all libraries from the haskell_library
@@ -38,6 +37,7 @@ get_libraries_as_runfiles(
     name = "library-static-only-libraries",
     library = ":library-static-only",
 )
+
 get_libraries_as_runfiles(
     name = "library-static-and-dynamic-libraries",
     library = ":library-static-and-dynamic",
@@ -48,16 +48,26 @@ get_libraries_as_runfiles(
 # TODO(Profpatsch): add functionality to sh_inline_test by default?
 sh_library(
     name = "bundled-dependency-files-static-only",
-    data = [":library-static-only-libraries"]
+    data = [":library-static-only-libraries"],
 )
+
 sh_library(
     name = "bundled-dependency-files-static-and-dynamic",
-    data = [":library-static-and-dynamic-libraries"]
+    data = [":library-static-and-dynamic-libraries"],
 )
 
 # ensure that linkstatic=True only creates only .a, no .so
 sh_inline_test(
     name = "test-linkstatic-static-only",
+    size = "small",
+    # pass the file names as arguments
+    args = ["$(rootpaths :library-static-only-libraries)"],
+    data = [
+        # for rootpaths
+        ":library-static-only-libraries",
+        # to actually get the files …
+        ":bundled-dependency-files-static-only",
+    ],
     script = """
 set -euo pipefail
 for f in "$@"; do
@@ -67,19 +77,20 @@ for f in "$@"; do
     fi
 done
 """,
-    # pass the file names as arguments
-    args = ["$(rootpaths :library-static-only-libraries)"],
-    data = [
-        # for rootpaths
-        ":library-static-only-libraries",
-        # to actually get the files …
-        ":bundled-dependency-files-static-only"],
-    size = "small",
 )
 
 # test whether .so is linked dynamically and .a statically
 sh_inline_test(
     name = "test-libraries-static-and-dynamic",
+    size = "small",
+    # pass the file names as arguments
+    args = ["$(rootpaths :library-static-and-dynamic-libraries)"],
+    data = [
+        # for rootpaths
+        ":library-static-and-dynamic-libraries",
+        # to actually get the files …
+        ":bundled-dependency-files-static-and-dynamic",
+    ],
     script = """
 set -euo pipefail
 is_dynamic () {
@@ -98,12 +109,4 @@ for f in "$@"; do
     fi
 done
 """,
-    # pass the file names as arguments
-    args = ["$(rootpaths :library-static-and-dynamic-libraries)"],
-    data = [
-        # for rootpaths
-        ":library-static-and-dynamic-libraries",
-        # to actually get the files …
-        ":bundled-dependency-files-static-and-dynamic"],
-    size = "small",
 )

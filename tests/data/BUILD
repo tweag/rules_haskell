@@ -2,6 +2,6 @@
 
 cc_library(
     name = "ourclibrary",
-    srcs = [ ":ourclibrary.c" ],
-    visibility = [ "//tests:__subpackages__" ],
+    srcs = [":ourclibrary.c"],
+    visibility = ["//tests:__subpackages__"],
 )

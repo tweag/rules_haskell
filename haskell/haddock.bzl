@@ -1,15 +1,14 @@
 """Haddock support"""
 
-load(":private/context.bzl", "haskell_context")
-load(":private/path_utils.bzl", "module_name")
-load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaddockInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
 )
-load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/context.bzl", "haskell_context")
+load(":private/set.bzl", "set")
 
 def _get_haddock_path(package_id):
     """Get path to Haddock file of a package given its id.

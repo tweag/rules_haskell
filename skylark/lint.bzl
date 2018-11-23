@@ -33,10 +33,10 @@ def _buildifier_generate_impl(ctx):
 _buildifier_generate = rule(
     _buildifier_generate_impl,
     attrs = {
-        "data": attr.label_list(allow_files = True, cfg = "data"),
+        "data": attr.label_list(allow_files = True),
         "_buildifier": attr.label(
             default = "@com_github_bazelbuild_buildtools//buildifier",
-            single_file = True,
+            allow_single_file = True,
         ),
     },
 )

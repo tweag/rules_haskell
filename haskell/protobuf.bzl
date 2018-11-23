@@ -1,17 +1,15 @@
 """Support for protocol buffers"""
 
 load(
+    ":private/haskell_impl.bzl",
+    _haskell_library_impl = "haskell_library_impl",
+)
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
-)
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/path_utils.bzl", "target_unique_name")
-load(
-    ":private/haskell_impl.bzl",
-    _haskell_library_impl = "haskell_library_impl",
 )
 
 def _capitalize_first_letter(c):

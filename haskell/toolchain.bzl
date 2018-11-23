@@ -1,5 +1,6 @@
 """Rules for defining toolchains"""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/actions/compile.bzl",
     "compile_binary",
@@ -13,7 +14,6 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:paths.bzl", "paths")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 

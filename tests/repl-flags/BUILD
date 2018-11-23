@@ -1,6 +1,6 @@
-package(default_testonly = 1)
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary")
 
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_toolchain")
+package(default_testonly = 1)
 
 # This test the `compiler` flags in many ways:
 # - the test needs to be built with `-DTESTS_TOOLCHAIN_COMPILER_FLAGS`, provided by the toolchain attribute `compiler_flags`

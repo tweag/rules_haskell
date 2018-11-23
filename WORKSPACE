@@ -1,42 +1,45 @@
 workspace(name = "io_tweag_rules_haskell")
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+
 haskell_repositories()
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
+    sha256 = "e08bfff0e3413cae8549df72e3fce36f7b0e2369e864dfe41d3307ef100500f8",
     strip_prefix = "rules_nixpkgs-0.4.1",
     urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.4.1.tar.gz"],
-    sha256 = "e08bfff0e3413cae8549df72e3fce36f7b0e2369e864dfe41d3307ef100500f8",
 )
 
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_cc_configure",
-    "nixpkgs_git_repository",
     "nixpkgs_local_repository",
     "nixpkgs_package",
 )
-load("@io_tweag_rules_haskell//haskell:nix.bzl",
-     "haskell_nixpkgs_packages",
-     "haskell_nixpkgs_package",
-     "haskell_nixpkgs_packageset")
+load(
+    "@io_tweag_rules_haskell//haskell:nix.bzl",
+    "haskell_nixpkgs_package",
+    "haskell_nixpkgs_packageset",
+)
 
 haskell_nixpkgs_package(
     name = "ghc",
+    attribute_path = "haskellPackages.ghc",
+    build_file = "//haskell:ghc.BUILD",
+    nix_file = "//tests:ghc.nix",
     # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly
     # if `repository` is not set, but our nix_file uses `./nixpkgs/`.
     # TODO(Profpatsch)
-    repositories = { "nixpkgs": "//nixpkgs:NOTUSED" },
-    nix_file = "//tests:ghc.nix",
-    attribute_path = "haskellPackages.ghc",
-    build_file = "//haskell:ghc.BUILD",
+    repositories = {"nixpkgs": "//nixpkgs:NOTUSED"},
 )
 
 http_archive(
     name = "com_google_protobuf",
-    strip_prefix = "protobuf-7b28271a61a3da0a37f6fda399b0c4c86464e5b3",
     sha256 = "d625beb4a43304409429a0466bb4fb44c89f7e7d90aeced972b8a61dbe92c80b",
-    urls = ["https://github.com/google/protobuf/archive/7b28271a61a3da0a37f6fda399b0c4c86464e5b3.zip"], # 2018-11-16
+    strip_prefix = "protobuf-7b28271a61a3da0a37f6fda399b0c4c86464e5b3",
+    urls = ["https://github.com/google/protobuf/archive/7b28271a61a3da0a37f6fda399b0c4c86464e5b3.zip"],  # 2018-11-16
 )
 
 nixpkgs_local_repository(
@@ -51,13 +54,12 @@ register_toolchains(
 )
 
 nixpkgs_cc_configure(
-    repository = "@nixpkgs",
     nix_file = "//nixpkgs:cc-toolchain.nix",
+    repository = "@nixpkgs",
 )
 
 nixpkgs_package(
     name = "zlib",
-    repository = "@nixpkgs",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
@@ -71,11 +73,11 @@ filegroup (
     testonly = 1,
 )
 """,
+    repository = "@nixpkgs",
 )
 
 nixpkgs_package(
     name = "zlib.dev",
-    repository = "@nixpkgs",
     build_file_content = """
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
 package(default_visibility = ["//visibility:public"])
@@ -94,11 +96,11 @@ haskell_cc_import(
         strip_include_prefix = "include",
 )
 """,
+    repository = "@nixpkgs",
 )
 
 nixpkgs_package(
     name = "glib_locales",
-    repository = "@nixpkgs",
     attribute_path = "glibcLocales",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
@@ -107,16 +109,19 @@ filegroup(
     name = "locale-archive",
     srcs = ["lib/locale/locale-archive"],
 )
-"""
+""",
+    repository = "@nixpkgs",
 )
 
 haskell_nixpkgs_packageset(
     name = "hackage-packages",
-    repositories = { "nixpkgs": "@nixpkgs" },
-    nix_file = "//tests:ghc.nix",
     base_attribute_path = "haskellPackages",
+    nix_file = "//tests:ghc.nix",
+    repositories = {"nixpkgs": "@nixpkgs"},
 )
+
 load("@hackage-packages//:packages.bzl", "import_packages")
+
 import_packages(name = "hackage")
 
 # zlib as a Haskell library
@@ -135,29 +140,32 @@ maven_jar(
 
 # c2hs rule in its own repository
 local_repository(
-        name = "c2hs_repo",
-        path = "tests/c2hs/repo",
+    name = "c2hs_repo",
+    path = "tests/c2hs/repo",
 )
 
 # For Skydoc
 
 http_archive(
-        name = "io_bazel_rules_sass",
-        strip_prefix = "rules_sass-0.0.3",
-        urls = ["https://github.com/bazelbuild/rules_sass/archive/0.0.3.tar.gz"],
-        sha256 = "14536292b14b5d36d1d72ae68ee7384a51e304fa35a3c4e4db0f4590394f36ad",
+    name = "io_bazel_rules_sass",
+    sha256 = "14536292b14b5d36d1d72ae68ee7384a51e304fa35a3c4e4db0f4590394f36ad",
+    strip_prefix = "rules_sass-0.0.3",
+    urls = ["https://github.com/bazelbuild/rules_sass/archive/0.0.3.tar.gz"],
 )
 
 load("@io_bazel_rules_sass//sass:sass.bzl", "sass_repositories")
+
 sass_repositories()
 
 http_archive(
-        name = "io_bazel_skydoc",
-        strip_prefix = "skydoc-9bbdf62c03b5c3fed231604f78d3976f47753d79",
-        urls = ["https://github.com/mrkkrp/skydoc/archive/9bbdf62c03b5c3fed231604f78d3976f47753d79.tar.gz"],
-        sha256 = "12a82b494a40c4ef96230bc66aeff654420dd39a537eb3064ff18ce1838f1fb7",
+    name = "io_bazel_skydoc",
+    sha256 = "12a82b494a40c4ef96230bc66aeff654420dd39a537eb3064ff18ce1838f1fb7",
+    strip_prefix = "skydoc-9bbdf62c03b5c3fed231604f78d3976f47753d79",
+    urls = ["https://github.com/mrkkrp/skydoc/archive/9bbdf62c03b5c3fed231604f78d3976f47753d79.tar.gz"],
 )
+
 load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
+
 skydoc_repositories()
 
 # For buildifier
@@ -179,8 +187,8 @@ http_archive(
 
 load(
     "@io_bazel_rules_go//go:def.bzl",
-    "go_rules_dependencies",
     "go_register_toolchains",
+    "go_rules_dependencies",
 )
 
 go_rules_dependencies()

@@ -1,13 +1,6 @@
 """GHCi REPL support"""
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_skylib//lib:shell.bzl", "shell")
-load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
-    "HaskellBinaryInfo",
-    "HaskellBuildInfo",
-    "HaskellLibraryInfo",
-)
+load(":private/packages.bzl", "expose_packages")
 load(
     ":private/path_utils.bzl",
     "get_external_libs_path",
@@ -19,7 +12,7 @@ load(
     ":private/set.bzl",
     "set",
 )
-load(":private/packages.bzl", "expose_packages")
+load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_repl(
         hs,

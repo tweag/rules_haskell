@@ -1,5 +1,3 @@
-package(default_testonly = 1)
-
 load("@io_tweag_rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
@@ -7,6 +5,8 @@ load(
     "haskell_cc_import",
     "haskell_library",
 )
+
+package(default_testonly = 1)
 
 haskell_cc_import(
     name = "zlib",
@@ -42,8 +42,8 @@ haskell_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//tests/data:ourclibrary",
         ":zlib",
+        "//tests/data:ourclibrary",
         "@hackage//:array",
         "@hackage//:base",
     ],
@@ -54,14 +54,14 @@ haskell_library(
     srcs = [
         "Bad.hs",
     ],
+    tags = ["manual"],
     visibility = ["//visibility:public"],
     deps = [
-        "//tests/data:ourclibrary",
         ":zlib",
+        "//tests/data:ourclibrary",
         "@hackage//:array",
         "@hackage//:base",
     ],
-    tags = ["manual"],
 )
 
 haskell_library(

@@ -1,17 +1,17 @@
-package(default_testonly = 1)
-
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
     "haskell_library",
 )
 
+package(default_testonly = 1)
+
 haskell_library(
     name = "hs-lib",
     srcs = ["Lib.hs"],
     deps = [
-        "@hackage//:base",
         "//tests/data:ourclibrary",
+        "@hackage//:base",
     ],
 )
 

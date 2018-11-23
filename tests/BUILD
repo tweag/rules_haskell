@@ -1,18 +1,15 @@
-package(default_testonly = 1)
-
+load("//skylark:lint.bzl", "skylark_lint")
+load(":sh_inline_test.bzl", "sh_inline_test")
+load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
     "haskell_doctest_toolchain",
-    "haskell_import",
-    "haskell_library",
     "haskell_proto_toolchain",
     "haskell_toolchain",
 )
-load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
-load("//skylark:lint.bzl", "skylark_lint")
-load(":sh_inline_test.bzl", "sh_inline_test")
-load("@io_tweag_rules_haskell//haskell:import.bzl", haskell_import_new = "haskell_import")
+
+package(default_testonly = 1)
 
 ghc_version = "8.4.4"
 

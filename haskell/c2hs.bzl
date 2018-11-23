@@ -1,5 +1,10 @@
 """Support for c2hs"""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load(
+    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
+    "C2hsLibraryInfo",
+)
 load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context")
 load(
@@ -7,11 +12,6 @@ load(
     "declare_compiled",
     "target_unique_name",
 )
-load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
-    "C2hsLibraryInfo",
-)
-load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _c2hs_library_impl(ctx):
     hs = haskell_context(ctx)

@@ -1,25 +1,5 @@
 """Implementation of core Haskell rules"""
 
-load(":cc.bzl", "cc_interop_info")
-load(":private/context.bzl", "haskell_context")
-load(":private/actions/compile.bzl", "compile_library")
-load(
-    ":private/actions/link.bzl",
-    "link_binary",
-    "link_library_dynamic",
-    "link_library_static",
-)
-load(":private/actions/package.bzl", "package")
-load(":private/pkg_id.bzl", "pkg_id")
-load(":private/actions/repl.bzl", "build_haskell_repl")
-load(":private/dependencies.bzl", "gather_dep_info")
-load(":private/java.bzl", "java_interop_info")
-load(":private/set.bzl", "set")
-load(":private/mode.bzl", "is_profiling_enabled")
-load(
-    ":private/path_utils.bzl",
-    "ln",
-)
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "C2hsLibraryInfo",
@@ -28,6 +8,25 @@ load(
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
 )
+load(":cc.bzl", "cc_interop_info")
+load(
+    ":private/actions/link.bzl",
+    "link_binary",
+    "link_library_dynamic",
+    "link_library_static",
+)
+load(":private/actions/package.bzl", "package")
+load(":private/actions/repl.bzl", "build_haskell_repl")
+load(":private/context.bzl", "haskell_context")
+load(":private/dependencies.bzl", "gather_dep_info")
+load(":private/java.bzl", "java_interop_info")
+load(":private/mode.bzl", "is_profiling_enabled")
+load(
+    ":private/path_utils.bzl",
+    "ln",
+)
+load(":private/pkg_id.bzl", "pkg_id")
+load(":private/set.bzl", "set")
 
 def _prepare_srcs(srcs):
     srcs_files = []

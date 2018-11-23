@@ -1,10 +1,10 @@
 """Loading of haskell packages from nixpkgs"""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_package",
 )
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
 
 def haskell_nixpkgs_package(
         name,

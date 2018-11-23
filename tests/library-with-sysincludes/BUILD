@@ -1,11 +1,10 @@
-package(default_testonly = 1)
-
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
     "haskell_cc_import",
     "haskell_library",
 )
+
+package(default_testonly = 1)
 
 genrule(
     name = "genrule-header",

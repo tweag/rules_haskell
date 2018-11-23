@@ -4,8 +4,34 @@ load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaskellPrebuiltPackageInfo",
 )
-load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:paths.bzl", "paths")
+load(
+    ":c2hs.bzl",
+    _c2hs_library = "c2hs_library",
+)
+load(
+    ":cc.bzl",
+    _cc_haskell_import = "cc_haskell_import",
+    _haskell_cc_import = "haskell_cc_import",
+)
+load(
+    ":doctest.bzl",
+    _haskell_doctest = "haskell_doctest",
+    _haskell_doctest_toolchain = "haskell_doctest_toolchain",
+)
+load(
+    ":ghc_bindist.bzl",
+    _ghc_bindist = "ghc_bindist",
+)
+load(
+    ":haddock.bzl",
+    _haskell_doc = "haskell_doc",
+    _haskell_doc_aspect = "haskell_doc_aspect",
+)
+load(
+    ":lint.bzl",
+    _haskell_lint = "haskell_lint",
+    _haskell_lint_aspect = "haskell_lint_aspect",
+)
 load(
     ":private/haskell_impl.bzl",
     _haskell_binary_impl = "haskell_binary_impl",
@@ -19,36 +45,8 @@ load(
     _haskell_proto_toolchain = "haskell_proto_toolchain",
 )
 load(
-    ":doctest.bzl",
-    _haskell_doctest = "haskell_doctest",
-    _haskell_doctest_toolchain = "haskell_doctest_toolchain",
-)
-load(
-    ":haddock.bzl",
-    _haskell_doc = "haskell_doc",
-    _haskell_doc_aspect = "haskell_doc_aspect",
-)
-load(
-    ":lint.bzl",
-    _haskell_lint = "haskell_lint",
-    _haskell_lint_aspect = "haskell_lint_aspect",
-)
-load(
     ":toolchain.bzl",
     _haskell_toolchain = "haskell_toolchain",
-)
-load(
-    ":ghc_bindist.bzl",
-    _ghc_bindist = "ghc_bindist",
-)
-load(
-    ":cc.bzl",
-    _cc_haskell_import = "cc_haskell_import",
-    _haskell_cc_import = "haskell_cc_import",
-)
-load(
-    ":c2hs.bzl",
-    _c2hs_library = "c2hs_library",
 )
 
 _haskell_common_attrs = {
@@ -69,7 +67,6 @@ _haskell_common_attrs = {
     "data": attr.label_list(
         doc = "See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).",
         allow_files = True,
-        cfg = "data",
     ),
     "compiler_flags": attr.string_list(
         doc = "Flags to pass to Haskell compiler.",

@@ -3,16 +3,15 @@
 These rules are temporary and will be deprecated in the future.
 """
 
+load(":private/path_utils.bzl", "ln")
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "CcSkylarkApiProviderHacked",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
-    "HaskellLibraryInfo",
 )
-load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/path_utils.bzl", "ln")
 
 CcInteropInfo = provider(
     doc = "Information needed for interop with cc rules.",

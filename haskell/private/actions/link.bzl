@@ -1,10 +1,10 @@
 """Actions for linking object code produced by compilation"""
 
+load(":private/packages.bzl", "expose_packages")
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/path_utils.bzl", "get_lib_name")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":private/path_utils.bzl", "get_lib_name")
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/packages.bzl", "expose_packages")
 
 def _backup_path(target):
     """Return a path from the directory this is in to the Bazel root.

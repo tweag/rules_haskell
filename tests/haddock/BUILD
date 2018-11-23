@@ -1,14 +1,14 @@
-package(
-    default_testonly = 1,
-    default_visibility = ["//visibility:public"],
-)
-
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_cc_import",
     "haskell_doc",
     "haskell_import",
     "haskell_library",
+)
+
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
 )
 
 haskell_cc_import(

@@ -1,4 +1,4 @@
-load(":private/path_utils.bzl", "ln")
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "CcSkylarkApiProviderHacked",
@@ -7,9 +7,8 @@ load(
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
 )
+load(":private/path_utils.bzl", "ln")
 load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _is_shared_library(f):
     """Check if the given File is a shared library.

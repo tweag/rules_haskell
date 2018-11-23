@@ -1,16 +1,15 @@
 """Importing prebuilt packages into bazel"""
 
-load(":private/context.bzl", "haskell_context")
-load(":private/actions/package.bzl", "package")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaddockInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
 )
-load(":private/set.bzl", "set")
+load(":private/context.bzl", "haskell_context")
 load(":private/path_utils.bzl", "copy_all", "link_forest", "ln")
-load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/set.bzl", "set")
 
 def _haskell_import_impl(ctx):
     hs = haskell_context(ctx)

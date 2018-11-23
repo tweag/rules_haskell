@@ -1,11 +1,5 @@
 """Linting"""
 
-load(":private/context.bzl", "haskell_context")
-load(":private/set.bzl", "set")
-load(
-    ":private/path_utils.bzl",
-    "target_unique_name",
-)
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaskellBinaryInfo",
@@ -13,7 +7,13 @@ load(
     "HaskellLibraryInfo",
     "HaskellLintInfo",
 )
+load(":private/context.bzl", "haskell_context")
 load(":private/packages.bzl", "expose_packages")
+load(
+    ":private/path_utils.bzl",
+    "target_unique_name",
+)
+load(":private/set.bzl", "set")
 
 def _collect_lint_logs(deps):
     lint_logs = set.empty()

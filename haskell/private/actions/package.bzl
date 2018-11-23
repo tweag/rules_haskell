@@ -1,9 +1,9 @@
 """Action for creating packages and registering them with ghc-pkg"""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/path_utils.bzl", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, dynamic_library, exposed_modules_file, other_modules, my_pkg_id, static_library_prof):
     """Create GHC package using ghc-pkg.

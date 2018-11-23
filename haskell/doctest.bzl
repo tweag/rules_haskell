@@ -1,21 +1,20 @@
 """Doctest support"""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/context.bzl", "haskell_context")
+load(
+    ":private/path_utils.bzl",
+    "get_external_libs_path",
+    "get_lib_name",
+)
+load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
 )
-load(":private/context.bzl", "haskell_context")
-load(":private/set.bzl", "set")
-load(
-    ":private/path_utils.bzl",
-    "get_external_libs_path",
-    "get_lib_name",
-    "target_unique_name",
-)
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _doctest_toolchain_impl(ctx):
     return platform_common.ToolchainInfo(
@@ -30,7 +29,7 @@ _doctest_toolchain = rule(
             doc = "Doctest executable",
             cfg = "host",
             executable = True,
-            single_file = True,
+            allow_single_file = True,
             mandatory = True,
         ),
     },

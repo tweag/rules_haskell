@@ -1,7 +1,5 @@
 """Workspace rules (GHC binary distributions)"""
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
-
 _GHC_BINS = {
     "8.4.1": {
         "linux-x86_64": ("https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-x86_64-deb8-linux.tar.xz", "427c77a934b30c3f1de992c38c072afb4323fe6fb30dbac919ca8cb6ae98fbd9"),
