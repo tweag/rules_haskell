@@ -19,5 +19,7 @@ mkShell {
     zip
     unzip
     bazel
+    # needed for cloning protobuf in @com_google_protobuf
+    git
   ];
 }

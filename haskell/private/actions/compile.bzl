@@ -14,7 +14,8 @@ load(
     "DefaultCompileInfo",
 )
 load(":private/set.bzl", "set")
-load("@bazel_skylib//:lib.bzl", "dicts", "paths")
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "expose_packages")
 
 def _process_hsc_file(hs, cc, hsc_file):

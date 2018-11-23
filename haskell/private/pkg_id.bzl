@@ -1,6 +1,6 @@
 """Package identifiers"""
 
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/mode.bzl", "is_profiling_enabled")
 
 def _zencode(s):

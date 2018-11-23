@@ -10,7 +10,7 @@ load(
 )
 load(":private/set.bzl", "set")
 load(":private/path_utils.bzl", "copy_all", "link_forest", "ln")
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _haskell_import_impl(ctx):
     hs = haskell_context(ctx)

@@ -6,7 +6,8 @@ load(
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
 )
-load("@bazel_skylib//:lib.bzl", "dicts", "paths")
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/path_utils.bzl", "target_unique_name")
 load(
     ":private/haskell_impl.bzl",

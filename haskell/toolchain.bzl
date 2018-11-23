@@ -13,7 +13,7 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":private/set.bzl", "set")
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 

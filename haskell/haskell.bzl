@@ -5,7 +5,7 @@ load(
     "HaskellPrebuiltPackageInfo",
 )
 load(":private/set.bzl", "set")
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/haskell_impl.bzl",
     _haskell_binary_impl = "haskell_binary_impl",

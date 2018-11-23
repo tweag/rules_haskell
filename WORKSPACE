@@ -34,9 +34,9 @@ haskell_nixpkgs_package(
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "cef7f1b5a7c5fba672bec2a319246e8feba471f04dcebfe362d55930ee7c1c30",
-    strip_prefix = "protobuf-3.5.0",
-    urls = ["https://github.com/google/protobuf/archive/v3.5.0.zip"],
+    strip_prefix = "protobuf-7b28271a61a3da0a37f6fda399b0c4c86464e5b3",
+    sha256 = "d625beb4a43304409429a0466bb4fb44c89f7e7d90aeced972b8a61dbe92c80b",
+    urls = ["https://github.com/google/protobuf/archive/7b28271a61a3da0a37f6fda399b0c4c86464e5b3.zip"], # 2018-11-16
 )
 
 nixpkgs_local_repository(
@@ -147,14 +147,15 @@ http_archive(
         urls = ["https://github.com/bazelbuild/rules_sass/archive/0.0.3.tar.gz"],
         sha256 = "14536292b14b5d36d1d72ae68ee7384a51e304fa35a3c4e4db0f4590394f36ad",
 )
+
 load("@io_bazel_rules_sass//sass:sass.bzl", "sass_repositories")
 sass_repositories()
 
 http_archive(
         name = "io_bazel_skydoc",
-        strip_prefix = "skydoc-b374449408e759e32e010fa6a20585fe9fabd523",
-        urls = ["https://github.com/mrkkrp/skydoc/archive/b374449408e759e32e010fa6a20585fe9fabd523.tar.gz"],
-        sha256 = "12b96f74de7a6002de69a92959e476bd8c9ed95cb969354ee1af750f9961203b",
+        strip_prefix = "skydoc-9bbdf62c03b5c3fed231604f78d3976f47753d79",
+        urls = ["https://github.com/mrkkrp/skydoc/archive/9bbdf62c03b5c3fed231604f78d3976f47753d79.tar.gz"],
+        sha256 = "12a82b494a40c4ef96230bc66aeff654420dd39a537eb3064ff18ce1838f1fb7",
 )
 load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
 skydoc_repositories()

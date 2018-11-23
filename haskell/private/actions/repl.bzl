@@ -1,10 +1,7 @@
 """GHCi REPL support"""
 
-load(
-    "@bazel_skylib//:lib.bzl",
-    "paths",
-    "shell",
-)
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:shell.bzl", "shell")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "HaskellBinaryInfo",
