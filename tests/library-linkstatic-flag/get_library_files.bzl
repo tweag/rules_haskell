@@ -13,7 +13,7 @@ def _get_libraries_as_runfiles_impl(ctx):
         # not necessarily complete
         files = depset(
             direct = bi.static_libraries,
-            transitive = [set.to_depset(bi.dynamic_libraries)]
+            transitive = [set.to_depset(bi.dynamic_libraries)],
         ),
     )]
 
@@ -23,6 +23,6 @@ get_libraries_as_runfiles = rule(
         "library": attr.label(
             mandatory = True,
             providers = [HaskellBuildInfo, HaskellLibraryInfo],
-        )
-    }
+        ),
+    },
 )

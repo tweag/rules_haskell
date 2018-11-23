@@ -54,7 +54,7 @@ _haskell_common_attrs = {
         doc = "Directory in which module hierarchy starts.",
     ),
     "srcs": attr.label_list(
-        allow_files = FileType([".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"]),
+        allow_files = [".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"],
         doc = "Haskell source files.",
     ),
     "extra_srcs": attr.label_list(
@@ -122,7 +122,7 @@ def _mk_binary_rule(**kwargs):
                 doc = """A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.""",
             ),
             main_file = attr.label(
-                allow_single_file = FileType([".hs", ".hsc", ".lhs"]),
+                allow_single_file = [".hs", ".hsc", ".lhs"],
                 doc = "File containing `Main` module (deprecated).",
             ),
             version = attr.string(
