@@ -31,6 +31,7 @@ haskell_toolchain(
         "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
         "-XNoOverloadedStrings",  # this is the default, so it does not harm other tests
     ],
+    haddock_flags = ["-U"],
     locale_archive = select({
         # For some reason glibcLocales is not available on Darwin.
         "@bazel_tools//src/conditions:darwin": None,
