@@ -58,6 +58,8 @@ def _haskell_doc_aspect_impl(target, ctx):
         "--hyperlinked-source",
     ])
 
+    args.add(hs.toolchain.haddock_flags)
+
     transitive_haddocks = {}
     transitive_html = {}
 

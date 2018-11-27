@@ -272,6 +272,7 @@ def _haskell_toolchain_impl(ctx):
             extra_binaries = extra_binaries_files,
             compiler_flags = ctx.attr.compiler_flags,
             repl_ghci_args = ctx.attr.repl_ghci_args,
+            haddock_flags = ctx.attr.haddock_flags,
             locale = ctx.attr.locale,
             locale_archive = locale_archive,
             mode = ctx.var["COMPILATION_MODE"],
@@ -313,6 +314,9 @@ _haskell_toolchain = rule(
         "repl_ghci_args": attr.string_list(
             doc = "A collection of flags that will be passed to GHCI on repl invocation. It extends the `compiler_flags` collection. Flags set here have precedance over `compiler_flags`.",
         ),
+        "haddock_flags": attr.string_list(
+            doc = "A collection of flags that will be passed to haddock.",
+        ),
         "c2hs": attr.label(
             doc = "c2hs executable",
             allow_single_file = True,
@@ -352,6 +356,7 @@ def haskell_toolchain(
         tools,
         compiler_flags = [],
         repl_ghci_args = [],
+        haddock_flags = [],
         **kwargs):
     """Declare a compiler toolchain.
 
@@ -402,6 +407,7 @@ def haskell_toolchain(
         tools = tools,
         compiler_flags = compiler_flags,
         repl_ghci_args = repl_ghci_args,
+        haddock_flags = haddock_flags,
         visibility = ["//visibility:public"],
         is_darwin = select({
             "@bazel_tools//src/conditions:darwin": True,
