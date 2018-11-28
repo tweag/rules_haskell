@@ -29,6 +29,7 @@ in
 mkShell {
   buildInputs = [
     nix
+    python
     which
   ]
   # TODO use Bazel from Nixpkgs even on Darwin. Blocked by
