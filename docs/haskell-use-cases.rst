@@ -22,6 +22,8 @@ of the compiler and all its dependencies is precisely defined in the
 ``WORKSPACE`` file. Use `rules_nixpkgs`_ to do so (where ``X.Y.Z``
 stands for any recent release)::
 
+  load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
   http_archive(
       name = "io_tweag_rules_nixpkgs",
       strip_prefix = "rules_nixpkgs-X.Y.Z",
