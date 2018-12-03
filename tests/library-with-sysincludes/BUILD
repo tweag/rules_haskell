@@ -2,6 +2,7 @@ load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_cc_import",
     "haskell_library",
+    "haskell_lint",
 )
 
 package(default_testonly = 1)
@@ -79,4 +80,10 @@ haskell_library(
         "@hackage//:base",
         "@hackage//:template-haskell",
     ],
+)
+
+# Regression test for #390
+haskell_lint(
+    name = "lint",
+    deps = ["//tests/textual-hdrs"],
 )

@@ -1,6 +1,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
+    "haskell_lint",
 )
 
 package(default_testonly = 1)
@@ -14,4 +15,10 @@ haskell_binary(
     compiler_flags = ["-Itests/textual-hdrs/include"],
     visibility = ["//visibility:public"],
     deps = ["@hackage//:base"],
+)
+
+# Regression test for #390
+haskell_lint(
+    name = "lint",
+    deps = ["//tests/textual-hdrs"],
 )
