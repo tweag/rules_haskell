@@ -14,6 +14,12 @@ load(
     "target_unique_name",
 )
 load(":private/set.bzl", "set")
+load(
+    ":private/path_utils.bzl",
+    "get_external_libs_path",
+    "get_lib_name",
+)
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _collect_lint_logs(deps):
     lint_logs = set.empty()
@@ -53,14 +59,31 @@ def _haskell_lint_aspect_impl(target, ctx):
         "--make",
     ])
 
-    args.add(expose_packages(
-        build_info,
-        lib_info,
-        use_direct = False,
-        use_my_pkg_id = None,
-        custom_package_caches = None,
-        version = ctx.rule.attr.version,
-    ))
+    args.add(lib_info.ghc_args if lib_info != None else bin_info.ghc_args)
+
+    # External libraries.
+    external_libs = set.from_list(build_info.external_libraries.values())
+    seen_libs = set.empty()
+    for lib in set.to_list(external_libs):
+        lib_name = get_lib_name(lib)
+        if not set.is_member(seen_libs, lib_name):
+            set.mutable_insert(seen_libs, lib_name)
+            if hs.toolchain.is_darwin:
+                args.add([
+                    "-optl-l{0}".format(lib_name),
+                    "-optl-L{0}".format(paths.dirname(lib.path)),
+                ])
+            else:
+                args.add([
+                    "-l{0}".format(lib_name),
+                    "-L{0}".format(paths.dirname(lib.path)),
+                ])
+
+    header_files = lib_info.header_files if lib_info != None else bin_info.header_files
+
+    sources = set.to_list(
+        lib_info.source_files if lib_info != None else bin_info.source_files,
+    )
 
     sources = set.to_list(
         lib_info.source_files if lib_info != None else bin_info.source_files,
@@ -79,6 +102,8 @@ def _haskell_lint_aspect_impl(target, ctx):
             set.to_depset(build_info.package_caches),
             set.to_depset(build_info.interface_dirs),
             set.to_depset(build_info.dynamic_libraries),
+            set.to_depset(header_files),
+            set.to_depset(external_libs),
             depset(build_info.external_libraries.values()),
             depset([
                 hs.tools.ghc,
