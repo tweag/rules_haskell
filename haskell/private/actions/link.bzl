@@ -162,18 +162,16 @@ def link_binary(
         dep_info.dynamic_libraries,
     )
 
+    # XXX: Suppress a warning that Clang prints due to GHC automatically passing
+    # "-pie" or "-no-pie" to the C compiler.
+    # This is linked to https://ghc.haskell.org/trac/ghc/ticket/15319
+    args.add([
+        "-optc-Wno-unused-command-line-argument",
+        "-optl-Wno-unused-command-line-argument",
+    ])
+
     if hs.toolchain.is_darwin:
         args.add(["-optl-Wl,-headerpad_max_install_names"])
-
-        # Suppress a warning that Clang prints due to GHC automatically passing
-        # "-pie" or "-no-pie" to the C compiler.
-        # This particular invocation of GHC is a little unusual; e.g., we're
-        # passing an empty archive so that GHC has some input files to work on
-        # during linking.
-        args.add([
-            "-optc-Wno-unused-command-line-argument",
-            "-optl-Wno-unused-command-line-argument",
-        ])
 
         # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
         # Darwin. We don't currently handle NIX_LDFLAGS in any special
