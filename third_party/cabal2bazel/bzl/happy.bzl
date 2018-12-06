@@ -29,11 +29,13 @@ Example:
   )
 """
 
+load("//tools:mangling.bzl", "hazel_binary")
+
 def genhappy(src, out):
   native.genrule(
       name = src + ".hs_happy",
       srcs = [src],
       outs = [out],
-      tools = ["@haskell_happy//:happy_bin"],
-      cmd = "$(location @haskell_happy//:happy_bin) -g -a -c -o $(OUTS) $(SRCS)",
+      tools = [hazel_binary("happy")],
+      cmd = "$(location {}) -g -a -c -o $(OUTS) $(SRCS)".format(hazel_binary("happy")),
   )

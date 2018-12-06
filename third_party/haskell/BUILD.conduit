@@ -3,6 +3,7 @@ package(default_visibility = ["//visibility:public"])
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_library",
 )
+load("//tools:mangling.bzl", "hazel_library")
 
 haskell_library(
   name = "conduit",
@@ -13,20 +14,20 @@ haskell_library(
   ]),
   compiler_flags = ["-Iexternal/haskell_conduit"],
   deps = [
-    "@haskell_base//:base",
-    "@haskell_bytestring//:bytestring",
-    "@haskell_exceptions//:exceptions",
-    "@haskell_lifted_base//:lifted-base",
-    "@haskell_mmorph//:mmorph",
-    "@haskell_monad_control//:monad-control",
-    "@haskell_mono_traversable//:mono-traversable",
-    "@haskell_mtl//:mtl",
-    "@haskell_primitive//:primitive",
-    "@haskell_resourcet//:resourcet",
-    "@haskell_text//:text",
-    "@haskell_transformers//:transformers",
-    "@haskell_transformers_base//:transformers-base",
-    "@haskell_transformers_compat//:transformers-compat",
-    "@haskell_vector//:vector",
+    hazel_library("base"),
+    hazel_library("bytestring"),
+    hazel_library("exceptions"),
+    hazel_library("lifted_base"),
+    hazel_library("mmorph"),
+    hazel_library("monad_control"),
+    hazel_library("mono_traversable"),
+    hazel_library("mtl"),
+    hazel_library("primitive"),
+    hazel_library("resourcet"),
+    hazel_library("text"),
+    hazel_library("transformers"),
+    hazel_library("transformers_base"),
+    hazel_library("transformers_compat"),
+    hazel_library("vector"),
   ],
 )

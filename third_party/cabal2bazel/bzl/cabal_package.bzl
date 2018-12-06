@@ -15,7 +15,9 @@
 """Skylark build rules for cabal haskell packages.
 
 To see all of the generated rules, run:
-bazel query --output=build @haskell_{package}//:all
+bazel query --output=build @haskell_{package}_{hash}//:all
+where {package} is the lower-cased package name with - replaced by _
+and {hash} is the Bazel hash of the original package name.
 """
 load("@bazel_skylib//:lib.bzl", "paths")
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
@@ -28,6 +30,7 @@ load(":bzl/alex.bzl", "genalex")
 load(":bzl/cabal_paths.bzl", "cabal_paths")
 load(":bzl/happy.bzl", "genhappy")
 load("//templates:templates.bzl", "templates")
+load("//tools:mangling.bzl", "hazel_library")
 
 _conditions_default = "//conditions:default"
 
@@ -238,7 +241,7 @@ def _get_build_attrs(
     if condition not in deps:
       deps[condition] = []
     for p in ps:
-      deps[condition] += ["@haskell_{}//:{}".format(p.replace("-", "_"), p)]
+      deps[condition] += [hazel_library(p)]
       if p in _CORE_DEPENDENCY_INCLUDES:
         cdeps += [_CORE_DEPENDENCY_INCLUDES[p]]
         deps[condition] += [_CORE_DEPENDENCY_INCLUDES[p]]

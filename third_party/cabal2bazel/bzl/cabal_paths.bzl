@@ -24,6 +24,7 @@ For usage information, see the below documentation for that rule.
 """
 load("@bazel_skylib//:lib.bzl", "paths")
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_library")
+load("//tools:mangling.bzl", "hazel_library")
 
 def _impl_path_module_gen(ctx):
   paths_file = ctx.new_file(ctx.label.name)
@@ -106,8 +107,8 @@ def cabal_paths(name=None, package=None, data_dir='',data=[], version=[], **kwar
       srcs = [paths_file],
       data = data,
       deps = [
-          "@haskell_base//:base",
-          "@haskell_filepath//:filepath",
+          hazel_library("base"),
+          hazel_library("filepath"),
       ],
       # TODO: run directory resolution.
       **kwargs)

@@ -103,7 +103,7 @@ For example:
 
 ```
 # Build all components of a single package, as well as all of its dependencies:
-bazel build @haskell_vector//:all
+bazel build @haskell_vector__820387517//:all
 
 # Build all components of all third-party packages:
 bazel build @all_hazel_packages//:all
