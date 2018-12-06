@@ -60,7 +60,7 @@ hazel_base_repository = repository_rule(
     })
 
 # TODO: don't reload all package names into every repository.
-def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, package_flags, cabal_path, output):
+def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_flags, cabal_path, output):
   for f in ["cabal2bazel", "ghc-version"]:
     ctx.symlink(Label("@" + hazel_base_repo_name + "//:" + f), f)
 
@@ -105,8 +105,9 @@ hazel_symlink(
 cabal_haskell_package(
   package,
   "{}",
+  "{}",
   extra_libs,
   extra_libs_hdrs,
   extra_libs_strip_include_prefix,
 )
-""".format(ghc_version))
+""".format(ghc_version, ghc_workspace))
