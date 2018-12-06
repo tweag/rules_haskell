@@ -94,6 +94,7 @@ def _fixup_package_name(package_name):
 def hazel_repositories(
   core_packages,
   packages,
+  extra_flags={},
   extra_libs={},
   extra_libs_hdrs={},
   extra_libs_strip_include_prefix={},
@@ -118,6 +119,7 @@ def hazel_repositories(
     packages: A dict mapping strings to structs, where each struct has two fields:
       - version: A version string
       - sha256: A hex-encoded SHA of the Cabal distribution (*.tar.gz).
+    extra_flags: A dict mapping package names to cabal flags.
     exclude_packages: names of packages to exclude.
     extra_libs: A dictionary that maps from name of extra libraries to Bazel
       targets that provide the shared library.
@@ -147,6 +149,10 @@ def hazel_repositories(
       # attributes of the _cabal_haskell_repository rule because there is no
       # attribute type for dictionary of booleans at the moment.
       flags = {flag: str(items[flag]) for flag in items}
+
+    if p in extra_flags:
+      items = extra_flags[p]
+      flags.update({flag: str(items[flag]) for flag in items})
 
     _cabal_haskell_repository(
         name = "haskell_" + _fixup_package_name(p),
