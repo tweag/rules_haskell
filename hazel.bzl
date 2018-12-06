@@ -165,7 +165,7 @@ def hazel_repositories(
 
   _all_hazel_packages(
       name = "all_hazel_packages",
-      files = ["@haskell_{}//:files".format(p) for p in pkgs])
+      files = ["@haskell_{}//:files".format(_fixup_package_name(p)) for p in pkgs])
 
 def hazel_library(name):
   """Returns the label of the haskell_library rule for the given package."""
