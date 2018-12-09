@@ -8,7 +8,7 @@ def haskell_repositories():
     """
     http_archive(
         name = "bazel_skylib",
-        strip_prefix = "bazel-skylib-0.5.0",
-        urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.5.0.tar.gz"],
-        sha256 = "b5f6abe419da897b7901f90cbab08af958b97a8f3575b0d3dd062ac7ce78541f",
+        sha256 = "eb5c57e4c12e68c0c20bc774bfbc60a568e800d025557bc4ea022c6479acc867",
+        strip_prefix = "bazel-skylib-0.6.0",
+        urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.6.0.tar.gz"],
     )

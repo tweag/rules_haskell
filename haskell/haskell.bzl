@@ -90,6 +90,9 @@ _haskell_common_attrs = {
         cfg = "host",
         default = Label("@io_tweag_rules_haskell//haskell:ls_modules"),
     ),
+    "_cc_toolchain": attr.label(
+        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+    ),
 }
 
 def _mk_binary_rule(**kwargs):
@@ -135,7 +138,6 @@ def _mk_binary_rule(**kwargs):
         },
         toolchains = [
             "@io_tweag_rules_haskell//haskell:toolchain",
-            "@bazel_tools//tools/cpp:toolchain_type",
         ],
         **kwargs
     )
@@ -200,7 +202,6 @@ haskell_library = rule(
     },
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
 )
 """Build a library from Haskell source.
