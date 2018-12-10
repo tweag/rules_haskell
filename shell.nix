@@ -14,6 +14,7 @@ mkShell {
     graphviz
     nix
     which
+    perl
     python
     python36Packages.sphinx
     zip
