@@ -17,6 +17,61 @@ load(":private/set.bzl", "set")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 
+_get_realpath = """\
+function get_realpath() {
+    if [ "$(uname -s)" == "Darwin" ]; then
+        local queue="$1"
+        if [[ "${queue}" != /* ]] ; then
+            # Make sure we start with an absolute path.
+            queue="${PWD}/${queue}"
+        fi
+        local current=""
+        while [ -n "${queue}" ]; do
+            # Removing a trailing /.
+            queue="${queue#/}"
+            # Pull the first path segment off of queue.
+            local segment="${queue%%/*}"
+            # If this is the last segment.
+            if [[ "${queue}" != */* ]] ; then
+                segment="${queue}"
+                queue=""
+            else
+                # Remove that first segment.
+                queue="${queue#*/}"
+            fi
+            local link="${current}/${segment}"
+            if [ -h "${link}" ] ; then
+                link="$(readlink "${link}")"
+                queue="${link}/${queue}"
+                if [[ "${link}" == /* ]] ; then
+                    current=""
+                fi
+            else
+                current="${link}"
+            fi
+        done
+
+        echo "${current}"
+    else
+        readlink -f "$1"
+    fi
+}
+"""
+
+_wrapper_template_relative = """\
+set -e
+
+{get_realpath}
+
+DIR="$( cd "$( dirname $(get_realpath "$0") )" >/dev/null && pwd )"
+
+$DIR/{tool_path} "$@"
+"""
+
+_wrapper_template_absolute = """\
+{tool_path} "$@"
+"""
+
 def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
     if not env:
         env = hs.env
@@ -189,38 +244,34 @@ def _haskell_toolchain_impl(ctx):
         set.mutable_insert(extra_binaries_names, binary.basename)
 
     extra_binaries_files = []
+
     for target in targets_r:
-        symlink = ctx.actions.declare_file(
+        wrapper = ctx.actions.declare_file(
             paths.join(visible_binaries, target),
         )
-        symlink_target = targets_r[target]
-        if not paths.is_absolute(symlink_target):
-            symlink_target = paths.join("/".join([".."] * len(symlink.dirname.split("/"))), symlink_target)
-        ctx.actions.run(
-            inputs = inputs,
-            outputs = [symlink],
-            mnemonic = "Symlink",
-            executable = "ln",
-            # FIXME Currently this part of the process is not hermetic. This
-            # should be adjusted when
-            #
-            # https://github.com/bazelbuild/bazel/issues/4681
-            #
-            # is implemented.
-            use_default_shell_env = True,
-            arguments = [
-                "-s",
-                symlink_target,
-                symlink.path,
-            ],
+        wrapper_target = targets_r[target]
+        if not paths.is_absolute(wrapper_target):
+            wrapper_target = paths.join("/".join([".."] * len(wrapper.dirname.split("/"))), wrapper_target)
+            wrapper_template = _wrapper_template_relative
+        else:
+            wrapper_template = _wrapper_template_absolute
+
+        ctx.actions.write(
+            wrapper,
+            wrapper_template.format(
+                tool_path = wrapper_target,
+                get_realpath = _get_realpath,
+            ),
+            is_executable = True,
         )
+
         if target == "xcrunwrapper.sh":
-            ar_runfiles += [symlink]
+            ar_runfiles += [wrapper]
 
         if set.is_member(extra_binaries_names, target):
-            extra_binaries_files += [symlink]
+            extra_binaries_files += [wrapper]
 
-        set.mutable_insert(symlinks, symlink)
+        set.mutable_insert(symlinks, wrapper)
 
     targets_w = [
         "bash",
