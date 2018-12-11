@@ -66,18 +66,31 @@ _core_library_repository = repository_rule(
     })
 
 def _all_hazel_packages_impl(ctx):
-  ctx.file("BUILD", """
+  all_packages_filegroup = """
 filegroup(
     name = "all-package-files",
     srcs = [{}],
 )
-           """.format(",".join(["\"{}\"".format(f) for f in ctx.attr.files])),
-          executable=False)
+  """.format(",".join(["\"@{}//:bzl\"".format(hazel_workspace(p)) for p in ctx.attr.packages]))
+  one_package_template = """
+filegroup(
+    name = "haskell_{package_name}",
+    srcs = ["@{workspace_name}//:bzl"],
+)
+  """
+  package_filegroups = [
+    one_package_template.format(
+      package_name = p,
+      workspace_name = hazel_workspace(p),
+    )
+    for p in ctx.attr.packages
+  ]
+  ctx.file("BUILD", "\n".join([all_packages_filegroup]+package_filegroups), executable=False)
 
 _all_hazel_packages = repository_rule(
     implementation=_all_hazel_packages_impl,
     attrs={
-        "files": attr.label_list(mandatory=True),
+        "packages": attr.string_list(mandatory=True),
     })
 
 def hazel_repositories(
@@ -160,7 +173,7 @@ def hazel_repositories(
 
   _all_hazel_packages(
       name = "all_hazel_packages",
-      files = ["@{}//:files".format(hazel_workspace(p)) for p in pkgs])
+      packages = [p for p in pkgs])
 
 def hazel_custom_package_hackage(
     package_name,
