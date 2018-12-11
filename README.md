@@ -99,9 +99,19 @@ dependency](https://docs.bazel.build/versions/master/external.html) for each
 package.  It downloads the corresponding Cabal tarball from Hackage
 and construct build rules for compiling the components of that package.
 
+Note, that Haskell package names are case-sensitive while Bazel workspace names
+are case-insensitive on case-insensitive file systems. For the generated
+workspace names to be case-insensitive we include a hash of the original
+package name. Query for targets `@all_hazel_packages//:haskell_{package_name}`
+to determine the generated workspace name.
+
 For example:
 
 ```
+# Discover the generated external workspace for the vector package.
+bazel query 'deps(@all_hazel_packages//:haskell_vector, 1)'
+# --> @haskell_vector__820387517//:bzl
+
 # Build all components of a single package, as well as all of its dependencies:
 bazel build @haskell_vector__820387517//:all
 
