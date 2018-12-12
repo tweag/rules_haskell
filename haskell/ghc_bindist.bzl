@@ -1,9 +1,25 @@
 """Workspace rules (GHC binary distributions)"""
 
 _GHC_BINS = {
+    "8.6.3": {
+        "linux-x86_64": ("https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-deb8-linux.tar.xz", "291ca565374f4d51cc311488581f3279d3167a064fabfd4a6722fe2bd4532fd5"),
+        "darwin-x86_64": ("https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-apple-darwin.tar.xz", "79d069a1a7d74cfdd7ac2a2711c45d3ddc6265b988a0cefa342714b24f997fc1"),
+    },
     "8.6.2": {
         "linux-x86_64": ("https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-x86_64-deb8-linux.tar.xz", "13f96e8b83bb5bb60f955786ff9085744c24927a33be8a17773f84c7c248533a"),
         "darwin-x86_64": ("https://downloads.haskell.org/~ghc/8.6.2/ghc-8.6.2-x86_64-apple-darwin.tar.xz", "8ec46a25872226dd7e5cf7271e3f3450c05f32144b96e6b9cb44cc4079db50dc"),
+    },
+    "8.4.4": {
+        "linux-x86_64": ("https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-deb8-linux.tar.xz", "4c2a8857f76b7f3e34ecba0b51015d5cb8b767fe5377a7ec477abde10705ab1a"),
+        "darwin-x86_64": ("https://downloads.haskell.org/~ghc/8.4.4/ghc-8.4.4-x86_64-apple-darwin.tar.xz", "28dc89ebd231335337c656f4c5ead2ae2a1acc166aafe74a14f084393c5ef03a"),
+    },
+    "8.4.3": {
+        "linux-x86_64": ("https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-x86_64-deb8-linux.tar.xz", "b9c855754a3007f69db9a434db3e41050d29aa15cba0ec43a942672a9b5f75b7"),
+        "darwin-x86_64": ("https://downloads.haskell.org/~ghc/8.4.3/ghc-8.4.3-x86_64-apple-darwin.tar.xz", "af0b455f6c46b9802b4b48dad996619cfa27cc6e2bf2ce5532387b4a8c00aa64"),
+    },
+    "8.4.2": {
+        "linux-x86_64": ("https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-x86_64-deb8-linux.tar.xz", "246f66eb56f4ad0f1c7755502cfc8f9972f2d067dede17e151f6f479c1f76fbd"),
+        "darwin-x86_64": ("https://downloads.haskell.org/~ghc/8.4.2/ghc-8.4.2-x86_64-apple-darwin.tar.xz", "87469222042b9ac23f9db216a8d4e5107297bdbbb99df71eb4d9e7208455def2"),
     },
     "8.4.1": {
         "linux-x86_64": ("https://downloads.haskell.org/~ghc/8.4.1/ghc-8.4.1-x86_64-deb8-linux.tar.xz", "427c77a934b30c3f1de992c38c072afb4323fe6fb30dbac919ca8cb6ae98fbd9"),
@@ -23,7 +39,7 @@ _GHC_BINS = {
     },
 }
 
-_GHC_DEFAULT_VERSION = "8.4.1"
+_GHC_DEFAULT_VERSION = "8.4.4"
 
 def _execute_fail_loudly(ctx, args):
     """Execute a command and fail loudly if it fails.
