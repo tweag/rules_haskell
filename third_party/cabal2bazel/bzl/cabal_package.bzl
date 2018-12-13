@@ -262,7 +262,6 @@ def _get_build_attrs(
         if m in boot_module_map:
           srcs[condition] += [boot_module_map[m]]
       else:
-        # XXX: Redundant?
         fail("Missing module %s for %s" % (m, name) + str(module_map))
 
   # Collect the options to pass to ghc.
