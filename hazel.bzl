@@ -10,22 +10,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl",
 )
 
 def _cabal_haskell_repository_impl(ctx):
-  pkg = "{}-{}".format(ctx.attr.package_name, ctx.attr.package_version)
-  url = "https://hackage.haskell.org/package/{}.tar.gz".format(pkg)
-  # If the SHA is wrong, the error message is very unhelpful:
-  # https://github.com/bazelbuild/bazel/issues/3709
-  # As a workaround, we compute it manually if it's not set (and then fail
-  # this rule).
-  if not ctx.attr.sha256:
-    ctx.download(url=url, output="tar")
-    res = ctx.execute(["openssl", "sha", "-sha256", "tar"])
-    fail("Missing expected attribute \"sha256\" for {}; computed {}".format(pkg, res.stdout + res.stderr))
-
-  ctx.download_and_extract(
-      url=url,
-      stripPrefix=ctx.attr.package_name + "-" + ctx.attr.package_version,
-      sha256=ctx.attr.sha256,
-      output="")
+  ctx.download_and_extract(**ctx.attr.download_options)
 
   symlink_and_invoke_hazel(
     ctx,
@@ -39,10 +24,9 @@ _cabal_haskell_repository = repository_rule(
     implementation=_cabal_haskell_repository_impl,
     attrs={
         "package_name": attr.string(mandatory=True),
-        "package_version": attr.string(mandatory=True),
         "package_flags": attr.string_dict(mandatory=True),
         "hazel_base_repo_name": attr.string(mandatory=True),
-        "sha256": attr.string(mandatory=True),
+        "download_options": attr.string_dict(mandatory=True),
     })
 
 def _core_library_repository_impl(ctx):
@@ -116,9 +100,17 @@ def hazel_repositories(
   Args:
     core_packages: A dict mapping Haskell package names to version
       numbers.  These packages are assumed to be provided by GHC.
-    packages: A dict mapping strings to structs, where each struct has two fields:
-      - version: A version string
+    packages: A dict mapping strings to structs, where each struct specifies
+    either the package version (for Hackage download) or a URL. In both cases
+    the sha256 of the archive must also be provided. When specifying a URL
+    download_and_extract options may also be provided: output, type,
+    stripPrefix. The following fields may be set:
+      - version: A version string.
       - sha256: A hex-encoded SHA of the Cabal distribution (*.tar.gz).
+      - url: Where to download the package tarball from (if no 'version' is
+        specified).
+      - output, type, stripPrefix: Only when "url" is specified. See the
+        download_and_extract documentation.
     extra_flags: A dict mapping package names to cabal flags.
     exclude_packages: names of packages to exclude.
     extra_libs: A dictionary that maps from name of extra libraries to Bazel
@@ -154,13 +146,56 @@ def hazel_repositories(
       items = extra_flags[p]
       flags.update({flag: str(items[flag]) for flag in items})
 
+    package_name = p
+
+    # download_options should have the following mandatory
+    # field for download_and_extract:
+    #   * url
+    # Moreover the following field is optional for download_and_extra but, for
+    # reproducibility's sake, we make it mandatory:
+    #   * sha256
+    # In the Hackage case, the URL is set to the tarball's on Hackage.
+    # In the case of the user specifying "url", we forward these other fields:
+    #   * output
+    #   * type
+    #   * stripPrefix
+    download_options = {}
+
+    sha256 = pkgs[p].sha256 if hasattr(pkgs[p], "sha256") else \
+            fail("{} is missing attribute sha256".format(package_name))
+    download_options += { "sha256": sha256 }
+
+    # If "version" is present, the package will be fetched from Hackage.
+    if hasattr(pkgs[p], "version"):
+        package_version = pkgs[p].version
+        pkg = "{}-{}".format(package_name, package_version)
+
+        url = "https://hackage.haskell.org/package/{}.tar.gz".format(pkg)
+        download_options += { "url": url }
+
+        stripPrefix = package_name + "-" + package_version
+        download_options += { "stripPrefix" : stripPrefix }
+
+    # If "url" is present, the package will be fetched from the given URL.
+    elif hasattr(pkgs[p], "url"):
+
+        download_options += { "url" : pkgs[p].url }
+        download_options += { "output" : pkgs[p].output } \
+            if hasattr(pkgs[p], "output") else {}
+        download_options += { "type" : pkgs[p].type } \
+            if hasattr(pkgs[p], "type") else {}
+        download_options += { "stripPrefix" : pkgs[p].stripPrefix } \
+            if hasattr(pkgs[p], "stripPrefix") else {}
+
+    else:
+        fail("Package {} should have either 'url' or 'version'").format(pkg)
+
     _cabal_haskell_repository(
         name = "haskell_" + _fixup_package_name(p),
         package_name = p,
-        package_version = pkgs[p].version,
         package_flags = flags,
-        sha256 = pkgs[p].sha256 if hasattr(pkgs[p], "sha256") else None,
         hazel_base_repo_name = hazel_base_repo_name,
+        download_options = download_options,
     )
 
   for p in core_packages:
