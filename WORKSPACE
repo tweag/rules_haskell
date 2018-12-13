@@ -166,6 +166,11 @@ hazel_custom_package_hackage(
 )
 
 hazel_custom_package_hackage(
+  package_name = "zlib-bindings",
+  version = "0.1.1.5",
+)
+
+hazel_custom_package_hackage(
   package_name = "vault",
   version = "0.3.1.1",
 )
@@ -210,6 +215,7 @@ hazel_repositories(
       "vault",
       "wai-app-static",
       "zlib",
+      "zlib-bindings",
     ],
     extra_libs = {
       "tag_c": "@taglib//:lib",
