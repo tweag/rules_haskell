@@ -26,6 +26,7 @@ The full reference documentation for rules is at https://haskell.build.
 | ---: | :--- |
 | [`haskell_library`](https://api.haskell.build/haskell/haskell.html#haskell_library) | Build a library from Haskell source. |
 | [`haskell_binary`](https://api.haskell.build/haskell/haskell.html#haskell_binary) | Build an executable from Haskell source. |
+| [`haskell_import`](https://api.haskell.build/haskell/haskell.html#haskell_import) | Import packages that are prebuilt outside of Bazel. |
 | [`haskell_test`](https://api.haskell.build/haskell/haskell.html#haskell_test) | Run a test suite. |
 | [`haskell_doc`](https://api.haskell.build/haskell/haddock.html#haskell_doc) | Create API documentation. |
 | [`haskell_toolchain`](https://api.haskell.build/haskell/toolchain.html#haskell_toolchain) | Declare a compiler toolchain. |
