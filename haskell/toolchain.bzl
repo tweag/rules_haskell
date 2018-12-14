@@ -172,8 +172,11 @@ def _haskell_toolchain_impl(ctx):
     )
 
     # Get the versions of every prebuilt package.
+    ghc_pkg_basename = "ghc-pkg"
+    if ctx.attr.is_windows:
+        ghc_pkg_basename = "ghc-pkg.exe"
     for t in ctx.files.tools:
-        if t.basename == "ghc-pkg":
+        if t.basename == ghc_pkg_basename:
             ghc_pkg = t
     pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
     ctx.actions.run_shell(
