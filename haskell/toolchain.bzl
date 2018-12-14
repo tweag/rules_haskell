@@ -142,9 +142,13 @@ def _haskell_toolchain_impl(ctx):
             ghc_binaries[tool.basename] = tool.path
 
     # Run a version check on the compiler.
+    ghc_basename = "ghc"
+    if ctx.attr.is_windows:
+        ghc_basename = "ghc.exe"
+
     compiler = None
     for t in ctx.files.tools:
-        if t.basename == "ghc":
+        if t.basename == ghc_basename:
             if compiler:
                 fail("There can only be one tool named `ghc` in scope")
             compiler = t
