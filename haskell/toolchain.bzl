@@ -401,12 +401,13 @@ def haskell_toolchain(
       ```
     """
     impl_name = name + "-impl"
+    corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
     _haskell_toolchain(
         name = impl_name,
         version = version,
         tools = tools,
         compiler_flags = compiler_flags,
-        repl_ghci_args = repl_ghci_args,
+        repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
         visibility = ["//visibility:public"],
         is_darwin = select({
