@@ -11,8 +11,10 @@ haskell_library(
     srcs = [
         "Bar.hsc",
         "Bar/Baz.hsc",
+        "Flags.hsc",
         "Foo.hsc",
     ],
+    compiler_flags = ["-DTHIS_IS_TRUE"],
     deps = ["@hackage//:base"],
 )
 
