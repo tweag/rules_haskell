@@ -97,11 +97,15 @@ ghc_bindist = repository_rule(
         ),
     },
 )
-"""Create a new repository with given `name` which will contain two
-targets:
+"""Create a new repository from binary distributions of GHC. The
+repository exports two targets:
 
-* filegroup `bin` containing all executable files of GHC
-* C library `threaded-rts`
+* a `bin` filegroup containing all GHC commands,
+* a `threaded-rts` CC library.
+
+These targets are unpacked from a binary distribution specific to your
+platform. Only the platforms that have a "binary package" on the GHC
+[download page](https://www.haskell.org/ghc/) are supported.
 
 Example:
    In `WORKSPACE` file:
