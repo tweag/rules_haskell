@@ -139,8 +139,8 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
 
     # Forward all "-D" and "-optP-D" flags to hsc2hs
     hsc_flags = []
-    hsc_flags += ["--cflag=" + x for x in compiler_flags if x.startswith('-D')]
-    hsc_flags += ["--cflag=" + x[len("-optP"):] for x in compiler_flags if x.startswith('-optP-D')]
+    hsc_flags += ["--cflag=" + x for x in compiler_flags if x.startswith("-D")]
+    hsc_flags += ["--cflag=" + x[len("-optP"):] for x in compiler_flags if x.startswith("-optP-D")]
 
     # Add import hierarchy root.
     # Note that this is not perfect, since GHC requires hs-boot files
