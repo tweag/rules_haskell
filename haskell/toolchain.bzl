@@ -59,11 +59,8 @@ function get_realpath() {
 """
 
 _wrapper_template_relative = """\
-set -e
-
 {get_realpath}
-
-DIR="$( cd "$( dirname $(get_realpath "$0") )" >/dev/null && pwd )"
+DIR="$( cd "$( dirname $(get_realpath "$0" 2> /dev/null) 2> /dev/null)" >/dev/null && pwd )"
 
 $DIR/{tool_path} "$@"
 """
@@ -130,7 +127,11 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
 
 def _haskell_toolchain_impl(ctx):
     # Check that we have all that we want.
-    for tool in _GHC_BINARIES:
+    _GHC_BINS = _GHC_BINARIES
+    if ctx.attr.is_windows:
+        _GHC_BINS = ["{}.exe".format(tool) for tool in _GHC_BINS]
+
+    for tool in _GHC_BINS:
         if tool not in [t.basename for t in ctx.files.tools]:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 
@@ -200,7 +201,7 @@ def _haskell_toolchain_impl(ctx):
     # are both necessary for a tool to be available with this approach.
 
     visible_binaries = "visible-binaries"
-    symlinks = set.empty()
+    tools = set.empty()
     inputs = []
     inputs.extend(ctx.files.tools)
     inputs.extend(ctx.files._crosstool)
@@ -271,7 +272,7 @@ def _haskell_toolchain_impl(ctx):
         if set.is_member(extra_binaries_names, target):
             extra_binaries_files += [wrapper]
 
-        set.mutable_insert(symlinks, wrapper)
+        set.mutable_insert(tools, wrapper)
 
     targets_w = [
         "bash",
@@ -302,11 +303,11 @@ def _haskell_toolchain_impl(ctx):
             ),
             use_default_shell_env = True,
         )
-        set.mutable_insert(symlinks, symlink)
+        set.mutable_insert(tools, symlink)
 
     tools_struct_args = {
         tool.basename.replace("-", "_"): tool
-        for tool in set.to_list(symlinks)
+        for tool in set.to_list(tools)
     }
     tools_runfiles_struct_args = {"ar": ar_runfiles}
 
@@ -340,7 +341,7 @@ def _haskell_toolchain_impl(ctx):
             # provide directory name of the first one (the collection cannot be
             # empty). The rest of the program may rely consider visible_bin_path
             # as the path to visible binaries, without recalculations.
-            visible_bin_path = set.to_list(symlinks)[0].dirname,
+            visible_bin_path = set.to_list(tools)[0].dirname,
             is_darwin = ctx.attr.is_darwin,
             version = ctx.attr.version,
             # Pass through the version_file, that it can be required as
@@ -380,6 +381,11 @@ _haskell_toolchain = rule(
             doc = "Whether compile on and for Darwin (macOS).",
             mandatory = True,
         ),
+        "is_windows": attr.bool(
+            doc = "Whether compile on and for Windows.",
+            mandatory = True,
+        ),
+
         # TODO: document
         "_crosstool": attr.label(
             default = Label("//tools/defaults:crosstool"),
@@ -464,6 +470,11 @@ def haskell_toolchain(
             "@bazel_tools//src/conditions:darwin": True,
             "//conditions:default": False,
         }),
+        is_windows = select({
+            "@bazel_tools//src/conditions:windows": True,
+            "//conditions:default": False,
+        }),
+
         **kwargs
     )
 
