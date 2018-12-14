@@ -127,19 +127,27 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
 
 def _haskell_toolchain_impl(ctx):
     # Check that we have all that we want.
-    _GHC_BINS = _GHC_BINARIES
+    tool_suffix = ""
     if ctx.attr.is_windows:
-        _GHC_BINS = ["{}.exe".format(tool) for tool in _GHC_BINS]
+        tool_suffix = ".exe"
 
-    for tool in _GHC_BINS:
+    ghc_bins = {
+        "{}{}".format(tool_name, tool_suffix): tool_name
+        for tool_name in _GHC_BINARIES
+    }
+
+    ghc_exes = [tool for tool, _ in ghc_bins.items()]
+    for tool in ghc_exes:
         if tool not in [t.basename for t in ctx.files.tools]:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 
     # Store the binaries of interest in ghc_binaries.
     ghc_binaries = {}
+
     for tool in ctx.files.tools:
-        if tool.basename in _GHC_BINARIES:
-            ghc_binaries[tool.basename] = tool.path
+        for tool_exe, tool_name in ghc_bins.items():
+            if tool.basename == tool_exe:
+                ghc_binaries[tool_name] = tool.path
 
     # Run a version check on the compiler.
     ghc_basename = "ghc"
