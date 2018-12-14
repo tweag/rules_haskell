@@ -16,12 +16,13 @@ load(
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 
-def _process_hsc_file(hs, cc, hsc_file):
+def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
     """Process a single hsc file.
 
     Args:
       hs: Haskell context.
       cc: CcInteropInfo, information about C dependencies.
+      hsc_flags: extra flags to pass to hsc2hs
       hsc_file: hsc file to process.
 
     Returns:
@@ -43,6 +44,7 @@ def _process_hsc_file(hs, cc, hsc_file):
     args.add(["--cflag=" + f for f in cc.compiler_flags])
     args.add(["--cflag=" + f for f in cc.include_args])
     args.add(["--lflag=" + f for f in cc.linker_flags])
+    args.add(hsc_flags)
 
     hs.actions.run(
         inputs = depset(transitive = [
@@ -135,6 +137,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     boot_files = []
     source_files = set.empty()
 
+    # Forward all "-D" flags to hsc2hs
+    hsc_flags = ["--cflag=" + x for x in compiler_flags if x.startswith('-D')]
+
     # Add import hierarchy root.
     # Note that this is not perfect, since GHC requires hs-boot files
     # to be in the same directory as the corresponding .hs file.  Thus
@@ -151,7 +156,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         if s.extension == "h":
             header_files.append(s)
         elif s.extension == "hsc":
-            s0, idir = _process_hsc_file(hs, cc, s)
+            s0, idir = _process_hsc_file(hs, cc, hsc_flags, s)
             set.mutable_insert(source_files, s0)
             set.mutable_insert(import_dirs, idir)
         elif s.extension in ["hs-boot", "lhs-boot"]:
