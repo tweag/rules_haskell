@@ -14,7 +14,7 @@ haskell_library(
         "Flags.hsc",
         "Foo.hsc",
     ],
-    compiler_flags = ["-DTHIS_IS_TRUE"],
+    compiler_flags = ["-DTHIS_IS_TRUE", "-optP-DTHIS_TOO_IS_TRUE" ],
     deps = ["@hackage//:base"],
 )
 
