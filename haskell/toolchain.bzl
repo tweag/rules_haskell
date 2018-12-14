@@ -165,6 +165,7 @@ def _haskell_toolchain_impl(ctx):
         inputs = [compiler],
         outputs = [version_file],
         mnemonic = "HaskellVersionCheck",
+        use_default_shell_env = True,
         command = """
     {compiler} --numeric-version > {version_file}
     if [[ "{expected_version}" != "$(< {version_file})" ]]
