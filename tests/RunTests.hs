@@ -59,7 +59,11 @@ main = hspec $ do
 
       -- Set Nixpkgs in environment variable to avoid hardcoding it in
       -- start script itself
-      , "NIX_PATH=nixpkgs=$pwd/nixpkgs/default.nix bazel fetch //... --config=ci"
+      , "NIX_PATH=nixpkgs=$pwd/nixpkgs/default.nix \
+        \bazel fetch \
+        \--config=ci \
+        \--override_repository=io_tweag_rules_haskell=$pwd \
+        \//..."
       ])
 
   describe "failures" $ do
