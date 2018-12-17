@@ -82,7 +82,7 @@ def _module_output(file, ending):
 def _find_module_by_ending(modulePath, ending, sourceDirs):
   # Find module source file in source directories.
   files = native.glob([
-    paths.join(d, modulePath + "." + ending)
+    paths.join(d if d != "." else "", modulePath + "." + ending)
     for d in sourceDirs
   ])
   if len(files) == 0:
