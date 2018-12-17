@@ -103,10 +103,10 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
         hs.toolchain.version_file,
     ]
     if params_file:
-        command = '${1+"$@"} $(< %s)' % params_file.path
+        command = '"$@" $(< %s)' % params_file.path
         extra_inputs.append(params_file)
     else:
-        command = '${1+"$@"}'
+        command = '"$@"'
 
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
