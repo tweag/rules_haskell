@@ -489,6 +489,7 @@ def cabal_haskell_package(
         name = exe_name,
         srcs = select(srcs),
         deps = select(deps),
+        linkstatic = False,
         visibility = ["//visibility:public"],
         **attrs
     )
