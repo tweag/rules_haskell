@@ -62,11 +62,11 @@ _wrapper_template_relative = """\
 {get_realpath}
 DIR="$( cd "$( dirname $(get_realpath "$0" 2> /dev/null) 2> /dev/null)" >/dev/null && pwd )"
 
-$DIR/{tool_path} "$@"
+"$DIR/{tool_path}" "$@"
 """
 
 _wrapper_template_absolute = """\
-{tool_path} "$@"
+"{tool_path}" "$@"
 """
 
 def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
