@@ -59,24 +59,6 @@ hazel_symlink = rule(
     },
     outputs={"out": "%{out}"})
 
-def _glob_modules(src_dir, extension, out_extension):
-  """List Haskell files under the given directory with this extension.
-
-  Args:
-    src_dir: A subdirectory relative to this package.
-    extension: A file extension; for example, ".hs" or ".hsc".
-  Returns:
-    A list of 3-tuples containing:
-      1. The original file, e.g., "srcs/Foo/Bar.hsc"
-      2. The Haskell module name, e.g., "Foo.Bar"
-      3. The preprocessed Haskell file name, e.g., "Foo/Bar.hs"
-  """
-  outputs = []
-  for f in native.glob([paths.normalize(paths.join(src_dir, "**", "*" + extension))]):
-    m,_ = paths.split_extension(paths.relativize(f, src_dir))
-    outputs += [(f, m.replace("/", "."), m + out_extension)]
-  return outputs
-
 def _conditions_dict(d):
   return d.select if hasattr(d, "select") else {_conditions_default: d}
 
@@ -84,6 +66,52 @@ def _fix_source_dirs(dirs):
   if dirs:
     return dirs
   return [""]
+
+def _module_output(file, ending):
+  out_extension = {
+    "hs": "hs",
+    "lhs": "lhs",
+    "hsc": "hsc",
+    "chs": "chs",
+    "x": "hs",
+    "y": "hs",
+    "ly": "hs",
+  }[ending]
+  return file[:-len(ending)] + out_extension
+
+def _find_module_by_ending(modulePath, ending, sourceDirs):
+  # Find module source file in source directories.
+  files = native.glob([
+    paths.join(d, modulePath + "." + ending)
+    for d in sourceDirs
+  ])
+  if len(files) == 0:
+    return None
+  file = files[0]
+  # Look for hs/lhs boot file.
+  bootFile = None
+  if ending in ["hs", "lhs"]:
+    bootFiles = native.glob([file + "-boot"])
+    if len(bootFiles) != 0:
+      bootFile = bootFiles[0]
+  return struct(
+    type = ending,
+    src = file,
+    out = _module_output(file, ending),
+    boot = bootFile,
+  )
+
+def _find_module(module, sourceDirs):
+  modulePath = module.replace(".", "/")
+  mod = None
+  # Looking for raw source files first. To override duplicates (e.g. if a
+  # package contains both a Happy Foo.y file and the corresponding generated
+  # Foo.hs).
+  for ending in ["hs", "lhs", "hsc", "chs", "x", "y", "ly"]:
+    mod = _find_module_by_ending(modulePath, ending, sourceDirs)
+    if mod != None:
+      break
+  return mod
 
 def _get_build_attrs(
     name,
@@ -129,73 +157,89 @@ def _get_build_attrs(
 
   srcs_dir = "gen-srcs-" + name + "/"
   clib_name = name + "-cbits"
+  generated_modules = [_paths_module(desc)]
 
+  # Keep track of chs modules, as later chs modules may depend on earlier ones.
+  chs_targets = []
 
-  for d in _fix_source_dirs(build_info.hsSourceDirs) + [generated_srcs_dir]:
-    for f,m,out in _glob_modules(d, ".x", ".hs"):
-      module_map[m] = srcs_dir + out
-      genalex(
-          src = f,
-          out = module_map[m],
-      )
-    for f,m,out in _glob_modules(d, ".y", ".hs") + _glob_modules(d, ".ly", ".hs"):
-      module_map[m] = srcs_dir + out
-      genhappy(
-          src = f,
-          out = module_map[m],
-      )
+  for module in build_info.otherModules + extra_modules:
+    if module in generated_modules:
+      continue
 
-    for f,m,out in _glob_modules(d, ".chs", ".chs"):
-      chs_rule = name + "-" + m
-      symlink_rule = name + "-" + m + "-symlink"
+    # Look for module files in source directories.
+    info = _find_module(module,
+      _fix_source_dirs(build_info.hsSourceDirs) + [generated_srcs_dir]
+    )
+    if info == None:
+      fail("Missing module %s for %s" % (module, name) + str(module_map))
+
+    # Create module files in build directory.
+    symlink_name = name + "-" + module + "-symlink"
+    chs_name = name + "-" + module + "-chs"
+    module_out = srcs_dir + info.out
+    module_map[module] = module_out
+    if info.type in ["hs", "lhs", "hsc"]:
       hazel_symlink(
-          name = symlink_rule,
-          src = f,
-          out = srcs_dir + out,
+        name = symlink_name,
+        src = info.src,
+        out = module_out,
       )
-      # TODO: this will not work if one .chs file imports another.
-      # To mimic Cabal's behavior we should assume the module names are
-      # topologically ordered; i.e., make each one depend on all previous
-      # modules.  However, that's not easy the way the code is currently
-      # structured.
-      c2hs_library(
-          name = chs_rule,
-          srcs = [symlink_rule],
-          deps = [_haskell_cc_import_name(elib) for elib in build_info.extraLibs]
-              + [clib_name],
-      )
-
-      module_map[m] = chs_rule
-    # Raw source files.  Include them last, to override duplicates (e.g. if a
-    # package contains both a Happy Foo.y file and the corresponding generated
-    # Foo.hs).
-    for f,m,out in (_glob_modules(d, ".hs", ".hs")
-                     + _glob_modules(d, ".lhs", ".lhs")
-                     + _glob_modules(d, ".hsc", ".hsc")):
-      if m not in module_map:
-        module_map[m] = srcs_dir + out
+      if info.boot != None:
+        boot_out = srcs_dir + info.out + "-boot"
+        boot_module_map[module] = boot_out
         hazel_symlink(
-            name = name + "-" + m,
-            src = f,
-            out = module_map[m],
+          name = name + "-boot-" + module + "-symlink",
+          src = info.boot,
+          out = boot_out,
         )
-    for f,m,out in (_glob_modules(d, ".hs-boot", ".hs-boot")
-                     + _glob_modules(d, ".lhs-boot", ".lhs-boot")):
-      boot_module_map[m] = srcs_dir + out
+    elif info.type in ["chs"]:
       hazel_symlink(
-          name = name + "-boot-" + m,
-          src = f,
-          out = boot_module_map[m],
+        name = symlink_name,
+        src = info.src,
+        out = module_out,
       )
+      c2hs_library(
+        name = chs_name,
+        srcs = [symlink_name],
+        deps = [
+          _haskell_cc_import_name(elib)
+          for elib in build_info.extraLibs
+        ] + [clib_name] + chs_targets,
+      )
+      chs_targets.append(chs_name)
+    elif info.type in ["x"]:
+      genalex(
+        src = info.src,
+        out = module_out,
+      )
+    elif info.type in ["y", "ly"]:
+      genhappy(
+        src = info.src,
+        out = module_out,
+      )
+
+  # Create extra source files in build directory.
+  extra_srcs = []
+  all_module_files = module_map.values() + boot_module_map.values()
+  for f in native.glob([paths.normalize(f) for f in desc.extraSrcFiles]):
+    fout = srcs_dir + f
+    # Skip files that were created in the previous steps.
+    if fout in all_module_files:
+      continue
+    hazel_symlink(
+      name = fout + "-symlink",
+      src = f,
+      out = srcs_dir + f,
+    )
+    extra_srcs.append(fout)
 
   # Collect the source files for each module in this Cabal component.
   # srcs is a mapping from "select()" conditions (e.g. //third_party/haskell/ghc:ghc-8.0.2) to a list of source files.
-  # Turn "boot_srcs" and others to dicts if there is a use case.
+  # Turn others to dicts if there is a use case.
   srcs = {}
   # Keep track of .hs-boot files specially.  GHC doesn't want us to pass
   # them as command-line arguments; instead, it looks for them next to the
   # corresponding .hs files.
-  boot_srcs = []
   deps = {}
   cdeps = []
   paths_module = _paths_module(desc)
@@ -214,6 +258,7 @@ def _get_build_attrs(
         if m in boot_module_map:
           srcs[condition] += [boot_module_map[m]]
       else:
+        # XXX: Redundant?
         fail("Missing module %s for %s" % (m, name) + str(module_map))
 
   # Collect the options to pass to ghc.
@@ -301,6 +346,7 @@ def _get_build_attrs(
 
   return {
       "srcs": srcs,
+      "extra_srcs": extra_srcs,
       "deps": deps,
       "compiler_flags": ghcopts + extra_ghcopts,
       "src_strip_prefix": srcs_dir,

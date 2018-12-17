@@ -30,7 +30,7 @@
 #   )
 def genalex(src, out):
   native.genrule(
-      name=src + ".hs_alex",
+      name=out + ".hs_alex",
       srcs=[src],
       outs=[out],
       tools=["@haskell_alex//:alex_bin"],
