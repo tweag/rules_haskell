@@ -327,6 +327,24 @@ rule_test(
 )
 
 genrule(
+    name = "run-bin-with-lib-dynamic",
+    outs = ["dyn-dummy"],
+    cmd = """sh -c '
+    set -e
+    $(location //tests/binary-with-lib-dynamic:binary-with-lib-dynamic)
+    touch $(location dyn-dummy)
+'""",
+    tools = ["//tests/binary-with-lib-dynamic"],
+)
+
+rule_test(
+    name = "test-run-bin-with-lib-dynamic",
+    size = "small",
+    generates = ["dyn-dummy"],
+    rule = "//tests:run-bin-with-lib-dynamic",
+)
+
+genrule(
     name = "run-bin-with-c-lib",
     outs = ["c-dummy"],
     cmd = """sh -c '
