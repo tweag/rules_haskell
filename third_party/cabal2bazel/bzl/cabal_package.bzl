@@ -204,6 +204,7 @@ def _get_build_attrs(
         deps = [
           _haskell_cc_import_name(elib)
           for elib in build_info.extraLibs
+          if elib != "pthread"
         ] + [clib_name] + chs_targets,
       )
       chs_targets.append(chs_name)
@@ -314,6 +315,9 @@ def _get_build_attrs(
   elibs_includes = []
 
   for elib in build_info.extraLibs:
+    if elib == "pthread":
+      continue
+
     elib_target_name = elib + "-cc-import"
 
     native.cc_import(
@@ -423,6 +427,9 @@ def cabal_haskell_package(
       elibs_targets = []
 
       for elib in lib.libBuildInfo.extraLibs:
+        if elib == "pthread":
+          continue
+
         elib_target_name = _haskell_cc_import_name(elib)
         haskell_cc_import(
           name = elib_target_name,
