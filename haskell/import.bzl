@@ -74,7 +74,7 @@ def _haskell_import_impl(ctx):
         dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
         prebuilt_dependencies = set.empty(),
-        external_libraries = {},
+        external_libraries = set.empty(),
         direct_prebuilt_deps = set.empty(),
     )
     html_files = list(ctx.attr.haddock_html.files)

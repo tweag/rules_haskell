@@ -3,14 +3,18 @@
 load(":private/packages.bzl", "expose_packages")
 load(
     ":private/path_utils.bzl",
-    "get_external_libs_path",
     "get_lib_name",
     "ln",
+    "make_path",
     "target_unique_name",
 )
 load(
     ":private/set.bzl",
     "set",
+)
+load(
+    ":private/providers.bzl",
+    "external_libraries_get_mangled",
 )
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
@@ -58,7 +62,8 @@ def build_haskell_repl(
 
     # External libraries.
     seen_libs = set.empty()
-    for lib in build_info.external_libraries.values():
+
+    for lib in [e.mangled_lib for e in set.to_list(build_info.external_libraries)]:
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
@@ -104,10 +109,10 @@ def build_haskell_repl(
         template = ghci_repl_wrapper,
         output = repl_file,
         substitutions = {
-            "{LDLIBPATH}": get_external_libs_path(
+            "{LDLIBPATH}": make_path(
                 set.union(
                     build_info.dynamic_libraries,
-                    set.from_list(build_info.external_libraries.values()),
+                    set.map(build_info.external_libraries, external_libraries_get_mangled),
                 ),
                 prefix = "$RULES_HASKELL_EXEC_ROOT",
             ),
@@ -129,7 +134,7 @@ def build_haskell_repl(
             repl_file,
         ]),
         set.to_depset(package_caches),
-        depset(build_info.external_libraries.values()),
+        depset([e.mangled_lib for e in set.to_list(build_info.external_libraries)]),
         set.to_depset(source_files),
     ])
     ln(hs, repl_file, output, extra_inputs)

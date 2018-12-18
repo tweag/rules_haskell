@@ -5,8 +5,8 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/context.bzl", "haskell_context")
 load(
     ":private/path_utils.bzl",
-    "get_external_libs_path",
     "get_lib_name",
+    "make_external_libs_path",
 )
 load(":private/set.bzl", "set")
 load(
@@ -108,9 +108,9 @@ def _haskell_doctest_single(target, ctx):
     args.add(ctx.attr.doctest_flags)
 
     # External libraries.
-    external_libs = set.from_list(build_info.external_libraries.values())
+    external_libraries = build_info.external_libraries
     seen_libs = set.empty()
-    for lib in set.to_list(external_libs):
+    for lib in [e.mangled_lib for e in set.to_list(build_info.external_libraries)]:
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
@@ -147,7 +147,7 @@ def _haskell_doctest_single(target, ctx):
             set.to_depset(build_info.interface_dirs),
             set.to_depset(build_info.dynamic_libraries),
             set.to_depset(header_files),
-            set.to_depset(external_libs),
+            depset([e.mangled_lib for e in set.to_list(external_libraries)]),
             depset([exposed_modules_file]),
             depset(
                 toolchain.doctest +
@@ -167,7 +167,7 @@ def _haskell_doctest_single(target, ctx):
         # in this case.
         env = dicts.add(
             {
-                "LD_LIBRARY_PATH": get_external_libs_path(external_libs),
+                "LD_LIBRARY_PATH": make_external_libs_path(external_libraries),
             },
             hs.env,
         ),
