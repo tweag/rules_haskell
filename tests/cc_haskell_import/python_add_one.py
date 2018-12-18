@@ -5,25 +5,14 @@ import subprocess
 
 r = runfiles.Create()
 
-# print("runfiles manifest: {}".format(r._strategy._path))
-# for k, f in r._strategy._runfiles.iteritems():
-#     # print("{}    -> {}".format(k, f))
-#     print(f)
-
-path = r.Rlocation('io_tweag_rules_haskell/tests/cc_haskell_import/libadd_one.so')
-
-subprocess.call("find $RUNFILES_DIR", shell=True)
-
-# subprocess.call(["ldd", path])
-# subprocess.call("objdump -x {} | grep -i runpath".format(path), shell=True)
-# print("path: {}".format(path))
+path = r.Rlocation('io_tweag_rules_haskell/tests/cc_haskell_import/hs-lib-b-wrapped.so')
 
 foreignlib = ctypes.cdll.LoadLibrary(path)
 
-# ATTN: If you remove this print(), hs_init will segfault!
-# TODO: why?
-print(foreignlib)
+# ATTN: If you remove this print *statement* hs_init will segfault!
+# If you use the python3 print *function*, it will segfault as well!
+# TODO: wtf?
+print foreignlib
 
 foreignlib.hs_init()
-print('one plus one equals: ' + str(foreignlib.add_one_hs(1)))
-print('success!')
+assert(str(foreignlib.add_one_hs(1)) == "2")

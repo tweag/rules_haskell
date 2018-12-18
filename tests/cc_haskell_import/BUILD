@@ -40,32 +40,31 @@ cc_binary(
     deps = ["@ghc//:threaded-rts"],
 )
 
-
 # We go one step further and use the Haskell library from above
 # to build a static .so which is then loaded with a Python script
 # and calls the Haskell function constructed from GHC C FFI.
 
 # shared library which python will dlopen
 cc_binary(
-    name = "libadd_one.so",
+    name = "hs-lib-b-wrapped.so",
     srcs = [
         ":hs-lib-b.so",
     ],
+    linkshared = 1,
+    linkstatic = 1,
     visibility = ["//tests:__subpackages__"],
     deps = ["@ghc//:threaded-rts"],
-    linkstatic = 1,
-    linkshared = 1,
 )
 
-# just dlopens libadd_one.so and prints it
+# just dlopens hb-lib-b-wrapped.so and prints it
 py_binary(
     name = "python_add_one",
     srcs = ["python_add_one.py"],
     data = [
-        ":libadd_one.so",
+        ":hs-lib-b-wrapped.so",
     ],
+    default_python_version = "PY3",
+    srcs_version = "PY3ONLY",
     visibility = ["//tests:__subpackages__"],
     deps = ["@bazel_tools//tools/python/runfiles"],
-    srcs_version = "PY3ONLY",
-    default_python_version = "PY3"
 )
