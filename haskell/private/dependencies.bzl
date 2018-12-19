@@ -32,38 +32,6 @@ def _is_static_library(f):
     """
     return f.extension in ["a"]
 
-def _mangle_lib(ctx, label, lib, preserve_name):
-    """Create a symlink to a library, with a longer name.
-
-    The built-in cc_* rules don't link against a library
-    directly. They link against a symlink whose name is guaranteed to be
-    unique across the entire workspace. This disambiguates
-    libraries with the same name. This process is called "mangling".
-    The built-in rules don't expose mangling functionality directly (see
-    https://github.com/bazelbuild/bazel/issues/4581). But this function
-    emulates the built-in dynamic library mangling.
-
-    Args:
-      ctx: Rule context.
-      label: the label to use as a qualifier for the library name.
-      solib: the library.
-      preserve_name: Bool, whether given `lib` should be returned unchanged.
-
-    Returns:
-      File: the created symlink or the original lib.
-    """
-
-    if preserve_name:
-        return lib
-
-    components = [c for c in [label.workspace_root, label.package, label.name] if c]
-    qualifier = "/".join(components).replace("_", "_U").replace("/", "_S")
-    quallib = ctx.actions.declare_file("lib" + qualifier + "_" + lib.basename)
-
-    ln(ctx, lib, quallib)
-
-    return quallib
-
 def gather_dep_info(ctx):
     """Collapse dependencies into a single `HaskellBuildInfo`.
 
@@ -133,7 +101,7 @@ def gather_dep_info(ctx):
             # Transitives static dependencies
             if hasattr(dep, "cc"):
                 transitive_static_deps = {
-                    name: _mangle_lib(ctx, dep.label, name, CcSkylarkApiProviderHacked in dep)
+                    name: name
                     for name in dep.cc.libs.to_list()
                     if _is_static_library(name)
                 }
@@ -155,7 +123,7 @@ def gather_dep_info(ctx):
                         f:
                         # If the provider is CcSkylarkApiProviderHacked, then the .so
                         # files come from haskell_cc_import.
-                        _mangle_lib(ctx, dep.label, f, CcSkylarkApiProviderHacked in dep)
+                        f
                         for f in dep.files.to_list()
                         if _is_shared_library(f)
                     },

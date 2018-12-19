@@ -109,21 +109,8 @@ def _haskell_doctest_single(target, ctx):
 
     # External libraries.
     external_libs = set.from_list(build_info.external_libraries.values())
-    seen_libs = set.empty()
     for lib in set.to_list(external_libs):
-        lib_name = get_lib_name(lib)
-        if not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            if hs.toolchain.is_darwin:
-                args.add([
-                    "-optl-l{0}".format(lib_name),
-                    "-optl-L{0}".format(paths.dirname(lib.path)),
-                ])
-            else:
-                args.add([
-                    "-l{0}".format(lib_name),
-                    "-L{0}".format(paths.dirname(lib.path)),
-                ])
+        args.add("-optl-l{0}".format(lib.path))
 
     header_files = lib_info.header_files if lib_info != None else bin_info.header_files
 
@@ -161,16 +148,7 @@ def _haskell_doctest_single(target, ctx):
     {doctest} "$@" $(cat {module_list} | tr , ' ') > {output} 2>&1 || rc=$? && cat {output} && exit $rc
     """.format(doctest = toolchain.doctest[0].path, output = doctest_log.path, module_list = exposed_modules_file.path),
         arguments = [args],
-        # NOTE It looks like we must specify the paths here as well as via -L
-        # flags because there are at least two different "consumers" of the info
-        # (ghc and linker?) and they seem to prefer to get it in different ways
-        # in this case.
-        env = dicts.add(
-            {
-                "LD_LIBRARY_PATH": get_external_libs_path(external_libs),
-            },
-            hs.env,
-        ),
+        env = hs.env,
     )
     return doctest_log
 

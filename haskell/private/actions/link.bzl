@@ -217,15 +217,8 @@ def _add_external_libraries(args, libs):
       args: Args object.
       libs: list of external shared libraries.
     """
-    seen_libs = set.empty()
     for lib in libs:
-        lib_name = get_lib_name(lib)
-        if not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            args.add([
-                "-l{0}".format(lib_name),
-                "-L{0}".format(paths.dirname(lib.path)),
-            ])
+        args.add(lib.path)
 
 def _infer_rpaths(target, solibs):
     """Return set of RPATH values to be added to target so it can find all
