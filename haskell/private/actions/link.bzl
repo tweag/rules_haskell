@@ -43,7 +43,10 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
             [
                 "cp {} {}".format(inp.path, out.path),
                 "chmod +w {}".format(out.path),
-                "/usr/bin/install_name_tool -id @rpath/{} {}".format(out.basename, out.path),
+                "/usr/bin/install_name_tool -id @rpath/{} {}".format(
+                    out.basename,
+                    out.path,
+                ),
             ] +
             [
                 "/usr/bin/install_name_tool -change {} {} {}".format(
@@ -180,6 +183,7 @@ def link_binary(
         # should do always when using a toolchain from Nixpkgs.
         # TODO remove this gross hack.
         args.add("-liconv")
+
     for rpath in set.to_list(_infer_rpaths(hs, executable, solibs)):
         args.add(["-optl-Wl,-rpath," + rpath])
 
@@ -241,9 +245,9 @@ def _infer_rpaths(hs, target, solibs):
     r = set.empty()
 
     if hs.toolchain.is_darwin:
-      origin = "@loader_path/"
+        origin = "@loader_path/"
     else:
-      origin = "$ORIGIN/"
+        origin = "$ORIGIN/"
 
     for solib in set.to_list(solibs):
         rpath = paths.normalize(
@@ -374,6 +378,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         args.add(["-optl-Wl,-headerpad_max_install_names"])
     else:
         dynamic_library_tmp = dynamic_library
+
     for rpath in set.to_list(_infer_rpaths(hs, dynamic_library, solibs)):
         args.add(["-optl-Wl,-rpath," + rpath])
 
