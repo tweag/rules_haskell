@@ -137,6 +137,8 @@ See [rules_haskell_examples][] for examples of using these rules.
 
 ## For `rules_haskell` developers
 
+### Test Suite
+
 To run the test suite for these rules, you'll need [Nix][nix]
 installed. First, from the project’s folder start a pure nix shell:
 
@@ -167,6 +169,15 @@ $ bazel run --direct_run //skylark:buildifier **/*.bzl **/BUILD
 ```
 
 [buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
+
+### CircleCI
+
+Pull Requests are checked by CircleCI.
+
+If a check fails and you cannot reproduce it locally (e.g. it failed on Darwin
+and you only run Linux), you can [ssh into CircleCI to aid debugging][ci-ssh].
+
+[ci-ssh]: https://circleci.com/docs/2.0/ssh-access-jobs/
 
 ## Rules
 
