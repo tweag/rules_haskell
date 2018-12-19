@@ -20,10 +20,19 @@ cc_library(
 )
 
 haskell_library(
+    name = "intermediate",
+    srcs = ["Intermediate.hs"],
+    deps = [
+        ":clib",
+        "@hackage//:base",
+    ],
+)
+
+haskell_library(
     name = "library-with-includes",
     srcs = ["Lib.hs"],
     deps = [
-        ":clib",
+        ":intermediate",
         "@hackage//:base",
     ],
 )
