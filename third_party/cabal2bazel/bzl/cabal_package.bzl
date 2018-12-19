@@ -71,6 +71,15 @@ def _fix_source_dirs(dirs):
   return [""]
 
 def _module_output(file, ending):
+  """Replace the input's ending by the ending for the generated output file.
+
+  Args:
+    file: Input file name.
+    ending: Input file ending.
+
+  Returns:
+    The output file with appropriate ending. E.g. `file.y --> file.hs`.
+  """
   out_extension = {
     "hs": "hs",
     "lhs": "lhs",
@@ -83,6 +92,20 @@ def _module_output(file, ending):
   return file[:-len(ending)] + out_extension
 
 def _find_module_by_ending(modulePath, ending, sourceDirs):
+  """Try to find a source file for the given modulePath with the given ending.
+
+  Checks for module source files in all given source directories.
+
+  Args:
+    modulePath: The module path converted to a relative file path. E.g.
+      `Some/Module/Name`
+    ending: Look for module source files with this file ending.
+    sourceDirs: Look for module source files in these directories.
+
+  Returns:
+    Either `None` if no source file was found, or a `struct` describing the
+    module source file. See `_find_module` for details.
+  """
   # Find module source file in source directories.
   files = native.glob([
     paths.join(d if d != "." else "", modulePath + "." + ending)
@@ -105,6 +128,23 @@ def _find_module_by_ending(modulePath, ending, sourceDirs):
   )
 
 def _find_module(module, sourceDirs):
+  """Find the source file for the given module.
+
+  Args:
+    module: Find the source file for this module. E.g. `Some.Module.Name`.
+    sourceDirs: List of source directories under which to search for sources.
+
+  Returns:
+    Either `None` if no module source file was found,
+    or a `struct` with the following fields:
+
+    `type`: The ending.
+    `src`: The source file that was found.
+      E.g. `Some/Module/Name.y`
+    `out`: The expected generated output module file.
+      E.g. `Some/Module/Name.hs`.
+    `bootFile`: Haskell boot file path or `None` if no boot file was found.
+  """
   modulePath = module.replace(".", "/")
   mod = None
   # Looking for raw source files first. To override duplicates (e.g. if a
