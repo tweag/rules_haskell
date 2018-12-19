@@ -179,11 +179,9 @@ def link_binary(
         # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
         # should do always when using a toolchain from Nixpkgs.
         # TODO remove this gross hack.
-        # TODO: enable dynamic linking of Haskell dependencies for macOS.
         args.add("-liconv")
-    else:
-        for rpath in set.to_list(_infer_rpaths(executable, solibs)):
-            args.add(["-optl-Wl,-rpath," + rpath])
+    for rpath in set.to_list(_infer_rpaths(hs, executable, solibs)):
+        args.add(["-optl-Wl,-rpath," + rpath])
 
     objects_dir_manifest = _create_objects_dir_manifest(
         hs,
@@ -228,11 +226,12 @@ def _add_external_libraries(args, libs):
                 "-L{0}".format(paths.dirname(lib.path)),
             ])
 
-def _infer_rpaths(target, solibs):
+def _infer_rpaths(hs, target, solibs):
     """Return set of RPATH values to be added to target so it can find all
     solibs.
 
     Args:
+      hs: Haskell context.
       target: File, executable or library we're linking.
       solibs: A set of Files, shared objects that the target needs.
 
@@ -241,6 +240,11 @@ def _infer_rpaths(target, solibs):
     """
     r = set.empty()
 
+    if hs.toolchain.is_darwin:
+      origin = "@loader_path/"
+    else:
+      origin = "$ORIGIN/"
+
     for solib in set.to_list(solibs):
         rpath = paths.normalize(
             paths.join(
@@ -248,7 +252,7 @@ def _infer_rpaths(target, solibs):
                 solib.dirname,
             ),
         )
-        set.mutable_insert(r, "$ORIGIN/" + rpath)
+        set.mutable_insert(r, origin + rpath)
 
     return r
 
@@ -370,8 +374,8 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         args.add(["-optl-Wl,-headerpad_max_install_names"])
     else:
         dynamic_library_tmp = dynamic_library
-        for rpath in set.to_list(_infer_rpaths(dynamic_library, solibs)):
-            args.add(["-optl-Wl,-rpath," + rpath])
+    for rpath in set.to_list(_infer_rpaths(hs, dynamic_library, solibs)):
+        args.add(["-optl-Wl,-rpath," + rpath])
 
     args.add(["-o", dynamic_library_tmp.path])
 
