@@ -8,6 +8,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl",
 load("@bazel_tools//tools/build_defs/repo:http.bzl",
      "http_archive",
 )
+load("//tools:mangling.bzl", "hazel_binary", "hazel_library", "hazel_workspace")
 
 def _cabal_haskell_repository_impl(ctx):
   ctx.download_and_extract(**ctx.attr.download_options)
@@ -49,31 +50,32 @@ _core_library_repository = repository_rule(
     })
 
 def _all_hazel_packages_impl(ctx):
-  ctx.file("BUILD", """
+  all_packages_filegroup = """
 filegroup(
     name = "all-package-files",
     srcs = [{}],
 )
-           """.format(",".join(["\"{}\"".format(f) for f in ctx.attr.files])),
-          executable=False)
+  """.format(",".join(["\"@{}//:bzl\"".format(hazel_workspace(p)) for p in ctx.attr.packages]))
+  one_package_template = """
+filegroup(
+    name = "haskell_{package_name}",
+    srcs = ["@{workspace_name}//:bzl"],
+)
+  """
+  package_filegroups = [
+    one_package_template.format(
+      package_name = p,
+      workspace_name = hazel_workspace(p),
+    )
+    for p in ctx.attr.packages
+  ]
+  ctx.file("BUILD", "\n".join([all_packages_filegroup]+package_filegroups), executable=False)
 
 _all_hazel_packages = repository_rule(
     implementation=_all_hazel_packages_impl,
     attrs={
-        "files": attr.label_list(mandatory=True),
+        "packages": attr.string_list(mandatory=True),
     })
-
-def _fixup_package_name(package_name):
-  """Fixup package name by replacing dashes with underscores to get a valid
-  workspace name from it.
-
-  Args:
-    package_name: string: Package name.
-
-  Returns:
-    string: fixed package name.
-  """
-  return package_name.replace("-", "_")
 
 def hazel_repositories(
   core_packages,
@@ -89,7 +91,7 @@ def hazel_repositories(
   external dependencies corresponding to the given packages:
   - @hazel_base_repository: The compiled "hazel" Haskell binary, along with
     support files.
-  - @haskell_{package}: A build of the given Cabal package, one per entry
+  - @haskell_{package}_{hash}: A build of the given Cabal package, one per entry
     of the "packages" argument.  (Note that Bazel only builds these
     on-demand when needed by other rules.)  This repository automatically
     downloads the package's Cabal distribution from Hackage and parses the
@@ -191,7 +193,7 @@ def hazel_repositories(
         fail("Package {} should have either 'url' or 'version'").format(pkg)
 
     _cabal_haskell_repository(
-        name = "haskell_" + _fixup_package_name(p),
+        name = hazel_workspace(p),
         package_name = p,
         package_flags = flags,
         hazel_base_repo_name = hazel_base_repo_name,
@@ -200,17 +202,13 @@ def hazel_repositories(
 
   for p in core_packages:
     _core_library_repository(
-        name = "haskell_" + _fixup_package_name(p),
+        name = hazel_workspace(p),
         package = p,
     )
 
   _all_hazel_packages(
       name = "all_hazel_packages",
-      files = ["@haskell_{}//:files".format(_fixup_package_name(p)) for p in pkgs])
-
-def hazel_library(name):
-  """Returns the label of the haskell_library rule for the given package."""
-  return "@haskell_{}//:{}".format(_fixup_package_name(name), name)
+      packages = [p for p in pkgs])
 
 def hazel_custom_package_hackage(
     package_name,
@@ -228,7 +226,7 @@ def hazel_custom_package_hackage(
     package_id,
     package_id,
   )
-  fixed_package_name = _fixup_package_name(package_name)
+  fixed_package_name = hazel_workspace(package_name)
   http_archive(
     name = "haskell_{0}".format(fixed_package_name),
     build_file = "//third_party/haskell:BUILD.{0}".format(fixed_package_name),
@@ -259,7 +257,7 @@ def hazel_custom_package_github(
                    repos).
   """
 
-  fixed_package_name = _fixup_package_name(package_name)
+  fixed_package_name = hazel_workspace(package_name)
   build_file = "//third_party/haskell:BUILD.{0}".format(fixed_package_name)
   url = "https://github.com/{0}/{1}".format(github_user, github_repo)
   ssh_url = "git@github.com:{0}/{1}".format(github_user, github_repo)

@@ -28,11 +28,12 @@
 #       srcs = [ "MyScanner.y.hs" ]
 #       ...
 #   )
+load("//tools:mangling.bzl", "hazel_binary")
 def genalex(src, out):
   native.genrule(
       name=out + ".hs_alex",
       srcs=[src],
       outs=[out],
-      tools=["@haskell_alex//:alex_bin"],
-      cmd="$(location @haskell_alex//:alex_bin) -g -o $(OUTS) $(SRCS)",
+      tools=[hazel_binary("alex")],
+      cmd="$(location {}) -g -o $(OUTS) $(SRCS)".format(hazel_binary("alex")),
   )
