@@ -43,6 +43,7 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
             [
                 "cp {} {}".format(inp.path, out.path),
                 "chmod +w {}".format(out.path),
+                "/usr/bin/install_name_tool -id @rpath/{} {}".format(out.basename, out.path),
             ] +
             [
                 "/usr/bin/install_name_tool -change {} {} {}".format(
