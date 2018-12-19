@@ -1,4 +1,4 @@
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_library", "haskell_import")
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_import", "haskell_library")
 
 haskell_import(name = "base")
 
@@ -13,17 +13,22 @@ cc_library(
     deps = ["cbits-indirect"],
 )
 
-
 haskell_library(
     name = "mypkg",
     srcs = ["src/MyModule.hs"],
     src_strip_prefix = "src",
-    deps = [":cbits", ":base"],
+    deps = [
+        ":base",
+        ":cbits",
+    ],
 )
 
 haskell_binary(
     name = "indirect-link",
     srcs = ["test/Main.hs"],
     src_strip_prefix = "test",
-    deps = [":mypkg", ":base"],
+    deps = [
+        ":base",
+        ":mypkg",
+    ],
 )
