@@ -157,13 +157,13 @@ Skylark code in this project is formatted according to the output of
 [buildifier]. You can check that the formatting is correct using:
 
 ```
-$ bazel test --config lint //...
+$ bazel run //:buildifier
 ```
 
 If tests fail then run the following to fix the formatting:
 
 ```
-$ bazel run --direct_run //skylark:buildifier **/*.bzl **/BUILD
+$ bazel run //:buildifier-fix
 ```
 
 [buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier

@@ -1,5 +1,3 @@
-load("//skylark:lint.bzl", "skylark_lint")
-
 exports_files(
     glob(["*.bzl"]) + [
         "assets/ghci_script",
@@ -14,5 +12,3 @@ py_binary(
     srcs = ["private/ls_modules.py"],
     visibility = ["//visibility:public"],
 )
-
-skylark_lint()

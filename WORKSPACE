@@ -179,10 +179,13 @@ http_archive(
     urls = ["https://github.com/mboes/rules_go/archive/6a2b1f780b475a75a7baae5b441635c566f0ed8a.tar.gz"],
 )
 
+bazelbuild_buildtools_rev = "4a7914a1466ff7388c934bfcd43a3852928536f6"
+
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    strip_prefix = "buildtools-588d90030bc8054b550967aa45a8a8d170deba0b",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/588d90030bc8054b550967aa45a8a8d170deba0b.tar.gz"],
+    sha256 = "45775c7bb7ee7656e9df4ca4278f977c8e4e260aff755734734c19321e14bc84",
+    strip_prefix = "buildtools-%s" % bazelbuild_buildtools_rev,
+    url = "https://github.com/bazelbuild/buildtools/archive/%s.zip" % bazelbuild_buildtools_rev,
 )
 
 load(
@@ -190,9 +193,12 @@ load(
     "go_register_toolchains",
     "go_rules_dependencies",
 )
+load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
 go_rules_dependencies()
 
 # Use host version because none of the SDK's that rules_go knows about
 # are compatible with NixOS.
 go_register_toolchains(go_version = "host")
+
+buildifier_dependencies()
