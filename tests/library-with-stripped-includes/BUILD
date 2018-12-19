@@ -36,3 +36,15 @@ haskell_library(
         "@hackage//:base",
     ],
 )
+
+cc_library(
+    name = "intermediate-clib",
+    deps = [":clib"],
+    srcs = ["intermediate-clib.c"],
+)
+
+cc_library(
+    name = "final-clib",
+    deps = [":intermediate-clib"],
+    srcs = ["final-clib.c"],
+)
