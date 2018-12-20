@@ -9,6 +9,3 @@ build:ci --verbose_failures
 build:ci --symlink_prefix=foobar
 common:ci --color=no
 test:ci --test_output=errors
-
-test:lint --build_tests_only
-test:lint --test_tag_filters=lint

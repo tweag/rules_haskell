@@ -13,8 +13,8 @@ import Test.Hspec (hspec, it, describe, runIO, shouldSatisfy, expectationFailure
 
 main :: IO ()
 main = hspec $ do
-  it "skylark lint" $ do
-    assertSuccess (bazel ["test", "//...", "--build_tests_only", "--test_tag_filters=lint"])
+  it "bazel lint" $ do
+    assertSuccess (bazel ["run", "//:buildifier"])
 
   it "bazel test" $ do
     assertSuccess (bazel ["test", "//..."])

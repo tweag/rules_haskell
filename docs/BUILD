@@ -1,4 +1,3 @@
-load("//skylark:lint.bzl", "skylark_lint")
 load("@io_bazel_skydoc//skylark:skylark.bzl", "skylark_doc")
 
 genrule(
@@ -33,5 +32,3 @@ skylark_doc(
     ],
     format = "html",
 )
-
-skylark_lint()

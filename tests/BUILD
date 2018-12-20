@@ -1,4 +1,3 @@
-load("//skylark:lint.bzl", "skylark_lint")
 load(":sh_inline_test.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load(
@@ -343,8 +342,6 @@ rule_test(
     generates = ["c-dummy"],
     rule = "//tests:run-bin-with-c-lib",
 )
-
-skylark_lint()
 
 haskell_binary(
     name = "run-tests",
