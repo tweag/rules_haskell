@@ -233,6 +233,10 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     for f in set.to_list(source_files):
         args.add(f)
 
+    if hs.is_windows:
+        cc_set = []
+    else:
+        cc_set = [hs.tools.cc]
     return DefaultCompileInfo(
         args = args,
         ghc_args = ghc_args,
@@ -250,7 +254,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             set.to_depset(dep_info.dynamic_libraries),
             depset(dep_info.external_libraries.values()),
             java.inputs,
-            depset([hs.tools.cc]),
+            depset(cc_set),
             locale_archive_depset,
         ]),
         objects_dir = objects_dir,

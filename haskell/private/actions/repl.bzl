@@ -100,6 +100,11 @@ def build_haskell_repl(
     # `-XOverloadedStrings`.
     args += hs.toolchain.compiler_flags + compiler_flags + hs.toolchain.repl_ghci_args + repl_ghci_args
 
+    if hs.is_windows:
+        ghci_path = "ghci"
+    else:
+        hs.tools.ghci.path
+    
     hs.actions.expand_template(
         template = ghci_repl_wrapper,
         output = repl_file,
@@ -111,23 +116,30 @@ def build_haskell_repl(
                 ),
                 prefix = "$RULES_HASKELL_EXEC_ROOT",
             ),
-            "{GHCi}": hs.tools.ghci.path,
+            "{GHCi}": ghci_path,
             "{SCRIPT_LOCATION}": output.path,
             "{ARGS}": " ".join([shell.quote(a) for a in args]),
         },
         is_executable = True,
     )
 
+    if hs.is_windows:
+        ds = depset([
+            ghci_repl_script,
+            repl_file,
+        ])
+    else:
+        ds = depset([
+            hs.tools.ghci,
+            ghci_repl_script,
+            repl_file,
+        ])
     # XXX We create a symlink here because we need to force
     # hs.tools.ghci and ghci_script and the best way to do that is
     # to use hs.actions.run. That action, in turn must produce
     # a result, so using ln seems to be the only sane choice.
     extra_inputs = depset(transitive = [
-        depset([
-            hs.tools.ghci,
-            ghci_repl_script,
-            repl_file,
-        ]),
+        ds,
         set.to_depset(package_caches),
         depset(build_info.external_libraries.values()),
         set.to_depset(source_files),

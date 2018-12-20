@@ -39,6 +39,7 @@ def haskell_context(ctx, attr = None):
         extra_binaries = toolchain.extra_binaries,
         src_root = src_root,
         env = env,
+		is_windows = toolchain.is_windows,
         mode = ctx.var["COMPILATION_MODE"],
         actions = ctx.actions,
         bin_dir = ctx.bin_dir,
