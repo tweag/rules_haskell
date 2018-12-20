@@ -10,7 +10,7 @@ load(
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
-    "get_external_libs_path",
+    "make_external_libs_path",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
@@ -248,7 +248,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             set.to_depset(dep_info.dynamic_libraries),
-            depset(dep_info.external_libraries.values()),
+            depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
             java.inputs,
             depset([hs.tools.cc]),
             locale_archive_depset,
@@ -263,7 +263,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         import_dirs = import_dirs,
         env = dicts.add(
             {
-                "LD_LIBRARY_PATH": get_external_libs_path(set.from_list(dep_info.external_libraries.values())),
+                "LD_LIBRARY_PATH": make_external_libs_path(dep_info.external_libraries),
             },
             java.env,
             hs.env,

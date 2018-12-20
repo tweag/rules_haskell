@@ -27,6 +27,7 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
+load(":private/providers.bzl", "external_libraries_get_mangled")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -126,7 +127,7 @@ use the 'haskell_import' rule instead.
     )
 
     solibs = set.union(
-        set.from_list(dep_info.external_libraries.values()),
+        set.map(dep_info.external_libraries, external_libraries_get_mangled),
         dep_info.dynamic_libraries,
     )
 

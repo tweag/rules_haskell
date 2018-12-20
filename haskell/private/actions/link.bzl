@@ -5,6 +5,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/path_utils.bzl", "get_lib_name")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
+load(":private/providers.bzl", "external_libraries_get_mangled")
 
 def _backup_path(target):
     """Return a path from the directory this is in to the Bazel root.
@@ -19,7 +20,7 @@ def _backup_path(target):
 
     return "/".join([".."] * n)
 
-def _fix_linker_paths(hs, inp, out, external_libraries):
+def _fix_darwin_linker_paths(hs, inp, out, external_libraries):
     """Postprocess a macOS binary to make shared library references relative.
 
     On macOS, in order to simulate the linker "rpath" behavior and make the
@@ -32,7 +33,7 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
       hs: Haskell context.
       inp: An input file.
       out: An output file.
-      external_libraries: A list of C library dependencies to make relative.
+      external_libraries: HaskellBuildInfo external_libraries to make relative.
     """
     hs.actions.run_shell(
         inputs = [inp],
@@ -46,11 +47,12 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
             ] +
             [
                 "/usr/bin/install_name_tool -change {} {} {}".format(
-                    f.path,
-                    paths.join("@loader_path", _backup_path(out), f.path),
+                    f.lib.path,
+                    paths.join("@loader_path", _backup_path(out), f.lib.path),
                     out.path,
                 )
-                for f in external_libraries
+                # we use the unmangled lib (f.lib) for this instead of a mangled lib name
+                for f in set.to_list(external_libraries)
             ],
         ),
     )
@@ -104,7 +106,7 @@ def link_binary(
         compile_output = executable
     else:
         compile_output = hs.actions.declare_file(hs.name + ".temp")
-        _fix_linker_paths(
+        _fix_darwin_linker_paths(
             hs,
             compile_output,
             executable,
@@ -155,10 +157,10 @@ def link_binary(
         version = version,
     ))
 
-    _add_external_libraries(args, dep_info.external_libraries.values())
+    _add_external_libraries(args, dep_info.external_libraries)
 
     solibs = set.union(
-        set.from_list(dep_info.external_libraries),
+        set.map(dep_info.external_libraries, external_libraries_get_mangled),
         dep_info.dynamic_libraries,
     )
 
@@ -199,7 +201,7 @@ def link_binary(
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             depset([objects_dir]),
-            depset(dep_info.external_libraries.values()),
+            depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
             depset(hs.extra_binaries),
         ]),
         outputs = [compile_output],
@@ -210,15 +212,16 @@ def link_binary(
 
     return executable
 
-def _add_external_libraries(args, libs):
-    """Add options to `args` that allow us to link to `libs`.
+def _add_external_libraries(args, ext_libs):
+    """Add options to `args` that allow us to link to `ext_libs`.
 
     Args:
       args: Args object.
-      libs: list of external shared libraries.
+      ext_libs: external_libraries from HaskellBuildInfo
     """
     seen_libs = set.empty()
-    for lib in libs:
+    for ext_lib in set.to_list(ext_libs):
+        lib = ext_lib.mangled_lib
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
@@ -351,16 +354,16 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         version = my_pkg_id.version if my_pkg_id else None,
     ))
 
-    _add_external_libraries(args, dep_info.external_libraries.values())
+    _add_external_libraries(args, dep_info.external_libraries)
 
     solibs = set.union(
-        set.from_list(dep_info.external_libraries),
+        set.map(dep_info.external_libraries, external_libraries_get_mangled),
         dep_info.dynamic_libraries,
     )
 
     if hs.toolchain.is_darwin:
         dynamic_library_tmp = hs.actions.declare_file(dynamic_library.basename + ".temp")
-        _fix_linker_paths(
+        _fix_darwin_linker_paths(
             hs,
             dynamic_library_tmp,
             dynamic_library,
@@ -389,7 +392,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
             depset(extra_srcs),
             set.to_depset(dep_info.package_caches),
             set.to_depset(dep_info.dynamic_libraries),
-            depset(dep_info.external_libraries.values()),
+            depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
         ]),
         outputs = [dynamic_library_tmp],
         mnemonic = "HaskellLinkDynamicLibrary",

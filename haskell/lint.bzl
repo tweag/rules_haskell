@@ -79,7 +79,7 @@ def _haskell_lint_aspect_impl(target, ctx):
             set.to_depset(build_info.package_caches),
             set.to_depset(build_info.interface_dirs),
             set.to_depset(build_info.dynamic_libraries),
-            depset(build_info.external_libraries.values()),
+            depset([e.mangled_lib for e in set.to_list(build_info.external_libraries)]),
             depset([
                 hs.tools.ghc,
                 hs.tools.cat,
