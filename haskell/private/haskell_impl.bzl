@@ -131,7 +131,7 @@ use the 'haskell_import' rule instead.
     )
 
     build_info = dep_info  # HaskellBuildInfo
-    
+
     bin_info = HaskellBinaryInfo(
         import_dirs = c.import_dirs,
         source_files = c.source_files,

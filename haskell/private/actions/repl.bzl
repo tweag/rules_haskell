@@ -104,7 +104,7 @@ def build_haskell_repl(
         ghci_path = "ghci"
     else:
         ghci_path = hs.tools.ghci.path
-    
+
     hs.actions.expand_template(
         template = ghci_repl_wrapper,
         output = repl_file,
@@ -134,6 +134,7 @@ def build_haskell_repl(
             ghci_repl_script,
             repl_file,
         ])
+
     # XXX We create a symlink here because we need to force
     # hs.tools.ghci and ghci_script and the best way to do that is
     # to use hs.actions.run. That action, in turn must produce

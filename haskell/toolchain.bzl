@@ -23,7 +23,7 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
             env = None
         else:
             env = hs.env
-    
+
     use_default_shell_env = False
     if hs.is_windows:
         use_default_shell_env = True
@@ -50,9 +50,8 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
             hs.tools.cc.path,
             "-pgmP",
             hs.tools.cc.path,
-
         ])
-    
+
     args.add([
         # Setting -pgm* flags explicitly has the unfortunate side effect
         # of resetting any program flags in the GHC settings file. So we
@@ -66,7 +65,7 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
 
     if hs.is_windows:
         extra_inputs = [
-            hs.toolchain.version_file
+            hs.toolchain.version_file,
         ]
     else:
         extra_inputs = [
@@ -76,7 +75,7 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
             # to ensure the version comparison check is run first.
             hs.toolchain.version_file,
         ]
-        
+
     if params_file:
         command = '\'${1+"$@"} $(< %s)\'' % params_file.path
         extra_inputs.append(params_file)
@@ -99,7 +98,7 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
             inputs = depset(extra_inputs, transitive = [inputs])
         else:
             inputs += extra_inputs
-            
+
         hs.actions.run_shell(
             inputs = inputs,
             outputs = outputs,
@@ -121,7 +120,7 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
             inputs = depset(extra_inputs, transitive = [inputs])
         else:
             inputs += extra_inputs
-            
+
         hs.actions.run_shell(
             inputs = inputs,
             outputs = outputs,
@@ -146,8 +145,8 @@ def _windows_haskell_toolchain(ctx, ghc_binaries, pkgdb_file, version_file, loca
                 #"nm": ctx.actions.declare_file(ctx.host_fragments.cpp.nm_executable),
                 #"cpp": ctx.actions.declare_file(ctx.host_fragments.cpp.preprocessor_executable),
                 #"strip": ctx.actions.declare_file(ctx.host_fragments.cpp.strip_executable),
-            }), # struct(**tools_struct_args),
-            tools_runfiles = {}, # struct(**tools_runfiles_struct_args),
+            }),  # struct(**tools_struct_args),
+            tools_runfiles = {},  # struct(**tools_runfiles_struct_args),
             extra_binaries = [],
             compiler_flags = ctx.attr.compiler_flags,
             repl_ghci_args = ctx.attr.repl_ghci_args,
@@ -181,12 +180,11 @@ def _windows_haskell_toolchain(ctx, ghc_binaries, pkgdb_file, version_file, loca
     ]
 
 def _haskell_toolchain_impl(ctx):
-
     # Check that we have all that we want.
     format = "{bin}"
     if ctx.attr.is_windows:
-      format = "{bin}.exe"
-    bin_list = [ (bin, format.format(bin=bin)) for bin in _GHC_BINARIES ]
+        format = "{bin}.exe"
+    bin_list = [(bin, format.format(bin = bin)) for bin in _GHC_BINARIES]
 
     ghc_binaries = {}
     for tool, tool_exe in bin_list:
@@ -202,7 +200,7 @@ def _haskell_toolchain_impl(ctx):
 
     # Run a version check on the compiler.
     compiler = ghc_binaries["ghc"]
-    
+
     version_file = ctx.actions.declare_file("ghc-version")
     ctx.actions.run_shell(
         inputs = [compiler],
@@ -224,7 +222,7 @@ def _haskell_toolchain_impl(ctx):
 
     # Get the versions of every prebuilt package.
     ghc_pkg = ghc_binaries["ghc-pkg"]
-    
+
     pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
     ctx.actions.run_shell(
         inputs = [ghc_pkg],
@@ -235,15 +233,14 @@ def _haskell_toolchain_impl(ctx):
             output = pkgdb_file.path,
         ),
     )
-    
+
     locale_archive = None
 
     if ctx.attr.locale_archive != None:
         locale_archive = ctx.file.locale_archive
-        
+
     if ctx.attr.is_windows:
         return _windows_haskell_toolchain(ctx, ghc_binaries, pkgdb_file, version_file, locale_archive)
-    
 
     # NOTE The only way to let various executables know where other
     # executables are located is often only via the PATH environment variable.
@@ -377,8 +374,6 @@ def _haskell_toolchain_impl(ctx):
         for tool in set.to_list(symlinks)
     }
     tools_runfiles_struct_args = {"ar": ar_runfiles}
-
-
 
     return [
         platform_common.ToolchainInfo(
