@@ -7,9 +7,9 @@ haskell_repositories()
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
-    sha256 = "e08bfff0e3413cae8549df72e3fce36f7b0e2369e864dfe41d3307ef100500f8",
-    strip_prefix = "rules_nixpkgs-0.4.1",
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.4.1.tar.gz"],
+    sha256 = "4f924d839d3a5896e3e22ba1282c686b2c078fd4c98d564ec427ac83ec66302d",
+    strip_prefix = "rules_nixpkgs-0.5.1",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.5.1.tar.gz"],
 )
 
 load(
@@ -118,6 +118,7 @@ haskell_nixpkgs_packageset(
     base_attribute_path = "haskellPackages",
     nix_file = "//tests:ghc.nix",
     repositories = {"nixpkgs": "@nixpkgs"},
+    nixopts = ["-j", "1"],
 )
 
 load("@hackage-packages//:packages.bzl", "import_packages")
