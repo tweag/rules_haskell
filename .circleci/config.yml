@@ -1,6 +1,8 @@
 version: 2
 
 jobs:
+
+  # ATTN: when you change anything here, don’t forget to copy it to the build-darwin section
   build-linux:
     docker:
       - image: nixos/nix:2.1.3
@@ -15,17 +17,21 @@ jobs:
             apk --no-progress add bash ca-certificates
             nix-channel --update
       - run:
+          name: Bazel linter
+          command: |
+            nix-shell --pure --run 'bazel run //:buildifier'
+      - run:
           name: Build
           command: |
-            nix-shell --pure --run "bazel build --jobs=2 //... @haskell_zlib//... --config=ci"
-            nix-shell --pure --run "bazel build -c dbg --jobs=2 //... --config=ci"
+            nix-shell --pure --run 'bazel build --jobs=2 //... @haskell_zlib//... --config=ci'
+            nix-shell --pure --run 'bazel build -c dbg --jobs=2 //... --config=ci'
       - run:
           name: Run tests
           # bazel does not support recursive bazel call, so we
           # cannot use bazel run here because the test runner uses
           # bazel
           command: |
-            nix-shell --pure --run "bazel build //tests:run-tests && ./bazel-bin/tests/run-tests"
+            nix-shell --pure --run 'bazel build //tests:run-tests && ./bazel-bin/tests/run-tests'
 
   build-darwin:
     macos:
@@ -36,6 +42,11 @@ jobs:
           name: Install Nix
           command: |
             curl https://nixos.org/nix/install | sh
+      - run:
+          name: Bazel linter
+          shell: /bin/bash -eilo pipefail
+          command: |
+            nix-shell --run 'CC=$(which clang) bazel run //:buildifier'
       - run:
           name: Build
           shell: /bin/bash -eilo pipefail
