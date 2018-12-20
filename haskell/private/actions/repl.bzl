@@ -103,7 +103,7 @@ def build_haskell_repl(
     if hs.is_windows:
         ghci_path = "ghci"
     else:
-        hs.tools.ghci.path
+        ghci_path = hs.tools.ghci.path
     
     hs.actions.expand_template(
         template = ghci_repl_wrapper,
