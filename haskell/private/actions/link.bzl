@@ -43,12 +43,20 @@ def _fix_linker_paths(hs, inp, out, external_libraries):
             [
                 "cp {} {}".format(inp.path, out.path),
                 "chmod +w {}".format(out.path),
+                # Patch the "install name" or "library identifaction name".
+                # The "install name" informs targets that link against `out`
+                # where `out` can be found during runtime. Here we update this
+                # "install name" to the new filename of the fixed binary.
+                # Refer to the Oracle blog post linked above for details.
                 "/usr/bin/install_name_tool -id @rpath/{} {}".format(
                     out.basename,
                     out.path,
                 ),
             ] +
             [
+                # Make rpaths for external library dependencies relative to the
+                # binary's installation path, rather than the working directory
+                # at execution time.
                 "/usr/bin/install_name_tool -change {} {} {}".format(
                     f.path,
                     paths.join("@loader_path", _backup_path(out), f.path),
