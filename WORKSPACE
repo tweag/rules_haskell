@@ -7,7 +7,7 @@ haskell_repositories()
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
-    # sha256 = "e08bfff0e3413cae8549df72e3fce36f7b0e2369e864dfe41d3307ef100500f8",
+    sha256 = "4f924d839d3a5896e3e22ba1282c686b2c078fd4c98d564ec427ac83ec66302d",
     strip_prefix = "rules_nixpkgs-0.5.1",
     urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.5.1.tar.gz"],
 )
