@@ -23,4 +23,9 @@ mkShell {
     # needed for cloning protobuf in @com_google_protobuf
     git
   ];
+
+  shellHook = ''
+    # source bazel bash completion
+    source ${pkgs.bazel}/share/bash-completion/completions/bazel
+  '';
 }
