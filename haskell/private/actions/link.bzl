@@ -20,7 +20,7 @@ def _backup_path(target):
 
     return "/".join([".."] * n)
 
-def _fix_linker_paths(hs, inp, out, external_libraries):
+def _fix_darwin_linker_paths(hs, inp, out, external_libraries):
     """Postprocess a macOS binary to make shared library references relative.
 
     On macOS, in order to simulate the linker "rpath" behavior and make the
@@ -106,7 +106,7 @@ def link_binary(
         compile_output = executable
     else:
         compile_output = hs.actions.declare_file(hs.name + ".temp")
-        _fix_linker_paths(
+        _fix_darwin_linker_paths(
             hs,
             compile_output,
             executable,
@@ -363,7 +363,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
 
     if hs.toolchain.is_darwin:
         dynamic_library_tmp = hs.actions.declare_file(dynamic_library.basename + ".temp")
-        _fix_linker_paths(
+        _fix_darwin_linker_paths(
             hs,
             dynamic_library_tmp,
             dynamic_library,
