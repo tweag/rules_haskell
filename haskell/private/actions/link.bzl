@@ -192,7 +192,7 @@ def link_binary(
         # TODO remove this gross hack.
         args.add("-liconv")
 
-    for rpath in set.to_list(_infer_rpaths(hs, executable, solibs)):
+    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, executable, solibs)):
         args.add(["-optl-Wl,-rpath," + rpath])
 
     objects_dir_manifest = _create_objects_dir_manifest(
@@ -238,12 +238,12 @@ def _add_external_libraries(args, libs):
                 "-L{0}".format(paths.dirname(lib.path)),
             ])
 
-def _infer_rpaths(hs, target, solibs):
+def _infer_rpaths(is_darwin, target, solibs):
     """Return set of RPATH values to be added to target so it can find all
     solibs.
 
     Args:
-      hs: Haskell context.
+      is_darwin: Whether we're compiling on and for Darwin.
       target: File, executable or library we're linking.
       solibs: A set of Files, shared objects that the target needs.
 
@@ -252,7 +252,7 @@ def _infer_rpaths(hs, target, solibs):
     """
     r = set.empty()
 
-    if hs.toolchain.is_darwin:
+    if is_darwin:
         origin = "@loader_path/"
     else:
         origin = "$ORIGIN/"
@@ -387,7 +387,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     else:
         dynamic_library_tmp = dynamic_library
 
-    for rpath in set.to_list(_infer_rpaths(hs, dynamic_library, solibs)):
+    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, dynamic_library, solibs)):
         args.add(["-optl-Wl,-rpath," + rpath])
 
     args.add(["-o", dynamic_library_tmp.path])
