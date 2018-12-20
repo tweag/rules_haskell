@@ -117,8 +117,11 @@ haskell_nixpkgs_packageset(
     name = "hackage-packages",
     base_attribute_path = "haskellPackages",
     nix_file = "//tests:ghc.nix",
+    nixopts = [
+        "-j",
+        "1",
+    ],
     repositories = {"nixpkgs": "@nixpkgs"},
-    nixopts = ["-j", "1"],
 )
 
 load("@hackage-packages//:packages.bzl", "import_packages")
