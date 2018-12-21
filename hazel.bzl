@@ -41,6 +41,13 @@ haskell_import(
     package = "{pkg}",
     visibility = ["//visibility:public"],
 )
+# Cabal packages can depend on other Cabal package's cbits, for example for
+# CPP includes. To enable uniform handling we define a `-cbits` target for
+# every Hazel Haskell target. In case of core_libraries this is just a dummy.
+cc_import(
+    name = "{pkg}-cbits",
+    visibility = ["//visibility:public"],
+)
 """.format(pkg=ctx.attr.package))
 
 _core_library_repository = repository_rule(

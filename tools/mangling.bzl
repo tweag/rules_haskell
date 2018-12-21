@@ -8,6 +8,11 @@ def hazel_binary(package_name):
   return "@{}//:{}_bin".format(hazel_workspace(package_name), package_name)
 
 
+def hazel_cbits(package_name):
+  """Returns the label of the cc_library rule for the given package."""
+  return "@{}//:{}-cbits".format(hazel_workspace(package_name), package_name)
+
+
 def hazel_workspace(package_name):
   """Convert a package name to a valid and unambiguous workspace name.
 
