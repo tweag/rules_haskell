@@ -6,20 +6,25 @@ load(
 package(default_testonly = 1)
 
 cc_library(
-    name = "clib",
-    includes = ["includes-a", "includes-b"],
+    name = "cbits-indirect",
+    includes = [
+        "includes-a",
+    ],
     hdrs = [
         "includes-a/a.h",
-        "includes-b/b.h",
     ],
 )
 
-haskell_library(
-    name = "intermediate",
-    srcs = ["Intermediate.hs"],
+cc_library(
+    name = "cbits-direct",
+    includes = [
+        "includes-b"
+    ],
+    hdrs = [
+        "includes-b/b.h",
+    ],
     deps = [
-        ":clib",
-        "@hackage//:base",
+        ":cbits-indirect",
     ],
 )
 
@@ -27,7 +32,7 @@ haskell_library(
     name = "library-with-stripped-includes",
     srcs = ["Lib.hs"],
     deps = [
-        ":intermediate",
+        ":cbits-direct",
         "@hackage//:base",
     ],
 )
