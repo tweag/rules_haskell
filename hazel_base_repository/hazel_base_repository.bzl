@@ -51,7 +51,7 @@ extra_libs_strip_include_prefix = {}
 
   ctx.file(
       "BUILD",
-      content="""exports_files(["cabal2bazel", "ghc-version"])""",
+      content="""exports_files(["cabal2bazel", "cabal2bazel.exe", "ghc-version"])""",
       executable=False)
 
 hazel_base_repository = repository_rule(
@@ -65,7 +65,8 @@ hazel_base_repository = repository_rule(
 
 # TODO: don't reload all package names into every repository.
 def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_flags, cabal_path, output):
-  for f in ["cabal2bazel", "ghc-version"]:
+  cabal2bazel = get_executable_name("cabal2bazel", ctx)
+  for f in [cabal2bazel, "ghc-version"]:
     ctx.symlink(Label("@" + hazel_base_repo_name + "//:" + f), f)
 
   ghc_version = ctx.execute(["cat", "ghc-version"]).stdout
@@ -79,7 +80,7 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_f
       flag_args += ["-flag-off", flag]
 
   res = ctx.execute([
-    "./cabal2bazel",
+    "./{}".format(cabal2bazel),
     ghc_version,
     cabal_path,
     "package.bzl"
