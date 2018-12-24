@@ -6,17 +6,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.7] - ???
 
+### Added
+
+* Support for Bazel 0.20.0. This is now also the lower bound for the
+  supported version.
+* Supported reexported modules, via the
+  new
+  [`exports` attribute](http://api.haskell.build/haskell/haskell.html#haskell_library.exports).
+  See [#357](https://github.com/tweag/rules_haskell/issues/357).
+* Support `linkstatic` attribute, for building mostly static binaries.
+  This is now the default for binaries, to match the C/C++ rules
+  defaults.
+  See [#378](https://github.com/tweag/rules_haskell/issues/378).
+* It is now possible to set default Haddock flags in the toolchain
+  definition.
+  See [#425](https://github.com/tweag/rules_haskell/pull/425).
+* Support wrapping Haskell libraries as shared objects callable from
+  Python.
+  See [#370](https://github.com/tweag/rules_haskell/issues/370).
+
 ### Changed
 
 * REPL targets have changed name. If you have a library target `foo`,
   then the corresponding REPL target is now called `foo@repl`. It was
   previously called `foo-repl`. The old name is still supported but is
   deprecated.
+* Don't set a default version number anymore in libraries and
+  binaries. Version numbers, and CPP version macros, are now only used
+  for packages imported from Hackage. Don't use them otherwise.
+  See
+  [#386](https://github.com/tweag/rules_haskell/pull/386),
+  [#414](https://github.com/tweag/rules_haskell/pull/414)
+  and [#446](https://github.com/tweag/rules_haskell/pull/446).
+* On macOS, we use `ar` for linking, not Libtool.
+  See [#392](https://github.com/tweag/rules_haskell/pull/392).
+* The `runfiles` Haskell library has been broken out into a Cabal
+  library and published on Hackage.
 
 ### Fixed
 
+* Make REPL force building of dependencies.
+  See [#363](https://github.com/tweag/rules_haskell/pull/363).
 * Don’t crash on inputs missing `.haddock` interface files. See
   [#362](https://github.com/tweag/rules_haskell/pull/362)
+* Fix handling of non-unique package names.
+  See [#403](https://github.com/tweag/rules_haskell/pull/403).
 
 ## [0.6] - 2018-07-21
 
