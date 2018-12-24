@@ -1,4 +1,4 @@
-{ pkgs ? import ./nixpkgs {} }:
+{ pkgs ? import ./nixpkgs {}, docTools ? true }:
 
 with pkgs;
 
@@ -11,18 +11,14 @@ mkShell {
 
   buildInputs = [
     go
-    graphviz
     nix
     which
     perl
     python
-    python36Packages.sphinx
-    zip
-    unzip
     bazel
-    # needed for cloning protobuf in @com_google_protobuf
+    # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
-  ];
+  ] ++ lib.optionals docTools [graphviz python36Packages.sphinx zip unzip];
 
   shellHook = ''
     # source bazel bash completion

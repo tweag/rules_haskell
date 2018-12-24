@@ -3,6 +3,12 @@
 These rules are temporary and will be deprecated in the future.
 """
 
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load(
+    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME",
+    "C_COMPILE_ACTION_NAME",
+)
 load(":private/path_utils.bzl", "ln")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/set.bzl", "set")
@@ -83,19 +89,47 @@ def cc_interop_info(ctx):
 
     include_args = ["-I" + include for include in include_directories]
 
-    # TODO Replace with https://github.com/bazelbuild/bazel/issues/4571
-    # when ready.
-    cc_toolchain = ctx.toolchains["@bazel_tools//tools/cpp:toolchain_type"]
+    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
+    # Should be find_cpp_toolchain() instead.
+    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    feature_configuration = cc_common.configure_features(
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+    compile_variables = cc_common.create_compile_variables(
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+    )
+    compiler_flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = C_COMPILE_ACTION_NAME,
+        variables = compile_variables,
+    )
+    link_variables = cc_common.create_link_variables(
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        is_linking_dynamic_library = False,
+        is_static_linking_mode = True,
+    )
+    linker_flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME,
+        variables = link_variables,
+    )
+
+    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6876.
+    linker_flags = [flag for flag in linker_flags if flag not in ["-shared"]]
 
     return CcInteropInfo(
         hdrs = hdrs.to_list(),
         cpp_flags = cpp_flags,
         include_args = include_args,
-        compiler_flags = cc_toolchain.compiler_options(),
+        compiler_flags = compiler_flags,
         # XXX this might not be the right set of flags for all situations,
         # but this will anyways all be replaced (once implemented) by
         # https://github.com/bazelbuild/bazel/issues/4571.
-        linker_flags = cc_toolchain.mostly_static_link_options(True),
+        linker_flags = linker_flags,
     )
 
 def _cc_import_impl(ctx):

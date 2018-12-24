@@ -88,9 +88,11 @@ c2hs_library = rule(
             allow_single_file = True,
             default = Label("@io_tweag_rules_haskell//haskell:private/c2hs_wrapper.sh"),
         ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
     },
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
-        "@bazel_tools//tools/cpp:toolchain_type",
     ],
 )

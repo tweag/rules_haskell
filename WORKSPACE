@@ -37,9 +37,9 @@ haskell_nixpkgs_package(
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "d625beb4a43304409429a0466bb4fb44c89f7e7d90aeced972b8a61dbe92c80b",
-    strip_prefix = "protobuf-7b28271a61a3da0a37f6fda399b0c4c86464e5b3",
-    urls = ["https://github.com/google/protobuf/archive/7b28271a61a3da0a37f6fda399b0c4c86464e5b3.zip"],  # 2018-11-16
+    sha256 = "73fdad358857e120fd0fa19e071a96e15c0f23bb25f85d3f7009abfd4f264a2a",
+    strip_prefix = "protobuf-3.6.1.3",
+    urls = ["https://github.com/google/protobuf/archive/v3.6.1.3.tar.gz"],
 )
 
 nixpkgs_local_repository(
@@ -130,9 +130,9 @@ import_packages(name = "hackage")
 
 # zlib as a Haskell library
 
-new_http_archive(
+http_archive(
     name = "haskell_zlib",
-    build_file = "tests/BUILD.zlib",
+    build_file = "//tests:BUILD.zlib",
     strip_prefix = "zlib-0.6.2",
     urls = ["https://hackage.haskell.org/package/zlib-0.6.2/zlib-0.6.2.tar.gz"],
 )
@@ -150,46 +150,77 @@ local_repository(
 
 # For Skydoc
 
-http_archive(
-    name = "io_bazel_rules_sass",
-    sha256 = "14536292b14b5d36d1d72ae68ee7384a51e304fa35a3c4e4db0f4590394f36ad",
-    strip_prefix = "rules_sass-0.0.3",
-    urls = ["https://github.com/bazelbuild/rules_sass/archive/0.0.3.tar.gz"],
+nixpkgs_package(
+    name = "nixpkgs_nodejs",
+    # XXX Indirection derivation to make all of NodeJS rooted in
+    # a single directory. We shouldn't need this, but it's
+    # a workaround for
+    # https://github.com/bazelbuild/bazel/issues/2927.
+    nix_file_content = """
+    with import <nixpkgs> {};
+    runCommand "nodejs-rules_haskell" { buildInputs = [ nodejs ]; } ''
+      mkdir -p $out/nixpkgs_nodejs
+      cd $out/nixpkgs_nodejs
+      for i in ${nodejs}/*; do ln -s $i; done
+      ''
+    """,
+    repository = "@nixpkgs",
 )
 
-load("@io_bazel_rules_sass//sass:sass.bzl", "sass_repositories")
+http_archive(
+    name = "build_bazel_rules_nodejs",
+    sha256 = "f79f605a920145216e64991d6eff4e23babc48810a9efd63a31744bb6637b01e",
+    strip_prefix = "rules_nodejs-b4dad57d2ecc63d74db1f5523593639a635e447d",
+    # Tip of https://github.com/bazelbuild/rules_nodejs/pull/471.
+    urls = ["https://github.com/mboes/rules_nodejs/archive/b4dad57d2ecc63d74db1f5523593639a635e447d.tar.gz"],
+)
+
+http_archive(
+    name = "io_bazel_rules_sass",
+    sha256 = "1e135452dc627f52eab39a50f4d5b8d13e8ed66cba2e6da56ac4cbdbd776536c",
+    strip_prefix = "rules_sass-1.15.2",
+    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.15.2.tar.gz"],
+)
+
+load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
+
+rules_sass_dependencies()
+
+load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
 
 sass_repositories()
 
-http_archive(
-    name = "io_bazel_skydoc",
-    sha256 = "12a82b494a40c4ef96230bc66aeff654420dd39a537eb3064ff18ce1838f1fb7",
-    strip_prefix = "skydoc-9bbdf62c03b5c3fed231604f78d3976f47753d79",
-    urls = ["https://github.com/mrkkrp/skydoc/archive/9bbdf62c03b5c3fed231604f78d3976f47753d79.tar.gz"],
+load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories")
+
+node_repositories(
+    vendored_node = "@nixpkgs_nodejs",
 )
 
-load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
+http_archive(
+    name = "io_bazel_skydoc",
+    sha256 = "19eb6c162075707df5703c274d3348127625873dbfa5ff83b1ef4b8f5dbaa449",
+    strip_prefix = "skydoc-0.2.0",
+    urls = ["https://github.com/bazelbuild/skydoc/archive/0.2.0.tar.gz"],
+)
+
+load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
 
 skydoc_repositories()
 
 # For buildifier
 
-# XXX Need a patched version of rules_go to workaround warnings fixed
-# by https://github.com/NixOS/nixpkgs/pull/28029 on NixOS. Revert to
-# official release once fix hits Nixpkgs master.
 http_archive(
     name = "io_bazel_rules_go",
-    strip_prefix = "rules_go-6a2b1f780b475a75a7baae5b441635c566f0ed8a",
-    urls = ["https://github.com/mboes/rules_go/archive/6a2b1f780b475a75a7baae5b441635c566f0ed8a.tar.gz"],
+    sha256 = "8be57ff66da79d9e4bd434c860dce589195b9101b2c187d144014bbca23b5166",
+    strip_prefix = "rules_go-0.16.3",
+    urls = ["https://github.com/bazelbuild/rules_go/archive/0.16.3.tar.gz"],
 )
-
-bazelbuild_buildtools_rev = "4a7914a1466ff7388c934bfcd43a3852928536f6"
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "45775c7bb7ee7656e9df4ca4278f977c8e4e260aff755734734c19321e14bc84",
-    strip_prefix = "buildtools-%s" % bazelbuild_buildtools_rev,
-    url = "https://github.com/bazelbuild/buildtools/archive/%s.zip" % bazelbuild_buildtools_rev,
+    sha256 = "d42e4c9727958bc5814d3bc44f19db5a24f419436cbba09f1e8913eb4a09da31",
+    strip_prefix = "buildtools-0.19.2.1",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/0.19.2.1.tar.gz"],
 )
 
 load(

@@ -37,17 +37,12 @@ jobs:
           command: |
             curl https://nixos.org/nix/install | sh
       - run:
-          name: Build
-          shell: /bin/bash -eilo pipefail
-          command: |
-            nix-shell --run 'CC=$(which clang) bazel build --jobs=2 //...'
-      - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
           # bazel does not support recursive bazel call, so we
           # cannot use bazel run here because the test runner uses
           # bazel
-          command: nix-shell --run 'CC=$(which clang) bazel build //tests:run-tests && ./bazel-bin/tests/run-tests'
+          command: nix-shell --arg docTools false --pure --run 'bazel build //tests:run-tests && ./bazel-bin/tests/run-tests'
 
 workflows:
   version: 2
