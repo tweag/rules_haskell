@@ -16,7 +16,7 @@ mkShell {
     perl
     python
     bazel
-    # needed for cloning protobuf in @com_google_protobuf
+    # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
   ] ++ lib.optionals docTools [graphviz python36Packages.sphinx zip unzip];
 
