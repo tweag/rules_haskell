@@ -2,7 +2,7 @@
 
 set -eux
 
-V=0.16.0
+V=0.20.0
 
 curl -LO https://github.com/bazelbuild/bazel/releases/download/$V/bazel-$V-installer-linux-x86_64.sh
 chmod +x bazel-$V-installer-linux-x86_64.sh
