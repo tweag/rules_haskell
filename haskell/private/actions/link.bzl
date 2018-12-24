@@ -56,8 +56,20 @@ def _fix_darwin_linker_paths(hs, inp, out, external_libraries):
             [
                 "cp {} {}".format(inp.path, out.path),
                 "chmod +w {}".format(out.path),
+                # Patch the "install name" or "library identifaction name".
+                # The "install name" informs targets that link against `out`
+                # where `out` can be found during runtime. Here we update this
+                # "install name" to the new filename of the fixed binary.
+                # Refer to the Oracle blog post linked above for details.
+                "/usr/bin/install_name_tool -id @rpath/{} {}".format(
+                    out.basename,
+                    out.path,
+                ),
             ] +
             [
+                # Make rpaths for external library dependencies relative to the
+                # binary's installation path, rather than the working directory
+                # at execution time.
                 "/usr/bin/install_name_tool -change {} {} {}".format(
                     f.lib.path,
                     paths.join("@loader_path", backup_path(out), f.lib.short_path),
@@ -192,11 +204,10 @@ def link_binary(
         # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
         # should do always when using a toolchain from Nixpkgs.
         # TODO remove this gross hack.
-        # TODO: enable dynamic linking of Haskell dependencies for macOS.
         args.add("-liconv")
-    else:
-        for rpath in set.to_list(_infer_rpaths(executable, solibs)):
-            args.add(["-optl-Wl,-rpath," + rpath])
+
+    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, executable, solibs)):
+        args.add(["-optl-Wl,-rpath," + rpath])
 
     objects_dir_manifest = _create_objects_dir_manifest(
         hs,
@@ -242,7 +253,7 @@ def _add_external_libraries(args, ext_libs):
                 "-L{0}".format(paths.dirname(lib.path)),
             ])
 
-def _infer_rpaths(target, solibs):
+def _infer_rpaths(is_darwin, target, solibs):
     """Return set of RPATH values to be added to target so it can find all
     solibs
 
@@ -252,6 +263,7 @@ def _infer_rpaths(target, solibs):
     the parent folder of the solib".
 
     Args:
+      is_darwin: Whether we're compiling on and for Darwin.
       target: File, executable or library we're linking.
       solibs: A set of Files, shared objects that the target needs.
 
@@ -260,6 +272,11 @@ def _infer_rpaths(target, solibs):
     """
     r = set.empty()
 
+    if is_darwin:
+        origin = "@loader_path/"
+    else:
+        origin = "$ORIGIN/"
+
     for solib in set.to_list(solibs):
         rpath = paths.normalize(
             paths.join(
@@ -267,7 +284,7 @@ def _infer_rpaths(target, solibs):
                 paths.dirname(solib.short_path),
             ),
         )
-        set.mutable_insert(r, "$ORIGIN/" + rpath)
+        set.mutable_insert(r, origin + rpath)
 
     return r
 
@@ -389,8 +406,9 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         args.add(["-optl-Wl,-headerpad_max_install_names"])
     else:
         dynamic_library_tmp = dynamic_library
-        for rpath in set.to_list(_infer_rpaths(dynamic_library, solibs)):
-            args.add(["-optl-Wl,-rpath," + rpath])
+
+    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, dynamic_library, solibs)):
+        args.add(["-optl-Wl,-rpath," + rpath])
 
     args.add(["-o", dynamic_library_tmp.path])
 
