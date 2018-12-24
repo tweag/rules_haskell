@@ -1,7 +1,7 @@
 #!/bin/sh
 
 MIN_BAZEL_MAJOR=0
-MIN_BAZEL_MINOR=14
+MIN_BAZEL_MINOR=20
 
 set -e
 

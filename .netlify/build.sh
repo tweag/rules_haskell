@@ -19,6 +19,10 @@ awk '
   # Note: awk -i inplace not available
 mv WORKSPACE.tmp WORKSPACE
 
+# We don't want to be depending on Nixpkgs for documentation
+# generation either.
+sed -i 's/vendored_node = "@nixpkgs_nodejs"/vendored_node = None/' WORKSPACE
+
 bazel build //docs:api_html
 unzip -d public bazel-bin/docs/api_html-skydoc.zip
 cp start public

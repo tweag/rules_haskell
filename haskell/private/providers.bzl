@@ -27,10 +27,17 @@ HaskellBuildInfo = provider(
         "dynamic_libraries": "Set of dynamic libraries.",
         "interface_dirs": "Set of interface dirs belonging to the packages.",
         "prebuilt_dependencies": "Transitive collection of names of wired-in Haskell dependencies.",
-        "external_libraries": "Set of dynamic shared libraries needed for linking.",
+        "external_libraries": "Set of dynamic shared libraries needed for linking. " +
+                              "Each entry is a struct(lib, mangled_lib) " +
+                              "because the Darwin linker needs the original library path, " +
+                              "while the Linux linker needs the mangled path.",
         "direct_prebuilt_deps": "Set of direct prebuilt dependencies.",
     },
 )
+
+def external_libraries_get_mangled(ext_lib):
+    """Just a dumb helper because skylark doesn’t do lambdas."""
+    return ext_lib.mangled_lib
 
 HaskellLibraryInfo = provider(
     doc = "Library-specific information.",

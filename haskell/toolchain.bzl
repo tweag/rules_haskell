@@ -1,6 +1,7 @@
 """Rules for defining toolchains"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(
     ":private/actions/compile.bzl",
     "compile_binary",
@@ -74,6 +75,8 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
     return args
 
 def _haskell_toolchain_impl(ctx):
+    cc_toolchain = find_cpp_toolchain(ctx)
+
     # Check that we have all that we want.
     for tool in _GHC_BINARIES:
         if tool not in [t.basename for t in ctx.files.tools]:
@@ -152,12 +155,12 @@ def _haskell_toolchain_impl(ctx):
 
     targets_r = {}
     targets_r.update({
-        "ar": ctx.host_fragments.cpp.ar_executable,
-        "cc": ctx.host_fragments.cpp.compiler_executable,
-        "ld": ctx.host_fragments.cpp.ld_executable,
-        "nm": ctx.host_fragments.cpp.nm_executable,
-        "cpp": ctx.host_fragments.cpp.preprocessor_executable,
-        "strip": ctx.host_fragments.cpp.strip_executable,
+        "ar": cc_toolchain.ar_executable(),
+        "cc": cc_toolchain.compiler_executable(),
+        "ld": cc_toolchain.ld_executable(),
+        "nm": cc_toolchain.nm_executable(),
+        "cpp": cc_toolchain.preprocessor_executable(),
+        "strip": cc_toolchain.strip_executable(),
     })
     targets_r.update(ghc_binaries)
 
@@ -302,7 +305,6 @@ def _haskell_toolchain_impl(ctx):
 
 _haskell_toolchain = rule(
     _haskell_toolchain_impl,
-    host_fragments = ["cpp"],
     attrs = {
         "tools": attr.label(
             doc = "GHC and executables that come with it",
@@ -332,6 +334,9 @@ _haskell_toolchain = rule(
         # TODO: document
         "_crosstool": attr.label(
             default = Label("//tools/defaults:crosstool"),
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
         "extra_binaries": attr.label_list(
             doc = "Additional binaries necessary for building",

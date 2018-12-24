@@ -146,6 +146,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         "deps": ctx.rule.attr.deps +
                 ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].deps,
         "prebuilt_dependencies": ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].prebuilt_deps,
+        "_cc_toolchain": ctx.attr._cc_toolchain,
     }
 
     patched_ctx = struct(
@@ -164,6 +165,9 @@ def _haskell_proto_aspect_impl(target, ctx):
         executable = struct(
             _ls_modules = ctx.executable._ls_modules,
         ),
+        # Necessary for CC interop (see cc.bzl).
+        features = ctx.rule.attr.features,
+        disabled_features = ctx.rule.attr.features,
     )
 
     [build_info, library_info, default_info] = _haskell_library_impl(patched_ctx)
@@ -191,10 +195,12 @@ _haskell_proto_aspect = aspect(
             cfg = "host",
             default = Label("@io_tweag_rules_haskell//haskell:ls_modules"),
         ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
     },
     attr_aspects = ["deps"],
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
         "@io_tweag_rules_haskell//haskell:toolchain",
         "@io_tweag_rules_haskell//protobuf:toolchain",
     ],

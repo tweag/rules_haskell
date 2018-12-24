@@ -17,10 +17,10 @@ main = hspec $ do
     assertSuccess (bazel ["run", "//:buildifier"])
 
   it "bazel test" $ do
-    assertSuccess (bazel ["test", "//..."])
+    assertSuccess (bazel ["test", "//...", "--build_tests_only"])
 
   it "bazel test prof" $ do
-    assertSuccess (bazel ["test", "-c", "dbg", "//..."])
+    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only"])
 
   describe "repl" $ do
     it "for libraries" $ do
