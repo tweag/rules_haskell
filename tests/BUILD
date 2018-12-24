@@ -256,7 +256,7 @@ rule_test(
             "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc{version}.so".format(version = ghc_version),
         ],
     }),
-    rule = "//tests/cc_haskell_import:hs-lib-b-so",
+    rule = "//tests/cc_haskell_import:hs-lib-b.so",
 )
 
 rule_test(
@@ -265,6 +265,19 @@ rule_test(
     generates = ["cc-bin"],
     rule = "//tests/cc_haskell_import:cc-bin",
 )
+
+# TODO(Profpatsch) blocked on https://github.com/bazelbuild/bazel/issues/6093
+# (among possibly others ..)
+# sh_test(
+#     name = "test-cc_haskell_import_python",
+#     size = "small",
+#     srcs = ["scripts/exec.sh"],
+#     args = ["tests/cc_haskell_import/python_add_one"],
+#     data = [
+#         "//tests/cc_haskell_import:python_add_one",
+#         "@bazel_tools//tools/bash/runfiles",
+#     ],
+# )
 
 sh_inline_test(
     name = "test-haskell_binary-with-link-flags",
