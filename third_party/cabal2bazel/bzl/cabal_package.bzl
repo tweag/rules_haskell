@@ -420,9 +420,6 @@ def _collect_data_files(description):
   else:
     return native.glob([paths.join(description.dataDir, d) for d in description.dataFiles])
 
-def _haskell_cc_import_name(clib_name):
-  return clib_name + "-haskell-cc-import"
-
 def cabal_haskell_package(
     description,
     ghc_version,
