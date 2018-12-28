@@ -86,7 +86,7 @@ def _module_output(file, ending):
     "hs": "hs",
     "lhs": "lhs",
     "hsc": "hsc",
-    "chs": "chs",
+    "chs": "hs",
     "x": "hs",
     "y": "hs",
     "ly": "hs",
@@ -200,7 +200,11 @@ def _get_build_attrs(
   # module_map will contain a dictionary from module names ("Foo.Bar")
   # to the preprocessed source file ("src/Foo/Bar.hs").
   module_map = {}
+  # boot_module_map will contain a dictionary from module names ("Foo.Bar")
+  # to hs-boot files, if applicable.
   boot_module_map = {}
+  # build_files will contain a list of all files in the build directory.
+  build_files = []
 
   srcs_dir = "gen-srcs-" + name + "/"
   clib_name = name + "-cbits"
@@ -222,10 +226,10 @@ def _get_build_attrs(
 
     # Create module files in build directory.
     symlink_name = name + "-" + module + "-symlink"
-    chs_name = name + "-" + module + "-chs"
-    module_out = srcs_dir + info.out
-    module_map[module] = module_out
     if info.type in ["hs", "lhs", "hsc"]:
+      module_out = srcs_dir + info.out
+      module_map[module] = module_out
+      build_files.append(module_out)
       hazel_symlink(
         name = symlink_name,
         src = info.src,
@@ -234,16 +238,20 @@ def _get_build_attrs(
       if info.boot != None:
         boot_out = srcs_dir + info.out + "-boot"
         boot_module_map[module] = boot_out
+        build_files.append(boot_out)
         hazel_symlink(
           name = name + "-boot-" + module + "-symlink",
           src = info.boot,
           out = boot_out,
         )
     elif info.type in ["chs"]:
+      chs_name = name + "-" + module + "-chs"
+      module_map[module] = chs_name
+      build_files.append(srcs_dir + info.src)
       hazel_symlink(
         name = symlink_name,
         src = info.src,
-        out = module_out,
+        out = srcs_dir + info.src,
       )
       c2hs_library(
         name = chs_name,
@@ -256,11 +264,17 @@ def _get_build_attrs(
       )
       chs_targets.append(chs_name)
     elif info.type in ["x"]:
+      module_out = srcs_dir + info.out
+      module_map[module] = module_out
+      build_files.append(module_out)
       genalex(
         src = info.src,
         out = module_out,
       )
     elif info.type in ["y", "ly"]:
+      module_out = srcs_dir + info.out
+      module_map[module] = module_out
+      build_files.append(module_out)
       genhappy(
         src = info.src,
         out = module_out,
@@ -268,11 +282,10 @@ def _get_build_attrs(
 
   # Create extra source files in build directory.
   extra_srcs = []
-  all_module_files = module_map.values() + boot_module_map.values()
   for f in native.glob([paths.normalize(f) for f in desc.extraSrcFiles]):
     fout = srcs_dir + f
     # Skip files that were created in the previous steps.
-    if fout in all_module_files:
+    if fout in build_files:
       continue
     hazel_symlink(
       name = fout + "-symlink",
