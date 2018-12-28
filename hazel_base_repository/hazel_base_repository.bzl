@@ -40,10 +40,12 @@ def _hazel_base_repository_impl(ctx):
       executable=False)
 
   ctx.file("extra-libs.bzl", """
+extra_cdeps = {}
 extra_libs = {}
 extra_libs_hdrs = {}
 extra_libs_strip_include_prefix = {}
 """.format(
+  str(ctx.attr.extra_cdeps),
   str(ctx.attr.extra_libs),
   str(ctx.attr.extra_libs_hdrs),
   str(ctx.attr.extra_libs_strip_include_prefix),
@@ -58,6 +60,7 @@ hazel_base_repository = repository_rule(
     implementation=_hazel_base_repository_impl,
     attrs={
         "ghc_workspaces": attr.string_dict(mandatory=True),
+        "extra_cdeps": attr.string_dict(mandatory=True),
         "extra_libs": attr.string_dict(mandatory=True),
         "extra_libs_hdrs": attr.string_dict(mandatory=True),
         "extra_libs_strip_include_prefix": attr.string_dict(mandatory=True),
@@ -96,6 +99,7 @@ load("@ai_formation_hazel//third_party/cabal2bazel:bzl/cabal_package.bzl",
      "cabal_haskell_package",
      "hazel_symlink")
 load("@hazel_base_repository//:extra-libs.bzl",
+  "extra_cdeps",
   "extra_libs",
   "extra_libs_hdrs",
   "extra_libs_strip_include_prefix",
@@ -111,6 +115,7 @@ cabal_haskell_package(
   package,
   "{}",
   "{}",
+  extra_cdeps,
   extra_libs,
   extra_libs_hdrs,
   extra_libs_strip_include_prefix,
