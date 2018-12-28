@@ -167,9 +167,6 @@ def _get_build_attrs(
     ghc_version,
     ghc_workspace,
     extra_cdeps,
-    extra_libs,
-    extra_libs_hdrs,
-    extra_libs_strip_include_prefix,
     cc_deps=[],
     version_overrides=None,
     ghcopts=[]):
@@ -185,11 +182,6 @@ def _get_build_attrs(
     ghc_workspace: Workspace in which GHC is provided.
     extra_cdeps: A dictionary that maps from name of extra libraries to Bazel
       targets that provide the shared library and headers as a cc_library.
-    extra_libs: A dictionary that maps from name of extra libraries to Bazel
-      targets that provide the shared library.
-    extra_libs_hdrs: Similar to extra_libs, but provides header files.
-    extra_libs_strip_include_prefix: Similar to extra_libs, but allows to
-      get include prefix to strip.
     cc_deps: External cc_libraries that this rule should depend on.
     version_overrides: Override the default version of specific dependencies;
       see cabal_haskell_package for more details.
@@ -260,13 +252,9 @@ def _get_build_attrs(
         name = chs_name,
         srcs = [symlink_name],
         deps = [
-          _haskell_cc_import_name(elib)
-          for elib in build_info.extraLibs
-          if elib in extra_libs
-        ] + [
           extra_cdeps[elib]
           for elib in build_info.extraLibs
-          if elib in extra_cdeps
+          if elib != "pthread"
         ] + [clib_name] + chs_targets,
       )
       chs_targets.append(chs_name)
@@ -389,31 +377,11 @@ def _get_build_attrs(
       ("0" if int(ghc_version_components[1]) <= 9 else "")
       + ghc_version_components[1])
 
-  elibs_targets = []
-  elibs_includes = []
-
-  for elib in build_info.extraLibs:
-    if elib == "pthread":
-      continue
-    elif elib in extra_cdeps:
-      elibs_targets.append(extra_cdeps[elib])
-      continue
-
-    elib_target_name = elib + "-cc-import"
-
-    native.cc_import(
-      name = elib_target_name,
-      shared_library = extra_libs[elib],
-      hdrs = [extra_libs_hdrs[elib]] if elib in extra_libs_hdrs else [],
-    )
-    elibs_targets.append(":" + elib_target_name)
-
-    if elib in extra_libs_strip_include_prefix:
-      i = extra_libs_strip_include_prefix[elib]
-      if i[0] == '/':
-        i = i[1:]
-
-      elibs_includes.append(i)
+  elibs_targets = [
+    extra_cdeps[elib]
+    for elib in build_info.extraLibs
+    if elib != "pthread"
+  ]
 
   native.cc_library(
       name = clib_name,
@@ -422,8 +390,7 @@ def _get_build_attrs(
       copts = ([o for o in build_info.ccOptions if not o.startswith("-D")]
                + ["-D__GLASGOW_HASKELL__=" + ghc_version_string,
                   "-w",
-                 ]
-               + ["-I" + i for i in elibs_includes]),
+                 ]),
       defines = [o[2:] for o in build_info.ccOptions if o.startswith("-D")],
       textual_hdrs = list(headers),
       deps = ["{}//:threaded-rts".format(ghc_workspace)] + select(cdeps) + cc_deps + elibs_targets,
@@ -461,9 +428,6 @@ def cabal_haskell_package(
     ghc_version,
     ghc_workspace,
     extra_cdeps,
-    extra_libs,
-    extra_libs_hdrs,
-    extra_libs_strip_include_prefix,
     ):
   """Create rules for building a Cabal package.
 
@@ -473,11 +437,6 @@ def cabal_haskell_package(
     ghc_workspace: Workspace under which GHC is provided.
     extra_cdeps: A dictionary that maps from name of extra libraries to Bazel
       targets that provide the shared library and headers as a cc_library.
-    extra_libs: A dictionary that maps from name of extra libraries to Bazel
-      targets that provide the shared library.
-    extra_libs_hdrs: Similar to extra_libs, but provides header files.
-    extra_libs_strip_include_prefix: Similar to extra_libs, but allows to
-      get include prefix to strip.
   """
   name = description.package.pkgName
 
@@ -506,31 +465,15 @@ def cabal_haskell_package(
         ghc_version,
         ghc_workspace,
         extra_cdeps,
-        extra_libs,
-        extra_libs_hdrs,
-        extra_libs_strip_include_prefix,
       )
       srcs = lib_attrs.pop("srcs")
       deps = lib_attrs.pop("deps")
 
-      elibs_targets = []
-
-      for elib in lib.libBuildInfo.extraLibs:
-        if elib == "pthread":
-          continue
-        elif elib in extra_cdeps:
-          elibs_targets.append(extra_cdeps[elib])
-          continue
-
-        elib_target_name = _haskell_cc_import_name(elib)
-        haskell_cc_import(
-          name = elib_target_name,
-          shared_library = extra_libs[elib],
-          hdrs = [extra_libs_hdrs[elib]] if elib in extra_libs_hdrs else [],
-          strip_include_prefix = extra_libs_strip_include_prefix[elib]
-                      if elib in extra_libs_strip_include_prefix else "",
-        )
-        elibs_targets.append(":" + elib_target_name)
+      elibs_targets = [
+        extra_cdeps[elib]
+        for elib in lib.libBuildInfo.extraLibs
+        if elib != "pthread"
+      ]
 
       hidden_modules = [m for m in lib.libBuildInfo.otherModules if not m.startswith("Paths_")]
 
@@ -564,9 +507,6 @@ def cabal_haskell_package(
       ghc_version,
       ghc_workspace,
       extra_cdeps,
-      extra_libs,
-      extra_libs_hdrs,
-      extra_libs_strip_include_prefix,
     )
     srcs = attrs.pop("srcs")
     deps = attrs.pop("deps")

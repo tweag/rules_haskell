@@ -222,10 +222,4 @@ hazel_repositories(
       "sndfile": "@//:sndfile",
       "tag_c": "@//:tag_c",
     },
-    extra_libs = {
-    },
-    extra_libs_hdrs = {
-    },
-    extra_libs_strip_include_prefix = {
-    },
 )
