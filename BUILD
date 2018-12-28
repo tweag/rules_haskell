@@ -28,3 +28,14 @@ cc_library(
     strip_include_prefix = "external/postgresql/include",
     visibility = ["//visibility:public"],
 )
+
+cc_import(
+    name = "tag_c-library",
+    shared_library = "@taglib//:lib",
+)
+
+cc_library(
+    name = "tag_c",
+    deps = [":tag_c-library"],
+    visibility = ["//visibility:public"],
+)

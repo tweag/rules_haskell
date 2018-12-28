@@ -219,9 +219,9 @@ hazel_repositories(
     ],
     extra_cdeps = {
       "pq": "@//:pq",
+      "tag_c": "@//:tag_c",
     },
     extra_libs = {
-      "tag_c": "@taglib//:lib",
       "sndfile": "@libsndfile.out//:lib",
     },
     extra_libs_hdrs = {
