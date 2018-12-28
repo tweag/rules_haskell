@@ -219,15 +219,13 @@ hazel_repositories(
     ],
     extra_cdeps = {
       "pq": "@//:pq",
+      "sndfile": "@//:sndfile",
       "tag_c": "@//:tag_c",
     },
     extra_libs = {
-      "sndfile": "@libsndfile.out//:lib",
     },
     extra_libs_hdrs = {
-      "sndfile": "@libsndfile.dev//:headers",
     },
     extra_libs_strip_include_prefix = {
-      "sndfile": "/external/libsndfile.dev/include",
     },
 )

@@ -30,6 +30,19 @@ cc_library(
 )
 
 cc_import(
+    name = "sndfile-library",
+    shared_library = "@libsndfile.out//:lib",
+)
+
+cc_library(
+    name = "sndfile",
+    deps = [":sndfile-library"],
+    hdrs = ["@libsndfile.dev//:headers"],
+    strip_include_prefix = "external/libsndfile.dev/include",
+    visibility = ["//visibility:public"],
+)
+
+cc_import(
     name = "tag_c-library",
     shared_library = "@taglib//:lib",
 )
