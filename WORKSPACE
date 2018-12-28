@@ -217,17 +217,17 @@ hazel_repositories(
       "zlib",
       "zlib-bindings",
     ],
+    extra_cdeps = {
+      "pq": "@//:pq",
+    },
     extra_libs = {
       "tag_c": "@taglib//:lib",
-      "pq": "@postgresql//:lib",
       "sndfile": "@libsndfile.out//:lib",
     },
     extra_libs_hdrs = {
-      "pq": "@postgresql//:headers",
       "sndfile": "@libsndfile.dev//:headers",
     },
     extra_libs_strip_include_prefix = {
-      "pq": "/external/postgresql/include",
       "sndfile": "/external/libsndfile.dev/include",
     },
 )
