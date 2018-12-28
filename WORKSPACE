@@ -217,7 +217,7 @@ hazel_repositories(
       "zlib",
       "zlib-bindings",
     ],
-    extra_cdeps = {
+    extra_libs = {
       "pq": "@//:pq",
       "sndfile": "@//:sndfile",
       "tag_c": "@//:tag_c",

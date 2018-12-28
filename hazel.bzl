@@ -93,7 +93,7 @@ def hazel_repositories(
   core_packages,
   packages,
   extra_flags={},
-  extra_cdeps={},
+  extra_libs={},
   exclude_packages=[],
   ghc_workspaces=default_ghc_workspaces):
   """Generates external dependencies for a set of Haskell packages.
@@ -126,7 +126,7 @@ def hazel_repositories(
         download_and_extract documentation.
     extra_flags: A dict mapping package names to cabal flags.
     exclude_packages: names of packages to exclude.
-    extra_cdeps: A dictionary that maps from name of extra libraries to Bazel
+    extra_libs: A dictionary that maps from name of extra libraries to Bazel
       targets that provide the shared library and headers as a cc_library.
     ghc_workspaces: Dictionary mapping OS names to GHC workspaces.
       Default: Linux/MacOS: "@ghc", Windows: "@ghc_windows".
@@ -140,7 +140,7 @@ def hazel_repositories(
   hazel_base_repository(
       name = hazel_base_repo_name,
       ghc_workspaces = ghc_workspaces,
-      extra_cdeps = extra_cdeps,
+      extra_libs = extra_libs,
   )
   for p in pkgs:
 
