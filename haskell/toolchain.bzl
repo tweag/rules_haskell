@@ -58,6 +58,7 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
         "-optP-undef",
         "-optP-traditional",
     ])
+    print("!!! args", args)
 
     extra_inputs = [
         hs.tools.ghc,
