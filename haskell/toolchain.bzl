@@ -187,6 +187,7 @@ def _haskell_toolchain_impl(ctx):
         "strip": cc_toolchain.strip_executable(),
     })
     targets_r.update(ghc_binaries)
+    print("!!! targets_r", targets_r)
 
     # If running on darwin but XCode is not installed (i.e., only the Command
     # Line Tools are available), then Bazel will make ar_executable point to
