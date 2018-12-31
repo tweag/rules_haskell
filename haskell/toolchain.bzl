@@ -18,6 +18,21 @@ load(":private/set.bzl", "set")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 
+def _exe_name(os, tool):
+    """Platform dependent executable name.
+
+    Args:
+        os: The toolchain OS.
+        tool: The basename of the executable without file ending.
+
+    Returns:
+        The basename of the tool executable on the given OS.
+    """
+    if os == "windows":
+        return tool + ".exe"
+    else:
+        return tool
+
 def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
     if not env:
         env = hs.env
@@ -83,21 +98,23 @@ def _haskell_toolchain_impl(ctx):
 
     cc_toolchain = find_cpp_toolchain(ctx)
 
-    # Check that we have all that we want.
-    for tool in _GHC_BINARIES:
-        if tool not in [t.basename for t in ctx.files.tools]:
-            fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
+    # Mapping from tool executable basename to full path for all given tools.
+    tool_paths = { t.basename: t.path for t in ctx.files.tools }
 
-    # Store the binaries of interest in ghc_binaries.
+    # Check that we have all that we want and
+    # store the binaries of interest in ghc_binaries.
     ghc_binaries = {}
-    for tool in ctx.files.tools:
-        if tool.basename in _GHC_BINARIES:
-            ghc_binaries[tool.basename] = tool.path
+    for tool in _GHC_BINARIES:
+        tool_exe = _exe_name(ctx.attr.os, tool)
+        if tool_exe not in tool_paths:
+            fail("Cannot find {} in {}".format(tool_exe, ctx.attr.tools.label))
+        else:
+            ghc_binaries[tool] = tool_paths[tool_exe]
 
     # Run a version check on the compiler.
     compiler = None
     for t in ctx.files.tools:
-        if t.basename == "ghc":
+        if t.basename == _exe_name(ctx.attr.os, "ghc"):
             if compiler:
                 fail("There can only be one tool named `ghc` in scope")
             compiler = t
@@ -122,8 +139,9 @@ def _haskell_toolchain_impl(ctx):
 
     # Get the versions of every prebuilt package.
     for t in ctx.files.tools:
-        if t.basename == "ghc-pkg":
+        if t.basename == _exe_name(ctx.attr.os, "ghc-pkg"):
             ghc_pkg = t
+            break
     pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
     ctx.actions.run_shell(
         inputs = [ghc_pkg],
