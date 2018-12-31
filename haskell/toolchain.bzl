@@ -75,6 +75,12 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
     return args
 
 def _haskell_toolchain_impl(ctx):
+    if ctx.attr.os not in ["linux", "darwin", "windows"]:
+        fail("Unsupported Haskell toolchain OS: %s" % ctx.attr.os)
+
+    if ctx.attr.os == "windows":
+        print("WARNING: Windows support is not fully implemented, yet.")
+
     cc_toolchain = find_cpp_toolchain(ctx)
 
     # Check that we have all that we want.
@@ -293,7 +299,7 @@ def _haskell_toolchain_impl(ctx):
             # empty). The rest of the program may rely consider visible_bin_path
             # as the path to visible binaries, without recalculations.
             visible_bin_path = set.to_list(symlinks)[0].dirname,
-            is_darwin = ctx.attr.is_darwin,
+            os = ctx.attr.os,
             version = ctx.attr.version,
             # Pass through the version_file, that it can be required as
             # input in _run_ghc, to make every call to GHC depend on a
@@ -327,8 +333,8 @@ _haskell_toolchain = rule(
             doc = "Version of your GHC compiler. It has to match the version reported by the GHC used by bazel.",
             mandatory = True,
         ),
-        "is_darwin": attr.bool(
-            doc = "Whether compile on and for Darwin (macOS).",
+        "os": attr.string(
+            doc = "The host and target operating system. Supported: 'linux', 'darwin', 'windows' (work in progress).",
             mandatory = True,
         ),
         # TODO: document
@@ -415,9 +421,10 @@ def haskell_toolchain(
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
         visibility = ["//visibility:public"],
-        is_darwin = select({
-            "@bazel_tools//src/conditions:darwin": True,
-            "//conditions:default": False,
+        os = select({
+            "@bazel_tools//src/conditions:darwin": "darwin",
+            "@bazel_tools//src/conditions:windows": "windows",
+            "//conditions:default": "linux",
         }),
         **kwargs
     )

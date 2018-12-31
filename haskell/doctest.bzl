@@ -114,16 +114,18 @@ def _haskell_doctest_single(target, ctx):
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
-            if hs.toolchain.is_darwin:
+            if hs.toolchain.os == "darwin":
                 args.add([
                     "-optl-l{0}".format(lib_name),
                     "-optl-L{0}".format(paths.dirname(lib.path)),
                 ])
-            else:
+            elif hs.toolchain.os == "linux":
                 args.add([
                     "-l{0}".format(lib_name),
                     "-L{0}".format(paths.dirname(lib.path)),
                 ])
+            else:
+                fail("Unsupported OS: %s" % hs.toolchain.os)
 
     header_files = lib_info.header_files if lib_info != None else bin_info.header_files
 

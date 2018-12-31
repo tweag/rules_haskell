@@ -121,7 +121,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
     # not yet in a release; plus, we still want to support older versions of
     # GHC.  For details, see: https://phabricator.haskell.org/D4714
-    if hs.toolchain.is_darwin:
+    if hs.toolchain.os == "darwin":
         ghc_args += ["-optl-Wl,-dead_strip_dylibs"]
 
     ghc_args.extend(expose_packages(

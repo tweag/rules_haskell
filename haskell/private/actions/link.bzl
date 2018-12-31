@@ -126,7 +126,7 @@ def link_binary(
     """
 
     executable = hs.actions.declare_file(hs.name)
-    if not hs.toolchain.is_darwin:
+    if not hs.toolchain.os == "darwin":
         compile_output = executable
     else:
         compile_output = hs.actions.declare_file(hs.name + ".temp")
@@ -196,7 +196,7 @@ def link_binary(
         "-optl-Wno-unused-command-line-argument",
     ])
 
-    if hs.toolchain.is_darwin:
+    if hs.toolchain.os == "darwin":
         args.add(["-optl-Wl,-headerpad_max_install_names"])
 
         # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
@@ -206,7 +206,7 @@ def link_binary(
         # TODO remove this gross hack.
         args.add("-liconv")
 
-    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, executable, solibs)):
+    for rpath in set.to_list(_infer_rpaths(hs.toolchain.os, executable, solibs)):
         args.add(["-optl-Wl,-rpath," + rpath])
 
     objects_dir_manifest = _create_objects_dir_manifest(
@@ -253,7 +253,7 @@ def _add_external_libraries(args, ext_libs):
                 "-L{0}".format(paths.dirname(lib.path)),
             ])
 
-def _infer_rpaths(is_darwin, target, solibs):
+def _infer_rpaths(os, target, solibs):
     """Return set of RPATH values to be added to target so it can find all
     solibs
 
@@ -263,7 +263,7 @@ def _infer_rpaths(is_darwin, target, solibs):
     the parent folder of the solib".
 
     Args:
-      is_darwin: Whether we're compiling on and for Darwin.
+      os: The Haskell toolchain OS.
       target: File, executable or library we're linking.
       solibs: A set of Files, shared objects that the target needs.
 
@@ -272,10 +272,12 @@ def _infer_rpaths(is_darwin, target, solibs):
     """
     r = set.empty()
 
-    if is_darwin:
+    if os == "darwin":
         origin = "@loader_path/"
-    else:
+    elif os == "linux":
         origin = "$ORIGIN/"
+    else:
+        fail("Unsupported OS: %s" % os)
 
     for solib in set.to_list(solibs):
         rpath = paths.normalize(
@@ -297,7 +299,12 @@ def _so_extension(hs):
     Returns:
       string of extension.
     """
-    return "dylib" if hs.toolchain.is_darwin else "so"
+    if hs.toolchain.os == "darwin":
+        return "dylib"
+    elif hs.toolchain.os == "windows":
+        return "dll"
+    else:
+        return "so"
 
 def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling):
     """Link a static library for the package using given object files.
@@ -318,7 +325,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
     inputs = ([objects_dir, objects_dir_manifest, hs.tools.ar] +
               hs.tools_runfiles.ar + hs.extra_binaries)
 
-    if hs.toolchain.is_darwin:
+    if hs.toolchain.os == "darwin":
         # On Darwin, ar doesn't support params files.
         args.add([
             static_library,
@@ -376,7 +383,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
     # not yet in a release; plus, we still want to support older versions of
     # GHC.  For details, see: https://phabricator.haskell.org/D4714
-    if hs.toolchain.is_darwin:
+    if hs.toolchain.os == "darwin":
         args.add(["-optl-Wl,-dead_strip_dylibs"])
 
     args.add(expose_packages(
@@ -395,7 +402,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         dep_info.dynamic_libraries,
     )
 
-    if hs.toolchain.is_darwin:
+    if hs.toolchain.os == "darwin":
         dynamic_library_tmp = hs.actions.declare_file(dynamic_library.basename + ".temp")
         _fix_darwin_linker_paths(
             hs,
@@ -407,7 +414,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     else:
         dynamic_library_tmp = dynamic_library
 
-    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, dynamic_library, solibs)):
+    for rpath in set.to_list(_infer_rpaths(hs.toolchain.os, dynamic_library, solibs)):
         args.add(["-optl-Wl,-rpath," + rpath])
 
     args.add(["-o", dynamic_library_tmp.path])
