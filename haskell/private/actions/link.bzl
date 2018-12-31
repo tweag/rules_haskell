@@ -277,7 +277,7 @@ def _infer_rpaths(os, target, solibs):
     elif os == "linux":
         origin = "$ORIGIN/"
     else:
-        fail("Unsupported OS: %s" % os)
+        origin = ""
 
     for solib in set.to_list(solibs):
         rpath = paths.normalize(
