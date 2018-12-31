@@ -29,23 +29,23 @@ main = hspec $ do
       -- because otherwise the test runner succeeds if the first test fails
       assertSuccess (bazel ["clean"])
 
-      assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib@repl", "--", "-e", "show (foo 10) ++ bar ++ baz ++ gen"])
-      assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib-bad@repl", "--", "-e", "1 + 2"])
+      assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib@repl", "--", "-ignore-dot-ghci", "-e", "show (foo 10) ++ bar ++ baz ++ gen"])
+      assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib-bad@repl", "--", "-ignore-dot-ghci", "-e", "1 + 2"])
 
     it "for binaries" $ do
       -- Test whether building of repl forces all runtime dependencies by itself:
       -- TODO(Profpatsch) remove clean once repl uses runfiles
       assertSuccess (bazel ["clean"])
 
-      assertSuccess (bazel ["run", "//tests/repl-targets:hs-bin@repl", "--", "-e", ":main"])
+      assertSuccess (bazel ["run", "//tests/repl-targets:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
     -- Test `compiler_flags` from toolchain and rule for REPL
     it "compiler flags" $ do
-      assertSuccess (bazel ["run", "//tests/repl-flags:compiler_flags@repl", "--", "-e", ":main"])
+      assertSuccess (bazel ["run", "//tests/repl-flags:compiler_flags@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
     -- Test `repl_ghci_args` from toolchain and rule for REPL
     it "repl flags" $ do
-      assertSuccess (bazel ["run", "//tests/repl-flags:repl_flags@repl", "--", "-e", "foo"])
+      assertSuccess (bazel ["run", "//tests/repl-flags:repl_flags@repl", "--", "-ignore-dot-ghci", "-e", "foo"])
 
   it "startup script" $ do
     assertSuccess (safeShell [
@@ -75,7 +75,7 @@ main = hspec $ do
 
   -- Test that the repl still works if we shadow some Prelude functions
   it "repl name shadowing" $ do
-    outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-e", "stdin"])
+    outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-ignore-dot-ghci", "-e", "stdin"])
       where
         p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
 
