@@ -555,7 +555,7 @@ def _reduce_array(reductions):
 
 def _reduce_object(reductions):
     obj = dict()
-    for i in range(0, len(reductions) / 2):
+    for i in range(0, len(reductions) // 2):
         idx = i * 2
         key = reductions[idx]["reduction"]
         val = reductions[idx + 1]["reduction"]
@@ -589,15 +589,15 @@ def _tokenize_int(collected_chars):
         sig = int(sig)
         for i in range(0, int(exp)):
             if sign == "+":
-                if _MAX_INT / 10 <= sig:
+                if _MAX_INT // 10 <= sig:
                     return _MAX_INT
-                elif _MIN_INT / 10 >= sig:
+                elif _MIN_INT // 10 >= sig:
                     return _MIN_INT
                 sig *= 10
             elif sign == "-":
                 if sig < 0:
                     return 0
-                sig /= 10
+                sig //= 10
 
         return sig
     elif collected_chars.find(".") >= 0:
