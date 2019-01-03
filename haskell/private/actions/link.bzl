@@ -251,6 +251,7 @@ def _add_external_libraries(args, ext_libs):
             args.add([
                 "-l{0}".format(lib_name),
                 "-L{0}".format(paths.dirname(lib.path)),
+                "-optl-Wl,-rpath,{0}".format(paths.dirname(lib.path)),
             ])
 
 def _infer_rpaths(is_darwin, target, solibs):

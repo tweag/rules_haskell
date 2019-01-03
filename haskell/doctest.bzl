@@ -124,6 +124,7 @@ def _haskell_doctest_single(target, ctx):
                     "-l{0}".format(lib_name),
                     "-L{0}".format(paths.dirname(lib.path)),
                 ])
+            args.add("-optl-Wl,-rpath,{0}".format(paths.dirname(lib.path)))
 
     header_files = lib_info.header_files if lib_info != None else bin_info.header_files
 

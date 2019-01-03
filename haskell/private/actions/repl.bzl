@@ -17,6 +17,7 @@ load(
     "external_libraries_get_mangled",
 )
 load("@bazel_skylib//lib:shell.bzl", "shell")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def build_haskell_repl(
         hs,
@@ -67,7 +68,10 @@ def build_haskell_repl(
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
-            args += ["-l{0}".format(lib_name)]
+            args += [
+                "-l{0}".format(lib_name),
+                "-optl-Wl,-rpath,{0}".format(paths.dirname(lib.path)),
+            ]
 
     repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
 
