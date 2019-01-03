@@ -116,10 +116,6 @@ def _mk_binary_rule(**kwargs):
                 default = True,
                 doc = "Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.",
             ),
-            generate_so = attr.bool(
-                default = False,
-                doc = "Whether to generate also a .so version of executable.",
-            ),
             main_function = attr.string(
                 default = "Main.main",
                 doc = """A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.""",
