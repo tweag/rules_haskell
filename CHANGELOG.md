@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.8] - 2019-xx-xx
+
+### Removed
+
+* The `generate_so` attribute of `haskell_binary` and `haskell_test`
+  has been completely superseded by `linkstatic` in the last release
+  and became a no-op, so it is removed.
+* The `main_file` attribute of `haskell_binary` and `haskell_test`
+  has been deprecated because it was a no-op, so it is removed.
+
 ## [0.7] - 2018-12-24
 
 ### Added
