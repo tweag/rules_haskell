@@ -137,6 +137,36 @@ See [rules_haskell_examples][] for examples of using these rules.
 
 ## For `rules_haskell` developers
 
+### Reference a local checkout of `rules_haskell`
+
+When you develop on `rules_haskell`, you usually do it in the context
+of a different project that has `rules_haskell` as a `WORKSPACE`
+dependency, like so:
+
+```
+http_archive(
+    name = "io_tweag_rules_haskell",
+    strip_prefix = "rules_haskell-" + version,
+    sha256 = …,
+    urls = …,
+)
+```
+
+To reference a local checkout instead, use the
+[`--override_repository`][override_repository] command line option:
+   
+```
+bazel build/test/run/sync \
+  --override_repository io_tweag_rules_haskell=/path/to/checkout
+```
+   
+If you don’t want to type that every time, [temporarily add it to
+`.bazelrc`][bazelrc].
+
+[override_repository]: https://docs.bazel.build/versions/master/command-line-reference.html#flag--override_repository
+[local_repository]: https://docs.bazel.build/versions/master/be/workspace.html#local_repository
+[bazelrc]: https://docs.bazel.build/versions/master/best-practices.html#bazelrc
+
 ### Test Suite
 
 To run the test suite for these rules, you'll need [Nix][nix]
