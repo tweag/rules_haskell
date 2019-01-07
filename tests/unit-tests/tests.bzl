@@ -1,5 +1,5 @@
 load(
-    "@bazel_skylib//:lib.bzl",
+    "@bazel_skylib//lib:unittest.bzl",
     "asserts",
     unit = "unittest",
 )
