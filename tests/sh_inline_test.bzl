@@ -1,4 +1,4 @@
-load("@bazel_skylib//:lib.bzl", "shell")
+load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def quote_make_variables(s):
     """Quote all genrule “Make” Variables in a string."""
