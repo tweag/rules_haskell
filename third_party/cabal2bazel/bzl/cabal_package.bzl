@@ -131,7 +131,7 @@ def _find_module(module, sourceDirs):
   """Find the source file for the given module.
 
   Args:
-    module: Find the source file for this module. E.g. `Some.Module.Name`.
+    module: The Haskell module name. E.g. `Some.Module.Name`.
     sourceDirs: List of source directories under which to search for sources.
 
   Returns:
