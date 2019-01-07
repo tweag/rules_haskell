@@ -322,6 +322,11 @@ def _get_build_attrs(
   ghcopts += ["-w", "-Wwarn"]  # -w doesn't kill all warnings...
 
   # Collect the dependencies.
+  #
+  # If package A depends on packages B and C, then the cbits target A-cbits
+  # will depend on B-cbits and C-cbits, and the Haskell target A will depend on
+  # A-cbits and the Haskell targets B and C. This allows A-cbits to depend on
+  # header files in B-cbits and C-cbits, as is the case with Cabal.
   for condition, ps in _conditions_dict(depset(
       [p.name for p in build_info.targetBuildDepends]).to_list()).items():
     if condition not in deps:
@@ -329,7 +334,9 @@ def _get_build_attrs(
     if condition not in cdeps:
       cdeps[condition] = []
     for p in ps:
+      # Collect direct Haskell dependencies.
       deps[condition] += [hazel_library(p)]
+      # Collect direct cbits dependencies.
       cdeps[condition] += [hazel_cbits(p)]
       if p in _CORE_DEPENDENCY_INCLUDES:
         cdeps[condition] += [_CORE_DEPENDENCY_INCLUDES[p]]
