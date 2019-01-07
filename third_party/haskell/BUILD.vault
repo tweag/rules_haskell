@@ -30,3 +30,8 @@ haskell_library(
     hazel_library("unordered-containers"),
   ],
 )
+
+cc_import(
+    name = "vault-cbits",
+    visibility = ["//visibility:public"],
+)

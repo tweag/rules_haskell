@@ -15,3 +15,8 @@ haskell_library(
     hazel_library("vector"),
   ],
 )
+
+cc_import(
+    name = "text-metrics-cbits",
+    visibility = ["//visibility:public"],
+)

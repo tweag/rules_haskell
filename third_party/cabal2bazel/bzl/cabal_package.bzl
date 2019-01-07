@@ -30,7 +30,7 @@ load(":bzl/alex.bzl", "genalex")
 load(":bzl/cabal_paths.bzl", "cabal_paths")
 load(":bzl/happy.bzl", "genhappy")
 load("//templates:templates.bzl", "templates")
-load("//tools:mangling.bzl", "hazel_library")
+load("//tools:mangling.bzl", "hazel_cbits", "hazel_library")
 
 _conditions_default = "//conditions:default"
 
@@ -71,6 +71,15 @@ def _fix_source_dirs(dirs):
   return [""]
 
 def _module_output(file, ending):
+  """Replace the input's ending by the ending for the generated output file.
+
+  Args:
+    file: Input file name.
+    ending: Input file ending.
+
+  Returns:
+    The output file with appropriate ending. E.g. `file.y --> file.hs`.
+  """
   out_extension = {
     "hs": "hs",
     "lhs": "lhs",
@@ -83,6 +92,20 @@ def _module_output(file, ending):
   return file[:-len(ending)] + out_extension
 
 def _find_module_by_ending(modulePath, ending, sourceDirs):
+  """Try to find a source file for the given modulePath with the given ending.
+
+  Checks for module source files in all given source directories.
+
+  Args:
+    modulePath: The module path converted to a relative file path. E.g.
+      `Some/Module/Name`
+    ending: Look for module source files with this file ending.
+    sourceDirs: Look for module source files in these directories.
+
+  Returns:
+    Either `None` if no source file was found, or a `struct` describing the
+    module source file. See `_find_module` for details.
+  """
   # Find module source file in source directories.
   files = native.glob([
     paths.join(d if d != "." else "", modulePath + "." + ending)
@@ -105,6 +128,23 @@ def _find_module_by_ending(modulePath, ending, sourceDirs):
   )
 
 def _find_module(module, sourceDirs):
+  """Find the source file for the given module.
+
+  Args:
+    module: The Haskell module name. E.g. `Some.Module.Name`.
+    sourceDirs: List of source directories under which to search for sources.
+
+  Returns:
+    Either `None` if no module source file was found,
+    or a `struct` with the following fields:
+
+    `type`: The ending.
+    `src`: The source file that was found.
+      E.g. `Some/Module/Name.y`
+    `out`: The expected generated output module file.
+      E.g. `Some/Module/Name.hs`.
+    `bootFile`: Haskell boot file path or `None` if no boot file was found.
+  """
   modulePath = module.replace(".", "/")
   mod = None
   # Looking for raw source files first. To override duplicates (e.g. if a
@@ -245,13 +285,14 @@ def _get_build_attrs(
   # them as command-line arguments; instead, it looks for them next to the
   # corresponding .hs files.
   deps = {}
-  cdeps = []
+  cdeps = {}
   paths_module = _paths_module(desc)
   extra_modules_dict = _conditions_dict(extra_modules)
   other_modules_dict = _conditions_dict(build_info.otherModules)
   for condition in depset(extra_modules_dict.keys() + other_modules_dict.keys()):
     srcs[condition] = []
     deps[condition] = []
+    cdeps[condition] = []
     for m in (extra_modules_dict.get(condition, []) +
               other_modules_dict.get(condition, [])):
       if m == paths_module:
@@ -262,7 +303,6 @@ def _get_build_attrs(
         if m in boot_module_map:
           srcs[condition] += [boot_module_map[m]]
       else:
-        # XXX: Redundant?
         fail("Missing module %s for %s" % (m, name) + str(module_map))
 
   # Collect the options to pass to ghc.
@@ -282,14 +322,24 @@ def _get_build_attrs(
   ghcopts += ["-w", "-Wwarn"]  # -w doesn't kill all warnings...
 
   # Collect the dependencies.
+  #
+  # If package A depends on packages B and C, then the cbits target A-cbits
+  # will depend on B-cbits and C-cbits, and the Haskell target A will depend on
+  # A-cbits and the Haskell targets B and C. This allows A-cbits to depend on
+  # header files in B-cbits and C-cbits, as is the case with Cabal.
   for condition, ps in _conditions_dict(depset(
       [p.name for p in build_info.targetBuildDepends]).to_list()).items():
     if condition not in deps:
       deps[condition] = []
+    if condition not in cdeps:
+      cdeps[condition] = []
     for p in ps:
+      # Collect direct Haskell dependencies.
       deps[condition] += [hazel_library(p)]
+      # Collect direct cbits dependencies.
+      cdeps[condition] += [hazel_cbits(p)]
       if p in _CORE_DEPENDENCY_INCLUDES:
-        cdeps += [_CORE_DEPENDENCY_INCLUDES[p]]
+        cdeps[condition] += [_CORE_DEPENDENCY_INCLUDES[p]]
         deps[condition] += [_CORE_DEPENDENCY_INCLUDES[p]]
 
   ghcopts += ["-optP" + o for o in build_info.cppOptions]
@@ -348,7 +398,8 @@ def _get_build_attrs(
                + ["-I" + i for i in elibs_includes]),
       defines = [o[2:] for o in build_info.ccOptions if o.startswith("-D")],
       textual_hdrs = list(headers),
-      deps = ["@ghc//:threaded-rts"] + cdeps + cc_deps + elibs_targets,
+      deps = ["@ghc//:threaded-rts"] + select(cdeps) + cc_deps + elibs_targets,
+      visibility = ["//visibility:public"],
   )
 
   return {
