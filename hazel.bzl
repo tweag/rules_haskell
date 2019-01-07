@@ -8,14 +8,18 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl",
 load("@bazel_tools//tools/build_defs/repo:http.bzl",
      "http_archive",
 )
+load("//tools:ghc.bzl", "get_ghc_workspace", "default_ghc_workspaces")
 load("//tools:mangling.bzl", "hazel_binary", "hazel_library", "hazel_workspace")
 
 def _cabal_haskell_repository_impl(ctx):
+  ghc_workspace = get_ghc_workspace(ctx.attr.ghc_workspaces, ctx)
+
   ctx.download_and_extract(**ctx.attr.download_options)
 
   symlink_and_invoke_hazel(
     ctx,
     ctx.attr.hazel_base_repo_name,
+    ghc_workspace,
     ctx.attr.package_flags,
     ctx.attr.package_name + ".cabal",
     "package.bzl"
@@ -28,6 +32,7 @@ _cabal_haskell_repository = repository_rule(
         "package_flags": attr.string_dict(mandatory=True),
         "hazel_base_repo_name": attr.string(mandatory=True),
         "download_options": attr.string_dict(mandatory=True),
+        "ghc_workspaces": attr.string_dict(mandatory=True),
     })
 
 def _core_library_repository_impl(ctx):
@@ -91,7 +96,8 @@ def hazel_repositories(
   extra_libs={},
   extra_libs_hdrs={},
   extra_libs_strip_include_prefix={},
-  exclude_packages=[]):
+  exclude_packages=[],
+  ghc_workspaces=default_ghc_workspaces):
   """Generates external dependencies for a set of Haskell packages.
 
   This macro should be invoked in the WORKSPACE.  It generates a set of
@@ -127,6 +133,10 @@ def hazel_repositories(
     extra_libs_hdrs: Similar to extra_libs, but provides header files.
     extra_libs_strip_include_prefix: Similar to extra_libs, but allows to
       get include prefix to strip.
+    ghc_workspaces: Dictionary mapping OS names to GHC workspaces.
+      Default: Linux/MacOS: "@ghc", Windows: "@ghc_windows".
+      Dictionary keys correspond to CPU values as returned by
+      `get_cpu_value` from `@bazel_tools//tools/cpp:lib_cc_configure.bzl`.
   """
   hazel_base_repo_name = "hazel_base_repository"
 
@@ -134,8 +144,7 @@ def hazel_repositories(
 
   hazel_base_repository(
       name = hazel_base_repo_name,
-      # TODO: don't hard-code this in
-      ghc="@ghc//:bin/ghc",
+      ghc_workspaces = ghc_workspaces,
       extra_libs = extra_libs,
       extra_libs_hdrs = extra_libs_hdrs,
       extra_libs_strip_include_prefix = extra_libs_strip_include_prefix,
@@ -205,6 +214,7 @@ def hazel_repositories(
         package_flags = flags,
         hazel_base_repo_name = hazel_base_repo_name,
         download_options = download_options,
+        ghc_workspaces = ghc_workspaces,
     )
 
   for p in core_packages:
