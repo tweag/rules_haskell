@@ -86,7 +86,7 @@ def _module_output(file, ending):
     "hs": "hs",
     "lhs": "lhs",
     "hsc": "hsc",
-    "chs": "chs",
+    "chs": "hs",
     "x": "hs",
     "y": "hs",
     "ly": "hs",
@@ -167,8 +167,6 @@ def _get_build_attrs(
     ghc_version,
     ghc_workspace,
     extra_libs,
-    extra_libs_hdrs,
-    extra_libs_strip_include_prefix,
     cc_deps=[],
     version_overrides=None,
     ghcopts=[]):
@@ -183,10 +181,7 @@ def _get_build_attrs(
     extra_modules: exposed-modules: or other-modules: in the package description
     ghc_workspace: Workspace in which GHC is provided.
     extra_libs: A dictionary that maps from name of extra libraries to Bazel
-      targets that provide the shared library.
-    extra_libs_hdrs: Similar to extra_libs, but provides header files.
-    extra_libs_strip_include_prefix: Similar to extra_libs, but allows to
-      get include prefix to strip.
+      targets that provide the shared library and headers as a cc_library.
     cc_deps: External cc_libraries that this rule should depend on.
     version_overrides: Override the default version of specific dependencies;
       see cabal_haskell_package for more details.
@@ -200,7 +195,11 @@ def _get_build_attrs(
   # module_map will contain a dictionary from module names ("Foo.Bar")
   # to the preprocessed source file ("src/Foo/Bar.hs").
   module_map = {}
+  # boot_module_map will contain a dictionary from module names ("Foo.Bar")
+  # to hs-boot files, if applicable.
   boot_module_map = {}
+  # build_files will contain a list of all files in the build directory.
+  build_files = []
 
   srcs_dir = "gen-srcs-" + name + "/"
   clib_name = name + "-cbits"
@@ -222,10 +221,10 @@ def _get_build_attrs(
 
     # Create module files in build directory.
     symlink_name = name + "-" + module + "-symlink"
-    chs_name = name + "-" + module + "-chs"
-    module_out = srcs_dir + info.out
-    module_map[module] = module_out
     if info.type in ["hs", "lhs", "hsc"]:
+      module_out = srcs_dir + info.out
+      module_map[module] = module_out
+      build_files.append(module_out)
       hazel_symlink(
         name = symlink_name,
         src = info.src,
@@ -234,33 +233,43 @@ def _get_build_attrs(
       if info.boot != None:
         boot_out = srcs_dir + info.out + "-boot"
         boot_module_map[module] = boot_out
+        build_files.append(boot_out)
         hazel_symlink(
           name = name + "-boot-" + module + "-symlink",
           src = info.boot,
           out = boot_out,
         )
     elif info.type in ["chs"]:
+      chs_name = name + "-" + module + "-chs"
+      module_map[module] = chs_name
+      build_files.append(srcs_dir + info.src)
       hazel_symlink(
         name = symlink_name,
         src = info.src,
-        out = module_out,
+        out = srcs_dir + info.src,
       )
       c2hs_library(
         name = chs_name,
         srcs = [symlink_name],
         deps = [
-          _haskell_cc_import_name(elib)
+          extra_libs[elib]
           for elib in build_info.extraLibs
           if elib != "pthread"
         ] + [clib_name] + chs_targets,
       )
       chs_targets.append(chs_name)
     elif info.type in ["x"]:
+      module_out = srcs_dir + info.out
+      module_map[module] = module_out
+      build_files.append(module_out)
       genalex(
         src = info.src,
         out = module_out,
       )
     elif info.type in ["y", "ly"]:
+      module_out = srcs_dir + info.out
+      module_map[module] = module_out
+      build_files.append(module_out)
       genhappy(
         src = info.src,
         out = module_out,
@@ -268,11 +277,10 @@ def _get_build_attrs(
 
   # Create extra source files in build directory.
   extra_srcs = []
-  all_module_files = module_map.values() + boot_module_map.values()
   for f in native.glob([paths.normalize(f) for f in desc.extraSrcFiles]):
     fout = srcs_dir + f
     # Skip files that were created in the previous steps.
-    if fout in all_module_files:
+    if fout in build_files:
       continue
     hazel_symlink(
       name = fout + "-symlink",
@@ -369,28 +377,11 @@ def _get_build_attrs(
       ("0" if int(ghc_version_components[1]) <= 9 else "")
       + ghc_version_components[1])
 
-  elibs_targets = []
-  elibs_includes = []
-
-  for elib in build_info.extraLibs:
-    if elib == "pthread":
-      continue
-
-    elib_target_name = elib + "-cc-import"
-
-    native.cc_import(
-      name = elib_target_name,
-      shared_library = extra_libs[elib],
-      hdrs = [extra_libs_hdrs[elib]] if elib in extra_libs_hdrs else [],
-    )
-    elibs_targets.append(":" + elib_target_name)
-
-    if elib in extra_libs_strip_include_prefix:
-      i = extra_libs_strip_include_prefix[elib]
-      if i[0] == '/':
-        i = i[1:]
-
-      elibs_includes.append(i)
+  elibs_targets = [
+    extra_libs[elib]
+    for elib in build_info.extraLibs
+    if elib != "pthread"
+  ]
 
   native.cc_library(
       name = clib_name,
@@ -399,8 +390,7 @@ def _get_build_attrs(
       copts = ([o for o in build_info.ccOptions if not o.startswith("-D")]
                + ["-D__GLASGOW_HASKELL__=" + ghc_version_string,
                   "-w",
-                 ]
-               + ["-I" + i for i in elibs_includes]),
+                 ]),
       defines = [o[2:] for o in build_info.ccOptions if o.startswith("-D")],
       textual_hdrs = list(headers),
       deps = ["{}//:threaded-rts".format(ghc_workspace)] + select(cdeps) + cc_deps + elibs_targets,
@@ -430,16 +420,11 @@ def _collect_data_files(description):
   else:
     return native.glob([paths.join(description.dataDir, d) for d in description.dataFiles])
 
-def _haskell_cc_import_name(clib_name):
-  return clib_name + "-haskell-cc-import"
-
 def cabal_haskell_package(
     description,
     ghc_version,
     ghc_workspace,
     extra_libs,
-    extra_libs_hdrs,
-    extra_libs_strip_include_prefix,
     ):
   """Create rules for building a Cabal package.
 
@@ -448,10 +433,7 @@ def cabal_haskell_package(
       .cabal file's contents.
     ghc_workspace: Workspace under which GHC is provided.
     extra_libs: A dictionary that maps from name of extra libraries to Bazel
-      targets that provide the shared library.
-    extra_libs_hdrs: Similar to extra_libs, but provides header files.
-    extra_libs_strip_include_prefix: Similar to extra_libs, but allows to
-      get include prefix to strip.
+      targets that provide the shared library and headers as a cc_library.
   """
   name = description.package.pkgName
 
@@ -480,27 +462,15 @@ def cabal_haskell_package(
         ghc_version,
         ghc_workspace,
         extra_libs,
-        extra_libs_hdrs,
-        extra_libs_strip_include_prefix,
       )
       srcs = lib_attrs.pop("srcs")
       deps = lib_attrs.pop("deps")
 
-      elibs_targets = []
-
-      for elib in lib.libBuildInfo.extraLibs:
-        if elib == "pthread":
-          continue
-
-        elib_target_name = _haskell_cc_import_name(elib)
-        haskell_cc_import(
-          name = elib_target_name,
-          shared_library = extra_libs[elib],
-          hdrs = [extra_libs_hdrs[elib]] if elib in extra_libs_hdrs else [],
-          strip_include_prefix = extra_libs_strip_include_prefix[elib]
-                      if elib in extra_libs_strip_include_prefix else "",
-        )
-        elibs_targets.append(":" + elib_target_name)
+      elibs_targets = [
+        extra_libs[elib]
+        for elib in lib.libBuildInfo.extraLibs
+        if elib != "pthread"
+      ]
 
       hidden_modules = [m for m in lib.libBuildInfo.otherModules if not m.startswith("Paths_")]
 
@@ -534,8 +504,6 @@ def cabal_haskell_package(
       ghc_version,
       ghc_workspace,
       extra_libs,
-      extra_libs_hdrs,
-      extra_libs_strip_include_prefix,
     )
     srcs = attrs.pop("srcs")
     deps = attrs.pop("deps")

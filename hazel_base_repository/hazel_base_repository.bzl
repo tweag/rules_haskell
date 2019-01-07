@@ -41,12 +41,8 @@ def _hazel_base_repository_impl(ctx):
 
   ctx.file("extra-libs.bzl", """
 extra_libs = {}
-extra_libs_hdrs = {}
-extra_libs_strip_include_prefix = {}
 """.format(
   str(ctx.attr.extra_libs),
-  str(ctx.attr.extra_libs_hdrs),
-  str(ctx.attr.extra_libs_strip_include_prefix),
 ))
 
   ctx.file(
@@ -59,8 +55,6 @@ hazel_base_repository = repository_rule(
     attrs={
         "ghc_workspaces": attr.string_dict(mandatory=True),
         "extra_libs": attr.string_dict(mandatory=True),
-        "extra_libs_hdrs": attr.string_dict(mandatory=True),
-        "extra_libs_strip_include_prefix": attr.string_dict(mandatory=True),
     })
 
 # TODO: don't reload all package names into every repository.
@@ -97,8 +91,6 @@ load("@ai_formation_hazel//third_party/cabal2bazel:bzl/cabal_package.bzl",
      "hazel_symlink")
 load("@hazel_base_repository//:extra-libs.bzl",
   "extra_libs",
-  "extra_libs_hdrs",
-  "extra_libs_strip_include_prefix",
 )
 load("//:package.bzl", "package")
 # Make a buildable target for easier debugging of the package.bzl file
@@ -112,7 +104,5 @@ cabal_haskell_package(
   "{}",
   "{}",
   extra_libs,
-  extra_libs_hdrs,
-  extra_libs_strip_include_prefix,
 )
 """.format(ghc_version, ghc_workspace))
