@@ -155,24 +155,33 @@ def _haskell_toolchain_impl(ctx):
     inputs.extend(ctx.files.tools)
     inputs.extend(ctx.files._crosstool)
 
-    targets_r = {}
-    targets_r.update({
+    targets = {}
+    targets.update({
         "ar": cc_toolchain.ar_executable(),
         "cc": cc_toolchain.compiler_executable(),
         "ld": cc_toolchain.ld_executable(),
         "nm": cc_toolchain.nm_executable(),
         "cpp": cc_toolchain.preprocessor_executable(),
         "strip": cc_toolchain.strip_executable(),
+        "bash": "bash",
+        "cat": "cat",
+        "tr": "tr",
+        "cp": "cp",
+        "grep": "cp",
+        "ln": "ln",
+        "mkdir": "mkdir",
+        "mktemp": "mktemp",
+        "rmdir": "rmdir",
     })
-    targets_r.update({k: v.path for k, v in ghc_binaries.items()})
+    targets.update({k: v.path for k, v in ghc_binaries.items()})
 
     # If running on darwin but XCode is not installed (i.e., only the Command
     # Line Tools are available), then Bazel will make ar_executable point to
     # "/usr/bin/libtool". Since we call ar directly, override it.
     # TODO: remove this if Bazel fixes its behavior.
     # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
-    if targets_r["ar"].find("libtool") >= 0:
-        targets_r["ar"] = "/usr/bin/ar"
+    if targets["ar"].find("libtool") >= 0:
+        targets["ar"] = "/usr/bin/ar"
 
     ar_runfiles = []
 
@@ -181,24 +190,25 @@ def _haskell_toolchain_impl(ctx):
     if xcrun_candidates:
         xcrun = xcrun_candidates[0]
         ar_runfiles += [xcrun]
-        targets_r["xcrunwrapper.sh"] = xcrun.path
+        targets["xcrunwrapper.sh"] = xcrun.path
 
     if ctx.attr.c2hs != None:
-        targets_r["c2hs"] = ctx.file.c2hs.path
+        targets["c2hs"] = ctx.file.c2hs.path
         inputs.append(ctx.file.c2hs)
 
     extra_binaries_names = set.empty()
     for binary in ctx.files.extra_binaries:
-        targets_r[binary.basename] = binary.path
+        targets[binary.basename] = binary.path
         inputs.append(binary)
         set.mutable_insert(extra_binaries_names, binary.basename)
 
     extra_binaries_files = []
-    for target in targets_r:
+
+    for target in targets:
         symlink = ctx.actions.declare_file(
             paths.join(visible_binaries, target),
         )
-        symlink_target = targets_r[target]
+        symlink_target = targets[target]
         if (paths.basename(symlink_target) != symlink_target) and not paths.is_absolute(symlink_target):
             symlink_target = paths.join("/".join([".."] * len(symlink.dirname.split("/"))), symlink_target)
         ctx.actions.run_shell(
@@ -233,28 +243,6 @@ def _haskell_toolchain_impl(ctx):
         "mktemp": "mktemp",
         "rmdir": "rmdir",
     }
-
-    for target in targets_w:
-        symlink = ctx.actions.declare_file(
-            paths.join(visible_binaries, target),
-        )
-        symlink_target = targets_w[target]
-        if (paths.basename(symlink_target) != symlink_target) and not paths.is_absolute(symlink_target):
-            symlink_target = paths.join("/".join([".."] * len(symlink.dirname.split("/"))), symlink_target)
-        ctx.actions.run_shell(
-            inputs = ctx.files.tools,
-            outputs = [symlink],
-            mnemonic = "Symlink",
-            command = """
-      mkdir -p $(dirname "{symlink}")
-      ln -s $(which "{target}") "{symlink}"
-      """.format(
-                target = symlink_target,
-                symlink = symlink.path,
-            ),
-            use_default_shell_env = True,
-        )
-        set.mutable_insert(symlinks, symlink)
 
     tools_struct_args = {
         tool.basename.replace("-", "_"): tool
