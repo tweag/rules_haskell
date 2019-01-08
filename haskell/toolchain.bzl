@@ -87,7 +87,7 @@ def _haskell_toolchain_impl(ctx):
     ghc_binaries = {}
 
     for tool in _GHC_BINARIES:
-        exe_name = tool # TODO:  + ".exe" if ctx.attr.is_windows else tool
+        exe_name = tool  # TODO:  + ".exe" if ctx.attr.is_windows else tool
         res = None
         for t in ctx.files.tools:
             if t.basename == exe_name:
@@ -223,15 +223,15 @@ def _haskell_toolchain_impl(ctx):
             extra_binaries_files += [symlink]
 
     targets_w = {
-            "bash" : "bash",
-            "cat" : "cat",
-            "tr" : "tr",
-            "cp" : "cp",
-            "grep" : "cp",
-            "ln" : "ln",
-            "mkdir" : "mkdir",
-            "mktemp" : "mktemp",
-            "rmdir" : "rmdir",
+        "bash": "bash",
+        "cat": "cat",
+        "tr": "tr",
+        "cp": "cp",
+        "grep": "cp",
+        "ln": "ln",
+        "mkdir": "mkdir",
+        "mktemp": "mktemp",
+        "rmdir": "rmdir",
     }
 
     for target in targets_w:
