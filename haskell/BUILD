@@ -12,3 +12,9 @@ py_binary(
     srcs = ["private/ls_modules.py"],
     visibility = ["//visibility:public"],
 )
+
+# toolchains must have a valid toolchain_type from bazel 0.21
+toolchain_type(
+    name = "toolchain",
+    visibility = ["//visibility:public"],
+)
