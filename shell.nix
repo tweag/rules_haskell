@@ -18,6 +18,8 @@ mkShell {
     bazel
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
+    # Needed to get correct locale for tests with encoding
+    glibcLocales
   ] ++ lib.optionals docTools [graphviz python36Packages.sphinx zip unzip];
 
   shellHook = ''

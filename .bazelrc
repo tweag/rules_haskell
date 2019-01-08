@@ -9,3 +9,9 @@ build:ci --verbose_failures
 build:ci --symlink_prefix=foobar
 common:ci --color=no
 test:ci --test_output=errors
+
+# test environment does not propagate locales by default
+# some tests reads files written in UTF8, we need to propagate the correct
+# environment variables, such as LOCALE_ARCHIVE
+# We also need to setup an utf8 locale
+test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
