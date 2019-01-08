@@ -87,7 +87,7 @@ def _haskell_toolchain_impl(ctx):
     ghc_binaries = {}
 
     for tool in _GHC_BINARIES:
-        exe_name = tool  # TODO:  + ".exe" if ctx.attr.is_windows else tool
+        exe_name = tool + ".exe" if ctx.attr.is_windows else tool
         res = None
         for t in ctx.files.tools:
             if t.basename == exe_name:
@@ -282,6 +282,7 @@ def _haskell_toolchain_impl(ctx):
             # as the path to visible binaries, without recalculations.
             visible_bin_path = set.to_list(symlinks)[0].dirname,
             is_darwin = ctx.attr.is_darwin,
+            is_windows = ctx.attr.is_windows,
             version = ctx.attr.version,
             # Pass through the version_file, that it can be required as
             # input in _run_ghc, to make every call to GHC depend on a
@@ -317,6 +318,10 @@ _haskell_toolchain = rule(
         ),
         "is_darwin": attr.bool(
             doc = "Whether compile on and for Darwin (macOS).",
+            mandatory = True,
+        ),
+        "is_windows": attr.bool(
+            doc = "Whether compile on and for Windows.",
             mandatory = True,
         ),
         # TODO: document
@@ -405,6 +410,10 @@ def haskell_toolchain(
         visibility = ["//visibility:public"],
         is_darwin = select({
             "@bazel_tools//src/conditions:darwin": True,
+            "//conditions:default": False,
+        }),
+        is_windows = select({
+            "@bazel_tools//src/conditions:windows": True,
             "//conditions:default": False,
         }),
         **kwargs
