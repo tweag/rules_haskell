@@ -79,6 +79,7 @@ load(
   "@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_library",
   "haskell_toolchain",
+  "haskell_import",
 )
 
 haskell_toolchain(
@@ -87,11 +88,18 @@ haskell_toolchain(
   tools = "@ghc//:bin",
 )
 
+haskell_import(
+  name = "base_pkg",
+  package = "base",
+)
+
 haskell_library(
   name = "MY_LIBRARY_NAME",
   src_strip_prefix = "src",
   srcs = glob(['src/**/*.hs']),
-  prebuilt_dependencies = ["base"],
+  deps = [
+    "base_pkg"
+  ],
 )
 EOF
 

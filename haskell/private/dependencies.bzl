@@ -85,10 +85,10 @@ def gather_dep_info(ctx):
         static_libraries_prof = [],
         dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
-        prebuilt_dependencies = set.from_list(ctx.attr.prebuilt_dependencies),
+        prebuilt_dependencies = set.empty(),
         # a set of struct(lib, mangled_lib)
         external_libraries = set.empty(),
-        direct_prebuilt_deps = set.from_list(ctx.attr.prebuilt_dependencies),
+        direct_prebuilt_deps = set.empty(),
     )
 
     for dep in ctx.attr.deps:

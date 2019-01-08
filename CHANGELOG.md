@@ -12,7 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   has been completely superseded by `linkstatic` in the last release
   and became a no-op, so it is removed.
 * The `main_file` attribute of `haskell_binary` and `haskell_test`
-  has been deprecated because it was a no-op, so it is removed.
+  had been deprecated because it was a no-op, so it is removed.
+* The `prebuilt_dependencies` attribute of all haskell rules
+  had been deprecated two versions ago and is removed.
+  Use `haskell_import` instead (see docs for usage).
 
 ## [0.7] - 2018-12-24
 
