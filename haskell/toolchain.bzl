@@ -158,15 +158,15 @@ def _haskell_toolchain_impl(ctx):
         "nm": cc_toolchain.nm_executable(),
         "cpp": cc_toolchain.preprocessor_executable(),
         "strip": cc_toolchain.strip_executable(),
-        "bash": "bash",
-        "cat": "cat",
-        "tr": "tr",
-        "cp": "cp",
-        "grep": "cp",
-        "ln": "ln",
-        "mkdir": "mkdir",
-        "mktemp": "mktemp",
-        "rmdir": "rmdir",
+        "bash": "$(type -p bash)",
+        "cat": "$(type -p cat)",
+        "tr": "$(type -p tr)",
+        "cp": "$(type -p cp)",
+        "grep": "$(type -p grep)",
+        "ln": "$(type -p ln)",
+        "mkdir": "$(type -p mkdir)",
+        "mktemp": "$(type -p mktemp)",
+        "rmdir": "$(type -p rmdir)",
     })
     targets.update({k: v.path for k, v in ghc_binaries.items()})
 
@@ -212,7 +212,7 @@ def _haskell_toolchain_impl(ctx):
             mnemonic = "Symlink",
             command = """
       mkdir -p $(dirname "{symlink}")
-      ln -s $(which "{target}") "{symlink}"
+      ln -s "{target}" "{symlink}"
       """.format(
                 target = symlink_target,
                 symlink = symlink.path,
@@ -226,18 +226,6 @@ def _haskell_toolchain_impl(ctx):
 
         if set.is_member(extra_binaries_names, target):
             extra_binaries_files += [symlink]
-
-    targets_w = {
-        "bash": "bash",
-        "cat": "cat",
-        "tr": "tr",
-        "cp": "cp",
-        "grep": "cp",
-        "ln": "ln",
-        "mkdir": "mkdir",
-        "mktemp": "mktemp",
-        "rmdir": "rmdir",
-    }
 
     tools_struct_args = {
         tool.basename.replace("-", "_"): tool
