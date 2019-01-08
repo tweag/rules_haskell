@@ -1,6 +1,5 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
     "haskell_library",
     "haskell_test",
 )
@@ -16,7 +15,7 @@ haskell_library(
     ],
 )
 
-haskell_binary(
+haskell_test(
     name = "bin",
     testonly = 1,
     srcs = ["bin/Bin.hs"],

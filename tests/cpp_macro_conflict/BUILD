@@ -1,7 +1,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
     "haskell_library",
+    "haskell_test",
 )
 
 package(default_testonly = 1)
@@ -15,7 +15,7 @@ haskell_library(
 
 # This depends on two packages "bytestring"
 # There should be no CPP macro conflict
-haskell_binary(
+haskell_test(
     name = "macro_conflict",
     srcs = ["Main.hs"],
     compiler_flags = [

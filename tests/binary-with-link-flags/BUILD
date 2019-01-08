@@ -1,6 +1,6 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
+    "haskell_test",
 )
 
 package(
@@ -8,7 +8,7 @@ package(
     default_visibility = ["//visibility:public"],
 )
 
-haskell_binary(
+haskell_test(
     name = "binary-with-link-flags",
     srcs = ["Main.hs"],
     compiler_flags = ["-threaded"],

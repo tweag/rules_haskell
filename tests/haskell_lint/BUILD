@@ -1,8 +1,8 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
     "haskell_library",
     "haskell_lint",
+    "haskell_test",
 )
 
 package(default_testonly = 1)
@@ -30,7 +30,7 @@ haskell_lint(
     deps = [":lib-b"],
 )
 
-haskell_binary(
+haskell_test(
     name = "bin",
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],

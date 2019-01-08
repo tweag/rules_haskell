@@ -1,12 +1,12 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
     "haskell_import",
+    "haskell_test",
 )
 
 haskell_import(name = "base")
 
-haskell_binary(
+haskell_test(
     name = "bin",
     srcs = ["Main.hs"],
     deps = [

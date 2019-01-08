@@ -1,9 +1,9 @@
 load("@io_tweag_rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
     "haskell_cc_import",
     "haskell_library",
+    "haskell_test",
 )
 
 package(default_testonly = 1)
@@ -70,7 +70,7 @@ haskell_library(
     deps = ["@hackage//:base"],
 )
 
-haskell_binary(
+haskell_test(
     name = "hs-bin",
     srcs = ["Quux.hs"],
     visibility = ["//visibility:public"],

@@ -1,4 +1,4 @@
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary")
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_test")
 
 package(default_testonly = 1)
 
@@ -9,7 +9,7 @@ package(default_testonly = 1)
 # - the ordering is as such as rule flags are more important that toolchain flags
 
 # This rule must build correctly (using `bazel build`), but also as a repl (using `bazel run //tests/repl-flags:compiler_flags@repl`)
-haskell_binary(
+haskell_test(
     name = "compiler_flags",
     srcs = ["CompilerFlags.hs"],
 
@@ -31,7 +31,7 @@ haskell_binary(
 #    copmiler flags
 
 # This rule must build correctly (using `bazel build`), but also as a repl (using `bazel run //tests/repl-flags:compiler_flags@repl`). The final result between the repl and the binary must be different
-haskell_binary(
+haskell_test(
     name = "repl_flags",
     srcs = ["ReplFlags.hs"],
 

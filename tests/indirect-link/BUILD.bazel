@@ -1,4 +1,4 @@
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_binary", "haskell_import", "haskell_library")
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_import", "haskell_library", "haskell_test")
 
 haskell_import(name = "base")
 
@@ -23,7 +23,7 @@ haskell_library(
     ],
 )
 
-haskell_binary(
+haskell_test(
     name = "indirect-link",
     srcs = ["test/Main.hs"],
     src_strip_prefix = "test",

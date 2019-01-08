@@ -1,7 +1,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
     "haskell_library",
+    "haskell_test",
 )
 
 package(default_testonly = 1)
@@ -13,7 +13,7 @@ haskell_library(
     src_strip_prefix = "src",
 )
 
-haskell_binary(
+haskell_test(
     name = "binary-with-lib-dynamic",
     srcs = ["Main.hs"],
     linkstatic = False,
