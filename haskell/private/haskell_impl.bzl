@@ -51,11 +51,6 @@ def _prepare_srcs(srcs):
     return srcs_files, import_dir_map
 
 def haskell_binary_impl(ctx):
-    if ctx.attr.prebuilt_dependencies:
-        print("""The attribute 'prebuilt_dependencies' has been deprecated,
-use the 'haskell_import' rule instead.
-""")
-
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx)
 
@@ -170,11 +165,6 @@ use the 'haskell_import' rule instead.
     ]
 
 def haskell_library_impl(ctx):
-    if ctx.attr.prebuilt_dependencies:
-        print("""The attribute 'prebuilt_dependencies' has been deprecated,
-use the 'haskell_import' rule instead.
-""")
-
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx)
     version = ctx.attr.version if ctx.attr.version else None

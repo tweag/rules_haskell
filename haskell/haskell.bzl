@@ -71,9 +71,6 @@ _haskell_common_attrs = {
     "compiler_flags": attr.string_list(
         doc = "Flags to pass to Haskell compiler.",
     ),
-    "prebuilt_dependencies": attr.string_list(
-        doc = "Non-Bazel supplied Cabal dependencies (deprecated).",
-    ),
     "repl_ghci_args": attr.string_list(
         doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
     ),

@@ -223,11 +223,18 @@ Example:
   ```bzl
   haskell_cc_import(name = "zlib", shared_library = "@zlib//:lib")
 
+  haskell_import(
+    name = "base_pkg",
+    package = "base",
+  )
+
   haskell_binary(
     name = "crc32sum",
     srcs = ["Main.hs"],
-    deps = [":zlib"],
-    prebuilt_dependencies = ["base"],
+    deps = [
+      "bazel_pkg",
+      ":zlib",
+    ],
   )
   ```
 
