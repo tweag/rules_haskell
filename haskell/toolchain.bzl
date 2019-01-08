@@ -77,11 +77,6 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
 def _haskell_toolchain_impl(ctx):
     cc_toolchain = find_cpp_toolchain(ctx)
 
-    # Check that we have all that we want.
-    for tool in _GHC_BINARIES:
-        if tool not in [t.basename for t in ctx.files.tools]:
-            fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
-
     # Store the binaries of interest in ghc_binaries.
     # "ghc" -> "../foo/bar/ghc.exe"
     ghc_binaries = {}
