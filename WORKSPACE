@@ -237,3 +237,16 @@ go_rules_dependencies()
 go_register_toolchains(go_version = "host")
 
 buildifier_dependencies()
+
+nixpkgs_package(
+    name = "lz4",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+cc_import(
+  name = "lib3",
+  shared_library = "lib/liblz4.so",
+)
+""",
+    repository = "@nixpkgs",
+)
