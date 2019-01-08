@@ -83,18 +83,22 @@ def _haskell_toolchain_impl(ctx):
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 
     # Store the binaries of interest in ghc_binaries.
+    # "ghc" -> "../foo/bar/ghc.exe"
     ghc_binaries = {}
-    for tool in ctx.files.tools:
-        if tool.basename in _GHC_BINARIES:
-            ghc_binaries[tool.basename] = tool.path
+
+    for tool in _GHC_BINARIES:
+        exe_name = tool # TODO:  + ".exe" if ctx.attr.is_windows else tool
+        res = None
+        for t in ctx.files.tools:
+            if t.basename == exe_name:
+                res = t
+                break
+        if res == None:
+            fail("Cannot find {} in {}".format(exe_name, ctx.attr.tools.label))
+        ghc_binaries[tool] = res
 
     # Run a version check on the compiler.
-    compiler = None
-    for t in ctx.files.tools:
-        if t.basename == "ghc":
-            if compiler:
-                fail("There can only be one tool named `ghc` in scope")
-            compiler = t
+    compiler = ghc_binaries["ghc"]
     version_file = ctx.actions.declare_file("ghc-version")
     ctx.actions.run_shell(
         inputs = [compiler],
@@ -115,9 +119,7 @@ def _haskell_toolchain_impl(ctx):
     )
 
     # Get the versions of every prebuilt package.
-    for t in ctx.files.tools:
-        if t.basename == "ghc-pkg":
-            ghc_pkg = t
+    ghc_pkg = ghc_binaries["ghc-pkg"]
     pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
     ctx.actions.run_shell(
         inputs = [ghc_pkg],
@@ -162,7 +164,7 @@ def _haskell_toolchain_impl(ctx):
         "cpp": cc_toolchain.preprocessor_executable(),
         "strip": cc_toolchain.strip_executable(),
     })
-    targets_r.update(ghc_binaries)
+    targets_r.update({k: v.path for k, v in ghc_binaries.items()})
 
     # If running on darwin but XCode is not installed (i.e., only the Command
     # Line Tools are available), then Bazel will make ar_executable point to
@@ -197,50 +199,48 @@ def _haskell_toolchain_impl(ctx):
             paths.join(visible_binaries, target),
         )
         symlink_target = targets_r[target]
-        if not paths.is_absolute(symlink_target):
+        if (paths.basename(symlink_target) != symlink_target) and not paths.is_absolute(symlink_target):
             symlink_target = paths.join("/".join([".."] * len(symlink.dirname.split("/"))), symlink_target)
-        ctx.actions.run(
+        ctx.actions.run_shell(
             inputs = inputs,
             outputs = [symlink],
             mnemonic = "Symlink",
-            executable = "ln",
-            # FIXME Currently this part of the process is not hermetic. This
-            # should be adjusted when
-            #
-            # https://github.com/bazelbuild/bazel/issues/4681
-            #
-            # is implemented.
+            command = """
+      mkdir -p $(dirname "{symlink}")
+      ln -s $(which "{target}") "{symlink}"
+      """.format(
+                target = symlink_target,
+                symlink = symlink.path,
+            ),
             use_default_shell_env = True,
-            arguments = [
-                "-s",
-                symlink_target,
-                symlink.path,
-            ],
         )
+        set.mutable_insert(symlinks, symlink)
+
         if target == "xcrunwrapper.sh":
             ar_runfiles += [symlink]
 
         if set.is_member(extra_binaries_names, target):
             extra_binaries_files += [symlink]
 
-        set.mutable_insert(symlinks, symlink)
-
-    targets_w = [
-        "bash",
-        "cat",
-        "tr",
-        "cp",
-        "grep",
-        "ln",
-        "mkdir",
-        "mktemp",
-        "rmdir",
-    ]
+    targets_w = {
+            "bash" : "bash",
+            "cat" : "cat",
+            "tr" : "tr",
+            "cp" : "cp",
+            "grep" : "cp",
+            "ln" : "ln",
+            "mkdir" : "mkdir",
+            "mktemp" : "mktemp",
+            "rmdir" : "rmdir",
+    }
 
     for target in targets_w:
         symlink = ctx.actions.declare_file(
-            paths.join(visible_binaries, paths.basename(target)),
+            paths.join(visible_binaries, target),
         )
+        symlink_target = targets_w[target]
+        if (paths.basename(symlink_target) != symlink_target) and not paths.is_absolute(symlink_target):
+            symlink_target = paths.join("/".join([".."] * len(symlink.dirname.split("/"))), symlink_target)
         ctx.actions.run_shell(
             inputs = ctx.files.tools,
             outputs = [symlink],
@@ -249,7 +249,7 @@ def _haskell_toolchain_impl(ctx):
       mkdir -p $(dirname "{symlink}")
       ln -s $(which "{target}") "{symlink}"
       """.format(
-                target = target,
+                target = symlink_target,
                 symlink = symlink.path,
             ),
             use_default_shell_env = True,
