@@ -27,13 +27,17 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
     args.add([
         # GHC uses C compiler for assemly, linking and preprocessing as well.
         "-pgma",
-        hs.tools.cc.path,
+        #hs.tools.cc.path,
+        hs.tools.cc,
         "-pgmc",
-        hs.tools.cc.path,
+        #hs.tools.cc.path,
+        hs.tools.cc,
         "-pgml",
-        hs.tools.cc.path,
+        #hs.tools.cc.path,
+        hs.tools.cc,
         "-pgmP",
-        hs.tools.cc.path,
+        #hs.tools.cc.path,
+        hs.tools.cc,
         # Setting -pgm* flags explicitly has the unfortunate side effect
         # of resetting any program flags in the GHC settings file. So we
         # restore them here. See
@@ -46,7 +50,7 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
 
     extra_inputs = [
         hs.tools.ghc,
-        hs.tools.cc,
+        #hs.tools.cc,
         # Depend on the version file of the Haskell toolchain,
         # to ensure the version comparison check is run first.
         hs.toolchain.version_file,
@@ -55,7 +59,8 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
         command = '${1+"$@"} $(< %s)' % params_file.path
         extra_inputs.append(params_file)
     else:
-        command = '${1+"$@"}'
+        #command = '${1+"$@"}'
+        command = '$@'
 
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
@@ -212,7 +217,11 @@ def _haskell_toolchain_impl(ctx):
             mnemonic = "Symlink",
             command = """
       mkdir -p $(dirname "{symlink}")
-      ln -s "{target}" "{symlink}"
+      cd $(dirname "{symlink}")
+      target={target}
+      # Absolute path without dereferencing:
+      target=$(cd $(dirname "$target") && pwd -P)/$(basename "$target")
+      echo "$target "'"$@"' > $(basename "{symlink}")
       """.format(
                 target = symlink_target,
                 symlink = symlink.path,
@@ -231,6 +240,10 @@ def _haskell_toolchain_impl(ctx):
         tool.basename.replace("-", "_"): tool
         for tool in set.to_list(symlinks)
     }
+
+    tools_struct_args.update({
+            "cc": cc_toolchain.compiler_executable(),
+        })
     tools_runfiles_struct_args = {"ar": ar_runfiles}
 
     locale_archive = None
