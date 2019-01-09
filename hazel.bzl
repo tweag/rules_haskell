@@ -236,10 +236,9 @@ def hazel_custom_package_hackage(
     package_id,
     package_id,
   )
-  fixed_package_name = hazel_workspace(package_name)
   http_archive(
-    name = "haskell_{0}".format(fixed_package_name),
-    build_file = "//third_party/haskell:BUILD.{0}".format(fixed_package_name),
+    name = hazel_workspace(package_name),
+    build_file = "//third_party/haskell:BUILD.{0}".format(package_name),
     sha256 = sha256,
     strip_prefix = package_id,
     urls = [url],
@@ -267,13 +266,12 @@ def hazel_custom_package_github(
                    repos).
   """
 
-  fixed_package_name = hazel_workspace(package_name)
-  build_file = "//third_party/haskell:BUILD.{0}".format(fixed_package_name)
+  build_file = "//third_party/haskell:BUILD.{0}".format(package_name)
   url = "https://github.com/{0}/{1}".format(github_user, github_repo)
   ssh_url = "git@github.com:{0}/{1}".format(github_user, github_repo)
 
   new_git_repository(
-    name = "haskell_{0}".format(fixed_package_name),
+    name = hazel_workspace(package_name),
     remote = ssh_url if clone_via_ssh else url,
     build_file = build_file,
     commit = repo_sha,
