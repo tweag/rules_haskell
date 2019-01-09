@@ -135,7 +135,7 @@ Nixpkgs, replace the compiler definition with the following::
 
   nixpkgs_package(
       name = "ghc",
-      repositories = { "nixpkgs": "@nixpkgs//:default.nix" }
+      repositories = { "nixpkgs": "@nixpkgs//:default.nix" },
       nix_file = "//:ghc.nix",
       build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
   )
