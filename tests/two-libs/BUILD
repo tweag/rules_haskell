@@ -1,7 +1,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
     "haskell_library",
+    "haskell_test",
 )
 
 package(
@@ -26,7 +26,7 @@ haskell_library(
     ],
 )
 
-haskell_binary(
+haskell_test(
     name = "two-libs",
     srcs = ["Main.hs"],
     deps = [

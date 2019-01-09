@@ -1,8 +1,8 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_binary",
     "haskell_cc_import",
     "haskell_library",
+    "haskell_test",
 )
 
 package(default_testonly = 1)
@@ -22,7 +22,7 @@ haskell_library(
     ],
 )
 
-haskell_binary(
+haskell_test(
     name = "bin",
     srcs = ["Main.hs"],
     deps = [

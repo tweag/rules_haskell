@@ -5,6 +5,7 @@ load(
     "haskell_binary",
     "haskell_doctest_toolchain",
     "haskell_proto_toolchain",
+    "haskell_test",
     "haskell_toolchain",
 )
 
@@ -374,6 +375,7 @@ rule_test(
     rule = "//tests:run-bin-with-c-lib",
 )
 
+# This is the test runner
 haskell_binary(
     name = "run-tests",
     srcs = ["RunTests.hs"],
