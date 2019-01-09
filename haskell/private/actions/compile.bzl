@@ -250,7 +250,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             set.to_depset(dep_info.dynamic_libraries),
             depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
             java.inputs,
-            depset([hs.tools.cc]),
+            # depset([hs.tools.cc]),
             locale_archive_depset,
         ]),
         objects_dir = objects_dir,
