@@ -189,14 +189,14 @@ rule_test(
     rule = "//tests/haskell_proto_library:hs-lib",
 )
 
-rule_test(
-    name = "test-haskell_doctest",
-    size = "small",
-    generates = [
-        "doctest-log-doctest-lib-testsZShaskellZUdoctestZSlib-b",
-    ],
-    rule = "//tests/haskell_doctest:doctest-lib",
-)
+#rule_test(
+#    name = "test-haskell_doctest",
+#    size = "small",
+#    generates = [
+#        "doctest-log-doctest-lib-testsZShaskellZUdoctestZSlib-b",
+#    ],
+#    rule = "//tests/haskell_doctest:doctest-lib",
+#)
 
 rule_test(
     name = "test-haskell_test",

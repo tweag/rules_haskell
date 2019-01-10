@@ -36,8 +36,8 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
     hs_out = declare_compiled(hs, hsc_file, ".hs", directory = hsc_dir_raw)
     args.add([hsc_file.path, "-o", hs_out.path])
 
-    args.add(["-c", hs.tools.cc])
-    args.add(["-l", hs.tools.cc])
+    args.add(["-c", hs.tools.cc_toolchain.compiler_executable()])
+    args.add(["-l", hs.tools.cc_toolchain.compiler_executable()])
     args.add("-ighcplatform.h")
     args.add("-ighcversion.h")
     args.add(["--cflag=" + f for f in cc.cpp_flags])
@@ -49,7 +49,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
     hs.actions.run(
         inputs = depset(transitive = [
             depset(cc.hdrs),
-            depset([hs.tools.cc, hsc_file]),
+            depset([hsc_file]),
         ]),
         outputs = [hs_out],
         mnemonic = "HaskellHsc2hs",
@@ -250,7 +250,6 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             set.to_depset(dep_info.dynamic_libraries),
             depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
             java.inputs,
-            depset([hs.tools.cc]),
             locale_archive_depset,
         ]),
         objects_dir = objects_dir,

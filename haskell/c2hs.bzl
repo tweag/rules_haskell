@@ -29,7 +29,7 @@ def _c2hs_library_impl(ctx):
     args.add([chs_file.path, "-o", hs_file.path])
 
     args.add(["-C-E"])
-    args.add(["--cpp", hs.tools.cc.path])
+    args.add(["--cpp", hs.tools.cc_toolchain.compiler_executable()])
     args.add("-C-includeghcplatform.h")
     args.add("-C-includeghcversion.h")
     args.add(["-C" + x for x in cc.cpp_flags])
@@ -51,7 +51,7 @@ def _c2hs_library_impl(ctx):
     hs.actions.run(
         inputs = depset(transitive = [
             depset(cc.hdrs),
-            depset([hs.tools.cc, hs.tools.ghc, hs.tools.c2hs, chs_file]),
+            depset([hs.tools.ghc, hs.tools.c2hs, chs_file]),
             depset(dep_chi_files),
         ]),
         outputs = [hs_file, chi_file],
