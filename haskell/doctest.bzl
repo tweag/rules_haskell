@@ -158,7 +158,7 @@ def _haskell_doctest_single(target, ctx):
         mnemonic = "HaskellDoctest",
         progress_message = "HaskellDoctest {}".format(ctx.label),
         command = """
-    {doctest} "$@" $(cat {module_list} | tr , ' ') > {output} 2>&1 || rc=$? && cat {output} && exit $rc
+    {doctest} "$@" $(cat {module_list} | tr , ' ') > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
     """.format(doctest = toolchain.doctest[0].path, output = doctest_log.path, module_list = exposed_modules_file.path),
         arguments = [args],
         # NOTE It looks like we must specify the paths here as well as via -L

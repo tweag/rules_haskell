@@ -1,5 +1,7 @@
 module Main where
 
-import Lib (value)
+import Control.Monad (unless)
+import Lib           (value)
 
-main = print value
+main = unless (value == 42)
+    $ error $ "Incorrect lib value. Got " <> show value
