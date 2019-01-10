@@ -223,22 +223,37 @@ def hazel_repositories(
 def hazel_custom_package_hackage(
     package_name,
     version,
-    sha256=None):
+    sha256=None,
+    build_file=None,
+    build_file_content=None):
   """Generate a repo for a Haskell package fetched from Hackage.
 
   Args:
     package_name: string, package name.
     version: string, package version.
     sha256: string, SHA256 hash of archive.
+    build_file: string,
+      the file to use as the BUILD file for this package.
+      Defaults to //third_party/haskel:BUILD.<package_name> if
+      neither build_file nor build_file_content are specified.
+      This attribute is a label relative to the main workspace.
+      build_file and build_file_content are mutually exclusive.
+    build_file_content: string,
+      the content for the BUILD file for this repository.
+      Will fall back to build_file if not specified.
+      build_file and build_file_content are mutually exclusive.
   """
   package_id = package_name + "-" + version
   url = "https://hackage.haskell.org/package/{0}/{1}.tar.gz".format(
     package_id,
     package_id,
   )
+  if not build_file and not build_file_content:
+    build_file = "//third_party/haskell:BUILD.{0}".format(package_name)
   http_archive(
     name = hazel_workspace(package_name),
-    build_file = "//third_party/haskell:BUILD.{0}".format(package_name),
+    build_file = build_file,
+    build_file_content = build_file_content,
     sha256 = sha256,
     strip_prefix = package_id,
     urls = [url],
@@ -251,7 +266,9 @@ def hazel_custom_package_github(
     repo_sha,
     strip_prefix=None,
     archive_sha256=None,
-    clone_via_ssh=False):
+    clone_via_ssh=False,
+    build_file=None,
+    build_file_content=None):
   """Generate a repo for a Haskell package coming from a GitHub repo.
 
   Args:
@@ -264,9 +281,20 @@ def hazel_custom_package_github(
     archive_sha256: hash of the actual archive to download.
     clone_via_ssh: whether to clone the repo using SSH (useful for private
                    repos).
+    build_file: string,
+      the file to use as the BUILD file for this package.
+      Defaults to //third_party/haskel:BUILD.<package_name> if
+      neither build_file nor build_file_content are specified.
+      This attribute is a label relative to the main workspace.
+      build_file and build_file_content are mutually exclusive.
+    build_file_content: string,
+      the content for the BUILD file for this repository.
+      Will fall back to build_file if not specified.
+      build_file and build_file_content are mutually exclusive.
   """
 
-  build_file = "//third_party/haskell:BUILD.{0}".format(package_name)
+  if not build_file and not build_file_content:
+    build_file = "//third_party/haskell:BUILD.{0}".format(package_name)
   url = "https://github.com/{0}/{1}".format(github_user, github_repo)
   ssh_url = "git@github.com:{0}/{1}".format(github_user, github_repo)
 
@@ -274,6 +302,7 @@ def hazel_custom_package_github(
     name = hazel_workspace(package_name),
     remote = ssh_url if clone_via_ssh else url,
     build_file = build_file,
+    build_file_content = build_file_content,
     commit = repo_sha,
     strip_prefix = strip_prefix,
   )
