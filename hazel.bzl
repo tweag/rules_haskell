@@ -237,9 +237,11 @@ def hazel_custom_package_hackage(
       Defaults to //third_party/haskel:BUILD.<package_name> if
       neither build_file nor build_file_content are specified.
       This attribute is a label relative to the main workspace.
+      build_file and build_file_content are mutually exclusive.
     build_file_content: string,
       the content for the BUILD file for this repository.
       Will fall back to build_file if not specified.
+      build_file and build_file_content are mutually exclusive.
   """
   package_id = package_name + "-" + version
   url = "https://hackage.haskell.org/package/{0}/{1}.tar.gz".format(
@@ -284,9 +286,11 @@ def hazel_custom_package_github(
       Defaults to //third_party/haskel:BUILD.<package_name> if
       neither build_file nor build_file_content are specified.
       This attribute is a label relative to the main workspace.
+      build_file and build_file_content are mutually exclusive.
     build_file_content: string,
       the content for the BUILD file for this repository.
       Will fall back to build_file if not specified.
+      build_file and build_file_content are mutually exclusive.
   """
 
   if not build_file and not build_file_content:
