@@ -452,6 +452,10 @@ def cabal_haskell_package(
           name = name,
           visibility = ["//visibility:public"],
       )
+      native.cc_library(
+          name = name + "-cbits",
+          visibility = ["//visibility:public"],
+      )
     else:
       lib_attrs = _get_build_attrs(
         name,
