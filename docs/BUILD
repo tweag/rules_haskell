@@ -6,12 +6,24 @@ genrule(
     outs = ["guide_html.zip"],
     cmd = """
     set -euo pipefail
+    # Nixpkgs_rules are pointing to every bins individually. Here
+    # we are extracting the /bin dir path to append it to the $$PATH.
+    CWD=`pwd`
+    sphinxBinDir=$${CWD}/$$(echo $(locations @sphinx//:bin) | cut -d ' ' -f 1 | xargs dirname)
+    dotBinDir=$${CWD}/$$(echo $(locations @graphviz//:bin) | cut -d ' ' -f 1 | xargs dirname)
+    zipBinDir=$${CWD}/$$(echo $(locations @zip//:bin) | cut -d ' ' -f 1 | xargs dirname)
+    PATH=$${PATH}:$${sphinxBinDir}:$${dotBinDir}:$${zipBinDir}
     sourcedir=$$(dirname $(location conf.py))
     builddir=$$(mktemp -d rules_haskell_docs.XXXX)
     sphinx-build -M html $$sourcedir $$builddir -W -N -q
-    (CWD=`pwd` && cd $$builddir/html && zip -q -r $$CWD/$@ .)
+    (cd $$builddir/html && zip -q -r $$CWD/$@ .)
     rm -rf $$builddir
     """,
+    tools = [
+        "@graphviz//:bin",
+        "@sphinx//:bin",
+        "@zip//:bin",
+    ],
 )
 
 skylark_doc(

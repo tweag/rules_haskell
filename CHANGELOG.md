@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   had been deprecated two versions ago and is removed.
   Use `haskell_import` instead (see docs for usage).
 * The `extra_binaries` field is now no longer supported.
+* Support for Bazel 0.21.
 
 ### Fixed
 

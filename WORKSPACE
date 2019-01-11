@@ -1,14 +1,16 @@
 workspace(name = "io_tweag_rules_haskell")
 
-rules_nixpkgs_version = "f23f48193ab3a26e930989fa5edd89f324ca078d"
-
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 
 haskell_repositories()
 
+rules_nixpkgs_version = "c232b296e795ad688854ff3d3d2de6e7ad45f0b4"
+rules_nixpkgs_sha256 = "5883ea01f3075354ab622cfe82542da01fe2b57a48f4c3f7610b4d14a3fced11"
+
 http_archive(
     name = "io_tweag_rules_nixpkgs",
+    sha256 = rules_nixpkgs_sha256,
     strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
     urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % rules_nixpkgs_version],
 )
@@ -30,6 +32,11 @@ haskell_nixpkgs_package(
     attribute_path = "haskellPackages.ghc",
     build_file = "//haskell:ghc.BUILD",
     nix_file = "//tests:ghc.nix",
+    nixopts = [
+        "--option",
+        "sandbox",
+        "false",
+    ],
     # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly
     # if `repository` is not set, but our nix_file uses `./nixpkgs/`.
     # TODO(Profpatsch)
@@ -71,11 +78,34 @@ register_toolchains(
 
 nixpkgs_cc_configure(
     nix_file = "//nixpkgs:cc-toolchain.nix",
+    nixopts = [
+        "--option",
+        "sandbox",
+        "false",
+    ],
     repository = "@nixpkgs",
 )
 
 nixpkgs_package(
     name = "zlib",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "sphinx",
+    attribute_path = "python36Packages.sphinx",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "graphviz",
+    attribute_path = "graphviz",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "zip",
+    attribute_path = "zip",
     repository = "@nixpkgs",
 )
 
@@ -123,6 +153,9 @@ haskell_nixpkgs_packageset(
     nixopts = [
         "-j",
         "1",
+        "--option",
+        "sandbox",
+        "false",
     ],
     repositories = {"nixpkgs": "@nixpkgs"},
 )
@@ -167,6 +200,11 @@ nixpkgs_package(
       for i in ${nodejs}/*; do ln -s $i; done
       ''
     """,
+    nixopts = [
+        "--option",
+        "sandbox",
+        "false",
+    ],
     repository = "@nixpkgs",
 )
 

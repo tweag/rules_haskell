@@ -66,6 +66,7 @@ haskell_proto_toolchain(
         "@hackage//:bytestring",
         "@hackage//:containers",
         "@hackage//:data-default-class",
+        "@hackage//:deepseq",
         "@hackage//:lens-family",
         "@hackage//:lens-family-core",
         "@hackage//:lens-labels",
