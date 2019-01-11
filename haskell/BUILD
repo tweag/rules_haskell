@@ -18,3 +18,8 @@ toolchain_type(
     name = "toolchain",
     visibility = ["//visibility:public"],
 )
+
+toolchain_type(
+    name = "doctest-toolchain",
+    visibility = ["//visibility:public"],
+)
