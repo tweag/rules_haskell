@@ -77,6 +77,24 @@ filegroup (
 )
 
 nixpkgs_package(
+    name = "sphinx",
+    attribute_path = "python36Packages.sphinx",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "graphviz",
+    attribute_path = "graphviz",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "zip",
+    attribute_path = "zip",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
     name = "zlib.dev",
     build_file_content = """
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
