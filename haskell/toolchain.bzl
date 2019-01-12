@@ -1,7 +1,6 @@
 """Rules for defining toolchains"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(
     ":private/actions/compile.bzl",
     "compile_binary",
@@ -18,7 +17,7 @@ load(":private/set.bzl", "set")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 
-def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
+def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
     if not env:
         env = hs.env
 
@@ -27,13 +26,13 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
     args.add([
         # GHC uses C compiler for assemly, linking and preprocessing as well.
         "-pgma",
-        hs.tools.cc.path,
+        cc.tools.cc,
         "-pgmc",
-        hs.tools.cc.path,
+        cc.tools.cc,
         "-pgml",
-        hs.tools.cc.path,
+        cc.tools.cc,
         "-pgmP",
-        hs.tools.cc.path,
+        cc.tools.cc,
         # Setting -pgm* flags explicitly has the unfortunate side effect
         # of resetting any program flags in the GHC settings file. So we
         # restore them here. See
@@ -46,11 +45,10 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
 
     extra_inputs = [
         hs.tools.ghc,
-        hs.tools.cc,
         # Depend on the version file of the Haskell toolchain,
         # to ensure the version comparison check is run first.
         hs.toolchain.version_file,
-    ]
+    ] + cc.files
     if params_file:
         command = '${1+"$@"} $(< %s)' % params_file.path
         extra_inputs.append(params_file)
@@ -75,9 +73,6 @@ def _run_ghc(hs, inputs, outputs, mnemonic, arguments, params_file = None, env =
     return args
 
 def _haskell_toolchain_impl(ctx):
-    cc_toolchain = find_cpp_toolchain(ctx)
-
-    # Check that we have all that we want.
     for tool in _GHC_BINARIES:
         if tool not in [t.basename for t in ctx.files.tools]:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
@@ -86,38 +81,33 @@ def _haskell_toolchain_impl(ctx):
     ghc_binaries = {}
     for tool in ctx.files.tools:
         if tool.basename in _GHC_BINARIES:
-            ghc_binaries[tool.basename] = tool.path
+            ghc_binaries[tool.basename] = tool
 
     # Run a version check on the compiler.
-    compiler = None
-    for t in ctx.files.tools:
-        if t.basename == "ghc":
-            if compiler:
-                fail("There can only be one tool named `ghc` in scope")
-            compiler = t
     version_file = ctx.actions.declare_file("ghc-version")
+    ghc = ghc_binaries["ghc"]
     ctx.actions.run_shell(
-        inputs = [compiler],
+        inputs = [ghc],
         outputs = [version_file],
         mnemonic = "HaskellVersionCheck",
         command = """
-    {compiler} --numeric-version > {version_file}
-    if [[ "{expected_version}" != "$(< {version_file})" ]]
-    then
-        echo ERROR: GHC version does not match expected version. Your haskell_toolchain specifies {expected_version}, but you have $(< {version_file}) in your environment.
-        exit 1
-    fi
-    """.format(
-            compiler = compiler.path,
+{ghc} --numeric-version > {version_file}
+if [[ "{expected_version}" != "$(< {version_file})" ]]
+then
+    echo ERROR: GHC version does not match expected version.
+    echo Your haskell_toolchain specifies {expected_version},
+    echo but you have $(< {version_file}) in your environment.
+exit 1
+fi
+        """.format(
+            ghc = ghc.path,
             version_file = version_file.path,
             expected_version = ctx.attr.version,
         ),
     )
 
     # Get the versions of every prebuilt package.
-    for t in ctx.files.tools:
-        if t.basename == "ghc-pkg":
-            ghc_pkg = t
+    ghc_pkg = ghc_binaries["ghc-pkg"]
     pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
     ctx.actions.run_shell(
         inputs = [ghc_pkg],
@@ -129,138 +119,13 @@ def _haskell_toolchain_impl(ctx):
         ),
     )
 
-    # NOTE The only way to let various executables know where other
-    # executables are located is often only via the PATH environment variable.
-    # For example, ghc uses gcc which is found on PATH. This forces us provide
-    # correct PATH value (with e.g. gcc on it) when we call executables such
-    # as ghc. However, this hurts hermeticity because if we construct PATH
-    # naively, i.e. through concatenation of directory names of all
-    # executables of interest, we also make other neighboring executables
-    # visible, and they indeed can influence the building process, which is
-    # undesirable.
-    #
-    # To prevent this, we create a special directory populated with symbolic
-    # links to all executables we want to make visible, and only to them. Then
-    # we make all rules depend on some of these symlinks, and provide PATH
-    # (always the same) that points only to this prepared directory with
-    # symlinks. This helps hermeticity and forces us to be explicit about all
-    # programs we need/use for building. Setting PATH and listing as inputs
-    # are both necessary for a tool to be available with this approach.
-
-    visible_binaries = "visible-binaries"
-    symlinks = set.empty()
-    inputs = []
-    inputs.extend(ctx.files.tools)
-    inputs.extend(ctx.files._crosstool)
-
-    targets_r = {}
-    targets_r.update({
-        "ar": cc_toolchain.ar_executable(),
-        "cc": cc_toolchain.compiler_executable(),
-        "ld": cc_toolchain.ld_executable(),
-        "nm": cc_toolchain.nm_executable(),
-        "cpp": cc_toolchain.preprocessor_executable(),
-        "strip": cc_toolchain.strip_executable(),
-    })
-    targets_r.update(ghc_binaries)
-
-    # If running on darwin but XCode is not installed (i.e., only the Command
-    # Line Tools are available), then Bazel will make ar_executable point to
-    # "/usr/bin/libtool". Since we call ar directly, override it.
-    # TODO: remove this if Bazel fixes its behavior.
-    # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
-    if targets_r["ar"].find("libtool") >= 0:
-        targets_r["ar"] = "/usr/bin/ar"
-
-    ar_runfiles = []
-
-    # "xcrunwrapper.sh" is a Bazel-generated dependency of the `ar` program on macOS.
-    xcrun_candidates = [f for f in ctx.files._crosstool if paths.basename(f.path) == "xcrunwrapper.sh"]
-    if xcrun_candidates:
-        xcrun = xcrun_candidates[0]
-        ar_runfiles += [xcrun]
-        targets_r["xcrunwrapper.sh"] = xcrun.path
-
     if ctx.attr.c2hs != None:
-        targets_r["c2hs"] = ctx.file.c2hs.path
-        inputs.append(ctx.file.c2hs)
-
-    extra_binaries_names = set.empty()
-    for binary in ctx.files.extra_binaries:
-        targets_r[binary.basename] = binary.path
-        inputs.append(binary)
-        set.mutable_insert(extra_binaries_names, binary.basename)
-
-    extra_binaries_files = []
-    for target in targets_r:
-        symlink = ctx.actions.declare_file(
-            paths.join(visible_binaries, target),
-        )
-        symlink_target = targets_r[target]
-        if not paths.is_absolute(symlink_target):
-            symlink_target = paths.join("/".join([".."] * len(symlink.dirname.split("/"))), symlink_target)
-        ctx.actions.run(
-            inputs = inputs,
-            outputs = [symlink],
-            mnemonic = "Symlink",
-            executable = "ln",
-            # FIXME Currently this part of the process is not hermetic. This
-            # should be adjusted when
-            #
-            # https://github.com/bazelbuild/bazel/issues/4681
-            #
-            # is implemented.
-            use_default_shell_env = True,
-            arguments = [
-                "-s",
-                symlink_target,
-                symlink.path,
-            ],
-        )
-        if target == "xcrunwrapper.sh":
-            ar_runfiles += [symlink]
-
-        if set.is_member(extra_binaries_names, target):
-            extra_binaries_files += [symlink]
-
-        set.mutable_insert(symlinks, symlink)
-
-    targets_w = [
-        "bash",
-        "cat",
-        "tr",
-        "cp",
-        "grep",
-        "ln",
-        "mkdir",
-        "mktemp",
-        "rmdir",
-    ]
-
-    for target in targets_w:
-        symlink = ctx.actions.declare_file(
-            paths.join(visible_binaries, paths.basename(target)),
-        )
-        ctx.actions.run_shell(
-            inputs = ctx.files.tools,
-            outputs = [symlink],
-            mnemonic = "Symlink",
-            command = """
-      mkdir -p $(dirname "{symlink}")
-      ln -s $(which "{target}") "{symlink}"
-      """.format(
-                target = target,
-                symlink = symlink.path,
-            ),
-            use_default_shell_env = True,
-        )
-        set.mutable_insert(symlinks, symlink)
+        ghc_binaries["c2hs"] = ctx.file.c2hs
 
     tools_struct_args = {
-        tool.basename.replace("-", "_"): tool
-        for tool in set.to_list(symlinks)
+        name.replace("-", "_"): file
+        for name, file in ghc_binaries.items()
     }
-    tools_runfiles_struct_args = {"ar": ar_runfiles}
 
     locale_archive = None
 
@@ -271,8 +136,6 @@ def _haskell_toolchain_impl(ctx):
         platform_common.ToolchainInfo(
             name = ctx.label.name,
             tools = struct(**tools_struct_args),
-            tools_runfiles = struct(**tools_runfiles_struct_args),
-            extra_binaries = extra_binaries_files,
             compiler_flags = ctx.attr.compiler_flags,
             repl_ghci_args = ctx.attr.repl_ghci_args,
             haddock_flags = ctx.attr.haddock_flags,
@@ -288,11 +151,6 @@ def _haskell_toolchain_impl(ctx):
                 package = package,
                 run_ghc = _run_ghc,
             ),
-            # All symlinks are guaranteed to be in the same directory so we just
-            # provide directory name of the first one (the collection cannot be
-            # empty). The rest of the program may rely consider visible_bin_path
-            # as the path to visible binaries, without recalculations.
-            visible_bin_path = set.to_list(symlinks)[0].dirname,
             is_darwin = ctx.attr.is_darwin,
             version = ctx.attr.version,
             # Pass through the version_file, that it can be required as
@@ -330,17 +188,6 @@ _haskell_toolchain = rule(
         "is_darwin": attr.bool(
             doc = "Whether compile on and for Darwin (macOS).",
             mandatory = True,
-        ),
-        # TODO: document
-        "_crosstool": attr.label(
-            default = Label("//tools/defaults:crosstool"),
-        ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
-        "extra_binaries": attr.label_list(
-            doc = "Additional binaries necessary for building",
-            default = [],
         ),
         "locale": attr.string(
             default = "en_US.UTF-8",

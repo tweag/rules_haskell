@@ -80,22 +80,26 @@ def _haskell_lint_aspect_impl(target, ctx):
             set.to_depset(build_info.interface_dirs),
             set.to_depset(build_info.dynamic_libraries),
             depset([e.mangled_lib for e in set.to_list(build_info.external_libraries)]),
-            depset([
-                hs.tools.ghc,
-                hs.tools.cat,
-            ]),
+            depset([hs.tools.ghc]),
         ]),
         outputs = [lint_log],
         mnemonic = "HaskellLint",
         progress_message = "HaskellLint {}".format(ctx.label),
         command = """
-    ghc "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
-    """.format(
+        {env}
+        {ghc} "$@" > {output} 2>&1 || rc=$? && cat {output} && exit $rc
+        """.format(
             ghc = hs.tools.ghc.path,
             output = lint_log.path,
+            # XXX Workaround
+            # https://github.com/bazelbuild/bazel/issues/5980.
+            env = "\n".join([
+                "export {}={}".format(k, v)
+                for k, v in hs.env.items()
+            ]),
         ),
         arguments = [args],
-        env = hs.env,
+        use_default_shell_env = True,
     )
 
     lint_info = HaskellLintInfo(outputs = set.singleton(lint_log))

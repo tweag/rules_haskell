@@ -36,8 +36,8 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
     hs_out = declare_compiled(hs, hsc_file, ".hs", directory = hsc_dir_raw)
     args.add([hsc_file.path, "-o", hs_out.path])
 
-    args.add(["-c", hs.tools.cc])
-    args.add(["-l", hs.tools.cc])
+    args.add(["-c", cc.tools.cc])
+    args.add(["-l", cc.tools.cc])
     args.add("-ighcplatform.h")
     args.add("-ighcversion.h")
     args.add(["--cflag=" + f for f in cc.cpp_flags])
@@ -49,7 +49,8 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
     hs.actions.run(
         inputs = depset(transitive = [
             depset(cc.hdrs),
-            depset([hs.tools.cc, hsc_file]),
+            depset([hsc_file]),
+            depset(cc.files),
         ]),
         outputs = [hs_out],
         mnemonic = "HaskellHsc2hs",
@@ -250,7 +251,6 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             set.to_depset(dep_info.dynamic_libraries),
             depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
             java.inputs,
-            depset([hs.tools.cc]),
             locale_archive_depset,
         ]),
         objects_dir = objects_dir,
@@ -291,7 +291,8 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
 
     hs.toolchain.actions.run_ghc(
         hs,
-        inputs = c.inputs + hs.extra_binaries,
+        cc,
+        inputs = c.inputs,
         outputs = c.outputs,
         mnemonic = "HaskellBuildBinary",
         progress_message = "HaskellBuildBinary {}".format(hs.label),
@@ -348,7 +349,8 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
 
     hs.toolchain.actions.run_ghc(
         hs,
-        inputs = c.inputs + hs.extra_binaries,
+        cc,
+        inputs = c.inputs,
         outputs = c.outputs,
         mnemonic = "HaskellBuildLibrary",
         progress_message = "HaskellBuildLibrary {}".format(hs.label),
