@@ -43,15 +43,8 @@ jobs:
           command: |
             curl https://nixos.org/nix/install | sh
       - run:
-          name: Bazel linter
-          shell: /bin/bash -eilo pipefail
-          command: |
-            nix-shell --run 'bazel run //:buildifier'
           name: Run tests
           shell: /bin/bash -eilo pipefail
-          # bazel does not support recursive bazel call, so we
-          # cannot use bazel run here because the test runner uses
-          # bazel
           command: nix-shell --arg docTools false --pure --run 'bazel build //tests:run-tests && ./bazel-bin/tests/run-tests'
 
 workflows:
