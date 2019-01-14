@@ -4,6 +4,18 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/path_utils.bzl", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
+load(":private/path_utils.bzl", "get_lib_name")
+
+def _get_extra_libraries(ext_libs):
+    extra_libs = []
+    seen_libs = set.empty()
+    for ext_lib in set.to_list(ext_libs):
+        lib = ext_lib.mangled_lib
+        lib_name = get_lib_name(lib)
+        if not set.is_member(seen_libs, lib_name):
+            set.mutable_insert(seen_libs, lib_name)
+            extra_libs.append(lib_name)
+    return extra_libs
 
 def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, dynamic_library, exposed_modules_file, other_modules, my_pkg_id, static_library_prof):
     """Create GHC package using ghc-pkg.
@@ -50,6 +62,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         "library-dirs": "${pkgroot}",
         "dynamic-library-dirs": "${pkgroot}",
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
+        "extra-libraries": " ".join(_get_extra_libraries(dep_info.external_libraries)),
         "depends": ", ".join(
             # XXX Ideally we would like to specify here prebuilt dependencies
             # too, but we don't know their versions, and package ids without
