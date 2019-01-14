@@ -22,7 +22,6 @@ def haskell_context(ctx, attr = None):
     )
 
     env = {
-        "PATH": toolchain.visible_bin_path,
         "LANG": toolchain.locale,
     }
 
@@ -35,8 +34,6 @@ def haskell_context(ctx, attr = None):
         label = ctx.label,
         toolchain = toolchain,
         tools = toolchain.tools,
-        tools_runfiles = toolchain.tools_runfiles,
-        extra_binaries = toolchain.extra_binaries,
         src_root = src_root,
         env = env,
         mode = ctx.var["COMPILATION_MODE"],

@@ -29,7 +29,7 @@ def _c2hs_library_impl(ctx):
     args.add([chs_file.path, "-o", hs_file.path])
 
     args.add(["-C-E"])
-    args.add(["--cpp", hs.tools.cc.path])
+    args.add(["--cpp", cc.tools.cc])
     args.add("-C-includeghcplatform.h")
     args.add("-C-includeghcversion.h")
     args.add(["-C" + x for x in cc.cpp_flags])
@@ -48,14 +48,22 @@ def _c2hs_library_impl(ctx):
     ]
     args.add(chi_includes)
 
-    hs.actions.run(
+    hs.actions.run_shell(
         inputs = depset(transitive = [
             depset(cc.hdrs),
-            depset([hs.tools.cc, hs.tools.ghc, hs.tools.c2hs, chs_file]),
+            depset([hs.tools.ghc, hs.tools.c2hs, chs_file]),
             depset(dep_chi_files),
+            depset(cc.files),
         ]),
         outputs = [hs_file, chi_file],
-        executable = ctx.file._chs_wrapper,
+        command = """
+        # Include libdir in include path just like hsc2hs does.
+        libdir=$({ghc} --print-libdir)
+        {c2hs} -C-I$libdir/include "$@"
+        """.format(
+            ghc = hs.tools.ghc.path,
+            c2hs = hs.tools.c2hs.path,
+        ),
         mnemonic = "HaskellC2Hs",
         arguments = [args],
         env = hs.env,
@@ -83,10 +91,6 @@ c2hs_library = rule(
         "srcs": attr.label_list(allow_files = [".chs"]),
         "src_strip_prefix": attr.string(
             doc = "Directory in which module hierarchy starts.",
-        ),
-        "_chs_wrapper": attr.label(
-            allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:private/c2hs_wrapper.sh"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
