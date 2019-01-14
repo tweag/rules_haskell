@@ -64,9 +64,8 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
         "extra-libraries": " ".join(_get_extra_libraries(dep_info.extra_libraries)),
         "depends": ", ".join(
-            # XXX Ideally we would like to specify here prebuilt dependencies
-            # too, but we don't know their versions, and package ids without
-            # versions will be rejected as unknown.
+            # Prebuilt dependencies are added further down, since their
+            # package-ids are not available as strings but in build outputs.
             set.to_list(dep_info.package_ids),
         ),
     }
@@ -83,18 +82,37 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         ]) + "\n",
     )
 
+    # Create a file of prebuilt package ids to append to the depends section.
+    prebuilt_package_ids = hs.actions.declare_file(target_unique_name(hs, "prebuilt_packages_ids"))
+    hs.actions.run_shell(
+        inputs = [hs.tools.ghc_pkg],
+        outputs = [prebuilt_package_ids],
+        command = """
+        set -ex
+        for pkg in $2; do
+          $1 --simple-output -v1 field $pkg id
+        done | tr "\\n" " " > $3""",
+        arguments = [
+            hs.tools.ghc_pkg.path,
+            " ".join(set.to_list(dep_info.prebuilt_dependencies)),
+            prebuilt_package_ids.path,
+        ],
+    )
+
     # Combine exposed modules and other metadata to form the package
     # configuration file.
     hs.actions.run_shell(
-        inputs = [metadata_file, exposed_modules_file],
+        inputs = [metadata_file, exposed_modules_file, prebuilt_package_ids],
         outputs = [conf_file],
         command = """
-        cat $1 > $3
-        echo "exposed-modules: $(< $2)" >> $3
+        cat $1 > $4
+        echo "exposed-modules: $(< $2)" >> $4
+        echo "depends: $(< $3)" >> $4
         """,
         arguments = [
             metadata_file.path,
             exposed_modules_file.path,
+            prebuilt_package_ids.path,
             conf_file.path,
         ],
         use_default_shell_env = True,
