@@ -13,6 +13,34 @@ package(default_testonly = 1)
 
 ghc_version = "8.4.4"
 
+config_setting(
+    name = "on_linux",
+    constraint_values = [
+        "@bazel_tools//platforms:linux",
+    ],
+)
+
+config_setting(
+    name = "on_osx",
+    constraint_values = [
+        "@bazel_tools//platforms:osx",
+    ],
+)
+
+config_setting(
+    name = "on_freebsd",
+    constraint_values = [
+        "@bazel_tools//platforms:freebsd",
+    ],
+)
+
+config_setting(
+    name = "on_windows",
+    constraint_values = [
+        "@bazel_tools//platforms:windows",
+    ],
+)
+
 haskell_toolchain(
     name = "ghc",
     # This toolchain is morally testonly.  However, that would break
@@ -20,7 +48,14 @@ haskell_toolchain(
     # proto_library rules (from com_google_protobuf) can't themselves
     # be testonly.
     testonly = 0,
-    c2hs = "@hackage-c2hs//:bin",
+    c2hs = select(
+        {
+            ":on_linux": "@hackage-c2hs//:bin",
+            ":on_osx": "@hackage-c2hs//:bin",
+            ":on_freebsd": "@hackage-c2hs//:bin",
+            ":on_windows": None,
+        },
+    ),
     compiler_flags = [
         "-XStandaloneDeriving",  # Flag used at compile time
         "-threaded",  # Flag used at link time
