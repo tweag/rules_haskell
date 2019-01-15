@@ -76,6 +76,7 @@ def _haskell_import_impl(ctx):
         prebuilt_dependencies = set.empty(),
         external_libraries = set.empty(),
         direct_prebuilt_deps = set.empty(),
+        extra_libraries = set.empty(),
     )
     html_files = list(ctx.attr.haddock_html.files)
     transitive_html = {ctx.attr.package_id: local_haddock_html} if html_files != [] else {}

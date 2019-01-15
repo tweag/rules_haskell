@@ -151,15 +151,26 @@ def _haskell_doctest_single(target, ctx):
             depset([exposed_modules_file]),
             depset(
                 toolchain.doctest +
-                [hs.tools.cat, hs.tools.ghc],
+                [hs.tools.ghc],
             ),
         ]),
         outputs = [doctest_log],
         mnemonic = "HaskellDoctest",
         progress_message = "HaskellDoctest {}".format(ctx.label),
         command = """
-    {doctest} "$@" $(cat {module_list} | tr , ' ') > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
-    """.format(doctest = toolchain.doctest[0].path, output = doctest_log.path, module_list = exposed_modules_file.path),
+        {env}
+        {doctest} "$@" $(cat {module_list} | tr , ' ') > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
+        """.format(
+            doctest = toolchain.doctest[0].path,
+            output = doctest_log.path,
+            module_list = exposed_modules_file.path,
+            # XXX Workaround
+            # https://github.com/bazelbuild/bazel/issues/5980.
+            env = "\n".join([
+                "export {}={}".format(k, v)
+                for k, v in hs.env.items()
+            ]),
+        ),
         arguments = [args],
         # NOTE It looks like we must specify the paths here as well as via -L
         # flags because there are at least two different "consumers" of the info

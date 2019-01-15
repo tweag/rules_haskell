@@ -1,0 +1,16 @@
+jobs:
+- job: Windows
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - bash: |
+      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.20.0/bazel-0.20.0-windows-x86_64.exe
+      mv bazel-*.exe bazel.exe
+      mkdir /c/bazel
+      mv bazel.exe /c/bazel
+    displayName: 'Install Bazel'
+  # There is no Windows support yet, so we simply make sure Bazel is installed
+  # https://github.com/tweag/rules_haskell/projects/2
+  - bash: |
+      /c/bazel/bazel.exe version
+    displayName: 'Run Bazel'

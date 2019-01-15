@@ -89,6 +89,25 @@ def _haskell_doc_aspect_impl(target, ctx):
         depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
     )
 
+    # TODO(mboes): we should be able to instantiate this template only
+    # once per toolchain instance, rather than here.
+    haddock_wrapper = ctx.actions.declare_file("haddock_wrapper-{}".format(hs.name))
+    ctx.actions.expand_template(
+        template = ctx.file._haddock_wrapper_tpl,
+        output = haddock_wrapper,
+        substitutions = {
+            "%{ghc-pkg}": hs.tools.ghc_pkg.path,
+            "%{haddock}": hs.tools.haddock.path,
+            # XXX Workaround
+            # https://github.com/bazelbuild/bazel/issues/5980.
+            "%{env}": "\n".join([
+                "export {}={}".format(k, v)
+                for k, v in hs.env.items()
+            ]),
+        },
+        is_executable = True,
+    )
+
     ctx.actions.run(
         inputs = depset(transitive = [
             set.to_depset(target[HaskellBuildInfo].package_caches),
@@ -105,24 +124,21 @@ def _haskell_doc_aspect_impl(target, ctx):
             set.to_depset(target[HaskellLibraryInfo].source_files),
             target[HaskellLibraryInfo].extra_source_files,
             depset([
-                hs.tools.bash,
                 hs.tools.ghc_pkg,
                 hs.tools.haddock,
-                hs.tools.mktemp,
-                hs.tools.rmdir,
             ]),
             locale_archive_depset,
         ]),
         outputs = [haddock_file, html_dir],
         mnemonic = "HaskellHaddock",
         progress_message = "HaskellHaddock {}".format(ctx.label),
-        executable = ctx.file._haddock_wrapper,
+        executable = haddock_wrapper,
         arguments = [
             prebuilt_deps,
             args,
             ghc_args,
         ],
-        env = hs.env,
+        use_default_shell_env = True,
     )
 
     transitive_html.update({package_id: html_dir})
@@ -140,9 +156,9 @@ def _haskell_doc_aspect_impl(target, ctx):
 haskell_doc_aspect = aspect(
     _haskell_doc_aspect_impl,
     attrs = {
-        "_haddock_wrapper": attr.label(
+        "_haddock_wrapper_tpl": attr.label(
             allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:private/haddock_wrapper.sh"),
+            default = Label("@io_tweag_rules_haskell//haskell:private/haddock_wrapper.sh.tpl"),
         ),
     },
     attr_aspects = ["deps"],
@@ -191,11 +207,7 @@ def _haskell_doc_rule_impl(ctx):
         html_dict_copied[package_id] = output_dir
 
         ctx.actions.run_shell(
-            inputs = [
-                hs.tools.cp,
-                hs.tools.mkdir,
-                html_dir,
-            ],
+            inputs = [html_dir],
             outputs = [output_dir],
             command = """
       mkdir -p "{doc_dir}"

@@ -4,6 +4,8 @@
 
 set -eo pipefail
 
+%{env}
+
 PREBUILT_DEPS_FILE=$1
 shift
 
@@ -19,8 +21,8 @@ do
     # If there were more than one file, going by the output for the `depends`,
     # the file names would be separated by a space character.
     # https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html#installedpackageinfo-a-package-specification
-    haddock_interfaces=$(ghc-pkg --simple-output field $pkg haddock-interfaces)
-    haddock_html=$(ghc-pkg --simple-output field $pkg haddock-html)
+    haddock_interfaces=$(%{ghc-pkg} --simple-output field $pkg haddock-interfaces)
+    haddock_html=$(%{ghc-pkg} --simple-output field $pkg haddock-html)
 
     # Sometimes the referenced `.haddock` file does not exist
     # (e.g. for `nixpkgs.haskellPackages` deps with haddock disabled).
@@ -43,5 +45,5 @@ cleanup() { rmdir "$TEMP"; }
 # XXX Override TMPDIR to prevent race conditions on certain platforms.
 # This is a workaround for
 # https://github.com/haskell/haddock/issues/894.
-TMPDIR=$TEMP haddock "${extra_args[@]}" "$@"
+TMPDIR=$TEMP %{haddock} "${extra_args[@]}" "$@"
 cleanup

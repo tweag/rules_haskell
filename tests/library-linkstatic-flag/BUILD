@@ -58,7 +58,7 @@ sh_library(
 
 # ensure that linkstatic=True only creates only .a, no .so
 sh_inline_test(
-    name = "test-linkstatic-static-only",
+    name = "library-linkstatic-flag",
     size = "small",
     # pass the file names as arguments
     args = ["$(rootpaths :library-static-only-libraries)"],

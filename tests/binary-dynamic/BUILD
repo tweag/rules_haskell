@@ -6,7 +6,7 @@ load(
 package(default_testonly = 1)
 
 haskell_test(
-    name = "binary-mostly-static",
+    name = "binary-dynamic",
     srcs = ["Main.hs"],
     linkstatic = False,
     visibility = ["//visibility:public"],

@@ -22,6 +22,10 @@ load(
 CcInteropInfo = provider(
     doc = "Information needed for interop with cc rules.",
     fields = {
+        "tools": "Tools from the CC toolchain",
+        # See the following for why this is needed:
+        # https://stackoverflow.com/questions/52769846/custom-c-rule-with-the-cc-common-api
+        "files": "Files for all tools (input to any action that uses tools)",
         "hdrs": "CC headers",
         "cpp_flags": "Preprocessor flags",
         "compiler_flags": "Flags for compilation",
@@ -121,7 +125,24 @@ def cc_interop_info(ctx):
     # XXX Workaround https://github.com/bazelbuild/bazel/issues/6876.
     linker_flags = [flag for flag in linker_flags if flag not in ["-shared"]]
 
+    tools = {
+        "ar": cc_toolchain.ar_executable(),
+        "cc": cc_toolchain.compiler_executable(),
+        "ld": cc_toolchain.ld_executable(),
+        "cpp": cc_toolchain.preprocessor_executable(),
+    }
+
+    # If running on darwin but XCode is not installed (i.e., only the Command
+    # Line Tools are available), then Bazel will make ar_executable point to
+    # "/usr/bin/libtool". Since we call ar directly, override it.
+    # TODO: remove this if Bazel fixes its behavior.
+    # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
+    if tools["ar"].find("libtool") >= 0:
+        tools["ar"] = "/usr/bin/ar"
+
     return CcInteropInfo(
+        tools = struct(**tools),
+        files = ctx.files._cc_toolchain,
         hdrs = hdrs.to_list(),
         cpp_flags = cpp_flags,
         include_args = include_args,

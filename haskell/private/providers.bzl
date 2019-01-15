@@ -32,6 +32,7 @@ HaskellBuildInfo = provider(
                               "because the Darwin linker needs the original library path, " +
                               "while the Linux linker needs the mangled path.",
         "direct_prebuilt_deps": "Set of direct prebuilt dependencies.",
+        "extra_libraries": "The direct non-Haskell dependencies of this target. These are added to the extra-libraries field in the package's database.",
     },
 )
 

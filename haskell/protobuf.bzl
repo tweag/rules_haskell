@@ -161,6 +161,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         files = struct(
             srcs = hs_files,
             extra_srcs = depset(),
+            _cc_toolchain = ctx.files._cc_toolchain,
         ),
         executable = struct(
             _ls_modules = ctx.executable._ls_modules,

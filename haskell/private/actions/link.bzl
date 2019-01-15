@@ -205,6 +205,7 @@ def link_binary(
     )
     hs.toolchain.actions.run_ghc(
         hs,
+        cc,
         inputs = depset(transitive = [
             depset(extra_srcs),
             set.to_depset(dep_info.package_caches),
@@ -213,7 +214,6 @@ def link_binary(
             depset(dep_info.static_libraries_prof),
             depset([objects_dir]),
             depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
-            depset(hs.extra_binaries),
         ]),
         outputs = [compile_output],
         mnemonic = "HaskellLinkBinary",
@@ -298,8 +298,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
         with_profiling = with_profiling,
     )
     args = hs.actions.args()
-    inputs = ([objects_dir, objects_dir_manifest, hs.tools.ar] +
-              hs.tools_runfiles.ar + hs.extra_binaries)
+    inputs = [objects_dir, objects_dir_manifest] + cc.files
 
     if hs.toolchain.is_darwin:
         # On Darwin, ar doesn't support params files.
@@ -316,7 +315,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
             inputs = inputs,
             outputs = [static_library],
             mnemonic = "HaskellLinkStaticLibrary",
-            command = "{ar} qc $1 $(< $2)".format(ar = hs.tools.ar.path),
+            command = "{ar} qc $1 $(< $2)".format(ar = cc.tools.ar),
             arguments = [args],
 
             # Use the default macosx toolchain
@@ -332,7 +331,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
             inputs = inputs,
             outputs = [static_library],
             mnemonic = "HaskellLinkStaticLibrary",
-            executable = hs.tools.ar,
+            executable = cc.tools.ar,
             arguments = [args],
         )
 
@@ -405,8 +404,8 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
 
     hs.toolchain.actions.run_ghc(
         hs,
+        cc,
         inputs = depset([objects_dir], transitive = [
-            depset(hs.extra_binaries),
             depset(extra_srcs),
             set.to_depset(dep_info.package_caches),
             set.to_depset(dep_info.dynamic_libraries),

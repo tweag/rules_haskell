@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 * The `prebuilt_dependencies` attribute of all haskell rules
   had been deprecated two versions ago and is removed.
   Use `haskell_import` instead (see docs for usage).
+* The `extra_binaries` field is now no longer supported.
+
+### Fixed
+
+* Fix static linking with C libraries that are indirectly depended upon
 
 ## [0.7] - 2018-12-24
 
