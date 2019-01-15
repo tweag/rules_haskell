@@ -26,12 +26,12 @@ HaskellBuildInfo = provider(
         "static_libraries_prof": "Ordered collection of static libraries with profiling.",
         "dynamic_libraries": "Set of dynamic libraries.",
         "interface_dirs": "Set of interface dirs belonging to the packages.",
-        "prebuilt_dependencies": "Transitive collection of names of wired-in Haskell dependencies.",
+        "prebuilt_dependencies": "Transitive collection of info of wired-in Haskell dependencies.",
         "external_libraries": "Set of dynamic shared libraries needed for linking. " +
                               "Each entry is a struct(lib, mangled_lib) " +
                               "because the Darwin linker needs the original library path, " +
                               "while the Linux linker needs the mangled path.",
-        "direct_prebuilt_deps": "Set of direct prebuilt dependencies.",
+        "direct_prebuilt_deps": "Set of info of direct prebuilt dependencies.",
         "extra_libraries": "The direct non-Haskell dependencies of this target. These are added to the extra-libraries field in the package's database.",
     },
 )
@@ -71,6 +71,7 @@ HaskellPrebuiltPackageInfo = provider(
     doc = "Information about a prebuilt GHC package.",
     fields = {
         "package": "Package name",
+        "id_file": "File containing package id",
     },
 )
 

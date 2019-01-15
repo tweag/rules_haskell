@@ -82,37 +82,26 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         ]) + "\n",
     )
 
-    # Create a file of prebuilt package ids to append to the depends section.
-    prebuilt_package_ids = hs.actions.declare_file(target_unique_name(hs, "prebuilt_packages_ids"))
-    hs.actions.run_shell(
-        inputs = [hs.tools.ghc_pkg],
-        outputs = [prebuilt_package_ids],
-        command = """
-        set -ex
-        for pkg in $2; do
-          $1 --simple-output -v1 field $pkg id
-        done | tr "\\n" " " > $3""",
-        arguments = [
-            hs.tools.ghc_pkg.path,
-            " ".join(set.to_list(dep_info.prebuilt_dependencies)),
-            prebuilt_package_ids.path,
-        ],
-    )
+    # Collect the package id files of all prebuilt dependencies.
+    prebuilt_deps_id_files = [
+        dep.id_file
+        for dep in set.to_list(dep_info.prebuilt_dependencies)
+    ]
 
     # Combine exposed modules and other metadata to form the package
     # configuration file.
     hs.actions.run_shell(
-        inputs = [metadata_file, exposed_modules_file, prebuilt_package_ids],
+        inputs = [metadata_file, exposed_modules_file] + prebuilt_deps_id_files,
         outputs = [conf_file],
         command = """
         cat $1 > $4
         echo "exposed-modules: $(< $2)" >> $4
-        echo "depends: $(< $3)" >> $4
+        echo "depends: $(cat $3 | tr "\\n" " ")" >> $4
         """,
         arguments = [
             metadata_file.path,
             exposed_modules_file.path,
-            prebuilt_package_ids.path,
+            " ".join([f.path for f in prebuilt_deps_id_files]),
             conf_file.path,
         ],
         use_default_shell_env = True,

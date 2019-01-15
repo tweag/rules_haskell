@@ -221,6 +221,9 @@ haskell_import = rule(
     attrs = dict(
         package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
     ),
+    toolchains = [
+        "@io_tweag_rules_haskell//haskell:toolchain",
+    ],
 )
 """Import packages that are prebuilt outside of Bazel.
 

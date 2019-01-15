@@ -46,7 +46,7 @@ def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_pack
     # registration (see a comment there), we have to pass all transitive
     # prebuilt_dependencies on linking like this
     for prebuilt_dep in set.to_list(build_info.direct_prebuilt_deps if use_direct else build_info.prebuilt_dependencies):
-        args.extend(["-package", prebuilt_dep])
+        args.extend(["-package", prebuilt_dep.package])
 
     # Expose all bazel dependencies
     for package in set.to_list(build_info.package_ids):
