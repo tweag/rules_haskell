@@ -371,7 +371,7 @@ def haskell_import_impl(ctx):
         inputs = [hs.tools.ghc_pkg],
         outputs = [id_file],
         command = """
-        $1 --simple-output -v1 field $2 id > $3
+        "$1" --simple-output -v1 field "$2" id > "$3"
         """,
         arguments = [
             hs.tools.ghc_pkg.path,
