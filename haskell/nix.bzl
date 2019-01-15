@@ -119,7 +119,14 @@ def import_packages(name):
         extra_args_raw = extra_args_raw,
     )
 
-    repository_ctx.file("packages.bzl", bzl_file_content)
+    bzl_file_content_windows = ""
+
+    is_windows = repository_ctx.os.name.startswith("windows")
+
+    if is_windows:
+        repository_ctx.file("packages.bzl", bzl_file_content_windows)
+    else:
+        repository_ctx.file("packages.bzl", bzl_file_content)
 
 _gen_imports_str = repository_rule(
     implementation = _gen_imports_impl,
@@ -206,6 +213,7 @@ def haskell_nixpkgs_packageset(name, base_attribute_path, repositories = {}, **k
         build_file_content = """
 exports_files(["all-haskell-packages.bzl"])
         """,
+        fail_not_supported = False,
         **kwargs
     )
     _gen_imports(

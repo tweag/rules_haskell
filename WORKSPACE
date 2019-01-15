@@ -1,5 +1,7 @@
 workspace(name = "io_tweag_rules_haskell")
 
+rules_nixpkgs_version = "8cd16d916bbb8abf91678d160da2587a56a010da"
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 
@@ -7,9 +9,8 @@ haskell_repositories()
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
-    sha256 = "4f924d839d3a5896e3e22ba1282c686b2c078fd4c98d564ec427ac83ec66302d",
-    strip_prefix = "rules_nixpkgs-0.5.1",
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.5.1.tar.gz"],
+    strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % rules_nixpkgs_version],
 )
 
 load(
