@@ -357,6 +357,13 @@ def haskell_library_impl(ctx):
         default_info,
     ]
 
+def haskell_import_impl(ctx):
+    if ctx.attr.package:
+        package = ctx.attr.package
+    else:
+        package = ctx.label.name
+    return [HaskellPrebuiltPackageInfo(package = package)]
+
 def _exposed_modules_reexports(exports):
     """Creates a ghc-pkg-compatible list of reexport declarations.
 
