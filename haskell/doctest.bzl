@@ -159,7 +159,7 @@ def _haskell_doctest_single(target, ctx):
         progress_message = "HaskellDoctest {}".format(ctx.label),
         command = """
         {env}
-        {doctest} "$@" $(cat {module_list} | tr , ' ') > {output} 2>&1 || rc=$? && cat {output} && exit $rc
+        {doctest} "$@" $(cat {module_list} | tr , ' ') > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
         """.format(
             doctest = toolchain.doctest[0].path,
             output = doctest_log.path,

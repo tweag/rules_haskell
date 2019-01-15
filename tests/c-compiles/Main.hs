@@ -1,8 +1,8 @@
 module Main (main) where
 
-import Lib (ten)
+import Control.Monad (unless)
+import Lib           (ten)
 
 main :: IO ()
-main = if ten == 10
-       then putStrLn "c-compiles"
-       else error $ "Unexpected result from Lib.ten: " ++ show ten
+main = unless (ten == 10)
+    $ error $ "Incorrect lib value. Got " <> show ten
