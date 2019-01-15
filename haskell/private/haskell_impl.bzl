@@ -306,6 +306,7 @@ def haskell_library_impl(ctx):
         interface_dirs = interface_dirs,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
         external_libraries = dep_info.external_libraries,
+        extra_libraries = dep_info.extra_libraries,
     )
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),

@@ -62,7 +62,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         "library-dirs": "${pkgroot}",
         "dynamic-library-dirs": "${pkgroot}",
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
-        "extra-libraries": " ".join(_get_extra_libraries(dep_info.external_libraries)),
+        "extra-libraries": " ".join(_get_extra_libraries(dep_info.extra_libraries)),
         "depends": ", ".join(
             # XXX Ideally we would like to specify here prebuilt dependencies
             # too, but we don't know their versions, and package ids without

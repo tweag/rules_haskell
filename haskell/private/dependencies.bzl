@@ -89,6 +89,7 @@ def gather_dep_info(ctx):
         # a set of struct(lib, mangled_lib)
         external_libraries = set.empty(),
         direct_prebuilt_deps = set.empty(),
+        extra_libraries = set.empty(),
     )
 
     for dep in ctx.attr.deps:
@@ -110,6 +111,7 @@ def gather_dep_info(ctx):
                 prebuilt_dependencies = set.mutable_union(acc.prebuilt_dependencies, binfo.prebuilt_dependencies),
                 external_libraries = set.mutable_union(acc.external_libraries, binfo.external_libraries),
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
+                extra_libraries = acc.extra_libraries,
             )
         elif HaskellPrebuiltPackageInfo in dep:
             pkg = dep[HaskellPrebuiltPackageInfo].package
@@ -124,6 +126,7 @@ def gather_dep_info(ctx):
                 prebuilt_dependencies = set.mutable_insert(acc.prebuilt_dependencies, pkg),
                 external_libraries = acc.external_libraries,
                 direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
+                extra_libraries = acc.extra_libraries,
             )
         else:
             # The final link of a library must include all static
@@ -131,7 +134,7 @@ def gather_dep_info(ctx):
             # Theses libs are provided in `dep.cc.libs` attribute.
             transitive_static_deps = set.empty()
 
-            # Transitives static dependencies
+            # Transitive static dependencies
             if hasattr(dep, "cc"):
                 transitive_static_deps = set.from_list([
                     struct(
@@ -172,6 +175,10 @@ def gather_dep_info(ctx):
                     transitive_static_deps,
                 ),
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
+                extra_libraries = set.mutable_union(
+                    acc.extra_libraries,
+                    transitive_static_deps,
+                ),
             )
 
     return acc
