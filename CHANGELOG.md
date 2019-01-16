@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.8] - 2019-xx-xx
 
+### Fixed
+
+* The evaluation of the `WORKSPACE` on Windows is successful. The `nix-build`
+  calls are bypassed.
+
 ### Removed
 
 * The `generate_so` attribute of `haskell_binary` and `haskell_test`
