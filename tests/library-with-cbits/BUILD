@@ -9,7 +9,17 @@ haskell_library(
     srcs = ["AddOne.hsc"],
     visibility = ["//visibility:public"],
     deps = [
-        "//tests/data:ourclibrary",
+        ":ourclibrary-indirect",
+        "@hackage//:base",
+    ],
+)
+
+haskell_library(
+    name = "library-with-cbits-indirect",
+    srcs = ["AddOne2.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":library-with-cbits",
         "@hackage//:base",
     ],
 )
@@ -21,6 +31,13 @@ haskell_library(
     deps = [
         ":ourclibrary-static",
         "@hackage//:base",
+    ],
+)
+
+cc_library(
+    name = "ourclibrary-indirect",
+    deps = [
+        "//tests/data:ourclibrary",
     ],
 )
 
