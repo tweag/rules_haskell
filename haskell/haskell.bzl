@@ -35,6 +35,7 @@ load(
 load(
     ":private/haskell_impl.bzl",
     _haskell_binary_impl = "haskell_binary_impl",
+    _haskell_import_impl = "haskell_import_impl",
     _haskell_library_impl = "haskell_library_impl",
 )
 
@@ -215,18 +216,14 @@ not built by default, but can be built on request. It works the same way as
 for `haskell_binary`.
 """
 
-def _haskell_import_impl(ctx):
-    if ctx.attr.package:
-        package = ctx.attr.package
-    else:
-        package = ctx.label.name
-    return [HaskellPrebuiltPackageInfo(package = package)]
-
 haskell_import = rule(
     _haskell_import_impl,
     attrs = dict(
         package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
     ),
+    toolchains = [
+        "@io_tweag_rules_haskell//haskell:toolchain",
+    ],
 )
 """Import packages that are prebuilt outside of Bazel.
 

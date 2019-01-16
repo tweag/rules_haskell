@@ -114,7 +114,7 @@ def gather_dep_info(ctx):
                 extra_libraries = acc.extra_libraries,
             )
         elif HaskellPrebuiltPackageInfo in dep:
-            pkg = dep[HaskellPrebuiltPackageInfo].package
+            pkg = dep[HaskellPrebuiltPackageInfo]
             acc = HaskellBuildInfo(
                 package_ids = acc.package_ids,
                 package_confs = acc.package_confs,

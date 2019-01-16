@@ -13,7 +13,7 @@ def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_pack
     All the other arguments are not understood well:
 
     lib_info: only used for repl and linter
-    use_direct: only used for one specific task in compile.bzl
+    use_direct: only used for repl and linter
     use_my_pkg_id: only used for one specific task in compile.bzl
     custom_package_caches: override the package_caches of build_info, used only by the repl
     """
@@ -41,12 +41,9 @@ def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_pack
     # We have to remember to specify all (transitive) wired-in
     # dependencies or we can't find objects for linking
     #
-    # XXX: This should be really dep_info.direct_prebuilt_deps, but since we
-    # cannot add prebuilt_dependencies to the "depends" field on package
-    # registration (see a comment there), we have to pass all transitive
-    # prebuilt_dependencies on linking like this
+    # Set use_direct if build_info does not have a direct_prebuilt_deps field.
     for prebuilt_dep in set.to_list(build_info.direct_prebuilt_deps if use_direct else build_info.prebuilt_dependencies):
-        args.extend(["-package", prebuilt_dep])
+        args.extend(["-package", prebuilt_dep.package])
 
     # Expose all bazel dependencies
     for package in set.to_list(build_info.package_ids):
