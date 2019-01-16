@@ -1,6 +1,6 @@
 workspace(name = "io_tweag_rules_haskell")
 
-rules_nixpkgs_version = "8cd16d916bbb8abf91678d160da2587a56a010da"
+rules_nixpkgs_version = "f23f48193ab3a26e930989fa5edd89f324ca078d"
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
