@@ -7,16 +7,17 @@ load(
 haskell_binary(
     name = "binary-indirect-cbits",
     srcs = ["Main.hs"],
+    linkstatic = False,
     deps = [
         "//tests/library-with-cbits",
         "@hackage//:base",
     ],
-    linkstatic = False
 )
 
 haskell_binary(
     name = "binary-indirect-cbits-partially-static",
     srcs = ["Main.hs"],
+    linkstatic = False,
     deps = [
         "//tests/library-with-cbits:library-with-cbits-static",
         "@hackage//:base",

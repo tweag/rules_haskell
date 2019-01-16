@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Fixed
 
 * Fix static linking with C libraries that are indirectly depended upon
+* Fix repl targets that have indirect cc_library dependencies
 
 ## [0.7] - 2018-12-24
 
