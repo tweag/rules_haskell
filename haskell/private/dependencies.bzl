@@ -7,30 +7,13 @@ load(
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
 )
-load(":private/path_utils.bzl", "ln")
+load(
+    ":private/path_utils.bzl",
+    "is_shared_library",
+    "is_static_library",
+    "ln",
+)
 load(":private/set.bzl", "set")
-
-def _is_shared_library(f):
-    """Check if the given File is a shared library.
-
-    Args:
-      f: The File to check.
-
-    Returns:
-      Bool: True if the given file `f` is a shared library, False otherwise.
-    """
-    return f.extension in ["so", "dylib"] or f.basename.find(".so.") != -1
-
-def _is_static_library(f):
-    """Check if the given File is a static library.
-
-    Args:
-      f: The File to check.
-
-    Returns:
-      Bool: True if the given file `f` is a static library, False otherwise.
-    """
-    return f.extension in ["a"]
 
 def _mangle_lib(ctx, label, lib, preserve_name):
     """Create a symlink to a library, with a longer name.
@@ -142,7 +125,7 @@ def gather_dep_info(ctx):
                         mangled_lib = _mangle_lib(ctx, dep.label, name, CcSkylarkApiProviderHacked in dep),
                     )
                     for name in dep.cc.libs.to_list()
-                    if _is_static_library(name)
+                    if is_static_library(name)
                 ])
 
             # If the provider is CcSkylarkApiProviderHacked, then the .so
@@ -153,7 +136,7 @@ def gather_dep_info(ctx):
                     mangled_lib = _mangle_lib(ctx, dep.label, f, CcSkylarkApiProviderHacked in dep),
                 )
                 for f in dep.files.to_list()
-                if _is_shared_library(f)
+                if is_shared_library(f)
             ])
 
             # If not a Haskell dependency, pass it through as-is to the
