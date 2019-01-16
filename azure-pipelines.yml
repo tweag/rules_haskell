@@ -10,10 +10,6 @@ jobs:
       mv bazel.exe /c/bazel
     displayName: 'Install Bazel'
   - bash: |
-      # We cannot build Haskell projects yet, so we ensure that we can at least
-      # evaluate the WORKSPACE
-      /c/bazel/bazel.exe fetch "///tests:ghc" # first '/' gets eaten up
-
-      # We make sure that the Go sdk can be loaded
-      /c/bazel/bazel.exe build "///:buildifier" # first '/' gets eaten up
+      # We make sure that GHC can be invoked
+      /c/bazel/bazel.exe build "///tests/ghc:ghc_help" # first '/' gets eaten up
     displayName: 'Run Bazel'

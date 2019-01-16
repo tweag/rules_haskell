@@ -20,7 +20,10 @@ haskell_toolchain(
     # proto_library rules (from com_google_protobuf) can't themselves
     # be testonly.
     testonly = 0,
-    c2hs = "@hackage-c2hs//:bin",
+    c2hs = select({
+        "@bazel_tools//src/conditions:windows": None,
+        "//conditions:default": "@hackage-c2hs//:bin",
+    }),
     compiler_flags = [
         "-XStandaloneDeriving",  # Flag used at compile time
         "-threaded",  # Flag used at link time
@@ -33,6 +36,7 @@ haskell_toolchain(
     locale_archive = select({
         # For some reason glibcLocales is not available on Darwin.
         "@bazel_tools//src/conditions:darwin": None,
+        "@bazel_tools//src/conditions:windows": None,
         "//conditions:default": "@glib_locales//:locale-archive",
     }),
     repl_ghci_args = [
@@ -40,7 +44,11 @@ haskell_toolchain(
         "-UTESTS_TOOLCHAIN_REPL_FLAGS",  # The repl test will need this flag, but set by the local `repl_ghci_args`.
         "-XOverloadedStrings",  # The repl test will need OverloadedString
     ],
-    tools = "@hackage-ghc//:bin",
+
+    tools = select({
+        "@bazel_tools//src/conditions:windows": "@ghc_windows//:bin",
+        "//conditions:default": "@hackage-ghc//:bin",
+    }),
     version = ghc_version,
 )
 

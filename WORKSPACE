@@ -48,6 +48,20 @@ nixpkgs_local_repository(
     nix_file = "//nixpkgs:default.nix",
 )
 
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "ghc_bindist",
+)
+
+# XXX: this needs to be kept in sync with `ghc_version` in `tests/BUILD`
+ghc_version = "8.4.4"
+
+# A GHC from a bindist for Windows
+ghc_bindist(
+  name    = "ghc_windows",
+  version = ghc_version,
+)
+
 register_toolchains(
     "//tests:ghc",
     "//tests:doctest-toolchain",
