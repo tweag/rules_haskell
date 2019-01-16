@@ -2,7 +2,7 @@
 
 load(":private/packages.bzl", "expose_packages")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/path_utils.bzl", "get_lib_name")
+load(":private/path_utils.bzl", "get_lib_name", "is_shared_library", "is_static_library")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/providers.bzl", "external_libraries_get_mangled")
@@ -171,10 +171,12 @@ def link_binary(
 
     _add_external_libraries(args, dep_info.external_libraries)
 
-    solibs = set.union(
-        set.map(dep_info.external_libraries, external_libraries_get_mangled),
-        dep_info.dynamic_libraries,
+    (static_libs, dynamic_libs) = _separate_static_and_dynamic_libraries(
+        dep_info.external_libraries,
+        dynamic,
     )
+
+    solibs = set.union(dynamic_libs, dep_info.dynamic_libraries)
 
     # XXX: Suppress a warning that Clang prints due to GHC automatically passing
     # "-pie" or "-no-pie" to the C compiler.
@@ -213,7 +215,8 @@ def link_binary(
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             depset([objects_dir]),
-            depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
+            set.to_depset(static_libs),
+            set.to_depset(dynamic_libs),
         ]),
         outputs = [compile_output],
         mnemonic = "HaskellLinkBinary",
@@ -240,6 +243,51 @@ def _add_external_libraries(args, ext_libs):
                 "-l{0}".format(lib_name),
                 "-L{0}".format(paths.dirname(lib.path)),
             ])
+
+def _separate_static_and_dynamic_libraries(ext_libs, dynamic):
+    """Separate static and dynamic libraries while avoiding duplicates.
+
+    Args:
+      ext_libs: external_libraries from HaskellBuildInfo
+      dynamic: Whether we're linking dynamically or statically.
+
+    Returns:
+      A tuple (static_libs, dynamic_libs) where each library dependency occurs
+      only once in either static_libs or dynamic_libs. In cases where both
+      versions are available, take preference according to the dynamic argument.
+    """
+    seen_libs = set.empty()
+    static_libs = set.empty()
+    dynamic_libs = set.empty()
+
+    if dynamic:
+        # Prefer dynamic libraries over static libraries.
+        preference = is_shared_library
+        preferred = dynamic_libs
+        remaining = static_libs
+    else:
+        # Prefer static libraries over dynamic libraries.
+        preference = is_static_library
+        preferred = static_libs
+        remaining = dynamic_libs
+
+    # Find the preferred libraries
+    for ext_lib in set.to_list(ext_libs):
+        lib = ext_lib.mangled_lib
+        lib_name = get_lib_name(lib)
+        if preference(lib) and not set.is_member(seen_libs, lib_name):
+            set.mutable_insert(seen_libs, lib_name)
+            set.mutable_insert(preferred, lib)
+
+    # Find the remaining libraries
+    for ext_lib in set.to_list(ext_libs):
+        lib = ext_lib.mangled_lib
+        lib_name = get_lib_name(lib)
+        if not preference(lib) and not set.is_member(seen_libs, lib_name):
+            set.mutable_insert(seen_libs, lib_name)
+            set.mutable_insert(remaining, lib)
+
+    return (static_libs, dynamic_libs)
 
 def _infer_rpaths(is_darwin, target, solibs):
     """Return set of RPATH values to be added to target so it can find all
