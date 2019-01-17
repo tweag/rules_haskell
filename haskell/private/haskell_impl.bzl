@@ -57,6 +57,8 @@ def haskell_binary_impl(ctx):
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
+    if hs.toolchain.is_windows:
+        cc = "Bazel's CC shouldn't be used on Windows"
     java = java_interop_info(ctx)
 
     with_profiling = is_profiling_enabled(hs)
@@ -175,6 +177,8 @@ def haskell_library_impl(ctx):
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
+    if hs.toolchain.is_windows:
+        cc = "Bazel's CC shouldn't be used on Windows"
     java = java_interop_info(ctx)
 
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)

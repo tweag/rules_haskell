@@ -113,7 +113,8 @@ def link_binary(
       File: produced executable
     """
 
-    executable = hs.actions.declare_file(hs.name)
+    exe_name = hs.name + (".exe" if hs.toolchain.is_windows else "")
+    executable = hs.actions.declare_file(exe_name)
     if not hs.toolchain.is_darwin:
         compile_output = executable
     else:
@@ -126,7 +127,8 @@ def link_binary(
         )
 
     args = hs.actions.args()
-    args.add(["-optl" + f for f in cc.linker_flags])
+    if not hs.toolchain.is_windows:
+        args.add(["-optl" + f for f in cc.linker_flags])
     if with_profiling:
         args.add("-prof")
     args.add(hs.toolchain.compiler_flags)
