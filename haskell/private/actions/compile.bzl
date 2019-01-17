@@ -297,7 +297,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         mnemonic = "HaskellBuildBinary",
         progress_message = "HaskellBuildBinary {}".format(hs.label),
         env = c.env,
-        arguments = [c.args],
+        arguments = c.args,
     )
 
     if with_profiling:
@@ -355,7 +355,7 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
         mnemonic = "HaskellBuildLibrary",
         progress_message = "HaskellBuildLibrary {}".format(hs.label),
         env = c.env,
-        arguments = [c.args],
+        arguments = c.args,
     )
 
     if with_profiling:
