@@ -171,6 +171,11 @@ def link_binary(
 
     _add_external_libraries(args, dep_info.external_libraries)
 
+    # By default GHC will link foreign library dependencies dynamically.
+    # If linkstatic is true we hide dynamic libraries from the linking step if
+    # static libraries are available instead, in order to link as many
+    # dependencies statically as possible.
+    # This is to follow the "mostly static" semantics of Bazel's CC rules.
     (static_libs, dynamic_libs) = _separate_static_and_dynamic_libraries(
         dep_info.external_libraries,
         dynamic,
