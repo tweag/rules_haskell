@@ -1,6 +1,9 @@
+{-# LANGUAGE ForeignFunctionInterface #-}
+
 module Main (main) where
 
-import qualified CLib
 import qualified HsLib
 
-main = print $ HsLib.value + CLib.value
+foreign import ccall "value" value :: Int
+
+main = print $ HsLib.value + value

@@ -4,7 +4,6 @@ load(
     "haskell_test",
 )
 load("//tests:sh_inline_test.bzl", "sh_inline_test")
-load(":get_library_files.bzl", "get_libraries_as_runfiles")
 
 # test whether `linkstatic` works as expected
 package(default_testonly = 1)
@@ -12,15 +11,6 @@ package(default_testonly = 1)
 cc_library(
     name = "c-lib",
     srcs = ["c-lib.c"],
-)
-
-haskell_library(
-    name = "CLib",
-    srcs = ["CLib.hsc"],
-    deps = [
-        ":c-lib",
-        "@hackage//:base",
-    ],
 )
 
 haskell_library(
@@ -36,8 +26,8 @@ haskell_test(
     srcs = ["Main.hs"],
     linkstatic = True,
     deps = [
-        ":CLib",
         ":HsLib",
+        ":c-lib",
         "@hackage//:base",
     ],
 )
@@ -47,84 +37,10 @@ haskell_test(
     srcs = ["Main.hs"],
     linkstatic = False,
     deps = [
-        ":CLib",
         ":HsLib",
+        ":c-lib",
         "@hackage//:base",
     ],
-)
-
-# extract all libraries from the Haskell binary
-get_libraries_as_runfiles(
-    name = "binary-static-libraries",
-    binary = ":binary-static",
-)
-
-get_libraries_as_runfiles(
-    name = "binary-dynamic-libraries",
-    binary = ":binary-dynamic",
-)
-
-# sh_test’s `data` doesn’t add stuff to runfiles :(
-# sh_library can bundle different targets as runfiles for sh_test
-# TODO(Profpatsch): add functionality to sh_inline_test by default?
-sh_library(
-    name = "bundled-dependency-files-static",
-    data = [":binary-static-libraries"],
-)
-
-sh_library(
-    name = "bundled-dependency-files-dynamic",
-    data = [":binary-dynamic-libraries"],
-)
-
-# The dynamic libraries that the binary references
-genrule(
-    name = "binary-static-ldd",
-    srcs = [":binary-static"],
-    outs = ["binary-static-ldd.txt"],
-    cmd = """
-    objdump -x $(SRCS) | sed -ne 's/^  NEEDED\s*//p' > $(OUTS)
-    """,
-)
-
-genrule(
-    name = "binary-dynamic-ldd",
-    srcs = [":binary-dynamic"],
-    outs = ["binary-dynamic-ldd.txt"],
-    cmd = """
-    objdump -x $(SRCS) | sed -ne 's/^  NEEDED\s*//p' > $(OUTS)
-    """,
-)
-
-# ensure that linkstatic=True only links to static library targets.
-sh_inline_test(
-    name = "test-binary-static-only",
-    size = "small",
-    args = [
-        "$(rootpath :binary-static-ldd)",
-        # pass the file names as arguments
-        "$(rootpaths :binary-static-libraries)",
-    ],
-    data = [
-        # for rootpaths
-        ":binary-static-ldd",
-        ":binary-static-libraries",
-        # to actually get the files …
-        ":bundled-dependency-files-static",
-    ],
-    script = """
-set -euo pipefail
-ldd=$1
-shift 1
-for f in "$@"; do
-    if [[ "$f" =~ .so$ || "$f" =~ .dylib$ ]]; then
-        if grep -q "$(basename "$f")" "$ldd"; then
-            echo "static binary should not depend on dynamic library $f" >&2
-            exit 1
-        fi
-    fi
-done
-""",
 )
 
 config_setting(
@@ -134,50 +50,69 @@ config_setting(
     },
 )
 
-# ensure that linkstatic=False links to dynamic library targets.
+# Ensure that linkstatic=True only links to static library targets.
 sh_inline_test(
-    name = "test-binary-dynamic-only",
+    name = "test-binary-static-symbols",
     size = "small",
-    args = select({
-        ":debug_build": ["dbg"],
-        "//conditions:default": ["rls"],
-    }) + [
-        "$(rootpath :binary-dynamic-ldd)",
-        # pass the file names as arguments
-        "$(rootpaths :binary-dynamic-libraries)",
+    args = [
+        "$(rootpath :binary-static)",
     ],
     data = [
-        # for rootpaths
-        ":binary-dynamic-ldd",
-        ":binary-dynamic-libraries",
-        # to actually get the files …
-        ":bundled-dependency-files-dynamic",
+        ":binary-static",
     ],
     script = """
-set -euo pipefail
-mode=$1
-if [[ $mode = dbg ]]; then
-    # Skip test in debug builds. Debug mode forces static linking.
-    exit 0
-fi
-ldd=$2
-shift 2
-for f in "$@"; do
-    if [[ "$f" =~ .so$ || "$f" =~ .dylib$ ]]; then
-        if ! grep -q "$(basename "$f")" "$ldd"; then
-            echo "dynamic binary should depend on dynamic library $f" >&2
-            exit 1
-        fi
+    set -eo pipefail
+    binary="$1"
+    # Symbols are prefixed with underscore on MacOS but not on Linux.
+    if nm -u "$binary" | grep -q "\<_\?value"; then
+        echo "C library dependency not linked statically"
+        exit 1
     fi
-done
-""",
+    if nm -u "$binary" | grep -q HsLib_value_closure; then
+        echo "Haskell library dependency not linked statically"
+        exit 1
+    fi
+    """,
+)
+
+# Ensure that linkstatic=False only links to dynamic library targets.
+sh_inline_test(
+    name = "test-binary-dynamic-symbols",
+    size = "small",
+    args = [
+        "$(rootpath :binary-dynamic)",
+    ] + select({
+        ":debug_build": ["dbg"],
+        "//conditions:default": ["rls"],
+    }),
+    data = [
+        ":binary-dynamic",
+    ],
+    script = """
+    set -eo pipefail
+    binary="$1"
+    mode="$2"
+    if [[ $mode = dbg ]]; then
+        # Skip test in debug builds. Debug mode forces static linking.
+        exit 0
+    fi
+    # Symbols are prefixed with underscore on MacOS but not on Linux.
+    if ! nm -u "$binary" | grep -q "\<_\?value"; then
+        echo "C library dependency not linked dynamically"
+        exit 1
+    fi
+    if ! nm -u "$binary" | grep -q HsLib_value_closure; then
+        echo "Haskell library dependency not linked dynamically"
+        exit 1
+    fi
+    """,
 )
 
 test_suite(
     name = "binary-linkstatic-flag",
     tests = [
-        ":test-binary-dynamic-only",
-        ":test-binary-static-only",
+        ":test-binary-dynamic-symbols",
+        ":test-binary-static-symbols",
     ],
     visibility = ["//visibility:public"],
 )
