@@ -128,6 +128,9 @@ def gather_dep_info(ctx):
                     if is_static_library(name)
                 ])
 
+            # Transitive dynamic dependencies
+            # Note, this can include dynamic versions of items in
+            # transitive_static_deps.
             # If the provider is CcSkylarkApiProviderHacked, then the .so
             # files come from haskell_cc_import.
             cc_skylark_api_hack_deps = set.from_list([
