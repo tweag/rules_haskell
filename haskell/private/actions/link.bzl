@@ -217,7 +217,7 @@ def link_binary(
         ]),
         outputs = [compile_output],
         mnemonic = "HaskellLinkBinary",
-        arguments = [args],
+        arguments = args,
         params_file = objects_dir_manifest,
     )
 
@@ -413,7 +413,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         ]),
         outputs = [dynamic_library_tmp],
         mnemonic = "HaskellLinkDynamicLibrary",
-        arguments = [args],
+        arguments = args,
         params_file = objects_dir_manifest,
     )
 

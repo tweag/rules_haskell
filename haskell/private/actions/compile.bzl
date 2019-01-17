@@ -294,10 +294,10 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         cc,
         inputs = c.inputs,
         outputs = c.outputs,
-        mnemonic = "HaskellBuildBinary",
+        mnemonic = "HaskellBuildBinary" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildBinary {}".format(hs.label),
         env = c.env,
-        arguments = [c.args],
+        arguments = c.args,
     )
 
     if with_profiling:
@@ -352,10 +352,10 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
         cc,
         inputs = c.inputs,
         outputs = c.outputs,
-        mnemonic = "HaskellBuildLibrary",
+        mnemonic = "HaskellBuildLibrary" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildLibrary {}".format(hs.label),
         env = c.env,
-        arguments = [c.args],
+        arguments = c.args,
     )
 
     if with_profiling:
