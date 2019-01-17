@@ -48,17 +48,31 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
             "-optP-traditional",
         ])
 
+    ghc_args_file = hs.actions.declare_file("ghc_args_%s_%s" % (hs.name, mnemonic))
+    extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
+
+    args.set_param_file_format("multiline")
+    arguments.set_param_file_format("multiline")
+    hs.actions.write(ghc_args_file, args)
+    hs.actions.write(extra_args_file, arguments)
+
     extra_inputs = [
         hs.tools.ghc,
         # Depend on the version file of the Haskell toolchain,
         # to ensure the version comparison check is run first.
         hs.toolchain.version_file,
+        ghc_args_file,
+        extra_args_file,
     ] + cc.files
     if params_file:
-        command = '${1+"$@"} $(< %s)' % params_file.path
+        command = """
+        $(< %s) $(< %s) $(< %s)
+""" % (ghc_args_file.path, extra_args_file.path, params_file.path)
         extra_inputs.append(params_file)
     else:
-        command = '${1+"$@"}'
+        command = """
+        $(< %s) $(< %s)
+""" % (ghc_args_file.path, extra_args_file.path)
 
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
@@ -72,7 +86,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = [args] + arguments,
+        arguments = [],
     )
 
     return args
