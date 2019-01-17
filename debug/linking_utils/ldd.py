@@ -1,5 +1,8 @@
+import six
+
 import subprocess
 import os
+import sys
 
 
 ### helper functions
@@ -14,7 +17,7 @@ def list_to_dict(f, l):
 def dict_remove_empty(d):
     """remove keys that have [] or {} or as values"""
     new = {}
-    for k, v in d.iteritems():
+    for k, v in six.iteritems(d):
         if not (v == [] or v == {}):
              new[k] = v
     return new
@@ -29,6 +32,16 @@ def const(x):
         return x
     return f
 
+def memoized(cache, f, arg):
+    """Memoizes a call to `f` with `arg` in the dict `cache`.
+    Modifies the cache dict in place."""
+    res = cache.get(arg)
+    if arg in cache:
+        return cache[arg]
+    else:
+        res = f(arg)
+        cache[arg] = res
+        return res
 
 ### IO functions that find elf dependencies
 
@@ -44,8 +57,8 @@ def get_runpath_dirs(elf):
     # TODO: cache the results to prevent more than one call per elf binary
     res = subprocess.check_output("""objdump -x {} | grep RUNPATH | sed 's/^ *RUNPATH *//'""".format(elf), shell = True).strip()
     return [{ 'path': path,
-              'absolute_path': os.path.normpath(path.replace("$ORIGIN", origin)) }
-            for path in res.strip(":").split(":")
+              'absolute_path': os.path.abspath(path.replace("$ORIGIN", origin)) }
+            for path in res.decode().strip(":").split(":")
             if path != ""]
 
 def get_needed(elf):
@@ -53,7 +66,7 @@ def get_needed(elf):
     # TODO: way to get info with less execution overhead
     # TODO: cache the results to prevent more than one call per elf binary
     res = subprocess.check_output("""objdump -x {} | grep NEEDED | sed 's/^ *NEEDED *//'""".format(elf), shell = True).strip()
-    return res.strip("\n").split("\n")
+    return res.decode().strip("\n").split("\n")
 
 
 ### Main utility
@@ -63,6 +76,55 @@ LDD_MISSING = "MISSING"
 # don't know how to search for dependency
 LDD_UNKNOWN = "DUNNO"
 LDD_ERRORS = [ LDD_MISSING, LDD_UNKNOWN ]
+
+def _ldd(elf_caches, f, elf_path):
+    """Same as ldd, but elf_caches is a dict of caches needed for memoizing
+    which elf files we already read, because the reading operation is quite
+    expensive."""
+
+    def search(rdirs, elf_libname):
+        """search for elf_libname in rdirs and return either name or missing"""
+        res = LDD_MISSING
+        for rdir in rdirs:
+            potential_path = os.path.join(rdir['absolute_path'], elf_libname)
+            if os.path.exists(potential_path):
+                res = {
+                    'item': potential_path,
+                    'found_in': rdir,
+                }
+                break
+        return res
+
+    def recurse(search_res):
+        """Unfold the subtree of ELF dependencies for a search result"""
+        if search_res == LDD_MISSING:
+            return LDD_MISSING
+        else:
+            # we keep all other fields in search_res the same,
+            # just item is the one that does the recursion.
+            # This is the part that would normally be done by fmap.
+            search_res['item'] = _ldd(elf_caches, f, search_res['item'])
+            return search_res
+
+    rdirs = memoized(elf_caches['runpath_dirs'], get_runpath_dirs, elf_path)
+    # if there's no runpath dirs we don't know where to search
+    all_needed = memoized(elf_caches['needed'], get_needed, elf_path)
+
+    if rdirs == []:
+        needed = list_to_dict(const(LDD_UNKNOWN), all_needed)
+    else:
+        needed = list_to_dict(
+            lambda name: recurse(search(rdirs, name)),
+            all_needed
+        )
+
+    result = {
+        'runpath_dirs': rdirs,
+        'needed': needed
+    }
+    # Here, f is applied to the result of the previous level of recursion
+    return f(result)
+
 
 def ldd(f, elf_path):
     """follows DT_NEEDED ELF headers for elf by searching the through DT_RUNPATH.
@@ -82,48 +144,15 @@ def ldd(f, elf_path):
     Args:
         f: DependencyInfo -> a
         modifies the results of each level
-        elf_path: path to ELF file
+        elf_path: path to ELF file, either absolute or relative to current working dir
 
     Returns: a
     """
-    def search(rdirs, elf_libname):
-        """search for elf_libname in rdirs and return either name or missing"""
-        res = LDD_MISSING
-        for rdir in rdirs:
-            potential_path = os.path.join(rdir['absolute_path'], elf_libname)
-            if os.path.exists(potential_path):
-                res = {
-                    'item': potential_path,
-                    'found_in': rdir,
-                }
-                break
-        return res
-
-    def recurse(search_res):
-        if search_res == LDD_MISSING:
-            return LDD_MISSING
-        else:
-            # we keep all other fields the same,
-            # just item is the one that does the recursion.
-            # This is the part that would normally be done by fmap.
-            search_res['item'] = ldd(f, search_res['item'])
-            return search_res
-
-    rdirs = get_runpath_dirs(elf_path)
-    # if there's no runpath dirs we don't know where to search
-    if rdirs == []:
-        needed = list_to_dict(const(LDD_UNKNOWN), get_needed(elf_path))
-    else:
-        needed = list_to_dict(
-            lambda name: recurse(search(rdirs, name)),
-            get_needed(elf_path)
-        )
-
-    result = {
-        'runpath_dirs': rdirs,
-        'needed': needed
+    elf_caches = {
+        'runpath_dirs': {},
+        'needed': {},
     }
-    return f(result)
+    return _ldd(elf_caches, f, elf_path)
 
 
 ### Functions to pass to ldd
@@ -159,7 +188,7 @@ def remove_uninteresting_dependencies(d):
             runpaths.append(absp)
 
     needed = {}
-    for k, v in d['needed'].iteritems():
+    for k, v in six.iteritems(d['needed']):
         # filter out some uninteresting deps
         if not bad_needed_p(k):
             needed[k] = v['item'] if not v in LDD_ERRORS else v
@@ -175,7 +204,7 @@ def was_runpath_used(d):
     used = set()
     given = set(r['absolute_path'] for r in d['runpath_dirs'])
     prev = {}
-    for k, v in d['needed'].iteritems():
+    for k, v in six.iteritems(d['needed']):
         if not v in LDD_ERRORS:
             used.add(v['found_in']['absolute_path'])
             prev[k] = v['item']
@@ -190,7 +219,7 @@ def was_runpath_used(d):
     # and a dict of all previeous layers combined (name to list)
     def combine_unused(deps):
         res = {}
-        for name, dep in deps.iteritems():
+        for name, dep in six.iteritems(deps):
             res.update(dep['others'])
             res[name] = dep['mine']
         return res

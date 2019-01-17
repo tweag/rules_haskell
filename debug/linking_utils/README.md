@@ -33,10 +33,11 @@ from debug.linking_utils.ldd import \
   ldd, \
   was_runpath_used, \
   dict_remove_empty, \
-  remove_unnecessary_dependencies
+  remove_uninteresting_dependencies
 
 r = runfiles.Create()
 pp = pprint.PrettyPrinter(indent=2)
+path = r.Rlocation("my_workspace/path/to/my/binary.so")
 
 pp.pprint(
   ldd(remove_uninteresting_dependencies, path)
