@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 * The evaluation of the `WORKSPACE` on Windows is successful. The `nix-build`
   calls are bypassed.
+* The evaluation of the `buildifier` on Windows is successful. The Go SDK
+  is downloaded.
+* GHC can successfully be invoked on Windows. The Go SDK
+  is downloaded.
 
 ### Removed
 
