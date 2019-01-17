@@ -127,11 +127,21 @@ done
 """,
 )
 
+config_setting(
+    name = "debug_build",
+    values = {
+        "compilation_mode": "dbg",
+    },
+)
+
 # ensure that linkstatic=False links to dynamic library targets.
 sh_inline_test(
     name = "test-binary-dynamic-only",
     size = "small",
-    args = [
+    args = select({
+        ":debug_build": ["dbg"],
+        "//conditions:default": ["rls"],
+    }) + [
         "$(rootpath :binary-dynamic-ldd)",
         # pass the file names as arguments
         "$(rootpaths :binary-dynamic-libraries)",
@@ -145,8 +155,13 @@ sh_inline_test(
     ],
     script = """
 set -euo pipefail
-ldd=$1
-shift 1
+mode=$1
+if [[ $mode = dbg ]]; then
+    # Skip test in debug builds. Debug mode forces static linking.
+    exit 0
+fi
+ldd=$2
+shift 2
 for f in "$@"; do
     if [[ "$f" =~ .so$ || "$f" =~ .dylib$ ]]; then
         if ! grep -q "$(basename "$f")" "$ldd"; then
