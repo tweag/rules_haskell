@@ -3,6 +3,7 @@ import six
 import subprocess
 import os
 import sys
+import re
 
 
 ### helper functions
@@ -45,28 +46,50 @@ def memoized(cache, f, arg):
 
 ### IO functions that find elf dependencies
 
-def get_runpath_dirs(elf):
-    """Find all runpath entries.
+_field_matcher = re.compile(b"  ([A-Z0-9_]+) +(.*)$")
+
+def get_dynamic_fields(elf_path):
+    res = subprocess.check_output([
+        # force locale to C for stable output
+        "env", "LC_ALL=C",
+        "objdump",
+        # specifying the section brings execution time down from 150ms to 10ms
+        "--section=.dynamic",
+        "--all-headers",
+        elf_path
+    ])
+    to_end = res.split(b"Dynamic Section:\n")[1]
+    # to first empty line
+    dyn_section = to_end[: 1 + to_end.find(b"\n\n")]
+    def get_dynamic_field(s):
+        """return (name, content)"""
+        return _field_matcher.match(s).groups()
+    return list(map(get_dynamic_field, dyn_section.splitlines(keepends=True)))
+
+def filter_dynamic_fields(df, key):
+    return [v for k, v in df if k == key]
+
+def parse_runpath_dirs(elf_path, elf_dynamic_fields):
+    """Parse a RUNPATH entry from an elf header bytestring.
 
     Returns:
       { path: unmodified string from DT_RUNPATH
       , absolute_path: fully normalized, absolute path to dir }
     """
-    origin = os.path.dirname(elf)
-    # TODO: way to get info with less execution overhead
-    # TODO: cache the results to prevent more than one call per elf binary
-    res = subprocess.check_output("""objdump -x {} | grep RUNPATH | sed 's/^ *RUNPATH *//'""".format(elf), shell = True).strip()
+    fields = filter_dynamic_fields(elf_dynamic_fields, b"RUNPATH")
+    if fields == []:
+        return []
+    assert len(fields) == 1
+    val = fields[0]
+    origin = os.path.dirname(elf_path)
     return [{ 'path': path,
               'absolute_path': os.path.abspath(path.replace("$ORIGIN", origin)) }
-            for path in res.decode().strip(":").split(":")
+            for path in val.decode().strip(":").split(":")
             if path != ""]
 
-def get_needed(elf):
+def parse_needed(elf_dynamic_fields):
     """Returns the list of DT_NEEDED entries for elf"""
-    # TODO: way to get info with less execution overhead
-    # TODO: cache the results to prevent more than one call per elf binary
-    res = subprocess.check_output("""objdump -x {} | grep NEEDED | sed 's/^ *NEEDED *//'""".format(elf), shell = True).strip()
-    return res.decode().strip("\n").split("\n")
+    return [n.decode() for n in filter_dynamic_fields(elf_dynamic_fields, b"NEEDED")]
 
 
 ### Main utility
@@ -77,8 +100,8 @@ LDD_MISSING = "MISSING"
 LDD_UNKNOWN = "DUNNO"
 LDD_ERRORS = [ LDD_MISSING, LDD_UNKNOWN ]
 
-def _ldd(elf_caches, f, elf_path):
-    """Same as ldd, but elf_caches is a dict of caches needed for memoizing
+def _ldd(elf_cache, f, elf_path):
+    """Same as ldd, but elf_cache is a dict needed for memoizing
     which elf files we already read, because the reading operation is quite
     expensive."""
 
@@ -103,13 +126,16 @@ def _ldd(elf_caches, f, elf_path):
             # we keep all other fields in search_res the same,
             # just item is the one that does the recursion.
             # This is the part that would normally be done by fmap.
-            search_res['item'] = _ldd(elf_caches, f, search_res['item'])
+            search_res['item'] = _ldd(elf_cache, f, search_res['item'])
             return search_res
 
-    rdirs = memoized(elf_caches['runpath_dirs'], get_runpath_dirs, elf_path)
-    # if there's no runpath dirs we don't know where to search
-    all_needed = memoized(elf_caches['needed'], get_needed, elf_path)
+    dyn_fields = memoized(
+        elf_cache, get_dynamic_fields, elf_path
+    )
+    rdirs = parse_runpath_dirs(elf_path, dyn_fields)
+    all_needed = parse_needed(dyn_fields)
 
+    # if there's no runpath dirs we don't know where to search
     if rdirs == []:
         needed = list_to_dict(const(LDD_UNKNOWN), all_needed)
     else:
@@ -148,11 +174,8 @@ def ldd(f, elf_path):
 
     Returns: a
     """
-    elf_caches = {
-        'runpath_dirs': {},
-        'needed': {},
-    }
-    return _ldd(elf_caches, f, elf_path)
+    elf_cache = {}
+    return _ldd(elf_cache, f, elf_path)
 
 
 ### Functions to pass to ldd
