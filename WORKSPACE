@@ -58,8 +58,8 @@ ghc_version = "8.4.4"
 
 # A GHC from a bindist for Windows
 ghc_bindist(
-  name    = "ghc_windows",
-  version = ghc_version,
+    name = "ghc_windows",
+    version = ghc_version,
 )
 
 register_toolchains(

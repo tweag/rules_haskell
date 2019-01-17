@@ -44,7 +44,6 @@ haskell_toolchain(
         "-UTESTS_TOOLCHAIN_REPL_FLAGS",  # The repl test will need this flag, but set by the local `repl_ghci_args`.
         "-XOverloadedStrings",  # The repl test will need OverloadedString
     ],
-
     tools = select({
         "@bazel_tools//src/conditions:windows": "@ghc_windows//:bin",
         "//conditions:default": "@hackage-ghc//:bin",

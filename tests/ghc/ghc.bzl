@@ -9,11 +9,11 @@ def _impl(ctx):
         inputs = [ghc],
         outputs = [output],
         progress_message = "Printing ghc help message",
-        command = "echo $PWD; %s --help > %s" % (ghc.path, output.path),
+        command = "%s --help > %s" % (ghc.path, output.path),
     )
 
 ghc_help = rule(
     implementation = _impl,
     outputs = {"out": "out_file"},
-    toolchains = [ hs_toolchain ],
+    toolchains = [hs_toolchain],
 )
