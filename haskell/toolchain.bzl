@@ -139,9 +139,6 @@ fi
         ),
     )
 
-    if ctx.attr.c2hs != None:
-        ghc_binaries["c2hs"] = ctx.file.c2hs
-
     tools_struct_args = {
         name.replace("-", "_"): file
         for name, file in ghc_binaries.items()
@@ -198,10 +195,6 @@ _haskell_toolchain = rule(
         "haddock_flags": attr.string_list(
             doc = "A collection of flags that will be passed to haddock.",
         ),
-        "c2hs": attr.label(
-            doc = "c2hs executable",
-            allow_single_file = True,
-        ),
         "version": attr.string(
             doc = "Version of your GHC compiler. It has to match the version reported by the GHC used by bazel.",
             mandatory = True,
@@ -252,7 +245,6 @@ def haskell_toolchain(
           version = '1.2.3'
           tools = ["@sys_ghc//:bin"],
           compiler_flags = ["-Wall"],
-          c2hs = "@c2hs//:bin", # optional
       )
       ```
 
@@ -266,15 +258,6 @@ def haskell_toolchain(
       )
 
       register_toolchains("//:ghc")
-      ```
-
-      and for `@c2hs`:
-
-      ```bzl
-      nixpkgs_package(
-          name = "c2hs",
-          attribute_path = "haskell.packages.ghc822.c2hs",
-      )
       ```
     """
     impl_name = name + "-impl"

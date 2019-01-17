@@ -5,10 +5,6 @@ load(
     "HaskellPrebuiltPackageInfo",
 )
 load(
-    ":c2hs.bzl",
-    _c2hs_library = "c2hs_library",
-)
-load(
     ":cc.bzl",
     _cc_haskell_import = "cc_haskell_import",
     _haskell_cc_import = "haskell_cc_import",
@@ -276,5 +272,3 @@ ghc_bindist = _ghc_bindist
 haskell_cc_import = _haskell_cc_import
 
 cc_haskell_import = _cc_haskell_import
-
-c2hs_library = _c2hs_library
