@@ -1,6 +1,10 @@
 load(":sh_inline_test.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load(
+    "@io_tweag_rules_haskell//haskell:c2hs.bzl",
+    "c2hs_toolchain",
+)
+load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
     "haskell_doctest_toolchain",
@@ -20,10 +24,6 @@ haskell_toolchain(
     # proto_library rules (from com_google_protobuf) can't themselves
     # be testonly.
     testonly = 0,
-    c2hs = select({
-        "@bazel_tools//src/conditions:windows": None,
-        "//conditions:default": "@hackage-c2hs//:bin",
-    }),
     compiler_flags = [
         "-XStandaloneDeriving",  # Flag used at compile time
         "-threaded",  # Flag used at link time
@@ -73,6 +73,12 @@ haskell_proto_toolchain(
         "@hackage//:proto-lens",
         "@hackage//:text",
     ],
+)
+
+c2hs_toolchain(
+    name = "c2hs-toolchain",
+    testonly = 0,
+    c2hs = "@hackage-c2hs//:bin",
 )
 
 rule_test(

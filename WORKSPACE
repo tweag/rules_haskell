@@ -64,6 +64,7 @@ ghc_bindist(
 
 register_toolchains(
     "//tests:ghc",
+    "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
 )
