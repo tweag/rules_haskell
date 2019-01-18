@@ -58,8 +58,6 @@ def _haskell_doc_aspect_impl(target, ctx):
         "--hyperlinked-source",
     ])
 
-    args.add(hs.toolchain.haddock_flags)
-
     transitive_haddocks = {}
     transitive_html = {}
 
@@ -84,6 +82,10 @@ def _haskell_doc_aspect_impl(target, ctx):
         ghc_args.add(["--optghc", x])
     ghc_args.add([x.path for x in set.to_list(target[HaskellLibraryInfo].source_files)])
     ghc_args.add(["-v0"])
+
+    # haddock flags should take precedence over ghc args, hence are in
+    # last position
+    ghc_args.add_all(hs.toolchain.haddock_flags)
 
     locale_archive_depset = (
         depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
