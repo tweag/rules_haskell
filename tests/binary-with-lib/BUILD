@@ -14,6 +14,9 @@ haskell_library(
         "//conditions:default": False,
     }),
     src_strip_prefix = "src",
+    deps = [
+        "//tests/hackage:template-haskell",
+    ],
 )
 
 haskell_test(
@@ -23,5 +26,6 @@ haskell_test(
     deps = [
         ":lib",
         "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
     ],
 )
