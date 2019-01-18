@@ -6,7 +6,7 @@ load(
 
 package(default_testonly = 1)
 
-haskell_import(package = "base")
+haskell_import(name = "base")
 
 haskell_test(
     name = "binary-custom-main",
