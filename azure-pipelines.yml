@@ -10,6 +10,6 @@ jobs:
       mv bazel.exe /c/bazel
     displayName: 'Install Bazel'
   - bash: |
-      # We make sure that GHC can be invoked
-      /c/bazel/bazel.exe build "///tests/ghc:ghc_help" # first '/' gets eaten up
+      # Simple haskell binary
+      /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-simple" # first '/' gets eaten up
     displayName: 'Run Bazel'

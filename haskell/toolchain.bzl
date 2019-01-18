@@ -66,11 +66,13 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     ] + cc.files
     if params_file:
         command = """
+        export PATH=${PATH:-} # otherwise GCC fails on Windows
         $(< %s) $(< %s) $(< %s)
 """ % (ghc_args_file.path, extra_args_file.path, params_file.path)
         extra_inputs.append(params_file)
     else:
         command = """
+        export PATH=${PATH:-} # otherwise GCC fails on Windows
         $(< %s) $(< %s)
 """ % (ghc_args_file.path, extra_args_file.path)
 
