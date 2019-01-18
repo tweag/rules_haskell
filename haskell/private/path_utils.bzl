@@ -155,6 +155,28 @@ def get_lib_name(lib):
     end = paths.replace_extension(base, "") if n == -1 else base[:n]
     return end
 
+def is_shared_library(f):
+    """Check if the given File is a shared library.
+
+    Args:
+      f: The File to check.
+
+    Returns:
+      Bool: True if the given file `f` is a shared library, False otherwise.
+    """
+    return f.extension in ["so", "dylib"] or f.basename.find(".so.") != -1
+
+def is_static_library(f):
+    """Check if the given File is a static library.
+
+    Args:
+      f: The File to check.
+
+    Returns:
+      Bool: True if the given file `f` is a static library, False otherwise.
+    """
+    return f.extension in ["a"]
+
 def _rel_path_to_module(hs, f):
     """Make given file name relative to the directory where the module hierarchy
     starts.
