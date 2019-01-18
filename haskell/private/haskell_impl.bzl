@@ -275,6 +275,7 @@ def haskell_library_impl(ctx):
         other_modules,
         my_pkg_id,
         static_library_prof = static_library_prof,
+        write_pkg_conf = ctx.executable._write_pkg_conf,
     )
 
     static_libraries_prof = dep_info.static_libraries_prof
