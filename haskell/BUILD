@@ -12,6 +12,12 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
+sh_binary(
+    name = "write_pkg_conf",
+    srcs = ["private/write_pkg_conf.sh"],
+    visibility = ["//visibility:public"],
+)
+
 # toolchains must have a valid toolchain_type from bazel 0.21
 toolchain_type(
     name = "toolchain",

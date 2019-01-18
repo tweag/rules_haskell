@@ -13,4 +13,5 @@ jobs:
       # Simple haskell binary
       /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-simple" # first '/' gets eaten up
       /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-custom-main" 
+      /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-with-lib"
     displayName: 'Run Bazel'
