@@ -127,8 +127,7 @@ def link_binary(
         )
 
     args = hs.actions.args()
-    if not hs.toolchain.is_windows:
-        args.add(["-optl" + f for f in cc.linker_flags])
+    args.add(["-optl" + f for f in cc.linker_flags])
     if with_profiling:
         args.add("-prof")
     args.add(hs.toolchain.compiler_flags)

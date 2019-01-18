@@ -18,8 +18,6 @@ load(":private/set.bzl", "set")
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
 
 def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
-    if hs.toolchain.is_windows:
-        cc = None
     if not env:
         env = hs.env
 
@@ -65,7 +63,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         hs.toolchain.version_file,
         ghc_args_file,
         extra_args_file,
-    ] + (cc.files if not hs.toolchain.is_windows else [])
+    ] + cc.files
     if params_file:
         command = """
         export PATH=${PATH:-} # otherwise GCC fails on Windows
