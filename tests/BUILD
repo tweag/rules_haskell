@@ -37,7 +37,7 @@ haskell_toolchain(
         # For some reason glibcLocales is not available on Darwin.
         "@bazel_tools//src/conditions:darwin": None,
         "@bazel_tools//src/conditions:windows": None,
-        "//conditions:default": "@glib_locales//:locale-archive",
+        "//conditions:default": "@glibc_locales//:locale-archive",
     }),
     repl_ghci_args = [
         # Used by `tests/repl-flags`

@@ -242,19 +242,19 @@ def haskell_toolchain(
       ```bzl
       haskell_toolchain(
           name = "ghc",
-          version = '1.2.3'
-          tools = ["@sys_ghc//:bin"],
+          version = "1.2.3",
+          tools = "@sys_ghc//:bin",
           compiler_flags = ["-Wall"],
       )
       ```
 
-      where `@ghc` is an external repository defined in the `WORKSPACE`,
+      where `@sys_ghc` is an external repository defined in the `WORKSPACE`,
       e.g. using:
 
       ```bzl
       nixpkgs_package(
           name = 'sys_ghc',
-          attribute_path = 'haskell.compiler.ghc822'
+          attribute_path = 'haskell.compiler.ghc822',
       )
 
       register_toolchains("//:ghc")

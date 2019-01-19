@@ -92,18 +92,18 @@ filegroup (
 )
 
 haskell_cc_import(
-        name = "zlib",
-        shared_library = "@zlib//:lib",
-        hdrs = [":include"],
-        testonly = 1,
-        strip_include_prefix = "include",
+    name = "zlib",
+    shared_library = "@zlib//:lib",
+    hdrs = [":include"],
+    testonly = 1,
+    strip_include_prefix = "include",
 )
 """,
     repository = "@nixpkgs",
 )
 
 nixpkgs_package(
-    name = "glib_locales",
+    name = "glibc_locales",
     attribute_path = "glibcLocales",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
