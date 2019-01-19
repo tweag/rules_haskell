@@ -1,5 +1,3 @@
-load("@io_tweag_rules_haskell//haskell:toolchain.bzl", "haskell_toolchain")
-
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
@@ -25,12 +23,4 @@ cc_library(
         ["lib/ghc-*/include"],
         exclude_directories = 0,
     )[0],
-)
-
-haskell_toolchain(
-    name = "toolchain",
-    tools = ":bin",
-    version = "{version}",
-    exec_compatible_with = {exec_constraints},
-    target_compatible_with = {target_constraints},
 )

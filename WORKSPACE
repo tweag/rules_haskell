@@ -28,34 +28,7 @@ load(
 haskell_nixpkgs_package(
     name = "ghc",
     attribute_path = "haskellPackages.ghc",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "bin",
-    srcs = glob(["bin/*"]),
-)
-
-cc_library(
-    name = "threaded-rts",
-    srcs = glob(
-        ["lib/ghc-*/rts/libHSrts_thr-ghc*." + ext for ext in [
-            "so",
-            "dylib",
-        ]] +
-        # dependency of `libHSrts_thr_ghc*`
-        # globbing on the `so` version to stay working when they update
-        [
-            "lib/ghc-*/rts/libffi.so.*",
-        ],
-    ),
-    hdrs = glob(["lib/ghc-*/include/**/*.h"]),
-    strip_include_prefix = glob(
-        ["lib/ghc-*/include"],
-        exclude_directories = 0,
-    )[0],
-)
-    """,
+    build_file = "//haskell:ghc.BUILD",
     nix_file = "//tests:ghc.nix",
     # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly
     # if `repository` is not set, but our nix_file uses `./nixpkgs/`.

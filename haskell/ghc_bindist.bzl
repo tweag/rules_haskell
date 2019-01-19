@@ -65,22 +65,6 @@ def _ghc_bindist_impl(ctx):
     version = ctx.attr.version
     target = ctx.attr.target
     os, _, arch = target.partition("_")
-    exec_constraints = [{
-        "darwin": "@bazel_tools//platforms:darwin",
-        "linux": "@bazel_tools//platforms:linux",
-        "windows": "@bazel_tools//platforms:windows",
-    }.get(os)]
-    target_constraints = exec_constraints
-    ctx.template(
-        "BUILD",
-        Label("//haskell:ghc.BUILD"),
-        executable = False,
-        substitutions = {
-            "{version}": ctx.attr.version,
-            "{exec_constraints}": str(exec_constraints),
-            "{target_constraints}": str(target_constraints),
-        },
-    )
 
     if _GHC_BINS[version].get(target) == None:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
@@ -102,6 +86,12 @@ def _ghc_bindist_impl(ctx):
         _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
         _execute_fail_loudly(ctx, ["make", "install"])
 
+    ctx.template(
+        "BUILD",
+        Label("//haskell:ghc.BUILD"),
+        executable = False,
+    )
+
 _ghc_bindist = repository_rule(
     _ghc_bindist_impl,
     local = False,
@@ -111,6 +101,45 @@ _ghc_bindist = repository_rule(
             values = _GHC_BINS.keys(),
             doc = "The desired GHC version",
         ),
+        "target": attr.string(),
+    },
+)
+
+def _ghc_bindist_toolchain_impl(ctx):
+    os, _, arch = ctx.attr.target.partition("_")
+    exec_constraints = [{
+        "darwin": "@bazel_tools//platforms:osx",
+        "linux": "@bazel_tools//platforms:linux",
+        "windows": "@bazel_tools//platforms:windows",
+    }.get(os)]
+    target_constraints = exec_constraints
+    ctx.file(
+        "BUILD",
+        executable = False,
+        content = """
+load("@io_tweag_rules_haskell//haskell:toolchain.bzl", "haskell_toolchain")
+
+haskell_toolchain(
+    name = "toolchain",
+    tools = "{tools}",
+    version = "{version}",
+    exec_compatible_with = {exec_constraints},
+    target_compatible_with = {target_constraints},
+)
+        """.format(
+            tools = "@{}//:bin".format(ctx.attr.bindist_name),
+            version = ctx.attr.version,
+            exec_constraints = exec_constraints,
+            target_constraints = target_constraints,
+        ),
+    )
+
+_ghc_bindist_toolchain = repository_rule(
+    _ghc_bindist_toolchain_impl,
+    local = False,
+    attrs = {
+        "bindist_name": attr.string(),
+        "version": attr.string(),
         "target": attr.string(),
     },
 )
@@ -153,9 +182,25 @@ def ghc_bindist(name, version, target):
        )
        ```
     """
+    bindist_name = name
+    toolchain_name = "{}-toolchain".format(name)
+
+    # We want the toolchain definition to be tucked away in a separate
+    # repository, that way `bazel build //...` will not match it (and
+    # e.g. build the Windows toolchain even on Linux). At the same
+    # time, we don't want the definition in the bindist repository,
+    # because then we need to download the bindist first before we can
+    # see the toolchain definition. The solution is to add the
+    # toolchain definition in its own special repository.
     _ghc_bindist(
-        name = name,
+        name = bindist_name,
         version = version,
         target = target,
     )
-    native.register_toolchains("@{}//:toolchain".format(name))
+    _ghc_bindist_toolchain(
+        name = toolchain_name,
+        bindist_name = bindist_name,
+        version = version,
+        target = target,
+    )
+    native.register_toolchains("@{}//:toolchain".format(toolchain_name))
