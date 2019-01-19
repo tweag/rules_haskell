@@ -17,39 +17,45 @@ package(default_testonly = 1)
 
 ghc_version = "8.4.4"
 
-haskell_toolchain(
-    name = "ghc",
-    # This toolchain is morally testonly.  However, that would break
-    # our tests of haskell_library_rules: aspects of non-testonly
-    # proto_library rules (from com_google_protobuf) can't themselves
-    # be testonly.
-    testonly = 0,
-    compiler_flags = [
-        "-XStandaloneDeriving",  # Flag used at compile time
-        "-threaded",  # Flag used at link time
+# These toolchains are all morally testonly. However, that would break
+# our tests of haskell_library_rules: aspects of non-testonly
+# proto_library rules (from com_google_protobuf) can't themselves be
+# testonly.
 
-        # Used by `tests/repl-flags`
-        "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
-        "-XNoOverloadedStrings",  # this is the default, so it does not harm other tests
-    ],
-    haddock_flags = ["-U"],
-    locale_archive = select({
+[
+    haskell_toolchain(
+        name = name,
+        testonly = 0,
+        compiler_flags = [
+            "-XStandaloneDeriving",  # Flag used at compile time
+            "-threaded",  # Flag used at link time
+
+            # Used by `tests/repl-flags`
+            "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+            # this is the default, so it does not harm other tests
+            "-XNoOverloadedStrings",
+        ],
+        exec_compatible_with = ["@bazel_tools//platforms:" + os],
+        haddock_flags = ["-U"],
+        locale_archive = locale_archive,
+        repl_ghci_args = [
+            # The repl test will need this flag, but set by the local
+            # `repl_ghci_args`.
+            "-UTESTS_TOOLCHAIN_REPL_FLAGS",
+            # The repl test will need OverloadedString
+            "-XOverloadedStrings",
+        ],
+        target_compatible_with = ["@bazel_tools//platforms:" + os],
+        tools = tools,
+        version = ghc_version,
+    )
+    for os, tools, locale_archive in [
+        ("linux", "@hackage-ghc//:bin", "@glibc_locales//:locale-archive"),
         # For some reason glibcLocales is not available on Darwin.
-        "@bazel_tools//src/conditions:darwin": None,
-        "@bazel_tools//src/conditions:windows": None,
-        "//conditions:default": "@glibc_locales//:locale-archive",
-    }),
-    repl_ghci_args = [
-        # Used by `tests/repl-flags`
-        "-UTESTS_TOOLCHAIN_REPL_FLAGS",  # The repl test will need this flag, but set by the local `repl_ghci_args`.
-        "-XOverloadedStrings",  # The repl test will need OverloadedString
-    ],
-    tools = select({
-        "@bazel_tools//src/conditions:windows": "@ghc_windows//:bin",
-        "//conditions:default": "@hackage-ghc//:bin",
-    }),
-    version = ghc_version,
-)
+        ("osx", "@hackage-ghc//:bin", None),
+    ]
+    for name in ["ghc_%s" % os]
+]
 
 haskell_doctest_toolchain(
     name = "doctest-toolchain",

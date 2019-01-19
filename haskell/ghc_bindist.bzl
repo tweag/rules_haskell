@@ -62,20 +62,30 @@ def _execute_fail_loudly(ctx, args):
         fail("{0} failed, aborting creation of GHC bindist".format(" ".join(args)))
 
 def _ghc_bindist_impl(ctx):
-    if ctx.os.name == "linux":
-        arch = "linux_amd64"
-    elif ctx.os.name == "mac os x":
-        arch = "darwin_amd64"
-    elif ctx.os.name.startswith("windows"):
-        arch = "windows_amd64"
-    else:
-        fail("Operating system {0} is not yet supported.".format(ctx.os.name))
-
     version = ctx.attr.version
-    if _GHC_BINS[version].get(arch) == None:
+    target = ctx.attr.target
+    os, _, arch = target.partition("_")
+    exec_constraints = [{
+        "darwin": "@bazel_tools//platforms:darwin",
+        "linux": "@bazel_tools//platforms:linux",
+        "windows": "@bazel_tools//platforms:windows",
+    }.get(os)]
+    target_constraints = exec_constraints
+    ctx.template(
+        "BUILD",
+        Label("//haskell:ghc.BUILD"),
+        executable = False,
+        substitutions = {
+            "{version}": ctx.attr.version,
+            "{exec_constraints}": str(exec_constraints),
+            "{target_constraints}": str(target_constraints),
+        },
+    )
+
+    if _GHC_BINS[version].get(target) == None:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
     else:
-        url, sha256 = _GHC_BINS[version][arch]
+        url, sha256 = _GHC_BINS[version][target]
 
     bindist_dir = ctx.path(".")  # repo path
 
@@ -88,17 +98,11 @@ def _ghc_bindist_impl(ctx):
     )
 
     # On Windows the bindist already contains the built executables
-    if arch != "windows_amd64":
+    if os != "windows":
         _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
         _execute_fail_loudly(ctx, ["make", "install"])
 
-    ctx.template(
-        "BUILD",
-        Label("//haskell:ghc.BUILD"),
-        executable = False,
-    )
-
-ghc_bindist = repository_rule(
+_ghc_bindist = repository_rule(
     _ghc_bindist_impl,
     local = False,
     attrs = {
@@ -107,42 +111,51 @@ ghc_bindist = repository_rule(
             values = _GHC_BINS.keys(),
             doc = "The desired GHC version",
         ),
+        "target": attr.string(),
     },
 )
-"""Create a new repository from binary distributions of GHC. The
-repository exports two targets:
 
-* a `bin` filegroup containing all GHC commands,
-* a `threaded-rts` CC library.
+def ghc_bindist(name, version, target):
+    """Create a new repository from binary distributions of GHC. The
+    repository exports two targets:
 
-These targets are unpacked from a binary distribution specific to your
-platform. Only the platforms that have a "binary package" on the GHC
-[download page](https://www.haskell.org/ghc/) are supported.
+    * a `bin` filegroup containing all GHC commands,
+    * a `threaded-rts` CC library.
 
-Example:
-   In `WORKSPACE` file:
+    These targets are unpacked from a binary distribution specific to your
+    platform. Only the platforms that have a "binary package" on the GHC
+    [download page](https://www.haskell.org/ghc/) are supported.
 
-   ```bzl
-   load("@io_tweag_rules_haskell//haskell:haskell.bzl", "ghc_bindist")
+    Example:
+       In `WORKSPACE` file:
 
-   # This repository rule creates @ghc repository.
-   ghc_bindist(
-     name    = "ghc",
-     version = "8.2.2",
-   )
+       ```bzl
+       load("@io_tweag_rules_haskell//haskell:haskell.bzl", "ghc_bindist")
 
-   # Register the toolchain defined locally in BUILD file:
-   register_toolchains("//:ghc")
-   ```
+       # This repository rule creates @ghc repository.
+       ghc_bindist(
+         name    = "ghc",
+         version = "8.2.2",
+       )
 
-   In `BUILD` file:
+       # Register the toolchain defined locally in BUILD file:
+       register_toolchains("//:ghc")
+       ```
 
-   ```bzl
-   # Use binaries from @ghc//:bin to define //:ghc toolchain.
-   haskell_toolchain(
-     name = "ghc",
-     version = "8.2.2",
-     tools = "@ghc//:bin",
-   )
-   ```
-"""
+       In `BUILD` file:
+
+       ```bzl
+       # Use binaries from @ghc//:bin to define //:ghc toolchain.
+       haskell_toolchain(
+         name = "ghc",
+         version = "8.2.2",
+         tools = "@ghc//:bin",
+       )
+       ```
+    """
+    _ghc_bindist(
+        name = name,
+        version = version,
+        target = target,
+    )
+    native.register_toolchains("@{}//:toolchain".format(name))
