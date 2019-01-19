@@ -166,20 +166,6 @@ def ghc_bindist(name, version, target):
          name    = "ghc",
          version = "8.2.2",
        )
-
-       # Register the toolchain defined locally in BUILD file:
-       register_toolchains("//:ghc")
-       ```
-
-       In `BUILD` file:
-
-       ```bzl
-       # Use binaries from @ghc//:bin to define //:ghc toolchain.
-       haskell_toolchain(
-         name = "ghc",
-         version = "8.2.2",
-         tools = "@ghc//:bin",
-       )
        ```
     """
     bindist_name = name
