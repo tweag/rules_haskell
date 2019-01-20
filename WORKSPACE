@@ -23,7 +23,7 @@ load(
     "nixpkgs_package",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:nix.bzl",
+    "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
     "haskell_nixpkgs_package",
     "haskell_nixpkgs_packageset",
 )

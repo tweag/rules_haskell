@@ -106,7 +106,7 @@ def _gen_imports_impl(repository_ctx):
         extra_args_raw += foo + " = " + bar + ", "
     bzl_file_content = """
 load("{repo_name}", "packages")
-load("@io_tweag_rules_haskell//haskell:nix.bzl", "haskell_nixpkgs_packages")
+load("@io_tweag_rules_haskell//haskell:nixpkgs.bzl", "haskell_nixpkgs_packages")
 
 def import_packages(name):
     haskell_nixpkgs_packages(
@@ -187,7 +187,7 @@ def haskell_nixpkgs_packageset(name, base_attribute_path, repositories = {}, **k
           revision = "9a787af6bc75a19ac9f02077ade58ddc248e674a",
       )
 
-      load("@io_tweag_rules_haskell//haskell:nix.bzl",
+      load("@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
           "haskell_nixpkgs_packageset",
 
       # Generate a list of all the available haskell packages
