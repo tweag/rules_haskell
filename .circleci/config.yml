@@ -16,6 +16,9 @@ jobs:
             apk --no-progress update
             apk --no-progress add bash ca-certificates
             nix-channel --update
+            # CircleCI and Nix sandboxing don't play nice. See
+            # https://discourse.nixos.org/t/nixos-on-ovh-kimsufi-cloning-builder-process-operation-not-permitted/1494/5
+            mkdir -p /etc/nix && echo "sandbox = false" > /etc/nix/nix.conf
       - run:
           name: Build
           command: |

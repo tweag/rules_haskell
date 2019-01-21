@@ -33,11 +33,6 @@ haskell_nixpkgs_package(
     attribute_path = "haskellPackages.ghc",
     build_file = "//haskell:ghc.BUILD",
     nix_file = "//tests:ghc.nix",
-    nixopts = [
-        "--option",
-        "sandbox",
-        "false",
-    ],
     # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly
     # if `repository` is not set, but our nix_file uses `./nixpkgs/`.
     # TODO(Profpatsch)
@@ -79,11 +74,6 @@ register_toolchains(
 
 nixpkgs_cc_configure(
     nix_file = "//nixpkgs:cc-toolchain.nix",
-    nixopts = [
-        "--option",
-        "sandbox",
-        "false",
-    ],
     repository = "@nixpkgs",
 )
 
@@ -154,9 +144,6 @@ haskell_nixpkgs_packageset(
     nixopts = [
         "-j",
         "1",
-        "--option",
-        "sandbox",
-        "false",
     ],
     repositories = {"nixpkgs": "@nixpkgs"},
 )
