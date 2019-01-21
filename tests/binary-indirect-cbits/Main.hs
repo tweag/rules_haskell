@@ -1,5 +1,5 @@
-
 import AddOne
 
 main :: IO ()
-main = putStrLn $ show $ addOne 2
+main = do
+  putStrLn $ show $ addOne 2

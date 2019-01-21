@@ -4,6 +4,7 @@ load(":private/packages.bzl", "expose_packages")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
+    "is_shared_library",
     "ln",
     "make_path",
     "target_unique_name",
@@ -60,10 +61,19 @@ def build_haskell_repl(
         for idir in set.to_list(lib_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
-    # External libraries.
-    seen_libs = set.empty()
+    # External shared libraries that we need to make available to the REPL.
+    # This is currently the shared libraries made available via haskell_cc_import's.
+    # We need to filter out the static libraries as including them here would
+    # cause linking errors as ghci cannot load static libraries.
+    mangled_external_shared_libraries = \
+        [
+            e.mangled_lib
+            for e in set.to_list(build_info.external_libraries)
+            if is_shared_library(e.mangled_lib)
+        ]
 
-    for lib in [e.mangled_lib for e in set.to_list(build_info.external_libraries)]:
+    seen_libs = set.empty()
+    for lib in mangled_external_shared_libraries:
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
@@ -134,7 +144,7 @@ def build_haskell_repl(
             repl_file,
         ]),
         set.to_depset(package_caches),
-        depset([e.mangled_lib for e in set.to_list(build_info.external_libraries)]),
+        depset(mangled_external_shared_libraries),
         set.to_depset(source_files),
     ])
     ln(hs, repl_file, output, extra_inputs)
