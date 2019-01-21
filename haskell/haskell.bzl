@@ -90,11 +90,6 @@ _haskell_common_attrs = {
         cfg = "host",
         default = Label("@io_tweag_rules_haskell//haskell:ls_modules"),
     ),
-    "_write_pkg_conf": attr.label(
-        executable = True,
-        cfg = "host",
-        default = Label("@io_tweag_rules_haskell//haskell:write_pkg_conf"),
-    ),
     "_cc_toolchain": attr.label(
         default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
