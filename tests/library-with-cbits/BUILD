@@ -4,13 +4,19 @@ load(
     "haskell_library",
 )
 
+
+haskell_import(
+    name = "base_pkg",
+    package = "base",
+)
+
 haskell_library(
     name = "library-with-cbits",
     srcs = ["AddOne.hsc"],
     visibility = ["//visibility:public"],
     deps = [
         ":ourclibrary-indirect",
-        "@hackage//:base",
+        ":base_pkg",
     ],
 )
 
@@ -20,7 +26,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":library-with-cbits",
-        "@hackage//:base",
+        ":base_pkg",
     ],
 )
 
@@ -30,7 +36,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":ourclibrary-static",
-        "@hackage//:base",
+        ":base_pkg",
     ],
 )
 

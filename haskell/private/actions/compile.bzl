@@ -36,8 +36,15 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
     hs_out = declare_compiled(hs, hsc_file, ".hs", directory = hsc_dir_raw)
     args.add_all([hsc_file.path, "-o", hs_out.path])
 
-    args.add_all(["-c", cc.tools.cc])
-    args.add_all(["-l", cc.tools.cc])
+    is_windows = hs.toolchain.is_windows
+
+    if is_windows:
+        args.add_all(["-c", hs.toolchain.tools.gcc])
+        args.add_all(["-l", hs.toolchain.tools.gcc])
+    else:
+        args.add_all(["-c", cc.tools.cc])
+        args.add_all(["-l", cc.tools.cc])
+
     args.add("-ighcplatform.h")
     args.add("-ighcversion.h")
     args.add_all(["--cflag=" + f for f in cc.cpp_flags])

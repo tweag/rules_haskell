@@ -17,6 +17,7 @@ load(":private/actions/package.bzl", "package")
 load(":private/set.bzl", "set")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci"]
+_GHC_BINARIES_WIN = ["gcc"]
 
 def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
     if not env:
@@ -103,10 +104,16 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
 def _haskell_toolchain_impl(ctx):
     # Store the binaries of interest in ghc_binaries.
     ghc_binaries = {}
-    for tool in _GHC_BINARIES:
+    is_windows = ctx.attr.is_windows
+    is_darwin = ctx.attr.is_darwin
+    _ghc_binaries = _GHC_BINARIES + (_GHC_BINARIES_WIN if is_windows else [])
+
+    for tool in _ghc_binaries:
         for file in ctx.files.tools:
             if tool == paths.split_extension(file.basename)[0]:
                 ghc_binaries[tool] = file
+        if not tool in ghc_binaries:
+            fail("Not tool {} in {}".format(tool, ctx.attr.tools.label))
         if not ghc_binaries[tool]:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 
@@ -151,6 +158,8 @@ fi
         for name, file in ghc_binaries.items()
     }
 
+    print(ghc_binaries.items())
+
     locale_archive = None
 
     if ctx.attr.locale_archive != None:
@@ -175,8 +184,8 @@ fi
                 package = package,
                 run_ghc = _run_ghc,
             ),
-            is_darwin = ctx.attr.is_darwin,
-            is_windows = ctx.attr.is_windows,
+            is_darwin = is_darwin,
+            is_windows = is_windows,
             version = ctx.attr.version,
             # Pass through the version_file, that it can be required as
             # input in _run_ghc, to make every call to GHC depend on a
