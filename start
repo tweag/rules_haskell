@@ -42,10 +42,14 @@ http_archive(
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 haskell_repositories()
 
+rules_nixpkgs_version = "c232b296e795ad688854ff3d3d2de6e7ad45f0b4"
+rules_nixpkgs_sha256 = "5883ea01f3075354ab622cfe82542da01fe2b57a48f4c3f7610b4d14a3fced11"
+
 http_archive(
-  name = "io_tweag_rules_nixpkgs",
-  strip_prefix = "rules_nixpkgs-0.4.0",
-  urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.4.0.tar.gz"],
+    name = "io_tweag_rules_nixpkgs",
+    sha256 = rules_nixpkgs_sha256,
+    strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % rules_nixpkgs_version],
 )
 
 load(
@@ -68,7 +72,10 @@ nixpkgs_package(
   repository = "@nixpkgs",
 )
 
-nixpkgs_cc_configure(repository = "@nixpkgs")
+nixpkgs_cc_configure(
+    repository = "@nixpkgs",
+)
+
 register_toolchains("//:ghc")
 EOF
 
@@ -88,10 +95,7 @@ haskell_toolchain(
   tools = "@ghc//:bin",
 )
 
-haskell_import(
-  name = "base_pkg",
-  package = "base",
-)
+haskell_import(name = "base")
 
 haskell_library(
   name = "MY_LIBRARY_NAME",

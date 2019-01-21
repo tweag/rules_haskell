@@ -1,14 +1,17 @@
 workspace(name = "io_tweag_rules_haskell")
 
-rules_nixpkgs_version = "f23f48193ab3a26e930989fa5edd89f324ca078d"
-
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 
 haskell_repositories()
 
+rules_nixpkgs_version = "c232b296e795ad688854ff3d3d2de6e7ad45f0b4"
+
+rules_nixpkgs_sha256 = "5883ea01f3075354ab622cfe82542da01fe2b57a48f4c3f7610b4d14a3fced11"
+
 http_archive(
     name = "io_tweag_rules_nixpkgs",
+    sha256 = rules_nixpkgs_sha256,
     strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
     urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % rules_nixpkgs_version],
 )
@@ -54,7 +57,7 @@ load(
 )
 
 # XXX: this needs to be kept in sync with `ghc_version` in `tests/BUILD`
-ghc_version = "8.4.4"
+ghc_version = "8.6.3"
 
 # A GHC from a bindist for Windows
 ghc_bindist(
@@ -76,6 +79,24 @@ nixpkgs_cc_configure(
 
 nixpkgs_package(
     name = "zlib",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "sphinx",
+    attribute_path = "python36Packages.sphinx",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "graphviz",
+    attribute_path = "graphviz",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "zip",
+    attribute_path = "zip",
     repository = "@nixpkgs",
 )
 
@@ -167,6 +188,11 @@ nixpkgs_package(
       for i in ${nodejs}/*; do ln -s $i; done
       ''
     """,
+    nixopts = [
+        "--option",
+        "sandbox",
+        "false",
+    ],
     repository = "@nixpkgs",
 )
 

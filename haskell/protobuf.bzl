@@ -116,7 +116,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         ))
 
     args.add([
-        "--haskell_out=no-reexports:" + paths.join(
+        "--haskell_out=no-runtime:" + paths.join(
             hs_files[0].root.path,
             src_prefix,
         ),
