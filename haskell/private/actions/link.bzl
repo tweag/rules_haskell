@@ -6,6 +6,7 @@ load(":private/path_utils.bzl", "get_lib_name", "is_shared_library", "is_static_
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
+load(":private/list.bzl", "list")
 
 def backup_path(target):
     """Return a path from the directory this `target` is in
@@ -423,15 +424,25 @@ def _add_external_libraries(args, ext_libs):
       ext_libs: C library dependencies.
     """
 
-    seen_libs = set.empty()
-    for lib in ext_libs:
-        lib_name = get_lib_name(lib)
-        if not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            args.add_all([
-                "-l{0}".format(lib_name),
-                "-L{0}".format(paths.dirname(lib.path)),
-            ])
+    # Deduplicate the list of ext_libs based on their
+    # library name (file name stripped of lib prefix and endings).
+    # This keeps the command lines short, e.g. when a C library
+    # like `liblz4.so` appears in multiple dependencies.
+    # XXX: this is only done in here
+    # Shouldn’t the deduplication be applied to *all* external libraries?
+    deduped = list.dedup_on(get_lib_name, ext_dyn_libs)
+
+    for lib in deduped:
+        args.add_all([
+            "-L{0}".format(
+                paths.dirname(lib.path),
+            ),
+            "-l{0}".format(
+                # technically this is the second call to get_lib_name,
+                #  but the added clarity makes up for it.
+                get_lib_name(lib),
+            ),
+        ])
 
 def _infer_rpaths(is_darwin, target, solibs):
     """Return set of RPATH values to be added to target so it can find all

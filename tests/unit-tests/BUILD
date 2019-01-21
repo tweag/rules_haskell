@@ -1,4 +1,8 @@
-load(":tests.bzl", "link_backup_path_test")
+load(
+    ":tests.bzl",
+    "dedup_on_test",
+    "link_backup_path_test",
+)
 
 link_backup_path_test(
     name = "backup_path_file",
@@ -16,4 +20,8 @@ link_backup_path_test(
     name = "backup_path_dir_dir_file",
     filename = "foo/bar/baz",
     output = "../..",
+)
+
+dedup_on_test(
+    name = "dedup_on_test",
 )
