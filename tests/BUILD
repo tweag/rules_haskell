@@ -15,7 +15,7 @@ load(
 
 package(default_testonly = 1)
 
-ghc_version = "8.4.4"
+ghc_version = "8.6.3"
 
 haskell_toolchain(
     name = "ghc",
@@ -165,9 +165,9 @@ rule_test(
     name = "test-haddock",
     size = "small",
     generates = [
-        "haddock/base-4.11.1.0",
+        "haddock/base-4.12.0.0",
         "haddock/index",
-        "haddock/template-haskell-2.13.0.0",
+        "haddock/template-haskell-2.14.0.0",
         "haddock/testsZShaddockZShaddock-lib-a",
         "haddock/testsZShaddockZShaddock-lib-b",
         "haddock/testsZShaddockZShaddock-lib-deep",

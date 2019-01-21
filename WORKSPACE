@@ -57,7 +57,7 @@ load(
 )
 
 # XXX: this needs to be kept in sync with `ghc_version` in `tests/BUILD`
-ghc_version = "8.4.4"
+ghc_version = "8.6.3"
 
 # A GHC from a bindist for Windows
 ghc_bindist(
