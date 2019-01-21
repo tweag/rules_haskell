@@ -49,7 +49,9 @@ jobs:
           name: Run tests
           shell: /bin/bash -eilo pipefail
           command: |
-            nix-shell --arg docTools false --pure --run 'bazel build //tests:run-tests && ./bazel-bin/tests/run-tests'
+            # XXX 2019-01-22 Disable start script checking on Darwin
+            # due to a clash between binutils and clang.
+            nix-shell --arg docTools false --pure --run 'bazel build //tests:run-tests && ./bazel-bin/tests/run-tests --skip "/startup script/"'
 
 workflows:
   version: 2
