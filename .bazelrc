@@ -2,7 +2,6 @@
 
 build:ci --loading_phase_threads=1
 #build:ci --all_incompatible_changes
-build:ci --sandbox_debug
 build:ci --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
 # can be changed by user.
