@@ -523,6 +523,18 @@ def _add_external_libraries(args, ext_libs):
       ext_libs: C library dependencies.
     """
 
+    # Normally, GHC adds `-Wl,-rpath,<dir>` to the linker for every
+    # `<dir>` that is added with `-L` (`-dynload=sysdep`).
+    # These paths are of no value to bazel, because the `lib.path`
+    # dirs we add below are only valid at link-time. We add the
+    # correct load-time paths (`lib.short_path`) below manually,
+    # and use `-dynload=deploy` so GHC doesn’t add any.
+    # See https://downloads.haskell.org/~ghc/7.6.1/docs/html/users_guide/using-shared-libs.html#finding-shared-libs-unix
+    # The difference between link-time and load-time comes from
+    # bazel sandboxing the runtime.
+    # (see: bazel runfiles).
+    args.add("-dynload=deploy")
+
     # Deduplicate the list of ext_libs based on their
     # library name (file name stripped of lib prefix and endings).
     # This keeps the command lines short, e.g. when a C library
