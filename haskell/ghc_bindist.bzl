@@ -190,3 +190,24 @@ def ghc_bindist(name, version, target):
         target = target,
     )
     native.register_toolchains("@{}//:toolchain".format(toolchain_name))
+
+def haskell_register_ghc_bindists(version):
+    """Register GHC binary distributions for all platforms as toolchains.
+
+    Toolchains can be used to compile Haskell code. This function
+    registers one toolchain for each known binary distribution on all
+    platforms of the given GHC version. During the build, one
+    toolchain will be selected based on the host and target platforms
+    (See [toolchain resolution][toolchain-resolution]).
+
+    [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
+
+    """
+    if not _GHC_BINDISTS.get(version):
+        fail("Binary distribution of GHC {} not available.".format(version))
+    for target in _GHC_BINDISTS[version]:
+        ghc_bindist(
+            name = "io_tweag_rules_haskell_ghc_{}".format(target),
+            target = target,
+            version = version,
+        )
