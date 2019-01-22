@@ -10,6 +10,9 @@ haskell_test(
     srcs = ["Main.hs"],
     # Flags that require -threaded, which we should get from the toolchain's
     # compiler_flags. Include spaces to validate proper quoting:
-    compiler_flags = ["-with-rtsopts=-N2 -qg -I0 -n2m -A128m"],
+    compiler_flags = [
+        "-with-rtsopts=-N2 -qg -I0 -n2m -A128m",
+        "-XLambdaCase",
+    ],
     deps = ["@hackage//:base"],
 )
