@@ -8,30 +8,129 @@ load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
 load(":private/list.bzl", "list")
 
-def backup_path(target):
-    """Return a path from the directory this `target` is in
-    to its runfile directory.
+# tests in /tests/unit_tests/BUILD
+def parent_dir_path(path):
+    """Returns the path of the parent directory.
+    For a relative path with just a file, "." is returned.
+    The path is not normalized.
 
     foo => .
-    foo/bar => ..
-    foo/bar/baz => ../..
+    foo/ => foo
+    foo/bar => foo
+    foo/bar/baz => foo/bar
+    foo/../bar => foo/..
 
     Args:
-      target: File
+      a path string
 
     Returns:
-      A path of the form "../../.."
+      A path list of the form `["foo", "bar"]`
     """
-    short_path_dir = paths.normalize(paths.dirname(target.short_path))
+    path_dir = paths.dirname(path)
 
     # dirname returns "" if there is no parent directory
-    # and normalize returns "." for "". In that case we
-    # return the identity path, which is ".".
-    if short_path_dir == ".":
-        return "."
+    # In that case we return the identity path, which is ".".
+    if path_dir == "":
+        return ["."]
     else:
-        n = len(short_path_dir.split("/"))
-        return "/".join([".."] * n)
+        return path_dir.split("/")
+
+def __check_dots(target, path):
+    # there’s still (non-leading) .. in split
+    if ".." in path:
+        fail("the short_path of target {} (which is {}) contains more dots than loading `../`. We can’t handle that.".format(
+            target,
+            target.short_path,
+        ))
+
+# skylark doesn’t allow nested defs, which is a mystery.
+def _get_target_parent_dir(target):
+    """get the parent dir and handle leading short_path dots,
+    which signify that the target is in an external repository.
+
+    Args:
+      target: a target, .short_path is used
+    Returns:
+      (is_external, parent_dir)
+      `is_external`: Bool whether the path points to an external repository
+      `parent_dir`: The parent directory, either up to the runfiles toplel,
+                    up to the external repository toplevel.
+    """
+
+    parent_dir = parent_dir_path(target.short_path)
+
+    if parent_dir[0] == "..":
+        __check_dots(target, parent_dir[1:])
+        return (True, parent_dir[1:])
+    else:
+        __check_dots(target, parent_dir)
+        return (False, parent_dir)
+
+# tests in /tests/unit_tests/BUILD
+def create_rpath_entry(binary, dependency, keep_filename, prefix = ""):
+    """Return a (relative) path that points from `binary` to `dependecy`
+    while not leaving the current bazel runpath, taking into account weird
+    corner cases of `.short_path` concerning external repositories.
+    The resulting entry should be able to be inserted into rpath or similar.
+
+    runpath/foo/a.so to runfile/bar/b.so => ../bar
+    with `keep_filename=True`:
+    runpath/foo/a.so to runfile/bar/b.so => ../bar/b.so
+    with `prefix="$ORIGIN"`:
+    runpath/foo/a.so to runfile/bar/b.so => $ORIGIN/../bar/b.so
+
+    Args:
+      binary: target of current binary
+      dependency: target of dependency to relatively point to
+      prefix: string path prefix to add before the relative path
+      keep_filename: whether to point to the filename or its parent dir
+
+    Returns:
+      relative path string
+    """
+    (bin_is_external, bin_parent_dir) = _get_target_parent_dir(binary)
+    (dep_is_external, dep_parent_dir) = _get_target_parent_dir(dependency)
+
+    # backup through parent directories of the binary
+    bin_backup = [".."] * len(bin_parent_dir)
+
+    # external repositories live in `target.runfiles/external`,
+    # while the internal repository lives in `target.runfiles`.
+    # The `.short_path`s of external repositories are strange,
+    # they start with `../`, but you cannot just append that in
+    # order to find the correct runpath. Instead you have to use
+    # the following logic to construct the correct runpaths:
+    if bin_is_external:
+        if dep_is_external:
+            # stay in `external`
+            path_segments = bin_backup
+        else:
+            # backup out of `external`
+            path_segments = [".."] + bin_backup
+    elif dep_is_external:
+        # go into `external`
+        path_segments = bin_backup + ["external"]
+    else:
+        # no special external traversal
+        path_segments = bin_backup
+
+    # then add the parent dir to our dependency
+    path_segments.extend(dep_parent_dir)
+
+    # and optionally add the filename
+    if keep_filename:
+        path_segments.append(
+            paths.basename(dependency.short_path),
+        )
+
+    # normalize for good measure and create the final path
+    path = paths.normalize("/".join(path_segments))
+
+    # and add the prefix if applicable
+    if prefix == "":
+        return path
+    else:
+        return prefix + "/" + path
 
 def _merge_parameter_files(hs, file1, file2):
     """Merge two GHC parameter files into one.
@@ -274,7 +373,7 @@ def _link_dependencies(hs, dep_info, dynamic, binary_tmp, binary, args):
 
     # Configure RUNPATH.
     solibs = cc_solibs + set.to_list(dep_info.dynamic_libraries)
-    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, binary, solibs)):
+    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, binary_tmp, solibs)):
         args.add("-optl-Wl,-rpath," + rpath)
 
     return (cc_link_libs, cc_solibs)
@@ -456,7 +555,7 @@ def _infer_rpaths(is_darwin, target, solibs):
     Args:
       is_darwin: Whether we're compiling on and for Darwin.
       target: File, executable or library we're linking.
-      solibs: A set of Files, shared objects that the target needs.
+      solibs: A list of Files, shared objects that the target needs.
 
     Returns:
       Set of strings: rpaths to add to target.
@@ -464,18 +563,18 @@ def _infer_rpaths(is_darwin, target, solibs):
     r = set.empty()
 
     if is_darwin:
-        origin = "@loader_path/"
+        prefix = "@loader_path"
     else:
-        origin = "$ORIGIN/"
+        prefix = "$ORIGIN"
 
     for solib in solibs:
-        rpath = paths.normalize(
-            paths.join(
-                backup_path(target),
-                paths.dirname(solib.short_path),
-            ),
+        rpath = create_rpath_entry(
+            target,
+            solib,
+            keep_filename = False,
+            prefix = prefix,
         )
-        set.mutable_insert(r, origin + rpath)
+        set.mutable_insert(r, rpath)
 
     return r
 
