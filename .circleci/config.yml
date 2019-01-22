@@ -20,9 +20,9 @@ jobs:
             # https://discourse.nixos.org/t/nixos-on-ovh-kimsufi-cloning-builder-process-operation-not-permitted/1494/5
             mkdir -p /etc/nix && echo "sandbox = false" > /etc/nix/nix.conf
       - run:
-          name: Build
+          name: Build tests
           command: |
-            nix-shell --arg docTools false --pure --run 'bazel build --config ci --jobs=2 //tests/...'
+            nix-shell --arg docTools false --pure --run 'bazel build --config ci --jobs=2 --build_tests_only //tests/...'
       - run:
           name: Run tests
           # bazel does not support recursive bazel call, so we
@@ -41,10 +41,10 @@ jobs:
           command: |
             curl https://nixos.org/nix/install | sh
       - run:
-          name: Build
+          name: Build tests
           shell: /bin/bash -eilo pipefail
           command: |
-            nix-shell --arg docTools false --pure --run 'bazel build --config ci --jobs=2 //tests/...'
+            nix-shell --arg docTools false --pure --run 'bazel build --config ci --jobs=2 --build_tests_only //tests/...'
       - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
