@@ -17,6 +17,7 @@ load(
 load(
     ":ghc_bindist.bzl",
     _ghc_bindist = "ghc_bindist",
+    _haskell_register_ghc_bindists = "haskell_register_ghc_bindists",
 )
 load(
     ":haddock.bzl",
@@ -27,6 +28,10 @@ load(
     ":lint.bzl",
     _haskell_lint = "haskell_lint",
     _haskell_lint_aspect = "haskell_lint_aspect",
+)
+load(
+    ":nixpkgs.bzl",
+    _haskell_register_ghc_nixpkgs = "haskell_register_ghc_nixpkgs",
 )
 load(
     ":private/haskell_impl.bzl",
@@ -43,6 +48,7 @@ load(
 )
 load(
     ":toolchain.bzl",
+    _haskell_register_toolchains = "haskell_register_toolchains",
     _haskell_toolchain = "haskell_toolchain",
 )
 
@@ -260,6 +266,12 @@ haskell_lint_aspect = _haskell_lint_aspect
 haskell_doctest = _haskell_doctest
 
 haskell_doctest_toolchain = _haskell_doctest_toolchain
+
+haskell_register_toolchains = _haskell_register_toolchains
+
+haskell_register_ghc_bindists = _haskell_register_ghc_bindists
+
+haskell_register_ghc_nixpkgs = _haskell_register_ghc_nixpkgs
 
 haskell_toolchain = _haskell_toolchain
 

@@ -15,52 +15,15 @@ load(
 
 package(default_testonly = 1)
 
-ghc_version = "8.6.3"
-
-# These toolchains are all morally testonly. However, that would break
-# our tests of haskell_library_rules: aspects of non-testonly
-# proto_library rules (from com_google_protobuf) can't themselves be
-# testonly.
-
-[
-    haskell_toolchain(
-        name = name,
-        testonly = 0,
-        compiler_flags = [
-            "-XStandaloneDeriving",  # Flag used at compile time
-            "-threaded",  # Flag used at link time
-
-            # Used by `tests/repl-flags`
-            "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
-            # this is the default, so it does not harm other tests
-            "-XNoOverloadedStrings",
-        ],
-        exec_compatible_with = ["@bazel_tools//platforms:" + os],
-        haddock_flags = ["-U"],
-        locale_archive = locale_archive,
-        repl_ghci_args = [
-            # The repl test will need this flag, but set by the local
-            # `repl_ghci_args`.
-            "-UTESTS_TOOLCHAIN_REPL_FLAGS",
-            # The repl test will need OverloadedString
-            "-XOverloadedStrings",
-        ],
-        target_compatible_with = ["@bazel_tools//platforms:" + os],
-        tools = tools,
-        version = ghc_version,
-    )
-    for os, tools, locale_archive in [
-        ("linux", "@hackage-ghc//:bin", "@glibc_locales//:locale-archive"),
-        # For some reason glibcLocales is not available on Darwin.
-        ("osx", "@hackage-ghc//:bin", None),
-    ]
-    for name in ["ghc_%s" % os]
-]
-
 haskell_doctest_toolchain(
     name = "doctest-toolchain",
     doctest = "@hackage-doctest//:bin",
 )
+
+# This toolchain is morally testonly. However, that would break our
+# tests of haskell_library_rules: aspects of non-testonly
+# proto_library rules (from com_google_protobuf) can't themselves be
+# testonly.
 
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
@@ -84,7 +47,6 @@ haskell_proto_toolchain(
 
 c2hs_toolchain(
     name = "c2hs-toolchain",
-    testonly = 0,
     c2hs = "@hackage-c2hs//:bin",
 )
 
@@ -263,6 +225,9 @@ rule_test(
     generates = ["java_classpath"],
     rule = "//tests/java_classpath",
 )
+
+# Keep in sync with test_ghc_version in WORKSPACE.
+ghc_version = "8.6.3"
 
 rule_test(
     name = "test-cc_haskell_import-output",

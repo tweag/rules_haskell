@@ -23,7 +23,7 @@ load(
     "nixpkgs_package",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:nix.bzl",
+    "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
     "haskell_nixpkgs_package",
     "haskell_nixpkgs_packageset",
 )
@@ -51,24 +51,46 @@ nixpkgs_local_repository(
     nix_file = "//nixpkgs:default.nix",
 )
 
+test_ghc_version = "8.6.3"
+
+test_compiler_flags = [
+    "-XStandaloneDeriving",  # Flag used at compile time
+    "-threaded",  # Flag used at link time
+
+    # Used by `tests/repl-flags`
+    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+    # this is the default, so it does not harm other tests
+    "-XNoOverloadedStrings",
+]
+
+test_haddock_flags = ["-U"]
+
+test_repl_ghci_args = [
+    # The repl test will need this flag, but set by the local
+    # `repl_ghci_args`.
+    "-UTESTS_TOOLCHAIN_REPL_FLAGS",
+    # The repl test will need OverloadedString
+    "-XOverloadedStrings",
+]
+
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "ghc_bindist",
+    "haskell_register_ghc_bindists",
+    "haskell_register_ghc_nixpkgs",
 )
 
-# XXX: this needs to be kept in sync with `ghc_version` in `tests/BUILD`
-ghc_version = "8.6.3"
-
-# A GHC from a bindist for Windows
-ghc_bindist(
-    name = "ghc_windows",
-    target = "windows_amd64",
-    version = ghc_version,
+haskell_register_ghc_nixpkgs(
+    compiler_flags = test_compiler_flags,
+    haddock_flags = test_haddock_flags,
+    locale_archive = "@glibc_locales//:locale-archive",
+    nix_file = "//tests:ghc.nix",
+    repl_ghci_args = test_repl_ghci_args,
+    version = test_ghc_version,
 )
+
+haskell_register_ghc_bindists(version = test_ghc_version)
 
 register_toolchains(
-    "//tests:ghc_linux",
-    "//tests:ghc_osx",
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",

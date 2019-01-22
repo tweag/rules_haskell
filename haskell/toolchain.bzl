@@ -1,6 +1,7 @@
 """Rules for defining toolchains"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load(
     ":private/actions/compile.bzl",
     "compile_binary",
@@ -235,6 +236,7 @@ def haskell_toolchain(
         compiler_flags = [],
         repl_ghci_args = [],
         haddock_flags = [],
+        locale_archive = None,
         **kwargs):
     """Declare a compiler toolchain.
 
@@ -269,9 +271,9 @@ def haskell_toolchain(
       ```
     """
     if exec_compatible_with and not target_compatible_with:
-        exec_compatible_with = target_compatible_with
-    elif target_compatible_with and not exec_compatible_with:
         target_compatible_with = exec_compatible_with
+    elif target_compatible_with and not exec_compatible_with:
+        exec_compatible_with = target_compatible_with
     impl_name = name + "-impl"
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
     _haskell_toolchain(
@@ -290,6 +292,13 @@ def haskell_toolchain(
             "@io_tweag_rules_haskell//haskell/platforms:mingw32": True,
             "//conditions:default": False,
         }),
+        # Ignore this attribute on any platform that is not Linux. The
+        # LOCALE_ARCHIVE environment variable is a Linux-specific
+        # Nixpkgs hack.
+        locale_archive = select({
+            "@io_tweag_rules_haskell//haskell/platforms:linux": locale_archive,
+            "//conditions:default": None,
+        }),
         **kwargs
     )
     native.toolchain(
@@ -299,3 +308,10 @@ def haskell_toolchain(
         exec_compatible_with = exec_compatible_with,
         target_compatible_with = target_compatible_with,
     )
+
+def haskell_register_toolchains(version):
+    """Download the binary distribution of GHC for your current platform
+    and register it as a toolchain. This currently has the same effect
+    as just `haskell_register_ghc_bindists(version)`.
+    """
+    haskell_register_ghc_bindists(version)

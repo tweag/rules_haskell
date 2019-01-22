@@ -1,6 +1,6 @@
 """Workspace rules (GHC binary distributions)"""
 
-_GHC_BINS = {
+_GHC_BINDISTS = {
     "8.6.3": {
         "linux_amd64": ("https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-deb8-linux.tar.xz", "291ca565374f4d51cc311488581f3279d3167a064fabfd4a6722fe2bd4532fd5"),
         "darwin_amd64": ("https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-apple-darwin.tar.xz", "79d069a1a7d74cfdd7ac2a2711c45d3ddc6265b988a0cefa342714b24f997fc1"),
@@ -66,10 +66,10 @@ def _ghc_bindist_impl(ctx):
     target = ctx.attr.target
     os, _, arch = target.partition("_")
 
-    if _GHC_BINS[version].get(target) == None:
+    if _GHC_BINDISTS[version].get(target) == None:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
     else:
-        url, sha256 = _GHC_BINS[version][target]
+        url, sha256 = _GHC_BINDISTS[version][target]
 
     bindist_dir = ctx.path(".")  # repo path
 
@@ -98,7 +98,7 @@ _ghc_bindist = repository_rule(
     attrs = {
         "version": attr.string(
             default = _GHC_DEFAULT_VERSION,
-            values = _GHC_BINS.keys(),
+            values = _GHC_BINDISTS.keys(),
             doc = "The desired GHC version",
         ),
         "target": attr.string(),
@@ -190,3 +190,24 @@ def ghc_bindist(name, version, target):
         target = target,
     )
     native.register_toolchains("@{}//:toolchain".format(toolchain_name))
+
+def haskell_register_ghc_bindists(version):
+    """Register GHC binary distributions for all platforms as toolchains.
+
+    Toolchains can be used to compile Haskell code. This function
+    registers one toolchain for each known binary distribution on all
+    platforms of the given GHC version. During the build, one
+    toolchain will be selected based on the host and target platforms
+    (See [toolchain resolution][toolchain-resolution]).
+
+    [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
+
+    """
+    if not _GHC_BINDISTS.get(version):
+        fail("Binary distribution of GHC {} not available.".format(version))
+    for target in _GHC_BINDISTS[version]:
+        ghc_bindist(
+            name = "io_tweag_rules_haskell_ghc_{}".format(target),
+            target = target,
+            version = version,
+        )
