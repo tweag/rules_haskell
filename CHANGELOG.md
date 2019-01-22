@@ -6,14 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.8] - 2019-xx-xx
 
-### Fixed
+### Added
 
-* The evaluation of the `WORKSPACE` on Windows is successful. The `nix-build`
-  calls are bypassed.
-* The evaluation of the `buildifier` on Windows is successful. The Go SDK
-  is downloaded.
-* GHC can successfully be invoked on Windows. The Go SDK
-  is downloaded.
+* `haskell_register_toolchains`, `haskell_register_ghc_bindists` and
+  `haskell_register_ghc_nixpkgs` to register multiple toolchains for
+  multiple platforms at once. Toolchains from binary distributions can
+  now coexist with toolchains from Nixpkgs, even on the same platform.
+* Support for Bazel v0.21.
 
 ### Removed
 
@@ -26,12 +25,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   had been deprecated two versions ago and is removed.
   Use `haskell_import` instead (see docs for usage).
 * The `extra_binaries` field is now no longer supported.
-* Support for Bazel 0.21.
+
+### Changed
+
+* The minimum supported Bazel version is now v0.21.
+* `ghc_bindist` now requires a `target` argument. Use
+  `haskell_register_ghc_nixpkgs` to call `ghc_bindist` once per known
+  target.
+* `ghc_bindist` now registers itself as a toolchain. We no longer
+  require a separate toolchain definition and registration in addition
+  to `ghc_bindist`.
+* `c2hs` support is now provided in a separate toolchain called
+  `c2hs_toolchain`, rather than an optional extra to the
+  `haskell_toolchain`.
 
 ### Fixed
 
-* Fix static linking with C libraries that are indirectly depended upon
-* Fix repl targets that have indirect cc_library dependencies
+* Fix static linking with C libraries that are indirectly depended
+  upon.
+* Fix repl targets that have indirect cc_library dependencies.
 
 ## [0.7] - 2018-12-24
 
