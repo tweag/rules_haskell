@@ -1,6 +1,6 @@
 """Workspace rules (GHC binary distributions)"""
 
-_GHC_BINS = {
+_GHC_BINDISTS = {
     "8.6.3": {
         "linux_amd64": ("https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-deb8-linux.tar.xz", "291ca565374f4d51cc311488581f3279d3167a064fabfd4a6722fe2bd4532fd5"),
         "darwin_amd64": ("https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-apple-darwin.tar.xz", "79d069a1a7d74cfdd7ac2a2711c45d3ddc6265b988a0cefa342714b24f997fc1"),
@@ -66,10 +66,10 @@ def _ghc_bindist_impl(ctx):
     target = ctx.attr.target
     os, _, arch = target.partition("_")
 
-    if _GHC_BINS[version].get(target) == None:
+    if _GHC_BINDISTS[version].get(target) == None:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
     else:
-        url, sha256 = _GHC_BINS[version][target]
+        url, sha256 = _GHC_BINDISTS[version][target]
 
     bindist_dir = ctx.path(".")  # repo path
 
@@ -98,7 +98,7 @@ _ghc_bindist = repository_rule(
     attrs = {
         "version": attr.string(
             default = _GHC_DEFAULT_VERSION,
-            values = _GHC_BINS.keys(),
+            values = _GHC_BINDISTS.keys(),
             doc = "The desired GHC version",
         ),
         "target": attr.string(),
