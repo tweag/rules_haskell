@@ -229,3 +229,118 @@ exports_files(["all-haskell-packages.bzl"])
             **kwargs
         ),
     )
+
+def _ghc_nixpkgs_toolchain_impl(repository_ctx):
+    # These constraints might look tautological, because they always
+    # match the host platform if it is the same as the target
+    # platform. But they are important to state because Bazel
+    # toolchain resolution prefers other toolchains with more specific
+    # constraints otherwise.
+    target_constraints = ["@bazel_tools//platforms:x86_64"]
+    if repository_ctx.os.name == "linux":
+        target_constraints.append("@bazel_tools//platforms:linux")
+    elif repository_ctx.os.name == "mac os x":
+        target_constraints.append("@bazel_tools//platforms:osx")
+    exec_constraints = list(target_constraints)
+    exec_constraints.append("@io_tweag_rules_haskell//haskell/platforms:nixpkgs")
+
+    repository_ctx.file(
+        "BUILD",
+        executable = False,
+        content = """
+load("@io_tweag_rules_haskell//haskell:toolchain.bzl", "haskell_toolchain")
+
+haskell_toolchain(
+    name = "toolchain",
+    tools = "{tools}",
+    version = "{version}",
+    compiler_flags = {compiler_flags},
+    haddock_flags = {haddock_flags},
+    repl_ghci_args = {repl_ghci_args},
+    # On Darwin we don't need a locale archive. It's a Linux-specific
+    # hack in Nixpkgs.
+    locale_archive = "{locale_archive}",
+    exec_compatible_with = {exec_constraints},
+    target_compatible_with = {target_constraints},
+)
+        """.format(
+            tools = "@io_tweag_rules_haskell_ghc-nixpkgs//:bin",
+            version = repository_ctx.attr.version,
+            compiler_flags = str(repository_ctx.attr.compiler_flags),
+            haddock_flags = str(repository_ctx.attr.haddock_flags),
+            repl_ghci_args = str(repository_ctx.attr.repl_ghci_args),
+            locale_archive = repository_ctx.attr.locale_archive,
+            exec_constraints = exec_constraints,
+            target_constraints = target_constraints,
+        ),
+    )
+
+_ghc_nixpkgs_toolchain = repository_rule(
+    _ghc_nixpkgs_toolchain_impl,
+    local = False,
+    attrs = {
+        # These attributes just forward to haskell_toolchain.
+        # They are documented there.
+        "version": attr.string(),
+        "compiler_flags": attr.string_list(),
+        "haddock_flags": attr.string_list(),
+        "repl_ghci_args": attr.string_list(),
+        "locale_archive": attr.string(),
+    },
+)
+
+def haskell_register_ghc_nixpkgs(
+        version,
+        compiler_flags = None,
+        haddock_flags = None,
+        repl_ghci_args = None,
+        locale_archive = None,
+        attribute_path = "haskellPackages.ghc",
+        nix_file = None,
+        nix_file_deps = [],
+        repositories = {}):
+    """Register a package from Nixpkgs as a toolchain.
+
+    Toolchains can be used to compile Haskell code. To have this
+    toolchain selected during [toolchain
+    resolution][toolchain-resolution], set a host platform that
+    includes the `@io_tweag_rules_haskell//haskell/platforms:nixpkgs`
+    constraint value.
+
+    [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
+
+    Example:
+
+      ```
+      haskell_register_ghc_nixpkgs(
+          locale_archive = "@glibc_locales//:locale-archive",
+          atttribute_path = "haskellPackages.ghc",
+          version = "1.2.3",   # The version of GHC
+      )
+      ```
+
+      Setting the host platform can be done on the command-line like
+      in the following:
+
+      ```
+      --host_platform=@io_tweag_rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
+      ```
+
+    """
+    haskell_nixpkgs_package(
+        name = "io_tweag_rules_haskell_ghc-nixpkgs",
+        attribute_path = attribute_path,
+        build_file = "//haskell:ghc.BUILD",
+        nix_file = nix_file,
+        nix_file_deps = nix_file_deps,
+        repositories = repositories,
+    )
+    _ghc_nixpkgs_toolchain(
+        name = "io_tweag_rules_haskell_ghc-nixpkgs-toolchain",
+        version = version,
+        compiler_flags = compiler_flags,
+        haddock_flags = haddock_flags,
+        repl_ghci_args = repl_ghci_args,
+        locale_archive = locale_archive,
+    )
+    native.register_toolchains("@io_tweag_rules_haskell_ghc-nixpkgs-toolchain//:toolchain")

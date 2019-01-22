@@ -235,6 +235,7 @@ def haskell_toolchain(
         compiler_flags = [],
         repl_ghci_args = [],
         haddock_flags = [],
+        locale_archive = None,
         **kwargs):
     """Declare a compiler toolchain.
 
@@ -269,9 +270,9 @@ def haskell_toolchain(
       ```
     """
     if exec_compatible_with and not target_compatible_with:
-        exec_compatible_with = target_compatible_with
-    elif target_compatible_with and not exec_compatible_with:
         target_compatible_with = exec_compatible_with
+    elif target_compatible_with and not exec_compatible_with:
+        exec_compatible_with = target_compatible_with
     impl_name = name + "-impl"
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
     _haskell_toolchain(
@@ -289,6 +290,13 @@ def haskell_toolchain(
         is_windows = select({
             "@io_tweag_rules_haskell//haskell/platforms:mingw32": True,
             "//conditions:default": False,
+        }),
+        # Ignore this attribute on any platform that is not Linux. The
+        # LOCALE_ARCHIVE environment variable is a Linux-specific
+        # Nixpkgs hack.
+        locale_archive = select({
+            "@io_tweag_rules_haskell//haskell/platforms:linux": locale_archive,
+            "//conditions:default": None,
         }),
         **kwargs
     )
