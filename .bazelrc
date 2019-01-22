@@ -6,7 +6,7 @@ build:ci --sandbox_debug
 build:ci --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
 # can be changed by user.
-build:ci --symlink_prefix=foobar
+build:ci --symlink_prefix=bazel-ci-
 common:ci --color=no
 test:ci --test_output=errors
 
