@@ -197,7 +197,6 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     if hs.mode == "opt":
         args.add("-O2")
 
-    args.add(ghc_args)
     args.add(["-static"])
     if with_profiling:
         args.add("-prof", "-fexternal-interpreter")
@@ -229,6 +228,8 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             "-osuf",
             "p_o",
         ])
+
+    args.add(ghc_args)
 
     # Pass source files
     for f in set.to_list(source_files):
