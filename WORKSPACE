@@ -74,7 +74,8 @@ test_repl_ghci_args = [
 ]
 
 load(
-    "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_register_ghc_bindists",
     "haskell_register_ghc_nixpkgs",
 )
 
@@ -85,11 +86,6 @@ haskell_register_ghc_nixpkgs(
     nix_file = "//tests:ghc.nix",
     repl_ghci_args = test_repl_ghci_args,
     version = test_ghc_version,
-)
-
-load(
-    "@io_tweag_rules_haskell//haskell:ghc_bindist.bzl",
-    "haskell_register_ghc_bindists",
 )
 
 haskell_register_ghc_bindists(version = test_ghc_version)

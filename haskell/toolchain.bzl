@@ -1,6 +1,7 @@
 """Rules for defining toolchains"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load(
     ":private/actions/compile.bzl",
     "compile_binary",
@@ -307,3 +308,10 @@ def haskell_toolchain(
         exec_compatible_with = exec_compatible_with,
         target_compatible_with = target_compatible_with,
     )
+
+def haskell_register_toolchains(version):
+    """Download the binary distribution of GHC for your current platform
+    and register it as a toolchain. This currently has the same effect
+    as just `haskell_register_ghc_bindists(version)`.
+    """
+    haskell_register_ghc_bindists(version)
