@@ -3,23 +3,47 @@ load(
     "asserts",
     unit = "unittest",
 )
-load("//haskell:private/actions/link.bzl", "backup_path")
+load("//haskell:private/actions/link.bzl", "create_rpath_entry", "parent_dir_path")
 load("//haskell:private/list.bzl", "list")
 
-def link_backup_path_test_impl(ctx):
+def parent_dir_path_test_impl(ctx):
     env = unit.begin(ctx)
-    file_stub = struct(short_path = ctx.attr.filename)
     asserts.equals(
         env,
         expected = ctx.attr.output,
-        actual = backup_path(file_stub),
+        actual = parent_dir_path(ctx.attr.filename),
     )
     unit.end(env)
 
-link_backup_path_test = unit.make(
-    link_backup_path_test_impl,
+parent_dir_path_test = unit.make(
+    parent_dir_path_test_impl,
     attrs = {
         "filename": attr.string(),
+        "output": attr.string_list(),
+    },
+)
+
+def create_rpath_entry_test_impl(ctx):
+    env = unit.begin(ctx)
+    asserts.equals(
+        env,
+        expected = ctx.attr.output,
+        actual = create_rpath_entry(
+            struct(short_path = ctx.attr.binary_short_path),
+            struct(short_path = ctx.attr.dependency_short_path),
+            keep_filename = ctx.attr.keep_filename,
+            prefix = ctx.attr.prefix,
+        ),
+    )
+    unit.end(env)
+
+create_rpath_entry_test = unit.make(
+    create_rpath_entry_test_impl,
+    attrs = {
+        "binary_short_path": attr.string(),
+        "dependency_short_path": attr.string(),
+        "keep_filename": attr.bool(),
+        "prefix": attr.string(),
         "output": attr.string(),
     },
 )
