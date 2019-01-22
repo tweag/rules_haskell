@@ -67,13 +67,19 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     if params_file:
         command = """
         export PATH=${PATH:-} # otherwise GCC fails on Windows
-        $(< %s) $(< %s) $(< %s)
+        readarray -t ghc_args < %s
+        readarray -t extra_args < %s
+        readarray -t param_file_args < %s
+        "${ghc_args[@]}" "${extra_args[@]}" "${param_file_args[@]}"
 """ % (ghc_args_file.path, extra_args_file.path, params_file.path)
         extra_inputs.append(params_file)
     else:
         command = """
         export PATH=${PATH:-} # otherwise GCC fails on Windows
-        $(< %s) $(< %s)
+        readarray -t ghc_args < %s
+        readarray -t extra_args < %s
+
+        "${ghc_args[@]}" "${extra_args[@]}"
 """ % (ghc_args_file.path, extra_args_file.path)
 
     if type(inputs) == type(depset()):
