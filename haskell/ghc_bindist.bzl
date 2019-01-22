@@ -62,20 +62,14 @@ def _execute_fail_loudly(ctx, args):
         fail("{0} failed, aborting creation of GHC bindist".format(" ".join(args)))
 
 def _ghc_bindist_impl(ctx):
-    if ctx.os.name == "linux":
-        arch = "linux_amd64"
-    elif ctx.os.name == "mac os x":
-        arch = "darwin_amd64"
-    elif ctx.os.name.startswith("windows"):
-        arch = "windows_amd64"
-    else:
-        fail("Operating system {0} is not yet supported.".format(ctx.os.name))
-
     version = ctx.attr.version
-    if _GHC_BINS[version].get(arch) == None:
+    target = ctx.attr.target
+    os, _, arch = target.partition("_")
+
+    if _GHC_BINS[version].get(target) == None:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
     else:
-        url, sha256 = _GHC_BINS[version][arch]
+        url, sha256 = _GHC_BINS[version][target]
 
     bindist_dir = ctx.path(".")  # repo path
 
@@ -88,7 +82,7 @@ def _ghc_bindist_impl(ctx):
     )
 
     # On Windows the bindist already contains the built executables
-    if arch != "windows_amd64":
+    if os != "windows":
         _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
         _execute_fail_loudly(ctx, ["make", "install"])
 
@@ -98,7 +92,7 @@ def _ghc_bindist_impl(ctx):
         executable = False,
     )
 
-ghc_bindist = repository_rule(
+_ghc_bindist = repository_rule(
     _ghc_bindist_impl,
     local = False,
     attrs = {
@@ -107,42 +101,92 @@ ghc_bindist = repository_rule(
             values = _GHC_BINS.keys(),
             doc = "The desired GHC version",
         ),
+        "target": attr.string(),
     },
 )
-"""Create a new repository from binary distributions of GHC. The
-repository exports two targets:
 
-* a `bin` filegroup containing all GHC commands,
-* a `threaded-rts` CC library.
+def _ghc_bindist_toolchain_impl(ctx):
+    os, _, arch = ctx.attr.target.partition("_")
+    exec_constraints = [{
+        "darwin": "@bazel_tools//platforms:osx",
+        "linux": "@bazel_tools//platforms:linux",
+        "windows": "@bazel_tools//platforms:windows",
+    }.get(os)]
+    target_constraints = exec_constraints
+    ctx.file(
+        "BUILD",
+        executable = False,
+        content = """
+load("@io_tweag_rules_haskell//haskell:toolchain.bzl", "haskell_toolchain")
 
-These targets are unpacked from a binary distribution specific to your
-platform. Only the platforms that have a "binary package" on the GHC
-[download page](https://www.haskell.org/ghc/) are supported.
+haskell_toolchain(
+    name = "toolchain",
+    tools = "{tools}",
+    version = "{version}",
+    exec_compatible_with = {exec_constraints},
+    target_compatible_with = {target_constraints},
+)
+        """.format(
+            tools = "@{}//:bin".format(ctx.attr.bindist_name),
+            version = ctx.attr.version,
+            exec_constraints = exec_constraints,
+            target_constraints = target_constraints,
+        ),
+    )
 
-Example:
-   In `WORKSPACE` file:
+_ghc_bindist_toolchain = repository_rule(
+    _ghc_bindist_toolchain_impl,
+    local = False,
+    attrs = {
+        "bindist_name": attr.string(),
+        "version": attr.string(),
+        "target": attr.string(),
+    },
+)
 
-   ```bzl
-   load("@io_tweag_rules_haskell//haskell:haskell.bzl", "ghc_bindist")
+def ghc_bindist(name, version, target):
+    """Create a new repository from binary distributions of GHC. The
+    repository exports two targets:
 
-   # This repository rule creates @ghc repository.
-   ghc_bindist(
-     name    = "ghc",
-     version = "8.2.2",
-   )
+    * a `bin` filegroup containing all GHC commands,
+    * a `threaded-rts` CC library.
 
-   # Register the toolchain defined locally in BUILD file:
-   register_toolchains("//:ghc")
-   ```
+    These targets are unpacked from a binary distribution specific to your
+    platform. Only the platforms that have a "binary package" on the GHC
+    [download page](https://www.haskell.org/ghc/) are supported.
 
-   In `BUILD` file:
+    Example:
+       In `WORKSPACE` file:
 
-   ```bzl
-   # Use binaries from @ghc//:bin to define //:ghc toolchain.
-   haskell_toolchain(
-     name = "ghc",
-     version = "8.2.2",
-     tools = "@ghc//:bin",
-   )
-   ```
-"""
+       ```bzl
+       load("@io_tweag_rules_haskell//haskell:haskell.bzl", "ghc_bindist")
+
+       # This repository rule creates @ghc repository.
+       ghc_bindist(
+         name    = "ghc",
+         version = "8.2.2",
+       )
+       ```
+    """
+    bindist_name = name
+    toolchain_name = "{}-toolchain".format(name)
+
+    # We want the toolchain definition to be tucked away in a separate
+    # repository, that way `bazel build //...` will not match it (and
+    # e.g. build the Windows toolchain even on Linux). At the same
+    # time, we don't want the definition in the bindist repository,
+    # because then we need to download the bindist first before we can
+    # see the toolchain definition. The solution is to add the
+    # toolchain definition in its own special repository.
+    _ghc_bindist(
+        name = bindist_name,
+        version = version,
+        target = target,
+    )
+    _ghc_bindist_toolchain(
+        name = toolchain_name,
+        bindist_name = bindist_name,
+        version = version,
+        target = target,
+    )
+    native.register_toolchains("@{}//:toolchain".format(toolchain_name))

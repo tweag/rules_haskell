@@ -224,6 +224,8 @@ def haskell_toolchain(
         name,
         version,
         tools,
+        exec_compatible_with = None,
+        target_compatible_with = None,
         compiler_flags = [],
         repl_ghci_args = [],
         haddock_flags = [],
@@ -260,6 +262,10 @@ def haskell_toolchain(
       register_toolchains("//:ghc")
       ```
     """
+    if exec_compatible_with and not target_compatible_with:
+        exec_compatible_with = target_compatible_with
+    elif target_compatible_with and not exec_compatible_with:
+        target_compatible_with = exec_compatible_with
     impl_name = name + "-impl"
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
     _haskell_toolchain(
@@ -285,10 +291,6 @@ def haskell_toolchain(
         name = name,
         toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
         toolchain = ":" + impl_name,
-        exec_compatible_with = [
-            "@bazel_tools//platforms:x86_64",
-        ],
-        target_compatible_with = [
-            "@bazel_tools//platforms:x86_64",
-        ],
+        exec_compatible_with = exec_compatible_with,
+        target_compatible_with = target_compatible_with,
     )

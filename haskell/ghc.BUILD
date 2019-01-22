@@ -2,9 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 filegroup(
     name = "bin",
-    srcs = glob([
-        "bin/*",
-    ]),
+    srcs = glob(["bin/*"]),
 )
 
 cc_library(

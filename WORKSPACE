@@ -62,11 +62,13 @@ ghc_version = "8.6.3"
 # A GHC from a bindist for Windows
 ghc_bindist(
     name = "ghc_windows",
+    target = "windows_amd64",
     version = ghc_version,
 )
 
 register_toolchains(
-    "//tests:ghc",
+    "//tests:ghc_linux",
+    "//tests:ghc_osx",
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
