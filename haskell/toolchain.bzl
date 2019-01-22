@@ -277,16 +277,15 @@ def haskell_toolchain(
         haddock_flags = haddock_flags,
         visibility = ["//visibility:public"],
         is_darwin = select({
-            "@bazel_tools//src/conditions:darwin": True,
+            "@io_tweag_rules_haskell//haskell/platforms:darwin": True,
             "//conditions:default": False,
         }),
         is_windows = select({
-            "@bazel_tools//src/conditions:windows": True,
+            "@io_tweag_rules_haskell//haskell/platforms:mingw32": True,
             "//conditions:default": False,
         }),
         **kwargs
     )
-
     native.toolchain(
         name = name,
         toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
