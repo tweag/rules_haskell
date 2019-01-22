@@ -138,6 +138,14 @@ See [rules_haskell_examples][] for examples of using these rules.
 
 ## For `rules_haskell` developers
 
+### Saving common command-line flags to a file
+
+If you find yourself constantly passing the same flags on the
+command-line for certain commands (such as `--host_platform` or
+`--compiler`), you can augment the [`.bazelrc`](./.bazelrc) file in
+this repository with a `.bazelrc.local` file. This file is ignored by
+Git.
+
 ### Reference a local checkout of `rules_haskell`
 
 When you develop on `rules_haskell`, you usually do it in the context
