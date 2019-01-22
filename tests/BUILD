@@ -13,6 +13,10 @@ load(
     "haskell_test",
     "haskell_toolchain",
 )
+load(
+    "//:constants.bzl",
+    "ghc_version",
+)
 
 package(default_testonly = 1)
 
@@ -235,9 +239,6 @@ rule_test(
     generates = ["java_classpath"],
     rule = "//tests/java_classpath",
 )
-
-# Keep in sync with test_ghc_version in WORKSPACE.
-ghc_version = "8.6.3"
 
 rule_test(
     name = "test-cc_haskell_import-output",
