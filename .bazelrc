@@ -1,7 +1,8 @@
 # See https://docs.bazel.build/versions/master/user-manual.html#bazelrc.
 
-build:ci --loading_phase_threads=1
 #build:ci --all_incompatible_changes
+build:ci --loading_phase_threads=1
+build:ci --jobs=2
 build:ci --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
 # can be changed by user.
