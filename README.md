@@ -3,6 +3,7 @@
 # Haskell rules for [Bazel][bazel]
 
 [![CircleCI](https://circleci.com/gh/tweag/rules_haskell.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell)
+[![Build Status](https://dev.azure.com/tweag/rules_haskell/_apis/build/status/tweag.rules_haskell?branchName=master)](https://dev.azure.com/tweag/rules_haskell/_build/latest?definitionId=1?branchName=master)
 
 Bazel automates building and testing software. It scales to very large
 multi-language projects. This project extends Bazel with build rules
