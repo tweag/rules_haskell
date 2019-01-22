@@ -255,7 +255,7 @@ def link_forest(ctx, srcs, basePath = ".", **kwargs):
     """Write a symlink to each file in `srcs` into a destination directory
     defined using the same arguments as `ctx.actions.declare_directory`"""
     local_files = []
-    for src in srcs:
+    for src in srcs.to_list():
         dest = ctx.actions.declare_file(
             paths.join(basePath, src.basename),
             **kwargs
@@ -266,7 +266,7 @@ def link_forest(ctx, srcs, basePath = ".", **kwargs):
 
 def copy_all(ctx, srcs, dest):
     """Copy all the files in `srcs` into `dest`"""
-    if list(srcs) == []:
+    if list(srcs.to_list()) == []:
         ctx.actions.run_shell(
             command = "mkdir -p {dest}".format(dest = dest.path),
             outputs = [dest],

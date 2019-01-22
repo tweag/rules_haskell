@@ -34,17 +34,17 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
     # Output a Haskell source file.
     hsc_dir_raw = paths.join("_hsc", hs.name)
     hs_out = declare_compiled(hs, hsc_file, ".hs", directory = hsc_dir_raw)
-    args.add([hsc_file.path, "-o", hs_out.path])
+    args.add_all([hsc_file.path, "-o", hs_out.path])
 
-    args.add(["-c", cc.tools.cc])
-    args.add(["-l", cc.tools.cc])
+    args.add_all(["-c", cc.tools.cc])
+    args.add_all(["-l", cc.tools.cc])
     args.add("-ighcplatform.h")
     args.add("-ighcversion.h")
-    args.add(["--cflag=" + f for f in cc.cpp_flags])
-    args.add(["--cflag=" + f for f in cc.compiler_flags])
-    args.add(["--cflag=" + f for f in cc.include_args])
-    args.add(["--lflag=" + f for f in cc.linker_flags])
-    args.add(hsc_flags)
+    args.add_all(["--cflag=" + f for f in cc.cpp_flags])
+    args.add_all(["--cflag=" + f for f in cc.compiler_flags])
+    args.add_all(["--cflag=" + f for f in cc.include_args])
+    args.add_all(["--lflag=" + f for f in cc.linker_flags])
+    args.add_all(hsc_flags)
 
     hs.actions.run(
         inputs = depset(transitive = [
@@ -197,12 +197,12 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     if hs.mode == "opt":
         args.add("-O2")
 
-    args.add(["-static"])
+    args.add("-static")
     if with_profiling:
         args.add("-prof", "-fexternal-interpreter")
 
     # Common flags
-    args.add([
+    args.add_all([
         "-v0",
         "-c",
         "--make",
@@ -211,7 +211,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     ])
 
     # Output directories
-    args.add([
+    args.add_all([
         "-odir",
         objects_dir,
         "-hidir",
@@ -222,14 +222,14 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     # https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html#installedpackageinfo-a-package-specification
     # otherwise we won't be able to register them with ghc-pkg.
     if with_profiling:
-        args.add([
+        args.add_all([
             "-hisuf",
             "p_hi",
             "-osuf",
             "p_o",
         ])
 
-    args.add(ghc_args)
+    args.add_all(ghc_args)
 
     # Pass source files
     for f in set.to_list(source_files):
@@ -282,13 +282,13 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         source_files: set of Haskell source files
     """
     c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = None, version = version)
-    c.args.add(["-main-is", main_function])
+    c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
         # linked dynamically. So we have to force the object suffix to
         # be consistent with the dynamic object suffix in the library
         # case.
-        c.args.add(["-dynamic", "-osuf dyn_o"])
+        c.args.add_all(["-dynamic", "-osuf dyn_o"])
 
     hs.toolchain.actions.run_ghc(
         hs,
@@ -346,7 +346,7 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
     """
     c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version)
     if with_shared:
-        c.args.add(["-dynamic-too"])
+        c.args.add("-dynamic-too")
 
     hs.toolchain.actions.run_ghc(
         hs,

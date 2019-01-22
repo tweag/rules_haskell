@@ -185,9 +185,14 @@ http_archive(
     urls = ["https://hackage.haskell.org/package/zlib-0.6.2/zlib-0.6.2.tar.gz"],
 )
 
-maven_jar(
+load("@bazel_tools//tools/build_defs/repo:jvm.bzl", "jvm_maven_import_external")
+
+jvm_maven_import_external(
     name = "org_apache_spark_spark_core_2_10",
     artifact = "org.apache.spark:spark-core_2.10:1.6.0",
+    artifact_sha256 = "28aad0602a5eea97e9cfed3a7c5f2934cd5afefdb7f7c1d871bb07985453ea6e",
+    licenses = ["notice"],
+    server_urls = ["http://central.maven.org/maven2"],
 )
 
 # c2hs rule in its own repository

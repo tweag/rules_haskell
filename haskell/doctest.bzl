@@ -91,7 +91,7 @@ def _haskell_doctest_single(target, ctx):
     bin_info = target[HaskellBinaryInfo] if HaskellBinaryInfo in target else None
 
     args = ctx.actions.args()
-    args.add(["--no-magic"])
+    args.add("--no-magic")
 
     doctest_log = ctx.actions.declare_file(
         "doctest-log-" + ctx.label.name + "-" + (
@@ -102,10 +102,10 @@ def _haskell_doctest_single(target, ctx):
     toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:doctest-toolchain"]
 
     # GHC flags we have prepared before.
-    args.add(lib_info.ghc_args if lib_info != None else bin_info.ghc_args)
+    args.add_all(lib_info.ghc_args if lib_info != None else bin_info.ghc_args)
 
     # Add any extra flags specified by the user.
-    args.add(ctx.attr.doctest_flags)
+    args.add_all(ctx.attr.doctest_flags)
 
     # External libraries.
     external_libraries = build_info.external_libraries
@@ -115,12 +115,12 @@ def _haskell_doctest_single(target, ctx):
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
             if hs.toolchain.is_darwin:
-                args.add([
+                args.add_all([
                     "-optl-l{0}".format(lib_name),
                     "-optl-L{0}".format(paths.dirname(lib.path)),
                 ])
             else:
-                args.add([
+                args.add_all([
                     "-l{0}".format(lib_name),
                     "-L{0}".format(paths.dirname(lib.path)),
                 ])
@@ -136,7 +136,7 @@ def _haskell_doctest_single(target, ctx):
     else:
         exposed_modules_file = ctx.actions.declare_file("doctest_modules")
         exposed_args = ctx.actions.args()
-        exposed_args.add(ctx.attr.modules)
+        exposed_args.add_all(ctx.attr.modules)
         ctx.actions.write(exposed_modules_file, exposed_args)
 
     ctx.actions.run_shell(

@@ -78,9 +78,9 @@ def _haskell_import_impl(ctx):
         direct_prebuilt_deps = set.empty(),
         extra_libraries = set.empty(),
     )
-    html_files = list(ctx.attr.haddock_html.files)
+    html_files = ctx.attr.haddock_html.files.to_list()
     transitive_html = {ctx.attr.package_id: local_haddock_html} if html_files != [] else {}
-    interface_files = list(ctx.attr.haddock_interfaces.files)
+    interface_files = ctx.attr.haddock_interfaces.files.to_list()
     transitive_haddocks = {ctx.attr.package_id: interface_files[0]} if interface_files != [] else {}
 
     haddockInfo = HaddockInfo(
