@@ -79,56 +79,19 @@ http_archive(
   urls = ["https://github.com/tweag/rules_haskell/archive/v$VERSION.tar.gz"],
 )
 
-load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+	"haskell_repositories",
+	"haskell_register_toolchains",
+)
+
 haskell_repositories()
 
-register_toolchains("//:ghc")
+haskell_register_toolchains()
 ```
 
-Then, add this to your root `BUILD` file:
-
-```bzl
-load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_toolchain",
-)
-
-haskell_toolchain(
-  name = "ghc",
-  version = "8.2.2",
-  tools = "@my_ghc//:bin",
-)
-```
-
-The `haskell_toolchain` rule instantiation brings a GHC compiler in
-scope. It assumes that an [external repository][external-repositories]
-called `@my_ghc` was defined, pointing to an installation of GHC. The
-recommended option is to provision GHC using Nix, but you can also
-point to an existing local installation somewhere in your filesystem.
-Using Nix, this is done by adding the following to your `WORKSPACE`
-file:
-
-```bzl
-nixpkgs_package(
-  name = "my_ghc",
-  attribute_path = "haskell.compiler.ghc822"
-)
-```
-
-Alternatively, you can point to an existing global installation:
-
-```bzl
-new_local_repository(
-  name = "my_ghc",
-  path = "/usr/local", # Change path accordingly.
-  build_file_content = """
-package(default_visibility = ["//visibility:public"])
-filegroup(
-    name = "bin",
-    srcs = glob(["bin/*"]),
-)
-"""
-)
-```
+You will then need to write one `BUILD` file for each "package" you
+want to define. See below for examples.
 
 ## Examples
 
