@@ -3,6 +3,10 @@ jobs:
   pool:
     vmImage: 'vs2017-win2016'
   steps:
+  - bash: |
+      ls -lR /c/tools/mingw64 >&2
+      echo "GCC: $(which gcc)" >&2
+
   - powershell: |
       iex (new-object net.webclient).downloadstring('https://get.scoop.sh')
       scoop install msys2
