@@ -3,6 +3,10 @@ jobs:
   pool:
     vmImage: 'vs2017-win2016'
   steps:
+  - powershell: |
+      iex (new-object net.webclient).downloadstring('https://get.scoop.sh')
+      scoop install msys2
+      
   - bash: |
       curl -LO https://github.com/bazelbuild/bazel/releases/download/0.20.0/bazel-0.20.0-windows-x86_64.exe
       mv bazel-*.exe bazel.exe
