@@ -14,7 +14,10 @@ jobs:
       mv bazel.exe /c/bazel
     displayName: 'Install Bazel'
   - bash: |
+      export BAZEL_SH=$HOME/scoop/apps/msys2/current/usr/bin/bash.exe
+      $HOME/scoop/apps/msys2/current/usr/bin/gcc.exe --version
       # Simple haskell binary
+
       /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-simple" # first '/' gets eaten up
       /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-custom-main" 
       /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-with-lib"
