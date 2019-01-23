@@ -11,9 +11,9 @@ haskell_import(
     package = "base",
 )
 
-haskell_test(
+cc_test(
     name = "binary-simple",
-    srcs = ["Main.hs"],
+    srcs = ["main.cc"],
     visibility = ["//visibility:public"],
     deps = [":base_pkg"],
 )
