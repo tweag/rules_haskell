@@ -166,6 +166,8 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
             "-v0",
             "--no-expand-pkgroot",
         ],
+        # XXX: Seems required for this to work on Windows
+        use_default_shell_env = True,
     )
 
     return conf_file, cache_file
