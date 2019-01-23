@@ -8,6 +8,9 @@ jobs:
       mv bazel-*.exe bazel.exe
       mkdir /c/bazel
       mv bazel.exe /c/bazel
+      gcc --version || echo NO GCC
+      pacman -S gcc
+      gcc --version
     displayName: 'Install Bazel'
   - bash: |
       # Simple haskell binary
