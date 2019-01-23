@@ -23,6 +23,22 @@ mkShell {
   ] ++ lib.optionals docTools [graphviz python36Packages.sphinx zip unzip];
 
   shellHook = ''
+    # Add nix config flags to .bazelrc.local.
+    #
+    BAZELRC_LOCAL=".bazelrc.local"
+    if [ ! -e "$BAZELRC_LOCAL" ]
+    then
+      ARCH=""
+      if [ "$(uname)" == "Darwin" ]; then
+        ARCH="darwin"
+      elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+        ARCH="linux"
+      fi
+      echo "[!] It looks like you are using a ''${ARCH} nix-based system. In order to build this project, you probably need to add the two following host_platform entries to your .bazelrc.local file."
+      echo ""
+      echo "test --host_platform=@io_tweag_rules_haskell//haskell/platforms:''${ARCH}_x86_64_nixpkgs"
+    fi
+
     # source bazel bash completion
     source ${pkgs.bazel}/share/bash-completion/completions/bazel
   '';
