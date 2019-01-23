@@ -11,7 +11,7 @@ jobs:
       gcc --version
       echo $(which gcc)
       echo $(which bash)
-      find "/c/tools/mingw64/"
+      find "/c/tools/"
     displayName: 'Install Bazel'
   - bash: |
       # Simple haskell binary
