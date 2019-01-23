@@ -17,3 +17,5 @@ jobs:
       # Simple haskell binary
       /c/bazel/bazel.exe build --compiler=mingw-gcc -s --verbose_failures "///tests/binary-simple"
     displayName: 'Run Bazel'
+  - script:
+      C:/bazel/bazel.exe build --compiler=mingw-gcc -s --verbose_failures "//tests/binary-simple"
