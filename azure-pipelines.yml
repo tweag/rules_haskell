@@ -11,13 +11,12 @@ jobs:
       gcc --version
       echo $(which gcc)
       echo $(which bash)
-      find "/c/program files/git"
+      find "/c/tools/mingw64/"
     displayName: 'Install Bazel'
-  - script:
-      C:/bazel/bazel.exe build --compiler=mingw-gcc -s --verbose_failures "//tests/binary-simple"
   - bash: |
       # Simple haskell binary
       export MSYS_NO_PATHCONV=1
       export MSYS2_ARG_CONV_EXCL="*"
+      export BAZEL_SH=/c/tools/mingw64/bin/bash
       /c/bazel/bazel.exe build --compiler=mingw-gcc -s --verbose_failures "//tests/binary-simple"
     displayName: 'Run Bazel'
