@@ -11,6 +11,7 @@ jobs:
       gcc --version || echo NO GCC
       pacman -S gcc
       gcc --version
+      echo $(which gcc)
     displayName: 'Install Bazel'
   - bash: |
       # Simple haskell binary
