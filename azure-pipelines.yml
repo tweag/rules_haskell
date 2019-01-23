@@ -11,6 +11,7 @@ jobs:
       gcc --version
       echo $(which gcc)
       echo $(which bash)
+      find "/c/program files/git"
     displayName: 'Install Bazel'
   - script:
       C:/bazel/bazel.exe build --compiler=mingw-gcc -s --verbose_failures "//tests/binary-simple"
