@@ -10,5 +10,5 @@ haskell_test(
     srcs = ["MainIsHere.hs"],
     main_function = "MainIsHere.this",
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )

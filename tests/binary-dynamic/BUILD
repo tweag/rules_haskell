@@ -10,5 +10,5 @@ haskell_test(
     srcs = ["Main.hs"],
     linkstatic = False,
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )

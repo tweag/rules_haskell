@@ -18,7 +18,7 @@ haskell_library(
         "-DTHIS_IS_TRUE",
         "-optP-DTHIS_TOO_IS_TRUE",
     ],
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )
 
 haskell_test(
@@ -30,6 +30,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":hsc-lib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

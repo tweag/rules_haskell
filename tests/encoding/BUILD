@@ -15,7 +15,7 @@ haskell_test(
         "unicode.txt",
     ],
     deps = [
-        "@hackage//:base",
-        "@hackage//:template-haskell",
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
     ],
 )

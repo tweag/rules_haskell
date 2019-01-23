@@ -9,10 +9,10 @@ package(default_testonly = 1)
 haskell_library(
     name = "sublib",
     srcs = ["TestSubLib.hs"],
-    exports = {"@hackage//:containers": "Data.Map as SubLib.Map"},
+    exports = {"//tests/hackage:containers": "Data.Map as SubLib.Map"},
     deps = [
-        "@hackage//:base",
-        "@hackage//:containers",
+        "//tests/hackage:base",
+        "//tests/hackage:containers",
     ],
 )
 
@@ -21,11 +21,11 @@ haskell_library(
     srcs = ["TestLib.hs"],
     exports = {
         ":sublib": "TestSubLib",
-        "@hackage//:containers": "Data.Map as Lib.Map",
+        "//tests/hackage:containers": "Data.Map as Lib.Map",
     },
     deps = [
         ":sublib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -36,6 +36,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":lib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

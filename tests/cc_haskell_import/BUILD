@@ -11,7 +11,7 @@ haskell_library(
     srcs = ["LibA.hs"],
     deps = [
         "//tests/data:ourclibrary",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -20,7 +20,7 @@ haskell_library(
     srcs = ["LibB.hs"],
     deps = [
         ":hs-lib-a",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 

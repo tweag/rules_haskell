@@ -35,8 +35,8 @@ haskell_library(
   ]),
   deps = [
     ":zlib-import",
-    "@hackage//:base",
-    "@hackage//:bytestring",
-    "@hackage//:ghc-prim",
+    "//tests/hackage:base",
+    "//tests/hackage:bytestring",
+    "//tests/hackage:ghc-prim",
   ],
 )

@@ -13,5 +13,5 @@ haskell_test(
     srcs = ["Main.hs"],
     compiler_flags = ["-threaded"],
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )

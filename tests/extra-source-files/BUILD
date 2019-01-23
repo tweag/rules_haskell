@@ -19,8 +19,8 @@ haskell_library(
         "ld-options.txt",
     ],
     deps = [
-        "@hackage//:base",
-        "@hackage//:template-haskell",
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
     ],
 )
 
@@ -38,7 +38,7 @@ haskell_test(
         "ld-options.txt",
     ],
     deps = [
-        "@hackage//:base",
-        "@hackage//:template-haskell",
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
     ],
 )

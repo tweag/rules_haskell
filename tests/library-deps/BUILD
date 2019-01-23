@@ -11,8 +11,8 @@ haskell_library(
     srcs = ["TestLib.hs"],
     visibility = ["//visibility:public"],
     deps = [
+        "//tests/hackage:base",
         "//tests/library-deps/sublib",
-        "@hackage//:base",
     ],
 )
 
@@ -22,7 +22,7 @@ haskell_test(
     srcs = ["Bin.hs"],
     visibility = ["//visibility:public"],
     deps = [
+        "//tests/hackage:base",
         "//tests/library-deps/sublib",
-        "@hackage//:base",
     ],
 )

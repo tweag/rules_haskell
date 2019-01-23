@@ -17,8 +17,8 @@ haskell_test(
     compiler_flags = ["-XOverloadedStrings"],
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
-        "@hackage//:bytestring",
+        "//tests/hackage:base",
+        "//tests/hackage:bytestring",
     ],
 )
 
@@ -39,7 +39,7 @@ haskell_test(
     repl_ghci_args = ["-DTESTS_TOOLCHAIN_REPL_FLAGS"],
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
-        "@hackage//:bytestring",
+        "//tests/hackage:base",
+        "//tests/hackage:bytestring",
     ],
 )
