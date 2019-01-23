@@ -65,7 +65,20 @@ You can learn more about Bazel's command line
 syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
 `build`, `test`, `run` and `coverage`.
 
+This rule set supports [Nixpkgs][nixpkgs]. If you are on NixOS, or if
+you are using Nixpkgs on your project, consider passing the following
+argument on the command-line to select a Nixpkgs-based toolchain for
+the build:
+
+```
+$ bazel build --host_platform=@io_tweag_rules_haskell//haskell/platforms:linux_x86_64_nixpkgs //...
+```
+
+See [below](#saving-common-command-line-flags-to-a-file) to
+permanently set that flag.
+
 [bazel-cli-commands]: https://docs.bazel.build/versions/master/command-line-reference.html#commands
+[nixpkgs]: https://nixos.org/nixpkgs/
 
 ### Doing it manually
 
