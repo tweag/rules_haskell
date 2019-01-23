@@ -17,7 +17,7 @@ def _get_extra_libraries(ext_libs):
             extra_libs.append(lib_name)
     return extra_libs
 
-def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, dynamic_library, exposed_modules_file, other_modules, my_pkg_id, static_library_prof, write_pkg_conf):
+def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, dynamic_library, exposed_modules_file, other_modules, my_pkg_id, static_library_prof):
     """Create GHC package using ghc-pkg.
 
     Args:
@@ -96,10 +96,15 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
     prebuilt_deps_args.use_param_file("%s", use_always = True)
     prebuilt_deps_args.set_param_file_format("multiline")
 
-    hs.actions.run(
+    hs.actions.run_shell(
         inputs = [metadata_file, exposed_modules_file] + prebuilt_deps_id_files,
         outputs = [conf_file],
-        executable = write_pkg_conf,
+        command = """
+            cat $1 > $4
+            echo "exposed-modules: `cat $2`" >> $4
+            deps=$(cat $3 | xargs -n1 cat | tr '\n' " ")
+            echo "depends: $deps" >> $4
+""",
         arguments = [
             metadata_file.path,
             exposed_modules_file.path,
@@ -161,8 +166,6 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
             "-v0",
             "--no-expand-pkgroot",
         ],
-        # XXX: Seems required for this to work on Windows.
-        use_default_shell_env = True,
     )
 
     return conf_file, cache_file
