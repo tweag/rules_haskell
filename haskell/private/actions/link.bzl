@@ -127,11 +127,11 @@ def link_binary(
         )
 
     args = hs.actions.args()
-    args.add(["-optl" + f for f in cc.linker_flags])
+    args.add_all(["-optl" + f for f in cc.linker_flags])
     if with_profiling:
         args.add("-prof")
-    args.add(hs.toolchain.compiler_flags)
-    args.add(compiler_flags)
+    args.add_all(hs.toolchain.compiler_flags)
+    args.add_all(compiler_flags)
 
     # By default, GHC will produce mostly-static binaries, i.e. in which all
     # Haskell code is statically linked and foreign libraries and system
@@ -144,7 +144,7 @@ def link_binary(
         if with_profiling:
             print("WARNING: dynamic linking and profiling don't mix. Omitting -dynamic.\nSee https://ghc.haskell.org/trac/ghc/ticket/15394")
         else:
-            args.add(["-pie", "-dynamic"])
+            args.add_all(["-pie", "-dynamic"])
 
     # When compiling with `-threaded`, GHC needs to link against
     # the pthread library when linking against static archives (.a).
@@ -152,7 +152,7 @@ def link_binary(
     # so we just default to passing it.
     args.add("-optl-pthread")
 
-    args.add(["-o", compile_output.path])
+    args.add_all(["-o", compile_output.path])
 
     # De-duplicate optl calls while preserving ordering: we want last
     # invocation of an object to remain last. That is `-optl foo -optl
@@ -161,7 +161,7 @@ def link_binary(
     # directly rather than doing multiple reversals with temporary
     # lists.
 
-    args.add(expose_packages(
+    args.add_all(expose_packages(
         dep_info,
         lib_info = None,
         use_direct = True,
@@ -187,13 +187,13 @@ def link_binary(
     # XXX: Suppress a warning that Clang prints due to GHC automatically passing
     # "-pie" or "-no-pie" to the C compiler.
     # This is linked to https://ghc.haskell.org/trac/ghc/ticket/15319
-    args.add([
+    args.add_all([
         "-optc-Wno-unused-command-line-argument",
         "-optl-Wno-unused-command-line-argument",
     ])
 
     if hs.toolchain.is_darwin:
-        args.add(["-optl-Wl,-headerpad_max_install_names"])
+        args.add("-optl-Wl,-headerpad_max_install_names")
 
         # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
         # Darwin. We don't currently handle NIX_LDFLAGS in any special
@@ -203,7 +203,7 @@ def link_binary(
         args.add("-liconv")
 
     for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, executable, solibs)):
-        args.add(["-optl-Wl,-rpath," + rpath])
+        args.add("-optl-Wl,-rpath," + rpath)
 
     objects_dir_manifest = _create_objects_dir_manifest(
         hs,
@@ -245,7 +245,7 @@ def _add_external_libraries(args, ext_libs):
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
-            args.add([
+            args.add_all([
                 "-l{0}".format(lib_name),
                 "-L{0}".format(paths.dirname(lib.path)),
             ])
@@ -356,7 +356,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
 
     if hs.toolchain.is_darwin:
         # On Darwin, ar doesn't support params files.
-        args.add([
+        args.add_all([
             static_library,
             objects_dir_manifest.path,
         ])
@@ -376,7 +376,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
             env = {"SDKROOT": "macosx"},
         )
     else:
-        args.add([
+        args.add_all([
             "qc",
             static_library,
             "@" + objects_dir_manifest.path,
@@ -406,16 +406,16 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     )
 
     args = hs.actions.args()
-    args.add(["-optl" + f for f in cc.linker_flags])
-    args.add(["-shared", "-dynamic"])
+    args.add_all(["-optl" + f for f in cc.linker_flags])
+    args.add_all(["-shared", "-dynamic"])
 
     # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
     # not yet in a release; plus, we still want to support older versions of
     # GHC.  For details, see: https://phabricator.haskell.org/D4714
     if hs.toolchain.is_darwin:
-        args.add(["-optl-Wl,-dead_strip_dylibs"])
+        args.add("-optl-Wl,-dead_strip_dylibs")
 
-    args.add(expose_packages(
+    args.add_all(expose_packages(
         dep_info,
         lib_info = None,
         use_direct = True,
@@ -439,14 +439,14 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
             dynamic_library,
             dep_info.external_libraries,
         )
-        args.add(["-optl-Wl,-headerpad_max_install_names"])
+        args.add("-optl-Wl,-headerpad_max_install_names")
     else:
         dynamic_library_tmp = dynamic_library
 
     for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, dynamic_library, solibs)):
-        args.add(["-optl-Wl,-rpath," + rpath])
+        args.add("-optl-Wl,-rpath," + rpath)
 
-    args.add(["-o", dynamic_library_tmp.path])
+    args.add_all(["-o", dynamic_library_tmp.path])
 
     # Profiling not supported for dynamic libraries.
     objects_dir_manifest = _create_objects_dir_manifest(

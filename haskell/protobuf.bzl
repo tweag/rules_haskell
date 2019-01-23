@@ -77,9 +77,9 @@ def _haskell_proto_aspect_impl(target, ctx):
     hs_files = []
     inputs = []
 
-    args.add([
+    args.add_all([
         "-I{0}={1}".format(_proto_path(s), s.path)
-        for s in target.proto.transitive_sources
+        for s in target.proto.transitive_sources.to_list()
     ])
 
     inputs.extend(target.proto.transitive_sources.to_list())
@@ -103,7 +103,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         if src.basename[-6:] != ".proto":
             fail("bad extension for proto file " + src)
 
-        args.add([src.path])
+        args.add(src.path)
         hs_files.append(ctx.actions.declare_file(
             _proto_lens_output_file(
                 _proto_path(src),
@@ -115,7 +115,7 @@ def _haskell_proto_aspect_impl(target, ctx):
             ),
         ))
 
-    args.add([
+    args.add_all([
         "--haskell_out=no-runtime:" + paths.join(
             hs_files[0].root.path,
             src_prefix,
