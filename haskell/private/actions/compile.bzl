@@ -271,6 +271,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         ),
     )
 
+def _get_hpc_c_args(hs):
+    return "{}/{}.hpc".format(hs.bin_dir.path, hs.src_root)
+
 def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, dynamic, with_profiling, main_function, version):
     """Compile a Haskell target into object files suitable for linking.
 
@@ -290,6 +293,9 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         # case.
         c.args.add(["-dynamic", "-osuf dyn_o"])
 
+    if hs.coverage_enabled:
+        c.args.add(_get_hpc_c_args(hs))
+    
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
@@ -347,6 +353,9 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
     c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version)
     if with_shared:
         c.args.add(["-dynamic-too"])
+
+    if hs.coverage_enabled:
+        c.args.add(_get_hpc_c_args(hs))
 
     hs.toolchain.actions.run_ghc(
         hs,
