@@ -111,32 +111,56 @@ def gather_dep_info(ctx):
                 direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
                 extra_libraries = acc.extra_libraries,
             )
-        else:
-            # The final link of a library must include all static
-            # libraries we depend on, including transitives ones.
-            # Theses libs are provided in `dep.cc.libs` attribute.
-            transitive_static_deps = set.empty()
-
-            # Transitive static dependencies
-            if hasattr(dep, "cc"):
-                transitive_static_deps = set.from_list([
-                    struct(
-                        lib = name,
-                        mangled_lib = _mangle_lib(ctx, dep.label, name, CcSkylarkApiProviderHacked in dep),
-                    )
-                    for name in dep.cc.libs.to_list()
-                    if is_static_library(name)
-                ])
-
-            # Transitive dynamic dependencies
-            # Note, this can include dynamic versions of items in
-            # transitive_static_deps.
+        elif CcInfo in dep:
+            # The final link of a binary must include all static libraries we
+            # depend on, including transitives ones. Theses libs are provided
+            # in the `CcInfo` provider.
+            static_linking = dep[CcInfo].linking_context.static_mode_params_for_executable
+            transitive_static_deps = set.from_list([
+                struct(
+                    lib = l.original_artifact(),
+                    mangled_lib = _mangle_lib(ctx, dep.label, l.original_artifact(), False),
+                )
+                for l in static_linking.libraries_to_link.to_list()
+            ])
+            dynamic_linking = dep[CcInfo].linking_context.dynamic_mode_params_for_executable
+            transitive_dynamic_deps = set.from_list([
+                struct(
+                    lib = l.original_artifact(),
+                    mangled_lib = _mangle_lib(ctx, dep.label, l.original_artifact(), False),
+                )
+                for l in dynamic_linking.libraries_to_link.to_list()
+            ])
+            acc = HaskellBuildInfo(
+                package_ids = acc.package_ids,
+                package_confs = acc.package_confs,
+                package_caches = acc.package_caches,
+                static_libraries = acc.static_libraries,
+                static_libraries_prof = acc.static_libraries_prof,
+                dynamic_libraries = acc.dynamic_libraries,
+                interface_dirs = acc.interface_dirs,
+                prebuilt_dependencies = acc.prebuilt_dependencies,
+                external_libraries = set.mutable_union(
+                    set.mutable_union(
+                        acc.external_libraries,  # this is the mutated set
+                        transitive_dynamic_deps,
+                    ),
+                    transitive_static_deps,
+                ),
+                direct_prebuilt_deps = acc.direct_prebuilt_deps,
+                extra_libraries = set.mutable_union(
+                    acc.extra_libraries,
+                    transitive_static_deps,
+                ),
+            )
+        elif CcSkylarkApiProviderHacked in dep:
             # If the provider is CcSkylarkApiProviderHacked, then the .so
-            # files come from haskell_cc_import.
-            cc_skylark_api_hack_deps = set.from_list([
+            # files come from haskell_cc_import. In that case there are no
+            # indirect shared library dependencies.
+            transitive_dynamic_deps = set.from_list([
                 struct(
                     lib = f,
-                    mangled_lib = _mangle_lib(ctx, dep.label, f, CcSkylarkApiProviderHacked in dep),
+                    mangled_lib = _mangle_lib(ctx, dep.label, f, True),
                 )
                 for f in dep.files.to_list()
                 if is_shared_library(f)
@@ -154,17 +178,11 @@ def gather_dep_info(ctx):
                 interface_dirs = acc.interface_dirs,
                 prebuilt_dependencies = acc.prebuilt_dependencies,
                 external_libraries = set.mutable_union(
-                    set.mutable_union(
-                        acc.external_libraries,  # this is the mutated set
-                        cc_skylark_api_hack_deps,
-                    ),
-                    transitive_static_deps,
+                    acc.external_libraries,  # this is the mutated set
+                    transitive_dynamic_deps,
                 ),
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
-                extra_libraries = set.mutable_union(
-                    acc.extra_libraries,
-                    transitive_static_deps,
-                ),
+                extra_libraries = acc.extra_libraries,
             )
 
     return acc
