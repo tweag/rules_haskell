@@ -255,6 +255,11 @@ frameworks such as Hazel.
 
 """
 
+_boot_packages = [ "base" ]
+
+def haskell_import_boot(names = {}):
+    [ haskell_import(name = "{}".format(names.get(pkg_name) or pkg_name), package = pkg_name) for pkg_name in _boot_packages ]
+
 haskell_doc = _haskell_doc
 
 haskell_doc_aspect = _haskell_doc_aspect

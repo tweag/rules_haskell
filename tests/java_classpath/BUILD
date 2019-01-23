@@ -10,7 +10,7 @@ haskell_test(
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:template-haskell",
         "@org_apache_spark_spark_core_2_10//jar",
     ],

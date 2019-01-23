@@ -7,11 +7,14 @@ load(
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
+    "haskell_import_boot",
     "haskell_doctest_toolchain",
     "haskell_proto_toolchain",
     "haskell_test",
     "haskell_toolchain",
 )
+
+haskell_import_boot()
 
 package(default_testonly = 1)
 
@@ -31,7 +34,7 @@ haskell_proto_toolchain(
     plugin = "@hackage-proto-lens-protoc//:bin/proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:bytestring",
         "@hackage//:containers",
         "@hackage//:data-default-class",
@@ -133,7 +136,6 @@ rule_test(
     name = "test-haddock",
     size = "small",
     generates = [
-        "haddock/base-4.12.0.0",
         "haddock/index",
         "haddock/template-haskell-2.14.0.0",
         "haddock/testsZShaddockZShaddock-lib-a",
@@ -365,7 +367,7 @@ haskell_binary(
     name = "run-tests",
     srcs = ["RunTests.hs"],
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:hspec",
         "@hackage//:hspec-core",
         "@hackage//:process",

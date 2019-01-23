@@ -1,14 +1,17 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
 )
 
 package(default_testonly = 1)
 
+haskell_import_boot()
+
 haskell_library(
     name = "lib-a",
     srcs = ["LibA.hs"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 haskell_library(
@@ -17,7 +20,7 @@ haskell_library(
     visibility = ["//visibility:private"],
     deps = [
         ":lib-a",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -40,7 +43,7 @@ haskell_library(
     srcs = ["LibC.hs"],
     deps = [
         ":lib-b",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -51,7 +54,7 @@ haskell_library(
     tags = ["manual"],
     deps = [
         ":lib-b",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -61,6 +64,6 @@ haskell_library(
     deps = [
         ":lib-a",
         ":lib-b",
-        "@hackage//:base",
+        ":base",
     ],
 )

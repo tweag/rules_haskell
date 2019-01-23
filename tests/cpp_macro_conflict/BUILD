@@ -1,16 +1,19 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_test",
 )
 
 package(default_testonly = 1)
 
+haskell_import_boot()
+
 # empty library with package name "bytestring"
 haskell_library(
     name = "bytestring",
     srcs = ["BS.hs"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 # This depends on two packages "bytestring"
@@ -30,7 +33,7 @@ haskell_test(
     }),
     deps = [
         ":bytestring",
-        "@hackage//:base",
+        ":base",
         "@hackage//:bytestring",
     ],
 )

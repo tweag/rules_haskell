@@ -1,14 +1,17 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_test",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_test(
     name = "binary-with-main",
     srcs = ["MainIsHere.hs"],
     main_function = "MainIsHere.this",
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )

@@ -1,5 +1,6 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_lint",
     "haskell_test",
@@ -7,11 +8,13 @@ load(
 
 package(default_testonly = 1)
 
+haskell_import_boot()
+
 haskell_library(
     name = "lib-a",
     srcs = ["Foo.hs"],
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 haskell_library(
@@ -20,7 +23,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":lib-a",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -36,7 +39,7 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":lib-a",
-        "@hackage//:base",
+        ":base",
     ],
 )
 

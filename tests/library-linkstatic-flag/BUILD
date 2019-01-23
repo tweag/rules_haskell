@@ -1,5 +1,6 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
 )
 load("//tests:sh_inline_test.bzl", "sh_inline_test")
@@ -8,6 +9,8 @@ load(":get_library_files.bzl", "get_libraries_as_runfiles")
 # test whether `linkstatic` works as expected
 package(default_testonly = 1)
 
+haskell_import_boot()
+
 # only .a files
 haskell_library(
     name = "library-static-only",
@@ -15,7 +18,7 @@ haskell_library(
     linkstatic = True,  # <--
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:bytestring",
     ],
 )
@@ -27,7 +30,7 @@ haskell_library(
     linkstatic = False,  # <--
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:bytestring",
     ],
 )

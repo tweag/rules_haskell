@@ -1,5 +1,6 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_cc_import",
     "haskell_doc",
     "haskell_import",
@@ -11,6 +12,8 @@ package(
     default_visibility = ["//visibility:public"],
 )
 
+haskell_import_boot()
+
 haskell_cc_import(
     name = "zlib",
     shared_library = "@zlib//:lib",
@@ -19,7 +22,7 @@ haskell_cc_import(
 haskell_library(
     name = "haddock-lib-deep",
     srcs = ["Deep.hsc"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 haskell_library(
@@ -32,7 +35,7 @@ haskell_library(
     compiler_flags = ["-I."],
     deps = [
         ":haddock-lib-deep",
-        "@hackage//:base",
+        ":base",
         "@hackage//:template-haskell",
     ],
 )
@@ -54,7 +57,7 @@ haskell_library(
     deps = [
         ":haddock-lib-a",
         ":zlib",
-        "@hackage//:base",
+        ":base",
         "@hackage//:libc",
         "@hackage//:template-haskell",
     ],

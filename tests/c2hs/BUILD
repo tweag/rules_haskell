@@ -1,11 +1,14 @@
 load("@io_tweag_rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_cc_import",
     "haskell_library",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_cc_import(
     name = "zlib",
@@ -35,5 +38,5 @@ haskell_library(
         ":foo",
         "@c2hs_repo//:baz",
     ],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )

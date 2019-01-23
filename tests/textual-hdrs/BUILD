@@ -1,9 +1,12 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_test",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_test(
     name = "textual-hdrs",
@@ -13,5 +16,5 @@ haskell_test(
     ],
     compiler_flags = ["-Itests/textual-hdrs/include"],
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )

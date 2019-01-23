@@ -1,9 +1,12 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 genrule(
     name = "gen-a",
@@ -24,6 +27,6 @@ haskell_library(
     srcs = ["Lib.hs"],
     deps = [
         ":clib",
-        "@hackage//:base",
+        ":base",
     ],
 )

@@ -1,8 +1,11 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_test",
 )
+
+haskell_import_boot()
 
 package(default_testonly = 1)
 
@@ -11,7 +14,7 @@ haskell_library(
     srcs = ["TestSubLib.hs"],
     exports = {"@hackage//:containers": "Data.Map as SubLib.Map"},
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:containers",
     ],
 )
@@ -25,7 +28,7 @@ haskell_library(
     },
     deps = [
         ":sublib",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -36,6 +39,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":lib",
-        "@hackage//:base",
+        ":base",
     ],
 )

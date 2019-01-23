@@ -1,9 +1,12 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_test",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_test(
     name = "bin1",
@@ -11,7 +14,7 @@ haskell_test(
     # Regular file input:
     data = ["bin1-input"],
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 haskell_test(
@@ -21,7 +24,7 @@ haskell_test(
     data = [":bin1"],
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:process",
     ],
 )

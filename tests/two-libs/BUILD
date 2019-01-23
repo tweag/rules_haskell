@@ -1,8 +1,11 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_test",
 )
+
+haskell_import_boot()
 
 package(
     default_testonly = 1,
@@ -13,7 +16,7 @@ haskell_library(
     name = "one",
     srcs = ["One.hs"],
     deps = [
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -22,7 +25,7 @@ haskell_library(
     srcs = ["Two.hs"],
     deps = [
         ":one",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -31,6 +34,6 @@ haskell_test(
     srcs = ["Main.hs"],
     deps = [
         ":two",
-        "@hackage//:base",
+        ":base",
     ],
 )

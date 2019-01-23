@@ -1,5 +1,6 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_test",
 )
@@ -7,6 +8,8 @@ load("//tests:sh_inline_test.bzl", "sh_inline_test")
 
 # test whether `linkstatic` works as expected
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 cc_library(
     name = "c-lib",
@@ -17,7 +20,7 @@ haskell_library(
     name = "HsLib",
     srcs = ["HsLib.hs"],
     deps = [
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -28,7 +31,7 @@ haskell_test(
     deps = [
         ":HsLib",
         ":c-lib",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -39,7 +42,7 @@ haskell_test(
     deps = [
         ":HsLib",
         ":c-lib",
-        "@hackage//:base",
+        ":base",
     ],
 )
 

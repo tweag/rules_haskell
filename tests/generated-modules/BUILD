@@ -1,6 +1,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
+    "haskell_import_boot",
     "haskell_test",
 )
 
@@ -8,6 +9,8 @@ package(
     default_testonly = 1,
     default_visibility = ["//visibility:public"],
 )
+
+haskell_import_boot()
 
 genrule(
     name = "generate-genmodule",
@@ -19,7 +22,7 @@ haskell_library(
     name = "GenModule",
     srcs = [":generate-genmodule"],
     src_strip_prefix = "src",
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 genrule(
@@ -33,7 +36,7 @@ haskell_library(
     name = "BinModule",
     srcs = [":generate-binmodule"],
     src_strip_prefix = "src",
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 genrule(
@@ -51,6 +54,6 @@ haskell_test(
     deps = [
         ":BinModule",
         ":GenModule",
-        "@hackage//:base",
+        ":base",
     ],
 )

@@ -1,8 +1,11 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_binary",
     "haskell_library",
 )
+
+haskell_import_boot()
 
 haskell_binary(
     name = "binary-indirect-cbits",
@@ -10,7 +13,7 @@ haskell_binary(
     linkstatic = False,
     deps = [
         "//tests/library-with-cbits",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -20,7 +23,7 @@ haskell_binary(
     linkstatic = False,
     deps = [
         "//tests/library-with-cbits:library-with-cbits-static",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -30,6 +33,6 @@ haskell_binary(
     linkstatic = True,
     deps = [
         "//tests/library-with-cbits:library-with-cbits-static",
-        "@hackage//:base",
+        ":base",
     ],
 )

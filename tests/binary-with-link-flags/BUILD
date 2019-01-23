@@ -1,5 +1,6 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_test",
 )
 
@@ -8,10 +9,12 @@ package(
     default_visibility = ["//visibility:public"],
 )
 
+haskell_import_boot()
+
 haskell_test(
     name = "binary-with-link-flags",
     srcs = ["Main.hs"],
     compiler_flags = ["-threaded"],
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )

@@ -1,8 +1,10 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_import",
+    "haskell_import_boot",
     "haskell_library",
 )
+
+haskell_import_boot()
 
 haskell_library(
     name = "library-with-cbits",
@@ -10,7 +12,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":ourclibrary-indirect",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -20,7 +22,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":library-with-cbits",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -30,7 +32,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":ourclibrary-static",
-        "@hackage//:base",
+        ":base",
     ],
 )
 

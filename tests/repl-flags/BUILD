@@ -1,6 +1,12 @@
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_test")
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
+    "haskell_test",
+)
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 # This test the `compiler` flags in many ways:
 # - the test needs to be built with `-DTESTS_TOOLCHAIN_COMPILER_FLAGS`, provided by the toolchain attribute `compiler_flags`
@@ -17,7 +23,7 @@ haskell_test(
     compiler_flags = ["-XOverloadedStrings"],
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:bytestring",
     ],
 )
@@ -39,7 +45,7 @@ haskell_test(
     repl_ghci_args = ["-DTESTS_TOOLCHAIN_REPL_FLAGS"],
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:bytestring",
     ],
 )

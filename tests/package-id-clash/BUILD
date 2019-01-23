@@ -1,15 +1,18 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
+    "haskell_import_boot",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_library(
     name = "sublib",
     srcs = ["Foo.hs"],
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 haskell_library(
@@ -19,6 +22,6 @@ haskell_library(
     deps = [
         ":sublib",
         "//tests/package-id-clash/sublib",
-        "@hackage//:base",
+        ":base",
     ],
 )

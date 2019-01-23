@@ -1,10 +1,13 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_test",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_library(
     name = "extra-source-files",
@@ -19,7 +22,7 @@ haskell_library(
         "ld-options.txt",
     ],
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:template-haskell",
     ],
 )
@@ -38,7 +41,7 @@ haskell_test(
         "ld-options.txt",
     ],
     deps = [
-        "@hackage//:base",
+        ":base",
         "@hackage//:template-haskell",
     ],
 )

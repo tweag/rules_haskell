@@ -1,18 +1,21 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_doctest",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_test",
 )
 
 package(default_testonly = 1)
 
+haskell_import_boot()
+
 haskell_library(
     name = "lib-a",
     srcs = ["Foo.hs"],
     deps = [
         "//tests/data:ourclibrary",
-        "@hackage//:base",
+        ":base",
         "@zlib.dev//:zlib",
     ],
 )
@@ -26,7 +29,7 @@ haskell_library(
     ],
     deps = [
         ":lib-a",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -56,7 +59,7 @@ haskell_test(
     srcs = ["Main.hs"],
     deps = [
         ":lib-a",
-        "@hackage//:base",
+        ":base",
     ],
 )
 

@@ -1,10 +1,13 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_test",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_library(
     name = "library-deps",
@@ -12,7 +15,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         "//tests/library-deps/sublib",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -23,6 +26,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         "//tests/library-deps/sublib",
-        "@hackage//:base",
+        ":base",
     ],
 )

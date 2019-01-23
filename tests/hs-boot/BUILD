@@ -1,10 +1,13 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
+    "haskell_import_boot",
     "haskell_test",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 genrule(
     name = "gen-A-boot",
@@ -29,7 +32,7 @@ haskell_library(
     ],
     src_strip_prefix = "srcs",
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 haskell_test(
@@ -43,6 +46,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":hs-boot-lib",
-        "@hackage//:base",
+        ":base",
     ],
 )

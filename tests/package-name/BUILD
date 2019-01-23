@@ -1,8 +1,11 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_test",
 )
+
+haskell_import_boot()
 
 # Tests around our use of package names.
 package(default_testonly = 1)
@@ -13,7 +16,7 @@ haskell_library(
     name = "lib-a_Z",
     srcs = ["Lib.hs"],
     version = "1.2.3.4",
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 haskell_test(
@@ -23,6 +26,6 @@ haskell_test(
     version = "0.0.0",  # This flags triggers the `MIN_VERSION` macro generation
     deps = [
         ":lib-a_Z",
-        "@hackage//:base",
+        ":base",
     ],
 )

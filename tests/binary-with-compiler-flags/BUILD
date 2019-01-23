@@ -1,9 +1,12 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_test",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_test(
     name = "binary-with-compiler-flags",
@@ -14,5 +17,5 @@ haskell_test(
         "-with-rtsopts=-N2 -qg -I0 -n2m -A128m",
         "-XLambdaCase",
     ],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )

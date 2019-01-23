@@ -1,8 +1,11 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_cc_import",
     "haskell_library",
 )
+
+haskell_import_boot()
 
 package(default_testonly = 1)
 
@@ -37,7 +40,7 @@ haskell_library(
     deps = [
         ":zlib",
         ":zlib-with-genrule-header",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -50,7 +53,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":intermediate-library",
-        "@hackage//:base",
+        ":base",
         "@hackage//:template-haskell",
     ],
 )
@@ -62,7 +65,7 @@ haskell_library(
     srcs = ["IntLib.hsc"],
     deps = [
         ":zlib-with-genrule-header",
-        "@hackage//:base",
+        ":base",
         "@zlib.dev//:zlib",
     ],
 )
@@ -76,7 +79,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":intermediate-library-other",
-        "@hackage//:base",
+        ":base",
         "@hackage//:template-haskell",
     ],
 )

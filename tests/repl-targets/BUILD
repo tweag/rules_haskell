@@ -1,12 +1,15 @@
 load("@io_tweag_rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_cc_import",
     "haskell_library",
     "haskell_test",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_cc_import(
     name = "zlib",
@@ -45,7 +48,7 @@ haskell_library(
         ":zlib",
         "//tests/data:ourclibrary",
         "@hackage//:array",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -60,14 +63,14 @@ haskell_library(
         ":zlib",
         "//tests/data:ourclibrary",
         "@hackage//:array",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
 haskell_library(
     name = "QuuxLib",
     srcs = ["QuuxLib.hs"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 haskell_test(
@@ -76,6 +79,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":QuuxLib",
-        "@hackage//:base",
+        ":base",
     ],
 )

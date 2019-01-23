@@ -2,10 +2,13 @@ load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_cc_import",
     "haskell_library",
+    "haskell_import_boot",
     "haskell_test",
 )
 
 package(default_testonly = 1)
+
+haskell_import_boot()
 
 haskell_cc_import(
     name = "zlib",
@@ -18,7 +21,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":zlib",
-        "@hackage//:base",
+        ":base",
     ],
 )
 
@@ -27,6 +30,6 @@ haskell_test(
     srcs = ["Main.hs"],
     deps = [
         ":library-with-sysdeps",
-        "@hackage//:base",
+        ":base",
     ],
 )

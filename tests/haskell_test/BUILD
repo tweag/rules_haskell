@@ -1,15 +1,18 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import_boot",
     "haskell_library",
     "haskell_test",
 )
 
 package(default_testonly = 1)
 
+haskell_import_boot()
+
 haskell_library(
     name = "mylib",
     srcs = ["Lib.hs"],
-    deps = ["@hackage//:base"],
+    deps = [":base"],
 )
 
 haskell_test(
@@ -24,6 +27,6 @@ haskell_test(
     deps = [
         ":mylib",
         "//tests/data:ourclibrary",
-        "@hackage//:base",
+        ":base",
     ],
 )
