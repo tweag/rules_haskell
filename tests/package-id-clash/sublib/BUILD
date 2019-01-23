@@ -9,5 +9,5 @@ haskell_library(
     name = "sublib",
     srcs = ["Bar.hs"],
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )

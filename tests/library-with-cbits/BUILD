@@ -10,7 +10,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":ourclibrary-indirect",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -20,7 +20,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":library-with-cbits",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -30,7 +30,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":ourclibrary-static",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 

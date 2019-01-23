@@ -13,7 +13,7 @@ haskell_library(
     name = "one",
     srcs = ["One.hs"],
     deps = [
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -22,7 +22,7 @@ haskell_library(
     srcs = ["Two.hs"],
     deps = [
         ":one",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -31,6 +31,6 @@ haskell_test(
     srcs = ["Main.hs"],
     deps = [
         ":two",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

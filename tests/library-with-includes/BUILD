@@ -24,6 +24,6 @@ haskell_library(
     srcs = ["Lib.hs"],
     deps = [
         ":clib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

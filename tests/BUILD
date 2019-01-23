@@ -31,9 +31,10 @@ haskell_proto_toolchain(
     plugin = "@hackage-proto-lens-protoc//:bin/proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     deps = [
-        "@hackage//:base",
-        "@hackage//:bytestring",
-        "@hackage//:containers",
+        "//tests/hackage:base",
+        "//tests/hackage:bytestring",
+        "//tests/hackage:containers",
+        "//tests/hackage:text",
         "@hackage//:data-default-class",
         "@hackage//:deepseq",
         "@hackage//:lens-family",
@@ -41,7 +42,6 @@ haskell_proto_toolchain(
         "@hackage//:lens-labels",
         "@hackage//:mtl",
         "@hackage//:proto-lens",
-        "@hackage//:text",
     ],
 )
 
@@ -133,9 +133,7 @@ rule_test(
     name = "test-haddock",
     size = "small",
     generates = [
-        "haddock/base-4.12.0.0",
         "haddock/index",
-        "haddock/template-haskell-2.14.0.0",
         "haddock/testsZShaddockZShaddock-lib-a",
         "haddock/testsZShaddockZShaddock-lib-b",
         "haddock/testsZShaddockZShaddock-lib-deep",
@@ -365,7 +363,7 @@ haskell_binary(
     name = "run-tests",
     srcs = ["RunTests.hs"],
     deps = [
-        "@hackage//:base",
+        "//tests/hackage:base",
         "@hackage//:hspec",
         "@hackage//:hspec-core",
         "@hackage//:process",

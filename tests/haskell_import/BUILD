@@ -10,8 +10,8 @@ haskell_library(
     name = "Lib",
     srcs = ["Lib.hs"],
     deps = [
-        "@hackage//:base",
-        "@hackage//:bytestring",
+        "//tests/hackage:base",
+        "//tests/hackage:bytestring",
     ],
 )
 
@@ -20,7 +20,7 @@ haskell_test(
     srcs = ["Bin.hs"],
     deps = [
         ":Lib",
-        "@hackage//:base",
-        "@hackage//:text",
+        "//tests/hackage:base",
+        "//tests/hackage:text",
     ],
 )

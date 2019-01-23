@@ -8,7 +8,7 @@ package(default_testonly = 1)
 haskell_library(
     name = "lib-a",
     srcs = ["LibA.hs"],
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )
 
 haskell_library(
@@ -17,7 +17,7 @@ haskell_library(
     visibility = ["//visibility:private"],
     deps = [
         ":lib-a",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -40,7 +40,7 @@ haskell_library(
     srcs = ["LibC.hs"],
     deps = [
         ":lib-b",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -51,7 +51,7 @@ haskell_library(
     tags = ["manual"],
     deps = [
         ":lib-b",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -61,6 +61,6 @@ haskell_library(
     deps = [
         ":lib-a",
         ":lib-b",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

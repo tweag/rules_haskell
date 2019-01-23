@@ -10,9 +10,9 @@ haskell_test(
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
         "@hackage//:streaming",
-        "@hackage//:template-haskell",
         "@hackage//:void",
     ],
 )

@@ -9,7 +9,7 @@ package(default_testonly = 1)
 haskell_library(
     name = "mylib",
     srcs = ["Lib.hs"],
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )
 
 haskell_test(
@@ -24,6 +24,6 @@ haskell_test(
     deps = [
         ":mylib",
         "//tests/data:ourclibrary",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

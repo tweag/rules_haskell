@@ -17,6 +17,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":zlib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

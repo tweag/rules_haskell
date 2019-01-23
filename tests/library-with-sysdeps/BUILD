@@ -18,7 +18,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":zlib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -27,6 +27,6 @@ haskell_test(
     srcs = ["Main.hs"],
     deps = [
         ":library-with-sysdeps",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

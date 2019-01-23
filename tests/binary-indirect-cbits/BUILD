@@ -9,8 +9,8 @@ haskell_binary(
     srcs = ["Main.hs"],
     linkstatic = False,
     deps = [
+        "//tests/hackage:base",
         "//tests/library-with-cbits",
-        "@hackage//:base",
     ],
 )
 
@@ -19,8 +19,8 @@ haskell_binary(
     srcs = ["Main.hs"],
     linkstatic = False,
     deps = [
+        "//tests/hackage:base",
         "//tests/library-with-cbits:library-with-cbits-static",
-        "@hackage//:base",
     ],
 )
 
@@ -29,7 +29,7 @@ haskell_binary(
     srcs = ["Main.hs"],
     linkstatic = True,
     deps = [
+        "//tests/hackage:base",
         "//tests/library-with-cbits:library-with-cbits-static",
-        "@hackage//:base",
     ],
 )
