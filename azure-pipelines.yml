@@ -15,6 +15,7 @@ jobs:
     displayName: 'Install Bazel'
   - bash: |
       export BAZEL_SH=$HOME/scoop/apps/msys2/current/usr/bin/bash.exe
+      tree -f /scoop/apps/msys2/current/
       $HOME/scoop/apps/msys2/current/usr/bin/gcc.exe --version
       # Simple haskell binary
 
