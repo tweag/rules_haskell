@@ -12,11 +12,11 @@ jobs:
       echo $(which gcc)
       echo $(which bash)
     displayName: 'Install Bazel'
+  - script:
+      C:/bazel/bazel.exe build --compiler=mingw-gcc -s --verbose_failures "//tests/binary-simple"
   - bash: |
       # Simple haskell binary
       export MSYS_NO_PATHCONV=1
       export MSYS2_ARG_CONV_EXCL="*"
       /c/bazel/bazel.exe build --compiler=mingw-gcc -s --verbose_failures "//tests/binary-simple"
     displayName: 'Run Bazel'
-  - script:
-      C:/bazel/bazel.exe build --compiler=mingw-gcc -s --verbose_failures "//tests/binary-simple"
