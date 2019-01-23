@@ -92,7 +92,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
     # configuration file.
 
     prebuilt_deps_args = hs.actions.args()
-    prebuilt_deps_args.add([f.path for f in prebuilt_deps_id_files])
+    prebuilt_deps_args.add_all([f.path for f in prebuilt_deps_id_files])
     prebuilt_deps_args.use_param_file("%s", use_always = True)
     prebuilt_deps_args.set_param_file_format("multiline")
 
