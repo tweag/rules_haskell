@@ -108,7 +108,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         arguments = [
             metadata_file.path,
             exposed_modules_file.path,
-            " ".join([f.path for f in prebuilt_deps_id_files]),
+            prebuilt_deps_args,
             conf_file.path,
         ],
         use_default_shell_env = True,
