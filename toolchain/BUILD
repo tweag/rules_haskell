@@ -6,7 +6,7 @@ cc_toolchain_suite(
 )
 
 cc_toolchain(
-    name = ":msys_x64_mingw",
+    name = "msys_x64_mingw",
     toolchain_identifier = "msys_x64_mingw",
     all_files = ":empty",
     compiler_files = ":empty",
@@ -21,7 +21,7 @@ cc_toolchain(
 )
 
 toolchain(
-    name = ":msys_x64_mingw-toolchain",
+    name = "msys_x64_mingw-toolchain",
     exec_compatible_with = [
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:windows",
