@@ -1,5 +1,18 @@
 package(default_visibility = ["//visibility:public"])
 
+cc_library(
+    name = "malloc",
+)
+
+cc_library(
+    name = "stl",
+)
+
+filegroup(
+    name = "empty",
+    srcs = [],
+)
+
 cc_toolchain_suite(
     name = "azure-mingw",
     toolchains = {
