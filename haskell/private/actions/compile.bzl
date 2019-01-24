@@ -9,11 +9,13 @@ load(
 )
 load(
     ":private/path_utils.bzl",
+    "darwin_convert_to_dylibs",
     "declare_compiled",
-    "make_external_libs_path",
+    "make_path",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
+load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
 
 def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
@@ -244,6 +246,19 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     for f in set.to_list(source_files):
         args.add(f)
 
+    # Transitive library dependencies for runtime.
+    trans_link_ctx = dep_info.transitive_cc_dependencies.dynamic_linking
+    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_import_libs = set.to_list(dep_info.transitive_import_dependencies)
+
+    _library_deps = trans_libs + trans_import_libs
+    if hs.toolchain.is_darwin:
+        # GHC's builtin linker requires .dylib files on MacOS.
+        library_deps = darwin_convert_to_dylibs(hs, _library_deps)
+    else:
+        library_deps = _library_deps
+    ld_library_path = make_path(library_deps)
+
     return DefaultCompileInfo(
         args = args,
         ghc_args = ghc_args,
@@ -259,7 +274,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             set.to_depset(dep_info.dynamic_libraries),
-            depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
+            depset(library_deps),
             java.inputs,
             locale_archive_depset,
         ]),
@@ -273,7 +288,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         import_dirs = import_dirs,
         env = dicts.add(
             {
-                "LD_LIBRARY_PATH": make_external_libs_path(dep_info.external_libraries),
+                "LD_LIBRARY_PATH": ld_library_path,
             },
             java.env,
             hs.env,

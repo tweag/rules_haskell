@@ -4,8 +4,8 @@ load(":private/packages.bzl", "expose_packages")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/path_utils.bzl", "get_lib_name", "is_shared_library", "is_static_library")
 load(":private/pkg_id.bzl", "pkg_id")
+load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
-load(":private/providers.bzl", "external_libraries_get_mangled")
 
 def backup_path(target):
     """Return a path from the directory this is in to the Bazel root.
@@ -94,7 +94,7 @@ def _darwin_create_extra_linker_flags_file(hs, cc, objects_dir, executable, dyna
         sibling = objects_dir,
     )
     hs.actions.run_shell(
-        inputs = set.to_list(solibs),
+        inputs = solibs,
         outputs = [linker_flags_file],
         command = """
         touch {out}
@@ -103,7 +103,7 @@ def _darwin_create_extra_linker_flags_file(hs, cc, objects_dir, executable, dyna
         done
         """.format(
             nm = cc.tools.nm,
-            solibs = " ".join(["\"" + l.path + "\"" for l in set.to_list(solibs)]),
+            solibs = " ".join(["\"" + l.path + "\"" for l in solibs]),
             out = linker_flags_file.path,
         ),
     )
@@ -122,7 +122,9 @@ def _fix_darwin_linker_paths(hs, inp, out, external_libraries):
       hs: Haskell context.
       inp: An input file.
       out: An output file.
-      external_libraries: HaskellBuildInfo external_libraries to make relative.
+      external_libraries: List of C libraries that inp depends on.
+        These can be plain File for haskell_cc_import dependencies, or
+        struct(lib, mangled_lib) for regular cc_library dependencies.
     """
     hs.actions.run_shell(
         inputs = [inp],
@@ -144,16 +146,28 @@ def _fix_darwin_linker_paths(hs, inp, out, external_libraries):
                 ),
             ] +
             [
-                # Make rpaths for external library dependencies relative to the
-                # binary's installation path, rather than the working directory
-                # at execution time.
+                # Make external library references relative to rpath instead of
+                # relative to the working directory at link time.
+                # Handles cc_library dependencies.
                 "/usr/bin/install_name_tool -change {} {} {}".format(
                     f.lib.path,
-                    paths.join("@loader_path", backup_path(out), f.lib.path),
+                    paths.join("@rpath", f.mangled_lib.basename),
                     out.path,
                 )
-                # we use the unmangled lib (f.lib) for this instead of a mangled lib name
-                for f in set.to_list(external_libraries)
+                for f in external_libraries
+                if hasattr(f, "mangled_lib")
+            ] +
+            [
+                # Make external library references relative to rpath instead of
+                # relative to the working directory at link time.
+                # Handles haskell_cc_import dependencies.
+                "/usr/bin/install_name_tool -change {} {} {}".format(
+                    f.path,
+                    paths.join("@rpath", f.basename),
+                    out.path,
+                )
+                for f in external_libraries
+                if not hasattr(f, "mangled_lib")
             ],
         ),
     )
@@ -207,13 +221,8 @@ def link_binary(
     if not hs.toolchain.is_darwin:
         compile_output = executable
     else:
+        # See _fix_darwin_linker_paths below.
         compile_output = hs.actions.declare_file(hs.name + ".temp")
-        _fix_darwin_linker_paths(
-            hs,
-            compile_output,
-            executable,
-            dep_info.external_libraries,
-        )
 
     args = hs.actions.args()
     args.add_all(["-optl" + f for f in cc.linker_flags])
@@ -259,19 +268,40 @@ def link_binary(
         version = version,
     ))
 
-    _add_external_libraries(args, dep_info.external_libraries)
+    if dynamic:
+        link_ctx = dep_info.cc_dependencies.dynamic_linking
+        trans_link_ctx = dep_info.transitive_cc_dependencies.dynamic_linking
+    else:
+        link_ctx = dep_info.cc_dependencies.static_linking
+        trans_link_ctx = dep_info.transitive_cc_dependencies.static_linking
 
-    # By default GHC will link foreign library dependencies dynamically.
-    # If linkstatic is true we hide dynamic libraries from the linking step if
-    # static libraries are available instead, in order to link as many
-    # dependencies statically as possible.
-    # This is to follow the "mostly static" semantics of Bazel's CC rules.
-    (static_libs, dynamic_libs) = _separate_static_and_dynamic_libraries(
-        dep_info.external_libraries,
-        dynamic,
-    )
+    # Direct C library dependencies to link.
+    # I.e. not indirect through another Haskell dependency.
+    # Such indirect dependencies are linked by GHC based on the extra-libraries
+    # fields in the dependency's package configuration file.
+    libs_to_link = get_mangled_libs(link_ctx.libraries_to_link.to_list())
+    import_libs_to_link = set.to_list(dep_info.import_dependencies)
+    _add_external_libraries(args, libs_to_link + import_libs_to_link)
 
-    solibs = set.union(dynamic_libs, dep_info.dynamic_libraries)
+    # Transitive library dependencies to have in scope for linking.
+    trans_libs_to_link = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_import_libs = set.to_list(dep_info.transitive_import_dependencies)
+
+    if hs.toolchain.is_darwin:
+        _fix_darwin_linker_paths(
+            hs,
+            compile_output,
+            executable,
+            trans_link_ctx.libraries_to_link.to_list() + trans_import_libs,
+        )
+
+    # Transitive dynamic library dependencies to have in RUNPATH.
+    trans_cc_solibs = trans_link_ctx.dynamic_libraries_for_runtime.to_list()
+
+    # Configure RUNPATH.
+    solibs = trans_cc_solibs + trans_import_libs + set.to_list(dep_info.dynamic_libraries)
+    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, executable, solibs)):
+        args.add("-optl-Wl,-rpath," + rpath)
 
     # XXX: Suppress a warning that Clang prints due to GHC automatically passing
     # "-pie" or "-no-pie" to the C compiler.
@@ -280,6 +310,13 @@ def link_binary(
         "-optc-Wno-unused-command-line-argument",
         "-optl-Wno-unused-command-line-argument",
     ])
+
+    objects_dir_manifest = _create_objects_dir_manifest(
+        hs,
+        objects_dir,
+        dynamic = dynamic,
+        with_profiling = with_profiling,
+    )
 
     extra_linker_flags_file = None
     if hs.toolchain.is_darwin:
@@ -298,18 +335,8 @@ def link_binary(
             objects_dir,
             executable,
             dynamic,
-            dynamic_libs,
+            trans_cc_solibs + trans_import_libs,
         )
-
-    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, executable, solibs)):
-        args.add("-optl-Wl,-rpath," + rpath)
-
-    objects_dir_manifest = _create_objects_dir_manifest(
-        hs,
-        objects_dir,
-        dynamic = dynamic,
-        with_profiling = with_profiling,
-    )
 
     if extra_linker_flags_file != None:
         params_file = _merge_parameter_files(hs, objects_dir_manifest, extra_linker_flags_file)
@@ -326,8 +353,8 @@ def link_binary(
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             depset([objects_dir]),
-            set.to_depset(static_libs),
-            set.to_depset(dynamic_libs),
+            depset(trans_libs_to_link),
+            depset(trans_import_libs),
         ]),
         outputs = [compile_output],
         mnemonic = "HaskellLinkBinary",
@@ -342,11 +369,11 @@ def _add_external_libraries(args, ext_libs):
 
     Args:
       args: Args object.
-      ext_libs: external_libraries from HaskellBuildInfo
+      ext_libs: C library dependencies.
     """
+
     seen_libs = set.empty()
-    for ext_lib in set.to_list(ext_libs):
-        lib = ext_lib.mangled_lib
+    for lib in ext_libs:
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
@@ -354,51 +381,6 @@ def _add_external_libraries(args, ext_libs):
                 "-l{0}".format(lib_name),
                 "-L{0}".format(paths.dirname(lib.path)),
             ])
-
-def _separate_static_and_dynamic_libraries(ext_libs, dynamic):
-    """Separate static and dynamic libraries while avoiding duplicates.
-
-    Args:
-      ext_libs: external_libraries from HaskellBuildInfo
-      dynamic: Whether we're linking dynamically or statically.
-
-    Returns:
-      A tuple (static_libs, dynamic_libs) where each library dependency occurs
-      only once in either static_libs or dynamic_libs. In cases where both
-      versions are available, take preference according to the dynamic argument.
-    """
-    seen_libs = set.empty()
-    static_libs = set.empty()
-    dynamic_libs = set.empty()
-
-    if dynamic:
-        # Prefer dynamic libraries over static libraries.
-        preference = is_shared_library
-        preferred = dynamic_libs
-        remaining = static_libs
-    else:
-        # Prefer static libraries over dynamic libraries.
-        preference = is_static_library
-        preferred = static_libs
-        remaining = dynamic_libs
-
-    # Find the preferred libraries
-    for ext_lib in set.to_list(ext_libs):
-        lib = ext_lib.mangled_lib
-        lib_name = get_lib_name(lib)
-        if preference(lib) and not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            set.mutable_insert(preferred, lib)
-
-    # Find the remaining libraries
-    for ext_lib in set.to_list(ext_libs):
-        lib = ext_lib.mangled_lib
-        lib_name = get_lib_name(lib)
-        if not preference(lib) and not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            set.mutable_insert(remaining, lib)
-
-    return (static_libs, dynamic_libs)
 
 def _infer_rpaths(is_darwin, target, solibs):
     """Return set of RPATH values to be added to target so it can find all
@@ -419,7 +401,7 @@ def _infer_rpaths(is_darwin, target, solibs):
     else:
         origin = "$ORIGIN/"
 
-    for solib in set.to_list(solibs):
+    for solib in solibs:
         rpath = paths.normalize(
             paths.join(
                 backup_path(target),
@@ -529,25 +511,43 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         version = my_pkg_id.version if my_pkg_id else None,
     ))
 
-    _add_external_libraries(args, dep_info.external_libraries)
+    if hs.toolchain.is_darwin:
+        # Keep space to override install name with mangled name.
+        args.add("-optl-Wl,-headerpad_max_install_names")
 
-    solibs = set.union(
-        set.map(dep_info.external_libraries, external_libraries_get_mangled),
-        dep_info.dynamic_libraries,
-    )
+        # See _fix_darwin_linker_paths below.
+        dynamic_library_tmp = hs.actions.declare_file(dynamic_library.basename + ".temp")
+    else:
+        dynamic_library_tmp = dynamic_library
+
+    link_ctx = dep_info.cc_dependencies.dynamic_linking
+    trans_link_ctx = dep_info.transitive_cc_dependencies.dynamic_linking
+
+    # Direct C library dependencies to link.
+    # I.e. not indirect through another Haskell dependency.
+    # Such indirect dependencies are linked by GHC based on the extra-libraries
+    # fields in the dependency's package configuration file.
+    libs_to_link = get_mangled_libs(link_ctx.libraries_to_link.to_list())
+    import_libs_to_link = set.to_list(dep_info.import_dependencies)
+    _add_external_libraries(args, libs_to_link + import_libs_to_link)
+
+    # Transitive library dependencies to have in scope for linking.
+    trans_libs_to_link = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_import_libs = set.to_list(dep_info.transitive_import_dependencies)
 
     if hs.toolchain.is_darwin:
-        dynamic_library_tmp = hs.actions.declare_file(dynamic_library.basename + ".temp")
         _fix_darwin_linker_paths(
             hs,
             dynamic_library_tmp,
             dynamic_library,
-            dep_info.external_libraries,
+            trans_link_ctx.libraries_to_link.to_list() + trans_import_libs,
         )
-        args.add("-optl-Wl,-headerpad_max_install_names")
-    else:
-        dynamic_library_tmp = dynamic_library
 
+    # Direct dynamic library dependencies to have in RUNPATH.
+    cc_solibs = trans_link_ctx.dynamic_libraries_for_runtime.to_list()
+
+    # Configure RUNPATH.
+    solibs = cc_solibs + trans_import_libs + set.to_list(dep_info.dynamic_libraries)
     for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, dynamic_library, solibs)):
         args.add("-optl-Wl,-rpath," + rpath)
 
@@ -568,7 +568,8 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
             depset(extra_srcs),
             set.to_depset(dep_info.package_caches),
             set.to_depset(dep_info.dynamic_libraries),
-            depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
+            depset(trans_libs_to_link),
+            depset(trans_import_libs),
         ]),
         outputs = [dynamic_library_tmp],
         mnemonic = "HaskellLinkDynamicLibrary",

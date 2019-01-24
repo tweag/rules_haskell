@@ -3,19 +3,40 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/path_utils.bzl", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
+load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
 load(":private/path_utils.bzl", "get_lib_name")
 
-def _get_extra_libraries(ext_libs):
-    extra_libs = []
+def _get_extra_libraries(dep_info):
+    """Get directories and library names for extra library dependencies.
+
+    Args:
+      dep_info: HaskellBuildInfo provider of the package.
+
+    Returns:
+      (dirs, libs):
+      dirs: list: Library search directories for extra library dependencies.
+      libs: list: Extra library dependencies.
+    """
+    cc_libs = get_mangled_libs(
+        dep_info.cc_dependencies.dynamic_linking.libraries_to_link.to_list(),
+    )
+    import_libs = set.to_list(dep_info.import_dependencies)
+
+    # The order in which library dependencies are listed is relevant when
+    # linking static archives. To maintain the order defined by the input
+    # depset we collect the library dependencies in a list, and use a separate
+    # set to deduplicate entries.
     seen_libs = set.empty()
-    for ext_lib in set.to_list(ext_libs):
-        lib = ext_lib.mangled_lib
+    extra_libs = []
+    extra_lib_dirs = set.empty()
+    for lib in cc_libs + import_libs:
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
             extra_libs.append(lib_name)
-    return extra_libs
+        set.mutable_insert(extra_lib_dirs, lib.dirname)
+    return (set.to_list(extra_lib_dirs), extra_libs)
 
 def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, dynamic_library, exposed_modules_file, other_modules, my_pkg_id, static_library_prof):
     """Create GHC package using ghc-pkg.
@@ -51,6 +72,8 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
     else:
         import_dir_prof = ""
 
+    (extra_lib_dirs, extra_libs) = _get_extra_libraries(dep_info)
+
     metadata_entries = {
         "name": my_pkg_id.name,
         "version": my_pkg_id.version,
@@ -59,10 +82,10 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         "exposed": "True",
         "hidden-modules": " ".join(other_modules),
         "import-dirs": " ".join([import_dir, import_dir_prof]),
-        "library-dirs": "${pkgroot}",
-        "dynamic-library-dirs": "${pkgroot}",
+        "library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
+        "dynamic-library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
-        "extra-libraries": " ".join(_get_extra_libraries(dep_info.extra_libraries)),
+        "extra-libraries": " ".join(extra_libs),
         "depends": ", ".join(
             # Prebuilt dependencies are added further down, since their
             # package-ids are not available as strings but in build outputs.

@@ -5,9 +5,11 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/context.bzl", "haskell_context")
 load(
     ":private/path_utils.bzl",
+    "darwin_convert_to_dylibs",
     "get_lib_name",
-    "make_external_libs_path",
+    "make_path",
 )
+load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
@@ -107,10 +109,14 @@ def _haskell_doctest_single(target, ctx):
     # Add any extra flags specified by the user.
     args.add_all(ctx.attr.doctest_flags)
 
+    # Direct C library dependencies to link against.
+    link_ctx = build_info.cc_dependencies.dynamic_linking
+    libs_to_link = get_mangled_libs(link_ctx.libraries_to_link.to_list())
+    import_libs_to_link = set.to_list(build_info.import_dependencies)
+
     # External libraries.
-    external_libraries = build_info.external_libraries
     seen_libs = set.empty()
-    for lib in [e.mangled_lib for e in set.to_list(build_info.external_libraries)]:
+    for lib in libs_to_link + import_libs_to_link:
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
@@ -124,6 +130,19 @@ def _haskell_doctest_single(target, ctx):
                     "-l{0}".format(lib_name),
                     "-L{0}".format(paths.dirname(lib.path)),
                 ])
+
+    # Transitive library dependencies for runtime.
+    trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
+    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_import_libs = set.to_list(build_info.transitive_import_dependencies)
+
+    _library_deps = trans_libs + trans_import_libs
+    if hs.toolchain.is_darwin:
+        # GHC's builtin linker requires .dylib files on MacOS.
+        library_deps = darwin_convert_to_dylibs(hs, _library_deps)
+    else:
+        library_deps = _library_deps
+    ld_library_path = make_path(library_deps)
 
     header_files = lib_info.header_files if lib_info != None else bin_info.header_files
 
@@ -147,7 +166,7 @@ def _haskell_doctest_single(target, ctx):
             set.to_depset(build_info.interface_dirs),
             set.to_depset(build_info.dynamic_libraries),
             set.to_depset(header_files),
-            depset([e.mangled_lib for e in set.to_list(external_libraries)]),
+            depset(library_deps),
             depset([exposed_modules_file]),
             depset(
                 toolchain.doctest +
@@ -178,7 +197,7 @@ def _haskell_doctest_single(target, ctx):
         # in this case.
         env = dicts.add(
             {
-                "LD_LIBRARY_PATH": make_external_libs_path(external_libraries),
+                "LD_LIBRARY_PATH": ld_library_path,
             },
             hs.env,
         ),
