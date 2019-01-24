@@ -9,7 +9,10 @@ haskell_test(
     name = "binary-simple",
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
-    deps = ["//tests/hackage:base", "//tests/data:ourclibrary"],
+    deps = [
+        "//tests/data:ourclibrary",
+        "//tests/hackage:base",
+    ],
 )
 
 cc_binary(

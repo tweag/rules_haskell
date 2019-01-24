@@ -19,5 +19,5 @@ test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
 
 try-import .bazelrc.local
 
-# Set up custom crosstool for Azure CI 
-build:windows --crostool_top=toolchain
+# Set up custom crosstool for Azure CI
+build:windows --crosstool_top=toolchain

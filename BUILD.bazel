@@ -12,5 +12,3 @@ buildifier(
     mode = "fix",
     verbose = True,
 )
-
-exports_files(["CROSSTOOL.windows"])
