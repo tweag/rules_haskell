@@ -52,12 +52,12 @@ def _prepare_srcs(srcs):
     return srcs_files, import_dir_map
 
 def haskell_test_impl(ctx):
-    return _haskell_common_impl(ctx, True)
+    return _haskell_binary_common_impl(ctx, True)
 
 def haskell_binary_impl(ctx):
-    return _haskell_common_impl(ctx, False)
+    return _haskell_binary_common_impl(ctx, False)
 
-def _haskell_common_impl(ctx, is_test):
+def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx)
 
@@ -68,6 +68,12 @@ def _haskell_common_impl(ctx, is_test):
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     compiler_flags = ctx.attr.compiler_flags
+
+    hpc_outputs = []
+    if ctx.configuration.coverage_enabled:
+        for s in srcs_files:
+            filename, _, _ = s.basename.partition(".")
+            hpc_outputs.append(filename + ".mix")
 
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -83,7 +89,8 @@ def _haskell_common_impl(ctx, is_test):
         with_profiling = False,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
-        is_test = is_test
+        is_test = is_test,
+        hpc_outputs = hpc_outputs,
     )
 
     c_p = None
@@ -112,7 +119,8 @@ def _haskell_common_impl(ctx, is_test):
             with_profiling = True,
             main_function = ctx.attr.main_function,
             version = ctx.attr.version,
-            is_test = is_test
+            is_test = is_test,
+            hpc_outputs = hpc_outputs,
         )
 
     binary = link_binary(
@@ -191,6 +199,12 @@ def haskell_library_impl(ctx):
 
     compiler_flags = ctx.attr.compiler_flags
 
+    hpc_outputs = []
+    if ctx.configuration.coverage_enabled:
+        for s in srcs_files:
+            filename, _, _ = s.basename.partition(".")
+            hpc_outputs.append(filename + ".mix")
+
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -206,6 +220,7 @@ def haskell_library_impl(ctx):
         with_shared = with_shared,
         with_profiling = False,
         my_pkg_id = my_pkg_id,
+        hpc_outputs = hpc_outputs,
     )
 
     c_p = None
@@ -235,6 +250,7 @@ def haskell_library_impl(ctx):
             with_shared = False,
             with_profiling = True,
             my_pkg_id = my_pkg_id,
+            hpc_outputs = hpc_outputs,
         )
 
     static_library = link_library_static(
