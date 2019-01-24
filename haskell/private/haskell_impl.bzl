@@ -51,7 +51,13 @@ def _prepare_srcs(srcs):
 
     return srcs_files, import_dir_map
 
+def haskell_test_impl(ctx):
+    return _haskell_common_impl(ctx, True)
+
 def haskell_binary_impl(ctx):
+    return _haskell_common_impl(ctx, False)
+
+def _haskell_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx)
 
