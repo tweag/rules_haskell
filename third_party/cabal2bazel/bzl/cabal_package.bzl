@@ -21,10 +21,12 @@ and {hash} is the Bazel hash of the original package name.
 """
 load("@bazel_skylib//:lib.bzl", "paths")
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-     "c2hs_library",
      "haskell_library",
      "haskell_binary",
      "haskell_cc_import",
+)
+load("@io_tweag_rules_haskell//haskell:c2hs.bzl",
+     "c2hs_library",
 )
 load(":bzl/alex.bzl", "genalex")
 load(":bzl/cabal_paths.bzl", "cabal_paths")
