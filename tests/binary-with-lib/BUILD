@@ -10,7 +10,7 @@ haskell_library(
     name = "lib",
     srcs = glob(["src/*.hs"]),
     linkstatic = select({
-        "@io_tweag_rules_haskell//haskell/platforms:windows": True,
+        "@bazel_tools///platforms:windows": True,
         "//conditions:default": False,
     }),
     src_strip_prefix = "src",
