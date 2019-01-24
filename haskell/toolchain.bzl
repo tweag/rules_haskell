@@ -151,12 +151,6 @@ fi
         for name, file in ghc_binaries.items()
     }
 
-    # On Windows, we need to compute GHC's internal ar.exe's path in order to
-    # invoke it instead of the CC toolchain's.
-    if ctx.attr.is_windows:
-        ar_path = paths.join(ghc.dirname, "..", "mingw", "bin", "ar.exe")
-        tools_struct_args["ar"] = ar_path
-
     locale_archive = None
 
     if ctx.attr.locale_archive != None:

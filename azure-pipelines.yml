@@ -18,4 +18,4 @@ jobs:
       ./bazel-out/x64_windows-fastbuild/bin/tests/binary-simple/binary-simple.exe >&2
       /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-custom-main" 
       /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-with-lib"
-    # displayName: 'Run Bazel'
+    displayName: 'Run Bazel'
