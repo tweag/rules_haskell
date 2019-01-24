@@ -83,6 +83,7 @@ def _haskell_common_impl(ctx, is_test):
         with_profiling = False,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
+        is_test = is_test
     )
 
     c_p = None
@@ -111,6 +112,7 @@ def _haskell_common_impl(ctx, is_test):
             with_profiling = True,
             main_function = ctx.attr.main_function,
             version = ctx.attr.version,
+            is_test = is_test
         )
 
     binary = link_binary(
