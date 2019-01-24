@@ -1,7 +1,7 @@
 cc_toolchain_suite(
     name = "azure-mingw",
     toolchains = {
-         "azure-mingw": ":msys_x64_mingw",
+         "x64_windows": ":msys_x64_mingw",
     },
 )
 
