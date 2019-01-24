@@ -17,6 +17,14 @@ constraint_value(
 )
 
 platform(
+    name = "windows",
+    constraint_values = [
+        "@bazel_tools//platforms:windows",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+platform(
     name = "linux_x86_64_nixpkgs",
     constraint_values = [
         # XXX using the platform names defined here results in a graph
