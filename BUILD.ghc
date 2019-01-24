@@ -34,7 +34,7 @@ cc_library(
     # dependency of `libHSrts_thr_ghc*`
     # globbing on the `so` version to stay working when they update
     [
-        "lib/ghc-*/rts/libffi.so.*",
+        "lib/ghc-*/rts/libffi.so*",
     ],
   ),
   hdrs = glob(["lib/ghc-*/include/**/*.h"]),
