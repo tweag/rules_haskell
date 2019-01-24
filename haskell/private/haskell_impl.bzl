@@ -72,7 +72,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     hpc_outputs = []
     if ctx.configuration.coverage_enabled:
         for s in srcs_files:
-            filename, _, _ = s.basename.partition(".")
+            filename, _, _ = s.basename.rpartition(".")
             hpc_outputs.append(filename + ".mix")
 
     c = hs.toolchain.actions.compile_binary(
@@ -202,7 +202,7 @@ def haskell_library_impl(ctx):
     hpc_outputs = []
     if ctx.configuration.coverage_enabled:
         for s in srcs_files:
-            filename, _, _ = s.basename.partition(".")
+            filename, _, _ = s.basename.rpartition(".")
             hpc_outputs.append(filename + ".mix")
 
     c = hs.toolchain.actions.compile_library(
