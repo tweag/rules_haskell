@@ -9,6 +9,10 @@ package(default_testonly = 1)
 haskell_library(
     name = "lib",
     srcs = glob(["src/*.hs"]),
+    linkstatic = select({
+        "@io_tweag_rules_haskell//haskell/platforms:windows": True,
+        "//conditions:default": False,
+    }),
     src_strip_prefix = "src",
 )
 
