@@ -2,7 +2,7 @@ major_version: "local"
 minor_version: ""
 
 toolchain {
-  toolchain_identifier: "msys_x64_mingw"
+  toolchain_identifier: "azure-mingw64"
   abi_version: "local"
   abi_libc_version: "local"
   builtin_sysroot: ""

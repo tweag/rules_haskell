@@ -14,15 +14,14 @@ filegroup(
 )
 
 cc_toolchain_suite(
-    name = "azure-mingw",
+    name = "toolchain",
     toolchains = {
-         "x64_windows": ":msys_x64_mingw",
+        "x64_windows": ":cc-compiler-mingw64",
     },
 )
 
 cc_toolchain(
-    name = "msys_x64_mingw",
-    toolchain_identifier = "msys_x64_mingw",
+    name = "cc-compiler-mingw64",
     all_files = ":empty",
     compiler_files = ":empty",
     cpu = "x64_windows",
@@ -33,10 +32,11 @@ cc_toolchain(
     static_runtime_libs = [":empty"],
     strip_files = ":empty",
     supports_param_files = 0,
+    toolchain_identifier = "azure-mingw64",
 )
 
 toolchain(
-    name = "msys_x64_mingw-toolchain",
+    name = "cc-toolchain-mingw64",
     exec_compatible_with = [
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:windows",
@@ -46,6 +46,6 @@ toolchain(
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:windows",
     ],
-    toolchain = ":msys_x64_mingw",
+    toolchain = ":mingw64",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
