@@ -1,3 +1,7 @@
+# features sh_inline_test and py_inline_test,
+# which are like their respective builtin rules,
+# but their scripts can be given inline as a string.
+
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def quote_make_variables(s):
@@ -56,5 +60,31 @@ def sh_inline_test(name, script, **kwargs):
         name = name,
         srcs = [script_name],
         deps = ["@bazel_tools//tools/bash/runfiles"] + deps,
+        **kwargs
+    )
+
+python_runfiles_boilerplate = """
+from bazel_tools.tools.python.runfiles import runfiles
+r = runfiles.Create()
+"""
+
+def py_inline_test(name, script, **kwargs):
+    """Like py_test, but instead of srcs takes the shell script
+    as verbatim bazel string. The python runfiles are in scope
+    as the `r` variable. Use `r.Rlocation()`
+    """
+    script_name = name + ".py"
+    script = python_runfiles_boilerplate + script
+
+    target_from_string(script_name, script)
+
+    deps = kwargs.pop("deps", [])
+    srcs = kwargs.pop("srcs", [])
+
+    native.py_test(
+        name = name,
+        srcs = [script_name] + srcs,
+        main = script_name,
+        deps = ["@bazel_tools//tools/python/runfiles"] + deps,
         **kwargs
     )
