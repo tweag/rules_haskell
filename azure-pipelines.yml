@@ -12,9 +12,9 @@ jobs:
   - bash: |
       # Simple haskell binary
 
-      /c/bazel/bazel.exe build --config windows "///tests/binary-simple:ccbin" # first '/' gets eaten up
-      /c/bazel/bazel.exe build --config windows "///tests/data:ourclibrary"
-      /c/bazel/bazel.exe build --config windows "///tests/binary-simple"
-      /c/bazel/bazel.exe build --config windows "///tests/binary-custom-main" 
-      /c/bazel/bazel.exe build --config windows "///tests/binary-with-lib"
+      /c/bazel/bazel.exe build --crosstool_top=//toolchain "///tests/binary-simple:ccbin" # first '/' gets eaten up
+      /c/bazel/bazel.exe build --crosstool_top=//toolchain "///tests/data:ourclibrary"
+      /c/bazel/bazel.exe build --crosstool_top=//toolchain "///tests/binary-simple"
+      /c/bazel/bazel.exe build --crosstool_top=//toolchain "///tests/binary-custom-main" 
+      /c/bazel/bazel.exe build --crosstool_top=//toolchain "///tests/binary-with-lib"
     # displayName: 'Run Bazel'
