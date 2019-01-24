@@ -23,23 +23,32 @@ haskell_library(
     ],
 )
 
-# TODO(guibhou): Does not work on darwin.
-# Executing tests from //tests/indirect-link:indirect-link
-# -----------------------------------------------------------------------------
-# dyld: lazy symbol binding failed: Symbol not found: _real_get_thing
-# Referenced from: /private/var/tmp/_bazel_distiller/bedaa68a8664d1b29e96b826d058247f/execroot/io_tweag_rules_haskell/bazel-out/darwin-fastbuild/bin/tests/indirect-link/../../../../../bazel-out/darwin-fastbuild/bin/tests/indirect-link/libcbits.so
-# Expected in: flat namespace
-#
-# dyld: Symbol not found: _real_get_thing
-# Referenced from: /private/var/tmp/_bazel_distiller/bedaa68a8664d1b29e96b826d058247f/execroot/io_tweag_rules_haskell/bazel-out/darwin-fastbuild/bin/tests/indirect-link/../../../../../bazel-out/darwin-fastbuild/bin/tests/indirect-link/libcbits.so
-# Expected in: flat namespace
+haskell_test(
+    name = "indirect-link-static",
+    srcs = ["test/Main.hs"],
+    linkstatic = True,
+    src_strip_prefix = "test",
+    deps = [
+        ":base",
+        ":mypkg",
+    ],
+)
 
-# haskell_test(
-#     name = "indirect-link",
-#     srcs = ["test/Main.hs"],
-#     src_strip_prefix = "test",
-#     deps = [
-#         ":base",
-#         ":mypkg",
-#     ],
-# )
+haskell_test(
+    name = "indirect-link-dynamic",
+    srcs = ["test/Main.hs"],
+    linkstatic = False,
+    src_strip_prefix = "test",
+    deps = [
+        ":base",
+        ":mypkg",
+    ],
+)
+
+test_suite(
+    name = "indirect-link",
+    tests = [
+        ":indirect-link-dynamic",
+        ":indirect-link-static",
+    ],
+)
