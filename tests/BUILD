@@ -1,4 +1,4 @@
-load(":sh_inline_test.bzl", "sh_inline_test")
+load(":inline_tests.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("//tests:rule_test_exe.bzl", "rule_test_exe")
 load(
