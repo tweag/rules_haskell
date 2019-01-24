@@ -26,9 +26,22 @@ filegroup(
 
 cc_library(
   name = "threaded-rts",
-  srcs = glob(["lib/ghc-*/rts/libHSrts_thr-ghc*." + ext for ext in ["so", "dylib"]]),
+  srcs = glob(
+    ["lib/ghc-*/rts/libHSrts_thr-ghc*." + ext for ext in [
+        "so",
+        "dylib",
+    ]] +
+    # dependency of `libHSrts_thr_ghc*`
+    # globbing on the `so` version to stay working when they update
+    [
+        "lib/ghc-*/rts/libffi.so.*",
+    ],
+  ),
   hdrs = glob(["lib/ghc-*/include/**/*.h"]),
-  strip_include_prefix = glob(["lib/ghc-*/include"], exclude_directories=0)[0],
+  strip_include_prefix = glob(
+    ["lib/ghc-*/include"],
+    exclude_directories = 0,
+  )[0],
 )
 
 # TODO: detect this more automatically.
@@ -39,13 +52,7 @@ cc_library(
 )
 
 haskell_toolchain(
-    name = "ghc",
-    c2hs = "@c2hs//:bin",
-    version = "8.2.2",
-    tools = ":bin",
-    locale_archive = select({
-      # For some reason glibcLocales is not available on Darwin.
-      "@bazel_tools//src/conditions:darwin": None,
-      "//conditions:default": "@glib_locales//:locale-archive",
-    }),
+  name = "ghc",
+  version = "8.2.2",
+  tools = ":bin",
 )
