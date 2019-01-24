@@ -1,3 +1,6 @@
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Main where
 
-main = putStrLn "hello world"
+foreign import ccall "c_add_one" addOne :: Int -> Int
+
+main = print $ addOne 41
