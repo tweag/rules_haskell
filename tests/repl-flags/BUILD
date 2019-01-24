@@ -15,6 +15,7 @@ haskell_test(
 
     # This also ensure that local `compiler_flags` does not override the `global ones`
     compiler_flags = ["-XOverloadedStrings"],
+    tags = ["requires_missing_compiler_flags"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
@@ -37,6 +38,7 @@ haskell_test(
 
     # This also ensure that local `repl_flags` does not override the `global ones`
     repl_ghci_args = ["-DTESTS_TOOLCHAIN_REPL_FLAGS"],
+    tags = ["requires_missing_compiler_flags"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",

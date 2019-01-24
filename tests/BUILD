@@ -18,6 +18,7 @@ package(default_testonly = 1)
 haskell_doctest_toolchain(
     name = "doctest-toolchain",
     doctest = "@hackage-doctest//:bin",
+    tags = ["requires_doctest"],
 )
 
 # This toolchain is morally testonly. However, that would break our
@@ -30,6 +31,7 @@ haskell_proto_toolchain(
     testonly = 0,
     plugin = "@hackage-proto-lens-protoc//:bin/proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
+    tags = ["requires_hackage"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
@@ -48,6 +50,7 @@ haskell_proto_toolchain(
 c2hs_toolchain(
     name = "c2hs-toolchain",
     c2hs = "@hackage-c2hs//:bin",
+    tags = ["requires_c2hs"],
 )
 
 rule_test(
@@ -76,6 +79,7 @@ rule_test(
     size = "small",
     generates = ["binary-with-prebuilt"],
     rule = "//tests/binary-with-prebuilt",
+    tags = ["requires_hackage"],
 )
 
 rule_test(
@@ -90,6 +94,7 @@ rule_test(
     size = "small",
     generates = ["binary-with-sysdeps"],
     rule = "//tests/binary-with-sysdeps",
+    tags = ["requires_zlib"],
 )
 
 sh_test(
@@ -98,6 +103,7 @@ sh_test(
     srcs = ["//tests/binary-with-data"],
     args = ["$(location //tests/binary-with-data:bin1)"],
     data = ["//tests/binary-with-data:bin1"],
+    tags = ["requires_hackage"],
 )
 
 rule_test(
@@ -120,6 +126,7 @@ rule_test(
             "testsZSlibrary-with-sysdepsZSlibrary-with-sysdeps/package.cache",
         ],
     rule = "//tests/library-with-sysdeps",
+    tags = ["requires_zlib"],
 )
 
 rule_test(
@@ -139,6 +146,7 @@ rule_test(
         "haddock/testsZShaddockZShaddock-lib-deep",
     ],
     rule = "//tests/haddock",
+    tags = ["requires_hackage"],
 )
 
 rule_test(
@@ -167,6 +175,7 @@ rule_test(
         "testsZShaskellZUprotoZUlibraryZShs-lib/testsZShaskellZUprotoZUlibraryZShs-lib.conf",
     ],
     rule = "//tests/haskell_proto_library:hs-lib",
+    tags = ["requires_hackage"],
 )
 
 rule_test(
@@ -176,6 +185,7 @@ rule_test(
         "doctest-log-doctest-lib-testsZShaskellZUdoctestZSlib-b",
     ],
     rule = "//tests/haskell_doctest:doctest-lib",
+    tags = ["requires_doctest"],
 )
 
 rule_test(
@@ -204,6 +214,7 @@ rule_test(
             "testsZSlibrary-with-sysincludesZSlibrary-with-sysincludes/package.cache",
         ],
     rule = "//tests/library-with-sysincludes",
+    tags = ["requires_zlib"],
 )
 
 rule_test(
@@ -248,6 +259,7 @@ rule_test(
     size = "small",
     generates = ["cc-bin"],
     rule = "//tests/cc_haskell_import:cc-bin",
+    tags = ["requires_threaded_rts"],
 )
 
 # TODO(Profpatsch) blocked on https://github.com/bazelbuild/bazel/issues/6093
@@ -362,6 +374,7 @@ rule_test(
 haskell_binary(
     name = "run-tests",
     srcs = ["RunTests.hs"],
+    tags = ["requires_hackage"],
     deps = [
         "//tests/hackage:base",
         "@hackage//:hspec",

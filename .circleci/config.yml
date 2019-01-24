@@ -1,9 +1,28 @@
 version: 2
 
 jobs:
+  build-linux-ghc-bindist:
+    docker:
+      - image: debian
+    working_directory: ~/rules_haskell
+    resource_class: large
+    steps:
+      - checkout
+      - run:
+          name: Setup test environment
+          command: |
+            apt-get update
+            apt-get install -y wget gnupg golang make libgmp3-dev pkg-config zip g++ zlib1g-dev unzip python bash-completion
+            wget "https://github.com/bazelbuild/bazel/releases/download/0.21.0/bazel_0.21.0-linux-x86_64.deb"
+            dpkg -i bazel_0.21.0-linux-x86_64.deb
+            echo "common:ci --build_tag_filters -requires_hackage,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-requires_missing_compiler_flags,-ghcbindist_th_failure" > .bazelrc.local
+      - run:
+          name: Build tests
+          command: |
+            bazel build --config ci //tests/...
 
   # ATTN: when you change anything here, don’t forget to copy it to the build-darwin section
-  build-linux:
+  build-linux-nixpkgs:
     docker:
       - image: nixos/nix:2.1.3
     working_directory: ~/rules_haskell
@@ -73,5 +92,6 @@ workflows:
   version: 2
   build:
     jobs:
-      - build-linux
+      - build-linux-ghc-bindist
+      - build-linux-nixpkgs
       - build-darwin

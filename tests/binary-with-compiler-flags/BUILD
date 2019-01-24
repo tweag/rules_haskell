@@ -14,5 +14,6 @@ haskell_test(
         "-with-rtsopts=-N2 -qg -I0 -n2m -A128m",
         "-XLambdaCase",
     ],
+    tags = ["requires_missing_compiler_flags"],
     deps = ["//tests/hackage:base"],
 )

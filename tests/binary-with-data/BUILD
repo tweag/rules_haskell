@@ -19,6 +19,7 @@ haskell_test(
     srcs = ["bin2.hs"],
     args = ["$(location :bin1)"],
     data = [":bin1"],
+    tags = ["requires_hackage"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
