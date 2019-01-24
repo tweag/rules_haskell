@@ -24,6 +24,8 @@ mkShell {
     linkchecker
     # to avoid CA certificate failures on MacOS CI
     cacert
+    # Needed for debug/linking_utils
+    binutils
   ] ++ lib.optionals docTools [graphviz python36Packages.sphinx zip unzip];
 
   shellHook = ''
