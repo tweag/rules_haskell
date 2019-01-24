@@ -11,3 +11,9 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = ["//tests/hackage:base"],
 )
+
+cc_binary(
+    name = "ccbin",
+    srcs = ["mybin.c"],
+    visibility = ["//visibility:public"],
+)
