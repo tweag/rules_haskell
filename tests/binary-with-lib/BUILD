@@ -9,11 +9,11 @@ package(default_testonly = 1)
 haskell_library(
     name = "lib",
     srcs = glob(["src/*.hs"]),
-    src_strip_prefix = "src",
     linkstatic = select({
         "@bazel_tools//src/conditions:windows": True,
         "//conditions:default": False,
     }),
+    src_strip_prefix = "src",
 )
 
 haskell_test(
