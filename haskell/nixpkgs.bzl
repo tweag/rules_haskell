@@ -1,4 +1,4 @@
-"""Loading of haskell packages from nixpkgs"""
+"""Workspace rules (Nixpkgs)"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(
