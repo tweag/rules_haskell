@@ -272,7 +272,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     )
 
 def _hpc_compiler_args(hs):
-    hpcdir = "{}/{}.hpc".format(hs.bin_dir.path, hs.src_root)
+    hpcdir = "{}/{}/.hpc".format(hs.bin_dir.path, hs.package_root)
     return ["-fhpc", "-hpcdir", hpcdir]
 
 def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, dynamic, with_profiling, main_function, version, is_test = False, hpc_outputs = []):
@@ -295,7 +295,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         c.args.add(["-dynamic", "-osuf dyn_o"])
 
     conditioned_hpc_outputs = []
-    if hs.coverage_enabled and not is_test:
+    if hs.coverage_enabled:
         c.args.add(_hpc_compiler_args(hs))
         for o in hpc_outputs:
             conditioned_file = hs.actions.declare_file(".hpc/" + o)
@@ -361,12 +361,11 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
 
     conditioned_hpc_outputs = []
     if hs.coverage_enabled:
-        c.args.add(_hpc_compiler_args(hs))  
+        c.args.add(_hpc_compiler_args(hs))
         for o in hpc_outputs:
             pkg_id_string = pkg_id.to_string(my_pkg_id)
             conditioned_file = hs.actions.declare_file(".hpc/" + pkg_id_string + "/" + o)
             conditioned_hpc_outputs.append(conditioned_file)
-
 
     hs.toolchain.actions.run_ghc(
         hs,

@@ -35,6 +35,7 @@ def haskell_context(ctx, attr = None):
         toolchain = toolchain,
         tools = toolchain.tools,
         src_root = src_root,
+        package_root = ctx.label.workspace_root + ctx.label.package,
         env = env,
         mode = ctx.var["COMPILATION_MODE"],
         actions = ctx.actions,
