@@ -125,12 +125,7 @@ def import_packages(name):
     return
     """
 
-    is_windows = repository_ctx.os.name.startswith("windows")
-
-    if is_windows:
-        repository_ctx.file("packages.bzl", bzl_file_content_windows)
-    else:
-        repository_ctx.file("packages.bzl", bzl_file_content)
+    repository_ctx.file("packages.bzl", bzl_file_content)
 
 _gen_imports_str = repository_rule(
     implementation = _gen_imports_impl,

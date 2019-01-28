@@ -25,29 +25,25 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     args = hs.actions.args()
     args.add(hs.tools.ghc)
 
-    # Do not use Bazel's CC toolchain on Windows, as it leads to linker and librarty compatibility issues.
-    # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
-    # C libraries with Haskell targets.
-    if not hs.toolchain.is_windows:
-        args.add_all([
-            # GHC uses C compiler for assemly, linking and preprocessing as well.
-            "-pgma",
-            cc.tools.cc,
-            "-pgmc",
-            cc.tools.cc,
-            "-pgml",
-            cc.tools.cc,
-            "-pgmP",
-            cc.tools.cc,
-            # Setting -pgm* flags explicitly has the unfortunate side effect
-            # of resetting any program flags in the GHC settings file. So we
-            # restore them here. See
-            # https://ghc.haskell.org/trac/ghc/ticket/7929.
-            "-optc-fno-stack-protector",
-            "-optP-E",
-            "-optP-undef",
-            "-optP-traditional",
-        ])
+    args.add_all([
+        # GHC uses C compiler for assemly, linking and preprocessing as well.
+        "-pgma",
+        cc.tools.cc,
+        "-pgmc",
+        cc.tools.cc,
+        "-pgml",
+        cc.tools.cc,
+        "-pgmP",
+        cc.tools.cc,
+        # Setting -pgm* flags explicitly has the unfortunate side effect
+        # of resetting any program flags in the GHC settings file. So we
+        # restore them here. See
+        # https://ghc.haskell.org/trac/ghc/ticket/7929.
+        "-optc-fno-stack-protector",
+        "-optP-E",
+        "-optP-undef",
+        "-optP-traditional",
+    ])
 
     ghc_args_file = hs.actions.declare_file("ghc_args_%s_%s" % (hs.name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
@@ -176,7 +172,6 @@ fi
                 run_ghc = _run_ghc,
             ),
             is_darwin = ctx.attr.is_darwin,
-            is_windows = ctx.attr.is_windows,
             version = ctx.attr.version,
             # Pass through the version_file, that it can be required as
             # input in _run_ghc, to make every call to GHC depend on a
@@ -208,10 +203,6 @@ _haskell_toolchain = rule(
         ),
         "is_darwin": attr.bool(
             doc = "Whether compile on and for Darwin (macOS).",
-            mandatory = True,
-        ),
-        "is_windows": attr.bool(
-            doc = "Whether compile on and for Windows.",
             mandatory = True,
         ),
         "locale": attr.string(
@@ -286,10 +277,6 @@ def haskell_toolchain(
         visibility = ["//visibility:public"],
         is_darwin = select({
             "@io_tweag_rules_haskell//haskell/platforms:darwin": True,
-            "//conditions:default": False,
-        }),
-        is_windows = select({
-            "@io_tweag_rules_haskell//haskell/platforms:mingw32": True,
             "//conditions:default": False,
         }),
         # Ignore this attribute on any platform that is not Linux. The
