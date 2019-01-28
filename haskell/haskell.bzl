@@ -77,6 +77,9 @@ _haskell_common_attrs = {
     "repl_ghci_args": attr.string_list(
         doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
     ),
+    "runghc_args": attr.string_list(
+        doc = "Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
+    ),
     "_ghci_script": attr.label(
         allow_single_file = True,
         default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),

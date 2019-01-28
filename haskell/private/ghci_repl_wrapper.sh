@@ -33,10 +33,8 @@ fi
 # components, such as shared libraries with that exec root.
 
 RULES_HASKELL_EXEC_ROOT=$(dirname $(readlink ${BUILD_WORKSPACE_DIRECTORY}/bazel-out))
-GHCI_LOCATION="$RULES_HASKELL_EXEC_ROOT/{GHCi}"
+TOOL_LOCATION="$RULES_HASKELL_EXEC_ROOT/{TOOL}"
 SCRIPT_LOCATION="$RULES_HASKELL_EXEC_ROOT/{SCRIPT_LOCATION}"
 
 export LD_LIBRARY_PATH={LDLIBPATH}
-# The base and directory packages are necessary for the GHCi script we use
-# (loads source files and brings in scope the corresponding modules).
-"$GHCI_LOCATION" -package base -package directory {ARGS} "$@"
+"$TOOL_LOCATION" {ARGS} "$@"

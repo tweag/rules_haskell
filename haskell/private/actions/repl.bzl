@@ -48,7 +48,11 @@ def build_haskell_repl(
       None.
     """
 
-    args = expose_packages(
+    # The base and directory packages are necessary for the GHCi script we use
+    # (loads source files and brings in scope the corresponding modules).
+    args = ["-package", "base", "-package", "directory"]
+
+    args += expose_packages(
         build_info,
         lib_info,
         use_direct = False,
@@ -126,7 +130,7 @@ def build_haskell_repl(
                 ),
                 prefix = "$RULES_HASKELL_EXEC_ROOT",
             ),
-            "{GHCi}": hs.tools.ghci.path,
+            "{TOOL}": hs.tools.ghci.path,
             "{SCRIPT_LOCATION}": output.path,
             "{ARGS}": " ".join([shell.quote(a) for a in args]),
         },

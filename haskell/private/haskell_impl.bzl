@@ -155,9 +155,8 @@ def haskell_binary_impl(ctx):
 
     build_haskell_runghc(
         hs,
-        ghci_script = ctx.file._ghci_script,
-        runghc_wrapper = ctx.file._runghc_wrapper,
-        repl_ghci_args = ctx.attr.repl_ghci_args,
+        runghc_wrapper = ctx.file._ghci_repl_wrapper,
+        extra_args = ctx.attr.runghc_args,
         compiler_flags = ctx.attr.compiler_flags,
         output = ctx.outputs.runghc,
         package_caches = dep_info.package_caches,
@@ -356,9 +355,8 @@ def haskell_library_impl(ctx):
 
         build_haskell_runghc(
             hs,
-            ghci_script = ctx.file._ghci_script,
-            runghc_wrapper = ctx.file._runghc_wrapper,
-            repl_ghci_args = ctx.attr.repl_ghci_args,
+            runghc_wrapper = ctx.file._ghci_repl_wrapper,
+            extra_args = ctx.attr.runghc_args,
             compiler_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.runghc,
             package_caches = dep_info.package_caches,
