@@ -1,10 +1,6 @@
 """Core Haskell rules"""
 
 load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
-    "HaskellPrebuiltPackageInfo",
-)
-load(
     ":cc.bzl",
     _cc_haskell_import = "cc_haskell_import",
     _haskell_cc_import = "haskell_cc_import",
@@ -36,9 +32,9 @@ load(
 load(
     ":private/haskell_impl.bzl",
     _haskell_binary_impl = "haskell_binary_impl",
-    _haskell_test_impl = "haskell_test_impl",
     _haskell_import_impl = "haskell_import_impl",
     _haskell_library_impl = "haskell_library_impl",
+    _haskell_test_impl = "haskell_test_impl",
 )
 
 # For re-exports:

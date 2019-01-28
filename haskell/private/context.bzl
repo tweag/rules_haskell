@@ -45,5 +45,5 @@ def haskell_context(ctx, attr = None):
         actions = ctx.actions,
         bin_dir = ctx.bin_dir,
         genfiles_dir = ctx.genfiles_dir,
-        coverage_enabled = coverage_enabled
+        coverage_enabled = coverage_enabled,
     )
