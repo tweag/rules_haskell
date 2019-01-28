@@ -5,7 +5,7 @@ jobs:
   steps:
   - bash: |
       set -e
-      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.20.0/bazel-0.20.0-windows-x86_64.exe
+      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.21.0/bazel-0.21.0-windows-x86_64.exe
       mv bazel-*.exe bazel.exe
       mkdir /c/bazel
       mv bazel.exe /c/bazel
