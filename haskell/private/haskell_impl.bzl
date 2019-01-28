@@ -77,7 +77,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     compiler_flags = ctx.attr.compiler_flags
 
     hpc_outputs = []
-    if ctx.configuration.coverage_enabled:
+    if hs.coverage_enabled:
         hpc_outputs = _get_hpc_outputs(ctx, srcs_files)
 
     c = hs.toolchain.actions.compile_binary(
@@ -205,7 +205,7 @@ def haskell_library_impl(ctx):
     compiler_flags = ctx.attr.compiler_flags
 
     hpc_outputs = []
-    if ctx.configuration.coverage_enabled:
+    if hs.coverage_enabled:
         hpc_outputs = _get_hpc_outputs(ctx, srcs_files)
 
     c = hs.toolchain.actions.compile_library(
