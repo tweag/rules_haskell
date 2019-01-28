@@ -82,7 +82,7 @@ def _ghc_bindist_impl(ctx):
     )
 
     # On Windows the bindist already contains the built executables
-    if os != "windows":
+    if arch != "windows":
         _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
         _execute_fail_loudly(ctx, ["make", "install"])
 
