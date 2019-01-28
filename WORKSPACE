@@ -281,20 +281,17 @@ http_archive(
     urls = ["https://github.com/bazelbuild/buildtools/archive/0.20.0.tar.gz"],
 )
 
-# A repository that generates the Go SDK imports, see ./tools/go_sdk/README
-local_repository(
-    name = "go_sdk_repo",
-    path = "tools/go_sdk",
+load(
+    "@io_bazel_rules_go//go:def.bzl",
+    "go_register_toolchains",
+    "go_rules_dependencies",
 )
-
-load("@go_sdk_repo//:sdk.bzl", "gen_imports")
-
-gen_imports(name = "go_sdk_imports")
-
-load("@go_sdk_imports//:imports.bzl", "load_go_sdk")
-
-load_go_sdk()
-
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
+
+go_rules_dependencies()
+
+# Use host version because none of the SDK's that rules_go knows about
+# are compatible with NixOS.
+go_register_toolchains(go_version = "host")
 
 buildifier_dependencies()
