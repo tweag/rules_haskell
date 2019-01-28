@@ -73,10 +73,8 @@ def _ghc_bindist_impl(ctx):
         stripPrefix = "ghc-" + version,
     )
 
-    # On Windows the bindist already contains the built executables
-    if arch != "windows":
-        _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
-        _execute_fail_loudly(ctx, ["make", "install"])
+    _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
+    _execute_fail_loudly(ctx, ["make", "install"])
 
     ctx.template(
         "BUILD",
