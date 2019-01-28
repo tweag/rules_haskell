@@ -2,7 +2,6 @@ exports_files(
     glob(["*.bzl"]) + [
         "assets/ghci_script",
         "private/ghci_repl_wrapper.sh",
-        "private/runghc_wrapper.sh",
         "private/haddock_wrapper.sh.tpl",
     ],
 )

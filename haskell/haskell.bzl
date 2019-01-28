@@ -88,10 +88,6 @@ _haskell_common_attrs = {
         allow_single_file = True,
         default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
     ),
-    "_runghc_wrapper": attr.label(
-        allow_single_file = True,
-        default = Label("@io_tweag_rules_haskell//haskell:private/runghc_wrapper.sh"),
-    ),
     "_ls_modules": attr.label(
         executable = True,
         cfg = "host",
