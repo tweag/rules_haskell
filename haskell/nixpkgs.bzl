@@ -119,11 +119,7 @@ def import_packages(name):
         extra_args_raw = extra_args_raw,
     )
 
-    # A dummy 'packages.bzl' file with a no-op 'import_packages()' on Windows
-    bzl_file_content_windows = """
-def import_packages(name):
-    return
-    """
+    bzl_file_content_windows = ""
 
     repository_ctx.file("packages.bzl", bzl_file_content)
 
