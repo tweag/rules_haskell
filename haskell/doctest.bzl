@@ -188,6 +188,7 @@ def _haskell_doctest_single(target, ctx):
             # The reason is that the doctest process uses its own PID to determine the name
             # of its working directory. In presence of PID namespacing, this occasionally results
             # in multiple concurrent processes attempting to create the same directory.
+            # See https://github.com/sol/doctest/issues/219 for details.
             #
             # For some reason, setting "exclusive": "1" does not fix the issue, so we disable
             # sandboxing altogether for doctest tests.
