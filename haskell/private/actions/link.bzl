@@ -202,8 +202,7 @@ def link_binary(
       File: produced executable
     """
 
-    exe_name = hs.name
-    executable = hs.actions.declare_file(exe_name)
+    executable = hs.actions.declare_file(hs.name)
     if not hs.toolchain.is_darwin:
         compile_output = executable
     else:
