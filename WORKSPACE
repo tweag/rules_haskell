@@ -51,7 +51,7 @@ nixpkgs_local_repository(
     nix_file = "//nixpkgs:default.nix",
 )
 
-test_ghc_version = "8.6.3"
+test_ghc_version = "8.6.2"
 
 test_compiler_flags = [
     "-XStandaloneDeriving",  # Flag used at compile time
