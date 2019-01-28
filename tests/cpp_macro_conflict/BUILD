@@ -10,7 +10,7 @@ package(default_testonly = 1)
 haskell_library(
     name = "bytestring",
     srcs = ["BS.hs"],
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )
 
 # This depends on two packages "bytestring"
@@ -30,7 +30,7 @@ haskell_test(
     }),
     deps = [
         ":bytestring",
-        "@hackage//:base",
-        "@hackage//:bytestring",
+        "//tests/hackage:base",
+        "//tests/hackage:bytestring",
     ],
 )

@@ -39,7 +39,7 @@ def _prepare_srcs(srcs):
         if hasattr(src, "files"):
             if C2hsLibraryInfo in src:
                 srcs_files += src.files.to_list()
-                for f in src.files:
+                for f in src.files.to_list():
                     import_dir_map[f] = src[C2hsLibraryInfo].import_dir
             else:
                 srcs_files += src.files.to_list()

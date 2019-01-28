@@ -27,14 +27,14 @@ def _c2hs_library_impl(ctx):
     chs_dir_raw = target_unique_name(hs, "chs")
     hs_file = declare_compiled(hs, chs_file, ".hs", directory = chs_dir_raw)
     chi_file = declare_compiled(hs, chs_file, ".chi", directory = chs_dir_raw)
-    args.add([chs_file.path, "-o", hs_file.path])
+    args.add_all([chs_file.path, "-o", hs_file.path])
 
-    args.add(["-C-E"])
-    args.add(["--cpp", cc.tools.cc])
+    args.add("-C-E")
+    args.add_all(["--cpp", cc.tools.cc])
     args.add("-C-includeghcplatform.h")
     args.add("-C-includeghcversion.h")
-    args.add(["-C" + x for x in cc.cpp_flags])
-    args.add(["-C" + x for x in cc.include_args])
+    args.add_all(["-C" + x for x in cc.cpp_flags])
+    args.add_all(["-C" + x for x in cc.include_args])
 
     dep_chi_files = [
         dep[C2hsLibraryInfo].chi_file
@@ -47,7 +47,7 @@ def _c2hs_library_impl(ctx):
         for dep in ctx.attr.deps
         if C2hsLibraryInfo in dep
     ]
-    args.add(chi_includes)
+    args.add_all(chi_includes)
 
     hs.actions.run_shell(
         inputs = depset(transitive = [

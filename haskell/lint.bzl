@@ -39,7 +39,7 @@ def _haskell_lint_aspect_impl(target, ctx):
 
     args = ctx.actions.args()
 
-    args.add([
+    args.add_all([
         "-O0",
         "-v0",
         "-fno-code",
@@ -53,7 +53,7 @@ def _haskell_lint_aspect_impl(target, ctx):
         "--make",
     ])
 
-    args.add(expose_packages(
+    args.add_all(expose_packages(
         build_info,
         lib_info,
         use_direct = False,
@@ -66,7 +66,7 @@ def _haskell_lint_aspect_impl(target, ctx):
         lib_info.source_files if lib_info != None else bin_info.source_files,
     )
 
-    args.add(sources)
+    args.add_all(sources)
 
     lint_log = ctx.actions.declare_file(
         target_unique_name(hs, "lint-log"),

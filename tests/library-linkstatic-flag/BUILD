@@ -15,8 +15,8 @@ haskell_library(
     linkstatic = True,  # <--
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
-        "@hackage//:bytestring",
+        "//tests/hackage:base",
+        "//tests/hackage:bytestring",
     ],
 )
 
@@ -27,8 +27,8 @@ haskell_library(
     linkstatic = False,  # <--
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
-        "@hackage//:bytestring",
+        "//tests/hackage:base",
+        "//tests/hackage:bytestring",
     ],
 )
 

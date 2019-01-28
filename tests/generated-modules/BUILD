@@ -19,7 +19,7 @@ haskell_library(
     name = "GenModule",
     srcs = [":generate-genmodule"],
     src_strip_prefix = "src",
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )
 
 genrule(
@@ -33,7 +33,7 @@ haskell_library(
     name = "BinModule",
     srcs = [":generate-binmodule"],
     src_strip_prefix = "src",
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )
 
 genrule(
@@ -51,6 +51,6 @@ haskell_test(
     deps = [
         ":BinModule",
         ":GenModule",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

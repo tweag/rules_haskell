@@ -130,6 +130,7 @@ def cc_interop_info(ctx):
         "cc": cc_toolchain.compiler_executable(),
         "ld": cc_toolchain.ld_executable(),
         "cpp": cc_toolchain.preprocessor_executable(),
+        "nm": cc_toolchain.nm_executable(),
     }
 
     # If running on darwin but XCode is not installed (i.e., only the Command

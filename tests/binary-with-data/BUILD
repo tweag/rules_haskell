@@ -11,7 +11,7 @@ haskell_test(
     # Regular file input:
     data = ["bin1-input"],
     visibility = ["//visibility:public"],
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )
 
 haskell_test(
@@ -21,7 +21,7 @@ haskell_test(
     data = [":bin1"],
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
+        "//tests/hackage:base",
         "@hackage//:process",
     ],
 )

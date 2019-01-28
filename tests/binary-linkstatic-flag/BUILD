@@ -17,7 +17,7 @@ haskell_library(
     name = "HsLib",
     srcs = ["HsLib.hs"],
     deps = [
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -28,7 +28,7 @@ haskell_test(
     deps = [
         ":HsLib",
         ":c-lib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -39,7 +39,7 @@ haskell_test(
     deps = [
         ":HsLib",
         ":c-lib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 

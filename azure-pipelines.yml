@@ -4,13 +4,19 @@ jobs:
     vmImage: 'vs2017-win2016'
   steps:
   - bash: |
-      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.20.0/bazel-0.20.0-windows-x86_64.exe
+      set -e
+      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.21.0/bazel-0.21.0-windows-x86_64.exe
       mv bazel-*.exe bazel.exe
       mkdir /c/bazel
       mv bazel.exe /c/bazel
     displayName: 'Install Bazel'
   - bash: |
+      set -e
+      export MSYS2_ARG_CONV_EXCL="*"
       # Simple haskell binary
-      /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-simple" # first '/' gets eaten up
-      /c/bazel/bazel.exe build --compiler=msys-gcc "///tests/binary-custom-main" 
+      /c/bazel/bazel.exe build --config windows "//tests/binary-simple"
+      /c/bazel/bazel.exe build --config windows "//tests/binary-custom-main"
+      /c/bazel/bazel.exe build --config windows "//tests/data:ourclibrary"
+      /c/bazel/bazel.exe build --config windows "//tests/binary-with-lib"
+
     displayName: 'Run Bazel'

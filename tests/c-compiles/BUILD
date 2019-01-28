@@ -11,7 +11,7 @@ haskell_library(
     srcs = ["Lib.hs"],
     deps = [
         "//tests/data:ourclibrary",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
 
@@ -21,6 +21,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":hs-lib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

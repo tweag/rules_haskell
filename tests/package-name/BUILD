@@ -13,7 +13,7 @@ haskell_library(
     name = "lib-a_Z",
     srcs = ["Lib.hs"],
     version = "1.2.3.4",
-    deps = ["@hackage//:base"],
+    deps = ["//tests/hackage:base"],
 )
 
 haskell_test(
@@ -23,6 +23,6 @@ haskell_test(
     version = "0.0.0",  # This flags triggers the `MIN_VERSION` macro generation
     deps = [
         ":lib-a_Z",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )

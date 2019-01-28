@@ -90,18 +90,30 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
 
     # Combine exposed modules and other metadata to form the package
     # configuration file.
+
+    prebuilt_deps_args = hs.actions.args()
+    prebuilt_deps_args.add_all([f.path for f in prebuilt_deps_id_files])
+    prebuilt_deps_args.use_param_file("%s", use_always = True)
+    prebuilt_deps_args.set_param_file_format("multiline")
+
     hs.actions.run_shell(
         inputs = [metadata_file, exposed_modules_file] + prebuilt_deps_id_files,
         outputs = [conf_file],
         command = """
-        cat $1 > $4
-        echo "exposed-modules: $(< $2)" >> $4
-        echo "depends: $(cat $3 | tr "\\n" " ")" >> $4
-        """,
+            cat $1 > $4
+            echo "exposed-modules: `cat $2`" >> $4
+            readarray -t deps_id_files < $3
+            if [ ${#deps_id_files[@]} -eq 0 ]; then
+              deps=""
+            else
+              deps=$(cat "${deps_id_files[@]}" | tr '\n' " ")
+            fi
+            echo "depends: $deps" >> $4
+""",
         arguments = [
             metadata_file.path,
             exposed_modules_file.path,
-            " ".join([f.path for f in prebuilt_deps_id_files]),
+            prebuilt_deps_args,
             conf_file.path,
         ],
         use_default_shell_env = True,
@@ -159,6 +171,8 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
             "-v0",
             "--no-expand-pkgroot",
         ],
+        # XXX: Seems required for this to work on Windows
+        use_default_shell_env = True,
     )
 
     return conf_file, cache_file

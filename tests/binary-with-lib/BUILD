@@ -9,6 +9,10 @@ package(default_testonly = 1)
 haskell_library(
     name = "lib",
     srcs = glob(["src/*.hs"]),
+    linkstatic = select({
+        "@bazel_tools//src/conditions:windows": True,
+        "//conditions:default": False,
+    }),
     src_strip_prefix = "src",
 )
 
@@ -18,6 +22,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":lib",
-        "@hackage//:base",
+        "//tests/hackage:base",
     ],
 )
