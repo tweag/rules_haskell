@@ -29,6 +29,8 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
       (File, string): Haskell source file created by processing hsc_file and
          new import directory containing the produced file.
     """
+    if hs.toolchain.is_windows:
+        cc = "Bazel's CC shouldn't be used on Windows"
     args = hs.actions.args()
 
     # Output a Haskell source file.
@@ -74,19 +76,25 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
       DefaultCompileInfo: Populated default compilation settings.
     """
 
+    if hs.toolchain.is_windows:
+        cc = "Bazel's CC shouldn't be used on Windows"
+
     ghc_args = []
 
     # GHC expects the CC compiler as the assembler, but segregates the
     # set of flags to pass to it when used as an assembler. So we have
     # to set both -optc and -opta.
-    cc_args = [
-        "-optc" + f
-        for f in cc.compiler_flags
-    ] + [
-        "-opta" + f
-        for f in cc.compiler_flags
-    ]
-    ghc_args += cc_args
+    # Since we don't use Bazel's CC toolchain on windows, there's nothing to
+    # do.
+    if not hs.toolchain.is_windows:
+        cc_args = [
+            "-optc" + f
+            for f in cc.compiler_flags
+        ] + [
+            "-opta" + f
+            for f in cc.compiler_flags
+        ]
+        ghc_args += cc_args
 
     interface_dir_raw = "_iface_prof" if with_profiling else "_iface"
     object_dir_raw = "_obj_prof" if with_profiling else "_obj"
@@ -172,8 +180,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             set.mutable_insert(import_dirs, idir)
 
     ghc_args += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
-    ghc_args += ["-optP" + f for f in cc.cpp_flags]
-    ghc_args += cc.include_args
+    if not hs.toolchain.is_windows:
+        ghc_args += ["-optP" + f for f in cc.cpp_flags]
+        ghc_args += cc.include_args
 
     locale_archive_depset = (
         depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
@@ -243,7 +252,6 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             depset(boot_files),
             set.to_depset(source_files),
             extra_srcs,
-            depset(cc.hdrs),
             set.to_depset(dep_info.package_confs),
             set.to_depset(dep_info.package_caches),
             set.to_depset(dep_info.interface_dirs),
@@ -253,11 +261,11 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
             java.inputs,
             locale_archive_depset,
-        ]),
+        ] + ([depset(cc.hdrs)] if not hs.toolchain.is_windows else [])),
         objects_dir = objects_dir,
         interfaces_dir = interfaces_dir,
         outputs = [objects_dir, interfaces_dir],
-        header_files = set.from_list(cc.hdrs + header_files),
+        header_files = set.from_list((cc.hdrs if not hs.toolchain.is_windows else []) + header_files),
         boot_files = set.from_list(boot_files),
         source_files = source_files,
         extra_source_files = extra_srcs,
@@ -281,6 +289,10 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         modules: set of module names
         source_files: set of Haskell source files
     """
+
+    if hs.toolchain.is_windows:
+        cc = "Bazel's CC shouldn't be used on Windows"
+
     c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = None, version = version)
     c.args.add_all(["-main-is", main_function])
     if dynamic:
@@ -344,6 +356,8 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
         source_files: set of Haskell module files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
+    if hs.toolchain.is_windows:
+        cc = "Bazel's CC shouldn't be used on Windows"
     c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version)
     if with_shared:
         c.args.add("-dynamic-too")
