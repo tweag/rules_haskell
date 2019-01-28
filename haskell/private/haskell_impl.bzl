@@ -57,6 +57,13 @@ def haskell_test_impl(ctx):
 def haskell_binary_impl(ctx):
     return _haskell_binary_common_impl(ctx, False)
 
+def _get_hpc_outputs(ctx, srcs_files):
+    hpc_outputs = []
+    for s in srcs_files:
+        filename, _, _ = s.basename.rpartition(".")
+        hpc_outputs.append(filename + ".mix")
+    return hpc_outputs
+
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx)
@@ -71,9 +78,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     hpc_outputs = []
     if ctx.configuration.coverage_enabled:
-        for s in srcs_files:
-            filename, _, _ = s.basename.rpartition(".")
-            hpc_outputs.append(filename + ".mix")
+        hpc_outputs = _get_hpc_outputs(ctx, srcs_files)
 
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -201,9 +206,7 @@ def haskell_library_impl(ctx):
 
     hpc_outputs = []
     if ctx.configuration.coverage_enabled:
-        for s in srcs_files:
-            filename, _, _ = s.basename.rpartition(".")
-            hpc_outputs.append(filename + ".mix")
+        hpc_outputs = _get_hpc_outputs(ctx, srcs_files)
 
     c = hs.toolchain.actions.compile_library(
         hs,
