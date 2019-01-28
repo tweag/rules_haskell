@@ -119,8 +119,6 @@ def import_packages(name):
         extra_args_raw = extra_args_raw,
     )
 
-    bzl_file_content_windows = ""
-
     repository_ctx.file("packages.bzl", bzl_file_content)
 
 _gen_imports_str = repository_rule(
@@ -208,7 +206,6 @@ def haskell_nixpkgs_packageset(name, base_attribute_path, repositories = {}, **k
         build_file_content = """
 exports_files(["all-haskell-packages.bzl"])
         """,
-        fail_not_supported = False,
         **kwargs
     )
     _gen_imports(
