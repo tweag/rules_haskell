@@ -10,6 +10,12 @@ multi-language projects. This project extends Bazel with build rules
 for Haskell. Get started building your own project using these rules
 wih the [setup script below](#setup).
 
+[bazel]: https://bazel.build/
+[bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
+[bazel-cli]: https://docs.bazel.build/versions/master/command-line-reference.html
+[external-repositories]: https://docs.bazel.build/versions/master/external.html
+[nix]: https://nixos.org/nix
+
 ## Rule summary
 
 The full reference documentation for rules is at https://haskell.build.
