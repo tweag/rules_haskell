@@ -53,6 +53,14 @@ def _execute_fail_loudly(ctx, args):
         fail("{0} failed, aborting creation of GHC bindist".format(" ".join(args)))
 
 def _ghc_bindist_impl(ctx):
+    # TODO adjust this when we support more platforms.
+    if ctx.os.name[:5] == "linux":
+        arch = "linux_amd64"
+    elif ctx.os.name == "mac os x":
+        arch = "darwin_amd64"
+    else:
+        fail("Operating system {0} is not yet supported.".format(ctx.os.name))
+
     version = ctx.attr.version
     target = ctx.attr.target
     os, _, arch = target.partition("_")
