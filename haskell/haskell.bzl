@@ -109,6 +109,7 @@ def _mk_binary_rule(**kwargs):
       Rule: Haskell binary compilation rule.
     """
     return rule(
+        # if _mk_binary_rule was called with test = True, we want to use the test binary implementation
         _haskell_test_impl if "test" in kwargs and kwargs["test"] else _haskell_binary_impl,
         executable = True,
         attrs = dict(
