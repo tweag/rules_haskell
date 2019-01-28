@@ -12,10 +12,11 @@ jobs:
     displayName: 'Install Bazel'
   - bash: |
       set -e
+      export MSYS2_ARG_CONV_EXCL="*"
       # Simple haskell binary
-      /c/bazel/bazel.exe build --config azure "///tests/binary-simple" # first '/' gets eaten up
-      /c/bazel/bazel.exe build --config azure "///tests/binary-custom-main" 
-      /c/bazel/bazel.exe build --config azure "///tests/data:ourclibrary"
-      /c/bazel/bazel.exe build --config azure "///tests/binary-with-lib"
+      /c/bazel/bazel.exe build --config windows "//tests/binary-simple"
+      /c/bazel/bazel.exe build --config windows "//tests/binary-custom-main"
+      /c/bazel/bazel.exe build --config windows "//tests/data:ourclibrary"
+      /c/bazel/bazel.exe build --config windows "//tests/binary-with-lib"
 
     displayName: 'Run Bazel'

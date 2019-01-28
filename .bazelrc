@@ -1,5 +1,10 @@
 # See https://docs.bazel.build/versions/master/user-manual.html#bazelrc.
 
+# Use this configuration when targeting Windows. Eventually this will
+# no longer be required:
+# https://bazel.build/roadmaps/platforms.html#replace---cpu-and---host_cpu-flags.
+build:windows --crosstool_top=@io_tweag_rules_haskell_ghc_windows_amd64//:toolchain
+
 build:ci --all_incompatible_changes  --incompatible_disable_deprecated_attr_params=false --incompatible_new_actions_api=false --incompatible_expand_directories=false
 build:ci --loading_phase_threads=1
 build:ci --jobs=2
@@ -16,8 +21,5 @@ test:ci --test_output=errors
 # environment variables, such as LOCALE_ARCHIVE
 # We also need to setup an utf8 locale
 test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
-
-# Crosstool configuration for Windows CI
-build:azure --crosstool_top=toolchain
 
 try-import .bazelrc.local
