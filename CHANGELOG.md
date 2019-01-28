@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [0.8] - 2019-xx-xx
+## [0.8] - 2019-01-28
+
+* The minimum supported Bazel version is now v0.21.
 
 ### Added
 
@@ -12,7 +14,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   `haskell_register_ghc_nixpkgs` to register multiple toolchains for
   multiple platforms at once. Toolchains from binary distributions can
   now coexist with toolchains from Nixpkgs, even on the same platform.
-* Support for Bazel v0.21.
+  On nixpkgs you need to provide a toolchain. See
+  [the `README`](./README.md#Nixpkgs) for instructions.
+  See [#597](https://github.com/tweag/rules_haskell/pull/597)
+  and [#610](https://github.com/tweag/rules_haskell/pull/610).
+* Instructions on how to reference a local checkout of `rules_haskell`.
+* `rules_haskell` is forward-compatible with the next breaking changes
+  in `bazel` versions, via the `--all_incompatible_changes` flag.
+  See [#613](https://github.com/tweag/rules_haskell/pull/613).
 
 ### Removed
 
@@ -28,22 +37,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
-* The minimum supported Bazel version is now v0.21.
 * `ghc_bindist` now requires a `target` argument. Use
   `haskell_register_ghc_nixpkgs` to call `ghc_bindist` once per known
   target.
+  See [#610](https://github.com/tweag/rules_haskell/pull/610).
 * `ghc_bindist` now registers itself as a toolchain. We no longer
   require a separate toolchain definition and registration in addition
   to `ghc_bindist`.
+  See [#610](https://github.com/tweag/rules_haskell/pull/610).
 * `c2hs` support is now provided in a separate toolchain called
   `c2hs_toolchain`, rather than an optional extra to the
   `haskell_toolchain`.
+  See [#590](https://github.com/tweag/rules_haskell/pull/590).
+* Rename bindist arch names so they are the same as in
+  `rules_go/nodejs`.
 
 ### Fixed
 
-* Fix static linking with C libraries that are indirectly depended
-  upon.
-* Fix repl targets that have indirect cc_library dependencies.
+* Prevent duplicate installs of bazel_skylib
+  See [#536](https://github.com/tweag/rules_haskell/pull/536).
+* Test suite now executes all binaries, various runtime errors were
+  uncovered.
+  See [#551](https://github.com/tweag/rules_haskell/pull/551).
+* Repl targets that have indirect cc_library dependencies.
+  See [#576](https://github.com/tweag/rules_haskell/pull/576).
+* `linkstatic` for haskell binaries that have an indirect dependency
+  on a prebuilt haskell package.
+  See [#569](https://github.com/tweag/rules_haskell/pull/569).
+* … and an indirect dependency on a C library.
+  See [#567](https://github.com/tweag/rules_haskell/pull/567).
+* Prefer linking agains static C libraries with `linkstatic`.
+  See [#587](https://github.com/tweag/rules_haskell/pull/587).
+* Haddock flags take precedence over GHC compiler flags.
+  See [#572](https://github.com/tweag/rules_haskell/pull/572).
+* User-defined GHC flags now override default flags.
+  See [#607](https://github.com/tweag/rules_haskell/pull/607).
+* Dynamic transitive C(++) libraries work.
+  See [#627](https://github.com/tweag/rules_haskell/pull/627).
 
 ## [0.7] - 2018-12-24
 
