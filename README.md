@@ -45,6 +45,8 @@ You can learn more about Bazel's command line
 syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
 `build`, `test`, `run` and `coverage`.
 
+### Nixpkgs
+
 This rule set supports [Nixpkgs][nixpkgs]. If you are on NixOS, or if
 you are using Nixpkgs on your project, consider passing the following
 argument on the command-line to select a Nixpkgs-based toolchain for

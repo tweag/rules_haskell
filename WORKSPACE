@@ -5,15 +5,17 @@ load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories"
 
 haskell_repositories()
 
-rules_nixpkgs_version = "c232b296e795ad688854ff3d3d2de6e7ad45f0b4"
+rules_nixpkgs_version = "0.5.2"
 
-rules_nixpkgs_sha256 = "5883ea01f3075354ab622cfe82542da01fe2b57a48f4c3f7610b4d14a3fced11"
+rules_nixpkgs_version_is_hash = False
+
+rules_nixpkgs_sha256 = "5a384daa57b49abf9f0b672852f1a66a3c52aecf9d4d2ac64f6de0fd307690c8"
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
     sha256 = rules_nixpkgs_sha256,
     strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % rules_nixpkgs_version],
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % rules_nixpkgs_version] if rules_nixpkgs_version_is_hash else ["https://github.com/tweag/rules_nixpkgs/archive/v%s.tar.gz" % rules_nixpkgs_version],
 )
 
 load(
