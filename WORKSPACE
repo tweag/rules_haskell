@@ -54,6 +54,12 @@ nixpkgs_local_repository(
 )
 
 test_ghc_version = "8.6.3"
+# XXX: We must currently keep a different GHC version for bindists
+# because 8.6.3 fails on Windows with Template Haskell.
+#
+# See: https://ghc.haskell.org/trac/ghc/ticket/16057 for details.
+
+bindists_ghc_version = "8.6.2"
 
 test_compiler_flags = [
     "-XStandaloneDeriving",  # Flag used at compile time
@@ -90,7 +96,7 @@ haskell_register_ghc_nixpkgs(
     version = test_ghc_version,
 )
 
-haskell_register_ghc_bindists(version = test_ghc_version)
+haskell_register_ghc_bindists(version = bindists_ghc_version)
 
 register_toolchains(
     "//tests:c2hs-toolchain",
