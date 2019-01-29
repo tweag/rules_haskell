@@ -49,21 +49,16 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
             "-optP-traditional",
         ])
 
-    ghc_args_file = hs.actions.declare_file("ghc_args_%s_%s" % (hs.name, mnemonic))
-    extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
-
     args.set_param_file_format("multiline")
     arguments.set_param_file_format("multiline")
-    hs.actions.write(ghc_args_file, args)
-    hs.actions.write(extra_args_file, arguments)
+    args.use_param_file("%s", use_always = True)
+    arguments.use_param_file("%s", use_always = True)
 
     extra_inputs = [
         hs.tools.ghc,
         # Depend on the version file of the Haskell toolchain,
         # to ensure the version comparison check is run first.
         hs.toolchain.version_file,
-        ghc_args_file,
-        extra_args_file,
     ] + cc.files
     if params_file:
         command = """
@@ -71,12 +66,12 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
 
         # this is equivalent to 'readarray'. We do not use 'readarray' in order to
         # support older bash versions.
-        while IFS= read -r line; do ghc_args+=("$line"); done < %s
-        while IFS= read -r line; do extra_args+=("$line"); done < %s
+        while IFS= read -r line; do ghc_args+=("$line"); done < $1
+        while IFS= read -r line; do extra_args+=("$line"); done < $2
         while IFS= read -r line; do param_file_args+=("$line"); done < %s
 
         "${ghc_args[@]}" "${extra_args[@]}" "${param_file_args[@]}"
-""" % (ghc_args_file.path, extra_args_file.path, params_file.path)
+""" % params_file.path
         extra_inputs.append(params_file)
     else:
         command = """
@@ -84,11 +79,11 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
 
         # this is equivalent to 'readarray'. We do use 'readarray' in order to
         # support older bash versions.
-        while IFS= read -r line; do ghc_args+=("$line"); done < %s
-        while IFS= read -r line; do extra_args+=("$line"); done < %s
+        while IFS= read -r line; do ghc_args+=("$line"); done < $1
+        while IFS= read -r line; do extra_args+=("$line"); done < $2
 
         "${ghc_args[@]}" "${extra_args[@]}"
-""" % (ghc_args_file.path, extra_args_file.path)
+"""
 
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
@@ -102,7 +97,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = [],
+        arguments = [args, arguments],
     )
 
     return args
