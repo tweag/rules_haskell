@@ -102,7 +102,11 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         command = """
             cat $1 > $4
             echo "exposed-modules: `cat $2`" >> $4
-            readarray -t deps_id_files < $3
+
+            # this is equivalent to 'readarray'. We do use 'readarray' in order to
+            # support older bash versions.
+            while IFS= read -r line; do deps_id_files+=("$line"); done < $3
+
             if [ ${#deps_id_files[@]} -eq 0 ]; then
               deps=""
             else
