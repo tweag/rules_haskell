@@ -1,10 +1,6 @@
 """Core Haskell rules"""
 
 load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
-    "HaskellPrebuiltPackageInfo",
-)
-load(
     ":cc.bzl",
     _cc_haskell_import = "cc_haskell_import",
     _haskell_cc_import = "haskell_cc_import",
@@ -38,6 +34,7 @@ load(
     _haskell_binary_impl = "haskell_binary_impl",
     _haskell_import_impl = "haskell_import_impl",
     _haskell_library_impl = "haskell_library_impl",
+    _haskell_test_impl = "haskell_test_impl",
 )
 
 # For re-exports:
@@ -108,7 +105,8 @@ def _mk_binary_rule(**kwargs):
       Rule: Haskell binary compilation rule.
     """
     return rule(
-        _haskell_binary_impl,
+        # if _mk_binary_rule was called with test = True, we want to use the test binary implementation
+        _haskell_test_impl if "test" in kwargs and kwargs["test"] else _haskell_binary_impl,
         executable = True,
         attrs = dict(
             _haskell_common_attrs,

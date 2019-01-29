@@ -28,6 +28,10 @@ def haskell_context(ctx, attr = None):
     if toolchain.locale_archive != None:
         env["LOCALE_ARCHIVE"] = toolchain.locale_archive.path
 
+    coverage_enabled = False
+    if hasattr(ctx, "configuration"):
+        coverage_enabled = ctx.configuration.coverage_enabled
+
     return HaskellContext(
         # Fields
         name = attr.name,
@@ -35,9 +39,11 @@ def haskell_context(ctx, attr = None):
         toolchain = toolchain,
         tools = toolchain.tools,
         src_root = src_root,
+        package_root = ctx.label.workspace_root + ctx.label.package,
         env = env,
         mode = ctx.var["COMPILATION_MODE"],
         actions = ctx.actions,
         bin_dir = ctx.bin_dir,
         genfiles_dir = ctx.genfiles_dir,
+        coverage_enabled = coverage_enabled,
     )

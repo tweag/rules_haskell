@@ -51,7 +51,20 @@ def _prepare_srcs(srcs):
 
     return srcs_files, import_dir_map
 
+def haskell_test_impl(ctx):
+    return _haskell_binary_common_impl(ctx, True)
+
 def haskell_binary_impl(ctx):
+    return _haskell_binary_common_impl(ctx, False)
+
+def _get_hpc_outputs(ctx, srcs_files):
+    hpc_outputs = []
+    for s in srcs_files:
+        filename, _, _ = s.basename.rpartition(".")
+        hpc_outputs.append(filename + ".mix")
+    return hpc_outputs
+
+def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx)
 
@@ -63,6 +76,10 @@ def haskell_binary_impl(ctx):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     compiler_flags = ctx.attr.compiler_flags
 
+    hpc_outputs = []
+    if hs.coverage_enabled:
+        hpc_outputs = _get_hpc_outputs(ctx, srcs_files)
+
     c = hs.toolchain.actions.compile_binary(
         hs,
         cc,
@@ -72,11 +89,13 @@ def haskell_binary_impl(ctx):
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
-        compiler_flags = ctx.attr.compiler_flags,
+        compiler_flags = compiler_flags,
         dynamic = not ctx.attr.linkstatic,
         with_profiling = False,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
+        is_test = is_test,
+        hpc_outputs = hpc_outputs,
     )
 
     c_p = None
@@ -97,7 +116,7 @@ def haskell_binary_impl(ctx):
                 depset(ctx.files.extra_srcs),
                 depset([c.objects_dir]),
             ]),
-            compiler_flags = ctx.attr.compiler_flags,
+            compiler_flags = compiler_flags,
             # NOTE We can't have profiling and dynamic code at the
             # same time, see:
             # https://ghc.haskell.org/trac/ghc/ticket/15394
@@ -105,6 +124,8 @@ def haskell_binary_impl(ctx):
             with_profiling = True,
             main_function = ctx.attr.main_function,
             version = ctx.attr.version,
+            is_test = is_test,
+            hpc_outputs = hpc_outputs,
         )
 
     binary = link_binary(
@@ -139,7 +160,7 @@ def haskell_binary_impl(ctx):
         hs,
         ghci_script = ctx.file._ghci_script,
         ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
-        compiler_flags = ctx.attr.compiler_flags,
+        compiler_flags = compiler_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
         package_caches = dep_info.package_caches,
@@ -181,6 +202,12 @@ def haskell_library_impl(ctx):
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
 
+    compiler_flags = ctx.attr.compiler_flags
+
+    hpc_outputs = []
+    if hs.coverage_enabled:
+        hpc_outputs = _get_hpc_outputs(ctx, srcs_files)
+
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -192,10 +219,11 @@ def haskell_library_impl(ctx):
         exposed_modules_reexports = exposed_modules_reexports,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
-        compiler_flags = ctx.attr.compiler_flags,
+        compiler_flags = compiler_flags,
         with_shared = with_shared,
         with_profiling = False,
         my_pkg_id = my_pkg_id,
+        hpc_outputs = hpc_outputs,
     )
 
     c_p = None
@@ -218,13 +246,14 @@ def haskell_library_impl(ctx):
                 depset(ctx.files.extra_srcs),
                 depset([c.objects_dir]),
             ]),
-            compiler_flags = ctx.attr.compiler_flags,
+            compiler_flags = compiler_flags,
             # NOTE We can't have profiling and dynamic code at the
             # same time, see:
             # https://ghc.haskell.org/trac/ghc/ticket/15394
             with_shared = False,
             with_profiling = True,
             my_pkg_id = my_pkg_id,
+            hpc_outputs = hpc_outputs,
         )
 
     static_library = link_library_static(
@@ -328,7 +357,7 @@ def haskell_library_impl(ctx):
             ghci_script = ctx.file._ghci_script,
             ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
             repl_ghci_args = ctx.attr.repl_ghci_args,
-            compiler_flags = ctx.attr.compiler_flags,
+            compiler_flags = compiler_flags,
             output = ctx.outputs.repl,
             package_caches = dep_info.package_caches,
             version = ctx.attr.version,
