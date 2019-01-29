@@ -13,10 +13,23 @@ jobs:
   - bash: |
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
-      # Simple haskell binary
-      /c/bazel/bazel.exe build --config windows "//tests/binary-simple"
-      /c/bazel/bazel.exe build --config windows "//tests/binary-custom-main"
-      /c/bazel/bazel.exe build --config windows "//tests/data:ourclibrary"
+
+      # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-lib"
+      /c/bazel/bazel.exe build --config windows "//tests/binary-with-data:bin1"
+
+      # Tests that only require building
+      # (when using 'test' CI fails with:
+      #     ERROR: No test targets were found, yet testing was requested
+      # )
+      # See https://github.com/bazelbuild/bazel/issues/7291
+      /c/bazel/bazel.exe build --config windows "//tests/data/..."
+
+      # Tests that succeed
+      /c/bazel/bazel.exe test --config windows "//tests/binary-custom-main/..."
+      /c/bazel/bazel.exe test --config windows "//tests/binary-with-main/..."
+      /c/bazel/bazel.exe test --config windows "//tests/binary-simple/..."
+      /c/bazel/bazel.exe test --config windows "//tests/binary-with-link-flags/..."
+      /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
 
     displayName: 'Run Bazel'
