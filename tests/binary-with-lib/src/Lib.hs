@@ -1,5 +1,8 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Lib (value) where
 
-value = 42
+import Language.Haskell.TH
+
+value = [|42|]

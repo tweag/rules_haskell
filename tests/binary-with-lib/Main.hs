@@ -1,7 +1,11 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Main where
 
 import Control.Monad (unless)
 import Lib           (value)
+import Language.Haskell.TH
 
-main = unless (value == 42)
-    $ error $ "Incorrect lib value. Got " <> show value
+val = $(value)
+
+main = unless (val == 42)
+    $ error $ "Incorrect lib value. Got " <> show val
