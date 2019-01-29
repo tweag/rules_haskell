@@ -9,6 +9,8 @@ jobs:
       mv bazel-*.exe bazel.exe
       mkdir /c/bazel
       mv bazel.exe /c/bazel
+      /c/bazel/bazel.exe info release
+
     displayName: 'Install Bazel'
   - bash: |
       set -e
