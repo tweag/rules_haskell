@@ -12,10 +12,12 @@ jobs:
           name: Setup test environment
           command: |
             apt-get update
-            apt-get install -y wget gnupg golang make libgmp3-dev pkg-config zip g++ zlib1g-dev unzip python bash-completion
+            apt-get install -y wget gnupg golang make libgmp3-dev pkg-config zip g++ zlib1g-dev unzip python bash-completion locales
+            echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+            locale-gen
             wget "https://github.com/bazelbuild/bazel/releases/download/0.21.0/bazel_0.21.0-linux-x86_64.deb"
             dpkg -i bazel_0.21.0-linux-x86_64.deb
-            echo "common:ci --build_tag_filters -requires_hackage,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-requires_missing_compiler_flags,-ghcbindist_th_failure,-dont_test_with_bindist" > .bazelrc.local
+            echo "common:ci --build_tag_filters -requires_hackage,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-requires_missing_compiler_flags,-dont_test_with_bindist" > .bazelrc.local
       - run:
           name: Build tests
           command: |
