@@ -252,6 +252,8 @@ rule_test(
         ],
     }),
     rule = "//tests/cc_haskell_import:hs-lib-b.so",
+    # TODO remove if version(GHC_bindist) == ghc_vension.
+    tags = ["dont_test_with_bindist"],
 )
 
 rule_test(
