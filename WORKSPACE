@@ -96,7 +96,10 @@ haskell_register_ghc_nixpkgs(
     version = test_ghc_version,
 )
 
-haskell_register_ghc_bindists(version = bindists_ghc_version)
+haskell_register_ghc_bindists(
+    compiler_flags = test_compiler_flags,
+    version = bindists_ghc_version,
+)
 
 register_toolchains(
     "//tests:c2hs-toolchain",

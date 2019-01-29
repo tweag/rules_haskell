@@ -129,12 +129,14 @@ haskell_toolchain(
     name = "toolchain",
     tools = "{tools}",
     version = "{version}",
+    compiler_flags = {compiler_flags},
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
         """.format(
             tools = "@{}//:bin".format(ctx.attr.bindist_name),
             version = ctx.attr.version,
+            compiler_flags = ctx.attr.compiler_flags,
             exec_constraints = exec_constraints,
             target_constraints = target_constraints,
         ),
@@ -146,11 +148,16 @@ _ghc_bindist_toolchain = repository_rule(
     attrs = {
         "bindist_name": attr.string(),
         "version": attr.string(),
+        "compiler_flags": attr.string_list(),
         "target": attr.string(),
     },
 )
 
-def ghc_bindist(name, version, target):
+def ghc_bindist(
+        name,
+        version,
+        target,
+        compiler_flags = None):
     """Create a new repository from binary distributions of GHC. The
     repository exports two targets:
 
@@ -193,11 +200,12 @@ def ghc_bindist(name, version, target):
         name = toolchain_name,
         bindist_name = bindist_name,
         version = version,
+        compiler_flags = compiler_flags,
         target = target,
     )
     native.register_toolchains("@{}//:toolchain".format(toolchain_name))
 
-def haskell_register_ghc_bindists(version):
+def haskell_register_ghc_bindists(version, compiler_flags = None):
     """Register GHC binary distributions for all platforms as toolchains.
 
     Toolchains can be used to compile Haskell code. This function
@@ -216,4 +224,5 @@ def haskell_register_ghc_bindists(version):
             name = "io_tweag_rules_haskell_ghc_{}".format(target),
             target = target,
             version = version,
+            compiler_flags = compiler_flags,
         )
