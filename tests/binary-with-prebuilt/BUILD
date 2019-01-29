@@ -8,6 +8,7 @@ package(default_testonly = 1)
 haskell_test(
     name = "binary-with-prebuilt",
     srcs = ["Main.hs"],
+    tags = ["requires_hackage"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",

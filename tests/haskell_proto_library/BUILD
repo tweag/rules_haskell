@@ -29,17 +29,20 @@ proto_library(
 
 haskell_proto_library(
     name = "address_haskell_proto",
+    tags = ["requires_hackage"],
     deps = [":address_proto"],
 )
 
 haskell_proto_library(
     name = "person_haskell_proto",
+    tags = ["requires_hackage"],
     deps = [":person_proto"],
 )
 
 haskell_library(
     name = "hs-lib",
     srcs = ["Bar.hs"],
+    tags = ["requires_hackage"],
     visibility = ["//visibility:public"],
     deps = [
         ":address_haskell_proto",
@@ -50,5 +53,6 @@ haskell_library(
 
 haskell_doc(
     name = "docs",
+    tags = ["requires_hackage"],
     deps = [":hs-lib"],
 )

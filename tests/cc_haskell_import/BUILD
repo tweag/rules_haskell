@@ -36,6 +36,7 @@ cc_binary(
         "main.c",
         ":hs-lib-b.so",
     ],
+    tags = ["requires_threaded_rts"],
     visibility = ["//tests:__subpackages__"],
     deps = ["@ghc//:threaded-rts"],
 )
@@ -52,6 +53,7 @@ cc_binary(
     ],
     linkshared = 1,
     linkstatic = 1,
+    tags = ["requires_threaded_rts"],
     visibility = ["//tests:__subpackages__"],
     deps = ["@ghc//:threaded-rts"],
 )
@@ -65,6 +67,7 @@ py_binary(
     ],
     default_python_version = "PY3",
     srcs_version = "PY3ONLY",
+    tags = ["requires_threaded_rts"],
     visibility = ["//tests:__subpackages__"],
     deps = ["@bazel_tools//tools/python/runfiles"],
 )

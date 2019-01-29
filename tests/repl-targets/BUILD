@@ -13,6 +13,7 @@ haskell_cc_import(
     hdrs = ["@zlib.dev//:include"],
     shared_library = "@zlib//:lib",
     strip_include_prefix = "/external/zlib.dev/include",
+    tags = ["requires_zlib"],
 )
 
 genrule(
@@ -30,6 +31,7 @@ genrule(
 c2hs_library(
     name = "chs",
     srcs = ["Chs.chs"],
+    tags = ["requires_c2hs"],
 )
 
 haskell_library(
@@ -40,6 +42,7 @@ haskell_library(
         ":chs",
         ":codegen",
     ],
+    tags = ["requires_hackage"],
     visibility = ["//visibility:public"],
     deps = [
         ":zlib",
