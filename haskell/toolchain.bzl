@@ -69,7 +69,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         command = """
         export PATH=${PATH:-} # otherwise GCC fails on Windows
 
-        # this is equivalent to 'readarray'. We do use 'readarray' in order to
+        # this is equivalent to 'readarray'. We do not use 'readarray' in order to
         # support older bash versions.
         while IFS= read -r line; do ghc_args+=("$line"); done < %s
         while IFS= read -r line; do extra_args+=("$line"); done < %s
