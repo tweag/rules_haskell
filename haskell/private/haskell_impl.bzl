@@ -29,6 +29,7 @@ load(
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/providers.bzl", "external_libraries_get_mangled")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -52,15 +53,15 @@ def _prepare_srcs(srcs):
     return srcs_files, import_dir_map
 
 def haskell_test_impl(ctx):
-    return _haskell_binary_common_impl(ctx, True)
+    return _haskell_binary_common_impl(ctx, is_test = True)
 
 def haskell_binary_impl(ctx):
-    return _haskell_binary_common_impl(ctx, False)
+    return _haskell_binary_common_impl(ctx, is_test = False)
 
 def _get_hpc_outputs(ctx, srcs_files):
     hpc_outputs = []
     for s in srcs_files:
-        filename, _, _ = s.basename.rpartition(".")
+        filename, _ = paths.split_extension(s.basename)
         hpc_outputs.append(filename + ".mix")
     return hpc_outputs
 
@@ -76,9 +77,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     compiler_flags = ctx.attr.compiler_flags
 
-    hpc_outputs = []
-    if hs.coverage_enabled:
-        hpc_outputs = _get_hpc_outputs(ctx, srcs_files)
+    hpc_outputs = _get_hpc_outputs(ctx, srcs_files) if hs.coverage_enabled else []
 
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -204,9 +203,7 @@ def haskell_library_impl(ctx):
 
     compiler_flags = ctx.attr.compiler_flags
 
-    hpc_outputs = []
-    if hs.coverage_enabled:
-        hpc_outputs = _get_hpc_outputs(ctx, srcs_files)
+    hpc_outputs = _get_hpc_outputs(ctx, srcs_files) if hs.coverage_enabled else []
 
     c = hs.toolchain.actions.compile_library(
         hs,
