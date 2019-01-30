@@ -23,6 +23,6 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
-        "@hackage//:process",
+        "//tests/hackage:process",
     ],
 )

@@ -36,13 +36,13 @@ haskell_proto_toolchain(
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
         "//tests/hackage:containers",
+        "//tests/hackage:deepseq",
+        "//tests/hackage:mtl",
         "//tests/hackage:text",
         "@hackage//:data-default-class",
-        "@hackage//:deepseq",
         "@hackage//:lens-family",
         "@hackage//:lens-family-core",
         "@hackage//:lens-labels",
-        "@hackage//:mtl",
         "@hackage//:proto-lens",
     ],
 )
@@ -379,8 +379,8 @@ haskell_binary(
     tags = ["requires_hackage"],
     deps = [
         "//tests/hackage:base",
+        "//tests/hackage:process",
         "@hackage//:hspec",
         "@hackage//:hspec-core",
-        "@hackage//:process",
     ],
 )

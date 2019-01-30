@@ -18,8 +18,8 @@ jobs:
 
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-lib"
-      /c/bazel/bazel.exe build --config windows "//tests/binary-with-data:bin1"
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
+      /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."
 
       # Tests that only require building
       # (when using 'test' CI fails with:
