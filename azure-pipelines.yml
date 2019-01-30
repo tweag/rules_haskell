@@ -29,6 +29,8 @@ jobs:
       /c/bazel/bazel.exe build --config windows "//tests/data/..."
 
       # Tests that succeed
+      /c/bazel/bazel.exe test --config windows "//tests:test-binary-simple"
+      /c/bazel/bazel.exe test --config windows "//tests:test-binary-custom-main"
       /c/bazel/bazel.exe test --config windows "//tests/binary-custom-main/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-main/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-simple/..."
