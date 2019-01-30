@@ -1,5 +1,6 @@
 load(":sh_inline_test.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
+load("//tests:rule_test_exe.bzl", "rule_test_exe")
 load(
     "@io_tweag_rules_haskell//haskell:c2hs.bzl",
     "c2hs_toolchain",
@@ -53,14 +54,14 @@ c2hs_toolchain(
     tags = ["requires_c2hs"],
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-simple",
     size = "small",
     generates = ["binary-simple"],
     rule = "//tests/binary-simple",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-custom-main",
     size = "small",
     generates = ["binary-custom-main"],
