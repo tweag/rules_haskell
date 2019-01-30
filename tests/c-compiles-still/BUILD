@@ -12,4 +12,8 @@ haskell_library(
         "//tests/data:ourclibrary",
         "//tests/hackage:base",
     ],
+    linkstatic = select({
+        "@bazel_tools//src/conditions:windows": True,
+        "//conditions:default": False,
+    }),
 )

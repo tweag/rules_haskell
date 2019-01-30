@@ -19,6 +19,7 @@ jobs:
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-lib"
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-data:bin1"
+      /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
 
       # Tests that only require building
       # (when using 'test' CI fails with:
@@ -33,5 +34,6 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/binary-simple/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-link-flags/..."
       /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
+      /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
 
     displayName: 'Run Bazel'
