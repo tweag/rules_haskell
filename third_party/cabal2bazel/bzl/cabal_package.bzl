@@ -395,7 +395,7 @@ def _get_build_attrs(
                  ]),
       defines = [o[2:] for o in build_info.ccOptions if o.startswith("-D")],
       textual_hdrs = list(headers),
-      deps = ["{}//:threaded-rts".format(ghc_workspace)] + select(cdeps) + cc_deps + elibs_targets,
+      deps = ["{}//:rts-headers".format(ghc_workspace)] + select(cdeps) + cc_deps + elibs_targets,
       visibility = ["//visibility:public"],
   )
 
