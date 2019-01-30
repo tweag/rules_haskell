@@ -10,6 +10,7 @@ haskell_library(
     name = "lhs-lib",
     srcs = ["Lib.lhs"],
     deps = ["//tests/hackage:base"],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_test(
@@ -20,4 +21,5 @@ haskell_test(
         ":lhs-lib",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )

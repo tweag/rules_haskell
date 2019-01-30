@@ -18,6 +18,7 @@ haskell_library(
         ":base",
         ":transformers",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_test(
@@ -28,4 +29,5 @@ haskell_test(
         ":base",
         ":lib",
     ],
+    tags = ["dont_test_when_windows"],
 )

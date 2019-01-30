@@ -14,7 +14,7 @@ package(
 haskell_cc_import(
     name = "zlib",
     shared_library = "@zlib//:lib",
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
 )
 
 haskell_library(
@@ -52,7 +52,7 @@ haskell_library(
     extra_srcs = [
         "unicode.txt",
     ],
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_bindist"],
     deps = [
         ":haddock-lib-a",
         ":zlib",
@@ -65,13 +65,13 @@ haskell_library(
 haskell_doc(
     name = "haddock",
     index_transitive_deps = False,
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_bindist"],
     deps = [":haddock-lib-b"],
 )
 
 haskell_doc(
     name = "haddock-transitive",
     index_transitive_deps = True,
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_bindist"],
     deps = [":haddock-lib-b"],
 )

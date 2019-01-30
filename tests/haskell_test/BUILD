@@ -10,6 +10,7 @@ haskell_library(
     name = "mylib",
     srcs = ["Lib.hs"],
     deps = ["//tests/hackage:base"],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_test(
@@ -26,4 +27,5 @@ haskell_test(
         "//tests/data:ourclibrary",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )

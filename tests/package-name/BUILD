@@ -14,6 +14,7 @@ haskell_library(
     srcs = ["Lib.hs"],
     version = "1.2.3.4",
     deps = ["//tests/hackage:base"],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_test(
@@ -25,4 +26,5 @@ haskell_test(
         ":lib-a_Z",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )

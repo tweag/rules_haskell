@@ -18,6 +18,7 @@ haskell_library(
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 # both .a and .so files
@@ -30,17 +31,20 @@ haskell_library(
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 # extract all libraries from the haskell_library
 get_libraries_as_runfiles(
     name = "library-static-only-libraries",
     library = ":library-static-only",
+    tags = ["dont_test_when_windows"],
 )
 
 get_libraries_as_runfiles(
     name = "library-static-and-dynamic-libraries",
     library = ":library-static-and-dynamic",
+    tags = ["dont_test_when_windows"],
 )
 
 # sh_test’s `data` doesn’t add stuff to runfiles :(
@@ -49,11 +53,13 @@ get_libraries_as_runfiles(
 sh_library(
     name = "bundled-dependency-files-static-only",
     data = [":library-static-only-libraries"],
+    tags = ["dont_test_when_windows"],
 )
 
 sh_library(
     name = "bundled-dependency-files-static-and-dynamic",
     data = [":library-static-and-dynamic-libraries"],
+    tags = ["dont_test_when_windows"],
 )
 
 # ensure that linkstatic=True only creates only .a, no .so
@@ -77,6 +83,7 @@ for f in "$@"; do
     fi
 done
 """,
+    tags = ["dont_test_when_windows"],
 )
 
 # test whether .so is linked dynamically and .a statically
@@ -109,4 +116,5 @@ for f in "$@"; do
     fi
 done
 """,
+    tags = ["dont_test_when_windows"],
 )

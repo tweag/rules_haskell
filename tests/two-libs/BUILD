@@ -15,6 +15,7 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_library(
@@ -24,6 +25,7 @@ haskell_library(
         ":one",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_test(
@@ -33,4 +35,5 @@ haskell_test(
         ":two",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )

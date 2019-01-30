@@ -14,6 +14,7 @@ haskell_library(
     hidden_modules = ["Foo"],
     src_strip_prefix = "lib-a",
     deps = ["//tests/hackage:base"],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_library(
@@ -21,6 +22,7 @@ haskell_library(
     srcs = glob(["lib-b/*.hs"]),
     src_strip_prefix = "lib-b",
     deps = ["//tests/hackage:base"],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_library(
@@ -32,4 +34,5 @@ haskell_library(
         ":lib-b",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )

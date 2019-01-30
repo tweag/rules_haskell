@@ -22,7 +22,7 @@ haskell_cc_import(
     hdrs = ["@zlib.dev//:include"],
     shared_library = "@zlib//:lib",
     strip_include_prefix = "/external/zlib.dev/include",
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
 )
 
 haskell_cc_import(
@@ -30,13 +30,13 @@ haskell_cc_import(
     hdrs = [":genrule-header"],
     shared_library = "@zlib//:lib",  # just use zlib because this field is required
     strip_include_prefix = "include",
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
 )
 
 haskell_library(
     name = "intermediate-library",
     srcs = ["IntLib.hsc"],
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
     deps = [
         ":zlib",
         ":zlib-with-genrule-header",
@@ -50,7 +50,7 @@ haskell_library(
         "Lib.hs",
         "TH.hs",
     ],
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
     visibility = ["//visibility:public"],
     deps = [
         ":intermediate-library",
@@ -64,7 +64,7 @@ haskell_library(
 haskell_library(
     name = "intermediate-library-other",
     srcs = ["IntLib.hsc"],
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
     deps = [
         ":zlib-with-genrule-header",
         "//tests/hackage:base",
@@ -78,7 +78,7 @@ haskell_library(
         "Lib.hs",
         "TH.hs",
     ],
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
     visibility = ["//visibility:public"],
     deps = [
         ":intermediate-library-other",

@@ -10,7 +10,7 @@ package(default_testonly = 1)
 haskell_library(
     name = "lib-a",
     srcs = ["Foo.hs"],
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
     deps = [
         "//tests/data:ourclibrary",
         "//tests/hackage:base",
@@ -25,7 +25,7 @@ haskell_library(
         "Baz.hs",
         "Quux.hsc",
     ],
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
     deps = [
         ":lib-a",
         "//tests/hackage:base",
@@ -42,7 +42,7 @@ haskell_doctest(
 haskell_doctest(
     name = "doctest-lib-all-success",
     doctest_flags = ["-DMAGIC_DOCTEST_THING"],
-    tags = ["requires_doctest"],
+    tags = ["dont_test_when_bindist"],
     visibility = ["//visibility:public"],
     deps = [":lib-b"],
 )
@@ -50,7 +50,7 @@ haskell_doctest(
 haskell_doctest(
     name = "doctest-lib",
     modules = ["Bar"],  # exclude Baz and succeed
-    tags = ["requires_doctest"],
+    tags = ["dont_test_when_bindist"],
     visibility = ["//visibility:public"],
     deps = [":lib-b"],
 )
@@ -58,7 +58,7 @@ haskell_doctest(
 haskell_test(
     name = "bin",
     srcs = ["Main.hs"],
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
     deps = [
         ":lib-a",
         "//tests/hackage:base",
@@ -67,7 +67,7 @@ haskell_test(
 
 haskell_doctest(
     name = "doctest-bin",
-    tags = ["requires_doctest"],
+    tags = ["dont_test_when_bindist"],
     visibility = ["//visibility:public"],
     deps = [":bin"],
 )

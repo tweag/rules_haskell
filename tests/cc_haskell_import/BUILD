@@ -36,9 +36,9 @@ cc_binary(
         "main.c",
         ":hs-lib-b.so",
     ],
-    tags = ["requires_threaded_rts"],
     visibility = ["//tests:__subpackages__"],
     deps = ["@ghc//:threaded-rts"],
+    tags = ["dont_test_when_bindist"],
 )
 
 # We go one step further and use the Haskell library from above
@@ -53,9 +53,9 @@ cc_binary(
     ],
     linkshared = 1,
     linkstatic = 1,
-    tags = ["requires_threaded_rts"],
     visibility = ["//tests:__subpackages__"],
     deps = ["@ghc//:threaded-rts"],
+    tags = ["dont_test_when_bindist"],
 )
 
 # just dlopens hb-lib-b-wrapped.so and prints it
@@ -67,7 +67,7 @@ py_binary(
     ],
     default_python_version = "PY3",
     srcs_version = "PY3ONLY",
-    tags = ["requires_threaded_rts"],
     visibility = ["//tests:__subpackages__"],
     deps = ["@bazel_tools//tools/python/runfiles"],
+    tags = ["dont_test_when_bindist"],
 )

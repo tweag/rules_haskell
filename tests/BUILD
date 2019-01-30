@@ -18,7 +18,7 @@ package(default_testonly = 1)
 haskell_doctest_toolchain(
     name = "doctest-toolchain",
     doctest = "@hackage-doctest//:bin",
-    tags = ["requires_doctest"],
+    tags = ["dont_test_when_bindist"],
 )
 
 # This toolchain is morally testonly. However, that would break our
@@ -31,7 +31,7 @@ haskell_proto_toolchain(
     testonly = 0,
     plugin = "@hackage-proto-lens-protoc//:bin/proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_windows"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
@@ -50,7 +50,7 @@ haskell_proto_toolchain(
 c2hs_toolchain(
     name = "c2hs-toolchain",
     c2hs = "@hackage-c2hs//:bin",
-    tags = ["requires_c2hs"],
+    tags = ["dont_test_when_bindist"],
 )
 
 rule_test(
@@ -58,6 +58,7 @@ rule_test(
     size = "small",
     generates = ["binary-simple"],
     rule = "//tests/binary-simple",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -65,6 +66,7 @@ rule_test(
     size = "small",
     generates = ["binary-custom-main"],
     rule = "//tests/binary-custom-main",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -72,6 +74,7 @@ rule_test(
     size = "small",
     generates = ["binary-with-lib"],
     rule = "//tests/binary-with-lib",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -79,7 +82,7 @@ rule_test(
     size = "small",
     generates = ["binary-with-prebuilt"],
     rule = "//tests/binary-with-prebuilt",
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -87,6 +90,7 @@ rule_test(
     size = "small",
     generates = ["binary-with-main"],
     rule = "//tests/binary-with-main",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -94,7 +98,7 @@ rule_test(
     size = "small",
     generates = ["binary-with-sysdeps"],
     rule = "//tests/binary-with-sysdeps",
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"]
 )
 
 sh_test(
@@ -103,7 +107,7 @@ sh_test(
     srcs = ["//tests/binary-with-data"],
     args = ["$(location //tests/binary-with-data:bin1)"],
     data = ["//tests/binary-with-data:bin1"],
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -126,7 +130,7 @@ rule_test(
             "testsZSlibrary-with-sysdepsZSlibrary-with-sysdeps/package.cache",
         ],
     rule = "//tests/library-with-sysdeps",
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
 )
 
 rule_test(
@@ -134,6 +138,7 @@ rule_test(
     size = "small",
     generates = ["hsc"],
     rule = "//tests/hsc",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -146,7 +151,7 @@ rule_test(
         "haddock/testsZShaddockZShaddock-lib-deep",
     ],
     rule = "//tests/haddock",
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -175,7 +180,7 @@ rule_test(
         "testsZShaskellZUprotoZUlibraryZShs-lib/testsZShaskellZUprotoZUlibraryZShs-lib.conf",
     ],
     rule = "//tests/haskell_proto_library:hs-lib",
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -185,7 +190,7 @@ rule_test(
         "doctest-log-doctest-lib-testsZShaskellZUdoctestZSlib-b",
     ],
     rule = "//tests/haskell_doctest:doctest-lib",
-    tags = ["requires_doctest"],
+    tags = ["dont_test_when_bindist"],
 )
 
 rule_test(
@@ -193,6 +198,7 @@ rule_test(
     size = "small",
     generates = ["haskell_test"],
     rule = "//tests/haskell_test:haskell_test",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -214,7 +220,7 @@ rule_test(
             "testsZSlibrary-with-sysincludesZSlibrary-with-sysincludes/package.cache",
         ],
     rule = "//tests/library-with-sysincludes",
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
 )
 
 rule_test(
@@ -226,6 +232,7 @@ rule_test(
             "testsZSpackage-id-clashZSlib/package.cache",
         ],
     rule = "//tests/package-id-clash:lib",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -233,6 +240,7 @@ rule_test(
     size = "small",
     generates = ["java_classpath"],
     rule = "//tests/java_classpath",
+    tags = ["dont_test_when_windows"],
 )
 
 # Keep in sync with test_ghc_version in WORKSPACE.
@@ -252,8 +260,8 @@ rule_test(
         ],
     }),
     rule = "//tests/cc_haskell_import:hs-lib-b.so",
-    # TODO remove if version(GHC_bindist) == ghc_vension.
-    tags = ["dont_test_with_bindist"],
+    # TODO remove if version(GHC_bindist) == ghc_version.
+    tags = ["dont_test_when_bindist"],
 )
 
 rule_test(
@@ -261,7 +269,7 @@ rule_test(
     size = "small",
     generates = ["cc-bin"],
     rule = "//tests/cc_haskell_import:cc-bin",
-    tags = ["requires_threaded_rts"],
+    tags = ["dont_test_when_bindist"],
 )
 
 # TODO(Profpatsch) blocked on https://github.com/bazelbuild/bazel/issues/6093
@@ -295,6 +303,7 @@ rule_test(
     size = "small",
     generates = ["lhs-bin"],
     rule = "//tests/lhs:lhs-bin",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -302,6 +311,7 @@ rule_test(
     size = "small",
     generates = ["hs-boot"],
     rule = "//tests/hs-boot:hs-boot",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -309,6 +319,7 @@ rule_test(
     size = "small",
     generates = ["textual-hdrs"],
     rule = "//tests/textual-hdrs:textual-hdrs",
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -316,6 +327,7 @@ rule_test(
     size = "small",
     generates = ["two-libs"],
     rule = "//tests/two-libs:two-libs",
+    tags = ["dont_test_when_windows"],
 )
 
 genrule(
@@ -327,6 +339,7 @@ genrule(
     touch $(location dummy)
 '""",
     tools = ["//tests/binary-with-lib"],
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -334,6 +347,7 @@ rule_test(
     size = "small",
     generates = ["dummy"],
     rule = "//tests:run-bin-with-lib",
+    tags = ["dont_test_when_windows"],
 )
 
 genrule(
@@ -345,6 +359,7 @@ genrule(
     touch $(location dyn-dummy)
 '""",
     tools = ["//tests/binary-with-lib-dynamic"],
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -352,6 +367,7 @@ rule_test(
     size = "small",
     generates = ["dyn-dummy"],
     rule = "//tests:run-bin-with-lib-dynamic",
+    tags = ["dont_test_when_windows"],
 )
 
 genrule(
@@ -363,6 +379,7 @@ genrule(
     touch $(location c-dummy)
 '""",
     tools = ["//tests/c-compiles"],
+    tags = ["dont_test_when_windows"],
 )
 
 rule_test(
@@ -370,17 +387,18 @@ rule_test(
     size = "small",
     generates = ["c-dummy"],
     rule = "//tests:run-bin-with-c-lib",
+    tags = ["dont_test_when_windows"],
 )
 
 # This is the test runner
 haskell_binary(
     name = "run-tests",
     srcs = ["RunTests.hs"],
-    tags = ["requires_hackage"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:process",
         "@hackage//:hspec",
         "@hackage//:hspec-core",
     ],
+    tags = ["dont_test_when_windows"],
 )

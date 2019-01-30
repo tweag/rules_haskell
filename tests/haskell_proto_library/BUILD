@@ -29,20 +29,20 @@ proto_library(
 
 haskell_proto_library(
     name = "address_haskell_proto",
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_bindist"],
     deps = [":address_proto"],
 )
 
 haskell_proto_library(
     name = "person_haskell_proto",
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_bindist"],
     deps = [":person_proto"],
 )
 
 haskell_library(
     name = "hs-lib",
     srcs = ["Bar.hs"],
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_bindist"],
     visibility = ["//visibility:public"],
     deps = [
         ":address_haskell_proto",
@@ -53,6 +53,6 @@ haskell_library(
 
 haskell_doc(
     name = "docs",
-    tags = ["requires_hackage"],
+    tags = ["dont_test_when_bindist"],
     deps = [":hs-lib"],
 )

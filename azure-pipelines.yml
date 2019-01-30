@@ -16,6 +16,8 @@ jobs:
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
 
+      echo "common:windows --build_tag_filters -dont_test_when_bindist,-dont_test_when_windows" > .bazelrc.local
+
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-lib"
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."

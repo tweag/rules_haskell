@@ -8,7 +8,6 @@ package(default_testonly = 1)
 haskell_test(
     name = "binary-with-prebuilt",
     srcs = ["Main.hs"],
-    tags = ["requires_hackage"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
@@ -16,4 +15,5 @@ haskell_test(
         "@hackage//:streaming",
         "@hackage//:void",
     ],
+    tags = ["dont_test_when_bindist"],
 )

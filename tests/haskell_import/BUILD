@@ -13,6 +13,7 @@ haskell_library(
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_test(
@@ -23,4 +24,5 @@ haskell_test(
         "//tests/hackage:base",
         "//tests/hackage:text",
     ],
+    tags = ["dont_test_when_windows"],
 )

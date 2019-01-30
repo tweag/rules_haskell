@@ -12,6 +12,7 @@ haskell_library(
         ":ourclibrary-indirect",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_library(
@@ -22,6 +23,7 @@ haskell_library(
         ":library-with-cbits",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 haskell_library(
@@ -32,6 +34,7 @@ haskell_library(
         ":ourclibrary-static",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 cc_library(
@@ -39,6 +42,7 @@ cc_library(
     deps = [
         "//tests/data:ourclibrary",
     ],
+    tags = ["dont_test_when_windows"],
 )
 
 cc_library(
@@ -47,4 +51,5 @@ cc_library(
     deps = [
         "//tests/data:ourclibrary",
     ],
+    tags = ["dont_test_when_windows"],
 )

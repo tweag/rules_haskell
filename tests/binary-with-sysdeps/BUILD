@@ -9,13 +9,13 @@ package(default_testonly = 1)
 haskell_cc_import(
     name = "zlib",
     shared_library = "@zlib//:lib",
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
 )
 
 haskell_test(
     name = "binary-with-sysdeps",
     srcs = ["Main.hs"],
-    tags = ["requires_zlib"],
+    tags = ["dont_test_when_bindist"],
     visibility = ["//visibility:public"],
     deps = [
         ":zlib",
