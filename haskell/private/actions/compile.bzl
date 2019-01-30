@@ -9,13 +9,12 @@ load(
 )
 load(
     ":private/path_utils.bzl",
-    "darwin_convert_to_dylibs",
     "declare_compiled",
     "make_path",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/providers.bzl", "get_mangled_libs")
+load(":private/providers.bzl", "get_solibs_for_ghc_linker")
 load(":private/set.bzl", "set")
 
 def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
@@ -247,16 +246,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         args.add(f)
 
     # Transitive library dependencies for runtime.
-    trans_link_ctx = dep_info.transitive_cc_dependencies.dynamic_linking
-    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
-    trans_import_libs = set.to_list(dep_info.transitive_import_dependencies)
-
-    _library_deps = trans_libs + trans_import_libs
-    if hs.toolchain.is_darwin:
-        # GHC's builtin linker requires .dylib files on MacOS.
-        library_deps = darwin_convert_to_dylibs(hs, _library_deps)
-    else:
-        library_deps = _library_deps
+    library_deps = get_solibs_for_ghc_linker(hs, dep_info)
     ld_library_path = make_path(library_deps)
 
     return DefaultCompileInfo(

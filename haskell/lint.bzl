@@ -11,10 +11,9 @@ load(":private/context.bzl", "haskell_context")
 load(":private/packages.bzl", "expose_packages")
 load(
     ":private/path_utils.bzl",
-    "darwin_convert_to_dylibs",
     "target_unique_name",
 )
-load(":private/providers.bzl", "get_mangled_libs")
+load(":private/providers.bzl", "get_solibs_for_ghc_linker")
 load(":private/set.bzl", "set")
 
 def _collect_lint_logs(deps):
@@ -75,16 +74,7 @@ def _haskell_lint_aspect_impl(target, ctx):
     )
 
     # Transitive library dependencies for runtime.
-    trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
-    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
-    trans_import_libs = set.to_list(build_info.transitive_import_dependencies)
-
-    _library_deps = trans_libs + trans_import_libs
-    if hs.toolchain.is_darwin:
-        # GHC's builtin linker requires .dylib files on MacOS.
-        library_deps = darwin_convert_to_dylibs(hs, _library_deps)
-    else:
-        library_deps = _library_deps
+    library_deps = get_solibs_for_ghc_linker(hs, build_info)
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [

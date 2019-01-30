@@ -3,14 +3,13 @@
 load(":private/packages.bzl", "expose_packages")
 load(
     ":private/path_utils.bzl",
-    "darwin_convert_to_dylibs",
     "get_lib_name",
     "is_shared_library",
     "ln",
     "make_path",
     "target_unique_name",
 )
-load(":private/providers.bzl", "get_mangled_libs")
+load(":private/providers.bzl", "get_solibs_for_ghc_linker")
 load(
     ":private/set.bzl",
     "set",
@@ -80,16 +79,7 @@ def build_haskell_repl(
             args += ["-l{0}".format(lib_name)]
 
     # Transitive library dependencies to have in runfiles.
-    trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
-    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
-    trans_import_libs = set.to_list(build_info.transitive_import_dependencies)
-
-    _library_deps = trans_libs + trans_import_libs
-    if hs.toolchain.is_darwin:
-        # GHC's builtin linker requires .dylib files on MacOS.
-        library_deps = darwin_convert_to_dylibs(hs, _library_deps)
-    else:
-        library_deps = _library_deps
+    library_deps = get_solibs_for_ghc_linker(hs, build_info)
     ld_library_path = make_path(
         library_deps,
         prefix = "$RULES_HASKELL_EXEC_ROOT",

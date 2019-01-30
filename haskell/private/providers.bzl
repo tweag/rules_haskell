@@ -1,3 +1,6 @@
+load(":private/path_utils.bzl", "darwin_convert_to_dylibs")
+load(":private/set.bzl", "set")
+
 DefaultCompileInfo = provider(
     doc = "Default compilation files and configuration.",
     fields = {
@@ -108,6 +111,37 @@ def get_mangled_lib(ext_lib):
 def get_mangled_libs(ext_libs):
     """Just a dumb helper because skylark doesn’t do lambdas."""
     return [ext_lib.mangled_lib for ext_lib in ext_libs]
+
+def get_solibs_for_ghc_linker(hs, build_info):
+    """Return all C library dependencies for GHC's linker.
+
+    GHC has it's own builtin linker. It is used for Template Haskell, for GHCi,
+    during doctests, etc. GHC's linker differs from the system's dynamic linker
+    in some ways. E.g. it strictly assumes that dynamic libraries end on .dylib
+    on MacOS.
+
+    This function returns a list of all transitive C library dependencies
+    (static or dynamic), taking the requirements of GHC's linker into account.
+
+    Args:
+      hs: Haskell context.
+      build_info: HaskellBinaryInfo provider.
+
+    Returns:
+      List of library files suitable for GHC's builtin linker.
+    """
+    trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
+    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_import_libs = set.to_list(build_info.transitive_import_dependencies)
+
+    _library_deps = trans_libs + trans_import_libs
+    if hs.toolchain.is_darwin:
+        # GHC's builtin linker requires .dylib files on MacOS.
+        library_deps = darwin_convert_to_dylibs(hs, _library_deps)
+    else:
+        library_deps = _library_deps
+
+    return library_deps
 
 HaskellLibraryInfo = provider(
     doc = "Library-specific information.",

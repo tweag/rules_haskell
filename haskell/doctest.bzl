@@ -5,11 +5,10 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/context.bzl", "haskell_context")
 load(
     ":private/path_utils.bzl",
-    "darwin_convert_to_dylibs",
     "get_lib_name",
     "make_path",
 )
-load(":private/providers.bzl", "get_mangled_libs")
+load(":private/providers.bzl", "get_mangled_libs", "get_solibs_for_ghc_linker")
 load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
@@ -132,16 +131,7 @@ def _haskell_doctest_single(target, ctx):
                 ])
 
     # Transitive library dependencies for runtime.
-    trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
-    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
-    trans_import_libs = set.to_list(build_info.transitive_import_dependencies)
-
-    _library_deps = trans_libs + trans_import_libs
-    if hs.toolchain.is_darwin:
-        # GHC's builtin linker requires .dylib files on MacOS.
-        library_deps = darwin_convert_to_dylibs(hs, _library_deps)
-    else:
-        library_deps = _library_deps
+    library_deps = get_solibs_for_ghc_linker(hs, build_info)
     ld_library_path = make_path(library_deps)
 
     header_files = lib_info.header_files if lib_info != None else bin_info.header_files
