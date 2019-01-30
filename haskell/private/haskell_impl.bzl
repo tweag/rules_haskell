@@ -61,7 +61,7 @@ def haskell_binary_impl(ctx):
 def _get_hpc_outputs(ctx, srcs_files):
     hpc_outputs = []
     for s in srcs_files:
-        filename, _ = paths.split_extension(s.basename)
+        filename = paths.replace_extension(s.basename, "")
         hpc_outputs.append(filename + ".mix")
     return hpc_outputs
 
