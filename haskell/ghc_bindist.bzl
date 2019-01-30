@@ -130,6 +130,8 @@ haskell_toolchain(
     tools = "{tools}",
     version = "{version}",
     compiler_flags = {compiler_flags},
+    haddock_flags = {haddock_flags},
+    repl_ghci_args = {repl_ghci_args},
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
@@ -137,6 +139,8 @@ haskell_toolchain(
             tools = "@{}//:bin".format(ctx.attr.bindist_name),
             version = ctx.attr.version,
             compiler_flags = ctx.attr.compiler_flags,
+            haddock_flags = ctx.attr.haddock_flags,
+            repl_ghci_args = ctx.attr.repl_ghci_args,
             exec_constraints = exec_constraints,
             target_constraints = target_constraints,
         ),
@@ -149,6 +153,8 @@ _ghc_bindist_toolchain = repository_rule(
         "bindist_name": attr.string(),
         "version": attr.string(),
         "compiler_flags": attr.string_list(),
+        "haddock_flags": attr.string_list(),
+        "repl_ghci_args": attr.string_list(),
         "target": attr.string(),
     },
 )
@@ -157,7 +163,9 @@ def ghc_bindist(
         name,
         version,
         target,
-        compiler_flags = None):
+        compiler_flags = None,
+        haddock_flags = None,
+        repl_ghci_args = None):
     """Create a new repository from binary distributions of GHC. The
     repository exports two targets:
 
@@ -201,11 +209,17 @@ def ghc_bindist(
         bindist_name = bindist_name,
         version = version,
         compiler_flags = compiler_flags,
+        haddock_flags = haddock_flags,
+        repl_ghci_args = repl_ghci_args,
         target = target,
     )
     native.register_toolchains("@{}//:toolchain".format(toolchain_name))
 
-def haskell_register_ghc_bindists(version, compiler_flags = None):
+def haskell_register_ghc_bindists(
+        version,
+        compiler_flags = None,
+        haddock_flags = None,
+        repl_ghci_args = None):
     """Register GHC binary distributions for all platforms as toolchains.
 
     Toolchains can be used to compile Haskell code. This function
@@ -225,4 +239,6 @@ def haskell_register_ghc_bindists(version, compiler_flags = None):
             target = target,
             version = version,
             compiler_flags = compiler_flags,
+            haddock_flags = haddock_flags,
+            repl_ghci_args = repl_ghci_args,
         )
