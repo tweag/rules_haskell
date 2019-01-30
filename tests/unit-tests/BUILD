@@ -45,9 +45,7 @@ create_rpath_entry_test(
     name = "rpath_entry_simple",
     binary_short_path = "foo/a.so",
     dependency_short_path = "bar/b.so",
-    keep_filename = False,
     output = "../bar",
-    prefix = "",
 )
 
 create_rpath_entry_test(
@@ -56,14 +54,12 @@ create_rpath_entry_test(
     dependency_short_path = "bar/b.so",
     keep_filename = True,
     output = "../bar/b.so",
-    prefix = "",
 )
 
 create_rpath_entry_test(
     name = "rpath_entry_prefix",
     binary_short_path = "foo/a.so",
     dependency_short_path = "bar/b.so",
-    keep_filename = False,
     output = "$ORIGIN/../bar",
     prefix = "$ORIGIN",
 )
@@ -76,9 +72,7 @@ create_rpath_entry_test(
     binary_short_path = "foo/a.so",
     # external dep
     dependency_short_path = "../bar/b.so",
-    keep_filename = False,
     output = "../external/bar",
-    prefix = "",
 )
 
 create_rpath_entry_test(
@@ -87,10 +81,8 @@ create_rpath_entry_test(
     binary_short_path = "../foo/a.so",
     # non-external
     dependency_short_path = "bar/b.so",
-    keep_filename = False,
     # back through `external`
     output = "../../bar",
-    prefix = "",
 )
 
 create_rpath_entry_test(
@@ -99,10 +91,8 @@ create_rpath_entry_test(
     binary_short_path = "../foo/a.so",
     # external dep
     dependency_short_path = "../bar/b.so",
-    keep_filename = False,
     # stay in `external`
     output = "../bar",
-    prefix = "",
 )
 
 # we have no idea how to handle internal dots, should they arise
@@ -110,11 +100,27 @@ create_rpath_entry_test(
 #     name = "rpath_entry_binary_internal_dots",
 #     binary_short_path = "foo/../../a.so",
 #     dependency_short_path = "../bar/../b.so",
-#     prefix = "",
-#     keep_filename = False,
 #     # but that doesn’t change anything for the runpath
 #     output = "../bar",
 # )
+
+# test comes_from_haskell_cc_import
+
+create_rpath_entry_test(
+    name = "rpath_entry_comes_from_haskell_cc_import",
+    # full path is up through the bazel-out directory
+    binary_path = "bazel-out/k8-fastbuild/bin/foo/baz/a.so",
+    binary_short_path = "foo/baz/a.so",
+    # it’s been imported with haskell_cc_import
+    comes_from_haskell_cc_import = True,
+    # the full path contains `external` as first element
+    dependency_path = "external/bar/lib/b.so",
+    # the short path is that of a normal external dependency
+    dependency_short_path = "../bar/lib/b.so",
+    # the output goes up all the way to the package root
+    # and then down .path of our external dependency
+    output = "../../../../../external/bar/lib",
+)
 
 dedup_on_test(
     name = "dedup_on_test",

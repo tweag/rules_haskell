@@ -65,11 +65,11 @@ sh_inline_test(
     binary="$1"
     # Symbols are prefixed with underscore on MacOS but not on Linux.
     if nm -u "$binary" | grep -q "\<_\?value"; then
-        echo "C library dependency not linked statically"
+        echo "C library dependency not linked statically: ${binary}"
         exit 1
     fi
     if nm -u "$binary" | grep -q HsLib_value_closure; then
-        echo "Haskell library dependency not linked statically"
+        echo "Haskell library dependency not linked statically ${binary}"
         exit 1
     fi
     """,
