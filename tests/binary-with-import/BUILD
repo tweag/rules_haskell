@@ -1,22 +1,21 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_import",
     "haskell_library",
     "haskell_test",
 )
 
 package(default_testonly = 1)
 
-haskell_import(name = "base")
-
-haskell_import(name = "transformers")
-
 haskell_library(
     name = "lib",
     srcs = ["Lib.hs"],
+    linkstatic = select({
+        "@bazel_tools//src/conditions:windows": True,
+        "//conditions:default": False,
+    }),
     deps = [
-        ":base",
-        ":transformers",
+        "//tests/hackage:base",
+        "//tests/hackage:transformers",
     ],
 )
 
@@ -25,7 +24,7 @@ haskell_test(
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
     deps = [
-        ":base",
         ":lib",
+        "//tests/hackage:base",
     ],
 )
