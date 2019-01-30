@@ -381,7 +381,7 @@ def _get_build_attrs(
   headers = depset(
       [ hdr
         for hdr in globbed_headers
-        if hdr.basename not in header_blacklist
+        if hdr.split("/")[-1] not in header_blacklist
       ]
       + install_includes
   )
