@@ -17,6 +17,7 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":private/actions/repl.bzl", "build_haskell_repl")
+load(":private/actions/runghc.bzl", "build_haskell_runghc")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/java.bzl", "java_interop_info")
@@ -171,6 +172,18 @@ def _haskell_binary_common_impl(ctx, is_test):
     # XXX Temporary backwards compatibility hack. Remove eventually.
     # See https://github.com/tweag/rules_haskell/pull/460.
     ln(hs, ctx.outputs.repl, ctx.outputs.repl_deprecated)
+
+    build_haskell_runghc(
+        hs,
+        runghc_wrapper = ctx.file._ghci_repl_wrapper,
+        extra_args = ctx.attr.runghc_args,
+        compiler_flags = ctx.attr.compiler_flags,
+        output = ctx.outputs.runghc,
+        package_caches = dep_info.package_caches,
+        version = ctx.attr.version,
+        build_info = build_info,
+        bin_info = bin_info,
+    )
 
     return [
         build_info,
@@ -365,6 +378,18 @@ def haskell_library_impl(ctx):
         # XXX Temporary backwards compatibility hack. Remove eventually.
         # See https://github.com/tweag/rules_haskell/pull/460.
         ln(hs, ctx.outputs.repl, ctx.outputs.repl_deprecated)
+
+        build_haskell_runghc(
+            hs,
+            runghc_wrapper = ctx.file._ghci_repl_wrapper,
+            extra_args = ctx.attr.runghc_args,
+            compiler_flags = ctx.attr.compiler_flags,
+            output = ctx.outputs.runghc,
+            package_caches = dep_info.package_caches,
+            version = ctx.attr.version,
+            build_info = build_info,
+            lib_info = lib_info,
+        )
 
     default_info = None
 
