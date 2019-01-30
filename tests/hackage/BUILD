@@ -13,14 +13,18 @@ load(
 [
     haskell_import(name = name)
     for name in [
+        "array",
         "base",
         "binary",
         "bytestring",
         "containers",
+        "deepseq",
         "directory",
         "filepath",
+        "mtl",
         "template-haskell",
         "ghc-prim",
+        "process",
         "text",
     ]
 ]

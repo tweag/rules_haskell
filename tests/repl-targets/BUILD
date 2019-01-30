@@ -47,8 +47,8 @@ haskell_library(
     deps = [
         ":zlib",
         "//tests/data:ourclibrary",
+        "//tests/hackage:array",
         "//tests/hackage:base",
-        "@hackage//:array",
     ],
 )
 
