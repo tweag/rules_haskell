@@ -19,18 +19,20 @@ DefaultCompileInfo = provider(
 HaskellCcInfo = provider(
     doc = "Haskell cc dependency information. Part of HaskellBuildInfo.",
     fields = {
-        "static_linking": "static linking mode parameters. " +
-                          "A struct of " +
-                          "(libraries_to_link, dynamic_libraries_for_runtime, user_link_flags). " +
-                          "Libraries in libraries_to_link are struct(lib, mangled_lib) " +
-                          "because the Darwin linker needs the original library path, " +
-                          "while the Linux linker needs the mangled path.",
-        "dynamic_linking": "static linking mode parameters. " +
-                           "A struct of " +
-                           "(libraries_to_link, dynamic_libraries_for_runtime, user_link_flags). " +
-                           "Libraries in libraries_to_link are struct(lib, mangled_lib) " +
-                           "because the Darwin linker needs the original library path, " +
-                           "while the Linux linker needs the mangled path.",
+        "static_linking": """static linking mode parameters.
+            A struct of
+            (libraries_to_link, dynamic_libraries_for_runtime, user_link_flags).
+            Libraries in libraries_to_link are struct(lib, mangled_lib)
+            because the Darwin linker needs the original library path,
+            while the Linux linker needs the mangled path.
+            """,
+        "dynamic_linking": """static linking mode parameters.
+            A struct of
+            (libraries_to_link, dynamic_libraries_for_runtime, user_link_flags).
+            Libraries in libraries_to_link are struct(lib, mangled_lib)
+            because the Darwin linker needs the original library path,
+            while the Linux linker needs the mangled path.
+            """,
     },
 )
 
