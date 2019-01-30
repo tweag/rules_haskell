@@ -75,7 +75,13 @@ def _haskell_binary_common_impl(ctx, is_test):
     java = java_interop_info(ctx)
 
     with_profiling = is_profiling_enabled(hs)
-    srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+    srcs_files_old, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+    srcs_files = []
+    for f in srcs_files_old:
+        print(f)
+        target = ctx.actions.declare_file("isolate-" + ctx.label.name + "-" + ctx.label.package + "/" + f.path)
+        ln(ctx, f, target)
+        srcs_files += [target]
     compiler_flags = ctx.attr.compiler_flags
 
     hpc_outputs = _get_hpc_outputs(ctx, srcs_files) if hs.coverage_enabled else []
@@ -210,13 +216,26 @@ def haskell_library_impl(ctx):
     cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
 
-    srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+    srcs_files_old, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+
+    srcs_files = []
+    for f in srcs_files_old:
+        print(f)
+        target = ctx.actions.declare_file("isolate-" + ctx.label.name + "-" + ctx.label.package + "/" + f.path)
+        ln(ctx, f, target)
+        srcs_files += [target]
+
+    #srcs_files = srcs_files_old
+
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
 
     compiler_flags = ctx.attr.compiler_flags
 
     hpc_outputs = _get_hpc_outputs(ctx, srcs_files) if hs.coverage_enabled else []
+
+
+
 
     c = hs.toolchain.actions.compile_library(
         hs,

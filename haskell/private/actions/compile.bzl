@@ -159,7 +159,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     # both in bin_dir, or both in genfiles_dir.
 
     import_dirs = set.from_list([
-        hs.src_root,
+        #hs.src_root,
         paths.join(hs.bin_dir.path, hs.src_root),
         paths.join(hs.genfiles_dir.path, hs.src_root),
     ])
@@ -240,8 +240,15 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
 
     args.add_all(ghc_args)
 
+
+    #native.filegroup(
+            #name = "foo",
+            #srcs = source_files,
+        #)
+
     # Pass source files
     for f in set.to_list(source_files):
+        print("HELLO")
         args.add(f)
 
     return DefaultCompileInfo(

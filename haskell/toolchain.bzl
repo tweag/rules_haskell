@@ -75,6 +75,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         while IFS= read -r line; do extra_args+=("$line"); done < %s
         while IFS= read -r line; do param_file_args+=("$line"); done < %s
 
+        echo "${ghc_args[@]}" "${extra_args[@]}" "${param_file_args[@]}"
         "${ghc_args[@]}" "${extra_args[@]}" "${param_file_args[@]}"
 """ % (ghc_args_file.path, extra_args_file.path, params_file.path)
         extra_inputs.append(params_file)
@@ -87,6 +88,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         while IFS= read -r line; do ghc_args+=("$line"); done < %s
         while IFS= read -r line; do extra_args+=("$line"); done < %s
 
+        echo "${ghc_args[@]}" "${extra_args[@]}"
         "${ghc_args[@]}" "${extra_args[@]}"
 """ % (ghc_args_file.path, extra_args_file.path)
 
