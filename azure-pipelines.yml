@@ -34,6 +34,7 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/binary-simple/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-compiler-flags/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-link-flags/..."
+      /c/bazel/bazel.exe test --config windows "//tests/library-deps/..."
       /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
       /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
 
