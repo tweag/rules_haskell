@@ -130,6 +130,13 @@ rule_test(
     tags = ["requires_zlib"],
 )
 
+rule_test_exe(
+    name = "test-library-with-includes",
+    size = "small",
+    generates = ["bin"],
+    rule = "//tests/library-with-includes:bin",
+)
+
 rule_test(
     name = "test-hsc",
     size = "small",

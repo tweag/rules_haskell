@@ -40,6 +40,8 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-import/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-link-flags/..."
       /c/bazel/bazel.exe test --config windows "//tests/library-deps/..."
+      /c/bazel/bazel.exe test --config windows "//tests/library-with-includes/..."
+      /c/bazel/bazel.exe test --config windows "//tests:test-library-with-includes"
       /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
       /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
 
