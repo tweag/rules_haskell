@@ -27,6 +27,9 @@ jobs:
       # )
       # See https://github.com/bazelbuild/bazel/issues/7291
       /c/bazel/bazel.exe build --config windows "//tests/data/..."
+      /c/bazel/bazel.exe build --config windows "//tests/failures/..."
+      /c/bazel/bazel.exe build --config windows "//tests/hidden-modules/..."
+      /c/bazel/bazel.exe build --config windows "//tests/package-id-clash/..."
 
       # Tests that succeed
       /c/bazel/bazel.exe test --config windows "//tests:test-binary-simple"
@@ -39,7 +42,22 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-compiler-flags/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-import/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-link-flags/..."
+      /c/bazel/bazel.exe test --config windows "//tests/cpp_macro_conflict/..."
+      /c/bazel/bazel.exe test --config windows "//tests/extra-source-files/..."
+      /c/bazel/bazel.exe test --config windows "//tests/java_classpath/..."
+      /c/bazel/bazel.exe test --config windows "//tests/generated-modules/..."
+      /c/bazel/bazel.exe test --config windows "//tests/haskell_lint/..."
+      /c/bazel/bazel.exe test --config windows "//tests/haskell_test/..."
+      /c/bazel/bazel.exe test --config windows "//tests/hs-boot/..."
+      /c/bazel/bazel.exe test --config windows "//tests/indirect-link/..."
       /c/bazel/bazel.exe test --config windows "//tests/library-deps/..."
+      /c/bazel/bazel.exe test --config windows "//tests/library-exports/..."
+      /c/bazel/bazel.exe test --config windows "//tests/library-linkstatic-flag/..."
+      /c/bazel/bazel.exe test --config windows "//tests/lhs/..."
+      /c/bazel/bazel.exe test --config windows "//tests/package-id-clash-binary/..."
+      /c/bazel/bazel.exe test --config windows "//tests/package-name/..."
+      /c/bazel/bazel.exe test --config windows "//tests/textual-hdrs/..."
+      /c/bazel/bazel.exe test --config windows "//tests/two-libs/..."
       /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
       /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
 
