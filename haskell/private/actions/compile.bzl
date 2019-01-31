@@ -46,6 +46,15 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
     args.add_all(["--lflag=" + f for f in cc.linker_flags])
     args.add_all(hsc_flags)
 
+    # Add an empty PATH variable if not already specified in hs.env.
+    # Needed to avoid a "Couldn't read PATH" error on Windows.
+    #
+    # On Unix platforms, though, we musn't set PATH as it is automatically set up
+    # by the run action, unless already set in the env parameter. This triggers
+    # build errors when using GHC bindists on Linux.
+    if hs.env.get("PATH") == None and hs.toolchain.is_windows:
+        hs.env["PATH"] = ""
+
     hs.actions.run(
         inputs = depset(transitive = [
             depset(cc.hdrs),
