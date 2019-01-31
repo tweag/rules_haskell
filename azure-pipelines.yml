@@ -19,7 +19,6 @@ jobs:
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."
-      /c/bazel/bazel.exe build --config windows "//tests/binary-indirect-cbits"
 
       # Tests that only require building
       # (when using 'test' CI fails with:
@@ -27,6 +26,7 @@ jobs:
       # )
       # See https://github.com/bazelbuild/bazel/issues/7291
       /c/bazel/bazel.exe build --config windows "//tests/data/..."
+      /c/bazel/bazel.exe build --config windows "//tests/binary-indirect-cbits/..."
 
       # Tests that succeed
       /c/bazel/bazel.exe test --config windows "//tests:test-binary-simple"
