@@ -17,7 +17,6 @@ jobs:
       export MSYS2_ARG_CONV_EXCL="*"
 
       # Tests that build but don't run
-      /c/bazel/bazel.exe build --config windows "//tests/binary-with-lib"
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."
       /c/bazel/bazel.exe build --config windows "//tests/binary-indirect-cbits"
@@ -34,6 +33,7 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests:test-binary-custom-main"
       /c/bazel/bazel.exe test --config windows "//tests/binary-custom-main/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-data/..."
+      /c/bazel/bazel.exe test --config windows "//tests/binary-with-lib/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-main/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-simple/..."
       /c/bazel/bazel.exe test --config windows "//tests/binary-with-compiler-flags/..."
