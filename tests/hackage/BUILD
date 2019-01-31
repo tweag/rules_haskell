@@ -23,6 +23,7 @@ load(
         "filepath",
         "mtl",
         "template-haskell",
+        "transformers",
         "ghc-prim",
         "process",
         "text",
