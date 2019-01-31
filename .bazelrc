@@ -5,7 +5,6 @@
 # https://bazel.build/roadmaps/platforms.html#replace---cpu-and---host_cpu-flags.
 build:windows --crosstool_top=@io_tweag_rules_haskell_ghc_windows_amd64//:toolchain -s --verbose_failures --sandbox_debug
 
-build:ci --all_incompatible_changes  --incompatible_disable_deprecated_attr_params=false --incompatible_new_actions_api=false --incompatible_expand_directories=false
 build:ci --loading_phase_threads=1
 build:ci --jobs=2
 build:ci --verbose_failures
@@ -13,7 +12,6 @@ build:ci --verbose_failures
 # can be changed by user.
 build:ci --symlink_prefix=bazel-ci-
 common:ci --color=no
-test:ci --all_incompatible_changes  --incompatible_disable_deprecated_attr_params=false --incompatible_new_actions_api=false --incompatible_expand_directories=false
 test:ci --test_output=errors
 
 # Needed on Windows for //tests/binary-with-data
@@ -25,5 +23,11 @@ test:windows --experimental_enable_runfiles
 # environment variables, such as LOCALE_ARCHIVE
 # We also need to setup an utf8 locale
 test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
+
+# Making incompatible changes fail.
+#
+# ToRemove: remove the three exceptions when they'll stop failing
+# on Google's protobuf_rules.
+test --all_incompatible_changes  --incompatible_disable_deprecated_attr_params=false --incompatible_new_actions_api=false --incompatible_expand_directories=false
 
 try-import .bazelrc.local
