@@ -90,7 +90,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         compiler_flags = compiler_flags,
-        dynamic = not ctx.attr.linkstatic,
+        dynamic = False if hs.toolchain.is_windows else not ctx.attr.linkstatic,
         with_profiling = False,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
@@ -135,7 +135,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx.files.extra_srcs,
         ctx.attr.compiler_flags,
         c_p.objects_dir if with_profiling else c.objects_dir,
-        dynamic = not ctx.attr.linkstatic,
+        dynamic = False if hs.toolchain.is_windows else not ctx.attr.linkstatic,
         with_profiling = with_profiling,
         version = ctx.attr.version,
     )
@@ -204,7 +204,7 @@ def haskell_library_impl(ctx):
     version = ctx.attr.version if ctx.attr.version else None
     my_pkg_id = pkg_id.new(ctx.label, version)
     with_profiling = is_profiling_enabled(hs)
-    with_shared = not ctx.attr.linkstatic
+    with_shared = False if hs.toolchain.is_windows else not ctx.attr.linkstatic
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)

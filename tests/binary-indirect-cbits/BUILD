@@ -7,10 +7,6 @@ load(
 haskell_binary(
     name = "binary-indirect-cbits",
     srcs = ["Main.hs"],
-    linkstatic = select({
-        "@bazel_tools//src/conditions:windows": True,
-        "//conditions:default": False,
-    }),
     deps = [
         "//tests/hackage:base",
         "//tests/library-with-cbits",
