@@ -16,6 +16,10 @@ common:ci --color=no
 test:ci --all_incompatible_changes  --incompatible_disable_deprecated_attr_params=false --incompatible_new_actions_api=false --incompatible_expand_directories=false
 test:ci --test_output=errors
 
+# Needed on Windows for //tests/binary-with-data
+# see: https://github.com/tweag/rules_haskell/issues/647#issuecomment-459001362
+test:windows --experimental_enable_runfiles
+
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct
 # environment variables, such as LOCALE_ARCHIVE
