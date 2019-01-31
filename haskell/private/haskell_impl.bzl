@@ -59,11 +59,11 @@ def haskell_test_impl(ctx):
 def haskell_binary_impl(ctx):
     return _haskell_binary_common_impl(ctx, is_test = False)
 
-def _get_hpc_outputs(ctx, srcs_files):
+def _replace_extensions(srcs_files, extension):
     hpc_outputs = []
     for s in srcs_files:
-        filename = paths.replace_extension(s.basename, "")
-        hpc_outputs.append(filename + ".mix")
+        filename = paths.replace_extension(s.basename, extension)
+        hpc_outputs.append(filename)
     return hpc_outputs
 
 def _haskell_binary_common_impl(ctx, is_test):
@@ -78,7 +78,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     compiler_flags = ctx.attr.compiler_flags
 
-    hpc_outputs = _get_hpc_outputs(ctx, srcs_files) if hs.coverage_enabled else []
+    hpc_outputs = _replace_extensions(srcs_files, ".mix") if hs.coverage_enabled else []
 
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -216,7 +216,7 @@ def haskell_library_impl(ctx):
 
     compiler_flags = ctx.attr.compiler_flags
 
-    hpc_outputs = _get_hpc_outputs(ctx, srcs_files) if hs.coverage_enabled else []
+    hpc_outputs = _replace_extensions(srcs_files, ".mix") if hs.coverage_enabled else []
 
     c = hs.toolchain.actions.compile_library(
         hs,
