@@ -284,7 +284,7 @@ def _hpc_compiler_args(hs):
     hpcdir = "{}/{}/.hpc".format(hs.bin_dir.path, hs.package_root)
     return ["-fhpc", "-hpcdir", hpcdir]
 
-def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, dynamic, with_profiling, main_function, version, is_test = False, hpc_outputs = []):
+def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, dynamic, with_profiling, main_function, version, is_test = False, mix_files = []):
     """Compile a Haskell target into object files suitable for linking.
 
     Returns:
@@ -303,18 +303,18 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         # case.
         c.args.add_all(["-dynamic", "-osuf dyn_o"])
 
-    conditioned_hpc_outputs = []
+    conditioned_mix_files = []
     if hs.coverage_enabled:
         c.args.add(_hpc_compiler_args(hs))
-        for o in hpc_outputs:
+        for o in mix_files:
             conditioned_file = hs.actions.declare_file(".hpc/" + o)
-            conditioned_hpc_outputs.append(conditioned_file)
+            conditioned_mix_files.append(conditioned_file)
 
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
         inputs = c.inputs,
-        outputs = c.outputs + conditioned_hpc_outputs,
+        outputs = c.outputs + conditioned_mix_files,
         mnemonic = "HaskellBuildBinary" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildBinary {}".format(hs.label),
         env = c.env,
@@ -350,7 +350,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         exposed_modules_file = exposed_modules_file,
     )
 
-def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exposed_modules_reexports, import_dir_map, extra_srcs, compiler_flags, with_shared, with_profiling, my_pkg_id, hpc_outputs = []):
+def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exposed_modules_reexports, import_dir_map, extra_srcs, compiler_flags, with_shared, with_profiling, my_pkg_id, mix_files = []):
     """Build arguments for Haskell package build.
 
     Returns:
@@ -368,19 +368,19 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
     if with_shared:
         c.args.add("-dynamic-too")
 
-    conditioned_hpc_outputs = []
+    conditioned_mix_files = []
     if hs.coverage_enabled:
         c.args.add(_hpc_compiler_args(hs))
-        for o in hpc_outputs:
+        for o in mix_files:
             pkg_id_string = pkg_id.to_string(my_pkg_id)
             conditioned_file = hs.actions.declare_file(".hpc/" + pkg_id_string + "/" + o)
-            conditioned_hpc_outputs.append(conditioned_file)
+            conditioned_mix_files.append(conditioned_file)
 
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
         inputs = c.inputs,
-        outputs = c.outputs + conditioned_hpc_outputs,
+        outputs = c.outputs + conditioned_mix_files,
         mnemonic = "HaskellBuildLibrary" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildLibrary {}".format(hs.label),
         env = c.env,

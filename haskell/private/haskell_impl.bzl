@@ -78,7 +78,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     compiler_flags = ctx.attr.compiler_flags
 
-    hpc_outputs = _replace_extensions(srcs_files, ".mix") if hs.coverage_enabled else []
+    mix_files = _replace_extensions(srcs_files, ".mix") if hs.coverage_enabled else []
 
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -95,7 +95,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
         is_test = is_test,
-        hpc_outputs = hpc_outputs,
+        mix_files = mix_files,
     )
 
     c_p = None
@@ -125,7 +125,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             main_function = ctx.attr.main_function,
             version = ctx.attr.version,
             is_test = is_test,
-            hpc_outputs = hpc_outputs,
+            mix_files = mix_files,
         )
 
     binary = link_binary(
@@ -216,7 +216,7 @@ def haskell_library_impl(ctx):
 
     compiler_flags = ctx.attr.compiler_flags
 
-    hpc_outputs = _replace_extensions(srcs_files, ".mix") if hs.coverage_enabled else []
+    mix_files = _replace_extensions(srcs_files, ".mix") if hs.coverage_enabled else []
 
     c = hs.toolchain.actions.compile_library(
         hs,
@@ -233,7 +233,7 @@ def haskell_library_impl(ctx):
         with_shared = with_shared,
         with_profiling = False,
         my_pkg_id = my_pkg_id,
-        hpc_outputs = hpc_outputs,
+        mix_files = mix_files,
     )
 
     c_p = None
@@ -263,7 +263,7 @@ def haskell_library_impl(ctx):
             with_shared = False,
             with_profiling = True,
             my_pkg_id = my_pkg_id,
-            hpc_outputs = hpc_outputs,
+            mix_files = mix_files,
         )
 
     static_library = link_library_static(
