@@ -9,10 +9,6 @@ package(default_testonly = 1)
 haskell_library(
     name = "lib",
     srcs = ["src/Lib.hs"],
-    linkstatic = select({
-        "@bazel_tools//src/conditions:windows": True,
-        "//conditions:default": False,
-    }),
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:transformers",

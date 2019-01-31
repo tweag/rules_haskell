@@ -8,10 +8,6 @@ package(default_testonly = 1)
 haskell_library(
     name = "sublib",
     srcs = ["TestSubLib.hs"],
-    linkstatic = select({
-        "@bazel_tools//src/conditions:windows": True,
-        "//conditions:default": False,
-    }),
     visibility = ["//visibility:public"],
     deps = [
         ":sublib-c",

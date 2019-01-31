@@ -9,10 +9,6 @@ package(default_testonly = 1)
 haskell_library(
     name = "library-deps",
     srcs = ["TestLib.hs"],
-    linkstatic = select({
-        "@bazel_tools//src/conditions:windows": True,
-        "//conditions:default": False,
-    }),
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",

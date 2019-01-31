@@ -7,10 +7,6 @@ load(
 haskell_library(
     name = "library-with-cbits",
     srcs = ["AddOne.hsc"],
-    linkstatic = select({
-        "@bazel_tools//src/conditions:windows": True,
-        "//conditions:default": False,
-    }),
     visibility = ["//visibility:public"],
     deps = [
         ":ourclibrary-indirect",
