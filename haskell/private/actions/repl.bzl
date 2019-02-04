@@ -9,7 +9,7 @@ load(
     "make_path",
     "target_unique_name",
 )
-load(":private/providers.bzl", "get_solibs_for_ghc_linker")
+load(":private/providers.bzl", "get_libs_for_ghc_linker")
 load(
     ":private/set.bzl",
     "set",
@@ -79,9 +79,13 @@ def build_haskell_repl(
             args += ["-l{0}".format(lib_name)]
 
     # Transitive library dependencies to have in runfiles.
-    library_deps = get_solibs_for_ghc_linker(hs, build_info)
-    ld_library_path = make_path(
+    (library_deps, ld_library_deps) = get_libs_for_ghc_linker(hs, build_info)
+    library_path = make_path(
         library_deps,
+        prefix = "$RULES_HASKELL_EXEC_ROOT",
+    )
+    ld_library_path = make_path(
+        ld_library_deps,
         prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
 
@@ -125,6 +129,7 @@ def build_haskell_repl(
         template = ghci_repl_wrapper,
         output = repl_file,
         substitutions = {
+            "{LIBPATH}": library_path,
             "{LDLIBPATH}": ld_library_path,
             "{TOOL}": hs.tools.ghci.path,
             "{SCRIPT_LOCATION}": output.path,
@@ -145,6 +150,7 @@ def build_haskell_repl(
         ]),
         set.to_depset(package_caches),
         depset(library_deps),
+        depset(ld_library_deps),
         set.to_depset(source_files),
     ])
     ln(hs, repl_file, output, extra_inputs)
