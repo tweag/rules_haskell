@@ -1,4 +1,8 @@
-load(":private/path_utils.bzl", "darwin_convert_to_dylibs")
+load(
+    ":private/path_utils.bzl",
+    "darwin_convert_to_dylibs",
+    "is_shared_library",
+)
 load(":private/set.bzl", "set")
 
 DefaultCompileInfo = provider(
@@ -104,17 +108,24 @@ HaskellBuildInfo = provider(
     },
 )
 
+def get_unmangled_libs(ext_libs):
+    """Just a dumb helper because skylark doesn’t do lambdas."""
+    return [ext_lib.lib for ext_lib in ext_libs]
+
 def get_mangled_libs(ext_libs):
     """Just a dumb helper because skylark doesn’t do lambdas."""
     return [ext_lib.mangled_lib for ext_lib in ext_libs]
 
-def get_solibs_for_ghc_linker(hs, build_info):
+def get_libs_for_ghc_linker(hs, build_info):
     """Return all C library dependencies for GHC's linker.
 
     GHC has it's own builtin linker. It is used for Template Haskell, for GHCi,
     during doctests, etc. GHC's linker differs from the system's dynamic linker
     in some ways. E.g. it strictly assumes that dynamic libraries end on .dylib
     on MacOS.
+
+    Additionally, on MacOS, GHC produces intermediate dynamic objects that load
+    C libraries by their unmangled names.
 
     This function returns a list of all transitive C library dependencies
     (static or dynamic), taking the requirements of GHC's linker into account.
@@ -124,20 +135,38 @@ def get_solibs_for_ghc_linker(hs, build_info):
       build_info: HaskellBinaryInfo provider.
 
     Returns:
-      List of library files suitable for GHC's builtin linker.
+      (library_deps, ld_library_deps)
+      library_deps: List of library files suitable for GHC's builtin linker.
+      ld_library_deps: List of library files that should be available for
+        dynamic loading.
     """
     trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
-    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
-    trans_import_libs = set.to_list(build_info.transitive_import_dependencies)
 
-    _library_deps = trans_libs + trans_import_libs
+    unmangled_libs = get_unmangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    mangled_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    import_libs = set.to_list(build_info.transitive_import_dependencies)
+
+    _library_deps = mangled_libs + import_libs
+    _ld_library_deps = [
+        lib
+        for lib in mangled_libs + import_libs
+        if is_shared_library(lib)
+    ]
     if hs.toolchain.is_darwin:
         # GHC's builtin linker requires .dylib files on MacOS.
         library_deps = darwin_convert_to_dylibs(hs, _library_deps)
+
+        # GHC produces intermediate dylibs that load the unmangled libraries.
+        ld_library_deps = _ld_library_deps + [
+            lib
+            for lib in unmangled_libs
+            if is_shared_library(lib)
+        ]
     else:
         library_deps = _library_deps
+        ld_library_deps = _ld_library_deps
 
-    return library_deps
+    return (library_deps, ld_library_deps)
 
 HaskellLibraryInfo = provider(
     doc = "Library-specific information.",
