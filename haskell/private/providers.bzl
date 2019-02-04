@@ -104,10 +104,6 @@ HaskellBuildInfo = provider(
     },
 )
 
-def get_mangled_lib(ext_lib):
-    """Just a dumb helper because skylark doesn’t do lambdas."""
-    return ext_lib.mangled_lib
-
 def get_mangled_libs(ext_libs):
     """Just a dumb helper because skylark doesn’t do lambdas."""
     return [ext_lib.mangled_lib for ext_lib in ext_libs]
