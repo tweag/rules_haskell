@@ -200,6 +200,72 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
 
     return objects_dir_manifest
 
+def _link_dependencies(hs, dep_info, dynamic, binary_tmp, binary, args):
+    """Configure linker flags and inputs.
+
+    Configure linker flags for C library dependencies and runtime dynamic
+    library dependencies. And collect the C libraries to pass as inputs to
+    the linking action.
+
+    Args:
+      hs: Haskell context.
+      dep_info: HaskellBuildInfo provider.
+      dynamic: Bool: Whether to link dynamically, or statically.
+      binary_tmp: Intermediate compilation output.
+      binary: Final linked binary.
+      args: Arguments to the linking action.
+
+    Returns:
+      depset: C library dependencies to provide as input to the linking action.
+    """
+
+    # Pick linking context based on linking mode.
+    if dynamic:
+        link_ctx = dep_info.cc_dependencies.dynamic_linking
+        trans_link_ctx = dep_info.transitive_cc_dependencies.dynamic_linking
+    else:
+        link_ctx = dep_info.cc_dependencies.static_linking
+        trans_link_ctx = dep_info.transitive_cc_dependencies.static_linking
+
+    # Direct C library dependencies to link.
+    # I.e. not indirect through another Haskell dependency.
+    # Such indirect dependencies are linked by GHC based on the extra-libraries
+    # fields in the dependency's package configuration file.
+    libs_to_link = get_mangled_libs(link_ctx.libraries_to_link.to_list())
+    import_libs_to_link = set.to_list(dep_info.import_dependencies)
+    _add_external_libraries(args, libs_to_link + import_libs_to_link)
+
+    # Transitive library dependencies to have in scope for linking.
+    trans_libs_to_link = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_import_libs = set.to_list(dep_info.transitive_import_dependencies)
+
+    # Libraries to pass as inputs to linking action.
+    cc_link_libs = depset(transitive = [
+        depset(trans_libs_to_link),
+        depset(trans_import_libs),
+    ])
+
+    if hs.toolchain.is_darwin:
+        _fix_darwin_linker_paths(
+            hs,
+            binary_tmp,
+            binary,
+            trans_link_ctx.libraries_to_link.to_list() + trans_import_libs,
+        )
+
+    # Transitive dynamic library dependencies to have in RUNPATH.
+    cc_solibs = (
+        trans_link_ctx.dynamic_libraries_for_runtime.to_list() +
+        trans_import_libs
+    )
+
+    # Configure RUNPATH.
+    solibs = cc_solibs + set.to_list(dep_info.dynamic_libraries)
+    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, binary, solibs)):
+        args.add("-optl-Wl,-rpath," + rpath)
+
+    return (cc_link_libs, cc_solibs)
+
 def link_binary(
         hs,
         cc,
@@ -268,40 +334,14 @@ def link_binary(
         version = version,
     ))
 
-    if dynamic:
-        link_ctx = dep_info.cc_dependencies.dynamic_linking
-        trans_link_ctx = dep_info.transitive_cc_dependencies.dynamic_linking
-    else:
-        link_ctx = dep_info.cc_dependencies.static_linking
-        trans_link_ctx = dep_info.transitive_cc_dependencies.static_linking
-
-    # Direct C library dependencies to link.
-    # I.e. not indirect through another Haskell dependency.
-    # Such indirect dependencies are linked by GHC based on the extra-libraries
-    # fields in the dependency's package configuration file.
-    libs_to_link = get_mangled_libs(link_ctx.libraries_to_link.to_list())
-    import_libs_to_link = set.to_list(dep_info.import_dependencies)
-    _add_external_libraries(args, libs_to_link + import_libs_to_link)
-
-    # Transitive library dependencies to have in scope for linking.
-    trans_libs_to_link = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
-    trans_import_libs = set.to_list(dep_info.transitive_import_dependencies)
-
-    if hs.toolchain.is_darwin:
-        _fix_darwin_linker_paths(
-            hs,
-            compile_output,
-            executable,
-            trans_link_ctx.libraries_to_link.to_list() + trans_import_libs,
-        )
-
-    # Transitive dynamic library dependencies to have in RUNPATH.
-    trans_cc_solibs = trans_link_ctx.dynamic_libraries_for_runtime.to_list()
-
-    # Configure RUNPATH.
-    solibs = trans_cc_solibs + trans_import_libs + set.to_list(dep_info.dynamic_libraries)
-    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, executable, solibs)):
-        args.add("-optl-Wl,-rpath," + rpath)
+    (cc_link_libs, cc_solibs) = _link_dependencies(
+        hs,
+        dep_info,
+        dynamic,
+        compile_output,
+        executable,
+        args,
+    )
 
     # XXX: Suppress a warning that Clang prints due to GHC automatically passing
     # "-pie" or "-no-pie" to the C compiler.
@@ -335,7 +375,7 @@ def link_binary(
             objects_dir,
             executable,
             dynamic,
-            trans_cc_solibs + trans_import_libs,
+            cc_solibs,
         )
 
     if extra_linker_flags_file != None:
@@ -353,8 +393,7 @@ def link_binary(
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             depset([objects_dir]),
-            depset(trans_libs_to_link),
-            depset(trans_import_libs),
+            cc_link_libs,
         ]),
         outputs = [compile_output],
         mnemonic = "HaskellLinkBinary",
@@ -520,36 +559,14 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     else:
         dynamic_library_tmp = dynamic_library
 
-    link_ctx = dep_info.cc_dependencies.dynamic_linking
-    trans_link_ctx = dep_info.transitive_cc_dependencies.dynamic_linking
-
-    # Direct C library dependencies to link.
-    # I.e. not indirect through another Haskell dependency.
-    # Such indirect dependencies are linked by GHC based on the extra-libraries
-    # fields in the dependency's package configuration file.
-    libs_to_link = get_mangled_libs(link_ctx.libraries_to_link.to_list())
-    import_libs_to_link = set.to_list(dep_info.import_dependencies)
-    _add_external_libraries(args, libs_to_link + import_libs_to_link)
-
-    # Transitive library dependencies to have in scope for linking.
-    trans_libs_to_link = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
-    trans_import_libs = set.to_list(dep_info.transitive_import_dependencies)
-
-    if hs.toolchain.is_darwin:
-        _fix_darwin_linker_paths(
-            hs,
-            dynamic_library_tmp,
-            dynamic_library,
-            trans_link_ctx.libraries_to_link.to_list() + trans_import_libs,
-        )
-
-    # Direct dynamic library dependencies to have in RUNPATH.
-    cc_solibs = trans_link_ctx.dynamic_libraries_for_runtime.to_list()
-
-    # Configure RUNPATH.
-    solibs = cc_solibs + trans_import_libs + set.to_list(dep_info.dynamic_libraries)
-    for rpath in set.to_list(_infer_rpaths(hs.toolchain.is_darwin, dynamic_library, solibs)):
-        args.add("-optl-Wl,-rpath," + rpath)
+    (cc_link_libs, _cc_solibs) = _link_dependencies(
+        hs,
+        dep_info,
+        True,  # dynamic linking mode
+        dynamic_library_tmp,
+        dynamic_library,
+        args,
+    )
 
     args.add_all(["-o", dynamic_library_tmp.path])
 
@@ -568,8 +585,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
             depset(extra_srcs),
             set.to_depset(dep_info.package_caches),
             set.to_depset(dep_info.dynamic_libraries),
-            depset(trans_libs_to_link),
-            depset(trans_import_libs),
+            cc_link_libs,
         ]),
         outputs = [dynamic_library_tmp],
         mnemonic = "HaskellLinkDynamicLibrary",
