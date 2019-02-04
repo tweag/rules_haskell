@@ -29,7 +29,6 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":private/providers.bzl", "external_libraries_get_mangled")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _prepare_srcs(srcs):
@@ -140,10 +139,13 @@ def _haskell_binary_common_impl(ctx, is_test):
         version = ctx.attr.version,
     )
 
-    solibs = set.union(
-        set.map(dep_info.external_libraries, external_libraries_get_mangled),
-        dep_info.dynamic_libraries,
-    )
+    if ctx.attr.linkstatic:
+        link_ctx = dep_info.cc_dependencies.static_linking
+    else:
+        link_ctx = dep_info.cc_dependencies.dynamic_linking
+    cc_solibs = link_ctx.dynamic_libraries_for_runtime.to_list()
+
+    solibs = cc_solibs + set.to_list(dep_info.dynamic_libraries)
 
     build_info = dep_info  # HaskellBuildInfo
     bin_info = HaskellBinaryInfo(
@@ -192,7 +194,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             executable = binary,
             files = target_files,
             runfiles = ctx.runfiles(
-                files = set.to_list(solibs),
+                files = solibs,
                 collect_data = True,
             ),
         ),
@@ -345,8 +347,10 @@ def haskell_library_impl(ctx):
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
-        external_libraries = dep_info.external_libraries,
-        extra_libraries = dep_info.extra_libraries,
+        cc_dependencies = dep_info.cc_dependencies,
+        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
+        import_dependencies = dep_info.import_dependencies,
+        transitive_import_dependencies = dep_info.transitive_import_dependencies,
     )
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),

@@ -1,3 +1,6 @@
+load(":private/path_utils.bzl", "darwin_convert_to_dylibs")
+load(":private/set.bzl", "set")
+
 DefaultCompileInfo = provider(
     doc = "Default compilation files and configuration.",
     fields = {
@@ -16,6 +19,72 @@ DefaultCompileInfo = provider(
     },
 )
 
+HaskellCcInfo = provider(
+    doc = "Haskell cc dependency information. Part of HaskellBuildInfo.",
+    fields = {
+        "static_linking": """static linking mode parameters.
+            A struct of
+            (libraries_to_link, dynamic_libraries_for_runtime, user_link_flags).
+            Libraries in libraries_to_link are struct(lib, mangled_lib)
+            because the Darwin linker needs the original library path,
+            while the Linux linker needs the mangled path.
+            """,
+        "dynamic_linking": """static linking mode parameters.
+            A struct of
+            (libraries_to_link, dynamic_libraries_for_runtime, user_link_flags).
+            Libraries in libraries_to_link are struct(lib, mangled_lib)
+            because the Darwin linker needs the original library path,
+            while the Linux linker needs the mangled path.
+            """,
+    },
+)
+
+def empty_HaskellCcInfo():
+    return HaskellCcInfo(
+        static_linking = struct(
+            libraries_to_link = depset(order = "topological"),
+            dynamic_libraries_for_runtime = depset(order = "topological"),
+            user_link_flags = depset(order = "topological"),
+        ),
+        dynamic_linking = struct(
+            libraries_to_link = depset(order = "topological"),
+            dynamic_libraries_for_runtime = depset(order = "topological"),
+            user_link_flags = depset(order = "topological"),
+        ),
+    )
+
+def merge_HaskellCcInfo(*args):
+    return HaskellCcInfo(
+        static_linking = struct(
+            libraries_to_link = depset(
+                order = "topological",
+                transitive = [arg.static_linking.libraries_to_link for arg in args],
+            ),
+            dynamic_libraries_for_runtime = depset(
+                order = "topological",
+                transitive = [arg.static_linking.dynamic_libraries_for_runtime for arg in args],
+            ),
+            user_link_flags = depset(
+                order = "topological",
+                transitive = [arg.static_linking.user_link_flags for arg in args],
+            ),
+        ),
+        dynamic_linking = struct(
+            libraries_to_link = depset(
+                order = "topological",
+                transitive = [arg.dynamic_linking.libraries_to_link for arg in args],
+            ),
+            dynamic_libraries_for_runtime = depset(
+                order = "topological",
+                transitive = [arg.dynamic_linking.dynamic_libraries_for_runtime for arg in args],
+            ),
+            user_link_flags = depset(
+                order = "topological",
+                transitive = [arg.dynamic_linking.user_link_flags for arg in args],
+            ),
+        ),
+    )
+
 HaskellBuildInfo = provider(
     doc = "Common information about build process: dependencies, etc.",
     fields = {
@@ -27,18 +96,48 @@ HaskellBuildInfo = provider(
         "dynamic_libraries": "Set of dynamic libraries.",
         "interface_dirs": "Set of interface dirs belonging to the packages.",
         "prebuilt_dependencies": "Transitive collection of info of wired-in Haskell dependencies.",
-        "external_libraries": "Set of dynamic shared libraries needed for linking. " +
-                              "Each entry is a struct(lib, mangled_lib) " +
-                              "because the Darwin linker needs the original library path, " +
-                              "while the Linux linker needs the mangled path.",
         "direct_prebuilt_deps": "Set of info of direct prebuilt dependencies.",
-        "extra_libraries": "The direct non-Haskell dependencies of this target. These are added to the extra-libraries field in the package's database.",
+        "cc_dependencies": "Direct cc library dependencies. See HaskellCcInfo.",
+        "transitive_cc_dependencies": "Transitive cc library dependencies. See HaskellCcInfo.",
+        "import_dependencies": "Direct haskell_cc_import library dependencies.",
+        "transitive_import_dependencies": "Transitive haskell_cc_import library dependencies.",
     },
 )
 
-def external_libraries_get_mangled(ext_lib):
+def get_mangled_libs(ext_libs):
     """Just a dumb helper because skylark doesn’t do lambdas."""
-    return ext_lib.mangled_lib
+    return [ext_lib.mangled_lib for ext_lib in ext_libs]
+
+def get_solibs_for_ghc_linker(hs, build_info):
+    """Return all C library dependencies for GHC's linker.
+
+    GHC has it's own builtin linker. It is used for Template Haskell, for GHCi,
+    during doctests, etc. GHC's linker differs from the system's dynamic linker
+    in some ways. E.g. it strictly assumes that dynamic libraries end on .dylib
+    on MacOS.
+
+    This function returns a list of all transitive C library dependencies
+    (static or dynamic), taking the requirements of GHC's linker into account.
+
+    Args:
+      hs: Haskell context.
+      build_info: HaskellBinaryInfo provider.
+
+    Returns:
+      List of library files suitable for GHC's builtin linker.
+    """
+    trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
+    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_import_libs = set.to_list(build_info.transitive_import_dependencies)
+
+    _library_deps = trans_libs + trans_import_libs
+    if hs.toolchain.is_darwin:
+        # GHC's builtin linker requires .dylib files on MacOS.
+        library_deps = darwin_convert_to_dylibs(hs, _library_deps)
+    else:
+        library_deps = _library_deps
+
+    return library_deps
 
 HaskellLibraryInfo = provider(
     doc = "Library-specific information.",

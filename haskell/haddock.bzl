@@ -8,6 +8,7 @@ load(
     "HaskellLibraryInfo",
 )
 load(":private/context.bzl", "haskell_context")
+load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
 
 def _get_haddock_path(package_id):
@@ -110,12 +111,18 @@ def _haskell_doc_aspect_impl(target, ctx):
         is_executable = True,
     )
 
+    # Transitive library dependencies for runtime.
+    trans_link_ctx = target[HaskellBuildInfo].transitive_cc_dependencies.dynamic_linking
+    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_import_libs = set.to_list(target[HaskellBuildInfo].transitive_import_dependencies)
+
     ctx.actions.run(
         inputs = depset(transitive = [
             set.to_depset(target[HaskellBuildInfo].package_caches),
             set.to_depset(target[HaskellBuildInfo].interface_dirs),
             set.to_depset(target[HaskellBuildInfo].dynamic_libraries),
-            depset([e.mangled_lib for e in set.to_list(target[HaskellBuildInfo].external_libraries)]),
+            depset(trans_libs),
+            depset(trans_import_libs),
             depset(transitive_haddocks.values()),
             depset(transitive_html.values()),
             # Need to give source files this way because the source_files field of

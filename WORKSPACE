@@ -114,6 +114,21 @@ nixpkgs_cc_configure(
 
 nixpkgs_package(
     name = "zlib",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "lib",
+    srcs = glob(["lib/**/*.so*", "lib/**/*.dylib", "lib/**/*.a"]),
+)
+
+cc_library(
+    name = "zlib",
+    linkstatic = 1,
+    srcs = [":lib"],
+    testonly = 1,
+)
+""",
     repository = "@nixpkgs",
 )
 
@@ -150,6 +165,14 @@ filegroup (
 haskell_cc_import(
     name = "zlib",
     shared_library = "@zlib//:lib",
+    hdrs = [":include"],
+    testonly = 1,
+    strip_include_prefix = "include",
+)
+
+cc_library(
+    name = "cc-zlib",
+    deps = ["@zlib//:zlib"],
     hdrs = [":include"],
     testonly = 1,
     strip_include_prefix = "include",
