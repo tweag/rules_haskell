@@ -2,7 +2,13 @@
 
 load(":private/packages.bzl", "expose_packages")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/path_utils.bzl", "get_lib_name", "is_shared_library", "is_static_library")
+load(
+    ":private/path_utils.bzl",
+    "get_lib_name",
+    "is_shared_library",
+    "is_static_library",
+    "ln",
+)
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
@@ -394,13 +400,27 @@ def _link_dependencies(hs, dep_info, dynamic, binary_tmp, binary, args):
         trans_import_libs
     )
 
+    # Collect Haskell dynamic library dependencies in common RUNPATH.
+    # This is to keep the number of RUNPATH entries low, for faster loading
+    # and to avoid exceeding the MACH-O header size limit on MacOS.
+    # XXX: Only in dynamic linking mode.
+    hs_solibs = []
+    hs_solibs_prefix = "_hssolib_%s" % hs.name
+    for dep in set.to_list(dep_info.dynamic_libraries):
+        dep_link = hs.actions.declare_file(
+            paths.join(hs_solibs_prefix, dep.basename),
+            sibling = binary,
+        )
+        ln(hs, dep, dep_link)
+        hs_solibs.append(dep_link)
+
     # Configure RUNPATH.
     rpaths = _infer_rpaths(
         hs.toolchain.is_darwin,
         False,  # Libraries not coming from haskell_cc_import.
         binary_tmp,
         trans_link_ctx.dynamic_libraries_for_runtime.to_list() +
-        set.to_list(dep_info.dynamic_libraries),
+        hs_solibs,
     )
     set.mutable_union(rpaths, _infer_rpaths(
         hs.toolchain.is_darwin,
@@ -411,7 +431,7 @@ def _link_dependencies(hs, dep_info, dynamic, binary_tmp, binary, args):
     for rpath in set.to_list(rpaths):
         args.add("-optl-Wl,-rpath," + rpath)
 
-    return (cc_link_libs, cc_solibs)
+    return (cc_link_libs, cc_solibs, hs_solibs)
 
 def link_binary(
         hs,
@@ -481,7 +501,7 @@ def link_binary(
         version = version,
     ))
 
-    (cc_link_libs, cc_solibs) = _link_dependencies(
+    (cc_link_libs, cc_solibs, hs_solibs) = _link_dependencies(
         hs = hs,
         dep_info = dep_info,
         dynamic = dynamic,
@@ -548,7 +568,7 @@ def link_binary(
         params_file = params_file,
     )
 
-    return executable
+    return (executable, cc_solibs + hs_solibs)
 
 def _add_external_libraries(args, ext_libs):
     """Add options to `args` that allow us to link to `ext_libs`.
@@ -725,7 +745,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     else:
         dynamic_library_tmp = dynamic_library
 
-    (cc_link_libs, _cc_solibs) = _link_dependencies(
+    (cc_link_libs, _cc_solibs, _hs_solibs) = _link_dependencies(
         hs = hs,
         dep_info = dep_info,
         dynamic = True,
