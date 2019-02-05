@@ -403,16 +403,16 @@ def _link_dependencies(hs, dep_info, dynamic, binary_tmp, binary, args):
     # Collect Haskell dynamic library dependencies in common RUNPATH.
     # This is to keep the number of RUNPATH entries low, for faster loading
     # and to avoid exceeding the MACH-O header size limit on MacOS.
-    # XXX: Only in dynamic linking mode.
     hs_solibs = []
-    hs_solibs_prefix = "_hssolib_%s" % hs.name
-    for dep in set.to_list(dep_info.dynamic_libraries):
-        dep_link = hs.actions.declare_file(
-            paths.join(hs_solibs_prefix, dep.basename),
-            sibling = binary,
-        )
-        ln(hs, dep, dep_link)
-        hs_solibs.append(dep_link)
+    if dynamic:
+        hs_solibs_prefix = "_hssolib_%s" % hs.name
+        for dep in set.to_list(dep_info.dynamic_libraries):
+            dep_link = hs.actions.declare_file(
+                paths.join(hs_solibs_prefix, dep.basename),
+                sibling = binary,
+            )
+            ln(hs, dep, dep_link)
+            hs_solibs.append(dep_link)
 
     # Configure RUNPATH.
     rpaths = _infer_rpaths(
