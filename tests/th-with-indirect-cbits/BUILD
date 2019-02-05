@@ -19,16 +19,22 @@ cc_library(
 
 haskell_library(
     name = "hs-lib-indirect",
-    srcs = ["HsLibIndirect.hs"],
+    srcs = [
+        "HsLibIndirect.hs",
+        "HsLibIndirectTH.hs",
+    ],
     deps = [
         ":cc-lib-direct",
         "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
     ],
 )
 
 haskell_library(
     name = "hs-lib-direct",
-    srcs = ["HsLibDirect.hs"],
+    srcs = [
+        "HsLibDirect.hs",
+    ],
     deps = [
         ":hs-lib-indirect",
         "//tests/hackage:base",
