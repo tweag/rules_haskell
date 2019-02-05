@@ -305,7 +305,7 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
 
     conditioned_mix_files = []
     if hs.coverage_enabled:
-        c.args.add(_hpc_compiler_args(hs))
+        c.args.add_all(_hpc_compiler_args(hs))
         for o in mix_files:
             conditioned_file = hs.actions.declare_file(".hpc/" + o)
             conditioned_mix_files.append(conditioned_file)
@@ -370,7 +370,7 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
 
     conditioned_mix_files = []
     if hs.coverage_enabled:
-        c.args.add(_hpc_compiler_args(hs))
+        c.args.add_all(_hpc_compiler_args(hs))
         for o in mix_files:
             pkg_id_string = pkg_id.to_string(my_pkg_id)
             conditioned_file = hs.actions.declare_file(".hpc/" + pkg_id_string + "/" + o)
