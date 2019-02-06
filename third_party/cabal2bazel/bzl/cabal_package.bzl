@@ -203,7 +203,6 @@ def _get_build_attrs(
   # build_files will contain a list of all files in the build directory.
   build_files = []
 
-  srcs_dir = "gen-srcs-" + name + "/"
   clib_name = name + "-cbits"
   generated_modules = [_paths_module(desc)]
 
@@ -222,37 +221,21 @@ def _get_build_attrs(
       fail("Missing module %s for %s" % (module, name) + str(module_map))
 
     # Create module files in build directory.
-    symlink_name = name + "-" + module + "-symlink"
     if info.type in ["hs", "lhs", "hsc"]:
-      module_out = srcs_dir + info.out
+      module_out = info.out
       module_map[module] = module_out
       build_files.append(module_out)
-      hazel_symlink(
-        name = symlink_name,
-        src = info.src,
-        out = module_out,
-      )
       if info.boot != None:
-        boot_out = srcs_dir + info.out + "-boot"
+        boot_out = info.out + "-boot"
         boot_module_map[module] = boot_out
         build_files.append(boot_out)
-        hazel_symlink(
-          name = name + "-boot-" + module + "-symlink",
-          src = info.boot,
-          out = boot_out,
-        )
     elif info.type in ["chs"]:
       chs_name = name + "-" + module + "-chs"
       module_map[module] = chs_name
-      build_files.append(srcs_dir + info.src)
-      hazel_symlink(
-        name = symlink_name,
-        src = info.src,
-        out = srcs_dir + info.src,
-      )
+      build_files.append(info.src)
       c2hs_library(
         name = chs_name,
-        srcs = [symlink_name],
+        srcs = [info.src],
         deps = [
           extra_libs[elib]
           for elib in build_info.extraLibs
@@ -261,7 +244,7 @@ def _get_build_attrs(
       )
       chs_targets.append(chs_name)
     elif info.type in ["x"]:
-      module_out = srcs_dir + info.out
+      module_out = info.out
       module_map[module] = module_out
       build_files.append(module_out)
       genalex(
@@ -269,7 +252,7 @@ def _get_build_attrs(
         out = module_out,
       )
     elif info.type in ["y", "ly"]:
-      module_out = srcs_dir + info.out
+      module_out = info.out
       module_map[module] = module_out
       build_files.append(module_out)
       genhappy(
@@ -280,15 +263,10 @@ def _get_build_attrs(
   # Create extra source files in build directory.
   extra_srcs = []
   for f in native.glob([paths.normalize(f) for f in desc.extraSrcFiles]):
-    fout = srcs_dir + f
+    fout = f
     # Skip files that were created in the previous steps.
     if fout in build_files:
       continue
-    hazel_symlink(
-      name = fout + "-symlink",
-      src = f,
-      out = srcs_dir + f,
-    )
     extra_srcs.append(fout)
 
   # Collect the source files for each module in this Cabal component.
@@ -420,7 +398,6 @@ def _get_build_attrs(
       "extra_srcs": extra_srcs,
       "deps": deps,
       "compiler_flags": ghcopts + extra_ghcopts,
-      "src_strip_prefix": srcs_dir,
   }
 
 def _collect_data_files(description):
@@ -532,15 +509,7 @@ def cabal_haskell_package(
 
     [full_module_path] = native.glob(
         [paths.normalize(paths.join(d, exe.modulePath)) for d in _fix_source_dirs(exe.buildInfo.hsSourceDirs)])
-    full_module_out = paths.join(attrs["src_strip_prefix"], full_module_path)
-    existing = native.existing_rules()
-    if not [existing[k] for k in existing if "out" in existing[k]
-            and existing[k]["out"] == full_module_out]:
-      hazel_symlink(
-          name = exe_name + "-" + exe.modulePath,
-          src = full_module_path,
-          out = full_module_out,
-      )
+    full_module_out = full_module_path
     for xs in srcs.values():
       if full_module_out not in xs:
         xs.append(full_module_out)
