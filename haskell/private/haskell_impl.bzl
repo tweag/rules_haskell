@@ -127,7 +127,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             hpc_outputs = hpc_outputs,
         )
 
-    binary = link_binary(
+    (binary, solibs) = link_binary(
         hs,
         cc,
         dep_info,
@@ -138,14 +138,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         with_profiling = with_profiling,
         version = ctx.attr.version,
     )
-
-    if ctx.attr.linkstatic:
-        link_ctx = dep_info.cc_dependencies.static_linking
-    else:
-        link_ctx = dep_info.cc_dependencies.dynamic_linking
-    cc_solibs = link_ctx.dynamic_libraries_for_runtime.to_list()
-
-    solibs = cc_solibs + set.to_list(dep_info.dynamic_libraries)
 
     build_info = dep_info  # HaskellBuildInfo
     bin_info = HaskellBinaryInfo(
