@@ -19,10 +19,12 @@ def _to_string(my_pkg_id):
     We can't use just the latter because then two components with
     the same names in different packages would clash.
     """
+
+    hashed_path = hash(paths.join(my_pkg_id.label.workspace_root, my_pkg_id.label.package))
+
     return _zencode(
         paths.join(
-            my_pkg_id.label.workspace_root,
-            my_pkg_id.label.package,
+            str(hashed_path),
             my_pkg_id.name,
         ),
     )
