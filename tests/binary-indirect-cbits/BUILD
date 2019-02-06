@@ -7,6 +7,8 @@ load(
 haskell_binary(
     name = "binary-indirect-cbits",
     srcs = ["Main.hs"],
+    linkstatic = False,
+    visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
         "//tests/library-with-cbits",

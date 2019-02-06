@@ -3,7 +3,7 @@ load(
     "haskell_library",
     "haskell_test",
 )
-load("//tests:sh_inline_test.bzl", "sh_inline_test")
+load("//tests:inline_tests.bzl", "sh_inline_test")
 
 # test whether `linkstatic` works as expected
 package(default_testonly = 1)
@@ -65,11 +65,11 @@ sh_inline_test(
     binary="$1"
     # Symbols are prefixed with underscore on MacOS but not on Linux.
     if nm -u "$binary" | grep -q "\<_\?value"; then
-        echo "C library dependency not linked statically"
+        echo "C library dependency not linked statically: ${binary}"
         exit 1
     fi
     if nm -u "$binary" | grep -q HsLib_value_closure; then
-        echo "Haskell library dependency not linked statically"
+        echo "Haskell library dependency not linked statically ${binary}"
         exit 1
     fi
     """,

@@ -101,7 +101,6 @@ def gather_dep_info(ctx):
         dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
         prebuilt_dependencies = set.empty(),
-        # a set of struct(lib, mangled_lib)
         direct_prebuilt_deps = set.empty(),
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),

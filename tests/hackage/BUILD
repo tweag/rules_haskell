@@ -3,7 +3,10 @@
     for better bindist support.
 """
 
-package(default_visibility = ["//tests:__subpackages__"])
+package(default_visibility = [
+    "//tests:__subpackages__",
+    "@haskell_package_repository_dummy//:__subpackages__",
+])
 
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
