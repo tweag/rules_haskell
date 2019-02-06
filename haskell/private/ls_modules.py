@@ -69,6 +69,8 @@ interface_files = (
 )
 
 modules = (
+    # replace directory separators by . to generate module names
+    # / and \ are respectively the separators for unix (linux / darwin) and windows systems
     os.path.splitext(os.path.relpath(f, start=root))[0]
         .replace("/",".")
         .replace("\\",".")
