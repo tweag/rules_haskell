@@ -335,12 +335,12 @@ def link_binary(
     ))
 
     (cc_link_libs, cc_solibs) = _link_dependencies(
-        hs,
-        dep_info,
-        dynamic,
-        compile_output,
-        executable,
-        args,
+        hs = hs,
+        dep_info = dep_info,
+        dynamic = dynamic,
+        binary_tmp = compile_output,
+        binary = executable,
+        args = args,
     )
 
     # XXX: Suppress a warning that Clang prints due to GHC automatically passing
@@ -560,12 +560,12 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         dynamic_library_tmp = dynamic_library
 
     (cc_link_libs, _cc_solibs) = _link_dependencies(
-        hs,
-        dep_info,
-        True,  # dynamic linking mode
-        dynamic_library_tmp,
-        dynamic_library,
-        args,
+        hs = hs,
+        dep_info = dep_info,
+        dynamic = True,
+        binary_tmp = dynamic_library_tmp,
+        binary = dynamic_library,
+        args = args,
     )
 
     args.add_all(["-o", dynamic_library_tmp.path])
