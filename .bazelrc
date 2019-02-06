@@ -24,10 +24,8 @@ test:windows --experimental_enable_runfiles
 # We also need to setup an utf8 locale
 test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
 
-# Making incompatible changes fail.
-#
 # ToRemove: remove the three exceptions when they'll stop failing
 # on Google's protobuf_rules.
-test --all_incompatible_changes  --incompatible_disable_deprecated_attr_params=false --incompatible_new_actions_api=false --incompatible_expand_directories=false
+test --incompatible_disable_deprecated_attr_params=false --incompatible_new_actions_api=false --incompatible_expand_directories=false
 
 try-import .bazelrc.local
