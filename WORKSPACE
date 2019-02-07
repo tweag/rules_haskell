@@ -151,6 +151,7 @@ filegroup(
 
 register_toolchains(
     "@ghc//:ghc",
+    "//:c2hs-toolchain",
     "//:doctest",
 )
 
@@ -199,7 +200,7 @@ hazel_custom_package_github(
   github_user = "FormationAI",
   github_repo = "wai",
   strip_prefix = "wai-app-static",
-  repo_sha = "aaa0dca56231c060372004cda46d719ec6cc3ec5",
+  repo_sha = "9217512fae1d6c2317447b257f478005efb55ef7",
 )
 
 load("//:packages.bzl", "packages", "core_packages")
