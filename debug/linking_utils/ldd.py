@@ -149,12 +149,15 @@ def _ldd(elf_cache, f, elf_path):
             search_res['item'] = _ldd(elf_cache, f, search_res['item'])
             return search_res
 
+    # (GNU) ld.so resolves any symlinks before searching for dependencies
+    elf_realpath = os.path.realpath(elf_path)
+
     # memoized uses the cache to not repeat the I/O action
     # for the same elf files (same path)
     dyn_fields = memoized(
-        elf_cache, read_dynamic_fields, elf_path
+        elf_cache, read_dynamic_fields, elf_realpath
     )
-    rdirs = parse_runpath_dirs(elf_path, dyn_fields)
+    rdirs = parse_runpath_dirs(elf_realpath, dyn_fields)
     all_needed = parse_needed(dyn_fields)
 
     # if there's no runpath dirs we don't know where to search
