@@ -59,9 +59,11 @@ def build_haskell_repl(
     )
     args += pkg_info_to_ghc_args(pkg_ghc_info)
 
+    lib_imports = []
     if lib_info != None:
         for idir in set.to_list(lib_info.import_dirs):
             args += ["-i{0}".format(idir)]
+            lib_imports.append(idir)
 
     link_ctx = build_info.cc_dependencies.dynamic_linking
     libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
@@ -72,11 +74,13 @@ def build_haskell_repl(
     # would cause linking errors as ghci cannot load static libraries.
     # XXX: Verify that static libraries can't be loaded by GHCi.
     seen_libs = set.empty()
+    libraries = []
     for lib in libs_to_link + import_libs_to_link:
         lib_name = get_lib_name(lib)
         if is_shared_library(lib) and not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
             args += ["-l{0}".format(lib_name)]
+            libraries.append(lib_name)
 
     # Transitive library dependencies to have in runfiles.
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
@@ -84,14 +88,18 @@ def build_haskell_repl(
         build_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
+    library_path = [paths.dirname(lib.path) for lib in library_deps]
+    ld_library_path = [paths.dirname(lib.path) for lib in ld_library_deps]
 
     repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
 
-    add_sources = []
+    lib_sources = []
+    bin_sources = []
     if lib_info != None:
-        add_sources = ["*" + f.path for f in set.to_list(lib_info.source_files)]
+        lib_sources = [f.path for f in set.to_list(lib_info.source_files)]
     elif bin_info != None:
-        add_sources = ["*" + f.path for f in set.to_list(bin_info.source_files)]
+        bin_sources = [f.path for f in set.to_list(bin_info.source_files)]
+    add_sources = ["*" + f for f in lib_sources + bin_sources]
 
     ghci_repl_script = hs.actions.declare_file(
         target_unique_name(hs, "ghci-repl-script"),
@@ -134,6 +142,37 @@ def build_haskell_repl(
         is_executable = True,
     )
 
+    ghc_info = struct(
+        has_version = pkg_ghc_info.has_version,
+        library_path = library_path,
+        ld_library_path = ld_library_path,
+        packages = pkg_ghc_info.packages,
+        package_ids = pkg_ghc_info.package_ids,
+        package_dbs = pkg_ghc_info.package_dbs,
+        lib_imports = lib_imports,
+        libraries = libraries,
+        lib_sources = lib_sources,
+        bin_sources = bin_sources,
+        execs = struct(
+            ghc = hs.tools.ghc.path,
+            ghci = hs.tools.ghci.path,
+            runghc = hs.tools.runghc.path,
+        ),
+        flags = struct(
+            compiler = compiler_flags,
+            toolchain_compiler = hs.toolchain.compiler_flags,
+            repl = repl_ghci_args,
+            toolchain_repl = hs.toolchain.repl_ghci_args,
+        ),
+    )
+    ghc_info_file = hs.actions.declare_file(
+        target_unique_name(hs, "ghc-info"),
+    )
+    hs.actions.write(
+        output = ghc_info_file,
+        content = ghc_info.to_json(),
+    )
+
     # XXX We create a symlink here because we need to force
     # hs.tools.ghci and ghci_script and the best way to do that is
     # to use hs.actions.run. That action, in turn must produce
@@ -143,6 +182,7 @@ def build_haskell_repl(
             hs.tools.ghci,
             ghci_repl_script,
             repl_file,
+            ghc_info_file,
         ]),
         set.to_depset(package_caches),
         depset(library_deps),
