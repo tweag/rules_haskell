@@ -108,10 +108,6 @@ HaskellBuildInfo = provider(
     },
 )
 
-def get_unmangled_libs(ext_libs):
-    """Just a dumb helper because skylark doesn’t do lambdas."""
-    return [ext_lib.lib for ext_lib in ext_libs]
-
 def get_mangled_libs(ext_libs):
     """Just a dumb helper because skylark doesn’t do lambdas."""
     return [ext_lib.mangled_lib for ext_lib in ext_libs]
@@ -142,8 +138,11 @@ def get_libs_for_ghc_linker(hs, build_info):
     """
     trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
 
-    unmangled_libs = get_unmangled_libs(trans_link_ctx.libraries_to_link.to_list())
-    mangled_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    unmangled_libs = []
+    mangled_libs = []
+    for lib in trans_link_ctx.libraries_to_link.to_list():
+        unmangled_libs.append(lib.lib)
+        mangled_libs.append(lib.mangled_lib)
     import_libs = set.to_list(build_info.transitive_import_dependencies)
 
     _library_deps = mangled_libs + import_libs
