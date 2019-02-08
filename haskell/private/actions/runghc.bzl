@@ -6,14 +6,13 @@ load(
     "get_lib_name",
     "is_shared_library",
     "ln",
-    "make_path",
     "target_unique_name",
 )
 load(
     ":private/set.bzl",
     "set",
 )
-load(":private/providers.bzl", "get_solibs_for_ghc_linker")
+load(":private/providers.bzl", "get_libs_for_ghc_linker")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_runghc(
@@ -73,10 +72,10 @@ def build_haskell_runghc(
             args += ["-l{0}".format(lib_name)]
 
     # Transitive library dependencies to have in runfiles.
-    library_deps = get_solibs_for_ghc_linker(hs, build_info)
-    ld_library_path = make_path(
-        library_deps,
-        prefix = "$RULES_HASKELL_EXEC_ROOT",
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        build_info,
+        path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
 
     runghc_file = hs.actions.declare_file(target_unique_name(hs, "runghc"))
@@ -104,7 +103,8 @@ def build_haskell_runghc(
         template = runghc_wrapper,
         output = runghc_file,
         substitutions = {
-            "{LDLIBPATH}": ld_library_path,
+            "{LIBPATH}": ghc_env["LIBRARY_PATH"],
+            "{LDLIBPATH}": ghc_env["LD_LIBRARY_PATH"],
             "{TOOL}": hs.tools.runghc.path,
             "{SCRIPT_LOCATION}": output.path,
             "{ARGS}": " ".join([shell.quote(a) for a in runghc_args]),
@@ -123,6 +123,7 @@ def build_haskell_runghc(
         ]),
         set.to_depset(package_caches),
         depset(library_deps),
+        depset(ld_library_deps),
         set.to_depset(source_files),
     ])
     ln(hs, runghc_file, output, extra_inputs)

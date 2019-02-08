@@ -6,9 +6,8 @@ load(":private/context.bzl", "haskell_context")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
-    "make_path",
 )
-load(":private/providers.bzl", "get_mangled_libs", "get_solibs_for_ghc_linker")
+load(":private/providers.bzl", "get_libs_for_ghc_linker", "get_mangled_libs")
 load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
@@ -131,8 +130,7 @@ def _haskell_doctest_single(target, ctx):
                 ])
 
     # Transitive library dependencies for runtime.
-    library_deps = get_solibs_for_ghc_linker(hs, build_info)
-    ld_library_path = make_path(library_deps)
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(hs, build_info)
 
     header_files = lib_info.header_files if lib_info != None else bin_info.header_files
 
@@ -157,6 +155,7 @@ def _haskell_doctest_single(target, ctx):
             set.to_depset(build_info.dynamic_libraries),
             set.to_depset(header_files),
             depset(library_deps),
+            depset(ld_library_deps),
             depset([exposed_modules_file]),
             depset(
                 toolchain.doctest +
@@ -186,9 +185,7 @@ def _haskell_doctest_single(target, ctx):
         # (ghc and linker?) and they seem to prefer to get it in different ways
         # in this case.
         env = dicts.add(
-            {
-                "LD_LIBRARY_PATH": ld_library_path,
-            },
+            ghc_env,
             hs.env,
         ),
         execution_requirements = {
