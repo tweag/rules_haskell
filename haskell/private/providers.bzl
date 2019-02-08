@@ -2,6 +2,7 @@ load(
     ":private/path_utils.bzl",
     "darwin_convert_to_dylibs",
     "is_shared_library",
+    "make_path",
 )
 load(":private/set.bzl", "set")
 
@@ -112,7 +113,7 @@ def get_mangled_libs(ext_libs):
     """Just a dumb helper because skylark doesn’t do lambdas."""
     return [ext_lib.mangled_lib for ext_lib in ext_libs]
 
-def get_libs_for_ghc_linker(hs, build_info):
+def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
     """Return all C library dependencies for GHC's linker.
 
     GHC has it's own builtin linker. It is used for Template Haskell, for GHCi,
@@ -129,12 +130,15 @@ def get_libs_for_ghc_linker(hs, build_info):
     Args:
       hs: Haskell context.
       build_info: HaskellBinaryInfo provider.
+      path_prefix: Prefix for paths in GHC environment variables.
 
     Returns:
-      (library_deps, ld_library_deps)
+      (library_deps, ld_library_deps, env)
       library_deps: List of library files suitable for GHC's builtin linker.
       ld_library_deps: List of library files that should be available for
         dynamic loading.
+      env: A mapping environment variables LIBRARY_PATH and LD_LIBRARY_PATH,
+        to the corresponding values as expected by GHC.
     """
     trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
 
@@ -165,7 +169,27 @@ def get_libs_for_ghc_linker(hs, build_info):
         library_deps = _library_deps
         ld_library_deps = _ld_library_deps
 
-    return (library_deps, ld_library_deps)
+    library_path = make_path(
+        library_deps,
+        prefix = path_prefix,
+    )
+    ld_library_path = make_path(
+        ld_library_deps,
+        prefix = path_prefix,
+    )
+
+    # GHC's builtin linker/loader looks for libraries in the paths defined by
+    # LIBRARY_PATH and LD_LIBRARY_PATH.
+    # See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/ghci.html?highlight=library_path#extra-libraries
+    # In certain cases it is not enough to specify LD_LIBRARY_PATH alone, and
+    # libraries are only found if their path is included in LIBRARY_PATH.
+    # See https://github.com/tweag/rules_haskell/pull/685
+    env = {
+        "LIBRARY_PATH": library_path,
+        "LD_LIBRARY_PATH": ld_library_path,
+    }
+
+    return (library_deps, ld_library_deps, env)
 
 HaskellLibraryInfo = provider(
     doc = "Library-specific information.",

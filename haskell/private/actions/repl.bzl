@@ -6,7 +6,6 @@ load(
     "get_lib_name",
     "is_shared_library",
     "ln",
-    "make_path",
     "target_unique_name",
 )
 load(":private/providers.bzl", "get_libs_for_ghc_linker")
@@ -79,14 +78,10 @@ def build_haskell_repl(
             args += ["-l{0}".format(lib_name)]
 
     # Transitive library dependencies to have in runfiles.
-    (library_deps, ld_library_deps) = get_libs_for_ghc_linker(hs, build_info)
-    library_path = make_path(
-        library_deps,
-        prefix = "$RULES_HASKELL_EXEC_ROOT",
-    )
-    ld_library_path = make_path(
-        ld_library_deps,
-        prefix = "$RULES_HASKELL_EXEC_ROOT",
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        build_info,
+        path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
 
     repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
@@ -129,8 +124,8 @@ def build_haskell_repl(
         template = ghci_repl_wrapper,
         output = repl_file,
         substitutions = {
-            "{LIBPATH}": library_path,
-            "{LDLIBPATH}": ld_library_path,
+            "{LIBPATH}": ghc_env["LIBRARY_PATH"],
+            "{LDLIBPATH}": ghc_env["LD_LIBRARY_PATH"],
             "{TOOL}": hs.tools.ghci.path,
             "{SCRIPT_LOCATION}": output.path,
             "{ARGS}": " ".join([shell.quote(a) for a in args]),
