@@ -84,9 +84,13 @@ package(default_visibility = ["//visibility:public"])
 
 load(
   "@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_library",
+  "haskell_binary",
   "haskell_toolchain",
   "haskell_import",
+)
+load(
+  "@io_tweag_rules_haskell//:bazel/string_to_target.bzl",
+  "string_to_target"
 )
 
 haskell_toolchain(
@@ -97,18 +101,30 @@ haskell_toolchain(
 
 haskell_import(name = "base")
 
-haskell_library(
-  name = "MY_LIBRARY_NAME",
+string_to_target(
+    name = "Hello.hs",
+    content = """
+module Hello where
+main = putStrLn "Hello, world!"
+""",
+  )
+
+haskell_binary(
+  name = "hello_world",
   src_strip_prefix = "src",
-  srcs = glob(['src/**/*.hs']),
+
+  srcs = [":Hello.hs"],
+
+  main_function = "Hello.main",
+
   deps = [
-    "base_pkg"
+    ":base"
   ],
 )
 EOF
 
 cat <<EOF
-WORKSPACE and initial BUILD files created. To run Bazel:
+WORKSPACE and initial BUILD files created. To build the example binary:
 
-    $ bazel build //...
+    $ bazel build //:hello_world
 EOF
