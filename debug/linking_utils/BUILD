@@ -53,4 +53,6 @@ if res['is_error']:
   print("example of missing dependency: {}".format(res['example']))
   exit(1)
 ''',
+    # it only works on linux
+    tags = ["dont_test_on_darwin"],
 )

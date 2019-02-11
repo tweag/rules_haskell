@@ -4,7 +4,7 @@ load(
 )
 
 #
-def ldd_test(name, elf_binary, script, current_workspace = None):
+def ldd_test(name, elf_binary, script, current_workspace = None, tags = []):
     """Test with imported linking_utils.ldd library.
     The path to the `elf_binary` is passed in sys.argv[1].
     """
@@ -22,4 +22,5 @@ from io_tweag_rules_haskell.debug.linking_utils.ldd import \\
         non_existing_runpaths, unused_runpaths, \\
         collect_unused_runpaths
 """ + script,
+        tags = tags,
     )

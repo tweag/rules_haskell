@@ -72,7 +72,8 @@ jobs:
       - run:
           name: Configure
           command: |
-            echo "build:ci --host_platform=@io_tweag_rules_haskell//haskell/platforms:darwin_x86_64_nixpkgs" > .bazelrc.local
+            echo "build:ci --host_platform=@io_tweag_rules_haskell//haskell/platforms:darwin_x86_64_nixpkgs" >> .bazelrc.local
+            echo "common:ci --test_tag_filters -dont_test_on_darwin" >> .bazelrc.local
       - run:
           name: Build tests
           shell: /bin/bash -eilo pipefail
