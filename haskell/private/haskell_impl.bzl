@@ -67,7 +67,7 @@ def _get_hpc_outputs(ctx, srcs_files):
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx)
+    dep_info = gather_dep_info(hs, ctx)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -194,7 +194,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx)
+    dep_info = gather_dep_info(hs, ctx)
     version = ctx.attr.version if ctx.attr.version else None
     my_pkg_id = pkg_id.new(ctx.label, version)
     with_profiling = is_profiling_enabled(hs)

@@ -124,39 +124,6 @@ def make_path(libs, prefix = None):
 
     return ":".join(r)
 
-def darwin_convert_to_dylibs(hs, libs):
-    """Convert .so dynamic libraries to .dylib.
-
-    Bazel's cc_library rule will create .so files for dynamic libraries even
-    on MacOS. GHC's builtin linker, which is used during compilation, GHCi,
-    or doctests, hard-codes the assumption that all dynamic libraries on MacOS
-    end on .dylib. This function serves as an adaptor and produces symlinks
-    from a .dylib version to the .so version for every dynamic library
-    dependencies that does not end on .dylib.
-
-    Args:
-      hs: Haskell context.
-      libs: List of library files dynamic or static.
-
-    Returns:
-      List of library files where all dynamic libraries end on .dylib.
-    """
-    lib_prefix = "_dylibs"
-    new_libs = []
-    for lib in libs:
-        if is_shared_library(lib) and lib.extension != "dylib":
-            dylib_name = paths.join(
-                target_unique_name(hs, lib_prefix),
-                lib.dirname,
-                "lib" + get_lib_name(lib) + ".dylib",
-            )
-            dylib = hs.actions.declare_file(dylib_name)
-            ln(hs, lib, dylib)
-            new_libs.append(dylib)
-        else:
-            new_libs.append(lib)
-    return new_libs
-
 def get_lib_name(lib):
     """Return name of library by dropping extension and "lib" prefix.
 

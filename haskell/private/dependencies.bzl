@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "CcSkylarkApiProviderHacked",
@@ -19,73 +20,168 @@ load(
 )
 load(":private/set.bzl", "set")
 
-def _HaskellCcInfo_from_CcInfo(ctx, cc_info):
-    static_linking = cc_info.linking_context.static_mode_params_for_executable
-    dynamic_linking = cc_info.linking_context.dynamic_mode_params_for_executable
-    manglings = {
-        get_lib_name(l.original_artifact()): get_lib_name(l.artifact())
-        for l in dynamic_linking.libraries_to_link.to_list()
-    }
+def _cc_get_static_lib(lib_info):
+    """Return the library to use in static linking mode.
+
+    This returns the first available library artifact in the following order:
+    - static_library
+    - pic_static_library
+    - dynamic_library
+    - interface_library
+
+    Args:
+      lib_info: LibraryToLink provider.
+
+    Returns:
+      File: The library to link against in static mode.
+    """
+    if lib_info.static_library:
+        return lib_info.static_library
+    elif lib_info.pic_static_library:
+        return lib_info.pic_static_library
+    elif lib_info.dynamic_library:
+        return lib_info.dynamic_library
+    else:
+        return lib_info.interface_library
+
+def _cc_get_dynamic_lib(lib_info):
+    """Return the library to use in dynamic linking mode.
+
+    This returns the first available library artifact in the following order:
+    - dynamic_library
+    - interface_library
+    - pic_static_library
+    - static_library
+
+    Args:
+      lib_info: LibraryToLink provider.
+
+    Returns:
+      File: The library to link against in dynamic mode.
+    """
+    if lib_info.dynamic_library:
+        return lib_info.dynamic_library
+    elif lib_info.interface_library:
+        return lib_info.interface_library
+    elif lib_info.pic_static_library:
+        return lib_info.pic_static_library
+    else:
+        return lib_info.static_library
+
+def _cc_add_lib(hs, lib, libs_to_link, libs_for_runtime):
+    """Add library to libs_to_link and libs_for_runtime.
+
+    This adds the given library dependency to the list for libraries to link
+    and runtime library dependencies.
+
+    On MacOS we apply two patches to the libraries for linking.
+    1) GHC's own loader expects dynamic libraries to end on `.dylib`, but Bazel
+       produces `.so` files. Here we copy the given library to a `.dylib` file.
+    2) MacOS adds load instructions based on the "install name" of the given
+       library. The dynamic libraries that Bazel produces maintain their
+       package path in their install name. E.g.
+       `bazel-out/darwin-fastbuild/bin/some/package/libsomelib.so`.
+       Here we modify the install name on a writable copy to be relative to
+       @rpath. E.g. `@rpath/libsomelib.so`.
+
+    Args:
+      hs: Haskell context.
+      lib: The library dependency.
+      libs_to_link: (output) list of libraries to link against.
+      libs_for_runtime: (output) list of libraries to add to runfiles.
+    """
+    link_lib = lib
+    if is_shared_library(lib):
+        libs_for_runtime.append(lib)
+        if hs.toolchain.is_darwin:
+            link_lib = hs.actions.declare_file(paths.join(
+                "_darwin_dylib",
+                paths.replace_extension(lib.basename, ".dylib"),
+            ))
+            hs.actions.run_shell(
+                inputs = [lib],
+                outputs = [link_lib],
+                mnemonic = "HaskellFixupCcInstallName",
+                progress_message = "Fixing install name for {0}".format(link_lib.basename),
+                command = " &&\n    ".join([
+                    "cp {} {}".format(lib.path, link_lib.path),
+                    "chmod +w {}".format(link_lib.path),
+                    "/usr/bin/install_name_tool -id @rpath/{} {}".format(
+                        lib.basename,
+                        link_lib.path,
+                    ),
+                ]),
+            )
+    libs_to_link.append(link_lib)
+
+def _HaskellCcInfo_from_CcInfo(hs, ctx, cc_info):
+    libs_to_link = cc_info.linking_context.libraries_to_link
     static_libs_to_link = []
-    for l in static_linking.libraries_to_link.to_list():
+    dynamic_libs_to_link = []
+    static_libs_for_runtime = []
+    dynamic_libs_for_runtime = []
+    for l in libs_to_link:
+        _static_lib = _cc_get_static_lib(l)
+        dynamic_lib = _cc_get_dynamic_lib(l)
+
         # Bazel itself only mangles dynamic libraries, not static libraries.
         # However, we need the library name of the static and dynamic version
         # of a library to match so that we can refer to both with one entry in
         # the package configuration file. Here we rename any static archives
         # with mismatching mangled dynamic library name.
-        orig_lib = l.original_artifact()
-        mangled_lib = l.artifact()
-        orig_name = get_lib_name(orig_lib)
-        mangled_name = get_lib_name(mangled_lib)
-        if mangled_name != manglings[orig_name]:
-            ext = orig_lib.extension
-            link_lib = ctx.actions.declare_file(
-                "lib%s.%s" % (manglings[orig_name], ext),
+        static_name = get_lib_name(_static_lib)
+        dynamic_name = get_lib_name(dynamic_lib)
+        if static_name != dynamic_name:
+            ext = _static_lib.extension
+            static_lib = ctx.actions.declare_file(
+                "lib%s.%s" % (dynamic_name, ext),
             )
-            ln(ctx, orig_lib, link_lib)
-            static_libs_to_link.append(struct(
-                lib = orig_lib,
-                mangled_lib = link_lib,
-            ))
+            ln(ctx, _static_lib, static_lib)
         else:
-            static_libs_to_link.append(struct(
-                lib = orig_lib,
-                mangled_lib = mangled_lib,
-            ))
-    static_libs_to_link = depset(
-        direct = static_libs_to_link,
-        order = "topological",
-    )
-    dynamic_libs_to_link = depset(
-        direct = [
-            struct(
-                lib = l.original_artifact(),
-                mangled_lib = l.artifact(),
-            )
-            for l in dynamic_linking.libraries_to_link.to_list()
-        ],
-        order = "topological",
-    )
+            static_lib = _static_lib
+
+        _cc_add_lib(hs, static_lib, static_libs_to_link, static_libs_for_runtime)
+        _cc_add_lib(hs, dynamic_lib, dynamic_libs_to_link, dynamic_libs_for_runtime)
+
     return HaskellCcInfo(
         static_linking = struct(
-            libraries_to_link = static_libs_to_link,
-            dynamic_libraries_for_runtime = static_linking.dynamic_libraries_for_runtime,
-            user_link_flags = static_linking.user_link_flags,
+            libraries_to_link = depset(
+                direct = static_libs_to_link,
+                order = "topological",
+            ),
+            dynamic_libraries_for_runtime = depset(
+                direct = static_libs_for_runtime,
+                order = "topological",
+            ),
+            user_link_flags = depset(
+                direct = cc_info.linking_context.user_link_flags,
+                order = "topological",
+            )
         ),
         dynamic_linking = struct(
-            libraries_to_link = dynamic_libs_to_link,
-            dynamic_libraries_for_runtime = dynamic_linking.dynamic_libraries_for_runtime,
-            user_link_flags = dynamic_linking.user_link_flags,
+            libraries_to_link = depset(
+                direct = dynamic_libs_to_link,
+                order = "topological",
+            ),
+            dynamic_libraries_for_runtime = depset(
+                direct = dynamic_libs_for_runtime,
+                order = "topological",
+            ),
+            user_link_flags = depset(
+                direct = cc_info.linking_context.user_link_flags,
+                order = "topological",
+            )
         ),
     )
 
-def gather_dep_info(ctx):
+def gather_dep_info(hs, ctx):
     """Collapse dependencies into a single `HaskellBuildInfo`.
 
     Note that the field `prebuilt_dependencies` also includes
     prebuilt_dependencies of current target.
 
     Args:
+      ctx: Haskell context.
       ctx: Rule context.
 
     Returns:
@@ -152,7 +248,7 @@ def gather_dep_info(ctx):
             # The final link of a binary must include all static libraries we
             # depend on, including transitives ones. Theses libs are provided
             # in the `CcInfo` provider.
-            hs_cc_info = _HaskellCcInfo_from_CcInfo(ctx, dep[CcInfo])
+            hs_cc_info = _HaskellCcInfo_from_CcInfo(hs, ctx, dep[CcInfo])
             acc = HaskellBuildInfo(
                 package_ids = acc.package_ids,
                 package_confs = acc.package_confs,

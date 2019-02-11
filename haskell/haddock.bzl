@@ -8,7 +8,6 @@ load(
     "HaskellLibraryInfo",
 )
 load(":private/context.bzl", "haskell_context")
-load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
 
 def _get_haddock_path(package_id):
@@ -113,7 +112,7 @@ def _haskell_doc_aspect_impl(target, ctx):
 
     # Transitive library dependencies for runtime.
     trans_link_ctx = target[HaskellBuildInfo].transitive_cc_dependencies.dynamic_linking
-    trans_libs = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_libs = trans_link_ctx.libraries_to_link.to_list()
     trans_import_libs = set.to_list(target[HaskellBuildInfo].transitive_import_dependencies)
 
     ctx.actions.run(

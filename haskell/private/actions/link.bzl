@@ -10,7 +10,6 @@ load(
     "ln",
 )
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
 load(":private/list.bzl", "list")
 
@@ -259,13 +258,17 @@ def _fix_darwin_linker_paths(hs, inp, out, external_libraries):
     (This is what the Bazel-provided `cc_wrapper.sh` does for cc rules.)
     For details: https://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
 
+    Regular C library dependencies are patched so that their install name is
+    relative to @rpath and the libraries are thereby linked relative to @rpath.
+    For haskell_cc_import dependencies this is not the case. This function
+    patches haskell_cc_import library dependencies to be linked relative to
+    @rpath as well.
+
     Args:
       hs: Haskell context.
       inp: An input file.
       out: An output file.
-      external_libraries: List of C libraries that inp depends on.
-        These can be plain File for haskell_cc_import dependencies, or
-        struct(lib, mangled_lib) for regular cc_library dependencies.
+      external_libraries: List of haskell_cc_import dependencies.
     """
     hs.actions.run_shell(
         inputs = [inp],
@@ -289,26 +292,14 @@ def _fix_darwin_linker_paths(hs, inp, out, external_libraries):
             [
                 # Make external library references relative to rpath instead of
                 # relative to the working directory at link time.
-                # Handles cc_library dependencies.
-                "/usr/bin/install_name_tool -change {} {} {}".format(
-                    f.lib.path,
-                    paths.join("@rpath", f.mangled_lib.basename),
-                    out.path,
-                )
-                for f in external_libraries
-                if hasattr(f, "mangled_lib")
-            ] +
-            [
-                # Make external library references relative to rpath instead of
-                # relative to the working directory at link time.
                 # Handles haskell_cc_import dependencies.
+                # XXX: Remove this when haskell_cc_import is removed.
                 "/usr/bin/install_name_tool -change {} {} {}".format(
                     f.path,
                     paths.join("@rpath", f.basename),
                     out.path,
                 )
                 for f in external_libraries
-                if not hasattr(f, "mangled_lib")
             ],
         ),
     )
@@ -372,12 +363,12 @@ def _link_dependencies(hs, dep_info, dynamic, binary_tmp, binary, args):
     # I.e. not indirect through another Haskell dependency.
     # Such indirect dependencies are linked by GHC based on the extra-libraries
     # fields in the dependency's package configuration file.
-    libs_to_link = get_mangled_libs(link_ctx.libraries_to_link.to_list())
+    libs_to_link = link_ctx.libraries_to_link.to_list()
     import_libs_to_link = set.to_list(dep_info.import_dependencies)
     _add_external_libraries(args, libs_to_link + import_libs_to_link)
 
     # Transitive library dependencies to have in scope for linking.
-    trans_libs_to_link = get_mangled_libs(trans_link_ctx.libraries_to_link.to_list())
+    trans_libs_to_link = trans_link_ctx.libraries_to_link.to_list()
     trans_import_libs = set.to_list(dep_info.transitive_import_dependencies)
 
     # Libraries to pass as inputs to linking action.
@@ -391,7 +382,7 @@ def _link_dependencies(hs, dep_info, dynamic, binary_tmp, binary, args):
             hs,
             binary_tmp,
             binary,
-            trans_link_ctx.libraries_to_link.to_list() + trans_import_libs,
+            trans_import_libs,
         )
 
     # Transitive dynamic library dependencies to have in RUNPATH.

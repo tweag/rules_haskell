@@ -1,6 +1,5 @@
 load(
     ":private/path_utils.bzl",
-    "darwin_convert_to_dylibs",
     "is_shared_library",
     "make_path",
 )
@@ -109,10 +108,6 @@ HaskellBuildInfo = provider(
     },
 )
 
-def get_mangled_libs(ext_libs):
-    """Just a dumb helper because skylark doesn’t do lambdas."""
-    return [ext_lib.mangled_lib for ext_lib in ext_libs]
-
 def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
     """Return all C library dependencies for GHC's linker.
 
@@ -142,32 +137,16 @@ def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
     """
     trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
 
-    unmangled_libs = []
-    mangled_libs = []
-    for lib in trans_link_ctx.libraries_to_link.to_list():
-        unmangled_libs.append(lib.lib)
-        mangled_libs.append(lib.mangled_lib)
+    libs_to_link = trans_link_ctx.libraries_to_link.to_list()
+    libs_for_runtime = trans_link_ctx.dynamic_libraries_for_runtime.to_list()
     import_libs = set.to_list(build_info.transitive_import_dependencies)
 
-    _library_deps = mangled_libs + import_libs
-    _ld_library_deps = [
+    library_deps = libs_to_link + import_libs
+    ld_library_deps = [
         lib
-        for lib in mangled_libs + import_libs
+        for lib in libs_for_runtime + import_libs
         if is_shared_library(lib)
     ]
-    if hs.toolchain.is_darwin:
-        # GHC's builtin linker requires .dylib files on MacOS.
-        library_deps = darwin_convert_to_dylibs(hs, _library_deps)
-
-        # GHC produces intermediate dylibs that load the unmangled libraries.
-        ld_library_deps = _ld_library_deps + [
-            lib
-            for lib in unmangled_libs
-            if is_shared_library(lib)
-        ]
-    else:
-        library_deps = _library_deps
-        ld_library_deps = _ld_library_deps
 
     library_path = make_path(
         library_deps,
