@@ -154,6 +154,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         header_files = c.header_files,
         exposed_modules_file = c.exposed_modules_file,
     )
+
     target_files = depset([binary])
 
     build_haskell_repl(
@@ -185,14 +186,56 @@ def _haskell_binary_common_impl(ctx, is_test):
         bin_info = bin_info,
     )
 
+    executable = binary
+
+    if True or hs.coverage_enabled:
+        binary_path = ctx.workspace_name + "/" + binary.short_path
+        tix_file_location = hs.label.name + ".tix"
+        bash_runfiles_boilerplate = """\
+# Copy-pasted from Bazel's Bash runfiles library (tools/bash/runfiles/runfiles.bash).
+set -euo pipefail
+if [[ ! -d "${RUNFILES_DIR:-/dev/null}" && ! -f "${RUNFILES_MANIFEST_FILE:-/dev/null}" ]]; then
+  if [[ -f "$0.runfiles_manifest" ]]; then
+    export RUNFILES_MANIFEST_FILE="$0.runfiles_manifest"
+  elif [[ -f "$0.runfiles/MANIFEST" ]]; then
+    export RUNFILES_MANIFEST_FILE="$0.runfiles/MANIFEST"
+  elif [[ -f "$0.runfiles/bazel_tools/tools/bash/runfiles/runfiles.bash" ]]; then
+    export RUNFILES_DIR="$0.runfiles"
+  fi
+fi
+if [[ -f "${RUNFILES_DIR:-/dev/null}/bazel_tools/tools/bash/runfiles/runfiles.bash" ]]; then
+  source "${RUNFILES_DIR}/bazel_tools/tools/bash/runfiles/runfiles.bash"
+elif [[ -f "${RUNFILES_MANIFEST_FILE:-/dev/null}" ]]; then
+  source "$(grep -m1 "^bazel_tools/tools/bash/runfiles/runfiles.bash " \
+            "$RUNFILES_MANIFEST_FILE" | cut -d ' ' -f 2-)"
+else
+  echo >&2 "ERROR: cannot find @bazel_tools//tools/bash/runfiles:runfiles.bash"
+  exit 1
+fi
+# --- end runfiles.bash initialization ---
+"""
+        wrapper = hs.actions.declare_file("coverage_wrapper.sh")
+        wrapper_content = bash_runfiles_boilerplate + """
+set -x
+binary_path=$(rlocation {})
+tix_file_location={}
+$binary_path "$@"
+""".format(binary_path, tix_file_location)
+        hs.actions.write(wrapper, wrapper_content, is_executable = True)
+        executable = wrapper
+
     return [
         build_info,
         bin_info,
         DefaultInfo(
-            executable = binary,
+            executable = executable,
             files = target_files,
             runfiles = ctx.runfiles(
-                files = set.to_list(solibs),
+                files = set.to_list(solibs) +
+                        [
+                            ctx.file._bazel_tools_bash_runfiles,
+                            binary,
+                        ],
                 collect_data = True,
             ),
         ),
