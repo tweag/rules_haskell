@@ -4,6 +4,7 @@ exports_files(
         "private/ghci_repl_wrapper.sh",
         "private/haddock_wrapper.sh.tpl",
         "private/coverage_wrapper.sh.tpl",
+        "private/osx_cc_wrapper.sh.tpl",
     ],
 )
 

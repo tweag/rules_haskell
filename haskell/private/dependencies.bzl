@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
     "CcSkylarkApiProviderHacked",
@@ -19,63 +20,115 @@ load(
 )
 load(":private/set.bzl", "set")
 
+def _cc_get_static_lib(lib_info):
+    """Return the library to use in static linking mode.
+
+    This returns the first available library artifact in the following order:
+    - static_library
+    - pic_static_library
+    - dynamic_library
+    - interface_library
+
+    Args:
+      lib_info: LibraryToLink provider.
+
+    Returns:
+      File: The library to link against in static mode.
+    """
+    if lib_info.static_library:
+        return lib_info.static_library
+    elif lib_info.pic_static_library:
+        return lib_info.pic_static_library
+    elif lib_info.dynamic_library:
+        return lib_info.dynamic_library
+    else:
+        return lib_info.interface_library
+
+def _cc_get_dynamic_lib(lib_info):
+    """Return the library to use in dynamic linking mode.
+
+    This returns the first available library artifact in the following order:
+    - dynamic_library
+    - interface_library
+    - pic_static_library
+    - static_library
+
+    Args:
+      lib_info: LibraryToLink provider.
+
+    Returns:
+      File: The library to link against in dynamic mode.
+    """
+    if lib_info.dynamic_library:
+        return lib_info.dynamic_library
+    elif lib_info.interface_library:
+        return lib_info.interface_library
+    elif lib_info.pic_static_library:
+        return lib_info.pic_static_library
+    else:
+        return lib_info.static_library
+
 def _HaskellCcInfo_from_CcInfo(ctx, cc_info):
-    static_linking = cc_info.linking_context.static_mode_params_for_executable
-    dynamic_linking = cc_info.linking_context.dynamic_mode_params_for_executable
-    manglings = {
-        get_lib_name(l.original_artifact()): get_lib_name(l.artifact())
-        for l in dynamic_linking.libraries_to_link.to_list()
-    }
+    libs_to_link = cc_info.linking_context.libraries_to_link
     static_libs_to_link = []
-    for l in static_linking.libraries_to_link.to_list():
+    dynamic_libs_to_link = []
+    static_libs_for_runtime = []
+    dynamic_libs_for_runtime = []
+    for l in libs_to_link:
+        _static_lib = _cc_get_static_lib(l)
+        dynamic_lib = _cc_get_dynamic_lib(l)
+
         # Bazel itself only mangles dynamic libraries, not static libraries.
         # However, we need the library name of the static and dynamic version
         # of a library to match so that we can refer to both with one entry in
         # the package configuration file. Here we rename any static archives
         # with mismatching mangled dynamic library name.
-        orig_lib = l.original_artifact()
-        mangled_lib = l.artifact()
-        orig_name = get_lib_name(orig_lib)
-        mangled_name = get_lib_name(mangled_lib)
-        if mangled_name != manglings[orig_name]:
-            ext = orig_lib.extension
-            link_lib = ctx.actions.declare_file(
-                "lib%s.%s" % (manglings[orig_name], ext),
+        static_name = get_lib_name(_static_lib)
+        dynamic_name = get_lib_name(dynamic_lib)
+        if static_name != dynamic_name:
+            ext = _static_lib.extension
+            static_lib = ctx.actions.declare_file(
+                "lib%s.%s" % (dynamic_name, ext),
             )
-            ln(ctx, orig_lib, link_lib)
-            static_libs_to_link.append(struct(
-                lib = orig_lib,
-                mangled_lib = link_lib,
-            ))
+            ln(ctx, _static_lib, static_lib)
         else:
-            static_libs_to_link.append(struct(
-                lib = orig_lib,
-                mangled_lib = mangled_lib,
-            ))
-    static_libs_to_link = depset(
-        direct = static_libs_to_link,
-        order = "topological",
-    )
-    dynamic_libs_to_link = depset(
-        direct = [
-            struct(
-                lib = l.original_artifact(),
-                mangled_lib = l.artifact(),
-            )
-            for l in dynamic_linking.libraries_to_link.to_list()
-        ],
-        order = "topological",
-    )
+            static_lib = _static_lib
+
+        static_libs_to_link.append(static_lib)
+        if is_shared_library(static_lib):
+            static_libs_for_runtime.append(static_lib)
+        dynamic_libs_to_link.append(dynamic_lib)
+        if is_shared_library(dynamic_lib):
+            dynamic_libs_for_runtime.append(dynamic_lib)
+
     return HaskellCcInfo(
         static_linking = struct(
-            libraries_to_link = static_libs_to_link,
-            dynamic_libraries_for_runtime = static_linking.dynamic_libraries_for_runtime,
-            user_link_flags = static_linking.user_link_flags,
+            libraries_to_link = depset(
+                direct = static_libs_to_link,
+                order = "topological",
+            ),
+            dynamic_libraries_for_runtime = depset(
+                direct = static_libs_for_runtime,
+                order = "topological",
+            ),
+            user_link_flags = depset(
+                direct = cc_info.linking_context.user_link_flags,
+                order = "topological",
+            ),
         ),
         dynamic_linking = struct(
-            libraries_to_link = dynamic_libs_to_link,
-            dynamic_libraries_for_runtime = dynamic_linking.dynamic_libraries_for_runtime,
-            user_link_flags = dynamic_linking.user_link_flags,
+            libraries_to_link = depset(
+                direct = dynamic_libs_to_link,
+                order = "topological",
+            ),
+            dynamic_libraries_for_runtime = depset(
+                direct = dynamic_libs_for_runtime,
+                order = "topological",
+            ),
+            user_link_flags = depset(
+                direct = cc_info.linking_context.user_link_flags,
+                order = "topological",
+            ),
         ),
     )
 
