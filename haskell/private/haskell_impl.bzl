@@ -188,7 +188,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     executable = binary
 
-    if True or hs.coverage_enabled:
+    if hs.coverage_enabled:
         binary_path = ctx.workspace_name + "/" + binary.short_path
         tix_file_location = hs.label.name + ".tix"
         bash_runfiles_boilerplate = """\
