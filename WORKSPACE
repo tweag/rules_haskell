@@ -34,6 +34,10 @@ load(
     "haskell_package_repository_dummy",
 )
 load(
+    "@io_tweag_rules_haskell//tests/start-script:start_script_repository_dummy.bzl",
+    "start_script_repository_dummy",
+)
+load(
     "@io_tweag_rules_haskell//:constants.bzl",
     "bindists_ghc_version",
     "ghc_version",
@@ -241,6 +245,11 @@ local_repository(
 # dummy repo for the external haskell repo test (hazel)
 haskell_package_repository_dummy(
     name = "haskell_package_repository_dummy",
+)
+
+# dummy repo for testing the start script
+start_script_repository_dummy(
+    name = "start_script_repository_dummy",
 )
 
 # For Skydoc
