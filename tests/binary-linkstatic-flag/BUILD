@@ -3,7 +3,7 @@ load(
     "haskell_library",
     "haskell_test",
 )
-load("//tests:inline_tests.bzl", "sh_inline_test")
+load("//:bazel/inline_tests.bzl", "sh_inline_test")
 
 # test whether `linkstatic` works as expected
 package(default_testonly = 1)

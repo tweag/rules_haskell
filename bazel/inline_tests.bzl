@@ -1,24 +1,8 @@
-# features sh_inline_test and py_inline_test,
+# features `sh_inline_test` and `py_inline_test`,
 # which are like their respective builtin rules,
 # but their scripts can be given inline as a string.
 
-load("@bazel_skylib//lib:shell.bzl", "shell")
-
-def quote_make_variables(s):
-    """Quote all genrule “Make” Variables in a string."""
-    return s.replace("$", "$$")
-
-def target_from_string(name, string):
-    """Write a skylark string to a target."""
-    native.genrule(
-        name = name + "-file",
-        outs = [name],
-        # this is exceptionally ugly.
-        cmd = """echo -n {quoted} > $(@)""".format(
-            # but should at least be quoted right
-            quoted = shell.quote(quote_make_variables(string)),
-        ),
-    )
+load("//:bazel/string_to_target.bzl", "string_to_target")
 
 bash_runfiles_boilerplate = """\
 # Copy-pasted from Bazel's Bash runfiles library (tools/bash/runfiles/runfiles.bash).
@@ -52,7 +36,7 @@ def sh_inline_test(name, script, **kwargs):
     script_name = name + ".sh"
     script = bash_runfiles_boilerplate + script
 
-    target_from_string(script_name, script)
+    string_to_target(script_name, script)
 
     deps = kwargs.pop("deps", [])
 
@@ -76,7 +60,7 @@ def py_inline_test(name, script, **kwargs):
     script_name = name + ".py"
     script = python_runfiles_boilerplate + script
 
-    target_from_string(script_name, script)
+    string_to_target(script_name, script)
 
     deps = kwargs.pop("deps", [])
     srcs = kwargs.pop("srcs", [])
