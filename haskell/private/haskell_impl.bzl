@@ -160,7 +160,6 @@ def _haskell_binary_common_impl(ctx, is_test):
             with_profiling = True,
             main_function = ctx.attr.main_function,
             version = ctx.attr.version,
-            is_test = is_test,
             mix_files = mix_files,
         )
 
