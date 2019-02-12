@@ -219,12 +219,12 @@ def _haskell_binary_common_impl(ctx, is_test):
     executable = binary
 
     if inspect_coverage:
-        binary_path = ctx.workspace_name + "/" + binary.short_path
-        hpc_path = ctx.workspace_name + "/" + hs.toolchain.tools.hpc.short_path
+        binary_path = paths.join(ctx.workspace_name, binary.short_path)
+        hpc_path = paths.join(ctx.workspace_name, hs.toolchain.tools.hpc.short_path)
         tix_file_path = hs.label.name + ".tix"
         mix_file_paths = ""
         for m in conditioned_mix_files:
-            mix_file_paths += """"{}/{}" """.format(ctx.workspace_name, m.short_path)
+            mix_file_paths += paths.join(ctx.workspace_name, m.short_path) + " "
         wrapper = hs.actions.declare_file("coverage_wrapper.sh")
         wrapper_content = _wrap_binary_for_coverage(
             binary_path,
