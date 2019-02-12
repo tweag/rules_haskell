@@ -31,6 +31,7 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/providers.bzl", "external_libraries_get_mangled")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/shell_utils.bzl", "runfiles_boilerplate")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -68,6 +69,33 @@ def _replace_extensions(srcs_files, extension):
 
 def _should_inspect_coverage(ctx, is_test):
     return is_test and ctx.attr.expected_expression_coverage > 0
+
+def _wrap_binary_for_coverage(binary_path, hpc_path, tix_file_path, expected_expression_coverage, mix_file_paths):
+    return runfiles_boilerplate + """
+ERRORCOLOR='\033[1;31m'
+CLEARCOLOR='\033[0m'
+binary_path=$(rlocation {})
+hpc_path=$(rlocation {})
+tix_file_path={}
+expected_expression_coverage={}
+hpc_dir_args=""
+for m in {}
+do
+  absolute_mix_file_path=$(rlocation $m)
+  hpc_dir_args="$hpc_dir_args --hpcdir=$(dirname $absolute_mix_file_path)"
+done
+$binary_path "$@"
+# cat $tix_file_path
+$hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
+echo "Overall report"
+cat __hpc_coverage_report
+expression_coverage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
+if [ $expression_coverage -lt $expected_expression_coverage ]
+then
+  echo "\n==>$ERRORCOLOR Inadequate expression coverage.$CLEARCOLOR Expected $expected_expression_coverage%, but actual coverage was $ERRORCOLOR$(($expression_coverage))%$CLEARCOLOR.\n"
+  exit 1
+fi
+""".format(binary_path, hpc_path, tix_file_path, expected_expression_coverage, mix_file_paths)
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
@@ -199,56 +227,14 @@ def _haskell_binary_common_impl(ctx, is_test):
         mix_file_paths = ""
         for m in c.conditioned_mix_files:
             mix_file_paths += """"{}/{}" """.format(ctx.workspace_name, m.short_path)
-        bash_runfiles_boilerplate = """\
-# Copy-pasted from Bazel's Bash runfiles library (tools/bash/runfiles/runfiles.bash).
-set -euo pipefail
-if [[ ! -d "${RUNFILES_DIR:-/dev/null}" && ! -f "${RUNFILES_MANIFEST_FILE:-/dev/null}" ]]; then
-  if [[ -f "$0.runfiles_manifest" ]]; then
-    export RUNFILES_MANIFEST_FILE="$0.runfiles_manifest"
-  elif [[ -f "$0.runfiles/MANIFEST" ]]; then
-    export RUNFILES_MANIFEST_FILE="$0.runfiles/MANIFEST"
-  elif [[ -f "$0.runfiles/bazel_tools/tools/bash/runfiles/runfiles.bash" ]]; then
-    export RUNFILES_DIR="$0.runfiles"
-  fi
-fi
-if [[ -f "${RUNFILES_DIR:-/dev/null}/bazel_tools/tools/bash/runfiles/runfiles.bash" ]]; then
-  source "${RUNFILES_DIR}/bazel_tools/tools/bash/runfiles/runfiles.bash"
-elif [[ -f "${RUNFILES_MANIFEST_FILE:-/dev/null}" ]]; then
-  source "$(grep -m1 "^bazel_tools/tools/bash/runfiles/runfiles.bash " \
-            "$RUNFILES_MANIFEST_FILE" | cut -d ' ' -f 2-)"
-else
-  echo >&2 "ERROR: cannot find @bazel_tools//tools/bash/runfiles:runfiles.bash"
-  exit 1
-fi
-# --- end runfiles.bash initialization ---
-"""
         wrapper = hs.actions.declare_file("coverage_wrapper.sh")
-        wrapper_content = bash_runfiles_boilerplate + """
-ERRORCOLOR='\033[1;31m'
-CLEARCOLOR='\033[0m'
-binary_path=$(rlocation {})
-hpc_path=$(rlocation {})
-tix_file_path={}
-expected_expression_coverage={}
-hpc_dir_args=""
-for m in {}
-do
-  absolute_mix_file_path=$(rlocation $m)
-  hpc_dir_args="$hpc_dir_args --hpcdir=$(dirname $absolute_mix_file_path)"
-done
-$binary_path "$@"
-# cat $tix_file_path
-$hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
-echo "Overall report"
-cat __hpc_coverage_report
-expression_coverage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
-if [ $expression_coverage -lt $expected_expression_coverage ]
-then
-  echo "\n==>$ERRORCOLOR Inadequate expression coverage.$CLEARCOLOR Expected $expected_expression_coverage%, but actual coverage was $ERRORCOLOR$(($expression_coverage))%$CLEARCOLOR.\n"
-  exit 1
-fi
-echo "END"
-""".format(binary_path, hpc_path, tix_file_path, ctx.attr.expected_expression_coverage, mix_file_paths)
+        wrapper_content = _wrap_binary_for_coverage(
+            binary_path,
+            hpc_path,
+            tix_file_path,
+            ctx.attr.expected_expression_coverage,
+            mix_file_paths,
+        )
         hs.actions.write(wrapper, wrapper_content, is_executable = True)
         executable = wrapper
 
