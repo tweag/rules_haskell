@@ -4,48 +4,80 @@ load(
     "CcSkylarkApiProviderHacked",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
+    "HaskellCcInfo",
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
+    "empty_HaskellCcInfo",
+    "merge_HaskellCcInfo",
 )
 load(
     ":private/path_utils.bzl",
+    "get_lib_name",
     "is_shared_library",
     "is_static_library",
     "ln",
 )
 load(":private/set.bzl", "set")
 
-def _mangle_lib(ctx, label, lib, preserve_name):
-    """Create a symlink to a library, with a longer name.
-
-    The built-in cc_* rules don't link against a library
-    directly. They link against a symlink whose name is guaranteed to be
-    unique across the entire workspace. This disambiguates
-    libraries with the same name. This process is called "mangling".
-    The built-in rules don't expose mangling functionality directly (see
-    https://github.com/bazelbuild/bazel/issues/4581). But this function
-    emulates the built-in dynamic library mangling.
-
-    Args:
-      ctx: Rule context.
-      label: the label to use as a qualifier for the library name.
-      solib: the library.
-      preserve_name: Bool, whether given `lib` should be returned unchanged.
-
-    Returns:
-      File: the created symlink or the original lib.
-    """
-
-    if preserve_name:
-        return lib
-
-    components = [c for c in [label.workspace_root, label.package, label.name] if c]
-    qualifier = "/".join(components).replace("_", "_U").replace("/", "_S")
-    quallib = ctx.actions.declare_file("lib" + qualifier + "_" + lib.basename)
-
-    ln(ctx, lib, quallib)
-
-    return quallib
+def _HaskellCcInfo_from_CcInfo(ctx, cc_info):
+    static_linking = cc_info.linking_context.static_mode_params_for_executable
+    dynamic_linking = cc_info.linking_context.dynamic_mode_params_for_executable
+    manglings = {
+        get_lib_name(l.original_artifact()): get_lib_name(l.artifact())
+        for l in dynamic_linking.libraries_to_link.to_list()
+    }
+    static_libs_to_link = []
+    for l in static_linking.libraries_to_link.to_list():
+        # Bazel itself only mangles dynamic libraries, not static libraries.
+        # However, we need the library name of the static and dynamic version
+        # of a library to match so that we can refer to both with one entry in
+        # the package configuration file. Here we rename any static archives
+        # with mismatching mangled dynamic library name.
+        orig_lib = l.original_artifact()
+        mangled_lib = l.artifact()
+        orig_name = get_lib_name(orig_lib)
+        mangled_name = get_lib_name(mangled_lib)
+        if mangled_name != manglings[orig_name]:
+            ext = orig_lib.extension
+            link_lib = ctx.actions.declare_file(
+                "lib%s.%s" % (manglings[orig_name], ext),
+            )
+            ln(ctx, orig_lib, link_lib)
+            static_libs_to_link.append(struct(
+                lib = orig_lib,
+                mangled_lib = link_lib,
+            ))
+        else:
+            static_libs_to_link.append(struct(
+                lib = orig_lib,
+                mangled_lib = mangled_lib,
+            ))
+    static_libs_to_link = depset(
+        direct = static_libs_to_link,
+        order = "topological",
+    )
+    dynamic_libs_to_link = depset(
+        direct = [
+            struct(
+                lib = l.original_artifact(),
+                mangled_lib = l.artifact(),
+            )
+            for l in dynamic_linking.libraries_to_link.to_list()
+        ],
+        order = "topological",
+    )
+    return HaskellCcInfo(
+        static_linking = struct(
+            libraries_to_link = static_libs_to_link,
+            dynamic_libraries_for_runtime = static_linking.dynamic_libraries_for_runtime,
+            user_link_flags = static_linking.user_link_flags,
+        ),
+        dynamic_linking = struct(
+            libraries_to_link = dynamic_libs_to_link,
+            dynamic_libraries_for_runtime = dynamic_linking.dynamic_libraries_for_runtime,
+            user_link_flags = dynamic_linking.user_link_flags,
+        ),
+    )
 
 def gather_dep_info(ctx):
     """Collapse dependencies into a single `HaskellBuildInfo`.
@@ -69,10 +101,11 @@ def gather_dep_info(ctx):
         dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
         prebuilt_dependencies = set.empty(),
-        # a set of struct(lib, mangled_lib)
-        external_libraries = set.empty(),
         direct_prebuilt_deps = set.empty(),
-        extra_libraries = set.empty(),
+        cc_dependencies = empty_HaskellCcInfo(),
+        transitive_cc_dependencies = empty_HaskellCcInfo(),
+        import_dependencies = set.empty(),
+        transitive_import_dependencies = set.empty(),
     )
 
     for dep in ctx.attr.deps:
@@ -92,9 +125,11 @@ def gather_dep_info(ctx):
                 dynamic_libraries = set.mutable_union(acc.dynamic_libraries, binfo.dynamic_libraries),
                 interface_dirs = set.mutable_union(acc.interface_dirs, binfo.interface_dirs),
                 prebuilt_dependencies = set.mutable_union(acc.prebuilt_dependencies, binfo.prebuilt_dependencies),
-                external_libraries = set.mutable_union(acc.external_libraries, binfo.external_libraries),
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
-                extra_libraries = acc.extra_libraries,
+                cc_dependencies = acc.cc_dependencies,
+                transitive_cc_dependencies = merge_HaskellCcInfo(acc.transitive_cc_dependencies, binfo.transitive_cc_dependencies),
+                import_dependencies = acc.import_dependencies,
+                transitive_import_dependencies = set.mutable_union(acc.transitive_import_dependencies, binfo.transitive_import_dependencies),
             )
         elif HaskellPrebuiltPackageInfo in dep:
             pkg = dep[HaskellPrebuiltPackageInfo]
@@ -107,30 +142,17 @@ def gather_dep_info(ctx):
                 dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
                 prebuilt_dependencies = set.mutable_insert(acc.prebuilt_dependencies, pkg),
-                external_libraries = acc.external_libraries,
                 direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
-                extra_libraries = acc.extra_libraries,
+                cc_dependencies = acc.cc_dependencies,
+                transitive_cc_dependencies = acc.transitive_cc_dependencies,
+                import_dependencies = acc.import_dependencies,
+                transitive_import_dependencies = acc.transitive_import_dependencies,
             )
         elif CcInfo in dep:
             # The final link of a binary must include all static libraries we
             # depend on, including transitives ones. Theses libs are provided
             # in the `CcInfo` provider.
-            static_linking = dep[CcInfo].linking_context.static_mode_params_for_executable
-            transitive_static_deps = set.from_list([
-                struct(
-                    lib = l.original_artifact(),
-                    mangled_lib = _mangle_lib(ctx, dep.label, l.original_artifact(), False),
-                )
-                for l in static_linking.libraries_to_link.to_list()
-            ])
-            dynamic_linking = dep[CcInfo].linking_context.dynamic_mode_params_for_executable
-            transitive_dynamic_deps = set.from_list([
-                struct(
-                    lib = l.original_artifact(),
-                    mangled_lib = _mangle_lib(ctx, dep.label, l.original_artifact(), False),
-                )
-                for l in dynamic_linking.libraries_to_link.to_list()
-            ])
+            hs_cc_info = _HaskellCcInfo_from_CcInfo(ctx, dep[CcInfo])
             acc = HaskellBuildInfo(
                 package_ids = acc.package_ids,
                 package_confs = acc.package_confs,
@@ -140,28 +162,24 @@ def gather_dep_info(ctx):
                 dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
                 prebuilt_dependencies = acc.prebuilt_dependencies,
-                external_libraries = set.mutable_union(
-                    set.mutable_union(
-                        acc.external_libraries,  # this is the mutated set
-                        transitive_dynamic_deps,
-                    ),
-                    transitive_static_deps,
-                ),
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
-                extra_libraries = set.mutable_union(
-                    acc.extra_libraries,
-                    transitive_static_deps,
+                cc_dependencies = merge_HaskellCcInfo(
+                    acc.cc_dependencies,
+                    hs_cc_info,
                 ),
+                transitive_cc_dependencies = merge_HaskellCcInfo(
+                    acc.transitive_cc_dependencies,
+                    hs_cc_info,
+                ),
+                import_dependencies = acc.import_dependencies,
+                transitive_import_dependencies = acc.transitive_import_dependencies,
             )
         elif CcSkylarkApiProviderHacked in dep:
             # If the provider is CcSkylarkApiProviderHacked, then the .so
             # files come from haskell_cc_import. In that case there are no
             # indirect shared library dependencies.
-            transitive_dynamic_deps = set.from_list([
-                struct(
-                    lib = f,
-                    mangled_lib = _mangle_lib(ctx, dep.label, f, True),
-                )
+            import_deps = set.from_list([
+                f
                 for f in dep.files.to_list()
                 if is_shared_library(f)
             ])
@@ -177,12 +195,17 @@ def gather_dep_info(ctx):
                 dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
                 prebuilt_dependencies = acc.prebuilt_dependencies,
-                external_libraries = set.mutable_union(
-                    acc.external_libraries,  # this is the mutated set
-                    transitive_dynamic_deps,
-                ),
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
-                extra_libraries = acc.extra_libraries,
+                cc_dependencies = acc.cc_dependencies,
+                transitive_cc_dependencies = acc.transitive_cc_dependencies,
+                import_dependencies = set.mutable_union(
+                    acc.import_dependencies,
+                    import_deps,
+                ),
+                transitive_import_dependencies = set.mutable_union(
+                    acc.transitive_import_dependencies,
+                    import_deps,
+                ),
             )
 
     return acc

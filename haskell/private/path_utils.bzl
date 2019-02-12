@@ -2,7 +2,6 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/set.bzl", "set")
-load(":private/providers.bzl", "external_libraries_get_mangled")
 
 def module_name(hs, f, rel_path = None):
     """Given Haskell source file path, turn it into a dot-separated module name.
@@ -104,26 +103,11 @@ def declare_compiled(hs, src, ext, directory = None, rel_path = None):
 
     return hs.actions.declare_file(fp_with_dir)
 
-def make_external_libs_path(ext_libs):
-    """Return a PATH string for an external_libraries set.
-
-    Args:
-      ext_libs: external_libraries field from HaskellBuildInfo
-      prefix: String, an optional prefix to add to every path.
-
-    Returns:
-      String: paths to the given libraries separated by ":".
-    """
-
-    # TODO: should we always use the path of the mangled library?
-    # Darwin sometimes needs the unmangled path as well.
-    return make_path(set.map(ext_libs, external_libraries_get_mangled))
-
 def make_path(libs, prefix = None):
     """Return a string value for using as LD_LIBRARY_PATH or similar.
 
     Args:
-      libs: Set of library files that should be available
+      libs: List of library files that should be available
       prefix: String, an optional prefix to add to every path.
 
     Returns:
@@ -131,7 +115,7 @@ def make_path(libs, prefix = None):
     """
     r = []
 
-    for lib in set.to_list(libs):
+    for lib in libs:
         lib_dir = paths.dirname(lib.path)
         if prefix:
             lib_dir = paths.join(prefix, lib_dir)
@@ -139,6 +123,39 @@ def make_path(libs, prefix = None):
         r.append(lib_dir)
 
     return ":".join(r)
+
+def darwin_convert_to_dylibs(hs, libs):
+    """Convert .so dynamic libraries to .dylib.
+
+    Bazel's cc_library rule will create .so files for dynamic libraries even
+    on MacOS. GHC's builtin linker, which is used during compilation, GHCi,
+    or doctests, hard-codes the assumption that all dynamic libraries on MacOS
+    end on .dylib. This function serves as an adaptor and produces symlinks
+    from a .dylib version to the .so version for every dynamic library
+    dependencies that does not end on .dylib.
+
+    Args:
+      hs: Haskell context.
+      libs: List of library files dynamic or static.
+
+    Returns:
+      List of library files where all dynamic libraries end on .dylib.
+    """
+    lib_prefix = "_dylibs"
+    new_libs = []
+    for lib in libs:
+        if is_shared_library(lib) and lib.extension != "dylib":
+            dylib_name = paths.join(
+                target_unique_name(hs, lib_prefix),
+                lib.dirname,
+                "lib" + get_lib_name(lib) + ".dylib",
+            )
+            dylib = hs.actions.declare_file(dylib_name)
+            ln(hs, lib, dylib)
+            new_libs.append(dylib)
+        else:
+            new_libs.append(lib)
+    return new_libs
 
 def get_lib_name(lib):
     """Return name of library by dropping extension and "lib" prefix.

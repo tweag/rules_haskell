@@ -2,7 +2,7 @@ load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
 )
-load("//tests:sh_inline_test.bzl", "sh_inline_test")
+load("//tests:inline_tests.bzl", "sh_inline_test")
 load(":get_library_files.bzl", "get_libraries_as_runfiles")
 
 # test whether `linkstatic` works as expected

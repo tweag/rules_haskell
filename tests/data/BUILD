@@ -3,5 +3,13 @@
 cc_library(
     name = "ourclibrary",
     srcs = [":ourclibrary.c"],
-    visibility = ["//tests:__subpackages__"],
+    linkstatic = False,
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "ourclibrary-static",
+    srcs = [":ourclibrary.c"],
+    linkstatic = True,
+    visibility = ["//visibility:public"],
 )

@@ -10,10 +10,10 @@ load(
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
-    "make_external_libs_path",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
+load(":private/providers.bzl", "get_libs_for_ghc_linker")
 load(":private/set.bzl", "set")
 
 def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
@@ -244,6 +244,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     for f in set.to_list(source_files):
         args.add(f)
 
+    # Transitive library dependencies for runtime.
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(hs, dep_info)
+
     return DefaultCompileInfo(
         args = args,
         ghc_args = ghc_args,
@@ -259,7 +262,8 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             set.to_depset(dep_info.dynamic_libraries),
-            depset([e.mangled_lib for e in set.to_list(dep_info.external_libraries)]),
+            depset(library_deps),
+            depset(ld_library_deps),
             java.inputs,
             locale_archive_depset,
         ]),
@@ -272,9 +276,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         extra_source_files = extra_srcs,
         import_dirs = import_dirs,
         env = dicts.add(
-            {
-                "LD_LIBRARY_PATH": make_external_libs_path(dep_info.external_libraries),
-            },
+            ghc_env,
             java.env,
             hs.env,
         ),

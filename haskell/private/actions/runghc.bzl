@@ -6,17 +6,13 @@ load(
     "get_lib_name",
     "is_shared_library",
     "ln",
-    "make_path",
     "target_unique_name",
 )
 load(
     ":private/set.bzl",
     "set",
 )
-load(
-    ":private/providers.bzl",
-    "external_libraries_get_mangled",
-)
+load(":private/providers.bzl", "get_libs_for_ghc_linker")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_runghc(
@@ -60,23 +56,27 @@ def build_haskell_runghc(
         for idir in set.to_list(lib_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
-    # External shared libraries that we need to make available to runghc.
-    # This is currently the shared libraries made available via haskell_cc_import's.
-    # We need to filter out the static libraries as including them here would
-    # cause linking errors as ghci cannot load static libraries.
-    mangled_external_shared_libraries = \
-        [
-            e.mangled_lib
-            for e in set.to_list(build_info.external_libraries)
-            if is_shared_library(e.mangled_lib)
-        ]
+    link_ctx = build_info.cc_dependencies.dynamic_linking
+    libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
+    import_libs_to_link = set.to_list(build_info.import_dependencies)
 
+    # External shared libraries that we need to make available to runghc.
+    # This only includes dynamic libraries as including static libraries here
+    # would cause linking errors as ghci cannot load static libraries.
+    # XXX: Verify that static libraries can't be loaded by GHCi.
     seen_libs = set.empty()
-    for lib in mangled_external_shared_libraries:
+    for lib in libs_to_link + import_libs_to_link:
         lib_name = get_lib_name(lib)
-        if not set.is_member(seen_libs, lib_name):
+        if is_shared_library(lib) and not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)
             args += ["-l{0}".format(lib_name)]
+
+    # Transitive library dependencies to have in runfiles.
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        build_info,
+        path_prefix = "$RULES_HASKELL_EXEC_ROOT",
+    )
 
     runghc_file = hs.actions.declare_file(target_unique_name(hs, "runghc"))
 
@@ -103,13 +103,8 @@ def build_haskell_runghc(
         template = runghc_wrapper,
         output = runghc_file,
         substitutions = {
-            "{LDLIBPATH}": make_path(
-                set.union(
-                    build_info.dynamic_libraries,
-                    set.map(build_info.external_libraries, external_libraries_get_mangled),
-                ),
-                prefix = "$RULES_HASKELL_EXEC_ROOT",
-            ),
+            "{LIBPATH}": ghc_env["LIBRARY_PATH"],
+            "{LDLIBPATH}": ghc_env["LD_LIBRARY_PATH"],
             "{TOOL}": hs.tools.runghc.path,
             "{SCRIPT_LOCATION}": output.path,
             "{ARGS}": " ".join([shell.quote(a) for a in runghc_args]),
@@ -127,7 +122,8 @@ def build_haskell_runghc(
             runghc_file,
         ]),
         set.to_depset(package_caches),
-        depset(mangled_external_shared_libraries),
+        depset(library_deps),
+        depset(ld_library_deps),
         set.to_depset(source_files),
     ])
     ln(hs, runghc_file, output, extra_inputs)

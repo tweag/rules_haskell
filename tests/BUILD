@@ -1,4 +1,4 @@
-load(":sh_inline_test.bzl", "sh_inline_test")
+load(":inline_tests.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("//tests:rule_test_exe.bzl", "rule_test_exe")
 load(
@@ -12,6 +12,10 @@ load(
     "haskell_proto_toolchain",
     "haskell_test",
     "haskell_toolchain",
+)
+load(
+    "//:constants.bzl",
+    "ghc_version",
 )
 
 package(default_testonly = 1)
@@ -236,9 +240,6 @@ rule_test(
     rule = "//tests/java_classpath",
 )
 
-# Keep in sync with test_ghc_version in WORKSPACE.
-ghc_version = "8.6.3"
-
 rule_test(
     name = "test-cc_haskell_import-output",
     size = "small",
@@ -265,18 +266,17 @@ rule_test(
     tags = ["requires_threaded_rts"],
 )
 
-# TODO(Profpatsch) blocked on https://github.com/bazelbuild/bazel/issues/6093
-# (among possibly others ..)
-# sh_test(
-#     name = "test-cc_haskell_import_python",
-#     size = "small",
-#     srcs = ["scripts/exec.sh"],
-#     args = ["tests/cc_haskell_import/python_add_one"],
-#     data = [
-#         "//tests/cc_haskell_import:python_add_one",
-#         "@bazel_tools//tools/bash/runfiles",
-#     ],
-# )
+sh_test(
+    name = "test-cc_haskell_import_python",
+    size = "small",
+    srcs = ["scripts/exec.sh"],
+    args = ["tests/cc_haskell_import/python_add_one"],
+    data = [
+        "//tests/cc_haskell_import:python_add_one",
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+    tags = ["requires_threaded_rts"],
+)
 
 sh_inline_test(
     name = "test-haskell_binary-with-link-flags",

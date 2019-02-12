@@ -6,6 +6,12 @@ exports_files(
     ],
 )
 
+# to make functions visible to unit tests
+exports_files(
+    ["private/actions/link.bzl"],
+    visibility = ["//tests/unit-tests:__pkg__"],
+)
+
 py_binary(
     name = "ls_modules",
     srcs = ["private/ls_modules.py"],

@@ -29,7 +29,7 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":private/providers.bzl", "HaskellCoverageInfo", "external_libraries_get_mangled")
+load(":private/providers.bzl", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/shell_utils.bzl", "runfiles_boilerplate")
 
@@ -164,7 +164,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             mix_files = mix_files,
         )
 
-    binary = link_binary(
+    (binary, solibs) = link_binary(
         hs,
         cc,
         dep_info,
@@ -174,11 +174,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         dynamic = False if hs.toolchain.is_windows else not ctx.attr.linkstatic,
         with_profiling = with_profiling,
         version = ctx.attr.version,
-    )
-
-    solibs = set.union(
-        set.map(dep_info.external_libraries, external_libraries_get_mangled),
-        dep_info.dynamic_libraries,
     )
 
     build_info = dep_info  # HaskellBuildInfo
@@ -250,7 +245,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             files = target_files,
             runfiles = ctx.runfiles(
                 files =
-                    set.to_list(solibs) +
+                    solibs +
                     c.conditioned_mix_files +
                     [
                         ctx.file._bazel_tools_bash_runfiles,
@@ -409,8 +404,10 @@ def haskell_library_impl(ctx):
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
-        external_libraries = dep_info.external_libraries,
-        extra_libraries = dep_info.extra_libraries,
+        cc_dependencies = dep_info.cc_dependencies,
+        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
+        import_dependencies = dep_info.import_dependencies,
+        transitive_import_dependencies = dep_info.transitive_import_dependencies,
     )
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),

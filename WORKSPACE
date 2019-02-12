@@ -29,6 +29,15 @@ load(
     "haskell_nixpkgs_package",
     "haskell_nixpkgs_packageset",
 )
+load(
+    "@io_tweag_rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
+    "haskell_package_repository_dummy",
+)
+load(
+    "@io_tweag_rules_haskell//:constants.bzl",
+    "bindists_ghc_version",
+    "ghc_version",
+)
 
 haskell_nixpkgs_package(
     name = "ghc",
@@ -53,13 +62,7 @@ nixpkgs_local_repository(
     nix_file = "//nixpkgs:default.nix",
 )
 
-test_ghc_version = "8.6.3"
-# XXX: We must currently keep a different GHC version for bindists
-# because 8.6.3 fails on Windows with Template Haskell.
-#
-# See: https://ghc.haskell.org/trac/ghc/ticket/16057 for details.
-
-bindists_ghc_version = "8.6.2"
+test_ghc_version = ghc_version
 
 test_compiler_flags = [
     "-XStandaloneDeriving",  # Flag used at compile time
@@ -114,6 +117,21 @@ nixpkgs_cc_configure(
 
 nixpkgs_package(
     name = "zlib",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "lib",
+    srcs = glob(["lib/**/*.so*", "lib/**/*.dylib", "lib/**/*.a"]),
+)
+
+cc_library(
+    name = "zlib",
+    linkstatic = 1,
+    srcs = [":lib"],
+    testonly = 1,
+)
+""",
     repository = "@nixpkgs",
 )
 
@@ -150,6 +168,14 @@ filegroup (
 haskell_cc_import(
     name = "zlib",
     shared_library = "@zlib//:lib",
+    hdrs = [":include"],
+    testonly = 1,
+    strip_include_prefix = "include",
+)
+
+cc_library(
+    name = "cc-zlib",
+    deps = ["@zlib//:zlib"],
     hdrs = [":include"],
     testonly = 1,
     strip_include_prefix = "include",
@@ -210,6 +236,11 @@ jvm_maven_import_external(
 local_repository(
     name = "c2hs_repo",
     path = "tests/c2hs/repo",
+)
+
+# dummy repo for the external haskell repo test (hazel)
+haskell_package_repository_dummy(
+    name = "haskell_package_repository_dummy",
 )
 
 # For Skydoc
