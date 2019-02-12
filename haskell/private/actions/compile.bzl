@@ -437,4 +437,5 @@ def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exp
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         exposed_modules_file = exposed_modules_file,
+        conditioned_mix_files = conditioned_mix_files,
     )

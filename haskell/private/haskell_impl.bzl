@@ -29,7 +29,7 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":private/providers.bzl", "external_libraries_get_mangled")
+load(":private/providers.bzl", "HaskellCoverageInfo", "external_libraries_get_mangled")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/shell_utils.bzl", "runfiles_boilerplate")
 
@@ -67,8 +67,8 @@ def _replace_extensions(srcs_files, extension):
         hpc_outputs.append(filename)
     return hpc_outputs
 
-def _should_inspect_coverage(ctx, is_test):
-    return is_test and ctx.attr.expected_expression_coverage > 0
+def _should_inspect_coverage(ctx, hs, is_test):
+    return hs.coverage_enabled and is_test and ctx.attr.expected_expression_coverage > 0
 
 def _wrap_binary_for_coverage(binary_path, hpc_path, tix_file_path, expected_expression_coverage, mix_file_paths):
     return runfiles_boilerplate + """
@@ -85,7 +85,6 @@ do
   hpc_dir_args="$hpc_dir_args --hpcdir=$(dirname $absolute_mix_file_path)"
 done
 $binary_path "$@"
-# cat $tix_file_path
 $hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
 echo "Overall report"
 cat __hpc_coverage_report
@@ -108,7 +107,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     compiler_flags = ctx.attr.compiler_flags
-    inspect_coverage = _should_inspect_coverage(ctx, is_test)
+    inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
     mix_files = _replace_extensions(srcs_files, ".mix") if inspect_coverage else []
 
@@ -129,6 +128,11 @@ def _haskell_binary_common_impl(ctx, is_test):
         inspect_coverage = inspect_coverage,
         mix_files = mix_files,
     )
+
+    conditioned_mix_files = c.conditioned_mix_files
+    for dep in ctx.attr.deps:
+        if HaskellCoverageInfo in dep:
+            conditioned_mix_files += dep[HaskellCoverageInfo].mix_files
 
     c_p = None
 
@@ -225,7 +229,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         hpc_path = ctx.workspace_name + "/" + hs.toolchain.tools.hpc.short_path
         tix_file_path = hs.label.name + ".tix"
         mix_file_paths = ""
-        for m in c.conditioned_mix_files:
+        for m in conditioned_mix_files:
             mix_file_paths += """"{}/{}" """.format(ctx.workspace_name, m.short_path)
         wrapper = hs.actions.declare_file("coverage_wrapper.sh")
         wrapper_content = _wrap_binary_for_coverage(
@@ -419,6 +423,16 @@ def haskell_library_impl(ctx):
         exposed_modules_file = c.exposed_modules_file,
         extra_source_files = c.extra_source_files,
     )
+
+    dependency_mix_files = []
+    for dep in ctx.attr.deps:
+        if HaskellCoverageInfo in dep:
+            dependency_mix_files += dep[HaskellCoverageInfo].mix_files
+
+    coverage_info = HaskellCoverageInfo(
+        mix_files = dependency_mix_files + c.conditioned_mix_files,
+    )
+
     target_files = depset([conf_file, cache_file])
 
     if hasattr(ctx, "outputs"):
@@ -467,6 +481,7 @@ def haskell_library_impl(ctx):
         build_info,
         lib_info,
         default_info,
+        coverage_info,
     ]
 
 def haskell_import_impl(ctx):
