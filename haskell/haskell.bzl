@@ -124,6 +124,10 @@ def _mk_binary_rule(**kwargs):
             version = attr.string(
                 doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
             ),
+            expected_expression_coverage = attr.int(
+                default = 0,
+                doc = "The expected amount of expressions covered by testing. This only applies to test rules.",
+            ),
             _bazel_tools_bash_runfiles = attr.label(
                 allow_single_file = True,
                 default = Label("@bazel_tools//tools/bash/runfiles:runfiles"),

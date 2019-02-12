@@ -66,6 +66,9 @@ def _replace_extensions(srcs_files, extension):
         hpc_outputs.append(filename)
     return hpc_outputs
 
+def _should_inspect_coverage(ctx, is_test):
+    return is_test and ctx.attr.expected_expression_coverage > 0
+
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx)
@@ -77,8 +80,9 @@ def _haskell_binary_common_impl(ctx, is_test):
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     compiler_flags = ctx.attr.compiler_flags
+    inspect_coverage = _should_inspect_coverage(ctx, is_test)
 
-    mix_files = _replace_extensions(srcs_files, ".mix") if hs.coverage_enabled else []
+    mix_files = _replace_extensions(srcs_files, ".mix") if inspect_coverage else []
 
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -94,7 +98,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         with_profiling = False,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
-        is_test = is_test,
+        inspect_coverage = inspect_coverage,
         mix_files = mix_files,
     )
 
@@ -188,9 +192,13 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     executable = binary
 
-    if hs.coverage_enabled:
+    if inspect_coverage:
         binary_path = ctx.workspace_name + "/" + binary.short_path
-        tix_file_location = hs.label.name + ".tix"
+        hpc_path = ctx.workspace_name + "/" + hs.toolchain.tools.hpc.short_path
+        tix_file_path = hs.label.name + ".tix"
+        mix_file_paths = ""
+        for m in c.conditioned_mix_files:
+            mix_file_paths += """"{}/{}" """.format(ctx.workspace_name, m.short_path)
         bash_runfiles_boilerplate = """\
 # Copy-pasted from Bazel's Bash runfiles library (tools/bash/runfiles/runfiles.bash).
 set -euo pipefail
@@ -216,11 +224,31 @@ fi
 """
         wrapper = hs.actions.declare_file("coverage_wrapper.sh")
         wrapper_content = bash_runfiles_boilerplate + """
-set -x
+ERRORCOLOR='\033[1;31m'
+CLEARCOLOR='\033[0m'
 binary_path=$(rlocation {})
-tix_file_location={}
+hpc_path=$(rlocation {})
+tix_file_path={}
+expected_expression_coverage={}
+hpc_dir_args=""
+for m in {}
+do
+  absolute_mix_file_path=$(rlocation $m)
+  hpc_dir_args="$hpc_dir_args --hpcdir=$(dirname $absolute_mix_file_path)"
+done
 $binary_path "$@"
-""".format(binary_path, tix_file_location)
+# cat $tix_file_path
+$hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
+echo "Overall report"
+cat __hpc_coverage_report
+expression_coverage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
+if [ $expression_coverage -lt $expected_expression_coverage ]
+then
+  echo "\n==>$ERRORCOLOR Inadequate expression coverage.$CLEARCOLOR Expected $expected_expression_coverage%, but actual coverage was $ERRORCOLOR$(($expression_coverage))%$CLEARCOLOR.\n"
+  exit 1
+fi
+echo "END"
+""".format(binary_path, hpc_path, tix_file_path, ctx.attr.expected_expression_coverage, mix_file_paths)
         hs.actions.write(wrapper, wrapper_content, is_executable = True)
         executable = wrapper
 
@@ -231,11 +259,14 @@ $binary_path "$@"
             executable = executable,
             files = target_files,
             runfiles = ctx.runfiles(
-                files = set.to_list(solibs) +
-                        [
-                            ctx.file._bazel_tools_bash_runfiles,
-                            binary,
-                        ],
+                files =
+                    set.to_list(solibs) +
+                    c.conditioned_mix_files +
+                    [
+                        ctx.file._bazel_tools_bash_runfiles,
+                        hs.toolchain.tools.hpc,
+                        binary,
+                    ],
                 collect_data = True,
             ),
         ),
