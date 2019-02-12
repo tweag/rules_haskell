@@ -1,6 +1,6 @@
 """Actions for compiling Haskell source code"""
 
-load(":private/packages.bzl", "expose_packages")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
@@ -134,14 +134,14 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     if hs.toolchain.is_darwin:
         ghc_args += ["-optl-Wl,-dead_strip_dylibs"]
 
-    ghc_args.extend(expose_packages(
+    ghc_args.extend(pkg_info_to_ghc_args(expose_packages(
         dep_info,
         lib_info = None,
         use_direct = True,
         use_my_pkg_id = my_pkg_id,
         custom_package_caches = None,
         version = version,
-    ))
+    )))
 
     header_files = []
     boot_files = []

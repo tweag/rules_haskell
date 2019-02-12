@@ -1,6 +1,6 @@
 """GHCi REPL support"""
 
-load(":private/packages.bzl", "expose_packages")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -49,7 +49,7 @@ def build_haskell_repl(
     # (loads source files and brings in scope the corresponding modules).
     args = ["-package", "base", "-package", "directory"]
 
-    args += expose_packages(
+    pkg_ghc_info = expose_packages(
         build_info,
         lib_info,
         use_direct = False,
@@ -57,6 +57,7 @@ def build_haskell_repl(
         custom_package_caches = package_caches,
         version = version,
     )
+    args += pkg_info_to_ghc_args(pkg_ghc_info)
 
     if lib_info != None:
         for idir in set.to_list(lib_info.import_dirs):

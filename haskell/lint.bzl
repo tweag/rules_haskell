@@ -8,7 +8,7 @@ load(
     "HaskellLintInfo",
 )
 load(":private/context.bzl", "haskell_context")
-load(":private/packages.bzl", "expose_packages")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
 load(
     ":private/path_utils.bzl",
     "target_unique_name",
@@ -54,14 +54,14 @@ def _haskell_lint_aspect_impl(target, ctx):
         "--make",
     ])
 
-    args.add_all(expose_packages(
+    args.add_all(pkg_info_to_ghc_args(expose_packages(
         build_info,
         lib_info,
         use_direct = False,
         use_my_pkg_id = None,
         custom_package_caches = None,
         version = ctx.rule.attr.version,
-    ))
+    )))
 
     sources = set.to_list(
         lib_info.source_files if lib_info != None else bin_info.source_files,
