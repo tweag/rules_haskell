@@ -16,6 +16,8 @@ jobs:
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
 
+      /c/bazel/bazel.exe test --config windows "//tests/data/..."
+
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."
