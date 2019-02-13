@@ -160,7 +160,8 @@ def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
         library_deps = darwin_convert_to_dylibs(hs, _library_deps)
 
         # GHC produces intermediate dylibs that load the unmangled libraries.
-        ld_library_deps = _ld_library_deps + [
+        # Additionally ghc 8.4 requires library_deps here although 8.6 does not
+        ld_library_deps = library_deps + _ld_library_deps + [
             lib
             for lib in unmangled_libs
             if is_shared_library(lib)
