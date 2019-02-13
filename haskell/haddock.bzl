@@ -221,7 +221,7 @@ def _haskell_doc_rule_impl(ctx):
             command = """
       mkdir -p "{doc_dir}"
       # Copy Haddocks of a dependency.
-      cp -R -L "{html_dir}" "{target_dir}"
+      cp -R -L "{html_dir}/." "{target_dir}"
       """.format(
                 doc_dir = doc_root_path,
                 html_dir = html_dir.path,
