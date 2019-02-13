@@ -1,4 +1,4 @@
--- | "Lib" header
+-- | "LibA" header
 {-# LANGUAGE CPP             #-}
 {-# LANGUAGE TemplateHaskell #-}
 

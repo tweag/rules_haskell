@@ -19,6 +19,23 @@ main = hspec $ do
   it "bazel test" $ do
     assertSuccess (bazel ["test", "//...", "--build_tests_only"])
 
+  it "haddock links" $ do
+    -- Test haddock links
+    -- All haddock tests are stored inside //tests/haddock
+    -- Temporaries files appears inside /doc-.... outputs and are ignored
+
+    -- the copy / chmod is here to workaround the fact that
+    -- linkchecker is dropping privileges to "nobody" user if called
+    -- from root, which is the case on CI.
+    assertSuccess (safeShell
+      [ "bazel build --config=ci //tests/haddock/..."
+      , "pwd=$(pwd)"
+      , "cd $(mktemp -d)"
+      , "cp -r $pwd/bazel-ci-bin/tests/haddock ."
+      , "chmod -R o+r ."
+      , "linkchecker . --ignore-url=/doc-"
+      ])
+
   it "bazel test prof" $ do
     assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only"])
 
