@@ -107,32 +107,42 @@ def _mk_binary_rule(**kwargs):
     Returns:
       Rule: Haskell binary compilation rule.
     """
-    return rule(
-        # if _mk_binary_rule was called with test = True, we want to use the test binary implementation
-        _haskell_test_impl if "test" in kwargs and kwargs["test"] else _haskell_binary_impl,
-        executable = True,
-        attrs = dict(
-            _haskell_common_attrs,
-            linkstatic = attr.bool(
-                default = True,
-                doc = "Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.",
-            ),
-            main_function = attr.string(
-                default = "Main.main",
-                doc = """A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.""",
-            ),
-            version = attr.string(
-                doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
-            ),
-            expected_expression_coverage = attr.int(
-                default = 0,
-                doc = "The expected amount of expressions covered by testing. This only applies to test rules.",
-            ),
-            _bazel_tools_bash_runfiles = attr.label(
-                allow_single_file = True,
-                default = Label("@bazel_tools//tools/bash/runfiles:runfiles"),
-            ),
+
+    is_test = "test" in kwargs and kwargs["test"]
+
+    attrs = dict(
+        _haskell_common_attrs,
+        linkstatic = attr.bool(
+            default = True,
+            doc = "Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.",
         ),
+        main_function = attr.string(
+            default = "Main.main",
+            doc = """A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.""",
+        ),
+        version = attr.string(
+            doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
+        ),
+        _bazel_tools_bash_runfiles = attr.label(
+            allow_single_file = True,
+            default = Label("@bazel_tools//tools/bash/runfiles:runfiles"),
+        ),
+    )
+
+    # Tests have an extra fields regarding expected code coverage percentages.
+    if is_test:
+        attrs.update({
+            "expected_expression_coverage": attr.int(
+                default = 0,
+                doc = "The expected percentage of expressions covered by testing.",
+            ),
+        })
+
+    return rule(
+        # If _mk_binary_rule was called with test = True, we want to use the test binary implementation
+        _haskell_test_impl if is_test else _haskell_binary_impl,
+        executable = True,
+        attrs = attrs,
         outputs = {
             "runghc": "%{name}@runghc",
             "repl": "%{name}@repl",
