@@ -3,6 +3,7 @@ exports_files(
         "assets/ghci_script",
         "private/ghci_repl_wrapper.sh",
         "private/haddock_wrapper.sh.tpl",
+        "private/coverage_wrapper.sh.tpl",
     ],
 )
 

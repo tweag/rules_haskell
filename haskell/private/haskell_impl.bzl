@@ -31,7 +31,6 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/providers.bzl", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/shell_utils.bzl", "runfiles_boilerplate")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -69,32 +68,6 @@ def _replace_extensions(srcs_files, extension):
 
 def _should_inspect_coverage(ctx, hs, is_test):
     return hs.coverage_enabled and is_test and ctx.attr.expected_expression_coverage > 0
-
-def _wrap_binary_for_coverage(binary_path, hpc_path, tix_file_path, expected_expression_coverage, mix_file_paths):
-    return runfiles_boilerplate + """
-ERRORCOLOR='\033[1;31m'
-CLEARCOLOR='\033[0m'
-binary_path=$(rlocation {})
-hpc_path=$(rlocation {})
-tix_file_path={}
-expected_expression_coverage={}
-hpc_dir_args=""
-for m in {}
-do
-  absolute_mix_file_path=$(rlocation $m)
-  hpc_dir_args="$hpc_dir_args --hpcdir=$(dirname $absolute_mix_file_path)"
-done
-$binary_path "$@"
-$hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
-echo "Overall report"
-cat __hpc_coverage_report
-expression_coverage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
-if [ $expression_coverage -lt $expected_expression_coverage ]
-then
-  echo "\n==>$ERRORCOLOR Inadequate expression coverage.$CLEARCOLOR Expected $expected_expression_coverage%, but actual coverage was $ERRORCOLOR$(($expression_coverage))%$CLEARCOLOR.\n"
-  exit 1
-fi
-""".format(binary_path, hpc_path, tix_file_path, expected_expression_coverage, mix_file_paths)
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
@@ -225,15 +198,20 @@ def _haskell_binary_common_impl(ctx, is_test):
         mix_file_paths = ""
         for m in conditioned_mix_files:
             mix_file_paths += paths.join(ctx.workspace_name, m.short_path) + " "
+        expected_expression_coverage = ctx.attr.expected_expression_coverage
         wrapper = hs.actions.declare_file("coverage_wrapper.sh")
-        wrapper_content = _wrap_binary_for_coverage(
-            binary_path,
-            hpc_path,
-            tix_file_path,
-            ctx.attr.expected_expression_coverage,
-            mix_file_paths,
+        ctx.actions.expand_template(
+            template = ctx.file._coverage_wrapper_template,
+            output = wrapper,
+            substitutions = {
+                "{binary_path}": binary_path,
+                "{hpc_path}": hpc_path,
+                "{tix_file_path}": tix_file_path,
+                "{expected_expression_coverage}": str(expected_expression_coverage),
+                "{mix_file_paths}": mix_file_paths,
+            },
+            is_executable = True,
         )
-        hs.actions.write(wrapper, wrapper_content, is_executable = True)
         executable = wrapper
 
     return [
@@ -247,7 +225,7 @@ def _haskell_binary_common_impl(ctx, is_test):
                     solibs +
                     c.conditioned_mix_files +
                     [
-                        ctx.file._bazel_tools_bash_runfiles,
+                        ctx.file._bash_runfiles,
                         hs.toolchain.tools.hpc,
                         binary,
                     ],

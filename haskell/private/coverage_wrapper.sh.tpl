@@ -1,6 +1,6 @@
-"""Utilities for shell scripts."""
+#!/usr/bin/env bash
+# A wrapper for Haskell binaries which have been instrumented for hpc code coverage.
 
-runfiles_boilerplate = """\
 # Copy-pasted from Bazel's Bash runfiles library (tools/bash/runfiles/runfiles.bash).
 set -euo pipefail
 if [[ ! -d "${RUNFILES_DIR:-/dev/null}" && ! -f "${RUNFILES_MANIFEST_FILE:-/dev/null}" ]]; then
@@ -22,4 +22,26 @@ else
   exit 1
 fi
 # --- end runfiles.bash initialization ---
-"""
+
+ERRORCOLOR='\033[1;31m'
+CLEARCOLOR='\033[0m'
+binary_path=$(rlocation {binary_path})
+hpc_path=$(rlocation {hpc_path})
+tix_file_path={tix_file_path}
+expected_expression_coverage={expected_expression_coverage}
+hpc_dir_args=""
+for m in {mix_file_paths}
+do
+  absolute_mix_file_path=$(rlocation $m)
+  hpc_dir_args="$hpc_dir_args --hpcdir=$(dirname $absolute_mix_file_path)"
+done
+$binary_path "$@"
+$hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
+echo "Overall report"
+cat __hpc_coverage_report
+expression_coverage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
+if [ $expression_coverage -lt $expected_expression_coverage ]
+then
+  echo -e "\n==>$ERRORCOLOR Inadequate expression coverage.$CLEARCOLOR Expected $expected_expression_coverage%, but actual coverage was $ERRORCOLOR$(($expression_coverage))%$CLEARCOLOR.\n"
+  exit 1
+fi
