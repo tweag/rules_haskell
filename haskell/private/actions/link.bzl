@@ -1,6 +1,6 @@
 """Actions for linking object code produced by compilation"""
 
-load(":private/packages.bzl", "expose_packages")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/path_utils.bzl",
@@ -492,14 +492,14 @@ def link_binary(
     # directly rather than doing multiple reversals with temporary
     # lists.
 
-    args.add_all(expose_packages(
+    args.add_all(pkg_info_to_ghc_args(expose_packages(
         dep_info,
         lib_info = None,
         use_direct = True,
         use_my_pkg_id = None,
         custom_package_caches = None,
         version = version,
-    ))
+    )))
 
     (cc_link_libs, cc_solibs, hs_solibs) = _link_dependencies(
         hs = hs,
@@ -727,14 +727,14 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     if hs.toolchain.is_darwin:
         args.add("-optl-Wl,-dead_strip_dylibs")
 
-    args.add_all(expose_packages(
+    args.add_all(pkg_info_to_ghc_args(expose_packages(
         dep_info,
         lib_info = None,
         use_direct = True,
         use_my_pkg_id = None,
         custom_package_caches = None,
         version = my_pkg_id.version if my_pkg_id else None,
-    ))
+    )))
 
     if hs.toolchain.is_darwin:
         # Keep space to override install name with mangled name.

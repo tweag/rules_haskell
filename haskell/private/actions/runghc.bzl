@@ -1,6 +1,6 @@
 """runghc support"""
 
-load(":private/packages.bzl", "expose_packages")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -43,14 +43,14 @@ def build_haskell_runghc(
       None.
     """
 
-    args = expose_packages(
+    args = pkg_info_to_ghc_args(expose_packages(
         build_info,
         lib_info,
         use_direct = False,
         use_my_pkg_id = None,
         custom_package_caches = package_caches,
         version = version,
-    )
+    ))
 
     if lib_info != None:
         for idir in set.to_list(lib_info.import_dirs):
