@@ -1,4 +1,4 @@
--- | "Lib.A" header
+-- | "LibA.A" header
 {-# LANGUAGE TemplateHaskell #-}
 
 module LibA.A where

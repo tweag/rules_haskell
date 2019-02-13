@@ -19,6 +19,13 @@ main = hspec $ do
   it "bazel test" $ do
     assertSuccess (bazel ["test", "//...", "--build_tests_only"])
 
+  it "haddock links" $ do
+    -- Test haddock links
+    -- All haddock tests are stored inside //tests/haddock
+    -- Temporaries files appears inside /doc-.... outputs and are ignored
+    assertSuccess (bazel ["build", "//tests/haddock/..."])
+    assertSuccess (Process.proc "linkchecker" ["bazel-ci-bin/tests/haddock/", "--ignore-url=/doc-"])
+
   it "bazel test prof" $ do
     assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only"])
 
