@@ -286,7 +286,22 @@ def _hpc_compiler_args(hs):
     hpcdir = "{}/{}/.hpc".format(hs.bin_dir.path, hs.package_root)
     return ["-fhpc", "-hpcdir", hpcdir]
 
-def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, extra_srcs, compiler_flags, dynamic, with_profiling, main_function, version, inspect_coverage = False, mix_files = []):
+def compile_binary(
+        hs,
+        cc,
+        java,
+        dep_info,
+        srcs,
+        ls_modules,
+        import_dir_map,
+        extra_srcs,
+        compiler_flags,
+        dynamic,
+        with_profiling,
+        main_function,
+        version,
+        inspect_coverage = False,
+        mix_files = []):
     """Compile a Haskell target into object files suitable for linking.
 
     Returns:
@@ -353,7 +368,22 @@ def compile_binary(hs, cc, java, dep_info, srcs, ls_modules, import_dir_map, ext
         conditioned_mix_files = conditioned_mix_files,
     )
 
-def compile_library(hs, cc, java, dep_info, srcs, ls_modules, other_modules, exposed_modules_reexports, import_dir_map, extra_srcs, compiler_flags, with_shared, with_profiling, my_pkg_id, mix_files = []):
+def compile_library(
+        hs,
+        cc,
+        java,
+        dep_info,
+        srcs,
+        ls_modules,
+        other_modules,
+        exposed_modules_reexports,
+        import_dir_map,
+        extra_srcs,
+        compiler_flags,
+        with_shared,
+        with_profiling,
+        my_pkg_id,
+        mix_files = []):
     """Build arguments for Haskell package build.
 
     Returns:
