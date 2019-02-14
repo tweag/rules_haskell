@@ -38,7 +38,18 @@ def _get_extra_libraries(dep_info):
         set.mutable_insert(extra_lib_dirs, lib.dirname)
     return (set.to_list(extra_lib_dirs), extra_libs)
 
-def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, dynamic_library, exposed_modules_file, other_modules, my_pkg_id, static_library_prof):
+def package(
+        hs,
+        dep_info,
+        interfaces_dir,
+        interfaces_dir_prof,
+        static_library,
+        dynamic_library,
+        exposed_modules_file,
+        other_modules,
+        my_pkg_id,
+        static_library_prof,
+        short_path_executable):
     """Create GHC package using ghc-pkg.
 
     Args:
@@ -146,9 +157,41 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         use_default_shell_env = True,
     )
 
+    # Generate a unique file name based on package ID to store packagedb dir name.
+    pkgdb_dirname_fname = "ghc-pkg_{}".format(
+        hash("{}".format(my_pkg_id)),
+    ).replace("-", "_")
+
+    pkgdb_dirname_file = hs.actions.declare_file(pkgdb_dirname_fname)
+
+    # On Windows, standard file path limit is of 260 characters.
+    #
+    # This limit can be disabled on Windows 10, but the removal of this
+    # limitation is not honored by MingW-derived binaries (such as ghc tools,
+    # prior to 8.6.x) by default. Since we can't realistically recompile GHC
+    # and friends, we instead use a batch script to compute an MS-DOS style
+    # "short path", where each segment contains at most 8 characters.
+    #
+    # See: https://github.com/haskell/cabal/issues/3972 for a related issue on
+    # Cabal side.
+    if hs.toolchain.is_windows:
+        hs.actions.run(
+            executable = short_path_executable,
+            outputs = [pkgdb_dirname_file],
+            arguments = [
+                conf_file.dirname,
+                pkgdb_dirname_file.path,
+            ],
+        )
+    else:
+        hs.actions.write(
+            pkgdb_dirname_file,
+            conf_file.dirname,
+        )
+
     # Make the call to ghc-pkg and use the package configuration file
     package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_confs)]) + ":"
-    hs.actions.run(
+    hs.actions.run_shell(
         inputs = depset(transitive = [
             set.to_depset(dep_info.package_confs),
             set.to_depset(dep_info.package_caches),
@@ -163,6 +206,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
                 ]
                 if input
             ]),
+            depset([hs.tools.ghc_pkg, pkgdb_dirname_file]),
         ]),
         outputs = [cache_file],
         env = {
@@ -170,7 +214,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         },
         mnemonic = "HaskellRegisterPackage",
         progress_message = "HaskellRegisterPackage {}".format(hs.label),
-        executable = hs.tools.ghc_pkg,
+
         # Registration of a new package consists in,
         #
         # 1. copying the registration file into the package db,
@@ -192,12 +236,16 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
         #
         # TODO Go back to using `ghc-pkg register`. Blocked by
         # https://ghc.haskell.org/trac/ghc/ticket/15478
-        arguments = [
-            "recache",
-            "--package-db={0}".format(conf_file.dirname),
-            "-v0",
-            "--no-expand-pkgroot",
-        ],
+        command = """
+            pkgdb_path=$(< {pkgdb_dirname_file})
+            {ghc_pkg} recache\
+                "--package-db=$pkgdb_path"\
+                -v0\
+                --no-expand-pkgroot
+        """.format(
+            ghc_pkg = hs.tools.ghc_pkg.path,
+            pkgdb_dirname_file = pkgdb_dirname_file.path,
+        ),
         # XXX: Seems required for this to work on Windows
         use_default_shell_env = True,
     )

@@ -25,6 +25,13 @@ cc_library(
     )[0],
 )
 
+# This is needed for Hazel targets.
+cc_library(
+    name = "rts-headers",
+    hdrs = glob(["lib/include/**/*.h"]),
+    strip_include_prefix = "lib/include",
+)
+
 # Expose embedded MinGW toolchain when on Windows.
 
 filegroup(
