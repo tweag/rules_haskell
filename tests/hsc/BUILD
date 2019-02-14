@@ -18,7 +18,7 @@ haskell_library(
         "-DTHIS_IS_TRUE",
         "-optP-DTHIS_TOO_IS_TRUE",
     ],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_test(

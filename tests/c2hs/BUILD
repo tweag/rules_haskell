@@ -39,5 +39,5 @@ haskell_library(
         "@c2hs_repo//:baz",
     ],
     tags = ["requires_c2hs"],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )

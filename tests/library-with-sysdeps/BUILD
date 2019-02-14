@@ -21,6 +21,7 @@ haskell_library(
     deps = [
         ":zlib",
         "//tests/hackage:base",
+        "@gmp",
     ],
 )
 

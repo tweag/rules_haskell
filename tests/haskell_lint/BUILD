@@ -11,7 +11,7 @@ haskell_library(
     name = "lib-a",
     srcs = ["Foo.hs"],
     visibility = ["//visibility:public"],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_library(
@@ -21,13 +21,14 @@ haskell_library(
     deps = [
         ":lib-a",
         "//tests/hackage:base",
+        "@gmp",
     ],
 )
 
 haskell_lint(
     name = "lint-lib-b",
     visibility = ["//visibility:public"],
-    deps = [":lib-b"],
+    deps = [":lib-b", "@gmp"],
 )
 
 haskell_test(

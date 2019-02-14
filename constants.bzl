@@ -1,4 +1,4 @@
-ghc_version = "8.6.3"
+ghc_version = "8.6.2"
 
 # XXX: We must currently keep a different GHC version for bindists
 # because 8.6.3 fails on Windows with Template Haskell.

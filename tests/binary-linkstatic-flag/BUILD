@@ -11,6 +11,7 @@ package(default_testonly = 1)
 cc_library(
     name = "c-lib",
     srcs = ["c-lib.c"],
+    deps = [ "@gmp" ],
 )
 
 haskell_library(
@@ -18,6 +19,7 @@ haskell_library(
     srcs = ["HsLib.hs"],
     deps = [
         "//tests/hackage:base",
+        "@gmp"
     ],
 )
 

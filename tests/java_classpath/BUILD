@@ -13,5 +13,6 @@ haskell_test(
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
         "@org_apache_spark_spark_core_2_10//jar",
+        "@gmp",
     ],
 )

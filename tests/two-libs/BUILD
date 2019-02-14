@@ -14,6 +14,7 @@ haskell_library(
     srcs = ["One.hs"],
     deps = [
         "//tests/hackage:base",
+        "@gmp",
     ],
 )
 
@@ -23,6 +24,7 @@ haskell_library(
     deps = [
         ":one",
         "//tests/hackage:base",
+        "@gmp",
     ],
 )
 

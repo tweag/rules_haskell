@@ -29,7 +29,7 @@ haskell_library(
     ],
     src_strip_prefix = "srcs",
     visibility = ["//visibility:public"],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_test(

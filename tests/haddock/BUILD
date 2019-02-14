@@ -20,7 +20,7 @@ haskell_cc_import(
 haskell_library(
     name = "haddock-lib-deep",
     srcs = ["Deep.hsc"],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_library(

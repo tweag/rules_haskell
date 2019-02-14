@@ -9,5 +9,9 @@ haskell_test(
     name = "binary-simple",
     srcs = ["Main.hs"],
     visibility = ["//visibility:public"],
-    deps = ["//tests/hackage:base"],
+    deps =
+        [
+            "//tests/hackage:base",
+            "@gmp",
+        ],
 )

@@ -12,6 +12,7 @@ haskell_library(
     src_strip_prefix = "src",
     deps = [
         "//tests/hackage:template-haskell",
+        "@gmp",
     ],
 )
 

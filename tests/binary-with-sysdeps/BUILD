@@ -20,5 +20,6 @@ haskell_test(
     deps = [
         ":zlib",
         "//tests/hackage:base",
+        "@gmp",
     ],
 )

@@ -9,7 +9,7 @@ haskell_library(
     name = "sublib",
     srcs = ["Foo.hs"],
     visibility = ["//visibility:public"],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_library(

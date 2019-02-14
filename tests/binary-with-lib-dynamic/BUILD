@@ -11,6 +11,7 @@ haskell_library(
     srcs = glob(["src/*.hs"]),
     linkstatic = False,
     src_strip_prefix = "src",
+    deps = [ "@gmp" ],
 )
 
 haskell_test(

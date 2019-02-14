@@ -10,5 +10,5 @@ haskell_library(
     name = "foo",
     srcs = ["Baz.hs"],
     visibility = ["//visibility:public"],
-    deps = [":base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )

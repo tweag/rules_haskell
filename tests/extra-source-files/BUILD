@@ -21,6 +21,7 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
+        "@gmp",
     ],
 )
 
@@ -40,5 +41,6 @@ haskell_test(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
+        "@gmp",
     ],
 )

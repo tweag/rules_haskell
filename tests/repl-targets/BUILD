@@ -70,7 +70,7 @@ haskell_library(
 haskell_library(
     name = "QuuxLib",
     srcs = ["QuuxLib.hs"],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_test(

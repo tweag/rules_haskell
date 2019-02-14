@@ -15,5 +15,6 @@ haskell_test(
         "//tests/hackage:template-haskell",
         "@hackage//:streaming",
         "@hackage//:void",
+        "@gmp"
     ],
 )

@@ -135,6 +135,47 @@ cc_library(
     repository = "@nixpkgs",
 )
 
+#bazelify_gmp_rev = "bb4881b35e6864c90493980d035e1d984cafd093"
+#bazelify_gmp_sha256 = "bb4881b35e6864c90493980d035e1d984cafd093"
+
+#http_archive(
+    #name = "io_bazel_rules_m4",
+    #strip_prefix = "rules_m4-2bf69df77dfb6b3ba6b7fc95c304b0dc279375bc",
+    #urls = ["https://github.com/jmillikin/rules_m4/archive/2bf69df77dfb6b3ba6b7fc95c304b0dc279375bc.tar.gz"]
+    ##remote = "https://github.com/jmillikin/rules_m4",
+    ##commit = "2bf69df77dfb6b3ba6b7fc95c304b0dc279375bc",
+#)
+
+#load("@io_bazel_rules_m4//:m4.bzl", "m4_register_toolchains")
+
+#m4_register_toolchains()
+
+#http_archive(
+    #name = "gmp",
+    ##sha256 = bazelify_gmp_sha256,
+    #strip_prefix = "bazelify-gmp-%s" % bazelify_gmp_rev,
+    #urls = ["https://github.com/robin-thomas/bazelify-gmp/archive/%s.tar.gz" % bazelify_gmp_rev]
+#)
+
+nixpkgs_package(
+    name = "gmp",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "lib",
+    srcs = glob(["lib/**/*.so*", "lib/**/*.dylib", "lib/**/*.a"]),
+)
+
+cc_library(
+    name = "gmp",
+    linkstatic = 1,
+    srcs = [":lib"],
+)
+""",
+    repository = "@nixpkgs",
+)
+
 nixpkgs_package(
     name = "sphinx",
     attribute_path = "python36Packages.sphinx",
@@ -340,3 +381,19 @@ load_go_sdk()
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
 buildifier_dependencies()
+
+hazel_version = "4684266e14e4a4ebb5973c1036f701f7f287d3fa"
+
+http_archive(
+    name = "ai_formation_hazel",
+    strip_prefix = "hazel-{}".format(hazel_version),
+    urls = ["https://github.com/FormationAI/hazel/archive/{}.tar.gz".format(hazel_version)],
+)
+
+load("@ai_formation_hazel//:hazel.bzl", "hazel_repositories")
+load("//hazel:packages.bzl", "core_packages", "packages")
+
+hazel_repositories(
+    core_packages = core_packages,
+    packages = packages,
+)

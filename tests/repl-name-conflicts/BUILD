@@ -11,5 +11,6 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
+        "@gmp",
     ],
 )

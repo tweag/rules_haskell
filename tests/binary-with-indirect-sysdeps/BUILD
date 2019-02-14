@@ -14,6 +14,7 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
         "@zlib.dev//:cc-zlib",
+        "@gmp",
     ],
 )
 
@@ -25,6 +26,7 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
         "@zlib.dev//:zlib",
+        "@gmp",
     ],
 )
 
@@ -35,6 +37,7 @@ haskell_test(
     deps = [
         ":hs-lib-cc",
         "//tests/hackage:base",
+        "@gmp",
     ],
 )
 

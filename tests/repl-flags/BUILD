@@ -19,6 +19,7 @@ haskell_test(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
+        "@gmp",
     ],
 )
 
@@ -41,5 +42,6 @@ haskell_test(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
+        "@gmp",
     ],
 )

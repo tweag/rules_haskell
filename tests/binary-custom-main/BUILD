@@ -6,11 +6,9 @@ load(
 
 package(default_testonly = 1)
 
-haskell_import(name = "base")
-
 haskell_test(
     name = "binary-custom-main",
     srcs = ["foo.hs"],
     visibility = ["//visibility:public"],
-    deps = [":base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )

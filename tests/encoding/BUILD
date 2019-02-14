@@ -17,5 +17,6 @@ haskell_test(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
+        "@gmp",
     ],
 )

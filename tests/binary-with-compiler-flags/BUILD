@@ -14,5 +14,5 @@ haskell_test(
         "-with-rtsopts=-N2 -qg -I0 -n2m -A128m",
         "-XLambdaCase",
     ],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )

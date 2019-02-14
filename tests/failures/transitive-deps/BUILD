@@ -8,7 +8,7 @@ package(default_testonly = 1)
 haskell_library(
     name = "lib-a",
     srcs = ["LibA.hs"],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_library(

@@ -20,6 +20,7 @@ haskell_library(
     deps = [
         ":base",
         ":cbits",
+        "@gmp",
     ],
 )
 

@@ -9,7 +9,7 @@ package(default_testonly = 1)
 haskell_library(
     name = "lhs-lib",
     srcs = ["Lib.lhs"],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_test(

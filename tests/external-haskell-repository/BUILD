@@ -13,5 +13,6 @@ haskell_test(
     deps = [
         "//tests/hackage:base",
         "@haskell_package_repository_dummy//:library-with-cbits",
+        "@gmp",
     ],
 )

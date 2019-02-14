@@ -13,6 +13,7 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
         "//tests/library-deps/sublib",
+        "@gmp",
     ],
 )
 

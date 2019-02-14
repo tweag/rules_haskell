@@ -40,6 +40,7 @@ haskell_library(
   deps = [
       "@io_tweag_rules_haskell//tests/data:ourclibrary",
       "@io_tweag_rules_haskell//tests/hackage:base",
+      "@gmp",
   ],
 
   linkstatic = False,

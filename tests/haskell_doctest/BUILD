@@ -15,6 +15,7 @@ haskell_library(
         "//tests/data:ourclibrary",
         "//tests/hackage:base",
         "@zlib.dev//:zlib",
+        "@gmp",
     ],
 )
 

@@ -41,6 +41,7 @@ haskell_library(
         ":zlib",
         ":zlib-with-genrule-header",
         "//tests/hackage:base",
+        "@gmp",
     ],
 )
 
@@ -69,6 +70,7 @@ haskell_library(
         ":zlib-with-genrule-header",
         "//tests/hackage:base",
         "@zlib.dev//:zlib",
+        "@gmp",
     ],
 )
 

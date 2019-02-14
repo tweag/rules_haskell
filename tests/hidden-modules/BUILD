@@ -13,14 +13,14 @@ haskell_library(
     srcs = glob(["lib-a/*.hs"]),
     hidden_modules = ["Foo"],
     src_strip_prefix = "lib-a",
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_library(
     name = "lib-b",
     srcs = glob(["lib-b/*.hs"]),
     src_strip_prefix = "lib-b",
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_library(

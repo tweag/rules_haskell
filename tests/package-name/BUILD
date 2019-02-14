@@ -13,7 +13,7 @@ haskell_library(
     name = "lib-a_Z",
     srcs = ["Lib.hs"],
     version = "1.2.3.4",
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@gmp"],
 )
 
 haskell_test(
