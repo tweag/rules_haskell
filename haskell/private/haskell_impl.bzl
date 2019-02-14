@@ -29,7 +29,9 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
+load(":private/providers.bzl", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -58,12 +60,15 @@ def haskell_test_impl(ctx):
 def haskell_binary_impl(ctx):
     return _haskell_binary_common_impl(ctx, is_test = False)
 
-def _get_hpc_outputs(ctx, srcs_files):
+def _replace_extensions(srcs_files, extension):
     hpc_outputs = []
     for s in srcs_files:
-        filename = paths.replace_extension(s.basename, "")
-        hpc_outputs.append(filename + ".mix")
+        filename = paths.replace_extension(s.basename, extension)
+        hpc_outputs.append(filename)
     return hpc_outputs
+
+def _should_inspect_coverage(ctx, hs, is_test):
+    return hs.coverage_enabled and is_test and ctx.attr.expected_expression_coverage > 0
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
@@ -76,8 +81,9 @@ def _haskell_binary_common_impl(ctx, is_test):
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     compiler_flags = ctx.attr.compiler_flags
+    inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
-    hpc_outputs = _get_hpc_outputs(ctx, srcs_files) if hs.coverage_enabled else []
+    mix_files = _replace_extensions(srcs_files, ".mix") if inspect_coverage else []
 
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -93,9 +99,14 @@ def _haskell_binary_common_impl(ctx, is_test):
         with_profiling = False,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
-        is_test = is_test,
-        hpc_outputs = hpc_outputs,
+        inspect_coverage = inspect_coverage,
+        mix_files = mix_files,
     )
+
+    conditioned_mix_files = c.conditioned_mix_files
+    for dep in ctx.attr.deps:
+        if HaskellCoverageInfo in dep:
+            conditioned_mix_files += dep[HaskellCoverageInfo].mix_files
 
     c_p = None
 
@@ -123,8 +134,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             with_profiling = True,
             main_function = ctx.attr.main_function,
             version = ctx.attr.version,
-            is_test = is_test,
-            hpc_outputs = hpc_outputs,
+            mix_files = mix_files,
         )
 
     (binary, solibs) = link_binary(
@@ -148,6 +158,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         header_files = c.header_files,
         exposed_modules_file = c.exposed_modules_file,
     )
+
     target_files = depset([binary])
 
     build_haskell_repl(
@@ -179,14 +190,49 @@ def _haskell_binary_common_impl(ctx, is_test):
         bin_info = bin_info,
     )
 
+    executable = binary
+    extra_runfiles = []
+
+    if inspect_coverage:
+        binary_path = paths.join(ctx.workspace_name, binary.short_path)
+        hpc_path = paths.join(ctx.workspace_name, hs.toolchain.tools.hpc.short_path)
+        tix_file_path = hs.label.name + ".tix"
+        mix_file_paths = [
+            paths.join(ctx.workspace_name, m.short_path)
+            for m in conditioned_mix_files
+        ]
+        expected_expression_coverage = ctx.attr.expected_expression_coverage
+        wrapper = hs.actions.declare_file("coverage_wrapper.sh")
+        ctx.actions.expand_template(
+            template = ctx.file._coverage_wrapper_template,
+            output = wrapper,
+            substitutions = {
+                "{binary_path}": shell.quote(binary_path),
+                "{hpc_path}": shell.quote(hpc_path),
+                "{tix_file_path}": shell.quote(tix_file_path),
+                "{expected_expression_coverage}": str(expected_expression_coverage),
+                "{mix_file_paths}": shell.array_literal(mix_file_paths),
+            },
+            is_executable = True,
+        )
+        executable = wrapper
+        extra_runfiles = [
+            ctx.file._bash_runfiles,
+            hs.toolchain.tools.hpc,
+            binary,
+        ]
+
     return [
         build_info,
         bin_info,
         DefaultInfo(
-            executable = binary,
+            executable = executable,
             files = target_files,
             runfiles = ctx.runfiles(
-                files = solibs,
+                files =
+                    solibs +
+                    c.conditioned_mix_files +
+                    extra_runfiles,
                 collect_data = True,
             ),
         ),
@@ -210,7 +256,7 @@ def haskell_library_impl(ctx):
 
     compiler_flags = ctx.attr.compiler_flags
 
-    hpc_outputs = _get_hpc_outputs(ctx, srcs_files) if hs.coverage_enabled else []
+    mix_files = _replace_extensions(srcs_files, ".mix") if hs.coverage_enabled else []
 
     c = hs.toolchain.actions.compile_library(
         hs,
@@ -227,7 +273,7 @@ def haskell_library_impl(ctx):
         with_shared = with_shared,
         with_profiling = False,
         my_pkg_id = my_pkg_id,
-        hpc_outputs = hpc_outputs,
+        mix_files = mix_files,
     )
 
     c_p = None
@@ -257,7 +303,7 @@ def haskell_library_impl(ctx):
             with_shared = False,
             with_profiling = True,
             my_pkg_id = my_pkg_id,
-            hpc_outputs = hpc_outputs,
+            mix_files = mix_files,
         )
 
     static_library = link_library_static(
@@ -357,6 +403,16 @@ def haskell_library_impl(ctx):
         exposed_modules_file = c.exposed_modules_file,
         extra_source_files = c.extra_source_files,
     )
+
+    dependency_mix_files = []
+    for dep in ctx.attr.deps:
+        if HaskellCoverageInfo in dep:
+            dependency_mix_files += dep[HaskellCoverageInfo].mix_files
+
+    coverage_info = HaskellCoverageInfo(
+        mix_files = dependency_mix_files + c.conditioned_mix_files,
+    )
+
     target_files = depset([conf_file, cache_file])
 
     if hasattr(ctx, "outputs"):
@@ -405,6 +461,7 @@ def haskell_library_impl(ctx):
         build_info,
         lib_info,
         default_info,
+        coverage_info,
     ]
 
 def haskell_import_impl(ctx):

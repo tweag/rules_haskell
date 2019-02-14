@@ -171,7 +171,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         disabled_features = ctx.rule.attr.features,
     )
 
-    [build_info, library_info, default_info] = _haskell_library_impl(patched_ctx)
+    [build_info, library_info, default_info, coverage_info] = _haskell_library_impl(patched_ctx)
 
     return [
         build_info,  # HaskellBuildInfo

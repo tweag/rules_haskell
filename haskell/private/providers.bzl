@@ -218,6 +218,13 @@ HaskellBinaryInfo = provider(
     },
 )
 
+HaskellCoverageInfo = provider(
+    doc = "Information about coverage instrumentation for Haskell files.",
+    fields = {
+        "mix_files": "A list of mix files, which track which parts of Haskell source code are being tracked for code coverage.",
+    },
+)
+
 HaskellPrebuiltPackageInfo = provider(
     doc = "Information about a prebuilt GHC package.",
     fields = {

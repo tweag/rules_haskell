@@ -14,9 +14,8 @@ load(
     "link_library_static",
 )
 load(":private/actions/package.bzl", "package")
-load(":private/set.bzl", "set")
 
-_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc"]
+_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
 def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
     if not env:
