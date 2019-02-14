@@ -391,6 +391,10 @@ def _get_build_attrs(
       textual_hdrs = list(headers),
       deps = ["{}//:rts-headers".format(ghc_workspace)] + select(cdeps) + cc_deps + elibs_targets,
       visibility = ["//visibility:public"],
+      linkstatic = select({
+          "@bazel_tools//src/conditions:windows": False,
+          "//conditions:default": True,
+      }),
   )
 
   return {
@@ -446,10 +450,18 @@ def cabal_haskell_package(
       native.cc_library(
           name = name,
           visibility = ["//visibility:public"],
+          linkstatic = select({
+              "@bazel_tools//src/conditions:windows": False,
+              "//conditions:default": True,
+          }),
       )
       native.cc_library(
           name = name + "-cbits",
           visibility = ["//visibility:public"],
+          linkstatic = select({
+              "@bazel_tools//src/conditions:windows": False,
+              "//conditions:default": True,
+          }),
       )
     else:
       lib_attrs = _get_build_attrs(
