@@ -31,6 +31,7 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/providers.bzl", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -196,20 +197,21 @@ def _haskell_binary_common_impl(ctx, is_test):
         binary_path = paths.join(ctx.workspace_name, binary.short_path)
         hpc_path = paths.join(ctx.workspace_name, hs.toolchain.tools.hpc.short_path)
         tix_file_path = hs.label.name + ".tix"
-        mix_file_paths = ""
-        for m in conditioned_mix_files:
-            mix_file_paths += paths.join(ctx.workspace_name, m.short_path) + " "
+        mix_file_paths = [
+            paths.join(ctx.workspace_name, m.short_path)
+            for m in conditioned_mix_files
+        ]
         expected_expression_coverage = ctx.attr.expected_expression_coverage
         wrapper = hs.actions.declare_file("coverage_wrapper.sh")
         ctx.actions.expand_template(
             template = ctx.file._coverage_wrapper_template,
             output = wrapper,
             substitutions = {
-                "{binary_path}": binary_path,
-                "{hpc_path}": hpc_path,
-                "{tix_file_path}": tix_file_path,
+                "{binary_path}": shell.quote(binary_path),
+                "{hpc_path}": shell.quote(hpc_path),
+                "{tix_file_path}": shell.quote(tix_file_path),
                 "{expected_expression_coverage}": str(expected_expression_coverage),
-                "{mix_file_paths}": mix_file_paths,
+                "{mix_file_paths}": shell.array_literal(mix_file_paths),
             },
             is_executable = True,
         )

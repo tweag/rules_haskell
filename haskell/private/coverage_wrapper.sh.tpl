@@ -30,7 +30,8 @@ hpc_path=$(rlocation {hpc_path})
 tix_file_path={tix_file_path}
 expected_expression_coverage={expected_expression_coverage}
 hpc_dir_args=""
-for m in {mix_file_paths}
+mix_file_paths={mix_file_paths}
+for m in $mix_file_paths
 do
   absolute_mix_file_path=$(rlocation $m)
   hpc_dir_args="$hpc_dir_args --hpcdir=$(dirname $absolute_mix_file_path)"
