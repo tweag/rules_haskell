@@ -108,7 +108,7 @@ def _mk_binary_rule(**kwargs):
       Rule: Haskell binary compilation rule.
     """
 
-    is_test = "test" in kwargs and kwargs["test"]
+    is_test = kwargs.get("test", False)
 
     attrs = dict(
         _haskell_common_attrs,
