@@ -123,10 +123,6 @@ def _mk_binary_rule(**kwargs):
         version = attr.string(
             doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
         ),
-        _bash_runfiles = attr.label(
-            allow_single_file = True,
-            default = Label("@bazel_tools//tools/bash/runfiles:runfiles"),
-        ),
     )
 
     # Tests have an extra fields regarding expected code coverage percentages.
@@ -139,6 +135,10 @@ def _mk_binary_rule(**kwargs):
             "_coverage_wrapper_template": attr.label(
                 allow_single_file = True,
                 default = Label("@io_tweag_rules_haskell//haskell:private/coverage_wrapper.sh.tpl"),
+            ),
+            "_bash_runfiles": attr.label(
+                allow_single_file = True,
+                default = Label("@bazel_tools//tools/bash/runfiles:runfiles"),
             ),
         })
 

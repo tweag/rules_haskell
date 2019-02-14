@@ -190,6 +190,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
 
     executable = binary
+    extra_runfiles = []
 
     if inspect_coverage:
         binary_path = paths.join(ctx.workspace_name, binary.short_path)
@@ -213,6 +214,11 @@ def _haskell_binary_common_impl(ctx, is_test):
             is_executable = True,
         )
         executable = wrapper
+        extra_runfiles = [
+            ctx.file._bash_runfiles,
+            hs.toolchain.tools.hpc,
+            binary,
+        ]
 
     return [
         build_info,
@@ -224,11 +230,7 @@ def _haskell_binary_common_impl(ctx, is_test):
                 files =
                     solibs +
                     c.conditioned_mix_files +
-                    [
-                        ctx.file._bash_runfiles,
-                        hs.toolchain.tools.hpc,
-                        binary,
-                    ],
+                    extra_runfiles,
                 collect_data = True,
             ),
         ),
