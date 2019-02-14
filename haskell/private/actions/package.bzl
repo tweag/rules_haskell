@@ -38,7 +38,18 @@ def _get_extra_libraries(dep_info):
         set.mutable_insert(extra_lib_dirs, lib.dirname)
     return (set.to_list(extra_lib_dirs), extra_libs)
 
-def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, dynamic_library, exposed_modules_file, other_modules, my_pkg_id, static_library_prof, short_path):
+def package(
+        hs,
+        dep_info,
+        interfaces_dir,
+        interfaces_dir_prof,
+        static_library,
+        dynamic_library,
+        exposed_modules_file,
+        other_modules,
+        my_pkg_id,
+        static_library_prof,
+        short_path_executable):
     """Create GHC package using ghc-pkg.
 
     Args:
@@ -147,7 +158,9 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
     )
 
     # Generate a unique file name based on package ID to store packagedb dir name.
-    pkgdb_dirname_fname = "ghc-pkg_{}".format(hash("{}".format(my_pkg_id))).replace("-", "_")
+    pkgdb_dirname_fname = "ghc-pkg_{}".format(
+        hash("{}".format(my_pkg_id)),
+    ).replace("-", "_")
 
     pkgdb_dirname_file = hs.actions.declare_file(pkgdb_dirname_fname)
 
@@ -163,7 +176,7 @@ def package(hs, dep_info, interfaces_dir, interfaces_dir_prof, static_library, d
     # Cabal side.
     if hs.toolchain.is_windows:
         hs.actions.run(
-            executable = short_path,
+            executable = short_path_executable,
             outputs = [pkgdb_dirname_file],
             arguments = [
                 conf_file.dirname,

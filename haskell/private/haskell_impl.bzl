@@ -308,7 +308,8 @@ def haskell_library_impl(ctx):
         other_modules,
         my_pkg_id,
         static_library_prof = static_library_prof,
-        short_path = ctx.executable._short_path if hs.toolchain.is_windows else None,
+        short_path_executable =
+            ctx.executable._short_path if hs.toolchain.is_windows else None,
     )
 
     static_libraries_prof = dep_info.static_libraries_prof
