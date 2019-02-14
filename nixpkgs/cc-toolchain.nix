@@ -1,4 +1,4 @@
-with import <nixpkgs> {};
+with import ./. {};
 with darwin.apple_sdk.frameworks;
 
 # XXX On Darwin, workaround
