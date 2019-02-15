@@ -20,6 +20,7 @@ where {package} is the lower-cased package name with - replaced by _
 and {hash} is the Bazel hash of the original package name.
 """
 load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//:lib.bzl", sets="new_sets")
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
      "haskell_library",
      "haskell_binary",
@@ -35,6 +36,10 @@ load("//templates:templates.bzl", "templates")
 load("//tools:mangling.bzl", "hazel_cbits", "hazel_library")
 
 _conditions_default = "//conditions:default"
+
+# Those libraries are already provided by Bazel or rules_haskell,
+# and must thus be ignored when specified as extra libraries.
+_excluded_cxx_libs = sets.make(elements = ["pthread", "stdc++"])
 
 def _get_core_dependency_includes(ghc_workspace):
   """Include files that are exported by core dependencies
@@ -239,7 +244,7 @@ def _get_build_attrs(
         deps = [
           extra_libs[elib]
           for elib in build_info.extraLibs
-          if elib != "pthread"
+          if not sets.contains(_excluded_cxx_libs, elib)
         ] + [clib_name] + chs_targets,
       )
       chs_targets.append(chs_name)
@@ -376,7 +381,7 @@ def _get_build_attrs(
   elibs_targets = [
     extra_libs[elib]
     for elib in build_info.extraLibs
-    if elib != "pthread"
+    if not sets.contains(_excluded_cxx_libs, elib)
   ]
 
   native.cc_library(
@@ -480,7 +485,7 @@ def cabal_haskell_package(
       elibs_targets = [
         extra_libs[elib]
         for elib in lib.libBuildInfo.extraLibs
-        if elib != "pthread"
+        if not sets.contains(_excluded_cxx_libs, elib)
       ]
 
       hidden_modules = [m for m in lib.libBuildInfo.otherModules if not m.startswith("Paths_")]
