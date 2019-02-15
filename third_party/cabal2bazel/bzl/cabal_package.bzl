@@ -342,7 +342,7 @@ def _get_build_attrs(
   # TODO(judahjacobson): Figure out the corner case logic for some packages.
   # In particular: JuicyPixels, cmark, ieee754.
   install_includes = native.glob(
-      [paths.join(d, f) for d in build_info.includeDirs
+      [paths.join(d if d != "." else "", f) for d in build_info.includeDirs
        for f in build_info.installIncludes])
   globbed_headers = native.glob([
       paths.normalize(f) for f in desc.extraSrcFiles + desc.extraTmpFiles
@@ -392,8 +392,8 @@ def _get_build_attrs(
       deps = ["{}//:rts-headers".format(ghc_workspace)] + select(cdeps) + cc_deps + elibs_targets,
       visibility = ["//visibility:public"],
       linkstatic = select({
-          "@bazel_tools//src/conditions:windows": False,
-          "//conditions:default": True,
+          "@bazel_tools//src/conditions:windows": True,
+          "//conditions:default": False,
       }),
   )
 
@@ -451,16 +451,16 @@ def cabal_haskell_package(
           name = name,
           visibility = ["//visibility:public"],
           linkstatic = select({
-              "@bazel_tools//src/conditions:windows": False,
-              "//conditions:default": True,
+              "@bazel_tools//src/conditions:windows": True,
+              "//conditions:default": False,
           }),
       )
       native.cc_library(
           name = name + "-cbits",
           visibility = ["//visibility:public"],
           linkstatic = select({
-              "@bazel_tools//src/conditions:windows": False,
-              "//conditions:default": True,
+              "@bazel_tools//src/conditions:windows": True,
+              "//conditions:default": False,
           }),
       )
     else:
