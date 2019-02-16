@@ -7,6 +7,7 @@ load(
 haskell_library(
     name = "runfiles",
     srcs = ["src/Bazel/Runfiles.hs"],
+    src_strip_prefix = "src",
     visibility = ["//visibility:public"],
     deps = [
         "@hackage//:base",
@@ -20,6 +21,7 @@ haskell_test(
     testonly = 1,
     srcs = ["bin/Bin.hs"],
     data = ["bin-data.txt"],
+    src_strip_prefix = "bin",
     deps = [
         ":runfiles",
         "@hackage//:base",
@@ -34,6 +36,7 @@ haskell_test(
         "test-data.txt",
         ":bin",
     ],
+    src_strip_prefix = "test",
     deps = [
         ":runfiles",
         "@hackage//:base",
