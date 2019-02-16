@@ -323,8 +323,8 @@ def compile_binary(
     conditioned_mix_files = []
     if inspect_coverage:
         c.args.add_all(_hpc_compiler_args(hs))
-        for o in mix_files:
-            conditioned_file = hs.actions.declare_file(".hpc/" + o)
+        for m in mix_files:
+            conditioned_file = hs.actions.declare_file(".hpc/" + m)
             conditioned_mix_files.append(conditioned_file)
 
     hs.toolchain.actions.run_ghc(
@@ -404,9 +404,9 @@ def compile_library(
     conditioned_mix_files = []
     if hs.coverage_enabled:
         c.args.add_all(_hpc_compiler_args(hs))
-        for o in mix_files:
+        for m in mix_files:
             pkg_id_string = pkg_id.to_string(my_pkg_id)
-            conditioned_file = hs.actions.declare_file(".hpc/" + pkg_id_string + "/" + o)
+            conditioned_file = hs.actions.declare_file(".hpc/" + pkg_id_string + "/" + m)
             conditioned_mix_files.append(conditioned_file)
 
     hs.toolchain.actions.run_ghc(
