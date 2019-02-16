@@ -25,6 +25,7 @@ load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
     "ln",
+    "module_name",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
@@ -60,13 +61,6 @@ def haskell_test_impl(ctx):
 def haskell_binary_impl(ctx):
     return _haskell_binary_common_impl(ctx, is_test = False)
 
-def _replace_extensions(srcs_files, extension):
-    hpc_outputs = []
-    for s in srcs_files:
-        filename = paths.replace_extension(s.basename, extension)
-        hpc_outputs.append(filename)
-    return hpc_outputs
-
 def _should_inspect_coverage(ctx, hs, is_test):
     return hs.coverage_enabled and is_test and ctx.attr.expected_expression_coverage > 0
 
@@ -83,7 +77,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     compiler_flags = ctx.attr.compiler_flags
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
-    mix_files = _replace_extensions(srcs_files, ".mix") if inspect_coverage else []
+    mix_files = [module_name(hs, s) + ".mix" for s in srcs_files] if hs.coverage_enabled else []
 
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -256,7 +250,7 @@ def haskell_library_impl(ctx):
 
     compiler_flags = ctx.attr.compiler_flags
 
-    mix_files = _replace_extensions(srcs_files, ".mix") if hs.coverage_enabled else []
+    mix_files = [module_name(hs, s) + ".mix" for s in srcs_files] if hs.coverage_enabled else []
 
     c = hs.toolchain.actions.compile_library(
         hs,
