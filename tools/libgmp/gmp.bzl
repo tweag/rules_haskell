@@ -14,7 +14,7 @@ load(
     "nixpkgs_package",
 )
 
-def baz():
+def import_gmp():
     nixpkgs_package(
         name = "gmp",
         fail_not_supported = False,
@@ -41,11 +41,17 @@ cc_library(
     )
 
     no_nix_file_content = """
-def baz():
-    native.cc_import(
-        name = "gmp",
-        visibility = ["//visibility:public"],
-    )
+def _import_gmp_impl(repository_ctx):
+    repository_ctx.file("BUILD", 'filegroup(name="gmp", srcs = ["foo.h"], visibility = ["//visibility:public"])')
+    repository_ctx.file("foo.h", "")
+
+_import_gmp = repository_rule(
+    implementation = _import_gmp_impl,
+    attrs = dict(),
+)
+
+def import_gmp():
+    _import_gmp(name = "gmp")
 """
 
     if _is_nix_platform(repository_ctx):
