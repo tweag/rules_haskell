@@ -147,7 +147,10 @@ def gather_dep_info(ctx):
                     acc.cc_dependencies,
                     pkg.cc_dependencies,
                 ),
-                transitive_cc_dependencies = merge_HaskellCcInfo(acc.transitive_cc_dependencies, pkg.transitive_cc_dependencies),
+                transitive_cc_dependencies = merge_HaskellCcInfo(
+                    acc.transitive_cc_dependencies,
+                    pkg.transitive_cc_dependencies,
+                ),
                 import_dependencies = acc.import_dependencies,
                 transitive_import_dependencies = acc.transitive_import_dependencies,
             )

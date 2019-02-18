@@ -253,7 +253,7 @@ haskell_import = rule(
     _haskell_import_impl,
     attrs = dict(
         deps = attr.label_list(
-            doc = "List of other Haskell libraries to be linked to this target.",
+            doc = "List of libraries to be linked to this target.",
         ),
         package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
     ),
