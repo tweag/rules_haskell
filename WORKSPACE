@@ -341,22 +341,36 @@ load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_depen
 
 buildifier_dependencies()
 
-nixpkgs_package(
-    name = "gmp",
-    fail_not_supported = False,
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "lib",
-    srcs = glob(["lib/**/*.so*", "lib/**/*.dylib", "lib/**/*.a"]),
+# A repository that generates the Go SDK imports, see ./tools/go_sdk/README
+local_repository(
+    name = "libgmp",
+    path = "tools/libgmp",
 )
 
-cc_library(
-    name = "gmp",
-    linkstatic = 1,
-    srcs = [":lib"],
-)
-""",
-    repository = "@nixpkgs",
-)
+load("@libgmp//:sdk.bzl", foo = "gen_imports")
+
+foo(name = "libgmp_imports")
+
+load("@libgmp_imports//:imports.bzl", "baz")
+
+baz()
+
+#nixpkgs_package(
+#    name = "gmp",
+#    fail_not_supported = False,
+#    build_file_content = """
+#package(default_visibility = ["//visibility:public"])
+#
+#filegroup(
+#    name = "lib",
+#    srcs = glob(["lib/**/*.so*", "lib/**/*.dylib", "lib/**/*.a"]),
+#)
+#
+#cc_library(
+#    name = "gmp",
+#    linkstatic = 1,
+#    srcs = [":lib"],
+#)
+#""",
+#    repository = "@nixpkgs",
+#)
