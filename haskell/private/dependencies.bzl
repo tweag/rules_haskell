@@ -143,8 +143,11 @@ def gather_dep_info(ctx):
                 interface_dirs = acc.interface_dirs,
                 prebuilt_dependencies = set.mutable_insert(acc.prebuilt_dependencies, pkg),
                 direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
-                cc_dependencies = acc.cc_dependencies,
-                transitive_cc_dependencies = acc.transitive_cc_dependencies,
+                cc_dependencies = merge_HaskellCcInfo(
+                    acc.cc_dependencies,
+                    pkg.cc_dependencies,
+                ),
+                transitive_cc_dependencies = merge_HaskellCcInfo(acc.transitive_cc_dependencies, pkg.transitive_cc_dependencies),
                 import_dependencies = acc.import_dependencies,
                 transitive_import_dependencies = acc.transitive_import_dependencies,
             )
