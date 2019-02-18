@@ -55,7 +55,10 @@ cc_binary(
     linkstatic = 1,
     tags = ["requires_threaded_rts"],
     visibility = ["//tests:__subpackages__"],
-    deps = ["@ghc//:threaded-rts"],
+    deps = [
+        "@ghc//:threaded-rts",
+        "@gmp",
+    ],
 )
 
 # just dlopens hb-lib-b-wrapped.so and prints it
