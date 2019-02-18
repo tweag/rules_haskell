@@ -347,9 +347,9 @@ local_repository(
     path = "tools/libgmp",
 )
 
-load("@libgmp//:sdk.bzl", foo = "gen_imports")
+load("@libgmp//:gmp.bzl", gmp_gen_imports = "gen_imports")
 
-foo(name = "libgmp_imports")
+gmp_gen_imports(name = "libgmp_imports")
 
 load("@libgmp_imports//:imports.bzl", "baz")
 

@@ -18,7 +18,7 @@ def baz():
     nixpkgs_package(
         name = "gmp",
         fail_not_supported = False,
-        build_file_content = {foo}
+        build_file_content = {multiline}
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
@@ -31,27 +31,21 @@ cc_library(
     linkstatic = 1,
     srcs = [":lib"],
 )
-    {foo},
+    {multiline},
         repository = "@nixpkgs",
     )
 
 
     """.format(
-        foo = '"""',
+        multiline = '"""',
     )
 
     no_nix_file_content = """
-def _baz_impl(repository_ctx):
-    repository_ctx.file("BUILD", 'filegroup(name="gmp", srcs = ["foo.h"], visibility = ["//visibility:public"])')
-    repository_ctx.file("foo.h", "")
-
-_baz = repository_rule(
-    implementation = _baz_impl,
-    attrs = dict(),
-)
-
 def baz():
-    _baz(name = "gmp")
+    native.cc_import(
+        name = "gmp",
+        visibility = ["//visibility:public"],
+    )
 """
 
     if _is_nix_platform(repository_ctx):
