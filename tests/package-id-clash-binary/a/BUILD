@@ -4,11 +4,9 @@ load(
     "haskell_library",
 )
 
-haskell_import(name = "base")
-
 haskell_library(
     name = "foo",
     srcs = ["Foo.hs"],
     visibility = ["//visibility:public"],
-    deps = [":base"],
+    deps = ["//tests/hackage:base"],
 )

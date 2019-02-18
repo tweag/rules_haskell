@@ -1,7 +1,5 @@
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_import", "haskell_library", "haskell_test")
 
-haskell_import(name = "base")
-
 cc_library(
     name = "cbits-indirect",
     srcs = ["cbits/impl.c"],
@@ -18,8 +16,8 @@ haskell_library(
     srcs = ["src/MyModule.hs"],
     src_strip_prefix = "src",
     deps = [
-        ":base",
         ":cbits",
+        "//tests/hackage:base",
     ],
 )
 
@@ -29,8 +27,8 @@ haskell_test(
     linkstatic = True,
     src_strip_prefix = "test",
     deps = [
-        ":base",
         ":mypkg",
+        "//tests/hackage:base",
     ],
 )
 
@@ -40,8 +38,8 @@ haskell_test(
     linkstatic = False,
     src_strip_prefix = "test",
     deps = [
-        ":base",
         ":mypkg",
+        "//tests/hackage:base",
     ],
 )
 
