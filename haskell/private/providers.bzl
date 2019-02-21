@@ -109,10 +109,6 @@ HaskellBuildInfo = provider(
     },
 )
 
-def get_mangled_libs(ext_libs):
-    """Just a dumb helper because skylark doesn’t do lambdas."""
-    return [ext_lib.mangled_lib for ext_lib in ext_libs]
-
 def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
     """Return all C library dependencies for GHC's linker.
 
@@ -120,9 +116,6 @@ def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
     during doctests, etc. GHC's linker differs from the system's dynamic linker
     in some ways. E.g. it strictly assumes that dynamic libraries end on .dylib
     on MacOS.
-
-    Additionally, on MacOS, GHC produces intermediate dynamic objects that load
-    C libraries by their unmangled names.
 
     This function returns a list of all transitive C library dependencies
     (static or dynamic), taking the requirements of GHC's linker into account.
@@ -142,30 +135,22 @@ def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
     """
     trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
 
-    unmangled_libs = []
-    mangled_libs = []
-    for lib in trans_link_ctx.libraries_to_link.to_list():
-        unmangled_libs.append(lib.lib)
-        mangled_libs.append(lib.mangled_lib)
+    libs_to_link = trans_link_ctx.libraries_to_link.to_list()
+    libs_for_runtime = trans_link_ctx.dynamic_libraries_for_runtime.to_list()
     import_libs = set.to_list(build_info.transitive_import_dependencies)
 
-    _library_deps = mangled_libs + import_libs
-    _ld_library_deps = [
+    _library_deps = libs_to_link + import_libs
+    _ld_library_deps = libs_for_runtime + [
         lib
-        for lib in mangled_libs + import_libs
+        for lib in import_libs
         if is_shared_library(lib)
     ]
     if hs.toolchain.is_darwin:
         # GHC's builtin linker requires .dylib files on MacOS.
         library_deps = darwin_convert_to_dylibs(hs, _library_deps)
 
-        # GHC produces intermediate dylibs that load the unmangled libraries.
         # Additionally ghc 8.4 requires library_deps here although 8.6 does not
-        ld_library_deps = library_deps + _ld_library_deps + [
-            lib
-            for lib in unmangled_libs
-            if is_shared_library(lib)
-        ]
+        ld_library_deps = library_deps + _ld_library_deps
     else:
         library_deps = _library_deps
         ld_library_deps = _ld_library_deps

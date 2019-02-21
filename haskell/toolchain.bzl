@@ -171,6 +171,7 @@ fi
             haddock_flags = ctx.attr.haddock_flags,
             locale = ctx.attr.locale,
             locale_archive = locale_archive,
+            osx_cc_wrapper_tpl = ctx.file._osx_cc_wrapper_tpl,
             mode = ctx.var["COMPILATION_MODE"],
             actions = struct(
                 compile_binary = compile_binary,
@@ -229,6 +230,10 @@ _haskell_toolchain = rule(
             doc = """
 Label pointing to the locale archive file to use. Mostly useful on NixOS.
 """,
+        ),
+        "_osx_cc_wrapper_tpl": attr.label(
+            allow_single_file = True,
+            default = Label("@io_tweag_rules_haskell//haskell:private/osx_cc_wrapper.sh.tpl"),
         ),
     },
 )

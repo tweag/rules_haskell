@@ -7,7 +7,7 @@ load(
     ":private/path_utils.bzl",
     "get_lib_name",
 )
-load(":private/providers.bzl", "get_libs_for_ghc_linker", "get_mangled_libs")
+load(":private/providers.bzl", "get_libs_for_ghc_linker")
 load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
@@ -109,7 +109,7 @@ def _haskell_doctest_single(target, ctx):
 
     # Direct C library dependencies to link against.
     link_ctx = build_info.cc_dependencies.dynamic_linking
-    libs_to_link = get_mangled_libs(link_ctx.libraries_to_link.to_list())
+    libs_to_link = link_ctx.libraries_to_link.to_list()
     import_libs_to_link = set.to_list(build_info.import_dependencies)
 
     # External libraries.

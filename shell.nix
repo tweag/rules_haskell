@@ -22,6 +22,8 @@ mkShell {
     glibcLocales
     # to check haddock outputs
     linkchecker
+    # to avoid CA certificate failures on MacOS CI
+    cacert
   ] ++ lib.optionals docTools [graphviz python36Packages.sphinx zip unzip];
 
   shellHook = ''

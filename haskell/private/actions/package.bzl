@@ -3,7 +3,6 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/path_utils.bzl", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/providers.bzl", "get_mangled_libs")
 load(":private/set.bzl", "set")
 load(":private/path_utils.bzl", "get_lib_name")
 
@@ -18,9 +17,7 @@ def _get_extra_libraries(dep_info):
       dirs: list: Library search directories for extra library dependencies.
       libs: list: Extra library dependencies.
     """
-    cc_libs = get_mangled_libs(
-        dep_info.cc_dependencies.dynamic_linking.libraries_to_link.to_list(),
-    )
+    cc_libs = dep_info.cc_dependencies.dynamic_linking.libraries_to_link.to_list()
     import_libs = set.to_list(dep_info.import_dependencies)
 
     # The order in which library dependencies are listed is relevant when

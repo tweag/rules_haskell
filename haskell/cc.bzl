@@ -122,12 +122,31 @@ def cc_interop_info(ctx):
         variables = link_variables,
     )
 
+    # Generate cc wrapper script on Darwin that adjusts load commands.
+    hs_toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"]
+    if hs_toolchain.is_darwin:
+        cc_wrapper = ctx.actions.declare_file("osx_cc_wrapper")
+        cc = cc_wrapper.path
+        ctx.actions.expand_template(
+            template = hs_toolchain.osx_cc_wrapper_tpl,
+            output = cc_wrapper,
+            substitutions = {
+                "%{cc}": cc_toolchain.compiler_executable(),
+            },
+        )
+        cc_files = ctx.files._cc_toolchain + [
+            cc_wrapper,
+        ]
+    else:
+        cc = cc_toolchain.compiler_executable()
+        cc_files = ctx.files._cc_toolchain
+
     # XXX Workaround https://github.com/bazelbuild/bazel/issues/6876.
     linker_flags = [flag for flag in linker_flags if flag not in ["-shared"]]
 
     tools = {
         "ar": cc_toolchain.ar_executable(),
-        "cc": cc_toolchain.compiler_executable(),
+        "cc": cc,
         "ld": cc_toolchain.ld_executable(),
         "cpp": cc_toolchain.preprocessor_executable(),
         "nm": cc_toolchain.nm_executable(),
@@ -143,7 +162,7 @@ def cc_interop_info(ctx):
 
     return CcInteropInfo(
         tools = struct(**tools),
-        files = ctx.files._cc_toolchain,
+        files = cc_files,
         hdrs = hdrs.to_list(),
         cpp_flags = cpp_flags,
         include_args = include_args,
