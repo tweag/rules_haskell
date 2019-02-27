@@ -244,6 +244,8 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     exec_constraints = list(target_constraints)
     exec_constraints.append("@io_tweag_rules_haskell//haskell/platforms:nixpkgs")
 
+    compiler_flags_select = repository_ctx.attr.compiler_flags_select or {"//conditions:default": []}
+
     repository_ctx.file(
         "BUILD",
         executable = False,
@@ -254,7 +256,7 @@ haskell_toolchain(
     name = "toolchain",
     tools = "{tools}",
     version = "{version}",
-    compiler_flags = {compiler_flags},
+    compiler_flags = {compiler_flags} + {compiler_flags_select},
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
     # On Darwin we don't need a locale archive. It's a Linux-specific
@@ -267,6 +269,7 @@ haskell_toolchain(
             tools = "@io_tweag_rules_haskell_ghc-nixpkgs//:bin",
             version = repository_ctx.attr.version,
             compiler_flags = str(repository_ctx.attr.compiler_flags),
+            compiler_flags_select = "select({})".format(compiler_flags_select),
             haddock_flags = str(repository_ctx.attr.haddock_flags),
             repl_ghci_args = str(repository_ctx.attr.repl_ghci_args),
             locale_archive = repository_ctx.attr.locale_archive,
@@ -283,6 +286,7 @@ _ghc_nixpkgs_toolchain = repository_rule(
         # They are documented there.
         "version": attr.string(),
         "compiler_flags": attr.string_list(),
+        "compiler_flags_select": attr.string_list_dict(),
         "haddock_flags": attr.string_list(),
         "repl_ghci_args": attr.string_list(),
         "locale_archive": attr.string(),
@@ -293,6 +297,7 @@ def haskell_register_ghc_nixpkgs(
         version,
         build_file = None,
         compiler_flags = None,
+        compiler_flags_select = None,
         haddock_flags = None,
         repl_ghci_args = None,
         locale_archive = None,
@@ -340,6 +345,7 @@ def haskell_register_ghc_nixpkgs(
         name = "io_tweag_rules_haskell_ghc-nixpkgs-toolchain",
         version = version,
         compiler_flags = compiler_flags,
+        compiler_flags_select = compiler_flags_select,
         haddock_flags = haddock_flags,
         repl_ghci_args = repl_ghci_args,
         locale_archive = locale_archive,
