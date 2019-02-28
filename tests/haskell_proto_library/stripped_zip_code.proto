@@ -2,6 +2,6 @@ syntax = "proto3";
 
 package demo; // Required to generate valid code.
 
-message ZipCode {
+message StrippedZipCode {
   string code = 1;
 }

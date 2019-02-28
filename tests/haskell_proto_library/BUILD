@@ -58,12 +58,6 @@ haskell_proto_library(
     deps = [":person_proto"],
 )
 
-haskell_proto_library(
-    name = "relative_person_haskell_proto",
-    tags = ["requires_hackage"],
-    deps = [":relative_person_proto"],
-)
-
 haskell_library(
     name = "hs-lib",
     srcs = ["Bar.hs"],
@@ -72,7 +66,7 @@ haskell_library(
     deps = [
         ":address_haskell_proto",
         ":person_haskell_proto",
-        ":relative_person_haskell_proto",
+        ":stripped_address_haskell_proto",
         "//tests/hackage:base",
     ],
 )

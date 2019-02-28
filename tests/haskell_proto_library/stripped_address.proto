@@ -4,7 +4,7 @@ package demo; // Required to generate valid code.
 
 import "stripped_zip_code.proto";
 
-message Address {
+message StrippedAddress {
   string city = 1;
-  ZipCode zip_code = 2;
+  StrippedZipCode zip_code = 2;
 }
