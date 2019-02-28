@@ -36,8 +36,8 @@ proto_library(
 proto_library(
     name = "stripped_address_proto",
     srcs = ["stripped_address.proto"],
-    deps = [":stripped_zip_code_proto"],
     strip_import_prefix = "/tests/haskell_proto_library/",
+    deps = [":stripped_zip_code_proto"],
 )
 
 haskell_proto_library(
