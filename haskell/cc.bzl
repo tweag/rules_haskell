@@ -253,12 +253,15 @@ absolute one, it's understood as a repository-relative path.
 Use this to make `.so`, `.dll`, `.dylib` files residing in external
 [external repositories][bazel-ext-repos] available to Haskell rules.
 
-*This rule is temporary replacement for [cc_import][cc_import] and
-will be deprecated in the future.*
+*This rule is temporary replacement for [cc_import][cc_import] and is
+deprecated. Use [cc_library][cc_library] instead as shown in the example.*
 
 Example:
   ```bzl
-  haskell_cc_import(name = "zlib", shared_library = "@zlib//:lib")
+  # Deprecated, use cc_library instead.
+  # haskell_cc_import(name = "zlib", shared_library = "@zlib//:lib")
+
+  cc_library(name = "zlib", srcs = ["@zlib//:lib"])
 
   haskell_import(
     name = "base_pkg",
@@ -277,6 +280,7 @@ Example:
 
 [bazel-ext-repos]: https://docs.bazel.build/versions/master/external.html
 [cc_import]: https://docs.bazel.build/versions/master/be/c-cpp.html#cc_import
+[cc_library]: https://docs.bazel.build/versions/master/be/c-cpp.html#cc_library
 """
 
 def _cc_haskell_import(ctx):
