@@ -6,13 +6,6 @@ import re
 
 ### helper functions
 
-if sys.version_info > (3, 0):
-    def items(d):
-        return d.items()
-else:
-    def items(d):
-        return d.iteritems()
-
 def list_to_dict(f, l):
     """dict with elements of list as keys & as values transformed by f"""
     d = {}
@@ -23,7 +16,7 @@ def list_to_dict(f, l):
 def dict_remove_empty(d):
     """remove keys that have [] or {} or as values"""
     new = {}
-    for k, v in items(d):
+    for k, v in d.items():
         if not (v == [] or v == {}):
              new[k] = v
     return new
@@ -223,7 +216,7 @@ def remove_matching_needed(d, re_matcher_absolute_path=None, re_matcher_path=Non
         if abs_match or match:
             return True
     d['needed'] = {
-        k: v for k, v in items(d['needed'])
+        k: v for k, v in d['needed'].items()
         if not pred(v)
     }
 
@@ -246,7 +239,7 @@ def non_existing_runpaths(d):
 def unused_runpaths(d):
     """Return a list of runpath_dirs that were not used to find NEEDED dependencies."""
     used = set()
-    for k, v in items(d['needed']):
+    for k, v in d['needed'].items():
         if not v in LDD_ERRORS:
             used.add(v['found_in']['absolute_path'])
     return [
@@ -269,7 +262,7 @@ def collect_unused_runpaths(d):
     given = set(r['absolute_path'] for r in d['runpath_dirs'])
     prev = {}
     # TODO: use `unused_runpaths` here
-    for k, v in items(d['needed']):
+    for k, v in d['needed'].items():
         if not v in LDD_ERRORS:
             used.add(v['found_in']['absolute_path'])
             prev[k] = v['item']
@@ -284,7 +277,7 @@ def collect_unused_runpaths(d):
     # and a dict of all previeous layers combined (name to list)
     def combine_unused(deps):
         res = {}
-        for name, dep in items(deps):
+        for name, dep in deps.items():
             res.update(dep['others'])
             res[name] = dep['mine']
         return res

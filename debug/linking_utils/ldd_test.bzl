@@ -15,7 +15,7 @@ def ldd_test(name, elf_binary, script, current_workspace = None, tags = []):
         args = ["{}/$(rootpath {})".format(current_workspace, elf_binary)] if current_workspace else ["$(rootpath {})".format(elf_binary)],
         script = """
 from io_tweag_rules_haskell.debug.linking_utils.ldd import \\
-        items, dict_remove_empty, identity, const, \\
+        dict_remove_empty, identity, const, \\
         LDD_MISSING, LDD_UNKNOWN, LDD_ERRORS, \\
         ldd, \\
         remove_matching_needed, remove_matching_runpaths, \\

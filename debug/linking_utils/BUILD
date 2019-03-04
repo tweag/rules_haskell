@@ -24,7 +24,7 @@ def contains_error(error):
     def f(d):
         is_any_err = False
         example = None
-        for k, n in items(d['needed']):
+        for k, n in d['needed'].items():
             if is_any_err:
               break
             if n is error:
