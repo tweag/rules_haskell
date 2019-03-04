@@ -156,7 +156,6 @@ nixpkgs_package(
 nixpkgs_package(
     name = "zlib.dev",
     build_file_content = """
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_cc_import")
 package(default_visibility = ["//visibility:public"])
 
 filegroup (
@@ -165,16 +164,8 @@ filegroup (
     testonly = 1,
 )
 
-haskell_cc_import(
-    name = "zlib",
-    shared_library = "@zlib//:lib",
-    hdrs = [":include"],
-    testonly = 1,
-    strip_include_prefix = "include",
-)
-
 cc_library(
-    name = "cc-zlib",
+    name = "zlib",
     deps = ["@zlib//:zlib"],
     hdrs = [":include"],
     testonly = 1,

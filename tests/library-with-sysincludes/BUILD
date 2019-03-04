@@ -1,6 +1,5 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_cc_import",
     "haskell_library",
 )
 
@@ -17,18 +16,17 @@ genrule(
 # A locally-defined replica of @zlib.dev//:zlib.
 # Since that shared library lives in another package, we must
 # use an absolute path for strip_include_prefix.
-haskell_cc_import(
+cc_library(
     name = "zlib",
     hdrs = ["@zlib.dev//:include"],
-    shared_library = "@zlib//:lib",
+    deps = ["@zlib"],
     strip_include_prefix = "/external/zlib.dev/include",
     tags = ["requires_zlib"],
 )
 
-haskell_cc_import(
+cc_library(
     name = "zlib-with-genrule-header",
     hdrs = [":genrule-header"],
-    shared_library = "@zlib//:lib",  # just use zlib because this field is required
     strip_include_prefix = "include",
     tags = ["requires_zlib"],
 )
@@ -60,7 +58,7 @@ haskell_library(
 )
 
 # Replicate the above example, but use the externally-defined
-# haskell_cc_import rule.
+# cc_library rule.
 haskell_library(
     name = "intermediate-library-other",
     srcs = ["IntLib.hsc"],

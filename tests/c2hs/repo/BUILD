@@ -6,5 +6,5 @@ c2hs_library(
     name = "baz",
     srcs = ["Baz.chs"],
     visibility = ["//visibility:public"],
-    deps = ["@io_tweag_rules_haskell//tests/c2hs:zlib"],
+    deps = ["@zlib.dev//:zlib"],
 )
