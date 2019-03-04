@@ -31,15 +31,12 @@ def create_rpath_entry_test_impl(ctx):
         actual = create_rpath_entry(
             struct(
                 short_path = ctx.attr.binary_short_path,
-                path = ctx.attr.binary_path,
             ),
             struct(
                 short_path = ctx.attr.dependency_short_path,
-                path = ctx.attr.dependency_path,
             ),
             keep_filename = ctx.attr.keep_filename,
             prefix = ctx.attr.prefix,
-            comes_from_haskell_cc_import = ctx.attr.comes_from_haskell_cc_import,
         ),
     )
     unit.end(env)
@@ -52,11 +49,6 @@ create_rpath_entry_test = unit.make(
         "keep_filename": attr.bool(default = False, mandatory = False),
         "prefix": attr.string(default = "", mandatory = False),
         "output": attr.string(),
-        "comes_from_haskell_cc_import": attr.bool(default = False, mandatory = False),
-        # only used when comes_from_haskell_cc_import is True
-        "dependency_path": attr.string(default = "", mandatory = False),
-        # only used when comes_from_haskell_cc_import is True
-        "binary_path": attr.string(default = "", mandatory = False),
     },
 )
 

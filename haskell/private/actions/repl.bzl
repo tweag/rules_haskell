@@ -67,7 +67,6 @@ def build_haskell_repl(
 
     link_ctx = build_info.cc_dependencies.dynamic_linking
     libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
-    import_libs_to_link = set.to_list(build_info.import_dependencies)
 
     # External shared libraries that we need to make available to the REPL.
     # This only includes dynamic libraries as including static libraries here
@@ -75,7 +74,7 @@ def build_haskell_repl(
     # XXX: Verify that static libraries can't be loaded by GHCi.
     seen_libs = set.empty()
     libraries = []
-    for lib in libs_to_link + import_libs_to_link:
+    for lib in libs_to_link:
         lib_name = get_lib_name(lib)
         if is_shared_library(lib) and not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)

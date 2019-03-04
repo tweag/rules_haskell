@@ -18,7 +18,6 @@ def _get_extra_libraries(dep_info):
       libs: list: Extra library dependencies.
     """
     cc_libs = dep_info.cc_dependencies.dynamic_linking.libraries_to_link.to_list()
-    import_libs = set.to_list(dep_info.import_dependencies)
 
     # The order in which library dependencies are listed is relevant when
     # linking static archives. To maintain the order defined by the input
@@ -27,7 +26,7 @@ def _get_extra_libraries(dep_info):
     seen_libs = set.empty()
     extra_libs = []
     extra_lib_dirs = set.empty()
-    for lib in cc_libs + import_libs:
+    for lib in cc_libs:
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)

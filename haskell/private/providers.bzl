@@ -104,8 +104,6 @@ HaskellBuildInfo = provider(
         "direct_prebuilt_deps": "Set of info of direct prebuilt dependencies.",
         "cc_dependencies": "Direct cc library dependencies. See HaskellCcInfo.",
         "transitive_cc_dependencies": "Transitive cc library dependencies. See HaskellCcInfo.",
-        "import_dependencies": "Direct haskell_cc_import library dependencies.",
-        "transitive_import_dependencies": "Transitive haskell_cc_import library dependencies.",
     },
 )
 
@@ -137,14 +135,9 @@ def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
 
     libs_to_link = trans_link_ctx.libraries_to_link.to_list()
     libs_for_runtime = trans_link_ctx.dynamic_libraries_for_runtime.to_list()
-    import_libs = set.to_list(build_info.transitive_import_dependencies)
 
-    _library_deps = libs_to_link + import_libs
-    _ld_library_deps = libs_for_runtime + [
-        lib
-        for lib in import_libs
-        if is_shared_library(lib)
-    ]
+    _library_deps = libs_to_link
+    _ld_library_deps = libs_for_runtime
     if hs.toolchain.is_darwin:
         # GHC's builtin linker requires .dylib files on MacOS.
         library_deps = darwin_convert_to_dylibs(hs, _library_deps)
@@ -239,24 +232,6 @@ HaskellProtobufInfo = provider(
     doc = "Provider that wraps providers of auto-generated Haskell libraries",
     fields = {
         "files": "files",
-    },
-)
-
-# XXX this provider shouldn't be necessary. But since Skylark rules
-# can neither return CcSkylarkApiProvider nor properly test for its
-# existence in a dependency, we're forced to introduce this hack for
-# now. See https://github.com/bazelbuild/bazel/issues/4370.
-CcSkylarkApiProviderHacked = provider(
-    doc = "Skylark emulation of CcSkylarkApiProvider. Temporary hack.",
-    fields = {
-        "transitive_headers": """
-
-Returns a depset of headers that have been declared in the src or
-headers attribute(possibly empty but never None).
-""",
-        "include_directories": """
-Returns the list of include directories used to compile this target.
-""",
     },
 )
 

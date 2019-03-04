@@ -2,7 +2,6 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:private/providers.bzl",
-    "CcSkylarkApiProviderHacked",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
     "HaskellCcInfo",
@@ -157,8 +156,6 @@ def gather_dep_info(ctx):
         direct_prebuilt_deps = set.empty(),
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),
-        import_dependencies = set.empty(),
-        transitive_import_dependencies = set.empty(),
     )
 
     for dep in ctx.attr.deps:
@@ -181,8 +178,6 @@ def gather_dep_info(ctx):
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
                 cc_dependencies = acc.cc_dependencies,
                 transitive_cc_dependencies = merge_HaskellCcInfo(acc.transitive_cc_dependencies, binfo.transitive_cc_dependencies),
-                import_dependencies = acc.import_dependencies,
-                transitive_import_dependencies = set.mutable_union(acc.transitive_import_dependencies, binfo.transitive_import_dependencies),
             )
         elif HaskellPrebuiltPackageInfo in dep:
             pkg = dep[HaskellPrebuiltPackageInfo]
@@ -198,8 +193,6 @@ def gather_dep_info(ctx):
                 direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
                 cc_dependencies = acc.cc_dependencies,
                 transitive_cc_dependencies = acc.transitive_cc_dependencies,
-                import_dependencies = acc.import_dependencies,
-                transitive_import_dependencies = acc.transitive_import_dependencies,
             )
         elif CcInfo in dep:
             # The final link of a binary must include all static libraries we
@@ -223,41 +216,6 @@ def gather_dep_info(ctx):
                 transitive_cc_dependencies = merge_HaskellCcInfo(
                     acc.transitive_cc_dependencies,
                     hs_cc_info,
-                ),
-                import_dependencies = acc.import_dependencies,
-                transitive_import_dependencies = acc.transitive_import_dependencies,
-            )
-        elif CcSkylarkApiProviderHacked in dep:
-            # If the provider is CcSkylarkApiProviderHacked, then the .so
-            # files come from haskell_cc_import. In that case there are no
-            # indirect shared library dependencies.
-            import_deps = set.from_list([
-                f
-                for f in dep.files.to_list()
-                if is_shared_library(f)
-            ])
-
-            # If not a Haskell dependency, pass it through as-is to the
-            # linking phase.
-            acc = HaskellBuildInfo(
-                package_ids = acc.package_ids,
-                package_confs = acc.package_confs,
-                package_caches = acc.package_caches,
-                static_libraries = acc.static_libraries,
-                static_libraries_prof = acc.static_libraries_prof,
-                dynamic_libraries = acc.dynamic_libraries,
-                interface_dirs = acc.interface_dirs,
-                prebuilt_dependencies = acc.prebuilt_dependencies,
-                direct_prebuilt_deps = acc.direct_prebuilt_deps,
-                cc_dependencies = acc.cc_dependencies,
-                transitive_cc_dependencies = acc.transitive_cc_dependencies,
-                import_dependencies = set.mutable_union(
-                    acc.import_dependencies,
-                    import_deps,
-                ),
-                transitive_import_dependencies = set.mutable_union(
-                    acc.transitive_import_dependencies,
-                    import_deps,
                 ),
             )
 

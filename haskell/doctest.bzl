@@ -110,11 +110,10 @@ def _haskell_doctest_single(target, ctx):
     # Direct C library dependencies to link against.
     link_ctx = build_info.cc_dependencies.dynamic_linking
     libs_to_link = link_ctx.libraries_to_link.to_list()
-    import_libs_to_link = set.to_list(build_info.import_dependencies)
 
     # External libraries.
     seen_libs = set.empty()
-    for lib in libs_to_link + import_libs_to_link:
+    for lib in libs_to_link:
         lib_name = get_lib_name(lib)
         if not set.is_member(seen_libs, lib_name):
             set.mutable_insert(seen_libs, lib_name)

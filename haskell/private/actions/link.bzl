@@ -76,7 +76,6 @@ def create_rpath_entry(
         binary,
         dependency,
         keep_filename,
-        comes_from_haskell_cc_import,
         prefix = ""):
     """Return a (relative) path that points from `binary` to `dependecy`
     while not leaving the current bazel runpath, taking into account weird
@@ -93,56 +92,41 @@ def create_rpath_entry(
       binary: target of current binary
       dependency: target of dependency to relatively point to
       keep_filename: whether to point to the filename or its parent dir
-      comes_from_haskell_cc_import: if dependency is a haskell_cc_import
       prefix: string path prefix to add before the relative path
 
     Returns:
       relative path string
     """
 
-    # we need to use different paths if the dependency was imported
-    # via the `haskell_cc_import` rule.
-    # XXX: remove once `haskell_cc_import` is removed.
-    if comes_from_haskell_cc_import:
-        # backup the full path to the binary
-        # This abuses the fact that the linker resolves symlinks,
-        # meaning the `binary` path is not actually the path in the
-        # runfiles folder, rather the one in the bazel execpath.
-        bin_backup = [".."] * len(parent_dir_path(binary.path))
+    (bin_is_external, bin_parent_dir) = _get_target_parent_dir(binary)
+    (dep_is_external, dep_parent_dir) = _get_target_parent_dir(dependency)
 
-        # append the full path of our dependency
-        path_segments = bin_backup + parent_dir_path(dependency.path)
+    # backup through parent directories of the binary,
+    # to the runfiles directory
+    bin_backup = [".."] * len(bin_parent_dir)
 
-    else:
-        (bin_is_external, bin_parent_dir) = _get_target_parent_dir(binary)
-        (dep_is_external, dep_parent_dir) = _get_target_parent_dir(dependency)
-
-        # backup through parent directories of the binary,
-        # to the runfiles directory
-        bin_backup = [".."] * len(bin_parent_dir)
-
-        # external repositories live in `target.runfiles/external`,
-        # while the internal repository lives in `target.runfiles`.
-        # The `.short_path`s of external repositories are strange,
-        # they start with `../`, but you cannot just append that in
-        # order to find the correct runpath. Instead you have to use
-        # the following logic to construct the correct runpaths:
-        if bin_is_external:
-            if dep_is_external:
-                # stay in `external`
-                path_segments = bin_backup
-            else:
-                # backup out of `external`
-                path_segments = [".."] + bin_backup
-        elif dep_is_external:
-            # go into `external`
-            path_segments = bin_backup + ["external"]
-        else:
-            # no special external traversal
+    # external repositories live in `target.runfiles/external`,
+    # while the internal repository lives in `target.runfiles`.
+    # The `.short_path`s of external repositories are strange,
+    # they start with `../`, but you cannot just append that in
+    # order to find the correct runpath. Instead you have to use
+    # the following logic to construct the correct runpaths:
+    if bin_is_external:
+        if dep_is_external:
+            # stay in `external`
             path_segments = bin_backup
+        else:
+            # backup out of `external`
+            path_segments = [".."] + bin_backup
+    elif dep_is_external:
+        # go into `external`
+        path_segments = bin_backup + ["external"]
+    else:
+        # no special external traversal
+        path_segments = bin_backup
 
-        # then add the parent dir to our dependency
-        path_segments.extend(dep_parent_dir)
+    # then add the parent dir to our dependency
+    path_segments.extend(dep_parent_dir)
 
     # optionally add the filename
     if keep_filename:
@@ -308,24 +292,18 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
     # Such indirect dependencies are linked by GHC based on the extra-libraries
     # fields in the dependency's package configuration file.
     libs_to_link = link_ctx.libraries_to_link.to_list()
-    import_libs_to_link = set.to_list(dep_info.import_dependencies)
-    _add_external_libraries(args, libs_to_link + import_libs_to_link)
+    _add_external_libraries(args, libs_to_link)
 
     # Transitive library dependencies to have in scope for linking.
     trans_libs_to_link = trans_link_ctx.libraries_to_link.to_list()
-    trans_import_libs = set.to_list(dep_info.transitive_import_dependencies)
 
     # Libraries to pass as inputs to linking action.
     cc_link_libs = depset(transitive = [
         depset(trans_libs_to_link),
-        depset(trans_import_libs),
     ])
 
     # Transitive dynamic library dependencies to have in RUNPATH.
-    cc_solibs = (
-        trans_link_ctx.dynamic_libraries_for_runtime.to_list() +
-        trans_import_libs
-    )
+    cc_solibs = trans_link_ctx.dynamic_libraries_for_runtime.to_list()
 
     # Collect Haskell dynamic library dependencies in common RUNPATH.
     # This is to keep the number of RUNPATH entries low, for faster loading
@@ -344,17 +322,10 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
     # Configure RUNPATH.
     rpaths = _infer_rpaths(
         hs.toolchain.is_darwin,
-        False,  # Libraries not coming from haskell_cc_import.
         binary,
         trans_link_ctx.dynamic_libraries_for_runtime.to_list() +
         hs_solibs,
     )
-    set.mutable_union(rpaths, _infer_rpaths(
-        hs.toolchain.is_darwin,
-        True,  # Libraries coming from haskell_cc_import.
-        binary,
-        trans_import_libs,
-    ))
     for rpath in set.to_list(rpaths):
         args.add("-optl-Wl,-rpath," + rpath)
 
@@ -519,7 +490,7 @@ def _add_external_libraries(args, ext_libs):
             ),
         ])
 
-def _infer_rpaths(is_darwin, comes_from_haskell_cc_import, target, solibs):
+def _infer_rpaths(is_darwin, target, solibs):
     """Return set of RPATH values to be added to target so it can find all
     solibs
 
@@ -530,8 +501,6 @@ def _infer_rpaths(is_darwin, comes_from_haskell_cc_import, target, solibs):
 
     Args:
       is_darwin: Whether we're compiling on and for Darwin.
-      comes_from_haskell_cc_import: Whether the given solibs come from the
-        `haskell_cc_import` rule.
       target: File, executable or library we're linking.
       solibs: A list of Files, shared objects that the target needs.
 
@@ -551,7 +520,6 @@ def _infer_rpaths(is_darwin, comes_from_haskell_cc_import, target, solibs):
             dependency = solib,
             keep_filename = False,
             prefix = prefix,
-            comes_from_haskell_cc_import = comes_from_haskell_cc_import,
         )
         set.mutable_insert(r, rpath)
 
