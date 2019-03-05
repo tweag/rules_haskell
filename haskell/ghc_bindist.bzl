@@ -64,8 +64,8 @@ def _execute_fail_loudly(ctx, args):
 def _ghc_bindist_impl(ctx):
     # Avoid rule restart by resolving these labels early. See
     # https://github.com/bazelbuild/bazel/blob/master/tools/cpp/lib_cc_configure.bzl#L17.
-    ghc_build = ctx.path(Label("//haskell:ghc.BUILD"))
-    crosstool_windows = ctx.path(Label("//haskell:CROSSTOOL.windows"))
+    ghc_build = ctx.path(Label("@io_tweag_rules_haskell//haskell:ghc.BUILD"))
+    crosstool_windows = ctx.path(Label("@io_tweag_rules_haskell//haskell:CROSSTOOL.windows"))
 
     version = ctx.attr.version
     target = ctx.attr.target
