@@ -48,7 +48,7 @@ def cc_interop_info(ctx):
 
     hdrs = depset(transitive = [cc.compilation_context.headers for cc in ccs])
     include_directories = set.to_list(set.from_list(
-        [f for cc in ccs for f in cc.compilation_context.includes]
+        [f for cc in ccs for f in cc.compilation_context.includes],
     ))
     quote_include_directories = set.to_list(set.from_list(
         [f for cc in ccs for f in cc.compilation_context.quote_includes],
@@ -187,7 +187,7 @@ def _cc_import_impl(ctx):
 
     compilation_context = cc_common.create_compilation_context(
         headers = depset(transitive = [l.files for l in ctx.attr.hdrs]),
-        includes = depset(direct = include_directories)
+        includes = depset(direct = include_directories),
     )
     linking_context = cc_common.create_linking_context(
         libraries_to_link = [

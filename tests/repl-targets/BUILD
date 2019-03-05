@@ -33,13 +33,16 @@ haskell_library(
         ":chs",
         ":codegen",
     ],
-    tags = ["requires_hackage", "requires_zlib"],
+    tags = [
+        "requires_hackage",
+        "requires_zlib",
+    ],
     visibility = ["//visibility:public"],
     deps = [
-        "@zlib",
         "//tests/data:ourclibrary",
         "//tests/hackage:array",
         "//tests/hackage:base",
+        "@zlib",
     ],
 )
 
@@ -48,13 +51,16 @@ haskell_library(
     srcs = [
         "Bad.hs",
     ],
-    tags = ["manual", "requires_zlib"],
+    tags = [
+        "manual",
+        "requires_zlib",
+    ],
     visibility = ["//visibility:public"],
     deps = [
-        "@zlib",
         "//tests/data:ourclibrary",
         "//tests/hackage:base",
         "@hackage//:array",
+        "@zlib",
     ],
 )
 

@@ -45,13 +45,16 @@ haskell_library(
     extra_srcs = [
         "unicode.txt",
     ],
-    tags = ["requires_hackage", "requires_zlib"],
+    tags = [
+        "requires_hackage",
+        "requires_zlib",
+    ],
     deps = [
         ":haddock-lib-a",
-        "@zlib",
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
         "@hackage//:libc",
+        "@zlib",
     ],
 )
 

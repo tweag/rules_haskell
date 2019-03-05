@@ -11,7 +11,7 @@ haskell_test(
     tags = ["requires_zlib"],
     visibility = ["//visibility:public"],
     deps = [
-        "@zlib",
         "//tests/hackage:base",
+        "@zlib",
     ],
 )

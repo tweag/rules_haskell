@@ -12,8 +12,8 @@ haskell_library(
     tags = ["requires_zlib"],
     visibility = ["//visibility:public"],
     deps = [
-        "@zlib",
         "//tests/hackage:base",
+        "@zlib",
     ],
 )
 
