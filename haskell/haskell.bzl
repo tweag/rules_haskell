@@ -36,6 +36,11 @@ load(
     _haskell_library_impl = "haskell_library_impl",
     _haskell_test_impl = "haskell_test_impl",
 )
+load(
+    ":repl.bzl",
+    _haskell_repl = "haskell_repl",
+    _haskell_repl_aspect = "haskell_repl_aspect",
+)
 
 # For re-exports:
 load(
@@ -303,6 +308,10 @@ haskell_register_toolchains = _haskell_register_toolchains
 haskell_register_ghc_bindists = _haskell_register_ghc_bindists
 
 haskell_register_ghc_nixpkgs = _haskell_register_ghc_nixpkgs
+
+haskell_repl = _haskell_repl
+
+haskell_repl_aspect = _haskell_repl_aspect
 
 haskell_toolchain = _haskell_toolchain
 

@@ -36,3 +36,4 @@ let rules_haskell_add_loaded_modules _ =
 :undef rules_haskell_add_loaded_modules
 -- reload modules to drop the rules_haskell* definitions
 :reload
+{COMMANDS}

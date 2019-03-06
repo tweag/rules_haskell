@@ -109,6 +109,7 @@ def build_haskell_repl(
         output = ghci_repl_script,
         substitutions = {
             "{ADD_SOURCES}": " ".join(add_sources),
+            "{COMMANDS}": "",
         },
     )
 
