@@ -31,10 +31,13 @@ def _camel_case(comp):
     """
 
     # Split on both "-" and "_", matching the behavior of proto-lens-protoc.
+    # Be sure to ignore any empty segments from input with leading or trailing
+    # delimiters.
     return "".join([
         _capitalize_first_letter(c2)
         for c1 in comp.split("_")
         for c2 in c1.split("-")
+        if len(c2) > 0
     ])
 
 def _proto_lens_output_file(path):
@@ -55,10 +58,15 @@ def _proto_lens_fields_file(path):
 
     return "Proto/" + result
 
-def _proto_path(proto):
+def _proto_path(proto, proto_source_roots):
     """A path to the proto file which matches any import statements."""
+    proto_path = proto.path
+    for p in proto_source_roots:
+        if proto_path.startswith(p):
+            return paths.relativize(proto_path, p)
+
     return paths.relativize(
-        proto.path,
+        proto_path,
         paths.join(proto.root.path, proto.owner.workspace_root),
     )
 
@@ -77,8 +85,11 @@ def _haskell_proto_aspect_impl(target, ctx):
     hs_files = []
     inputs = []
 
+    direct_proto_paths = [target.proto.proto_source_root]
+    transitive_proto_paths = target.proto.transitive_proto_path
+
     args.add_all([
-        "-I{0}={1}".format(_proto_path(s), s.path)
+        "-I{0}={1}".format(_proto_path(s, transitive_proto_paths), s.path)
         for s in target.proto.transitive_sources.to_list()
     ])
 
@@ -106,16 +117,17 @@ def _haskell_proto_aspect_impl(target, ctx):
         args.add(src.path)
         hs_files.append(ctx.actions.declare_file(
             _proto_lens_output_file(
-                _proto_path(src),
+                _proto_path(src, direct_proto_paths),
             ),
         ))
         hs_files.append(ctx.actions.declare_file(
             _proto_lens_fields_file(
-                _proto_path(src),
+                _proto_path(src, direct_proto_paths),
             ),
         ))
 
     args.add_all([
+        "--proto_path=" + target.proto.proto_source_root,
         "--haskell_out=no-runtime:" + paths.join(
             hs_files[0].root.path,
             src_prefix,
@@ -150,25 +162,25 @@ def _haskell_proto_aspect_impl(target, ctx):
     }
 
     patched_ctx = struct(
-        label = ctx.label,
-        attr = struct(**patched_attrs),
         actions = ctx.actions,
-        var = ctx.var,
+        attr = struct(**patched_attrs),
         bin_dir = ctx.bin_dir,
-        genfiles_dir = ctx.genfiles_dir,
-        toolchains = ctx.toolchains,
-        file = ctx.file,
-        files = struct(
-            srcs = hs_files,
-            extra_srcs = depset(),
-            _cc_toolchain = ctx.files._cc_toolchain,
-        ),
+        disabled_features = ctx.rule.attr.features,
         executable = struct(
             _ls_modules = ctx.executable._ls_modules,
         ),
         # Necessary for CC interop (see cc.bzl).
         features = ctx.rule.attr.features,
-        disabled_features = ctx.rule.attr.features,
+        file = ctx.file,
+        files = struct(
+            srcs = hs_files,
+            _cc_toolchain = ctx.files._cc_toolchain,
+            extra_srcs = depset(),
+        ),
+        genfiles_dir = ctx.genfiles_dir,
+        label = ctx.label,
+        toolchains = ctx.toolchains,
+        var = ctx.var,
     )
 
     [build_info, library_info, default_info, coverage_info] = _haskell_library_impl(patched_ctx)
@@ -182,6 +194,7 @@ def _haskell_proto_aspect_impl(target, ctx):
 
 _haskell_proto_aspect = aspect(
     _haskell_proto_aspect_impl,
+    attr_aspects = ["deps"],
     attrs = {
         "_ghci_script": attr.label(
             allow_single_file = True,
@@ -200,7 +213,6 @@ _haskell_proto_aspect = aspect(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
-    attr_aspects = ["deps"],
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
         "@io_tweag_rules_haskell//protobuf:toolchain",
@@ -230,6 +242,7 @@ haskell_proto_library = rule(
         "@io_tweag_rules_haskell//protobuf:toolchain",
     ],
 )
+
 """Generate Haskell library allowing to use protobuf definitions with help
 of [`proto-lens`](https://github.com/google/proto-lens#readme).
 
@@ -260,8 +273,8 @@ use the 'deps' attribute instead.
         platform_common.ToolchainInfo(
             name = ctx.label.name,
             tools = struct(
-                protoc = ctx.executable.protoc,
                 plugin = ctx.executable.plugin,
+                protoc = ctx.executable.protoc,
             ),
             deps = ctx.attr.deps,
             prebuilt_deps = ctx.attr.prebuilt_deps,

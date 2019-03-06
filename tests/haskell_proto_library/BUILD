@@ -27,10 +27,29 @@ proto_library(
     ],
 )
 
+proto_library(
+    name = "stripped_zip_code_proto",
+    srcs = ["stripped_zip_code.proto"],
+    strip_import_prefix = "/tests/haskell_proto_library/",
+)
+
+proto_library(
+    name = "stripped_address_proto",
+    srcs = ["stripped_address.proto"],
+    strip_import_prefix = "/tests/haskell_proto_library/",
+    deps = [":stripped_zip_code_proto"],
+)
+
 haskell_proto_library(
     name = "address_haskell_proto",
     tags = ["requires_hackage"],
     deps = [":address_proto"],
+)
+
+haskell_proto_library(
+    name = "stripped_address_haskell_proto",
+    tags = ["requires_hackage"],
+    deps = [":stripped_address_proto"],
 )
 
 haskell_proto_library(
@@ -47,6 +66,7 @@ haskell_library(
     deps = [
         ":address_haskell_proto",
         ":person_haskell_proto",
+        ":stripped_address_haskell_proto",
         "//tests/hackage:base",
     ],
 )
