@@ -7,8 +7,8 @@ local_repository(
 
 http_archive(
     name = "io_tweag_rules_haskell",
-    strip_prefix = "rules_haskell-0.6",
-    urls = ["https://github.com/tweag/rules_haskell/archive/v0.6.tar.gz"],
+    strip_prefix = "rules_haskell-0.8",
+    urls = ["https://github.com/tweag/rules_haskell/archive/v0.8.tar.gz"],
 )
 
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")

@@ -1,10 +1,12 @@
 workspace(name = "tutorial")
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 http_archive(
     name = "io_tweag_rules_haskell",
-    strip_prefix = "rules_haskell-0.6",
-    urls = ["https://github.com/tweag/rules_haskell/archive/v0.6.tar.gz"],
-    sha256 = "ab0411a7907074e15bc959914eb0642fd44016b89cf1b92e7e6bc9719398e725",
+    strip_prefix = "rules_haskell-0.8",
+    urls = ["https://github.com/tweag/rules_haskell/archive/v0.8.tar.gz"],
+    sha256 = "431d492a8ee6a110cdf42496181c9d27225dfb997379e64a148eb8e69f272ab7",
 )
 
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
