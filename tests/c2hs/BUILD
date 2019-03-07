@@ -2,6 +2,7 @@ load("@io_tweag_rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
+    "haskell_repl",
 )
 
 package(default_testonly = 1)
@@ -33,4 +34,11 @@ haskell_library(
     ],
     tags = ["requires_c2hs"],
     deps = ["//tests/hackage:base"],
+)
+
+haskell_repl(
+    name = "repl",
+    deps = [
+        ":c2hs",
+    ],
 )

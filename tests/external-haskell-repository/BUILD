@@ -4,6 +4,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_test",
+    "haskell_repl",
 )
 
 haskell_test(
@@ -14,4 +15,12 @@ haskell_test(
         "//tests/hackage:base",
         "@haskell_package_repository_dummy//:library-with-cbits",
     ],
+)
+
+haskell_repl(
+    name = "repl",
+    deps = [
+        ":external-haskell-repository",
+    ],
+    testonly = 1,
 )
