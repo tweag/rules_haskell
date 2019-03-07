@@ -18,7 +18,7 @@ cc_haskell_import(
     dep = ":add-one-hs",
 )
 
-cc_binary(
+cc_test(
     name = "add-one",
     srcs = [
         "main.c",

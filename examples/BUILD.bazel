@@ -6,5 +6,5 @@ load(
 haskell_toolchain(
     name = "ghc",
     tools = "@ghc//:bin",
-    version = "8.2.2",
+    version = "8.4.3",
 )
