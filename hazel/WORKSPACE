@@ -36,13 +36,9 @@ cc_configure_custom(
     ld = "@binutils//:bin/ld",
 )
 
-RULES_HASKELL_SHA = "869d14b8c7c95745b146be9ec15285d8c6dabe57"
-
-http_archive(
+local_repository(
     name = "io_tweag_rules_haskell",
-    urls = ["https://github.com/FormationAI/rules_haskell/archive/"
-            + RULES_HASKELL_SHA + ".tar.gz"],
-    strip_prefix = "rules_haskell-" + RULES_HASKELL_SHA,
+    path = "..",
 )
 
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
