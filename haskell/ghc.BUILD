@@ -25,7 +25,17 @@ cc_library(
     )[0],
 )
 
-# This is needed for Hazel targets.
+# Needed for Hazel; see FormationAI/hazel/BUILD.ghc
+
+cc_library(
+    name = "unix-includes",
+    hdrs = glob(["lib/ghc-*/unix-*/include/*.h"]),
+    strip_include_prefix = glob(
+        ["lib/ghc-*/unix-*/include"],
+        exclude_directories = 0,
+    )[0],
+)
+
 cc_library(
     name = "rts-headers",
     hdrs = glob(["lib/include/**/*.h"]),
