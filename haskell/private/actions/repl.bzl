@@ -113,8 +113,6 @@ def build_haskell_repl(
 
     source_files = lib_info.source_files if lib_info != None else bin_info.source_files
 
-    args += ["-ghci-script", ghci_repl_script.path]
-
     # Extra arguments.
     # `compiler flags` is the default set of arguments for the repl,
     # augmented by `repl_ghci_args`.
@@ -135,7 +133,14 @@ def build_haskell_repl(
             "{LIBPATH}": ghc_env["LIBRARY_PATH"],
             "{LDLIBPATH}": ghc_env["LD_LIBRARY_PATH"],
             "{TOOL}": hs.tools.ghci.path,
-            "{ARGS}": " ".join([shell.quote(a) for a in args]),
+            "{ARGS}": " ".join(
+                [
+                    "-ghci-script",
+                    paths.join("$RULES_HASKELL_EXEC_ROOT", ghci_repl_script.path),
+                ] + [
+                   shell.quote(a) for a in args
+                ]
+            ),
         },
         is_executable = True,
     )
