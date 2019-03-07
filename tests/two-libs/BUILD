@@ -2,6 +2,7 @@ load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
     "haskell_test",
+    "haskell_repl",
 )
 
 package(
@@ -32,5 +33,12 @@ haskell_test(
     deps = [
         ":two",
         "//tests/hackage:base",
+    ],
+)
+
+haskell_repl(
+    name = "two-libs-multi-repl",
+    deps = [
+        ":two-libs",
     ],
 )
