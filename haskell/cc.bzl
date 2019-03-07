@@ -46,32 +46,28 @@ def cc_interop_info(ctx):
     """
     ccs = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep]
 
-    hdrs = depset(transitive = [cc.compilation_context.headers for cc in ccs])
-    include_directories = set.to_list(set.from_list(
-        [f for cc in ccs for f in cc.compilation_context.includes],
-    ))
-    quote_include_directories = set.to_list(set.from_list(
-        [f for cc in ccs for f in cc.compilation_context.quote_includes],
-    ))
-    system_include_directories = set.to_list(set.from_list(
-        [f for cc in ccs for f in cc.compilation_context.system_includes],
-    ))
-
-    cpp_flags = (
-        ["-D" + define for cc in ccs for define in cc.compilation_context.defines] +
-        [
-            f
-            for include in quote_include_directories
-            for f in ["-iquote", include]
-        ] +
-        [
-            f
-            for include in system_include_directories
-            for f in ["-isystem", include]
-        ]
-    )
-
-    include_args = ["-I" + include for include in include_directories]
+    hdrs = []
+    include_args = []
+    cpp_flags = []
+    for cc in ccs:
+        cc_ctx = cc.compilation_context
+        hdrs.append(cc_ctx.headers)
+        include_args.extend(["-I" + include for include in cc_ctx.includes])
+        cpp_flags.extend(
+            [
+                "-D" + define
+                for define in cc_ctx.defines
+            ] + [
+                f
+                for include in cc_ctx.quote_includes
+                for f in ["-iquote", include]
+            ] + [
+                f
+                for include in cc_ctx.system_includes
+                for f in ["-isystem", include]
+            ],
+        )
+    hdrs = depset(transitive = hdrs)
 
     # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
     # Should be find_cpp_toolchain() instead.
