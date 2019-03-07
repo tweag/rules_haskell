@@ -135,7 +135,6 @@ def build_haskell_repl(
             "{LIBPATH}": ghc_env["LIBRARY_PATH"],
             "{LDLIBPATH}": ghc_env["LD_LIBRARY_PATH"],
             "{TOOL}": hs.tools.ghci.path,
-            "{SCRIPT_LOCATION}": output.path,
             "{ARGS}": " ".join([shell.quote(a) for a in args]),
         },
         is_executable = True,
