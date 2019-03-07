@@ -1,13 +1,17 @@
-load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-     "haskell_import",
-     "haskell_binary",
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import",
+    "haskell_test",
 )
 
 haskell_import(name = "base")
 
-haskell_binary(
+haskell_test(
     name = "demorgan",
     srcs = ["Main.hs"],
     compiler_flags = ["-threaded"],
-    deps = [":base", "//lib:booleans"],
+    deps = [
+        ":base",
+        "//lib:booleans",
+    ],
 )
