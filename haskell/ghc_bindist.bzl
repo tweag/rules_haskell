@@ -1,6 +1,11 @@
 """Workspace rules (GHC binary distributions)"""
 
 _GHC_BINDISTS = {
+    "8.6.4": {
+        "linux_amd64": ("https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-x86_64-deb8-linux.tar.xz", "34ef5fc8ddf2fc32a027180bea5b1c8a81ea840c87faace2977a572188d4b42d"),
+        "darwin_amd64": ("https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-x86_64-apple-darwin.tar.xz", "cccb58f142fe41b601d73690809f6089f7715b6a50a09aa3d0104176ab4db09e"),
+        "windows_amd64": ("https://downloads.haskell.org/~ghc/8.6.4/ghc-8.6.4-x86_64-unknown-mingw32.tar.xz", "e8d021b7a90772fc559862079da20538498d991956d7557b468ca19ddda22a08"),
+    },
     "8.6.3": {
         "linux_amd64": ("https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-deb8-linux.tar.xz", "291ca565374f4d51cc311488581f3279d3167a064fabfd4a6722fe2bd4532fd5"),
         "darwin_amd64": ("https://downloads.haskell.org/~ghc/8.6.3/ghc-8.6.3-x86_64-apple-darwin.tar.xz", "79d069a1a7d74cfdd7ac2a2711c45d3ddc6265b988a0cefa342714b24f997fc1"),
