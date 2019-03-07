@@ -11,6 +11,8 @@ let
   genBuildFile =
     { package_name, package, ghc }:
     runCommand "${package_name}-BUILD" {
+      preferLocalBuild = true;
+      allowSubstitutes = false;
       ghc_pkg = "${ghc}/bin/ghc-pkg --simple-output -v0";
       GHC_PACKAGE_PATH = "${package}/lib/${ghc.name}/package.conf.d";
       inherit package_name;
