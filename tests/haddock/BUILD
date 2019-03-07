@@ -1,6 +1,5 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_cc_import",
     "haskell_doc",
     "haskell_import",
     "haskell_library",
@@ -9,12 +8,6 @@ load(
 package(
     default_testonly = 1,
     default_visibility = ["//visibility:public"],
-)
-
-haskell_cc_import(
-    name = "zlib",
-    shared_library = "@zlib//:lib",
-    tags = ["requires_zlib"],
 )
 
 haskell_library(
@@ -52,13 +45,16 @@ haskell_library(
     extra_srcs = [
         "unicode.txt",
     ],
-    tags = ["requires_hackage"],
+    tags = [
+        "requires_hackage",
+        "requires_zlib",
+    ],
     deps = [
         ":haddock-lib-a",
-        ":zlib",
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
         "@hackage//:libc",
+        "@zlib",
     ],
 )
 

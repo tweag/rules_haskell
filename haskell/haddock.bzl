@@ -113,7 +113,6 @@ def _haskell_doc_aspect_impl(target, ctx):
     # Transitive library dependencies for runtime.
     trans_link_ctx = target[HaskellBuildInfo].transitive_cc_dependencies.dynamic_linking
     trans_libs = trans_link_ctx.libraries_to_link.to_list()
-    trans_import_libs = set.to_list(target[HaskellBuildInfo].transitive_import_dependencies)
 
     ctx.actions.run(
         inputs = depset(transitive = [
@@ -121,7 +120,6 @@ def _haskell_doc_aspect_impl(target, ctx):
             set.to_depset(target[HaskellBuildInfo].interface_dirs),
             set.to_depset(target[HaskellBuildInfo].dynamic_libraries),
             depset(trans_libs),
-            depset(trans_import_libs),
             depset(transitive_haddocks.values()),
             depset(transitive_html.values()),
             # Need to give source files this way because the source_files field of

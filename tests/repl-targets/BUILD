@@ -1,20 +1,11 @@
 load("@io_tweag_rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_cc_import",
     "haskell_library",
     "haskell_test",
 )
 
 package(default_testonly = 1)
-
-haskell_cc_import(
-    name = "zlib",
-    hdrs = ["@zlib.dev//:include"],
-    shared_library = "@zlib//:lib",
-    strip_include_prefix = "/external/zlib.dev/include",
-    tags = ["requires_zlib"],
-)
 
 genrule(
     name = "codegen",
@@ -42,13 +33,16 @@ haskell_library(
         ":chs",
         ":codegen",
     ],
-    tags = ["requires_hackage"],
+    tags = [
+        "requires_hackage",
+        "requires_zlib",
+    ],
     visibility = ["//visibility:public"],
     deps = [
-        ":zlib",
         "//tests/data:ourclibrary",
         "//tests/hackage:array",
         "//tests/hackage:base",
+        "@zlib",
     ],
 )
 
@@ -57,13 +51,16 @@ haskell_library(
     srcs = [
         "Bad.hs",
     ],
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "requires_zlib",
+    ],
     visibility = ["//visibility:public"],
     deps = [
-        ":zlib",
         "//tests/data:ourclibrary",
         "//tests/hackage:base",
         "@hackage//:array",
+        "@zlib",
     ],
 )
 

@@ -2,7 +2,6 @@ package(default_testonly = 1)
 
 load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_library",
-  "haskell_cc_import",
 )
 
 filegroup (
@@ -19,9 +18,9 @@ filegroup (
   ]),
 )
 
-haskell_cc_import(
+cc_library(
   name = "zlib-import",
-  shared_library = ":lib",
+  srcs = [":lib"],
   hdrs = [":include"],
   strip_include_prefix = "cbits",
 )

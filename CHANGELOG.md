@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 * The minimum supported Bazel version is now v0.22.
+* Mark `haskell_cc_import` as deprecated.
 
 ## [0.8] - 2019-01-28
 

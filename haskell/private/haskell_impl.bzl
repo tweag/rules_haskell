@@ -383,8 +383,6 @@ def haskell_library_impl(ctx):
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
-        import_dependencies = dep_info.import_dependencies,
-        transitive_import_dependencies = dep_info.transitive_import_dependencies,
     )
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
