@@ -129,7 +129,10 @@ def _haskell_doctest_single(target, ctx):
                 ])
 
     # Transitive library dependencies for runtime.
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(hs, build_info)
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        build_info.transitive_cc_dependencies,
+    )
 
     header_files = lib_info.header_files if lib_info != None else bin_info.header_files
 

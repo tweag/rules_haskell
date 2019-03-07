@@ -73,7 +73,7 @@ def build_haskell_runghc(
     # Transitive library dependencies to have in runfiles.
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
         hs,
-        build_info,
+        build_info.transitive_cc_dependencies,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
 

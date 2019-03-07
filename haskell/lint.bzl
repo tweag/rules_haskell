@@ -74,7 +74,10 @@ def _haskell_lint_aspect_impl(target, ctx):
     )
 
     # Transitive library dependencies for runtime.
-    (library_deps, ld_library_deps, _ghc_env) = get_libs_for_ghc_linker(hs, build_info)
+    (library_deps, ld_library_deps, _ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        build_info.transitive_cc_dependencies,
+    )
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
