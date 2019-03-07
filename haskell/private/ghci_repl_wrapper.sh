@@ -20,6 +20,12 @@ EOF
     exit 1
 fi
 
+# GHCi script and libraries are loaded relative to workspace directory.
+# bazel run //some:target@repl will be executed from the workspace directory.
+# bazel run //some:haskell_repl will be executed from its execroot.
+# Explicitly change into the workspace root in that case.
+cd "$BUILD_WORKSPACE_DIRECTORY"
+
 # This is a workaround for https://github.com/bazelbuild/bazel/issues/5506
 # and also for the fact that REPL script relies on so-called “convenience
 # links” and the names of those links are controlled by the --symlink_prefix
