@@ -2,6 +2,7 @@ load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
     "haskell_test",
+    "haskell_repl",
 )
 
 package(default_testonly = 1)
@@ -24,5 +25,13 @@ haskell_test(
     deps = [
         "//tests/hackage:base",
         "//tests/library-deps/sublib",
+    ],
+)
+
+haskell_repl(
+    name = "library-repl",
+    deps = [
+        ":library-deps",
+        ":bin-deps",
     ],
 )
