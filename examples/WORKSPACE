@@ -5,10 +5,9 @@ local_repository(
     path = "tutorial",
 )
 
-http_archive(
+local_repository(
     name = "io_tweag_rules_haskell",
-    strip_prefix = "rules_haskell-0.8",
-    urls = ["https://github.com/tweag/rules_haskell/archive/v0.8.tar.gz"],
+    path = "..",
 )
 
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
