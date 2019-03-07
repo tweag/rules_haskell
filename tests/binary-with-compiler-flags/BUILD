@@ -1,6 +1,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_test",
+    "haskell_repl",
 )
 
 package(default_testonly = 1)
@@ -15,4 +16,9 @@ haskell_test(
         "-XLambdaCase",
     ],
     deps = ["//tests/hackage:base"],
+)
+
+haskell_repl(
+    name = "repl",
+    deps = [":binary-with-compiler-flags"],
 )
