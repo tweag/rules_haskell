@@ -359,7 +359,11 @@ def _create_repl(hs, ctx, repl_info, output):
         output = ghci_repl_wrapper,
         is_executable = True,
         substitutions = {
-            "{ENV}": render_env(ghc_env),
+            "{ENV}": render_env(ghc_env + {
+                # Export RUNFILES_DIR so that targets that require runfiles
+                # can be executed in the REPL.
+                "RUNFILES_DIR": paths.join("$RULES_HASKELL_EXEC_ROOT", output.path + ".runfiles")
+            }),
             "{TOOL}": hs.tools.ghci.path,
             "{ARGS}": " ".join(
                 [
@@ -389,6 +393,13 @@ def _create_repl(hs, ctx, repl_info, output):
         set.to_depset(repl_info.source_files),
     ])
     ln(hs, ghci_repl_wrapper, output, extra_inputs)
+    return [DefaultInfo(
+        executable = output,
+        runfiles = ctx.runfiles(
+            transitive_files = extra_inputs,
+            collect_data = True,
+        ),
+    )]
 
 
 def _haskell_repl_aspect_impl(target, ctx):
@@ -425,8 +436,7 @@ def _haskell_repl_impl(ctx):
     exclude = [_parse_pattern(pat) for pat in ctx.attr.exclude]
     repl_info = _create_HaskellReplInfo(include, exclude, collect_info)
     hs = haskell_context(ctx)
-    _create_repl(hs, ctx, repl_info, ctx.outputs.repl)
-    return [DefaultInfo(executable = ctx.outputs.repl)]
+    return _create_repl(hs, ctx, repl_info, ctx.outputs.repl)
 
 
 haskell_repl = rule(
