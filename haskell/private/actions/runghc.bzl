@@ -1,5 +1,6 @@
 """runghc support"""
 
+load(":private/context.bzl", "render_env")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
 load(
     ":private/path_utils.bzl",
@@ -102,8 +103,7 @@ def build_haskell_runghc(
         template = runghc_wrapper,
         output = runghc_file,
         substitutions = {
-            "{LIBPATH}": ghc_env["LIBRARY_PATH"],
-            "{LDLIBPATH}": ghc_env["LD_LIBRARY_PATH"],
+            "{ENV}": render_env(ghc_env),
             "{TOOL}": hs.tools.runghc.path,
             "{ARGS}": " ".join([shell.quote(a) for a in runghc_args]),
         },
