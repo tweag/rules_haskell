@@ -3,6 +3,11 @@ workspace(name = "io_tweag_rules_haskell")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 
+local_repository(
+    name = "io_tweag_rules_haskell_examples",
+    path = "examples",
+)
+
 haskell_repositories()
 
 rules_nixpkgs_version = "0.5.2"
