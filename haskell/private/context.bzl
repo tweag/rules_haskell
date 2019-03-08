@@ -47,3 +47,19 @@ def haskell_context(ctx, attr = None):
         genfiles_dir = ctx.genfiles_dir,
         coverage_enabled = coverage_enabled,
     )
+
+
+def render_env(env):
+    """Render environment dict to shell exports.
+
+    Example:
+
+      >>> render_env({"PATH": "foo:bar", "LANG": "lang"})
+      export PATH=foo:bar
+      export LANG=lang
+
+    """
+    return "\n".join([
+        "export {}={}".format(k, v)
+        for k, v in env.items()
+    ])
