@@ -142,6 +142,7 @@ def _merge_HaskellReplCollectInfo(*args):
             transitive_cc_dependencies,
             arg.transitive_cc_dependencies,
         )
+
     return HaskellReplCollectInfo(
         load_infos = load_infos,
         dep_infos = dep_infos,
@@ -150,19 +151,93 @@ def _merge_HaskellReplCollectInfo(*args):
     )
 
 
-def _load_as_source(load_labels, lbl):
-    # Load all targets in the current workspace.
+def _parse_pattern(pattern_str):
+    # We only load targets in the local workspace anyway. So, it's never
+    # necessary to specify a workspace. Therefore, we don't allow it.
+    if pattern_str.startswith("@"):
+        fail("Invalid haskell_repl pattern. Patterns may not specify a workspace. They only apply to the current workspace")
+
+    # To keep things simple, all patterns have to be absolute.
+    if not pattern_str.startswith("//"):
+        fail("Invalid haskell_repl pattern. Patterns must start with //.")
+
+    # Separate package and target (if present).
+    package_target = pattern_str[2:].split(":", maxsplit=2)
+    package_str = package_target[0]
+    target_str = None
+    if len(package_target) == 2:
+        target_str = package_target[1]
+
+    # Parse package pattern.
+    package = []
+    dotdotdot = False  # ... has to be last component in the pattern.
+    for s in package_str.split("/"):
+        if dotdotdot:
+            fail("Invalid haskell_repl pattern. ... has to appear at the end.")
+        if s == "...":
+            dotdotdot = True
+        package.append(s)
+
+    # Parse target pattern.
+    if dotdotdot:
+        if target_str != None:
+            fail("Invalid haskell_repl pattern. ... has to appear at the end.")
+    else:
+        if target_str == None:
+            if len(package) > 0 and package[-1] != "":
+                target_str = package[-1]
+            else:
+                fail("Invalid haskell_repl pattern. The empty string is not a valid target.")
+
+    return struct(
+        package = package,
+        target = target_str,
+    )
+
+
+def _match_label(pattern, label):
+    # Only local workspace labels can match.
     # Despite the docs saying otherwise, labels don't have a workspace_name
     # attribute. So, we use the workspace_root. If it's empty, the target is in
-    # the local workspace and we load it by source. Otherwise, it's an external
-    # target and we load it as a package.
-    if lbl.workspace_root == "":
+    # the local workspace. Otherwise, it's an external target.
+    if label.workspace_root != "":
+        return False
+
+    package = label.package.split("/")
+    target = label.name
+
+    # Match package components.
+    for i in range(min(len(pattern.package), len(package))):
+        if pattern.package[i] == "...":
+            return True
+        elif pattern.package[i] != package[i]:
+            return False
+
+    # If no wild-card or mismatch was encountered, the lengths must match.
+    # Otherwise, the label's package is not covered.
+    if len(pattern.package) != len(package):
+        return False
+
+    # Match target.
+    if pattern.target == "all" or pattern.target == "*":
         return True
-    # Load all targets in the load_labels list
-    return lbl in load_labels
+    else:
+        return pattern.target == target
 
 
-def _create_HaskellReplInfo(load_labels, collect_info):
+def _load_as_source(include, exclude, lbl):
+    for pat in exclude:
+        if _match_label(pat, lbl):
+            return False
+
+    for pat in include:
+        if _match_label(pat, lbl):
+            return True
+
+    return False
+
+
+def _create_HaskellReplInfo(include, exclude, collect_info):
     source_files = set.empty()
     package_ids = set.empty()
     package_caches = set.empty()
@@ -171,7 +246,7 @@ def _create_HaskellReplInfo(load_labels, collect_info):
     repl_ghci_args = []
 
     for (lbl, load_info) in collect_info.load_infos.items():
-        if not _load_as_source(load_labels, lbl):
+        if not _load_as_source(include, exclude, lbl):
             continue
 
         set.mutable_union(source_files, load_info.source_files)
@@ -183,7 +258,7 @@ def _create_HaskellReplInfo(load_labels, collect_info):
         repl_ghci_args += load_info.repl_ghci_args
 
     for (lbl, dep_info) in collect_info.dep_infos.items():
-        if _load_as_source(load_labels, lbl):
+        if _load_as_source(include, exclude, lbl):
             continue
 
         set.mutable_insert(package_ids, dep_info.package_id)
@@ -199,7 +274,7 @@ def _create_HaskellReplInfo(load_labels, collect_info):
         compiler_flags = compiler_flags,
         repl_ghci_args = repl_ghci_args,
     )
-            
+
 
 def _create_repl(hs, ctx, repl_info, output):
     # The base and directory packages are necessary for the GHCi script we use
@@ -346,8 +421,9 @@ def _haskell_repl_impl(ctx):
         for dep in ctx.attr.deps
         if HaskellReplCollectInfo in dep
     ])
-    load_labels = [dep.label for dep in ctx.attr.deps]
-    repl_info = _create_HaskellReplInfo(load_labels, collect_info)
+    include = [_parse_pattern(pat) for pat in ctx.attr.include]
+    exclude = [_parse_pattern(pat) for pat in ctx.attr.exclude]
+    repl_info = _create_HaskellReplInfo(include, exclude, collect_info)
     hs = haskell_context(ctx)
     _create_repl(hs, ctx, repl_info, ctx.outputs.repl)
     return [DefaultInfo(executable = ctx.outputs.repl)]
@@ -367,6 +443,24 @@ haskell_repl = rule(
         "deps": attr.label_list(
             aspects = [haskell_repl_aspect],
             doc = "List of Haskell targets to load into the REPL",
+        ),
+        "include": attr.string_list(
+            doc = """White-list of targets to load by source.
+
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+            """,
+            default = ["//..."],
+        ),
+        "exclude": attr.string_list(
+            doc = """Black-list of targets to not load by source but as packages.
+
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+            """,
+            default = [],
         ),
     },
     executable = True,
