@@ -20,8 +20,8 @@ haskell_library(
     testonly = 1,
     srcs = glob(["Data/**/*.*hs"]),
     compiler_flags = [
-        "-Ivector/include",
-        "-Ivector/internal",
+        "-Iexternal/io_tweag_rules_haskell_examples/vector/include",
+        "-Iexternal/io_tweag_rules_haskell_examples/vector/internal",
     ],
     extra_srcs = [
         "include/vector.h",
