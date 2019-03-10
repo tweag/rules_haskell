@@ -22,10 +22,10 @@ http_archive(
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_cc_configure",
-    "nixpkgs_git_repository",
     "nixpkgs_package",
 )
 
+# For the rts example.
 nixpkgs_package(
     name = "ghc",
     attribute_path = "haskellPackages.ghc",
@@ -33,9 +33,22 @@ nixpkgs_package(
     repository = "@io_tweag_rules_haskell//nixpkgs:default.nix",
 )
 
-register_toolchains("//:ghc")
-
 nixpkgs_cc_configure(
     nix_file = "@io_tweag_rules_haskell//nixpkgs:cc-toolchain.nix",
     repository = "@io_tweag_rules_haskell//nixpkgs:default.nix",
 )
+
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_register_ghc_bindists",
+    "haskell_register_ghc_nixpkgs",
+)
+
+haskell_register_ghc_nixpkgs(
+    repositories = {
+        "nixpkgs": "@io_tweag_rules_haskell//nixpkgs:default.nix",
+    },
+    version = "8.6.3",
+)
+
+haskell_register_ghc_bindists(version = "8.6.3")
