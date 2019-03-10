@@ -8,6 +8,11 @@ local_repository(
     path = "examples",
 )
 
+local_repository(
+    name = "io_tweag_rules_haskell_tutorial",
+    path = "tutorial",
+)
+
 haskell_repositories()
 
 rules_nixpkgs_version = "0.5.2"
