@@ -1,6 +1,0 @@
-{}:
-
-import ./nixpkgs {
-  config = {};
-  overlays = [];
-}
