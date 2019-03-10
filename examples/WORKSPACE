@@ -25,25 +25,11 @@ load(
     "nixpkgs_package",
 )
 
-nixpkgs_git_repository(
-    name = "nixpkgs",
-    revision = "18.09",
-    sha256 = "6451af4083485e13daa427f745cbf859bc23cb8b70454c017887c006a13bd65e",
-)
-
 nixpkgs_package(
     name = "ghc",
-    # For rts example. Not needed if you're not using the RTS directly.
+    attribute_path = "haskellPackages.ghc",
     build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
-    # For vector example. Just use `attribute_path = haskell.compiler.ghc822`
-    # when no extra packages needed.
-    nix_file_content = """
-  let pkgs = import <nixpkgs> {}; in
-  pkgs.haskellPackages.ghcWithPackages (p: with p;
-    [primitive semigroupoids]
-  )
-  """,
-    repository = "@nixpkgs",
+    repository = "@io_tweag_rules_haskell//nixpkgs:default.nix",
 )
 
 register_toolchains("//:ghc")
