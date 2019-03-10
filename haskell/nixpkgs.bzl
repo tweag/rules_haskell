@@ -245,6 +245,7 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     exec_constraints.append("@io_tweag_rules_haskell//haskell/platforms:nixpkgs")
 
     compiler_flags_select = repository_ctx.attr.compiler_flags_select or {"//conditions:default": []}
+    locale_archive = repr(repository_ctx.attr.locale_archive or None)
 
     repository_ctx.file(
         "BUILD",
@@ -261,18 +262,18 @@ haskell_toolchain(
     repl_ghci_args = {repl_ghci_args},
     # On Darwin we don't need a locale archive. It's a Linux-specific
     # hack in Nixpkgs.
-    locale_archive = "{locale_archive}",
+    locale_archive = {locale_archive},
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
         """.format(
             tools = "@io_tweag_rules_haskell_ghc-nixpkgs//:bin",
             version = repository_ctx.attr.version,
-            compiler_flags = str(repository_ctx.attr.compiler_flags),
+            compiler_flags = repository_ctx.attr.compiler_flags,
             compiler_flags_select = "select({})".format(compiler_flags_select),
-            haddock_flags = str(repository_ctx.attr.haddock_flags),
-            repl_ghci_args = str(repository_ctx.attr.repl_ghci_args),
-            locale_archive = repository_ctx.attr.locale_archive,
+            haddock_flags = repository_ctx.attr.haddock_flags,
+            repl_ghci_args = repository_ctx.attr.repl_ghci_args,
+            locale_archive = locale_archive,
             exec_constraints = exec_constraints,
             target_constraints = target_constraints,
         ),
