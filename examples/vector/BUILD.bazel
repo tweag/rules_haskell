@@ -27,13 +27,12 @@ haskell_library(
         "include/vector.h",
         "internal/unbox-tuple-instances",
     ],
-    version = "0.0.0",  # This flags triggers the `MIN_VERSION` macro generation
+    version = "0",
     visibility = ["//visibility:public"],
     deps = [
         ":base",
         ":deepseq",
         ":ghc-prim",
-        ":primitive",
-        ":semigroups",
+        "//primitive",
     ],
 )
