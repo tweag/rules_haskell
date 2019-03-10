@@ -21,6 +21,7 @@ http_archive(
 
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_cc_configure",
     "nixpkgs_git_repository",
     "nixpkgs_package",
 )
@@ -33,3 +34,8 @@ nixpkgs_package(
 )
 
 register_toolchains("//:ghc")
+
+nixpkgs_cc_configure(
+    nix_file = "@io_tweag_rules_haskell//nixpkgs:cc-toolchain.nix",
+    repository = "@io_tweag_rules_haskell//nixpkgs:default.nix",
+)
