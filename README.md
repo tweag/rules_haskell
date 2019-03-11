@@ -283,8 +283,12 @@ $ bazel run //:buildifier
 If tests fail then run the following to fix the formatting:
 
 ```
-$ bazel run //:buildifier-fix
+$ git rebase --exec "bazel run //:buildifier-fix" <first commit>
 ```
+
+where `<first commit>` is the first commit in your pull request.
+This fixes formatting for each of your commits separately, to keep
+the history clean.
 
 [buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
 
