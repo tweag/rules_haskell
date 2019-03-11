@@ -1,0 +1,30 @@
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_library",
+)
+
+haskell_library(
+    name = "b",
+    srcs = [
+        "src/BC/B.hs",
+    ],
+    src_strip_prefix = "src",
+    deps = [
+        "//tests/hackage:base",
+        "//tests/multi_repl/a",
+    ],
+)
+
+haskell_library(
+    name = "c",
+    srcs = [
+        "src/BC/C.hs",
+    ],
+    src_strip_prefix = "src",
+    deps = [
+        ":b",
+        "//tests/hackage:base",
+    ],
+)
