@@ -1,0 +1,39 @@
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_library",
+    "haskell_repl",
+)
+
+haskell_library(
+    name = "b",
+    srcs = [
+        "src/BC/B.hs",
+    ],
+    src_strip_prefix = "src",
+    deps = [
+        "//tests/repro/rh_ghci_bug_a:a",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "c",
+    srcs = [
+        "src/BC/C.hs",
+    ],
+    src_strip_prefix = "src",
+    deps = [
+        ":b",
+        # "//rh_ghci_bug_a:a", explicitly adding the transitive dependency fixes it
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_repl(
+    name = "c_repl",
+    deps = [":c"],
+    # To only load :c by source.
+    include = ["//tests/repro/rh_ghci_bug_bc:c"],
+)
