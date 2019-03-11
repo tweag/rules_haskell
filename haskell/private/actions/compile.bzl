@@ -222,9 +222,9 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     # Output directories
     args.add_all([
         "-odir",
-        objects_dir,
+        objects_dir.path,
         "-hidir",
-        interfaces_dir,
+        interfaces_dir.path,
     ])
 
     # Interface files with profiling have to have the extension "p_hi":
