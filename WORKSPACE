@@ -3,6 +3,16 @@ workspace(name = "io_tweag_rules_haskell")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 
+local_repository(
+    name = "io_tweag_rules_haskell_examples",
+    path = "examples",
+)
+
+local_repository(
+    name = "io_tweag_rules_haskell_tutorial",
+    path = "tutorial",
+)
+
 haskell_repositories()
 
 rules_nixpkgs_version = "0.5.2"
@@ -309,9 +319,9 @@ http_archive(
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "c730536b703b10294675743579afa78055d3feda92e8cb03d2fb76ad97396770",
-    strip_prefix = "buildtools-0.20.0",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/0.20.0.tar.gz"],
+    sha256 = "7525deb4d74e3aa4cb2b960da7d1c400257a324be4e497f75d265f2f508c518f",
+    strip_prefix = "buildtools-0.22.0",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/0.22.0.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README

@@ -94,9 +94,14 @@ main = hspec $ do
 
   -- Test that the repl still works if we shadow some Prelude functions
   it "repl name shadowing" $ do
+    let p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
     outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-ignore-dot-ghci", "-e", "stdin"])
-      where
-        p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
+
+  it "bazel test examples" $ do
+    assertSuccess (bazel ["test", "@io_tweag_rules_haskell_examples//..."])
+
+  it "bazel test tutorial" $ do
+    assertSuccess (bazel ["test", "@io_tweag_rules_haskell_tutorial//..."])
 
 -- * Bazel commands
 
