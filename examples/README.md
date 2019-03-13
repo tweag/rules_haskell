@@ -7,40 +7,39 @@ for building Haskell code.
   found on Hackage, using a Nix provided compiler toolchain.
 * [**rts:**](./rts/) demonstrates foreign exports and shows how to
   link against GHC's RTS library, i.e. `libHSrts.so`.
-* [**tutorial:**](./tutorial/) a separate workspace for the [tutorial][tutorial].
-* [**cat_hs:**](./cat_hs/) a separate workspace for a [Hazel][hazel] example project.
+  
+## **Important**
+
+Run all commands from the root of `rules_haskell`.
+If you `cd examples/`, bazel *will* [break on
+you](https://github.com/tweag/rules_haskell/issues/740).
+This is a current problem with bazel workspaces.
 
 ## Root Workspace
 
 Build everything in the root workspace with;
 
 ```
-$ bazel build //...
+$ bazel build @io_tweag_rules_haskell_examples//...
 ```
 
-Show every target in this workspace;
+Show every target of the vector example;
 
 ```
-$ bazel query //...
-//vector:vector
-//vector:semigroups
-//vector:primitive
-//vector:ghc-prim
-//vector:deepseq
-//vector:base
-//rts:add-one
-//rts:add-one-so
-//rts:add-one-hs
-//rts:base
-//:ghc-impl
-//:ghc
+$ bazel query @io_tweag_rules_haskell_examples//vector/...
+@io_tweag_rules_haskell_examples//vector:vector
+@io_tweag_rules_haskell_examples//vector:semigroups
+@io_tweag_rules_haskell_examples//vector:primitive
+@io_tweag_rules_haskell_examples//vector:ghc-prim
+@io_tweag_rules_haskell_examples//vector:deepseq
+@io_tweag_rules_haskell_examples//vector:base
 ```
 
 Build the two main Haskell targets;
 
 ```
-$ bazel build //vector:vector
-$ bazel build //rts:add-one-hs
+$ bazel build @io_tweag_rules_haskell_examples//vector
+$ bazel build @io_tweag_rules_haskell_examples//rts:add-one-hs
 ```
 
 ## Tutorial Workspace
@@ -69,11 +68,6 @@ $ bazel build @tutorial//lib:booleans
 $ bazel build @tutorial//main:demorgan
 $ bazel run @tutorial//main:demorgan
 ```
-
-## cat_hs - Hazel example
-
-Change into the `cat_hs` directory and follow the instructions given in the
-[README file](./cat_hs/README.md).
 
 [rules_haskell]: https://github.com/tweag/rules_haskell
 [tutorial]: https://rules-haskell.readthedocs.io
