@@ -47,28 +47,24 @@ $ bazel build @io_tweag_rules_haskell_examples//rts:add-one-hs
 Build everything in the tutorial workspace with;
 
 ```
-$ bazel build @tutorial//...
+$ bazel build @io_tweag_rules_haskell_tutorial//...
 ```
 
 Show everything in the tutorial;
 
 ```
-$ bazel query @tutorial//...
-@tutorial//main:demorgan
-@tutorial//main:base
-@tutorial//lib:booleans
-@tutorial//:ghc-impl
-@tutorial//:ghc
+$ bazel query @io_tweag_rules_haskell_tutorial//...
+@io_tweag_rules_haskell_tutorial//main:demorgan
+@io_tweag_rules_haskell_tutorial//main:base
+@io_tweag_rules_haskell_tutorial//lib:booleans
 ```
 
 Build and run the tutorial example;
 
 ```
-$ bazel build @tutorial//lib:booleans
-$ bazel build @tutorial//main:demorgan
-$ bazel run @tutorial//main:demorgan
+$ bazel build @io_tweag_rules_haskell_tutorial//lib:booleans
+$ bazel build @io_tweag_rules_haskell_tutorial//main:demorgan
+$ bazel run @io_tweag_rules_haskell_tutorial//main:demorgan
 ```
 
 [rules_haskell]: https://github.com/tweag/rules_haskell
-[tutorial]: https://rules-haskell.readthedocs.io
-[hazel]: https://github.com/FormationAI/hazel
