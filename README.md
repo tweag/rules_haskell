@@ -88,11 +88,14 @@ haskell_register_toolchains()
 You will then need to write one `BUILD` file for each "package" you
 want to define. See below for examples.
 
-## Examples
+## Tutorial and Examples
 
-See [rules_haskell_examples][] for examples of using these rules.
+We provide a [tutorial for writing your first rules][tutorial].
+The corresponding source code is in [./tutorial](./tutorial).
 
-[rules_haskell_examples]: https://github.com/tweag/rules_haskell_examples
+A collection of example rules is in [./examples](./examples).
+
+[tutorial]: https://rules-haskell.readthedocs.io/en/latest/
 
 ## For `rules_haskell` developers
 
