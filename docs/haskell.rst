@@ -26,15 +26,15 @@ Before you begin
 ----------------
 
 To prepare for the tutorial, first `install Bazel`_ if you don't have
-it installed already. Then, retrieve the sample project from Bazel's
-GitHub repository::
+it installed already. Then, retrieve the ``rules_haskell`` GitHub
+repository::
 
-  git clone https://github.com/tweag/rules_haskell_examples/
+  git clone https://github.com/tweag/rules_haskell/
 
 The sample project for this tutorial is in the ``tutorial``
 directory and is structured as follows::
 
-  rules_haskell_examples
+  rules_haskell
   └── tutorial
      ├── WORKSPACE
      ├── main
