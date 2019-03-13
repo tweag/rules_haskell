@@ -42,29 +42,4 @@ $ bazel build @io_tweag_rules_haskell_examples//vector
 $ bazel build @io_tweag_rules_haskell_examples//rts:add-one-hs
 ```
 
-## Tutorial Workspace
-
-Build everything in the tutorial workspace with;
-
-```
-$ bazel build @io_tweag_rules_haskell_tutorial//...
-```
-
-Show everything in the tutorial;
-
-```
-$ bazel query @io_tweag_rules_haskell_tutorial//...
-@io_tweag_rules_haskell_tutorial//main:demorgan
-@io_tweag_rules_haskell_tutorial//main:base
-@io_tweag_rules_haskell_tutorial//lib:booleans
-```
-
-Build and run the tutorial example;
-
-```
-$ bazel build @io_tweag_rules_haskell_tutorial//lib:booleans
-$ bazel build @io_tweag_rules_haskell_tutorial//main:demorgan
-$ bazel run @io_tweag_rules_haskell_tutorial//main:demorgan
-```
-
 [rules_haskell]: https://github.com/tweag/rules_haskell
