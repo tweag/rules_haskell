@@ -113,16 +113,16 @@ def make_path(libs, prefix = None):
     Returns:
       String: paths to the given library directories separated by ":".
     """
-    r = []
+    r = set.empty()
 
     for lib in libs:
         lib_dir = paths.dirname(lib.path)
         if prefix:
             lib_dir = paths.join(prefix, lib_dir)
 
-        r.append(lib_dir)
+        set.mutable_insert(r, lib_dir)
 
-    return ":".join(r)
+    return ":".join(set.to_list(r))
 
 def darwin_convert_to_dylibs(hs, libs):
     """Convert .so dynamic libraries to .dylib.
