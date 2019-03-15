@@ -199,3 +199,64 @@ Alternatively, you can directly check a target using
       --aspects @io_tweag_rules_haskell//haskell:haskell.bzl%haskell_lint_aspect
 
 .. _haskell_lint: http://api.haskell.build/haskell/lint.html#haskell_lint
+
+Checking code coverage
+----------------------
+
+"Code coverage" is the name given to metrics that describe how much source 
+code is covered by a given test suite.  A specific code coverage metric 
+implemented here is expression coverage, or the number of expressions in 
+the source code that are explored when the tests are run.
+
+Haskell's ``ghc`` compiler has built-in support for code coverage analysis, 
+through the hpc_ tool. The Haskell rules allow the use of this tool to analyse 
+``haskell_library`` coverage by ``haskell_test`` rules. To do so, add 
+``expected_expression_coverage=<some integer between 0 and 100>`` to the 
+attributes of a ``haskell_test``, and if the expression coverage percentage 
+is lower than this amount, the test will fail. To see the coverage details of 
+the test suite regardless of if the test passes or fails, add 
+``--test_output=all`` as a flag when invoking the test, and there will be a 
+report in the test output. You will only see the report if you required a 
+certain level of expression coverage in the rule attributes.
+
+For example, your BUILD file might look like this: ::
+
+  haskell_library(
+    name = "lib",
+    srcs = ["Lib.hs"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+  )
+
+  haskell_test(
+    name = "test",
+    srcs = ["Main.hs"],
+    deps = [
+        ":lib",
+        "//tests/hackage:base",
+    ],
+    expected_expression_coverage = 80,
+  )
+
+And if you ran ``bazel coverage //somepackage:test --test_output=all``, you 
+might see a result like this: ::
+
+  INFO: From Testing //somepackage:test:
+  ==================== Test output for //somepackage:test:
+  Overall report
+  100% expressions used (9/9)
+  100% boolean coverage (0/0)
+      100% guards (0/0)
+      100% 'if' conditions (0/0)
+      100% qualifiers (0/0)
+  100% alternatives used (0/0)
+  100% local declarations used (0/0)
+  100% top-level declarations used (3/3)
+  ================================================================================
+
+Here, the test passes because it actually has 100% expression coverage, but if
+the line reading ``<pct>% expressions used`` had a ``<pct>`` of less than 80,
+the test would fail.
+
+.. _hpc: <http://hackage.haskell.org/package/hpc>
