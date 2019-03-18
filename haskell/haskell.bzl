@@ -36,6 +36,10 @@ load(
     _haskell_library_impl = "haskell_library_impl",
     _haskell_test_impl = "haskell_test_impl",
 )
+load(
+	":group.bzl",
+	_haskell_group = "haskell_group",
+)
 
 # For re-exports:
 load(
@@ -315,3 +319,5 @@ ghc_bindist = _ghc_bindist
 haskell_cc_import = _haskell_cc_import
 
 cc_haskell_import = _cc_haskell_import
+
+haskell_group = _haskell_group

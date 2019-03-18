@@ -165,7 +165,13 @@ def gather_dep_info(ctx):
             if HaskellBinaryInfo in dep:
                 fail("Target {0} cannot depend on binary".format(ctx.attr.name))
             if HaskellLibraryInfo in dep:
-                set.mutable_insert(package_ids, dep[HaskellLibraryInfo].package_id)
+                dep_ids = dep[HaskellLibraryInfo].package_id
+                if type(dep_ids) == type([]):
+                    ids = dep_ids
+                else:
+                    ids = [dep_ids]
+                for id in ids:
+                    set.mutable_insert(package_ids, id)
             acc = HaskellBuildInfo(
                 package_ids = package_ids,
                 package_confs = set.mutable_union(acc.package_confs, binfo.package_confs),
