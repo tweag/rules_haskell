@@ -88,93 +88,14 @@ haskell_register_toolchains()
 You will then need to write one `BUILD` file for each "package" you
 want to define. See below for examples.
 
-## Examples
+## Tutorial and Examples
 
-See [rules_haskell_examples][] for examples of using these rules.
+We provide a [tutorial for writing your first rules][tutorial].
+The corresponding source code is in [./tutorial](./tutorial).
 
-[rules_haskell_examples]: https://github.com/tweag/rules_haskell_examples
+A collection of example rules is in [./examples](./examples).
 
-## For `rules_haskell` developers
-
-### Saving common command-line flags to a file
-
-If you find yourself constantly passing the same flags on the
-command-line for certain commands (such as `--host_platform` or
-`--compiler`), you can augment the [`.bazelrc`](./.bazelrc) file in
-this repository with a `.bazelrc.local` file. This file is ignored by
-Git.
-
-### Reference a local checkout of `rules_haskell`
-
-When you develop on `rules_haskell`, you usually do it in the context
-of a different project that has `rules_haskell` as a `WORKSPACE`
-dependency, like so:
-
-```
-http_archive(
-    name = "io_tweag_rules_haskell",
-    strip_prefix = "rules_haskell-" + version,
-    sha256 = …,
-    urls = …,
-)
-```
-
-To reference a local checkout instead, use the
-[`--override_repository`][override_repository] command line option:
-   
-```
-bazel build/test/run/sync \
-  --override_repository io_tweag_rules_haskell=/path/to/checkout
-```
-   
-If you don’t want to type that every time, [temporarily add it to
-`.bazelrc`][bazelrc].
-
-[override_repository]: https://docs.bazel.build/versions/master/command-line-reference.html#flag--override_repository
-[local_repository]: https://docs.bazel.build/versions/master/be/workspace.html#local_repository
-[bazelrc]: https://docs.bazel.build/versions/master/best-practices.html#bazelrc
-
-### Test Suite
-
-To run the test suite for these rules, you'll need [Nix][nix]
-installed. First, from the project’s folder start a pure nix shell:
-
-```
-$ nix-shell --pure shell.nix
-```
-
-This will make sure that bazel has the exact same environment
-on every development system (`python`, `ghc`, `go`, …).
-
-To build and run tests locally, execute:
-
-```
-$ bazel test //...
-```
-
-Skylark code in this project is formatted according to the output of
-[buildifier]. You can check that the formatting is correct using:
-
-```
-$ bazel run //:buildifier
-```
-
-If tests fail then run the following to fix the formatting:
-
-```
-$ bazel run //:buildifier-fix
-```
-
-[buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
-
-### CircleCI
-
-Pull Requests are checked by CircleCI.
-
-If a check fails and you cannot reproduce it locally (e.g. it failed on Darwin
-and you only run Linux), you can [ssh into CircleCI to aid debugging][ci-ssh].
-
-[ci-ssh]: https://circleci.com/docs/2.0/ssh-access-jobs/
+[tutorial]: https://rules-haskell.readthedocs.io/en/latest/
 
 ## Rules
 
@@ -290,3 +211,86 @@ installed package lens-labels-0.2.0.1 is broken due to missing package profuncto
 
 you’ve most likely hit GHC’s
 [infamous non-deterministic library ID bug](https://nixos.org/nixpkgs/manual/#how-to-recover-from-ghcs-infamous-non-deterministic-library-id-bug).
+
+
+## For `rules_haskell` developers
+
+### Saving common command-line flags to a file
+
+If you find yourself constantly passing the same flags on the
+command-line for certain commands (such as `--host_platform` or
+`--compiler`), you can augment the [`.bazelrc`](./.bazelrc) file in
+this repository with a `.bazelrc.local` file. This file is ignored by
+Git.
+
+### Reference a local checkout of `rules_haskell`
+
+When you develop on `rules_haskell`, you usually do it in the context
+of a different project that has `rules_haskell` as a `WORKSPACE`
+dependency, like so:
+
+```
+http_archive(
+    name = "io_tweag_rules_haskell",
+    strip_prefix = "rules_haskell-" + version,
+    sha256 = …,
+    urls = …,
+)
+```
+
+To reference a local checkout instead, use the
+[`--override_repository`][override_repository] command line option:
+   
+```
+bazel build/test/run/sync \
+  --override_repository io_tweag_rules_haskell=/path/to/checkout
+```
+   
+If you don’t want to type that every time, [temporarily add it to
+`.bazelrc`][bazelrc].
+
+[override_repository]: https://docs.bazel.build/versions/master/command-line-reference.html#flag--override_repository
+[local_repository]: https://docs.bazel.build/versions/master/be/workspace.html#local_repository
+[bazelrc]: https://docs.bazel.build/versions/master/best-practices.html#bazelrc
+
+### Test Suite
+
+To run the test suite for these rules, you'll need [Nix][nix]
+installed. First, from the project’s folder start a pure nix shell:
+
+```
+$ nix-shell --pure shell.nix
+```
+
+This will make sure that bazel has the exact same environment
+on every development system (`python`, `ghc`, `go`, …).
+
+To build and run tests locally, execute:
+
+```
+$ bazel test //...
+```
+
+Skylark code in this project is formatted according to the output of
+[buildifier]. You can check that the formatting is correct using:
+
+```
+$ bazel run //:buildifier
+```
+
+If tests fail then run the following to fix the formatting:
+
+```
+$ bazel run //:buildifier-fix
+```
+
+[buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
+
+### CircleCI
+
+Pull Requests are checked by CircleCI.
+
+If a check fails and you cannot reproduce it locally (e.g. it failed on Darwin
+and you only run Linux), you can [ssh into CircleCI to aid debugging][ci-ssh].
+
+[ci-ssh]: https://circleci.com/docs/2.0/ssh-access-jobs/
