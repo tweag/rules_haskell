@@ -97,10 +97,12 @@ def _haskell_binary_common_impl(ctx, is_test):
         mix_files = mix_files,
     )
 
+    # gather intermediary code coverage instrumentation data
     conditioned_mix_files = c.conditioned_mix_files
     for dep in ctx.attr.deps:
         if HaskellCoverageInfo in dep:
             conditioned_mix_files += dep[HaskellCoverageInfo].mix_files
+    conditioned_mix_files = depset(conditioned_mix_files).to_list()
 
     c_p = None
 
@@ -402,7 +404,7 @@ def haskell_library_impl(ctx):
             dependency_mix_files += dep[HaskellCoverageInfo].mix_files
 
     coverage_info = HaskellCoverageInfo(
-        mix_files = dependency_mix_files + c.conditioned_mix_files,
+        mix_files = depset(dependency_mix_files + c.conditioned_mix_files).to_list(),
     )
 
     target_files = depset([conf_file, cache_file])

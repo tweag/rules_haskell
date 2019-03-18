@@ -31,10 +31,12 @@ tix_file_path={tix_file_path}
 expected_expression_coverage={expected_expression_coverage}
 hpc_dir_args=""
 mix_file_paths={mix_file_paths}
-for m in $mix_file_paths
+for m in "${mix_file_paths[@]}"
 do
   absolute_mix_file_path=$(rlocation $m)
-  hpc_dir_args="$hpc_dir_args --hpcdir=$(dirname $absolute_mix_file_path)"
+  hpc_parent_dir=$(dirname $absolute_mix_file_path)
+  trimmed_hpc_parent_dir=$(echo "${hpc_parent_dir%%.hpc*}")
+  hpc_dir_args="$hpc_dir_args --hpcdir=$trimmed_hpc_parent_dir.hpc"
 done
 $binary_path "$@"
 $hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
