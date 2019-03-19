@@ -90,12 +90,6 @@ _haskell_common_attrs = {
         cfg = "host",
         default = Label("@io_tweag_rules_haskell//haskell:ls_modules"),
     ),
-    "_short_path": attr.label(
-        executable = True,
-        allow_single_file = True,
-        cfg = "host",
-        default = Label("@io_tweag_rules_haskell//haskell:private/short_path.bat"),
-    ),
     "_cc_toolchain": attr.label(
         default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
