@@ -111,17 +111,13 @@ def _merge_HaskellReplDepInfo(dep_infos):
 def _create_HaskellReplCollectInfo(target, ctx):
     load_infos = {}
     dep_infos = {}
-    if HaskellBuildInfo in target:
-        build_info = target[HaskellBuildInfo]
-        prebuilt_dependencies = build_info.prebuilt_dependencies
-        transitive_cc_dependencies = build_info.transitive_cc_dependencies
-    else:
-        prebuilt_dependencies = set.empty()
-        transitive_cc_dependencies = empty_HaskellCcInfo()
+
+    build_info = target[HaskellBuildInfo]
+    prebuilt_dependencies = build_info.prebuilt_dependencies
+    transitive_cc_dependencies = build_info.transitive_cc_dependencies
 
     if HaskellLibraryInfo in target:
         lib_info = target[HaskellLibraryInfo]
-        build_info = target[HaskellBuildInfo]
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = set.union(
                 lib_info.boot_files,
@@ -137,13 +133,14 @@ def _create_HaskellReplCollectInfo(target, ctx):
         )
     elif HaskellBinaryInfo in target:
         bin_info = target[HaskellBinaryInfo]
-        build_info = target[HaskellBuildInfo]
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = bin_info.source_files,
             cc_dependencies = build_info.cc_dependencies,
             compiler_flags = ctx.rule.attr.compiler_flags,
             repl_ghci_args = ctx.rule.attr.repl_ghci_args,
         )
+    else:
+        fail("Missing HaskellLibraryInfo or HaskellBinaryInfo.")
 
     return HaskellReplCollectInfo(
         load_infos = load_infos,
@@ -454,8 +451,10 @@ def _create_repl(hs, ctx, repl_info, output):
 
 def _haskell_repl_aspect_impl(target, ctx):
     is_eligible = (
-        HaskellLibraryInfo in target or
-        HaskellBinaryInfo in target
+        HaskellBuildInfo in target and (
+            HaskellLibraryInfo in target or
+            HaskellBinaryInfo in target
+        )
     )
     if not is_eligible:
         return []
