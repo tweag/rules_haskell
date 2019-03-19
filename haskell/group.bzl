@@ -147,3 +147,6 @@ haskell_group = rule(
         "@io_tweag_rules_haskell//haskell:toolchain",
     ],
 )
+"""
+Bundle together a group of haskell targets so that they appear as a single target from the outside.
+"""
