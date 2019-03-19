@@ -20,6 +20,20 @@ EOF
     exit 1
 fi
 
+# Derived from Bazel's Bash runfiles library (tools/bash/runfiles/runfiles.bash).
+if [[ -z "$RUNFILES_DIR" ]]; then
+  if [[ -d "$0.runfiles" ]]; then
+    export RUNFILES_DIR="$0.runfiles"
+  fi
+fi
+if [[ -z "$RUNFILES_MANIFEST_FILE" ]]; then
+  if [[ -f "$0.runfiles_manifest" ]]; then
+    export RUNFILES_MANIFEST_FILE="$0.runfiles_manifest"
+  elif [[ -f "$0.runfiles/MANIFEST" ]]; then
+    export RUNFILES_MANIFEST_FILE="$0.runfiles/MANIFEST"
+  fi
+fi
+
 # GHCi script and libraries are loaded relative to workspace directory.
 # bazel run //some:target@repl will be executed from the workspace directory.
 # bazel run //some:haskell_repl will be executed from its execroot.

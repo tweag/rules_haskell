@@ -418,11 +418,7 @@ def _create_repl(hs, ctx, repl_info, output):
         output = output,
         is_executable = True,
         substitutions = {
-            "{ENV}": render_env(ghc_env + {
-                # Export RUNFILES_DIR so that targets that require runfiles
-                # can be executed in the REPL.
-                "RUNFILES_DIR": paths.join("$RULES_HASKELL_EXEC_ROOT", output.path + ".runfiles"),
-            }),
+            "{ENV}": render_env(ghc_env),
             "{TOOL}": hs.tools.ghci.path,
             "{ARGS}": " ".join(
                 args + [
