@@ -6,7 +6,7 @@ load(
 haskell_repl(
     name = "c_only_repl",
     # To only load :c by source.
-    include = ["//tests/multi_repl/bc:c"],
+    experimental_from_source = ["//tests/multi_repl/bc:c"],
     deps = ["//tests/multi_repl/bc:c"],
 )
 

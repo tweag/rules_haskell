@@ -273,24 +273,24 @@ def _match_label(pattern, label):
     else:
         return pattern.target == target
 
-def _load_as_source(include, exclude, lbl):
+def _load_as_source(from_source, from_binary, lbl):
     """Whether a package should be loaded by source or as binary."""
-    for pat in exclude:
+    for pat in from_binary:
         if _match_label(pat, lbl):
             return False
 
-    for pat in include:
+    for pat in from_source:
         if _match_label(pat, lbl):
             return True
 
     return False
 
-def _create_HaskellReplInfo(include, exclude, collect_info):
+def _create_HaskellReplInfo(from_source, from_binary, collect_info):
     """Convert a HaskellReplCollectInfo to a HaskellReplInfo.
 
     Args:
-      include: List of patterns for packages to load by source.
-      exclude: List of patterns for packages to load as binary packages.
+      from_source: List of patterns for packages to load by source.
+      from_binary: List of patterns for packages to load as binary packages.
       collect_info: HaskellReplCollectInfo provider.
 
     Returns:
@@ -301,14 +301,14 @@ def _create_HaskellReplInfo(include, exclude, collect_info):
     load_info = _merge_HaskellReplLoadInfo([
         load_info
         for (lbl, load_info) in collect_info.load_infos.items()
-        if _load_as_source(include, exclude, lbl)
+        if _load_as_source(from_source, from_binary, lbl)
     ])
 
     # Collect all packages to load as binary packages.
     dep_info = _merge_HaskellReplDepInfo([
         dep_info
         for (lbl, dep_info) in collect_info.dep_infos.items()
-        if not _load_as_source(include, exclude, lbl)
+        if not _load_as_source(from_source, from_binary, lbl)
     ])
 
     return HaskellReplInfo(
@@ -486,9 +486,9 @@ def _haskell_repl_impl(ctx):
         for dep in ctx.attr.deps
         if HaskellReplCollectInfo in dep
     ])
-    include = [_parse_pattern(pat) for pat in ctx.attr.include]
-    exclude = [_parse_pattern(pat) for pat in ctx.attr.exclude]
-    repl_info = _create_HaskellReplInfo(include, exclude, collect_info)
+    from_source = [_parse_pattern(pat) for pat in ctx.attr.experimental_from_source]
+    from_binary = [_parse_pattern(pat) for pat in ctx.attr.experimental_from_binary]
+    repl_info = _create_HaskellReplInfo(from_source, from_binary, collect_info)
     hs = haskell_context(ctx)
     return _create_repl(hs, ctx, repl_info, ctx.outputs.repl)
 
@@ -507,21 +507,27 @@ haskell_repl = rule(
             aspects = [haskell_repl_aspect],
             doc = "List of Haskell targets to load into the REPL",
         ),
-        "include": attr.string_list(
+        "experimental_from_source": attr.string_list(
             doc = """White-list of targets to load by source.
 
             Wild-card targets such as //... or //:all are allowed.
 
             The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
             """,
             default = ["//..."],
         ),
-        "exclude": attr.string_list(
+        "experimental_from_binary": attr.string_list(
             doc = """Black-list of targets to not load by source but as packages.
 
             Wild-card targets such as //... or //:all are allowed.
 
             The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
             """,
             default = [],
         ),
@@ -554,21 +560,21 @@ Example:
           "//lib:some_lib",
           "//exe:some_exe",
       ],
-      include = [
+      experimental_from_source = [
           "//lib/...",
           "//exe/...",
           "//common/...",
       ],
-      exclude = [
+      experimental_from_binary = [
           "//lib/vendored/...",
       ],
   )
   ```
 
   Collects all transitive Haskell dependencies from `deps`. Those that match
-  `exclude` or are defined in an external workspace will be loaded as binary
-  packages. Those that match `include` and are defined in the local workspace
-  will be loaded by source.
+  `experimental_from_binary` or are defined in an external workspace will be
+  loaded as binary packages. Those that match `experimental_from_source` and
+  are defined in the local workspace will be loaded by source.
 
   You can call the REPL like this:
 
