@@ -14,13 +14,6 @@ exports_files(
     visibility = ["//tests/unit-tests:__pkg__"],
 )
 
-# used on Windows to get shorter paths in order to stay under the MAX_PATH
-# limit of 260 chars.
-exports_files(
-    ["private/short_path.bat"],
-    visibility = ["//visibility:public"],
-)
-
 py_binary(
     name = "ls_modules",
     srcs = ["private/ls_modules.py"],
