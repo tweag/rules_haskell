@@ -66,6 +66,8 @@ def _execute_fail_loudly(ctx, args):
     if eresult.return_code != 0:
         fail("{0} failed, aborting creation of GHC bindist".format(" ".join(args)))
 
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
+
 def _ghc_bindist_impl(ctx):
     # Avoid rule restart by resolving these labels early. See
     # https://github.com/bazelbuild/bazel/blob/master/tools/cpp/lib_cc_configure.bzl#L17.
@@ -96,6 +98,13 @@ def _ghc_bindist_impl(ctx):
         _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
         _execute_fail_loudly(ctx, ["make", "install"])
 
+    # We apply some patches, if needed. As the patches may touch the package DB
+    # we regenerate the cache.
+    patch(ctx)
+
+    if len(ctx.attr.patches) > 0:
+        _execute_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
+
     ctx.template(
         "BUILD",
         ghc_build,
@@ -113,6 +122,24 @@ _ghc_bindist = repository_rule(
             doc = "The desired GHC version",
         ),
         "target": attr.string(),
+        "patches": attr.label_list(
+            default = [],
+            doc =
+                "A list of files that are to be applied as patches afer " +
+                "extracting the archive.",
+        ),
+        "patch_tool": attr.string(
+            default = "patch",
+            doc = "The patch(1) utility to use.",
+        ),
+        "patch_args": attr.string_list(
+            default = ["-p0"],
+            doc = "The arguments given to the patch tool",
+        ),
+        "patch_cmds": attr.string_list(
+            default = [],
+            doc = "Sequence of commands to be applied after patches are applied.",
+        ),
     },
 )
 
@@ -197,6 +224,13 @@ def ghc_bindist(
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
 
+    # Recent GHC versions on Windows contain a bug:
+    # https://gitlab.haskell.org/ghc/ghc/issues/10205
+    # We work around this by patching the base configuration.
+    (major, minor, _) = version.split(".")
+    is_ghc_8_6_win = target == "windows_amd64" and int(major) == 8 and int(minor) < 7
+    extra_attrs = {"patches": ["@io_tweag_rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"], "patch_args": ["-p0"]} if is_ghc_8_6_win else {}
+
     # We want the toolchain definition to be tucked away in a separate
     # repository, that way `bazel build //...` will not match it (and
     # e.g. build the Windows toolchain even on Linux). At the same
@@ -208,6 +242,7 @@ def ghc_bindist(
         name = bindist_name,
         version = version,
         target = target,
+        **extra_attrs
     )
     _ghc_bindist_toolchain(
         name = toolchain_name,
