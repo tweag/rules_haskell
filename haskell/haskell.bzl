@@ -37,8 +37,8 @@ load(
     _haskell_test_impl = "haskell_test_impl",
 )
 load(
-	":group.bzl",
-	_haskell_group = "haskell_group",
+    ":group.bzl",
+    _haskell_group = "haskell_group",
 )
 
 # For re-exports:

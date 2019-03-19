@@ -3,16 +3,21 @@
 load(":private/set.bzl", "set")
 load(
     ":private/providers.bzl",
-    "empty_HaskellCcInfo",
-    "merge_HaskellCcInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
+    "empty_HaskellCcInfo",
+    "merge_HaskellCcInfo",
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(
     ":private/path_utils.bzl",
     "target_unique_name",
 )
+load(
+    ":private/actions/repl.bzl",
+    "build_haskell_repl",
+)
+load(":private/context.bzl", "haskell_context")
 
 def appendBuildInfos(bi1, bi2):
     return HaskellBuildInfo(
@@ -24,7 +29,6 @@ def appendBuildInfos(bi1, bi2):
         dynamic_libraries = set.union(bi1.dynamic_libraries, bi2.dynamic_libraries),
         interface_dirs = set.union(bi1.interface_dirs, bi2.interface_dirs),
         prebuilt_dependencies = set.union(bi1.prebuilt_dependencies, bi2.prebuilt_dependencies),
-        # direct_prebuilt_deps = set.union(bi1.direct_prebuilt_deps, bi2.direct_prebuilt_deps),
         cc_dependencies = merge_HaskellCcInfo(bi1.cc_dependencies, bi2.cc_dependencies),
         transitive_cc_dependencies = merge_HaskellCcInfo(bi1.transitive_cc_dependencies, bi2.transitive_cc_dependencies),
     )
@@ -54,13 +58,13 @@ def appendLibraryInfos(ctx, li1, li2, idx):
         ctx.attr.name + "-exposed-modules-" + str(idx),
     )
     ctx.actions.run_shell(
-        inputs = [ li1.exposed_modules_file, li2.exposed_modules_file ],
-        outputs = [ exposed_modules_file ],
+        inputs = [li1.exposed_modules_file, li2.exposed_modules_file],
+        outputs = [exposed_modules_file],
         command = "cat {file1} <(echo ',') {file2} > {out}".format(
             file1 = li1.exposed_modules_file,
             file2 = li2.exposed_modules_file,
-            out = exposed_modules_file
-        )
+            out = exposed_modules_file,
+        ),
     )
     return HaskellLibraryInfo(
         package_id = li1.package_id + [li2.package_id],
@@ -99,28 +103,47 @@ def concatLibraryInfos(ctx, package_id, deps):
     return acc
 
 def _haskell_group_impl(ctx):
+    hs = haskell_context(ctx)
     deps = ctx.attr.deps
 
     combinedBuildInfos = concatBuildInfos(deps)
     my_pkg_id = pkg_id.new(ctx.label, None)
     combinedLibraryInfos = concatLibraryInfos(ctx, my_pkg_id, deps)
 
+    build_haskell_repl(
+        hs,
+        ghci_script = ctx.file._ghci_script,
+        ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
+        compiler_flags = [],  # XXX: Forward compiler flags properly
+        repl_ghci_args = [],
+        output = ctx.outputs.repl,
+        package_caches = combinedBuildInfos.package_caches,
+        version = combinedLibraryInfos.version,
+        build_info = combinedBuildInfos,
+        lib_info = combinedLibraryInfos,
+    )
+
     return [combinedBuildInfos, combinedLibraryInfos]
 
-
 haskell_group = rule(
-  _haskell_group_impl,
-  attrs = {
-    "deps": attr.label_list(
-      doc = "List of haskell targets to combine",
-    "_ghci_script": attr.label(
-        allow_single_file = True,
-        default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
-    ),
-    "_ghci_repl_wrapper": attr.label(
-        allow_single_file = True,
-        default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
-    ),
-    ),
-  },
+    _haskell_group_impl,
+    attrs = {
+        "deps": attr.label_list(
+            doc = "List of haskell targets to combine",
+        ),
+        "_ghci_script": attr.label(
+            allow_single_file = True,
+            default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
+        ),
+        "_ghci_repl_wrapper": attr.label(
+            allow_single_file = True,
+            default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
+        ),
+    },
+    outputs = {
+        "repl": "%{name}@repl",
+    },
+    toolchains = [
+        "@io_tweag_rules_haskell//haskell:toolchain",
+    ],
 )
