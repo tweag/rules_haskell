@@ -149,7 +149,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
         transitive_cc_dependencies = transitive_cc_dependencies,
     )
 
-def _merge_HaskellReplCollectInfo(*args):
+def _merge_HaskellReplCollectInfo(args):
     load_infos = {}
     dep_infos = {}
     prebuilt_dependencies = set.empty()
@@ -461,7 +461,7 @@ def _haskell_repl_aspect_impl(target, ctx):
         for dep in ctx.rule.attr.deps
         if HaskellReplCollectInfo in dep
     ]
-    collect_info = _merge_HaskellReplCollectInfo(*([target_info] + deps_infos))
+    collect_info = _merge_HaskellReplCollectInfo([target_info] + deps_infos)
 
     # This aspect currently does not generate an executable REPL script by
     # itself. This could be extended in future. Note, to that end it's
@@ -481,7 +481,7 @@ by itself.
 """
 
 def _haskell_repl_impl(ctx):
-    collect_info = _merge_HaskellReplCollectInfo(*[
+    collect_info = _merge_HaskellReplCollectInfo([
         dep[HaskellReplCollectInfo]
         for dep in ctx.attr.deps
         if HaskellReplCollectInfo in dep
