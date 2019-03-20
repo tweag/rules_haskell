@@ -368,6 +368,8 @@ def _create_repl(hs, ctx, repl_info, output):
     ld_library_path = [paths.dirname(lib.path) for lib in ld_library_deps]
 
     # Load source files
+    # Force loading by source with `:add *...`.
+    # See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/ghci.html#ghci-cmd-:add
     add_sources = [
         "*" + f.path
         for f in set.to_list(repl_info.load_info.source_files)
