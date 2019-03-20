@@ -16,6 +16,7 @@ ldd_test(
     elf_binary = "//tests/binary-indirect-cbits",
     script = r'''
 import sys
+import subprocess
 
 def contains_error(error):
     """check whether any of the dependencies contains `error`,
@@ -48,6 +49,7 @@ assert \
 assert ldd(contains_error(LDD_UNKNOWN), sys.argv[1])
 
 # none of the dependencies must be missing
+subprocess.check_call(["ldd", sys.argv[1]])
 res = ldd(contains_error(LDD_MISSING), sys.argv[1])
 if res['is_error']:
   print("example of missing dependency: {}".format(res['example']))

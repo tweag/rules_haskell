@@ -1,10 +1,11 @@
-{ pkgs ? import ../nixpkgs {}
+let
+  pkgs = import ../nixpkgs {};
 # Whether we want to wrap the packages using <bazel_haskell_wrapper>.
 # When this is called from inside bazel, we need to wrap the haskell package
 # set using <bazel_haskell_wrapper>. Otherwise we don't need (and don't want)
 # to.
-, wrapPackages ? (builtins.tryEval <bazel_haskell_wrapper>).success
-}:
+  wrapPackages = (builtins.tryEval <bazel_haskell_wrapper>).success;
+in
 
 with pkgs;
 

@@ -15,11 +15,11 @@ local_repository(
 
 haskell_repositories()
 
-rules_nixpkgs_version = "0.5.2"
+rules_nixpkgs_version = "b3a52fca6082b484a6144a8f90df9b3f3debbe11"
 
-rules_nixpkgs_version_is_hash = False
+rules_nixpkgs_version_is_hash = True
 
-rules_nixpkgs_sha256 = "5a384daa57b49abf9f0b672852f1a66a3c52aecf9d4d2ac64f6de0fd307690c8"
+rules_nixpkgs_sha256 = "91da40d6688ca85e35639d984c020d2b3640145109c6b11f9d6f9c0b53477d0f"
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
@@ -58,7 +58,7 @@ haskell_nixpkgs_package(
     # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly
     # if `repository` is not set, but our nix_file uses `./nixpkgs/`.
     # TODO(Profpatsch)
-    repositories = {"nixpkgs": "//nixpkgs:NOTUSED"},
+    repositories = {"nixpkgs": "//nixpkgs:default.nix"},
 )
 
 http_archive(
@@ -109,6 +109,7 @@ haskell_register_ghc_nixpkgs(
     nix_file_deps = ["//nixpkgs:default.nix"],
     repl_ghci_args = test_repl_ghci_args,
     version = test_ghc_version,
+    repositories = {"nixpkgs": "@nixpkgs"},
 )
 
 haskell_register_ghc_bindists(
