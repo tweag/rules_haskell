@@ -93,17 +93,17 @@ def _ghc_bindist_impl(ctx):
         stripPrefix = "ghc-" + version,
     )
 
+    # We apply some patches, if needed.
+    patch(ctx)
+
+    # As the patches may touch the package DB we regenerate the cache.
+    if len(ctx.attr.patches) > 0:
+        _execute_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
+
     # On Windows the bindist already contains the built executables
     if os != "windows":
         _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
         _execute_fail_loudly(ctx, ["make", "install"])
-
-    # We apply some patches, if needed. As the patches may touch the package DB
-    # we regenerate the cache.
-    patch(ctx)
-
-    if len(ctx.attr.patches) > 0:
-        _execute_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
 
     ctx.template(
         "BUILD",
@@ -227,9 +227,12 @@ def ghc_bindist(
     # Recent GHC versions on Windows contain a bug:
     # https://gitlab.haskell.org/ghc/ghc/issues/10205
     # We work around this by patching the base configuration.
-    (major, minor, _) = version.split(".")
-    is_ghc_8_6_win = target == "windows_amd64" and int(major) == 8 and int(minor) < 7
-    extra_attrs = {"patches": ["@io_tweag_rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"], "patch_args": ["-p0"]} if is_ghc_8_6_win else {}
+    patches = {
+        "8.6.2": ["@io_tweag_rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
+        "8.6.4": ["@io_tweag_rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"],
+    }.get(version) if target == "windows_amd64" else None
+
+    extra_attrs = {"patches": patches, "patch_args": ["-p0"]} if patches else {}
 
     # We want the toolchain definition to be tucked away in a separate
     # repository, that way `bazel build //...` will not match it (and
