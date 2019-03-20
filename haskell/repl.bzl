@@ -7,6 +7,7 @@ load(
     "@io_tweag_rules_haskell//haskell:private/path_utils.bzl",
     "get_lib_name",
     "is_shared_library",
+    "link_libraries",
     "ln",
     "target_unique_name",
 )
@@ -355,14 +356,7 @@ def _create_repl(hs, ctx, repl_info, output):
     libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
 
     # External C libraries that we need to make available to the REPL.
-    seen_libs = set.empty()
-    libraries = []
-    for lib in libs_to_link:
-        lib_name = get_lib_name(lib)
-        if not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            args += ["-l{0}".format(lib_name)]
-            libraries.append(lib_name)
+    libraries = link_libraries(libs_to_link, args)
 
     # Transitive library dependencies to have in runfiles.
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(

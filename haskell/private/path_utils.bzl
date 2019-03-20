@@ -172,6 +172,26 @@ def get_lib_name(lib):
     end = paths.replace_extension(base, "") if n == -1 else base[:n]
     return end
 
+def link_libraries(libs_to_link, args):
+    """Add linker flags to link against the given libraries.
+
+    Args:
+      libs_to_link: List of library Files.
+      args: Append arguments to this list.
+
+    Returns:
+      List of library names that were linked.
+
+    """
+    seen_libs = set.empty()
+    libraries = []
+    for lib in libs_to_link:
+        lib_name = get_lib_name(lib)
+        if not set.is_member(seen_libs, lib_name):
+            set.mutable_insert(seen_libs, lib_name)
+            args += ["-l{0}".format(lib_name)]
+            libraries.append(lib_name)
+
 def is_shared_library(f):
     """Check if the given File is a shared library.
 
