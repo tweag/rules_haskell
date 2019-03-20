@@ -54,6 +54,7 @@ haskell_nixpkgs_package(
     attribute_path = "haskellPackages.ghc",
     build_file = "//haskell:ghc.BUILD",
     nix_file = "//tests:ghc.nix",
+    nix_file_deps = ["//nixpkgs:default.nix"],
     # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly
     # if `repository` is not set, but our nix_file uses `./nixpkgs/`.
     # TODO(Profpatsch)
@@ -105,6 +106,7 @@ haskell_register_ghc_nixpkgs(
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
     nix_file = "//tests:ghc.nix",
+    nix_file_deps = ["//nixpkgs:default.nix"],
     repl_ghci_args = test_repl_ghci_args,
     version = test_ghc_version,
 )
@@ -203,6 +205,7 @@ haskell_nixpkgs_packageset(
     name = "hackage-packages",
     base_attribute_path = "haskellPackages",
     nix_file = "//tests:ghc.nix",
+    nix_file_deps = ["//tests/haddock:libC.nix"],
     nixopts = [
         "-j",
         "1",
