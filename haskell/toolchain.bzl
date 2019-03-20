@@ -113,7 +113,7 @@ def _haskell_toolchain_impl(ctx):
         for file in ctx.files.tools:
             if tool == paths.split_extension(file.basename)[0]:
                 ghc_binaries[tool] = file
-        if not ghc_binaries[tool]:
+        if not tool in ghc_binaries:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 
     # Run a version check on the compiler.
