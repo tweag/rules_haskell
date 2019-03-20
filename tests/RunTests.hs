@@ -4,7 +4,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 import Data.Foldable (for_)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, sort)
 import System.Exit (ExitCode(..))
 
 import qualified System.Process as Process
@@ -65,6 +65,14 @@ main = hspec $ do
     -- Test `repl_ghci_args` from toolchain and rule for REPL
     it "repl flags" $ do
       assertSuccess (bazel ["run", "//tests/repl-flags:repl_flags@repl", "--", "-ignore-dot-ghci", "-e", "foo"])
+
+  describe "multi_repl" $ do
+    it "loads transitive library dependencies" $ do
+      let p' (stdout, _stderr) = lines stdout == ["tests/multi_repl/bc/src/BC/C.hs"]
+      outputSatisfy p' (bazel ["run", "//tests/multi_repl:c_only_repl", "--", "-ignore-dot-ghci", "-e", ":show targets"])
+    it "loads transitive source dependencies" $ do
+      let p' (stdout, _stderr) = sort (lines stdout) == ["tests/multi_repl/a/src/A/A.hs","tests/multi_repl/bc/src/BC/B.hs","tests/multi_repl/bc/src/BC/C.hs"]
+      outputSatisfy p' (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":show targets"])
 
   it "startup script" $ do
     assertSuccess (safeShell [

@@ -7,7 +7,7 @@ load(
     "HaskellLibraryInfo",
     "HaskellLintInfo",
 )
-load(":private/context.bzl", "haskell_context")
+load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
 load(
     ":private/path_utils.bzl",
@@ -74,7 +74,10 @@ def _haskell_lint_aspect_impl(target, ctx):
     )
 
     # Transitive library dependencies for runtime.
-    (library_deps, ld_library_deps, _ghc_env) = get_libs_for_ghc_linker(hs, build_info)
+    (library_deps, ld_library_deps, _ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        build_info.transitive_cc_dependencies,
+    )
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
@@ -98,10 +101,7 @@ def _haskell_lint_aspect_impl(target, ctx):
             output = lint_log.path,
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
-            env = "\n".join([
-                "export {}={}".format(k, v)
-                for k, v in hs.env.items()
-            ]),
+            env = render_env(hs.env),
         ),
         arguments = [args],
         use_default_shell_env = True,

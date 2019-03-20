@@ -1,10 +1,12 @@
 """runghc support"""
 
+load(":private/context.bzl", "render_env")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
     "is_shared_library",
+    "link_libraries",
     "ln",
     "target_unique_name",
 )
@@ -59,21 +61,13 @@ def build_haskell_runghc(
     link_ctx = build_info.cc_dependencies.dynamic_linking
     libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
 
-    # External shared libraries that we need to make available to runghc.
-    # This only includes dynamic libraries as including static libraries here
-    # would cause linking errors as ghci cannot load static libraries.
-    # XXX: Verify that static libraries can't be loaded by GHCi.
-    seen_libs = set.empty()
-    for lib in libs_to_link:
-        lib_name = get_lib_name(lib)
-        if is_shared_library(lib) and not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            args += ["-l{0}".format(lib_name)]
+    # External C libraries that we need to make available to runghc.
+    link_libraries(libs_to_link, args)
 
     # Transitive library dependencies to have in runfiles.
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
         hs,
-        build_info,
+        build_info.transitive_cc_dependencies,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
 
@@ -102,10 +96,8 @@ def build_haskell_runghc(
         template = runghc_wrapper,
         output = runghc_file,
         substitutions = {
-            "{LIBPATH}": ghc_env["LIBRARY_PATH"],
-            "{LDLIBPATH}": ghc_env["LD_LIBRARY_PATH"],
+            "{ENV}": render_env(ghc_env),
             "{TOOL}": hs.tools.runghc.path,
-            "{SCRIPT_LOCATION}": output.path,
             "{ARGS}": " ".join([shell.quote(a) for a in runghc_args]),
         },
         is_executable = True,

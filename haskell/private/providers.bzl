@@ -107,7 +107,7 @@ HaskellBuildInfo = provider(
     },
 )
 
-def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
+def get_libs_for_ghc_linker(hs, transitive_cc_dependencies, path_prefix = None):
     """Return all C library dependencies for GHC's linker.
 
     GHC has it's own builtin linker. It is used for Template Haskell, for GHCi,
@@ -120,7 +120,7 @@ def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
 
     Args:
       hs: Haskell context.
-      build_info: HaskellBinaryInfo provider.
+      transitive_cc_dependencies: HaskellCcInfo provider.
       path_prefix: Prefix for paths in GHC environment variables.
 
     Returns:
@@ -131,7 +131,7 @@ def get_libs_for_ghc_linker(hs, build_info, path_prefix = None):
       env: A mapping environment variables LIBRARY_PATH and LD_LIBRARY_PATH,
         to the corresponding values as expected by GHC.
     """
-    trans_link_ctx = build_info.transitive_cc_dependencies.dynamic_linking
+    trans_link_ctx = transitive_cc_dependencies.dynamic_linking
 
     libs_to_link = trans_link_ctx.libraries_to_link.to_list()
     libs_for_runtime = trans_link_ctx.dynamic_libraries_for_runtime.to_list()

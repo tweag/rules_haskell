@@ -245,7 +245,10 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
         args.add(f)
 
     # Transitive library dependencies for runtime.
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(hs, dep_info)
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        dep_info.transitive_cc_dependencies,
+    )
 
     return DefaultCompileInfo(
         args = args,

@@ -7,7 +7,7 @@ load(
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
 )
-load(":private/context.bzl", "haskell_context")
+load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
 
 def _get_haddock_path(package_id):
@@ -102,10 +102,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             "%{haddock}": hs.tools.haddock.path,
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
-            "%{env}": "\n".join([
-                "export {}={}".format(k, v)
-                for k, v in hs.env.items()
-            ]),
+            "%{env}": render_env(hs.env),
         },
         is_executable = True,
     )

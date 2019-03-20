@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/context.bzl", "haskell_context")
+load(":private/context.bzl", "haskell_context", "render_env")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -129,7 +129,10 @@ def _haskell_doctest_single(target, ctx):
                 ])
 
     # Transitive library dependencies for runtime.
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(hs, build_info)
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        build_info.transitive_cc_dependencies,
+    )
 
     header_files = lib_info.header_files if lib_info != None else bin_info.header_files
 
@@ -173,10 +176,7 @@ def _haskell_doctest_single(target, ctx):
             module_list = exposed_modules_file.path,
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
-            env = "\n".join([
-                "export {}={}".format(k, v)
-                for k, v in hs.env.items()
-            ]),
+            env = render_env(hs.env),
         ),
         arguments = [args],
         # NOTE It looks like we must specify the paths here as well as via -L

@@ -6,10 +6,10 @@ import qualified System.Directory as Dir
 rules_haskell_stdout_dupe <- Handle.hDuplicate IO.stdout
 :{
 (rules_haskell_stdout_copy_file, rules_haskell_stdout_copy_h) <- do
-  tmpDir <- Dir.getTemporaryDirectory Prelude.>>= Dir.canonicalizePath
-  (fn, h) <- IO.openTempFile tmpDir "rules-haskell-ghci-repl"
-  Handle.hDuplicateTo h IO.stdout
-  Prelude.return (fn, h)
+  rules_haskell_tmp_dir <- Dir.getTemporaryDirectory Prelude.>>= Dir.canonicalizePath
+  (rules_haskell_fn, rules_haskell_h) <- IO.openTempFile rules_haskell_tmp_dir "rules-haskell-ghci-repl"
+  Handle.hDuplicateTo rules_haskell_h IO.stdout
+  Prelude.return (rules_haskell_fn, rules_haskell_h)
 :}
 :show modules
 :{
@@ -19,10 +19,10 @@ rules_haskell_loaded_modules <- do
   -- stream at offset 0 did not work (no data is there, although the
   -- corresponding file certainly contained it after flushing). Couldn't
   -- figure this one out, so we first close the file and then read from it.
-  h <- IO.openFile rules_haskell_stdout_copy_file IO.ReadMode
-  xs <- Handle.hGetContents h
+  rules_haskell_h <- IO.openFile rules_haskell_stdout_copy_file IO.ReadMode
+  rules_haskell_xs <- Handle.hGetContents rules_haskell_h
   Dir.removeFile rules_haskell_stdout_copy_file
-  Prelude.return Prelude.$ Prelude.takeWhile (Prelude./= ' ') Prelude.<$> Prelude.lines xs
+  Prelude.return Prelude.$ Prelude.takeWhile (Prelude./= ' ') Prelude.<$> Prelude.lines rules_haskell_xs
 :}
 hDuplicateTo rules_haskell_stdout_dupe IO.stdout
 :{
@@ -36,3 +36,4 @@ let rules_haskell_add_loaded_modules _ =
 :undef rules_haskell_add_loaded_modules
 -- reload modules to drop the rules_haskell* definitions
 :reload
+{COMMANDS}
