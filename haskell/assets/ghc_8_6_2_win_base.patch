@@ -1,0 +1,11 @@
+--- lib/package.conf.d/base-4.12.0.0.conf	2019-03-19 18:04:35.186653529 +0100
++++ lib/package.conf.d/base-4.12.0.0.conf	2019-03-19 18:04:48.958873769 +0100
+@@ -79,7 +79,7 @@
+ data-dir: $topdir\x86_64-windows-ghc-8.6.2\base-4.12.0.0
+ hs-libraries: HSbase-4.12.0.0
+ extra-libraries:
+-    wsock32 user32 shell32 msvcrt mingw32 mingwex
++    wsock32 user32 shell32 msvcrt mingw32 mingwex shlwapi
+ include-dirs: $topdir\base-4.12.0.0\include
+ includes:
+     HsBase.h
