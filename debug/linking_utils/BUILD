@@ -20,23 +20,13 @@ import sys
 def contains_error(error):
     """check whether any of the dependencies contains `error`,
     where error is something from `LDD_ERRORS`.
+    Returns {} if there's no error.
     """
     def f(d):
-        is_any_err = False
-        example = None
-        for k, n in d['needed'].items():
-            if is_any_err:
-              break
-            if n is error:
-                is_any_err = True
-                example = k
-                break
-            elif n in LDD_ERRORS:
-                pass
-            else:
-                is_any_err = n['item']['is_error']
-                example = n['item']['example']
-        return { 'is_error': is_any_err, 'example': example }
+        return { k: v for k, v in d['needed'].items()
+          if (v == error
+             or (v not in LDD_ERRORS
+                and dict_remove_empty(v['item']) != {})) }
     return f
 
 # output should have some runpaths
@@ -47,10 +37,12 @@ assert \
 # some of the dependencies are implicit and not in NEEDED flags
 assert ldd(contains_error(LDD_UNKNOWN), sys.argv[1])
 
+import pprint
 # none of the dependencies must be missing
 res = ldd(contains_error(LDD_MISSING), sys.argv[1])
-if res['is_error']:
-  print("example of missing dependency: {}".format(res['example']))
+if res != {}:
+  print("These dependencies are missing:")
+  pprint.pprint(res)
   exit(1)
 ''',
     # it only works on linux
