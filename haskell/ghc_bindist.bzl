@@ -225,7 +225,7 @@ def ghc_bindist(
     toolchain_name = "{}-toolchain".format(name)
 
     # Recent GHC versions on Windows contain a bug:
-    # https://gitlab.haskell.org/ghc/ghc/issues/10205
+    # https://gitlab.haskell.org/ghc/ghc/issues/16466
     # We work around this by patching the base configuration.
     patches = {
         "8.6.2": ["@io_tweag_rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
