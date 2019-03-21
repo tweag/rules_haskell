@@ -111,6 +111,10 @@ def _haskell_toolchain_impl(ctx):
     ghc_binaries = {}
     for tool in _GHC_BINARIES:
         for file in ctx.files.tools:
+
+            if tool in ghc_binaries:
+                continue
+
             basename_no_ext = paths.split_extension(file.basename)[0]
             if tool == basename_no_ext:
                 ghc_binaries[tool] = file
