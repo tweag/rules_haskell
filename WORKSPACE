@@ -13,6 +13,11 @@ local_repository(
     path = "tutorial",
 )
 
+local_repository(
+    name = "ai_formation_hazel",
+    path = "hazel",
+)
+
 haskell_repositories()
 
 rules_nixpkgs_version = "0.5.2"
