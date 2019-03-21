@@ -1,9 +1,11 @@
-load("@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_toolchain",
-  "haskell_doctest_toolchain",
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_doctest_toolchain",
+    "haskell_toolchain",
 )
-load("@io_tweag_rules_haskell//haskell:c2hs.bzl",
-  "c2hs_toolchain",
+load(
+    "@io_tweag_rules_haskell//haskell:c2hs.bzl",
+    "c2hs_toolchain",
 )
 load("//tools:mangling.bzl", "hazel_binary")
 
@@ -31,10 +33,10 @@ cc_import(
 
 cc_library(
     name = "pq",
-    deps = [":pq-library"],
     hdrs = ["@postgresql//:headers"],
     strip_include_prefix = "external/postgresql/include",
     visibility = ["//visibility:public"],
+    deps = [":pq-library"],
 )
 
 cc_import(
@@ -44,10 +46,10 @@ cc_import(
 
 cc_library(
     name = "sndfile",
-    deps = [":sndfile-library"],
     hdrs = ["@libsndfile.dev//:headers"],
     strip_include_prefix = "external/libsndfile.dev/include",
     visibility = ["//visibility:public"],
+    deps = [":sndfile-library"],
 )
 
 cc_import(
@@ -57,6 +59,6 @@ cc_import(
 
 cc_library(
     name = "tag_c",
-    deps = [":tag_c-library"],
     visibility = ["//visibility:public"],
+    deps = [":tag_c-library"],
 )

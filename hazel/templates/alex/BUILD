@@ -14,4 +14,4 @@ exports_files([
     "AlexWrapper-posn",
     "AlexWrapper-posn-bytestring",
     "AlexWrapper-strict-bytestring",
-])    
+])

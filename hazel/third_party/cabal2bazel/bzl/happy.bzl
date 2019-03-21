@@ -32,10 +32,10 @@ Example:
 load("//tools:mangling.bzl", "hazel_binary")
 
 def genhappy(src, out):
-  native.genrule(
-      name = out + ".hs_happy",
-      srcs = [src],
-      outs = [out],
-      tools = [hazel_binary("happy")],
-      cmd = "$(location {}) -g -a -c -o $(OUTS) $(SRCS)".format(hazel_binary("happy")),
-  )
+    native.genrule(
+        name = out + ".hs_happy",
+        srcs = [src],
+        outs = [out],
+        tools = [hazel_binary("happy")],
+        cmd = "$(location {}) -g -a -c -o $(OUTS) $(SRCS)".format(hazel_binary("happy")),
+    )

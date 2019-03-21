@@ -29,11 +29,12 @@
 #       ...
 #   )
 load("//tools:mangling.bzl", "hazel_binary")
+
 def genalex(src, out):
-  native.genrule(
-      name=out + ".hs_alex",
-      srcs=[src],
-      outs=[out],
-      tools=[hazel_binary("alex")],
-      cmd="$(location {}) -g -o $(OUTS) $(SRCS)".format(hazel_binary("alex")),
-  )
+    native.genrule(
+        name = out + ".hs_alex",
+        srcs = [src],
+        outs = [out],
+        tools = [hazel_binary("alex")],
+        cmd = "$(location {}) -g -o $(OUTS) $(SRCS)".format(hazel_binary("alex")),
+    )
