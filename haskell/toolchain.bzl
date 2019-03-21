@@ -111,7 +111,6 @@ def _haskell_toolchain_impl(ctx):
     ghc_binaries = {}
     for tool in _GHC_BINARIES:
         for file in ctx.files.tools:
-
             if tool in ghc_binaries:
                 continue
 
