@@ -1,0 +1,114 @@
+#!/bin/sh
+
+MIN_BAZEL_MAJOR=0
+MIN_BAZEL_MINOR=21
+
+set -e
+
+actual_raw=$(bazel version | egrep '^Build label:' | egrep -o '[0-9.]+')
+
+IFS=. read actual_major actual_minor actual_patch <<EOF
+$actual_raw
+EOF
+
+expected=$MIN_BAZEL_MAJOR.$MIN_BAZEL_MINOR.0
+cmp=$expected'\n'$actual
+
+if ! ( [ "$actual_major" -gt "$MIN_BAZEL_MAJOR" ] || (
+           [ "$actual_major" -eq "$MIN_BAZEL_MAJOR" ] &&
+               [ "$actual_minor" -ge "$MIN_BAZEL_MINOR" ] ) )
+then
+    echo Need at least Bazel v${expected}. v${actual_raw} detected. >/dev/stderr
+    exit 1
+fi
+
+if [ -e WORKSPACE ] || [ -e BUILD ]
+then
+    echo Current directory already has WORKSPACE and/or BUILD files. >/dev/stderr
+    exit 1
+fi
+
+cat > WORKSPACE <<EOF
+workspace(name = "YOUR_PROJECT_NAME_HERE")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+  name = "io_tweag_rules_haskell",
+  strip_prefix = "rules_haskell-0.8",
+  urls = ["https://github.com/tweag/rules_haskell/archive/v0.8.tar.gz"]
+)
+
+load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+haskell_repositories()
+
+rules_nixpkgs_version = "c232b296e795ad688854ff3d3d2de6e7ad45f0b4"
+rules_nixpkgs_sha256 = "5883ea01f3075354ab622cfe82542da01fe2b57a48f4c3f7610b4d14a3fced11"
+
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    sha256 = rules_nixpkgs_sha256,
+    strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % rules_nixpkgs_version],
+)
+
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_package",
+    "nixpkgs_git_repository",
+    "nixpkgs_cc_configure",
+)
+
+nixpkgs_git_repository(
+    name = "nixpkgs",
+    remote = "https://github.com/NixOS/nixpkgs",
+    revision = "18.09",
+    sha256 = "6451af4083485e13daa427f745cbf859bc23cb8b70454c017887c006a13bd65e",
+)
+
+nixpkgs_package(
+  name = "ghc",
+  attribute_path = "haskell.compiler.ghc843",
+  repository = "@nixpkgs",
+)
+
+nixpkgs_cc_configure(
+    repository = "@nixpkgs",
+)
+
+register_toolchains("//:ghc")
+EOF
+
+cat > BUILD <<EOF
+package(default_visibility = ["//visibility:public"])
+
+load(
+  "@io_tweag_rules_haskell//haskell:haskell.bzl",
+  "haskell_library",
+  "haskell_toolchain",
+  "haskell_import",
+)
+
+haskell_toolchain(
+  name = "ghc",
+  version = "8.4.3",
+  tools = "@ghc//:bin",
+)
+
+haskell_import(name = "base")
+
+haskell_library(
+  name = "MY_LIBRARY_NAME",
+  src_strip_prefix = "src",
+  srcs = glob(['src/**/*.hs']),
+  deps = [
+    "base_pkg"
+  ],
+)
+EOF
+
+cat <<EOF
+WORKSPACE and initial BUILD files created. To run Bazel:
+
+    $ bazel build //...
+EOF

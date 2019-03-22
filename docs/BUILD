@@ -1,0 +1,46 @@
+load("@io_bazel_skydoc//skylark:skylark.bzl", "skylark_doc")
+
+genrule(
+    name = "guide_html",
+    srcs = ["conf.py"] + glob(["*.rst"]),
+    outs = ["guide_html.zip"],
+    cmd = """
+    set -euo pipefail
+    # Nixpkgs_rules are pointing to every bins individually. Here
+    # we are extracting the /bin dir path to append it to the $$PATH.
+    CWD=`pwd`
+    sphinxBinDir=$${CWD}/$$(echo $(locations @sphinx//:bin) | cut -d ' ' -f 1 | xargs dirname)
+    dotBinDir=$${CWD}/$$(echo $(locations @graphviz//:bin) | cut -d ' ' -f 1 | xargs dirname)
+    zipBinDir=$${CWD}/$$(echo $(locations @zip//:bin) | cut -d ' ' -f 1 | xargs dirname)
+    PATH=$${PATH}:$${sphinxBinDir}:$${dotBinDir}:$${zipBinDir}
+    sourcedir=$$(dirname $(location conf.py))
+    builddir=$$(mktemp -d rules_haskell_docs.XXXX)
+    sphinx-build -M html $$sourcedir $$builddir -W -N -q
+    (cd $$builddir/html && zip -q -r $$CWD/$@ .)
+    rm -rf $$builddir
+    """,
+    tools = [
+        "@graphviz//:bin",
+        "@sphinx//:bin",
+        "@zip//:bin",
+    ],
+)
+
+skylark_doc(
+    name = "api_html",
+    srcs = [
+
+        # The order of these files defines the order in which the corresponding
+        # sections are presented in the docs.
+        "//haskell:haskell.bzl",
+        "//haskell:haddock.bzl",
+        "//haskell:lint.bzl",
+        "//haskell:toolchain.bzl",
+        "//haskell:protobuf.bzl",
+        "//haskell:cc.bzl",
+        "//haskell:repositories.bzl",
+        "//haskell:ghc_bindist.bzl",
+        "//haskell:nixpkgs.bzl",
+    ],
+    format = "html",
+)

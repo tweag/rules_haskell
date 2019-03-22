@@ -1,0 +1,27 @@
+# See https://docs.bazel.build/versions/master/user-manual.html#bazelrc.
+
+# Use this configuration when targeting Windows. Eventually this will
+# no longer be required:
+# https://bazel.build/roadmaps/platforms.html#replace---cpu-and---host_cpu-flags.
+build:windows --crosstool_top=@io_tweag_rules_haskell_ghc_windows_amd64//:toolchain -s --verbose_failures --sandbox_debug
+
+build:ci --loading_phase_threads=1
+build:ci --jobs=2
+build:ci --verbose_failures
+# Make sure we don't rely on the names of convenience symlinks because those
+# can be changed by user.
+build:ci --symlink_prefix=bazel-ci-
+common:ci --color=no
+test:ci --test_output=errors
+
+# Needed on Windows for //tests/binary-with-data
+# see: https://github.com/tweag/rules_haskell/issues/647#issuecomment-459001362
+test:windows --experimental_enable_runfiles
+
+# test environment does not propagate locales by default
+# some tests reads files written in UTF8, we need to propagate the correct
+# environment variables, such as LOCALE_ARCHIVE
+# We also need to setup an utf8 locale
+test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
+
+try-import .bazelrc.local

@@ -1,0 +1,44 @@
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "extra-source-files",
+    srcs = [
+        "Foo.hs",
+        "FooTH.hs",
+    ],
+    # Test that the linker can also see the extra_srcs.
+    compiler_flags = ["-optl-Wl,@tests/extra-source-files/ld-options.txt"],
+    extra_srcs = [
+        "file.txt",
+        "ld-options.txt",
+    ],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+    ],
+)
+
+haskell_test(
+    name = "extra-source-files-bin",
+    srcs = [
+        "Foo.hs",
+        "FooTH.hs",
+        "Main.hs",
+    ],
+    # Test that the linker can also see the extra_srcs.
+    compiler_flags = ["-optl-Wl,@tests/extra-source-files/ld-options.txt"],
+    extra_srcs = [
+        "file.txt",
+        "ld-options.txt",
+    ],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+    ],
+)
