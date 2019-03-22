@@ -1,3 +1,4 @@
+load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@ai_formation_hazel//tools:ghc.bzl", "get_executable_name", "get_ghc_workspace")
 
 def _hazel_base_repository_impl(ctx):
@@ -16,18 +17,24 @@ def _hazel_base_repository_impl(ctx):
         l = Label(f)
         ctx.symlink(Label(f), l.name)
 
-    res = ctx.execute([
-                          ghc,
-                          "-Wall",
-                          "-Werror",
-                          # Only use core packages of GHC, nothing from the the user level:
-                          "-clear-package-db",
-                          "-global-package-db",
-                          "--make",
-                          "-o",
-                          "cabal2bazel",
-                      ] +
-                      [Label(f).name for f in cabal2bazel_srcs])
+    ghc_args = [
+        "-Wall",
+        "-Werror",
+        # Only use core packages of GHC, nothing from the the user level:
+        "-clear-package-db",
+        "-global-package-db",
+        "--make",
+        "-o",
+        "cabal2bazel",
+    ]
+    if get_cpu_value(ctx) == "darwin":
+        # Nixpkgs commit 3513034208a introduces -liconv in NIX_LDFLAGS on
+        # Darwin. We don't currently handle NIX_LDFLAGS in any special
+        # way, so a hack is to simply do what NIX_LDFLAGS is telling us we
+        # should do always when using a toolchain from Nixpkgs.
+        # TODO remove this gross hack.
+        ghc_args.append("-liconv")
+    res = ctx.execute([ghc] + ghc_args + [Label(f).name for f in cabal2bazel_srcs])
     if res.return_code != 0:
         fail("Couldn't build cabal2bazel:\n{}\n{}".format(res.stdout, res.stderr))
 
