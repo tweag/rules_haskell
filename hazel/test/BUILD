@@ -33,4 +33,5 @@ haskell_library(
 haskell_doctest(
     name = "doctest-test",
     deps = [":DoctestExample"],
+    testonly = True,
 )
