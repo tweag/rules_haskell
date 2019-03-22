@@ -111,6 +111,34 @@ main = hspec $ do
   it "bazel test tutorial" $ do
     assertSuccess (bazel ["test", "@io_tweag_rules_haskell_tutorial//..."])
 
+  describe "Hazel" $ do
+    it "bazel test" $ do
+      assertSuccess (bazel ["test", "@ai_formation_hazel//..."])
+    for_ hazelPackages $ \pkg -> do
+      it ("builds " ++ pkg) $ do
+        assertSuccess (bazel ["build", "@haskell_" ++ pkg ++ "//..."])
+
+      where
+        hazelPackages =
+          [ "aeson_92704494"
+          , "aeson_extra_2122370161"
+          , "cassava_555306702"
+          , "conduit_951069182"
+          , "entropy__1591567247"
+          , "fuzzyset_1745887768"
+          , "htaglib_1224840979"
+          , "http_client__884921168"
+          , "lens_3318014"
+          , "network_1843485230"
+          , "postgresql_libpq_275795853"
+          , "pretty_show_1195896308"
+          , "text_metrics_1740008483"
+          , "unix_compat__2123728025"
+          , "unix_time__403943438"
+          , "wai_app_static__1453541560"
+          , "zlib_3741643"
+          ]
+
 -- * Bazel commands
 
 -- | Returns a bazel command line suitable for CI
