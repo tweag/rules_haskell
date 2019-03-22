@@ -259,4 +259,13 @@ Here, the test passes because it actually has 100% expression coverage, but if
 the line reading ``<pct>% expressions used`` had a ``<pct>`` of less than 80,
 the test would fail.
 
+There a couple of notes regarding this feature:
+
+- Coverage analysis currently is scoped to all source files and all
+  locally-built Haskell dependencies (both direct and transitive) for a given
+  test rule.
+- Coverage-enabled build and execution for ``haskell_test`` targets may take
+  longer than regular. However, this has not effected regular ``run`` /
+  ``build`` / ``test`` performance.
+
 .. _hpc: <http://hackage.haskell.org/package/hpc>
