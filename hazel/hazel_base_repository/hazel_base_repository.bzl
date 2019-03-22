@@ -1,4 +1,4 @@
-load("//tools:ghc.bzl", "get_executable_name", "get_ghc_workspace")
+load("@ai_formation_hazel//tools:ghc.bzl", "get_executable_name", "get_ghc_workspace")
 
 def _hazel_base_repository_impl(ctx):
     ghc_workspace = get_ghc_workspace(ctx.attr.ghc_workspaces, ctx)
@@ -99,7 +99,7 @@ load("@ai_formation_hazel//third_party/cabal2bazel:bzl/cabal_package.bzl",
 load("@hazel_base_repository//:extra-libs.bzl",
   "extra_libs",
 )
-load("//:package.bzl", "package")
+load("@{workspace_name}//:package.bzl", "package")
 # Make a buildable target for easier debugging of the package.bzl file
 hazel_symlink(
   name = "bzl",
@@ -108,8 +108,12 @@ hazel_symlink(
 )
 cabal_haskell_package(
   package,
-  "{}",
-  "{}",
+  "{ghc_version}",
+  "{ghc_workspace}",
   extra_libs,
 )
-""".format(ghc_version, ghc_workspace))
+""".format(
+    workspace_name = ctx.name,
+    ghc_version = ghc_version,
+    ghc_workspace = ghc_workspace,
+))
