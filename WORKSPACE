@@ -13,11 +13,6 @@ local_repository(
     path = "tutorial",
 )
 
-local_repository(
-    name = "ai_formation_hazel",
-    path = "hazel",
-)
-
 haskell_repositories()
 
 rules_nixpkgs_version = "0.5.2"
@@ -349,3 +344,17 @@ load_go_sdk()
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
 buildifier_dependencies()
+
+# For Hazel
+# The purpose is to capture Hazel in rules_haskell's CI.
+
+local_repository(
+    name = "ai_formation_hazel",
+    path = "hazel",
+)
+
+load("@ai_formation_hazel//:repositories.bzl", "hazel_repositories")
+hazel_repositories()
+
+load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
+hazel_setup()
