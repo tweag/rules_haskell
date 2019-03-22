@@ -1,6 +1,6 @@
 # Hazel: Automatic Bazel rules for third-party Haskell dependencies
 
-[![CircleCI](https://circleci.com/gh/FormationAI/hazel/tree/master.svg?style=svg)](https://circleci.com/gh/FormationAI/hazel/tree/master)
+[![CircleCI](https://circleci.com/gh/tweag/rules_haskell/tree/master.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell/tree/master)
 
 Hazel is a Bazel framework that manages build rules for third-party Haskell
 dependencies.
@@ -12,7 +12,8 @@ time, including automatically downloading Cabal packages from Hackage,
 parsing their .cabal files and creating Haskell build rules.
 
 Hazel uses the [`rules_haskell`](https://github.com/tweag/rules_haskell)
-package.
+package for Haskell build rules. Hazel is now part of the `rules_haskell`
+repository.
 
 ## Status
 Hazel is still experimental, and its API is subject to change.  Most Hackage
@@ -34,52 +35,20 @@ particular LTS release or nightly snapshot:
 That `packages.bzl` file should be checked into your repository.
 
 
-Then, add some `rules_haskell`-related boilerplate to your `WORKSPACE` file,
-as described in their
-[`README`](https://github.com/tweag/rules_nixpkgs/blob/master/README.md):
+Then, follow the instructions in the [`rules_haskell` `README`](../README.md)
+to configure `rules_haskell`. Next, include Hazel as follows:
 
 ```
-http_archive(
-    name = "io_tweag_rules_nixpkgs",
-    strip_prefix = "rules_nixpkgs-cd2ed701127ebf7f8f21d37feb1d678e4fdf85e5",
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/cd2ed70.tar.gz"],
-)
-RULES_HASKELL_SHA = "f6f75f4b551202bff0a90e026cb572c181fac0d8"
-http_archive(
-    name = "io_tweag_rules_haskell",
-    urls = ["https://github.com/tweag/rules_haskell/archive/"
-            + RULES_HASKELL_SHA + ".tar.gz"],
-    strip_prefix = "rules_haskell-" + RULES_HASKELL_SHA,
-)
+# Hazel is contained in the rules_haskell repository.
+# Use the same git revision for rules_haskell and Hazel.
 # Replace with a more recent commit, as appropriate
-HAZEL_SHA=dca41ff6d9ce7a00e4af91ebe621f0c939e7e465
+RULES_HASKELL_SHA = "2a4f902bd0911e479610abda895e6cdc9a72da41"
 http_archive(
     name = "ai_formation_hazel",
-    strip_prefix = "hazel-dca41ff6d9ce7a00e4af91ebe621f0c939e7e465",
-    urls = ["https://github.com/FormationAI/hazel/archive/{}.tar.gz".format(
-              HAZEL_COMMIT)],
+    urls = ["https://github.com/tweag/rules_haskell/archive/"
+            + RULES_HASKELL_SHA + ".tar.gz"],
+    strip_prefix = "rules_haskell-" + RULES_HASKELL_SHA + "/hazel",
 )
-
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_git_repository", "nixpkgs_package")
-
-nixpkgs_git_repository(
-    name = "nixpkgs",
-    # A revision of 17.09 that contains ghc-8.2.2:
-    revision = "c33c5239f62b4855b14dc5b01dfa3e2a885cf9ca",
-)
-
-nixpkgs_package(
-    name = "ghc",
-    repository = "@nixpkgs",
-    attribute_path = "haskell.packages.ghc822.ghc",
-    # NOTE: this uses the ghc bindist template provided by Hazel
-    build_file = "@ai_formation_hazel//:BUILD.ghc",
-)
-
-load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
-haskell_repositories()
-
-register_toolchains("@ghc//:ghc")
 ```
 
 Finally, in `WORKSPACE`, load `packages.bzl` and feed its contents to `haskell_repositories` macro:

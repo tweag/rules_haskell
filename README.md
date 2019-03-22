@@ -130,7 +130,7 @@ packages. This is provided by downstream rule sets. We
 recommend [Hazel][hazel] for generating rules to build packages
 published on Hackage, or part of Stackage snapshots, using Bazel.
 
-[hazel]: https://github.com/formationai/hazel
+[hazel]: ./hazel/README.md
 
 ## Troubleshooting
 
