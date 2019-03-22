@@ -309,3 +309,15 @@ def hazel_custom_package_github(
         commit = repo_sha,
         strip_prefix = strip_prefix,
     )
+
+def hazel_extra_packages(pkgs, extra_pkgs):
+    """Override or add extra packages to the snapshot.
+
+    Args:
+      pkgs: A dict mapping strings to structs as expected by hazel_repositories.
+      extra_pkgs: A dict mapping strings to dicts.
+        The keys represent the name of the package to override or add.
+        The dicts represent the fields of the corresponding package struct as
+        expected by hazel_repositories. See there for details.
+    """
+    return pkgs + { k: struct(**v) for (k, v) in extra_pkgs.items() }
