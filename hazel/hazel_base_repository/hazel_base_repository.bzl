@@ -113,7 +113,7 @@ cabal_haskell_package(
   extra_libs,
 )
 """.format(
-    workspace_name = ctx.name,
-    ghc_version = ghc_version,
-    ghc_workspace = ghc_workspace,
-))
+        workspace_name = ctx.name,
+        ghc_version = ghc_version,
+        ghc_workspace = ghc_workspace,
+    ))

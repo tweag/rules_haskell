@@ -320,4 +320,4 @@ def hazel_extra_packages(pkgs, extra_pkgs):
         The dicts represent the fields of the corresponding package struct as
         expected by hazel_repositories. See there for details.
     """
-    return pkgs + { k: struct(**v) for (k, v) in extra_pkgs.items() }
+    return pkgs + {k: struct(**v) for (k, v) in extra_pkgs.items()}

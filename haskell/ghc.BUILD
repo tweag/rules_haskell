@@ -29,14 +29,26 @@ cc_library(
 cc_library(
     name = "unix-includes",
     hdrs = glob(["lib/ghc-*/unix-*/include/*.h"]),
-    includes = glob(["lib/ghc-*/unix-*/include"], exclude_directories=0),
+    includes = glob(
+        ["lib/ghc-*/unix-*/include"],
+        exclude_directories = 0,
+    ),
 )
 
 # This is needed for Hazel targets.
 cc_library(
     name = "rts-headers",
-    hdrs = glob(["lib/ghc-*/include/**/*.h", "lib/include/**/*.h"]),
-    includes = glob(["lib/ghc-*/include", "lib/include"], exclude_directories=0),
+    hdrs = glob([
+        "lib/ghc-*/include/**/*.h",
+        "lib/include/**/*.h",
+    ]),
+    includes = glob(
+        [
+            "lib/ghc-*/include",
+            "lib/include",
+        ],
+        exclude_directories = 0,
+    ),
 )
 
 # Expose embedded MinGW toolchain when on Windows.
