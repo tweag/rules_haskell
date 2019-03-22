@@ -81,7 +81,7 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_f
         "./{}".format(cabal2bazel),
         ghc_version,
         cabal_path,
-        "package.bzl",
+        output,
     ] + flag_args, quiet = False)
 
     if res.return_code != 0:
