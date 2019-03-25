@@ -210,14 +210,19 @@ the source code that are explored when the tests are run.
 
 Haskell's ``ghc`` compiler has built-in support for code coverage analysis, 
 through the hpc_ tool. The Haskell rules allow the use of this tool to analyse 
-``haskell_library`` coverage by ``haskell_test`` rules. To do so, add 
-``expected_expression_coverage=<some integer between 0 and 100>`` to the 
-attributes of a ``haskell_test``, and if the expression coverage percentage 
-is lower than this amount, the test will fail. To see the coverage details of 
-the test suite regardless of if the test passes or fails, add 
-``--test_output=all`` as a flag when invoking the test, and there will be a 
-report in the test output. You will only see the report if you required a 
-certain level of expression coverage in the rule attributes.
+``haskell_library`` coverage by ``haskell_test`` rules. To do so, you have a 
+few options. You can add 
+``expected_covered_expressions_percentage=<some integer between 0 and 100>`` to
+the attributes of a ``haskell_test``, and if the expression coverage percentage
+is lower than this amount, the test will fail. Alternatively, you can add
+``expected_uncovered_expression_count=<some integer greater or equal to 0>`` to
+the attributes of a ``haskell_test``, and instead the test will fail if the
+number of uncovered expressions is greater than this amount. Finally, you could
+do both at once, and have both of these checks analyzed by the coverage runner.
+To see the coverage details of the test suite regardless of if the test passes
+or fails, add ``--test_output=all`` as a flag when invoking the test, and there 
+will be a report in the test output. You will only see the report if you
+required a certain level of expression coverage in the rule attributes.
 
 For example, your BUILD file might look like this: ::
 
@@ -236,7 +241,8 @@ For example, your BUILD file might look like this: ::
         ":lib",
         "//tests/hackage:base",
     ],
-    expected_expression_coverage = 80,
+    expected_covered_expressions_percentage = 80,
+    expected_uncovered_expression_count = 10,
   )
 
 And if you ran ``bazel coverage //somepackage:test --test_output=all``, you 
@@ -253,11 +259,10 @@ might see a result like this: ::
   100% alternatives used (0/0)
   100% local declarations used (0/0)
   100% top-level declarations used (3/3)
-  ================================================================================
+  =============================================================================
 
-Here, the test passes because it actually has 100% expression coverage, but if
-the line reading ``<pct>% expressions used`` had a ``<pct>`` of less than 80,
-the test would fail.
+Here, the test passes because it actually has 100% expression coverage and 0 uncovered
+expressions, which is even better than we expected on both counts.
 
 There a couple of notes regarding this feature:
 
