@@ -22,11 +22,6 @@ jobs:
           name: Build tests
           command: |
             bazel build --config ci //tests/...
-            nix-shell --arg docTools false --pure --run \
-              'bazel coverage //tests/... \ 
-                --build_tag_filters "coverage-compatible" \
-                --test_tag_filters "coverage-compatible" \ 
-                --test_output=all'
 
   # ATTN: when you change anything here, don’t forget to copy it to the build-darwin section
   build-linux-nixpkgs:
