@@ -48,6 +48,22 @@ create_rpath_entry_test(
     output = "../bar",
 )
 
+# checks that a binary in //:bin works properly
+create_rpath_entry_test(
+    name = "rpath_entry_binary_root",
+    binary_short_path = "bin",
+    dependency_short_path = "xyz/b.so",
+    output = "xyz",
+)
+
+# same for dependency
+create_rpath_entry_test(
+    name = "rpath_entry_dep_root",
+    binary_short_path = "lib/bin",
+    dependency_short_path = "b.so",
+    output = "..",
+)
+
 create_rpath_entry_test(
     name = "rpath_entry_simple_filename",
     binary_short_path = "foo/a.so",

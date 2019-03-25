@@ -60,6 +60,7 @@ def _get_target_parent_dir(target):
       `is_external`: Bool whether the path points to an external repository
       `parent_dir`: The parent directory, either up to the runfiles toplel,
                     up to the external repository toplevel.
+                    Is `[]` if there is no parent dir.
     """
 
     parent_dir = parent_dir_path(target.short_path)
@@ -67,6 +68,8 @@ def _get_target_parent_dir(target):
     if parent_dir[0] == "..":
         __check_dots(target, parent_dir[1:])
         return (True, parent_dir[1:])
+    elif parent_dir[0] == ".":
+        return (False, [])
     else:
         __check_dots(target, parent_dir)
         return (False, parent_dir)
