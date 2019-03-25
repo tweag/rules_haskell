@@ -5,17 +5,45 @@ jobs:
   steps:
   - bash: |
       set -e
-      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.22.0/bazel-0.22.0-windows-x86_64.exe
+      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.23.2/bazel-0.23.2-windows-x86_64.exe
       mv bazel-*.exe bazel.exe
       mkdir /c/bazel
       mv bazel.exe /c/bazel
       /c/bazel/bazel.exe info release
 
     displayName: 'Install Bazel'
+
+  - powershell: |
+        Write-Host "Enable long path behavior"
+        # See https://docs.microsoft.com/en-us/windows/desktop/fileio/naming-a-file#maximum-path-length-limitation
+        Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1
+    displayName: "Enable da long paths"
+
   - bash: |
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
 
+      /c/bazel/bazel.exe build --config windows "@haskell_aeson_92704494//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_aeson_extra_2122370161//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_cassava_555306702//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_conduit_951069182//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_entropy__1591567247//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_fuzzyset_1745887768//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_htaglib_1224840979//..."
+      # /c/bazel/bazel.exe build --config windows "@haskell_http_client__884921168//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_lens_3318014//..."
+      # /c/bazel/bazel.exe build --config windows "@haskell_network_1843485230//..."
+      # /c/bazel/bazel.exe build --config windows "@haskell_postgresql_libpq_275795853//..."
+      # /c/bazel/bazel.exe build --config windows "@haskell_pretty_show_1195896308//..."
+      # /c/bazel/bazel.exe build --config windows "@haskell_pretty_show_1195896308//..."
+      # /c/bazel/bazel.exe build --config windows "@haskell_wai_app_static__1453541560//..."
+      # /c/bazel/bazel.exe build --config windows "@haskell_zlib_3741643//..."
+
+    displayName: 'Hazel Tests'
+
+  - bash: |
+      set -e
+      export MSYS2_ARG_CONV_EXCL="*"
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."
