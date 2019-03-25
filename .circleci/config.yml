@@ -22,6 +22,11 @@ jobs:
           name: Build tests
           command: |
             bazel build --config ci //tests/...
+            nix-shell --arg docTools false --pure --run \
+              'bazel coverage //tests/... \ 
+                --build_tag_filters "coverage-compatible" \
+                --test_tag_filters "coverage-compatible" \ 
+                --test_output=all'
 
   # ATTN: when you change anything here, don’t forget to copy it to the build-darwin section
   build-linux-nixpkgs:
@@ -59,6 +64,11 @@ jobs:
               'bazel build --config ci //tests:run-tests'
             nix-shell --arg docTools false --pure --run \
               './bazel-ci-bin/tests/run-tests'
+            nix-shell --arg docTools false --pure --run \
+              'bazel coverage //tests/... \ 
+                --build_tag_filters "coverage-compatible" \
+                --test_tag_filters "coverage-compatible" \ 
+                --test_output=all'
 
   build-darwin:
     macos:
@@ -90,6 +100,11 @@ jobs:
             # due to a clash between binutils and clang.
             nix-shell --arg docTools false --pure --run \
               './bazel-ci-bin/tests/run-tests --skip "/startup script/"'
+            nix-shell --arg docTools false --pure --run \
+              'bazel coverage //tests/... \ 
+                --build_tag_filters "coverage-compatible" \
+                --test_tag_filters "coverage-compatible" \ 
+                --test_output=all'
 
 workflows:
   version: 2
