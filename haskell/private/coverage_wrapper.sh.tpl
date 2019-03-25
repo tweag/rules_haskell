@@ -28,7 +28,8 @@ CLEARCOLOR='\033[0m'
 binary_path=$(rlocation {binary_path})
 hpc_path=$(rlocation {hpc_path})
 tix_file_path={tix_file_path}
-expected_expression_coverage={expected_expression_coverage}
+expected_covered_expressions_percentage={expected_covered_expressions_percentage}
+expected_uncovered_expression_count={expected_uncovered_expression_count}
 hpc_dir_args=""
 mix_file_paths={mix_file_paths}
 for m in "${mix_file_paths[@]}"
@@ -42,9 +43,15 @@ $binary_path "$@"
 $hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
 echo "Overall report"
 cat __hpc_coverage_report
-expression_coverage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
-if [ $expression_coverage -lt $expected_expression_coverage ]
+covered_expression_percentage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
+if [ $covered_expression_percentage -lt $expected_covered_expressions_percentage ]
 then
-  echo -e "\n==>$ERRORCOLOR Inadequate expression coverage.$CLEARCOLOR Expected $expected_expression_coverage%, but actual coverage was $ERRORCOLOR$(($expression_coverage))%$CLEARCOLOR.\n"
+  echo -e "\n==>$ERRORCOLOR Inadequate expression coverage percentage.$CLEARCOLOR Expected $expected_covered_expressions_percentage%, but actual coverage was $ERRORCOLOR$(($covered_expression_percentage))%$CLEARCOLOR.\n"
+  exit 1
+fi
+uncovered_expression_count=$(grep "expressions used" __hpc_coverage_report | sed s/.*\(//g | cut -f1 -d "/")
+if [ $uncovered_expression_count -gt $expected_uncovered_expression_count ]
+then
+  echo -e "\n==>$ERRORCOLOR Overly large uncovered expression count.$CLEARCOLOR Expected $expected_uncovered_expression_count uncovered expressions, but actual uncovered expression count was $ERRORCOLOR$(($uncovered_expression_count))%$CLEARCOLOR.\n"
   exit 1
 fi

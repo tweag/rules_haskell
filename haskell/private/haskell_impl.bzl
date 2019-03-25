@@ -62,7 +62,8 @@ def haskell_binary_impl(ctx):
     return _haskell_binary_common_impl(ctx, is_test = False)
 
 def _should_inspect_coverage(ctx, hs, is_test):
-    return hs.coverage_enabled and is_test and ctx.attr.expected_expression_coverage > 0
+    return hs.coverage_enabled and is_test and (ctx.attr.expected_covered_expressions_percentage != None or
+                                                ctx.attr.expected_uncovered_expression_count != None)
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
@@ -197,7 +198,8 @@ def _haskell_binary_common_impl(ctx, is_test):
             paths.join(ctx.workspace_name, m.short_path)
             for m in conditioned_mix_files
         ]
-        expected_expression_coverage = ctx.attr.expected_expression_coverage
+        expected_covered_expressions_percentage = ctx.attr.expected_covered_expressions_percentage
+        expected_uncovered_expression_count = ctx.attr.expected_uncovered_expression_count
         wrapper = hs.actions.declare_file("coverage_wrapper.sh")
         ctx.actions.expand_template(
             template = ctx.file._coverage_wrapper_template,
@@ -206,7 +208,8 @@ def _haskell_binary_common_impl(ctx, is_test):
                 "{binary_path}": shell.quote(binary_path),
                 "{hpc_path}": shell.quote(hpc_path),
                 "{tix_file_path}": shell.quote(tix_file_path),
-                "{expected_expression_coverage}": str(expected_expression_coverage),
+                "{expected_covered_expressions_percentage}": str(expected_covered_expressions_percentage),
+                "{expected_uncovered_expression_count}": str(expected_uncovered_expression_count),
                 "{mix_file_paths}": shell.array_literal(mix_file_paths),
             },
             is_executable = True,
