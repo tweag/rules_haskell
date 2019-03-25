@@ -68,6 +68,8 @@ Add the following to your `WORKSPACE` file, and select a `$VERSION`
 (or even an arbitrary commit hash) accordingly.
 
 ```bzl
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 http_archive(
   name = "io_tweag_rules_haskell",
   strip_prefix = "rules_haskell-$VERSION",
