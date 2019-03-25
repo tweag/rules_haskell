@@ -42,9 +42,21 @@ def fixup_package_name(package_name):
 def case_insensitive_name(package_name):
     """Convert a package name to a case-insensitive name.
 
-    Appends the hash of the input string, and converts the whole string to
-    lower case. Note, the appended hash value is represented in decimal, and
-    may be negative.
+    An upper case character is converted to its lowercase equivalent followed by
+    an underscore.
+
+    A hyphen is converted to two underscores.
+
+    Digits and lowercase characters and left as-is.
+
+    >>> case_insensitive_name("Cabal")
+    'c_abal'
+    >>> case_insensitive_name("conduit")
+    'conduit'
+    >>> case_insensitive_name("AERN-Net")
+    'a_e_r_n___n_et'
+    >>> case_insensitive_name("c2hs-extra")
+    'c2hs__extra'
 
     Args:
       name: string: A potentially case-sensitive package name.
@@ -52,7 +64,18 @@ def case_insensitive_name(package_name):
     Returns:
       string: A case-insensitive package name.
     """
-    return "{lower}_{hash}".format(
-        lower = package_name.lower(),
-        hash = hash(package_name),
-    )
+
+    chars = package_name.elems()
+    out = []
+
+    for c in chars:
+        if c.islower() or c.isdigit():
+            out += [c]
+        elif c.isupper():
+            out += [c.lower(), '_']
+        elif c == '-':
+            out += ['_', '_']
+        else:
+            fail("Don't know how to handle char %s in %s" % ([c], package_name))
+
+    return ''.join(out)
