@@ -104,7 +104,12 @@ def cabal_paths(name = None, package = None, data_dir = "", data = [], version =
       version: The version number of this package (list of ints)
     """
     module_name = "Paths_" + package
-    paths_file = module_name + ".hs"
+    # XXX: we generate the `Paths_` file in a different directory otherwise GHC
+    # picks up on it when building the actual target (because no sandbox on
+    # Windows) and crashes (the actual target may not have the same set of
+    # dependencies as Paths_)
+    # TODO: 'gen_paths' may clash with other dirs!
+    paths_file = "gen_paths/" + module_name + ".hs"
     _path_module_gen(
         name = paths_file,
         module = module_name,

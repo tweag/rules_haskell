@@ -396,6 +396,9 @@ def _get_build_attrs(
         xs.append(":" + clib_name)
 
     ghc_version_components = ghc_version.split(".")
+    if len(ghc_version_components) != 3:
+        fail("Not enough version components for GHC:" + str(ghc_version_components))
+
     ghc_version_string = (
         ghc_version_components[0] +
         ("0" if int(ghc_version_components[1]) <= 9 else "") +
