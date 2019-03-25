@@ -82,11 +82,14 @@ def create_rpath_entry(
     corner cases of `.short_path` concerning external repositories.
     The resulting entry should be able to be inserted into rpath or similar.
 
-    runpath/foo/a.so to runfile/bar/b.so => ../bar
-    with `keep_filename=True`:
-    runpath/foo/a.so to runfile/bar/b.so => ../bar/b.so
-    with `prefix="$ORIGIN"`:
-    runpath/foo/a.so to runfile/bar/b.so => $ORIGIN/../bar/b.so
+    Examples:
+
+      bin.short_path=foo/a.so and dep.short_path=bar/b.so
+        => create_rpath_entry(bin, dep, False) = ../bar
+           and
+           create_rpath_entry(bin, dep, True) = ../bar/b.so
+           and
+           create_rpath_entry(bin, dep, True, "$ORIGIN") = $ORIGIN/../bar/b.so
 
     Args:
       binary: target of current binary
