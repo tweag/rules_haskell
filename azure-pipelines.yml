@@ -40,7 +40,8 @@ jobs:
       # /c/bazel/bazel.exe build --config windows "@haskell_pretty__show//..."
       /c/bazel/bazel.exe build --config windows "@haskell_text__metrics//..."
       # /c/bazel/bazel.exe build --config windows "@haskell_wai_app_static__1453541560//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_zlib//..."
+      # FIXME: no such package '@haskell_zlib//tests/hackage': BUILD file not found on package path (maybe a core package on Windows ?)
+      # /c/bazel/bazel.exe build --config windows "@haskell_zlib//..."
 
     displayName: 'Hazel Tests'
 
