@@ -30,7 +30,8 @@ jobs:
       # FIXME: Needs to provide advapi32 extra lib.
       # /c/bazel/bazel.exe build --config windows "@haskell_entropy//..."
       /c/bazel/bazel.exe build --config windows "@haskell_fuzzyset//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_htaglib//..."
+      # FIXME: no such package '@taglib//': Platform is not supported (see 'fail_not_supported') and referenced by '@haskell_htaglib//:htaglib'
+      # /c/bazel/bazel.exe build --config windows "@haskell_htaglib//..."
       # /c/bazel/bazel.exe build --config windows "@haskell_http_client__884921168//..."
       /c/bazel/bazel.exe build --config windows "@haskell_lens//..."
       # /c/bazel/bazel.exe build --config windows "@haskell_network_1843485230//..."
