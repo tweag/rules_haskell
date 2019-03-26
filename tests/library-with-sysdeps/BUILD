@@ -20,11 +20,6 @@ haskell_library(
 haskell_test(
     name = "bin",
     srcs = ["Main.hs"],
-    expected_expression_coverage = 100,
-    tags = [
-        "coverage-compatible",
-        "requires_zlib",
-    ],
     deps = [
         ":library-with-sysdeps",
         "//tests/hackage:base",
