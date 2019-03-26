@@ -27,21 +27,35 @@ jobs:
       /c/bazel/bazel.exe build --config windows "@haskell_aeson__extra//..."
       /c/bazel/bazel.exe build --config windows "@haskell_cassava//..."
       /c/bazel/bazel.exe build --config windows "@haskell_conduit//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_fuzzyset//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_lens//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_text__metrics//..."
+
+      # FIXME:
+      # this rule is missing dependency declarations for the following files included by 'external/haskell_zlib/cbits/adler32.c':
+      #   'external/haskell_zlib/cbits/zutil.h'
+      #   'external/haskell_zlib/cbits/zlib.h'
+      #   'external/haskell_zlib/cbits/zconf.h'
+      #/c/bazel/bazel.exe build --config windows "@haskell_zlib//..."
+
+      # FIXME: needs network, warp, cryptonite, etc...
+      # /c/bazel/bazel.exe build --config windows "@haskell_wai__app__static//..."
+
       # FIXME: Needs to provide advapi32 extra lib.
       # /c/bazel/bazel.exe build --config windows "@haskell_entropy//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_fuzzyset//..."
+
       # FIXME: no such package '@taglib//': Platform is not supported (see 'fail_not_supported') and referenced by '@haskell_htaglib//:htaglib'
       # /c/bazel/bazel.exe build --config windows "@haskell_htaglib//..."
-      # /c/bazel/bazel.exe build --config windows "@haskell_http_client__884921168//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_lens//..."
-      # /c/bazel/bazel.exe build --config windows "@haskell_network_1843485230//..."
-      # /c/bazel/bazel.exe build --config windows "@haskell_postgresql_libpq_275795853//..."
+
       # FIXME: Cabal version macros issue
       # /c/bazel/bazel.exe build --config windows "@haskell_pretty__show//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_text__metrics//..."
-      # /c/bazel/bazel.exe build --config windows "@haskell_wai_app_static__1453541560//..."
-      # FIXME: no such package '@haskell_zlib//tests/hackage': BUILD file not found on package path (maybe a core package on Windows ?)
-      # /c/bazel/bazel.exe build --config windows "@haskell_zlib//..."
+
+      # FIXME: need custom builds
+      # /c/bazel/bazel.exe build --config windows "@haskell_network_1843485230//..."
+      # /c/bazel/bazel.exe build --config windows "@haskell_postgresql_libpq_275795853//..."
+
+      # FIXME: depends on network
+      # /c/bazel/bazel.exe build --config windows "@haskell_http__client//..."
 
     displayName: 'Hazel Tests'
 
