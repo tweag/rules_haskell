@@ -135,7 +135,7 @@ main = hspec $ do
           , "text__metrics"
           , "unix__compat"
           , "unix__time"
-          -- , "wai__app__static"
+          , "wai__app__static"
           , "zlib"
           ]
 

@@ -85,11 +85,13 @@ cc_library(
 
     hazel_custom_package_github(
         package_name = "wai-app-static",
-        github_user = "FormationAI",
+        github_user = "yesodweb",
         github_repo = "wai",
         strip_prefix = "wai-app-static",
-        repo_sha = "9217512fae1d6c2317447b257f478005efb55ef7",
+        repo_sha = "0678ddd381fb860af6f12d7a50dadf4d10e77bf7",
         build_file = "@ai_formation_hazel//third_party/haskell:BUILD.wai-app-static",
+        patches = ["@ai_formation_hazel//tools:wai.patch"],
+        patch_args = ["-p1"],
     )
 
     hazel_repositories(
