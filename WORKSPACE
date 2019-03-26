@@ -353,10 +353,6 @@ local_repository(
     path = "hazel",
 )
 
-load("@ai_formation_hazel//:repositories.bzl", "hazel_repositories")
-
-hazel_repositories()
-
 load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
 
 hazel_setup()
