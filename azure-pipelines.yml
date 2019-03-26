@@ -36,7 +36,8 @@ jobs:
       /c/bazel/bazel.exe build --config windows "@haskell_lens//..."
       # /c/bazel/bazel.exe build --config windows "@haskell_network_1843485230//..."
       # /c/bazel/bazel.exe build --config windows "@haskell_postgresql_libpq_275795853//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_pretty__show//..."
+      # FIXME: Cabal version macros issue
+      # /c/bazel/bazel.exe build --config windows "@haskell_pretty__show//..."
       /c/bazel/bazel.exe build --config windows "@haskell_text__metrics//..."
       # /c/bazel/bazel.exe build --config windows "@haskell_wai_app_static__1453541560//..."
       /c/bazel/bazel.exe build --config windows "@haskell_zlib//..."

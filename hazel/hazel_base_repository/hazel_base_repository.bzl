@@ -75,14 +75,14 @@ def symlink_and_invoke_hazel(ctx, hazel_base_repo_name, ghc_workspace, package_f
         ctx.symlink(Label("@" + hazel_base_repo_name + "//:" + f), f)
 
     cat_ghc_version = ctx.execute(["cat", "ghc-version"])
-  
+
     if cat_ghc_version.return_code != 0:
-      fail("Could not read ghc-version, got return code {}, stderr: {}, stdout: {}".format(
-              cat_ghc_version.return_code,
-              cat_ghc_version.stderr,
-              cat_ghc_version.stdout,
-              ))
-  
+        fail("Could not read ghc-version, got return code {}, stderr: {}, stdout: {}".format(
+            cat_ghc_version.return_code,
+            cat_ghc_version.stderr,
+            cat_ghc_version.stdout,
+        ))
+
     ghc_version = cat_ghc_version.stdout
 
     flag_args = []

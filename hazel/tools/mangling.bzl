@@ -72,10 +72,10 @@ def case_insensitive_name(package_name):
         if c.islower() or c.isdigit():
             out += [c]
         elif c.isupper():
-            out += [c.lower(), '_']
-        elif c == '-':
-            out += ['_', '_']
+            out += [c.lower(), "_"]
+        elif c == "-":
+            out += ["_", "_"]
         else:
             fail("Don't know how to handle char %s in %s" % ([c], package_name))
 
-    return ''.join(out)
+    return "".join(out)
