@@ -1,11 +1,11 @@
 #!/usr/bin/env stack
--- stack --resolver lts-10.5 script --package base16-bytestring --package cryptohash --package http-types --package http-client --package http-client-tls --package aeson --package bytestring --package text --package containers --package temporary --package process --package pretty --package Cabal --package yaml --ghc-options=-ihazel_base_repository
+-- stack --resolver lts-13.14 script --package base16-bytestring --package cryptohash --package http-types --package http-client --package http-client-tls --package aeson --package bytestring --package text --package containers --package temporary --package process --package pretty --package Cabal --package yaml --ghc-options=-ihazel_base_repository
 --
 -- This script generates a .bzl file containing the versions of all packages in a
 -- particular Stackage LTS release.
 --
 -- To invoke:
---     ./Stackage.hs lts-10.5 packages.bzl
+--     ./Stackage.hs lts-13.14 packages.bzl
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main (main) where

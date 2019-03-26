@@ -1,7 +1,5 @@
 # Hazel: Automatic Bazel rules for third-party Haskell dependencies
 
-[![CircleCI](https://circleci.com/gh/tweag/rules_haskell/tree/master.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell/tree/master)
-
 Hazel is a Bazel framework that manages build rules for third-party Haskell
 dependencies.
 
@@ -11,9 +9,8 @@ dependencies and their versions.  Hazel autogenerates everything else at build
 time, including automatically downloading Cabal packages from Hackage,
 parsing their .cabal files and creating Haskell build rules.
 
-Hazel uses the [`rules_haskell`](https://github.com/tweag/rules_haskell)
-package for Haskell build rules. Hazel is now part of the `rules_haskell`
-repository.
+Hazel uses the [`rules_haskell`](../README.md) package for Haskell build rules.
+Hazel is now part of the `rules_haskell` repository.
 
 ## Status
 Hazel is still experimental, and its API is subject to change.  Most Hackage
@@ -25,7 +22,7 @@ First, run the `Stackage.hs` script to generate a list of all packages in a
 particular LTS release or nightly snapshot:
 
 ```
-./Stackage.hs lts-10.5 packages.bzl
+./Stackage.hs lts-13.14 packages.bzl
 ```
 
 ```
