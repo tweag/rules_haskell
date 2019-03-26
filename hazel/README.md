@@ -70,22 +70,21 @@ and construct build rules for compiling the components of that package.
 
 Note, that Haskell package names are case-sensitive while Bazel workspace names
 are case-insensitive on case-insensitive file systems. For the generated
-workspace names to be case-insensitive we include a hash of the original
-package name. Query for targets `@all_hazel_packages//:haskell_{package_name}`
-to determine the generated workspace name.
+workspace names to be case-insensitive we perform a substitution on some
+characters. An upper case character is converted to its lowercase equivalent
+followed by an underscore. A hyphen is converted to two underscores. Digits and
+lowercase characters and left as-is.
 
-For example:
 
-```
-# Discover the generated external workspace for the vector package.
-bazel query 'deps(@all_hazel_packages//:haskell_vector, 1)'
-# --> @haskell_vector__820387517//:bzl
-
-# Build all components of a single package, as well as all of its dependencies:
-bazel build @haskell_vector__820387517//:all
-
-# Build all components of all third-party packages:
-bazel build @all_hazel_packages//:all
+``` python
+  >>> case_insensitive_name("Cabal")
+  'c_abal'
+  >>> case_insensitive_name("conduit")
+  'conduit'
+  >>> case_insensitive_name("AERN-Net")
+  'a_e_r_n___n_et'
+  >>> case_insensitive_name("c2hs-extra")
+  'c2hs__extra'
 ```
 
 To depend on a third-party package in a `BUILD` file, use the macros provided by `hazel.bzl`:
