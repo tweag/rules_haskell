@@ -267,21 +267,20 @@ def hazel_custom_package_github(
         github_user,
         github_repo,
         repo_sha,
-        strip_prefix = None,
-        archive_sha256 = None,
         clone_via_ssh = False,
-        build_file = None,
-        build_file_content = None):
-    """Generate a repo for a Haskell package coming from a GitHub repo.
+        **kwargs):
+    """Generate a repo for a Haskell package coming from a GitHub repo. This is
+        mostly a wrapper around `new_git_repository`. All arguments not listed
+        below will be passed directly to `new_git_repository`.
+
+        NOTE: `name`, `remote` and `commit` should _not_ be specified, those
+        are inferred by `hazel_custom_package_github`.
 
     Args:
       package_name: string, package name.
       github_user: string, GitHub user.
       github_repo: string, repo name under `github_user` account.
       repo_sha: SHA1 of commit in the repo.
-      strip_prefix: strip this path prefix from directory repo, useful when a
-                    repo contains several packages.
-      archive_sha256: hash of the actual archive to download.
       clone_via_ssh: whether to clone the repo using SSH (useful for private
                      repos).
       build_file: string,
@@ -296,19 +295,35 @@ def hazel_custom_package_github(
         build_file and build_file_content are mutually exclusive.
     """
 
+    build_file = kwargs.get("build_file")
+    build_file_content = kwargs.get("build_file_content")
+
+    err_str = "hazel_custom_package_github: error: {}"
+
     if not build_file and not build_file_content:
         build_file = "//third_party/haskell:BUILD.{0}".format(package_name)
     url = "https://github.com/{0}/{1}".format(github_user, github_repo)
     ssh_url = "git@github.com:{0}/{1}".format(github_user, github_repo)
 
-    new_git_repository(
-        name = hazel_workspace(package_name),
-        remote = ssh_url if clone_via_ssh else url,
-        build_file = build_file,
-        build_file_content = build_file_content,
-        commit = repo_sha,
-        strip_prefix = strip_prefix,
-    )
+    new_kwargs = {}
+
+    for k, v in kwargs.items():
+        new_kwargs[k] = v
+
+    new_kwargs["name"] = hazel_workspace(package_name) if not "name" in new_kwargs else fail(err_str.format("Do not specify 'name'"))
+
+    new_kwargs["remote"] = ssh_url if clone_via_ssh else url if not "remote" in new_kwargs else fail(err_str.format("Do not specify 'remote'"))
+
+    if build_file and build_file_content:
+        fail(err_str.format("Please specify either build_file or build_file_content, not both"))
+    elif build_file:
+        new_kwargs["build_file"] = build_file
+    else:
+        new_kwargs["build_file_content"] = build_file_content
+
+    new_kwargs["commit"] = repo_sha if not "commit" in new_kwargs else fail(err_str.format("Do not specify 'commit'"))
+
+    new_git_repository(**new_kwargs)
 
 def hazel_extra_packages(pkgs, extra_pkgs):
     """Override or add extra packages to the snapshot.
