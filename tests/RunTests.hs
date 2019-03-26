@@ -127,7 +127,7 @@ main = hspec $ do
           , "entropy"
           , "fuzzyset"
           , "htaglib"
-          -- , "http__client"
+          , "http__client"
           , "lens"
           , "network"
           , "postgresql__libpq"
@@ -136,7 +136,7 @@ main = hspec $ do
           , "unix__compat"
           , "unix__time"
           -- , "wai__app__static"
-          -- , "zlib"
+          , "zlib"
           ]
 
 -- * Bazel commands

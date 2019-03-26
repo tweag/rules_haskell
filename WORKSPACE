@@ -217,15 +217,6 @@ load("@hackage-packages//:packages.bzl", "import_packages")
 
 import_packages(name = "hackage")
 
-# zlib as a Haskell library
-
-http_archive(
-    name = "haskell_zlib",
-    build_file = "//tests:BUILD.zlib",
-    strip_prefix = "zlib-0.6.2",
-    urls = ["https://hackage.haskell.org/package/zlib-0.6.2/zlib-0.6.2.tar.gz"],
-)
-
 load("@bazel_tools//tools/build_defs/repo:jvm.bzl", "jvm_maven_import_external")
 
 jvm_maven_import_external(
