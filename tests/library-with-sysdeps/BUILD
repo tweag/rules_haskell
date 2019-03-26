@@ -20,6 +20,7 @@ haskell_library(
 haskell_test(
     name = "bin",
     srcs = ["Main.hs"],
+    tags = ["requires_zlib"],
     deps = [
         ":library-with-sysdeps",
         "//tests/hackage:base",
