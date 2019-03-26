@@ -24,7 +24,7 @@ core_packages = (
   "time": "1.8.0.2",
   "transformers": "0.5.5.0",
   "unix": "2.7.2.2",
-  "win32": "2.6.1.0",
+  "Win32": "2.6.1.0",
 }
 )
 packages = (
