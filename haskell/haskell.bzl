@@ -134,11 +134,11 @@ def _mk_binary_rule(**kwargs):
     if is_test:
         attrs.update({
             "expected_covered_expressions_percentage": attr.int(
-                default = 0,
+                default = -1,
                 doc = "The expected percentage of expressions covered by testing.",
             ),
             "expected_uncovered_expression_count": attr.int(
-                default = 0,
+                default = -1,
                 doc = "The expected number of expressions which are not covered by testing.",
             ),
             "_coverage_wrapper_template": attr.label(

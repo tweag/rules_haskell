@@ -29,7 +29,8 @@ haskell_library(
 haskell_test(
     name = "two-libs",
     srcs = ["Main.hs"],
-    expected_expression_coverage = 100,
+    expected_covered_expressions_percentage = 100,
+    expected_uncovered_expression_count = 0,
     tags = ["coverage-compatible"],
     deps = [
         ":two",

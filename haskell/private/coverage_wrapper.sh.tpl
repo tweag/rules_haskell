@@ -43,15 +43,25 @@ $binary_path "$@"
 $hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
 echo "Overall report"
 cat __hpc_coverage_report
-covered_expression_percentage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
-if [ $covered_expression_percentage -lt $expected_covered_expressions_percentage ]
+
+if [ "$expected_covered_expressions_percentage" -ne -1 ]
 then
-  echo -e "\n==>$ERRORCOLOR Inadequate expression coverage percentage.$CLEARCOLOR Expected $expected_covered_expressions_percentage%, but actual coverage was $ERRORCOLOR$(($covered_expression_percentage))%$CLEARCOLOR.\n"
-  exit 1
+  covered_expression_percentage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
+  if [ $covered_expression_percentage -lt $expected_covered_expressions_percentage ]
+  then
+    echo -e "\n==>$ERRORCOLOR Inadequate expression coverage percentage.$CLEARCOLOR Expected $expected_covered_expressions_percentage%, but actual coverage was $ERRORCOLOR$(($covered_expression_percentage))%$CLEARCOLOR.\n"
+    exit 1
+  fi
 fi
-uncovered_expression_count=$(grep "expressions used" __hpc_coverage_report | sed s/.*\(//g | cut -f1 -d "/")
-if [ $uncovered_expression_count -gt $expected_uncovered_expression_count ]
+
+if [ "$expected_uncovered_expression_count" -ne -1 ]
 then
-  echo -e "\n==>$ERRORCOLOR Overly large uncovered expression count.$CLEARCOLOR Expected $expected_uncovered_expression_count uncovered expressions, but actual uncovered expression count was $ERRORCOLOR$(($uncovered_expression_count))%$CLEARCOLOR.\n"
-  exit 1
+  coverage_numerator=$(grep "expressions used" __hpc_coverage_report | sed s:.*\(::g | cut -f1 -d "/")
+  coverage_denominator=$(grep "expressions used" __hpc_coverage_report | sed s:.*/::g | cut -f1 -d ")")
+  uncovered_expression_count="$(($coverage_denominator - $coverage_numerator))"
+  if [ $uncovered_expression_count -gt $expected_uncovered_expression_count ]
+  then
+    echo -e "\n==>$ERRORCOLOR Too many uncovered expressions.$CLEARCOLOR Expected $expected_uncovered_expression_count uncovered expressions, but actual uncovered expression count was $ERRORCOLOR$(($uncovered_expression_count))$CLEARCOLOR.\n"
+    exit 1
+  fi
 fi
