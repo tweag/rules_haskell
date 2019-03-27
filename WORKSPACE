@@ -3,16 +3,27 @@ workspace(name = "io_tweag_rules_haskell")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 
+# Subrepositories of rules_haskell
+
+# various examples
 local_repository(
     name = "io_tweag_rules_haskell_examples",
     path = "examples",
 )
 
+# code for the tutorial
 local_repository(
     name = "io_tweag_rules_haskell_tutorial",
     path = "tutorial",
 )
 
+# hazel, a way to generate bazel libraries from [st/h]ackage
+local_repository(
+    name = "ai_formation_hazel",
+    path = "hazel",
+)
+
+# bazel dependencies
 haskell_repositories()
 
 rules_nixpkgs_version = "0.5.2"
@@ -336,13 +347,7 @@ load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_depen
 
 buildifier_dependencies()
 
-# For Hazel
-# The purpose is to capture Hazel in rules_haskell's CI.
-
-local_repository(
-    name = "ai_formation_hazel",
-    path = "hazel",
-)
+# Hazel
 
 load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
 
