@@ -60,10 +60,7 @@ jobs:
             nix-shell --arg docTools false --pure --run \
               './bazel-ci-bin/tests/run-tests'
             nix-shell --arg docTools false --pure --run \
-              'bazel coverage //tests/... \ 
-                --build_tag_filters "coverage-compatible" \
-                --test_tag_filters "coverage-compatible" \ 
-                --test_output=all'
+              'bazel coverage //tests/... --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all'
 
   build-darwin:
     macos:
@@ -96,10 +93,7 @@ jobs:
             nix-shell --arg docTools false --pure --run \
               './bazel-ci-bin/tests/run-tests --skip "/startup script/"'
             nix-shell --arg docTools false --pure --run \
-              'bazel coverage //tests/... \ 
-                --build_tag_filters "coverage-compatible" \
-                --test_tag_filters "coverage-compatible" \ 
-                --test_output=all'
+              'bazel coverage //tests/... --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all'
 
 workflows:
   version: 2
