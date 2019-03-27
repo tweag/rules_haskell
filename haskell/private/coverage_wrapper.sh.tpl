@@ -30,6 +30,7 @@ hpc_path=$(rlocation {hpc_path})
 tix_file_path={tix_file_path}
 expected_covered_expressions_percentage={expected_covered_expressions_percentage}
 expected_uncovered_expression_count={expected_uncovered_expression_count}
+strict_coverage_analysis={strict_coverage_analysis}
 hpc_dir_args=""
 mix_file_paths={mix_file_paths}
 for m in "${mix_file_paths[@]}"
@@ -47,9 +48,17 @@ cat __hpc_coverage_report
 if [ "$expected_covered_expressions_percentage" -ne -1 ]
 then
   covered_expression_percentage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
-  if [ $covered_expression_percentage -lt $expected_covered_expressions_percentage ]
+  if [ "$covered_expression_percentage" -lt "$expected_covered_expressions_percentage" ]
   then
-    echo -e "\n==>$ERRORCOLOR Inadequate expression coverage percentage.$CLEARCOLOR Expected $expected_covered_expressions_percentage%, but actual coverage was $ERRORCOLOR$(($covered_expression_percentage))%$CLEARCOLOR.\n"
+    echo -e "\n==>$ERRORCOLOR Inadequate expression coverage percentage.$CLEARCOLOR"
+    echo -e "==> Expected $expected_covered_expressions_percentage%, but the actual coverage was $ERRORCOLOR$(($covered_expression_percentage))%$CLEARCOLOR.\n"
+    exit 1
+  elif [ "$strict_coverage_analysis" == "True" ] && [ "$covered_expression_percentage" -gt "$expected_covered_expressions_percentage" ]
+  then
+    echo -e "\n==>$ERRORCOLOR ** BECAUSE STRICT COVERAGE ANALYSIS IS ENABLED **$CLEARCOLOR"
+    echo -e "==> Your coverage percentage is now higher than expected.$CLEARCOLOR"
+    echo -e "==> Expected $expected_covered_expressions_percentage% of expressions covered, but the actual value is $ERRORCOLOR$(($covered_expression_percentage))%$CLEARCOLOR."
+    echo -e "==> Please increase the expected coverage percentage to match.\n"
     exit 1
   fi
 fi
@@ -59,9 +68,17 @@ then
   coverage_numerator=$(grep "expressions used" __hpc_coverage_report | sed s:.*\(::g | cut -f1 -d "/")
   coverage_denominator=$(grep "expressions used" __hpc_coverage_report | sed s:.*/::g | cut -f1 -d ")")
   uncovered_expression_count="$(($coverage_denominator - $coverage_numerator))"
-  if [ $uncovered_expression_count -gt $expected_uncovered_expression_count ]
+  if [ "$uncovered_expression_count" -gt "$expected_uncovered_expression_count" ]
   then
-    echo -e "\n==>$ERRORCOLOR Too many uncovered expressions.$CLEARCOLOR Expected $expected_uncovered_expression_count uncovered expressions, but actual uncovered expression count was $ERRORCOLOR$(($uncovered_expression_count))$CLEARCOLOR.\n"
+    echo -e "\n==>$ERRORCOLOR Too many uncovered expressions.$CLEARCOLOR"
+    echo -e "==> Expected $expected_uncovered_expression_count uncovered expressions, but the actual count was $ERRORCOLOR$(($uncovered_expression_count))$CLEARCOLOR.\n"
+    exit 1
+  elif [ "$strict_coverage_analysis" == "True" ] && [ "$uncovered_expression_count" -lt "$expected_uncovered_expression_count" ]
+  then
+    echo -e "\n==>$ERRORCOLOR ** BECAUSE STRICT COVERAGE ANALYSIS IS ENABLED **$CLEARCOLOR"
+    echo -e "==>$ERRORCOLOR Your uncovered expression count is now lower than expected.$CLEARCOLOR"
+    echo -e "==> Expected $expected_uncovered_expression_count uncovered expressions, but there is $ERRORCOLOR$(($uncovered_expression_count))$CLEARCOLOR."
+    echo -e "==> Please lower the expected uncovered expression count to match.\n"
     exit 1
   fi
 fi

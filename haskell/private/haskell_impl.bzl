@@ -200,6 +200,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         ]
         expected_covered_expressions_percentage = ctx.attr.expected_covered_expressions_percentage
         expected_uncovered_expression_count = ctx.attr.expected_uncovered_expression_count
+        strict_coverage_analysis = ctx.attr.strict_coverage_analysis
         wrapper = hs.actions.declare_file("coverage_wrapper.sh")
         ctx.actions.expand_template(
             template = ctx.file._coverage_wrapper_template,
@@ -211,6 +212,7 @@ def _haskell_binary_common_impl(ctx, is_test):
                 "{expected_covered_expressions_percentage}": str(expected_covered_expressions_percentage),
                 "{expected_uncovered_expression_count}": str(expected_uncovered_expression_count),
                 "{mix_file_paths}": shell.array_literal(mix_file_paths),
+                "{strict_coverage_analysis}": str(strict_coverage_analysis),
             },
             is_executable = True,
         )

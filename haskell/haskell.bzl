@@ -141,6 +141,10 @@ def _mk_binary_rule(**kwargs):
                 default = -1,
                 doc = "The expected number of expressions which are not covered by testing.",
             ),
+            "strict_coverage_analysis": attr.bool(
+                default = False,
+                doc = "Requires that the coverage metric is matched exactly, even doing better than expected is not allowed.",
+            ),
             "_coverage_wrapper_template": attr.label(
                 allow_single_file = True,
                 default = Label("@io_tweag_rules_haskell//haskell:private/coverage_wrapper.sh.tpl"),
