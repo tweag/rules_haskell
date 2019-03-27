@@ -40,6 +40,13 @@ jobs:
             # CircleCI and Nix sandboxing don't play nice. See
             # https://discourse.nixos.org/t/nixos-on-ovh-kimsufi-cloning-builder-process-operation-not-permitted/1494/5
             mkdir -p /etc/nix && echo "sandbox = false" > /etc/nix/nix.conf
+            nix-env -iA cachix -f https://github.com/NixOS/nixpkgs/tarball/db557aab7b690f5e0e3348459f2e4dc8fd0d9298
+      - run:
+          name: Run cachix
+          command: |
+            cachix use tweag
+            cachix push tweag --watch-store
+          background: true
       - run:
           name: Configure
           command: |
@@ -69,6 +76,21 @@ jobs:
           name: Install Nix
           command: |
             curl https://nixos.org/nix/install | sh
+
+      - run:
+          name: Install cachix
+          shell: /bin/bash -eilo pipefail
+          command: |
+            nix-env -iA cachix -f https://github.com/NixOS/nixpkgs/tarball/db557aab7b690f5e0e3348459f2e4dc8fd0d9298
+
+      - run:
+          name: Run cachix
+          shell: /bin/bash -eilo pipefail
+          command: |
+            cachix use tweag
+            cachix push tweag --watch-store
+          background: true
+
       - run:
           name: Configure
           command: |
@@ -96,5 +118,7 @@ workflows:
   build:
     jobs:
       - build-linux-ghc-bindist
-      - build-linux-nixpkgs
-      - build-darwin
+      - build-linux-nixpkgs:
+          context: org-global # for the cachix token
+      - build-darwin:
+          context: org-global # for the cachix token
