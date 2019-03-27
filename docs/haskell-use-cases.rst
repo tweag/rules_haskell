@@ -261,10 +261,17 @@ might see a result like this: ::
   100% top-level declarations used (3/3)
   =============================================================================
 
-Here, the test passes because it actually has 100% expression coverage and 0 uncovered
-expressions, which is even better than we expected on both counts.
+Here, the test passes because it actually has 100% expression coverage and 0
+uncovered expressions, which is even better than we expected on both counts.
 
-There a couple of notes regarding this feature:
+There is an optional ``haskell_test`` attribute called
+``strict_coverage_analysis``, which is a boolean that changes the coverage
+analysis such that even having better coverage than expected fails the test.
+This can be used to enforce that developers must upgrade the expected test
+coverage when they improve it. On the other hand, it requires changing the
+expected coverage for almost any change.
+
+There a couple of notes regarding the coverage analysis functionality:
 
 - Coverage analysis currently is scoped to all source files and all
   locally-built Haskell dependencies (both direct and transitive) for a given
