@@ -3,6 +3,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 
+import Control.Monad (forever)
+import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async (race_)
 import Data.Foldable (for_)
 import Data.List (isInfixOf, sort)
 import System.Exit (ExitCode(..))
@@ -12,7 +15,7 @@ import Test.Hspec.Core.Spec (SpecM)
 import Test.Hspec (hspec, it, describe, runIO, shouldSatisfy, expectationFailure)
 
 main :: IO ()
-main = hspec $ do
+main = race_ (forever $ threadDelay 60000000 >> putStrLn ".") $ hspec $ do
   it "bazel lint" $ do
     assertSuccess (bazel ["run", "//:buildifier"])
 

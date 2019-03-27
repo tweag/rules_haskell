@@ -381,6 +381,7 @@ haskell_binary(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:process",
+        "@hackage//:async",
         "@hackage//:hspec",
         "@hackage//:hspec-core",
     ],
