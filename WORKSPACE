@@ -23,6 +23,13 @@ local_repository(
     path = "hazel",
 )
 
+# Some helpers for platform-dependent configuration
+load("//tools:os_info.bzl", "os_info")
+
+os_info(name = "os_info")
+
+load("@os_info//:os_info.bzl", "is_linux", "is_windows")
+
 # bazel dependencies
 haskell_repositories()
 
@@ -335,13 +342,17 @@ local_repository(
     path = "tools/go_sdk",
 )
 
-load("@go_sdk_repo//:sdk.bzl", "gen_imports")
+load(
+    "@io_bazel_rules_go//go:def.bzl",
+    "go_register_toolchains",
+    "go_rules_dependencies",
+)
 
-gen_imports(name = "go_sdk_imports")
+go_rules_dependencies()
 
-load("@go_sdk_imports//:imports.bzl", "load_go_sdk")
-
-load_go_sdk()
+# If Windows, ask Bazel to download a Go SDK. Otherwise use the nix-shell
+# provided GO SDK.
+go_register_toolchains() if is_windows else go_register_toolchains(go_version = "host")
 
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
