@@ -7,14 +7,14 @@ import Control.Monad (forever)
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (race_)
 import Data.Foldable (for_)
-import Data.List (isInfixOf, sort)
+import Data.List (isInfixOf, sort, intercalate)
 import System.Exit (ExitCode(..))
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
 import Test.Hspec (hspec, it, describe, runIO, shouldSatisfy, expectationFailure)
 
-main :: IO ()
+main :: IO () -- print a dot every minute to keep CI awake
 main = race_ (forever $ threadDelay 60000000 >> putStrLn ".") $ hspec $ do
   it "bazel lint" $ do
     assertSuccess (bazel ["run", "//:buildifier"])
@@ -117,12 +117,12 @@ main = race_ (forever $ threadDelay 60000000 >> putStrLn ".") $ hspec $ do
   describe "Hazel" $ do
     it "bazel test" $ do
       assertSuccess (bazel ["test", "@ai_formation_hazel//..."])
-    for_ hazelPackages $ \pkg -> do
-      it ("builds " ++ pkg) $ do
-        assertSuccess (bazel ["build", "@haskell_" ++ pkg ++ "//..."])
+    it ("builds " <> intercalate " " hazelPackages) $
+      assertSuccess (bazel $ ["build"] <> hazelPackages)
 
       where
-        hazelPackages =
+        hazelPackages = (\pkg -> "@haskell_" <> pkg <> "//...") <$> hazelPackages'
+        hazelPackages' =
           [ "aeson"
           , "aeson__extra"
           , "cassava"
