@@ -5,28 +5,35 @@ MIN_BAZEL_MINOR=21
 
 set -e
 
-actual_raw=$(bazel version | egrep '^Build label:' | egrep -o '[0-9.]+')
+check_files_dont_exist () {
+    if [ -e WORKSPACE ] || [ -e BUILD ] || [ -e BazelExample.hs ]
+    then
+        echo "Current directory already has WORKSPACE and/or BUILD and/or BazelExample.hs files." >/dev/stderr
+        exit 1
+    fi
+}
 
-IFS=. read actual_major actual_minor actual_patch <<EOF
+check_bazel_version () {
+    local actual_raw=$(bazel version | egrep '^Build label:' | egrep -o '[0-9.]+')
+
+    IFS=. read actual_major actual_minor actual_patch <<EOF
 $actual_raw
 EOF
 
-expected=$MIN_BAZEL_MAJOR.$MIN_BAZEL_MINOR.0
-cmp=$expected'\n'$actual
+    local expected=$MIN_BAZEL_MAJOR.$MIN_BAZEL_MINOR.0
+    local cmp=$expected'\n'$actual
 
-if ! ( [ "$actual_major" -gt "$MIN_BAZEL_MAJOR" ] || (
-           [ "$actual_major" -eq "$MIN_BAZEL_MAJOR" ] &&
-               [ "$actual_minor" -ge "$MIN_BAZEL_MINOR" ] ) )
-then
-    echo "Need at least Bazel v${expected}. v${actual_raw} detected." >/dev/stderr
-    exit 1
-fi
+    if ! ( [ "$actual_major" -gt "$MIN_BAZEL_MAJOR" ] || (
+            [ "$actual_major" -eq "$MIN_BAZEL_MAJOR" ] &&
+                [ "$actual_minor" -ge "$MIN_BAZEL_MINOR" ] ) )
+    then
+        echo "Need at least Bazel v${expected}. v${actual_raw} detected." >/dev/stderr
+        exit 1
+    fi
+}
 
-if [ -e WORKSPACE ] || [ -e BUILD ] || [ -e BazelExample.hs ]
-then
-    echo "Current directory already has WORKSPACE and/or BUILD and/or BazelExample.hs files." >/dev/stderr
-    exit 1
-fi
+check_files_dont_exist
+check_bazel_version
 
 cat > WORKSPACE <<"EOF"
 # Give your project a name. :)
