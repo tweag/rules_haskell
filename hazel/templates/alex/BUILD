@@ -1,0 +1,17 @@
+exports_files([
+    "AlexTemplate",
+    "AlexTemplate-debug",
+    "AlexTemplate-ghc",
+    "AlexTemplate-ghc-debug",
+    "AlexTemplate-ghc-nopred",
+    "AlexWrapper-basic",
+    "AlexWrapper-basic-bytestring",
+    "AlexWrapper-gscan",
+    "AlexWrapper-monad",
+    "AlexWrapper-monad-bytestring",
+    "AlexWrapper-monadUserState",
+    "AlexWrapper-monadUserState-bytestring",
+    "AlexWrapper-posn",
+    "AlexWrapper-posn-bytestring",
+    "AlexWrapper-strict-bytestring",
+])

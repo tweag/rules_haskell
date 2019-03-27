@@ -1,0 +1,22 @@
+diff --git a/Network/Wai/Application/Static.hs b/Network/Wai/Application/Static.hs
+index 2338b45d..8d86747e 100644
+--- a/Network/Wai/Application/Static.hs
++++ b/Network/Wai/Application/Static.hs
+@@ -231,8 +231,8 @@ staticAppPieces _ _ req sendResponse
+         H.status405
+         [("Content-Type", "text/plain")]
+         "Only GET or HEAD is supported"
+-staticAppPieces _ [".hidden", "folder.png"] _ sendResponse = sendResponse $ W.responseLBS H.status200 [("Content-Type", "image/png")] $ L.fromChunks [$(embedFile "images/folder.png")]
+-staticAppPieces _ [".hidden", "haskell.png"] _ sendResponse = sendResponse $ W.responseLBS H.status200 [("Content-Type", "image/png")] $ L.fromChunks [$(embedFile "images/haskell.png")]
++staticAppPieces _ [".hidden", "folder.png"] _ sendResponse = sendResponse $ W.responseLBS H.status200 [("Content-Type", "image/png")] $ L.fromChunks [$(embedFile "external/haskell_wai__app__static/images/folder.png")]
++staticAppPieces _ [".hidden", "haskell.png"] _ sendResponse = sendResponse $ W.responseLBS H.status200 [("Content-Type", "image/png")] $ L.fromChunks [$(embedFile "external/haskell_wai__app__static/images/haskell.png")]
+ staticAppPieces ss rawPieces req sendResponse = liftIO $ do
+     case toPieces rawPieces of
+         Just pieces -> checkPieces ss pieces req >>= response
+diff --git "a/\327\247\327\250\327\250\327\250\327\250.html" "b/\327\247\327\250\327\250\327\250\327\250.html"
+deleted file mode 100644
+index 2e52da08..00000000
+--- "a/\327\247\327\250\327\250\327\250\327\250.html"
++++ /dev/null
+@@ -1 +0,0 @@
+-<h1>HELLO WORLD</h1>

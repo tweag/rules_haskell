@@ -1,0 +1,50 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.7.0-stretch-browsers
+    steps:
+      - checkout
+
+      - run:
+          name: Set up environment
+          command: |
+            echo "export USER=circleci" >> "${BASH_ENV}"
+            echo "export PATH=$HOME/.nix-profile/bin:$HOME/bin:$PATH" >> "${BASH_ENV}"
+
+      - run:
+          name: Install Bazel
+          command: |
+            set -x
+            export USER=circleci
+            VERSION=0.15.2
+            INSTALLER=bazel-$VERSION-installer-linux-x86_64.sh
+            wget https://github.com/bazelbuild/bazel/releases/download/$VERSION/$INSTALLER
+            chmod +x $INSTALLER
+            ./$INSTALLER --user
+
+      - run:
+          name: Install Nix
+          command: |
+            sudo mkdir -p /nix
+            sudo chown -R circleci /nix
+            NIX_RELEASE=1.11.14
+            ARCH=x86_64
+            wget https://nixos.org/releases/nix/nix-${NIX_RELEASE}/nix-${NIX_RELEASE}-${ARCH}-linux.tar.bz2
+            tar -xjvf nix-${NIX_RELEASE}-${ARCH}-linux.tar.bz2
+            mkdir -p /nix/var/nix/profiles/per-user/${USER}
+            nix-${NIX_RELEASE}-${ARCH}-linux/install
+
+      - run:
+          name: Build and test
+          command: bazel test --test_output=errors --jobs=2 //...
+
+      - run:
+          name: Test some third-party packages
+          command: |
+              bazel build --jobs=2 \
+                  $(for p in $(cat test-packages.txt)
+                    do
+                       echo @haskell_$p//...
+                    done)

@@ -5,17 +5,63 @@ jobs:
   steps:
   - bash: |
       set -e
-      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.22.0/bazel-0.22.0-windows-x86_64.exe
+      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.23.2/bazel-0.23.2-windows-x86_64.exe
       mv bazel-*.exe bazel.exe
       mkdir /c/bazel
       mv bazel.exe /c/bazel
       /c/bazel/bazel.exe info release
 
     displayName: 'Install Bazel'
+
+  - powershell: |
+        Write-Host "Enable long path behavior"
+        # See https://docs.microsoft.com/en-us/windows/desktop/fileio/naming-a-file#maximum-path-length-limitation
+        Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1
+    displayName: "Enable da long paths"
+
   - bash: |
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
 
+      /c/bazel/bazel.exe build --config windows "@haskell_aeson//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_aeson__extra//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_cassava//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_conduit//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_fuzzyset//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_lens//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_text__metrics//..."
+
+      # FIXME:
+      # this rule is missing dependency declarations for the following files included by 'external/haskell_zlib/cbits/adler32.c':
+      #   'external/haskell_zlib/cbits/zutil.h'
+      #   'external/haskell_zlib/cbits/zlib.h'
+      #   'external/haskell_zlib/cbits/zconf.h'
+      #/c/bazel/bazel.exe build --config windows "@haskell_zlib//..."
+
+      # FIXME: needs network, warp, cryptonite, etc...
+      # /c/bazel/bazel.exe build --config windows "@haskell_wai__app__static//..."
+
+      # FIXME: Needs to provide advapi32 extra lib.
+      # /c/bazel/bazel.exe build --config windows "@haskell_entropy//..."
+
+      # FIXME: no such package '@taglib//': Platform is not supported (see 'fail_not_supported') and referenced by '@haskell_htaglib//:htaglib'
+      # /c/bazel/bazel.exe build --config windows "@haskell_htaglib//..."
+
+      # FIXME: Cabal version macros issue
+      # /c/bazel/bazel.exe build --config windows "@haskell_pretty__show//..."
+
+      # FIXME: need custom builds
+      # /c/bazel/bazel.exe build --config windows "@haskell_network_1843485230//..."
+      # /c/bazel/bazel.exe build --config windows "@haskell_postgresql_libpq_275795853//..."
+
+      # FIXME: depends on network
+      # /c/bazel/bazel.exe build --config windows "@haskell_http__client//..."
+
+    displayName: 'Hazel Tests'
+
+  - bash: |
+      set -e
+      export MSYS2_ARG_CONV_EXCL="*"
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."

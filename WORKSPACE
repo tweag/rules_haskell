@@ -3,16 +3,27 @@ workspace(name = "io_tweag_rules_haskell")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 
+# Subrepositories of rules_haskell
+
+# various examples
 local_repository(
     name = "io_tweag_rules_haskell_examples",
     path = "examples",
 )
 
+# code for the tutorial
 local_repository(
     name = "io_tweag_rules_haskell_tutorial",
     path = "tutorial",
 )
 
+# hazel, a way to generate bazel libraries from [st/h]ackage
+local_repository(
+    name = "ai_formation_hazel",
+    path = "hazel",
+)
+
+# bazel dependencies
 haskell_repositories()
 
 rules_nixpkgs_version = "0.5.2"
@@ -217,15 +228,6 @@ load("@hackage-packages//:packages.bzl", "import_packages")
 
 import_packages(name = "hackage")
 
-# zlib as a Haskell library
-
-http_archive(
-    name = "haskell_zlib",
-    build_file = "//tests:BUILD.zlib",
-    strip_prefix = "zlib-0.6.2",
-    urls = ["https://hackage.haskell.org/package/zlib-0.6.2/zlib-0.6.2.tar.gz"],
-)
-
 load("@bazel_tools//tools/build_defs/repo:jvm.bzl", "jvm_maven_import_external")
 
 jvm_maven_import_external(
@@ -344,3 +346,9 @@ load_go_sdk()
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
 buildifier_dependencies()
+
+# Hazel
+
+load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
+
+hazel_setup()
