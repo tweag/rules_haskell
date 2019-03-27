@@ -29,6 +29,8 @@ haskell_library(
 haskell_test(
     name = "two-libs",
     srcs = ["Main.hs"],
+    expected_expression_coverage = 100,
+    tags = ["coverage-compatible"],
     deps = [
         ":two",
         "//tests/hackage:base",
