@@ -23,13 +23,14 @@ jobs:
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
 
-      /c/bazel/bazel.exe build --config windows "@haskell_aeson//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_aeson__extra//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_cassava//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_conduit//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_fuzzyset//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_lens//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_text__metrics//..."
+      /c/bazel/bazel.exe build --config windows \
+        "@haskell_aeson//..." \
+        "@haskell_aeson__extra//..." \
+        "@haskell_cassava//..." \
+        "@haskell_conduit//..." \
+        "@haskell_fuzzyset//..." \
+        "@haskell_lens//..." \
+        "@haskell_text__metrics//..."
 
       # FIXME:
       # this rule is missing dependency declarations for the following files included by 'external/haskell_zlib/cbits/adler32.c':
