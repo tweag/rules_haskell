@@ -32,6 +32,14 @@ toolchain {
   tool_path { name: "strip" path: "mingw/bin/strip" }
   cxx_builtin_include_directory: "mingw"
   cxx_flag: "-std=gnu++0x"
+
+  # Needed to prevent Bazel from complaining about undeclared inclusions of
+  # MingW headers.
+  #
+  # See: https://github.com/bazelbuild/bazel/issues/4605
+  unfiltered_cxx_flag: "-no-canonical-prefixes"
+  unfiltered_cxx_flag: "-fno-canonical-system-headers"
+
   linker_flag: "-lstdc++"
   objcopy_embed_flag: "-I"
   objcopy_embed_flag: "binary"
