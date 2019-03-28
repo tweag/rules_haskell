@@ -79,7 +79,7 @@ nixpkgs_cc_configure(
 register_toolchains("//:ghc")
 EOF
 
-cat > BUILD <<EOF
+cat > BUILD.bazel <<EOF
 package(default_visibility = ["//visibility:public"])
 
 load(
