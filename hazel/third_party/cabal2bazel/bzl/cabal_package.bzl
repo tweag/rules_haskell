@@ -251,11 +251,12 @@ def _get_build_attrs(
             chs_name = name + "-" + module + "-chs"
             module_map[module] = chs_name
             build_files.append(info.src)
+            msg_no_such_lib = "Cannot find library: %s. If it is a system library, please open a ticket on https://github.com/tweag/rules_haskell requesting to add it to _excluded_cxx_libs."
             c2hs_library(
                 name = chs_name,
                 srcs = [info.src],
                 deps = [
-                    extra_libs[elib]
+                    extra_libs[elib] if extra_libs.get(elib) else fail(msg_no_such_lib % elib)
                     for elib in build_info.extraLibs
                     if not sets.contains(_excluded_cxx_libs, elib)
                 ] + [clib_name] + chs_targets,
