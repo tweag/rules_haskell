@@ -8,7 +8,7 @@ package(default_testonly = 1)
 haskell_test(
     name = "binary-custom-main",
     srcs = ["Main.hs"],
-    expected_expression_coverage = 50,
+    expected_covered_expressions_percentage = 50,
     tags = [
         "coverage-compatible",
     ],

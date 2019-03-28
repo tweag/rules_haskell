@@ -20,7 +20,7 @@ haskell_library(
 haskell_test(
     name = "bin",
     srcs = ["Main.hs"],
-    expected_expression_coverage = 100,
+    expected_covered_expressions_percentage = 100,
     tags = [
         "coverage-compatible",
         "requires_zlib",
