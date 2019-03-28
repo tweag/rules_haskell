@@ -108,6 +108,10 @@ jobs:
           name: Run tests
           shell: /bin/bash -eilo pipefail
           command: |
+
+            # Keep CI awake
+            while true; do echo "."; sleep 60; done &
+
             nix-shell --arg docTools false --pure --run \
               'bazel build --config ci //tests:run-tests'
             # XXX 2019-01-22 Disable start script checking on Darwin
