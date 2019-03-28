@@ -1,5 +1,22 @@
 version: 2
 
+# NOTE:
+#   Disk cache:
+#       We don't want to keep old artifacts around so we always build from
+#       scratch on master builds and upload the new cache afterwards. Because
+#       Circle doesn't allow skipping a "restore_cache" we create a dummy
+#       "empty" cache that's only ever pulled on master. Alternatively we could
+#       ask Bazel to clean up old items (LRU style) but the documentation is
+#       very terse and I could not figure how to do it:
+#           https://docs.bazel.build/versions/master/remote-caching.html
+#       It also appears that there's ongoing work but the feature is not ready:
+#           https://github.com/bazelbuild/bazel/issues/5139
+#
+#       Currently the disk cache is only implemented for the Darwin builds,
+#       which were the slowest ones. There is no reason why a disk cache
+#       couldn't be used for the other jobs: I just haven't gotten around to
+#       doing it.
+
 jobs:
   build-linux-ghc-bindist:
     docker:
@@ -96,8 +113,18 @@ jobs:
       - run:
           name: Configure
           command: |
+            mkdir -p ~/.cache/bazel/
+
             echo "build:ci --host_platform=@io_tweag_rules_haskell//haskell/platforms:darwin_x86_64_nixpkgs" >> .bazelrc.local
+            echo "build:ci --disk_cache=~/.cache/bazel/" >> .bazelrc.local
             echo "common:ci --test_tag_filters -dont_test_on_darwin" >> .bazelrc.local
+
+      - restore_cache:
+          keys: # see note about 'Disk cache'
+              - v1-rules_haskell-empty-{{ .Branch }}-
+              - v1-rules_haskell-cache-{{ .Branch }}-
+              - v1-rules_haskell-cache-master-
+
       - run:
           name: Build tests
           shell: /bin/bash -eilo pipefail
@@ -116,6 +143,25 @@ jobs:
               './bazel-ci-bin/tests/run-tests --skip "/startup script/"'
             nix-shell --arg docTools false --pure --run \
               'bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all'
+
+
+        # see note about 'Disk cache'
+      - save_cache:
+          key: v1-rules_haskell-cache-{{ .Branch }}-{{ .BuildNum }}
+          paths:
+              - ~/.cache/bazel/
+
+      - run:
+          name: Clean up cache
+          shell: /bin/bash -eilo pipefail
+          command: |
+            rm -rf ~/.cache/bazel/
+            mkdir -p ~/.cache/bazel/
+
+      - save_cache:
+          key: v1-rules_haskell-empty-master-{{ .BuildNum }}
+          paths:
+              - ~/.cache/bazel/
 
 workflows:
   version: 2
