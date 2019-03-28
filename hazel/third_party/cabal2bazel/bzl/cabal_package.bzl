@@ -40,9 +40,9 @@ load("//tools:mangling.bzl", "hazel_cbits", "hazel_library")
 
 _conditions_default = "//conditions:default"
 
-# Those libraries are already provided by Bazel or rules_haskell,
+# Those libraries are already provided by the system, Bazel or rules_haskell,
 # and must thus be ignored when specified as extra libraries.
-_excluded_cxx_libs = sets.make(elements = ["pthread", "stdc++"])
+_excluded_cxx_libs = sets.make(elements = ["pthread", "stdc++", "advapi32"])
 
 def _get_core_dependency_includes(ghc_workspace):
     """Include files that are exported by core dependencies
