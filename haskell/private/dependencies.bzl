@@ -131,7 +131,7 @@ def _HaskellCcInfo_from_CcInfo(ctx, cc_info):
         ),
     )
 
-def gather_dep_info(ctx):
+def gather_dep_info(ctx, deps):
     """Collapse dependencies into a single `HaskellBuildInfo`.
 
     Note that the field `prebuilt_dependencies` also includes
@@ -139,6 +139,7 @@ def gather_dep_info(ctx):
 
     Args:
       ctx: Rule context.
+      deps: deps attribute.
 
     Returns:
       HaskellBuildInfo: Unified information about all dependencies.
@@ -158,7 +159,7 @@ def gather_dep_info(ctx):
         transitive_cc_dependencies = empty_HaskellCcInfo(),
     )
 
-    for dep in ctx.attr.deps:
+    for dep in deps:
         if HaskellBuildInfo in dep:
             binfo = dep[HaskellBuildInfo]
             package_ids = acc.package_ids
