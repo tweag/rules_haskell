@@ -268,6 +268,13 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         for opt in plugin[GhcPluginInfo].args:
             args.add_all(["-fplugin-opt", "{}:{}".format(plugin[GhcPluginInfo].module, opt)])
 
+    plugin_tool_inputs = [plugin[GhcPluginInfo].tool_inputs for plugin in plugins]
+    plugin_tool_input_manifests = [
+        manifest
+        for plugin in plugins
+        for manifest in plugin[GhcPluginInfo].tool_input_manifests
+    ]
+
     # Pass source files
     for f in set.to_list(source_files):
         args.add(f)
@@ -306,7 +313,9 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             depset(ld_library_deps),
             java.inputs,
             locale_archive_depset,
+            depset(transitive = plugin_tool_inputs),
         ]),
+        input_manifests = plugin_tool_input_manifests,
         objects_dir = objects_dir,
         interfaces_dir = interfaces_dir,
         outputs = [objects_dir, interfaces_dir],
@@ -373,6 +382,7 @@ def compile_binary(
         hs,
         cc,
         inputs = c.inputs,
+        input_manifests = c.input_manifests,
         outputs = c.outputs + conditioned_mix_files,
         mnemonic = "HaskellBuildBinary" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildBinary {}".format(hs.label),
@@ -457,6 +467,7 @@ def compile_library(
         hs,
         cc,
         inputs = c.inputs,
+        input_manifests = c.input_manifests,
         outputs = c.outputs + conditioned_mix_files,
         mnemonic = "HaskellBuildLibrary" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildLibrary {}".format(hs.label),
