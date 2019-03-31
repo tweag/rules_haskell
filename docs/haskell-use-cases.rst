@@ -160,7 +160,7 @@ Each package mentioned in ``ghc.nix`` can then be imported using
 Building code with Hackage dependencies (using Hazel)
 -----------------------------------------------------
 
-.. todo
+.. todo::
 
    Explain how to use Hazel instead of Nix
 
