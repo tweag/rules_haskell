@@ -28,8 +28,11 @@ CLEARCOLOR='\033[0m'
 binary_path=$(rlocation {binary_path})
 hpc_path=$(rlocation {hpc_path})
 tix_file_path={tix_file_path}
+
+# either of the two expected coverage metrics should be set to -1 if they're meant to be unused
 expected_covered_expressions_percentage={expected_covered_expressions_percentage}
 expected_uncovered_expression_count={expected_uncovered_expression_count}
+
 strict_coverage_analysis={strict_coverage_analysis}
 hpc_dir_args=""
 mix_file_paths={mix_file_paths}
