@@ -31,7 +31,14 @@ toolchain {
   tool_path { name: "objdump" path: "mingw/bin/objdump" }
   tool_path { name: "strip" path: "mingw/bin/strip" }
   cxx_builtin_include_directory: "mingw"
-  cxx_flag: "-std=gnu++0x"
+  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include"
+  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include/sdks"
+  cxx_builtin_include_directory: "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/include"
+  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include/psdk_inc"
+  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include/sec_api"
+  cxx_builtin_include_directory: "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/include"
+  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include"
+  cxx_builtin_include_directory: "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/include-fixed"
 
   # Needed to prevent Bazel from complaining about undeclared inclusions of
   # MingW headers.
