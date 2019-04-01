@@ -130,12 +130,20 @@ def _mk_binary_rule(**kwargs):
         ),
     )
 
-    # Tests have an extra fields regarding expected code coverage percentages.
+    # Tests have an extra fields regarding code coverage.
     if is_test:
         attrs.update({
-            "expected_expression_coverage": attr.int(
-                default = 0,
+            "expected_covered_expressions_percentage": attr.int(
+                default = -1,
                 doc = "The expected percentage of expressions covered by testing.",
+            ),
+            "expected_uncovered_expression_count": attr.int(
+                default = -1,
+                doc = "The expected number of expressions which are not covered by testing.",
+            ),
+            "strict_coverage_analysis": attr.bool(
+                default = False,
+                doc = "Requires that the coverage metric is matched exactly, even doing better than expected is not allowed.",
             ),
             "_coverage_wrapper_template": attr.label(
                 allow_single_file = True,
