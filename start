@@ -40,63 +40,48 @@ cat > WORKSPACE <<"EOF"
 workspace(name = "YOUR_PROJECT_NAME_HERE")
 
 # Load the repository rule to download an http archive.
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load(
+    "@bazel_tools//tools/build_defs/repo:http.bzl",
+    "http_archive"
+)
 
 # Download `rules_haskell`.
 # and make it accessible `@io_tweag_rules_haskell`.
 http_archive(
-  name = "io_tweag_rules_haskell",
-  strip_prefix = "rules_haskell-0.8",
-  urls = ["https://github.com/tweag/rules_haskell/archive/v0.8.tar.gz"],
-  sha256 = "431d492a8ee6a110cdf42496181c9d27225dfb997379e64a148eb8e69f272ab7",
+    name = "io_tweag_rules_haskell",
+    strip_prefix = "rules_haskell-master",
+    urls = ["https://github.com/tweag/rules_haskell/archive/master.tar.gz"],
+    # sha256 = "431d492a8ee6a110cdf42496181c9d27225dfb997379e64a148eb8e69f272ab7",
 )
 
-load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+# TODO: get rid the `rules_nixpkgs` repository dependency for bindists
+# https://github.com/tweag/rules_haskell/issues/715
+rules_nixpkgs_version = "0.5.2"
+
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    sha256 = "5a384daa57b49abf9f0b672852f1a66a3c52aecf9d4d2ac64f6de0fd307690c8",
+    strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v%s.tar.gz" % rules_nixpkgs_version],
+)
+
+load(
+    "@io_tweag_rules_haskell//haskell:repositories.bzl",
+    "haskell_repositories"
+)
+
 # `haskell_repositories()` sets up all bazel dependencies
 # required by `rules_haskell`.
 haskell_repositories()
 
-# Note that you can use variables as well.
-rules_nixpkgs_version = "c232b296e795ad688854ff3d3d2de6e7ad45f0b4"
-rules_nixpkgs_sha256 = "5883ea01f3075354ab622cfe82542da01fe2b57a48f4c3f7610b4d14a3fced11"
-
-# `rules_nixpkgs` is used for fetching GHC and hackage packages.
-http_archive(
-    name = "io_tweag_rules_nixpkgs",
-    strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % rules_nixpkgs_version],
-    sha256 = rules_nixpkgs_sha256,
-)
-
 load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-    "nixpkgs_package",
-    "nixpkgs_git_repository",
-    "nixpkgs_cc_configure",
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_register_ghc_bindists",
 )
 
-# Fetch a stable version of `nixpkgs`.
-nixpkgs_git_repository(
-    name = "nixpkgs",
-    remote = "https://github.com/NixOS/nixpkgs",
-    revision = "18.09",
-    sha256 = "6451af4083485e13daa427f745cbf859bc23cb8b70454c017887c006a13bd65e",
-)
-
-# The GHC distribution from `nixpkgs`.
-nixpkgs_package(
-  name = "ghc",
-  attribute_path = "haskell.compiler.ghc843",
-  repository = "@nixpkgs",
-)
-
-# Use the CC toolchain from `nixpkgs`.
-nixpkgs_cc_configure(
-    repository = "@nixpkgs",
-)
-
-# Register the GHC toolchain defined in `./BUILD`.
-register_toolchains("//:ghc-toolchain")
+# Registers a haskell toolchain with a GHC binary
+# downloaded from haskell.org.
+haskell_register_ghc_bindists(version = "8.6.3")
 EOF
 
 cat > BUILD.bazel <<"EOF"
@@ -105,19 +90,11 @@ package(default_visibility = ["//visibility:public"])
 
 # Load `rules_haskell` rules.
 load(
-  "@io_tweag_rules_haskell//haskell:haskell.bzl",
-  "haskell_toolchain",
-  "haskell_import",
-  "haskell_library",
-  "haskell_binary",
-)
-
-# `haskell_toolchain` sets up the GHC to be used
-# implicitely by all `haskell_*` rules.
-haskell_toolchain(
-  name = "ghc-toolchain",
-  version = "8.4.3",
-  tools = "@ghc//:bin",
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_toolchain",
+    "haskell_import",
+    "haskell_library",
+    "haskell_binary",
 )
 
 # `haskell_import` can access builtin GHC packages
@@ -127,20 +104,20 @@ haskell_import(name = "base")
 
 # You can add your own libraries with `haskell_library`.
 # haskell_library(
-#   name = "MY_LIBRARY_NAME",
-#   src_strip_prefix = "src",
-#   srcs = glob(['src/**/*.hs']),
-#   deps = [
-#     "base_pkg"
-#   ],
+#     name = "MY_LIBRARY_NAME",
+#     src_strip_prefix = "src",
+#     srcs = glob(['src/**/*.hs']),
+#     deps = [
+#         "base_pkg"
+#     ],
 # )
 
 # An example binary using the Prelude module from the
 # GHC base package, to print the hello world.
 haskell_binary(
-  name = "example",
-  srcs = [":Example.hs"],
-  deps = [":base"],
+    name = "example",
+    srcs = [":Example.hs"],
+    deps = [":base"],
 )
 EOF
 
