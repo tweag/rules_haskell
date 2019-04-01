@@ -292,6 +292,27 @@ the history clean.
 
 [buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
 
+### How to update the nixpkgs pin
+
+You have to find a new git commit where all our `shell.nix`
+dependencies are available from the official NixOS Hydra binary cache.
+
+At least for `x86-linux` this is guaranteed for the `unstable`
+channels. You can find the `nixpkgs` git commit of current `unstable`
+here:
+
+https://nixos.org/channels/nixos-unstable/git-revision
+
+That might be too old for your use-case (because all tests have to
+pass for that channel to be updated), so as a fallback there is:
+
+https://nixos.org/channels/nixos-unstable-small/git-revision
+
+You copy that hash to `url` in
+[`./nixpkgs/default.nix`](./nixpkgs/default.nix). Don’t forget to
+change the `sha256` or it will use the old version. Please update the
+date comment to the date of the `nixpkgs` commit you are pinning to.
+
 ### CircleCI
 
 Pull Requests are checked by CircleCI.
