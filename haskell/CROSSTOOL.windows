@@ -31,15 +31,18 @@ toolchain {
   tool_path { name: "objdump" path: "mingw/bin/objdump" }
   tool_path { name: "strip" path: "mingw/bin/strip" }
 
-  cxx_builtin_include_directory: "mingw"
-  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include"
-  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include/sdks"
-  cxx_builtin_include_directory: "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/include"
-  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include/psdk_inc"
-  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include/sec_api"
-  cxx_builtin_include_directory: "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/include"
-  cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include"
-  cxx_builtin_include_directory: "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/include-fixed"
+  cxx_builtin_include_directory: "external/io_tweag_rules_haskell_ghc_windows_amd64/mingw"
+  cxx_builtin_include_directory: "external/io_tweag_rules_haskell_ghc_windows_amd64/mingw/x86_64-w64-mingw32/include"
+  cxx_builtin_include_directory: "external/io_tweag_rules_haskell_ghc_windows_amd64/mingw/x86_64-w64-mingw32/include/sdks"
+  cxx_builtin_include_directory: "external/io_tweag_rules_haskell_ghc_windows_amd64/mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/include"
+  cxx_builtin_include_directory: "external/io_tweag_rules_haskell_ghc_windows_amd64/mingw/x86_64-w64-mingw32/include/psdk_inc"
+  cxx_builtin_include_directory: "external/io_tweag_rules_haskell_ghc_windows_amd64/mingw/x86_64-w64-mingw32/include/sec_api"
+  cxx_builtin_include_directory: "external/io_tweag_rules_haskell_ghc_windows_amd64/mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/include"
+  cxx_builtin_include_directory: "external/io_tweag_rules_haskell_ghc_windows_amd64/mingw/x86_64-w64-mingw32/include"
+  cxx_builtin_include_directory: "external/io_tweag_rules_haskell_ghc_windows_amd64/mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/include-fixed"
+
+  unfiltered_cxx_flag: "-no-canonical-prefixes"
+  unfiltered_cxx_flag: "-fno-canonical-system-headers"
 
   linker_flag: "-lstdc++"
   objcopy_embed_flag: "-I"
