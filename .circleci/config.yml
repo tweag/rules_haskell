@@ -51,12 +51,20 @@ jobs:
       - run:
           name: System dependencies
           command: |
+            set -e
             apk --no-progress update
             apk --no-progress add bash ca-certificates
 
+            mkdir -p /etc/nix
             # CircleCI and Nix sandboxing don't play nice. See
             # https://discourse.nixos.org/t/nixos-on-ovh-kimsufi-cloning-builder-process-operation-not-permitted/1494/5
-            mkdir -p /etc/nix && echo "sandbox = false" > /etc/nix/nix.conf
+            echo "sandbox = false" > /etc/nix/nix.conf
+            # No builders and no local jobs ensures that everything has to come from a binary cache
+            # If we want to add packages that are not cached by the offical NixOS binary cache,
+            # we need to manually build them (e.g. `nix-build -A <dependency> --max-jobs <no-cpu-cores>`).
+            # This is a sanity check.
+            echo "builders =" >> /etc/nix/nix.conf
+            echo "max-jobs = 0" >> /etc/nix/nix.conf
       - run:
           name: Configure
           command: |

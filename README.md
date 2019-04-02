@@ -292,7 +292,7 @@ the history clean.
 
 [buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
 
-### How to update the nixpkgs pin
+### <a name="nixpkgs-pin" />How to update the nixpkgs pin
 
 You have to find a new git commit where all our `shell.nix`
 dependencies are available from the official NixOS Hydra binary cache.
@@ -321,3 +321,14 @@ If a check fails and you cannot reproduce it locally (e.g. it failed on Darwin
 and you only run Linux), you can [ssh into CircleCI to aid debugging][ci-ssh].
 
 [ci-ssh]: https://circleci.com/docs/2.0/ssh-access-jobs/
+
+#### “unable to start any build”
+
+```
+error: unable to start any build; either increase '--max-jobs' or enable remote builds
+```
+
+We set `--builders ""` and `--max-jobs 0` on CI to be sure all
+dependencies are coming from binary caches. You might need to add an
+exception (TODO: where to add exception) or [switch to a different
+nixpkgs pin](#nixpkgs-pin).
