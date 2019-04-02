@@ -42,7 +42,14 @@ _conditions_default = "//conditions:default"
 
 # Those libraries are already provided by the system, Bazel or rules_haskell,
 # and must thus be ignored when specified as extra libraries.
-_excluded_cxx_libs = sets.make(elements = ["pthread", "stdc++", "advapi32"])
+_excluded_cxx_libs = sets.make(elements = [
+    "pthread",
+    "stdc++",
+    # Windows libraries
+    "advapi32",
+    "iphlpapi",
+    "Crypt32",
+])
 
 def _get_core_dependency_includes(ghc_workspace):
     """Include files that are exported by core dependencies
