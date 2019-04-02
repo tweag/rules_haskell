@@ -41,14 +41,12 @@ jobs:
             bazel build --config ci //tests/...
       - run:
           name: Run tests
-          # bazel does not support recursive bazel call, so we
-          # cannot use bazel run here because the test runner uses
-          # bazel
           command: |
-            bazel build --config ci //tests:run-tests
-            # run the start script test
-            ./bazel-ci-bin/tests/run-tests --match "/startup script/"
+            # Run the start script test.
+            # Doesn't use the test suite binary, because that depends on nixpkgs dependencies.
+            ./tests/run-start-script.sh
             # TODO: enable all tests for bindists
+            # (this will require tests to both work with nixpkgs and hazel backends)
 
   # ATTN: when you change anything here, don’t forget to copy it to the build-darwin section
   build-linux-nixpkgs:
