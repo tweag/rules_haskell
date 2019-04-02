@@ -20,6 +20,14 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
+# generate the _GHC_BINDISTS dict
+py_binary(
+    name = "gen-ghc-bindist",
+    srcs = [":gen_ghc_bindist.py"],
+    main = ":gen_ghc_bindist.py",
+    visibility = ["//visibility:public"],
+)
+
 # toolchains must have a valid toolchain_type from bazel 0.21
 toolchain_type(
     name = "toolchain",

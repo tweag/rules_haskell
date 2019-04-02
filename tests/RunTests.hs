@@ -75,23 +75,7 @@ main = hspec $ do
       outputSatisfy p' (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":show targets"])
 
   it "startup script" $ do
-    assertSuccess (safeShell [
-        "pwd=$(pwd)"
-      , "cd $(mktemp -d)"
-      , "$pwd/start"
-
-      -- Copy the bazel configuration, this is only useful for CI
-      , "mkdir tools"
-      , "cp $pwd/.bazelrc .bazelrc"
-
-      -- Set Nixpkgs in environment variable to avoid hardcoding it in
-      -- start script itself
-      , "NIX_PATH=nixpkgs=$pwd/nixpkgs/default.nix \
-        \bazel fetch \
-        \--config=ci \
-        \--override_repository=io_tweag_rules_haskell=$pwd \
-        \//..."
-      ])
+    assertSuccess (safeShell ["./tests/run-start-script.sh"])
 
   describe "failures" $ do
     all_failure_tests <- bazelQuery "kind(rule, //tests/failures/...) intersect attr('tags', 'manual', //tests/failures/...)"
