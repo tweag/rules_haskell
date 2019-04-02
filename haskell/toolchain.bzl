@@ -64,8 +64,9 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         ghc_args_file,
         extra_args_file,
     ] + cc.files
+
     if params_file:
-        command = """
+        script = """
         export PATH=${PATH:-} # otherwise GCC fails on Windows
 
         # this is equivalent to 'readarray'. We do not use 'readarray' in order to
@@ -78,7 +79,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
 """ % (ghc_args_file.path, extra_args_file.path, params_file.path)
         extra_inputs.append(params_file)
     else:
-        command = """
+        script = """
         export PATH=${PATH:-} # otherwise GCC fails on Windows
 
         # this is equivalent to 'readarray'. We do use 'readarray' in order to
@@ -89,6 +90,11 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         "${ghc_args[@]}" "${extra_args[@]}"
 """ % (ghc_args_file.path, extra_args_file.path)
 
+    ghc_wrapper_name = "ghc_wrapper_%s_%s" % (hs.name, mnemonic)
+    ghc_wrapper = hs.actions.declare_file(ghc_wrapper_name)
+    hs.actions.write(ghc_wrapper, script, is_executable = True)
+    extra_inputs.append(ghc_wrapper)
+
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
     else:
@@ -97,7 +103,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     hs.actions.run_shell(
         inputs = inputs,
         outputs = outputs,
-        command = command,
+        command = ghc_wrapper.path,
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
