@@ -66,29 +66,22 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     ] + cc.files
 
     if params_file:
-        script = """
-        export PATH=${PATH:-} # otherwise GCC fails on Windows
-
-        # this is equivalent to 'readarray'. We do not use 'readarray' in order to
-        # support older bash versions.
-        while IFS= read -r line; do ghc_args+=("$line"); done < %s
-        while IFS= read -r line; do extra_args+=("$line"); done < %s
-        while IFS= read -r line; do param_file_args+=("$line"); done < %s
-
-        "${ghc_args[@]}" "${extra_args[@]}" "${param_file_args[@]}"
-""" % (ghc_args_file.path, extra_args_file.path, params_file.path)
+        params_file_src = params_file.path
         extra_inputs.append(params_file)
     else:
-        script = """
-        export PATH=${PATH:-} # otherwise GCC fails on Windows
+        params_file_src = "<(:)"  # a temporary file with no contents
 
-        # this is equivalent to 'readarray'. We do use 'readarray' in order to
-        # support older bash versions.
-        while IFS= read -r line; do ghc_args+=("$line"); done < %s
-        while IFS= read -r line; do extra_args+=("$line"); done < %s
+    script = """
+export PATH=${PATH:-} # otherwise GCC fails on Windows
 
-        "${ghc_args[@]}" "${extra_args[@]}"
-""" % (ghc_args_file.path, extra_args_file.path)
+# this is equivalent to 'readarray'. We do not use 'readarray' in order to
+# support older bash versions.
+while IFS= read -r line; do ghc_args+=("$line"); done < %s
+while IFS= read -r line; do extra_args+=("$line"); done < %s
+while IFS= read -r line; do param_file_args+=("$line"); done < %s
+
+"${ghc_args[@]}" "${extra_args[@]}" ${param_file_args+"${param_file_args[@]}"}
+""" % (ghc_args_file.path, extra_args_file.path, params_file_src)
 
     ghc_wrapper_name = "ghc_wrapper_%s_%s" % (hs.name, mnemonic)
     ghc_wrapper = hs.actions.declare_file(ghc_wrapper_name)
