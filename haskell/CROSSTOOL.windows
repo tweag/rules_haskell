@@ -31,6 +31,7 @@ toolchain {
   tool_path { name: "objdump" path: "mingw/bin/objdump" }
   tool_path { name: "strip" path: "mingw/bin/strip" }
 
+  cxx_builtin_include_directory: "C:/"
   cxx_builtin_include_directory: "mingw"
   cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include"
   cxx_builtin_include_directory: "mingw/x86_64-w64-mingw32/include/sdks"
