@@ -148,14 +148,19 @@ def get_libs_for_ghc_linker(hs, transitive_cc_dependencies, path_prefix = None):
         library_deps = _library_deps
         ld_library_deps = _ld_library_deps
 
+    sep = ";" if hs.toolchain.is_windows else None
+
     library_path = make_path(
         library_deps,
         prefix = path_prefix,
+        sep = sep,
     )
     ld_library_path = make_path(
         ld_library_deps,
         prefix = path_prefix,
+        sep = sep,
     )
+
 
     # GHC's builtin linker/loader looks for libraries in the paths defined by
     # LIBRARY_PATH and LD_LIBRARY_PATH.

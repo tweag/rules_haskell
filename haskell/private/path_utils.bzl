@@ -103,17 +103,20 @@ def declare_compiled(hs, src, ext, directory = None, rel_path = None):
 
     return hs.actions.declare_file(fp_with_dir)
 
-def make_path(libs, prefix = None):
+def make_path(libs, prefix = None, sep = None):
     """Return a string value for using as LD_LIBRARY_PATH or similar.
 
     Args:
       libs: List of library files that should be available
       prefix: String, an optional prefix to add to every path.
+      sep: String, the path separator, defaults to ":".
 
     Returns:
       String: paths to the given library directories separated by ":".
     """
     r = set.empty()
+
+    sep = sep if sep else ":"
 
     for lib in libs:
         lib_dir = paths.dirname(lib.path)
@@ -122,7 +125,7 @@ def make_path(libs, prefix = None):
 
         set.mutable_insert(r, lib_dir)
 
-    return ":".join(set.to_list(r))
+    return sep.join(set.to_list(r))
 
 def darwin_convert_to_dylibs(hs, libs):
     """Convert .so dynamic libraries to .dylib.
