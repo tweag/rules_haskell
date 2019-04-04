@@ -34,3 +34,34 @@ haskell_binary(
         "//tests/library-with-cbits:library-with-cbits-static",
     ],
 )
+
+haskell_binary(
+    name = "binary-two-indirect-cbits",
+    srcs = ["Main2.hs"],
+    linkstatic = False,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/library-with-two-cbits",
+    ],
+)
+
+haskell_binary(
+    name = "binary-two-indirect-cbits-partially-static",
+    srcs = ["Main2.hs"],
+    linkstatic = False,
+    deps = [
+        "//tests/hackage:base",
+        "//tests/library-with-two-cbits:library-with-two-cbits-static",
+    ],
+)
+
+haskell_binary(
+    name = "binary-two-indirect-cbits-fully-static",
+    srcs = ["Main2.hs"],
+    linkstatic = True,
+    deps = [
+        "//tests/hackage:base",
+        "//tests/library-with-two-cbits:library-with-two-cbits-static",
+    ],
+)
