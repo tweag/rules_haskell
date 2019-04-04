@@ -77,6 +77,7 @@ jobs:
       /c/bazel/bazel.exe build --config windows "//tests/failures/..."
       /c/bazel/bazel.exe build --config windows "//tests/hidden-modules/..."
       /c/bazel/bazel.exe build --config windows "//tests/package-id-clash/..."
+      /c/bazel/bazel.exe build --config windows "//tests/library-with-cbits/..."
 
       # Tests that succeed
       /c/bazel/bazel.exe test --config windows "//tests:test-binary-simple"
