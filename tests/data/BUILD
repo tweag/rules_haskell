@@ -13,3 +13,17 @@ cc_library(
     linkstatic = True,
     visibility = ["//visibility:public"],
 )
+
+cc_library(
+    name = "ourotherclibrary",
+    srcs = [":ourotherclibrary.c"],
+    linkstatic = False,
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "ourotherclibrary-static",
+    srcs = [":ourotherclibrary.c"],
+    linkstatic = True,
+    visibility = ["//visibility:public"],
+)
