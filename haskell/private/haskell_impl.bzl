@@ -25,7 +25,9 @@ load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
     "ln",
+    "match_label",
     "module_name",
+    "parse_pattern",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
@@ -65,6 +67,19 @@ def _should_inspect_coverage(ctx, hs, is_test):
     return hs.coverage_enabled and is_test and (ctx.attr.expected_covered_expressions_percentage != -1 or
                                                 ctx.attr.expected_uncovered_expression_count != -1)
 
+def _make_coverage_data(mix_file, target_label):
+    return struct(
+        mix_file = mix_file,
+        target_label = target_label,
+    )
+
+def _coverage_enabled_for_target(coverage_source_patterns, label):
+    for pat in coverage_source_patterns:
+        if match_label(pat, label):
+            return True
+
+    return False
+
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx)
@@ -99,11 +114,10 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
 
     # gather intermediary code coverage instrumentation data
-    conditioned_mix_files = c.conditioned_mix_files
+    coverage_data = [_make_coverage_data(m, ctx.label) for m in c.conditioned_mix_files]
     for dep in ctx.attr.deps:
         if HaskellCoverageInfo in dep:
-            conditioned_mix_files += dep[HaskellCoverageInfo].mix_files
-    conditioned_mix_files = depset(conditioned_mix_files).to_list()
+            coverage_data += dep[HaskellCoverageInfo].coverage_data
 
     c_p = None
 
@@ -195,13 +209,21 @@ def _haskell_binary_common_impl(ctx, is_test):
         hpc_path = paths.join(ctx.workspace_name, hs.toolchain.tools.hpc.short_path)
         tix_file_path = hs.label.name + ".tix"
         mix_file_paths = [
-            paths.join(ctx.workspace_name, m.short_path)
-            for m in conditioned_mix_files
+            paths.join(ctx.workspace_name, datum.mix_file.short_path)
+            for datum in coverage_data
         ]
+
+        # find which modules to exclude from coverage analysis, by using the specified source patterns
+        raw_coverage_source_patterns = ctx.attr.coverage_source_patterns
+        coverage_source_patterns = [parse_pattern(pat) for pat in raw_coverage_source_patterns]
+        modules_to_exclude = [paths.split_extension(datum.mix_file.basename)[0] for datum in coverage_data if not _coverage_enabled_for_target(coverage_source_patterns, datum.target_label)]
+
         expected_covered_expressions_percentage = ctx.attr.expected_covered_expressions_percentage
         expected_uncovered_expression_count = ctx.attr.expected_uncovered_expression_count
         strict_coverage_analysis = ctx.attr.strict_coverage_analysis
+
         wrapper = hs.actions.declare_file("coverage_wrapper.sh")
+
         ctx.actions.expand_template(
             template = ctx.file._coverage_wrapper_template,
             output = wrapper,
@@ -212,6 +234,7 @@ def _haskell_binary_common_impl(ctx, is_test):
                 "{expected_covered_expressions_percentage}": str(expected_covered_expressions_percentage),
                 "{expected_uncovered_expression_count}": str(expected_uncovered_expression_count),
                 "{mix_file_paths}": shell.array_literal(mix_file_paths),
+                "{modules_to_exclude}": shell.array_literal(modules_to_exclude),
                 "{strict_coverage_analysis}": str(strict_coverage_analysis),
             },
             is_executable = True,
@@ -223,6 +246,8 @@ def _haskell_binary_common_impl(ctx, is_test):
             binary,
         ]
 
+    mix_runfiles = [datum.mix_file for datum in coverage_data]
+
     return [
         build_info,
         bin_info,
@@ -232,7 +257,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             runfiles = ctx.runfiles(
                 files =
                     solibs +
-                    c.conditioned_mix_files +
+                    mix_runfiles +
                     extra_runfiles,
                 collect_data = True,
             ),
@@ -401,13 +426,13 @@ def haskell_library_impl(ctx):
         extra_source_files = c.extra_source_files,
     )
 
-    dependency_mix_files = []
+    dep_coverage_data = []
     for dep in ctx.attr.deps:
         if HaskellCoverageInfo in dep:
-            dependency_mix_files += dep[HaskellCoverageInfo].mix_files
+            dep_coverage_data += dep[HaskellCoverageInfo].coverage_data
 
     coverage_info = HaskellCoverageInfo(
-        mix_files = depset(dependency_mix_files + c.conditioned_mix_files).to_list(),
+        coverage_data = dep_coverage_data + [_make_coverage_data(m, ctx.label) for m in c.conditioned_mix_files],
     )
 
     target_files = depset([conf_file, cache_file])

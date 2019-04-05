@@ -318,3 +318,103 @@ def copy_all(ctx, srcs, dest):
             command = "mkdir -p {dest} && cp -L -R \"$@\" {dest}".format(dest = dest.path),
             arguments = [args],
         )
+
+def parse_pattern(pattern_str):
+    """Parses a string label pattern.
+
+    Args:
+      pattern_str: The pattern to parse.
+        Patterns are absolute labels in the local workspace. E.g.
+        `//some/package:some_target`. The following wild-cards are allowed:
+        `...`, `:all`, and `:*`. Also the `//some/package` shortcut is allowed.
+
+    Returns:
+      A struct of
+        package: A list of package path components. May end on the wildcard `...`.
+        target: The target name. None if the package ends on `...`. May be one
+          of the wildcards `all` or `*`.
+
+    """
+
+    # We only load targets in the local workspace anyway. So, it's never
+    # necessary to specify a workspace. Therefore, we don't allow it.
+    if pattern_str.startswith("@"):
+        fail("Invalid haskell_repl pattern. Patterns may not specify a workspace. They only apply to the current workspace")
+
+    # To keep things simple, all patterns have to be absolute.
+    if not pattern_str.startswith("//"):
+        fail("Invalid haskell_repl pattern. Patterns must start with //.")
+
+    # Separate package and target (if present).
+    package_target = pattern_str[2:].split(":", maxsplit = 2)
+    package_str = package_target[0]
+    target_str = None
+    if len(package_target) == 2:
+        target_str = package_target[1]
+
+    # Parse package pattern.
+    package = []
+    dotdotdot = False  # ... has to be last component in the pattern.
+    for s in package_str.split("/"):
+        if dotdotdot:
+            fail("Invalid haskell_repl pattern. ... has to appear at the end.")
+        if s == "...":
+            dotdotdot = True
+        package.append(s)
+
+    # Parse target pattern.
+    if dotdotdot:
+        if target_str != None:
+            fail("Invalid haskell_repl pattern. ... has to appear at the end.")
+    elif target_str == None:
+        if len(package) > 0 and package[-1] != "":
+            target_str = package[-1]
+        else:
+            fail("Invalid haskell_repl pattern. The empty string is not a valid target.")
+
+    return struct(
+        package = package,
+        target = target_str,
+    )
+
+def match_label(patterns, label):
+    """Whether the given local workspace label matches any of the patterns.
+
+    Args:
+      patterns: A list of parsed patterns to match the label against.
+        Apply `_parse_pattern` before passing patterns into this function.
+      label: Match this label against the patterns.
+
+    Returns:
+      A boolean. True if the label is in the local workspace and matches any of
+      the given patterns. False otherwise.
+
+    """
+
+    # Only local workspace labels can match.
+    # Despite the docs saying otherwise, labels don't have a workspace_name
+    # attribute. So, we use the workspace_root. If it's empty, the target is in
+    # the local workspace. Otherwise, it's an external target.
+    if label.workspace_root != "":
+        return False
+
+    package = label.package.split("/")
+    target = label.name
+
+    # Match package components.
+    for i in range(min(len(patterns.package), len(package))):
+        if patterns.package[i] == "...":
+            return True
+        elif patterns.package[i] != package[i]:
+            return False
+
+    # If no wild-card or mismatch was encountered, the lengths must match.
+    # Otherwise, the label's package is not covered.
+    if len(patterns.package) != len(package):
+        return False
+
+    # Match target.
+    if patterns.target == "all" or patterns.target == "*":
+        return True
+    else:
+        return patterns.target == target

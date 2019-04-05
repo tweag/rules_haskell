@@ -43,8 +43,14 @@ do
   trimmed_hpc_parent_dir=$(echo "${hpc_parent_dir%%.hpc*}")
   hpc_dir_args="$hpc_dir_args --hpcdir=$trimmed_hpc_parent_dir.hpc"
 done
+hpc_exclude_args=""
+modules_to_exclude={modules_to_exclude}
+for m in "${modules_to_exclude[@]}"
+do
+  hpc_exclude_args="$hpc_exclude_args --exclude=$m"
+done
 $binary_path "$@"
-$hpc_path report $tix_file_path $hpc_dir_args > __hpc_coverage_report
+$hpc_path report "$tix_file_path" $hpc_dir_args $hpc_exclude_args > __hpc_coverage_report
 echo "Overall report"
 cat __hpc_coverage_report
 
