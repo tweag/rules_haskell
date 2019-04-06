@@ -51,7 +51,7 @@ def _haskell_doc_aspect_impl(target, ctx):
         "-D",
         haddock_file.path,
         "-o",
-        html_dir,
+        html_dir.path,
         "--html",
         "--hoogle",
         "--title={0}".format(package_id),
