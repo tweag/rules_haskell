@@ -20,14 +20,18 @@ def java_interop_info(ctx):
       JavaInteropInfo: Information needed for Java interop.
     """
 
-    inputs = []
-    for dep in ctx.attr.deps:
-        if JavaInfo in dep:
-            for f in dep.files.to_list():
-                # Crashes!
-                # print(dep[JavaInfo].transitive_compile_time_jars)
-                if f.extension == "jar":
-                    inputs.append(f)
+    inputs = depset(
+        transitive = [
+            # We only expose direct dependencies, though we could
+            # expose transitive ones as well. Only exposing the direct
+            # ones corresponds to Bazel's "strict Java dependencies"
+            # mode. See
+            # https://github.com/tweag/rules_haskell/issues/96.
+            dep[JavaInfo].compile_jars
+            for dep in ctx.attr.deps
+            if JavaInfo in dep
+        ]
+    )
 
     env_dict = dict()
     uniq_classpath = collections.uniq([
@@ -39,6 +43,6 @@ def java_interop_info(ctx):
         env_dict["CLASSPATH"] = ":".join(uniq_classpath)
 
     return JavaInteropInfo(
-        inputs = depset(inputs),
+        inputs = inputs,
         env = env_dict,
     )
