@@ -239,6 +239,9 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         "-no-link",
         "-fPIC",
         "-hide-all-packages",
+        # Should never trigger in sandboxed builds, but can be useful
+        # to debug issues in non-sandboxed builds.
+        "-Wmissing-home-modules",
     ])
 
     # Output directories
