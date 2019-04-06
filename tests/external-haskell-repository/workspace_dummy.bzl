@@ -31,7 +31,7 @@ load(
 )
 load(
   "@io_tweag_rules_haskell//:constants.bzl",
-  "ghc_version",
+  "test_ghc_version",
 )
 
 haskell_library(

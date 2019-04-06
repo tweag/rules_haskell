@@ -63,8 +63,7 @@ load(
 )
 load(
     "@io_tweag_rules_haskell//:constants.bzl",
-    "bindists_ghc_version",
-    "ghc_version",
+    "test_ghc_version",
 )
 
 haskell_nixpkgs_package(
@@ -90,8 +89,6 @@ nixpkgs_local_repository(
     name = "nixpkgs",
     nix_file = "//nixpkgs:default.nix",
 )
-
-test_ghc_version = ghc_version
 
 test_compiler_flags = [
     "-XStandaloneDeriving",  # Flag used at compile time
@@ -135,7 +132,7 @@ load(
 
 haskell_register_ghc_bindists(
     compiler_flags = test_compiler_flags,
-    version = bindists_ghc_version,
+    version = test_ghc_version,
 )
 
 register_toolchains(

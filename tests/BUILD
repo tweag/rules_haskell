@@ -15,7 +15,7 @@ load(
 )
 load(
     "//:constants.bzl",
-    "ghc_version",
+    "test_ghc_version",
 )
 
 package(default_testonly = 1)
@@ -245,17 +245,15 @@ rule_test(
     size = "small",
     generates = select({
         "@bazel_tools//src/conditions:darwin": [
-            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc{version}.dylib".format(version = ghc_version),
-            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc{version}.dylib".format(version = ghc_version),
+            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc{version}.dylib".format(version = test_ghc_version),
+            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc{version}.dylib".format(version = test_ghc_version),
         ],
         "//conditions:default": [
-            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc{version}.so".format(version = ghc_version),
-            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc{version}.so".format(version = ghc_version),
+            "libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc{version}.so".format(version = test_ghc_version),
+            "libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc{version}.so".format(version = test_ghc_version),
         ],
     }),
     rule = "//tests/cc_haskell_import:hs-lib-b.so",
-    # TODO remove if version(GHC_bindist) == ghc_vension.
-    tags = ["dont_test_with_bindist"],
 )
 
 rule_test(
