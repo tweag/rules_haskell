@@ -242,3 +242,12 @@ C2hsLibraryInfo = provider(
         "import_dir": "Import directory containing generated Haskell source file.",
     },
 )
+
+GhcPluginInfo = provider(
+    doc = "Encapsulates GHC plugin dependencies and tools",
+    fields = {
+        "module": "Plugin entrypoint.",
+        "deps": "Plugin dependencies.",
+        "args": "Plugin options.",
+    },
+)

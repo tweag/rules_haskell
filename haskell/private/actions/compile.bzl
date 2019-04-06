@@ -13,7 +13,13 @@ load(
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/providers.bzl", "get_libs_for_ghc_linker")
+load(
+    ":private/providers.bzl",
+    "GhcPluginInfo",
+    "HaskellLibraryInfo",
+    "get_libs_for_ghc_linker",
+    "merge_HaskellCcInfo",
+)
 load(":private/set.bzl", "set")
 
 def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
@@ -76,7 +82,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id, version):
+def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id, version, plugins):
     """Declare default compilation targets and create default compiler arguments.
 
     Returns:
@@ -134,14 +140,31 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     if hs.toolchain.is_darwin:
         ghc_args += ["-optl-Wl,-dead_strip_dylibs"]
 
-    ghc_args.extend(pkg_info_to_ghc_args(expose_packages(
-        dep_info,
-        lib_info = None,
-        use_direct = True,
-        use_my_pkg_id = my_pkg_id,
-        custom_package_caches = None,
-        version = version,
-    )))
+    ghc_args.extend(
+        pkg_info_to_ghc_args(
+            expose_packages(
+                dep_info,
+                lib_info = None,
+                use_direct = True,
+                use_my_pkg_id = my_pkg_id,
+                custom_package_caches = None,
+                version = version,
+            ),
+        ),
+    )
+    ghc_args.extend(
+        pkg_info_to_ghc_args(
+            expose_packages(
+                plugin_dep_info,
+                lib_info = None,
+                use_direct = True,
+                use_my_pkg_id = my_pkg_id,
+                custom_package_caches = None,
+                version = version,
+            ),
+            for_plugin = True,
+        ),
+    )
 
     header_files = []
     boot_files = []
@@ -240,6 +263,12 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
 
     args.add_all(ghc_args)
 
+    # Plugins
+    for plugin in plugins:
+        args.add("-fplugin={}".format(plugin[GhcPluginInfo].module))
+        for opt in plugin[GhcPluginInfo].args:
+            args.add_all(["-fplugin-opt", "{}:{}".format(plugin[GhcPluginInfo].module, opt)])
+
     # Pass source files
     for f in set.to_list(source_files):
         args.add(f)
@@ -247,7 +276,10 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
     # Transitive library dependencies for runtime.
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
         hs,
-        dep_info.transitive_cc_dependencies,
+        merge_HaskellCcInfo(
+            dep_info.transitive_cc_dependencies,
+            plugin_dep_info.transitive_cc_dependencies,
+        ),
     )
 
     return DefaultCompileInfo(
@@ -265,6 +297,12 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_sr
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             set.to_depset(dep_info.dynamic_libraries),
+            set.to_depset(plugin_dep_info.package_confs),
+            set.to_depset(plugin_dep_info.package_caches),
+            set.to_depset(plugin_dep_info.interface_dirs),
+            depset(plugin_dep_info.static_libraries),
+            depset(plugin_dep_info.static_libraries_prof),
+            set.to_depset(plugin_dep_info.dynamic_libraries),
             depset(library_deps),
             depset(ld_library_deps),
             java.inputs,
@@ -294,6 +332,7 @@ def compile_binary(
         cc,
         java,
         dep_info,
+        plugin_dep_info,
         srcs,
         ls_modules,
         import_dir_map,
@@ -304,7 +343,8 @@ def compile_binary(
         main_function,
         version,
         inspect_coverage = False,
-        mix_files = []):
+        mix_files = [],
+        plugins = []):
     """Compile a Haskell target into object files suitable for linking.
 
     Returns:
@@ -314,7 +354,7 @@ def compile_binary(
         modules: set of module names
         source_files: set of Haskell source files
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = None, version = version)
+    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins)
     c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
@@ -376,6 +416,7 @@ def compile_library(
         cc,
         java,
         dep_info,
+        plugin_dep_info,
         srcs,
         ls_modules,
         other_modules,
@@ -386,7 +427,8 @@ def compile_library(
         with_shared,
         with_profiling,
         my_pkg_id,
-        mix_files = []):
+        mix_files = [],
+        plugins = []):
     """Build arguments for Haskell package build.
 
     Returns:
@@ -400,7 +442,7 @@ def compile_library(
         source_files: set of Haskell module files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version)
+    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins)
     if with_shared:
         c.args.add("-dynamic-too")
 

@@ -53,6 +53,10 @@ load(
     _haskell_register_toolchains = "haskell_register_toolchains",
     _haskell_toolchain = "haskell_toolchain",
 )
+load(
+    ":plugins.bzl",
+    _ghc_plugin = "ghc_plugin",
+)
 
 _haskell_common_attrs = {
     "src_strip_prefix": attr.string(
@@ -81,6 +85,9 @@ _haskell_common_attrs = {
     ),
     "runghc_args": attr.string_list(
         doc = "Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
+    ),
+    "plugins": attr.label_list(
+        doc = "Compiler plugins to use during compilation.",
     ),
     "_ghci_script": attr.label(
         allow_single_file = True,
@@ -326,3 +333,5 @@ ghc_bindist = _ghc_bindist
 haskell_cc_import = _haskell_cc_import
 
 cc_haskell_import = _cc_haskell_import
+
+ghc_plugin = _ghc_plugin

@@ -17,7 +17,7 @@ load(":private/actions/package.bzl", "package")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
-def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None):
+def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None, input_manifests = None):
     if not env:
         env = hs.env
 
@@ -95,6 +95,7 @@ while IFS= read -r line; do param_file_args+=("$line"); done < %s
 
     hs.actions.run_shell(
         inputs = inputs,
+        input_manifests = input_manifests,
         outputs = outputs,
         command = ghc_wrapper.path,
         mnemonic = mnemonic,

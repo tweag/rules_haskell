@@ -30,7 +30,7 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":private/providers.bzl", "HaskellCoverageInfo")
+load(":private/providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
@@ -67,7 +67,11 @@ def _should_inspect_coverage(ctx, hs, is_test):
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx)
+    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    plugin_dep_info = gather_dep_info(
+        ctx,
+        [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
+    )
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -85,6 +89,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         cc,
         java,
         dep_info,
+        plugin_dep_info,
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
@@ -96,6 +101,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
         mix_files = mix_files,
+        plugins = ctx.attr.plugins,
     )
 
     # gather intermediary code coverage instrumentation data
@@ -113,6 +119,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             cc,
             java,
             dep_info,
+            plugin_dep_info,
             srcs = srcs_files,
             ls_modules = ctx.executable._ls_modules,
             import_dir_map = import_dir_map,
@@ -132,6 +139,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             main_function = ctx.attr.main_function,
             version = ctx.attr.version,
             mix_files = mix_files,
+            plugins = ctx.attr.plugins,
         )
 
     (binary, solibs) = link_binary(
@@ -241,7 +249,11 @@ def _haskell_binary_common_impl(ctx, is_test):
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx)
+    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    plugin_dep_info = gather_dep_info(
+        ctx,
+        [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
+    )
     version = ctx.attr.version if ctx.attr.version else None
     my_pkg_id = pkg_id.new(ctx.label, version)
     with_profiling = is_profiling_enabled(hs)
@@ -264,6 +276,7 @@ def haskell_library_impl(ctx):
         cc,
         java,
         dep_info,
+        plugin_dep_info,
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
         other_modules = other_modules,
@@ -275,6 +288,7 @@ def haskell_library_impl(ctx):
         with_profiling = False,
         my_pkg_id = my_pkg_id,
         mix_files = mix_files,
+        plugins = ctx.attr.plugins,
     )
 
     c_p = None
@@ -285,6 +299,7 @@ def haskell_library_impl(ctx):
             cc,
             java,
             dep_info,
+            plugin_dep_info,
             srcs = srcs_files,
             ls_modules = ctx.executable._ls_modules,
             other_modules = other_modules,
@@ -305,6 +320,7 @@ def haskell_library_impl(ctx):
             with_profiling = True,
             my_pkg_id = my_pkg_id,
             mix_files = mix_files,
+            plugins = ctx.attr.plugins,
         )
 
     static_library = link_library_static(
