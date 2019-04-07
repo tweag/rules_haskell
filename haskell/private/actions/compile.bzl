@@ -236,8 +236,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     # Common flags
     args.add_all([
         "-v0",
-        "-c",
-        "--make",
+        "-no-link",
         "-fPIC",
         "-hide-all-packages",
     ])
