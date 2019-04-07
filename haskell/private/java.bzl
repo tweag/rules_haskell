@@ -30,7 +30,7 @@ def java_interop_info(ctx):
             dep[JavaInfo].compile_jars
             for dep in ctx.attr.deps
             if JavaInfo in dep
-        ]
+        ],
     )
 
     env_dict = dict()
