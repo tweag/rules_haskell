@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 * The minimum supported Bazel version is now v0.22.
 * Mark `haskell_cc_import` as deprecated.
+* Don't reexport `haskell_register_ghc_bindists` from
+  `//haskell/haskell.bzl`. You must now load that macro from
+  `//haskell:nixpkgs.bzl`. rules_nixpkgs is now no longer a dependency
+  of rules_haskell.
 
 ## [0.8] - 2019-01-28
 

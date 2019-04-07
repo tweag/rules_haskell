@@ -26,10 +26,6 @@ load(
     _haskell_lint_aspect = "haskell_lint_aspect",
 )
 load(
-    ":nixpkgs.bzl",
-    _haskell_register_ghc_nixpkgs = "haskell_register_ghc_nixpkgs",
-)
-load(
     ":private/haskell_impl.bzl",
     _haskell_binary_impl = "haskell_binary_impl",
     _haskell_import_impl = "haskell_import_impl",
@@ -315,8 +311,6 @@ haskell_doctest_toolchain = _haskell_doctest_toolchain
 haskell_register_toolchains = _haskell_register_toolchains
 
 haskell_register_ghc_bindists = _haskell_register_ghc_bindists
-
-haskell_register_ghc_nixpkgs = _haskell_register_ghc_nixpkgs
 
 haskell_repl = _haskell_repl
 

@@ -30,8 +30,7 @@ nixpkgs_cc_configure(
 )
 
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_register_ghc_bindists",
+    "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
 
@@ -40,6 +39,11 @@ haskell_register_ghc_nixpkgs(
         "nixpkgs": "@io_tweag_rules_haskell//nixpkgs:default.nix",
     },
     version = "8.6.3",
+)
+
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_register_ghc_bindists",
 )
 
 haskell_register_ghc_bindists(version = "8.6.3")
