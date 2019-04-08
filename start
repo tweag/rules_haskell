@@ -49,9 +49,9 @@ load(
 # and make it accessible `@io_tweag_rules_haskell`.
 http_archive(
     name = "io_tweag_rules_haskell",
-    strip_prefix = "rules_haskell-master",
-    urls = ["https://github.com/tweag/rules_haskell/archive/master.tar.gz"],
-    # sha256 = "431d492a8ee6a110cdf42496181c9d27225dfb997379e64a148eb8e69f272ab7",
+    strip_prefix = "rules_haskell-0.8",
+    urls = ["https://github.com/tweag/rules_haskell/archive/v0.8.tar.gz"],
+    sha256 = "431d492a8ee6a110cdf42496181c9d27225dfb997379e64a148eb8e69f272ab7",
 )
 
 load(
