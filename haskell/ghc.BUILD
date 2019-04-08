@@ -66,16 +66,16 @@ cc_toolchain_suite(
     },
 )
 
+# TODO Remove this definition. It was copied from Bazel but is no
+# longer present in Bazel >=0.24.
 cc_toolchain(
     name = "cc-compiler-mingw64",
     all_files = ":empty",
     compiler_files = ":empty",
     cpu = "x64_windows",
     dwp_files = ":empty",
-    dynamic_runtime_libs = [":empty"],
     linker_files = ":empty",
     objcopy_files = ":empty",
-    static_runtime_libs = [":empty"],
     strip_files = ":empty",
     supports_param_files = 0,
     toolchain_identifier = "ghc_windows_mingw64",

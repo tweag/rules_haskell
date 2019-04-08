@@ -180,7 +180,7 @@ def hazel_repositories(
         download_options = {}
 
         sha256 = pkgs[p].sha256 if hasattr(pkgs[p], "sha256") else fail("{} is missing attribute sha256".format(package_name))
-        download_options += {"sha256": sha256}
+        download_options.update({"sha256": sha256})
 
         # If "version" is present, the package will be fetched from Hackage.
         if hasattr(pkgs[p], "version"):
@@ -188,17 +188,17 @@ def hazel_repositories(
             pkg = "{}-{}".format(package_name, package_version)
 
             url = "https://hackage.haskell.org/package/{}.tar.gz".format(pkg)
-            download_options += {"url": url}
+            download_options.update({"url": url})
 
             stripPrefix = package_name + "-" + package_version
-            download_options += {"stripPrefix": stripPrefix}
+            download_options.update({"stripPrefix": stripPrefix})
 
             # If "url" is present, the package will be fetched from the given URL.
         elif hasattr(pkgs[p], "url"):
-            download_options += {"url": pkgs[p].url}
-            download_options += {"output": pkgs[p].output} if hasattr(pkgs[p], "output") else {}
-            download_options += {"type": pkgs[p].type} if hasattr(pkgs[p], "type") else {}
-            download_options += {"stripPrefix": pkgs[p].stripPrefix} if hasattr(pkgs[p], "stripPrefix") else {}
+            download_options.update({"url": pkgs[p].url})
+            download_options.update({"output": pkgs[p].output} if hasattr(pkgs[p], "output") else {})
+            download_options.update({"type": pkgs[p].type} if hasattr(pkgs[p], "type") else {})
+            download_options.update({"stripPrefix": pkgs[p].stripPrefix} if hasattr(pkgs[p], "stripPrefix") else {})
 
         else:
             fail("Package {} should have either 'url' or 'version'").format(pkg)
@@ -335,4 +335,6 @@ def hazel_extra_packages(pkgs, extra_pkgs):
         The dicts represent the fields of the corresponding package struct as
         expected by hazel_repositories. See there for details.
     """
-    return pkgs + {k: struct(**v) for (k, v) in extra_pkgs.items()}
+    pkgs = dict(pkgs)
+    pkgs.update({k: struct(**v) for (k, v) in extra_pkgs.items()})
+    return pkgs

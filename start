@@ -1,7 +1,7 @@
 #!/bin/sh
 
 MIN_BAZEL_MAJOR=0
-MIN_BAZEL_MINOR=21
+MIN_BAZEL_MINOR=24
 
 set -e
 
@@ -70,7 +70,7 @@ load(
 
 # Registers a haskell toolchain with a GHC binary
 # downloaded from haskell.org.
-haskell_register_ghc_bindists(version = "8.6.3")
+haskell_register_ghc_bindists(version = "8.6.4")
 EOF
 
 cat > BUILD.bazel <<"EOF"

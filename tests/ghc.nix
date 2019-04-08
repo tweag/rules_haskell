@@ -8,7 +8,7 @@
 
 with pkgs;
 
-let haskellPackages = pkgs.haskell.packages.ghc863.override {
+let haskellPackages = pkgs.haskell.packages.ghc864.override {
       overrides = with pkgs.haskell.lib; self: super: rec {
         libc = import ./haddock/libC.nix self pkgs;
       };
