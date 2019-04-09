@@ -145,7 +145,7 @@ def _mk_binary_rule(**kwargs):
                 default = False,
                 doc = "Requires that the coverage metric is matched exactly, even doing better than expected is not allowed.",
             ),
-            "coverage_source_patterns": attr.string_list(
+            "experimental_coverage_source_patterns": attr.string_list(
                 default = ["//..."],
                 doc = "The path patterns specifying which targets to analyze for test coverage metrics. Wildcarding is allowed.",
             ),
