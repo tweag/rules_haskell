@@ -386,7 +386,7 @@ def match_label(patterns, label):
 
     Args:
       patterns: A list of parsed patterns to match the label against.
-        Apply `_parse_pattern` before passing patterns into this function.
+        Apply `parse_pattern` before passing patterns into this function.
       label: Match this label against the patterns.
 
     Returns:
