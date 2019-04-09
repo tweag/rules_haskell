@@ -334,6 +334,10 @@ def parse_pattern(pattern_str):
         target: The target name. None if the package ends on `...`. May be one
           of the wildcards `all` or `*`.
 
+    NOTE: it would be better if Bazel itself exposed this functionality to Starlark.
+
+    Any feature using this function should be marked as experimental, until the
+    resolution of https://github.com/bazelbuild/bazel/issues/7763.
     """
 
     # We only load targets in the local workspace anyway. So, it's never
@@ -389,6 +393,10 @@ def match_label(patterns, label):
       A boolean. True if the label is in the local workspace and matches any of
       the given patterns. False otherwise.
 
+    NOTE: it would be better if Bazel itself exposed this functionality to Starlark.
+
+    Any feature using this function should be marked as experimental, until the
+    resolution of https://github.com/bazelbuild/bazel/issues/7763.
     """
 
     # Only local workspace labels can match.
