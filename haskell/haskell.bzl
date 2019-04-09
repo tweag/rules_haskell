@@ -147,7 +147,12 @@ def _mk_binary_rule(**kwargs):
             ),
             "experimental_coverage_source_patterns": attr.string_list(
                 default = ["//..."],
-                doc = "The path patterns specifying which targets to analyze for test coverage metrics. Wildcarding is allowed.",
+                doc = """The path patterns specifying which targets to analyze for test coverage metrics.
+
+                Wild-card targets such as //... or //:all are allowed. The paths must be relative to the workspace, which means they must start with "//".
+
+                Note, this attribute may leave experimental status depending on the outcome of https://github.com/bazelbuild/bazel/issues/7763.
+                """,
             ),
             "_coverage_wrapper_template": attr.label(
                 allow_single_file = True,
