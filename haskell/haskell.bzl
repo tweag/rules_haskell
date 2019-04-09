@@ -148,6 +148,12 @@ def _mk_binary_rule(**kwargs):
                 default = False,
                 doc = "Requires that the coverage metric is matched exactly, even doing better than expected is not allowed.",
             ),
+            "coverage_report_format": attr.string(
+                default = "text",
+                doc = """The format to output the coverage report in. Supported values: "text", "html". Default: "text". 
+                Report can be seen in the testlog XML file, or by setting --test_output=all when running bazel coverage.
+                """,
+            ),
             "experimental_coverage_source_patterns": attr.string_list(
                 default = ["//..."],
                 doc = """The path patterns specifying which targets to analyze for test coverage metrics.
