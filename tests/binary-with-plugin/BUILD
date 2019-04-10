@@ -19,20 +19,23 @@ haskell_import(name = "base")
 
 haskell_import(name = "ghc")
 
+haskell_import(name = "process")
+
 haskell_library(
     name = "plugin-lib",
     srcs = ["Plugin.hs"],
     deps = [
         ":base",
         ":ghc",
+        ":process",
     ],
 )
 
 ghc_plugin(
     name = "plugin",
-    args = ["$(JAVABASE)/bin/javac"],
+    args = ["$(location //tests/binary-simple)"],
     module = "Plugin",
-    toolchains = ["@bazel_tools//tools/jdk:current_java_runtime"],
+    tools = ["//tests/binary-simple"],
     deps = [":plugin-lib"],
 )
 

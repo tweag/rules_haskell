@@ -12,6 +12,7 @@ DefaultCompileInfo = provider(
         "args": "Default argument list.",
         "ghc_args": "Arguments that were used to compile the package.",
         "inputs": "Default inputs.",
+        "input_manifests": "Input manifests",
         "outputs": "Default outputs.",
         "objects_dir": "Object files directory.",
         "interfaces_dir": "Interface files directory.",
@@ -249,5 +250,7 @@ GhcPluginInfo = provider(
         "module": "Plugin entrypoint.",
         "deps": "Plugin dependencies.",
         "args": "Plugin options.",
+        "tool_inputs": "Inputs required for plugin tools.",
+        "tool_input_manifests": "Plugin tools input manifests.",
     },
 )

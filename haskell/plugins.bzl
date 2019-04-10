@@ -1,11 +1,18 @@
 load(":private/providers.bzl", "GhcPluginInfo", "HaskellLibraryInfo")
 
 def ghc_plugin_impl(ctx):
-    args = [ctx.expand_make_variables("args", i, {}) for i in ctx.attr.args]
+    args = ctx.attr.args
+    args = [ctx.expand_location(arg, ctx.attr.tools) for arg in args]
+    args = [ctx.expand_make_variables("args", arg, {}) for arg in args]
+
+    # XXX Ideally we'd resolve tools downstream.
+    (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
     return [
         GhcPluginInfo(
             module = ctx.attr.module,
             deps = ctx.attr.deps,
+            tool_inputs = tool_inputs,
+            tool_input_manifests = tool_input_manifests,
             args = args,
         ),
     ]
