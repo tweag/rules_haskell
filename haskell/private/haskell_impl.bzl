@@ -26,7 +26,6 @@ load(
     ":private/path_utils.bzl",
     "ln",
     "match_label",
-    "module_name",
     "parse_pattern",
     "target_unique_name",
 )
@@ -67,12 +66,6 @@ def _should_inspect_coverage(ctx, hs, is_test):
     return hs.coverage_enabled and is_test and (ctx.attr.expected_covered_expressions_percentage != -1 or
                                                 ctx.attr.expected_uncovered_expression_count != -1)
 
-def _make_coverage_data(mix_file, target_label):
-    return struct(
-        mix_file = mix_file,
-        target_label = target_label,
-    )
-
 def _coverage_enabled_for_target(coverage_source_patterns, label):
     for pat in coverage_source_patterns:
         if match_label(pat, label):
@@ -97,8 +90,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     compiler_flags = ctx.attr.compiler_flags
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
-    mix_files = [module_name(hs, s) + ".mix" for s in srcs_files] if hs.coverage_enabled else []
-
     c = hs.toolchain.actions.compile_binary(
         hs,
         cc,
@@ -115,12 +106,11 @@ def _haskell_binary_common_impl(ctx, is_test):
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
-        mix_files = mix_files,
         plugins = ctx.attr.plugins,
     )
 
     # gather intermediary code coverage instrumentation data
-    coverage_data = [_make_coverage_data(m, ctx.label) for m in c.conditioned_mix_files]
+    coverage_data = c.coverage_data
     for dep in ctx.attr.deps:
         if HaskellCoverageInfo in dep:
             coverage_data += dep[HaskellCoverageInfo].coverage_data
@@ -152,7 +142,6 @@ def _haskell_binary_common_impl(ctx, is_test):
             with_profiling = True,
             main_function = ctx.attr.main_function,
             version = ctx.attr.version,
-            mix_files = mix_files,
             plugins = ctx.attr.plugins,
         )
 
@@ -248,13 +237,12 @@ def _haskell_binary_common_impl(ctx, is_test):
             is_executable = True,
         )
         executable = wrapper
+        mix_runfiles = [datum.mix_file for datum in coverage_data]
         extra_runfiles = [
             ctx.file._bash_runfiles,
             hs.toolchain.tools.hpc,
             binary,
-        ]
-
-    mix_runfiles = [datum.mix_file for datum in coverage_data]
+        ] + mix_runfiles
 
     return [
         build_info,
@@ -265,7 +253,6 @@ def _haskell_binary_common_impl(ctx, is_test):
             runfiles = ctx.runfiles(
                 files =
                     solibs +
-                    mix_runfiles +
                     extra_runfiles,
                 collect_data = True,
             ),
@@ -294,8 +281,6 @@ def haskell_library_impl(ctx):
 
     compiler_flags = ctx.attr.compiler_flags
 
-    mix_files = [module_name(hs, s) + ".mix" for s in srcs_files] if hs.coverage_enabled else []
-
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -312,7 +297,6 @@ def haskell_library_impl(ctx):
         with_shared = with_shared,
         with_profiling = False,
         my_pkg_id = my_pkg_id,
-        mix_files = mix_files,
         plugins = ctx.attr.plugins,
     )
 
@@ -344,7 +328,6 @@ def haskell_library_impl(ctx):
             with_shared = False,
             with_profiling = True,
             my_pkg_id = my_pkg_id,
-            mix_files = mix_files,
             plugins = ctx.attr.plugins,
         )
 
@@ -448,7 +431,7 @@ def haskell_library_impl(ctx):
             dep_coverage_data += dep[HaskellCoverageInfo].coverage_data
 
     coverage_info = HaskellCoverageInfo(
-        coverage_data = dep_coverage_data + [_make_coverage_data(m, ctx.label) for m in c.conditioned_mix_files],
+        coverage_data = dep_coverage_data + c.coverage_data,
     )
 
     target_files = depset([conf_file, cache_file])
