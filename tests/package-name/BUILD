@@ -26,3 +26,14 @@ haskell_test(
         "//tests/hackage:base",
     ],
 )
+
+haskell_test(
+    name = "bin-c",
+    size = "small",
+    srcs = ["Main.hsc"],
+    version = "0.0.0",  # This flags triggers the `MIN_VERSION` macro generation
+    deps = [
+        ":lib-a_Z",
+        "//tests/hackage:base",
+    ],
+)
