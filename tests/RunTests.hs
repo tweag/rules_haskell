@@ -41,19 +41,10 @@ main = hspec $ do
 
   describe "repl" $ do
     it "for libraries" $ do
-      -- Test whether building of repl forces all runtime dependencies by itself:
-      -- TODO(Profpatsch) remove clean once repl uses runfiles
-      -- because otherwise the test runner succeeds if the first test fails
-      assertSuccess (bazel ["clean"])
-
       assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib@repl", "--", "-ignore-dot-ghci", "-e", "show (foo 10) ++ bar ++ baz ++ gen"])
       assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib-bad@repl", "--", "-ignore-dot-ghci", "-e", "1 + 2"])
 
     it "for binaries" $ do
-      -- Test whether building of repl forces all runtime dependencies by itself:
-      -- TODO(Profpatsch) remove clean once repl uses runfiles
-      assertSuccess (bazel ["clean"])
-
       assertSuccess (bazel ["run", "//tests/repl-targets:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
       assertSuccess (bazel ["run", "//tests/binary-indirect-cbits:binary-indirect-cbits@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
