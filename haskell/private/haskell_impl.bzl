@@ -208,6 +208,10 @@ def _haskell_binary_common_impl(ctx, is_test):
             paths.join(ctx.workspace_name, datum.mix_file.short_path)
             for datum in coverage_data
         ]
+        source_file_paths = [
+            paths.join(ctx.workspace_name, datum.src_file.short_path)
+            for datum in coverage_data
+        ]
 
         # find which modules to exclude from coverage analysis, by using the specified source patterns
         raw_coverage_source_patterns = ctx.attr.experimental_coverage_source_patterns
@@ -233,6 +237,7 @@ def _haskell_binary_common_impl(ctx, is_test):
                 "{expected_covered_expressions_percentage}": str(expected_covered_expressions_percentage),
                 "{expected_uncovered_expression_count}": str(expected_uncovered_expression_count),
                 "{mix_file_paths}": shell.array_literal(mix_file_paths),
+                "{source_file_paths}": shell.array_literal(source_file_paths),
                 "{modules_to_exclude}": shell.array_literal(modules_to_exclude),
                 "{strict_coverage_analysis}": str(strict_coverage_analysis),
                 "{coverage_report_format}": shell.quote(ctx.attr.coverage_report_format),
