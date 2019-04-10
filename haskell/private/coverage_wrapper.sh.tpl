@@ -28,12 +28,14 @@ CLEARCOLOR='\033[0m'
 binary_path=$(rlocation {binary_path})
 hpc_path=$(rlocation {hpc_path})
 tix_file_path={tix_file_path}
+coverage_report_format={coverage_report_format}
+strict_coverage_analysis={strict_coverage_analysis}
 
 # either of the two expected coverage metrics should be set to -1 if they're meant to be unused
 expected_covered_expressions_percentage={expected_covered_expressions_percentage}
 expected_uncovered_expression_count={expected_uncovered_expression_count}
 
-strict_coverage_analysis={strict_coverage_analysis}
+# gather the hpc directories
 hpc_dir_args=""
 mix_file_paths={mix_file_paths}
 for m in "${mix_file_paths[@]}"
@@ -43,14 +45,28 @@ do
   trimmed_hpc_parent_dir=$(echo "${hpc_parent_dir%%.hpc*}")
   hpc_dir_args="$hpc_dir_args --hpcdir=$trimmed_hpc_parent_dir.hpc"
 done
+
+# gather the src directories
+src_dir_args=""
+source_file_paths={source_file_paths}
+for s in "${source_file_paths[@]}"
+do
+  absolute_src_file_path=$(rlocation $s)
+  src_parent_dir=$(dirname $absolute_src_file_path)
+  src_dir_args="$src_dir_args --srcdir=$src_parent_dir"
+done
+
+# gather the modules to exclude from the coverage analysis
 hpc_exclude_args=""
 modules_to_exclude={modules_to_exclude}
 for m in "${modules_to_exclude[@]}"
 do
   hpc_exclude_args="$hpc_exclude_args --exclude=$m"
 done
+
+# generate the report
 $binary_path "$@"
-$hpc_path report "$tix_file_path" $hpc_dir_args $hpc_exclude_args > __hpc_coverage_report
+$hpc_path report "$tix_file_path" $hpc_dir_args $src_dir_args $hpc_exclude_args > __hpc_coverage_report
 echo "Overall report"
 cat __hpc_coverage_report
 
