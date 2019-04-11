@@ -1,10 +1,8 @@
 load(
     ":private/path_utils.bzl",
     "darwin_convert_to_dylibs",
-    "is_shared_library",
     "make_path",
 )
-load(":private/set.bzl", "set")
 
 DefaultCompileInfo = provider(
     doc = "Default compilation files and configuration.",
@@ -201,7 +199,7 @@ HaskellBinaryInfo = provider(
 HaskellCoverageInfo = provider(
     doc = "Information about coverage instrumentation for Haskell files.",
     fields = {
-        "mix_files": "A list of mix files, which track which parts of Haskell source code are being tracked for code coverage.",
+        "coverage_data": "A list of coverage data containing which parts of Haskell source code are being tracked for code coverage.",
     },
 )
 

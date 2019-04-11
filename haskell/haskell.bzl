@@ -148,6 +148,15 @@ def _mk_binary_rule(**kwargs):
                 default = False,
                 doc = "Requires that the coverage metric is matched exactly, even doing better than expected is not allowed.",
             ),
+            "experimental_coverage_source_patterns": attr.string_list(
+                default = ["//..."],
+                doc = """The path patterns specifying which targets to analyze for test coverage metrics.
+
+                Wild-card targets such as //... or //:all are allowed. The paths must be relative to the workspace, which means they must start with "//".
+
+                Note, this attribute may leave experimental status depending on the outcome of https://github.com/bazelbuild/bazel/issues/7763.
+                """,
+            ),
             "_coverage_wrapper_template": attr.label(
                 allow_single_file = True,
                 default = Label("@io_tweag_rules_haskell//haskell:private/coverage_wrapper.sh.tpl"),
