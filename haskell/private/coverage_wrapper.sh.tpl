@@ -46,16 +46,6 @@ do
   hpc_dir_args="$hpc_dir_args --hpcdir=$trimmed_hpc_parent_dir.hpc"
 done
 
-# gather the src directories
-src_dir_args=""
-source_file_paths={source_file_paths}
-for s in "${source_file_paths[@]}"
-do
-  absolute_src_file_path=$(rlocation $s)
-  src_parent_dir=$(dirname $absolute_src_file_path)
-  src_dir_args="$src_dir_args --srcdir=$src_parent_dir"
-done
-
 # gather the modules to exclude from the coverage analysis
 hpc_exclude_args=""
 modules_to_exclude={modules_to_exclude}
@@ -64,12 +54,18 @@ do
   hpc_exclude_args="$hpc_exclude_args --exclude=$m"
 done
 
-# generate the report
-$binary_path "$@"
-$hpc_path report "$tix_file_path" $hpc_dir_args $src_dir_args $hpc_exclude_args > __hpc_coverage_report
-echo "Overall report"
-cat __hpc_coverage_report
+# run the test binary, and then generate the report
+$binary_path "$@" > /dev/null
+$hpc_path report "$tix_file_path" $hpc_dir_args $hpc_exclude_args > __hpc_coverage_report
 
+# if we want a text report, just output the file generated in the previous step
+if [ "$coverage_report_format" == "text" ]
+then
+  echo "Overall report"
+  cat __hpc_coverage_report
+fi
+
+# check the covered expression percentage, and if it matches our expectations
 if [ "$expected_covered_expressions_percentage" -ne -1 ]
 then
   covered_expression_percentage=$(grep "expressions used" __hpc_coverage_report | cut -c 1-3)
@@ -88,6 +84,7 @@ then
   fi
 fi
 
+# check how many uncovered expressions there are, and if that number matches our expectations
 if [ "$expected_uncovered_expression_count" -ne -1 ]
 then
   coverage_numerator=$(grep "expressions used" __hpc_coverage_report | sed s:.*\(::g | cut -f1 -d "/")
@@ -106,4 +103,18 @@ then
     echo -e "==> Please lower the expected uncovered expression count to match.\n"
     exit 1
   fi
+fi
+
+# if we want an html report, run the hpc binary again with the "markup" command,
+# and feed its generated files into stdout, wrapped in XML tags
+if [ "$coverage_report_format" == "html" ]
+then
+  $hpc_path markup "$tix_file_path" $hpc_dir_args $hpc_exclude_args --destdir=hpc_out > /dev/null
+  cd hpc_out
+  for file in *.html **/*.hs.html; do
+    [ -e "$file" ] || continue
+    echo "<coverage-result-file name=\"$file\">"
+    cat $file
+    echo "</coverage-result-file>"
+  done
 fi
