@@ -9,7 +9,7 @@ package(default_testonly = 1)
 # empty library with package name "bytestring"
 haskell_library(
     name = "bytestring",
-    srcs = ["BS.hs"],
+    srcs = ["src/BS.hs"],
     deps = ["//tests/hackage:base"],
 )
 
