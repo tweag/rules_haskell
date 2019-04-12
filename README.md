@@ -214,6 +214,25 @@ installed package lens-labels-0.2.0.1 is broken due to missing package profuncto
 you’ve most likely hit GHC’s
 [infamous non-deterministic library ID bug](https://nixos.org/nixpkgs/manual/#how-to-recover-from-ghcs-infamous-non-deterministic-library-id-bug).
 
+### Warning about home modules during non-sandboxed builds
+
+Say you have a folder that mixes source files for two different
+libraries or for a library and an executable. If you build with
+sandboxing turned off, it is possible that GHC will use the source
+files for one library during the build of the other. The danger in
+this situation is that because GHC used inputs that Bazel didn't know
+about, incremental rebuilds might not be correct. This is why you get
+a warning of the following form if this happens:
+
+```
+<no location info>: warning: [-Wmissing-home-modules]
+    Modules are not listed in command line but needed for compilation: Foo
+```
+
+Turning sandboxing on (this is Bazel's default on Linux and macOS)
+protects against this problem. If sandboxing is not an option, simply
+put the source files for each target in a separate directory (you can
+still use a single `BUILD` file to define all targets).
 
 ## For `rules_haskell` developers
 
