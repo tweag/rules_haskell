@@ -10,13 +10,13 @@ load(
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
+    "module_name",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(
     ":private/providers.bzl",
     "GhcPluginInfo",
-    "HaskellLibraryInfo",
     "get_libs_for_ghc_linker",
     "merge_HaskellCcInfo",
 )
@@ -338,6 +338,13 @@ def _hpc_compiler_args(hs):
     hpcdir = "{}/{}/.hpc".format(hs.bin_dir.path, hs.package_root)
     return ["-fhpc", "-hpcdir", hpcdir]
 
+def _coverage_datum(mix_file, src_file, target_label):
+    return struct(
+        mix_file = mix_file,
+        src_file = src_file,
+        target_label = target_label,
+    )
+
 def compile_binary(
         hs,
         cc,
@@ -354,7 +361,6 @@ def compile_binary(
         main_function,
         version,
         inspect_coverage = False,
-        mix_files = [],
         plugins = []):
     """Compile a Haskell target into object files suitable for linking.
 
@@ -374,19 +380,20 @@ def compile_binary(
         # case.
         c.args.add_all(["-dynamic", "-osuf dyn_o"])
 
-    conditioned_mix_files = []
+    coverage_data = []
     if inspect_coverage:
         c.args.add_all(_hpc_compiler_args(hs))
-        for m in mix_files:
-            conditioned_file = hs.actions.declare_file(".hpc/" + m)
-            conditioned_mix_files.append(conditioned_file)
+        for src_file in srcs:
+            module = module_name(hs, src_file)
+            mix_file = hs.actions.declare_file(".hpc/{module}.mix".format(module = module))
+            coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
 
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
         inputs = c.inputs,
         input_manifests = c.input_manifests,
-        outputs = c.outputs + conditioned_mix_files,
+        outputs = c.outputs + [datum.mix_file for datum in coverage_data],
         mnemonic = "HaskellBuildBinary" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildBinary {}".format(hs.label),
         env = c.env,
@@ -420,7 +427,7 @@ def compile_binary(
         ghc_args = c.ghc_args,
         header_files = c.header_files,
         exposed_modules_file = exposed_modules_file,
-        conditioned_mix_files = conditioned_mix_files,
+        coverage_data = coverage_data,
     )
 
 def compile_library(
@@ -439,7 +446,6 @@ def compile_library(
         with_shared,
         with_profiling,
         my_pkg_id,
-        mix_files = [],
         plugins = []):
     """Build arguments for Haskell package build.
 
@@ -458,20 +464,21 @@ def compile_library(
     if with_shared:
         c.args.add("-dynamic-too")
 
-    conditioned_mix_files = []
+    coverage_data = []
     if hs.coverage_enabled:
         c.args.add_all(_hpc_compiler_args(hs))
-        for m in mix_files:
+        for src_file in srcs:
             pkg_id_string = pkg_id.to_string(my_pkg_id)
-            conditioned_file = hs.actions.declare_file(".hpc/" + pkg_id_string + "/" + m)
-            conditioned_mix_files.append(conditioned_file)
+            module = module_name(hs, src_file)
+            mix_file = hs.actions.declare_file(".hpc/{pkg}/{module}.mix".format(pkg = pkg_id_string, module = module))
+            coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
 
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
         inputs = c.inputs,
         input_manifests = c.input_manifests,
-        outputs = c.outputs + conditioned_mix_files,
+        outputs = c.outputs + [datum.mix_file for datum in coverage_data],
         mnemonic = "HaskellBuildLibrary" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildLibrary {}".format(hs.label),
         env = c.env,
@@ -527,5 +534,5 @@ def compile_library(
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         exposed_modules_file = exposed_modules_file,
-        conditioned_mix_files = conditioned_mix_files,
+        coverage_data = coverage_data,
     )
