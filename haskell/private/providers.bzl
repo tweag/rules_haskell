@@ -4,25 +4,6 @@ load(
     "make_path",
 )
 
-DefaultCompileInfo = provider(
-    doc = "Default compilation files and configuration.",
-    fields = {
-        "args": "Default argument list.",
-        "ghc_args": "Arguments that were used to compile the package.",
-        "inputs": "Default inputs.",
-        "input_manifests": "Input manifests",
-        "outputs": "Default outputs.",
-        "objects_dir": "Object files directory.",
-        "interfaces_dir": "Interface files directory.",
-        "header_files": "Set of header files.",
-        "boot_files": "Set of boot files.",
-        "source_files": "Set of files that contain Haskell modules.",
-        "extra_source_files": "A depset of non-Haskell source files.",
-        "import_dirs": "Import hierarchy roots.",
-        "env": "Default env vars.",
-    },
-)
-
 HaskellCcInfo = provider(
     doc = "Haskell cc dependency information. Part of HaskellBuildInfo.",
     fields = {

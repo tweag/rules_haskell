@@ -4,10 +4,6 @@ load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
-    "DefaultCompileInfo",
-)
-load(
     ":private/path_utils.bzl",
     "declare_compiled",
     "module_name",
@@ -83,10 +79,23 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
     return hs_out, idir
 
 def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id, version, plugins):
-    """Declare default compilation targets and create default compiler arguments.
+    """Compute variables common to all compilation targets (binary and library).
 
     Returns:
-      DefaultCompileInfo: Populated default compilation settings.
+      struct with the following fields:
+        args: default argument list
+        ghc_args: arguments that were used to compile the package
+        inputs: default inputs
+        input_manifests: input manifests
+        outputs: default outputs
+        objects_dir: object files directory
+        interfaces_dir: interface files directory
+        header_files: set of header files
+        boot_files: set of boot files
+        source_files: set of files that contain Haskell modules
+        extra_source_files: depset of non-Haskell source files
+        import_dirs: c2hs Import hierarchy roots
+        env: default environment variables
     """
 
     ghc_args = []
@@ -291,7 +300,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         ),
     )
 
-    return DefaultCompileInfo(
+    return struct(
         args = args,
         ghc_args = ghc_args,
         inputs = depset(transitive = [
