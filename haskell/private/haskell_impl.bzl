@@ -438,7 +438,7 @@ def haskell_library_impl(ctx):
         coverage_data = dep_coverage_data + c.coverage_data,
     )
 
-    target_files = depset([conf_file, cache_file])
+    target_files = depset([file for file in [static_library, dynamic_library] if file])
 
     if hasattr(ctx, "outputs"):
         build_haskell_repl(
