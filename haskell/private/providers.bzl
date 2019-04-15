@@ -2,6 +2,7 @@ load(
     ":private/path_utils.bzl",
     "darwin_convert_to_dylibs",
     "make_path",
+    "windows_convert_to_dlls",
 )
 
 HaskellCcInfo = provider(
@@ -123,6 +124,12 @@ def get_libs_for_ghc_linker(hs, transitive_cc_dependencies, path_prefix = None):
         library_deps = darwin_convert_to_dylibs(hs, _library_deps)
 
         # Additionally ghc 8.4 requires library_deps here although 8.6 does not
+        ld_library_deps = library_deps + _ld_library_deps
+    elif hs.toolchain.is_windows:
+        # GHC's builtin linker requires .dll files on Windows.
+        library_deps = windows_convert_to_dlls(hs, _library_deps)
+
+        # copied over from Darwin 5 lines above
         ld_library_deps = library_deps + _ld_library_deps
     else:
         library_deps = _library_deps
