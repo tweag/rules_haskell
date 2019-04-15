@@ -160,6 +160,39 @@ def darwin_convert_to_dylibs(hs, libs):
             new_libs.append(lib)
     return new_libs
 
+def windows_convert_to_dlls(hs, libs):
+    """Convert .so dynamic libraries to .dll.
+
+    Bazel's cc_library rule will create .so files for dynamic libraries even
+    on Windows. GHC's builtin linker, which is used during compilation, GHCi,
+    or doctests, hard-codes the assumption that all dynamic libraries on Windows
+    end on .dll. This function serves as an adaptor and produces symlinks
+    from a .dll version to the .so version for every dynamic library
+    dependencies that does not end on .dll.
+
+    Args:
+      hs: Haskell context.
+      libs: List of library files dynamic or static.
+
+    Returns:
+      List of library files where all dynamic libraries end on .dll.
+    """
+    lib_prefix = "_dlls"
+    new_libs = []
+    for lib in libs:
+        if is_shared_library(lib) and lib.extension != "dll":
+            dll_name = paths.join(
+                target_unique_name(hs, lib_prefix),
+                paths.dirname(lib.short_path),
+                "lib" + get_lib_name(lib) + ".dll",
+            )
+            dll = hs.actions.declare_file(dll_name)
+            ln(hs, lib, dll)
+            new_libs.append(dll)
+        else:
+            new_libs.append(lib)
+    return new_libs
+
 def get_lib_name(lib):
     """Return name of library by dropping extension and "lib" prefix.
 
