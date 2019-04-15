@@ -55,7 +55,7 @@ do
 done
 
 # run the test binary, and then generate the report
-$binary_path "$@" > /dev/null
+$binary_path "$@" > /dev/null 2>&1
 $hpc_path report "$tix_file_path" $hpc_dir_args $hpc_exclude_args > __hpc_coverage_report
 
 # if we want a text report, just output the file generated in the previous step
@@ -109,12 +109,14 @@ fi
 # and feed its generated files into stdout, wrapped in XML tags
 if [ "$coverage_report_format" == "html" ]
 then
-  $hpc_path markup "$tix_file_path" $hpc_dir_args $hpc_exclude_args --destdir=hpc_out > /dev/null
+  $hpc_path markup "$tix_file_path" $hpc_dir_args $hpc_exclude_args --destdir=hpc_out > /dev/null 2>&1
   cd hpc_out
   for file in *.html **/*.hs.html; do
     [ -e "$file" ] || continue
-    echo "<coverage-result-file name=\"$file\">"
+    echo "<coverage-report-part name=\"$file\">"
+    echo "<![CDATA["
     cat $file
-    echo "</coverage-result-file>"
+    echo "]]>"
+    echo "</coverage-report-part>"
   done
 fi
