@@ -140,10 +140,12 @@ def hazel_repositories(
           specified).
         - output, type, stripPrefix: Only when "url" is specified. See the
           download_and_extract documentation.
-        - patches: list of labels, patch files to apply after unpacking.
-        - patch_tool: string, patch executable.
-        - patch_args: list of strings, extra arguments to patch tool.
-        - patch_cmds: list of strings, commands to apply after patches.
+        - patches: list of labels, a list of files that are to be applied as
+	  patches after extracting the archive.
+        - patch_tool: string, the patch(1) utility to use.
+        - patch_args: list of strings, the arguments given to the patch tool.
+        - patch_cmds: list of strings, sequence of commands to be executed after
+	  patches are applied.
       extra_flags: A dict mapping package names to cabal flags.
       exclude_packages: names of packages to exclude.
       extra_libs: A dictionary that maps from name of extra libraries to Bazel
