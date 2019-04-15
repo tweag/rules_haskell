@@ -11,6 +11,10 @@ load(
     "@bazel_tools//tools/build_defs/repo:http.bzl",
     "http_archive",
 )
+load(
+    "@bazel_tools//tools/build_defs/repo:utils.bzl",
+    "patch",
+)
 load("//tools:ghc.bzl", "default_ghc_workspaces", "get_ghc_workspace")
 load("//tools:mangling.bzl", "hazel_binary", "hazel_library", "hazel_workspace")
 
@@ -18,6 +22,7 @@ def _cabal_haskell_repository_impl(ctx):
     ghc_workspace = get_ghc_workspace(ctx.attr.ghc_workspaces, ctx)
 
     ctx.download_and_extract(**ctx.attr.download_options)
+    patch(ctx)
 
     symlink_and_invoke_hazel(
         ctx,
@@ -36,6 +41,10 @@ _cabal_haskell_repository = repository_rule(
         "hazel_base_repo_name": attr.string(mandatory = True),
         "download_options": attr.string_dict(mandatory = True),
         "ghc_workspaces": attr.string_dict(mandatory = True),
+        "patches": attr.label_list(default = []),
+        "patch_tool": attr.string(default = "patch"),
+        "patch_args": attr.string_list(default = ["-p0"]),
+        "patch_cmds": attr.string_list(default = []),
     },
 )
 
@@ -131,6 +140,14 @@ def hazel_repositories(
           specified).
         - output, type, stripPrefix: Only when "url" is specified. See the
           download_and_extract documentation.
+        - patches: list of labels, a list of files that are to be applied as
+	  patches after extracting the archive.
+        - patch_tool: string, the patch(1) utility to use.
+        - patch_args: list of strings, the arguments given to the patch tool.
+        - patch_cmds: list of strings, sequence of commands to be executed after
+	  patches are applied.
+	The patch fields are forwarded to the patch function from bazel_tools:
+	https://github.com/bazelbuild/bazel/blob/b941e0b939c18257107f7f4b5186ae3a4b770eac/tools/build_defs/repo/utils.bzl#L70-L101
       extra_flags: A dict mapping package names to cabal flags.
       exclude_packages: names of packages to exclude.
       extra_libs: A dictionary that maps from name of extra libraries to Bazel
@@ -203,6 +220,12 @@ def hazel_repositories(
         else:
             fail("Package {} should have either 'url' or 'version'").format(pkg)
 
+        patch_args = {
+            attr: getattr(pkgs[p], attr)
+            for attr in ["patches", "patch_tool", "patch_args", "patch_cmds"]
+            if hasattr(pkgs[p], attr)
+        }
+
         _cabal_haskell_repository(
             name = hazel_workspace(p),
             package_name = p,
@@ -210,6 +233,7 @@ def hazel_repositories(
             hazel_base_repo_name = hazel_base_repo_name,
             download_options = download_options,
             ghc_workspaces = ghc_workspaces,
+            **patch_args
         )
 
     for p in core_packages:
