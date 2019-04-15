@@ -49,6 +49,7 @@ _excluded_cxx_libs = sets.make(elements = [
     "advapi32",
     "iphlpapi",
     "Crypt32",
+    "msvcrt",
 ])
 
 def _get_core_dependency_includes(ghc_workspace):
