@@ -204,7 +204,7 @@ def hazel_repositories(
             package_version = pkgs[p].version
             pkg = "{}-{}".format(package_name, package_version)
 
-            url = "https://hackage.haskell.org/package/{}.tar.gz".format(pkg)
+            url = "http://hackage.fpcomplete.com/package/{}.tar.gz".format(pkg)
             download_options.update({"url": url})
 
             stripPrefix = package_name + "-" + package_version
@@ -271,8 +271,7 @@ def hazel_custom_package_hackage(
         build_file and build_file_content are mutually exclusive.
     """
     package_id = package_name + "-" + version
-    url = "https://hackage.haskell.org/package/{0}/{1}.tar.gz".format(
-        package_id,
+    url = "http://hackage.fpcomplete.com/package/{}.tar.gz".format(
         package_id,
     )
     if not build_file and not build_file_content:
