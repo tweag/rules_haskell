@@ -32,6 +32,7 @@ jobs:
       /c/bazel/bazel.exe build --config windows "@haskell_text__metrics//..."
       /c/bazel/bazel.exe build --config windows "@haskell_cryptonite//..."
       /c/bazel/bazel.exe build --config windows "@haskell_unix__compat//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_hostname//..."
 
       # FIXME:
       # this rule is missing dependency declarations for the following files included by 'external/haskell_zlib/cbits/adler32.c':
