@@ -44,7 +44,7 @@ def cc_interop_info(ctx):
     Returns:
       CcInteropInfo: Information needed for CC interop.
     """
-    ccs = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep]
+    ccs = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep and HaskellBuildInfo not in dep]
 
     hdrs = []
     include_args = []

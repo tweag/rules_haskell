@@ -195,7 +195,7 @@ def gather_dep_info(ctx, deps):
                 cc_dependencies = acc.cc_dependencies,
                 transitive_cc_dependencies = acc.transitive_cc_dependencies,
             )
-        elif CcInfo in dep:
+        elif CcInfo in dep and HaskellBuildInfo not in dep:
             # The final link of a binary must include all static libraries we
             # depend on, including transitives ones. Theses libs are provided
             # in the `CcInfo` provider.
