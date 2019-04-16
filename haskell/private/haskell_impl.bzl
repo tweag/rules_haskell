@@ -482,11 +482,43 @@ def haskell_library_impl(ctx):
             files = target_files,
         )
 
+    # Create a CcInfo provider so that CC rules can work with
+    # a haskell library as if it was a regular CC one.
+
+    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
+    # Should be find_cpp_toolchain() instead.
+    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    feature_configuration = cc_common.configure_features(
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+    library_to_link = cc_common.create_library_to_link(
+        actions = ctx.actions,
+        feature_configuration = feature_configuration,
+        dynamic_library = dynamic_library,
+        static_library = static_library,
+        cc_toolchain = cc_toolchain,
+    )
+    compilation_context = cc_common.create_compilation_context()
+    linking_context = cc_common.create_linking_context(
+        libraries_to_link = [library_to_link],
+    )
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [
+            CcInfo(
+                compilation_context = compilation_context,
+                linking_context = linking_context,
+            ),
+        ] + [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+    )
+
     return [
         build_info,
-        lib_info,
-        default_info,
+        cc_info,
         coverage_info,
+        default_info,
+        lib_info,
     ]
 
 def haskell_import_impl(ctx):

@@ -184,7 +184,10 @@ def _haskell_proto_aspect_impl(target, ctx):
         var = ctx.var,
     )
 
-    [build_info, library_info, default_info, coverage_info] = _haskell_library_impl(patched_ctx)
+    # TODO this pattern match is very brittle. Let's not do this. The
+    # order should match the order in the return value expression in
+    # haskell_library_impl().
+    [build_info, cc_info, coverage_info, default_info, library_info] = _haskell_library_impl(patched_ctx)
 
     return [
         build_info,  # HaskellBuildInfo
