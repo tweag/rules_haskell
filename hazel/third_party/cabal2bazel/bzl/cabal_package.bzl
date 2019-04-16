@@ -48,6 +48,7 @@ _excluded_cxx_libs = sets.make(elements = [
     # Windows libraries
     "advapi32",
     "iphlpapi",
+    "kernel32",
     "Crypt32",
     "msvcrt",
 ])
