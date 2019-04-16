@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 * The default outputs of `haskell_library` are now the static and/or
   shared library files, not the package database config and cache
   files.
+* `cc_haskell_import` and `haskell_cc_import` are now no longer
+  necessary and are deprecated. A `haskell_library` can be used nearly
+  anywhere a `cc_library` can.
 
 ## [0.8] - 2019-01-28
 

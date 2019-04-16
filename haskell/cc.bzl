@@ -1,6 +1,6 @@
 """Interop with cc_* rules
 
-These rules are temporary and will be deprecated in the future.
+These rules are deprecated.
 """
 
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
@@ -335,9 +335,7 @@ separately to your `cc_library`. If you're getting
 `prebuilt_dependencies` from your toolchain, you will likely want to
 extract those and pass them in as well.
 
-*This rule is temporary and only needed until the Bazel C/C++
-"sandwich" (see [bazelbuild/bazel#2163][bazel-cpp-sandwich]) is
-implemented. This rule will be deprecated in the future.*
+*This rule is deprecated.*
 
 Example:
   ```bzl
