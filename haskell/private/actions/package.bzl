@@ -80,6 +80,8 @@ def package(
 
     (extra_lib_dirs, extra_libs) = _get_extra_libraries(dep_info)
 
+    extra_libs_foo = extra_libs + ([ "Crypto32", "stdc++" ] if my_pkg_id.name == "grpc-haskell" else [])
+
     metadata_entries = {
         "name": my_pkg_id.name,
         "version": my_pkg_id.version,
@@ -91,7 +93,7 @@ def package(
         "library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
         "dynamic-library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
-        "extra-libraries": " ".join(extra_libs),
+        "extra-libraries": " ".join(extra_libs_foo),
         "depends": ", ".join(
             # Prebuilt dependencies are added further down, since their
             # package-ids are not available as strings but in build outputs.
