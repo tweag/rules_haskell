@@ -6,7 +6,7 @@
 # dependencies). The exposed modules are filtered using a provided
 # list of hidden modules, and augmented with reexport declarations.
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import collections
 import fnmatch
@@ -62,9 +62,18 @@ with io.open(reexported_modules_file, "r", encoding='utf8') as f:
         for mod in raw_reexported_modules
     )
 
+def handle_walk_error(e):
+    print("""
+Failed to list interface files:
+    {}
+On Windows you may need to enable long file path support:
+    Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1
+    """.strip().format(e), file=sys.stderr)
+    exit(1)
+
 interface_files = (
     os.path.join(path, f)
-    for path, dirs, files in os.walk(root)
+    for path, dirs, files in os.walk(root, onerror=handle_walk_error)
     for f in fnmatch.filter(files, '*.hi')
 )
 
