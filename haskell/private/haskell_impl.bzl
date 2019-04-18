@@ -72,6 +72,38 @@ def _coverage_enabled_for_target(coverage_source_patterns, label):
 
     return False
 
+# Mix files refer to genfile srcs including their root. Therefore, we
+# must condition the src filepaths passed in for coverage to match.
+def _condition_coverage_src(hs, src):
+    if not src.path.startswith(hs.genfiles_dir.path):
+        return src
+
+    """ Genfiles have the genfile directory as part of their path,
+    so declaring a file with the sample path actually makes the new
+    file double-qualified by the genfile directory.
+
+    This is necessary because mix files capture the genfile
+    path before compilation, and then expect those files to be
+    qualified by the genfile directory when `hpc report` or
+    `hpc markup` are used. But, genfiles included as runfiles
+    are no longer qualified. So, double-qualifying them results in
+    only one level of qualification as runfiles.
+    """
+    conditioned_src = hs.actions.declare_file(src.path)
+    hs.actions.run_shell(
+        inputs = [src],
+        outputs = [conditioned_src],
+        arguments = [
+            src.path,
+            conditioned_src.path,
+        ],
+        command = """
+        mkdir -p $(dirname "$2") && cp "$1" "$2"
+        """,
+    )
+
+    return conditioned_src
+
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
@@ -236,12 +268,13 @@ def _haskell_binary_common_impl(ctx, is_test):
                 "{modules_to_exclude}": shell.array_literal(modules_to_exclude),
                 "{strict_coverage_analysis}": str(strict_coverage_analysis),
                 "{coverage_report_format}": shell.quote(ctx.attr.coverage_report_format),
+                "{package_path}": shell.quote(ctx.label.package),
             },
             is_executable = True,
         )
         executable = wrapper
         mix_runfiles = [datum.mix_file for datum in coverage_data]
-        srcs_runfiles = [datum.src_file for datum in coverage_data]
+        srcs_runfiles = [_condition_coverage_src(hs, datum.src_file) for datum in coverage_data]
         extra_runfiles = [
             ctx.file._bash_runfiles,
             hs.toolchain.tools.hpc,
