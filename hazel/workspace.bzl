@@ -1,10 +1,12 @@
 """Workspace rules (setup)"""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 load(
     "@ai_formation_hazel//:hazel.bzl",
     "hazel_custom_package_github",
     "hazel_custom_package_hackage",
+    "hazel_default_extra_libs",
     "hazel_extra_packages",
     "hazel_repositories",
 )
@@ -110,8 +112,8 @@ cc_library(
             "wai-app-static",
             "zlib",
         ],
-        extra_libs = {
+        extra_libs = dicts.add(hazel_default_extra_libs, {
             "pq": "@postgresql",
             "tag_c": "@taglib",
-        },
+        }),
     )
