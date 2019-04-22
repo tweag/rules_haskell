@@ -80,15 +80,15 @@ package(default_visibility = ["//visibility:public"])
 # Load `rules_haskell` rules.
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_import",
+    "haskell_toolchain_library",
     "haskell_library",
     "haskell_binary",
 )
 
-# `haskell_import` can access builtin GHC packages
+# `haskell_toolchain_library` can access builtin GHC packages
 # and assign them a bazel target name, so that they
 # can be referenced as dependencies.
-haskell_import(name = "base")
+haskell_toolchain_library(name = "base")
 
 # You can add your own libraries with `haskell_library`.
 # haskell_library(

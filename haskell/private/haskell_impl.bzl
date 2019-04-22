@@ -521,7 +521,7 @@ def haskell_library_impl(ctx):
         lib_info,
     ]
 
-def haskell_import_impl(ctx):
+def haskell_toolchain_library_impl(ctx):
     hs = haskell_context(ctx)
 
     if ctx.attr.package:

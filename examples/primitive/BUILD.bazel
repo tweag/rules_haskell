@@ -1,13 +1,13 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_cc_import",
-    "haskell_import",
     "haskell_library",
+    "haskell_toolchain_library",
 )
 
-haskell_import(name = "base")
+haskell_toolchain_library(name = "base")
 
-haskell_import(name = "ghc-prim")
+haskell_toolchain_library(name = "ghc-prim")
 
 cc_library(
     name = "memops",
