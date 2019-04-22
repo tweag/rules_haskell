@@ -199,7 +199,7 @@ a single ``BUILD.bazel`` as follows::
       srcs = ["Bool.hs"],
   )
 
-  haskell_import(name = "base")
+  haskell_toolchain_library(name = "base")
 
   haskell_binary(
       name = "demorgan",
@@ -217,7 +217,7 @@ the ``demorgan`` binary. The binary also requires the ``base``
 built-in library that ships with GHC, to perform I/O among other
 things. Libraries like ``base``, ``bytestring`` and others that ship
 with GHC are special in that they are prebuilt outside of Bazel. To
-import them as regular targets, we use the `haskell_import`_ rule.
+import them as regular targets, we use the `haskell_toolchain_library`_ rule.
 
 Let's build this new version of our project::
 
@@ -277,7 +277,7 @@ Take a look at the ``lib/BUILD.bazel`` file::
 
 And at the ``main/BUILD.bazel`` file::
 
-  haskell_import(name = "base")
+  haskell_toolchain_library(name = "base")
 
   haskell_binary(
       name = "demorgan",
@@ -353,7 +353,7 @@ Happy building!
 
 .. _install Bazel: https://docs.bazel.build/versions/master/install.html
 .. _haskell_binary: http://api.haskell.build/haskell/haskell.html#haskell_binary
-.. _haskell_import: http://api.haskell.build/haskell/haskell.html#haskell_import
+.. _haskell_toolchain_library: http://api.haskell.build/haskell/haskell.html#haskell_toolchain_library
 .. _haskell_library: http://api.haskell.build/haskell/haskell.html#haskell_library
 .. _graphviz: https://www.graphviz.org/
 .. _external dependencies: https://docs.bazel.build/versions/master/external.html

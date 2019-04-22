@@ -1,9 +1,9 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "ghc_plugin",
-    "haskell_import",
     "haskell_library",
     "haskell_test",
+    "haskell_toolchain_library",
 )
 
 package(default_testonly = 1)
@@ -15,11 +15,11 @@ config_setting(
     },
 )
 
-haskell_import(name = "base")
+haskell_toolchain_library(name = "base")
 
-haskell_import(name = "ghc")
+haskell_toolchain_library(name = "ghc")
 
-haskell_import(name = "process")
+haskell_toolchain_library(name = "process")
 
 haskell_library(
     name = "plugin-lib",

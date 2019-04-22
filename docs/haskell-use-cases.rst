@@ -153,9 +153,9 @@ construct a compiler with all the packages you depend on in scope::
   ])
 
 Each package mentioned in ``ghc.nix`` can then be imported using
-`haskell_import`_ in ``BUILD`` files.
+`haskell_toolchain_library`_ in ``BUILD`` files.
 
-.. _haskell_import: http://api.haskell.build/haskell/haskell.html#haskell_import
+.. _haskell_toolchain_library: http://api.haskell.build/haskell/haskell.html#haskell_toolchain_library
 
 Building code with Hackage dependencies (using Hazel)
 -----------------------------------------------------
