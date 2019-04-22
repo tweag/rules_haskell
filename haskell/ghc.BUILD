@@ -66,11 +66,12 @@ cc_toolchain_suite(
     },
 )
 
-# TODO Remove this definition. It was copied from Bazel but is no
-# longer present in Bazel >=0.24.
+# Keep in sync with @bazel_tools//cpp:cc-compiler-x64_windows definition.
 cc_toolchain(
     name = "cc-compiler-mingw64",
     all_files = ":empty",
+    ar_files = ":empty",
+    as_files = ":empty",
     compiler_files = ":empty",
     cpu = "x64_windows",
     dwp_files = ":empty",
