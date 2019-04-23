@@ -15,6 +15,7 @@ load(
     "@bazel_tools//tools/build_defs/repo:utils.bzl",
     "patch",
 )
+load("@os_info//:os_info.bzl", "is_windows")
 load("//tools:ghc.bzl", "default_ghc_workspaces", "get_ghc_workspace")
 load("//tools:mangling.bzl", "hazel_binary", "hazel_library", "hazel_workspace")
 
@@ -105,11 +106,28 @@ _all_hazel_packages = repository_rule(
     },
 )
 
+hazel_default_unix_extra_libs = {
+    "pthread": "",
+    "stdc++": "",
+}
+
+hazel_default_windows_extra_libs = {
+    "advapi32": "",
+    "Crypt32": "",
+    "iphlpapi": "",
+    "kernel32": "",
+    "msvcrt": "",
+    "pthread": "",
+    "stdc++": "",
+}
+
+hazel_default_extra_libs = hazel_default_windows_extra_libs if is_windows else hazel_default_unix_extra_libs
+
 def hazel_repositories(
         core_packages,
         packages,
         extra_flags = {},
-        extra_libs = {},
+        extra_libs = hazel_default_extra_libs,
         exclude_packages = [],
         ghc_workspaces = default_ghc_workspaces):
     """Generates external dependencies for a set of Haskell packages.
@@ -151,7 +169,8 @@ def hazel_repositories(
       extra_flags: A dict mapping package names to cabal flags.
       exclude_packages: names of packages to exclude.
       extra_libs: A dictionary that maps from name of extra libraries to Bazel
-        targets that provide the shared library and headers as a cc_library.
+        targets that provide the shared library and headers as a cc_library, or
+        empty string if the library is a system library not defined by Bazel.
       ghc_workspaces: Dictionary mapping OS names to GHC workspaces.
         Default: Linux/MacOS: "@ghc", Windows: "@ghc_windows".
         Dictionary keys correspond to CPU values as returned by
