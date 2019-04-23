@@ -1,0 +1,35 @@
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_toolchain",
+    "haskell_binary",
+    "haskell_library",
+    "haskell_import",
+)
+
+haskell_import(name="base")
+
+haskell_toolchain(
+    name = "ghc-toolchain",
+    tools = "@ghc-toolchain//:bin",
+    version = "8.6.3",
+)
+
+haskell_library(
+    name = "foo",
+    srcs = [
+        "Foo.hs",
+    ],
+    deps = [
+        ":base",
+    ],
+)
+
+haskell_binary(
+    name = "bar",
+    srcs = [
+        "Foo.hs",
+    ],
+    deps = [
+        ":base",
+    ],
+)

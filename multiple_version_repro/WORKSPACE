@@ -1,0 +1,50 @@
+workspace(name = "heavisoft")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+rules_haskell_rev = "6420184897cd0feb82562ef018a1396ea970d575"
+
+http_archive(
+    name = "io_tweag_rules_haskell",
+    sha256 = "dde14f50995967e6c32564853b83eb701b07efb9ba099a4d2e696e1f2a038adf",
+    strip_prefix = "rules_haskell-{}".format(rules_haskell_rev.replace("/", "-")),
+    urls = ["https://github.com/tweag/rules_haskell/archive/{}.tar.gz".format(rules_haskell_rev)],
+)
+
+load(
+    "@io_tweag_rules_haskell//haskell:repositories.bzl",
+    "haskell_repositories",
+)
+
+haskell_repositories()
+
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    sha256 = "1dc7ad9d4e0e7e690962317fa70bf5ab3bac5b4944e4f40eff3c2d6f5255eb20",
+    strip_prefix = "rules_nixpkgs-0.3.1",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.3.1.tar.gz"],
+)
+
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_package",
+)
+
+nixpkgs_package(
+    name = "ghc-toolchain",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+  name = "bin",
+  srcs = glob(["bin/*"]),
+)
+""",
+    nix_file_content = "with import ./nixpkgs.nix {}; haskellPackages.ghcWithPackages(p: with p; [haskell-gi-overloading haskell-gi-overloading_0_0])",
+    nix_file_deps = ["//:nixpkgs.nix"],
+)
+
+register_toolchains(
+    "//:ghc-toolchain",
+)
+

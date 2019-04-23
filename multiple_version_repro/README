@@ -1,0 +1,3 @@
+nix-shell
+bazel build //:foo # does not work
+bazel build //:bar # works
