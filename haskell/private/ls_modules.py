@@ -32,19 +32,16 @@ with io.open(global_pkg_db_dump, "r", encoding='utf8') as f:
 
     # A few sanity checks.
     assert len(names) == len(ids)
+
+    # compute duplicate, i.e. package name associated with multiples ids
+    duplicates = set()
     if len(names) != len(set(names)):
-        duplicates = [
+        duplicates = set([
             name for name, count in collections.Counter(names).items()
             if count > 1
-        ]
-        sys.exit(
-            "\n".join([
-                "Multiple versions of the following packages installed: ",
-                ", ".join(duplicates),
-                "\nThis is not currently supported.",
-            ])
-        )
+        ])
 
+    # This associate pkg name to pkg id
     pkg_ids_map = dict(zip(names, ids))
 
 with io.open(hidden_modules_file, "r", encoding='utf8') as f:
@@ -57,8 +54,24 @@ with io.open(reexported_modules_file, "r", encoding='utf8') as f:
     # Substitute package ids for package names in reexports, because
     # GHC really wants package ids.
     regexp = re.compile("from (%s):" % "|".join(map(re.escape, pkg_ids_map)))
+
+    def replace_pkg_by_pkgid(match):
+        pkgname = match.group(1)
+
+        if pkgname in duplicates:
+            sys.exit(
+                "\n".join([
+                    "Multiple versions of the following packages installed: ",
+                    ", ".join(duplicates),
+                    "\nThe following was explictly used: " + pkgname,
+                    "\nThis is not currently supported.",
+                ])
+            )
+
+        return "from %s:" % pkg_ids_map[pkgname]
+
     reexported_modules = (
-        regexp.sub(lambda match: "from %s:" % pkg_ids_map[match.group(1)], mod)
+        regexp.sub(replace_pkg_by_pkgid, mod)
         for mod in raw_reexported_modules
     )
 
