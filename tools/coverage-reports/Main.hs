@@ -5,6 +5,7 @@
 import Control.Monad (forM_)
 
 import Control.Arrow.ListArrow (runLA)
+import Data.Either.Utils (maybeToEither)
 import Data.List (find)
 import Data.List.Safe ((!!), head, tail)
 import Data.List.Utils (replace, split)
@@ -46,35 +47,52 @@ main = do
           exitFailure
         Just tree -> do
           let reportFiles = generateReportFiles tree
-          forM_ reportFiles $ \ReportFile {content, filename} -> do
-            putStrLn filename
-            createDirectoryIfMissing True (destdir </> takeDirectory filename)
-            writeFile (destdir </> filename) content
+          case reportFiles of
+            Right reports ->
+              forM_ reports $ \ReportFile {content, filename} -> do
+                putStrLn $ concat ["Creating ", show $ destdir </> filename]
+                createDirectoryIfMissing
+                  True
+                  (destdir </> takeDirectory filename)
+                writeFile (destdir </> filename) content
+            Left err -> do
+              putStrLn err
+              exitFailure
 
-generateReportFiles :: XmlTree -> [ReportFile]
+generateReportFiles :: XmlTree -> Either String [ReportFile]
 generateReportFiles doc =
   let testSuites = getXPath "/testsuites/testsuite" doc
-   in concat $ Maybe.catMaybes $ reportsForTestCase <$> testSuites
+   in concat <$> sequence (reportsForTestCase <$> testSuites)
 
-reportsForTestCase :: XmlTree -> Maybe [ReportFile]
+reportsForTestCase :: XmlTree -> Either String [ReportFile]
 reportsForTestCase testSuite = do
   caseName <-
     extractAttr =<<
-    head (getXPathSubTrees "/testsuite/testcase/@name" testSuite)
+    maybeToEither
+      "Couldn't find testcase name."
+      (head (getXPathSubTrees "/testsuite/testcase/@name" testSuite))
   let coverageOutputDirectory = takeDirectory caseName
   testOutput <-
-    extractText =<< head (getXPathSubTrees "/testsuite/system-out" testSuite)
-  htmlPortion <- head =<< tail (split testOutputSeparator testOutput)
+    extractText =<<
+    maybeToEither
+      "Couldn't find system output."
+      (head (getXPathSubTrees "/testsuite/system-out" testSuite))
+  htmlPortion <-
+    maybeToEither
+      ("Couldn't find HTML report section in test case " ++ caseName ++ ".")
+      (head =<< tail (split testOutputSeparator testOutput))
   let coverageReportPartXmlTrees = runLA XML.hreadDoc htmlPortion
   traverse
     (coveragePartToReportFile coverageOutputDirectory)
     coverageReportPartXmlTrees
 
-coveragePartToReportFile :: FilePath -> XmlTree -> Maybe ReportFile
+coveragePartToReportFile :: FilePath -> XmlTree -> Either String ReportFile
 coveragePartToReportFile parentDirectory reportPart = do
   filename <-
     extractAttr =<<
-    head (getXPathSubTrees "/coverage-report-part/@name" reportPart)
+    maybeToEither
+      "Couldn't find report part name."
+      (head (getXPathSubTrees "/coverage-report-part/@name" reportPart))
   content <- extractText reportPart
   return $
     ReportFile
@@ -97,13 +115,13 @@ isRoot tree =
     NTree (XTag name _) _ -> localPart name == "testsuites"
     _ -> False
 
-extractAttr :: XmlTree -> Maybe String
+extractAttr :: XmlTree -> Either String String
 extractAttr tree =
   case tree of
     NTree (XAttr _) [NTree (XText value) []] -> pure value
-    _ -> Nothing
+    _ -> Left "Couldn't extract attribute from test XML."
 
-extractText :: XmlTree -> Maybe String
+extractText :: XmlTree -> Either String String
 extractText tree =
   let treeToText :: XmlTree -> String -> String
       treeToText textTree acc =
@@ -112,8 +130,7 @@ extractText tree =
           _ -> ""
    in case tree of
         NTree (XTag _ _) textTree -> pure $ foldr treeToText "" textTree
-        _ -> Nothing
+        _ -> Left "Couldn't extract text from test XML."
 
 testOutputSeparator :: String
-testOutputSeparator =
-  "\n-----------------------------------------------------------------------------\n"
+testOutputSeparator = "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"

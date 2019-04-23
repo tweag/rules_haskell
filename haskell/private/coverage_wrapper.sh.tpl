@@ -114,12 +114,15 @@ then
   $hpc_path markup "$tix_file_path" $hpc_dir_args $hpc_exclude_args \
     --srcdir "." --srcdir "$package_path" --destdir=hpc_out > /dev/null 2>&1
   cd hpc_out
+  echo "COVERAGE REPORT BELOW"
+  echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
   for file in *.html **/*.hs.html; do
     [ -e "$file" ] || continue
     echo "<coverage-report-part name=\"$file\">"
-    echo "<![CDATA["
+    echo '<![CDATA['
     cat $file
-    echo "]]>"
+    echo ']]>'
     echo "</coverage-report-part>"
   done
+  echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
 fi
