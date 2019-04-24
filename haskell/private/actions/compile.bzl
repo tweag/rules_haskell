@@ -214,7 +214,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
 
     ghc_args += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
 
-    # Write the -optP flags to a response because they can be very long on Windows
+    # Write the -optP flags to a parameter file because they can be very long on Windows
     # e.g. 27Kb for grpc-haskell
     # Equivalent to: ghc_args += ["-optP" + f for f in cc.cpp_flags]
     optp_args_file = hs.actions.declare_file("optp_args_%s" % hs.name)
