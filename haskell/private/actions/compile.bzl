@@ -221,7 +221,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     optp_args = hs.actions.args()
     optp_args.add_all(cc.cpp_flags)
     optp_args.set_param_file_format("multiline")
-    print(cc.cpp_flags)
     hs.actions.write(optp_args_file, optp_args)
     ghc_args += ["-optP@" + optp_args_file.path]
 
