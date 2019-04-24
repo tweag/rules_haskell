@@ -150,7 +150,7 @@ def _mk_binary_rule(**kwargs):
             ),
             "coverage_report_format": attr.string(
                 default = "text",
-                doc = """The format to output the coverage report in. Supported values: "text", "html". Default: "text". 
+                doc = """The format to output the coverage report in. Supported values: "text", "html". Default: "text".
                 Report can be seen in the testlog XML file, or by setting --test_output=all when running bazel coverage.
                 """,
             ),
