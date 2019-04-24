@@ -40,18 +40,27 @@ load("//tools:mangling.bzl", "hazel_cbits", "hazel_library")
 
 _conditions_default = "//conditions:default"
 
-# Those libraries are already provided by the system, Bazel or rules_haskell,
-# and must thus be ignored when specified as extra libraries.
-_excluded_cxx_libs = sets.make(elements = [
-    "pthread",
-    "stdc++",
-    # Windows libraries
-    "advapi32",
-    "iphlpapi",
-    "Crypt32",
-    "msvcrt",
-    "kernel32",
-])
+def _get_extra_libs(libnames, extra_libs):
+    """Find the given libraries in the extra_libs dict.
+
+    Throws an error if a library is missing.
+    System libraries are indicated as empty strings in the dict.
+
+    Args:
+        libnames: list of strings, the libraries to find.
+        extra_libs: dict of strings, known library targets or system libraries.
+
+    Returns:
+        list of strings, the required non-system library targets.
+    """
+    result = []
+    for lib in libnames:
+        lookup = extra_libs.get(lib)
+        if lookup == None:
+            fail("Cannot find library: %s. If it is a system library, please add an empty string entry to extra_libs in hazel_repositories." % lib)
+        elif lookup != "":
+            result.append(lookup)
+    return result
 
 def _get_core_dependency_includes(ghc_workspace):
     """Include files that are exported by core dependencies
@@ -260,15 +269,14 @@ def _get_build_attrs(
             chs_name = name + "-" + module + "-chs"
             module_map[module] = chs_name
             build_files.append(info.src)
-            msg_no_such_lib = "Cannot find library: %s. If it is a system library, please open a ticket on https://github.com/tweag/rules_haskell requesting to add it to _excluded_cxx_libs."
             c2hs_library(
                 name = chs_name,
                 srcs = [info.src],
-                deps = [
-                    extra_libs[elib] if extra_libs.get(elib) else fail(msg_no_such_lib % elib)
-                    for elib in build_info.extraLibs
-                    if not sets.contains(_excluded_cxx_libs, elib)
-                ] + [clib_name] + chs_targets,
+                deps = (
+                    _get_extra_libs(build_info.extraLibs, extra_libs) +
+                    [clib_name] +
+                    chs_targets
+                ),
             )
             chs_targets.append(chs_name)
         elif info.type in ["x"]:
@@ -415,11 +423,7 @@ def _get_build_attrs(
         ghc_version_components[1]
     )
 
-    elibs_targets = [
-        extra_libs[elib]
-        for elib in build_info.extraLibs
-        if not sets.contains(_excluded_cxx_libs, elib)
-    ]
+    elibs_targets = _get_extra_libs(build_info.extraLibs, extra_libs)
 
     native.cc_library(
         name = clib_name,
@@ -520,11 +524,7 @@ def cabal_haskell_package(
             srcs = lib_attrs.pop("srcs")
             deps = lib_attrs.pop("deps")
 
-            elibs_targets = [
-                extra_libs[elib]
-                for elib in lib.libBuildInfo.extraLibs
-                if not sets.contains(_excluded_cxx_libs, elib)
-            ]
+            elibs_targets = _get_extra_libs(lib.libBuildInfo.extraLibs, extra_libs)
 
             hidden_modules = [m for m in lib.libBuildInfo.otherModules if not m.startswith("Paths_")]
 
