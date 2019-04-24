@@ -33,6 +33,7 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def _prepare_srcs(srcs):
@@ -240,11 +241,13 @@ def _haskell_binary_common_impl(ctx, is_test):
             paths.join(ctx.workspace_name, datum.mix_file.short_path)
             for datum in coverage_data
         ]
+        mix_file_paths = collections.uniq(mix_file_paths)  # remove duplicates
 
         # find which modules to exclude from coverage analysis, by using the specified source patterns
         raw_coverage_source_patterns = ctx.attr.experimental_coverage_source_patterns
         coverage_source_patterns = [parse_pattern(pat) for pat in raw_coverage_source_patterns]
         modules_to_exclude = [paths.split_extension(datum.mix_file.basename)[0] for datum in coverage_data if not _coverage_enabled_for_target(coverage_source_patterns, datum.target_label)]
+        modules_to_exclude = collections.uniq(modules_to_exclude)  # remove duplicates
 
         expected_covered_expressions_percentage = ctx.attr.expected_covered_expressions_percentage
         expected_uncovered_expression_count = ctx.attr.expected_uncovered_expression_count
