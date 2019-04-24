@@ -1,7 +1,7 @@
 """Implementation of core Haskell rules"""
 
 load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
@@ -31,7 +31,7 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":private/providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
+load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 

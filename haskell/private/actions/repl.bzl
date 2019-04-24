@@ -10,7 +10,7 @@ load(
     "ln",
     "target_unique_name",
 )
-load(":private/providers.bzl", "get_libs_for_ghc_linker")
+load(":providers.bzl", "get_libs_for_ghc_linker")
 load(
     ":private/set.bzl",
     "set",

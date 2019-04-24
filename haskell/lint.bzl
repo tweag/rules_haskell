@@ -1,7 +1,7 @@
 """Linting"""
 
 load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
@@ -13,7 +13,7 @@ load(
     ":private/path_utils.bzl",
     "target_unique_name",
 )
-load(":private/providers.bzl", "get_libs_for_ghc_linker")
+load(":providers.bzl", "get_libs_for_ghc_linker")
 load(":private/set.bzl", "set")
 
 def _collect_lint_logs(deps):
