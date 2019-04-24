@@ -345,7 +345,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         header_files = set.from_list(cc.hdrs + header_files),
         boot_files = set.from_list(boot_files),
         source_files = source_files,
-        extra_source_files = extra_srcs,
+        extra_source_files = depset(transitive = [extra_srcs, depset([optp_args_file])]),
         import_dirs = import_dirs,
         env = dicts.add(
             ghc_env,
