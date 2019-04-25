@@ -149,6 +149,20 @@ GHC_BINDIST = \
                 "e8d021b7a90772fc559862079da20538498d991956d7557b468ca19ddda22a08",
             ),
         },
+        "8.6.5": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-apple-darwin.tar.xz",
+                "dfc1bdb1d303a87a8552aa17f5b080e61351f2823c2b99071ec23d0837422169",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-deb8-linux.tar.xz",
+                "c419fd0aa9065fe4d2eb9a248e323860c696ddf3859749ca96a84938aee49107",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/8.6.5/ghc-8.6.5-x86_64-unknown-mingw32.tar.xz",
+                "457024c6ea43bdce340af428d86319931f267089398b859b00efdfe2fd4ce93f",
+            ),
+        },
     }
 
 def _execute_fail_loudly(ctx, args):
