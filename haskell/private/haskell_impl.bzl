@@ -163,7 +163,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         binary = binary,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
-        exposed_modules_file = c.exposed_modules_file,
     )
 
     target_files = depset([binary])
@@ -425,7 +424,6 @@ def haskell_library_impl(ctx):
         header_files = c.header_files,
         boot_files = c.boot_files,
         source_files = c.source_files,
-        exposed_modules_file = c.exposed_modules_file,
         extra_source_files = c.extra_source_files,
     )
 
