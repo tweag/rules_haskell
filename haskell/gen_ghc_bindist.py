@@ -17,6 +17,7 @@ import urllib2
 # `ignore_prefixes` is the prefix of files to ignore
 # `ignore_suffixes` is the suffix of files to ignore
 VERSIONS = [
+    { "version": "8.6.5" },
     { "version": "8.6.4" },
     { "version": "8.6.3" },
     { "version": "8.6.2" },
