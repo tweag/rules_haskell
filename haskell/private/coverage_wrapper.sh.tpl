@@ -30,6 +30,7 @@ hpc_path=$(rlocation {hpc_path})
 tix_file_path={tix_file_path}
 coverage_report_format={coverage_report_format}
 strict_coverage_analysis={strict_coverage_analysis}
+package_path={package_path}
 
 # either of the two expected coverage metrics should be set to -1 if they're meant to be unused
 expected_covered_expressions_percentage={expected_covered_expressions_percentage}
@@ -56,7 +57,8 @@ done
 
 # run the test binary, and then generate the report
 $binary_path "$@" > /dev/null 2>&1
-$hpc_path report "$tix_file_path" $hpc_dir_args $hpc_exclude_args > __hpc_coverage_report
+$hpc_path report "$tix_file_path" $hpc_dir_args $hpc_exclude_args \
+  --srcdir "." --srcdir "$package_path" > __hpc_coverage_report
 
 # if we want a text report, just output the file generated in the previous step
 if [ "$coverage_report_format" == "text" ]
@@ -109,14 +111,18 @@ fi
 # and feed its generated files into stdout, wrapped in XML tags
 if [ "$coverage_report_format" == "html" ]
 then
-  $hpc_path markup "$tix_file_path" $hpc_dir_args $hpc_exclude_args --destdir=hpc_out > /dev/null 2>&1
+  $hpc_path markup "$tix_file_path" $hpc_dir_args $hpc_exclude_args \
+    --srcdir "." --srcdir "$package_path" --destdir=hpc_out > /dev/null 2>&1
   cd hpc_out
+  echo "COVERAGE REPORT BELOW"
+  echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
   for file in *.html **/*.hs.html; do
     [ -e "$file" ] || continue
     echo "<coverage-report-part name=\"$file\">"
-    echo "<![CDATA["
+    echo '<![CDATA['
     cat $file
-    echo "]]>"
+    echo ']]>'
     echo "</coverage-report-part>"
   done
+  echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
 fi
