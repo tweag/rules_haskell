@@ -7,18 +7,16 @@ import Control.Monad (forM_)
 import Control.Arrow.ListArrow (runLA)
 import Data.Either.Utils (maybeToEither)
 import Data.List (find)
-import Data.List.Safe ((!!), head, tail)
-import Data.List.Utils (replace, split)
-import qualified Data.Maybe as Maybe
+import Data.List.Safe (head, tail)
+import Data.List.Utils (split)
 import Data.Tree.NTree.TypeDefs (NTree(..))
-import Prelude hiding ((!!), head, tail)
+import Prelude hiding (head, tail)
 import System.Console.CmdArgs.Implicit (Data, Typeable, cmdArgs)
 import System.Directory (createDirectoryIfMissing)
 import System.Exit (exitFailure)
 import System.FilePath (FilePath, (</>), takeDirectory)
 import qualified Text.XML.HXT.Arrow.ReadDocument as XML
-import Text.XML.HXT.Arrow.WriteDocument (writeDocumentToString)
-import Text.XML.HXT.DOM.QualifiedName (localPart, mkName)
+import Text.XML.HXT.DOM.QualifiedName (localPart)
 import Text.XML.HXT.DOM.TypeDefs (XNode(..), XmlTree)
 import Text.XML.HXT.XPath.XPathEval (getXPath, getXPathSubTrees)
 
@@ -126,7 +124,7 @@ extractText tree =
   let treeToText :: XmlTree -> String -> String
       treeToText textTree acc =
         case textTree of
-          (NTree (XText value) _) -> value
+          (NTree (XText value) _) -> acc ++ value
           _ -> ""
    in case tree of
         NTree (XTag _ _) textTree -> pure $ foldr treeToText "" textTree
