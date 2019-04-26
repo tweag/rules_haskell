@@ -31,6 +31,7 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
+load(":private/version_macros.bzl", "generate_version_macros")
 load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:collections.bzl", "collections")
@@ -438,21 +439,9 @@ def haskell_library_impl(ctx):
 
     version_macros = set.empty()
     if version != None:
-        version_macros_file = hs.actions.declare_file("{}_version_macros.h".format(hs.name))
-        hs.actions.run_shell(
-            inputs = [ctx.executable._version_macros],
-            outputs = [version_macros_file],
-            command = """
-            "$1" "$2" "$3" > "$4"
-            """,
-            arguments = [
-                ctx.executable._version_macros.path,
-                hs.name,
-                version,
-                version_macros_file.path,
-            ],
+        version_macros = set.singleton(
+            generate_version_macros(ctx, hs.name, version),
         )
-        version_macros = set.singleton(version_macros_file)
 
     build_info = HaskellBuildInfo(
         package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),

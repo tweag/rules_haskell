@@ -11,6 +11,7 @@ load(
 load(":private/context.bzl", "haskell_context")
 load(":private/path_utils.bzl", "copy_all", "link_forest", "ln")
 load(":private/set.bzl", "set")
+load(":private/version_macros.bzl", "generate_version_macros")
 
 def _haskell_import_impl(ctx):
     hs = haskell_context(ctx)
@@ -58,21 +59,9 @@ def _haskell_import_impl(ctx):
 
     version_macros = set.empty()
     if ctx.attr.version != None:
-        version_macros_file = hs.actions.declare_file("{}_version_macros.h".format(hs.name))
-        hs.actions.run_shell(
-            inputs = [ctx.executable._version_macros],
-            outputs = [version_macros_file],
-            command = """
-            "$1" "$2" "$3" > "$4"
-            """,
-            arguments = [
-                ctx.executable._version_macros.path,
-                hs.name,
-                ctx.attr.version,
-                version_macros_file.path,
-            ],
+        version_macros = set.singleton(
+            generate_version_macros(ctx, hs.name, ctx.attr.version),
         )
-        version_macros = set.singleton(version_macros_file)
 
     libInfo = HaskellLibraryInfo(
         package_id = ctx.attr.package_id,
