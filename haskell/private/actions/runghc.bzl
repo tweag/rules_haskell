@@ -55,7 +55,7 @@ def build_haskell_runghc(
     ))
 
     if lib_info != None:
-        for idir in set.to_list(lib_info.import_dirs):
+        for idir in set.to_list(hs_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
     link_ctx = hs_info.cc_dependencies.dynamic_linking

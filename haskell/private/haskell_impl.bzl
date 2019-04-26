@@ -192,7 +192,6 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     hs_info = dep_info  # HaskellInfo
     bin_info = HaskellBinaryInfo(
-        import_dirs = c.import_dirs,
         source_files = c.source_files,
         binary = binary,
         ghc_args = c.ghc_args,
@@ -447,6 +446,7 @@ def haskell_library_impl(ctx):
         package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
         package_databases = set.insert(dep_info.package_databases, cache_file),
         version_macros = version_macros,
+        import_dirs = c.import_dirs,
         # NOTE We have to use lists for static libraries because the order is
         # important for linker. Linker searches for unresolved symbols to the
         # left, i.e. you first feed a library which has unresolved symbols and
@@ -462,7 +462,6 @@ def haskell_library_impl(ctx):
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
         version = version,
-        import_dirs = c.import_dirs,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
         boot_files = c.boot_files,
