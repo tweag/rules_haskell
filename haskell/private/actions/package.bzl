@@ -10,7 +10,7 @@ def _get_extra_libraries(dep_info):
     """Get directories and library names for extra library dependencies.
 
     Args:
-      dep_info: HaskellBuildInfo provider of the package.
+      dep_info: HaskellInfo provider of the package.
 
     Returns:
       (dirs, libs):

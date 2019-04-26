@@ -22,7 +22,7 @@ def build_haskell_runghc(
         runghc_wrapper,
         compiler_flags,
         extra_args,
-        build_info,
+        hs_info,
         output,
         package_caches,
         version,
@@ -32,7 +32,7 @@ def build_haskell_runghc(
 
     Args:
       hs: Haskell context.
-      build_info: HaskellBuildInfo.
+      hs_info: HaskellInfo.
 
       package_caches: package caches excluding the cache file of the package
                       we're creating a runghc for.
@@ -46,7 +46,7 @@ def build_haskell_runghc(
     """
 
     args = pkg_info_to_ghc_args(expose_packages(
-        build_info,
+        hs_info,
         lib_info,
         use_direct = False,
         use_my_pkg_id = None,
@@ -58,7 +58,7 @@ def build_haskell_runghc(
         for idir in set.to_list(lib_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
-    link_ctx = build_info.cc_dependencies.dynamic_linking
+    link_ctx = hs_info.cc_dependencies.dynamic_linking
     libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
 
     # External C libraries that we need to make available to runghc.
@@ -67,7 +67,7 @@ def build_haskell_runghc(
     # Transitive library dependencies to have in runfiles.
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
         hs,
-        build_info.transitive_cc_dependencies,
+        hs_info.transitive_cc_dependencies,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
 
