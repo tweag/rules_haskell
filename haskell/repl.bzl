@@ -119,10 +119,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
     if HaskellLibraryInfo in target:
         lib_info = target[HaskellLibraryInfo]
         load_infos[target.label] = HaskellReplLoadInfo(
-            source_files = set.union(
-                lib_info.boot_files,
-                lib_info.source_files,
-            ),
+            source_files = lib_info.source_files,
             cc_dependencies = hs_info.cc_dependencies,
             compiler_flags = getattr(ctx.rule.attr, "compiler_flags", []),
             repl_ghci_args = getattr(ctx.rule.attr, "repl_ghci_args", []),
