@@ -3,7 +3,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellBinaryInfo",
-    "HaskellBuildInfo",
+    "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellLintInfo",
 )
@@ -31,10 +31,10 @@ def _haskell_lint_rule_impl(ctx):
 def _haskell_lint_aspect_impl(target, ctx):
     hs = haskell_context(ctx, ctx.rule.attr)
 
-    if HaskellBuildInfo not in target:
+    if HaskellInfo not in target:
         return []
 
-    build_info = target[HaskellBuildInfo]
+    hs_info = target[HaskellInfo]
     lib_info = target[HaskellLibraryInfo] if HaskellLibraryInfo in target else None
     bin_info = target[HaskellBinaryInfo] if HaskellBinaryInfo in target else None
 
@@ -55,7 +55,7 @@ def _haskell_lint_aspect_impl(target, ctx):
     ])
 
     args.add_all(pkg_info_to_ghc_args(expose_packages(
-        build_info,
+        hs_info,
         lib_info,
         use_direct = False,
         use_my_pkg_id = None,
@@ -76,16 +76,16 @@ def _haskell_lint_aspect_impl(target, ctx):
     # Transitive library dependencies for runtime.
     (library_deps, ld_library_deps, _ghc_env) = get_libs_for_ghc_linker(
         hs,
-        build_info.transitive_cc_dependencies,
+        hs_info.transitive_cc_dependencies,
     )
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
             depset(sources),
-            set.to_depset(build_info.package_confs),
-            set.to_depset(build_info.package_caches),
-            set.to_depset(build_info.interface_dirs),
-            set.to_depset(build_info.dynamic_libraries),
+            set.to_depset(hs_info.package_confs),
+            set.to_depset(hs_info.package_caches),
+            set.to_depset(hs_info.interface_dirs),
+            set.to_depset(hs_info.dynamic_libraries),
             depset(library_deps),
             depset(ld_library_deps),
             depset([hs.tools.ghc]),

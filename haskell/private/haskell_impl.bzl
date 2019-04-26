@@ -4,7 +4,7 @@ load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
     "HaskellBinaryInfo",
-    "HaskellBuildInfo",
+    "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
 )
@@ -190,7 +190,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         version = ctx.attr.version,
     )
 
-    build_info = dep_info  # HaskellBuildInfo
+    hs_info = dep_info  # HaskellInfo
     bin_info = HaskellBinaryInfo(
         import_dirs = c.import_dirs,
         source_files = c.source_files,
@@ -210,7 +210,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         output = ctx.outputs.repl,
         package_caches = dep_info.package_caches,
         version = ctx.attr.version,
-        build_info = build_info,
+        hs_info = hs_info,
         bin_info = bin_info,
     )
 
@@ -226,7 +226,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         output = ctx.outputs.runghc,
         package_caches = dep_info.package_caches,
         version = ctx.attr.version,
-        build_info = build_info,
+        hs_info = hs_info,
         bin_info = bin_info,
     )
 
@@ -285,7 +285,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         ] + mix_runfiles + srcs_runfiles
 
     return [
-        build_info,
+        hs_info,
         bin_info,
         DefaultInfo(
             executable = executable,
@@ -443,7 +443,7 @@ def haskell_library_impl(ctx):
             generate_version_macros(ctx, hs.name, version),
         )
 
-    build_info = HaskellBuildInfo(
+    hs_info = HaskellInfo(
         package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
         package_confs = set.insert(dep_info.package_confs, conf_file),
         package_caches = set.insert(dep_info.package_caches, cache_file),
@@ -492,7 +492,7 @@ def haskell_library_impl(ctx):
             output = ctx.outputs.repl,
             package_caches = dep_info.package_caches,
             version = ctx.attr.version,
-            build_info = build_info,
+            hs_info = hs_info,
             lib_info = lib_info,
         )
 
@@ -508,7 +508,7 @@ def haskell_library_impl(ctx):
             output = ctx.outputs.runghc,
             package_caches = dep_info.package_caches,
             version = ctx.attr.version,
-            build_info = build_info,
+            hs_info = hs_info,
             lib_info = lib_info,
         )
 
@@ -556,7 +556,7 @@ def haskell_library_impl(ctx):
     )
 
     return [
-        build_info,
+        hs_info,
         cc_info,
         coverage_info,
         default_info,

@@ -4,7 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaddockInfo",
-    "HaskellBuildInfo",
+    "HaskellInfo",
     "HaskellLibraryInfo",
     "empty_HaskellCcInfo",
 )
@@ -48,8 +48,8 @@ def _haskell_import_impl(ctx):
 
     dependencies_caches = set.singleton(package_cache)
     for dep in ctx.attr.deps:
-        if HaskellBuildInfo in dep:
-            set.mutable_union(dependencies_caches, dep[HaskellBuildInfo].package_caches)
+        if HaskellInfo in dep:
+            set.mutable_union(dependencies_caches, dep[HaskellInfo].package_caches)
 
     deps_ids = [
         dep[HaskellLibraryInfo].package_id
@@ -73,7 +73,7 @@ def _haskell_import_impl(ctx):
         extra_source_files = set.empty(),
         ghc_args = [],
     )
-    buildInfo = HaskellBuildInfo(
+    buildInfo = HaskellInfo(
         package_ids = set.from_list([ctx.attr.package_id] + deps_ids),
         package_confs = set.from_list(local_package_confs),
         package_caches = dependencies_caches,

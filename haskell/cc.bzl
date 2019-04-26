@@ -15,7 +15,7 @@ load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellBinaryInfo",
-    "HaskellBuildInfo",
+    "HaskellInfo",
 )
 
 CcInteropInfo = provider(
@@ -40,12 +40,12 @@ def cc_interop_info(ctx, dep_info):
 
     Args:
       ctx: Rule context.
-      dep_info: HaskellBuildInfo provider.
+      dep_info: HaskellInfo provider.
 
     Returns:
       CcInteropInfo: Information needed for CC interop.
     """
-    ccs = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep and HaskellBuildInfo not in dep]
+    ccs = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep and HaskellInfo not in dep]
 
     hdrs = []
     include_args = []
@@ -291,10 +291,10 @@ Example:
 def _cc_haskell_import(ctx):
     dyn_libs = set.empty()
 
-    if HaskellBuildInfo in ctx.attr.dep:
-        set.mutable_union(dyn_libs, ctx.attr.dep[HaskellBuildInfo].dynamic_libraries)
+    if HaskellInfo in ctx.attr.dep:
+        set.mutable_union(dyn_libs, ctx.attr.dep[HaskellInfo].dynamic_libraries)
     else:
-        fail("{0} has to provide `HaskellBuildInfo`".format(ctx.attr.dep.label.name))
+        fail("{0} has to provide `HaskellInfo`".format(ctx.attr.dep.label.name))
 
     if HaskellBinaryInfo in ctx.attr.dep:
         bin = ctx.attr.dep[HaskellBinaryInfo].binary
