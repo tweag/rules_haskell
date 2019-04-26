@@ -63,7 +63,7 @@ def build_haskell_repl(
 
     lib_imports = []
     if lib_info != None:
-        for idir in set.to_list(lib_info.import_dirs):
+        for idir in set.to_list(hs_info.import_dirs):
             args += ["-i{0}".format(idir)]
             lib_imports.append(idir)
 
