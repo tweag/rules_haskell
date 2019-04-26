@@ -41,12 +41,12 @@ def pkg_info_to_ghc_args(pkg_info, for_plugin = False):
 
     return args
 
-def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_package_caches, version):
+def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package_caches, version):
     """
     Returns the information that is needed by GHC in order to enable haskell
     packages.
 
-    build_info: is common to all builds
+    hs_info: is common to all builds
     version: if the rule contains a version, we will export the CPP version macro
 
     All the other arguments are not understood well:
@@ -54,7 +54,7 @@ def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_pack
     lib_info: only used for repl and linter
     use_direct: only used for repl and linter
     use_my_pkg_id: only used for one specific task in compile.bzl
-    custom_package_caches: override the package_caches of build_info, used only by the repl
+    custom_package_caches: override the package_caches of hs_info, used only by the repl
     """
     has_version = version != None and version != ""
 
@@ -63,14 +63,14 @@ def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_pack
     # We have to remember to specify all (transitive) wired-in
     # dependencies or we can't find objects for linking
     #
-    # Set use_direct if build_info does not have a direct_prebuilt_deps field.
+    # Set use_direct if hs_info does not have a direct_prebuilt_deps field.
     packages = []
-    for prebuilt_dep in set.to_list(build_info.direct_prebuilt_deps if use_direct else build_info.prebuilt_dependencies):
+    for prebuilt_dep in set.to_list(hs_info.direct_prebuilt_deps if use_direct else hs_info.prebuilt_dependencies):
         packages.append(prebuilt_dep.package)
 
     # Expose all bazel dependencies
     package_ids = []
-    for package in set.to_list(build_info.package_ids):
+    for package in set.to_list(hs_info.package_ids):
         # XXX: repl and lint uses this lib_info flags
         # It is set to None in all other usage of this function
         # TODO: find the meaning of this flag
@@ -82,7 +82,7 @@ def expose_packages(build_info, lib_info, use_direct, use_my_pkg_id, custom_pack
     # Only include package DBs for deps, prebuilt deps should be found
     # auto-magically by GHC
     package_dbs = []
-    for cache in set.to_list(build_info.package_caches if not custom_package_caches else custom_package_caches):
+    for cache in set.to_list(hs_info.package_caches if not custom_package_caches else custom_package_caches):
         package_dbs.append(cache.dirname)
 
     ghc_info = struct(

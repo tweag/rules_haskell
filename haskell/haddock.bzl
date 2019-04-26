@@ -4,7 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaddockInfo",
-    "HaskellBuildInfo",
+    "HaskellInfo",
     "HaskellLibraryInfo",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
@@ -22,7 +22,7 @@ def _get_haddock_path(package_id):
     return package_id + ".haddock"
 
 def _haskell_doc_aspect_impl(target, ctx):
-    if HaskellBuildInfo not in target or HaskellLibraryInfo not in target:
+    if HaskellInfo not in target or HaskellLibraryInfo not in target:
         return []
 
     # Packages imported via `//haskell:import.bzl%haskell_import` already
@@ -73,7 +73,7 @@ def _haskell_doc_aspect_impl(target, ctx):
         ))
 
     prebuilt_deps = ctx.actions.args()
-    for dep in set.to_list(target[HaskellBuildInfo].prebuilt_dependencies):
+    for dep in set.to_list(target[HaskellInfo].prebuilt_dependencies):
         prebuilt_deps.add(dep.package)
     prebuilt_deps.use_param_file(param_file_arg = "%s", use_always = True)
 
@@ -108,14 +108,14 @@ def _haskell_doc_aspect_impl(target, ctx):
     )
 
     # Transitive library dependencies for runtime.
-    trans_link_ctx = target[HaskellBuildInfo].transitive_cc_dependencies.dynamic_linking
+    trans_link_ctx = target[HaskellInfo].transitive_cc_dependencies.dynamic_linking
     trans_libs = trans_link_ctx.libraries_to_link.to_list()
 
     ctx.actions.run(
         inputs = depset(transitive = [
-            set.to_depset(target[HaskellBuildInfo].package_caches),
-            set.to_depset(target[HaskellBuildInfo].interface_dirs),
-            set.to_depset(target[HaskellBuildInfo].dynamic_libraries),
+            set.to_depset(target[HaskellInfo].package_caches),
+            set.to_depset(target[HaskellInfo].interface_dirs),
+            set.to_depset(target[HaskellInfo].dynamic_libraries),
             depset(trans_libs),
             depset(transitive_haddocks.values()),
             depset(transitive_html.values()),
@@ -185,10 +185,10 @@ def _haskell_doc_rule_impl(ctx):
         if HaddockInfo in dep:
             html_dict_original.update(dep[HaddockInfo].transitive_html)
             haddock_dict.update(dep[HaddockInfo].transitive_haddocks)
-        if HaskellBuildInfo in dep:
+        if HaskellInfo in dep:
             set.mutable_union(
                 all_caches,
-                dep[HaskellBuildInfo].package_caches,
+                dep[HaskellInfo].package_caches,
             )
 
     # Copy docs of Bazel deps into predefined locations under the root doc

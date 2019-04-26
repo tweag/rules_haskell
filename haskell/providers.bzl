@@ -8,7 +8,7 @@ load(
 )
 
 HaskellCcInfo = provider(
-    doc = "Haskell cc dependency information. Part of HaskellBuildInfo.",
+    doc = "Haskell cc dependency information. Part of HaskellInfo.",
     fields = {
         "static_linking": """static linking mode parameters.
             A struct of
@@ -73,7 +73,7 @@ def merge_HaskellCcInfo(*args):
         ),
     )
 
-HaskellBuildInfo = provider(
+HaskellInfo = provider(
     doc = "Common information about build process: dependencies, etc.",
     fields = {
         "package_ids": "Set of all package ids of direct (non-prebuilt) dependencies.",

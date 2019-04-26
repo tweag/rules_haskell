@@ -276,7 +276,7 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
 
     Args:
       hs: Haskell context.
-      dep_info: HaskellBuildInfo provider.
+      dep_info: HaskellInfo provider.
       dynamic: Bool: Whether to link dynamically, or statically.
       binary: Final linked binary.
       args: Arguments to the linking action.

@@ -7,7 +7,7 @@ load(
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBuildInfo",
+    "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
 )
@@ -187,10 +187,10 @@ def _haskell_proto_aspect_impl(target, ctx):
     # TODO this pattern match is very brittle. Let's not do this. The
     # order should match the order in the return value expression in
     # haskell_library_impl().
-    [build_info, cc_info, coverage_info, default_info, library_info] = _haskell_library_impl(patched_ctx)
+    [hs_info, cc_info, coverage_info, default_info, library_info] = _haskell_library_impl(patched_ctx)
 
     return [
-        build_info,  # HaskellBuildInfo
+        hs_info,  # HaskellInfo
         library_info,  # HaskellLibraryInfo
         # We can't return DefaultInfo here because target already provides that.
         HaskellProtobufInfo(files = default_info.files),
@@ -226,7 +226,7 @@ _haskell_proto_aspect = aspect(
 def _haskell_proto_library_impl(ctx):
     dep = ctx.attr.deps[0]  # FIXME
     return [
-        dep[HaskellBuildInfo],
+        dep[HaskellInfo],
         dep[HaskellLibraryInfo],
         DefaultInfo(files = dep[HaskellProtobufInfo].files),
     ]
