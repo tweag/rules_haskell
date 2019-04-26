@@ -94,9 +94,7 @@ def _haskell_doctest_single(target, ctx):
     args.add("--no-magic")
 
     doctest_log = ctx.actions.declare_file(
-        "doctest-log-" + ctx.label.name + "-" + (
-            lib_info.package_id if lib_info != None else bin_info.binary.basename
-        ),
+        "doctest-log-" + ctx.label.name + "-" + target.label.name,
     )
 
     toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:doctest-toolchain"]

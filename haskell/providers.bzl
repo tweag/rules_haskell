@@ -181,7 +181,6 @@ HaskellBinaryInfo = provider(
     doc = "Binary-specific information.",
     fields = {
         "source_files": "Set of source files.",
-        "binary": "File, compiled binary.",
         "header_files": "Set of header files.",
         "ghc_args": "Arguments that were used to compile the binary.",
     },
