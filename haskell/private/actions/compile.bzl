@@ -547,9 +547,11 @@ def compile_library(
         objects_dir = c.objects_dir,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
-        boot_files = c.boot_files,
         source_files = c.source_files,
-        extra_source_files = c.extra_source_files,
+        extra_source_files = depset(
+            set.to_list(c.boot_files),
+            transitive = [c.extra_source_files]
+        ),
         import_dirs = c.import_dirs,
         exposed_modules_file = exposed_modules_file,
         coverage_data = coverage_data,
