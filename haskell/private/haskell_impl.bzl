@@ -257,7 +257,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         if coverage_report_format != "text" and coverage_report_format != "html":
             fail("""haskell_test attribute "coverage_report_format" must be one of "text" or "html".""")
 
-        wrapper = hs.actions.declare_file("coverage_wrapper.sh")
+        wrapper = hs.actions.declare_file("{}_coverage/coverage_wrapper.sh".format(ctx.label.name))
         ctx.actions.expand_template(
             template = ctx.file._coverage_wrapper_template,
             output = wrapper,
