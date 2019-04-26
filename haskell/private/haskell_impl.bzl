@@ -174,7 +174,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         compiler_flags = compiler_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
-        package_caches = dep_info.package_caches,
+        package_databases = dep_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
         bin_info = bin_info,
@@ -190,7 +190,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         extra_args = ctx.attr.runghc_args,
         compiler_flags = ctx.attr.compiler_flags,
         output = ctx.outputs.runghc,
-        package_caches = dep_info.package_caches,
+        package_databases = dep_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
         bin_info = bin_info,
@@ -402,7 +402,7 @@ def haskell_library_impl(ctx):
 
     hs_info = HaskellInfo(
         package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
-        package_caches = set.insert(dep_info.package_caches, cache_file),
+        package_databases = set.insert(dep_info.package_databases, cache_file),
         # NOTE We have to use lists for static libraries because the order is
         # important for linker. Linker searches for unresolved symbols to the
         # left, i.e. you first feed a library which has unresolved symbols and
@@ -445,7 +445,7 @@ def haskell_library_impl(ctx):
             repl_ghci_args = ctx.attr.repl_ghci_args,
             compiler_flags = compiler_flags,
             output = ctx.outputs.repl,
-            package_caches = dep_info.package_caches,
+            package_databases = dep_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
             lib_info = lib_info,
@@ -461,7 +461,7 @@ def haskell_library_impl(ctx):
             extra_args = ctx.attr.runghc_args,
             compiler_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.runghc,
-            package_caches = dep_info.package_caches,
+            package_databases = dep_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
             lib_info = lib_info,

@@ -113,7 +113,7 @@ def _haskell_doc_aspect_impl(target, ctx):
 
     ctx.actions.run(
         inputs = depset(transitive = [
-            set.to_depset(target[HaskellInfo].package_caches),
+            set.to_depset(target[HaskellInfo].package_databases),
             set.to_depset(target[HaskellInfo].interface_dirs),
             set.to_depset(target[HaskellInfo].dynamic_libraries),
             depset(trans_libs),
@@ -188,7 +188,7 @@ def _haskell_doc_rule_impl(ctx):
         if HaskellInfo in dep:
             set.mutable_union(
                 all_caches,
-                dep[HaskellInfo].package_caches,
+                dep[HaskellInfo].package_databases,
             )
 
     # Copy docs of Bazel deps into predefined locations under the root doc

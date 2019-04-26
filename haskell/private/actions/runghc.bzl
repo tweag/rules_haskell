@@ -24,7 +24,7 @@ def build_haskell_runghc(
         extra_args,
         hs_info,
         output,
-        package_caches,
+        package_databases,
         version,
         lib_info = None,
         bin_info = None):
@@ -34,7 +34,7 @@ def build_haskell_runghc(
       hs: Haskell context.
       hs_info: HaskellInfo.
 
-      package_caches: package caches excluding the cache file of the package
+      package_databases: package caches excluding the cache file of the package
                       we're creating a runghc for.
       lib_info: If we're building runghc for a library target, pass
                 HaskellLibraryInfo here, otherwise it should be None.
@@ -50,7 +50,7 @@ def build_haskell_runghc(
         lib_info,
         use_direct = False,
         use_my_pkg_id = None,
-        custom_package_caches = package_caches,
+        custom_package_databases = package_databases,
         version = version,
     ))
 
@@ -112,7 +112,7 @@ def build_haskell_runghc(
             hs.tools.runghc,
             runghc_file,
         ]),
-        set.to_depset(package_caches),
+        set.to_depset(package_databases),
         depset(library_deps),
         depset(ld_library_deps),
         set.to_depset(source_files),
