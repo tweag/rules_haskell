@@ -159,7 +159,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     hs_info = dep_info  # HaskellInfo
     bin_info = HaskellBinaryInfo(
         source_files = c.source_files,
-        binary = binary,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
     )
