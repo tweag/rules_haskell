@@ -31,7 +31,7 @@ def version_macros(name, version):
         cpp_ifndef_define(
             "VERSION_" + escaped_name,
             [],
-            "\"{}\"".format(version),
+            '"{}"'.format(version),
         ),
         # #define MIN_VERSION_pkg(major1, major2, minor) ...
         cpp_ifndef_define(
