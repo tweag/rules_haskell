@@ -445,7 +445,6 @@ def haskell_library_impl(ctx):
 
     hs_info = HaskellInfo(
         package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
-        package_confs = set.insert(dep_info.package_confs, conf_file),
         package_caches = set.insert(dep_info.package_caches, cache_file),
         version_macros = version_macros,
         # NOTE We have to use lists for static libraries because the order is
