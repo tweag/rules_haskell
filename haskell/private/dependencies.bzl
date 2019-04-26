@@ -147,7 +147,7 @@ def gather_dep_info(ctx, deps):
 
     acc = HaskellInfo(
         package_ids = set.empty(),
-        package_caches = set.empty(),
+        package_databases = set.empty(),
         version_macros = set.empty(),
         static_libraries = [],
         static_libraries_prof = [],
@@ -169,7 +169,7 @@ def gather_dep_info(ctx, deps):
                 set.mutable_insert(package_ids, dep[HaskellLibraryInfo].package_id)
             acc = HaskellInfo(
                 package_ids = package_ids,
-                package_caches = set.mutable_union(acc.package_caches, binfo.package_caches),
+                package_databases = set.mutable_union(acc.package_databases, binfo.package_databases),
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
                 static_libraries = acc.static_libraries + binfo.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof + binfo.static_libraries_prof,
@@ -184,7 +184,7 @@ def gather_dep_info(ctx, deps):
             pkg = dep[HaskellPrebuiltPackageInfo]
             acc = HaskellInfo(
                 package_ids = acc.package_ids,
-                package_caches = acc.package_caches,
+                package_databases = acc.package_databases,
                 version_macros = set.mutable_insert(acc.version_macros, pkg.version_macros_file),
                 static_libraries = acc.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof,
@@ -202,7 +202,7 @@ def gather_dep_info(ctx, deps):
             hs_cc_info = _HaskellCcInfo_from_CcInfo(ctx, dep[CcInfo])
             acc = HaskellInfo(
                 package_ids = acc.package_ids,
-                package_caches = acc.package_caches,
+                package_databases = acc.package_databases,
                 version_macros = acc.version_macros,
                 static_libraries = acc.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof,

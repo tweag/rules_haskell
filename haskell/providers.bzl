@@ -77,7 +77,7 @@ HaskellInfo = provider(
     doc = "Common information about build process: dependencies, etc.",
     fields = {
         "package_ids": "Set of all package ids of direct (non-prebuilt) dependencies.",
-        "package_caches": "Set of package cache files.",
+        "package_databases": "Set of package cache files.",
         "version_macros": "Set of version macro files.",
         "static_libraries": "Ordered collection of compiled library archives.",
         "static_libraries_prof": "Ordered collection of static libraries with profiling.",
