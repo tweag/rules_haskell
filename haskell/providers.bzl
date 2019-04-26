@@ -79,6 +79,7 @@ HaskellBuildInfo = provider(
         "package_ids": "Set of all package ids of direct (non-prebuilt) dependencies.",
         "package_confs": "Set of package .conf files.",
         "package_caches": "Set of package cache files.",
+        "version_macros": "Set of version macro files.",
         "static_libraries": "Ordered collection of compiled library archives.",
         "static_libraries_prof": "Ordered collection of static libraries with profiling.",
         "dynamic_libraries": "Set of dynamic libraries.",
@@ -200,6 +201,7 @@ HaskellPrebuiltPackageInfo = provider(
     fields = {
         "package": "Package name",
         "id_file": "File containing package id",
+        "version_macros_file": "C header file containing Cabal version macros",
     },
 )
 

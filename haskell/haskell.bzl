@@ -98,6 +98,11 @@ _haskell_common_attrs = {
         cfg = "host",
         default = Label("@io_tweag_rules_haskell//haskell:ls_modules"),
     ),
+    "_version_macros": attr.label(
+        executable = True,
+        cfg = "host",
+        default = Label("@io_tweag_rules_haskell//haskell:version_macros"),
+    ),
     "_cc_toolchain": attr.label(
         default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
@@ -279,6 +284,11 @@ haskell_toolchain_library = rule(
     attrs = dict(
         package = attr.string(
             doc = "The name of a GHC package not built by Bazel. Defaults to the name of the rule.",
+        ),
+        _version_macros = attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@io_tweag_rules_haskell//haskell:version_macros"),
         ),
     ),
     toolchains = [

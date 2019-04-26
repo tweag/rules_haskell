@@ -56,6 +56,24 @@ def _haskell_import_impl(ctx):
         if HaskellLibraryInfo in dep
     ]
 
+    version_macros = set.empty()
+    if ctx.attr.version != None:
+        version_macros_file = hs.actions.declare_file("{}_version_macros.h".format(hs.name))
+        hs.actions.run_shell(
+            inputs = [ctx.executable._version_macros],
+            outputs = [version_macros_file],
+            command = """
+            "$1" "$2" "$3" > "$4"
+            """,
+            arguments = [
+                ctx.executable._version_macros.path,
+                hs.name,
+                ctx.attr.version,
+                version_macros_file.path,
+            ],
+        )
+        version_macros = set.singleton(version_macros_file)
+
     libInfo = HaskellLibraryInfo(
         package_id = ctx.attr.package_id,
         version = ctx.attr.version,
@@ -70,6 +88,7 @@ def _haskell_import_impl(ctx):
         package_ids = set.from_list([ctx.attr.package_id] + deps_ids),
         package_confs = set.from_list(local_package_confs),
         package_caches = dependencies_caches,
+        version_macros = version_macros,
         static_libraries = [],
         static_libraries_prof = [],
         dynamic_libraries = set.empty(),
@@ -100,6 +119,11 @@ haskell_import = rule(
         haddock_interfaces = attr.label(doc = "List of haddock interfaces"),
         haddock_html = attr.label(doc = "List of haddock html dirs"),
         package_confs = attr.label(doc = "List of ghc-pkg package.conf files"),
+        _version_macros = attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@io_tweag_rules_haskell//haskell:version_macros"),
+        ),
     ),
     outputs = {
         "cache": "%{name}-cache",

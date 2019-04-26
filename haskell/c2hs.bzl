@@ -7,15 +7,20 @@ load(
 )
 load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context")
+load(":private/dependencies.bzl", "gather_dep_info")
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
     "target_unique_name",
 )
+load(":private/set.bzl", "set")
 
 def _c2hs_library_impl(ctx):
     hs = haskell_context(ctx)
-    cc = cc_interop_info(ctx)
+
+    # XXX: We only need dep_info.version_macros.
+    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    cc = cc_interop_info(ctx, dep_info)
     args = hs.actions.args()
     c2hs = ctx.toolchains["@io_tweag_rules_haskell//haskell/c2hs:toolchain"].c2hs
 

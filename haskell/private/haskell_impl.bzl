@@ -114,7 +114,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
 
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx)
+    cc = cc_interop_info(ctx, dep_info)
     java = java_interop_info(ctx)
 
     with_profiling = is_profiling_enabled(hs)
@@ -311,7 +311,7 @@ def haskell_library_impl(ctx):
     with_shared = False if hs.toolchain.is_windows else not ctx.attr.linkstatic
 
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx)
+    cc = cc_interop_info(ctx, dep_info)
     java = java_interop_info(ctx)
 
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
@@ -436,10 +436,29 @@ def haskell_library_impl(ctx):
             set.singleton(c_p.interfaces_dir),
         )
 
+    version_macros = set.empty()
+    if version != None:
+        version_macros_file = hs.actions.declare_file("{}_version_macros.h".format(hs.name))
+        hs.actions.run_shell(
+            inputs = [ctx.executable._version_macros],
+            outputs = [version_macros_file],
+            command = """
+            "$1" "$2" "$3" > "$4"
+            """,
+            arguments = [
+                ctx.executable._version_macros.path,
+                hs.name,
+                version,
+                version_macros_file.path,
+            ],
+        )
+        version_macros = set.singleton(version_macros_file)
+
     build_info = HaskellBuildInfo(
         package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
         package_confs = set.insert(dep_info.package_confs, conf_file),
         package_caches = set.insert(dep_info.package_caches, cache_file),
+        version_macros = version_macros,
         # NOTE We have to use lists for static libraries because the order is
         # important for linker. Linker searches for unresolved symbols to the
         # left, i.e. you first feed a library which has unresolved symbols and
@@ -577,9 +596,28 @@ def haskell_toolchain_library_impl(ctx):
         ],
     )
 
+    version_macros_file = hs.actions.declare_file("{}_version_macros.h".format(hs.name))
+    hs.actions.run_shell(
+        inputs = [hs.tools.ghc_pkg, ctx.executable._version_macros],
+        outputs = [version_macros_file],
+        command = """
+        "$1" \\
+            `"$2" --simple-output -v1 field "$3" name` \\
+            `"$2" --simple-output -v1 field "$3" version` \\
+            > "$4"
+        """,
+        arguments = [
+            ctx.executable._version_macros.path,
+            hs.tools.ghc_pkg.path,
+            package,
+            version_macros_file.path,
+        ],
+    )
+
     prebuilt_package_info = HaskellPrebuiltPackageInfo(
         package = package,
         id_file = id_file,
+        version_macros_file = version_macros_file,
     )
 
     return [prebuilt_package_info]

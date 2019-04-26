@@ -20,6 +20,12 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
+py_binary(
+    name = "version_macros",
+    srcs = ["private/version_macros.py"],
+    visibility = ["//visibility:public"],
+)
+
 # generate the _GHC_BINDISTS dict
 py_binary(
     name = "gen-ghc-bindist",
