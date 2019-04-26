@@ -169,7 +169,6 @@ HaskellLibraryInfo = provider(
         "package_id": "Workspace unique package identifier.",
         "version": "Package version.",
         "header_files": "Set of header files.",
-        "boot_files": "Set of boot files.",
         "source_files": "Set of files that contain Haskell modules.",
         "extra_source_files": "A depset of non-Haskell source files.",
         "ghc_args": "Arguments that were used to compile the package.",

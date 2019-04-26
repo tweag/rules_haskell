@@ -419,7 +419,6 @@ def haskell_library_impl(ctx):
         version = version,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
-        boot_files = c.boot_files,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
     )

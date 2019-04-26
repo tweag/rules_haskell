@@ -60,7 +60,6 @@ def _haskell_import_impl(ctx):
         package_id = ctx.attr.package_id,
         version = ctx.attr.version,
         header_files = set.empty(),
-        boot_files = set.empty(),
         source_files = set.empty(),
         extra_source_files = set.empty(),
         ghc_args = [],
