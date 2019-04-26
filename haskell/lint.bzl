@@ -59,7 +59,7 @@ def _haskell_lint_aspect_impl(target, ctx):
         lib_info,
         use_direct = False,
         use_my_pkg_id = None,
-        custom_package_caches = None,
+        custom_package_databases = None,
         version = ctx.rule.attr.version,
     )))
 
@@ -82,7 +82,7 @@ def _haskell_lint_aspect_impl(target, ctx):
     ctx.actions.run_shell(
         inputs = depset(transitive = [
             depset(sources),
-            set.to_depset(hs_info.package_caches),
+            set.to_depset(hs_info.package_databases),
             set.to_depset(hs_info.interface_dirs),
             set.to_depset(hs_info.dynamic_libraries),
             depset(library_deps),

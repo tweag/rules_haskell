@@ -41,7 +41,7 @@ def pkg_info_to_ghc_args(pkg_info, for_plugin = False):
 
     return args
 
-def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package_caches, version):
+def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package_databases, version):
     """
     Returns the information that is needed by GHC in order to enable haskell
     packages.
@@ -54,7 +54,7 @@ def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package
     lib_info: only used for repl and linter
     use_direct: only used for repl and linter
     use_my_pkg_id: only used for one specific task in compile.bzl
-    custom_package_caches: override the package_caches of hs_info, used only by the repl
+    custom_package_databases: override the package_databases of hs_info, used only by the repl
     """
     has_version = version != None and version != ""
 
@@ -82,7 +82,7 @@ def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package
     # Only include package DBs for deps, prebuilt deps should be found
     # auto-magically by GHC
     package_dbs = []
-    for cache in set.to_list(hs_info.package_caches if not custom_package_caches else custom_package_caches):
+    for cache in set.to_list(hs_info.package_databases if not custom_package_databases else custom_package_databases):
         package_dbs.append(cache.dirname)
 
     ghc_info = struct(

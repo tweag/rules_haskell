@@ -49,7 +49,7 @@ def _haskell_import_impl(ctx):
     dependencies_caches = set.singleton(package_cache)
     for dep in ctx.attr.deps:
         if HaskellInfo in dep:
-            set.mutable_union(dependencies_caches, dep[HaskellInfo].package_caches)
+            set.mutable_union(dependencies_caches, dep[HaskellInfo].package_databases)
 
     deps_ids = [
         dep[HaskellLibraryInfo].package_id
@@ -75,7 +75,7 @@ def _haskell_import_impl(ctx):
     )
     buildInfo = HaskellInfo(
         package_ids = set.from_list([ctx.attr.package_id] + deps_ids),
-        package_caches = dependencies_caches,
+        package_databases = dependencies_caches,
         version_macros = version_macros,
         static_libraries = [],
         static_libraries_prof = [],
