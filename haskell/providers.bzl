@@ -78,6 +78,7 @@ HaskellInfo = provider(
     fields = {
         "package_ids": "Set of all package ids of direct (non-prebuilt) dependencies.",
         "package_databases": "Set of package cache files.",
+        "import_dirs": "Import hierarchy roots.",
         "static_libraries": "Ordered collection of compiled library archives.",
         "static_libraries_prof": "Ordered collection of static libraries with profiling.",
         "dynamic_libraries": "Set of dynamic libraries.",
@@ -167,7 +168,6 @@ HaskellLibraryInfo = provider(
     fields = {
         "package_id": "Workspace unique package identifier.",
         "version": "Package version.",
-        "import_dirs": "Import hierarchy roots.",
         "header_files": "Set of header files.",
         "boot_files": "Set of boot files.",
         "source_files": "Set of files that contain Haskell modules.",
@@ -179,7 +179,6 @@ HaskellLibraryInfo = provider(
 HaskellBinaryInfo = provider(
     doc = "Binary-specific information.",
     fields = {
-        "import_dirs": "Import hierarchy roots.",
         "source_files": "Set of source files.",
         "binary": "File, compiled binary.",
         "header_files": "Set of header files.",
