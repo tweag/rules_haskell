@@ -68,7 +68,6 @@ def _haskell_import_impl(ctx):
     )
     buildInfo = HaskellInfo(
         package_ids = set.from_list([ctx.attr.package_id] + deps_ids),
-        package_confs = set.from_list(local_package_confs),
         package_caches = dependencies_caches,
         static_libraries = [],
         static_libraries_prof = [],
