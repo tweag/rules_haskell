@@ -67,8 +67,6 @@ def _haskell_import_impl(ctx):
         package_id = ctx.attr.package_id,
         version = ctx.attr.version,
         header_files = set.empty(),
-        source_files = set.empty(),
-        extra_source_files = set.empty(),
         ghc_args = [],
     )
     buildInfo = HaskellInfo(
@@ -76,6 +74,8 @@ def _haskell_import_impl(ctx):
         package_databases = dependencies_caches,
         version_macros = version_macros,
         import_dirs = [],
+        source_files = set.empty(),
+        extra_source_files = set.empty(),
         static_libraries = [],
         static_libraries_prof = [],
         dynamic_libraries = set.empty(),
