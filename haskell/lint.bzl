@@ -63,9 +63,7 @@ def _haskell_lint_aspect_impl(target, ctx):
         version = ctx.rule.attr.version,
     )))
 
-    sources = set.to_list(
-        lib_info.source_files if lib_info != None else bin_info.source_files,
-    )
+    sources = set.to_list(hs_info.source_files)
 
     args.add_all(sources)
 

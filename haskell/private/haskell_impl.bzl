@@ -156,9 +156,21 @@ def _haskell_binary_common_impl(ctx, is_test):
         version = ctx.attr.version,
     )
 
-    hs_info = dep_info  # HaskellInfo
-    bin_info = HaskellBinaryInfo(
+    hs_info = HaskellInfo(
+        package_ids = dep_info.package_ids,
+        package_databases = dep_info.package_databases,
         source_files = c.source_files,
+        extra_source_files = c.extra_source_files,
+        import_dirs = c.import_dirs,
+        static_libraries = dep_info.static_libraries,
+        static_libraries_prof = dep_info.static_libraries_prof,
+        dynamic_libraries = dep_info.dynamic_libraries,
+        interface_dirs = dep_info.interface_dirs,
+        prebuilt_dependencies = dep_info.prebuilt_dependencies,
+        cc_dependencies = dep_info.cc_dependencies,
+        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
+    )
+    bin_info = HaskellBinaryInfo(
         ghc_args = c.ghc_args,
         header_files = c.header_files,
     )
@@ -401,6 +413,8 @@ def haskell_library_impl(ctx):
     hs_info = HaskellInfo(
         package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
         package_databases = set.insert(dep_info.package_databases, cache_file),
+        source_files = c.source_files,
+        extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         # NOTE We have to use lists for static libraries because the order is
         # important for linker. Linker searches for unresolved symbols to the
@@ -419,8 +433,6 @@ def haskell_library_impl(ctx):
         version = version,
         ghc_args = c.ghc_args,
         header_files = c.header_files,
-        source_files = c.source_files,
-        extra_source_files = c.extra_source_files,
     )
 
     dep_coverage_data = []

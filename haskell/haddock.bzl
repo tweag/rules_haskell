@@ -80,7 +80,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     ghc_args = ctx.actions.args()
     for x in target[HaskellLibraryInfo].ghc_args:
         ghc_args.add_all(["--optghc", x])
-    ghc_args.add_all([x.path for x in set.to_list(target[HaskellLibraryInfo].source_files)])
+    ghc_args.add_all([x.path for x in set.to_list(target[HaskellInfo].source_files)])
     ghc_args.add("-v0")
 
     # haddock flags should take precedence over ghc args, hence are in
@@ -115,6 +115,8 @@ def _haskell_doc_aspect_impl(target, ctx):
         inputs = depset(transitive = [
             set.to_depset(target[HaskellInfo].package_databases),
             set.to_depset(target[HaskellInfo].interface_dirs),
+            set.to_depset(target[HaskellInfo].source_files),
+            target[HaskellInfo].extra_source_files,
             set.to_depset(target[HaskellInfo].dynamic_libraries),
             depset(trans_libs),
             depset(transitive_haddocks.values()),
@@ -123,8 +125,6 @@ def _haskell_doc_aspect_impl(target, ctx):
             # HaskellLibraryInfo provider contains files that are already
             # pre-processed by hsc2hs and these should be visible to Haddock.
             set.to_depset(target[HaskellLibraryInfo].header_files),
-            set.to_depset(target[HaskellLibraryInfo].source_files),
-            target[HaskellLibraryInfo].extra_source_files,
             depset([
                 hs.tools.ghc_pkg,
                 hs.tools.haddock,
