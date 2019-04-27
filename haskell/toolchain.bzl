@@ -48,12 +48,12 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
             "-optP-traditional",
         ])
 
-    ghc_args_file = hs.actions.declare_file("ghc_args_%s_%s" % (hs.name, mnemonic))
+    compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
 
     args.set_param_file_format("multiline")
     arguments.set_param_file_format("multiline")
-    hs.actions.write(ghc_args_file, args)
+    hs.actions.write(compile_flags_file, args)
     hs.actions.write(extra_args_file, arguments)
 
     extra_inputs = [
@@ -61,7 +61,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         # Depend on the version file of the Haskell toolchain,
         # to ensure the version comparison check is run first.
         hs.toolchain.version_file,
-        ghc_args_file,
+        compile_flags_file,
         extra_args_file,
     ] + cc.files
 
@@ -76,12 +76,12 @@ export PATH=${PATH:-} # otherwise GCC fails on Windows
 
 # this is equivalent to 'readarray'. We do not use 'readarray' in order to
 # support older bash versions.
-while IFS= read -r line; do ghc_args+=("$line"); done < %s
+while IFS= read -r line; do compile_flags+=("$line"); done < %s
 while IFS= read -r line; do extra_args+=("$line"); done < %s
 while IFS= read -r line; do param_file_args+=("$line"); done < %s
 
-"${ghc_args[@]}" "${extra_args[@]}" ${param_file_args+"${param_file_args[@]}"}
-""" % (ghc_args_file.path, extra_args_file.path, params_file_src)
+"${compile_flags[@]}" "${extra_args[@]}" ${param_file_args+"${param_file_args[@]}"}
+""" % (compile_flags_file.path, extra_args_file.path, params_file_src)
 
     ghc_wrapper_name = "ghc_wrapper_%s_%s" % (hs.name, mnemonic)
     ghc_wrapper = hs.actions.declare_file(ghc_wrapper_name)
