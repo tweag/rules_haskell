@@ -66,7 +66,6 @@ def _haskell_import_impl(ctx):
     libInfo = HaskellLibraryInfo(
         package_id = ctx.attr.package_id,
         version = ctx.attr.version,
-        header_files = set.empty(),
         ghc_args = [],
     )
     buildInfo = HaskellInfo(

@@ -90,8 +90,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         outputs: default outputs
         objects_dir: object files directory
         interfaces_dir: interface files directory
-        header_files: set of header files
-        boot_files: set of boot files
         source_files: set of files that contain Haskell modules
         extra_source_files: depset of non-Haskell source files
         import_dirs: c2hs Import hierarchy roots
@@ -291,6 +289,10 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     for f in set.to_list(source_files):
         args.add(f)
 
+    extra_source_files = depset(
+        transitive = [extra_srcs, depset(header_files), depset(boot_files)],
+    )
+
     # Transitive library dependencies for runtime.
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
         hs,
@@ -307,7 +309,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             depset(header_files),
             depset(boot_files),
             set.to_depset(source_files),
-            extra_srcs,
+            extra_source_files,
             depset(cc.hdrs),
             set.to_depset(dep_info.package_databases),
             set.to_depset(dep_info.interface_dirs),
@@ -329,10 +331,8 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         objects_dir = objects_dir,
         interfaces_dir = interfaces_dir,
         outputs = [objects_dir, interfaces_dir],
-        header_files = set.from_list(cc.hdrs + header_files),
-        boot_files = set.from_list(boot_files),
         source_files = source_files,
-        extra_source_files = extra_srcs,
+        extra_source_files = extra_source_files,
         import_dirs = import_dirs,
         env = dicts.add(
             ghc_env,
@@ -430,13 +430,9 @@ def compile_binary(
     return struct(
         objects_dir = c.objects_dir,
         source_files = c.source_files,
-        extra_source_files = depset(
-            set.to_list(c.boot_files),
-            transitive = [c.extra_source_files]
-        ),
+        extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         ghc_args = c.ghc_args,
-        header_files = c.header_files,
         exposed_modules_file = exposed_modules_file,
         coverage_data = coverage_data,
     )
@@ -539,12 +535,8 @@ def compile_library(
         interfaces_dir = c.interfaces_dir,
         objects_dir = c.objects_dir,
         ghc_args = c.ghc_args,
-        header_files = c.header_files,
         source_files = c.source_files,
-        extra_source_files = depset(
-            set.to_list(c.boot_files),
-            transitive = [c.extra_source_files]
-        ),
+        extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         exposed_modules_file = exposed_modules_file,
         coverage_data = coverage_data,
