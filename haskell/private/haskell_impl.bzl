@@ -174,6 +174,9 @@ def _haskell_binary_common_impl(ctx, is_test):
         ghc_args = c.ghc_args,
         header_files = c.header_files,
     )
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+    )
 
     target_files = depset([binary])
 
@@ -260,6 +263,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     return [
         hs_info,
         bin_info,
+        cc_info,
         DefaultInfo(
             executable = executable,
             files = target_files,
