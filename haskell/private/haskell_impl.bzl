@@ -86,7 +86,6 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
-    compiler_flags = ctx.attr.compiler_flags
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
     c = hs.toolchain.actions.compile_binary(
@@ -99,7 +98,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
-        compiler_flags = compiler_flags,
+        user_compile_flags = ctx.attr.compiler_flags,
         dynamic = False if hs.toolchain.is_windows else not ctx.attr.linkstatic,
         with_profiling = False,
         main_function = ctx.attr.main_function,
@@ -133,7 +132,7 @@ def _haskell_binary_common_impl(ctx, is_test):
                 depset(ctx.files.extra_srcs),
                 depset([c.objects_dir]),
             ]),
-            compiler_flags = compiler_flags,
+            user_compile_flags = ctx.attr.compiler_flags,
             # NOTE We can't have profiling and dynamic code at the
             # same time, see:
             # https://ghc.haskell.org/trac/ghc/ticket/15394
@@ -166,7 +165,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         static_libraries_prof = dep_info.static_libraries_prof,
         dynamic_libraries = dep_info.dynamic_libraries,
         interface_dirs = dep_info.interface_dirs,
-        ghc_args = c.ghc_args,
+        compile_flags = c.compile_flags,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
@@ -183,7 +182,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         hs,
         ghci_script = ctx.file._ghci_script,
         ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
-        compiler_flags = compiler_flags,
+        user_compile_flags = ctx.attr.compiler_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
         package_databases = dep_info.package_databases,
@@ -199,8 +198,8 @@ def _haskell_binary_common_impl(ctx, is_test):
     build_haskell_runghc(
         hs,
         runghc_wrapper = ctx.file._ghci_repl_wrapper,
-        extra_args = ctx.attr.runghc_args,
-        compiler_flags = ctx.attr.compiler_flags,
+        extra_args = ctx.attr.runcompile_flags,
+        user_compile_flags = ctx.attr.compiler_flags,
         output = ctx.outputs.runghc,
         package_databases = dep_info.package_databases,
         version = ctx.attr.version,
@@ -295,8 +294,6 @@ def haskell_library_impl(ctx):
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
 
-    compiler_flags = ctx.attr.compiler_flags
-
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -309,7 +306,7 @@ def haskell_library_impl(ctx):
         exposed_modules_reexports = exposed_modules_reexports,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
-        compiler_flags = compiler_flags,
+        user_compile_flags = ctx.attr.compiler_flags,
         with_shared = with_shared,
         with_profiling = False,
         my_pkg_id = my_pkg_id,
@@ -337,7 +334,7 @@ def haskell_library_impl(ctx):
                 depset(ctx.files.extra_srcs),
                 depset([c.objects_dir]),
             ]),
-            compiler_flags = compiler_flags,
+            user_compile_flags = ctx.attr.compiler_flags,
             # NOTE We can't have profiling and dynamic code at the
             # same time, see:
             # https://ghc.haskell.org/trac/ghc/ticket/15394
@@ -427,7 +424,7 @@ def haskell_library_impl(ctx):
         static_libraries_prof = static_libraries_prof,
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
-        ghc_args = c.ghc_args,
+        compile_flags = c.compile_flags,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
@@ -454,7 +451,7 @@ def haskell_library_impl(ctx):
             ghci_script = ctx.file._ghci_script,
             ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
             repl_ghci_args = ctx.attr.repl_ghci_args,
-            compiler_flags = compiler_flags,
+            user_compile_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.repl,
             package_databases = dep_info.package_databases,
             version = ctx.attr.version,
@@ -469,8 +466,8 @@ def haskell_library_impl(ctx):
         build_haskell_runghc(
             hs,
             runghc_wrapper = ctx.file._ghci_repl_wrapper,
-            extra_args = ctx.attr.runghc_args,
-            compiler_flags = ctx.attr.compiler_flags,
+            extra_args = ctx.attr.runcompile_flags,
+            user_compile_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.runghc,
             package_databases = dep_info.package_databases,
             version = ctx.attr.version,

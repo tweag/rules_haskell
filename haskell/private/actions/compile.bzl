@@ -1,6 +1,6 @@
 """Actions for compiling Haskell source code"""
 
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
@@ -78,13 +78,13 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id, version, plugins):
+def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins):
     """Compute variables common to all compilation targets (binary and library).
 
     Returns:
       struct with the following fields:
         args: default argument list
-        ghc_args: arguments that were used to compile the package
+        compile_flags: arguments that were used to compile the package
         inputs: default inputs
         input_manifests: input manifests
         outputs: default outputs
@@ -96,7 +96,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         env: default environment variables
     """
 
-    ghc_args = []
+    compile_flags = []
 
     # GHC expects the CC compiler as the assembler, but segregates the
     # set of flags to pass to it when used as an assembler. So we have
@@ -108,7 +108,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         "-opta" + f
         for f in cc.compiler_flags
     ]
-    ghc_args += cc_args
+    compile_flags += cc_args
 
     interface_dir_raw = "_iface_prof" if with_profiling else "_iface"
     object_dir_raw = "_obj_prof" if with_profiling else "_obj"
@@ -138,17 +138,17 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     )
 
     # Default compiler flags.
-    ghc_args += hs.toolchain.compiler_flags
-    ghc_args += compiler_flags
+    compile_flags += hs.toolchain.compiler_flags
+    compile_flags += user_compile_flags
 
     # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
     # not yet in a release; plus, we still want to support older versions of
     # GHC.  For details, see: https://phabricator.haskell.org/D4714
     if hs.toolchain.is_darwin:
-        ghc_args += ["-optl-Wl,-dead_strip_dylibs"]
+        compile_flags += ["-optl-Wl,-dead_strip_dylibs"]
 
-    ghc_args.extend(
-        pkg_info_to_ghc_args(
+    compile_flags.extend(
+        pkg_info_to_compile_flags(
             expose_packages(
                 dep_info,
                 lib_info = None,
@@ -159,8 +159,8 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             ),
         ),
     )
-    ghc_args.extend(
-        pkg_info_to_ghc_args(
+    compile_flags.extend(
+        pkg_info_to_compile_flags(
             expose_packages(
                 plugin_dep_info,
                 lib_info = None,
@@ -179,8 +179,8 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
 
     # Forward all "-D" and "-optP-D" flags to hsc2hs
     hsc_flags = []
-    hsc_flags += ["--cflag=" + x for x in compiler_flags if x.startswith("-D")]
-    hsc_flags += ["--cflag=" + x[len("-optP"):] for x in compiler_flags if x.startswith("-optP-D")]
+    hsc_flags += ["--cflag=" + x for x in user_compile_flags if x.startswith("-D")]
+    hsc_flags += ["--cflag=" + x[len("-optP"):] for x in user_compile_flags if x.startswith("-optP-D")]
 
     # Add import hierarchy root.
     # Note that this is not perfect, since GHC requires hs-boot files
@@ -210,9 +210,9 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             idir = import_dir_map[s]
             set.mutable_insert(import_dirs, idir)
 
-    ghc_args += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
-    ghc_args += ["-optP" + f for f in cc.cpp_flags]
-    ghc_args += cc.include_args
+    compile_flags += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
+    compile_flags += ["-optP" + f for f in cc.cpp_flags]
+    compile_flags += cc.include_args
 
     locale_archive_depset = (
         depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
@@ -228,7 +228,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             pkg_id.to_string(my_pkg_id),
             "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(pkg_id.to_string(my_pkg_id)),
         ]
-        ghc_args += unit_id_args
+        compile_flags += unit_id_args
 
     args = hs.actions.args()
 
@@ -270,7 +270,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             "p_o",
         ])
 
-    args.add_all(ghc_args)
+    args.add_all(compile_flags)
 
     # Plugins
     for plugin in plugins:
@@ -304,7 +304,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
 
     return struct(
         args = args,
-        ghc_args = ghc_args,
+        compile_flags = compile_flags,
         inputs = depset(transitive = [
             depset(header_files),
             depset(boot_files),
@@ -362,7 +362,7 @@ def compile_binary(
         ls_modules,
         import_dir_map,
         extra_srcs,
-        compiler_flags,
+        user_compile_flags,
         dynamic,
         with_profiling,
         main_function,
@@ -378,7 +378,7 @@ def compile_binary(
         modules: set of module names
         source_files: set of Haskell source files
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins)
+    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins)
     c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
@@ -432,7 +432,7 @@ def compile_binary(
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        ghc_args = c.ghc_args,
+        compile_flags = c.compile_flags,
         exposed_modules_file = exposed_modules_file,
         coverage_data = coverage_data,
     )
@@ -449,7 +449,7 @@ def compile_library(
         exposed_modules_reexports,
         import_dir_map,
         extra_srcs,
-        compiler_flags,
+        user_compile_flags,
         with_shared,
         with_profiling,
         my_pkg_id,
@@ -462,12 +462,12 @@ def compile_library(
         interface_files: list of interface files
         object_files: list of static object files
         object_dyn_files: list of dynamic object files
-        ghc_args: list of string arguments suitable for Haddock
+        compile_flags: list of string arguments suitable for Haddock
         modules: set of module names
         source_files: set of Haskell module files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, compiler_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins)
+    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins)
     if with_shared:
         c.args.add("-dynamic-too")
 
@@ -534,7 +534,7 @@ def compile_library(
     return struct(
         interfaces_dir = c.interfaces_dir,
         objects_dir = c.objects_dir,
-        ghc_args = c.ghc_args,
+        compile_flags = c.compile_flags,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,

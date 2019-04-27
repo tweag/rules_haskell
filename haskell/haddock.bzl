@@ -77,15 +77,15 @@ def _haskell_doc_aspect_impl(target, ctx):
         prebuilt_deps.add(dep.package)
     prebuilt_deps.use_param_file(param_file_arg = "%s", use_always = True)
 
-    ghc_args = ctx.actions.args()
-    for x in target[HaskellInfo].ghc_args:
-        ghc_args.add_all(["--optghc", x])
-    ghc_args.add_all([x.path for x in set.to_list(target[HaskellInfo].source_files)])
-    ghc_args.add("-v0")
+    compile_flags = ctx.actions.args()
+    for x in target[HaskellInfo].compile_flags:
+        compile_flags.add_all(["--optghc", x])
+    compile_flags.add_all([x.path for x in set.to_list(target[HaskellInfo].source_files)])
+    compile_flags.add("-v0")
 
     # haddock flags should take precedence over ghc args, hence are in
     # last position
-    ghc_args.add_all(hs.toolchain.haddock_flags)
+    compile_flags.add_all(hs.toolchain.haddock_flags)
 
     locale_archive_depset = (
         depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
@@ -135,7 +135,7 @@ def _haskell_doc_aspect_impl(target, ctx):
         arguments = [
             prebuilt_deps,
             args,
-            ghc_args,
+            compile_flags,
         ],
         use_default_shell_env = True,
     )

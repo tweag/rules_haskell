@@ -79,7 +79,7 @@ _haskell_common_attrs = {
     "repl_ghci_args": attr.string_list(
         doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
     ),
-    "runghc_args": attr.string_list(
+    "runcompile_flags": attr.string_list(
         doc = "Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
     ),
     "plugins": attr.label_list(

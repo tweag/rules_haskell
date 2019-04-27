@@ -1,7 +1,7 @@
 """GHCi REPL support"""
 
 load(":private/context.bzl", "render_env")
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -22,7 +22,7 @@ def build_haskell_repl(
         hs,
         ghci_script,
         ghci_repl_wrapper,
-        compiler_flags,
+        user_compile_flags,
         repl_ghci_args,
         hs_info,
         output,
@@ -59,7 +59,7 @@ def build_haskell_repl(
         custom_package_databases = package_databases,
         version = version,
     )
-    args += pkg_info_to_ghc_args(pkg_ghc_info)
+    args += pkg_info_to_compile_flags(pkg_ghc_info)
 
     lib_imports = []
     if lib_info != None:
@@ -107,9 +107,9 @@ def build_haskell_repl(
     # GHC.
     # Note that most flags for GHCI do have their negative value, so a
     # negative flag in `repl_ghci_args` can disable a positive flag set
-    # in `compiler_flags`, such as `-XNoOverloadedStrings` will disable
+    # in `user_compile_flags`, such as `-XNoOverloadedStrings` will disable
     # `-XOverloadedStrings`.
-    args += hs.toolchain.compiler_flags + compiler_flags + hs.toolchain.repl_ghci_args + repl_ghci_args
+    args += hs.toolchain.compiler_flags + user_compile_flags + hs.toolchain.repl_ghci_args + repl_ghci_args
 
     hs.actions.expand_template(
         template = ghci_repl_wrapper,
@@ -145,7 +145,7 @@ def build_haskell_repl(
             runghc = hs.tools.runghc.path,
         ),
         flags = struct(
-            compiler = compiler_flags,
+            compiler = user_compile_flags,
             toolchain_compiler = hs.toolchain.compiler_flags,
             repl = repl_ghci_args,
             toolchain_repl = hs.toolchain.repl_ghci_args,
