@@ -101,7 +101,7 @@ def _haskell_doctest_single(target, ctx):
     toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:doctest-toolchain"]
 
     # GHC flags we have prepared before.
-    args.add_all(lib_info.ghc_args if lib_info != None else bin_info.ghc_args)
+    args.add_all(hs_info.ghc_args)
 
     # Add any extra flags specified by the user.
     args.add_all(ctx.attr.doctest_flags)

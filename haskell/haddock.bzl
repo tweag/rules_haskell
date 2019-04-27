@@ -78,7 +78,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     prebuilt_deps.use_param_file(param_file_arg = "%s", use_always = True)
 
     ghc_args = ctx.actions.args()
-    for x in target[HaskellLibraryInfo].ghc_args:
+    for x in target[HaskellInfo].ghc_args:
         ghc_args.add_all(["--optghc", x])
     ghc_args.add_all([x.path for x in set.to_list(target[HaskellInfo].source_files)])
     ghc_args.add("-v0")
