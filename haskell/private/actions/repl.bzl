@@ -28,8 +28,7 @@ def build_haskell_repl(
         output,
         package_databases,
         version,
-        lib_info = None,
-        bin_info = None):
+        lib_info = None):
     """Build REPL script.
 
     Args:
@@ -40,8 +39,6 @@ def build_haskell_repl(
                       we're creating a REPL for.
       lib_info: If we're building REPL for a library target, pass
                 HaskellLibraryInfo here, otherwise it should be None.
-      bin_info: If we're building REPL for a binary target, pass
-                HaskellBinaryInfo here, otherwise it should be None.
 
     Returns:
       None.

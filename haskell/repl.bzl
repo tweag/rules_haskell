@@ -12,7 +12,6 @@ load(
 )
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBinaryInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "empty_HaskellCcInfo",
@@ -116,28 +115,18 @@ def _create_HaskellReplCollectInfo(target, ctx):
     prebuilt_dependencies = hs_info.prebuilt_dependencies
     transitive_cc_dependencies = hs_info.transitive_cc_dependencies
 
+    load_infos[target.label] = HaskellReplLoadInfo(
+        source_files = hs_info.source_files,
+        cc_dependencies = hs_info.cc_dependencies,
+        compiler_flags = getattr(ctx.rule.attr, "compiler_flags", []),
+        repl_ghci_args = getattr(ctx.rule.attr, "repl_ghci_args", []),
+    )
     if HaskellLibraryInfo in target:
         lib_info = target[HaskellLibraryInfo]
-        load_infos[target.label] = HaskellReplLoadInfo(
-            source_files = hs_info.source_files,
-            cc_dependencies = hs_info.cc_dependencies,
-            compiler_flags = getattr(ctx.rule.attr, "compiler_flags", []),
-            repl_ghci_args = getattr(ctx.rule.attr, "repl_ghci_args", []),
-        )
         dep_infos[target.label] = HaskellReplDepInfo(
             package_ids = set.singleton(lib_info.package_id),
             package_databases = hs_info.package_databases,
         )
-    elif HaskellBinaryInfo in target:
-        bin_info = target[HaskellBinaryInfo]
-        load_infos[target.label] = HaskellReplLoadInfo(
-            source_files = hs_info.source_files,
-            cc_dependencies = hs_info.cc_dependencies,
-            compiler_flags = ctx.rule.attr.compiler_flags,
-            repl_ghci_args = ctx.rule.attr.repl_ghci_args,
-        )
-    else:
-        fail("Missing HaskellLibraryInfo or HaskellBinaryInfo.")
 
     return HaskellReplCollectInfo(
         load_infos = load_infos,
@@ -338,13 +327,7 @@ def _create_repl(hs, ctx, repl_info, output):
     )]
 
 def _haskell_repl_aspect_impl(target, ctx):
-    is_eligible = (
-        HaskellInfo in target and (
-            HaskellLibraryInfo in target or
-            HaskellBinaryInfo in target
-        )
-    )
-    if not is_eligible:
+    if not HaskellInfo in target:
         return []
 
     target_info = _create_HaskellReplCollectInfo(target, ctx)
