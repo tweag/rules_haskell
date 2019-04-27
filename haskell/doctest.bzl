@@ -11,7 +11,6 @@ load(":providers.bzl", "get_libs_for_ghc_linker")
 load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBinaryInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
 )
@@ -89,7 +88,6 @@ def _haskell_doctest_single(target, ctx):
     hs_info = target[HaskellInfo]
     cc_info = target[CcInfo]
     lib_info = target[HaskellLibraryInfo] if HaskellLibraryInfo in target else None
-    bin_info = target[HaskellBinaryInfo] if HaskellBinaryInfo in target else None
 
     args = ctx.actions.args()
     args.add("--no-magic")

@@ -2,7 +2,6 @@
 
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBinaryInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellLintInfo",
@@ -36,7 +35,6 @@ def _haskell_lint_aspect_impl(target, ctx):
 
     hs_info = target[HaskellInfo]
     lib_info = target[HaskellLibraryInfo] if HaskellLibraryInfo in target else None
-    bin_info = target[HaskellBinaryInfo] if HaskellBinaryInfo in target else None
 
     args = ctx.actions.args()
 

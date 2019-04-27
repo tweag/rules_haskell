@@ -2,7 +2,6 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBinaryInfo",
     "HaskellCcInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
@@ -163,7 +162,7 @@ def gather_dep_info(ctx, deps):
         if HaskellInfo in dep:
             binfo = dep[HaskellInfo]
             package_ids = acc.package_ids
-            if HaskellBinaryInfo in dep:
+            if HaskellLibraryInfo not in dep:
                 fail("Target {0} cannot depend on binary".format(ctx.attr.name))
             if HaskellLibraryInfo in dep:
                 set.mutable_insert(package_ids, dep[HaskellLibraryInfo].package_id)
