@@ -174,10 +174,6 @@ HaskellLibraryInfo = provider(
     },
 )
 
-HaskellBinaryInfo = provider(
-    doc = "Binary-specific information.",
-)
-
 HaskellCoverageInfo = provider(
     doc = "Information about coverage instrumentation for Haskell files.",
     fields = {

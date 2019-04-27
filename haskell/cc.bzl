@@ -14,7 +14,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBinaryInfo",
     "HaskellInfo",
 )
 
@@ -287,12 +286,6 @@ def _cc_haskell_import(ctx):
     else:
         fail("{0} has to provide `HaskellInfo`".format(ctx.attr.dep.label.name))
 
-    if HaskellBinaryInfo in ctx.attr.dep:
-        bin = ctx.attr.dep[HaskellBinaryInfo].binary
-        dyn_lib = ctx.actions.declare_file("lib{0}.so".format(bin.basename))
-        ln(ctx, bin, dyn_lib)
-        set.mutable_insert(dyn_libs, dyn_lib)
-
     return [
         DefaultInfo(
             files = set.to_depset(dyn_libs),
@@ -312,8 +305,8 @@ cc_haskell_import = rule(
     attrs = {
         "dep": attr.label(
             doc = """
-Target providing a `HaskellLibraryInfo` or `HaskellBinaryInfo`, such as
-`haskell_library` or `haskell_binary`.
+Target providing a `HaskellLiInfo` such as `haskell_library` or
+`haskell_binary`.
 """,
         ),
     },

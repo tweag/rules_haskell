@@ -3,7 +3,6 @@
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
-    "HaskellBinaryInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
@@ -170,8 +169,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
-    bin_info = HaskellBinaryInfo(
-    )
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
     )
@@ -188,7 +185,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         package_databases = dep_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
-        bin_info = bin_info,
     )
 
     # XXX Temporary backwards compatibility hack. Remove eventually.
@@ -204,7 +200,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         package_databases = dep_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
-        bin_info = bin_info,
     )
 
     executable = binary
@@ -260,7 +255,6 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     return [
         hs_info,
-        bin_info,
         cc_info,
         DefaultInfo(
             executable = executable,

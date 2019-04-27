@@ -26,8 +26,7 @@ def build_haskell_runghc(
         output,
         package_databases,
         version,
-        lib_info = None,
-        bin_info = None):
+        lib_info = None):
     """Build runghc script.
 
     Args:
@@ -38,8 +37,6 @@ def build_haskell_runghc(
                       we're creating a runghc for.
       lib_info: If we're building runghc for a library target, pass
                 HaskellLibraryInfo here, otherwise it should be None.
-      bin_info: If we're building runghc for a binary target, pass
-                HaskellBinaryInfo here, otherwise it should be None.
 
     Returns:
       None.
