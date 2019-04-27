@@ -441,6 +441,10 @@ def compile_binary(
     return struct(
         objects_dir = c.objects_dir,
         source_files = c.source_files,
+        extra_source_files = depset(
+            set.to_list(c.boot_files),
+            transitive = [c.extra_source_files]
+        ),
         import_dirs = c.import_dirs,
         ghc_args = c.ghc_args,
         header_files = c.header_files,

@@ -84,13 +84,7 @@ def build_haskell_repl(
 
     repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
 
-    lib_sources = []
-    bin_sources = []
-    if lib_info != None:
-        lib_sources = [f.path for f in set.to_list(lib_info.source_files)]
-    elif bin_info != None:
-        bin_sources = [f.path for f in set.to_list(bin_info.source_files)]
-    add_sources = ["*" + f for f in lib_sources + bin_sources]
+    add_sources = ["*" + f.path for f in set.to_list(hs_info.source_files)]
 
     ghci_repl_script = hs.actions.declare_file(
         target_unique_name(hs, "ghci-repl-script"),
@@ -103,8 +97,6 @@ def build_haskell_repl(
             "{COMMANDS}": "",
         },
     )
-
-    source_files = lib_info.source_files if lib_info != None else bin_info.source_files
 
     # Extra arguments.
     # `compiler flags` is the default set of arguments for the repl,
@@ -147,8 +139,6 @@ def build_haskell_repl(
         package_dbs = pkg_ghc_info.package_dbs,
         lib_imports = lib_imports,
         libraries = libraries,
-        lib_sources = lib_sources,
-        bin_sources = bin_sources,
         execs = struct(
             ghc = hs.tools.ghc.path,
             ghci = hs.tools.ghci.path,
@@ -183,6 +173,6 @@ def build_haskell_repl(
         set.to_depset(package_databases),
         depset(library_deps),
         depset(ld_library_deps),
-        set.to_depset(source_files),
+        set.to_depset(hs_info.source_files),
     ])
     ln(hs, repl_file, output, extra_inputs)

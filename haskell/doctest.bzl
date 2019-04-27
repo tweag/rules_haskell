@@ -134,9 +134,7 @@ def _haskell_doctest_single(target, ctx):
 
     header_files = lib_info.header_files if lib_info != None else bin_info.header_files
 
-    sources = set.to_list(
-        lib_info.source_files if lib_info != None else bin_info.source_files,
-    )
+    sources = set.to_list(hs_info.source_files)
 
     if ctx.attr.modules:
         inputs = ctx.attr.modules

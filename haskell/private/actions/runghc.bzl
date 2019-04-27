@@ -73,8 +73,6 @@ def build_haskell_runghc(
 
     runghc_file = hs.actions.declare_file(target_unique_name(hs, "runghc"))
 
-    source_files = lib_info.source_files if lib_info != None else bin_info.source_files
-
     # Extra arguments.
     # `compiler flags` is the default set of arguments for runghc,
     # augmented by `extra_args`.
@@ -115,6 +113,6 @@ def build_haskell_runghc(
         set.to_depset(package_databases),
         depset(library_deps),
         depset(ld_library_deps),
-        set.to_depset(source_files),
+        set.to_depset(hs_info.source_files),
     ])
     ln(hs, runghc_file, output, extra_inputs)
