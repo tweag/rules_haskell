@@ -8,7 +8,7 @@ load(
     "HaskellLintInfo",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(
     ":private/path_utils.bzl",
     "target_unique_name",
@@ -54,7 +54,7 @@ def _haskell_lint_aspect_impl(target, ctx):
         "--make",
     ])
 
-    args.add_all(pkg_info_to_ghc_args(expose_packages(
+    args.add_all(pkg_info_to_compile_flags(expose_packages(
         hs_info,
         lib_info,
         use_direct = False,

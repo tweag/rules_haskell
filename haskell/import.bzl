@@ -78,7 +78,7 @@ def _haskell_import_impl(ctx):
         static_libraries_prof = [],
         dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
-        ghc_args = [],
+        compile_flags = [],
         prebuilt_dependencies = set.empty(),
         direct_prebuilt_deps = set.empty(),
         cc_dependencies = empty_HaskellCcInfo(),

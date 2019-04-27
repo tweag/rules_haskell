@@ -1,7 +1,7 @@
 """runghc support"""
 
 load(":private/context.bzl", "render_env")
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -20,7 +20,7 @@ load("@bazel_skylib//lib:shell.bzl", "shell")
 def build_haskell_runghc(
         hs,
         runghc_wrapper,
-        compiler_flags,
+        user_compile_flags,
         extra_args,
         hs_info,
         output,
@@ -45,7 +45,7 @@ def build_haskell_runghc(
       None.
     """
 
-    args = pkg_info_to_ghc_args(expose_packages(
+    args = pkg_info_to_compile_flags(expose_packages(
         hs_info,
         lib_info,
         use_direct = False,
@@ -82,13 +82,13 @@ def build_haskell_runghc(
     # GHC.
     # Note that most flags for GHCI do have their negative value, so a
     # negative flag in `extra_args` can disable a positive flag set
-    # in `compiler_flags`, such as `-XNoOverloadedStrings` will disable
+    # in `user_compile_flags`, such as `-XNoOverloadedStrings` will disable
     # `-XOverloadedStrings`.
-    args += hs.toolchain.compiler_flags + compiler_flags + hs.toolchain.repl_ghci_args
+    args += hs.toolchain.compiler_flags + user_compile_flags + hs.toolchain.repl_ghci_args
 
     # ghc args need to be wrapped up in "--ghc-arg=" when passing to runghc
-    runghc_args = ["--ghc-arg=%s" % a for a in args]
-    runghc_args += extra_args
+    runcompile_flags = ["--ghc-arg=%s" % a for a in args]
+    runcompile_flags += extra_args
 
     hs.actions.expand_template(
         template = runghc_wrapper,
@@ -96,7 +96,7 @@ def build_haskell_runghc(
         substitutions = {
             "{ENV}": render_env(ghc_env),
             "{TOOL}": hs.tools.runghc.path,
-            "{ARGS}": " ".join([shell.quote(a) for a in runghc_args]),
+            "{ARGS}": " ".join([shell.quote(a) for a in runcompile_flags]),
         },
         is_executable = True,
     )

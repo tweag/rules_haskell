@@ -2,7 +2,7 @@
 
 load(":private/set.bzl", "set")
 
-def pkg_info_to_ghc_args(pkg_info, for_plugin = False):
+def pkg_info_to_compile_flags(pkg_info, for_plugin = False):
     """Map package info to GHC command-line arguments.
 
     Args:
