@@ -59,7 +59,6 @@ def _haskell_import_impl(ctx):
     libInfo = HaskellLibraryInfo(
         package_id = ctx.attr.package_id,
         version = ctx.attr.version,
-        ghc_args = [],
     )
     buildInfo = HaskellInfo(
         package_ids = set.from_list([ctx.attr.package_id] + deps_ids),
@@ -71,6 +70,7 @@ def _haskell_import_impl(ctx):
         static_libraries_prof = [],
         dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
+        ghc_args = [],
         prebuilt_dependencies = set.empty(),
         direct_prebuilt_deps = set.empty(),
         cc_dependencies = empty_HaskellCcInfo(),

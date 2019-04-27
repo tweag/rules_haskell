@@ -85,6 +85,7 @@ HaskellInfo = provider(
         "static_libraries_prof": "Ordered collection of static libraries with profiling.",
         "dynamic_libraries": "Set of dynamic libraries.",
         "interface_dirs": "Set of interface dirs belonging to the packages.",
+        "ghc_args": "Arguments that were used to compile the code.",
         "prebuilt_dependencies": "Transitive collection of info of wired-in Haskell dependencies.",
         "direct_prebuilt_deps": "Set of info of direct prebuilt dependencies.",
         "cc_dependencies": "Direct cc library dependencies. See HaskellCcInfo.",
@@ -170,15 +171,11 @@ HaskellLibraryInfo = provider(
     fields = {
         "package_id": "Workspace unique package identifier.",
         "version": "Package version.",
-        "ghc_args": "Arguments that were used to compile the package.",
     },
 )
 
 HaskellBinaryInfo = provider(
     doc = "Binary-specific information.",
-    fields = {
-        "ghc_args": "Arguments that were used to compile the binary.",
-    },
 )
 
 HaskellCoverageInfo = provider(
