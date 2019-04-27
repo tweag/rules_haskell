@@ -171,7 +171,6 @@ HaskellLibraryInfo = provider(
     fields = {
         "package_id": "Workspace unique package identifier.",
         "version": "Package version.",
-        "header_files": "Set of header files.",
         "ghc_args": "Arguments that were used to compile the package.",
     },
 )
@@ -179,7 +178,6 @@ HaskellLibraryInfo = provider(
 HaskellBinaryInfo = provider(
     doc = "Binary-specific information.",
     fields = {
-        "header_files": "Set of header files.",
         "ghc_args": "Arguments that were used to compile the binary.",
     },
 )
