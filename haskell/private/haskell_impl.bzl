@@ -172,7 +172,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
     bin_info = HaskellBinaryInfo(
         ghc_args = c.ghc_args,
-        header_files = c.header_files,
     )
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
@@ -436,7 +435,6 @@ def haskell_library_impl(ctx):
         package_id = pkg_id.to_string(my_pkg_id),
         version = version,
         ghc_args = c.ghc_args,
-        header_files = c.header_files,
     )
 
     dep_coverage_data = []

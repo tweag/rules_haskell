@@ -121,10 +121,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             depset(trans_libs),
             depset(transitive_haddocks.values()),
             depset(transitive_html.values()),
-            # Need to give source files this way because the source_files field of
-            # HaskellLibraryInfo provider contains files that are already
-            # pre-processed by hsc2hs and these should be visible to Haddock.
-            set.to_depset(target[HaskellLibraryInfo].header_files),
+            target[CcInfo].compilation_context.headers,
             depset([
                 hs.tools.ghc_pkg,
                 hs.tools.haddock,

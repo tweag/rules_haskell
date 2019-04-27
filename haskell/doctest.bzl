@@ -87,6 +87,7 @@ def _haskell_doctest_single(target, ctx):
     hs = haskell_context(ctx, ctx.attr)
 
     hs_info = target[HaskellInfo]
+    cc_info = target[CcInfo]
     lib_info = target[HaskellLibraryInfo] if HaskellLibraryInfo in target else None
     bin_info = target[HaskellBinaryInfo] if HaskellBinaryInfo in target else None
 
@@ -132,8 +133,6 @@ def _haskell_doctest_single(target, ctx):
         hs_info.transitive_cc_dependencies,
     )
 
-    header_files = lib_info.header_files if lib_info != None else bin_info.header_files
-
     sources = set.to_list(hs_info.source_files)
 
     if ctx.attr.modules:
@@ -147,7 +146,7 @@ def _haskell_doctest_single(target, ctx):
             set.to_depset(hs_info.package_databases),
             set.to_depset(hs_info.interface_dirs),
             set.to_depset(hs_info.dynamic_libraries),
-            set.to_depset(header_files),
+            cc_info.compilation_context.headers,
             depset(library_deps),
             depset(ld_library_deps),
             depset(
