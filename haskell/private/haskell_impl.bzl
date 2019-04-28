@@ -74,9 +74,24 @@ def _coverage_enabled_for_target(coverage_source_patterns, label):
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [
+            dep[CcInfo]
+            for dep in ctx.attr.deps
+            if CcInfo in dep
+        ],
+    )
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
+    )
+    plugin_cc_info = cc_common.merge_cc_infos(
+        cc_infos = [
+            dep[CcInfo]
+            for plugin in ctx.attr.plugins
+            for dep in plugin[GhcPluginInfo].deps
+            if CcInfo in dep
+        ],
     )
 
     # Add any interop info for other languages.
@@ -92,7 +107,9 @@ def _haskell_binary_common_impl(ctx, is_test):
         cc,
         java,
         dep_info,
+        cc_info,
         plugin_dep_info,
+        plugin_cc_info,
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
@@ -120,7 +137,9 @@ def _haskell_binary_common_impl(ctx, is_test):
             cc,
             java,
             dep_info,
+            cc_info,
             plugin_dep_info,
+            plugin_cc_info,
             srcs = srcs_files,
             ls_modules = ctx.executable._ls_modules,
             import_dir_map = import_dir_map,
@@ -146,6 +165,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         hs,
         cc,
         dep_info,
+        cc_info,
         ctx.files.extra_srcs,
         ctx.attr.compiler_flags,
         c_p.objects_dir if with_profiling else c.objects_dir,
@@ -162,15 +182,11 @@ def _haskell_binary_common_impl(ctx, is_test):
         import_dirs = c.import_dirs,
         static_libraries = dep_info.static_libraries,
         static_libraries_prof = dep_info.static_libraries_prof,
-        dynamic_libraries = dep_info.dynamic_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = c.compile_flags,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
-    )
-    cc_info = cc_common.merge_cc_infos(
-        cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
     )
 
     target_files = depset([binary])
@@ -271,9 +287,15 @@ def _haskell_binary_common_impl(ctx, is_test):
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+    )
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
+    )
+    plugin_cc_info = cc_common.merge_cc_infos(
+        cc_infos = [dep[CcInfo] for plugin in ctx.attr.plugins for dep in ctx.attr.deps],
     )
     version = ctx.attr.version if ctx.attr.version else None
     my_pkg_id = pkg_id.new(ctx.label, version)
@@ -284,6 +306,15 @@ def haskell_library_impl(ctx):
     cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
 
+    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
+    # Should be find_cpp_toolchain() instead.
+    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    feature_configuration = cc_common.configure_features(
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
@@ -293,7 +324,9 @@ def haskell_library_impl(ctx):
         cc,
         java,
         dep_info,
+        cc_info,
         plugin_dep_info,
+        plugin_cc_info,
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
         other_modules = other_modules,
@@ -315,7 +348,9 @@ def haskell_library_impl(ctx):
             cc,
             java,
             dep_info,
+            cc_info,
             plugin_dep_info,
+            plugin_cc_info,
             srcs = srcs_files,
             ls_modules = ctx.executable._ls_modules,
             other_modules = other_modules,
@@ -342,6 +377,7 @@ def haskell_library_impl(ctx):
         hs,
         cc,
         dep_info,
+        cc_info,
         c.objects_dir,
         my_pkg_id,
         with_profiling = False,
@@ -352,17 +388,13 @@ def haskell_library_impl(ctx):
             hs,
             cc,
             dep_info,
+            cc_info,
             depset(ctx.files.extra_srcs),
             c.objects_dir,
             my_pkg_id,
         )
-        dynamic_libraries = set.insert(
-            dep_info.dynamic_libraries,
-            dynamic_library,
-        )
     else:
         dynamic_library = None
-        dynamic_libraries = dep_info.dynamic_libraries
 
     static_library_prof = None
     if with_profiling:
@@ -370,18 +402,30 @@ def haskell_library_impl(ctx):
             hs,
             cc,
             dep_info,
+            cc_info,
             c_p.objects_dir,
             my_pkg_id,
             with_profiling = True,
         )
+
+    # library_to_link might rewrite the paths to the static/dynamic
+    # libraries. So it's important that we feed its output to the
+    # packaging step.
+    library_to_link = cc_common.create_library_to_link(
+        actions = ctx.actions,
+        feature_configuration = feature_configuration,
+        dynamic_library = dynamic_library,
+        static_library = static_library,
+        cc_toolchain = cc_toolchain,
+    )
 
     conf_file, cache_file = package(
         hs,
         dep_info,
         c.interfaces_dir,
         c_p.interfaces_dir if c_p != None else None,
-        static_library,
-        dynamic_library,
+        library_to_link.static_library,
+        library_to_link.dynamic_library,
         c.exposed_modules_file,
         other_modules,
         my_pkg_id,
@@ -416,7 +460,6 @@ def haskell_library_impl(ctx):
         # then you feed the library which resolves the symbols.
         static_libraries = [static_library] + dep_info.static_libraries,
         static_libraries_prof = static_libraries_prof,
-        dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
@@ -484,37 +527,18 @@ def haskell_library_impl(ctx):
     # Create a CcInfo provider so that CC rules can work with
     # a haskell library as if it was a regular CC one.
 
-    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
-    # Should be find_cpp_toolchain() instead.
-    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
-    feature_configuration = cc_common.configure_features(
-        cc_toolchain = cc_toolchain,
-        requested_features = ctx.features,
-        unsupported_features = ctx.disabled_features,
-    )
-    library_to_link = cc_common.create_library_to_link(
-        actions = ctx.actions,
-        feature_configuration = feature_configuration,
-        dynamic_library = dynamic_library,
-        static_library = static_library,
-        cc_toolchain = cc_toolchain,
-    )
     compilation_context = cc_common.create_compilation_context()
     linking_context = cc_common.create_linking_context(
         libraries_to_link = [library_to_link],
     )
-    cc_info = cc_common.merge_cc_infos(
-        cc_infos = [
-            CcInfo(
-                compilation_context = compilation_context,
-                linking_context = linking_context,
-            ),
-        ] + [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+    my_cc_info = CcInfo(
+        compilation_context = compilation_context,
+        linking_context = linking_context,
     )
 
     return [
         hs_info,
-        cc_info,
+        cc_common.merge_cc_infos(cc_infos = [my_cc_info, cc_info]),
         coverage_info,
         default_info,
         lib_info,

@@ -111,13 +111,19 @@ def _haskell_doc_aspect_impl(target, ctx):
     trans_link_ctx = target[HaskellInfo].transitive_cc_dependencies.dynamic_linking
     trans_libs = trans_link_ctx.libraries_to_link.to_list()
 
+    dynamic_libraries = [
+        lib.dynamic_library
+        for lib in target[CcInfo].linking_context.libraries_to_link
+        if lib.dynamic_library
+    ]
+
     ctx.actions.run(
         inputs = depset(transitive = [
             set.to_depset(target[HaskellInfo].package_databases),
             set.to_depset(target[HaskellInfo].interface_dirs),
             set.to_depset(target[HaskellInfo].source_files),
             target[HaskellInfo].extra_source_files,
-            set.to_depset(target[HaskellInfo].dynamic_libraries),
+            depset(dynamic_libraries),
             depset(trans_libs),
             depset(transitive_haddocks.values()),
             depset(transitive_html.values()),

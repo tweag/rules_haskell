@@ -149,7 +149,6 @@ def gather_dep_info(ctx, deps):
         package_databases = set.empty(),
         static_libraries = [],
         static_libraries_prof = [],
-        dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
         prebuilt_dependencies = set.empty(),
         direct_prebuilt_deps = set.empty(),
@@ -170,7 +169,6 @@ def gather_dep_info(ctx, deps):
                 package_databases = set.mutable_union(acc.package_databases, binfo.package_databases),
                 static_libraries = acc.static_libraries + binfo.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof + binfo.static_libraries_prof,
-                dynamic_libraries = set.mutable_union(acc.dynamic_libraries, binfo.dynamic_libraries),
                 interface_dirs = set.mutable_union(acc.interface_dirs, binfo.interface_dirs),
                 prebuilt_dependencies = set.mutable_union(acc.prebuilt_dependencies, binfo.prebuilt_dependencies),
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,
@@ -184,14 +182,14 @@ def gather_dep_info(ctx, deps):
                 package_databases = acc.package_databases,
                 static_libraries = acc.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof,
-                dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
                 prebuilt_dependencies = set.mutable_insert(acc.prebuilt_dependencies, pkg),
                 direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
                 cc_dependencies = acc.cc_dependencies,
                 transitive_cc_dependencies = acc.transitive_cc_dependencies,
             )
-        elif CcInfo in dep and HaskellInfo not in dep:
+
+        if CcInfo in dep:
             # The final link of a binary must include all static libraries we
             # depend on, including transitives ones. Theses libs are provided
             # in the `CcInfo` provider.
@@ -201,7 +199,6 @@ def gather_dep_info(ctx, deps):
                 package_databases = acc.package_databases,
                 static_libraries = acc.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof,
-                dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
                 prebuilt_dependencies = acc.prebuilt_dependencies,
                 direct_prebuilt_deps = acc.direct_prebuilt_deps,

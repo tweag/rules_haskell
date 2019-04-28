@@ -143,7 +143,6 @@ def _haskell_doctest_single(target, ctx):
             depset(sources),
             set.to_depset(hs_info.package_databases),
             set.to_depset(hs_info.interface_dirs),
-            set.to_depset(hs_info.dynamic_libraries),
             cc_info.compilation_context.headers,
             depset(library_deps),
             depset(ld_library_deps),

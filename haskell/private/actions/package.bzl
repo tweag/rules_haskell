@@ -88,8 +88,6 @@ def package(
         "exposed": "True",
         "hidden-modules": " ".join(other_modules),
         "import-dirs": " ".join([import_dir, import_dir_prof]),
-        "library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
-        "dynamic-library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
         "extra-libraries": " ".join(extra_libs),
         "depends": ", ".join(
@@ -98,6 +96,14 @@ def package(
             set.to_list(dep_info.package_ids),
         ),
     }
+    if static_library:
+        metadata_entries["library-dirs"] = " ".join(
+            [static_library.dirname] + extra_lib_dirs,
+        )
+    if dynamic_library:
+        metadata_entries["dynamic-library-dirs"] = " ".join(
+            [dynamic_library.dirname] + extra_lib_dirs,
+        )
 
     # Create a file from which ghc-pkg will create the actual package
     # from. List of exposed modules generated below.

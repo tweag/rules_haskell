@@ -78,7 +78,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins):
+def _compilation_defaults(hs, cc, java, dep_info, cc_info, plugin_dep_info, plugin_cc_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins):
     """Compute variables common to all compilation targets (binary and library).
 
     Returns:
@@ -302,6 +302,17 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         ),
     )
 
+    dynamic_libraries = [
+        lib.dynamic_library
+        for lib in cc_info.linking_context.libraries_to_link
+        if lib.dynamic_library
+    ]
+    plugin_dynamic_libraries = [
+        lib.dynamic_library
+        for lib in plugin_cc_info.linking_context.libraries_to_link
+        if lib.dynamic_library
+    ]
+
     return struct(
         args = args,
         compile_flags = compile_flags,
@@ -315,12 +326,12 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             set.to_depset(dep_info.interface_dirs),
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
-            set.to_depset(dep_info.dynamic_libraries),
+            depset(dynamic_libraries),
             set.to_depset(plugin_dep_info.package_databases),
             set.to_depset(plugin_dep_info.interface_dirs),
             depset(plugin_dep_info.static_libraries),
             depset(plugin_dep_info.static_libraries_prof),
-            set.to_depset(plugin_dep_info.dynamic_libraries),
+            depset(plugin_dynamic_libraries),
             depset(library_deps),
             depset(ld_library_deps),
             java.inputs,
@@ -357,7 +368,9 @@ def compile_binary(
         cc,
         java,
         dep_info,
+        cc_info,
         plugin_dep_info,
+        plugin_cc_info,
         srcs,
         ls_modules,
         import_dir_map,
@@ -378,7 +391,7 @@ def compile_binary(
         modules: set of module names
         source_files: set of Haskell source files
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins)
+    c = _compilation_defaults(hs, cc, java, dep_info, cc_info, plugin_dep_info, plugin_cc_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins)
     c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
@@ -442,7 +455,9 @@ def compile_library(
         cc,
         java,
         dep_info,
+        cc_info,
         plugin_dep_info,
+        plugin_cc_info,
         srcs,
         ls_modules,
         other_modules,
@@ -467,7 +482,7 @@ def compile_library(
         source_files: set of Haskell module files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins)
+    c = _compilation_defaults(hs, cc, java, dep_info, cc_info, plugin_dep_info, plugin_cc_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins)
     if with_shared:
         c.args.add("-dynamic-too")
 

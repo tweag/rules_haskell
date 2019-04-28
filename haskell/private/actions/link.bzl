@@ -267,7 +267,7 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
 
     return objects_dir_manifest
 
-def _link_dependencies(hs, dep_info, dynamic, binary, args):
+def _link_dependencies(hs, dep_info, cc_info, dynamic, binary, args):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -317,13 +317,14 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
     hs_solibs = []
     if dynamic:
         hs_solibs_prefix = "_hssolib_%s" % hs.name
-        for dep in set.to_list(dep_info.dynamic_libraries):
-            dep_link = hs.actions.declare_file(
-                paths.join(hs_solibs_prefix, dep.basename),
-                sibling = binary,
-            )
-            ln(hs, dep, dep_link)
-            hs_solibs.append(dep_link)
+        for lib in cc_info.linking_context.libraries_to_link:
+            if lib.dynamic_library:
+                lib_link = hs.actions.declare_file(
+                    paths.join(hs_solibs_prefix, lib.dynamic_library.basename),
+                    sibling = binary,
+                )
+                ln(hs, lib.dynamic_library, lib_link)
+                hs_solibs.append(lib_link)
 
     # Configure RUNPATH.
     rpaths = _infer_rpaths(
@@ -341,6 +342,7 @@ def link_binary(
         hs,
         cc,
         dep_info,
+        cc_info,
         extra_srcs,
         compiler_flags,
         objects_dir,
@@ -403,6 +405,7 @@ def link_binary(
     (cc_link_libs, cc_solibs, hs_solibs) = _link_dependencies(
         hs = hs,
         dep_info = dep_info,
+        cc_info = cc_info,
         dynamic = dynamic,
         binary = executable,
         args = args,
@@ -454,7 +457,6 @@ def link_binary(
         inputs = depset(transitive = [
             depset(extra_srcs),
             set.to_depset(dep_info.package_databases),
-            set.to_depset(dep_info.dynamic_libraries),
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
             depset([objects_dir]),
@@ -542,7 +544,7 @@ def _so_extension(hs):
     """
     return "dylib" if hs.toolchain.is_darwin else "so"
 
-def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling):
+def link_library_static(hs, cc, dep_info, cc_info, objects_dir, my_pkg_id, with_profiling):
     """Link a static library for the package using given object files.
 
     Returns:
@@ -597,7 +599,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
 
     return static_library
 
-def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
+def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_pkg_id):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -634,6 +636,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     (cc_link_libs, _cc_solibs, _hs_solibs) = _link_dependencies(
         hs = hs,
         dep_info = dep_info,
+        cc_info = cc_info,
         dynamic = True,
         binary = dynamic_library,
         args = args,
@@ -655,7 +658,6 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         inputs = depset([objects_dir], transitive = [
             depset(extra_srcs),
             set.to_depset(dep_info.package_databases),
-            set.to_depset(dep_info.dynamic_libraries),
             cc_link_libs,
         ]),
         outputs = [dynamic_library],
