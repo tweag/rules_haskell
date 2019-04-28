@@ -66,7 +66,6 @@ def _haskell_import_impl(ctx):
         import_dirs = [],
         source_files = set.empty(),
         extra_source_files = set.empty(),
-        static_libraries = [],
         static_libraries_prof = [],
         interface_dirs = set.empty(),
         compile_flags = [],

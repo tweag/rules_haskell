@@ -147,7 +147,6 @@ def gather_dep_info(ctx, deps):
     acc = HaskellInfo(
         package_ids = set.empty(),
         package_databases = set.empty(),
-        static_libraries = [],
         static_libraries_prof = [],
         interface_dirs = set.empty(),
         prebuilt_dependencies = set.empty(),
@@ -167,7 +166,6 @@ def gather_dep_info(ctx, deps):
             acc = HaskellInfo(
                 package_ids = package_ids,
                 package_databases = set.mutable_union(acc.package_databases, binfo.package_databases),
-                static_libraries = acc.static_libraries + binfo.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof + binfo.static_libraries_prof,
                 interface_dirs = set.mutable_union(acc.interface_dirs, binfo.interface_dirs),
                 prebuilt_dependencies = set.mutable_union(acc.prebuilt_dependencies, binfo.prebuilt_dependencies),
@@ -180,7 +178,6 @@ def gather_dep_info(ctx, deps):
             acc = HaskellInfo(
                 package_ids = acc.package_ids,
                 package_databases = acc.package_databases,
-                static_libraries = acc.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof,
                 interface_dirs = acc.interface_dirs,
                 prebuilt_dependencies = set.mutable_insert(acc.prebuilt_dependencies, pkg),
@@ -197,7 +194,6 @@ def gather_dep_info(ctx, deps):
             acc = HaskellInfo(
                 package_ids = acc.package_ids,
                 package_databases = acc.package_databases,
-                static_libraries = acc.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof,
                 interface_dirs = acc.interface_dirs,
                 prebuilt_dependencies = acc.prebuilt_dependencies,

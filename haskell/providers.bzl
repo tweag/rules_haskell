@@ -81,7 +81,6 @@ HaskellInfo = provider(
         "import_dirs": "Import hierarchy roots.",
         "source_files": "Set of files that contain Haskell modules.",
         "extra_source_files": "A depset of non-Haskell source files.",
-        "static_libraries": "Ordered collection of compiled library archives.",
         "static_libraries_prof": "Ordered collection of static libraries with profiling.",
         "interface_dirs": "Set of interface dirs belonging to the packages.",
         "compile_flags": "Arguments that were used to compile the code.",

@@ -302,10 +302,20 @@ def _compilation_defaults(hs, cc, java, dep_info, cc_info, plugin_dep_info, plug
         ),
     )
 
+    static_libraries = [
+        lib.static_library
+        for lib in cc_info.linking_context.libraries_to_link
+        if lib.static_library
+    ]
     dynamic_libraries = [
         lib.dynamic_library
         for lib in cc_info.linking_context.libraries_to_link
         if lib.dynamic_library
+    ]
+    plugin_static_libraries = [
+        lib.static_library
+        for lib in plugin_cc_info.linking_context.libraries_to_link
+        if lib.static_library
     ]
     plugin_dynamic_libraries = [
         lib.dynamic_library
@@ -324,12 +334,12 @@ def _compilation_defaults(hs, cc, java, dep_info, cc_info, plugin_dep_info, plug
             depset(cc.hdrs),
             set.to_depset(dep_info.package_databases),
             set.to_depset(dep_info.interface_dirs),
-            depset(dep_info.static_libraries),
+            depset(static_libraries),
             depset(dep_info.static_libraries_prof),
             depset(dynamic_libraries),
             set.to_depset(plugin_dep_info.package_databases),
             set.to_depset(plugin_dep_info.interface_dirs),
-            depset(plugin_dep_info.static_libraries),
+            depset(plugin_static_libraries),
             depset(plugin_dep_info.static_libraries_prof),
             depset(plugin_dynamic_libraries),
             depset(library_deps),

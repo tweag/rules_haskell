@@ -451,13 +451,19 @@ def link_binary(
     else:
         params_file = objects_dir_manifest
 
+    static_libraries = [
+        lib.static_library
+        for lib in cc_info.linking_context.libraries_to_link
+        if lib.static_library
+    ]
+
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
         inputs = depset(transitive = [
             depset(extra_srcs),
             set.to_depset(dep_info.package_databases),
-            depset(dep_info.static_libraries),
+            depset(static_libraries),
             depset(dep_info.static_libraries_prof),
             depset([objects_dir]),
             cc_link_libs,

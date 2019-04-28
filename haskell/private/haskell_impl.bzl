@@ -180,7 +180,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        static_libraries = dep_info.static_libraries,
         static_libraries_prof = dep_info.static_libraries_prof,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = c.compile_flags,
@@ -458,7 +457,6 @@ def haskell_library_impl(ctx):
         # important for linker. Linker searches for unresolved symbols to the
         # left, i.e. you first feed a library which has unresolved symbols and
         # then you feed the library which resolves the symbols.
-        static_libraries = [static_library] + dep_info.static_libraries,
         static_libraries_prof = static_libraries_prof,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
