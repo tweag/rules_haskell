@@ -28,9 +28,9 @@ load(
 load(
     ":private/haskell_impl.bzl",
     _haskell_binary_impl = "haskell_binary_impl",
-    _haskell_import_impl = "haskell_import_impl",
     _haskell_library_impl = "haskell_library_impl",
     _haskell_test_impl = "haskell_test_impl",
+    _haskell_toolchain_library_impl = "haskell_toolchain_library_impl",
 )
 load(
     ":repl.bzl",
@@ -274,10 +274,12 @@ not built by default, but can be built on request. It works the same way as
 for `haskell_binary`.
 """
 
-haskell_import = rule(
-    _haskell_import_impl,
+haskell_toolchain_library = rule(
+    _haskell_toolchain_library_impl,
     attrs = dict(
-        package = attr.string(doc = "A non-Bazel-supplied GHC package name.  Defaults to the name of the rule."),
+        package = attr.string(
+            doc = "The name of a GHC package not built by Bazel. Defaults to the name of the rule.",
+        ),
     ),
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
@@ -287,7 +289,7 @@ haskell_import = rule(
 
 Example:
   ```bzl
-  haskell_import(
+  haskell_toolchain_library(
       name = "base_pkg",
       package = "base",
   )
@@ -303,12 +305,7 @@ Example:
   ```
 
 Use this rule to make dependencies that are prebuilt (supplied as part
-of the compiler toolchain or elsewhere in the environment) available
-as targets.
-
-Often, targets of this type will be generated automatically by
-frameworks such as Hazel.
-
+of the compiler toolchain) available as targets.
 """
 
 haskell_doc = _haskell_doc

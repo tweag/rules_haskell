@@ -18,6 +18,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 * `cc_haskell_import` and `haskell_cc_import` are now no longer
   necessary and are deprecated. A `haskell_library` can be used nearly
   anywhere a `cc_library` can.
+* `haskell_import` has been renamed to `haskell_toolchain_library`.
+  This is a substantial breaking change. But adapting to it should be
+  as simple as
+
+  ```
+  sed -i 's/^haskell_import/haskell_toolchain_library/' **/BUILD{,.bazel}
+  sed -i 's/"haskell_import"/"haskell_toolchain_library"/' **/BUILD{,.bazel}
+  ```
 
 ## [0.8] - 2019-01-28
 

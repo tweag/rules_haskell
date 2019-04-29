@@ -1,10 +1,10 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_import",
     "haskell_test",
+    "haskell_toolchain_library",
 )
 
-haskell_import(name = "base")
+haskell_toolchain_library(name = "base")
 
 haskell_test(
     name = "demorgan",

@@ -1,7 +1,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_import",
     "haskell_test",
+    "haskell_toolchain_library",
 )
 
 haskell_test(
