@@ -314,7 +314,7 @@ cc_haskell_import = rule(
     attrs = {
         "dep": attr.label(
             doc = """
-Target providing a `HaskellLiInfo` such as `haskell_library` or
+Target providing a `HaskellInfo` such as `haskell_library` or
 `haskell_binary`.
 """,
         ),
