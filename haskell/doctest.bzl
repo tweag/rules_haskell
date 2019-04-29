@@ -140,13 +140,10 @@ def _haskell_doctest_single(target, ctx):
         lib_info.source_files if lib_info != None else bin_info.source_files,
     )
 
-    if not ctx.attr.modules:
-        exposed_modules_file = lib_info.exposed_modules_file if lib_info != None else bin_info.exposed_modules_file
+    if ctx.attr.modules:
+        inputs = ctx.attr.modules
     else:
-        exposed_modules_file = ctx.actions.declare_file("doctest_modules")
-        exposed_args = ctx.actions.args()
-        exposed_args.add_all(ctx.attr.modules)
-        ctx.actions.write(exposed_modules_file, exposed_args)
+        inputs = [source.path for source in sources]
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
@@ -158,7 +155,6 @@ def _haskell_doctest_single(target, ctx):
             set.to_depset(header_files),
             depset(library_deps),
             depset(ld_library_deps),
-            depset([exposed_modules_file]),
             depset(
                 toolchain.doctest +
                 [hs.tools.ghc],
@@ -169,11 +165,11 @@ def _haskell_doctest_single(target, ctx):
         progress_message = "HaskellDoctest {}".format(ctx.label),
         command = """
         {env}
-        {doctest} "$@" $(cat {module_list} | tr , ' ') > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
+        {doctest} "$@" {inputs} > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
         """.format(
             doctest = toolchain.doctest[0].path,
             output = doctest_log.path,
-            module_list = exposed_modules_file.path,
+            inputs = " ".join(inputs),
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
             env = render_env(hs.env),

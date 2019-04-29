@@ -174,7 +174,6 @@ HaskellLibraryInfo = provider(
         "source_files": "Set of files that contain Haskell modules.",
         "extra_source_files": "A depset of non-Haskell source files.",
         "ghc_args": "Arguments that were used to compile the package.",
-        "exposed_modules_file": "File containing a list of exposed module names.",
     },
 )
 
@@ -186,7 +185,6 @@ HaskellBinaryInfo = provider(
         "binary": "File, compiled binary.",
         "header_files": "Set of header files.",
         "ghc_args": "Arguments that were used to compile the binary.",
-        "exposed_modules_file": "File containing a list of exposed module names.",
     },
 )
 
