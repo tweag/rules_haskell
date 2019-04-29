@@ -100,7 +100,6 @@ cc_library(
         packages = hazel_extra_packages(
             pkgs = packages,
             extra_pkgs = {
-                "unix-compat": {"version": "0.5.1", "sha256": "a39d0c79dd906763770b80ba5b6c5cb710e954f894350e9917de0d73f3a19c52", "patches": ["@ai_formation_hazel//third_party/haskell:unix-compat.patch"]},
                 "unix-time": {"version": "0.4.5", "sha256": "fe7805c62ad682589567afeee265e6e230170c3941cdce479a2318d1c5088faf"},
             },
         ),

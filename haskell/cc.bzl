@@ -33,13 +33,14 @@ CcInteropInfo = provider(
     },
 )
 
-def cc_interop_info(ctx):
+def cc_interop_info(ctx, dep_info):
     """Gather information from any CC dependencies.
 
     *Internal function - do not use.*
 
     Args:
       ctx: Rule context.
+      dep_info: HaskellBuildInfo provider.
 
     Returns:
       CcInteropInfo: Information needed for CC interop.
@@ -67,6 +68,14 @@ def cc_interop_info(ctx):
                 for f in ["-isystem", include]
             ],
         )
+
+    hdrs.append(set.to_depset(dep_info.version_macros))
+    cpp_flags.extend([
+        f
+        for include in set.to_list(dep_info.version_macros)
+        for f in ["-include", include.path]
+    ])
+
     hdrs = depset(transitive = hdrs)
 
     # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
