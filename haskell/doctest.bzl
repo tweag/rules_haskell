@@ -7,10 +7,10 @@ load(
     ":private/path_utils.bzl",
     "get_lib_name",
 )
-load(":private/providers.bzl", "get_libs_for_ghc_linker")
+load(":providers.bzl", "get_libs_for_ghc_linker")
 load(":private/set.bzl", "set")
 load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",

@@ -13,7 +13,7 @@ load(":private/path_utils.bzl", "ln")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/set.bzl", "set")
 load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellBinaryInfo",
     "HaskellBuildInfo",
 )

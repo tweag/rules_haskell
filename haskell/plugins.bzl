@@ -1,4 +1,4 @@
-load(":private/providers.bzl", "GhcPluginInfo", "HaskellLibraryInfo")
+load(":providers.bzl", "GhcPluginInfo", "HaskellLibraryInfo")
 
 def ghc_plugin_impl(ctx):
     args = ctx.attr.args

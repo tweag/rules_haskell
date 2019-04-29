@@ -6,7 +6,7 @@ load(
 )
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
-    "@io_tweag_rules_haskell//haskell:private/providers.bzl",
+    "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellBuildInfo",
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",

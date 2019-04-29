@@ -1,3 +1,5 @@
+"""Providers exposed by the Haskell rules."""
+
 load(
     ":private/path_utils.bzl",
     "darwin_convert_to_dylibs",

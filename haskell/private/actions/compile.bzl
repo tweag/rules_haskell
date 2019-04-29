@@ -11,7 +11,7 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(
-    ":private/providers.bzl",
+    ":providers.bzl",
     "GhcPluginInfo",
     "get_libs_for_ghc_linker",
     "merge_HaskellCcInfo",

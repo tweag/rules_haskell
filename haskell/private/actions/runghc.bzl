@@ -14,7 +14,7 @@ load(
     ":private/set.bzl",
     "set",
 )
-load(":private/providers.bzl", "get_libs_for_ghc_linker")
+load(":providers.bzl", "get_libs_for_ghc_linker")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_runghc(
