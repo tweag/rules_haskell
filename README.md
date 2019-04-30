@@ -161,7 +161,7 @@ genrule(
 # Make it visible to rules_haskell rules:
 haskell_toolchain(
     name = "ghc",
-    tools = "@ghc//:bin",
+    tools = ["@ghc//:bin"],
     version = "8.4.1",
     extra_binaries = [":toolchain_as"], # <----
 )
@@ -187,7 +187,7 @@ C99 or later, as the error message says, so try this:
 ```bzl
 haskell_toolchain(
     name = "ghc",
-    tools = "@ghc//:bin",
+    tools = ["@ghc//:bin"],
     version = "8.4.1",
     compiler_flags = ["-optc-std=c99"], # <----
 )
