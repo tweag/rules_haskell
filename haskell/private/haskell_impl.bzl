@@ -114,7 +114,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
 
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx, dep_info)
+    cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
 
     with_profiling = is_profiling_enabled(hs)
@@ -191,7 +191,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     hs_info = HaskellInfo(
         package_ids = dep_info.package_ids,
         package_databases = dep_info.package_databases,
-        version_macros = dep_info.version_macros,
+        version_macros = set.empty(),
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
@@ -319,7 +319,7 @@ def haskell_library_impl(ctx):
     with_shared = False if hs.toolchain.is_windows else not ctx.attr.linkstatic
 
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx, dep_info)
+    cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
 
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)

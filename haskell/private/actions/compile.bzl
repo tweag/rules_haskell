@@ -10,6 +10,7 @@ load(
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
+load(":private/version_macros.bzl", "version_macro_includes")
 load(
     ":providers.bzl",
     "GhcPluginInfo",
@@ -18,13 +19,14 @@ load(
 )
 load(":private/set.bzl", "set")
 
-def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
+def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     """Process a single hsc file.
 
     Args:
       hs: Haskell context.
       cc: CcInteropInfo, information about C dependencies.
       hsc_flags: extra flags to pass to hsc2hs
+      hsc_inputs: extra file inputs for the hsc2hs command
       hsc_file: hsc file to process.
 
     Returns:
@@ -62,6 +64,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_file):
             depset(cc.hdrs),
             depset([hsc_file]),
             depset(cc.files),
+            depset(hsc_inputs),
         ]),
         outputs = [hs_out],
         mnemonic = "HaskellHsc2hs",
@@ -182,6 +185,12 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     hsc_flags += ["--cflag=" + x for x in user_compile_flags if x.startswith("-D")]
     hsc_flags += ["--cflag=" + x[len("-optP"):] for x in user_compile_flags if x.startswith("-optP-D")]
 
+    hsc_inputs = []
+    if version:
+        (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
+        hsc_flags += ["--cflag=" + x for x in version_macro_flags]
+        hsc_inputs += set.to_list(version_macro_headers)
+
     # Add import hierarchy root.
     # Note that this is not perfect, since GHC requires hs-boot files
     # to be in the same directory as the corresponding .hs file.  Thus
@@ -198,7 +207,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         if s.extension == "h":
             header_files.append(s)
         elif s.extension == "hsc":
-            s0, idir = _process_hsc_file(hs, cc, hsc_flags, s)
+            s0, idir = _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, s)
             set.mutable_insert(source_files, s0)
             set.mutable_insert(import_dirs, idir)
         elif s.extension in ["hs-boot", "lhs-boot"]:
