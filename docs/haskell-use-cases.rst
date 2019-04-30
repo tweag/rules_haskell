@@ -60,7 +60,7 @@ the repository that includes the following::
     # Versions here and in WORKSPACE must match.
     version = "8.4.3",
     # Use binaries from @ghc//:bin to define //:ghc toolchain.
-    tools = "@ghc//:bin",
+    tools = ["@ghc//:bin"],
   )
 
 .. _Bazel+Nix blog post: https://www.tweag.io/posts/2018-03-15-bazel-nix.html

@@ -202,8 +202,8 @@ fi
 _haskell_toolchain = rule(
     _haskell_toolchain_impl,
     attrs = {
-        "tools": attr.label(
-            doc = "GHC and executables that come with it",
+        "tools": attr.label_list(
+            doc = "GHC and executables that come with it. First item take precedance.",
             mandatory = True,
         ),
         "compiler_flags": attr.string_list(
@@ -270,7 +270,7 @@ def haskell_toolchain(
       haskell_toolchain(
           name = "ghc",
           version = "1.2.3",
-          tools = "@sys_ghc//:bin",
+          tools = ["@sys_ghc//:bin"],
           compiler_flags = ["-Wall"],
       )
       ```

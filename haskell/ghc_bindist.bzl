@@ -269,7 +269,7 @@ load("@io_tweag_rules_haskell//haskell:toolchain.bzl", "haskell_toolchain")
 
 haskell_toolchain(
     name = "toolchain",
-    tools = "{tools}",
+    tools = ["{tools}"],
     version = "{version}",
     compiler_flags = {compiler_flags},
     haddock_flags = {haddock_flags},
