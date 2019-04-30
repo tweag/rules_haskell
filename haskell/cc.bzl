@@ -32,14 +32,13 @@ CcInteropInfo = provider(
     },
 )
 
-def cc_interop_info(ctx, dep_info):
+def cc_interop_info(ctx):
     """Gather information from any CC dependencies.
 
     *Internal function - do not use.*
 
     Args:
       ctx: Rule context.
-      dep_info: HaskellInfo provider.
 
     Returns:
       CcInteropInfo: Information needed for CC interop.
@@ -67,13 +66,6 @@ def cc_interop_info(ctx, dep_info):
                 for f in ["-isystem", include]
             ],
         )
-
-    hdrs.append(set.to_depset(dep_info.version_macros))
-    cpp_flags.extend([
-        f
-        for include in set.to_list(dep_info.version_macros)
-        for f in ["-include", include.path]
-    ])
 
     hdrs = depset(transitive = hdrs)
 

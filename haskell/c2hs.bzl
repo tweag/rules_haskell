@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
+    "HaskellInfo",
 )
 load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context")
@@ -14,13 +15,12 @@ load(
     "target_unique_name",
 )
 load(":private/set.bzl", "set")
+load(":private/version_macros.bzl", "version_macro_includes")
 
 def _c2hs_library_impl(ctx):
     hs = haskell_context(ctx)
 
-    # XXX: We only need dep_info.version_macros.
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
-    cc = cc_interop_info(ctx, dep_info)
+    cc = cc_interop_info(ctx)
     args = hs.actions.args()
     c2hs = ctx.toolchains["@io_tweag_rules_haskell//haskell/c2hs:toolchain"].c2hs
 
@@ -54,12 +54,19 @@ def _c2hs_library_impl(ctx):
     ]
     args.add_all(chi_includes)
 
+    version_macro_headers = set.empty()
+    if ctx.attr.version:
+        dep_info = gather_dep_info(ctx, ctx.attr.deps)
+        (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
+        args.add_all(["-C" + x for x in version_macro_flags])
+
     hs.actions.run_shell(
         inputs = depset(transitive = [
             depset(cc.hdrs),
             depset([hs.tools.ghc, c2hs, chs_file]),
             depset(dep_chi_files),
             depset(cc.files),
+            set.to_depset(version_macro_headers),
         ]),
         outputs = [hs_file, chi_file],
         command = """
@@ -97,6 +104,9 @@ c2hs_library = rule(
         "srcs": attr.label_list(allow_files = [".chs"]),
         "src_strip_prefix": attr.string(
             doc = "Directory in which module hierarchy starts.",
+        ),
+        "version": attr.string(
+            doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
