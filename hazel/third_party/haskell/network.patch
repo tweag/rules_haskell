@@ -1,0 +1,22 @@
+--- network.cabal.orig	2019-04-30 16:22:51.017832083 +0200
++++ network.cabal	2019-04-30 16:33:48.037415801 +0200
+@@ -71,8 +71,19 @@
+   includes: HsNet.h HsNetDef.h
+   install-includes: HsNet.h HsNetDef.h
+   c-sources: cbits/HsNet.c
++
++  if os(windows)
++    c-sources: cbits/initWinSock.c cbits/winSockErr.c cbits/asyncAccept.c
++  else
++    c-sources: cbits/ancilData.c
++
+   ghc-options: -Wall -fwarn-tabs
+ 
++  if !os(windows)
++    ghc-options: -D_GNU_SOURCE
++    ghc-prof-options: -D_GNU_SOURCE
++    cc-options: -D_GNU_SOURCE
++
+ test-suite spec
+   hs-source-dirs: tests
+   main-is: Spec.hs

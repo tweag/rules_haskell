@@ -101,6 +101,7 @@ cc_library(
             pkgs = packages,
             extra_pkgs = {
                 "unix-time": {"version": "0.4.5", "sha256": "fe7805c62ad682589567afeee265e6e230170c3941cdce479a2318d1c5088faf"},
+                "network": {"version": "2.8.0.0", "sha256": "c8905268b7e3b4cf624a40245bf11b35274a6dd836a5d4d531b5760075645303", "patches": ["@ai_formation_hazel//third_party/haskell:network.patch"]},
             },
         ),
         core_packages = core_packages,
