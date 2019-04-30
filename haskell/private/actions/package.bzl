@@ -10,7 +10,7 @@ def _get_extra_libraries(dep_info):
     """Get directories and library names for extra library dependencies.
 
     Args:
-      dep_info: HaskellBuildInfo provider of the package.
+      dep_info: HaskellInfo provider of the package.
 
     Returns:
       (dirs, libs):
@@ -153,11 +153,10 @@ def package(
     )
 
     # Make the call to ghc-pkg and use the package configuration file
-    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_confs)]) + ":"
+    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_databases)]) + ":"
     hs.actions.run(
         inputs = depset(transitive = [
-            set.to_depset(dep_info.package_confs),
-            set.to_depset(dep_info.package_caches),
+            set.to_depset(dep_info.package_databases),
             depset(interfaces_dirs),
             depset([
                 input

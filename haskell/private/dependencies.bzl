@@ -2,9 +2,8 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBinaryInfo",
-    "HaskellBuildInfo",
     "HaskellCcInfo",
+    "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
     "empty_HaskellCcInfo",
@@ -132,7 +131,7 @@ def _HaskellCcInfo_from_CcInfo(ctx, cc_info):
     )
 
 def gather_dep_info(ctx, deps):
-    """Collapse dependencies into a single `HaskellBuildInfo`.
+    """Collapse dependencies into a single `HaskellInfo`.
 
     Note that the field `prebuilt_dependencies` also includes
     prebuilt_dependencies of current target.
@@ -142,13 +141,12 @@ def gather_dep_info(ctx, deps):
       deps: deps attribute.
 
     Returns:
-      HaskellBuildInfo: Unified information about all dependencies.
+      HaskellInfo: Unified information about all dependencies.
     """
 
-    acc = HaskellBuildInfo(
+    acc = HaskellInfo(
         package_ids = set.empty(),
-        package_confs = set.empty(),
-        package_caches = set.empty(),
+        package_databases = set.empty(),
         version_macros = set.empty(),
         static_libraries = [],
         static_libraries_prof = [],
@@ -161,17 +159,16 @@ def gather_dep_info(ctx, deps):
     )
 
     for dep in deps:
-        if HaskellBuildInfo in dep:
-            binfo = dep[HaskellBuildInfo]
+        if HaskellInfo in dep:
+            binfo = dep[HaskellInfo]
             package_ids = acc.package_ids
-            if HaskellBinaryInfo in dep:
+            if HaskellLibraryInfo not in dep:
                 fail("Target {0} cannot depend on binary".format(ctx.attr.name))
             if HaskellLibraryInfo in dep:
                 set.mutable_insert(package_ids, dep[HaskellLibraryInfo].package_id)
-            acc = HaskellBuildInfo(
+            acc = HaskellInfo(
                 package_ids = package_ids,
-                package_confs = set.mutable_union(acc.package_confs, binfo.package_confs),
-                package_caches = set.mutable_union(acc.package_caches, binfo.package_caches),
+                package_databases = set.mutable_union(acc.package_databases, binfo.package_databases),
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
                 static_libraries = acc.static_libraries + binfo.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof + binfo.static_libraries_prof,
@@ -184,10 +181,9 @@ def gather_dep_info(ctx, deps):
             )
         elif HaskellPrebuiltPackageInfo in dep:
             pkg = dep[HaskellPrebuiltPackageInfo]
-            acc = HaskellBuildInfo(
+            acc = HaskellInfo(
                 package_ids = acc.package_ids,
-                package_confs = acc.package_confs,
-                package_caches = acc.package_caches,
+                package_databases = acc.package_databases,
                 version_macros = set.mutable_insert(acc.version_macros, pkg.version_macros_file),
                 static_libraries = acc.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof,
@@ -198,15 +194,14 @@ def gather_dep_info(ctx, deps):
                 cc_dependencies = acc.cc_dependencies,
                 transitive_cc_dependencies = acc.transitive_cc_dependencies,
             )
-        elif CcInfo in dep and HaskellBuildInfo not in dep:
+        elif CcInfo in dep and HaskellInfo not in dep:
             # The final link of a binary must include all static libraries we
             # depend on, including transitives ones. Theses libs are provided
             # in the `CcInfo` provider.
             hs_cc_info = _HaskellCcInfo_from_CcInfo(ctx, dep[CcInfo])
-            acc = HaskellBuildInfo(
+            acc = HaskellInfo(
                 package_ids = acc.package_ids,
-                package_confs = acc.package_confs,
-                package_caches = acc.package_caches,
+                package_databases = acc.package_databases,
                 version_macros = acc.version_macros,
                 static_libraries = acc.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof,

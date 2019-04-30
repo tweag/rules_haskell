@@ -11,8 +11,7 @@ load(":providers.bzl", "get_libs_for_ghc_linker")
 load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBinaryInfo",
-    "HaskellBuildInfo",
+    "HaskellInfo",
     "HaskellLibraryInfo",
 )
 
@@ -81,34 +80,32 @@ def _haskell_doctest_single(target, ctx):
       File: the doctest log.
     """
 
-    if HaskellBuildInfo not in target:
+    if HaskellInfo not in target:
         return []
 
     hs = haskell_context(ctx, ctx.attr)
 
-    build_info = target[HaskellBuildInfo]
+    hs_info = target[HaskellInfo]
+    cc_info = target[CcInfo]
     lib_info = target[HaskellLibraryInfo] if HaskellLibraryInfo in target else None
-    bin_info = target[HaskellBinaryInfo] if HaskellBinaryInfo in target else None
 
     args = ctx.actions.args()
     args.add("--no-magic")
 
     doctest_log = ctx.actions.declare_file(
-        "doctest-log-" + ctx.label.name + "-" + (
-            lib_info.package_id if lib_info != None else bin_info.binary.basename
-        ),
+        "doctest-log-" + ctx.label.name + "-" + target.label.name,
     )
 
     toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:doctest-toolchain"]
 
     # GHC flags we have prepared before.
-    args.add_all(lib_info.ghc_args if lib_info != None else bin_info.ghc_args)
+    args.add_all(hs_info.compile_flags)
 
     # Add any extra flags specified by the user.
     args.add_all(ctx.attr.doctest_flags)
 
     # Direct C library dependencies to link against.
-    link_ctx = build_info.cc_dependencies.dynamic_linking
+    link_ctx = hs_info.cc_dependencies.dynamic_linking
     libs_to_link = link_ctx.libraries_to_link.to_list()
 
     # External libraries.
@@ -131,14 +128,10 @@ def _haskell_doctest_single(target, ctx):
     # Transitive library dependencies for runtime.
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
         hs,
-        build_info.transitive_cc_dependencies,
+        hs_info.transitive_cc_dependencies,
     )
 
-    header_files = lib_info.header_files if lib_info != None else bin_info.header_files
-
-    sources = set.to_list(
-        lib_info.source_files if lib_info != None else bin_info.source_files,
-    )
+    sources = set.to_list(hs_info.source_files)
 
     if ctx.attr.modules:
         inputs = ctx.attr.modules
@@ -148,11 +141,10 @@ def _haskell_doctest_single(target, ctx):
     ctx.actions.run_shell(
         inputs = depset(transitive = [
             depset(sources),
-            set.to_depset(build_info.package_confs),
-            set.to_depset(build_info.package_caches),
-            set.to_depset(build_info.interface_dirs),
-            set.to_depset(build_info.dynamic_libraries),
-            set.to_depset(header_files),
+            set.to_depset(hs_info.package_databases),
+            set.to_depset(hs_info.interface_dirs),
+            set.to_depset(hs_info.dynamic_libraries),
+            cc_info.compilation_context.headers,
             depset(library_deps),
             depset(ld_library_deps),
             depset(

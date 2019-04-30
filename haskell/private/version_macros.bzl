@@ -1,3 +1,5 @@
+load(":private/set.bzl", "set")
+
 def generate_version_macros(ctx, name, version):
     """Generate a version macros header file.
 
@@ -24,3 +26,22 @@ def generate_version_macros(ctx, name, version):
         ],
     )
     return version_macros_file
+
+def version_macro_includes(hs_info):
+    """Generate a list of version macro header includes.
+
+    Args:
+        hs_info: HaskellInfo provider.
+
+    Returns:
+        (files, flags):
+        files: Set of version macros header files.
+        flags: List of C preprocessor flags to include version macros.
+    """
+    files = hs_info.version_macros
+    flags = [
+        f
+        for include in set.to_list(files)
+        for f in ["-include", include.path]
+    ]
+    return (files, flags)

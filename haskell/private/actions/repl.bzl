@@ -1,7 +1,7 @@
 """GHCi REPL support"""
 
 load(":private/context.bzl", "render_env")
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -22,26 +22,23 @@ def build_haskell_repl(
         hs,
         ghci_script,
         ghci_repl_wrapper,
-        compiler_flags,
+        user_compile_flags,
         repl_ghci_args,
-        build_info,
+        hs_info,
         output,
-        package_caches,
+        package_databases,
         version,
-        lib_info = None,
-        bin_info = None):
+        lib_info = None):
     """Build REPL script.
 
     Args:
       hs: Haskell context.
-      build_info: HaskellBuildInfo.
+      hs_info: HaskellInfo.
 
-      package_caches: package caches excluding the cache file of the package
+      package_databases: package caches excluding the cache file of the package
                       we're creating a REPL for.
       lib_info: If we're building REPL for a library target, pass
                 HaskellLibraryInfo here, otherwise it should be None.
-      bin_info: If we're building REPL for a binary target, pass
-                HaskellBinaryInfo here, otherwise it should be None.
 
     Returns:
       None.
@@ -52,22 +49,22 @@ def build_haskell_repl(
     args = ["-package", "base", "-package", "directory"]
 
     pkg_ghc_info = expose_packages(
-        build_info,
+        hs_info,
         lib_info,
         use_direct = False,
         use_my_pkg_id = None,
-        custom_package_caches = package_caches,
+        custom_package_databases = package_databases,
         version = version,
     )
-    args += pkg_info_to_ghc_args(pkg_ghc_info)
+    args += pkg_info_to_compile_flags(pkg_ghc_info)
 
     lib_imports = []
     if lib_info != None:
-        for idir in set.to_list(lib_info.import_dirs):
+        for idir in set.to_list(hs_info.import_dirs):
             args += ["-i{0}".format(idir)]
             lib_imports.append(idir)
 
-    link_ctx = build_info.cc_dependencies.dynamic_linking
+    link_ctx = hs_info.cc_dependencies.dynamic_linking
     libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
 
     # External C libraries that we need to make available to the REPL.
@@ -76,7 +73,7 @@ def build_haskell_repl(
     # Transitive library dependencies to have in runfiles.
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
         hs,
-        build_info.transitive_cc_dependencies,
+        hs_info.transitive_cc_dependencies,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
     library_path = [paths.dirname(lib.path) for lib in library_deps]
@@ -84,13 +81,7 @@ def build_haskell_repl(
 
     repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
 
-    lib_sources = []
-    bin_sources = []
-    if lib_info != None:
-        lib_sources = [f.path for f in set.to_list(lib_info.source_files)]
-    elif bin_info != None:
-        bin_sources = [f.path for f in set.to_list(bin_info.source_files)]
-    add_sources = ["*" + f for f in lib_sources + bin_sources]
+    add_sources = ["*" + f.path for f in set.to_list(hs_info.source_files)]
 
     ghci_repl_script = hs.actions.declare_file(
         target_unique_name(hs, "ghci-repl-script"),
@@ -104,8 +95,6 @@ def build_haskell_repl(
         },
     )
 
-    source_files = lib_info.source_files if lib_info != None else bin_info.source_files
-
     # Extra arguments.
     # `compiler flags` is the default set of arguments for the repl,
     # augmented by `repl_ghci_args`.
@@ -115,9 +104,9 @@ def build_haskell_repl(
     # GHC.
     # Note that most flags for GHCI do have their negative value, so a
     # negative flag in `repl_ghci_args` can disable a positive flag set
-    # in `compiler_flags`, such as `-XNoOverloadedStrings` will disable
+    # in `user_compile_flags`, such as `-XNoOverloadedStrings` will disable
     # `-XOverloadedStrings`.
-    args += hs.toolchain.compiler_flags + compiler_flags + hs.toolchain.repl_ghci_args + repl_ghci_args
+    args += hs.toolchain.compiler_flags + user_compile_flags + hs.toolchain.repl_ghci_args + repl_ghci_args
 
     hs.actions.expand_template(
         template = ghci_repl_wrapper,
@@ -147,15 +136,13 @@ def build_haskell_repl(
         package_dbs = pkg_ghc_info.package_dbs,
         lib_imports = lib_imports,
         libraries = libraries,
-        lib_sources = lib_sources,
-        bin_sources = bin_sources,
         execs = struct(
             ghc = hs.tools.ghc.path,
             ghci = hs.tools.ghci.path,
             runghc = hs.tools.runghc.path,
         ),
         flags = struct(
-            compiler = compiler_flags,
+            compiler = user_compile_flags,
             toolchain_compiler = hs.toolchain.compiler_flags,
             repl = repl_ghci_args,
             toolchain_repl = hs.toolchain.repl_ghci_args,
@@ -180,9 +167,9 @@ def build_haskell_repl(
             repl_file,
             ghc_info_file,
         ]),
-        set.to_depset(package_caches),
+        set.to_depset(package_databases),
         depset(library_deps),
         depset(ld_library_deps),
-        set.to_depset(source_files),
+        set.to_depset(hs_info.source_files),
     ])
     ln(hs, repl_file, output, extra_inputs)

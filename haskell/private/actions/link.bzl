@@ -1,6 +1,6 @@
 """Actions for linking object code produced by compilation"""
 
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/path_utils.bzl",
@@ -276,7 +276,7 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
 
     Args:
       hs: Haskell context.
-      dep_info: HaskellBuildInfo provider.
+      dep_info: HaskellInfo provider.
       dynamic: Bool: Whether to link dynamically, or statically.
       binary: Final linked binary.
       args: Arguments to the linking action.
@@ -391,12 +391,12 @@ def link_binary(
     # directly rather than doing multiple reversals with temporary
     # lists.
 
-    args.add_all(pkg_info_to_ghc_args(expose_packages(
+    args.add_all(pkg_info_to_compile_flags(expose_packages(
         dep_info,
         lib_info = None,
         use_direct = True,
         use_my_pkg_id = None,
-        custom_package_caches = None,
+        custom_package_databases = None,
         version = version,
     )))
 
@@ -453,7 +453,7 @@ def link_binary(
         cc,
         inputs = depset(transitive = [
             depset(extra_srcs),
-            set.to_depset(dep_info.package_caches),
+            set.to_depset(dep_info.package_databases),
             set.to_depset(dep_info.dynamic_libraries),
             depset(dep_info.static_libraries),
             depset(dep_info.static_libraries_prof),
@@ -622,12 +622,12 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     if hs.toolchain.is_darwin:
         args.add("-optl-Wl,-dead_strip_dylibs")
 
-    args.add_all(pkg_info_to_ghc_args(expose_packages(
+    args.add_all(pkg_info_to_compile_flags(expose_packages(
         dep_info,
         lib_info = None,
         use_direct = True,
         use_my_pkg_id = None,
-        custom_package_caches = None,
+        custom_package_databases = None,
         version = my_pkg_id.version if my_pkg_id else None,
     )))
 
@@ -654,7 +654,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         cc,
         inputs = depset([objects_dir], transitive = [
             depset(extra_srcs),
-            set.to_depset(dep_info.package_caches),
+            set.to_depset(dep_info.package_databases),
             set.to_depset(dep_info.dynamic_libraries),
             cc_link_libs,
         ]),

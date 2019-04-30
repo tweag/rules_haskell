@@ -173,7 +173,7 @@ rule_test(
     name = "test-haskell_doctest",
     size = "small",
     generates = [
-        "doctest-log-doctest-lib-testsZShaskellZUdoctestZSlib-b",
+        "doctest-log-doctest-lib-lib-b",
     ],
     rule = "//tests/haskell_doctest:doctest-lib",
     tags = ["requires_doctest"],

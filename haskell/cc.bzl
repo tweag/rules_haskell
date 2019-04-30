@@ -14,8 +14,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBinaryInfo",
-    "HaskellBuildInfo",
+    "HaskellInfo",
 )
 
 CcInteropInfo = provider(
@@ -33,19 +32,18 @@ CcInteropInfo = provider(
     },
 )
 
-def cc_interop_info(ctx, dep_info):
+def cc_interop_info(ctx):
     """Gather information from any CC dependencies.
 
     *Internal function - do not use.*
 
     Args:
       ctx: Rule context.
-      dep_info: HaskellBuildInfo provider.
 
     Returns:
       CcInteropInfo: Information needed for CC interop.
     """
-    ccs = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep and HaskellBuildInfo not in dep]
+    ccs = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep and HaskellInfo not in dep]
 
     hdrs = []
     include_args = []
@@ -68,13 +66,6 @@ def cc_interop_info(ctx, dep_info):
                 for f in ["-isystem", include]
             ],
         )
-
-    hdrs.append(set.to_depset(dep_info.version_macros))
-    cpp_flags.extend([
-        f
-        for include in set.to_list(dep_info.version_macros)
-        for f in ["-include", include.path]
-    ])
 
     hdrs = depset(transitive = hdrs)
 
@@ -291,16 +282,10 @@ Example:
 def _cc_haskell_import(ctx):
     dyn_libs = set.empty()
 
-    if HaskellBuildInfo in ctx.attr.dep:
-        set.mutable_union(dyn_libs, ctx.attr.dep[HaskellBuildInfo].dynamic_libraries)
+    if HaskellInfo in ctx.attr.dep:
+        set.mutable_union(dyn_libs, ctx.attr.dep[HaskellInfo].dynamic_libraries)
     else:
-        fail("{0} has to provide `HaskellBuildInfo`".format(ctx.attr.dep.label.name))
-
-    if HaskellBinaryInfo in ctx.attr.dep:
-        bin = ctx.attr.dep[HaskellBinaryInfo].binary
-        dyn_lib = ctx.actions.declare_file("lib{0}.so".format(bin.basename))
-        ln(ctx, bin, dyn_lib)
-        set.mutable_insert(dyn_libs, dyn_lib)
+        fail("{0} has to provide `HaskellInfo`".format(ctx.attr.dep.label.name))
 
     return [
         DefaultInfo(
@@ -321,8 +306,8 @@ cc_haskell_import = rule(
     attrs = {
         "dep": attr.label(
             doc = """
-Target providing a `HaskellLibraryInfo` or `HaskellBinaryInfo`, such as
-`haskell_library` or `haskell_binary`.
+Target providing a `HaskellInfo` such as `haskell_library` or
+`haskell_binary`.
 """,
         ),
     },

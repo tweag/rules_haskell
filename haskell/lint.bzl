@@ -2,13 +2,12 @@
 
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellBinaryInfo",
-    "HaskellBuildInfo",
+    "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellLintInfo",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_ghc_args")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(
     ":private/path_utils.bzl",
     "target_unique_name",
@@ -31,12 +30,11 @@ def _haskell_lint_rule_impl(ctx):
 def _haskell_lint_aspect_impl(target, ctx):
     hs = haskell_context(ctx, ctx.rule.attr)
 
-    if HaskellBuildInfo not in target:
+    if HaskellInfo not in target:
         return []
 
-    build_info = target[HaskellBuildInfo]
+    hs_info = target[HaskellInfo]
     lib_info = target[HaskellLibraryInfo] if HaskellLibraryInfo in target else None
-    bin_info = target[HaskellBinaryInfo] if HaskellBinaryInfo in target else None
 
     args = ctx.actions.args()
 
@@ -54,18 +52,16 @@ def _haskell_lint_aspect_impl(target, ctx):
         "--make",
     ])
 
-    args.add_all(pkg_info_to_ghc_args(expose_packages(
-        build_info,
+    args.add_all(pkg_info_to_compile_flags(expose_packages(
+        hs_info,
         lib_info,
         use_direct = False,
         use_my_pkg_id = None,
-        custom_package_caches = None,
+        custom_package_databases = None,
         version = ctx.rule.attr.version,
     )))
 
-    sources = set.to_list(
-        lib_info.source_files if lib_info != None else bin_info.source_files,
-    )
+    sources = set.to_list(hs_info.source_files)
 
     args.add_all(sources)
 
@@ -76,16 +72,15 @@ def _haskell_lint_aspect_impl(target, ctx):
     # Transitive library dependencies for runtime.
     (library_deps, ld_library_deps, _ghc_env) = get_libs_for_ghc_linker(
         hs,
-        build_info.transitive_cc_dependencies,
+        hs_info.transitive_cc_dependencies,
     )
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
             depset(sources),
-            set.to_depset(build_info.package_confs),
-            set.to_depset(build_info.package_caches),
-            set.to_depset(build_info.interface_dirs),
-            set.to_depset(build_info.dynamic_libraries),
+            set.to_depset(hs_info.package_databases),
+            set.to_depset(hs_info.interface_dirs),
+            set.to_depset(hs_info.dynamic_libraries),
             depset(library_deps),
             depset(ld_library_deps),
             depset([hs.tools.ghc]),

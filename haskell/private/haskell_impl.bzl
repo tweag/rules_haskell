@@ -3,8 +3,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
-    "HaskellBinaryInfo",
-    "HaskellBuildInfo",
+    "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
 )
@@ -115,12 +114,11 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
 
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx, dep_info)
+    cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
 
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
-    compiler_flags = ctx.attr.compiler_flags
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
     c = hs.toolchain.actions.compile_binary(
@@ -133,7 +131,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
-        compiler_flags = compiler_flags,
+        user_compile_flags = ctx.attr.compiler_flags,
         dynamic = False if hs.toolchain.is_windows else not ctx.attr.linkstatic,
         with_profiling = False,
         main_function = ctx.attr.main_function,
@@ -167,7 +165,7 @@ def _haskell_binary_common_impl(ctx, is_test):
                 depset(ctx.files.extra_srcs),
                 depset([c.objects_dir]),
             ]),
-            compiler_flags = compiler_flags,
+            user_compile_flags = ctx.attr.compiler_flags,
             # NOTE We can't have profiling and dynamic code at the
             # same time, see:
             # https://ghc.haskell.org/trac/ghc/ticket/15394
@@ -190,13 +188,24 @@ def _haskell_binary_common_impl(ctx, is_test):
         version = ctx.attr.version,
     )
 
-    build_info = dep_info  # HaskellBuildInfo
-    bin_info = HaskellBinaryInfo(
-        import_dirs = c.import_dirs,
+    hs_info = HaskellInfo(
+        package_ids = dep_info.package_ids,
+        package_databases = dep_info.package_databases,
+        version_macros = set.empty(),
         source_files = c.source_files,
-        binary = binary,
-        ghc_args = c.ghc_args,
-        header_files = c.header_files,
+        extra_source_files = c.extra_source_files,
+        import_dirs = c.import_dirs,
+        static_libraries = dep_info.static_libraries,
+        static_libraries_prof = dep_info.static_libraries_prof,
+        dynamic_libraries = dep_info.dynamic_libraries,
+        interface_dirs = dep_info.interface_dirs,
+        compile_flags = c.compile_flags,
+        prebuilt_dependencies = dep_info.prebuilt_dependencies,
+        cc_dependencies = dep_info.cc_dependencies,
+        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
+    )
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
     )
 
     target_files = depset([binary])
@@ -205,13 +214,12 @@ def _haskell_binary_common_impl(ctx, is_test):
         hs,
         ghci_script = ctx.file._ghci_script,
         ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
-        compiler_flags = compiler_flags,
+        user_compile_flags = ctx.attr.compiler_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
-        package_caches = dep_info.package_caches,
+        package_databases = dep_info.package_databases,
         version = ctx.attr.version,
-        build_info = build_info,
-        bin_info = bin_info,
+        hs_info = hs_info,
     )
 
     # XXX Temporary backwards compatibility hack. Remove eventually.
@@ -221,13 +229,12 @@ def _haskell_binary_common_impl(ctx, is_test):
     build_haskell_runghc(
         hs,
         runghc_wrapper = ctx.file._ghci_repl_wrapper,
-        extra_args = ctx.attr.runghc_args,
-        compiler_flags = ctx.attr.compiler_flags,
+        extra_args = ctx.attr.runcompile_flags,
+        user_compile_flags = ctx.attr.compiler_flags,
         output = ctx.outputs.runghc,
-        package_caches = dep_info.package_caches,
+        package_databases = dep_info.package_databases,
         version = ctx.attr.version,
-        build_info = build_info,
-        bin_info = bin_info,
+        hs_info = hs_info,
     )
 
     executable = binary
@@ -285,8 +292,8 @@ def _haskell_binary_common_impl(ctx, is_test):
         ] + mix_runfiles + srcs_runfiles
 
     return [
-        build_info,
-        bin_info,
+        hs_info,
+        cc_info,
         DefaultInfo(
             executable = executable,
             files = target_files,
@@ -312,14 +319,12 @@ def haskell_library_impl(ctx):
     with_shared = False if hs.toolchain.is_windows else not ctx.attr.linkstatic
 
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx, dep_info)
+    cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
 
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
-
-    compiler_flags = ctx.attr.compiler_flags
 
     c = hs.toolchain.actions.compile_library(
         hs,
@@ -333,7 +338,7 @@ def haskell_library_impl(ctx):
         exposed_modules_reexports = exposed_modules_reexports,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
-        compiler_flags = compiler_flags,
+        user_compile_flags = ctx.attr.compiler_flags,
         with_shared = with_shared,
         with_profiling = False,
         my_pkg_id = my_pkg_id,
@@ -361,7 +366,7 @@ def haskell_library_impl(ctx):
                 depset(ctx.files.extra_srcs),
                 depset([c.objects_dir]),
             ]),
-            compiler_flags = compiler_flags,
+            user_compile_flags = ctx.attr.compiler_flags,
             # NOTE We can't have profiling and dynamic code at the
             # same time, see:
             # https://ghc.haskell.org/trac/ghc/ticket/15394
@@ -443,11 +448,13 @@ def haskell_library_impl(ctx):
             generate_version_macros(ctx, hs.name, version),
         )
 
-    build_info = HaskellBuildInfo(
+    hs_info = HaskellInfo(
         package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
-        package_confs = set.insert(dep_info.package_confs, conf_file),
-        package_caches = set.insert(dep_info.package_caches, cache_file),
+        package_databases = set.insert(dep_info.package_databases, cache_file),
         version_macros = version_macros,
+        source_files = c.source_files,
+        extra_source_files = c.extra_source_files,
+        import_dirs = c.import_dirs,
         # NOTE We have to use lists for static libraries because the order is
         # important for linker. Linker searches for unresolved symbols to the
         # left, i.e. you first feed a library which has unresolved symbols and
@@ -456,6 +463,7 @@ def haskell_library_impl(ctx):
         static_libraries_prof = static_libraries_prof,
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
+        compile_flags = c.compile_flags,
         prebuilt_dependencies = dep_info.prebuilt_dependencies,
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
@@ -463,12 +471,6 @@ def haskell_library_impl(ctx):
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
         version = version,
-        import_dirs = c.import_dirs,
-        ghc_args = c.ghc_args,
-        header_files = c.header_files,
-        boot_files = c.boot_files,
-        source_files = c.source_files,
-        extra_source_files = c.extra_source_files,
     )
 
     dep_coverage_data = []
@@ -488,11 +490,11 @@ def haskell_library_impl(ctx):
             ghci_script = ctx.file._ghci_script,
             ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
             repl_ghci_args = ctx.attr.repl_ghci_args,
-            compiler_flags = compiler_flags,
+            user_compile_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.repl,
-            package_caches = dep_info.package_caches,
+            package_databases = dep_info.package_databases,
             version = ctx.attr.version,
-            build_info = build_info,
+            hs_info = hs_info,
             lib_info = lib_info,
         )
 
@@ -503,12 +505,12 @@ def haskell_library_impl(ctx):
         build_haskell_runghc(
             hs,
             runghc_wrapper = ctx.file._ghci_repl_wrapper,
-            extra_args = ctx.attr.runghc_args,
-            compiler_flags = ctx.attr.compiler_flags,
+            extra_args = ctx.attr.runcompile_flags,
+            user_compile_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.runghc,
-            package_caches = dep_info.package_caches,
+            package_databases = dep_info.package_databases,
             version = ctx.attr.version,
-            build_info = build_info,
+            hs_info = hs_info,
             lib_info = lib_info,
         )
 
@@ -556,7 +558,7 @@ def haskell_library_impl(ctx):
     )
 
     return [
-        build_info,
+        hs_info,
         cc_info,
         coverage_info,
         default_info,

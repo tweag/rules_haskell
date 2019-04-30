@@ -8,7 +8,7 @@ load(
 )
 
 HaskellCcInfo = provider(
-    doc = "Haskell cc dependency information. Part of HaskellBuildInfo.",
+    doc = "Haskell cc dependency information. Part of HaskellInfo.",
     fields = {
         "static_linking": """static linking mode parameters.
             A struct of
@@ -73,17 +73,20 @@ def merge_HaskellCcInfo(*args):
         ),
     )
 
-HaskellBuildInfo = provider(
+HaskellInfo = provider(
     doc = "Common information about build process: dependencies, etc.",
     fields = {
         "package_ids": "Set of all package ids of direct (non-prebuilt) dependencies.",
-        "package_confs": "Set of package .conf files.",
-        "package_caches": "Set of package cache files.",
+        "package_databases": "Set of package cache files.",
         "version_macros": "Set of version macro files.",
+        "import_dirs": "Import hierarchy roots.",
+        "source_files": "Set of files that contain Haskell modules.",
+        "extra_source_files": "A depset of non-Haskell source files.",
         "static_libraries": "Ordered collection of compiled library archives.",
         "static_libraries_prof": "Ordered collection of static libraries with profiling.",
         "dynamic_libraries": "Set of dynamic libraries.",
         "interface_dirs": "Set of interface dirs belonging to the packages.",
+        "compile_flags": "Arguments that were used to compile the code.",
         "prebuilt_dependencies": "Transitive collection of info of wired-in Haskell dependencies.",
         "direct_prebuilt_deps": "Set of info of direct prebuilt dependencies.",
         "cc_dependencies": "Direct cc library dependencies. See HaskellCcInfo.",
@@ -169,23 +172,6 @@ HaskellLibraryInfo = provider(
     fields = {
         "package_id": "Workspace unique package identifier.",
         "version": "Package version.",
-        "import_dirs": "Import hierarchy roots.",
-        "header_files": "Set of header files.",
-        "boot_files": "Set of boot files.",
-        "source_files": "Set of files that contain Haskell modules.",
-        "extra_source_files": "A depset of non-Haskell source files.",
-        "ghc_args": "Arguments that were used to compile the package.",
-    },
-)
-
-HaskellBinaryInfo = provider(
-    doc = "Binary-specific information.",
-    fields = {
-        "import_dirs": "Import hierarchy roots.",
-        "source_files": "Set of source files.",
-        "binary": "File, compiled binary.",
-        "header_files": "Set of header files.",
-        "ghc_args": "Arguments that were used to compile the binary.",
     },
 )
 
