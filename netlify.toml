@@ -1,3 +1,0 @@
-[build]
-command = ".netlify/install.sh && .netlify/build.sh"
-publish = "public"

@@ -1,2 +1,0 @@
-# Use the overrides from @local_config_cc on MacOS as well:
-build --action_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1

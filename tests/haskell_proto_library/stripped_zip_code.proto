@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package demo; // Required to generate valid code.
-
-message StrippedZipCode {
-  string code = 1;
-}
