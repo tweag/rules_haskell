@@ -1,7 +1,5 @@
 """Rules for defining toolchains"""
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
-
 def _haskell_toolchain_impl(ctx):
     libraries = {
         lib.label.name: lib
@@ -22,19 +20,14 @@ _haskell_toolchain = rule(
             doc = "The set of libraries that come with GHC.",
             mandatory = True,
         ),
-        "version": attr.string(
-            doc = "Version of your GHC compiler. It has to match the version reported by the GHC used by bazel.",
-            mandatory = True,
-        ),
     },
 )
 
-def haskell_toolchain(name, version, libraries):
+def haskell_toolchain(name, libraries):
     impl_name = name + "-impl"
     _haskell_toolchain(
         name = impl_name,
         libraries = libraries,
-        version = version,
         visibility = ["//visibility:public"],
     )
     native.toolchain(
