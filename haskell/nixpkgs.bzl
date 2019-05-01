@@ -243,19 +243,46 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
         target_constraints.append("@bazel_tools//platforms:osx")
     exec_constraints = list(target_constraints)
     exec_constraints.append("@io_tweag_rules_haskell//haskell/platforms:nixpkgs")
-
+    nixpkgs_ghc_path = repository_ctx.path("../../external/io_tweag_rules_haskell_ghc-nixpkgs")
     compiler_flags_select = repository_ctx.attr.compiler_flags_select or {"//conditions:default": []}
     locale_archive = repr(repository_ctx.attr.locale_archive or None)
+
+    # Symlink content of ghc external repo. In effect, this repo has
+    # the same content, but with a BUILD file that includes generated
+    # content (not a static one like nixpkgs_package supports).
+    for target in _find_children(repository_ctx, nixpkgs_ghc_path):
+        basename = target.rpartition("/")[-1]
+        repository_ctx.symlink(target, basename)
+
+    # Generate BUILD file entries describing each prebuilt package.
+    pkgdb_to_bzl = repository_ctx.path(
+        Label("@io_tweag_rules_haskell//haskell:private/pkgdb_to_bzl.py")
+    )
+    result = repository_ctx.execute([
+        pkgdb_to_bzl,
+        repository_ctx.attr.name,
+        "lib/ghc-{}".format(repository_ctx.attr.version),
+    ])
+    if result.return_code:
+        fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
+    toolchain_libraries = result.stdout
 
     repository_ctx.file(
         "BUILD",
         executable = False,
         content = """
-load("@io_tweag_rules_haskell//haskell:toolchain.bzl", "haskell_toolchain")
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import",
+    "haskell_toolchain",
+)
+
+{toolchain_libraries}
 
 haskell_toolchain(
     name = "toolchain",
     tools = ["{tools}"],
+    libraries = toolchain_libraries,
     version = "{version}",
     compiler_flags = {compiler_flags} + {compiler_flags_select},
     haddock_flags = {haddock_flags},
@@ -276,6 +303,7 @@ haskell_toolchain(
             locale_archive = locale_archive,
             exec_constraints = exec_constraints,
             target_constraints = target_constraints,
+            toolchain_libraries = toolchain_libraries,
         ),
     )
 
@@ -352,3 +380,20 @@ def haskell_register_ghc_nixpkgs(
         locale_archive = locale_archive,
     )
     native.register_toolchains("@io_tweag_rules_haskell_ghc-nixpkgs-toolchain//:toolchain")
+
+def _find_children(repository_ctx, target_dir):
+    find_args = [
+        "find",
+        "-L",
+        target_dir,
+        "-maxdepth",
+        "1",
+        # otherwise the directory is printed as well
+        "-mindepth",
+        "1",
+        # filenames can contain \n
+        "-print0",
+    ]
+    exec_result = repository_ctx.execute(find_args)
+    if exec_result.return_code: fail("_find_children() failed.")
+    return exec_result.stdout.rstrip("\0").split("\0")

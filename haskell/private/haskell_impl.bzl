@@ -6,6 +6,7 @@ load(
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
+    "empty_HaskellCcInfo",
 )
 load(":cc.bzl", "cc_interop_info")
 load(
@@ -611,7 +612,91 @@ def haskell_toolchain_library_impl(ctx):
         version_macros_file = version_macros_file,
     )
 
-    return [prebuilt_package_info]
+    target = hs.toolchain.libraries.get(package)
+    if not target:
+        fail("""
+{} is not a toolchain library.
+Check that it ships with your version of GHC.
+            """.format(package)
+        )
+
+    return [
+        #prebuilt_package_info,
+        target[HaskellInfo],
+        target[CcInfo],
+        target[DefaultInfo],
+        target[HaskellLibraryInfo],
+    ]
+
+def haskell_import_impl(ctx):
+    id = ctx.attr.id or ctx.attr.name
+    target_files = [
+        file for file in [ctx.file.static_library, ctx.file.shared_library] if file
+    ]
+    hs_info = HaskellInfo(
+        package_ids = set.singleton(id),
+        # XXX Empty set of conf and cache files only works for global db.
+        package_databases = set.empty(),
+        version_macros = set.empty(),
+        static_libraries = [],
+        static_libraries_prof = [],
+        dynamic_libraries = set.empty(),
+        interface_dirs = set.empty(),
+        prebuilt_dependencies = set.empty(),
+        direct_prebuilt_deps = set.empty(),
+        cc_dependencies = empty_HaskellCcInfo(),
+        transitive_cc_dependencies = empty_HaskellCcInfo(),
+    )
+    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
+    # Should be find_cpp_toolchain() instead.
+    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    feature_configuration = cc_common.configure_features(
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+    library_to_link = cc_common.create_library_to_link(
+        actions = ctx.actions,
+        feature_configuration = feature_configuration,
+        # TODO Reenable dynamic linking for Haskell libraries. See
+        # https://github.com/bazelbuild/bazel/issues/8129.
+        #
+        dynamic_library = ctx.file.shared_library,
+        static_library = ctx.file.static_library,
+        cc_toolchain = cc_toolchain,
+    )
+    compilation_context = cc_common.create_compilation_context(
+        headers = depset(ctx.files.hdrs),
+        includes = depset(ctx.attr.includes),
+    )
+    linking_context = cc_common.create_linking_context(
+        libraries_to_link = [library_to_link],
+        user_link_flags = ctx.attr.linkopts,
+    )
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [
+            CcInfo(
+                compilation_context = compilation_context,
+                linking_context = linking_context,
+            )
+        ] + [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep]
+    )
+    coverage_info = HaskellCoverageInfo(coverage_data = [])
+    lib_info = HaskellLibraryInfo(
+        package_id = id,
+        version = ctx.attr.version,
+    )
+    default_info = DefaultInfo(
+        files = depset(target_files),
+    )
+
+    return [
+        hs_info,
+        cc_info,
+        coverage_info,
+        default_info,
+        lib_info,
+    ]
 
 def _exposed_modules_reexports(exports):
     """Creates a ghc-pkg-compatible list of reexport declarations.

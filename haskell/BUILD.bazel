@@ -5,6 +5,7 @@ exports_files(
         "private/haddock_wrapper.sh.tpl",
         "private/coverage_wrapper.sh.tpl",
         "private/osx_cc_wrapper.sh.tpl",
+        "private/pkgdb_to_bzl.py",
     ],
 )
 
