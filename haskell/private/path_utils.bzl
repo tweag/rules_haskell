@@ -355,10 +355,12 @@ def copy_all(ctx, srcs, dest):
             arguments = [args],
         )
 
-def parse_pattern(pattern_str):
+def parse_pattern(ctx, pattern_str):
     """Parses a string label pattern.
 
     Args:
+      ctx: Standard Bazel Rule context.
+
       pattern_str: The pattern to parse.
         Patterns are absolute labels in the local workspace. E.g.
         `//some/package:some_target`. The following wild-cards are allowed:
@@ -383,7 +385,12 @@ def parse_pattern(pattern_str):
 
     # To keep things simple, all patterns have to be absolute.
     if not pattern_str.startswith("//"):
-        fail("Invalid haskell_repl pattern. Patterns must start with //.")
+        if not pattern_str.startswith(":"):
+            fail("Invalid haskell_repl pattern. Patterns must start with either '//' or ':'.")
+
+        # if the pattern string doesn't start with a package (it starts with :, e.g. :two),
+        # then we prepend the contextual package
+        pattern_str = "//{package}{target}".format(package = ctx.label.package, target = pattern_str)
 
     # Separate package and target (if present).
     package_target = pattern_str[2:].split(":", maxsplit = 2)
