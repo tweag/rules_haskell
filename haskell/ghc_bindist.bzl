@@ -218,7 +218,7 @@ def _ghc_bindist_impl(ctx):
         ctx.file("patch_bins", executable = True, content = """#!/usr/bin/env bash
 grep -lZ {bindist_dir} bin/* | xargs -0 --verbose \\
     sed -i \\
-        -e '2iDISTDIR="$( dirname "$(readlink -f "$0")" )/.."' \\
+        -e '2iDISTDIR="$( dirname "$(resolved="$0"; while tmp="$(readlink "$resolved")"; do resolved="$tmp"; done; echo "$resolved")" )/.."' \\
         -e 's:{bindist_dir}:$DISTDIR:'
 """.format(
             bindist_dir = bindist_dir.realpath,
