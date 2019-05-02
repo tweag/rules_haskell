@@ -32,7 +32,7 @@ haskell_test(
     coverage_report_format = "html",
     expected_covered_expressions_percentage = 55,
     expected_uncovered_expression_count = 4,
-    experimental_coverage_source_patterns = ["//tests/two-libs:two"],
+    experimental_coverage_source_patterns = [":two"],
     strict_coverage_analysis = True,
     tags = ["coverage-compatible"],
     deps = [

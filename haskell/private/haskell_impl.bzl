@@ -252,7 +252,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
         # find which modules to exclude from coverage analysis, by using the specified source patterns
         raw_coverage_source_patterns = ctx.attr.experimental_coverage_source_patterns
-        coverage_source_patterns = [parse_pattern(pat) for pat in raw_coverage_source_patterns]
+        coverage_source_patterns = [parse_pattern(ctx, pat) for pat in raw_coverage_source_patterns]
         modules_to_exclude = [paths.split_extension(datum.mix_file.basename)[0] for datum in coverage_data if not _coverage_enabled_for_target(coverage_source_patterns, datum.target_label)]
         modules_to_exclude = collections.uniq(modules_to_exclude)  # remove duplicates
 

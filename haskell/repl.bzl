@@ -361,8 +361,8 @@ def _haskell_repl_impl(ctx):
         for dep in ctx.attr.deps
         if HaskellReplCollectInfo in dep
     ])
-    from_source = [parse_pattern(pat) for pat in ctx.attr.experimental_from_source]
-    from_binary = [parse_pattern(pat) for pat in ctx.attr.experimental_from_binary]
+    from_source = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_from_source]
+    from_binary = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_from_binary]
     repl_info = _create_HaskellReplInfo(from_source, from_binary, collect_info)
     hs = haskell_context(ctx)
     return _create_repl(hs, ctx, repl_info, ctx.outputs.repl)
