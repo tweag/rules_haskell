@@ -108,6 +108,12 @@ of `rules_haskell`.
   sed -i 's/^haskell_import/haskell_toolchain_library/' **/BUILD{,.bazel}
   sed -i 's/"haskell_import"/"haskell_toolchain_library"/' **/BUILD{,.bazel}
   ```
+* The `haskell_toolchain` macro now no longer adds a `toolchain`
+  definition. You must now define yourself a `haskell_toolchain` and
+  a `toolchain` separately. This should be a mostly transparent
+  change, because nearly no one uses these functions directly. They
+  are normally only used transitively via
+  `haskell_register_toolchains` and related functions.
 
   See [#843](https://github.com/tweag/rules_haskell/pull/843).
 

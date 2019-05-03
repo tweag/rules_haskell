@@ -226,8 +226,28 @@ grep -lZ {bindist_dir} bin/* | xargs -0 --verbose \\
 
     ctx.template(
         "BUILD",
-        ghc_build,
         executable = False,
+        content = """
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_toolchain",
+)
+
+haskell_toolchain(
+    name = "toolchain",
+    tools = [":bin"],
+    version = "{version}",
+    compiler_flags = {compiler_flags},
+    haddock_flags = {haddock_flags},
+    repl_ghci_args = {repl_ghci_args},
+    visibility = ["//visibility:public"],
+)
+        """.format(
+            version = ctx.attr.version,
+            compiler_flags = ctx.attr.compiler_flags,
+            haddock_flags = ctx.attr.haddock_flags,
+            repl_ghci_args = ctx.attr.repl_ghci_args,
+        ),
     )
 
 _ghc_bindist = repository_rule(
@@ -240,6 +260,9 @@ _ghc_bindist = repository_rule(
             doc = "The desired GHC version",
         ),
         "target": attr.string(),
+        "compiler_flags": attr.string_list(),
+        "haddock_flags": attr.string_list(),
+        "repl_ghci_args": attr.string_list(),
         "patches": attr.label_list(
             default = [],
             doc =
@@ -273,24 +296,15 @@ def _ghc_bindist_toolchain_impl(ctx):
         "BUILD",
         executable = False,
         content = """
-load("@io_tweag_rules_haskell//haskell:toolchain.bzl", "haskell_toolchain")
-
-haskell_toolchain(
+toolchain(
     name = "toolchain",
-    tools = ["{tools}"],
-    version = "{version}",
-    compiler_flags = {compiler_flags},
-    haddock_flags = {haddock_flags},
-    repl_ghci_args = {repl_ghci_args},
+    toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
+    toolchain = "@{bindist_name}//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
         """.format(
-            tools = "@{}//:bin".format(ctx.attr.bindist_name),
-            version = ctx.attr.version,
-            compiler_flags = ctx.attr.compiler_flags,
-            haddock_flags = ctx.attr.haddock_flags,
-            repl_ghci_args = ctx.attr.repl_ghci_args,
+            bindist_name = ctx.attr.bindist_name,
             exec_constraints = exec_constraints,
             target_constraints = target_constraints,
         ),
@@ -301,10 +315,6 @@ _ghc_bindist_toolchain = repository_rule(
     local = False,
     attrs = {
         "bindist_name": attr.string(),
-        "version": attr.string(),
-        "compiler_flags": attr.string_list(),
-        "haddock_flags": attr.string_list(),
-        "repl_ghci_args": attr.string_list(),
         "target": attr.string(),
     },
 )
@@ -362,16 +372,15 @@ def ghc_bindist(
     _ghc_bindist(
         name = bindist_name,
         version = version,
+        compiler_flags = compiler_flags,
+        haddock_flags = haddock_flags,
+        repl_ghci_args = repl_ghci_args,
         target = target,
         **extra_attrs
     )
     _ghc_bindist_toolchain(
         name = toolchain_name,
         bindist_name = bindist_name,
-        version = version,
-        compiler_flags = compiler_flags,
-        haddock_flags = haddock_flags,
-        repl_ghci_args = repl_ghci_args,
         target = target,
     )
     native.register_toolchains("@{}//:toolchain".format(toolchain_name))
