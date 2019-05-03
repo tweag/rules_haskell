@@ -26,6 +26,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   sed -i 's/^haskell_import/haskell_toolchain_library/' **/BUILD{,.bazel}
   sed -i 's/"haskell_import"/"haskell_toolchain_library"/' **/BUILD{,.bazel}
   ```
+* The `haskell_toolchain` macro now no longer adds a `toolchain`
+  definition. You must now define yourself a `haskell_toolchain` and
+  a `toolchain` separately. This should be a mostly transparent
+  change, because nearly no one uses these functions directly. They
+  are normally only used transitively via
+  `haskell_register_toolchains` and related functions.
 
 ## [0.8] - 2019-01-28
 

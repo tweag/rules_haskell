@@ -248,8 +248,6 @@ def haskell_toolchain(
         name,
         version,
         tools,
-        exec_compatible_with = None,
-        target_compatible_with = None,
         compiler_flags = [],
         repl_ghci_args = [],
         haddock_flags = [],
@@ -287,20 +285,14 @@ def haskell_toolchain(
       register_toolchains("//:ghc")
       ```
     """
-    if exec_compatible_with and not target_compatible_with:
-        target_compatible_with = exec_compatible_with
-    elif target_compatible_with and not exec_compatible_with:
-        exec_compatible_with = target_compatible_with
-    impl_name = name + "-impl"
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
     _haskell_toolchain(
-        name = impl_name,
+        name = name,
         version = version,
         tools = tools,
         compiler_flags = compiler_flags,
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
-        visibility = ["//visibility:public"],
         is_darwin = select({
             "@io_tweag_rules_haskell//haskell/platforms:darwin": True,
             "//conditions:default": False,
@@ -317,13 +309,6 @@ def haskell_toolchain(
             "//conditions:default": None,
         }),
         **kwargs
-    )
-    native.toolchain(
-        name = name,
-        toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
-        toolchain = ":" + impl_name,
-        exec_compatible_with = exec_compatible_with,
-        target_compatible_with = target_compatible_with,
     )
 
 def haskell_register_toolchains(version):
