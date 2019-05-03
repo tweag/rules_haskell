@@ -29,6 +29,7 @@ jobs:
       /c/bazel/bazel.exe build --config windows "@haskell_conduit//..."
       /c/bazel/bazel.exe build --config windows "@haskell_fuzzyset//..."
       /c/bazel/bazel.exe build --config windows "@haskell_lens//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_network//..."
       /c/bazel/bazel.exe build --config windows "@haskell_text__metrics//..."
       /c/bazel/bazel.exe build --config windows "@haskell_cryptonite//..."
       /c/bazel/bazel.exe build --config windows "@haskell_unix__compat//..."
@@ -54,7 +55,6 @@ jobs:
       # /c/bazel/bazel.exe build --config windows "@haskell_pretty__show//..."
 
       # FIXME: need custom builds
-      # /c/bazel/bazel.exe build --config windows "@haskell_network_1843485230//..."
       # /c/bazel/bazel.exe build --config windows "@haskell_postgresql_libpq_275795853//..."
 
       # FIXME: depends on network
