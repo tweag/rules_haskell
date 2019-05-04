@@ -9,11 +9,13 @@ haskell_toolchain_library(name = "base")
 
 haskell_toolchain_library(name = "ghc-prim")
 
+haskell_toolchain_library(name = "rts")
+
 cc_library(
     name = "memops",
     srcs = ["cbits/primitive-memops.c"],
     hdrs = ["cbits/primitive-memops.h"],
-    deps = ["@ghc//:threaded-rts"],
+    deps = [":rts"],
 )
 
 haskell_library(

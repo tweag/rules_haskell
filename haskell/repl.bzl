@@ -14,6 +14,7 @@ load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
+    "HaskellPrebuiltPackageInfo",
     "empty_HaskellCcInfo",
     "get_libs_for_ghc_linker",
     "merge_HaskellCcInfo",
@@ -327,7 +328,7 @@ def _create_repl(hs, ctx, repl_info, output):
     )]
 
 def _haskell_repl_aspect_impl(target, ctx):
-    if not HaskellInfo in target:
+    if HaskellInfo not in target or HaskellPrebuiltPackageInfo in target:
         return []
 
     target_info = _create_HaskellReplCollectInfo(target, ctx)

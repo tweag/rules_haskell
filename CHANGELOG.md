@@ -114,6 +114,8 @@ of `rules_haskell`.
   change, because nearly no one uses these functions directly. They
   are normally only used transitively via
   `haskell_register_toolchains` and related functions.
+* It is now possible to statically link Haskell libraries in CC
+  binaries.
 
   See [#843](https://github.com/tweag/rules_haskell/pull/843).
 

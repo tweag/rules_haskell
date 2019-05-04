@@ -184,11 +184,6 @@ HaskellCoverageInfo = provider(
 
 HaskellPrebuiltPackageInfo = provider(
     doc = "Information about a prebuilt GHC package.",
-    fields = {
-        "package": "Package name",
-        "id_file": "File containing package id",
-        "version_macros_file": "C header file containing Cabal version macros",
-    },
 )
 
 HaddockInfo = provider(

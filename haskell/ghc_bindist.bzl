@@ -181,7 +181,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 def _ghc_bindist_impl(ctx):
     # Avoid rule restart by resolving these labels early. See
     # https://github.com/bazelbuild/bazel/blob/master/tools/cpp/lib_cc_configure.bzl#L17.
-    ghc_build = ctx.path(Label("//haskell:ghc.BUILD"))
+    ghc_build = ctx.path(Label("@io_tweag_rules_haskell//haskell:ghc.BUILD.tpl"))
 
     version = ctx.attr.version
     target = ctx.attr.target
@@ -224,30 +224,47 @@ grep -lZ {bindist_dir} bin/* | xargs -0 --verbose \\
         ))
         _execute_fail_loudly(ctx, ["./patch_bins"])
 
-    ctx.template(
-        "BUILD",
-        executable = False,
-        content = """
-load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_toolchain",
-)
+    # Generate BUILD file entries describing each prebuilt package.
+    # Cannot use //haskell:pkgdb_to_bzl because that's a generated
+    # target. ctx.path() only works on source files.
+    pkgdb_to_bzl = ctx.path(Label("@io_tweag_rules_haskell//haskell:private/pkgdb_to_bzl.py"))
+    python = _find_python(ctx)
+    result = ctx.execute([
+        python,
+        pkgdb_to_bzl,
+        ctx.attr.name,
+        "lib",
+    ])
+    if result.return_code:
+        fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
+    toolchain_libraries = result.stdout
+    toolchain = """
+{toolchain_libraries}
 
 haskell_toolchain(
-    name = "toolchain",
+    name = "toolchain-impl",
     tools = [":bin"],
+    libraries = toolchain_libraries,
     version = "{version}",
     compiler_flags = {compiler_flags},
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
     visibility = ["//visibility:public"],
 )
-        """.format(
-            version = ctx.attr.version,
-            compiler_flags = ctx.attr.compiler_flags,
-            haddock_flags = ctx.attr.haddock_flags,
-            repl_ghci_args = ctx.attr.repl_ghci_args,
-        ),
+    """.format(
+        toolchain_libraries = toolchain_libraries,
+        version = ctx.attr.version,
+        compiler_flags = ctx.attr.compiler_flags,
+        haddock_flags = ctx.attr.haddock_flags,
+        repl_ghci_args = ctx.attr.repl_ghci_args,
+    )
+    ctx.template(
+        "BUILD",
+        ghc_build,
+        substitutions = {
+            "%{toolchain}": toolchain,
+        },
+        executable = False,
     )
 
 _ghc_bindist = repository_rule(
@@ -412,3 +429,12 @@ def haskell_register_ghc_bindists(
             haddock_flags = haddock_flags,
             repl_ghci_args = repl_ghci_args,
         )
+
+def _find_python(repository_ctx):
+    python = repository_ctx.which("python3")
+    if not python:
+        python = repository_ctx.which("python")
+        result = repository_ctx.execute([python, "--version"])
+        if not result.stdout.startswith("Python 3"):
+            fail("rules_haskell requires Python >= 3.3.")
+    return python
