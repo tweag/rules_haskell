@@ -131,7 +131,6 @@ def build_haskell_repl(
         has_version = pkg_ghc_info.has_version,
         library_path = library_path,
         ld_library_path = ld_library_path,
-        packages = pkg_ghc_info.packages,
         package_ids = pkg_ghc_info.package_ids,
         package_dbs = pkg_ghc_info.package_dbs,
         lib_imports = lib_imports,

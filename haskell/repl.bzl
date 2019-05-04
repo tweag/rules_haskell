@@ -14,7 +14,6 @@ load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "HaskellPrebuiltPackageInfo",
     "empty_HaskellCcInfo",
     "get_libs_for_ghc_linker",
     "merge_HaskellCcInfo",
@@ -54,7 +53,6 @@ HaskellReplCollectInfo = provider(
     fields = {
         "load_infos": "Dictionary from labels to HaskellReplLoadInfo.",
         "dep_infos": "Dictionary from labels to HaskellReplDepInfo.",
-        "prebuilt_dependencies": "Transitive collection of info of wired-in Haskell dependencies.",
         "transitive_cc_dependencies": "Transitive cc library dependencies. See HaskellCcInfo.",
     },
 )
@@ -68,7 +66,6 @@ HaskellReplInfo = provider(
     fields = {
         "load_info": "Combined HaskellReplLoadInfo.",
         "dep_info": "Combined HaskellReplDepInfo.",
-        "prebuilt_dependencies": "Transitive collection of info of wired-in Haskell dependencies.",
         "transitive_cc_dependencies": "Transitive cc library dependencies. See HaskellCcInfo.",
     },
 )
@@ -113,7 +110,6 @@ def _create_HaskellReplCollectInfo(target, ctx):
     dep_infos = {}
 
     hs_info = target[HaskellInfo]
-    prebuilt_dependencies = hs_info.prebuilt_dependencies
     transitive_cc_dependencies = hs_info.transitive_cc_dependencies
 
     load_infos[target.label] = HaskellReplLoadInfo(
@@ -132,22 +128,16 @@ def _create_HaskellReplCollectInfo(target, ctx):
     return HaskellReplCollectInfo(
         load_infos = load_infos,
         dep_infos = dep_infos,
-        prebuilt_dependencies = prebuilt_dependencies,
         transitive_cc_dependencies = transitive_cc_dependencies,
     )
 
 def _merge_HaskellReplCollectInfo(args):
     load_infos = {}
     dep_infos = {}
-    prebuilt_dependencies = set.empty()
     transitive_cc_dependencies = empty_HaskellCcInfo()
     for arg in args:
         load_infos.update(arg.load_infos)
         dep_infos.update(arg.dep_infos)
-        set.mutable_union(
-            prebuilt_dependencies,
-            arg.prebuilt_dependencies,
-        )
         transitive_cc_dependencies = merge_HaskellCcInfo(
             transitive_cc_dependencies,
             arg.transitive_cc_dependencies,
@@ -156,7 +146,6 @@ def _merge_HaskellReplCollectInfo(args):
     return HaskellReplCollectInfo(
         load_infos = load_infos,
         dep_infos = dep_infos,
-        prebuilt_dependencies = prebuilt_dependencies,
         transitive_cc_dependencies = transitive_cc_dependencies,
     )
 
@@ -201,7 +190,6 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
     return HaskellReplInfo(
         load_info = load_info,
         dep_info = dep_info,
-        prebuilt_dependencies = collect_info.prebuilt_dependencies,
         transitive_cc_dependencies = collect_info.transitive_cc_dependencies,
     )
 
@@ -223,10 +211,6 @@ def _create_repl(hs, ctx, repl_info, output):
     # The base and directory packages are necessary for the GHCi script we use
     # (loads source files and brings in scope the corresponding modules).
     args = ["-package", "base", "-package", "directory"]
-
-    # Load prebuilt dependencies (-package)
-    for dep in set.to_list(repl_info.prebuilt_dependencies):
-        args.extend(["-package", dep.package])
 
     # Load built dependencies (-package-id, -package-db)
     for package_id in set.to_list(repl_info.dep_info.package_ids):
@@ -328,15 +312,18 @@ def _create_repl(hs, ctx, repl_info, output):
     )]
 
 def _haskell_repl_aspect_impl(target, ctx):
-    if HaskellInfo not in target or HaskellPrebuiltPackageInfo in target:
+    if HaskellInfo not in target:
         return []
 
     target_info = _create_HaskellReplCollectInfo(target, ctx)
-    deps_infos = [
-        dep[HaskellReplCollectInfo]
-        for dep in ctx.rule.attr.deps
-        if HaskellReplCollectInfo in dep
-    ]
+    if hasattr(ctx.rule.attr, "deps"):
+        deps_infos = [
+            dep[HaskellReplCollectInfo]
+            for dep in ctx.rule.attr.deps
+            if HaskellReplCollectInfo in dep
+        ]
+    else:
+        deps_infos = []
     collect_info = _merge_HaskellReplCollectInfo([target_info] + deps_infos)
 
     # This aspect currently does not generate an executable REPL script by

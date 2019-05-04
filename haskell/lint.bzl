@@ -5,7 +5,6 @@ load(
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellLintInfo",
-    "HaskellPrebuiltPackageInfo",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
@@ -31,7 +30,7 @@ def _haskell_lint_rule_impl(ctx):
 def _haskell_lint_aspect_impl(target, ctx):
     hs = haskell_context(ctx, ctx.rule.attr)
 
-    if HaskellInfo not in target or HaskellPrebuiltPackageInfo in target:
+    if HaskellInfo not in target:
         return []
 
     hs_info = target[HaskellInfo]

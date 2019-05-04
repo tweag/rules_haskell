@@ -76,7 +76,7 @@ def merge_HaskellCcInfo(*args):
 HaskellInfo = provider(
     doc = "Common information about build process: dependencies, etc.",
     fields = {
-        "package_ids": "Set of all package ids of direct (non-prebuilt) dependencies.",
+        "package_ids": "Set of all package ids of direct dependencies.",
         "package_databases": "Set of package cache files.",
         "version_macros": "Set of version macro files.",
         "import_dirs": "Import hierarchy roots.",
@@ -87,8 +87,6 @@ HaskellInfo = provider(
         "dynamic_libraries": "Set of dynamic libraries.",
         "interface_dirs": "Set of interface dirs belonging to the packages.",
         "compile_flags": "Arguments that were used to compile the code.",
-        "prebuilt_dependencies": "Transitive collection of info of wired-in Haskell dependencies.",
-        "direct_prebuilt_deps": "Set of info of direct prebuilt dependencies.",
         "cc_dependencies": "Direct cc library dependencies. See HaskellCcInfo.",
         "transitive_cc_dependencies": "Transitive cc library dependencies. See HaskellCcInfo.",
     },
@@ -180,10 +178,6 @@ HaskellCoverageInfo = provider(
     fields = {
         "coverage_data": "A list of coverage data containing which parts of Haskell source code are being tracked for code coverage.",
     },
-)
-
-HaskellPrebuiltPackageInfo = provider(
-    doc = "Information about a prebuilt GHC package.",
 )
 
 HaddockInfo = provider(

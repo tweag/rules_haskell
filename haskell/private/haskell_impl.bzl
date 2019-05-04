@@ -5,7 +5,6 @@ load(
     "C2hsLibraryInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "HaskellPrebuiltPackageInfo",
     "empty_HaskellCcInfo",
 )
 load(":cc.bzl", "cc_interop_info")
@@ -202,7 +201,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         dynamic_libraries = dep_info.dynamic_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = c.compile_flags,
-        prebuilt_dependencies = dep_info.prebuilt_dependencies,
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
@@ -466,7 +464,6 @@ def haskell_library_impl(ctx):
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
-        prebuilt_dependencies = dep_info.prebuilt_dependencies,
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
@@ -596,24 +593,6 @@ def haskell_toolchain_library_impl(ctx):
         ],
     )
 
-    version_macros_file = hs.actions.declare_file("{}_version_macros.h".format(hs.name))
-    hs.actions.run_shell(
-        inputs = [hs.tools.ghc_pkg, ctx.executable._version_macros],
-        outputs = [version_macros_file],
-        command = """
-        "$1" \\
-            `"$2" --simple-output -v1 field "$3" name` \\
-            `"$2" --simple-output -v1 field "$3" version` \\
-            > "$4"
-        """,
-        arguments = [
-            ctx.executable._version_macros.path,
-            hs.tools.ghc_pkg.path,
-            package,
-            version_macros_file.path,
-        ],
-    )
-
     target = hs.toolchain.libraries.get(package)
     if not target:
         fail(
@@ -667,14 +646,8 @@ Check that it ships with your version of GHC.
         compilation_context = compilation_context,
         linking_context = linking_context,
     )
-    prebuilt_package_info = HaskellPrebuiltPackageInfo(
-        package = package,
-        id_file = id_file,
-        version_macros_file = version_macros_file,
-    )
 
     return [
-        prebuilt_package_info,
         target[HaskellInfo],
         cc_info,
         target[DefaultInfo],
@@ -697,12 +670,13 @@ def haskell_import_impl(ctx):
         # XXX Empty set of conf and cache files only works for global db.
         package_databases = set.empty(),
         version_macros = version_macros,
+        source_files = set.empty(),
+        extra_source_files = depset(),
         static_libraries = [],
         static_libraries_prof = [],
         dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
-        prebuilt_dependencies = set.empty(),
-        direct_prebuilt_deps = set.empty(),
+        compile_flags = [],
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),
     )
@@ -787,18 +761,13 @@ def _exposed_modules_reexports(exports):
                 reexported = cabal_decl_parts[1]
             else:
                 reexported = cabal_decl_parts[0]
-
-            if HaskellPrebuiltPackageInfo in dep:
-                pkg = dep[HaskellPrebuiltPackageInfo].package
-            elif HaskellLibraryInfo in dep:
+            if HaskellLibraryInfo in dep:
                 pkg = dep[HaskellLibraryInfo].package_id
-
             exposed_reexport = "{reexported} from {pkg}:{original}".format(
                 reexported = reexported,
                 pkg = pkg,
                 original = original,
             )
-
             exposed_reexports.append(exposed_reexport)
 
     return exposed_reexports

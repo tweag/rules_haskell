@@ -102,8 +102,6 @@ def package(
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
         "extra-libraries": " ".join(extra_libs),
         "depends": ", ".join(
-            # Prebuilt dependencies are added further down, since their
-            # package-ids are not available as strings but in build outputs.
             set.to_list(dep_info.package_ids),
         ),
     }
@@ -120,42 +118,19 @@ def package(
         ]) + "\n",
     )
 
-    # Collect the package id files of all prebuilt dependencies.
-    prebuilt_deps_id_files = [
-        dep.id_file
-        for dep in set.to_list(dep_info.prebuilt_dependencies)
-    ]
-
     # Combine exposed modules and other metadata to form the package
     # configuration file.
 
-    prebuilt_deps_args = hs.actions.args()
-    prebuilt_deps_args.add_all([f.path for f in prebuilt_deps_id_files])
-    prebuilt_deps_args.use_param_file("%s", use_always = True)
-    prebuilt_deps_args.set_param_file_format("multiline")
-
     hs.actions.run_shell(
-        inputs = [metadata_file, exposed_modules_file] + prebuilt_deps_id_files,
+        inputs = [metadata_file, exposed_modules_file],
         outputs = [conf_file],
         command = """
-            cat $1 > $4
-            echo "exposed-modules: `cat $2`" >> $4
-
-            # this is equivalent to 'readarray'. We do use 'readarray' in order to
-            # support older bash versions.
-            while IFS= read -r line; do deps_id_files+=("$line"); done < $3
-
-            if [ ${#deps_id_files[@]} -eq 0 ]; then
-              deps=""
-            else
-              deps=$(cat "${deps_id_files[@]}" | tr '\n' " ")
-            fi
-            echo "depends: $deps" >> $4
+            cat $1 > $3
+            echo "exposed-modules: `cat $2`" >> $3
 """,
         arguments = [
             metadata_file.path,
             exposed_modules_file.path,
-            prebuilt_deps_args,
             conf_file.path,
         ],
         use_default_shell_env = True,
