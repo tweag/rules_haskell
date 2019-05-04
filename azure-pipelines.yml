@@ -3,6 +3,10 @@ jobs:
   pool:
     vmImage: 'vs2017-win2016'
   steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      architecture: 'x64'
   - bash: |
       set -e
       curl -LO https://github.com/bazelbuild/bazel/releases/download/0.23.2/bazel-0.23.2-windows-x86_64.exe

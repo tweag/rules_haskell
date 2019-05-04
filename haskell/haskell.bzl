@@ -28,6 +28,7 @@ load(
 load(
     ":private/haskell_impl.bzl",
     _haskell_binary_impl = "haskell_binary_impl",
+    _haskell_import_impl = "haskell_import_impl",
     _haskell_library_impl = "haskell_library_impl",
     _haskell_test_impl = "haskell_test_impl",
     _haskell_toolchain_library_impl = "haskell_toolchain_library_impl",
@@ -279,6 +280,29 @@ not built by default, but can be built on request. It works the same way as
 for `haskell_binary`.
 """
 
+haskell_import = rule(
+    _haskell_import_impl,
+    attrs = {
+        "id": attr.string(),
+        "version": attr.string(),
+        "deps": attr.label_list(),
+        "static_libraries": attr.label_list(allow_files = [".a"]),
+        "shared_libraries": attr.label_list(allow_files = [".dll", ".dylib", ".so"]),
+        "static_profiling_libraries": attr.label_list(allow_files = ["_p.a"]),
+        "linkopts": attr.string_list(),
+        "hdrs": attr.label_list(allow_files = True),
+        "includes": attr.string_list(),
+        "_version_macros": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@io_tweag_rules_haskell//haskell:version_macros"),
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+    },
+)
+
 haskell_toolchain_library = rule(
     _haskell_toolchain_library_impl,
     attrs = dict(
@@ -289,6 +313,10 @@ haskell_toolchain_library = rule(
             executable = True,
             cfg = "host",
             default = Label("@io_tweag_rules_haskell//haskell:version_macros"),
+        ),
+        # XXX We'll no longer need this once HaskellImportHack is removed.
+        _cc_toolchain = attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     ),
     toolchains = [

@@ -32,6 +32,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   change, because nearly no one uses these functions directly. They
   are normally only used transitively via
   `haskell_register_toolchains` and related functions.
+* It is now possible to statically link Haskell libraries in CC
+  binaries.
 
 ## [0.8] - 2019-01-28
 

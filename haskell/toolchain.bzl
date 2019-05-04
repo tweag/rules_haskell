@@ -168,6 +168,11 @@ fi
     if ctx.attr.locale_archive != None:
         locale_archive = ctx.file.locale_archive
 
+    libraries = {
+        lib.label.name: lib
+        for lib in ctx.attr.libraries
+    }
+
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,
@@ -188,6 +193,7 @@ fi
                 package = package,
                 run_ghc = _run_ghc,
             ),
+            libraries = libraries,
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
             version = ctx.attr.version,
@@ -205,6 +211,10 @@ _haskell_toolchain = rule(
         "tools": attr.label_list(
             doc = "GHC and executables that come with it. First item take precedance.",
             mandatory = True,
+        ),
+        "libraries": attr.label_list(
+            doc = "The set of libraries that come with GHC.",
+            #mandatory = True,
         ),
         "compiler_flags": attr.string_list(
             doc = "A collection of flags that will be passed to GHC on every invocation.",
@@ -248,6 +258,7 @@ def haskell_toolchain(
         name,
         version,
         tools,
+        libraries,
         compiler_flags = [],
         repl_ghci_args = [],
         haddock_flags = [],
@@ -290,6 +301,7 @@ def haskell_toolchain(
         name = name,
         version = version,
         tools = tools,
+        libraries = libraries,
         compiler_flags = compiler_flags,
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,

@@ -28,13 +28,10 @@ cc_binary(
     srcs = [
         "main.c",
     ],
-    # TODO support linking with static haskell libraries.
-    linkstatic = False,
     tags = ["requires_threaded_rts"],
     visibility = ["//tests:__subpackages__"],
     deps = [
         ":hs-lib-b",
-        "@ghc//:threaded-rts",
     ],
 )
 
@@ -51,7 +48,6 @@ cc_binary(
     visibility = ["//tests:__subpackages__"],
     deps = [
         ":hs-lib-b",
-        "@ghc//:threaded-rts",
     ],
 )
 

@@ -69,7 +69,6 @@ load(
 haskell_nixpkgs_package(
     name = "ghc",
     attribute_path = "haskellPackages.ghc",
-    build_file = "//haskell:ghc.BUILD",
     nix_file = "//tests:ghc.nix",
     nix_file_deps = ["//nixpkgs:default.nix"],
     # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly

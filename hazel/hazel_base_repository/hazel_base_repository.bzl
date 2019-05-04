@@ -125,11 +125,9 @@ hazel_symlink(
 cabal_haskell_package(
   package,
   "{ghc_version}",
-  "{ghc_workspace}",
   extra_libs,
 )
 """.format(
         workspace_name = ctx.name,
         ghc_version = ghc_version,
-        ghc_workspace = ghc_workspace,
     ))
