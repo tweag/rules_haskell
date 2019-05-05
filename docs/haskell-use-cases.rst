@@ -43,7 +43,7 @@ stands for any recent release)::
 
   nixpkgs_package(
       name = "ghc",
-      repositories = { "nixpkgs": "@nixpkgs//:default.nix" }
+      repositories = { "nixpkgs": "@nixpkgs//:default.nix" },
       attribute_path = "haskell.compiler.ghc843", # Any compiler version
       build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
   )
