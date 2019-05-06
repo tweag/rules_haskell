@@ -136,7 +136,7 @@ def hazel_repositories(
     external dependencies corresponding to the given packages:
     - @hazel_base_repository: The compiled "hazel" Haskell binary, along with
       support files.
-    - @haskell_{package}_{hash}: A build of the given Cabal package, one per entry
+    - @haskell_{package}: A build of the given Cabal package, one per entry
       of the "packages" argument.  (Note that Bazel only builds these
       on-demand when needed by other rules.)  This repository automatically
       downloads the package's Cabal distribution from Hackage and parses the
