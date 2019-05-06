@@ -64,7 +64,7 @@ haskell_toolchain_library(
 # CPP includes. To enable uniform handling we define a `-cbits` target for
 # every Hazel Haskell target. In case of core_libraries this is just a dummy.
 cc_import(
-    name = "cbits",
+    name = "{pkg}-cbits",
     visibility = ["//visibility:public"],
 )
 """.format(pkg = ctx.attr.package),

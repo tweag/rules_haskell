@@ -109,7 +109,6 @@ def _configure(desc):
         outs = outputs,
     )
 
-_cbits_name = "cbits"
 _lib_name = "lib"
 
 def _paths_module(desc):
@@ -284,11 +283,19 @@ def _get_build_attrs(
     # Keep track of chs modules, as later chs modules may depend on earlier ones.
     chs_targets = []
 
-    # The library components' cbits are called 'cbits'. Executable components'
-    # cbits are called <exe-name>-cbits.
-    cbits_name = _cbits_name
-    if name != _lib_name:
-        cbits_name = name + "-" + _cbits_name
+    # XXX: We would like to also shorten the library components cbits' name to
+    # 'cbits'. However, on Windows, where we only create static libraries, no
+    # dynamic libraries, this causes name clashes. Bazel does not mangle static
+    # library names, only dynamic library names. If a dynamic library is
+    # present, then rules_haskell will mangle the static library the same, so
+    # that one entry in the package configuration file's extra-libraries
+    # section covers both static and dynamic libraries. However, if no dynamic
+    # library is present, then no such mangling is performed. The
+    # extra-libraries field will then hold only one 'cbits' entry which can be
+    # ambiguous if the target depends on multuple cbits.
+    cbits_name = name + "-cbits"
+    if name == _lib_name:
+        cbits_name = desc.package.pkgName + "-cbits"
 
     for module in build_info.otherModules + extra_modules:
         if module in generated_modules:
@@ -576,7 +583,7 @@ def cabal_haskell_package(
 
         # No exposed library modules. Generate an empty dummy cbits target.
         native.cc_library(
-            name = _cbits_name,
+            name = name + "-cbits",
             visibility = ["//visibility:public"],
             linkstatic = select({
                 "@bazel_tools//src/conditions:windows": True,
