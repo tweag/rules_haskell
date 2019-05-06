@@ -33,13 +33,7 @@ jobs:
       /c/bazel/bazel.exe build --config windows "@haskell_cryptonite//..."
       /c/bazel/bazel.exe build --config windows "@haskell_unix__compat//..."
       /c/bazel/bazel.exe build --config windows "@haskell_hostname//..."
-
-      # FIXME:
-      # this rule is missing dependency declarations for the following files included by 'external/haskell_zlib/cbits/adler32.c':
-      #   'external/haskell_zlib/cbits/zutil.h'
-      #   'external/haskell_zlib/cbits/zlib.h'
-      #   'external/haskell_zlib/cbits/zconf.h'
-      #/c/bazel/bazel.exe build --config windows "@haskell_zlib//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_zlib//..."
 
       # FIXME: needs network, warp, cryptonite, etc...
       # /c/bazel/bazel.exe build --config windows "@haskell_wai__app__static//..."
