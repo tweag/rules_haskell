@@ -1,17 +1,17 @@
 load(":private/set.bzl", "set")
 
-def generate_version_macros(ctx, name, version):
+def generate_version_macros(ctx, pkg_name, version):
     """Generate a version macros header file.
 
     Args:
         ctx: Rule context. Needs to define a _version_macros executable attribute.
-        name: The package name.
+        pkg_name: The package name.
         version: The package version.
 
     Returns:
         Version macros header File.
     """
-    version_macros_file = ctx.actions.declare_file("{}_version_macros.h".format(name))
+    version_macros_file = ctx.actions.declare_file("{}_version_macros.h".format(ctx.attr.name))
     ctx.actions.run_shell(
         inputs = [ctx.executable._version_macros],
         outputs = [version_macros_file],
@@ -20,7 +20,7 @@ def generate_version_macros(ctx, name, version):
         """,
         arguments = [
             ctx.executable._version_macros.path,
-            name,
+            pkg_name,
             version,
             version_macros_file.path,
         ],

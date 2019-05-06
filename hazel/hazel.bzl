@@ -56,7 +56,7 @@ def _core_library_repository_impl(ctx):
         content = """
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_toolchain_library")
 haskell_toolchain_library(
-    name = "{pkg}",
+    name = "lib",
     package = "{pkg}",
     visibility = ["//visibility:public"],
 )
@@ -64,7 +64,7 @@ haskell_toolchain_library(
 # CPP includes. To enable uniform handling we define a `-cbits` target for
 # every Hazel Haskell target. In case of core_libraries this is just a dummy.
 cc_import(
-    name = "{pkg}-cbits",
+    name = "cbits",
     visibility = ["//visibility:public"],
 )
 """.format(pkg = ctx.attr.package),

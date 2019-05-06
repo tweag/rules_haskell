@@ -6,7 +6,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
 load("@ai_formation_hazel//:hazel.bzl", "hazel_library")
 
 haskell_library(
-  name = "text-metrics",
+  name = "lib",
   srcs = ["Data/Text/Metrics.hs"],
   deps = [
     hazel_library("base"),
@@ -14,10 +14,11 @@ haskell_library(
     hazel_library("text"),
     hazel_library("vector"),
   ],
+  package_name = "text-metrics",
   version = "0.3.0",
 )
 
 cc_import(
-    name = "text-metrics-cbits",
+    name = "cbits",
     visibility = ["//visibility:public"],
 )

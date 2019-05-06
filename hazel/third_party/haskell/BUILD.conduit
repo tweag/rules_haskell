@@ -7,7 +7,7 @@ load("@ai_formation_hazel//tools:mangling.bzl", "hazel_library")
 load("@ai_formation_hazel//:tools/mangling.bzl", "hazel_workspace")
 
 haskell_library(
-  name = "conduit",
+  name = "lib",
   srcs = glob([
     "Data/*.hs",
     "Data/**/*.hs",
@@ -31,10 +31,11 @@ haskell_library(
     hazel_library("transformers-compat"),
     hazel_library("vector"),
   ],
+  package_name = "conduit",
   version = "1.2.13.1",
 )
 
 cc_import(
-    name = "conduit-cbits",
+    name = "cbits",
     visibility = ["//visibility:public"],
 )

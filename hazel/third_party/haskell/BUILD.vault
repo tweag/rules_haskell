@@ -4,7 +4,7 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_library")
 load("@ai_formation_hazel//:hazel.bzl", "hazel_library")
 
 haskell_library(
-  name = "vault",
+  name = "lib",
   srcs = [
     "src/Data/Unique/Really.hs",
     "src/Data/Vault/IO.h",
@@ -29,9 +29,11 @@ haskell_library(
     hazel_library("semigroups"),
     hazel_library("unordered-containers"),
   ],
+  package_name = "vault",
+  version = "0.3.1.1",
 )
 
 cc_import(
-    name = "vault-cbits",
+    name = "cbits",
     visibility = ["//visibility:public"],
 )

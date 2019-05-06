@@ -313,8 +313,9 @@ def haskell_library_impl(ctx):
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
     )
-    version = ctx.attr.version if ctx.attr.version else None
-    my_pkg_id = pkg_id.new(ctx.label, version)
+    package_name = getattr(ctx.attr, "package_name", None)
+    version = getattr(ctx.attr, "version", None)
+    my_pkg_id = pkg_id.new(ctx.label, package_name, version)
     with_profiling = is_profiling_enabled(hs)
     with_shared = False if hs.toolchain.is_windows else not ctx.attr.linkstatic
 
@@ -443,9 +444,12 @@ def haskell_library_impl(ctx):
         )
 
     version_macros = set.empty()
-    if version != None:
+    if version:
+        package_name = hs.name
+        if hasattr(ctx.attr, "package_name") and ctx.attr.package_name:
+            package_name = ctx.attr.package_name
         version_macros = set.singleton(
-            generate_version_macros(ctx, hs.name, version),
+            generate_version_macros(ctx, package_name, version),
         )
 
     hs_info = HaskellInfo(

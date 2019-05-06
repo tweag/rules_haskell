@@ -27,7 +27,7 @@ def _to_string(my_pkg_id):
         ),
     )
 
-def _new(label, version = None):
+def _new(label, package_name = None, version = None):
     """Create a new package identifier.
 
     Package identifiers should be globally unique. This is why we use
@@ -35,15 +35,18 @@ def _new(label, version = None):
 
     Args:
       label: The label of the rule declaring the package.
+      package_name: an optional override of the package name.
       version: an optional version annotation.
 
     Returns:
       string: GHC package ID to use.
 
     """
+    name = label.name.replace("_", "-")
     return struct(
         label = label,
-        name = label.name.replace("_", "-"),
+        name = name,
+        package_name = package_name if package_name else name,
         version = version,
     )
 

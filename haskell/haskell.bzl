@@ -243,6 +243,11 @@ haskell_library = rule(
             default = False,
             doc = "Create a static library, not both a static and a shared library.",
         ),
+        package_name = attr.string(
+            doc = """Library name used in version macro generation. Only used
+            if the version attribute is defined, see version attribute
+            documentation. Optional, defaults to target name.""",
+        ),
         version = attr.string(
             doc = """Library version. Not normally necessary unless to build a library
             originally defined as a Cabal package. If this is specified, CPP version macro will be generated.""",

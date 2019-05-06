@@ -14,7 +14,7 @@ cc_library(
 )
 
 haskell_library(
-  name = "zlib-bindings",
+  name = "lib",
   srcs = glob([
     "Codec/Zlib.hs",
     "Codec/Zlib/Lowlevel.hs",
@@ -25,4 +25,6 @@ haskell_library(
       hazel_library("bytestring"),
       hazel_library("zlib"),
   ],
+  package_name "zlib-bindings",
+  version = "0.1.1.5",
 )
