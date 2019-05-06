@@ -1,0 +1,6 @@
+cc_library(
+    name = "cbits",
+    srcs = ["cbits.c"],
+    linkstatic = True,
+    visibility = ["//tests/library-cbits-name-clash:__pkg__"],
+)

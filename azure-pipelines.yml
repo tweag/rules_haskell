@@ -111,4 +111,7 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
       /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
 
+      # Tests that fail
+      /c/bazel/bazel.exe test --config windows "//tests/library-cbits-name-clash/..."
+
     displayName: 'Run Bazel'

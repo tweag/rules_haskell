@@ -1,0 +1,35 @@
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+# This library depends on two cc_library targets, both called `cbits`. Both
+# these libraries need to be added to the `extra-libraries` section of this
+# library's package configuration file. Since both libraries have the same
+# target name, their final compiled library name needs to be mangled to include
+# their package path to avoid name collisions. On Unix this is taken into
+# account if the cc_library produces both static and dynamic libraries. Bazel
+# automatically mangles dynamic libraries and rules_haskell matches the static
+# library name by create a symlink. On Windows this is not taken into account,
+# because no dynamic libraries are generated.
+haskell_library(
+    name = "lib",
+    srcs = ["Lib.hs"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/library-cbits-name-clash/liba:cbits",
+        "//tests/library-cbits-name-clash/libb:cbits",
+    ],
+)
+
+haskell_test(
+    name = "library-cbits-name-clash",
+    srcs = ["Test.hs"],
+    deps = [
+        "//tests/hackage:base",
+        ":lib",
+    ],
+)
