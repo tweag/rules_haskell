@@ -125,15 +125,6 @@ those dependencies available during Haskell source compilation phase
 (i.e. not during linking &c. but it's subject to change) and set the
 CLASSPATH for that phase as well.
 
-## Building Cabal packages published on Hackage
-
-This repository contains no special support for building Cabal
-packages. This is provided by downstream rule sets. We
-recommend [Hazel][hazel] for generating rules to build packages
-published on Hackage, or part of Stackage snapshots, using Bazel.
-
-[hazel]: ./hazel/README.md
-
 ## Troubleshooting
 
 ### No such file or directory

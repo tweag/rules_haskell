@@ -17,12 +17,6 @@ local_repository(
     path = "tutorial",
 )
 
-# hazel, a way to generate bazel libraries from [st/h]ackage
-local_repository(
-    name = "ai_formation_hazel",
-    path = "hazel",
-)
-
 # Some helpers for platform-dependent configuration
 load("//tools:os_info.bzl", "os_info")
 
@@ -358,9 +352,3 @@ go_register_toolchains() if is_windows else go_register_toolchains(go_version = 
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
 buildifier_dependencies()
-
-# Hazel
-
-load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
-
-hazel_setup()
