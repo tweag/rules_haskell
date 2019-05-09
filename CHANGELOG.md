@@ -4,20 +4,102 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.9] - 2019-05-07
 
-* The minimum supported Bazel version is now v0.22.
-* Mark `haskell_cc_import` as deprecated.
-* Don't reexport `haskell_register_ghc_bindists` from
-  `//haskell/haskell.bzl`. You must now load that macro from
-  `//haskell:nixpkgs.bzl`. rules_nixpkgs is now no longer a dependency
-  of rules_haskell.
-* The default outputs of `haskell_library` are now the static and/or
-  shared library files, not the package database config and cache
-  files.
-* `cc_haskell_import` and `haskell_cc_import` are now no longer
-  necessary and are deprecated. A `haskell_library` can be used nearly
-  anywhere a `cc_library` can.
+### Highlights
+
+* The minimum supported Bazel version is now v0.24.
+
+  The version is available from [`nixpkgs`
+  unstable](https://github.com/NixOS/nixpkgs/pull/58147) and via
+  [official
+  releases](https://docs.bazel.build/versions/master/install.html).
+
+* Initial Windows support
+
+  A non-trivial subset of `rules_haskell` is now working on Windows.
+  See the [project
+  tracker](https://github.com/tweag/rules_haskell/issues?q=is%3Aopen+is%3Aissue+project%3Atweag%2Frules_haskell%2F2)
+  for finished and ongoing work.
+
+* Improved OSX support
+
+  Due to the `mach-o` header size limit, we took extra measures to
+  make sure generated library paths are as short as possible, so
+  linking haskell binaries works even for large dependency graphs.
+
+* Better Bindist support
+
+  The default [`start` script](http://haskell.build/start) sets up a
+  bindist-based project by default.
+  `rules_nixpkgs` is no longer a required dependency of
+  `rules_haskell` (but can still be used as backend).
+
+* Full Haskell–C–Haskell Sandwich
+
+  A `haskell_library` can be now be used nearly anywhere a
+  `cc_library` can.
+
+  The old `cc_haskell_import` and `haskell_cc_import` wrapper rules
+  are no longer necessary and have been deprecated.
+
+* Greatly improved REPL support
+
+  A new `haskell_repl` rule allows to load multiple source targets by
+  source, or compiled, as needed. Example usage:
+
+  ```
+  haskell_repl(
+    name = "my-repl",
+    # Collect all transitive Haskell dependencies from these targets.
+    deps = [
+        "//package-a:target-1",
+        "//package-b:target-2",
+    ],
+    # Load targets by source that match these patterns.
+    include = [
+        "//package-a/...",
+        "//packaga-b/...",
+        "//common/...",
+    ],
+    # Don't load targets by source that match these patterns.
+    exclude = [
+        "//package-a/vendored/...",
+    ],
+  )
+  ```
+
+* Support for GHC plugins
+
+  Each `haskell_*` rule now has a `plugins` attribute. It takes a
+  list of bazel targets, which should be `haskell_library`s that
+  implement the [GHC plugin
+  specification](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/extending_ghc.html#compiler-plugins).
+
+* Initial Code Coverage support
+
+  Measure coverage of your Haskell code. See the [“Checking Code
+  Coverage”](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#checking-code-coverage)
+  section in the manual.
+
+### Compatibility Notice
+
+[`hazel`](https://github.com/FormationAI/hazel) was [merged into
+`rules_haskell`](https://github.com/tweag/rules_haskell/pull/733), but
+we are not yet certain about the exact interface we want to expose.
+`hazel` is therefore not included in this release, and we can’t
+guarantee the original, unmerged version is compatible with this
+release. If you depend on `hazel`, please use a recent `master` commit
+of `rules_haskell`.
+
+### Changed
+
+* `haskell_register_ghc_bindists` is no longer re-exported from
+  `//haskell/haskell.bzl`.
+  You must now load that macro from `//haskell:nixpkgs.bzl`.
+
+* `rules_nixpkgs` is no longer a dependency of `rules_haskell`.
+
 * `haskell_import` has been renamed to `haskell_toolchain_library`.
   This is a substantial breaking change. But adapting to it should be
   as simple as
@@ -26,6 +108,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   sed -i 's/^haskell_import/haskell_toolchain_library/' **/BUILD{,.bazel}
   sed -i 's/"haskell_import"/"haskell_toolchain_library"/' **/BUILD{,.bazel}
   ```
+
+  See [#843](https://github.com/tweag/rules_haskell/pull/843).
+
+* `haskell_toolchain`’s tools attribute is now a list of labels.
+  Earlier entries take precendence. To migrate, add `[]` around your
+  argument.
+  See [#854](https://github.com/tweag/rules_haskell/pull/854).
+
+* The default outputs of `haskell_library` are now the static and/or
+  shared library files, not the package database config and cache
+  files.
+
+### Added
+
+* `haskell_repl` rule that constructs a ghci wrapper that loads
+  multiple targets by source.
+  See [#736](https://github.com/tweag/rules_haskell/pull/736).
+* `plugins` attribute to `haskell_*` rules to load GHC plugins.
+  See [#799](https://github.com/tweag/rules_haskell/pull/799).
+* The `HaskellInfo` and `HaskellLibraryInfo` providers are now
+  exported and thus accessible by downstream rules.
+  See [#844](https://github.com/tweag/rules_haskell/pull/844).
+* Generate version macros for preprocessors (`c2hs`, `hsc2hs`).
+  See [#847](https://github.com/tweag/rules_haskell/pull/847).
+* `bindist_toolchain` rule gets `haddock_flags` and `repl_ghci_args`
+  attributes.
+* `@repl` targets write json file with build information, usable by
+  IDE tools.
+  See [#695](https://github.com/tweag/rules_haskell/pull/695).
+
+### Deprecated
+
+* `haskell_cc_import`; use `cc_library` instead.
+  See [#831](https://github.com/tweag/rules_haskell/pull/831).
+* `cc_haskell_import`; just use `haskell_library` like a `cc_library`.
+  See [#831](https://github.com/tweag/rules_haskell/pull/831).
+
+### Fixed
+
+* Support protobuf roots in `haskell_proto_library`.
+  See [#722](https://github.com/tweag/rules_haskell/pull/722).
+* Made GHC bindist relocatable on *nix.
+  See [#853](https://github.com/tweag/rules_haskell/pull/853).
+* Various other fixes
 
 ## [0.8] - 2019-01-28
 

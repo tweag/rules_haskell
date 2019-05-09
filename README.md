@@ -22,7 +22,7 @@ The full reference documentation for rules is at https://haskell.build.
 
 ## Setup
 
-You'll need [Bazel >= 0.22.0][bazel-getting-started] installed.
+You'll need [Bazel >= 0.24][bazel-getting-started] installed.
 
 ### The easy way
 
