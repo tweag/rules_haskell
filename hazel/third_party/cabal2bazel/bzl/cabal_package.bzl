@@ -109,6 +109,8 @@ def _configure(desc):
         outs = outputs,
     )
 
+_lib_name = "lib"
+
 def _paths_module(desc):
     return "Paths_" + desc.package.pkgName.replace("-", "_")
 
@@ -276,11 +278,24 @@ def _get_build_attrs(
     # build_files will contain a list of all files in the build directory.
     build_files = []
 
-    clib_name = name + "-cbits"
     generated_modules = [_paths_module(desc)]
 
     # Keep track of chs modules, as later chs modules may depend on earlier ones.
     chs_targets = []
+
+    # XXX: We would like to also shorten the library components cbits' name to
+    # 'cbits'. However, on Windows, where we only create static libraries, no
+    # dynamic libraries, this causes name clashes. Bazel does not mangle static
+    # library names, only dynamic library names. If a dynamic library is
+    # present, then rules_haskell will mangle the static library the same, so
+    # that one entry in the package configuration file's extra-libraries
+    # section covers both static and dynamic libraries. However, if no dynamic
+    # library is present, then no such mangling is performed. The
+    # extra-libraries field will then hold only one 'cbits' entry which can be
+    # ambiguous if the target depends on multuple cbits.
+    cbits_name = name + "-cbits"
+    if name == _lib_name:
+        cbits_name = desc.package.pkgName + "-cbits"
 
     for module in build_info.otherModules + extra_modules:
         if module in generated_modules:
@@ -304,7 +319,7 @@ def _get_build_attrs(
                 boot_module_map[module] = boot_out
                 build_files.append(boot_out)
         elif info.type in ["chs"]:
-            chs_name = name + "-" + module + "-chs"
+            chs_name = module + "-chs"
             module_map[module] = chs_name
             build_files.append(info.src)
             c2hs_library(
@@ -312,7 +327,7 @@ def _get_build_attrs(
                 srcs = [info.src],
                 deps = (
                     _get_extra_libs(build_info.extraLibs, extra_libs) +
-                    [clib_name] +
+                    [cbits_name] +
                     chs_targets
                 ),
             )
@@ -364,7 +379,7 @@ def _get_build_attrs(
         for m in (extra_modules_dict.get(condition, []) +
                   other_modules_dict.get(condition, [])):
             if m == paths_module:
-                deps[condition] += [":" + paths_module]
+                deps[condition] += [":paths"]
             elif m in module_map:
                 srcs[condition] += [module_map[m]]
 
@@ -443,7 +458,7 @@ def _get_build_attrs(
     )
     ghcopts += ["-I" + native.package_name() + "/" + d for d in build_info.includeDirs]
     for xs in deps.values():
-        xs.append(":" + clib_name)
+        xs.append(cbits_name)
 
     ghc_version_components = ghc_version.split(".")
     if len(ghc_version_components) != 3:
@@ -458,7 +473,7 @@ def _get_build_attrs(
     elibs_targets = _get_extra_libs(build_info.extraLibs, extra_libs)
 
     native.cc_library(
-        name = clib_name,
+        name = cbits_name,
         srcs = build_info.cSources,
         includes = build_info.includeDirs,
         copts = ([o for o in build_info.ccOptions if not o.startswith("-D")] +
@@ -519,7 +534,7 @@ def cabal_haskell_package(
         _configure(description)
 
     cabal_paths(
-        name = _paths_module(description),
+        name = "paths",
         package = name.replace("-", "_"),
         version = [int(v) for v in description.package.pkgVersion.split(".")],
         data_dir = description.dataDir,
@@ -527,51 +542,54 @@ def cabal_haskell_package(
     )
 
     lib = description.library
-    if lib and lib.libBuildInfo.buildable:
-        if not lib.exposedModules:
-            native.cc_library(
-                name = name,
-                visibility = ["//visibility:public"],
-                linkstatic = select({
-                    "@bazel_tools//src/conditions:windows": True,
-                    "//conditions:default": False,
-                }),
-            )
-            native.cc_library(
-                name = name + "-cbits",
-                visibility = ["//visibility:public"],
-                linkstatic = select({
-                    "@bazel_tools//src/conditions:windows": True,
-                    "//conditions:default": False,
-                }),
-            )
-        else:
-            lib_attrs = _get_build_attrs(
-                name,
-                lib.libBuildInfo,
-                description,
-                "dist/build",
-                lib.exposedModules,
-                ghc_version,
-                ghc_workspace,
-                extra_libs,
-            )
-            srcs = lib_attrs.pop("srcs")
-            deps = lib_attrs.pop("deps")
+    if lib and lib.libBuildInfo.buildable and lib.exposedModules:
+        lib_attrs = _get_build_attrs(
+            _lib_name,
+            lib.libBuildInfo,
+            description,
+            "dist/build",
+            lib.exposedModules,
+            ghc_version,
+            ghc_workspace,
+            extra_libs,
+        )
+        srcs = lib_attrs.pop("srcs")
+        deps = lib_attrs.pop("deps")
 
-            elibs_targets = _get_extra_libs(lib.libBuildInfo.extraLibs, extra_libs)
+        elibs_targets = _get_extra_libs(lib.libBuildInfo.extraLibs, extra_libs)
 
-            hidden_modules = [m for m in lib.libBuildInfo.otherModules if not m.startswith("Paths_")]
+        hidden_modules = [m for m in lib.libBuildInfo.otherModules if not m.startswith("Paths_")]
 
-            haskell_library(
-                name = name,
-                srcs = select(srcs),
-                hidden_modules = hidden_modules,
-                version = description.package.pkgVersion,
-                deps = select(deps) + elibs_targets,
-                visibility = ["//visibility:public"],
-                **lib_attrs
-            )
+        haskell_library(
+            name = _lib_name,
+            srcs = select(srcs),
+            hidden_modules = hidden_modules,
+            package_name = description.package.pkgName,
+            version = description.package.pkgVersion,
+            deps = select(deps) + elibs_targets,
+            visibility = ["//visibility:public"],
+            **lib_attrs
+        )
+    else:
+        # No exposed library modules. Generate an empty dummy library target.
+        native.cc_library(
+            name = _lib_name,
+            visibility = ["//visibility:public"],
+            linkstatic = select({
+                "@bazel_tools//src/conditions:windows": True,
+                "//conditions:default": False,
+            }),
+        )
+
+        # No exposed library modules. Generate an empty dummy cbits target.
+        native.cc_library(
+            name = name + "-cbits",
+            visibility = ["//visibility:public"],
+            linkstatic = select({
+                "@bazel_tools//src/conditions:windows": True,
+                "//conditions:default": False,
+            }),
+        )
 
     for exe in description.executables:
         if not exe.buildInfo.buildable:
@@ -581,7 +599,7 @@ def cabal_haskell_package(
         # Avoid a name clash with the library.  For stability, make this logic
         # independent of whether the package actually contains a library.
         if exe_name == name:
-            exe_name = name + "_bin"
+            exe_name = "bin"
         paths_mod = _paths_module(description)
         attrs = _get_build_attrs(
             exe_name,

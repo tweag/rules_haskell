@@ -15,7 +15,7 @@ cc_library(
 )
 
 haskell_library(
-  name = "zlib",
+  name = "lib",
   srcs = glob([
     "Codec/Compression/*.hs",
     "Codec/Compression/Zlib/*.hs",
@@ -27,4 +27,6 @@ haskell_library(
       hazel_library("bytestring"),
       hazel_library("ghc-prim"),
   ],
+  package_name = "zlib",
+  version = "0.6.2",
 )

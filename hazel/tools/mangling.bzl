@@ -1,10 +1,10 @@
 def hazel_library(package_name):
     """Returns the label of the haskell_library rule for the given package."""
-    return "@{}//:{}".format(hazel_workspace(package_name), package_name)
+    return "@{}//:lib".format(hazel_workspace(package_name))
 
 def hazel_binary(package_name):
     """Returns the label of the haskell_binary rule for the given package."""
-    return "@{}//:{}_bin".format(hazel_workspace(package_name), package_name)
+    return "@{}//:bin".format(hazel_workspace(package_name))
 
 def hazel_cbits(package_name):
     """Returns the label of the cc_library rule for the given package."""

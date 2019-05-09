@@ -81,7 +81,7 @@ def package(
     (extra_lib_dirs, extra_libs) = _get_extra_libraries(dep_info)
 
     metadata_entries = {
-        "name": my_pkg_id.name,
+        "name": my_pkg_id.package_name,
         "version": my_pkg_id.version,
         "id": pkg_id.to_string(my_pkg_id),
         "key": pkg_id.to_string(my_pkg_id),

@@ -11,11 +11,13 @@ ghc_paths_module(
     name = "paths_module")
 
 haskell_library(
-    name = "ghc-paths",
+    name = "lib",
     srcs = [":paths_module"],
     deps = [
         hazel_library("base"),
     ],
+    package_name = "ghc-paths",
+    version = "0.1.0.9",
 )
 
 cc_import(

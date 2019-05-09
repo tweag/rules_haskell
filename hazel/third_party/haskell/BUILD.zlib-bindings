@@ -7,22 +7,24 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
 load("@ai_formation_hazel//:hazel.bzl", "hazel_library")
 
 cc_library(
-  name = "cbits",
+  name = "zlib-bindings-cbits",
   hdrs = glob(["cbits/*.h"]),
   srcs = glob(["cbits/*.c"]),
   strip_include_prefix = "cbits",
 )
 
 haskell_library(
-  name = "zlib-bindings",
+  name = "lib",
   srcs = glob([
     "Codec/Zlib.hs",
     "Codec/Zlib/Lowlevel.hs",
   ]),
   deps = [
-      ":cbits",
+      ":zlib-bindings-cbits",
       hazel_library("base"),
       hazel_library("bytestring"),
       hazel_library("zlib"),
   ],
+  package_name "zlib-bindings",
+  version = "0.1.1.5",
 )
