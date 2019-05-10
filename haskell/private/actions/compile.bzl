@@ -153,7 +153,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     compile_flags.extend(
         pkg_info_to_compile_flags(
             expose_packages(
-                dep_info,
+                dep_info.hs_info,
                 lib_info = None,
                 use_direct = True,
                 use_my_pkg_id = my_pkg_id,
@@ -165,7 +165,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     compile_flags.extend(
         pkg_info_to_compile_flags(
             expose_packages(
-                plugin_dep_info,
+                plugin_dep_info.hs_info,
                 lib_info = None,
                 use_direct = True,
                 use_my_pkg_id = my_pkg_id,
@@ -187,7 +187,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
 
     hsc_inputs = []
     if version:
-        (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
+        (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info.hs_info)
         hsc_flags += ["--cflag=" + x for x in version_macro_flags]
         hsc_inputs += set.to_list(version_macro_headers)
 
@@ -316,8 +316,8 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
         hs,
         merge_HaskellCcInfo(
-            dep_info.transitive_cc_dependencies,
-            plugin_dep_info.transitive_cc_dependencies,
+            dep_info.hs_info.transitive_cc_dependencies,
+            plugin_dep_info.hs_info.transitive_cc_dependencies,
         ),
     )
 
@@ -330,16 +330,16 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             set.to_depset(source_files),
             extra_source_files,
             depset(cc.hdrs),
-            set.to_depset(dep_info.package_databases),
-            set.to_depset(dep_info.interface_dirs),
-            depset(dep_info.static_libraries),
-            depset(dep_info.static_libraries_prof),
-            set.to_depset(dep_info.dynamic_libraries),
-            set.to_depset(plugin_dep_info.package_databases),
-            set.to_depset(plugin_dep_info.interface_dirs),
-            depset(plugin_dep_info.static_libraries),
-            depset(plugin_dep_info.static_libraries_prof),
-            set.to_depset(plugin_dep_info.dynamic_libraries),
+            set.to_depset(dep_info.hs_info.package_databases),
+            set.to_depset(dep_info.hs_info.interface_dirs),
+            depset(dep_info.hs_info.static_libraries),
+            depset(dep_info.hs_info.static_libraries_prof),
+            set.to_depset(dep_info.hs_info.dynamic_libraries),
+            set.to_depset(plugin_dep_info.hs_info.package_databases),
+            set.to_depset(plugin_dep_info.hs_info.interface_dirs),
+            depset(plugin_dep_info.hs_info.static_libraries),
+            depset(plugin_dep_info.hs_info.static_libraries_prof),
+            set.to_depset(plugin_dep_info.hs_info.dynamic_libraries),
             depset(library_deps),
             depset(ld_library_deps),
             java.inputs,

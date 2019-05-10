@@ -192,20 +192,20 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
 
     hs_info = HaskellInfo(
-        package_ids = dep_info.package_ids,
-        package_databases = dep_info.package_databases,
+        package_ids = dep_info.hs_info.package_ids,
+        package_databases = dep_info.hs_info.package_databases,
         version_macros = set.empty(),
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        static_libraries = dep_info.static_libraries,
-        static_libraries_prof = dep_info.static_libraries_prof,
-        dynamic_libraries = dep_info.dynamic_libraries,
-        interface_dirs = dep_info.interface_dirs,
+        static_libraries = dep_info.hs_info.static_libraries,
+        static_libraries_prof = dep_info.hs_info.static_libraries_prof,
+        dynamic_libraries = dep_info.hs_info.dynamic_libraries,
+        interface_dirs = dep_info.hs_info.interface_dirs,
         compile_flags = c.compile_flags,
-        prebuilt_dependencies = dep_info.prebuilt_dependencies,
-        cc_dependencies = dep_info.cc_dependencies,
-        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
+        prebuilt_dependencies = dep_info.hs_info.prebuilt_dependencies,
+        cc_dependencies = dep_info.hs_info.cc_dependencies,
+        transitive_cc_dependencies = dep_info.hs_info.transitive_cc_dependencies,
     )
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
@@ -220,7 +220,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         user_compile_flags = ctx.attr.compiler_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
-        package_databases = dep_info.package_databases,
+        package_databases = dep_info.hs_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
     )
@@ -235,7 +235,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         extra_args = ctx.attr.runcompile_flags,
         user_compile_flags = ctx.attr.compiler_flags,
         output = ctx.outputs.runghc,
-        package_databases = dep_info.package_databases,
+        package_databases = dep_info.hs_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
     )
@@ -399,12 +399,12 @@ def haskell_library_impl(ctx):
             my_pkg_id,
         )
         dynamic_libraries = set.insert(
-            dep_info.dynamic_libraries,
+            dep_info.hs_info.dynamic_libraries,
             dynamic_library,
         )
     else:
         dynamic_library = None
-        dynamic_libraries = dep_info.dynamic_libraries
+        dynamic_libraries = dep_info.hs_info.dynamic_libraries
 
     static_library_prof = None
     if with_profiling:
@@ -430,13 +430,13 @@ def haskell_library_impl(ctx):
         static_library_prof = static_library_prof,
     )
 
-    static_libraries_prof = dep_info.static_libraries_prof
+    static_libraries_prof = dep_info.hs_info.static_libraries_prof
 
     if static_library_prof != None:
-        static_libraries_prof = [static_library_prof] + dep_info.static_libraries_prof
+        static_libraries_prof = [static_library_prof] + dep_info.hs_info.static_libraries_prof
 
     interface_dirs = set.union(
-        dep_info.interface_dirs,
+        dep_info.hs_info.interface_dirs,
         set.singleton(c.interfaces_dir),
     )
 
@@ -456,8 +456,8 @@ def haskell_library_impl(ctx):
         )
 
     hs_info = HaskellInfo(
-        package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
-        package_databases = set.insert(dep_info.package_databases, cache_file),
+        package_ids = set.insert(dep_info.hs_info.package_ids, pkg_id.to_string(my_pkg_id)),
+        package_databases = set.insert(dep_info.hs_info.package_databases, cache_file),
         version_macros = version_macros,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
@@ -466,14 +466,14 @@ def haskell_library_impl(ctx):
         # important for linker. Linker searches for unresolved symbols to the
         # left, i.e. you first feed a library which has unresolved symbols and
         # then you feed the library which resolves the symbols.
-        static_libraries = [static_library] + dep_info.static_libraries,
+        static_libraries = [static_library] + dep_info.hs_info.static_libraries,
         static_libraries_prof = static_libraries_prof,
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
-        prebuilt_dependencies = dep_info.prebuilt_dependencies,
-        cc_dependencies = dep_info.cc_dependencies,
-        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
+        prebuilt_dependencies = dep_info.hs_info.prebuilt_dependencies,
+        cc_dependencies = dep_info.hs_info.cc_dependencies,
+        transitive_cc_dependencies = dep_info.hs_info.transitive_cc_dependencies,
     )
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
@@ -499,7 +499,7 @@ def haskell_library_impl(ctx):
             repl_ghci_args = ctx.attr.repl_ghci_args,
             user_compile_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.repl,
-            package_databases = dep_info.package_databases,
+            package_databases = dep_info.hs_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
             lib_info = lib_info,
@@ -515,7 +515,7 @@ def haskell_library_impl(ctx):
             extra_args = ctx.attr.runcompile_flags,
             user_compile_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.runghc,
-            package_databases = dep_info.package_databases,
+            package_databases = dep_info.hs_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
             lib_info = lib_info,

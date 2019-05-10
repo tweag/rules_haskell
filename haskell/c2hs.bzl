@@ -57,7 +57,7 @@ def _c2hs_library_impl(ctx):
     version_macro_headers = set.empty()
     if ctx.attr.version:
         dep_info = gather_dep_info(ctx, ctx.attr.deps)
-        (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
+        (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info.hs_info)
         args.add_all(["-C" + x for x in version_macro_flags])
 
     hs.actions.run_shell(

@@ -2,6 +2,7 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "HaskellBuildInfo",
     "HaskellCcInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
@@ -141,7 +142,7 @@ def gather_dep_info(ctx, deps):
       deps: deps attribute.
 
     Returns:
-      HaskellInfo: Unified information about all dependencies.
+      HaskellBuildInfo: Unified information about all dependencies.
     """
 
     acc = HaskellInfo(
@@ -157,6 +158,8 @@ def gather_dep_info(ctx, deps):
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),
     )
+
+    cc_infos = []
 
     for dep in deps:
         if HaskellInfo in dep:
@@ -219,4 +222,10 @@ def gather_dep_info(ctx, deps):
                 ),
             )
 
-    return acc
+        if CcInfo in dep:
+            cc_infos.append(dep[CcInfo])
+
+    return HaskellBuildInfo(
+        hs_info = acc,
+        cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
+    )

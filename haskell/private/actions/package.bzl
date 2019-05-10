@@ -17,7 +17,7 @@ def _get_extra_libraries(dep_info):
       dirs: list: Library search directories for extra library dependencies.
       libs: list: Extra library dependencies.
     """
-    cc_libs = dep_info.cc_dependencies.dynamic_linking.libraries_to_link.to_list()
+    cc_libs = dep_info.hs_info.cc_dependencies.dynamic_linking.libraries_to_link.to_list()
 
     # The order in which library dependencies are listed is relevant when
     # linking static archives. To maintain the order defined by the input
@@ -104,7 +104,7 @@ def package(
         "depends": ", ".join(
             # Prebuilt dependencies are added further down, since their
             # package-ids are not available as strings but in build outputs.
-            set.to_list(dep_info.package_ids),
+            set.to_list(dep_info.hs_info.package_ids),
         ),
     }
 
@@ -123,7 +123,7 @@ def package(
     # Collect the package id files of all prebuilt dependencies.
     prebuilt_deps_id_files = [
         dep.id_file
-        for dep in set.to_list(dep_info.prebuilt_dependencies)
+        for dep in set.to_list(dep_info.hs_info.prebuilt_dependencies)
     ]
 
     # Combine exposed modules and other metadata to form the package
@@ -162,10 +162,10 @@ def package(
     )
 
     # Make the call to ghc-pkg and use the package configuration file
-    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_databases)]) + ":"
+    package_path = ":".join([c.dirname for c in set.to_list(dep_info.hs_info.package_databases)]) + ":"
     hs.actions.run(
         inputs = depset(transitive = [
-            set.to_depset(dep_info.package_databases),
+            set.to_depset(dep_info.hs_info.package_databases),
             depset(interfaces_dirs),
             depset([
                 input

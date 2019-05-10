@@ -73,6 +73,14 @@ def merge_HaskellCcInfo(*args):
         ),
     )
 
+HaskellBuildInfo = provider(
+    doc = "Collection of HaskellInfo and CcInfo required for build process.",
+    fields = {
+        "hs_info": "Combined HaskellInfo of transitive dependencies.",
+        "cc_info": "Combined CcInfo of transitive dependencies.",
+    },
+)
+
 HaskellInfo = provider(
     doc = "Common information about build process: dependencies, etc.",
     fields = {

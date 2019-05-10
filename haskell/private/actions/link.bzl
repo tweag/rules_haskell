@@ -287,11 +287,11 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
 
     # Pick linking context based on linking mode.
     if dynamic:
-        link_ctx = dep_info.cc_dependencies.dynamic_linking
-        trans_link_ctx = dep_info.transitive_cc_dependencies.dynamic_linking
+        link_ctx = dep_info.hs_info.cc_dependencies.dynamic_linking
+        trans_link_ctx = dep_info.hs_info.transitive_cc_dependencies.dynamic_linking
     else:
-        link_ctx = dep_info.cc_dependencies.static_linking
-        trans_link_ctx = dep_info.transitive_cc_dependencies.static_linking
+        link_ctx = dep_info.hs_info.cc_dependencies.static_linking
+        trans_link_ctx = dep_info.hs_info.transitive_cc_dependencies.static_linking
 
     # Direct C library dependencies to link.
     # I.e. not indirect through another Haskell dependency.
@@ -317,7 +317,7 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
     hs_solibs = []
     if dynamic:
         hs_solibs_prefix = "_hssolib_%s" % hs.name
-        for dep in set.to_list(dep_info.dynamic_libraries):
+        for dep in set.to_list(dep_info.hs_info.dynamic_libraries):
             dep_link = hs.actions.declare_file(
                 paths.join(hs_solibs_prefix, dep.basename),
                 sibling = binary,
@@ -392,7 +392,7 @@ def link_binary(
     # lists.
 
     args.add_all(pkg_info_to_compile_flags(expose_packages(
-        dep_info,
+        dep_info.hs_info,
         lib_info = None,
         use_direct = True,
         use_my_pkg_id = None,
@@ -453,10 +453,10 @@ def link_binary(
         cc,
         inputs = depset(transitive = [
             depset(extra_srcs),
-            set.to_depset(dep_info.package_databases),
-            set.to_depset(dep_info.dynamic_libraries),
-            depset(dep_info.static_libraries),
-            depset(dep_info.static_libraries_prof),
+            set.to_depset(dep_info.hs_info.package_databases),
+            set.to_depset(dep_info.hs_info.dynamic_libraries),
+            depset(dep_info.hs_info.static_libraries),
+            depset(dep_info.hs_info.static_libraries_prof),
             depset([objects_dir]),
             cc_link_libs,
         ]),
@@ -632,7 +632,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         args.add("-optl-Wl,-dead_strip_dylibs")
 
     args.add_all(pkg_info_to_compile_flags(expose_packages(
-        dep_info,
+        dep_info.hs_info,
         lib_info = None,
         use_direct = True,
         use_my_pkg_id = None,
@@ -663,8 +663,8 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         cc,
         inputs = depset([objects_dir], transitive = [
             depset(extra_srcs),
-            set.to_depset(dep_info.package_databases),
-            set.to_depset(dep_info.dynamic_libraries),
+            set.to_depset(dep_info.hs_info.package_databases),
+            set.to_depset(dep_info.hs_info.dynamic_libraries),
             cc_link_libs,
         ]),
         outputs = [dynamic_library],
