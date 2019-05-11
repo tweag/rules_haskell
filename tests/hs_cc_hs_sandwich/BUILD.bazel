@@ -1,0 +1,33 @@
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_library",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+
+package(default_testonly = 1)
+
+haskell_toolchain_library(name = "base")
+
+haskell_library(
+    name = "hs-lib1",
+    srcs = glob(["src/Lib1.hs"]),
+    deps = [":base"],
+)
+
+cc_library(
+    name = "cc-lib",
+    deps = [":hs-lib1"],
+)
+
+haskell_library(
+    name = "hs-lib2",
+    srcs = ["src/Lib2.hs"],
+    deps = [":base", ":cc-lib"],
+)
+
+haskell_test(
+    name = "hs_cc_hs_sandwich",
+    srcs = ["Main.hs"],
+    deps = [":base", ":hs-lib2"],
+)
