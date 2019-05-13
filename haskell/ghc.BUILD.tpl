@@ -8,6 +8,8 @@ load(
     "haskell_toolchain",
 )
 
+package(default_visibility = ["//visibility:public"])
+
 %{toolchain}
 
 filegroup(

@@ -267,6 +267,13 @@ load(
     "haskell_toolchain",
 )
 
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "bin",
+    srcs = glob(["bin/*"]),
+)
+
 {toolchain_libraries}
 
 haskell_toolchain(
@@ -280,7 +287,6 @@ haskell_toolchain(
     # On Darwin we don't need a locale archive. It's a Linux-specific
     # hack in Nixpkgs.
     locale_archive = {locale_archive},
-    visibility = ["//visibility:public"],
 )
         """.format(
             toolchain_libraries = toolchain_libraries,
