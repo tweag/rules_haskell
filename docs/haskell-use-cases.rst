@@ -280,4 +280,4 @@ There a couple of notes regarding the coverage analysis functionality:
   longer than regular. However, this has not effected regular ``run`` /
   ``build`` / ``test`` performance.
 
-.. _hpc: <http://hackage.haskell.org/package/hpc>
+.. _hpc: https://hackage.haskell.org/package/hpc
