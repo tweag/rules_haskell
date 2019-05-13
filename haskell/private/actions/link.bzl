@@ -485,6 +485,15 @@ def _add_external_libraries(args, ext_libs):
     deduped = list.dedup_on(get_lib_name, ext_libs)
 
     for lib in deduped:
+        # This test is a hack. When a CC library has a Haskell library
+        # as a dependency, we need to be careful to filter it out,
+        # otherwise it will end up polluting the linker flags. GHC
+        # already uses hs-libraries to link all Haskell libraries.
+        #
+        # TODO Get rid of this hack. See
+        # https://github.com/tweag/rules_haskell/issues/873.
+        if get_lib_name(lib).startswith("HS"):
+            continue
         args.add_all([
             "-L{0}".format(
                 paths.dirname(lib.path),
