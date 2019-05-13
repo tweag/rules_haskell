@@ -1,0 +1,5 @@
+resolver: lts-13.20
+packages:
+- .
+extra-deps:
+- hxt-xpath-9.1.2.2@sha256:9cd590ae93a04573db8f90fa4094625ebd97dded45da7667c577ce6b38a42900
