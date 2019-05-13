@@ -182,7 +182,6 @@ def _ghc_bindist_impl(ctx):
     # Avoid rule restart by resolving these labels early. See
     # https://github.com/bazelbuild/bazel/blob/master/tools/cpp/lib_cc_configure.bzl#L17.
     ghc_build = ctx.path(Label("//haskell:ghc.BUILD"))
-    crosstool_windows = ctx.path(Label("//haskell:CROSSTOOL.windows"))
 
     version = ctx.attr.version
     target = ctx.attr.target
@@ -230,7 +229,6 @@ grep -lZ {bindist_dir} bin/* | xargs -0 --verbose \\
         ghc_build,
         executable = False,
     )
-    ctx.template("CROSSTOOL", crosstool_windows, executable = False)
 
 _ghc_bindist = repository_rule(
     _ghc_bindist_impl,

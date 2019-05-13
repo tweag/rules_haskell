@@ -1,3 +1,5 @@
+load("@io_tweag_rules_haskell//haskell:cc_toolchain_config.bzl", "cc_toolchain_config")
+
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
@@ -54,8 +56,8 @@ cc_library(
 # Expose embedded MinGW toolchain when on Windows.
 
 filegroup(
-    name = "empty",
-    srcs = [],
+    name = "mingw",
+    srcs = glob(["mingw/**"]),
 )
 
 cc_toolchain_suite(
@@ -69,15 +71,18 @@ cc_toolchain_suite(
 # Keep in sync with @bazel_tools//cpp:cc-compiler-x64_windows definition.
 cc_toolchain(
     name = "cc-compiler-mingw64",
-    all_files = ":empty",
-    ar_files = ":empty",
-    as_files = ":empty",
-    compiler_files = ":empty",
+    all_files = ":mingw",
+    ar_files = ":mingw",
+    as_files = ":mingw",
+    compiler_files = ":mingw",
     cpu = "x64_windows",
-    dwp_files = ":empty",
-    linker_files = ":empty",
-    objcopy_files = ":empty",
-    strip_files = ":empty",
+    dwp_files = ":mingw",
+    linker_files = ":mingw",
+    objcopy_files = ":mingw",
+    strip_files = ":mingw",
     supports_param_files = 0,
+    toolchain_config = ":ghc_windows_mingw64_config",
     toolchain_identifier = "ghc_windows_mingw64",
 )
+
+cc_toolchain_config(name = "ghc_windows_mingw64_config")
