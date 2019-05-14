@@ -67,19 +67,19 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
         elif key == "id":
             pkg.id = value
         elif key == "include-dirs":
-            pkg.include_dirs = value.split()
+            pkg.include_dirs += value.split()
         elif key == "library-dirs":
-            pkg.library_dirs = value.split()
+            pkg.library_dirs += value.split()
         elif key == "dynamic-library-dirs":
-            pkg.dynamic_library_dirs = value.split()
+            pkg.dynamic_library_dirs += value.split()
         elif key == "hs-libraries":
-            pkg.hs_libraries = value.split()
+            pkg.hs_libraries += value.split()
         elif key == "depends":
-            pkg.depends = value.split()
+            pkg.depends += value.split()
         elif key == "ld-options":
-            pkg.ld_options = [opt.strip('"') for opt in value.split()]
+            pkg.ld_options += [opt.strip('"') for opt in value.split()]
         elif key == "extra-libraries":
-            pkg.extra_libraries = value.split()
+            pkg.extra_libraries += value.split()
 
     # pkgroot is not part of .conf files. It's a computed value. It is
     # defined to be the directory enclosing the package database
