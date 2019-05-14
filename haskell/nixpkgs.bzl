@@ -350,6 +350,8 @@ _ghc_nixpkgs_toolchain = repository_rule(_ghc_nixpkgs_toolchain_impl)
 
 def haskell_register_ghc_nixpkgs(
         version,
+        build_file = None,
+        build_file_content = None,
         compiler_flags = None,
         compiler_flags_select = None,
         haddock_flags = None,
@@ -395,7 +397,8 @@ def haskell_register_ghc_nixpkgs(
     haskell_nixpkgs_package(
         name = nixpkgs_ghc_repo_name,
         attribute_path = attribute_path,
-        build_file_content = "",
+        build_file = build_file,
+        build_file_content = build_file_content,
         nix_file = nix_file,
         nix_file_deps = nix_file_deps,
         repositories = repositories,
