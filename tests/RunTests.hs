@@ -97,10 +97,12 @@ main = hspec $ do
         hazelPackages =
           [ "aeson"
           , "aeson__extra"
+          , "alex"
           , "cassava"
           , "conduit"
           , "entropy"
           , "fuzzyset"
+          , "happy"
           , "htaglib"
           , "http__client"
           , "lens"
