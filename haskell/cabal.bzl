@@ -243,3 +243,231 @@ However, using a plain `haskell_library` sometimes leads to better
 build times, and does not require drafting a `.cabal` file.
 
 """
+
+def _chop_version(name):
+    """Remove any version component from the given package name."""
+    return name.rpartition("-")[0]
+
+# Temporary hardcoded list of core libraries. This will no longer be
+# necessary once Stack 2.0 is released.
+#
+# TODO remove this list and replace it with Stack's --global-hints
+# mechanism.
+_CORE_PACKAGES = [
+    "Cabal",
+    "array",
+    "base",
+    "binary",
+    "bytestring",
+    "containers",
+    "deepseq",
+    "directory",
+    "filepath",
+    "ghc",
+    "ghc-boot",
+    "ghc-boot-th",
+    "ghc-compact",
+    "ghc-heap",
+    "ghc-prim",
+    "ghci",
+    "haskeline",
+    "hpc",
+    "integer-gmp",
+    "libiserv",
+    "mtl",
+    "parsec",
+    "pretty",
+    "process",
+    "rts",
+    "stm",
+    "template-haskell",
+    "terminfo",
+    "text",
+    "time",
+    "transformers",
+    "unix",
+    "xhtml",
+]
+
+def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_packages):
+    """Given a list of root packages, compute a dependency graph.
+
+    Returns:
+      dependencies: adjacency list of packages, represented as a dictionary.
+      transitive_unpacked_sdists: directory names of unpacked source distributions.
+
+    """
+
+    if not versioned_packages and not unversioned_packages:
+        return ({}, [])
+
+    # Unpack all given packages, then compute the transitive closure
+    # and unpack anything in the transitive closure as well.
+    stack_cmd = repository_ctx.which("stack")
+    if not stack_cmd:
+        fail("Cannot find stack command in your PATH.")
+    stack = [stack_cmd, "--no-nix", "--skip-ghc-check", "--system-ghc"]
+    if versioned_packages:
+        _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
+    stack = [stack_cmd, "--no-nix", "--skip-ghc-check", "--system-ghc", "--resolver", repository_ctx.attr.snapshot]
+    if unversioned_packages:
+        _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + unversioned_packages)
+    exec_result = _execute_or_fail_loudly(repository_ctx, ["ls"])
+    unpacked_sdists = exec_result.stdout.splitlines()
+    stack_yaml_content = "\n".join(["resolver: none", "packages:"]) + "\n" + "\n".join([
+        "- {}".format(dir)
+        for dir in unpacked_sdists
+    ])
+    repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
+    exec_result = _execute_or_fail_loudly(
+        repository_ctx,
+        stack + ["ls", "dependencies", "--separator=-"],
+    )
+    transitive_unpacked_sdists = [
+        unpacked_sdist
+        for unpacked_sdist in exec_result.stdout.splitlines()
+        if _chop_version(unpacked_sdist) not in _CORE_PACKAGES
+    ]
+    _execute_or_fail_loudly(
+        repository_ctx,
+        stack + ["unpack"] + [
+            unpacked_sdist
+            for unpacked_sdist in transitive_unpacked_sdists
+            if unpacked_sdist not in unpacked_sdists
+        ],
+    )
+    stack_yaml_content = "\n".join(["resolver: none", "packages:"]) + "\n" + "\n".join([
+        "- {}".format(dir)
+        for dir in transitive_unpacked_sdists
+    ])
+    repository_ctx.file("stack.yaml", stack_yaml_content, executable = False)
+
+    # Compute dependency graph.
+    all_packages = [_chop_version(dir) for dir in transitive_unpacked_sdists + _CORE_PACKAGES]
+    exec_result = _execute_or_fail_loudly(
+        repository_ctx,
+        stack + ["dot", "--external"],
+    )
+    dependencies = {k: [] for k in all_packages}
+    for line in exec_result.stdout.splitlines():
+        tokens = [w.strip('";') for w in line.split(" ")]
+
+        # All lines of the form `"foo" -> "bar";` declare edges of the
+        # dependency graph in the Graphviz format.
+        if len(tokens) == 3 and tokens[1] == "->":
+            [src, _, dest] = tokens
+            if src in all_packages and dest in all_packages:
+                dependencies[src].append(dest)
+    return (dependencies, transitive_unpacked_sdists)
+
+def _stack_install_impl(repository_ctx):
+    packages = repository_ctx.attr.packages
+    non_core_packages = [
+        package
+        for package in packages
+        if package not in _CORE_PACKAGES
+    ]
+    versioned_packages = []
+    unversioned_packages = []
+    for package in non_core_packages:
+        if package.rpartition("-")[2].replace(".", "").isdigit():
+            versioned_packages.append(package)
+        else:
+            unversioned_packages.append(package)
+    (dependencies, transitive_unpacked_sdists) = _compute_dependency_graph(
+        repository_ctx,
+        versioned_packages,
+        unversioned_packages,
+    )
+
+    # Write out the dependency graph as a BUILD file.
+    build_file_builder = []
+    build_file_builder.append("""
+load("@io_tweag_rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_toolchain_library")
+""")
+    extra_deps = [
+        "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
+        for label in repository_ctx.attr.deps
+    ]
+    for package in _CORE_PACKAGES:
+        if package in packages:
+            visibility = ["//visibility:public"]
+        else:
+            visibility = ["//visibility:private"]
+        build_file_builder.append(
+            """
+haskell_toolchain_library(name = "{name}", visibility = {visibility})
+""".format(name = package, visibility = visibility),
+        )
+    for package in transitive_unpacked_sdists:
+        unversioned_package = _chop_version(package)
+        if unversioned_package in _CORE_PACKAGES:
+            continue
+        if unversioned_package in unversioned_packages or package in versioned_packages:
+            visibility = ["//visibility:public"]
+        else:
+            visibility = ["//visibility:private"]
+        build_file_builder.append(
+            """
+haskell_cabal_library(
+    name = "{name}",
+    srcs = glob(["{dir}/**"]),
+    deps = {deps},
+    visibility = {visibility},
+)
+""".format(
+                name = package,
+                dir = package,
+                deps = dependencies[unversioned_package] + extra_deps,
+                testonly = repository_ctx.attr.testonly,
+                visibility = visibility,
+            ),
+        )
+        build_file_builder.append(
+            """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
+                name = unversioned_package,
+                actual = package,
+                visibility = visibility,
+            ),
+        )
+    build_file_content = "\n".join(build_file_builder)
+    repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
+
+stack_install = repository_rule(
+    _stack_install_impl,
+    attrs = {
+        "snapshot": attr.string(
+            doc = "The name of a Stackage snapshot.",
+        ),
+        "packages": attr.string_list(
+            doc = "A set of package identifiers. For packages in the snapshot, version numbers can be omitted.",
+        ),
+        "deps": attr.label_list(
+            doc = "Dependencies of the package set, e.g. system libraries or C/C++ libraries.",
+        ),
+    },
+)
+"""Use Stack to download and extract Cabal source distributions.
+
+Example:
+  ```bzl
+  stack_install(
+      name = "stackage",
+      packages = ["conduit", "lens", "zlib"],
+      snapshot = "lts-13.15",
+      deps = ["@zlib.dev//:zlib"],
+  )
+  ```
+
+This rule will use Stack to compute the transitive closure of the
+subset of the given snapshot listed in the `packages` attribute, and
+generate a dependency graph. If a package in the closure depends on
+system libraries or other external libraries, use the `deps` attribute
+to list them. This attribute works like the
+`--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
+
+In the external repository defined by the rule, all given packages are
+available as top-level targets named after each package.
+
+"""

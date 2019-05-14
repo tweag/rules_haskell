@@ -363,3 +363,13 @@ buildifier_dependencies()
 load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
 
 hazel_setup()
+
+load("@io_tweag_rules_haskell//haskell:cabal.bzl", "stack_install")
+
+stack_install(
+    name = "stackage",
+    testonly = 1,
+    packages = ["stack"],
+    snapshot = "lts-13.15",
+    deps = ["@zlib.dev//:zlib"],
+)
