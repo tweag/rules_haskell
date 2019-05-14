@@ -54,6 +54,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
         library_dirs = [],
         dynamic_library_dirs = [],
         depends = [],
+        hs_libraries = [],
         ld_options = [],
         extra_libraries = [],
     )
