@@ -35,11 +35,14 @@ def unfold_fields(content):
             fields.append(line)
     return fields
 
-def path_to_label(path, pkgroot):
+def path_to_label(path, pkgroot, mismatch_fatal=False):
     """Substitute one pkgroot for another relative one to obtain a label."""
     topdir_relative_path = path.replace(pkgroot, "$topdir")
     if topdir_relative_path.find("$topdir") != -1:
         return topdir_relative_path.replace("$topdir", topdir).replace('\\', '/')
+    elif mismatch_fatal:
+        print("ERROR: '{}' is not a prefix of '{}'.".format(pkgroot, path), file = sys.stderr)
+        sys.exit(1)
 
 output = []
 
@@ -111,26 +114,22 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                 id = pkg.id,
                 version = pkg.version,
                 hdrs = "glob({})".format([
-                    path_to_label("{}/**/*.h".format(include_dir), pkg.pkgroot)
+                    path_to_label("{}/**/*.h".format(include_dir), pkg.pkgroot, mismatch_fatal = True)
                     for include_dir in pkg.include_dirs
-                    if path_to_label(include_dir, pkg.pkgroot)
                 ]),
                 includes = [
-                    "/".join([repo_dir, path_to_label(include_dir, pkg.pkgroot)])
+                    "/".join([repo_dir, path_to_label(include_dir, pkg.pkgroot, mismatch_fatal = True)])
                     for include_dir in pkg.include_dirs
-                    if path_to_label(include_dir, pkg.pkgroot)
                 ],
                 static_libraries = "glob({})".format([
-                    path_to_label("{}/lib{}.a".format(library_dir, hs_library), pkg.pkgroot)
+                    path_to_label("{}/lib{}.a".format(library_dir, hs_library), pkg.pkgroot, mismatch_fatal = True)
                     for hs_library in pkg.hs_libraries
                     for library_dir in pkg.library_dirs
-                    if path_to_label(library_dir, pkg.pkgroot)
                 ]),
                 static_profiling_libraries = "glob({})".format([
-                    path_to_label("{}/lib{}_p.a".format(library_dir, hs_library), pkg.pkgroot)
+                    path_to_label("{}/lib{}_p.a".format(library_dir, hs_library), pkg.pkgroot, mismatch_fatal = True)
                     for hs_library in pkg.hs_libraries
                     for library_dir in pkg.library_dirs
-                    if path_to_label(library_dir, pkg.pkgroot)
                 ]),
                 shared_libraries = "glob({})".format([
                     path_to_label(
@@ -140,10 +139,10 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                             ext,
                         ),
                         pkg.pkgroot,
+                        mismatch_fatal = True,
                     )
                     for hs_library in pkg.hs_libraries
                     for dynamic_library_dir in pkg.dynamic_library_dirs + pkg.library_dirs
-                    if path_to_label(dynamic_library_dir, pkg.pkgroot)
                     for ext in ["dll", "dylib", "so"]
                 ]),
                 deps = pkg.depends,
