@@ -11,10 +11,6 @@ haskell_toolchain_library(name = "deepseq")
 
 haskell_toolchain_library(name = "ghc-prim")
 
-haskell_toolchain_library(name = "primitive")
-
-haskell_toolchain_library(name = "semigroups")
-
 haskell_library(
     name = "vector",
     testonly = 1,

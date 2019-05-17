@@ -29,6 +29,7 @@ load(
         "transformers",
         "ghc-prim",
         "process",
+        "rts",
         "text",
     ]
 ]

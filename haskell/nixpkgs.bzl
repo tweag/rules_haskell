@@ -230,6 +230,91 @@ exports_files(["all-haskell-packages.bzl"])
         ),
     )
 
+def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
+    compiler_flags_select = "select({})".format(
+        repository_ctx.attr.compiler_flags_select or {
+            "//conditions:default": [],
+        },
+    )
+    locale_archive = repr(repository_ctx.attr.locale_archive)
+    nixpkgs_ghc_path = repository_ctx.path(repository_ctx.attr._nixpkgs_ghc).dirname
+
+    # Symlink content of ghc external repo. In effect, this repo has
+    # the same content, but with a BUILD file that includes generated
+    # content (not a static one like nixpkgs_package supports).
+    for target in _find_children(repository_ctx, nixpkgs_ghc_path):
+        basename = target.rpartition("/")[-1]
+        repository_ctx.symlink(target, basename)
+
+    # Generate BUILD file entries describing each prebuilt package.
+    pkgdb_to_bzl = repository_ctx.path(Label("@io_tweag_rules_haskell//haskell:private/pkgdb_to_bzl.py"))
+    result = repository_ctx.execute([
+        pkgdb_to_bzl,
+        repository_ctx.attr.name,
+        "lib/ghc-{}".format(repository_ctx.attr.version),
+    ])
+    if result.return_code:
+        fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
+    toolchain_libraries = result.stdout
+
+    repository_ctx.file(
+        "BUILD",
+        executable = False,
+        content = """
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_import",
+    "haskell_toolchain",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "bin",
+    srcs = glob(["bin/*"]),
+)
+
+{toolchain_libraries}
+
+haskell_toolchain(
+    name = "toolchain-impl",
+    tools = {tools},
+    libraries = toolchain_libraries,
+    version = "{version}",
+    compiler_flags = {compiler_flags} + {compiler_flags_select},
+    haddock_flags = {haddock_flags},
+    repl_ghci_args = {repl_ghci_args},
+    # On Darwin we don't need a locale archive. It's a Linux-specific
+    # hack in Nixpkgs.
+    locale_archive = {locale_archive},
+)
+        """.format(
+            toolchain_libraries = toolchain_libraries,
+            tools = ["@io_tweag_rules_haskell_ghc_nixpkgs//:bin"],
+            version = repository_ctx.attr.version,
+            compiler_flags = repository_ctx.attr.compiler_flags,
+            compiler_flags_select = compiler_flags_select,
+            haddock_flags = repository_ctx.attr.haddock_flags,
+            repl_ghci_args = repository_ctx.attr.repl_ghci_args,
+            locale_archive = locale_archive,
+        ),
+    )
+
+_ghc_nixpkgs_haskell_toolchain = repository_rule(
+    _ghc_nixpkgs_haskell_toolchain_impl,
+    attrs = {
+        # These attributes just forward to haskell_toolchain.
+        # They are documented there.
+        "version": attr.string(),
+        "compiler_flags": attr.string_list(),
+        "compiler_flags_select": attr.string_list_dict(),
+        "haddock_flags": attr.string_list(),
+        "repl_ghci_args": attr.string_list(),
+        "locale_archive": attr.string(),
+        "_nixpkgs_ghc": attr.label(default = "@io_tweag_rules_haskell_ghc_nixpkgs//:BUILD"),
+    },
+)
+
 def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     # These constraints might look tautological, because they always
     # match the host platform if it is the same as the target
@@ -244,59 +329,29 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     exec_constraints = list(target_constraints)
     exec_constraints.append("@io_tweag_rules_haskell//haskell/platforms:nixpkgs")
 
-    compiler_flags_select = repository_ctx.attr.compiler_flags_select or {"//conditions:default": []}
-    locale_archive = repr(repository_ctx.attr.locale_archive or None)
-
     repository_ctx.file(
         "BUILD",
         executable = False,
         content = """
-load("@io_tweag_rules_haskell//haskell:toolchain.bzl", "haskell_toolchain")
-
-haskell_toolchain(
+toolchain(
     name = "toolchain",
-    tools = ["{tools}"],
-    version = "{version}",
-    compiler_flags = {compiler_flags} + {compiler_flags_select},
-    haddock_flags = {haddock_flags},
-    repl_ghci_args = {repl_ghci_args},
-    # On Darwin we don't need a locale archive. It's a Linux-specific
-    # hack in Nixpkgs.
-    locale_archive = {locale_archive},
+    toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
+    toolchain = "@io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
         """.format(
-            tools = "@io_tweag_rules_haskell_ghc-nixpkgs//:bin",
-            version = repository_ctx.attr.version,
-            compiler_flags = repository_ctx.attr.compiler_flags,
-            compiler_flags_select = "select({})".format(compiler_flags_select),
-            haddock_flags = repository_ctx.attr.haddock_flags,
-            repl_ghci_args = repository_ctx.attr.repl_ghci_args,
-            locale_archive = locale_archive,
             exec_constraints = exec_constraints,
             target_constraints = target_constraints,
         ),
     )
 
-_ghc_nixpkgs_toolchain = repository_rule(
-    _ghc_nixpkgs_toolchain_impl,
-    local = False,
-    attrs = {
-        # These attributes just forward to haskell_toolchain.
-        # They are documented there.
-        "version": attr.string(),
-        "compiler_flags": attr.string_list(),
-        "compiler_flags_select": attr.string_list_dict(),
-        "haddock_flags": attr.string_list(),
-        "repl_ghci_args": attr.string_list(),
-        "locale_archive": attr.string(),
-    },
-)
+_ghc_nixpkgs_toolchain = repository_rule(_ghc_nixpkgs_toolchain_impl)
 
 def haskell_register_ghc_nixpkgs(
         version,
         build_file = None,
+        build_file_content = None,
         compiler_flags = None,
         compiler_flags_select = None,
         haddock_flags = None,
@@ -334,16 +389,24 @@ def haskell_register_ghc_nixpkgs(
       ```
 
     """
+    nixpkgs_ghc_repo_name = "io_tweag_rules_haskell_ghc_nixpkgs"
+    haskell_toolchain_repo_name = "io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain"
+    toolchain_repo_name = "io_tweag_rules_haskell_ghc_nixpkgs_toolchain"
+
+    # The package from the system.
     haskell_nixpkgs_package(
-        name = "io_tweag_rules_haskell_ghc-nixpkgs",
+        name = nixpkgs_ghc_repo_name,
         attribute_path = attribute_path,
-        build_file = build_file or "@io_tweag_rules_haskell//haskell:ghc.BUILD",
+        build_file = build_file,
+        build_file_content = build_file_content,
         nix_file = nix_file,
         nix_file_deps = nix_file_deps,
         repositories = repositories,
     )
-    _ghc_nixpkgs_toolchain(
-        name = "io_tweag_rules_haskell_ghc-nixpkgs-toolchain",
+
+    # haskell_toolchain + haskell_import definitions.
+    _ghc_nixpkgs_haskell_toolchain(
+        name = haskell_toolchain_repo_name,
         version = version,
         compiler_flags = compiler_flags,
         compiler_flags_select = compiler_flags_select,
@@ -351,4 +414,25 @@ def haskell_register_ghc_nixpkgs(
         repl_ghci_args = repl_ghci_args,
         locale_archive = locale_archive,
     )
-    native.register_toolchains("@io_tweag_rules_haskell_ghc-nixpkgs-toolchain//:toolchain")
+
+    # toolchain definition.
+    _ghc_nixpkgs_toolchain(name = toolchain_repo_name)
+    native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
+
+def _find_children(repository_ctx, target_dir):
+    find_args = [
+        "find",
+        "-L",
+        target_dir,
+        "-maxdepth",
+        "1",
+        # otherwise the directory is printed as well
+        "-mindepth",
+        "1",
+        # filenames can contain \n
+        "-print0",
+    ]
+    exec_result = repository_ctx.execute(find_args)
+    if exec_result.return_code:
+        fail("_find_children() failed.")
+    return exec_result.stdout.rstrip("\0").split("\0")

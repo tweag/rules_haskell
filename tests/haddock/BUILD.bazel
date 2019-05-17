@@ -31,11 +31,6 @@ haskell_library(
     ],
 )
 
-haskell_toolchain_library(
-    name = "haddock-lib-c",
-    package = "libc",
-)
-
 haskell_library(
     name = "haddock-lib-b",
     srcs = [

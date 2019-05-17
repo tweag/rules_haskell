@@ -168,6 +168,11 @@ fi
     if ctx.attr.locale_archive != None:
         locale_archive = ctx.file.locale_archive
 
+    libraries = {
+        lib.label.name: lib
+        for lib in ctx.attr.libraries
+    }
+
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,
@@ -188,6 +193,7 @@ fi
                 package = package,
                 run_ghc = _run_ghc,
             ),
+            libraries = libraries,
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
             version = ctx.attr.version,
@@ -204,6 +210,10 @@ _haskell_toolchain = rule(
     attrs = {
         "tools": attr.label_list(
             doc = "GHC and executables that come with it. First item take precedance.",
+            mandatory = True,
+        ),
+        "libraries": attr.label_list(
+            doc = "The set of libraries that come with GHC.",
             mandatory = True,
         ),
         "compiler_flags": attr.string_list(
@@ -248,8 +258,7 @@ def haskell_toolchain(
         name,
         version,
         tools,
-        exec_compatible_with = None,
-        target_compatible_with = None,
+        libraries,
         compiler_flags = [],
         repl_ghci_args = [],
         haddock_flags = [],
@@ -287,20 +296,15 @@ def haskell_toolchain(
       register_toolchains("//:ghc")
       ```
     """
-    if exec_compatible_with and not target_compatible_with:
-        target_compatible_with = exec_compatible_with
-    elif target_compatible_with and not exec_compatible_with:
-        exec_compatible_with = target_compatible_with
-    impl_name = name + "-impl"
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
     _haskell_toolchain(
-        name = impl_name,
+        name = name,
         version = version,
         tools = tools,
+        libraries = libraries,
         compiler_flags = compiler_flags,
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
-        visibility = ["//visibility:public"],
         is_darwin = select({
             "@io_tweag_rules_haskell//haskell/platforms:darwin": True,
             "//conditions:default": False,
@@ -317,13 +321,6 @@ def haskell_toolchain(
             "//conditions:default": None,
         }),
         **kwargs
-    )
-    native.toolchain(
-        name = name,
-        toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
-        toolchain = ":" + impl_name,
-        exec_compatible_with = exec_compatible_with,
-        target_compatible_with = target_compatible_with,
     )
 
 def haskell_register_toolchains(version):
