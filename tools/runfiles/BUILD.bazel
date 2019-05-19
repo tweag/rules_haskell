@@ -10,9 +10,9 @@ haskell_library(
     src_strip_prefix = "src",
     visibility = ["//visibility:public"],
     deps = [
-        "@hackage//:base",
-        "@hackage//:directory",
-        "@hackage//:filepath",
+        "@stackage//:base",
+        "@stackage//:directory",
+        "@stackage//:filepath",
     ],
 )
 
@@ -24,8 +24,8 @@ haskell_test(
     src_strip_prefix = "bin",
     deps = [
         ":runfiles",
-        "@hackage//:base",
-        "@hackage//:filepath",
+        "@stackage//:base",
+        "@stackage//:filepath",
     ],
 )
 
@@ -39,8 +39,8 @@ haskell_test(
     src_strip_prefix = "test",
     deps = [
         ":runfiles",
-        "@hackage//:base",
-        "@hackage//:filepath",
-        "@hackage//:process",
+        "@stackage//:base",
+        "@stackage//:filepath",
+        "@stackage//:process",
     ],
 )

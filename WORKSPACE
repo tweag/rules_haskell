@@ -33,6 +33,32 @@ load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 # bazel dependencies
 haskell_repositories()
 
+load("@io_tweag_rules_haskell//haskell:cabal.bzl", "stack_install")
+
+stack_install(
+    name = "stackage",
+    packages = [
+        # Core libraries
+        "array",
+        "base",
+        "directory",
+        "filepath",
+        "process",
+        # For tests
+        "streaming",
+        "void",
+        "hspec",
+        "hspec-core",
+        "lens-family-core",
+        "data-default-class",
+        "lens-labels",
+        "proto-lens",
+        "lens-family",
+    ],
+    snapshot = "lts-13.15",
+    deps = ["@zlib.dev//:zlib"],
+)
+
 rules_nixpkgs_version = "0.5.2"
 
 rules_nixpkgs_version_is_hash = False
@@ -52,29 +78,10 @@ load(
     "nixpkgs_local_repository",
     "nixpkgs_package",
 )
-load(
-    "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
-    "haskell_nixpkgs_package",
-    "haskell_nixpkgs_packageset",
-)
-load(
-    "@io_tweag_rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
-    "haskell_package_repository_dummy",
-)
-load(
-    "@io_tweag_rules_haskell//:constants.bzl",
-    "test_ghc_version",
-)
 
-haskell_nixpkgs_package(
+nixpkgs_package(
     name = "ghc",
-    attribute_path = "haskellPackages.ghc",
-    nix_file = "//tests:ghc.nix",
-    nix_file_deps = ["//nixpkgs:default.nix"],
-    # rules_nixpkgs assumes we want to read from `<nixpkgs>` implicitly
-    # if `repository` is not set, but our nix_file uses `./nixpkgs/`.
-    # TODO(Profpatsch)
-    repositories = {"nixpkgs": "//nixpkgs:NOTUSED"},
+    repository = "@nixpkgs",
 )
 
 http_archive(
@@ -110,17 +117,21 @@ test_repl_ghci_args = [
 ]
 
 load(
+    "@io_tweag_rules_haskell//:constants.bzl",
+    "test_ghc_version",
+)
+load(
     "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
 
 haskell_register_ghc_nixpkgs(
+    attribute_path = "ghc",
     compiler_flags = test_compiler_flags,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
-    nix_file = "//tests:ghc.nix",
-    nix_file_deps = ["//nixpkgs:default.nix"],
     repl_ghci_args = test_repl_ghci_args,
+    repositories = {"nixpkgs": "@nixpkgs"},
     version = test_ghc_version,
 )
 
@@ -159,9 +170,26 @@ cc_library(
     name = "zlib",
     linkstatic = 1,
     srcs = [":lib"],
-    testonly = 1,
 )
 """,
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "c2hs",
+    attribute_path = "haskellPackages.c2hs",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "doctest",
+    attribute_path = "haskellPackages.doctest",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "proto-lens-protoc",
+    attribute_path = "haskellPackages.proto-lens-protoc",
     repository = "@nixpkgs",
 )
 
@@ -191,14 +219,12 @@ package(default_visibility = ["//visibility:public"])
 filegroup (
     name = "include",
     srcs = glob(["include/*.h"]),
-    testonly = 1,
 )
 
 cc_library(
     name = "zlib",
     deps = ["@zlib//:zlib"],
     hdrs = [":include"],
-    testonly = 1,
     strip_include_prefix = "include",
 )
 """,
@@ -219,22 +245,6 @@ filegroup(
     repository = "@nixpkgs",
 )
 
-haskell_nixpkgs_packageset(
-    name = "hackage-packages",
-    base_attribute_path = "haskellPackages",
-    nix_file = "//tests:ghc.nix",
-    nix_file_deps = ["//tests/haddock:libC.nix"],
-    nixopts = [
-        "-j",
-        "1",
-    ],
-    repositories = {"nixpkgs": "@nixpkgs"},
-)
-
-load("@hackage-packages//:packages.bzl", "import_packages")
-
-import_packages(name = "hackage")
-
 load("@bazel_tools//tools/build_defs/repo:jvm.bzl", "jvm_maven_import_external")
 
 jvm_maven_import_external(
@@ -249,6 +259,11 @@ jvm_maven_import_external(
 local_repository(
     name = "c2hs_repo",
     path = "tests/c2hs/repo",
+)
+
+load(
+    "@io_tweag_rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
+    "haskell_package_repository_dummy",
 )
 
 # dummy repo for the external haskell repo test (hazel)
@@ -363,13 +378,3 @@ buildifier_dependencies()
 load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
 
 hazel_setup()
-
-load("@io_tweag_rules_haskell//haskell:cabal.bzl", "stack_install")
-
-stack_install(
-    name = "stackage",
-    testonly = 1,
-    packages = ["stack"],
-    snapshot = "lts-13.15",
-    deps = ["@zlib.dev//:zlib"],
-)

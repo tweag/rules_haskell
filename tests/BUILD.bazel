@@ -22,7 +22,7 @@ package(default_testonly = 1)
 
 haskell_doctest_toolchain(
     name = "doctest-toolchain",
-    doctest = "@hackage-doctest//:bin",
+    doctest = "@doctest//:bin",
     tags = ["requires_doctest"],
 )
 
@@ -34,7 +34,7 @@ haskell_doctest_toolchain(
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
     testonly = 0,
-    plugin = "@hackage-proto-lens-protoc//:bin/proto-lens-protoc",
+    plugin = "@proto-lens-protoc//:bin/proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     tags = ["requires_hackage"],
     deps = [
@@ -44,17 +44,17 @@ haskell_proto_toolchain(
         "//tests/hackage:deepseq",
         "//tests/hackage:mtl",
         "//tests/hackage:text",
-        "@hackage//:data-default-class",
-        "@hackage//:lens-family",
-        "@hackage//:lens-family-core",
-        "@hackage//:lens-labels",
-        "@hackage//:proto-lens",
+        "@stackage//:data-default-class",
+        "@stackage//:lens-family",
+        "@stackage//:lens-family-core",
+        "@stackage//:lens-labels",
+        "@stackage//:proto-lens",
     ],
 )
 
 c2hs_toolchain(
     name = "c2hs-toolchain",
-    c2hs = "@hackage-c2hs//:bin",
+    c2hs = "@c2hs//:bin",
     tags = ["requires_c2hs"],
 )
 
@@ -316,7 +316,7 @@ haskell_binary(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:process",
-        "@hackage//:hspec",
-        "@hackage//:hspec-core",
+        "@stackage//:hspec",
+        "@stackage//:hspec-core",
     ],
 )

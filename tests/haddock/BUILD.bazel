@@ -48,7 +48,6 @@ haskell_library(
         ":haddock-lib-a",
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
-        "@hackage//:libc",
         "@zlib",
     ],
 )
