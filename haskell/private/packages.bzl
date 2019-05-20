@@ -41,6 +41,42 @@ def pkg_info_to_compile_flags(pkg_info, for_plugin = False):
 
     return args
 
+def pkg_info_to_ghc_env_args(pkg_env_file, pkg_info):
+    """Map package info to GHC command-line arguments.
+
+    Args:
+      pkg_env_file: The package environment file (we need the path)
+      pkg_info: Package info collected by `ghc_info()`.
+
+    Returns:
+      A tuple of the arguments that should go in the GHC environment file and arguments
+      passed as CLI args.
+    """
+    package_env_args = ["clear-package-db", "global-package-db"]
+    other_args = []
+    if not pkg_info.has_version:
+        other_args.extend([
+            # Macro version are disabled for all packages by default
+            # and enabled for package with version
+            # see https://github.com/tweag/rules_haskell/issues/414
+            "-fno-version-macros",
+        ])
+
+    # GHC environment files only support -package-id
+    for package in pkg_info.packages:
+        other_args.extend(["-package", package])
+
+    for package_id in pkg_info.package_ids:
+        package_env_args.extend(["package-id {}".format(package_id)])
+
+    # GHC insists on interpreting the paths in package environment files relative
+    # to the package environment files, so we use this horrible hack.
+    package_db_loc_prefix = "/".join([".." for f in pkg_env_file.dirname.split("/")])
+    for package_db in pkg_info.package_dbs:
+        package_env_args.extend(["package-db {}/{}".format(package_db_loc_prefix, package_db)])
+
+    return package_env_args, other_args
+
 def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package_databases, version):
     """
     Returns the information that is needed by GHC in order to enable haskell

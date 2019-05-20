@@ -1,6 +1,6 @@
 """Actions for compiling Haskell source code"""
 
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags", "pkg_info_to_ghc_env_args")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
@@ -150,18 +150,28 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     if hs.toolchain.is_darwin:
         compile_flags += ["-optl-Wl,-dead_strip_dylibs"]
 
-    compile_flags.extend(
-        pkg_info_to_compile_flags(
-            expose_packages(
-                dep_info,
-                lib_info = None,
-                use_direct = True,
-                use_my_pkg_id = my_pkg_id,
-                custom_package_databases = None,
-                version = version,
-            ),
+    compile_flags.extend(["-hide-all-packages"])
+
+    package_env_file = hs.actions.declare_file("package_env_%s" % hs.name)
+    package_args = hs.actions.args()
+    package_env_args, other_args = pkg_info_to_ghc_env_args(
+        package_env_file,
+        expose_packages(
+            dep_info,
+            lib_info = None,
+            use_direct = True,
+            use_my_pkg_id = my_pkg_id,
+            custom_package_databases = None,
+            version = version,
         ),
     )
+    package_args.add_all(package_env_args)
+    package_args.set_param_file_format("multiline")
+    hs.actions.write(package_env_file, package_args)
+    compile_flags.extend(["-package-env", package_env_file])
+    compile_flags.extend(other_args)
+
+    # Plugin arguments cannot be redirected via package environment files afaict.
     compile_flags.extend(
         pkg_info_to_compile_flags(
             expose_packages(
@@ -346,6 +356,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             locale_archive_depset,
             depset(transitive = plugin_tool_inputs),
             depset([optp_args_file]),
+            depset([package_env_file]),
         ]),
         input_manifests = plugin_tool_input_manifests,
         objects_dir = objects_dir,
