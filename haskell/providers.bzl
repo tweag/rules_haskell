@@ -194,6 +194,21 @@ HaskellPrebuiltPackageInfo = provider(
     doc = "Information about a prebuilt GHC package.",
 )
 
+HaskellPackageConfiguration = provider(
+    doc = "Contents of a GHC package-db package configuration file.",
+    fields = {
+        "name": "The package's name.",
+        "id": "The installed package Id",
+        "version": "The package's version",
+        "exposed": "Whether the package is exposed or not",
+        "hidden_modules": "Modules that cannot be imported by other packages",
+        "exposed_modules": "Modules that can be imported by other packages",
+        "import_dirs": "A list of directories containing interface files",
+        "depends": "Packages on which this package depends",
+        # XXX: Add more fields as needed.
+    },
+)
+
 HaddockInfo = provider(
     doc = "Haddock information.",
     fields = {

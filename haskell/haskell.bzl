@@ -297,6 +297,9 @@ haskell_import = rule(
         "linkopts": attr.string_list(),
         "hdrs": attr.label_list(allow_files = True),
         "includes": attr.string_list(),
+        "import_dirs": attr.label_list(allow_files = True),
+        "exposed_modules": attr.string_list(),
+        "hidden_modules": attr.string_list(),
         "_version_macros": attr.label(
             executable = True,
             cfg = "host",

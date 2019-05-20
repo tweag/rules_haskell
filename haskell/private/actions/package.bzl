@@ -194,3 +194,57 @@ def package(
     )
 
     return conf_file, cache_file
+
+def package_from_configuration(
+        hs,
+        package_conf):
+    """
+    Generate package-db for given package configuration.
+
+    Args:
+        hs: Haskell context
+        package_conf: HaskellPackageConfiguration provider.
+
+    Returns:
+        (File, File): GHC package conf file, GHC package cache file
+    """
+    metadata_entries = {
+        "name": package_conf.name,
+        "id": package_conf.id,
+        "key": package_conf.id,
+        "version": package_conf.version,
+        "exposed": package_conf.exposed,
+        "exposed-modules": " ".join(package_conf.exposed_modules),
+        "hidden-modules": " ".join(package_conf.hidden_modules),
+        "import-dirs": " ".join([
+            import_dir.path
+            for import_dir in package_conf.import_dirs
+        ]), # XXX: Do we need these here? Does this actually forward hi files?
+        "depends": ", ".join(package_conf.depends),
+    }
+    conf_file = hs.actions.declare_file("{0}.db/{0}.conf".format(package_conf.id))
+    hs.actions.write(
+        output = conf_file,
+        content = "\n".join([
+            "{}: {}".format(k, v)
+            for k, v in metadata_entries.items()
+            if v
+        ]) + "\n",
+    )
+    cache_file = hs.actions.declare_file("package.cache", sibling = conf_file)
+    hs.actions.run(
+        executable = hs.tools.ghc_pkg,
+        arguments = [
+            "recache",
+            "--package-db={}".format(conf_file.dirname),
+            "-v0",
+            "--no-expand-pkgroot",
+        ],
+        mnemonic = "HaskellRegisterToolchainPackage",
+        progress_message = "HaskellRegisterToolchainPackage {}".format(hs.label),
+        outputs = [cache_file],
+        inputs = depset(
+            direct = [conf_file] + package_conf.import_dirs,
+        ),
+    )
+    return (conf_file, cache_file)

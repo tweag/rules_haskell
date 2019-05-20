@@ -53,10 +53,13 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
         include_dirs = [],
         library_dirs = [],
         dynamic_library_dirs = [],
+        import_dirs = [],
         depends = [],
         hs_libraries = [],
         ld_options = [],
         extra_libraries = [],
+        exposed_modules = [],
+        hidden_modules = [],
     )
     for field in fields:
         key, value = field.split(":", 1)
@@ -73,6 +76,8 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
             pkg.library_dirs += value.split()
         elif key == "dynamic-library-dirs":
             pkg.dynamic_library_dirs += value.split()
+        elif key == "import-dirs":
+            pkg.import_dirs += value.split()
         elif key == "hs-libraries":
             pkg.hs_libraries += value.split()
         elif key == "depends":
@@ -81,6 +86,10 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
             pkg.ld_options += [opt.strip('"') for opt in value.split()]
         elif key == "extra-libraries":
             pkg.extra_libraries += value.split()
+        elif key == "exposed-modules":
+            pkg.exposed_modules += value.split()
+        elif key == "hidden-modules":
+            pkg.hidden_modules += value.split()
 
     # pkgroot is not part of .conf files. It's a computed value. It is
     # defined to be the directory enclosing the package database
@@ -103,6 +112,9 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                 shared_libraries = {shared_libraries},
                 static_libraries = {static_libraries},
                 static_profiling_libraries = {static_profiling_libraries},
+                import_dirs = {import_dirs},
+                exposed_modules = {exposed_modules},
+                hidden_modules = {hidden_modules},
                 version = "{version}",
                 visibility = ["//visibility:public"],
             )
@@ -155,6 +167,12 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                     "-l{}".format(extra_library)
                     for extra_library in pkg.extra_libraries
                 ],
+                import_dirs = "{}".format([
+                    path_to_label(import_dir, pkg.pkgroot)
+                    for import_dir in pkg.import_dirs
+                ]),
+                exposed_modules = "{}".format(pkg.exposed_modules),
+                hidden_modules = "{}".format(pkg.hidden_modules),
             )
         )
     ]
