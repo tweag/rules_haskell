@@ -24,6 +24,8 @@ load(":private/java.bzl", "java_interop_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
+    "get_dynamic_hs_lib_name",
+    "get_lib_name",
     "ln",
     "match_label",
     "parse_pattern",
@@ -634,18 +636,28 @@ Check that it ships with your version of GHC.
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
     )
+
+    # Static and dynamic libraries don't necessarily pair up 1 to 1.
+    # E.g. the rts package in the Unix GHC bindist contains the
+    # dynamic libHSrts and the static libCffi and libHSrts.
+    libs = {
+        get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
+        for lib in target[HaskellImportHack].dynamic_libraries
+    }
+    for lib in target[HaskellImportHack].static_libraries:
+        name = get_lib_name(lib)
+        entry = libs.get(name, {})
+        entry["static"] = lib
+        libs[name] = entry
     libraries_to_link = [
         cc_common.create_library_to_link(
             actions = ctx.actions,
             feature_configuration = feature_configuration,
-            dynamic_library = dynamic_library,
-            static_library = static_library,
+            dynamic_library = lib.get("dynamic", None),
+            static_library = lib.get("static", None),
             cc_toolchain = cc_toolchain,
         )
-        for (dynamic_library, static_library) in zip(
-            target[HaskellImportHack].dynamic_libraries,
-            target[HaskellImportHack].static_libraries,
-        )
+        for lib in libs.values()
     ]
     compilation_context = cc_common.create_compilation_context(
         headers = target[HaskellImportHack].headers,
