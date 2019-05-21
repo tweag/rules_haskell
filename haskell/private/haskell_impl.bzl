@@ -637,6 +637,7 @@ Check that it ships with your version of GHC.
         unsupported_features = ctx.disabled_features,
     )
 
+    # Workaround for https://github.com/tweag/rules_haskell/issues/881
     # Static and dynamic libraries don't necessarily pair up 1 to 1.
     # E.g. the rts package in the Unix GHC bindist contains the
     # dynamic libHSrts and the static libCffi and libHSrts.
