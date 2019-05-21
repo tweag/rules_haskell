@@ -673,27 +673,6 @@ Check that it ships with your version of GHC.
         compilation_context = compilation_context,
         linking_context = linking_context,
     )
-    (conf_file, cache_file) = package_from_configuration(
-        hs, target[HaskellPackageConfiguration],
-    )
-    hs_info = target[HaskellInfo]
-    hs_info = HaskellInfo(
-        package_ids = hs_info.package_ids,
-        package_databases = set.insert(hs_info.package_databases, cache_file),
-        version_macros = hs_info.version_macros,
-        import_dirs = hs_info.import_dirs,
-        source_files = hs_info.source_files,
-        extra_source_files = hs_info.extra_source_files,
-        static_libraries = hs_info.static_libraries,
-        static_libraries_prof = hs_info.static_libraries_prof,
-        dynamic_libraries = hs_info.dynamic_libraries,
-        interface_dirs = hs_info.interface_dirs,
-        compile_flags = hs_info.compile_flags,
-        prebuilt_dependencies = hs_info.prebuilt_dependencies,
-        direct_prebuilt_deps = hs_info.direct_prebuilt_deps,
-        cc_dependencies = hs_info.cc_dependencies,
-        transitive_cc_dependencies = hs_info.transitive_cc_dependencies,
-    )
     prebuilt_package_info = HaskellPrebuiltPackageInfo(
         package = package,
         id_file = id_file,
@@ -702,7 +681,7 @@ Check that it ships with your version of GHC.
 
     return [
         prebuilt_package_info,
-        hs_info,
+        target[HaskellInfo],
         cc_info,
         target[DefaultInfo],
         target[HaskellLibraryInfo],
@@ -729,23 +708,34 @@ def haskell_import_impl(ctx):
             if HaskellPackageConfiguration in dep
         ],
     )
+    (conf_file, cache_file) = package_from_configuration(
+        ctx,
+        ctx.executable.ghc_pkg,
+        package_conf,
+    )
     version_macros = set.empty()
     if ctx.attr.version != None:
         version_macros = set.singleton(
             generate_version_macros(ctx, ctx.label.name, ctx.attr.version),
         )
+    package_databases = set.singleton(cache_file)
+    import_dirs = set.from_list(ctx.files.import_dirs)
+    for dep in ctx.attr.deps:
+        if HaskellInfo in dep:
+            set.mutable_union(package_databases, dep[HaskellInfo].package_databases)
+            set.mutable_union(import_dirs, dep[HaskellInfo].import_dirs)
     hs_info = HaskellInfo(
         package_ids = set.singleton(id),
         # XXX Empty set of conf and cache files only works for global db.
-        package_databases = set.empty(),
+        package_databases = package_databases,
         version_macros = version_macros,
-        import_dirs = ctx.attr.import_dirs,
+        import_dirs = import_dirs,
         source_files = set.empty(),
         extra_source_files = set.empty(),
         static_libraries = [],
         static_libraries_prof = [],
         dynamic_libraries = set.empty(),
-        interface_dirs = set.empty(),
+        interface_dirs = import_dirs,
         compile_flags = set.empty(),
         prebuilt_dependencies = set.empty(),
         direct_prebuilt_deps = set.empty(),

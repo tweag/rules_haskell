@@ -116,6 +116,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                 exposed_modules = {exposed_modules},
                 hidden_modules = {hidden_modules},
                 version = "{version}",
+                ghc_pkg = ":bin/ghc-pkg",
                 visibility = ["//visibility:public"],
             )
             """.format(

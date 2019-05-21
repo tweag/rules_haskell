@@ -6,6 +6,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
+    "get_lib_name",
     "module_name",
     "target_unique_name",
 )
@@ -112,6 +113,36 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         for f in cc.compiler_flags
     ]
     compile_flags += cc_args
+
+    linkflags = depset()
+    linkinputs = depset()
+    # XXX: Only template Haskell dependencies.
+    linking_context = dep_info.cc_info.linking_context
+    if linking_context:
+        for lib_to_link in linking_context.libraries_to_link:
+            lib = None
+            if lib_to_link.pic_static_library:
+                # XXX: Mangle static libraries.
+                lib = lib_to_link.pic_static_library
+            elif lib_to_link.dynamic_library:
+                # XXX: Consider resolved_symlink_dynamic_library
+                lib = lib_to_link.dynamic_library
+            elif lib_to_link.interface_library:
+                # XXX: Consider resolved_symlink_interface_library
+                lib = lib_to_link.interface_library
+            else:
+                fail("No pic-static or dynamic library found. (static: {})".format(lib_to_link.static_library))
+            linkflags = depset(
+                direct = ["-l{}".format(get_lib_name(lib)), "-L{}".format(lib.dirname)],
+                transitive = [linkflags],
+            )
+            linkinputs = depset(
+                direct = [lib],
+                transitive = [linkinputs],
+            )
+
+    compile_flags += linkflags.to_list()
+    compile_flags += ["-no-global-package-db"]
 
     interface_dir_raw = "_iface_prof" if with_profiling else "_iface"
     object_dir_raw = "_obj_prof" if with_profiling else "_obj"
@@ -330,6 +361,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             set.to_depset(source_files),
             extra_source_files,
             depset(cc.hdrs),
+            linkinputs,
             set.to_depset(dep_info.hs_info.package_databases),
             set.to_depset(dep_info.hs_info.interface_dirs),
             depset(dep_info.hs_info.static_libraries),

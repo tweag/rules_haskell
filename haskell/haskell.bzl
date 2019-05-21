@@ -300,6 +300,12 @@ haskell_import = rule(
         "import_dirs": attr.label_list(allow_files = True),
         "exposed_modules": attr.string_list(),
         "hidden_modules": attr.string_list(),
+        "ghc_pkg": attr.label(
+            allow_files = True,
+            cfg = "host",
+            executable = True,
+            mandatory = True,
+        ),
         "_version_macros": attr.label(
             executable = True,
             cfg = "host",

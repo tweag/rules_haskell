@@ -196,13 +196,15 @@ def package(
     return conf_file, cache_file
 
 def package_from_configuration(
-        hs,
+        ctx,
+        ghc_pkg,
         package_conf):
     """
     Generate package-db for given package configuration.
 
     Args:
-        hs: Haskell context
+        ctx: Rule context.
+        ghc_pkg: ghc-pkg executable.
         package_conf: HaskellPackageConfiguration provider.
 
     Returns:
@@ -219,11 +221,11 @@ def package_from_configuration(
         "import-dirs": " ".join([
             import_dir.path
             for import_dir in package_conf.import_dirs
-        ]), # XXX: Do we need these here? Does this actually forward hi files?
+        ]),
         "depends": ", ".join(package_conf.depends),
     }
-    conf_file = hs.actions.declare_file("{0}.db/{0}.conf".format(package_conf.id))
-    hs.actions.write(
+    conf_file = ctx.actions.declare_file("{0}.db/{0}.conf".format(package_conf.id))
+    ctx.actions.write(
         output = conf_file,
         content = "\n".join([
             "{}: {}".format(k, v)
@@ -231,9 +233,9 @@ def package_from_configuration(
             if v
         ]) + "\n",
     )
-    cache_file = hs.actions.declare_file("package.cache", sibling = conf_file)
-    hs.actions.run(
-        executable = hs.tools.ghc_pkg,
+    cache_file = ctx.actions.declare_file("package.cache", sibling = conf_file)
+    ctx.actions.run(
+        executable = ghc_pkg,
         arguments = [
             "recache",
             "--package-db={}".format(conf_file.dirname),
@@ -241,7 +243,7 @@ def package_from_configuration(
             "--no-expand-pkgroot",
         ],
         mnemonic = "HaskellRegisterToolchainPackage",
-        progress_message = "HaskellRegisterToolchainPackage {}".format(hs.label),
+        progress_message = "HaskellRegisterToolchainPackage {}".format(ctx.label),
         outputs = [cache_file],
         inputs = depset(
             direct = [conf_file] + package_conf.import_dirs,
