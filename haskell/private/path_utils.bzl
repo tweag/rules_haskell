@@ -208,6 +208,23 @@ def get_lib_name(lib):
     end = paths.replace_extension(base, "") if n == -1 else base[:n]
     return end
 
+def get_dynamic_hs_lib_name(ghc_version, lib):
+    """Return name of library by dropping extension,
+    "lib" prefix, and GHC version suffix.
+
+    Args:
+      version: GHC version.
+      lib: The library File.
+
+    Returns:
+      String: name of library.
+    """
+    name = get_lib_name(lib)
+    suffix = "-ghc{}".format(ghc_version)
+    if name.endswith(suffix):
+        name = name[:-len(suffix)]
+    return name
+
 def link_libraries(libs_to_link, args):
     """Add linker flags to link against the given libraries.
 
