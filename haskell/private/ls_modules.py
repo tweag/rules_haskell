@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Create a list of exposed modules (including reexported modules)
 # given a directory full of interface files and the content of the

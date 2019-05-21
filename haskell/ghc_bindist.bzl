@@ -181,7 +181,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 def _ghc_bindist_impl(ctx):
     # Avoid rule restart by resolving these labels early. See
     # https://github.com/bazelbuild/bazel/blob/master/tools/cpp/lib_cc_configure.bzl#L17.
-    ghc_build = ctx.path(Label("//haskell:ghc.BUILD"))
+    ghc_build = ctx.path(Label("@io_tweag_rules_haskell//haskell:ghc.BUILD.tpl"))
 
     version = ctx.attr.version
     target = ctx.attr.target
@@ -224,9 +224,46 @@ grep -lZ {bindist_dir} bin/* | xargs -0 --verbose \\
         ))
         _execute_fail_loudly(ctx, ["./patch_bins"])
 
+    # Generate BUILD file entries describing each prebuilt package.
+    # Cannot use //haskell:pkgdb_to_bzl because that's a generated
+    # target. ctx.path() only works on source files.
+    pkgdb_to_bzl = ctx.path(Label("@io_tweag_rules_haskell//haskell:private/pkgdb_to_bzl.py"))
+    python = _find_python(ctx)
+    result = ctx.execute([
+        python,
+        pkgdb_to_bzl,
+        ctx.attr.name,
+        "lib",
+    ])
+    if result.return_code:
+        fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
+    toolchain_libraries = result.stdout
+    toolchain = """
+{toolchain_libraries}
+
+haskell_toolchain(
+    name = "toolchain-impl",
+    tools = [":bin"],
+    libraries = toolchain_libraries,
+    version = "{version}",
+    compiler_flags = {compiler_flags},
+    haddock_flags = {haddock_flags},
+    repl_ghci_args = {repl_ghci_args},
+    visibility = ["//visibility:public"],
+)
+    """.format(
+        toolchain_libraries = toolchain_libraries,
+        version = ctx.attr.version,
+        compiler_flags = ctx.attr.compiler_flags,
+        haddock_flags = ctx.attr.haddock_flags,
+        repl_ghci_args = ctx.attr.repl_ghci_args,
+    )
     ctx.template(
         "BUILD",
         ghc_build,
+        substitutions = {
+            "%{toolchain}": toolchain,
+        },
         executable = False,
     )
 
@@ -240,6 +277,9 @@ _ghc_bindist = repository_rule(
             doc = "The desired GHC version",
         ),
         "target": attr.string(),
+        "compiler_flags": attr.string_list(),
+        "haddock_flags": attr.string_list(),
+        "repl_ghci_args": attr.string_list(),
         "patches": attr.label_list(
             default = [],
             doc =
@@ -273,24 +313,15 @@ def _ghc_bindist_toolchain_impl(ctx):
         "BUILD",
         executable = False,
         content = """
-load("@io_tweag_rules_haskell//haskell:toolchain.bzl", "haskell_toolchain")
-
-haskell_toolchain(
+toolchain(
     name = "toolchain",
-    tools = ["{tools}"],
-    version = "{version}",
-    compiler_flags = {compiler_flags},
-    haddock_flags = {haddock_flags},
-    repl_ghci_args = {repl_ghci_args},
+    toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
+    toolchain = "@{bindist_name}//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
         """.format(
-            tools = "@{}//:bin".format(ctx.attr.bindist_name),
-            version = ctx.attr.version,
-            compiler_flags = ctx.attr.compiler_flags,
-            haddock_flags = ctx.attr.haddock_flags,
-            repl_ghci_args = ctx.attr.repl_ghci_args,
+            bindist_name = ctx.attr.bindist_name,
             exec_constraints = exec_constraints,
             target_constraints = target_constraints,
         ),
@@ -301,10 +332,6 @@ _ghc_bindist_toolchain = repository_rule(
     local = False,
     attrs = {
         "bindist_name": attr.string(),
-        "version": attr.string(),
-        "compiler_flags": attr.string_list(),
-        "haddock_flags": attr.string_list(),
-        "repl_ghci_args": attr.string_list(),
         "target": attr.string(),
     },
 )
@@ -362,16 +389,15 @@ def ghc_bindist(
     _ghc_bindist(
         name = bindist_name,
         version = version,
+        compiler_flags = compiler_flags,
+        haddock_flags = haddock_flags,
+        repl_ghci_args = repl_ghci_args,
         target = target,
         **extra_attrs
     )
     _ghc_bindist_toolchain(
         name = toolchain_name,
         bindist_name = bindist_name,
-        version = version,
-        compiler_flags = compiler_flags,
-        haddock_flags = haddock_flags,
-        repl_ghci_args = repl_ghci_args,
         target = target,
     )
     native.register_toolchains("@{}//:toolchain".format(toolchain_name))
@@ -403,3 +429,12 @@ def haskell_register_ghc_bindists(
             haddock_flags = haddock_flags,
             repl_ghci_args = repl_ghci_args,
         )
+
+def _find_python(repository_ctx):
+    python = repository_ctx.which("python3")
+    if not python:
+        python = repository_ctx.which("python")
+        result = repository_ctx.execute([python, "--version"])
+        if not result.stdout.startswith("Python 3"):
+            fail("rules_haskell requires Python >= 3.3.")
+    return python

@@ -5,6 +5,7 @@ exports_files(
         "private/haddock_wrapper.sh.tpl",
         "private/coverage_wrapper.sh.tpl",
         "private/osx_cc_wrapper.sh.tpl",
+        "private/pkgdb_to_bzl.py",
     ],
 )
 
@@ -12,6 +13,12 @@ exports_files(
 exports_files(
     ["private/actions/link.bzl"],
     visibility = ["//tests/unit-tests:__pkg__"],
+)
+
+py_binary(
+    name = "pkgdb_to_bzl",
+    srcs = ["private/pkgdb_to_bzl.py"],
+    visibility = ["//visibility:public"],
 )
 
 py_binary(

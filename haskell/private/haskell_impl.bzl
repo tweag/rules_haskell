@@ -6,6 +6,7 @@ load(
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellPrebuiltPackageInfo",
+    "empty_HaskellCcInfo",
 )
 load(":cc.bzl", "cc_interop_info")
 load(
@@ -23,6 +24,8 @@ load(":private/java.bzl", "java_interop_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
+    "get_dynamic_hs_lib_name",
+    "get_lib_name",
     "ln",
     "match_label",
     "parse_pattern",
@@ -569,6 +572,13 @@ def haskell_library_impl(ctx):
         lib_info,
     ]
 
+# We should not need this provider. It exists purely as a workaround
+# for https://github.com/bazelbuild/bazel/issues/8129.
+#
+# TODO Get rid of this by computing a CcInfo in haskell_import
+# instead. Currently blocked on upstream.
+HaskellImportHack = provider()
+
 def haskell_toolchain_library_impl(ctx):
     hs = haskell_context(ctx)
 
@@ -609,13 +619,140 @@ def haskell_toolchain_library_impl(ctx):
         ],
     )
 
+    target = hs.toolchain.libraries.get(package)
+    if not target:
+        fail(
+            """
+{} is not a toolchain library.
+Check that it ships with your version of GHC.
+            """.format(package),
+        )
+
+    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
+    # Should be find_cpp_toolchain() instead.
+    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    feature_configuration = cc_common.configure_features(
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+
+    # Workaround for https://github.com/tweag/rules_haskell/issues/881
+    # Static and dynamic libraries don't necessarily pair up 1 to 1.
+    # E.g. the rts package in the Unix GHC bindist contains the
+    # dynamic libHSrts and the static libCffi and libHSrts.
+    libs = {
+        get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
+        for lib in target[HaskellImportHack].dynamic_libraries
+    }
+    for lib in target[HaskellImportHack].static_libraries:
+        name = get_lib_name(lib)
+        entry = libs.get(name, {})
+        entry["static"] = lib
+        libs[name] = entry
+    libraries_to_link = [
+        cc_common.create_library_to_link(
+            actions = ctx.actions,
+            feature_configuration = feature_configuration,
+            dynamic_library = lib.get("dynamic", None),
+            static_library = lib.get("static", None),
+            cc_toolchain = cc_toolchain,
+        )
+        for lib in libs.values()
+    ]
+    compilation_context = cc_common.create_compilation_context(
+        headers = target[HaskellImportHack].headers,
+        includes = target[HaskellImportHack].includes,
+    )
+    linking_context = cc_common.create_linking_context(
+        libraries_to_link = libraries_to_link,
+        user_link_flags = target[HaskellImportHack].linkopts,
+    )
+    cc_info = CcInfo(
+        compilation_context = compilation_context,
+        linking_context = linking_context,
+    )
     prebuilt_package_info = HaskellPrebuiltPackageInfo(
         package = package,
         id_file = id_file,
         version_macros_file = version_macros_file,
     )
 
-    return [prebuilt_package_info]
+    return [
+        prebuilt_package_info,
+        target[HaskellInfo],
+        cc_info,
+        target[DefaultInfo],
+        target[HaskellLibraryInfo],
+    ]
+
+def haskell_import_impl(ctx):
+    id = ctx.attr.id or ctx.attr.name
+    target_files = [
+        file
+        for file in ctx.files.static_libraries + ctx.files.shared_libraries
+    ]
+    version_macros = set.empty()
+    if ctx.attr.version != None:
+        version_macros = set.singleton(
+            generate_version_macros(ctx, ctx.label.name, ctx.attr.version),
+        )
+    hs_info = HaskellInfo(
+        package_ids = set.singleton(id),
+        # XXX Empty set of conf and cache files only works for global db.
+        package_databases = set.empty(),
+        version_macros = version_macros,
+        static_libraries = [],
+        static_libraries_prof = [],
+        dynamic_libraries = set.empty(),
+        interface_dirs = set.empty(),
+        prebuilt_dependencies = set.empty(),
+        direct_prebuilt_deps = set.empty(),
+        cc_dependencies = empty_HaskellCcInfo(),
+        transitive_cc_dependencies = empty_HaskellCcInfo(),
+    )
+    import_info = HaskellImportHack(
+        # Make sure we're using the same order for dynamic_libraries,
+        # static_libraries.
+        dynamic_libraries = depset(ctx.files.shared_libraries, order = "topological", transitive = [
+            dep[HaskellImportHack].dynamic_libraries
+            for dep in ctx.attr.deps
+        ]),
+        static_libraries = depset(ctx.files.static_libraries, order = "topological", transitive = [
+            dep[HaskellImportHack].static_libraries
+            for dep in ctx.attr.deps
+        ]),
+        headers = depset(ctx.files.hdrs, transitive = [
+            dep[HaskellImportHack].headers
+            for dep in ctx.attr.deps
+        ]),
+        includes = depset(ctx.attr.includes, transitive = [
+            dep[HaskellImportHack].includes
+            for dep in ctx.attr.deps
+        ]),
+        linkopts = ctx.attr.linkopts + [
+            opt
+            for dep in ctx.attr.deps
+            for opt in dep[HaskellImportHack].linkopts
+        ],
+    )
+
+    coverage_info = HaskellCoverageInfo(coverage_data = [])
+    lib_info = HaskellLibraryInfo(
+        package_id = id,
+        version = ctx.attr.version,
+    )
+    default_info = DefaultInfo(
+        files = depset(target_files),
+    )
+
+    return [
+        hs_info,
+        import_info,
+        coverage_info,
+        default_info,
+        lib_info,
+    ]
 
 def _exposed_modules_reexports(exports):
     """Creates a ghc-pkg-compatible list of reexport declarations.

@@ -28,10 +28,19 @@ def _get_extra_libraries(dep_info):
     extra_lib_dirs = set.empty()
     for lib in cc_libs:
         lib_name = get_lib_name(lib)
-        if not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            extra_libs.append(lib_name)
-        set.mutable_insert(extra_lib_dirs, lib.dirname)
+
+        # This test is a hack. When a CC library has a Haskell library
+        # as a dependency, we need to be careful to filter it out,
+        # otherwise it will end up polluting extra-libraries, when GHC
+        # already uses hs-libraries to locate all Haskell libraries.
+        #
+        # TODO Get rid of this hack. See
+        # https://github.com/tweag/rules_haskell/issues/873.
+        if not lib_name.startswith("HS"):
+            if not set.is_member(seen_libs, lib_name):
+                set.mutable_insert(seen_libs, lib_name)
+                extra_libs.append(lib_name)
+            set.mutable_insert(extra_lib_dirs, lib.dirname)
     return (set.to_list(extra_lib_dirs), extra_libs)
 
 def package(

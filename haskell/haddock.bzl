@@ -6,6 +6,7 @@ load(
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
+    "HaskellPrebuiltPackageInfo",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
@@ -22,7 +23,7 @@ def _get_haddock_path(package_id):
     return package_id + ".haddock"
 
 def _haskell_doc_aspect_impl(target, ctx):
-    if HaskellInfo not in target or HaskellLibraryInfo not in target:
+    if HaskellInfo not in target or HaskellLibraryInfo not in target or HaskellPrebuiltPackageInfo in target:
         return []
 
     # Packages imported via `//haskell:import.bzl%haskell_import` already

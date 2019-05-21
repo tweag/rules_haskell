@@ -14,7 +14,7 @@ mkShell {
     nix
     which
     perl
-    python
+    python3
     bazel
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git

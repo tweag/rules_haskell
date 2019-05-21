@@ -1,28 +1,23 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "cc_haskell_import",
     "haskell_library",
     "haskell_toolchain_library",
 )
 
 haskell_toolchain_library(name = "base")
 
-haskell_toolchain_library(name = "rts")
-
 haskell_library(
-    name = "add-one-hs",
+    name = "add-one",
     srcs = ["One.hs"],
     deps = [":base"],
 )
 
 cc_test(
-    name = "add-one",
-    srcs = [
-        "main.c",
-    ],
+    name = "haskell_import",
+    srcs = ["main.c"],
     visibility = ["//visibility:public"],
     deps = [
-        ":add-one-hs",
-        ":rts",
+        ":add-one",
+        ":base",
     ],
 )

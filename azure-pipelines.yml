@@ -3,6 +3,10 @@ jobs:
   pool:
     vmImage: 'vs2017-win2016'
   steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      architecture: 'x64'
   - bash: |
       set -e
       curl -LO https://github.com/bazelbuild/bazel/releases/download/0.24.0/bazel-0.24.0-windows-x86_64.exe
@@ -35,6 +39,7 @@ jobs:
       /c/bazel/bazel.exe build --config windows "@haskell_unix__compat//..."
       /c/bazel/bazel.exe build --config windows "@haskell_hostname//..."
       /c/bazel/bazel.exe build --config windows "@haskell_zlib//..."
+      /c/bazel/bazel.exe build --config windows "@haskell_ghc__paths//..."
 
       # FIXME: needs network, warp, cryptonite, etc...
       # /c/bazel/bazel.exe build --config windows "@haskell_wai__app__static//..."
