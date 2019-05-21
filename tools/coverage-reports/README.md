@@ -14,7 +14,7 @@ haskell_test(
     srcs = [
         ...
     ],
-    coverage_report_format = "html", # this must be set
+    coverage_report_format = "html", # this must be set to "html" (not "text")
     expected_covered_expressions_percentage = ...,
     expected_uncovered_expression_count = ...,
     deps = [

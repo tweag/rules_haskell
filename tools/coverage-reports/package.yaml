@@ -30,7 +30,3 @@ executables:
     - hxt
     - hxt-xpath
     - listsafe
-    ghc-options:
-    - -rtsopts
-    - -threaded
-    - -with-rtsopts=-N
