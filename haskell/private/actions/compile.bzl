@@ -131,7 +131,8 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
                 # XXX: Consider resolved_symlink_interface_library
                 lib = lib_to_link.interface_library
             else:
-                fail("No pic-static or dynamic library found. (static: {})".format(lib_to_link.static_library))
+                lib = lib_to_link.static_library
+                print("WARNING: No pic-static or dynamic library found. (static: {})".format(lib))
             linkflags = depset(
                 direct = ["-l{}".format(get_lib_name(lib)), "-L{}".format(lib.dirname)],
                 transitive = [linkflags],
