@@ -1,0 +1,25 @@
+load("@io_tweag_rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base")
+
+haskell_cabal_library(
+    name = "lib-0.1.0.0",
+    srcs = [
+        "Lib.hs",
+        "lib.cabal",
+    ],
+)
+
+haskell_test(
+    name = "haskell_cabal_library",
+    srcs = ["Main.hs"],
+    deps = [
+        ":base",
+        ":lib-0.1.0.0",
+    ],
+)
