@@ -12,7 +12,7 @@ extra-source-files:
 - README.md
 - stack.yaml
 
-synopsis:            Generate coverage report from Rules_Haskell bazel coverage output. See README at <https://github.com/tweag/rules_haskell/blob/master/tools/coverage-reports/README.md>
+synopsis:            Generate coverage report from Rules_Haskell Bazel coverage output.
 category:            Build Tool
 
 ghc-options: -Wall -Werror
