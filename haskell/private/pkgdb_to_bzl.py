@@ -15,11 +15,14 @@ import sys
 import textwrap
 import types
 
-if len(sys.argv) == 3:
+if len(sys.argv) >= 3:
     repo_dir = "external/" + sys.argv[1]
     topdir = sys.argv[2]
+
+    # aliases are a list of key, val, key, val...
+    aliases = dict(zip(sys.argv[3::2], sys.argv[4::2]))
 else:
-    sys.exit("Usage: pkgdb_to_bzl.py <REPO_NAME> <TOPDIR>")
+    sys.exit("Usage: pkgdb_to_bzl.py <REPO_NAME> <TOPDIR> <LIST_OF_ALIASES>")
 
 def unfold_fields(content):
     """Unfold fields that were split over multiple lines.
@@ -86,6 +89,11 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     # defined to be the directory enclosing the package database
     # directory.
     pkg.pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
+
+    # replace the package name by an export alias
+    for prefix, alias in aliases.items():
+        if pkg.id.startswith(prefix):
+            pkg.name = alias
 
     pkg_id_map.append((pkg.name, pkg.id))
     output += [
@@ -158,6 +166,31 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
             )
         )
     ]
+
+
+# Count the number of package ids associated with the same name
+counts = {}
+for pkg_name, pkg_id in pkg_id_map:
+    counts.setdefault(pkg_name, []).append(pkg_id)
+
+# list all the conflicts (i.e. a package name with many packages id associated)
+conflicts = {}
+for pkg_name, pkgs in counts.items():
+    if len(pkgs) > 1:
+        conflicts[pkg_name] = pkgs
+
+# A conflict is a failure
+if conflicts:
+    ret = ["The following haskell packages are the same name.", ""]
+
+    for pkg_name, pkgs in conflicts.items():
+        ret.append("- {}".format(pkg_name))
+        for pkg in pkgs:
+            ret.append("    - {}".format(pkg))
+        ret.append("")
+
+    ret.append("Please set the 'aliases' attribute in your toolchain definition.")
+    sys.exit('\n'.join(ret))
 
 for pkg_name, pkg_id in pkg_id_map:
     if pkg_id != pkg_name:

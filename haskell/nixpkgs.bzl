@@ -246,13 +246,18 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         basename = target.rpartition("/")[-1]
         repository_ctx.symlink(target, basename)
 
+    # convert the aliases dict to a list key, val, key, val
+    aliases_list = []
+    for key, val in repository_ctx.attr.aliases.items():
+        aliases_list.extend([key, val])
+
     # Generate BUILD file entries describing each prebuilt package.
     pkgdb_to_bzl = repository_ctx.path(Label("@io_tweag_rules_haskell//haskell:private/pkgdb_to_bzl.py"))
     result = repository_ctx.execute([
         pkgdb_to_bzl,
         repository_ctx.attr.name,
         "lib/ghc-{}".format(repository_ctx.attr.version),
-    ])
+    ] + aliases_list)
     if result.return_code:
         fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
     toolchain_libraries = result.stdout
@@ -318,6 +323,24 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         "locale": attr.string(
             default = "en_US.UTF-8",
         ),
+        "aliases": attr.string_dict(
+            default = {},
+            doc = """
+This is a list of alias for module export name. A dictionary of (prefix, alias) used to rename bazel rule based on the package id of the haskell package.
+
+If this dict is empty, haskell package will be exported using their unqualified package name. For example, 'megaparsec-6.0-packageID' will be exported as 'megaparsec'.
+
+You can override this default behavior by setting this dictionary. A package id prefix is matched from dict keys and the export name is replaced by the dict value.
+
+For example, with a dict of
+
+{
+   "megaparsec-6.0": "megaparsec-6.0"
+}
+
+Will match the package ID 'megaparsec-6.0.-packageID' and export it as 'megaparsec-6.0' instead of 'megaparsec'.
+                                    """,
+        ),
         "tools": attr.label_list(),
     },
 )
@@ -370,6 +393,7 @@ def haskell_register_ghc_nixpkgs(
         locale = None,
         repositories = {},
         tools = [],
+        aliases = {},
         nix_file_content = ""):
     """Register a package from Nixpkgs as a toolchain.
 
@@ -426,6 +450,7 @@ def haskell_register_ghc_nixpkgs(
         locale_archive = locale_archive,
         locale = locale,
         tools = tools,
+        aliases = aliases,
     )
 
     # toolchain definition.
