@@ -41,6 +41,33 @@ def path_to_label(path, pkgroot):
     if topdir_relative_path.find("$topdir") != -1:
         return topdir_relative_path.replace("$topdir", topdir).replace('\\', '/')
 
+def hs_library_pattern(name, mode = "static", config = ""):
+    """Convert hs-libraries entry to glob patterns.
+
+    Args:
+        name: The library name. E.g. HSrts or Cffi.
+        mode: The linking mode. Either "static" or "dynamic".
+        suffix: The RTS configuration suffix. See https://gitlab.haskell.org/ghc/ghc/wikis/commentary/rts/config#rts-configurations
+
+    Returns:
+        List of globbing patterns for the library file.
+
+    """
+    if name == "Cffi" and mode == "dynamic":
+        libname = "ffi"
+    else:
+        libname = name + config
+        if mode == "dynamic":
+            libname += "-ghc*"
+    if mode == "dynamic":
+        exts = ["so", "dylib", "dll"]
+    else:
+        exts = ["a"]
+    return [
+        "lib{}.{}".format(libname, ext)
+        for ext in exts
+    ]
+
 output = []
 
 # Accumulate package id to package name mappings.
@@ -121,30 +148,25 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                     if path_to_label(include_dir, pkg.pkgroot)
                 ],
                 static_libraries = "glob({})".format([
-                    path_to_label("{}/lib{}.a".format(library_dir, hs_library), pkg.pkgroot)
+                    path_to_label("{}/{}".format(library_dir, pattern), pkg.pkgroot)
                     for hs_library in pkg.hs_libraries
+                    for pattern in hs_library_pattern(hs_library, mode = "static", config = "")
                     for library_dir in pkg.library_dirs
                     if path_to_label(library_dir, pkg.pkgroot)
                 ]),
                 static_profiling_libraries = "glob({})".format([
-                    path_to_label("{}/lib{}_p.a".format(library_dir, hs_library), pkg.pkgroot)
+                    path_to_label("{}/{}".format(library_dir, pattern), pkg.pkgroot)
                     for hs_library in pkg.hs_libraries
+                    for pattern in hs_library_pattern(hs_library, mode = "static", config = "_p")
                     for library_dir in pkg.library_dirs
                     if path_to_label(library_dir, pkg.pkgroot)
                 ]),
                 shared_libraries = "glob({})".format([
-                    path_to_label(
-                        "{}/lib{}-ghc*.{}".format(
-                            dynamic_library_dir,
-                            hs_library,
-                            ext,
-                        ),
-                        pkg.pkgroot,
-                    )
+                    path_to_label("{}/{}".format(dynamic_library_dir, pattern), pkg.pkgroot)
                     for hs_library in pkg.hs_libraries
+                    for pattern in hs_library_pattern(hs_library, mode = "dynamic", config = "")
                     for dynamic_library_dir in pkg.dynamic_library_dirs + pkg.library_dirs
                     if path_to_label(dynamic_library_dir, pkg.pkgroot)
-                    for ext in ["dll", "dylib", "so"]
                 ]),
                 deps = pkg.depends,
                 linkopts = pkg.ld_options + [

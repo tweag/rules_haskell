@@ -26,6 +26,7 @@ load(
     ":private/path_utils.bzl",
     "get_dynamic_hs_lib_name",
     "get_lib_name",
+    "get_static_hs_lib_name",
     "ln",
     "match_label",
     "parse_pattern",
@@ -646,7 +647,7 @@ Check that it ships with your version of GHC.
         for lib in target[HaskellImportHack].dynamic_libraries
     }
     for lib in target[HaskellImportHack].static_libraries:
-        name = get_lib_name(lib)
+        name = get_static_hs_lib_name(lib)
         entry = libs.get(name, {})
         entry["static"] = lib
         libs[name] = entry
