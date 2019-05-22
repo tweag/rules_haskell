@@ -102,7 +102,7 @@ noTestlogError :: String
 noTestlogError =
   unlines
     [ "ERROR: You must specify the testlog XML file location with --testlog."
-    , "It is found inside the bazel-testlog, in the respective"
+    , "It is found inside the bazel-testlog directory, in the respective"
     , "folder for the test you're interested in."
     , "This must be after having run 'bazel coverage'."
     ]
