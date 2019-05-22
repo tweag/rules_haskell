@@ -250,3 +250,10 @@ GhcPluginInfo = provider(
         "tool_input_manifests": "Plugin tools input manifests.",
     },
 )
+
+# We should not need this provider. It exists purely as a workaround
+# for https://github.com/bazelbuild/bazel/issues/8129.
+#
+# TODO Get rid of this by computing a CcInfo in haskell_import
+# instead. Currently blocked on upstream.
+HaskellImportHack = provider()

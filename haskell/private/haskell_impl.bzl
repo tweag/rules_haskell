@@ -3,6 +3,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
+    "HaskellImportHack",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellPackageConfiguration",
@@ -572,13 +573,6 @@ def haskell_library_impl(ctx):
         default_info,
         lib_info,
     ]
-
-# We should not need this provider. It exists purely as a workaround
-# for https://github.com/bazelbuild/bazel/issues/8129.
-#
-# TODO Get rid of this by computing a CcInfo in haskell_import
-# instead. Currently blocked on upstream.
-HaskellImportHack = provider()
 
 def haskell_toolchain_library_impl(ctx):
     hs = haskell_context(ctx)

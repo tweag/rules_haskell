@@ -233,6 +233,10 @@ def package_from_configuration(
             if v
         ]) + "\n",
     )
+    cache_file = ghc_pkg_recache(ctx, ghc_pkg, conf_file)
+    return (conf_file, cache_file)
+
+def ghc_pkg_recache(ctx, ghc_pkg, conf_file):
     cache_file = ctx.actions.declare_file("package.cache", sibling = conf_file)
     ctx.actions.run(
         executable = ghc_pkg,
@@ -245,8 +249,6 @@ def package_from_configuration(
         mnemonic = "HaskellRegisterToolchainPackage",
         progress_message = "HaskellRegisterToolchainPackage {}".format(ctx.label),
         outputs = [cache_file],
-        inputs = depset(
-            direct = [conf_file] + package_conf.import_dirs,
-        ),
+        inputs = depset(direct = [conf_file]),
     )
-    return (conf_file, cache_file)
+    return cache_file

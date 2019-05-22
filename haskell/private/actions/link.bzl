@@ -1,5 +1,6 @@
 """Actions for linking object code produced by compilation"""
 
+load(":private/actions/package.bzl", "ghc_pkg_recache")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
@@ -12,6 +13,7 @@ load(
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/list.bzl", "list")
+load(":providers.bzl", "HaskellImportHack")
 
 # tests in /tests/unit_tests/BUILD
 def parent_dir_path(path):
@@ -357,8 +359,10 @@ def link_binary(
     executable = hs.actions.declare_file(exe_name)
 
     args = hs.actions.args()
-    args.add_all(["-optl" + f for f in cc.linker_flags])
+    # XXX: Shift these into cc_info
+    #args.add_all(["-optl" + f for f in cc.linker_flags])
     if with_profiling:
+        # XXX: Handle profiling
         args.add("-prof")
     args.add_all(hs.toolchain.compiler_flags)
     args.add_all(compiler_flags)
@@ -371,42 +375,69 @@ def link_binary(
     # this is when we are compiling for profiling, which currently does not play
     # nicely with dynamic linking.
     if dynamic:
+        # XXX: Handle these.
         if with_profiling:
             print("WARNING: dynamic linking and profiling don't mix. Omitting -dynamic.\nSee https://ghc.haskell.org/trac/ghc/ticket/15394")
         else:
             args.add_all(["-pie", "-dynamic"])
 
-    # When compiling with `-threaded`, GHC needs to link against
-    # the pthread library when linking against static archives (.a).
-    # We assume it’s not a problem to pass it for other cases,
-    # so we just default to passing it.
-    args.add("-optl-pthread")
-
     args.add_all(["-o", executable.path])
 
-    # De-duplicate optl calls while preserving ordering: we want last
-    # invocation of an object to remain last. That is `-optl foo -optl
-    # bar -optl foo` becomes `-optl bar -optl foo`. Do this by counting
-    # number of occurrences. That way we only build dict and add to args
-    # directly rather than doing multiple reversals with temporary
-    # lists.
-
-    args.add_all(pkg_info_to_compile_flags(expose_packages(
-        dep_info.hs_info,
-        lib_info = None,
-        use_direct = True,
-        use_my_pkg_id = None,
-        custom_package_databases = None,
-        version = version,
-    )))
-
-    (cc_link_libs, cc_solibs, hs_solibs) = _link_dependencies(
-        hs = hs,
-        dep_info = dep_info,
-        dynamic = dynamic,
-        binary = executable,
-        args = args,
+    # GHC will pass all `-l` `-optl` flags to gcc before the object files. This
+    # would cause missing symbol errors in case of static linking. To work
+    # around this we create a dummy package configuration containing all
+    # required linker flags so that they appear in the right place on the gcc
+    # command line.
+    lib_dirs = depset()
+    lib_files = depset(order = "topological")
+    for lib_to_link in dep_info.cc_info.linking_context.libraries_to_link:
+        # XXX: dynamic linking mode
+        # XXX: Handle static library name clashes.
+        #      Maybe by passing archive file paths in ld-options.
+        lib = None
+        if lib_to_link.static_library:
+            lib = lib_to_link.static_library
+        elif lib_to_link.pic_static_library:
+            lib = lib_to_link.pic_static_library
+        elif lib_to_link.dynamic_library:
+            lib = lib_to_link.dynamic_library
+        elif lib_to_link.interface_library:
+            lib = lib_to_link.interface_library
+        else:
+            continue
+        lib_dirs = depset(direct = [lib.dirname], transitive = [lib_dirs])
+        lib_files = depset(direct = [lib], transitive = [lib_files])
+    package_name = "{}-linkflags".format(hs.name)
+    package_conf = hs.actions.args()
+    package_conf.add(package_name, format = "name: %s")
+    package_conf.add_joined(
+        lib_dirs,
+        join_with = " ",
+        format_joined = "library-dirs: %s",
     )
+    package_conf.add_joined(
+        lib_files,
+        join_with = " ",
+        map_each = get_lib_name,
+        format_joined = "extra-libraries: %s",
+    )
+    package_conf.add_joined(
+        dep_info.cc_info.linking_context.user_link_flags,
+        join_with = " ",
+        format_each = '"%s"',
+        format_joined = "ld-options: %s",
+    )
+    package_conf.add_joined(
+        # GHC requries the Rts.h header during linking.
+        hs.toolchain.libraries["rts"][HaskellImportHack].includes,
+        join_with = " ",
+        format_joined = "include-dirs: %s",
+    )
+    package_conf.set_param_file_format("multiline")
+    conf_file = hs.actions.declare_file("{0}.db/{0}.conf".format(package_name))
+    hs.actions.write(conf_file, package_conf)
+    cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
+    args.add_all(["-package-db", cache_file.dirname, "-package", package_name])
 
     # XXX: Suppress a warning that Clang prints due to GHC automatically passing
     # "-pie" or "-no-pie" to the C compiler.
@@ -440,7 +471,7 @@ def link_binary(
             objects_dir,
             executable,
             dynamic,
-            cc_solibs,
+            [],
         )
 
     if extra_linker_flags_file != None:
@@ -451,14 +482,16 @@ def link_binary(
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
-        inputs = depset(transitive = [
+        inputs = depset(direct = [cache_file], transitive = [
             depset(extra_srcs),
             set.to_depset(dep_info.hs_info.package_databases),
             set.to_depset(dep_info.hs_info.dynamic_libraries),
             depset(dep_info.hs_info.static_libraries),
             depset(dep_info.hs_info.static_libraries_prof),
+            lib_files,
             depset([objects_dir]),
-            cc_link_libs,
+            # GHC requries the Rts.h header during linking.
+            hs.toolchain.libraries["rts"][HaskellImportHack].headers,
         ]),
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
@@ -466,7 +499,7 @@ def link_binary(
         params_file = params_file,
     )
 
-    return (executable, cc_solibs + hs_solibs)
+    return (executable, [])
 
 def _add_external_libraries(args, ext_libs):
     """Add options to `args` that allow us to link to `ext_libs`.
@@ -485,15 +518,6 @@ def _add_external_libraries(args, ext_libs):
     deduped = list.dedup_on(get_lib_name, ext_libs)
 
     for lib in deduped:
-        # This test is a hack. When a CC library has a Haskell library
-        # as a dependency, we need to be careful to filter it out,
-        # otherwise it will end up polluting the linker flags. GHC
-        # already uses hs-libraries to link all Haskell libraries.
-        #
-        # TODO Get rid of this hack. See
-        # https://github.com/tweag/rules_haskell/issues/873.
-        if get_lib_name(lib).startswith("HS"):
-            continue
         args.add_all([
             "-L{0}".format(
                 paths.dirname(lib.path),
