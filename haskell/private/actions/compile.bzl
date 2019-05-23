@@ -464,9 +464,6 @@ def compile_library(
         dep_info,
         plugin_dep_info,
         srcs,
-        ls_modules,
-        other_modules,
-        exposed_modules_reexports,
         import_dir_map,
         extra_srcs,
         user_compile_flags,
@@ -512,13 +509,6 @@ def compile_library(
         arguments = c.args,
     )
 
-    if with_profiling:
-        exposed_modules_file = None
-    else:
-        exposed_modules_file = list_exposed_modules(
-            hs, ls_modules, other_modules, exposed_modules_reexports, c.interfaces_dir
-        )
-
     return struct(
         interfaces_dir = c.interfaces_dir,
         objects_dir = c.objects_dir,
@@ -526,7 +516,6 @@ def compile_library(
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        exposed_modules_file = exposed_modules_file,
         coverage_data = coverage_data,
     )
 
