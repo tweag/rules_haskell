@@ -128,6 +128,14 @@ def _haskell_binary_common_impl(ctx, is_test):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
+    dynamic = not ctx.attr.linkstatic
+    if with_profiling or hs.toolchain.is_windows:
+        # NOTE We can't have profiling and dynamic code at the
+        # same time, see:
+        # https://ghc.haskell.org/trac/ghc/ticket/15394
+        # Also, GHC on Windows doesn't support dynamic code
+        dynamic = False
+
     c = hs.toolchain.actions.compile_binary(
         hs,
         cc,
@@ -139,8 +147,8 @@ def _haskell_binary_common_impl(ctx, is_test):
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         user_compile_flags = ctx.attr.compiler_flags,
-        dynamic = False if hs.toolchain.is_windows else not ctx.attr.linkstatic,
-        with_profiling = False,
+        dynamic = dynamic,
+        with_profiling = with_profiling,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
@@ -153,38 +161,14 @@ def _haskell_binary_common_impl(ctx, is_test):
         if HaskellCoverageInfo in dep:
             coverage_data += dep[HaskellCoverageInfo].coverage_data
 
-    c_p = None
-
-    if with_profiling:
-        c_p = hs.toolchain.actions.compile_binary(
-            hs,
-            cc,
-            java,
-            dep_info,
-            plugin_dep_info,
-            srcs = srcs_files,
-            ls_modules = ctx.executable._ls_modules,
-            import_dir_map = import_dir_map,
-            extra_srcs = depset(ctx.files.extra_srcs),
-            user_compile_flags = ctx.attr.compiler_flags,
-            # NOTE We can't have profiling and dynamic code at the
-            # same time, see:
-            # https://ghc.haskell.org/trac/ghc/ticket/15394
-            dynamic = False,
-            with_profiling = True,
-            main_function = ctx.attr.main_function,
-            version = ctx.attr.version,
-            plugins = ctx.attr.plugins,
-        )
-
     (binary, solibs) = link_binary(
         hs,
         cc,
         dep_info,
         ctx.files.extra_srcs,
         ctx.attr.compiler_flags,
-        c_p.objects_dir if with_profiling else c.objects_dir,
-        dynamic = False if hs.toolchain.is_windows else not ctx.attr.linkstatic,
+        c.objects_dir,
+        dynamic = dynamic,
         with_profiling = with_profiling,
         version = ctx.attr.version,
     )
@@ -197,7 +181,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         static_libraries = dep_info.static_libraries,
-        static_libraries_prof = dep_info.static_libraries_prof,
         dynamic_libraries = dep_info.dynamic_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = c.compile_flags,
@@ -313,19 +296,25 @@ def haskell_library_impl(ctx):
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
     )
-    package_name = getattr(ctx.attr, "package_name", None)
-    version = getattr(ctx.attr, "version", None)
-    my_pkg_id = pkg_id.new(ctx.label, package_name, version)
-    with_profiling = is_profiling_enabled(hs)
-    with_shared = False if hs.toolchain.is_windows else not ctx.attr.linkstatic
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
 
+    with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
-    other_modules = ctx.attr.hidden_modules
-    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
+
+    with_shared = not ctx.attr.linkstatic
+    if with_profiling or hs.toolchain.is_windows:
+        # NOTE We can't have profiling and dynamic code at the
+        # same time, see:
+        # https://ghc.haskell.org/trac/ghc/ticket/15394
+        # Also, GHC on Windows doesn't support dynamic code
+        with_shared = False
+
+    package_name = getattr(ctx.attr, "package_name", None)
+    version = getattr(ctx.attr, "version", None)
+    my_pkg_id = pkg_id.new(ctx.label, package_name, version)
 
     c = hs.toolchain.actions.compile_library(
         hs,
@@ -338,40 +327,21 @@ def haskell_library_impl(ctx):
         extra_srcs = depset(ctx.files.extra_srcs),
         user_compile_flags = ctx.attr.compiler_flags,
         with_shared = with_shared,
-        with_profiling = False,
+        with_profiling = with_profiling,
         my_pkg_id = my_pkg_id,
         plugins = ctx.attr.plugins,
     )
 
+    other_modules = ctx.attr.hidden_modules
+    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
     exposed_modules_file = list_exposed_modules(
         hs,
         ls_modules = ctx.executable._ls_modules,
         other_modules = other_modules,
         exposed_modules_reexports = exposed_modules_reexports,
         interfaces_dir = c.interfaces_dir,
+        with_profiling = with_profiling,
     )
-
-    c_p = None
-
-    if with_profiling:
-        c_p = hs.toolchain.actions.compile_library(
-            hs,
-            cc,
-            java,
-            dep_info,
-            plugin_dep_info,
-            srcs = srcs_files,
-            import_dir_map = import_dir_map,
-            extra_srcs = depset(ctx.files.extra_srcs),
-            user_compile_flags = ctx.attr.compiler_flags,
-            # NOTE We can't have profiling and dynamic code at the
-            # same time, see:
-            # https://ghc.haskell.org/trac/ghc/ticket/15394
-            with_shared = False,
-            with_profiling = True,
-            my_pkg_id = my_pkg_id,
-            plugins = ctx.attr.plugins,
-        )
 
     static_library = link_library_static(
         hs,
@@ -379,7 +349,7 @@ def haskell_library_impl(ctx):
         dep_info,
         c.objects_dir,
         my_pkg_id,
-        with_profiling = False,
+        with_profiling = with_profiling,
     )
 
     if with_shared:
@@ -396,41 +366,19 @@ def haskell_library_impl(ctx):
         dynamic_library = None
         dynamic_libraries = dep_info.dynamic_libraries
 
-    static_library_prof = None
-    if with_profiling:
-        static_library_prof = link_library_static(
-            hs,
-            cc,
-            dep_info,
-            c_p.objects_dir,
-            my_pkg_id,
-            with_profiling = True,
-        )
-
     conf_file, cache_file = package(
         hs,
         dep_info,
         c.interfaces_dir,
-        c_p.interfaces_dir if c_p != None else None,
         static_library,
         dynamic_library,
         exposed_modules_file,
         other_modules,
         my_pkg_id,
-        static_library_prof = static_library_prof,
     )
 
-    static_libraries_prof = dep_info.static_libraries_prof
-
-    if static_library_prof != None:
-        static_libraries_prof = depset(
-            direct = [static_library_prof],
-            transitive = [dep_info.static_libraries_prof],
-            order = "topological",
-        )
-
     interface_dirs = depset(
-        direct = [c.interfaces_dir] + ([c_p.interfaces_dir] if c_p else []),
+        direct = [c.interfaces_dir],
         transitive = [dep_info.interface_dirs],
     )
 
@@ -459,7 +407,6 @@ def haskell_library_impl(ctx):
             transitive = [dep_info.static_libraries],
             order = "topological",
         ),
-        static_libraries_prof = static_libraries_prof,
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
@@ -610,16 +557,27 @@ Check that it ships with your version of GHC.
         unsupported_features = ctx.disabled_features,
     )
 
-    # Workaround for https://github.com/tweag/rules_haskell/issues/881
-    # Static and dynamic libraries don't necessarily pair up 1 to 1.
-    # E.g. the rts package in the Unix GHC bindist contains the
-    # dynamic libHSrts and the static libCffi and libHSrts.
-    libs = {
-        get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
-        for lib in target[HaskellImportHack].dynamic_libraries.to_list()
-    }
-    for lib in target[HaskellImportHack].static_libraries.to_list():
-        name = get_static_hs_lib_name(lib)
+    with_profiling = is_profiling_enabled(hs)
+
+    if with_profiling:
+        # GHC does not provide dynamic profiling mode libraries. The dynamic
+        # libraries that are available are missing profiling symbols, that
+        # other profiling mode build results will reference. Therefore, we
+        # don't import dynamic libraries in profiling mode.
+        libs = {}
+        static_libraries = target[HaskellImportHack].static_profiling_libraries.to_list()
+    else:
+        # Workaround for https://github.com/tweag/rules_haskell/issues/881
+        # Static and dynamic libraries don't necessarily pair up 1 to 1.
+        # E.g. the rts package in the Unix GHC bindist contains the
+        # dynamic libHSrts and the static libCffi and libHSrts.
+        libs = {
+            get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
+            for lib in target[HaskellImportHack].dynamic_libraries.to_list()
+        }
+        static_libraries = target[HaskellImportHack].static_libraries.to_list()
+    for lib in static_libraries:
+        name = get_static_hs_lib_name(with_profiling, lib)
         entry = libs.get(name, {})
         entry["static"] = lib
         libs[name] = entry
@@ -672,7 +630,6 @@ def haskell_import_impl(ctx):
         source_files = set.empty(),
         extra_source_files = depset(),
         static_libraries = depset(),
-        static_libraries_prof = depset(),
         dynamic_libraries = depset(),
         interface_dirs = depset(),
         compile_flags = [],
@@ -688,6 +645,15 @@ def haskell_import_impl(ctx):
         ]),
         static_libraries = depset(ctx.files.static_libraries, order = "topological", transitive = [
             dep[HaskellImportHack].static_libraries
+            for dep in ctx.attr.deps
+        ]),
+        # NOTE: haskell_import is evaluated as a toolchain rule. Even if we
+        # bazel build with -c dbg, this rule is still executed with
+        # ctx.var["COMPILATION_MODE"] == "opt". Therefore, we need to carry
+        # both profiling and non-profiling libraries forward so that a later
+        # haskell_toolchain_library can select the appropriate artifacts.
+        static_profiling_libraries = depset(ctx.files.static_profiling_libraries, order = "topological", transitive = [
+            dep[HaskellImportHack].static_profiling_libraries
             for dep in ctx.attr.deps
         ]),
         headers = depset(ctx.files.hdrs, transitive = [

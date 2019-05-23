@@ -456,7 +456,6 @@ def link_binary(
             dep_info.package_databases,
             dep_info.dynamic_libraries,
             dep_info.static_libraries,
-            dep_info.static_libraries_prof,
             depset([objects_dir]),
             cc_link_libs,
         ]),

@@ -16,14 +16,15 @@ import re
 import sys
 import io
 
-if len(sys.argv) != 6:
-    sys.exit("Usage: %s <DIRECTORY> <GLOBAL_PKG_DB> <HIDDEN_MODS_FILE> <REEXPORTED_MODS_FILE> <RESULT_FILE>" % sys.argv[0])
+if len(sys.argv) != 7:
+    sys.exit("Usage: %s <WITH_PROFILING> <DIRECTORY> <GLOBAL_PKG_DB> <HIDDEN_MODS_FILE> <REEXPORTED_MODS_FILE> <RESULT_FILE>" % sys.argv[0])
 
-root = sys.argv[1]
-global_pkg_db_dump = sys.argv[2]
-hidden_modules_file = sys.argv[3]
-reexported_modules_file = sys.argv[4]
-results_file = sys.argv[5]
+with_profiling = sys.argv[1] == 'True'
+root = sys.argv[2]
+global_pkg_db_dump = sys.argv[3]
+hidden_modules_file = sys.argv[4]
+reexported_modules_file = sys.argv[5]
+results_file = sys.argv[6]
 
 with io.open(global_pkg_db_dump, "r", encoding='utf8') as f:
     names = [line.split()[1] for line in f if line.startswith("name:")]
@@ -87,7 +88,7 @@ On Windows you may need to enable long file path support:
 interface_files = (
     os.path.join(path, f)
     for path, dirs, files in os.walk(root, onerror=handle_walk_error)
-    for f in fnmatch.filter(files, '*.hi')
+    for f in fnmatch.filter(files, '*.p_hi' if with_profiling else '*.hi')
 )
 
 modules = (

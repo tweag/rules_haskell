@@ -176,7 +176,6 @@ def gather_dep_info(ctx, deps):
         package_databases = package_databases,
         version_macros = set.empty(),
         static_libraries = static_libraries,
-        static_libraries_prof = static_libraries_prof,
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         cc_dependencies = empty_HaskellCcInfo(),
@@ -193,7 +192,6 @@ def gather_dep_info(ctx, deps):
                 package_databases = acc.package_databases,
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
                 static_libraries = acc.static_libraries + binfo.static_libraries,
-                static_libraries_prof = acc.static_libraries_prof + binfo.static_libraries_prof,
                 dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
                 cc_dependencies = acc.cc_dependencies,
@@ -209,7 +207,6 @@ def gather_dep_info(ctx, deps):
                 package_databases = acc.package_databases,
                 version_macros = acc.version_macros,
                 static_libraries = acc.static_libraries,
-                static_libraries_prof = acc.static_libraries_prof,
                 dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
                 cc_dependencies = merge_HaskellCcInfo(

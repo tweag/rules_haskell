@@ -155,16 +155,13 @@ def _haskell_cabal_library_impl(ctx):
         "_install/iface",
         sibling = cabal,
     )
+    static_library_filename = "_install/lib/libHS{}.a".format(name)
+    if with_profiling:
+        static_library_filename = "_install/lib/libHS{}_p.a".format(name)
     static_library = hs.actions.declare_file(
-        "_install/lib/libHS{}.a".format(name),
+        static_library_filename,
         sibling = cabal,
     )
-    static_library_prof = None
-    if with_profiling:
-        static_library_prof = hs.actions.declare_file(
-            "_install/lib/libHS{}_p.a".format(name),
-            sibling = cabal,
-        )
     dynamic_library = hs.actions.declare_file(
         "_install/lib/libHS{}-ghc{}.{}".format(name, hs.toolchain.version, _so_extension(hs)),
         sibling = cabal,
@@ -189,7 +186,7 @@ def _haskell_cabal_library_impl(ctx):
             interfaces_dir,
             static_library,
             dynamic_library,
-        ] + ([static_library_prof] if with_profiling else []),
+        ],
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
         progress_message = "HaskellCabalLibrary {}".format(hs.label),
@@ -207,11 +204,6 @@ def _haskell_cabal_library_impl(ctx):
         static_libraries = depset(
             direct = [static_library],
             transitive = [dep_info.static_libraries],
-            order = "topological",
-        ),
-        static_libraries_prof = depset(
-            direct = [static_library_prof] if with_profiling else [],
-            transitive = [dep_info.static_libraries_prof],
             order = "topological",
         ),
         dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries]),
@@ -344,7 +336,6 @@ def _haskell_cabal_binary_impl(ctx):
         extra_source_files = depset(),
         import_dirs = set.empty(),
         static_libraries = dep_info.static_libraries,
-        static_libraries_prof = dep_info.static_libraries_prof,
         dynamic_libraries = dep_info.dynamic_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = [],

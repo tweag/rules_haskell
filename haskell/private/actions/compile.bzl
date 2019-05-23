@@ -113,8 +113,8 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     ]
     compile_flags += cc_args
 
-    interface_dir_raw = "_iface_prof" if with_profiling else "_iface"
-    object_dir_raw = "_obj_prof" if with_profiling else "_obj"
+    interface_dir_raw = "_iface"
+    object_dir_raw = "_obj"
 
     # Declare file directories.
     #
@@ -333,7 +333,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             dep_info.package_databases,
             dep_info.interface_dirs,
             dep_info.static_libraries,
-            dep_info.static_libraries_prof,
             dep_info.dynamic_libraries,
             plugin_dep_info.package_databases,
             plugin_dep_info.interface_dirs,
@@ -503,7 +502,8 @@ def list_exposed_modules(
         ls_modules,
         other_modules,
         exposed_modules_reexports,
-        interfaces_dir):
+        interfaces_dir,
+        with_profiling):
     """Construct file listing the exposed modules of this package.
 
     Args:
@@ -512,6 +512,7 @@ def list_exposed_modules(
       other_modules: List of hidden modules.
       exposed_modules_reexports: List of re-exported modules.
       interfaces_dir: The directory containing the interface files.
+      with_profiling: Whether we're building in profiling mode.
 
     Returns:
       File: File holding the package ceonfiguration exposed-modules value.
@@ -543,6 +544,7 @@ def list_exposed_modules(
         outputs = [exposed_modules_file],
         executable = ls_modules,
         arguments = [
+            str(with_profiling),
             interfaces_dir.path,
             hs.toolchain.global_pkg_db.path,
             hidden_modules_file.path,

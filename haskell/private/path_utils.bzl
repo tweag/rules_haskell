@@ -225,20 +225,23 @@ def get_dynamic_hs_lib_name(ghc_version, lib):
         name = name[:-len(suffix)]
     return name
 
-def get_static_hs_lib_name(lib):
-    """Return name of library by dropping extension, "lib" prefix.
-
-    Takes the unusual case of libCffi.a into account.
+def get_static_hs_lib_name(with_profiling, lib):
+    """Return name of library by dropping extension,
+    "lib" prefix, and potential profiling suffix.
 
     Args:
+      with_profiling: Whether profiling mode is enabled.
       lib: The library File.
 
     Returns:
       String: name of library.
     """
     name = get_lib_name(lib)
+    suffix = "_p" if with_profiling else ""
+    if name.endswith(suffix):
+        name = name[:-len(suffix)]
     if name == "Cffi":
-        return "ffi"
+        name = "ffi"
     return name
 
 def link_libraries(libs_to_link, args):
