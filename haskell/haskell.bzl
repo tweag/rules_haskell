@@ -297,7 +297,8 @@ haskell_import = rule(
         "linkopts": attr.string_list(),
         "hdrs": attr.label_list(allow_files = True),
         "includes": attr.string_list(),
-        "import_dirs": attr.label_list(allow_files = True),
+        "interface_dirs": attr.label_list(allow_files = True),
+        "interface_files": attr.label_list(allow_files = [".hi", ".p_hi", ".dyn_hi"]),
         "exposed_modules": attr.string_list(),
         "hidden_modules": attr.string_list(),
         "ghc_pkg": attr.label(

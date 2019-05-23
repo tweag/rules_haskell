@@ -6,7 +6,6 @@ load(
     "HaskellImportHack",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "HaskellPackageConfiguration",
     "HaskellPrebuiltPackageInfo",
     "empty_HaskellCcInfo",
 )
@@ -17,7 +16,7 @@ load(
     "link_library_dynamic",
     "link_library_static",
 )
-load(":private/actions/package.bzl", "package", "package_from_configuration")
+load(":private/actions/package.bzl", "package", "ghc_pkg_recache")
 load(":private/actions/repl.bzl", "build_haskell_repl")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
 load(":private/context.bzl", "haskell_context")
@@ -688,49 +687,57 @@ def haskell_import_impl(ctx):
         file
         for file in ctx.files.static_libraries + ctx.files.shared_libraries
     ]
-    package_conf = HaskellPackageConfiguration(
-        name = ctx.attr.name,
-        id = ctx.attr.id,
-        version = ctx.attr.version,
-        exposed = True,
-        exposed_modules = ctx.attr.exposed_modules,
-        hidden_modules = ctx.attr.hidden_modules,
-        import_dirs = ctx.files.import_dirs,
-        depends = [
-            # XXX: Do we need to handle HaskellInfo dependencies?
-            dep[HaskellPackageConfiguration].id
-            for dep in ctx.attr.deps
-            if HaskellPackageConfiguration in dep
-        ],
+    package_conf = ctx.actions.args()
+    package_conf.add(ctx.attr.name, format = "name: %s")
+    package_conf.add(ctx.attr.id, format = "id: %s")
+    package_conf.add(ctx.attr.version, format = "version: %s")
+    package_conf.add(True, format = "exposed: %s")
+    package_conf.add_joined(
+        ctx.attr.exposed_modules,
+        join_with = " ",
+        format_joined = "exposed-modules: %s",
     )
-    (conf_file, cache_file) = package_from_configuration(
-        ctx,
-        ctx.executable.ghc_pkg,
-        package_conf,
+    package_conf.add_joined(
+        ctx.attr.hidden_modules,
+        join_with = " ",
+        format_joined = "hidden-modules: %s",
     )
+    package_conf.add_joined(
+        ctx.files.interface_dirs,
+        join_with = " ",
+        format_joined = "import-dirs: %s",
+    )
+    package_conf.add_joined(
+        [dep[HaskellLibraryInfo].package_id for dep in ctx.attr.deps],
+        join_with = ", ",
+        format_joined = "depends: %s",
+    )
+    package_conf.set_param_file_format("multiline")
+    conf_file = ctx.actions.declare_file("{0}.db/{0}.conf".format(ctx.attr.id))
+    ctx.actions.write(conf_file, package_conf)
+    cache_file = ghc_pkg_recache(ctx, ctx.executable.ghc_pkg, conf_file)
     version_macros = set.empty()
     if ctx.attr.version != None:
         version_macros = set.singleton(
             generate_version_macros(ctx, ctx.label.name, ctx.attr.version),
         )
     package_databases = set.singleton(cache_file)
-    import_dirs = set.from_list(ctx.files.import_dirs)
+    interface_dirs = set.from_list(ctx.files.interface_files)
     for dep in ctx.attr.deps:
         if HaskellInfo in dep:
             set.mutable_union(package_databases, dep[HaskellInfo].package_databases)
-            set.mutable_union(import_dirs, dep[HaskellInfo].import_dirs)
+            set.mutable_union(interface_dirs, dep[HaskellInfo].interface_dirs)
     hs_info = HaskellInfo(
         package_ids = set.singleton(id),
-        # XXX Empty set of conf and cache files only works for global db.
         package_databases = package_databases,
         version_macros = version_macros,
-        import_dirs = import_dirs,
+        import_dirs = set.empty(),
         source_files = set.empty(),
         extra_source_files = set.empty(),
         static_libraries = [],
         static_libraries_prof = [],
         dynamic_libraries = set.empty(),
-        interface_dirs = import_dirs,
+        interface_dirs = interface_dirs,
         compile_flags = set.empty(),
         prebuilt_dependencies = set.empty(),
         direct_prebuilt_deps = set.empty(),
@@ -773,7 +780,6 @@ def haskell_import_impl(ctx):
     )
 
     return [
-        package_conf,
         hs_info,
         import_info,
         coverage_info,

@@ -139,7 +139,8 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                 shared_libraries = {shared_libraries},
                 static_libraries = {static_libraries},
                 static_profiling_libraries = {static_profiling_libraries},
-                import_dirs = {import_dirs},
+                interface_dirs = {interface_dirs},
+                interface_files = {interface_files},
                 exposed_modules = {exposed_modules},
                 hidden_modules = {hidden_modules},
                 version = "{version}",
@@ -190,9 +191,14 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                     "-l{}".format(extra_library)
                     for extra_library in pkg.extra_libraries
                 ],
-                import_dirs = "{}".format([
+                interface_dirs = "{}".format([
                     path_to_label(import_dir, pkg.pkgroot)
                     for import_dir in pkg.import_dirs
+                ]),
+                interface_files = "glob({})".format([
+                    path_to_label("{}/**/*.{}".format(import_dir, ext), pkg.pkgroot)
+                    for import_dir in pkg.import_dirs
+                    for ext in ["hi", "p_hi", "dyn_hi"]
                 ]),
                 exposed_modules = "{}".format(pkg.exposed_modules),
                 hidden_modules = "{}".format(pkg.hidden_modules),
