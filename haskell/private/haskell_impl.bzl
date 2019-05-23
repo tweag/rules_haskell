@@ -418,24 +418,51 @@ def haskell_library_impl(ctx):
             my_pkg_id,
             with_profiling = True,
         )
-
-    conf_file, cache_file = package(
-        hs,
-        dep_info,
-        c.interfaces_dir,
-        c_p.interfaces_dir if c_p != None else None,
-        static_library,
-        dynamic_library,
-        c.exposed_modules_file,
+    package_conf = ctx.actions.args()
+    package_conf.add(my_pkg_id.package_name, format = "name: %s")
+    package_conf.add(pkg_id.to_string(my_pkg_id), format = "id: %s")
+    package_conf.add(pkg_id.to_string(my_pkg_id), format = "key: %s")
+    if my_pkg_id.version:
+        package_conf.add(my_pkg_id.version, format = "version: %s")
+    package_conf.add(True, format = "exposed: %s")
+    package_conf.add_joined(
         other_modules,
-        my_pkg_id,
-        static_library_prof = static_library_prof,
+        join_with = " ",
+        format_joined = "hidden-modules: %s",
     )
-
-    static_libraries_prof = dep_info.hs_info.static_libraries_prof
-
-    if static_library_prof != None:
-        static_libraries_prof = [static_library_prof] + dep_info.hs_info.static_libraries_prof
+    package_conf.add(
+        c.interfaces_dir.path,
+        format = "import-dirs: %s",
+    )
+    # XXX: Do we need the depends entry?
+    package_conf.add_joined(
+        set.to_list(dep_info.hs_info.package_ids),
+        join_with = ", ",
+        format_joined = "depends: %s",
+    )
+    package_conf.set_param_file_format("multiline")
+    conf_file_part = ctx.actions.declare_file(
+        "{0}.db/{0}.conf.part".format(pkg_id.to_string(my_pkg_id))
+    )
+    ctx.actions.write(conf_file_part, package_conf)
+    conf_file = ctx.actions.declare_file(
+        "{0}.db/{0}.conf".format(pkg_id.to_string(my_pkg_id))
+    )
+    hs.actions.run_shell(
+        inputs = [conf_file_part, c.exposed_modules_file],
+        outputs = [conf_file],
+        command = """
+            cat $2 > $1
+            echo -n "exposed-modules: " >> $1
+            cat $3 >> $1
+        """,
+        arguments = [
+            conf_file.path,
+            conf_file_part.path,
+            c.exposed_modules_file.path,
+        ],
+    )
+    cache_file = ghc_pkg_recache(ctx, hs.tools.ghc_pkg, conf_file)
 
     interface_dirs = set.union(
         dep_info.hs_info.interface_dirs,
@@ -469,7 +496,7 @@ def haskell_library_impl(ctx):
         # left, i.e. you first feed a library which has unresolved symbols and
         # then you feed the library which resolves the symbols.
         static_libraries = [static_library] + dep_info.hs_info.static_libraries,
-        static_libraries_prof = static_libraries_prof,
+        static_libraries_prof = [],
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
@@ -690,6 +717,7 @@ def haskell_import_impl(ctx):
     package_conf = ctx.actions.args()
     package_conf.add(ctx.attr.name, format = "name: %s")
     package_conf.add(ctx.attr.id, format = "id: %s")
+    # XXX: Add key
     package_conf.add(ctx.attr.version, format = "version: %s")
     package_conf.add(True, format = "exposed: %s")
     package_conf.add_joined(
