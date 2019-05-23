@@ -155,16 +155,13 @@ def _haskell_cabal_library_impl(ctx):
         "_install/iface",
         sibling = cabal,
     )
+    static_library_filename = "_install/lib/libHS{}.a".format(name)
+    if with_profiling:
+        static_library_filename = "_install/lib/libHS{}_p.a".format(name)
     static_library = hs.actions.declare_file(
-        "_install/lib/libHS{}.a".format(name),
+        static_library_filename,
         sibling = cabal,
     )
-    static_library_prof = None
-    if with_profiling:
-        static_library_prof = hs.actions.declare_file(
-            "_install/lib/libHS{}_p.a".format(name),
-            sibling = cabal,
-        )
     dynamic_library = hs.actions.declare_file(
         "_install/lib/libHS{}-ghc{}.{}".format(name, hs.toolchain.version, _so_extension(hs)),
         sibling = cabal,
@@ -189,7 +186,7 @@ def _haskell_cabal_library_impl(ctx):
             interfaces_dir,
             static_library,
             dynamic_library,
-        ] + ([static_library_prof] if with_profiling else []),
+        ],
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
         progress_message = "HaskellCabalLibrary {}".format(hs.label),
@@ -205,9 +202,6 @@ def _haskell_cabal_library_impl(ctx):
         extra_source_files = depset(),
         import_dirs = set.empty(),
         static_libraries = [static_library] + dep_info.static_libraries,
-        static_libraries_prof = (
-            [static_library_prof] if with_profiling else []
-        ) + dep_info.static_libraries_prof,
         dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
         interface_dirs = set.insert(dep_info.interface_dirs, interfaces_dir),
         compile_flags = [],

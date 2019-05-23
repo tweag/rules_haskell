@@ -111,10 +111,21 @@ sh_test(
     tags = ["requires_hackage"],
 )
 
+config_setting(
+    name = "debug_build",
+    values = {
+        "compilation_mode": "dbg",
+    },
+)
+
 rule_test(
     name = "test-library-deps",
     size = "small",
     generates = select({
+        ":debug_build": [
+            # In profiling build we only generate profiling static archives.
+            "libHStestsZSlibrary-depsZSlibrary-deps_p.a",
+        ],
         "@bazel_tools//src/conditions:darwin": [
             "libHStestsZSlibrary-depsZSlibrary-deps-ghc{}.dylib".format(test_ghc_version),
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
@@ -210,7 +221,10 @@ sh_test(
         "//tests/cc_haskell_import:python_add_one",
         "@bazel_tools//tools/bash/runfiles",
     ],
-    tags = ["requires_threaded_rts"],
+    tags = [
+        "requires_dynamic",
+        "requires_threaded_rts",
+    ],
 )
 
 sh_inline_test(

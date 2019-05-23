@@ -37,7 +37,7 @@ main = hspec $ do
       ])
 
   it "bazel test prof" $ do
-    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only"])
+    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only", "--test_tag_filters", "-requires_dynamic"])
 
   describe "repl" $ do
     it "for libraries" $ do
