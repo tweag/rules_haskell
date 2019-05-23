@@ -12,10 +12,12 @@ extra-source-files:
 - README.md
 - stack.yaml
 
-synopsis:            Generate coverage report from Rules_Haskell Bazel coverage output.
+synopsis:            HTML Coverage Reports for Rules_Haskell
 category:            Build Tool
 
-ghc-options: -Wall -Werror
+description:         Generate coverage reports from Rules_Haskell Bazel coverage output
+
+ghc-options: -Wall
 
 executables:
   bazel-coverage-report-renderer:
