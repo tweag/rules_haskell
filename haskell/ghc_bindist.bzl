@@ -1,6 +1,6 @@
 """Workspace rules (GHC binary distributions)"""
 
-_GHC_DEFAULT_VERSION = "8.4.4"
+_GHC_DEFAULT_VERSION = "8.6.5"
 
 # Generated with `bazel run @io_tweag_rules_haskell//haskell:gen-ghc-bindist`
 # To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py,
