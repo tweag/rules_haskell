@@ -437,7 +437,11 @@ def link_binary(
     conf_file = hs.actions.declare_file("{0}.db/{0}.conf".format(package_name))
     hs.actions.write(conf_file, package_conf)
     cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
-    args.add_all(["-package-db", cache_file.dirname, "-package", package_name])
+    args.add_all([
+        #"-no-global-package-db", # XXX: This causes GHC to crash.
+        "-package-db", cache_file.dirname,
+        "-package", package_name,
+    ])
 
     # XXX: Suppress a warning that Clang prints due to GHC automatically passing
     # "-pie" or "-no-pie" to the C compiler.
@@ -479,15 +483,16 @@ def link_binary(
     else:
         params_file = objects_dir_manifest
 
+    # XXX: When profiling we see duplicate arguments like the following:
+    #   -lHSbase-4.12.0.0_p -lHSinteger-gmp-1.0.2.0_p
+    #   -lHSbase-4.12.0.0   -lHSinteger-gmp-1.0.2.0
+
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
         inputs = depset(direct = [cache_file], transitive = [
             depset(extra_srcs),
             set.to_depset(dep_info.hs_info.package_databases),
-            set.to_depset(dep_info.hs_info.dynamic_libraries),
-            depset(dep_info.hs_info.static_libraries),
-            depset(dep_info.hs_info.static_libraries_prof),
             lib_files,
             depset([objects_dir]),
             # GHC requries the Rts.h header during linking.
@@ -499,6 +504,7 @@ def link_binary(
         params_file = params_file,
     )
 
+    # XXX: Add dynamic libraries to runtime dependencies.
     return (executable, [])
 
 def _add_external_libraries(args, ext_libs):

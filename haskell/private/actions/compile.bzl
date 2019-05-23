@@ -1,5 +1,6 @@
 """Actions for compiling Haskell source code"""
 
+load(":private/actions/package.bzl", "ghc_pkg_recache")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
@@ -102,48 +103,86 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
 
     compile_flags = []
 
-    # GHC expects the CC compiler as the assembler, but segregates the
-    # set of flags to pass to it when used as an assembler. So we have
-    # to set both -optc and -opta.
-    cc_args = [
-        "-optc" + f
-        for f in cc.compiler_flags
-    ] + [
-        "-opta" + f
-        for f in cc.compiler_flags
+    # XXX: Remove/share cc.compiler_flags
+
+    package_name = "{}-compileflags".format(hs.name)
+    package_conf = hs.actions.args()
+    package_conf.add(package_name, format = "name: %s")
+
+    package_conf.add_joined(
+        dep_info.cc_info.compilation_context.defines,
+        join_with = " ",
+        format_each = '"-D%s"',
+        format_joined = "cc-options: %s",
+    )
+    package_conf.add_joined(
+        dep_info.cc_info.compilation_context.includes,
+        join_with = " ",
+        format_joined = "include-dirs: %s",
+    )
+    package_conf.add_joined(
+        dep_info.cc_info.compilation_context.quote_includes,
+        join_with = " ",
+        format_each = '"-iquote%s"',
+        format_joined = "cc-options: %s",
+    )
+    package_conf.add_joined(
+        dep_info.cc_info.compilation_context.system_includes,
+        join_with = " ",
+        format_each = '"-isystem%s"',
+        format_joined = "cc-options: %s",
+    )
+
+    lib_dirs = depset()
+    lib_files = depset(order = "topological")
+    for lib_to_link in dep_info.cc_info.linking_context.libraries_to_link:
+        # XXX: dynamic linking mode
+        # XXX: Handle static library name clashes.
+        #      Maybe by passing archive file paths in ld-options.
+        # XXX: Consider resolved_symlink_(dynamic|interface)_library
+        lib = None
+        if lib_to_link.pic_static_library:
+            lib = lib_to_link.pic_static_library
+        elif lib_to_link.dynamic_library:
+            lib = lib_to_link.dynamic_library
+        elif lib_to_link.interface_library:
+            lib = lib_to_link.interface_library
+        elif lib_to_link.static_library:
+            lib = lib_to_link.static_library
+            print("WARNING: No pic-static or dynamic library found. (static: {})".format(lib))
+        else:
+            continue
+        lib_dirs = depset(direct = [lib.dirname], transitive = [lib_dirs])
+        lib_files = depset(direct = [lib], transitive = [lib_files])
+    package_conf.add_joined(
+        lib_dirs,
+        join_with = " ",
+        format_joined = "library-dirs: %s",
+    )
+    package_conf.add_joined(
+        lib_files,
+        join_with = " ",
+        map_each = get_lib_name,
+        format_joined = "extra-libraries: %s",
+    )
+    package_conf.add_joined(
+        dep_info.cc_info.linking_context.user_link_flags,
+        join_with = " ",
+        format_each = '"%s"',
+        format_joined = "ld-options: %s",
+    )
+
+    # XXX: Include plugin_dep_info
+
+    package_conf.set_param_file_format("multiline")
+    conf_file = hs.actions.declare_file("{0}.db/{0}.conf".format(package_name))
+    hs.actions.write(conf_file, package_conf)
+    cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
+    compile_flags += [
+        "-no-global-package-db",
+        "-package-db", cache_file.dirname,
+        "-package", package_name,
     ]
-    compile_flags += cc_args
-
-    linkflags = depset()
-    linkinputs = depset()
-    # XXX: Only template Haskell dependencies.
-    linking_context = dep_info.cc_info.linking_context
-    if linking_context:
-        for lib_to_link in linking_context.libraries_to_link:
-            lib = None
-            if lib_to_link.pic_static_library:
-                # XXX: Mangle static libraries.
-                lib = lib_to_link.pic_static_library
-            elif lib_to_link.dynamic_library:
-                # XXX: Consider resolved_symlink_dynamic_library
-                lib = lib_to_link.dynamic_library
-            elif lib_to_link.interface_library:
-                # XXX: Consider resolved_symlink_interface_library
-                lib = lib_to_link.interface_library
-            else:
-                lib = lib_to_link.static_library
-                print("WARNING: No pic-static or dynamic library found. (static: {})".format(lib))
-            linkflags = depset(
-                direct = ["-l{}".format(get_lib_name(lib)), "-L{}".format(lib.dirname)],
-                transitive = [linkflags],
-            )
-            linkinputs = depset(
-                direct = [lib],
-                transitive = [linkinputs],
-            )
-
-    compile_flags += linkflags.to_list()
-    compile_flags += ["-no-global-package-db"]
 
     interface_dir_raw = "_iface_prof" if with_profiling else "_iface"
     object_dir_raw = "_obj_prof" if with_profiling else "_obj"
@@ -344,37 +383,22 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         transitive = [extra_srcs, depset(header_files), depset(boot_files)],
     )
 
-    # Transitive library dependencies for runtime.
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
-        hs,
-        merge_HaskellCcInfo(
-            dep_info.hs_info.transitive_cc_dependencies,
-            plugin_dep_info.hs_info.transitive_cc_dependencies,
-        ),
-    )
-
     return struct(
         args = args,
         compile_flags = compile_flags,
         inputs = depset(transitive = [
+            depset([cache_file]),
             depset(header_files),
             depset(boot_files),
             set.to_depset(source_files),
             extra_source_files,
-            depset(cc.hdrs),
-            linkinputs,
+            dep_info.cc_info.compilation_context.headers,
+            lib_files,
             set.to_depset(dep_info.hs_info.package_databases),
             set.to_depset(dep_info.hs_info.interface_dirs),
-            depset(dep_info.hs_info.static_libraries),
-            depset(dep_info.hs_info.static_libraries_prof),
-            set.to_depset(dep_info.hs_info.dynamic_libraries),
+            # XXX: Remove hs_info.static_libraries etc.
             set.to_depset(plugin_dep_info.hs_info.package_databases),
             set.to_depset(plugin_dep_info.hs_info.interface_dirs),
-            depset(plugin_dep_info.hs_info.static_libraries),
-            depset(plugin_dep_info.hs_info.static_libraries_prof),
-            set.to_depset(plugin_dep_info.hs_info.dynamic_libraries),
-            depset(library_deps),
-            depset(ld_library_deps),
             java.inputs,
             locale_archive_depset,
             depset(transitive = plugin_tool_inputs),
@@ -388,7 +412,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         extra_source_files = depset(transitive = [extra_source_files, depset([optp_args_file])]),
         import_dirs = import_dirs,
         env = dicts.add(
-            ghc_env,
             java.env,
             hs.env,
         ),

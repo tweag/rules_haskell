@@ -727,6 +727,7 @@ def haskell_import_impl(ctx):
         if HaskellInfo in dep:
             set.mutable_union(package_databases, dep[HaskellInfo].package_databases)
             set.mutable_union(interface_dirs, dep[HaskellInfo].interface_dirs)
+    # XXX: Add -ghcversion-file flag to compiler flags for rts package
     hs_info = HaskellInfo(
         package_ids = set.singleton(id),
         package_databases = package_databases,
