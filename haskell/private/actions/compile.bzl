@@ -515,40 +515,8 @@ def compile_library(
     if with_profiling:
         exposed_modules_file = None
     else:
-        hidden_modules_file = hs.actions.declare_file(
-            target_unique_name(hs, "hidden-modules"),
-        )
-        hs.actions.write(
-            output = hidden_modules_file,
-            content = ", ".join(other_modules),
-        )
-        reexported_modules_file = hs.actions.declare_file(
-            target_unique_name(hs, "reexported-modules"),
-        )
-        hs.actions.write(
-            output = reexported_modules_file,
-            content = ", ".join(exposed_modules_reexports),
-        )
-        exposed_modules_file = hs.actions.declare_file(
-            target_unique_name(hs, "exposed-modules"),
-        )
-        hs.actions.run(
-            inputs = [
-                c.interfaces_dir,
-                hs.toolchain.global_pkg_db,
-                hidden_modules_file,
-                reexported_modules_file,
-            ],
-            outputs = [exposed_modules_file],
-            executable = ls_modules,
-            arguments = [
-                c.interfaces_dir.path,
-                hs.toolchain.global_pkg_db.path,
-                hidden_modules_file.path,
-                reexported_modules_file.path,
-                exposed_modules_file.path,
-            ],
-            use_default_shell_env = True,
+        exposed_modules_file = list_exposed_modules(
+            hs, ls_modules, other_modules, exposed_modules_reexports, c.interfaces_dir
         )
 
     return struct(
@@ -561,3 +529,58 @@ def compile_library(
         exposed_modules_file = exposed_modules_file,
         coverage_data = coverage_data,
     )
+
+def list_exposed_modules(
+        hs,
+        ls_modules,
+        other_modules,
+        exposed_modules_reexports,
+        interfaces_dir):
+    """Construct file listing the exposed modules of this package.
+
+    Args:
+      hs: The Haskell context.
+      ls_modules: The ls_modules.py executable.
+      other_modules: List of hidden modules.
+      exposed_modules_reexports: List of re-exported modules.
+      interfaces_dir: The directory containing the interface files.
+
+    Returns:
+      File: File holding the package ceonfiguration exposed-modules value.
+    """
+    hidden_modules_file = hs.actions.declare_file(
+        target_unique_name(hs, "hidden-modules"),
+    )
+    hs.actions.write(
+        output = hidden_modules_file,
+        content = ", ".join(other_modules),
+    )
+    reexported_modules_file = hs.actions.declare_file(
+        target_unique_name(hs, "reexported-modules"),
+    )
+    hs.actions.write(
+        output = reexported_modules_file,
+        content = ", ".join(exposed_modules_reexports),
+    )
+    exposed_modules_file = hs.actions.declare_file(
+        target_unique_name(hs, "exposed-modules"),
+    )
+    hs.actions.run(
+        inputs = [
+            interfaces_dir,
+            hs.toolchain.global_pkg_db,
+            hidden_modules_file,
+            reexported_modules_file,
+        ],
+        outputs = [exposed_modules_file],
+        executable = ls_modules,
+        arguments = [
+            interfaces_dir.path,
+            hs.toolchain.global_pkg_db.path,
+            hidden_modules_file.path,
+            reexported_modules_file.path,
+            exposed_modules_file.path,
+        ],
+        use_default_shell_env = True,
+    )
+    return exposed_modules_file
