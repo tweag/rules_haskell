@@ -314,10 +314,7 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + unversioned_packages)
     exec_result = _execute_or_fail_loudly(repository_ctx, ["ls"])
     unpacked_sdists = exec_result.stdout.splitlines()
-    stack_yaml_content = "\n".join(["resolver: none", "packages:"]) + "\n" + "\n".join([
-        "- {}".format(dir)
-        for dir in unpacked_sdists
-    ])
+    stack_yaml_content = struct(resolver = "none", packages = unpacked_sdists).to_json()
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
@@ -336,10 +333,7 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
             if unpacked_sdist not in unpacked_sdists
         ],
     )
-    stack_yaml_content = "\n".join(["resolver: none", "packages:"]) + "\n" + "\n".join([
-        "- {}".format(dir)
-        for dir in transitive_unpacked_sdists
-    ])
+    stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists).to_json()
     repository_ctx.file("stack.yaml", stack_yaml_content, executable = False)
 
     # Compute dependency graph.
