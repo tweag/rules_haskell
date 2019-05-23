@@ -161,13 +161,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             srcs = srcs_files,
             ls_modules = ctx.executable._ls_modules,
             import_dir_map = import_dir_map,
-            # NOTE We must make the object files compiled without profiling
-            # available to this step for TH to work, presumably because GHC is
-            # linked against RTS without profiling.
-            extra_srcs = depset(transitive = [
-                depset(ctx.files.extra_srcs),
-                depset([c.objects_dir]),
-            ]),
+            extra_srcs = depset(ctx.files.extra_srcs),
             user_compile_flags = ctx.attr.compiler_flags,
             # NOTE We can't have profiling and dynamic code at the
             # same time, see:
@@ -363,13 +357,7 @@ def haskell_library_impl(ctx):
             other_modules = other_modules,
             exposed_modules_reexports = exposed_modules_reexports,
             import_dir_map = import_dir_map,
-            # NOTE We must make the object files compiled without profiling
-            # available to this step for TH to work, presumably because GHC is
-            # linked against RTS without profiling.
-            extra_srcs = depset(transitive = [
-                depset(ctx.files.extra_srcs),
-                depset([c.objects_dir]),
-            ]),
+            extra_srcs = depset(ctx.files.extra_srcs),
             user_compile_flags = ctx.attr.compiler_flags,
             # NOTE We can't have profiling and dynamic code at the
             # same time, see:
