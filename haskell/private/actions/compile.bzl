@@ -427,33 +427,12 @@ def compile_binary(
         arguments = c.args,
     )
 
-    if with_profiling:
-        exposed_modules_file = None
-    else:
-        exposed_modules_file = hs.actions.declare_file(
-            target_unique_name(hs, "exposed-modules"),
-        )
-        hs.actions.run(
-            inputs = [c.interfaces_dir, hs.toolchain.global_pkg_db],
-            outputs = [exposed_modules_file],
-            executable = ls_modules,
-            arguments = [
-                c.interfaces_dir.path,
-                hs.toolchain.global_pkg_db.path,
-                "/dev/null",  # no hidden modules
-                "/dev/null",  # no reexported modules
-                exposed_modules_file.path,
-            ],
-            use_default_shell_env = True,
-        )
-
     return struct(
         objects_dir = c.objects_dir,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         compile_flags = c.compile_flags,
-        exposed_modules_file = exposed_modules_file,
         coverage_data = coverage_data,
     )
 
