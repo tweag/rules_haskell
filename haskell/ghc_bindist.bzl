@@ -266,6 +266,7 @@ haskell_toolchain(
         },
         executable = False,
     )
+    ctx.file("WORKSPACE")
 
 _ghc_bindist = repository_rule(
     _ghc_bindist_impl,
