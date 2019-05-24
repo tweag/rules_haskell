@@ -394,7 +394,7 @@ def haskell_register_ghc_nixpkgs(
     toolchain_repo_name = "io_tweag_rules_haskell_ghc_nixpkgs_toolchain"
 
     # The package from the system.
-    haskell_nixpkgs_package(
+    nixpkgs_package(
         name = nixpkgs_ghc_repo_name,
         attribute_path = attribute_path,
         build_file = build_file,
