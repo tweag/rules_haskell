@@ -10,6 +10,10 @@ load(
 )
 load(":cc.bzl", "cc_interop_info")
 load(
+    ":private/actions/compile.bzl",
+    "list_exposed_modules",
+)
+load(
     ":private/actions/link.bzl",
     "link_binary",
     "link_library_dynamic",
@@ -337,9 +341,6 @@ def haskell_library_impl(ctx):
         dep_info,
         plugin_dep_info,
         srcs = srcs_files,
-        ls_modules = ctx.executable._ls_modules,
-        other_modules = other_modules,
-        exposed_modules_reexports = exposed_modules_reexports,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         user_compile_flags = ctx.attr.compiler_flags,
@@ -347,6 +348,14 @@ def haskell_library_impl(ctx):
         with_profiling = False,
         my_pkg_id = my_pkg_id,
         plugins = ctx.attr.plugins,
+    )
+
+    exposed_modules_file = list_exposed_modules(
+        hs,
+        ls_modules = ctx.executable._ls_modules,
+        other_modules = other_modules,
+        exposed_modules_reexports = exposed_modules_reexports,
+        interfaces_dir = c.interfaces_dir,
     )
 
     c_p = None
@@ -359,9 +368,6 @@ def haskell_library_impl(ctx):
             dep_info,
             plugin_dep_info,
             srcs = srcs_files,
-            ls_modules = ctx.executable._ls_modules,
-            other_modules = other_modules,
-            exposed_modules_reexports = exposed_modules_reexports,
             import_dir_map = import_dir_map,
             # NOTE We must make the object files compiled without profiling
             # available to this step for TH to work, presumably because GHC is
@@ -424,7 +430,7 @@ def haskell_library_impl(ctx):
         c_p.interfaces_dir if c_p != None else None,
         static_library,
         dynamic_library,
-        c.exposed_modules_file,
+        exposed_modules_file,
         other_modules,
         my_pkg_id,
         static_library_prof = static_library_prof,

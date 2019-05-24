@@ -427,33 +427,12 @@ def compile_binary(
         arguments = c.args,
     )
 
-    if with_profiling:
-        exposed_modules_file = None
-    else:
-        exposed_modules_file = hs.actions.declare_file(
-            target_unique_name(hs, "exposed-modules"),
-        )
-        hs.actions.run(
-            inputs = [c.interfaces_dir, hs.toolchain.global_pkg_db],
-            outputs = [exposed_modules_file],
-            executable = ls_modules,
-            arguments = [
-                c.interfaces_dir.path,
-                hs.toolchain.global_pkg_db.path,
-                "/dev/null",  # no hidden modules
-                "/dev/null",  # no reexported modules
-                exposed_modules_file.path,
-            ],
-            use_default_shell_env = True,
-        )
-
     return struct(
         objects_dir = c.objects_dir,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         compile_flags = c.compile_flags,
-        exposed_modules_file = exposed_modules_file,
         coverage_data = coverage_data,
     )
 
@@ -464,9 +443,6 @@ def compile_library(
         dep_info,
         plugin_dep_info,
         srcs,
-        ls_modules,
-        other_modules,
-        exposed_modules_reexports,
         import_dir_map,
         extra_srcs,
         user_compile_flags,
@@ -512,45 +488,6 @@ def compile_library(
         arguments = c.args,
     )
 
-    if with_profiling:
-        exposed_modules_file = None
-    else:
-        hidden_modules_file = hs.actions.declare_file(
-            target_unique_name(hs, "hidden-modules"),
-        )
-        hs.actions.write(
-            output = hidden_modules_file,
-            content = ", ".join(other_modules),
-        )
-        reexported_modules_file = hs.actions.declare_file(
-            target_unique_name(hs, "reexported-modules"),
-        )
-        hs.actions.write(
-            output = reexported_modules_file,
-            content = ", ".join(exposed_modules_reexports),
-        )
-        exposed_modules_file = hs.actions.declare_file(
-            target_unique_name(hs, "exposed-modules"),
-        )
-        hs.actions.run(
-            inputs = [
-                c.interfaces_dir,
-                hs.toolchain.global_pkg_db,
-                hidden_modules_file,
-                reexported_modules_file,
-            ],
-            outputs = [exposed_modules_file],
-            executable = ls_modules,
-            arguments = [
-                c.interfaces_dir.path,
-                hs.toolchain.global_pkg_db.path,
-                hidden_modules_file.path,
-                reexported_modules_file.path,
-                exposed_modules_file.path,
-            ],
-            use_default_shell_env = True,
-        )
-
     return struct(
         interfaces_dir = c.interfaces_dir,
         objects_dir = c.objects_dir,
@@ -558,6 +495,60 @@ def compile_library(
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        exposed_modules_file = exposed_modules_file,
         coverage_data = coverage_data,
     )
+
+def list_exposed_modules(
+        hs,
+        ls_modules,
+        other_modules,
+        exposed_modules_reexports,
+        interfaces_dir):
+    """Construct file listing the exposed modules of this package.
+
+    Args:
+      hs: The Haskell context.
+      ls_modules: The ls_modules.py executable.
+      other_modules: List of hidden modules.
+      exposed_modules_reexports: List of re-exported modules.
+      interfaces_dir: The directory containing the interface files.
+
+    Returns:
+      File: File holding the package ceonfiguration exposed-modules value.
+    """
+    hidden_modules_file = hs.actions.declare_file(
+        target_unique_name(hs, "hidden-modules"),
+    )
+    hs.actions.write(
+        output = hidden_modules_file,
+        content = ", ".join(other_modules),
+    )
+    reexported_modules_file = hs.actions.declare_file(
+        target_unique_name(hs, "reexported-modules"),
+    )
+    hs.actions.write(
+        output = reexported_modules_file,
+        content = ", ".join(exposed_modules_reexports),
+    )
+    exposed_modules_file = hs.actions.declare_file(
+        target_unique_name(hs, "exposed-modules"),
+    )
+    hs.actions.run(
+        inputs = [
+            interfaces_dir,
+            hs.toolchain.global_pkg_db,
+            hidden_modules_file,
+            reexported_modules_file,
+        ],
+        outputs = [exposed_modules_file],
+        executable = ls_modules,
+        arguments = [
+            interfaces_dir.path,
+            hs.toolchain.global_pkg_db.path,
+            hidden_modules_file.path,
+            reexported_modules_file.path,
+            exposed_modules_file.path,
+        ],
+        use_default_shell_env = True,
+    )
+    return exposed_modules_file
