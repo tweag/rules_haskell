@@ -225,6 +225,22 @@ def get_dynamic_hs_lib_name(ghc_version, lib):
         name = name[:-len(suffix)]
     return name
 
+def get_static_hs_lib_name(lib):
+    """Return name of library by dropping extension, "lib" prefix.
+
+    Takes the unusual case of libCffi.a into account.
+
+    Args:
+      lib: The library File.
+
+    Returns:
+      String: name of library.
+    """
+    name = get_lib_name(lib)
+    if name == "Cffi":
+        return "ffi"
+    return name
+
 def link_libraries(libs_to_link, args):
     """Add linker flags to link against the given libraries.
 
