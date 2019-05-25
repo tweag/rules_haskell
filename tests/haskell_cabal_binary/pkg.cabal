@@ -1,0 +1,9 @@
+cabal-version: >=1.10
+name: pkg
+version: 0.1.0.0
+build-type: Simple
+
+executable haskell_cabal_binary
+  build-depends: base >=4.12 && <4.13
+  default-language: Haskell2010
+  main-is: Main.hs
