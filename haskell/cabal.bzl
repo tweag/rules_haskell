@@ -28,28 +28,33 @@ def _so_extension(hs):
 def _dirname(file):
     return file.dirname
 
-def _haskell_cabal_library_impl(ctx):
-    hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
-    cc = cc_interop_info(ctx)
-    cc_info = cc_common.merge_cc_infos(
-        cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
-    )
-    name = hs.label.name
-    with_profiling = is_profiling_enabled(hs)
+def _version(name):
+    """Return the version component of a package name."""
+    return name.rpartition("-")[2]
 
-    # Check that a .cabal file exists. Choose the root one.
+def _has_version(name):
+    """Check whether a package identifier has a version component."""
+    return name.rpartition("-")[2].replace(".", "").isdigit()
+
+def _chop_version(name):
+    """Remove any version component from the given package name."""
+    return name.rpartition("-")[0]
+
+def _find_cabal(hs, srcs):
+    """Check that a .cabal file exists. Choose the root one."""
     cabal = None
-    for f in ctx.files.srcs:
+    for f in srcs:
         if f.extension == "cabal":
             if not cabal or f.dirname < cabal.dirname:
                 cabal = f
     if not cabal:
         fail("A .cabal file was not found in the srcs attribute.")
+    return cabal
 
-    # Check that a Setup script exists. If not, create a default one.
+def _find_setup(hs, cabal, srcs):
+    """Check that a Setup script exists. If not, create a default one."""
     setup = None
-    for f in ctx.files.srcs:
+    for f in srcs:
         if f.basename in ["Setup.hs", "Setup.lhs"]:
             if not setup or f.dirname < setup.dirname:
                 setup = f
@@ -65,7 +70,78 @@ main :: IO ()
 main = defaultMain
 """,
         )
+    return setup
 
+def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_wrapper_tpl, package_database):
+    """Compute Cabal wrapper, arguments, inputs."""
+    name = hs.label.name
+    with_profiling = is_profiling_enabled(hs)
+
+    # TODO Instantiating this template could be done just once in the
+    # toolchain rule.
+    cabal_wrapper = hs.actions.declare_file("cabal_wrapper-{}.sh".format(hs.label.name))
+    hs.actions.expand_template(
+        template = cabal_wrapper_tpl,
+        output = cabal_wrapper,
+        is_executable = True,
+        substitutions = {
+            "%{ghc}": hs.tools.ghc.path,
+            "%{ghc_pkg}": hs.tools.ghc_pkg.path,
+            "%{runghc}": hs.tools.runghc.path,
+            "%{ar}": cc.tools.ar,
+            "%{strip}": cc.tools.strip,
+        },
+    )
+
+    args = hs.actions.args()
+    package_databases = set.to_depset(dep_info.package_databases)
+    extra_headers = cc_info.compilation_context.headers
+    extra_include_dirs = cc_info.compilation_context.includes
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        dep_info.transitive_cc_dependencies,
+    )
+    extra_lib_dirs = [file.dirname for file in library_deps]
+    args.add_all([name, setup, cabal.dirname, package_database.dirname])
+    args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
+    args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")
+    args.add_all(extra_lib_dirs, format_each = "--extra-lib-dirs=%s", uniquify = True)
+    if with_profiling:
+        args.add("--enable-profiling")
+
+    inputs = depset(
+        [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
+        transitive = [
+            depset(srcs),
+            package_databases,
+            extra_headers,
+            depset(library_deps),
+            depset(ld_library_deps),
+            set.to_depset(dep_info.interface_dirs),
+            depset(dep_info.static_libraries),
+            set.to_depset(dep_info.dynamic_libraries),
+        ],
+    )
+
+    return struct(
+        cabal_wrapper = cabal_wrapper,
+        args = args,
+        inputs = inputs,
+        env = dicts.add(ghc_env, hs.env),
+    )
+
+def _haskell_cabal_library_impl(ctx):
+    hs = haskell_context(ctx)
+    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    cc = cc_interop_info(ctx)
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+    )
+    name = hs.label.name
+    with_profiling = is_profiling_enabled(hs)
+
+    cabal = _find_cabal(hs, ctx.files.srcs)
+    setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
         "_install/package.conf.d/package.cache",
         sibling = cabal,
@@ -88,64 +164,28 @@ main = defaultMain
         "_install/lib/libHS{}-ghc{}.{}".format(name, hs.toolchain.version, _so_extension(hs)),
         sibling = cabal,
     )
-
-    args = hs.actions.args()
-    package_databases = set.to_depset(dep_info.package_databases)
-    extra_headers = cc_info.compilation_context.headers
-    extra_include_dirs = cc_info.compilation_context.includes
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+    c = _prepare_cabal_inputs(
         hs,
-        dep_info.transitive_cc_dependencies,
+        cc,
+        dep_info,
+        cc_info,
+        cabal = cabal,
+        setup = setup,
+        srcs = ctx.files.srcs,
+        cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
+        package_database = package_database,
     )
-    extra_lib_dirs = [file.dirname for file in library_deps]
-    args.add_all([name, setup, cabal.dirname, package_database.dirname])
-    args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
-    args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")
-    args.add_all(extra_lib_dirs, format_each = "--extra-lib-dirs=%s", uniquify = True)
-    if with_profiling:
-        args.add("--enable-profiling")
-
-    # TODO Instantiating this template could be done just once in the
-    # toolchain rule.
-    cabal_wrapper = ctx.actions.declare_file("cabal_wrapper-{}.sh".format(hs.label.name))
-    ctx.actions.expand_template(
-        template = ctx.file._cabal_wrapper_tpl,
-        output = cabal_wrapper,
-        is_executable = True,
-        substitutions = {
-            "%{ghc}": hs.tools.ghc.path,
-            "%{ghc_pkg}": hs.tools.ghc_pkg.path,
-            "%{runghc}": hs.tools.runghc.path,
-            "%{ar}": cc.tools.ar,
-            "%{strip}": cc.tools.strip,
-        },
-    )
-
-    # Make the Cabal configure/build/install steps one big action so
-    # that we don't have to track all inputs explicitly between steps.
     ctx.actions.run(
-        executable = cabal_wrapper,
-        arguments = [args],
-        inputs = depset(
-            [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
-            transitive = [
-                depset(ctx.files.srcs),
-                package_databases,
-                extra_headers,
-                depset(library_deps),
-                depset(ld_library_deps),
-                set.to_depset(dep_info.interface_dirs),
-                depset(dep_info.static_libraries),
-                set.to_depset(dep_info.dynamic_libraries),
-            ],
-        ),
+        executable = c.cabal_wrapper,
+        arguments = [c.args],
+        inputs = c.inputs,
         outputs = [
             package_database,
             interfaces_dir,
             static_library,
             dynamic_library,
         ] + ([static_library_prof] if with_profiling else []),
-        env = dicts.add(ghc_env, hs.env),
+        env = c.env,
         mnemonic = "HaskellCabalLibrary",
         progress_message = "HaskellCabalLibrary {}".format(hs.label),
         use_default_shell_env = True,
@@ -243,10 +283,6 @@ However, using a plain `haskell_library` sometimes leads to better
 build times, and does not require drafting a `.cabal` file.
 
 """
-
-def _chop_version(name):
-    """Remove any version component from the given package name."""
-    return name.rpartition("-")[0]
 
 # Temporary hardcoded list of core libraries. This will no longer be
 # necessary once Stack 2.0 is released.
@@ -364,7 +400,7 @@ def _stack_snapshot_impl(repository_ctx):
     versioned_packages = []
     unversioned_packages = []
     for package in non_core_packages:
-        if package.rpartition("-")[2].replace(".", "").isdigit():
+        if _has_version(package):
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)

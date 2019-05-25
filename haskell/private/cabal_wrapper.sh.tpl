@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 #
 # cabal_wrapper.sh <PKG_NAME> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [SETUP_ARGS...]
+#
+# This wrapper calls Cabal's configure/build/install steps one big
+# action so that we don't have to track all inputs explicitly between
+# steps.
 
 set -euo pipefail
 execroot="$(pwd)"
