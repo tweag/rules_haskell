@@ -72,7 +72,14 @@ main = defaultMain
         )
     return setup
 
-def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_wrapper_tpl, package_database):
+_CABAL_TOOLS = ["alex", "c2hs", "cpphs", "doctest", "happy"]
+
+def _cabal_tool_flag(tool):
+    """Return a --with-PROG=PATH flag if input is a recognized Cabal tool. None otherwise."""
+    if tool.basename in _CABAL_TOOLS:
+        return "--with-{}={}".format(tool.basename, tool.path)
+
+def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_manifests, cabal, setup, srcs, cabal_wrapper_tpl, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     name = hs.label.name
     with_profiling = is_profiling_enabled(hs)
@@ -113,6 +120,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
     args.add_all(extra_lib_dirs, format_each = "--extra-lib-dirs=%s", uniquify = True)
     if with_profiling:
         args.add("--enable-profiling")
+    args.add_all(tool_inputs, map_each = _cabal_tool_flag)
 
     inputs = depset(
         [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
@@ -125,13 +133,16 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
             dep_info.interface_dirs,
             dep_info.static_libraries,
             dep_info.dynamic_libraries,
+            tool_inputs,
         ],
     )
+    input_manifests = tool_input_manifests
 
     return struct(
         cabal_wrapper = cabal_wrapper,
         args = args,
         inputs = inputs,
+        input_manifests = input_manifests,
         env = env,
     )
 
@@ -170,11 +181,14 @@ def _haskell_cabal_library_impl(ctx):
         "_install/lib/libHS{}-ghc{}.{}".format(name, hs.toolchain.version, _so_extension(hs)),
         sibling = cabal,
     )
+    (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
     c = _prepare_cabal_inputs(
         hs,
         cc,
         dep_info,
         cc_info,
+        tool_inputs = tool_inputs,
+        tool_input_manifests = tool_input_manifests,
         cabal = cabal,
         setup = setup,
         srcs = ctx.files.srcs,
@@ -185,6 +199,7 @@ def _haskell_cabal_library_impl(ctx):
         executable = c.cabal_wrapper,
         arguments = [c.args],
         inputs = c.inputs,
+        input_manifests = c.input_manifests,
         outputs = [
             package_database,
             interfaces_dir,
@@ -257,6 +272,11 @@ haskell_cabal_library = rule(
     attrs = {
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(),
+        "tools": attr.label_list(
+            cfg = "host",
+            doc = """Tool dependencies. They are built using the host configuration, since
+            the tools are executed as part of the build.""",
+        ),
         "_cabal_wrapper_tpl": attr.label(
             allow_single_file = True,
             default = Label("@io_tweag_rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
@@ -318,11 +338,14 @@ def _haskell_cabal_binary_impl(ctx):
         "_install/data",
         sibling = cabal,
     )
+    (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
     c = _prepare_cabal_inputs(
         hs,
         cc,
         dep_info,
         cc_info,
+        tool_inputs = tool_inputs,
+        tool_input_manifests = tool_input_manifests,
         cabal = cabal,
         setup = setup,
         srcs = ctx.files.srcs,
@@ -333,6 +356,7 @@ def _haskell_cabal_binary_impl(ctx):
         executable = c.cabal_wrapper,
         arguments = [c.args],
         inputs = c.inputs,
+        input_manifests = c.input_manifests,
         outputs = [
             package_database,
             binary,
@@ -375,6 +399,11 @@ haskell_cabal_binary = rule(
     attrs = {
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(),
+        "tools": attr.label_list(
+            cfg = "host",
+            doc = """Tool dependencies. They are built using the host configuration, since
+            the tools are executed as part of the build.""",
+        ),
         "_cabal_wrapper_tpl": attr.label(
             allow_single_file = True,
             default = Label("@io_tweag_rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
@@ -481,6 +510,7 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
         unpacked_sdist
         for unpacked_sdist in exec_result.stdout.splitlines()
         if _chop_version(unpacked_sdist) not in _CORE_PACKAGES
+        if _chop_version(unpacked_sdist) not in _CABAL_TOOLS
     ]
     for unpacked_sdist in transitive_unpacked_sdists:
         package = _chop_version(unpacked_sdist)
@@ -548,6 +578,10 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_toolchain_library"
         "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
         for label in repository_ctx.attr.deps
     ]
+    tools = [
+        "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
+        for label in repository_ctx.attr.tools
+    ]
     for package in _CORE_PACKAGES:
         if package in packages:
             visibility = ["//visibility:public"]
@@ -572,12 +606,14 @@ haskell_cabal_library(
     name = "{name}",
     srcs = glob(["{dir}/**"]),
     deps = {deps},
+    tools = {tools},
     visibility = {visibility},
 )
 """.format(
                 name = package,
                 dir = package,
                 deps = dependencies[unversioned_package] + extra_deps,
+                tools = tools,
                 testonly = repository_ctx.attr.testonly,
                 visibility = visibility,
             ),
@@ -604,6 +640,10 @@ stack_snapshot = repository_rule(
         "deps": attr.label_list(
             doc = "Dependencies of the package set, e.g. system libraries or C/C++ libraries.",
         ),
+        "tools": attr.label_list(
+            doc = """Tool dependencies. They are built using the host configuration, since
+            the tools are executed as part of the build.""",
+        ),
     },
 )
 """Use Stack to download and extract Cabal source distributions.
@@ -613,6 +653,7 @@ Example:
   stack_snapshot(
       name = "stackage",
       packages = ["conduit", "lens", "zlib-0.6.2"],
+      tools = ["@happy//:happy", "@c2hs//:c2hs"],
       snapshot = "lts-13.15",
       deps = ["@zlib.dev//:zlib"],
   )

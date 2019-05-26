@@ -33,6 +33,17 @@ load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 # bazel dependencies
 haskell_repositories()
 
+http_archive(
+    name = "happy",
+    build_file_content = """
+load("@io_tweag_rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visibility:public"])
+    """,
+    sha256 = "22eb606c97105b396e1c7dc27e120ca02025a87f3e44d2ea52be6a653a52caed",
+    strip_prefix = "happy-1.19.10",
+    urls = ["http://hackage.haskell.org/package/happy-1.19.10/happy-1.19.10.tar.gz"],
+)
+
 load("@io_tweag_rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
@@ -56,6 +67,7 @@ stack_snapshot(
         "lens-family",
     ],
     snapshot = "lts-13.15",
+    tools = ["@happy"],
     deps = ["@zlib.dev//:zlib"],
 )
 
