@@ -6,6 +6,10 @@
 # action so that we don't have to track all inputs explicitly between
 # steps.
 
+# TODO Remove once https://github.com/bazelbuild/bazel/issues/5980 is
+# fixed.
+%{env}
+
 set -euo pipefail
 execroot="$(pwd)"
 

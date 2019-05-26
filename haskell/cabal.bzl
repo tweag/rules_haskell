@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":cc.bzl", "cc_interop_info")
-load(":private/context.bzl", "haskell_context")
+load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(":private/set.bzl", "set")
@@ -77,6 +77,12 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
     name = hs.label.name
     with_profiling = is_profiling_enabled(hs)
 
+    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+        hs,
+        dep_info.transitive_cc_dependencies,
+    )
+    env = dicts.add(ghc_env, hs.env)
+
     # TODO Instantiating this template could be done just once in the
     # toolchain rule.
     cabal_wrapper = hs.actions.declare_file("cabal_wrapper-{}.sh".format(hs.label.name))
@@ -90,6 +96,9 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
             "%{runghc}": hs.tools.runghc.path,
             "%{ar}": cc.tools.ar,
             "%{strip}": cc.tools.strip,
+            # XXX Workaround
+            # https://github.com/bazelbuild/bazel/issues/5980.
+            "%{env}": render_env(env),
         },
     )
 
@@ -97,10 +106,6 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
     package_databases = set.to_depset(dep_info.package_databases)
     extra_headers = cc_info.compilation_context.headers
     extra_include_dirs = cc_info.compilation_context.includes
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
-        hs,
-        dep_info.transitive_cc_dependencies,
-    )
     extra_lib_dirs = [file.dirname for file in library_deps]
     args.add_all([name, setup, cabal.dirname, package_database.dirname])
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
@@ -127,7 +132,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
         cabal_wrapper = cabal_wrapper,
         args = args,
         inputs = inputs,
-        env = dicts.add(ghc_env, hs.env),
+        env = env,
     )
 
 def _haskell_cabal_library_impl(ctx):
