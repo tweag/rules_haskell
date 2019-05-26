@@ -425,16 +425,10 @@ def haskell_library_impl(ctx):
     if static_library_prof != None:
         static_libraries_prof = [static_library_prof] + dep_info.static_libraries_prof
 
-    interface_dirs = set.union(
-        dep_info.interface_dirs,
-        set.singleton(c.interfaces_dir),
+    interface_dirs = depset(
+        direct = [c.interfaces_dir] + ([c_p.interface_dirs] if c_p else []),
+        transitive = [dep_info.interface_dirs],
     )
-
-    if c_p != None:
-        interface_dirs = set.mutable_union(
-            interface_dirs,
-            set.singleton(c_p.interfaces_dir),
-        )
 
     version_macros = set.empty()
     if version:
@@ -672,7 +666,7 @@ def haskell_import_impl(ctx):
         static_libraries = [],
         static_libraries_prof = [],
         dynamic_libraries = depset(),
-        interface_dirs = set.empty(),
+        interface_dirs = depset(),
         compile_flags = [],
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),

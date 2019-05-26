@@ -79,7 +79,7 @@ def _haskell_lint_aspect_impl(target, ctx):
         inputs = depset(transitive = [
             depset(sources),
             hs_info.package_databases,
-            set.to_depset(hs_info.interface_dirs),
+            hs_info.interface_dirs,
             hs_info.dynamic_libraries,
             depset(library_deps),
             depset(ld_library_deps),

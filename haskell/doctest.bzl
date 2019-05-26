@@ -142,7 +142,7 @@ def _haskell_doctest_single(target, ctx):
         inputs = depset(transitive = [
             depset(sources),
             hs_info.package_databases,
-            set.to_depset(hs_info.interface_dirs),
+            hs_info.interface_dirs,
             hs_info.dynamic_libraries,
             cc_info.compilation_context.headers,
             depset(library_deps),
