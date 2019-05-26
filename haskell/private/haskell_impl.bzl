@@ -423,10 +423,14 @@ def haskell_library_impl(ctx):
     static_libraries_prof = dep_info.static_libraries_prof
 
     if static_library_prof != None:
-        static_libraries_prof = [static_library_prof] + dep_info.static_libraries_prof
+        static_libraries_prof = depset(
+            direct = [static_library_prof],
+            transitive = [dep_info.static_libraries_prof],
+            order = "topological",
+        )
 
     interface_dirs = depset(
-        direct = [c.interfaces_dir] + ([c_p.interface_dirs] if c_p else []),
+        direct = [c.interfaces_dir] + ([c_p.interfaces_dir] if c_p else []),
         transitive = [dep_info.interface_dirs],
     )
 
@@ -450,7 +454,11 @@ def haskell_library_impl(ctx):
         # important for linker. Linker searches for unresolved symbols to the
         # left, i.e. you first feed a library which has unresolved symbols and
         # then you feed the library which resolves the symbols.
-        static_libraries = [static_library] + dep_info.static_libraries,
+        static_libraries = depset(
+            direct = [static_library],
+            transitive = [dep_info.static_libraries],
+            order = "topological",
+        ),
         static_libraries_prof = static_libraries_prof,
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
@@ -610,7 +618,7 @@ Check that it ships with your version of GHC.
         get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
         for lib in target[HaskellImportHack].dynamic_libraries.to_list()
     }
-    for lib in target[HaskellImportHack].static_libraries:
+    for lib in target[HaskellImportHack].static_libraries.to_list():
         name = get_static_hs_lib_name(lib)
         entry = libs.get(name, {})
         entry["static"] = lib
@@ -663,8 +671,8 @@ def haskell_import_impl(ctx):
         version_macros = version_macros,
         source_files = set.empty(),
         extra_source_files = depset(),
-        static_libraries = [],
-        static_libraries_prof = [],
+        static_libraries = depset(),
+        static_libraries_prof = depset(),
         dynamic_libraries = depset(),
         interface_dirs = depset(),
         compile_flags = [],

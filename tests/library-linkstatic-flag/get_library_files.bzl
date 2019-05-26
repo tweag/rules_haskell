@@ -12,8 +12,7 @@ def _get_libraries_as_runfiles_impl(ctx):
     return [DefaultInfo(
         # not necessarily complete
         files = depset(
-            direct = bi.static_libraries,
-            transitive = [bi.dynamic_libraries],
+            transitive = [bi.static_libraries, bi.dynamic_libraries],
         ),
     )]
 
