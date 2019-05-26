@@ -366,6 +366,13 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
         for unpacked_sdist in exec_result.stdout.splitlines()
         if _chop_version(unpacked_sdist) not in _CORE_PACKAGES
     ]
+    for unpacked_sdist in transitive_unpacked_sdists:
+        package = _chop_version(unpacked_sdist)
+        if _version(unpacked_sdist) == "<unknown>":
+            fail("""\
+Could not resolve version of {}. It is not in the snapshot.
+Specify a fully qualified package name of the form <package>-<version>.
+            """.format(package))
     _execute_or_fail_loudly(
         repository_ctx,
         stack + ["unpack"] + [
