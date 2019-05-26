@@ -391,10 +391,7 @@ def haskell_library_impl(ctx):
             c.objects_dir,
             my_pkg_id,
         )
-        dynamic_libraries = set.insert(
-            dep_info.dynamic_libraries,
-            dynamic_library,
-        )
+        dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries])
     else:
         dynamic_library = None
         dynamic_libraries = dep_info.dynamic_libraries
@@ -617,7 +614,7 @@ Check that it ships with your version of GHC.
     # dynamic libHSrts and the static libCffi and libHSrts.
     libs = {
         get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
-        for lib in target[HaskellImportHack].dynamic_libraries
+        for lib in target[HaskellImportHack].dynamic_libraries.to_list()
     }
     for lib in target[HaskellImportHack].static_libraries:
         name = get_static_hs_lib_name(lib)
@@ -674,7 +671,7 @@ def haskell_import_impl(ctx):
         extra_source_files = depset(),
         static_libraries = [],
         static_libraries_prof = [],
-        dynamic_libraries = set.empty(),
+        dynamic_libraries = depset(),
         interface_dirs = set.empty(),
         compile_flags = [],
         cc_dependencies = empty_HaskellCcInfo(),

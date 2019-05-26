@@ -150,6 +150,11 @@ def gather_dep_info(ctx, deps):
         for dep in deps
         if HaskellInfo in dep
     ])
+    dynamic_libraries = depset(transitive = [
+        dep[HaskellInfo].dynamic_libraries
+        for dep in deps
+        if HaskellInfo in dep
+    ])
 
     acc = HaskellInfo(
         package_ids = package_ids,
@@ -157,7 +162,7 @@ def gather_dep_info(ctx, deps):
         version_macros = set.empty(),
         static_libraries = [],
         static_libraries_prof = [],
-        dynamic_libraries = set.empty(),
+        dynamic_libraries = dynamic_libraries,
         interface_dirs = set.empty(),
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),
@@ -174,7 +179,7 @@ def gather_dep_info(ctx, deps):
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
                 static_libraries = acc.static_libraries + binfo.static_libraries,
                 static_libraries_prof = acc.static_libraries_prof + binfo.static_libraries_prof,
-                dynamic_libraries = set.mutable_union(acc.dynamic_libraries, binfo.dynamic_libraries),
+                dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = set.mutable_union(acc.interface_dirs, binfo.interface_dirs),
                 cc_dependencies = acc.cc_dependencies,
                 transitive_cc_dependencies = merge_HaskellCcInfo(acc.transitive_cc_dependencies, binfo.transitive_cc_dependencies),
