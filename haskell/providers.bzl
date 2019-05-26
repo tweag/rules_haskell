@@ -76,7 +76,7 @@ def merge_HaskellCcInfo(*args):
 HaskellInfo = provider(
     doc = "Common information about build process: dependencies, etc.",
     fields = {
-        "package_ids": "Set of all package ids of direct dependencies.",
+        "package_ids": "List of all package ids of direct dependencies.",
         "package_databases": "Set of package cache files.",
         "version_macros": "Set of version macro files.",
         "import_dirs": "Import hierarchy roots.",

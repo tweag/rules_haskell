@@ -195,7 +195,7 @@ def _haskell_cabal_library_impl(ctx):
 
     default_info = DefaultInfo(files = depset([static_library, dynamic_library]))
     hs_info = HaskellInfo(
-        package_ids = set.empty(),
+        package_ids = [],
         package_databases = set.insert(dep_info.package_databases, package_database),
         version_macros = set.empty(),
         source_files = set.empty(),
