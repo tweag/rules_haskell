@@ -123,7 +123,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
             depset(library_deps),
             depset(ld_library_deps),
             dep_info.interface_dirs,
-            depset(dep_info.static_libraries),
+            dep_info.static_libraries,
             dep_info.dynamic_libraries,
         ],
     )
@@ -201,7 +201,11 @@ def _haskell_cabal_library_impl(ctx):
         source_files = set.empty(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
-        static_libraries = [static_library] + dep_info.static_libraries,
+        static_libraries = depset(
+            direct = [static_library],
+            transitive = [dep_info.static_libraries],
+            order = "topological",
+        ),
         dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries]),
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
