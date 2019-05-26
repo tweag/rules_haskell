@@ -122,10 +122,10 @@ def package(
     )
 
     # Make the call to ghc-pkg and use the package configuration file
-    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_databases)]) + ":"
+    package_path = ":".join([c.dirname for c in dep_info.package_databases.to_list()]) + ":"
     hs.actions.run(
         inputs = depset(transitive = [
-            set.to_depset(dep_info.package_databases),
+            dep_info.package_databases,
             depset([interfaces_dir]),
             depset([
                 input

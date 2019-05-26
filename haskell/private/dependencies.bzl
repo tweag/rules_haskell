@@ -145,10 +145,15 @@ def gather_dep_info(ctx, deps):
         for dep in deps
         if HaskellLibraryInfo in dep
     ]
+    package_databases = depset(transitive = [
+        dep[HaskellInfo].package_databases
+        for dep in deps
+        if HaskellInfo in dep
+    ])
 
     acc = HaskellInfo(
         package_ids = package_ids,
-        package_databases = set.empty(),
+        package_databases = package_databases,
         version_macros = set.empty(),
         static_libraries = [],
         dynamic_libraries = set.empty(),
@@ -164,7 +169,7 @@ def gather_dep_info(ctx, deps):
                 fail("Target {0} cannot depend on binary".format(ctx.attr.name))
             acc = HaskellInfo(
                 package_ids = acc.package_ids,
-                package_databases = set.mutable_union(acc.package_databases, binfo.package_databases),
+                package_databases = acc.package_databases,
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
                 static_libraries = acc.static_libraries + binfo.static_libraries,
                 dynamic_libraries = set.mutable_union(acc.dynamic_libraries, binfo.dynamic_libraries),

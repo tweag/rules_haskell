@@ -103,7 +103,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
     )
 
     args = hs.actions.args()
-    package_databases = set.to_depset(dep_info.package_databases)
+    package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
     extra_include_dirs = cc_info.compilation_context.includes
     extra_lib_dirs = [file.dirname for file in library_deps]
@@ -196,7 +196,7 @@ def _haskell_cabal_library_impl(ctx):
     default_info = DefaultInfo(files = depset([static_library, dynamic_library]))
     hs_info = HaskellInfo(
         package_ids = [],
-        package_databases = set.insert(dep_info.package_databases, package_database),
+        package_databases = depset([package_database], transitive = [dep_info.package_databases]),
         version_macros = set.empty(),
         source_files = set.empty(),
         extra_source_files = depset(),

@@ -396,7 +396,7 @@ def haskell_library_impl(ctx):
 
     hs_info = HaskellInfo(
         package_ids = [pkg_id.to_string(my_pkg_id)] + dep_info.package_ids,
-        package_databases = set.insert(dep_info.package_databases, cache_file),
+        package_databases = depset([cache_file], transitive = [dep_info.package_databases]),
         version_macros = version_macros,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
@@ -625,7 +625,7 @@ def haskell_import_impl(ctx):
     hs_info = HaskellInfo(
         package_ids = [id],
         # XXX Empty set of conf and cache files only works for global db.
-        package_databases = set.empty(),
+        package_databases = depset(),
         version_macros = version_macros,
         source_files = set.empty(),
         extra_source_files = depset(),

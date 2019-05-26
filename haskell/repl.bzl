@@ -94,11 +94,11 @@ def _merge_HaskellReplLoadInfo(load_infos):
 
 def _merge_HaskellReplDepInfo(dep_infos):
     package_ids = []
-    package_databases = set.empty()
+    package_databases = depset()
 
     for dep_info in dep_infos:
         package_ids += dep_info.package_ids
-        set.mutable_union(package_databases, dep_info.package_databases)
+        package_databases = depset(transitive = [package_databases, dep_info.package_databases])
 
     return HaskellReplDepInfo(
         package_ids = package_ids,
@@ -215,7 +215,7 @@ def _create_repl(hs, ctx, repl_info, output):
     # Load built dependencies (-package-id, -package-db)
     for package_id in repl_info.dep_info.package_ids:
         args.extend(["-package-id", package_id])
-    for package_cache in set.to_list(repl_info.dep_info.package_databases):
+    for package_cache in repl_info.dep_info.package_databases.to_list():
         args.extend([
             "-package-db",
             paths.join("$RULES_HASKELL_EXEC_ROOT", package_cache.dirname),
@@ -300,7 +300,7 @@ def _create_repl(hs, ctx, repl_info, output):
         ghci_repl_script,
     ]
     extra_inputs.extend(set.to_list(repl_info.load_info.source_files))
-    extra_inputs.extend(set.to_list(repl_info.dep_info.package_databases))
+    extra_inputs.extend(repl_info.dep_info.package_databases.to_list())
     extra_inputs.extend(library_deps)
     extra_inputs.extend(ld_library_deps)
     return [DefaultInfo(
