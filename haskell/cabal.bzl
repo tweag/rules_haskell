@@ -354,7 +354,7 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
                 dependencies[src].append(dest)
     return (dependencies, transitive_unpacked_sdists)
 
-def _stack_install_impl(repository_ctx):
+def _stack_snapshot_impl(repository_ctx):
     packages = repository_ctx.attr.packages
     non_core_packages = [
         package
@@ -428,8 +428,8 @@ haskell_cabal_library(
     build_file_content = "\n".join(build_file_builder)
     repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
 
-stack_install = repository_rule(
-    _stack_install_impl,
+stack_snapshot = repository_rule(
+    _stack_snapshot_impl,
     attrs = {
         "snapshot": attr.string(
             doc = "The name of a Stackage snapshot.",
@@ -446,7 +446,7 @@ stack_install = repository_rule(
 
 Example:
   ```bzl
-  stack_install(
+  stack_snapshot(
       name = "stackage",
       packages = ["conduit", "lens", "zlib"],
       snapshot = "lts-13.15",
