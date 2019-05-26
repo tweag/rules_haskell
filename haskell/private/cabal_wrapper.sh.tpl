@@ -30,6 +30,7 @@ distdir=$(mktemp -d)
 libdir=$pkgroot/iface
 dynlibdir=$pkgroot/lib
 bindir=$pkgroot/bin
+datadir=$pkgroot/data
 package_database=$pkgroot/package.conf.d
 
 %{ghc_pkg} recache --package-db=$package_database
@@ -55,6 +56,7 @@ $execroot/%{runghc} $setup configure \
     --dynlibdir=$dynlibdir \
     --libsubdir= \
     --bindir=$bindir \
+    --datadir=$datadir \
     --package-db=clear \
     --package-db=global \
     "${@/=/=$execroot/}" \

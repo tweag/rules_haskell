@@ -155,6 +155,10 @@ def _haskell_cabal_library_impl(ctx):
         "_install/iface",
         sibling = cabal,
     )
+    data_dir = hs.actions.declare_directory(
+        "_install/data",
+        sibling = cabal,
+    )
     static_library_filename = "_install/lib/libHS{}.a".format(name)
     if with_profiling:
         static_library_filename = "_install/lib/libHS{}_p.a".format(name)
@@ -186,6 +190,7 @@ def _haskell_cabal_library_impl(ctx):
             interfaces_dir,
             static_library,
             dynamic_library,
+            data_dir,
         ],
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
@@ -193,7 +198,13 @@ def _haskell_cabal_library_impl(ctx):
         use_default_shell_env = True,
     )
 
-    default_info = DefaultInfo(files = depset([static_library, dynamic_library]))
+    default_info = DefaultInfo(
+        files = depset([static_library, dynamic_library]),
+        runfiles = ctx.runfiles(
+            files = [data_dir],
+            collect_default = True,
+        ),
+    )
     hs_info = HaskellInfo(
         package_ids = [],
         package_databases = depset([package_database], transitive = [dep_info.package_databases]),
@@ -303,6 +314,10 @@ def _haskell_cabal_binary_impl(ctx):
         "_install/bin/{}".format(hs.label.name),
         sibling = cabal,
     )
+    data_dir = hs.actions.declare_directory(
+        "_install/data",
+        sibling = cabal,
+    )
     c = _prepare_cabal_inputs(
         hs,
         cc,
@@ -321,6 +336,7 @@ def _haskell_cabal_binary_impl(ctx):
         outputs = [
             package_database,
             binary,
+            data_dir,
         ],
         env = c.env,
         mnemonic = "HaskellCabalBinary",
@@ -342,7 +358,14 @@ def _haskell_cabal_binary_impl(ctx):
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
-    default_info = DefaultInfo(files = depset([binary]), executable = binary)
+    default_info = DefaultInfo(
+        files = depset([binary]),
+        executable = binary,
+        runfiles = ctx.runfiles(
+            files = [data_dir],
+            collect_default = True,
+        ),
+    )
 
     return [hs_info, cc_info, default_info]
 
