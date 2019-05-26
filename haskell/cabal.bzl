@@ -496,11 +496,13 @@ Example:
   ```bzl
   stack_snapshot(
       name = "stackage",
-      packages = ["conduit", "lens", "zlib"],
+      packages = ["conduit", "lens", "zlib-0.6.2"],
       snapshot = "lts-13.15",
       deps = ["@zlib.dev//:zlib"],
   )
   ```
+  defines `@stackage//:conduit`, `@stackage//:lens`,
+  `@stackage//:zlib` library targets.
 
 This rule will use Stack to compute the transitive closure of the
 subset of the given snapshot listed in the `packages` attribute, and
@@ -508,6 +510,11 @@ generate a dependency graph. If a package in the closure depends on
 system libraries or other external libraries, use the `deps` attribute
 to list them. This attribute works like the
 `--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
+
+Packages that are in the snapshot need not have their versions
+specified. But any additional packages or version overrides will have
+to be specified with a package identifier of the form
+`<package>-<version>` in the `packages` attribute.
 
 In the external repository defined by the rule, all given packages are
 available as top-level targets named after each package.
