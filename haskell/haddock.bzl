@@ -108,7 +108,7 @@ def _haskell_doc_aspect_impl(target, ctx):
 
     ctx.actions.run(
         inputs = depset(transitive = [
-            set.to_depset(target[HaskellInfo].package_databases),
+            target[HaskellInfo].package_databases,
             set.to_depset(target[HaskellInfo].interface_dirs),
             set.to_depset(target[HaskellInfo].source_files),
             target[HaskellInfo].extra_source_files,
@@ -158,6 +158,9 @@ haskell_doc_aspect = aspect(
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
 )
 
+def _dirname(file):
+    return file.dirname
+
 def _haskell_doc_rule_impl(ctx):
     hs = haskell_context(ctx)
 
@@ -169,17 +172,16 @@ def _haskell_doc_rule_impl(ctx):
     doc_root_raw = ctx.attr.name
     haddock_dict = {}
     html_dict_original = {}
-    all_caches = set.empty()
+    all_caches = depset(transitive = [
+        dep[HaskellInfo].package_databases
+        for dep in ctx.attr.deps
+        if HaskellInfo in dep
+    ])
 
     for dep in ctx.attr.deps:
         if HaddockInfo in dep:
             html_dict_original.update(dep[HaddockInfo].transitive_html)
             haddock_dict.update(dep[HaddockInfo].transitive_haddocks)
-        if HaskellInfo in dep:
-            set.mutable_union(
-                all_caches,
-                dep[HaskellInfo].package_databases,
-            )
 
     # Copy docs of Bazel deps into predefined locations under the root doc
     # directory.
@@ -244,16 +246,14 @@ def _haskell_doc_rule_impl(ctx):
                     haddock_dict[package_id].path,
                 ))
 
-    for cache in set.to_list(all_caches):
-        args.add("--optghc=-package-db={0}".format(cache.dirname))
-
+    args.add_all(all_caches, map_each = _dirname, format_each = "--optghc=-package-db=%s")
     locale_archive_depset = (
         depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
     )
 
     ctx.actions.run(
         inputs = depset(transitive = [
-            set.to_depset(all_caches),
+            all_caches,
             depset(html_dict_copied.values()),
             depset(haddock_dict.values()),
             locale_archive_depset,
