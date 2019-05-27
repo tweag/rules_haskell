@@ -13,7 +13,6 @@ load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "HaskellPrebuiltPackageInfo",
 )
 
 def _doctest_toolchain_impl(ctx):
@@ -81,7 +80,7 @@ def _haskell_doctest_single(target, ctx):
       File: the doctest log.
     """
 
-    if HaskellInfo not in target or HaskellPrebuiltPackageInfo in target:
+    if HaskellInfo not in target:
         return []
 
     hs = haskell_context(ctx, ctx.attr)

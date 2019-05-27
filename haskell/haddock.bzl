@@ -6,7 +6,6 @@ load(
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "HaskellPrebuiltPackageInfo",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
@@ -23,7 +22,7 @@ def _get_haddock_path(package_id):
     return package_id + ".haddock"
 
 def _haskell_doc_aspect_impl(target, ctx):
-    if HaskellInfo not in target or HaskellLibraryInfo not in target or HaskellPrebuiltPackageInfo in target:
+    if not (HaskellLibraryInfo in target and set.to_list(target[HaskellInfo].source_files)):
         return []
 
     # Packages imported via `//haskell:import.bzl%haskell_import` already
@@ -72,11 +71,6 @@ def _haskell_doc_aspect_impl(target, ctx):
             pid,
             transitive_haddocks[pid].path,
         ))
-
-    prebuilt_deps = ctx.actions.args()
-    for dep in set.to_list(target[HaskellInfo].prebuilt_dependencies):
-        prebuilt_deps.add(dep.package)
-    prebuilt_deps.use_param_file(param_file_arg = "%s", use_always = True)
 
     compile_flags = ctx.actions.args()
     for x in target[HaskellInfo].compile_flags:
@@ -134,7 +128,6 @@ def _haskell_doc_aspect_impl(target, ctx):
         progress_message = "HaskellHaddock {}".format(ctx.label),
         executable = haddock_wrapper,
         arguments = [
-            prebuilt_deps,
             args,
             compile_flags,
         ],

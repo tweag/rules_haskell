@@ -5,7 +5,6 @@ load(
     "HaskellCcInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "HaskellPrebuiltPackageInfo",
     "empty_HaskellCcInfo",
     "merge_HaskellCcInfo",
 )
@@ -133,9 +132,6 @@ def _HaskellCcInfo_from_CcInfo(ctx, cc_info):
 def gather_dep_info(ctx, deps):
     """Collapse dependencies into a single `HaskellInfo`.
 
-    Note that the field `prebuilt_dependencies` also includes
-    prebuilt_dependencies of current target.
-
     Args:
       ctx: Rule context.
       deps: deps attribute.
@@ -152,8 +148,6 @@ def gather_dep_info(ctx, deps):
         static_libraries_prof = [],
         dynamic_libraries = set.empty(),
         interface_dirs = set.empty(),
-        prebuilt_dependencies = set.empty(),
-        direct_prebuilt_deps = set.empty(),
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),
     )
@@ -174,25 +168,8 @@ def gather_dep_info(ctx, deps):
                 static_libraries_prof = acc.static_libraries_prof + binfo.static_libraries_prof,
                 dynamic_libraries = set.mutable_union(acc.dynamic_libraries, binfo.dynamic_libraries),
                 interface_dirs = set.mutable_union(acc.interface_dirs, binfo.interface_dirs),
-                prebuilt_dependencies = set.mutable_union(acc.prebuilt_dependencies, binfo.prebuilt_dependencies),
-                direct_prebuilt_deps = acc.direct_prebuilt_deps,
                 cc_dependencies = acc.cc_dependencies,
                 transitive_cc_dependencies = merge_HaskellCcInfo(acc.transitive_cc_dependencies, binfo.transitive_cc_dependencies),
-            )
-        elif HaskellPrebuiltPackageInfo in dep:
-            pkg = dep[HaskellPrebuiltPackageInfo]
-            acc = HaskellInfo(
-                package_ids = acc.package_ids,
-                package_databases = acc.package_databases,
-                version_macros = set.mutable_insert(acc.version_macros, pkg.version_macros_file),
-                static_libraries = acc.static_libraries,
-                static_libraries_prof = acc.static_libraries_prof,
-                dynamic_libraries = acc.dynamic_libraries,
-                interface_dirs = acc.interface_dirs,
-                prebuilt_dependencies = set.mutable_insert(acc.prebuilt_dependencies, pkg),
-                direct_prebuilt_deps = set.mutable_insert(acc.direct_prebuilt_deps, pkg),
-                cc_dependencies = acc.cc_dependencies,
-                transitive_cc_dependencies = acc.transitive_cc_dependencies,
             )
         elif CcInfo in dep and HaskellInfo not in dep:
             # The final link of a binary must include all static libraries we
@@ -207,8 +184,6 @@ def gather_dep_info(ctx, deps):
                 static_libraries_prof = acc.static_libraries_prof,
                 dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
-                prebuilt_dependencies = acc.prebuilt_dependencies,
-                direct_prebuilt_deps = acc.direct_prebuilt_deps,
                 cc_dependencies = merge_HaskellCcInfo(
                     acc.cc_dependencies,
                     hs_cc_info,

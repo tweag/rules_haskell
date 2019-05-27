@@ -166,8 +166,6 @@ main = defaultMain
         dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
         interface_dirs = set.insert(dep_info.interface_dirs, interfaces_dir),
         compile_flags = [],
-        prebuilt_dependencies = set.empty(),
-        direct_prebuilt_deps = set.empty(),
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )

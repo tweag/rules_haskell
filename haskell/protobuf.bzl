@@ -157,7 +157,6 @@ def _haskell_proto_aspect_impl(target, ctx):
         "srcs": hs_files,
         "deps": ctx.rule.attr.deps +
                 ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].deps,
-        "prebuilt_dependencies": ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].prebuilt_deps,
         "plugins": [],
         "_cc_toolchain": ctx.attr._cc_toolchain,
     }
@@ -270,11 +269,6 @@ registered.
 """
 
 def _protobuf_toolchain_impl(ctx):
-    if ctx.attr.prebuilt_deps:
-        print("""The attribute 'prebuilt_deps' has been deprecated,
-use the 'deps' attribute instead.
-""")
-
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,
@@ -283,7 +277,6 @@ use the 'deps' attribute instead.
                 protoc = ctx.executable.protoc,
             ),
             deps = ctx.attr.deps,
-            prebuilt_deps = ctx.attr.prebuilt_deps,
         ),
     ]
 
@@ -307,9 +300,6 @@ _protobuf_toolchain = rule(
         "deps": attr.label_list(
             doc = "List of other Haskell libraries to be linked to protobuf libraries.",
         ),
-        "prebuilt_deps": attr.string_list(
-            doc = "Non-Bazel supplied Cabal dependencies for protobuf libraries.",
-        ),
     },
 )
 
@@ -317,7 +307,6 @@ def haskell_proto_toolchain(
         name,
         plugin,
         deps = [],
-        prebuilt_deps = [],
         protoc = Label("@com_google_protobuf//:protoc"),
         **kwargs):
     """Declare a Haskell protobuf toolchain.
@@ -336,7 +325,7 @@ def haskell_proto_toolchain(
         name = "protobuf-toolchain",
         protoc = "@com_google_protobuf//:protoc",
         plugin = "@hackage-proto-lens-protoc//:bin/proto-lens-protoc",
-        prebuilt_deps = [
+        deps = [
           "base",
           "bytestring",
           "containers",
@@ -349,8 +338,8 @@ def haskell_proto_toolchain(
       )
       ```
 
-      The `prebuilt_deps` and `deps` arguments allow to specify Haskell
-      libraries to use to compile the auto-generated source files.
+      The `deps` attribute is for specifying Haskell libraries to use
+      when compiling the auto-generated source files.
 
       In `WORKSPACE` you could have something like this:
 
@@ -373,13 +362,13 @@ def haskell_proto_toolchain(
         "//tests:protobuf-toolchain",
       )
       ```
+
     """
     impl_name = name + "-impl"
     _protobuf_toolchain(
         name = impl_name,
         plugin = plugin,
         deps = deps,
-        prebuilt_deps = prebuilt_deps,
         protoc = protoc,
         visibility = ["//visibility:public"],
         **kwargs
