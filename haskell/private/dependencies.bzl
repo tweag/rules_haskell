@@ -155,11 +155,6 @@ def gather_dep_info(ctx, deps):
         for dep in deps
         if HaskellInfo in dep
     ])
-    static_libraries_prof = depset(transitive = [
-        dep[HaskellInfo].static_libraries_prof
-        for dep in deps
-        if HaskellInfo in dep
-    ])
     dynamic_libraries = depset(transitive = [
         dep[HaskellInfo].dynamic_libraries
         for dep in deps

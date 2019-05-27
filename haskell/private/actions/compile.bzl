@@ -337,7 +337,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             plugin_dep_info.package_databases,
             plugin_dep_info.interface_dirs,
             plugin_dep_info.static_libraries,
-            plugin_dep_info.static_libraries_prof,
             plugin_dep_info.dynamic_libraries,
             depset(library_deps),
             depset(ld_library_deps),

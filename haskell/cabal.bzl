@@ -339,7 +339,6 @@ def _haskell_cabal_binary_impl(ctx):
         dynamic_libraries = dep_info.dynamic_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = [],
-        prebuilt_dependencies = dep_info.prebuilt_dependencies,
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
