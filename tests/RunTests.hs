@@ -6,6 +6,7 @@
 import Data.Foldable (for_)
 import Data.List (isInfixOf, sort)
 import System.Exit (ExitCode(..))
+import System.Info (os)
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
@@ -37,7 +38,13 @@ main = hspec $ do
       ])
 
   it "bazel test prof" $ do
-    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only", "--test_tag_filters", "-requires_dynamic"])
+    -- In .circleci/config.yml we specify --test_tag_filters
+    -- -dont_test_on_darwin. However, specifiying --test_tag_filters
+    -- -requires_dynamic here alone would override that filter. So,
+    -- we have to duplicate that filter here.
+    let tagFilter | os == "darwin" = "-dont_test_on_darwin,-requires_dynamic"
+                  | otherwise      = "-requires_dynamic"
+    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only", "--test_tag_filters", tagFilter])
 
   describe "repl" $ do
     it "for libraries" $ do
