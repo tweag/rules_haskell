@@ -76,32 +76,23 @@ def package(
 
     (extra_lib_dirs, extra_libs) = _get_extra_libraries(dep_info)
 
-    metadata_entries = {
+    # Create a file from which ghc-pkg will create the actual package
+    # from. List of exposed modules generated below.
+    metadata_file = hs.actions.declare_file(target_unique_name(hs, "metadata"))
+    write_package_conf(hs, metadata_file, {
         "name": my_pkg_id.package_name,
         "version": my_pkg_id.version,
         "id": pkg_id.to_string(my_pkg_id),
         "key": pkg_id.to_string(my_pkg_id),
         "exposed": "True",
-        "hidden-modules": " ".join(other_modules),
-        "import-dirs": import_dir,
-        "library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
-        "dynamic-library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
-        "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
-        "extra-libraries": " ".join(extra_libs),
-        "depends": ", ".join(dep_info.package_ids),
-    }
-
-    # Create a file from which ghc-pkg will create the actual package
-    # from. List of exposed modules generated below.
-    metadata_file = hs.actions.declare_file(target_unique_name(hs, "metadata"))
-    hs.actions.write(
-        output = metadata_file,
-        content = "\n".join([
-            "{0}: {1}".format(k, v)
-            for k, v in metadata_entries.items()
-            if v
-        ]) + "\n",
-    )
+        "hidden-modules": other_modules,
+        "import-dirs": [import_dir],
+        "library-dirs": ["${pkgroot}"] + extra_lib_dirs,
+        "dynamic-library-dirs": ["${pkgroot}"] + extra_lib_dirs,
+        "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)],
+        "extra-libraries": extra_libs,
+        "depends": dep_info.package_ids,
+    })
 
     # Combine exposed modules and other metadata to form the package
     # configuration file.
@@ -125,6 +116,51 @@ def package(
     cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
 
     return conf_file, cache_file
+
+def write_package_conf(ctx, conf_file, metadata):
+    """Write GHC package configuration file.
+
+    See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html
+
+    Args:
+      ctx: Rule context or Haskell context.
+      conf_file: The declared output file.
+      metadata: Dictionary from metadata keys to values.
+        Sequence or depset values should be passed as such. Scalar values as scalars.
+    """
+    # Use an Args object to avoid converting depsets to lists and building up large strings.
+    package_conf = ctx.actions.args()
+    package_conf.set_param_file_format("multiline")
+
+    formats = {
+        "name": ("add", {"format": "name: %s"}),
+        "id": ("add", {"format": "id: %s"}),
+        "key": ("add", {"format": "key: %s"}),
+        "version": ("add", {"format": "version: %s"}),
+        "exposed": ("add", {"format": "exposed: %s"}),
+        "depends": ("add_joined", {"join_with": " ", "format_joined": "depends: %s"}),
+        "exposed-modules": ("add_joined", {"join_with": " ", "format_joined": "exposed-modules: %s"}),
+        "hidden-modules": ("add_joined", {"join_with": " ", "format_joined": "hidden-modules: %s"}),
+        "import-dirs": ("add_joined", {"join_with": " ", "format_joined": "import-dirs: %s"}),
+        "hs-libraries": ("add_joined", {"join_with": " ", "format_joined": "hs-libraries: %s"}),
+        "extra-libraries": ("add_joined", {"join_with": " ", "format_joined": "extra-libraries: %s"}),
+        "library-dirs": ("add_joined", {"join_with": " ", "format_joined": "library-dirs: %s"}),
+        "dynamic-library-dirs": ("add_joined", {"join_with": " ", "format_joined": "dynamic-library-dirs: %s"}),
+        # NOTE: Add additional fields as needed.
+    }
+
+    for (k, v) in metadata.items():
+        if not v:
+            continue
+        (fn, kwargs) = formats[k]
+        if fn == "add":
+            package_conf.add(v, **kwargs)
+        elif fn == "add_joined":
+            package_conf.add_joined(v, **kwargs)
+        else:
+            fail("Internal error: unknown package_conf function")
+
+    ctx.actions.write(conf_file, package_conf)
 
 def ghc_pkg_recache(ctx, ghc_pkg, conf_file):
     """Generate a package.cache file from the given package configuration
