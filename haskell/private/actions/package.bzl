@@ -47,8 +47,6 @@ def package(
         hs,
         dep_info,
         interfaces_dir,
-        static_library,
-        dynamic_library,
         exposed_modules_file,
         other_modules,
         my_pkg_id):
@@ -56,9 +54,11 @@ def package(
 
     Args:
       hs: Haskell context.
+      dep_info: HaskellInfo of dependencies.
       interfaces_dir: Directory containing interface files.
-      static_library: Static library of the package.
-      dynamic_library: Dynamic library of the package.
+      exposed_modules_file: File listing exposed Haskell modules.
+      other_modules: Hidden Haskell modules.
+      my_pkg_id: This package's pkg_id object.
 
     Returns:
       (File, File): GHC package conf file, GHC package cache file
@@ -122,57 +122,33 @@ def package(
     )
 
     # Make the call to ghc-pkg and use the package configuration file
-    package_path = ":".join([c.dirname for c in dep_info.package_databases.to_list()]) + ":"
-    hs.actions.run(
-        inputs = depset(transitive = [
-            dep_info.package_databases,
-            depset([interfaces_dir]),
-            depset([
-                input
-                for input in [
-                    static_library,
-                    conf_file,
-                    dynamic_library,
-                ]
-                if input
-            ]),
-        ]),
-        outputs = [cache_file],
-        env = {
-            "GHC_PACKAGE_PATH": package_path,
-        },
-        mnemonic = "HaskellRegisterPackage",
-        progress_message = "HaskellRegisterPackage {}".format(hs.label),
-        executable = hs.tools.ghc_pkg,
-        # Registration of a new package consists in,
-        #
-        # 1. copying the registration file into the package db,
-        # 2. performing some validation on the registration file content,
-        # 3. recaching, i.e. regenerating the package db cache file.
-        #
-        # Normally, this is all done by `ghc-pkg register`. But in our
-        # case, `ghc-pkg register` is painful, because the validation
-        # it performs is slow, somewhat redundant but especially, too
-        # strict (see e.g.
-        # https://ghc.haskell.org/trac/ghc/ticket/15478). So we do (1)
-        # and (3) manually, by copying then calling `ghc-pkg recache`
-        # directly.
-        #
-        # The downside is that we do lose the few validations that
-        # `ghc-pkg register` was doing that was useful. e.g. when
-        # reexporting modules, validation checks that the source
-        # module does exist.
-        #
-        # TODO Go back to using `ghc-pkg register`. Blocked by
-        # https://ghc.haskell.org/trac/ghc/ticket/15478
+    cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
+
+    return conf_file, cache_file
+
+def ghc_pkg_recache(ctx, ghc_pkg, conf_file):
+    """Generate a package.cache file from the given package configuration
+
+    Args:
+      ctx: Rule context or Haskell context.
+      ghc_pkg: The ghc-pkg tool.
+      conf_file: The package configuration file.
+
+    Returns:
+      File, the package.cache file.
+    """
+    cache_file = ctx.actions.declare_file("package.cache", sibling = conf_file)
+    ctx.actions.run(
+        executable = ghc_pkg,
         arguments = [
             "recache",
-            "--package-db={0}".format(conf_file.dirname),
+            "--package-db={}".format(conf_file.dirname),
             "-v0",
             "--no-expand-pkgroot",
         ],
-        # XXX: Seems required for this to work on Windows
-        use_default_shell_env = True,
+        mnemonic = "HaskellRegisterPackage",
+        progress_message = "HaskellRegisterPackage {}".format(ctx.label),
+        outputs = [cache_file],
+        inputs = depset(direct = [conf_file]),
     )
-
-    return conf_file, cache_file
+    return cache_file

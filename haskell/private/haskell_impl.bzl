@@ -370,8 +370,6 @@ def haskell_library_impl(ctx):
         hs,
         dep_info,
         c.interfaces_dir,
-        static_library,
-        dynamic_library,
         exposed_modules_file,
         other_modules,
         my_pkg_id,
