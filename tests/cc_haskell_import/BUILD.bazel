@@ -44,7 +44,10 @@ cc_binary(
     name = "hs-lib-b-wrapped.so",
     linkshared = 1,
     linkstatic = 0,
-    tags = ["requires_threaded_rts"],
+    tags = [
+        "requires_dynamic",
+        "requires_threaded_rts",
+    ],
     visibility = ["//tests:__subpackages__"],
     deps = [
         ":hs-lib-b",
@@ -60,7 +63,12 @@ py_binary(
     ],
     default_python_version = "PY3",
     srcs_version = "PY3ONLY",
-    tags = ["requires_threaded_rts"],
+    # This requires a shared object, which is not provided in profiling mode.
+    # Hence we disable this test in profiling mode using requires_dynamic.
+    tags = [
+        "requires_dynamic",
+        "requires_threaded_rts",
+    ],
     visibility = ["//tests:__subpackages__"],
     deps = ["@bazel_tools//tools/python/runfiles"],
 )

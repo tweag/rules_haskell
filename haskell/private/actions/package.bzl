@@ -47,13 +47,11 @@ def package(
         hs,
         dep_info,
         interfaces_dir,
-        interfaces_dir_prof,
         static_library,
         dynamic_library,
         exposed_modules_file,
         other_modules,
-        my_pkg_id,
-        static_library_prof):
+        my_pkg_id):
     """Create GHC package using ghc-pkg.
 
     Args:
@@ -61,7 +59,6 @@ def package(
       interfaces_dir: Directory containing interface files.
       static_library: Static library of the package.
       dynamic_library: Dynamic library of the package.
-      static_library_prof: Static library compiled with profiling or None.
 
     Returns:
       (File, File): GHC package conf file, GHC package cache file
@@ -76,16 +73,6 @@ def package(
         "${pkgroot}",
         paths.join(pkg_db_dir, "_iface"),
     )
-    interfaces_dirs = [interfaces_dir]
-
-    if interfaces_dir_prof != None:
-        import_dir_prof = paths.join(
-            "${pkgroot}",
-            paths.join(pkg_db_dir, "_iface_prof"),
-        )
-        interfaces_dirs.append(interfaces_dir_prof)
-    else:
-        import_dir_prof = ""
 
     (extra_lib_dirs, extra_libs) = _get_extra_libraries(dep_info)
 
@@ -96,7 +83,7 @@ def package(
         "key": pkg_id.to_string(my_pkg_id),
         "exposed": "True",
         "hidden-modules": " ".join(other_modules),
-        "import-dirs": " ".join([import_dir, import_dir_prof]),
+        "import-dirs": import_dir,
         "library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
         "dynamic-library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
@@ -141,14 +128,13 @@ def package(
     hs.actions.run(
         inputs = depset(transitive = [
             set.to_depset(dep_info.package_databases),
-            depset(interfaces_dirs),
+            depset([interfaces_dir]),
             depset([
                 input
                 for input in [
                     static_library,
                     conf_file,
                     dynamic_library,
-                    static_library_prof,
                 ]
                 if input
             ]),
