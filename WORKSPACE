@@ -33,9 +33,9 @@ load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 # bazel dependencies
 haskell_repositories()
 
-load("@io_tweag_rules_haskell//haskell:cabal.bzl", "stack_install")
+load("@io_tweag_rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
-stack_install(
+stack_snapshot(
     name = "stackage",
     packages = [
         # Core libraries
