@@ -238,7 +238,7 @@ def get_static_hs_lib_name(with_profiling, lib):
     """
     name = get_lib_name(lib)
     suffix = "_p" if with_profiling else ""
-    if name.endswith(suffix):
+    if suffix and name.endswith(suffix):
         name = name[:-len(suffix)]
     if name == "Cffi":
         name = "ffi"
