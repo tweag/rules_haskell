@@ -35,3 +35,6 @@ labels:
     color: 0052cc
   - name: "wontfix"
     color: ffffff
+  - name: "merge-queue"
+    color: 0e8a16
+    description: "merge on green CI"
