@@ -287,6 +287,105 @@ build times, and does not require drafting a `.cabal` file.
 
 """
 
+def _haskell_cabal_binary_impl(ctx):
+    hs = haskell_context(ctx)
+    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    cc = cc_interop_info(ctx)
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+    )
+
+    cabal = _find_cabal(hs, ctx.files.srcs)
+    setup = _find_setup(hs, cabal, ctx.files.srcs)
+    package_database = hs.actions.declare_file(
+        "_install/package.conf.d/package.cache",
+        sibling = cabal,
+    )
+    binary = hs.actions.declare_file(
+        "_install/bin/{}".format(hs.label.name),
+        sibling = cabal,
+    )
+    c = _prepare_cabal_inputs(
+        hs,
+        cc,
+        dep_info,
+        cc_info,
+        cabal = cabal,
+        setup = setup,
+        srcs = ctx.files.srcs,
+        cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
+        package_database = package_database,
+    )
+    ctx.actions.run(
+        executable = c.cabal_wrapper,
+        arguments = [c.args],
+        inputs = c.inputs,
+        outputs = [
+            package_database,
+            binary,
+        ],
+        env = c.env,
+        mnemonic = "HaskellCabalBinary",
+        progress_message = "HaskellCabalBinary {}".format(hs.label),
+        use_default_shell_env = True,
+    )
+
+    hs_info = HaskellInfo(
+        package_ids = dep_info.package_ids,
+        package_databases = dep_info.package_databases,
+        version_macros = set.empty(),
+        source_files = set.empty(),
+        extra_source_files = depset(),
+        import_dirs = set.empty(),
+        static_libraries = dep_info.static_libraries,
+        static_libraries_prof = dep_info.static_libraries_prof,
+        dynamic_libraries = dep_info.dynamic_libraries,
+        interface_dirs = dep_info.interface_dirs,
+        compile_flags = [],
+        prebuilt_dependencies = dep_info.prebuilt_dependencies,
+        cc_dependencies = dep_info.cc_dependencies,
+        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
+    )
+    default_info = DefaultInfo(files = depset([binary]), executable = binary)
+
+    return [hs_info, cc_info, default_info]
+
+haskell_cabal_binary = rule(
+    _haskell_cabal_binary_impl,
+    executable = True,
+    attrs = {
+        "srcs": attr.label_list(allow_files = True),
+        "deps": attr.label_list(),
+        "_cabal_wrapper_tpl": attr.label(
+            allow_single_file = True,
+            default = Label("@io_tweag_rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+    },
+    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+)
+"""Use Cabal to build a binary.
+
+Example:
+  ```bzl
+  haskell_cabal_binary(
+      name = "happy",
+      srcs = glob(["**"]),
+  )
+  ```
+
+This rule assumes that the .cabal file defines a single executable
+with the same name as the package.
+
+This rule does not use `cabal-install`. It calls the package's
+`Setup.hs` script directly if one exists, or the default one if not.
+All sources files that would have been part of a Cabal sdist need to
+be listed in `srcs` (crucially, including the `.cabal` file).
+
+"""
+
 # Temporary hardcoded list of core libraries. This will no longer be
 # necessary once Stack 2.0 is released.
 #

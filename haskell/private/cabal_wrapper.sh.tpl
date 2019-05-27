@@ -11,6 +11,7 @@
 %{env}
 
 set -euo pipefail
+shopt -s nullglob
 execroot="$(pwd)"
 
 # Set these variables if unset.
@@ -28,6 +29,7 @@ shift 4
 distdir=$(mktemp -d)
 libdir=$pkgroot/iface
 dynlibdir=$pkgroot/lib
+bindir=$pkgroot/bin
 package_database=$pkgroot/package.conf.d
 
 %{ghc_pkg} recache --package-db=$package_database
@@ -52,6 +54,7 @@ $execroot/%{runghc} $setup configure \
     --libdir=$libdir \
     --dynlibdir=$dynlibdir \
     --libsubdir= \
+    --bindir=$bindir \
     --package-db=clear \
     --package-db=global \
     "${@/=/=$execroot/}" \
@@ -69,8 +72,12 @@ cd - >/dev/null
 #
 # There were plans for controlling this, but they died. See:
 # https://github.com/haskell/cabal/pull/3982#issuecomment-254038734
-mv $libdir/libHS*.a $dynlibdir
-sed 's,library-dirs:.*,library-dirs: ${pkgroot}/lib,' \
-    $package_database/$name.conf > $package_database/$name.conf.tmp
-mv  $package_database/$name.conf.tmp $package_database/$name.conf
-%{ghc_pkg} recache --package-db=$package_database
+library=($libdir/libHS*.a)
+if [[ -n ${library+x} ]]
+then
+    mv $libdir/libHS*.a $dynlibdir
+    sed 's,library-dirs:.*,library-dirs: ${pkgroot}/lib,' \
+	$package_database/$name.conf > $package_database/$name.conf.tmp
+    mv  $package_database/$name.conf.tmp $package_database/$name.conf
+    %{ghc_pkg} recache --package-db=$package_database
+fi
