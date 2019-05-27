@@ -118,19 +118,37 @@ config_setting(
     },
 )
 
+config_setting(
+    name = "fastbuild_darwin",
+    values = {
+        "compilation_mode": "fastbuild",
+        "cpu": "darwin",
+    },
+)
+
+config_setting(
+    name = "fastbuild_windows",
+    values = {
+        "compilation_mode": "fastbuild",
+        "cpu": "x64_windows",
+    },
+)
+
 rule_test(
     name = "test-library-deps",
     size = "small",
+    # Bazel does not allow nested select statements. Therefore we flatten
+    # compilation_mode and cpu conditions into one select statement.
     generates = select({
         ":debug_build": [
             # In profiling build we only generate profiling static archives.
             "libHStestsZSlibrary-depsZSlibrary-deps_p.a",
         ],
-        "@bazel_tools//src/conditions:darwin": [
+        ":fastbuild_darwin": [
             "libHStestsZSlibrary-depsZSlibrary-deps-ghc{}.dylib".format(test_ghc_version),
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
         ],
-        "@bazel_tools//src/conditions:windows": [
+        ":fastbuild_windows": [
             "libHStestsZSlibrary-depsZSlibrary-deps-ghc{}.dll".format(test_ghc_version),
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
         ],
