@@ -564,8 +564,10 @@ Check that it ships with your version of GHC.
         # libraries that are available are missing profiling symbols, that
         # other profiling mode build results will reference. Therefore, we
         # don't import dynamic libraries in profiling mode.
-        libs = {}
-        static_libraries = target[HaskellImportHack].static_profiling_libraries.to_list()
+        libs = {
+            get_static_hs_lib_name(hs.toolchain.version, lib): {"static": lib}
+            for lib in target[HaskellImportHack].static_profiling_libraries.to_list()
+        }
     else:
         # Workaround for https://github.com/tweag/rules_haskell/issues/881
         # Static and dynamic libraries don't necessarily pair up 1 to 1.
@@ -575,12 +577,11 @@ Check that it ships with your version of GHC.
             get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
             for lib in target[HaskellImportHack].dynamic_libraries.to_list()
         }
-        static_libraries = target[HaskellImportHack].static_libraries.to_list()
-    for lib in static_libraries:
-        name = get_static_hs_lib_name(with_profiling, lib)
-        entry = libs.get(name, {})
-        entry["static"] = lib
-        libs[name] = entry
+        for lib in target[HaskellImportHack].static_libraries.to_list():
+            name = get_static_hs_lib_name(with_profiling, lib)
+            entry = libs.get(name, {})
+            entry["static"] = lib
+            libs[name] = entry
     libraries_to_link = [
         cc_common.create_library_to_link(
             actions = ctx.actions,
