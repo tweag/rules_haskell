@@ -36,11 +36,6 @@ jobs:
             dpkg -i bazel_0.24.0-linux-x86_64.deb
             echo "common:ci --build_tag_filters -requires_hackage,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
       - run:
-          name: Prefetch Stackage snapshot
-          command: |
-            # Retry if needed due to network flakiness.
-            cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd
-      - run:
           name: Build tests
           command: |
             bazel build --config ci //tests/...
@@ -86,7 +81,8 @@ jobs:
           name: Prefetch Stackage snapshot
           command: |
             # Retry if needed due to network flakiness.
-            cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd
+            nix-shell --arg docTools false --pure --run \
+              'cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd'
       - run:
           name: Build tests
           command: |
@@ -150,7 +146,8 @@ jobs:
           name: Prefetch Stackage snapshot
           command: |
             # Retry if needed due to network flakiness.
-            cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd
+            nix-shell --arg docTools false --pure --run \
+              'cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd'
       - run:
           name: Build tests
           shell: /bin/bash -eilo pipefail
