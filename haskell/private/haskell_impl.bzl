@@ -18,7 +18,12 @@ load(
     "link_library_dynamic",
     "link_library_static",
 )
-load(":private/actions/package.bzl", "package")
+load(
+    ":private/actions/package.bzl",
+    "package",
+    "write_package_conf",
+    "ghc_pkg_recache",
+)
 load(":private/actions/repl.bzl", "build_haskell_repl")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
 load(":private/context.bzl", "haskell_context")
@@ -621,16 +626,39 @@ def haskell_import_impl(ctx):
         version_macros = set.singleton(
             generate_version_macros(ctx, ctx.label.name, ctx.attr.version),
         )
+    conf_file = ctx.actions.declare_file("{0}.db/{0}.conf".format(id))
+    write_package_conf(ctx, conf_file, {
+        "id": id,
+        "name": ctx.attr.name,
+        "key": id,
+        "version": ctx.attr.version,
+        "exposed": "True",
+        "exposed-modules": ctx.attr.exposed_modules,
+        "hidden-modules": ctx.attr.hidden_modules,
+        "import-dirs": ctx.files.import_dirs,
+        "depends": [
+            dep[HaskellLibraryInfo].package_id
+            for dep in ctx.attr.deps
+            if HaskellLibraryInfo in dep
+        ],
+    })
+    cache_file = ghc_pkg_recache(ctx, ctx.executable.ghc_pkg, conf_file)
     hs_info = HaskellInfo(
         package_ids = [id],
-        # XXX Empty set of conf and cache files only works for global db.
-        package_databases = depset(),
+        package_databases = depset(
+            direct = [cache_file],
+            transitive = [
+                dep[HaskellInfo].package_databases
+                for dep in ctx.attr.deps
+                if HaskellInfo in dep
+            ],
+        ),
         version_macros = version_macros,
         source_files = set.empty(),
         extra_source_files = depset(),
         static_libraries = depset(),
         dynamic_libraries = depset(),
-        interface_dirs = depset(),
+        interface_dirs = depset(direct = ctx.files.interface_files),
         compile_flags = [],
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),

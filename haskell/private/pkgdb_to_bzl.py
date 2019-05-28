@@ -77,6 +77,9 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
         content = f.read()
     fields = unfold_fields(content)
     pkg = types.SimpleNamespace(
+        exposed_modules = [],
+        hidden_modules = [],
+        import_dirs = [],
         include_dirs = [],
         library_dirs = [],
         dynamic_library_dirs = [],
@@ -94,6 +97,14 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
             pkg.version = value
         elif key == "id":
             pkg.id = value
+        elif key == "key":
+            pkg.key = value
+        elif key == "exposed-modules":
+            pkg.exposed_modules += value.split()
+        elif key == "hidden-modules":
+            pkg.hidden_modules += value.split()
+        elif key == "import-dirs":
+            pkg.import_dirs += value.split()
         elif key == "include-dirs":
             pkg.include_dirs += value.split()
         elif key == "library-dirs":
@@ -123,7 +134,12 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
             haskell_import(
                 name = "{name}",
                 id = "{id}",
+                key = "{key}",
                 deps = {deps},
+                exposed_modules = {exposed_modules},
+                hidden_modules = {hidden_modules},
+                import_dirs = {import_dirs},
+                interface_files = {interface_files},
                 hdrs = {hdrs},
                 includes = {includes},
                 linkopts = {linkopts},
@@ -132,11 +148,24 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                 static_profiling_libraries = {static_profiling_libraries},
                 version = "{version}",
                 visibility = ["//visibility:public"],
+                ghc_pkg = ":bin/ghc-pkg",
             )
             """.format(
                 name = pkg.name,
                 id = pkg.id,
+                key = pkg.key,
                 version = pkg.version,
+                exposed_modules = pkg.exposed_modules,
+                hidden_modules = pkg.hidden_modules,
+                import_dirs = "{}".format([
+                    path_to_label(import_dir, pkg.pkgroot)
+                    for import_dir in pkg.import_dirs
+                ]),
+                interface_files = "glob({})".format([
+                    path_to_label("{}/**/*.{}".format(import_dir, ext), pkg.pkgroot)
+                    for import_dir in pkg.import_dirs
+                    for ext in ["hi", "p_hi", "dyn_hi"]
+                ]),
                 hdrs = "glob({})".format([
                     path_to_label("{}/**/*.h".format(include_dir), pkg.pkgroot)
                     for include_dir in pkg.include_dirs

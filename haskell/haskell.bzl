@@ -289,14 +289,31 @@ haskell_import = rule(
     _haskell_import_impl,
     attrs = {
         "id": attr.string(),
+        "key": attr.string(),
         "version": attr.string(),
         "deps": attr.label_list(),
+        "exposed_modules": attr.string_list(),
+        "hidden_modules": attr.string_list(),
+        "import_dirs": attr.label_list(
+            allow_files = True,
+            doc = "The directories listed under import-dirs.",
+        ),
+        "interface_files": attr.label_list(
+            allow_files = True,
+            doc = "The package's interface files in the import-dirs.",
+        ),
         "static_libraries": attr.label_list(allow_files = [".a"]),
         "shared_libraries": attr.label_list(allow_files = [".dll", ".dylib", ".so"]),
         "static_profiling_libraries": attr.label_list(allow_files = ["_p.a"]),
         "linkopts": attr.string_list(),
         "hdrs": attr.label_list(allow_files = True),
         "includes": attr.string_list(),
+        "ghc_pkg": attr.label(
+            allow_files = True,
+            cfg = "host",
+            executable = True,
+            mandatory = True,
+        ),
         "_version_macros": attr.label(
             executable = True,
             cfg = "host",
