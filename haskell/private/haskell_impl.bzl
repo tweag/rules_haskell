@@ -119,11 +119,11 @@ def _condition_coverage_src(hs, src):
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    dep_info = gather_dep_info(ctx, ctx.attr.deps).hs_info
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
-    )
+    ).hs_info
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -296,11 +296,11 @@ def _haskell_binary_common_impl(ctx, is_test):
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    dep_info = gather_dep_info(ctx, ctx.attr.deps).hs_info
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
-    )
+    ).hs_info
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)

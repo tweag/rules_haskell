@@ -137,7 +137,9 @@ def gather_dep_info(ctx, deps):
       deps: deps attribute.
 
     Returns:
-      HaskellInfo: Unified information about all dependencies.
+      struct:
+        hs_info: HaskellInfo, unified information about all dependencies.
+        cc_info: CcInfo, C dependency information.
     """
 
     package_ids = [
@@ -164,6 +166,12 @@ def gather_dep_info(ctx, deps):
         dep[HaskellInfo].interface_dirs
         for dep in deps
         if HaskellInfo in dep
+    ])
+
+    cc_info = cc_common.merge_cc_infos(cc_infos = [
+        dep[CcInfo]
+        for dep in deps
+        if CcInfo in dep
     ])
 
     acc = HaskellInfo(
@@ -214,4 +222,7 @@ def gather_dep_info(ctx, deps):
                 ),
             )
 
-    return acc
+    return struct(
+        hs_info = acc,
+        cc_info = cc_info,
+    )

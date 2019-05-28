@@ -137,7 +137,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
 
 def _haskell_cabal_library_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    dep_info = gather_dep_info(ctx, ctx.attr.deps).hs_info
     cc = cc_interop_info(ctx)
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
@@ -287,7 +287,7 @@ build times, and does not require drafting a `.cabal` file.
 
 def _haskell_cabal_binary_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    dep_info = gather_dep_info(ctx, ctx.attr.deps).hs_info
     cc = cc_interop_info(ctx)
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
