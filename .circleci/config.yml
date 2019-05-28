@@ -144,6 +144,7 @@ jobs:
 
       - run:
           name: Prefetch Stackage snapshot
+          shell: /bin/bash -eilo pipefail
           command: |
             # Retry if needed due to network flakiness.
             nix-shell --arg docTools false --pure --run \
