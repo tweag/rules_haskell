@@ -166,7 +166,7 @@ def build_haskell_repl(
             repl_file,
             ghc_info_file,
         ]),
-        set.to_depset(package_databases),
+        package_databases,
         depset(library_deps),
         depset(ld_library_deps),
         set.to_depset(hs_info.source_files),

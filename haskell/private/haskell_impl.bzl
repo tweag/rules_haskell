@@ -361,10 +361,7 @@ def haskell_library_impl(ctx):
             c.objects_dir,
             my_pkg_id,
         )
-        dynamic_libraries = set.insert(
-            dep_info.dynamic_libraries,
-            dynamic_library,
-        )
+        dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries])
     else:
         dynamic_library = None
         dynamic_libraries = dep_info.dynamic_libraries
@@ -380,9 +377,9 @@ def haskell_library_impl(ctx):
         my_pkg_id,
     )
 
-    interface_dirs = set.union(
-        dep_info.interface_dirs,
-        set.singleton(c.interfaces_dir),
+    interface_dirs = depset(
+        direct = [c.interfaces_dir],
+        transitive = [dep_info.interface_dirs],
     )
 
     version_macros = set.empty()
@@ -395,8 +392,8 @@ def haskell_library_impl(ctx):
         )
 
     hs_info = HaskellInfo(
-        package_ids = set.insert(dep_info.package_ids, pkg_id.to_string(my_pkg_id)),
-        package_databases = set.insert(dep_info.package_databases, cache_file),
+        package_ids = [pkg_id.to_string(my_pkg_id)] + dep_info.package_ids,
+        package_databases = depset([cache_file], transitive = [dep_info.package_databases]),
         version_macros = version_macros,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
@@ -405,7 +402,11 @@ def haskell_library_impl(ctx):
         # important for linker. Linker searches for unresolved symbols to the
         # left, i.e. you first feed a library which has unresolved symbols and
         # then you feed the library which resolves the symbols.
-        static_libraries = [static_library] + dep_info.static_libraries,
+        static_libraries = depset(
+            direct = [static_library],
+            transitive = [dep_info.static_libraries],
+            order = "topological",
+        ),
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
@@ -565,7 +566,7 @@ Check that it ships with your version of GHC.
         # don't import dynamic libraries in profiling mode.
         libs = {
             get_static_hs_lib_name(hs.toolchain.version, lib): {"static": lib}
-            for lib in target[HaskellImportHack].static_profiling_libraries
+            for lib in target[HaskellImportHack].static_profiling_libraries.to_list()
         }
     else:
         # Workaround for https://github.com/tweag/rules_haskell/issues/881
@@ -574,9 +575,9 @@ Check that it ships with your version of GHC.
         # dynamic libHSrts and the static libCffi and libHSrts.
         libs = {
             get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
-            for lib in target[HaskellImportHack].dynamic_libraries
+            for lib in target[HaskellImportHack].dynamic_libraries.to_list()
         }
-        for lib in target[HaskellImportHack].static_libraries:
+        for lib in target[HaskellImportHack].static_libraries.to_list():
             name = get_static_hs_lib_name(with_profiling, lib)
             entry = libs.get(name, {})
             entry["static"] = lib
@@ -623,15 +624,15 @@ def haskell_import_impl(ctx):
             generate_version_macros(ctx, ctx.label.name, ctx.attr.version),
         )
     hs_info = HaskellInfo(
-        package_ids = set.singleton(id),
+        package_ids = [id],
         # XXX Empty set of conf and cache files only works for global db.
-        package_databases = set.empty(),
+        package_databases = depset(),
         version_macros = version_macros,
         source_files = set.empty(),
         extra_source_files = depset(),
-        static_libraries = [],
-        dynamic_libraries = set.empty(),
-        interface_dirs = set.empty(),
+        static_libraries = depset(),
+        dynamic_libraries = depset(),
+        interface_dirs = depset(),
         compile_flags = [],
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),

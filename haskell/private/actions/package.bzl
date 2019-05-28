@@ -88,9 +88,7 @@ def package(
         "dynamic-library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
         "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
         "extra-libraries": " ".join(extra_libs),
-        "depends": ", ".join(
-            set.to_list(dep_info.package_ids),
-        ),
+        "depends": ", ".join(dep_info.package_ids),
     }
 
     # Create a file from which ghc-pkg will create the actual package
@@ -124,10 +122,10 @@ def package(
     )
 
     # Make the call to ghc-pkg and use the package configuration file
-    package_path = ":".join([c.dirname for c in set.to_list(dep_info.package_databases)]) + ":"
+    package_path = ":".join([c.dirname for c in dep_info.package_databases.to_list()]) + ":"
     hs.actions.run(
         inputs = depset(transitive = [
-            set.to_depset(dep_info.package_databases),
+            dep_info.package_databases,
             depset([interfaces_dir]),
             depset([
                 input

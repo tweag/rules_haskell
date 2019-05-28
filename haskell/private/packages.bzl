@@ -57,7 +57,7 @@ def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package
 
     # Expose all bazel dependencies
     package_ids = []
-    for package in set.to_list(hs_info.package_ids):
+    for package in hs_info.package_ids:
         # XXX: repl and lint uses this lib_info flags
         # It is set to None in all other usage of this function
         # TODO: find the meaning of this flag
@@ -68,7 +68,7 @@ def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package
 
     # Only include package DBs for deps.
     package_dbs = []
-    for cache in set.to_list(hs_info.package_databases if not custom_package_databases else custom_package_databases):
+    for cache in hs_info.package_databases.to_list() if custom_package_databases == None else custom_package_databases.to_list():
         package_dbs.append(cache.dirname)
 
     ghc_info = struct(

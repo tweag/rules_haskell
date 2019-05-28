@@ -140,13 +140,39 @@ def gather_dep_info(ctx, deps):
       HaskellInfo: Unified information about all dependencies.
     """
 
+    package_ids = [
+        dep[HaskellLibraryInfo].package_id
+        for dep in deps
+        if HaskellLibraryInfo in dep
+    ]
+    package_databases = depset(transitive = [
+        dep[HaskellInfo].package_databases
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+    static_libraries = depset(transitive = [
+        dep[HaskellInfo].static_libraries
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+    dynamic_libraries = depset(transitive = [
+        dep[HaskellInfo].dynamic_libraries
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+    interface_dirs = depset(transitive = [
+        dep[HaskellInfo].interface_dirs
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+
     acc = HaskellInfo(
-        package_ids = set.empty(),
-        package_databases = set.empty(),
+        package_ids = package_ids,
+        package_databases = package_databases,
         version_macros = set.empty(),
-        static_libraries = [],
-        dynamic_libraries = set.empty(),
-        interface_dirs = set.empty(),
+        static_libraries = static_libraries,
+        dynamic_libraries = dynamic_libraries,
+        interface_dirs = interface_dirs,
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),
     )
@@ -154,18 +180,15 @@ def gather_dep_info(ctx, deps):
     for dep in deps:
         if HaskellInfo in dep:
             binfo = dep[HaskellInfo]
-            package_ids = acc.package_ids
             if HaskellLibraryInfo not in dep:
                 fail("Target {0} cannot depend on binary".format(ctx.attr.name))
-            if HaskellLibraryInfo in dep:
-                set.mutable_insert(package_ids, dep[HaskellLibraryInfo].package_id)
             acc = HaskellInfo(
-                package_ids = package_ids,
-                package_databases = set.mutable_union(acc.package_databases, binfo.package_databases),
+                package_ids = acc.package_ids,
+                package_databases = acc.package_databases,
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
                 static_libraries = acc.static_libraries + binfo.static_libraries,
-                dynamic_libraries = set.mutable_union(acc.dynamic_libraries, binfo.dynamic_libraries),
-                interface_dirs = set.mutable_union(acc.interface_dirs, binfo.interface_dirs),
+                dynamic_libraries = acc.dynamic_libraries,
+                interface_dirs = acc.interface_dirs,
                 cc_dependencies = acc.cc_dependencies,
                 transitive_cc_dependencies = merge_HaskellCcInfo(acc.transitive_cc_dependencies, binfo.transitive_cc_dependencies),
             )

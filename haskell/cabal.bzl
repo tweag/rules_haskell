@@ -103,7 +103,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
     )
 
     args = hs.actions.args()
-    package_databases = set.to_depset(dep_info.package_databases)
+    package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
     extra_include_dirs = cc_info.compilation_context.includes
     extra_lib_dirs = [file.dirname for file in library_deps]
@@ -122,9 +122,9 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, cabal, setup, srcs, cabal_w
             extra_headers,
             depset(library_deps),
             depset(ld_library_deps),
-            set.to_depset(dep_info.interface_dirs),
-            depset(dep_info.static_libraries),
-            set.to_depset(dep_info.dynamic_libraries),
+            dep_info.interface_dirs,
+            dep_info.static_libraries,
+            dep_info.dynamic_libraries,
         ],
     )
 
@@ -195,15 +195,19 @@ def _haskell_cabal_library_impl(ctx):
 
     default_info = DefaultInfo(files = depset([static_library, dynamic_library]))
     hs_info = HaskellInfo(
-        package_ids = set.empty(),
-        package_databases = set.insert(dep_info.package_databases, package_database),
+        package_ids = [],
+        package_databases = depset([package_database], transitive = [dep_info.package_databases]),
         version_macros = set.empty(),
         source_files = set.empty(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
-        static_libraries = [static_library] + dep_info.static_libraries,
-        dynamic_libraries = set.insert(dep_info.dynamic_libraries, dynamic_library),
-        interface_dirs = set.insert(dep_info.interface_dirs, interfaces_dir),
+        static_libraries = depset(
+            direct = [static_library],
+            transitive = [dep_info.static_libraries],
+            order = "topological",
+        ),
+        dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries]),
+        interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,

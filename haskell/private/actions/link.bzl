@@ -317,7 +317,7 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
     hs_solibs = []
     if dynamic:
         hs_solibs_prefix = "_hssolib_%s" % hs.name
-        for dep in set.to_list(dep_info.dynamic_libraries):
+        for dep in dep_info.dynamic_libraries.to_list():
             dep_link = hs.actions.declare_file(
                 paths.join(hs_solibs_prefix, dep.basename),
                 sibling = binary,
@@ -453,9 +453,9 @@ def link_binary(
         cc,
         inputs = depset(transitive = [
             depset(extra_srcs),
-            set.to_depset(dep_info.package_databases),
-            set.to_depset(dep_info.dynamic_libraries),
-            depset(dep_info.static_libraries),
+            dep_info.package_databases,
+            dep_info.dynamic_libraries,
+            dep_info.static_libraries,
             depset([objects_dir]),
             cc_link_libs,
         ]),
@@ -662,8 +662,8 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         cc,
         inputs = depset([objects_dir], transitive = [
             depset(extra_srcs),
-            set.to_depset(dep_info.package_databases),
-            set.to_depset(dep_info.dynamic_libraries),
+            dep_info.package_databases,
+            dep_info.dynamic_libraries,
             cc_link_libs,
         ]),
         outputs = [dynamic_library],
