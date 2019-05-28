@@ -13,3 +13,10 @@ pull_request_rules:
     conditions: []
     actions:
       delete_head_branch: {}
+  - name: remove from merge-queue after merge
+    conditions:
+      - merged
+    actions:
+      label:
+        remove:
+          - "merge-queue"
