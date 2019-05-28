@@ -62,6 +62,7 @@ haskell_toolchain(
     # On Darwin we don't need a locale archive. It's a Linux-specific
     # hack in Nixpkgs.
     locale_archive = {locale_archive},
+    locale = {locale},
 )
         """.format(
             toolchain_libraries = toolchain_libraries,
@@ -72,6 +73,7 @@ haskell_toolchain(
             haddock_flags = repository_ctx.attr.haddock_flags,
             repl_ghci_args = repository_ctx.attr.repl_ghci_args,
             locale_archive = locale_archive,
+            locale = repr(repository_ctx.attr.locale),
         ),
     )
 
@@ -87,6 +89,9 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         "repl_ghci_args": attr.string_list(),
         "locale_archive": attr.string(),
         "_nixpkgs_ghc": attr.label(default = "@io_tweag_rules_haskell_ghc_nixpkgs//:BUILD"),
+        "locale": attr.string(
+            default = "en_US.UTF-8",
+        ),
     },
 )
 
@@ -135,7 +140,9 @@ def haskell_register_ghc_nixpkgs(
         attribute_path = "haskellPackages.ghc",
         nix_file = None,
         nix_file_deps = [],
-        repositories = {}):
+        locale = None,
+        repositories = {},
+        nix_file_content = ""):
     """Register a package from Nixpkgs as a toolchain.
 
     Toolchains can be used to compile Haskell code. To have this
@@ -176,6 +183,7 @@ def haskell_register_ghc_nixpkgs(
         build_file_content = build_file_content,
         nix_file = nix_file,
         nix_file_deps = nix_file_deps,
+        nix_file_content = nix_file_content,
         repositories = repositories,
     )
 
@@ -188,6 +196,7 @@ def haskell_register_ghc_nixpkgs(
         haddock_flags = haddock_flags,
         repl_ghci_args = repl_ghci_args,
         locale_archive = locale_archive,
+        locale = locale,
     )
 
     # toolchain definition.
