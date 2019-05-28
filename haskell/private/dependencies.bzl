@@ -166,6 +166,27 @@ def gather_dep_info(ctx, deps):
         if HaskellInfo in dep
     ])
 
+    source_files = set.empty()
+    for dep in deps:
+        if HaskellInfo in dep:
+            source_files = set.mutable_union(source_files, dep[HaskellInfo].source_files)
+
+    import_dirs = set.empty()
+    for dep in deps:
+        if HaskellInfo in dep:
+            import_dirs = set.mutable_union(source_files, dep[HaskellInfo].source_files)
+
+    extra_source_files = depset(transitive = [
+        dep[HaskellInfo].extra_source_files
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+
+    compile_flags = []
+    for dep in deps:
+        if HaskellInfo in dep:
+            compile_flags.extend(dep[HaskellInfo].compile_flags)
+
     acc = HaskellInfo(
         package_ids = package_ids,
         package_databases = package_databases,
@@ -173,6 +194,10 @@ def gather_dep_info(ctx, deps):
         static_libraries = static_libraries,
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
+        source_files = source_files,
+        import_dirs = import_dirs,
+        extra_source_files = extra_source_files,
+        compile_flags = compile_flags,
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),
     )
@@ -189,6 +214,10 @@ def gather_dep_info(ctx, deps):
                 static_libraries = acc.static_libraries + binfo.static_libraries,
                 dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
+                import_dirs = import_dirs,
+                compile_flags = compile_flags,
+                extra_source_files = extra_source_files,
+                source_files = source_files,
                 cc_dependencies = acc.cc_dependencies,
                 transitive_cc_dependencies = merge_HaskellCcInfo(acc.transitive_cc_dependencies, binfo.transitive_cc_dependencies),
             )
@@ -201,8 +230,12 @@ def gather_dep_info(ctx, deps):
                 package_ids = acc.package_ids,
                 package_databases = acc.package_databases,
                 version_macros = acc.version_macros,
+                import_dirs = acc.import_dirs,
+                source_files = acc.source_files,
+                compile_flags = acc.compile_flags,
                 static_libraries = acc.static_libraries,
                 dynamic_libraries = acc.dynamic_libraries,
+                extra_source_files = acc.extra_source_files,
                 interface_dirs = acc.interface_dirs,
                 cc_dependencies = merge_HaskellCcInfo(
                     acc.cc_dependencies,
