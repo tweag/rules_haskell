@@ -332,11 +332,9 @@ def _haskell_cabal_binary_impl(ctx):
         extra_source_files = depset(),
         import_dirs = set.empty(),
         static_libraries = dep_info.static_libraries,
-        static_libraries_prof = dep_info.static_libraries_prof,
         dynamic_libraries = dep_info.dynamic_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = [],
-        prebuilt_dependencies = dep_info.prebuilt_dependencies,
         cc_dependencies = dep_info.cc_dependencies,
         transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
