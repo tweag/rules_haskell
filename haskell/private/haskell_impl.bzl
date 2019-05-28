@@ -18,18 +18,14 @@ load(
     "link_library_dynamic",
     "link_library_static",
 )
-load(
-    ":private/actions/package.bzl",
-    "package",
-    "write_package_conf",
-    "ghc_pkg_recache",
-)
+load(":private/actions/package.bzl", "package")
 load(":private/actions/repl.bzl", "build_haskell_repl")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/java.bzl", "java_interop_info")
 load(":private/mode.bzl", "is_profiling_enabled")
+load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(
     ":private/path_utils.bzl",
     "get_dynamic_hs_lib_name",
@@ -119,11 +115,11 @@ def _condition_coverage_src(hs, src):
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps).hs_info
+    dep_info = gather_dep_info(ctx, ctx.attr.deps)
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
-    ).hs_info
+    )
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -169,7 +165,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     (binary, solibs) = link_binary(
         hs,
         cc,
-        dep_info,
+        dep_info.hs_info,
         ctx.files.extra_srcs,
         ctx.attr.compiler_flags,
         c.objects_dir,
@@ -179,18 +175,18 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
 
     hs_info = HaskellInfo(
-        package_ids = dep_info.package_ids,
-        package_databases = dep_info.package_databases,
+        package_ids = dep_info.hs_info.package_ids,
+        package_databases = dep_info.hs_info.package_databases,
         version_macros = set.empty(),
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        static_libraries = dep_info.static_libraries,
-        dynamic_libraries = dep_info.dynamic_libraries,
-        interface_dirs = dep_info.interface_dirs,
+        static_libraries = dep_info.hs_info.static_libraries,
+        dynamic_libraries = dep_info.hs_info.dynamic_libraries,
+        interface_dirs = dep_info.hs_info.interface_dirs,
         compile_flags = c.compile_flags,
-        cc_dependencies = dep_info.cc_dependencies,
-        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
+        cc_dependencies = dep_info.hs_info.cc_dependencies,
+        transitive_cc_dependencies = dep_info.hs_info.transitive_cc_dependencies,
     )
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
@@ -205,7 +201,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         user_compile_flags = ctx.attr.compiler_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         output = ctx.outputs.repl,
-        package_databases = dep_info.package_databases,
+        package_databases = dep_info.hs_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
     )
@@ -220,7 +216,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         extra_args = ctx.attr.runcompile_flags,
         user_compile_flags = ctx.attr.compiler_flags,
         output = ctx.outputs.runghc,
-        package_databases = dep_info.package_databases,
+        package_databases = dep_info.hs_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
     )
@@ -296,11 +292,11 @@ def _haskell_binary_common_impl(ctx, is_test):
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps).hs_info
+    dep_info = gather_dep_info(ctx, ctx.attr.deps)
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
-    ).hs_info
+    )
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -351,7 +347,7 @@ def haskell_library_impl(ctx):
     static_library = link_library_static(
         hs,
         cc,
-        dep_info,
+        dep_info.hs_info,
         c.objects_dir,
         my_pkg_id,
         with_profiling = with_profiling,
@@ -361,19 +357,19 @@ def haskell_library_impl(ctx):
         dynamic_library = link_library_dynamic(
             hs,
             cc,
-            dep_info,
+            dep_info.hs_info,
             depset(ctx.files.extra_srcs),
             c.objects_dir,
             my_pkg_id,
         )
-        dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries])
+        dynamic_libraries = depset([dynamic_library], transitive = [dep_info.hs_info.dynamic_libraries])
     else:
         dynamic_library = None
-        dynamic_libraries = dep_info.dynamic_libraries
+        dynamic_libraries = dep_info.hs_info.dynamic_libraries
 
     conf_file, cache_file = package(
         hs,
-        dep_info,
+        dep_info.hs_info,
         c.interfaces_dir,
         exposed_modules_file,
         other_modules,
@@ -382,7 +378,7 @@ def haskell_library_impl(ctx):
 
     interface_dirs = depset(
         direct = [c.interfaces_dir],
-        transitive = [dep_info.interface_dirs],
+        transitive = [dep_info.hs_info.interface_dirs],
     )
 
     version_macros = set.empty()
@@ -395,8 +391,8 @@ def haskell_library_impl(ctx):
         )
 
     hs_info = HaskellInfo(
-        package_ids = [pkg_id.to_string(my_pkg_id)] + dep_info.package_ids,
-        package_databases = depset([cache_file], transitive = [dep_info.package_databases]),
+        package_ids = [pkg_id.to_string(my_pkg_id)] + dep_info.hs_info.package_ids,
+        package_databases = depset([cache_file], transitive = [dep_info.hs_info.package_databases]),
         version_macros = version_macros,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
@@ -407,14 +403,14 @@ def haskell_library_impl(ctx):
         # then you feed the library which resolves the symbols.
         static_libraries = depset(
             direct = [static_library],
-            transitive = [dep_info.static_libraries],
+            transitive = [dep_info.hs_info.static_libraries],
             order = "topological",
         ),
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
-        cc_dependencies = dep_info.cc_dependencies,
-        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
+        cc_dependencies = dep_info.hs_info.cc_dependencies,
+        transitive_cc_dependencies = dep_info.hs_info.transitive_cc_dependencies,
     )
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
@@ -440,7 +436,7 @@ def haskell_library_impl(ctx):
             repl_ghci_args = ctx.attr.repl_ghci_args,
             user_compile_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.repl,
-            package_databases = dep_info.package_databases,
+            package_databases = dep_info.hs_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
             lib_info = lib_info,
@@ -456,7 +452,7 @@ def haskell_library_impl(ctx):
             extra_args = ctx.attr.runcompile_flags,
             user_compile_flags = ctx.attr.compiler_flags,
             output = ctx.outputs.runghc,
-            package_databases = dep_info.package_databases,
+            package_databases = dep_info.hs_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
             lib_info = lib_info,
@@ -658,7 +654,14 @@ def haskell_import_impl(ctx):
         extra_source_files = depset(),
         static_libraries = depset(),
         dynamic_libraries = depset(),
-        interface_dirs = depset(direct = ctx.files.interface_files),
+        interface_dirs = depset(
+            direct = ctx.files.interface_files,
+            transitive = [
+                dep[HaskellInfo].interface_dirs
+                for dep in ctx.attr.deps
+                if HaskellInfo in dep
+            ],
+        ),
         compile_flags = [],
         cc_dependencies = empty_HaskellCcInfo(),
         transitive_cc_dependencies = empty_HaskellCcInfo(),

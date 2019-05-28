@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/path_utils.bzl", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
+load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(":private/path_utils.bzl", "get_lib_name")
 
 def _get_extra_libraries(dep_info):
@@ -116,75 +117,3 @@ def package(
     cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
 
     return conf_file, cache_file
-
-def write_package_conf(ctx, conf_file, metadata):
-    """Write GHC package configuration file.
-
-    See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html
-
-    Args:
-      ctx: Rule context or Haskell context.
-      conf_file: The declared output file.
-      metadata: Dictionary from metadata keys to values.
-        Sequence or depset values should be passed as such. Scalar values as scalars.
-    """
-    # Use an Args object to avoid converting depsets to lists and building up large strings.
-    package_conf = ctx.actions.args()
-    package_conf.set_param_file_format("multiline")
-
-    formats = {
-        "name": ("add", {"format": "name: %s"}),
-        "id": ("add", {"format": "id: %s"}),
-        "key": ("add", {"format": "key: %s"}),
-        "version": ("add", {"format": "version: %s"}),
-        "exposed": ("add", {"format": "exposed: %s"}),
-        "depends": ("add_joined", {"join_with": " ", "format_joined": "depends: %s"}),
-        "exposed-modules": ("add_joined", {"join_with": " ", "format_joined": "exposed-modules: %s"}),
-        "hidden-modules": ("add_joined", {"join_with": " ", "format_joined": "hidden-modules: %s"}),
-        "import-dirs": ("add_joined", {"join_with": " ", "format_joined": "import-dirs: %s"}),
-        "hs-libraries": ("add_joined", {"join_with": " ", "format_joined": "hs-libraries: %s"}),
-        "extra-libraries": ("add_joined", {"join_with": " ", "format_joined": "extra-libraries: %s"}),
-        "library-dirs": ("add_joined", {"join_with": " ", "format_joined": "library-dirs: %s"}),
-        "dynamic-library-dirs": ("add_joined", {"join_with": " ", "format_joined": "dynamic-library-dirs: %s"}),
-        # NOTE: Add additional fields as needed.
-    }
-
-    for (k, v) in metadata.items():
-        if not v:
-            continue
-        (fn, kwargs) = formats[k]
-        if fn == "add":
-            package_conf.add(v, **kwargs)
-        elif fn == "add_joined":
-            package_conf.add_joined(v, **kwargs)
-        else:
-            fail("Internal error: unknown package_conf function")
-
-    ctx.actions.write(conf_file, package_conf)
-
-def ghc_pkg_recache(ctx, ghc_pkg, conf_file):
-    """Generate a package.cache file from the given package configuration
-
-    Args:
-      ctx: Rule context or Haskell context.
-      ghc_pkg: The ghc-pkg tool.
-      conf_file: The package configuration file.
-
-    Returns:
-      File, the package.cache file.
-    """
-    cache_file = ctx.actions.declare_file("package.cache", sibling = conf_file)
-    ctx.actions.run(
-        executable = ghc_pkg,
-        arguments = [
-            "recache",
-            "--package-db={}".format(conf_file.dirname),
-            "-v0",
-            "--no-expand-pkgroot",
-        ],
-        mnemonic = "HaskellRegisterPackage",
-        progress_message = "HaskellRegisterPackage {}".format(ctx.label),
-        outputs = [cache_file],
-        inputs = depset(direct = [conf_file]),
-    )
-    return cache_file

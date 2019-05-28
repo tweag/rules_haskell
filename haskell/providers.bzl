@@ -2,8 +2,10 @@
 
 load(
     ":private/path_utils.bzl",
+    "ghci_dynamic_library_extension",
     "darwin_convert_to_dylibs",
     "make_path",
+    "target_unique_name",
     "windows_convert_to_dlls",
 )
 
@@ -90,6 +92,32 @@ HaskellInfo = provider(
         "transitive_cc_dependencies": "Transitive cc library dependencies. See HaskellCcInfo.",
     },
 )
+
+def get_ghci_extra_libs(hs, cc_info):
+    ghci_fixed_lib_dir = target_unique_name(hs, "ghci_libs")
+    libs_to_link = cc_info.linking_context.libraries_to_link
+    libs = []
+    for lib_to_link in libs_to_link:
+        lib = None
+        if lib_to_link.pic_static_library:
+            # XXX: Handle static library name collisions.
+            #   https://github.com/tweag/rules_haskell/issues/862
+            lib = lib_to_link.pic_static_library
+        elif lib_to_link.dynamic_library:
+            lib = ghci_dynamic_library_extension(
+                hs,
+                lib_to_link.dynamic_library,
+                ghci_fixed_lib_dir,
+            )
+        elif lib_to_link.interface_library:
+            lib = lib_to_link.interface_library
+        elif lib_to_link.static_library:
+            lib = lib_to_link.static_library
+            fail("GHCi cannot load non-pic static libraries: {}".format(lib))
+        else:
+            continue
+        libs.append(lib)
+    return libs
 
 def get_libs_for_ghc_linker(hs, transitive_cc_dependencies, path_prefix = None):
     """Return all C library dependencies for GHC's linker.

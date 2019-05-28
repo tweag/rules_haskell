@@ -77,3 +77,83 @@ def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package
         package_dbs = package_dbs,
     )
     return ghc_info
+
+def write_package_conf(ctx, conf_file, metadata):
+    """Write GHC package configuration file.
+
+    See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html
+
+    Args:
+      ctx: Rule context or Haskell context.
+      conf_file: The declared output file.
+      metadata: Dictionary from metadata keys to values.
+        Sequence or depset values should be passed as such. Scalar values as scalars.
+    """
+    # Use an Args object to avoid converting depsets to lists and building up large strings.
+    package_conf = ctx.actions.args()
+    package_conf.set_param_file_format("multiline")
+
+    formats = {
+        "name": ("add", {"format": "name: %s"}),
+        "id": ("add", {"format": "id: %s"}),
+        "key": ("add", {"format": "key: %s"}),
+        "version": ("add", {"format": "version: %s"}),
+        "exposed": ("add", {"format": "exposed: %s"}),
+        "depends": ("add_joined", {"join_with": " ", "format_joined": "depends: %s"}),
+        "exposed-modules": ("add_joined", {"join_with": " ", "format_joined": "exposed-modules: %s"}),
+        "hidden-modules": ("add_joined", {"join_with": " ", "format_joined": "hidden-modules: %s"}),
+        "import-dirs": ("add_joined", {"join_with": " ", "format_joined": "import-dirs: %s", "uniquify": True}),
+        "hs-libraries": ("add_joined", {"join_with": " ", "format_joined": "hs-libraries: %s"}),
+        "extra-libraries": ("add_joined", {"join_with": " ", "format_joined": "extra-libraries: %s"}),
+        "extra-ghci-libraries": ("add_joined", {"join_with": " ", "format_joined": "extra-ghci-libraries: %s"}),
+        "library-dirs": ("add_joined", {"join_with": " ", "format_joined": "library-dirs: %s", "uniquify": True}),
+        "dynamic-library-dirs": ("add_joined", {"join_with": " ", "format_joined": "dynamic-library-dirs: %s", "uniquify": True}),
+        "include-dirs": ("add_joined", {"join_with": " ", "format_joined": "include-dirs: %s", "uniquify": True}),
+        "cc-options": ("add_joined", {"join_with": " ", "format_joined": "cc-options: %s"}),
+        "ld-options": ("add_joined", {"join_with": " ", "format_joined": "ld-options: %s"}),
+        # Custom fields that map to GHC package configuration fields.
+        "cc-defines": ("add_joined", {"join_with": " ", "format_each": '"-D%s"', "format_joined": "cc-options: %s", "uniquify": True}),
+        "cc-quote-includes": ("add_joined", {"join_with": " ", "format_each": '"-iquote%s"', "format_joined": "cc-options: %s", "uniquify": True}),
+        "cc-system-includes": ("add_joined", {"join_with": " ", "format_each": '"-isystem%s"', "format_joined": "cc-options: %s", "uniquify": True}),
+        # NOTE: Add additional fields as needed.
+    }
+
+    for (k, v) in metadata.items():
+        if not v:
+            continue
+        (fn, kwargs) = formats[k]
+        if fn == "add":
+            package_conf.add(v, **kwargs)
+        elif fn == "add_joined":
+            package_conf.add_joined(v, **kwargs)
+        else:
+            fail("Internal error: unknown package_conf function")
+
+    ctx.actions.write(conf_file, package_conf)
+
+def ghc_pkg_recache(ctx, ghc_pkg, conf_file):
+    """Generate a package.cache file from the given package configuration
+
+    Args:
+      ctx: Rule context or Haskell context.
+      ghc_pkg: The ghc-pkg tool.
+      conf_file: The package configuration file.
+
+    Returns:
+      File, the package.cache file.
+    """
+    cache_file = ctx.actions.declare_file("package.cache", sibling = conf_file)
+    ctx.actions.run(
+        executable = ghc_pkg,
+        arguments = [
+            "recache",
+            "--package-db={}".format(conf_file.dirname),
+            "-v0",
+            "--no-expand-pkgroot",
+        ],
+        mnemonic = "HaskellRegisterPackage",
+        progress_message = "HaskellRegisterPackage {}".format(ctx.label),
+        outputs = [cache_file],
+        inputs = depset(direct = [conf_file]),
+    )
+    return cache_file

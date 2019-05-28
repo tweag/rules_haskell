@@ -127,6 +127,36 @@ def make_path(libs, prefix = None, sep = None):
 
     return sep.join(set.to_list(r))
 
+def ghci_dynamic_library_extension(hs, lib, outdir):
+    """Convert .so dynamic library endings according to the platform.
+
+    On MacOS GHCi requires dynamic libraries to end on .dylib, on Windows on
+    .dll. Creates symbolic links to adjust the library ending.
+
+    Args:
+      hs: Haskell context.
+      lib: The dynamic library file.
+      outdir: Output directory for the symbolic link, if necessary.
+
+    Returns:
+      File, dynamic library with the appropriate extension.
+    """
+    ext = lib.extension
+    if hs.toolchain.is_darwin and ext != "dylib":
+        link = hs.actions.declare_file(
+            paths.join(outdir, "lib" + get_lib_name(lib) + ".dylib"),
+        )
+        ln(hs, lib, link)
+        return link
+    elif hs.toolchain.is_windows and ext != "dll":
+        link = hs.actions.declare_file(
+            paths.join(outdir, "lib" + get_lib_name(lib) + ".dll"),
+        )
+        ln(hs, lib, link)
+        return link
+    else:
+        return lib
+
 def darwin_convert_to_dylibs(hs, libs):
     """Convert .so dynamic libraries to .dylib.
 

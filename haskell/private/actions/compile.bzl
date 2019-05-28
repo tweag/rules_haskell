@@ -3,9 +3,11 @@
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
+    "get_lib_name",
     "module_name",
     "target_unique_name",
 )
@@ -14,6 +16,7 @@ load(":private/version_macros.bzl", "version_macro_includes")
 load(
     ":providers.bzl",
     "GhcPluginInfo",
+    "get_ghci_extra_libs",
     "get_libs_for_ghc_linker",
     "merge_HaskellCcInfo",
 )
@@ -44,6 +47,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     args.add_all(["-l", cc.tools.cc])
     args.add("-ighcplatform.h")
     args.add("-ighcversion.h")
+    # XXX: Use cc_info
     args.add_all(["--cflag=" + f for f in cc.cpp_flags])
     args.add_all(["--cflag=" + f for f in cc.compiler_flags])
     args.add_all(["--cflag=" + f for f in cc.include_args])
@@ -104,14 +108,14 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     # GHC expects the CC compiler as the assembler, but segregates the
     # set of flags to pass to it when used as an assembler. So we have
     # to set both -optc and -opta.
-    cc_args = [
-        "-optc" + f
-        for f in cc.compiler_flags
-    ] + [
-        "-opta" + f
-        for f in cc.compiler_flags
-    ]
-    compile_flags += cc_args
+    #cc_args = [
+    #    "-optc" + f
+    #    for f in cc.compiler_flags
+    #] + [
+    #    "-opta" + f
+    #    for f in cc.compiler_flags
+    #]
+    #compile_flags += cc_args
 
     interface_dir_raw = "_iface"
     object_dir_raw = "_obj"
@@ -150,10 +154,53 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     if hs.toolchain.is_darwin:
         compile_flags += ["-optl-Wl,-dead_strip_dylibs"]
 
+    # GHC will pass all `-l` `-optl` flags to gcc before the object files. This
+    # would cause missing symbol errors in case of static linking. To work
+    # around this we create a dummy package configuration containing all
+    # required linker flags so that they appear in the right place on the gcc
+    # command line.
+    ghci_extra_libs = get_ghci_extra_libs(hs, dep_info.cc_info)
+    # XXX: What to do with plugin_dep_info.cc_info?
+    # ghci_extra_libs += get_ghci_extra_libs(hs, plugin_dep_info.cc_info)
+    conf_file = hs.actions.declare_file(paths.join(
+        target_unique_name(hs, "compile.db"),
+        "compile.conf",
+    ))
+    pkg_name = target_unique_name(hs, "compile")
+    write_package_conf(hs, conf_file, {
+        "name": pkg_name,
+        "id": pkg_name,
+        "include-dirs": depset(transitive = [
+            dep_info.cc_info.compilation_context.includes,
+            plugin_dep_info.cc_info.compilation_context.includes,
+        ]),
+        "cc-defines": depset(transitive = [
+            dep_info.cc_info.compilation_context.defines,
+            plugin_dep_info.cc_info.compilation_context.defines,
+        ]),
+        "cc-quote-includes": depset(transitive = [
+            dep_info.cc_info.compilation_context.quote_includes,
+            plugin_dep_info.cc_info.compilation_context.quote_includes,
+        ]),
+        "cc-system-includes": depset(transitive = [
+            dep_info.cc_info.compilation_context.system_includes,
+            plugin_dep_info.cc_info.compilation_context.system_includes,
+        ]),
+        "extra-ghci-libraries": [get_lib_name(lib) for lib in ghci_extra_libs],
+        "library-dirs": [lib.dirname for lib in ghci_extra_libs],
+        "ld-options": dep_info.cc_info.linking_context.user_link_flags,
+    })
+    cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
+    compile_flags += [
+        "-no-global-package-db",
+        "-package-db", cache_file.dirname,
+        "-package", pkg_name,
+    ]
+
     compile_flags.extend(
         pkg_info_to_compile_flags(
             expose_packages(
-                dep_info,
+                dep_info.hs_info,
                 lib_info = None,
                 use_direct = True,
                 use_my_pkg_id = my_pkg_id,
@@ -165,7 +212,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     compile_flags.extend(
         pkg_info_to_compile_flags(
             expose_packages(
-                plugin_dep_info,
+                plugin_dep_info.hs_info,
                 lib_info = None,
                 use_direct = True,
                 use_my_pkg_id = my_pkg_id,
@@ -231,7 +278,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     hs.actions.write(optp_args_file, optp_args)
     compile_flags += ["-optP@" + optp_args_file.path]
 
-    compile_flags += cc.include_args
+    #compile_flags += cc.include_args
 
     locale_archive_depset = (
         depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
@@ -313,37 +360,38 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     )
 
     # Transitive library dependencies for runtime.
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
-        hs,
-        merge_HaskellCcInfo(
-            dep_info.transitive_cc_dependencies,
-            plugin_dep_info.transitive_cc_dependencies,
-        ),
-    )
+    #(library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+    #    hs,
+    #    merge_HaskellCcInfo(
+    #        dep_info.transitive_cc_dependencies,
+    #        plugin_dep_info.transitive_cc_dependencies,
+    #    ),
+    #)
 
     return struct(
         args = args,
         compile_flags = compile_flags,
         inputs = depset(transitive = [
+            depset(ghci_extra_libs),
             depset(header_files),
             depset(boot_files),
             set.to_depset(source_files),
             extra_source_files,
             depset(cc.hdrs),
-            dep_info.package_databases,
-            dep_info.interface_dirs,
-            dep_info.static_libraries,
-            dep_info.dynamic_libraries,
-            plugin_dep_info.package_databases,
-            plugin_dep_info.interface_dirs,
-            plugin_dep_info.static_libraries,
-            plugin_dep_info.dynamic_libraries,
-            depset(library_deps),
-            depset(ld_library_deps),
+            dep_info.hs_info.package_databases,
+            dep_info.hs_info.interface_dirs,
+            dep_info.hs_info.static_libraries,
+            dep_info.hs_info.dynamic_libraries,
+            plugin_dep_info.hs_info.package_databases,
+            plugin_dep_info.hs_info.interface_dirs,
+            plugin_dep_info.hs_info.static_libraries,
+            plugin_dep_info.hs_info.dynamic_libraries,
+            #depset(library_deps),
+            #depset(ld_library_deps),
             java.inputs,
             locale_archive_depset,
             depset(transitive = plugin_tool_inputs),
-            depset([optp_args_file]),
+            depset([cache_file, optp_args_file]),
         ]),
         input_manifests = plugin_tool_input_manifests,
         objects_dir = objects_dir,
@@ -353,7 +401,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         extra_source_files = depset(transitive = [extra_source_files, depset([optp_args_file])]),
         import_dirs = import_dirs,
         env = dicts.add(
-            ghc_env,
+            #ghc_env,
             java.env,
             hs.env,
         ),
