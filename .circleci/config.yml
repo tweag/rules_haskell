@@ -36,6 +36,11 @@ jobs:
             dpkg -i bazel_0.24.0-linux-x86_64.deb
             echo "common:ci --build_tag_filters -requires_hackage,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
       - run:
+          name: Prefetch Stackage snapshot
+          command: |
+            # Retry if needed due to network flakiness.
+            cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd
+      - run:
           name: Build tests
           command: |
             bazel build --config ci //tests/...
@@ -77,6 +82,11 @@ jobs:
           name: Configure
           command: |
             echo "build:ci --host_platform=@io_tweag_rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
+      - run:
+          name: Prefetch Stackage snapshot
+          command: |
+            # Retry if needed due to network flakiness.
+            cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd
       - run:
           name: Build tests
           command: |
@@ -136,6 +146,11 @@ jobs:
               - v1-rules_haskell-cache-{{ .Branch }}-
               - v1-rules_haskell-cache-master-
 
+      - run:
+          name: Prefetch Stackage snapshot
+          command: |
+            # Retry if needed due to network flakiness.
+            cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd
       - run:
           name: Build tests
           shell: /bin/bash -eilo pipefail
