@@ -12,6 +12,10 @@ load(
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
 load(":private/list.bzl", "list")
+load(
+    "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "HaskellImportHack",
+)
 
 # tests in /tests/unit_tests/BUILD
 def parent_dir_path(path):
@@ -448,6 +452,12 @@ def link_binary(
     else:
         params_file = objects_dir_manifest
 
+    # GHC requries the Rts.h header to build the main function.
+    args.add_all(
+        hs.toolchain.libraries["rts"][HaskellImportHack].includes,
+        format_each = "-optc-I%s",
+    )
+
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
@@ -458,6 +468,8 @@ def link_binary(
             dep_info.static_libraries,
             depset([objects_dir]),
             cc_link_libs,
+            # GHC requries the Rts.h header to build the main function.
+            hs.toolchain.libraries["rts"][HaskellImportHack].headers,
         ]),
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
