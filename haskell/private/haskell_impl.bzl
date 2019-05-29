@@ -119,6 +119,11 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
     )
+    package_ids = [
+        dep[HaskellLibraryInfo].package_id
+        for dep in ctx.attr.deps
+        if HaskellLibraryInfo in dep
+    ]
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -174,7 +179,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
 
     hs_info = HaskellInfo(
-        package_ids = dep_info.package_ids,
         package_databases = dep_info.package_databases,
         version_macros = set.empty(),
         source_files = c.source_files,
@@ -296,6 +300,11 @@ def haskell_library_impl(ctx):
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
     )
+    package_ids = [
+        dep[HaskellLibraryInfo].package_id
+        for dep in ctx.attr.deps
+        if HaskellLibraryInfo in dep
+    ]
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -392,7 +401,6 @@ def haskell_library_impl(ctx):
         )
 
     hs_info = HaskellInfo(
-        package_ids = [pkg_id.to_string(my_pkg_id)] + dep_info.package_ids,
         package_databases = depset([cache_file], transitive = [dep_info.package_databases]),
         version_macros = version_macros,
         source_files = c.source_files,
@@ -624,7 +632,6 @@ def haskell_import_impl(ctx):
             generate_version_macros(ctx, ctx.label.name, ctx.attr.version),
         )
     hs_info = HaskellInfo(
-        package_ids = [id],
         # XXX Empty set of conf and cache files only works for global db.
         package_databases = depset(),
         version_macros = version_macros,

@@ -1,6 +1,7 @@
 """Derived context with Haskell-specific fields and methods"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@io_tweag_rules_haskell//haskell:providers.bzl", "HaskellLibraryInfo")
 
 HaskellContext = provider()
 
@@ -9,6 +10,15 @@ def haskell_context(ctx, attr = None):
 
     if not attr:
         attr = ctx.attr
+
+    if hasattr(attr, "deps"):
+        package_ids = [
+            dep[HaskellLibraryInfo].package_id
+            for dep in attr.deps
+            if HaskellLibraryInfo in dep
+        ]
+    else:
+        package_ids = []
 
     if hasattr(attr, "src_strip_prefix"):
         src_strip_prefix = attr.src_strip_prefix
@@ -38,6 +48,7 @@ def haskell_context(ctx, attr = None):
         label = ctx.label,
         toolchain = toolchain,
         tools = toolchain.tools,
+        package_ids = package_ids,
         src_root = src_root,
         package_root = ctx.label.workspace_root + ctx.label.package,
         env = env,

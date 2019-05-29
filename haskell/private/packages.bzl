@@ -33,12 +33,12 @@ def pkg_info_to_compile_flags(pkg_info, for_plugin = False):
     for package_id in pkg_info.package_ids:
         args.extend(["-{}package-id".format(namespace), package_id])
 
-    for package_db in pkg_info.package_dbs:
+    for package_db in pkg_info.package_databases:
         args.extend(["-package-db", package_db])
 
     return args
 
-def expose_packages(hs_info, my_pkg_id, custom_package_databases, version):
+def expose_packages(package_ids, package_databases, version):
     """
     Returns the information that is needed by GHC in order to enable haskell
     packages.
@@ -52,18 +52,9 @@ def expose_packages(hs_info, my_pkg_id, custom_package_databases, version):
     custom_package_databases: override the package_databases of hs_info, used only by the repl
     """
     has_version = version != None and version != ""
-
-    # Expose all bazel dependencies
-    package_ids = [package_id for package_id in hs_info.package_ids if package_id != my_pkg_id]
-
-    # Only include package DBs for deps.
-    package_dbs = []
-    for cache in hs_info.package_databases.to_list() if custom_package_databases == None else custom_package_databases.to_list():
-        package_dbs.append(cache.dirname)
-
     ghc_info = struct(
         has_version = has_version,
         package_ids = package_ids,
-        package_dbs = package_dbs,
+        package_databases = [cache.dirname for cache in package_databases.to_list()],
     )
     return ghc_info

@@ -43,9 +43,8 @@ def build_haskell_runghc(
     """
 
     args = pkg_info_to_compile_flags(expose_packages(
-        hs_info,
-        my_pkg_id = lib_info.package_id if lib_info else None,
-        custom_package_databases = package_databases,
+        package_ids = hs.package_ids,
+        package_databases = package_databases,
         version = version,
     ))
 
