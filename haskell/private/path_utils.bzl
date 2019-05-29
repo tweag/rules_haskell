@@ -223,6 +223,9 @@ def windows_convert_to_dlls(hs, libs):
             new_libs.append(lib)
     return new_libs
 
+def get_dirname(file):
+    return file.dirname
+
 def get_lib_name(lib):
     """Return name of library by dropping extension and "lib" prefix.
 

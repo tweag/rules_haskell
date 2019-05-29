@@ -119,6 +119,38 @@ def get_ghci_extra_libs(hs, cc_info):
         libs.append(lib)
     return libs
 
+def get_extra_libs(hs, dynamic, cc_info):
+    static_libs = []
+    dynamic_libs = []
+    libs_to_link = cc_info.linking_context.libraries_to_link
+    for lib_to_link in libs_to_link:
+        lib = None
+        if dynamic:
+            if lib_to_link.dynamic_library:
+                dynamic_libs.append(lib_to_link.dynamic_library)
+            elif lib_to_link.interface_library:
+                dynamic_libs.append(lib_to_link.interface_library)
+            elif lib_to_link.static_library:
+                static_libs.append(lib_to_link.static_library)
+            elif lib_to_link.pic_static_library:
+                static_libs.append(lib_to_link.pic_static_library)
+            else:
+                continue
+        else:
+            if lib_to_link.static_library:
+                static_libs.append(lib_to_link.static_library)
+            elif lib_to_link.pic_static_library:
+                static_libs.append(lib_to_link.pic_static_library)
+            elif lib_to_link.dynamic_library:
+                dynamic_libs.append(lib_to_link.dynamic_library)
+            elif lib_to_link.interface_library:
+                dynamic_libs.append(lib_to_link.interface_library)
+            else:
+                continue
+    static_libs = depset(direct = static_libs, order = "topological")
+    dynamic_libs = depset(direct = dynamic_libs)
+    return (static_libs, dynamic_libs)
+
 def get_libs_for_ghc_linker(hs, transitive_cc_dependencies, path_prefix = None):
     """Return all C library dependencies for GHC's linker.
 

@@ -2,12 +2,14 @@
 
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
     "is_shared_library",
     "is_static_library",
     "ln",
+    "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
@@ -15,6 +17,7 @@ load(":private/list.bzl", "list")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellImportHack",
+    "get_extra_libs",
 )
 
 # tests in /tests/unit_tests/BUILD
@@ -361,10 +364,33 @@ def link_binary(
     executable = hs.actions.declare_file(exe_name)
 
     args = hs.actions.args()
-    args.add_all(["-optl" + f for f in cc.linker_flags])
+
+    (static_libs, dynamic_libs) = get_extra_libs(hs, dynamic, dep_info.cc_info)
+    conf_file = hs.actions.declare_file(paths.join(
+        target_unique_name(hs, "link.db"),
+        "link.conf",
+    ))
+    pkg_name = target_unique_name(hs, "link")
+    write_package_conf(hs, conf_file, {
+        "name": pkg_name,
+        "id": pkg_name,
+        "ld-static-libs": static_libs,
+        "ld-dynamic-libs": dynamic_libs,
+        "ld-dynamic-libdirs": dynamic_libs,
+        "ld-options": dep_info.cc_info.linking_context.user_link_flags,
+    })
+    cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
+    args.add_all([
+        "-no-global-package-db",
+        "-package-db", cache_file.dirname,
+        "-package", pkg_name,
+    ])
+
+    #args.add_all(["-optl" + f for f in cc.linker_flags])
     if with_profiling:
         args.add("-prof")
     args.add_all(hs.toolchain.compiler_flags)
+    # XXX: Do we need those?
     args.add_all(compiler_flags)
 
     # By default, GHC will produce mostly-static binaries, i.e. in which all
@@ -396,21 +422,13 @@ def link_binary(
     # lists.
 
     args.add_all(pkg_info_to_compile_flags(expose_packages(
-        dep_info,
+        dep_info.hs_info,
         lib_info = None,
         use_direct = True,
         use_my_pkg_id = None,
         custom_package_databases = None,
         version = version,
     )))
-
-    (cc_link_libs, cc_solibs, hs_solibs) = _link_dependencies(
-        hs = hs,
-        dep_info = dep_info,
-        dynamic = dynamic,
-        binary = executable,
-        args = args,
-    )
 
     # XXX: Suppress a warning that Clang prints due to GHC automatically passing
     # "-pie" or "-no-pie" to the C compiler.
@@ -438,14 +456,15 @@ def link_binary(
         # TODO remove this gross hack.
         args.add("-liconv")
 
-        extra_linker_flags_file = _darwin_create_extra_linker_flags_file(
-            hs,
-            cc,
-            objects_dir,
-            executable,
-            dynamic,
-            cc_solibs,
-        )
+        # XXX: Adapt this
+        #extra_linker_flags_file = _darwin_create_extra_linker_flags_file(
+        #    hs,
+        #    cc,
+        #    objects_dir,
+        #    executable,
+        #    dynamic,
+        #    cc_solibs,
+        #)
 
     if extra_linker_flags_file != None:
         params_file = _merge_parameter_files(hs, objects_dir_manifest, extra_linker_flags_file)
@@ -462,12 +481,11 @@ def link_binary(
         hs,
         cc,
         inputs = depset(transitive = [
+            static_libs,
+            dynamic_libs,
             depset(extra_srcs),
-            dep_info.package_databases,
-            dep_info.dynamic_libraries,
-            dep_info.static_libraries,
-            depset([objects_dir]),
-            cc_link_libs,
+            dep_info.hs_info.package_databases,
+            depset([cache_file, objects_dir]),
             # GHC requries the Rts.h header to build the main function.
             hs.toolchain.libraries["rts"][HaskellImportHack].headers,
         ]),
@@ -477,7 +495,7 @@ def link_binary(
         params_file = params_file,
     )
 
-    return (executable, cc_solibs + hs_solibs)
+    return (executable, dynamic_libs)
 
 def _add_external_libraries(args, ext_libs):
     """Add options to `args` that allow us to link to `ext_libs`.

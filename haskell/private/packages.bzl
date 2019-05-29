@@ -1,5 +1,6 @@
 """Package list handling"""
 
+load(":private/path_utils.bzl", "get_dirname", "get_lib_name")
 load(":private/set.bzl", "set")
 
 def pkg_info_to_compile_flags(pkg_info, for_plugin = False):
@@ -110,11 +111,14 @@ def write_package_conf(ctx, conf_file, metadata):
         "dynamic-library-dirs": ("add_joined", {"join_with": " ", "format_joined": "dynamic-library-dirs: %s", "uniquify": True}),
         "include-dirs": ("add_joined", {"join_with": " ", "format_joined": "include-dirs: %s", "uniquify": True}),
         "cc-options": ("add_joined", {"join_with": " ", "format_joined": "cc-options: %s"}),
-        "ld-options": ("add_joined", {"join_with": " ", "format_joined": "ld-options: %s"}),
+        "ld-options": ("add_joined", {"join_with": " ", "format_each": '"%s"', "format_joined": "ld-options: %s"}),
         # Custom fields that map to GHC package configuration fields.
         "cc-defines": ("add_joined", {"join_with": " ", "format_each": '"-D%s"', "format_joined": "cc-options: %s", "uniquify": True}),
         "cc-quote-includes": ("add_joined", {"join_with": " ", "format_each": '"-iquote%s"', "format_joined": "cc-options: %s", "uniquify": True}),
         "cc-system-includes": ("add_joined", {"join_with": " ", "format_each": '"-isystem%s"', "format_joined": "cc-options: %s", "uniquify": True}),
+        "ld-static-libs": ("add_joined", {"join_with": " ", "format_joined": "ld-options: %s"}),
+        "ld-dynamic-libs": ("add_joined", {"join_with": " ", "map_each": get_lib_name, "format_joined": "extra-libraries: %s", "uniquify": True}),
+        "ld-dynamic-libdirs": ("add_joined", {"join_with": " ", "map_each": get_dirname, "format_joined": "dynamic-library-dirs: %s", "uniquify": True}),
         # NOTE: Add additional fields as needed.
     }
 

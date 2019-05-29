@@ -163,10 +163,10 @@ def _haskell_binary_common_impl(ctx, is_test):
         if HaskellCoverageInfo in dep:
             coverage_data += dep[HaskellCoverageInfo].coverage_data
 
-    (binary, solibs) = link_binary(
+    (binary, dynamic_libs) = link_binary(
         hs,
         cc,
-        dep_info.hs_info,
+        dep_info,
         ctx.files.extra_srcs,
         ctx.attr.compiler_flags,
         c.objects_dir,
@@ -283,9 +283,8 @@ def _haskell_binary_common_impl(ctx, is_test):
             executable = executable,
             files = target_files,
             runfiles = ctx.runfiles(
-                files =
-                    solibs +
-                    extra_runfiles,
+                files = extra_runfiles,
+                transitive_files = dynamic_libs,
                 collect_data = True,
             ),
         ),
