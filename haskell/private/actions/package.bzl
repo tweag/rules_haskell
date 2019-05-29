@@ -7,43 +7,6 @@ load(":private/set.bzl", "set")
 load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(":private/path_utils.bzl", "get_lib_name")
 
-def _get_extra_libraries(dep_info):
-    """Get directories and library names for extra library dependencies.
-
-    Args:
-      dep_info: HaskellInfo provider of the package.
-
-    Returns:
-      (dirs, libs):
-      dirs: list: Library search directories for extra library dependencies.
-      libs: list: Extra library dependencies.
-    """
-    cc_libs = dep_info.cc_dependencies.dynamic_linking.libraries_to_link.to_list()
-
-    # The order in which library dependencies are listed is relevant when
-    # linking static archives. To maintain the order defined by the input
-    # depset we collect the library dependencies in a list, and use a separate
-    # set to deduplicate entries.
-    seen_libs = set.empty()
-    extra_libs = []
-    extra_lib_dirs = set.empty()
-    for lib in cc_libs:
-        lib_name = get_lib_name(lib)
-
-        # This test is a hack. When a CC library has a Haskell library
-        # as a dependency, we need to be careful to filter it out,
-        # otherwise it will end up polluting extra-libraries, when GHC
-        # already uses hs-libraries to locate all Haskell libraries.
-        #
-        # TODO Get rid of this hack. See
-        # https://github.com/tweag/rules_haskell/issues/873.
-        if not lib_name.startswith("HS"):
-            if not set.is_member(seen_libs, lib_name):
-                set.mutable_insert(seen_libs, lib_name)
-                extra_libs.append(lib_name)
-            set.mutable_insert(extra_lib_dirs, lib.dirname)
-    return (set.to_list(extra_lib_dirs), extra_libs)
-
 def package(
         hs,
         dep_info,
@@ -75,8 +38,6 @@ def package(
         paths.join(pkg_db_dir, "_iface"),
     )
 
-    (extra_lib_dirs, extra_libs) = _get_extra_libraries(dep_info)
-
     # Create a file from which ghc-pkg will create the actual package
     # from. List of exposed modules generated below.
     metadata_file = hs.actions.declare_file(target_unique_name(hs, "metadata"))
@@ -88,10 +49,6 @@ def package(
         "exposed": "True",
         "hidden-modules": other_modules,
         "import-dirs": [import_dir],
-        "library-dirs": ["${pkgroot}"] + extra_lib_dirs,
-        "dynamic-library-dirs": ["${pkgroot}"] + extra_lib_dirs,
-        "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)],
-        "extra-libraries": extra_libs,
         "depends": dep_info.package_ids,
     })
 

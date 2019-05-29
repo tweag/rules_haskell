@@ -386,6 +386,8 @@ def link_binary(
         "-package", pkg_name,
     ])
 
+    # XXX: Generate RPATHs
+
     #args.add_all(["-optl" + f for f in cc.linker_flags])
     if with_profiling:
         args.add("-prof")
@@ -651,8 +653,32 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     )
 
     args = hs.actions.args()
-    args.add_all(["-optl" + f for f in cc.linker_flags])
-    args.add_all(["-shared", "-dynamic"])
+
+    (static_libs, dynamic_libs) = get_extra_libs(hs, True, dep_info.cc_info)
+    conf_file = hs.actions.declare_file(paths.join(
+        target_unique_name(hs, "link-dynamic.db"),
+        "link-dynamic.conf",
+    ))
+    pkg_name = target_unique_name(hs, "link-dynamic")
+    write_package_conf(hs, conf_file, {
+        "name": pkg_name,
+        "id": pkg_name,
+        "ld-static-libs": static_libs,
+        "ld-dynamic-libs": dynamic_libs,
+        "ld-dynamic-libdirs": dynamic_libs,
+        "ld-options": dep_info.cc_info.linking_context.user_link_flags,
+    })
+    cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
+    args.add_all([
+        "-no-global-package-db",
+        "-package-db", cache_file.dirname,
+        "-package", pkg_name,
+    ])
+
+    # The -dynload=deploy flag prevents GHC from autogenerating RPATH entries.
+    # These RPATHs would be wrong anyway and just pollute the library headers.
+    # On MacOS they would contribute to exceeding the MACH-O header size limit.
+    args.add_all(["-shared", "-dynamic", "-dynload=deploy"])
 
     # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
     # not yet in a release; plus, we still want to support older versions of
@@ -661,21 +687,13 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         args.add("-optl-Wl,-dead_strip_dylibs")
 
     args.add_all(pkg_info_to_compile_flags(expose_packages(
-        dep_info,
+        dep_info.hs_info,
         lib_info = None,
         use_direct = True,
         use_my_pkg_id = None,
         custom_package_databases = None,
         version = my_pkg_id.version if my_pkg_id else None,
     )))
-
-    (cc_link_libs, _cc_solibs, _hs_solibs) = _link_dependencies(
-        hs = hs,
-        dep_info = dep_info,
-        dynamic = True,
-        binary = dynamic_library,
-        args = args,
-    )
 
     args.add_all(["-o", dynamic_library.path])
 
@@ -690,11 +708,11 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
-        inputs = depset([objects_dir], transitive = [
+        inputs = depset([cache_file, objects_dir], transitive = [
+            static_libs,
+            dynamic_libs,
             depset(extra_srcs),
-            dep_info.package_databases,
-            dep_info.dynamic_libraries,
-            cc_link_libs,
+            dep_info.hs_info.package_databases,
         ]),
         outputs = [dynamic_library],
         mnemonic = "HaskellLinkDynamicLibrary",

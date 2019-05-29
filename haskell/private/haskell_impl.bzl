@@ -357,7 +357,7 @@ def haskell_library_impl(ctx):
         dynamic_library = link_library_dynamic(
             hs,
             cc,
-            dep_info.hs_info,
+            dep_info,
             depset(ctx.files.extra_srcs),
             c.objects_dir,
             my_pkg_id,
@@ -485,7 +485,7 @@ def haskell_library_impl(ctx):
         actions = ctx.actions,
         feature_configuration = feature_configuration,
         dynamic_library = dynamic_library,
-        static_library = static_library,
+        pic_static_library = static_library,
         cc_toolchain = cc_toolchain,
     )
     compilation_context = cc_common.create_compilation_context()
