@@ -154,8 +154,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         pkg_info_to_compile_flags(
             expose_packages(
                 dep_info,
-                lib_info = None,
-                use_my_pkg_id = my_pkg_id,
+                my_pkg_id = my_pkg_id,
                 custom_package_databases = None,
                 version = version,
             ),
@@ -165,8 +164,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         pkg_info_to_compile_flags(
             expose_packages(
                 plugin_dep_info,
-                lib_info = None,
-                use_my_pkg_id = my_pkg_id,
+                my_pkg_id = my_pkg_id,
                 custom_package_databases = None,
                 version = version,
             ),

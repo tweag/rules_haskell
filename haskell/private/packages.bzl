@@ -38,7 +38,7 @@ def pkg_info_to_compile_flags(pkg_info, for_plugin = False):
 
     return args
 
-def expose_packages(hs_info, lib_info, use_my_pkg_id, custom_package_databases, version):
+def expose_packages(hs_info, my_pkg_id, custom_package_databases, version):
     """
     Returns the information that is needed by GHC in order to enable haskell
     packages.
@@ -48,22 +48,13 @@ def expose_packages(hs_info, lib_info, use_my_pkg_id, custom_package_databases, 
 
     All the other arguments are not understood well:
 
-    lib_info: only used for repl and linter
-    use_my_pkg_id: only used for one specific task in compile.bzl
+    my_pkg_id: the pkg_id if we're compiling a library
     custom_package_databases: override the package_databases of hs_info, used only by the repl
     """
     has_version = version != None and version != ""
 
     # Expose all bazel dependencies
-    package_ids = []
-    for package in hs_info.package_ids:
-        # XXX: repl and lint uses this lib_info flags
-        # It is set to None in all other usage of this function
-        # TODO: find the meaning of this flag
-        if lib_info == None or package != lib_info.package_id:
-            # XXX: use_my_pkg_id is not None only in compile.bzl
-            if (use_my_pkg_id == None) or package != use_my_pkg_id:
-                package_ids.append(package)
+    package_ids = [package_id for package_id in hs_info.package_ids if package_id != my_pkg_id]
 
     # Only include package DBs for deps.
     package_dbs = []

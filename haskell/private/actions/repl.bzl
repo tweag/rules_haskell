@@ -50,8 +50,7 @@ def build_haskell_repl(
 
     pkg_ghc_info = expose_packages(
         hs_info,
-        lib_info,
-        use_my_pkg_id = None,
+        my_pkg_id = lib_info.package_id if lib_info else None,
         custom_package_databases = package_databases,
         version = version,
     )
