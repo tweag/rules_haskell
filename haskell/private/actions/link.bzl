@@ -394,7 +394,6 @@ def link_binary(
     args.add_all(pkg_info_to_compile_flags(expose_packages(
         dep_info,
         lib_info = None,
-        use_direct = True,
         use_my_pkg_id = None,
         custom_package_databases = None,
         version = version,
@@ -633,7 +632,6 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
     args.add_all(pkg_info_to_compile_flags(expose_packages(
         dep_info,
         lib_info = None,
-        use_direct = True,
         use_my_pkg_id = None,
         custom_package_databases = None,
         version = my_pkg_id.version if my_pkg_id else None,

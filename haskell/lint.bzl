@@ -55,7 +55,6 @@ def _haskell_lint_aspect_impl(target, ctx):
     args.add_all(pkg_info_to_compile_flags(expose_packages(
         hs_info,
         lib_info,
-        use_direct = False,
         use_my_pkg_id = None,
         custom_package_databases = None,
         version = getattr(ctx.rule.attr, "version", None),

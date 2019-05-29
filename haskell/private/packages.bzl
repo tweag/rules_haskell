@@ -38,7 +38,7 @@ def pkg_info_to_compile_flags(pkg_info, for_plugin = False):
 
     return args
 
-def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package_databases, version):
+def expose_packages(hs_info, lib_info, use_my_pkg_id, custom_package_databases, version):
     """
     Returns the information that is needed by GHC in order to enable haskell
     packages.
@@ -49,7 +49,6 @@ def expose_packages(hs_info, lib_info, use_direct, use_my_pkg_id, custom_package
     All the other arguments are not understood well:
 
     lib_info: only used for repl and linter
-    use_direct: only used for repl and linter
     use_my_pkg_id: only used for one specific task in compile.bzl
     custom_package_databases: override the package_databases of hs_info, used only by the repl
     """
