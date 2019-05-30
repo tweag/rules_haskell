@@ -548,7 +548,15 @@ Specify a fully qualified package name of the form <package>-<version>.
                 dependencies[src].append(dest)
     return (dependencies, transitive_unpacked_sdists)
 
+def _invert(d):
+    """Invert a dictionary."""
+    return dict(zip(d.values(), d.keys()))
+
+def _label_to_string(label):
+    return "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
+
 def _stack_snapshot_impl(repository_ctx):
+    vendored_dependencies = _invert(repository_ctx.attr.vendored_packages)
     packages = repository_ctx.attr.packages
     non_core_packages = [
         package
@@ -574,14 +582,8 @@ def _stack_snapshot_impl(repository_ctx):
 load("@io_tweag_rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
 load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_toolchain_library")
 """)
-    extra_deps = [
-        "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
-        for label in repository_ctx.attr.deps
-    ]
-    tools = [
-        "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
-        for label in repository_ctx.attr.tools
-    ]
+    extra_deps = [_label_to_string(label) for label in repository_ctx.attr.deps]
+    tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
     for package in _CORE_PACKAGES:
         if package in packages:
             visibility = ["//visibility:public"]
@@ -600,6 +602,11 @@ haskell_toolchain_library(name = "{name}", visibility = {visibility})
             visibility = ["//visibility:public"]
         else:
             visibility = ["//visibility:private"]
+        deps = [
+            _label_to_string(dep_override) if dep_override else dep
+            for dep in dependencies[unversioned_package]
+            for dep_override in [vendored_dependencies.get(dep)]
+        ]
         build_file_builder.append(
             """
 haskell_cabal_library(
@@ -612,7 +619,7 @@ haskell_cabal_library(
 """.format(
                 name = package,
                 dir = package,
-                deps = dependencies[unversioned_package] + extra_deps,
+                deps = deps + extra_deps,
                 tools = tools,
                 testonly = repository_ctx.attr.testonly,
                 visibility = visibility,
@@ -628,14 +635,18 @@ haskell_cabal_library(
     build_file_content = "\n".join(build_file_builder)
     repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
 
-stack_snapshot = repository_rule(
+_stack_snapshot = repository_rule(
     _stack_snapshot_impl,
     attrs = {
         "snapshot": attr.string(
             doc = "The name of a Stackage snapshot.",
+            mandatory = True,
         ),
         "packages": attr.string_list(
             doc = "A set of package identifiers. For packages in the snapshot, version numbers can be omitted.",
+        ),
+        "vendored_packages": attr.label_keyed_string_dict(
+            doc = "Add or override a package to the snapshot with a custom unpacked source distribution.",
         ),
         "deps": attr.label_list(
             doc = "Dependencies of the package set, e.g. system libraries or C/C++ libraries.",
@@ -646,34 +657,47 @@ stack_snapshot = repository_rule(
         ),
     },
 )
-"""Use Stack to download and extract Cabal source distributions.
 
-Example:
-  ```bzl
-  stack_snapshot(
-      name = "stackage",
-      packages = ["conduit", "lens", "zlib-0.6.2"],
-      tools = ["@happy//:happy", "@c2hs//:c2hs"],
-      snapshot = "lts-13.15",
-      deps = ["@zlib.dev//:zlib"],
-  )
-  ```
-  defines `@stackage//:conduit`, `@stackage//:lens`,
-  `@stackage//:zlib` library targets.
+# TODO Remove this macro once following issue is resolved:
+# https://github.com/bazelbuild/bazel/issues/7989.
+def stack_snapshot(name, snapshot, packages = [], vendored_packages = {}, deps = [], tools = []):
+    """Use Stack to download and extract Cabal source distributions.
 
-This rule will use Stack to compute the transitive closure of the
-subset of the given snapshot listed in the `packages` attribute, and
-generate a dependency graph. If a package in the closure depends on
-system libraries or other external libraries, use the `deps` attribute
-to list them. This attribute works like the
-`--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
+    Example:
+      ```bzl
+      stack_snapshot(
+          name = "stackage",
+          packages = ["conduit", "lens", "zlib-0.6.2"],
+          vendored_packages = {"split": "//split:split"},
+          tools = ["@happy//:happy", "@c2hs//:c2hs"],
+          snapshot = "lts-13.15",
+          deps = ["@zlib.dev//:zlib"],
+      )
+      ```
+      defines `@stackage//:conduit`, `@stackage//:lens`,
+      `@stackage//:zlib` library targets.
 
-Packages that are in the snapshot need not have their versions
-specified. But any additional packages or version overrides will have
-to be specified with a package identifier of the form
-`<package>-<version>` in the `packages` attribute.
+    This rule will use Stack to compute the transitive closure of the
+    subset of the given snapshot listed in the `packages` attribute, and
+    generate a dependency graph. If a package in the closure depends on
+    system libraries or other external libraries, use the `deps` attribute
+    to list them. This attribute works like the
+    `--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
 
-In the external repository defined by the rule, all given packages are
-available as top-level targets named after each package.
+    Packages that are in the snapshot need not have their versions
+    specified. But any additional packages or version overrides will have
+    to be specified with a package identifier of the form
+    `<package>-<version>` in the `packages` attribute.
 
-"""
+    In the external repository defined by the rule, all given packages are
+    available as top-level targets named after each package.
+
+    """
+    _stack_snapshot(
+        name = name,
+        snapshot = snapshot,
+        packages = packages,
+        vendored_packages = _invert(vendored_packages),
+        deps = deps,
+        tools = tools,
+    )
