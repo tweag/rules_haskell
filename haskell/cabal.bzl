@@ -672,6 +672,13 @@ Specify a fully qualified package name of the form <package>-<version>.
                 all_packages[src].deps.append(dest)
     return all_packages
 
+def _invert(d):
+    """Invert a dictionary."""
+    return dict(zip(d.values(), d.keys()))
+
+def _label_to_string(label):
+    return "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
+
 def _stack_snapshot_impl(repository_ctx):
     if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
         fail("Please specify either snapshot or local_snapshot, but not both.")
@@ -682,6 +689,7 @@ def _stack_snapshot_impl(repository_ctx):
     else:
         fail("Please specify one of snapshot or repository_snapshot")
 
+    vendored_dependencies = _invert(repository_ctx.attr.vendored_packages)
     packages = repository_ctx.attr.packages
     core_packages = []
     versioned_packages = []
@@ -709,14 +717,8 @@ def _stack_snapshot_impl(repository_ctx):
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_library")
 """)
-    extra_deps = [
-        "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
-        for label in repository_ctx.attr.deps
-    ]
-    tools = [
-        "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
-        for label in repository_ctx.attr.tools
-    ]
+    extra_deps = [_label_to_string(label) for label in repository_ctx.attr.deps]
+    tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
     for package in all_packages.values():
         if package.name in packages or package.versioned_name in packages:
             visibility = ["//visibility:public"]
@@ -743,6 +745,11 @@ haskell_library(
                 ),
             )
         else:
+            deps = [
+                _label_to_string(dep_override) if dep_override else dep
+                for dep in package.deps
+                for dep_override in [vendored_dependencies.get(dep)]
+            ]
             build_file_builder.append(
                 """
 haskell_cabal_library(
@@ -759,7 +766,7 @@ haskell_cabal_library(
                     version = package.version,
                     flags = package.flags,
                     dir = package.sdist,
-                    deps = package.deps + extra_deps,
+                    deps = deps + extra_deps,
                     tools = tools,
                     visibility = visibility,
                 ),
@@ -781,6 +788,7 @@ _stack_snapshot = repository_rule(
         "snapshot": attr.string(),
         "local_snapshot": attr.label(allow_single_file = True),
         "packages": attr.string_list(),
+        "vendored_packages": attr.label_keyed_string_dict(),
         "flags": attr.string_list_dict(),
         "deps": attr.label_list(),
         "tools": attr.label_list(),
@@ -846,7 +854,7 @@ _fetch_stack = repository_rule(
 )
 """Find a suitably recent local Stack or download it."""
 
-def stack_snapshot(stack = None, **kwargs):
+def stack_snapshot(stack = None, vendored_packages = {}, **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
     Args:
@@ -855,6 +863,8 @@ def stack_snapshot(stack = None, **kwargs):
         Incompatible with snapshot.
       packages: A set of package identifiers. For packages in the snapshot,
         version numbers can be omitted.
+      vendored_packages: Add or override a package to the snapshot with a custom
+        unpacked source distribution.
       flags: A dict from package name to list of flags.
       deps: Dependencies of the package set, e.g. system libraries or C/C++ libraries.
       tools: Tool dependencies. They are built using the host configuration, since
@@ -867,6 +877,7 @@ def stack_snapshot(stack = None, **kwargs):
       stack_snapshot(
           name = "stackage",
           packages = ["conduit", "lens", "zlib-0.6.2"],
+          vendored_packages = {"split": "//split:split"},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
           snapshot = "lts-13.15",
           deps = ["@zlib.dev//:zlib"],
@@ -908,9 +919,14 @@ def stack_snapshot(stack = None, **kwargs):
 
     In the external repository defined by the rule, all given packages are
     available as top-level targets named after each package.
-
     """
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
         stack = Label("@rules_haskell_stack//:stack")
-    _stack_snapshot(stack = stack, **kwargs)
+    _stack_snapshot(
+        stack = stack,
+        # TODO Remove _invert once following issue is resolved:
+        # https://github.com/bazelbuild/bazel/issues/7989.
+        vendored_packages = _invert(vendored_packages),
+        **kwargs
+    )
