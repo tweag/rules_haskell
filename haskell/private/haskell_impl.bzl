@@ -629,6 +629,7 @@ def haskell_import_impl(ctx):
         package_databases = depset(),
         version_macros = version_macros,
         source_files = set.empty(),
+        import_dirs = depset(),
         extra_source_files = depset(),
         static_libraries = depset(),
         dynamic_libraries = depset(),
