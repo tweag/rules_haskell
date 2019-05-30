@@ -123,6 +123,19 @@ def _resolve_plugin_tools(ctx, plugin_info):
         tool_input_manifests = tool_input_manifests,
     )
 
+def _resolve_preprocessors(ctx, preprocessors):
+    if not hasattr(ctx, "resolve_tools"):
+        # No resolve_tools when ctx is faked (see protobuf.bzl).
+        return struct(
+            inputs = depset(),
+            input_manifests = [],
+        )
+    (inputs, input_manifests) = ctx.resolve_tools(tools = preprocessors)
+    return struct(
+        inputs = inputs,
+        input_manifests = input_manifests,
+    )
+
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
@@ -148,6 +161,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         dynamic = False
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
+    preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
     c = hs.toolchain.actions.compile_binary(
         hs,
         cc,
@@ -330,6 +344,7 @@ def haskell_library_impl(ctx):
     my_pkg_id = pkg_id.new(ctx.label, package_name, version)
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
+    preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -344,6 +359,7 @@ def haskell_library_impl(ctx):
         with_profiling = with_profiling,
         my_pkg_id = my_pkg_id,
         plugins = plugins,
+        preprocessors = preprocessors,
     )
 
     other_modules = ctx.attr.hidden_modules

@@ -1,0 +1,21 @@
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_binary",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_binary(
+    name = "cat",
+    srcs = ["Cat.hs"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_test(
+    name = "binary-with-tool",
+    srcs = ["Main.hs"],
+    tools = [":cat"],
+    visibility = ["//visibility:public"],
+    deps = ["//tests/hackage:base"],
+)
