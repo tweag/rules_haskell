@@ -112,6 +112,17 @@ def _condition_coverage_src(hs, src):
 
     return conditioned_src
 
+def _resolve_plugin_tools(ctx, plugin_info):
+    """Convert a plugin provider to a struct with tools resolved to inputs."""
+    (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = plugin_info.tools)
+    return struct(
+        module = plugin_info.module,
+        deps = plugin_info.deps,
+        args = plugin_info.args,
+        tool_inputs = tool_inputs,
+        tool_input_manifests = tool_input_manifests,
+    )
+
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
@@ -136,6 +147,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         # Also, GHC on Windows doesn't support dynamic code
         dynamic = False
 
+    plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     c = hs.toolchain.actions.compile_binary(
         hs,
         cc,
@@ -152,7 +164,8 @@ def _haskell_binary_common_impl(ctx, is_test):
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
-        plugins = ctx.attr.plugins,
+        plugins = plugins,
+        preprocessors = preprocessors,
     )
 
     # gather intermediary code coverage instrumentation data
@@ -316,6 +329,7 @@ def haskell_library_impl(ctx):
     version = getattr(ctx.attr, "version", None)
     my_pkg_id = pkg_id.new(ctx.label, package_name, version)
 
+    plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -329,7 +343,7 @@ def haskell_library_impl(ctx):
         with_shared = with_shared,
         with_profiling = with_profiling,
         my_pkg_id = my_pkg_id,
-        plugins = ctx.attr.plugins,
+        plugins = plugins,
     )
 
     other_modules = ctx.attr.hidden_modules

@@ -4,15 +4,11 @@ def ghc_plugin_impl(ctx):
     args = ctx.attr.args
     args = [ctx.expand_location(arg, ctx.attr.tools) for arg in args]
     args = [ctx.expand_make_variables("args", arg, {}) for arg in args]
-
-    # XXX Ideally we'd resolve tools downstream.
-    (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
     return [
         GhcPluginInfo(
             module = ctx.attr.module,
             deps = ctx.attr.deps,
-            tool_inputs = tool_inputs,
-            tool_input_manifests = tool_input_manifests,
+            tools = ctx.attr.tools,
             args = args,
         ),
     ]
@@ -31,6 +27,7 @@ ghc_plugin = rule(
             doc = "Plugin options.",
         ),
         "tools": attr.label_list(
+            cfg = "host",
             doc = "Tools needed by the plugin when it used.",
         ),
     },
