@@ -9,6 +9,12 @@ pull_request_rules:
       merge:
         method: merge
         strict: smart
+  - name: delete head branch after merge
+    conditions:
+      - merged
+      - closed
+    actions:
+      delete_head_branch: {}
   - name: remove from merge-queue after merge
     conditions:
       - merged
