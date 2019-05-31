@@ -408,6 +408,11 @@ def link_binary(
         else:
             args.add_all(["-pie", "-dynamic"])
 
+    # The -dynload=deploy flag prevents GHC from autogenerating RPATH entries.
+    # These RPATHs would be wrong anyway and just pollute the library headers.
+    # On MacOS they would contribute to exceeding the MACH-O header size limit.
+    args.add("-dynload=deploy")
+
     # When compiling with `-threaded`, GHC needs to link against
     # the pthread library when linking against static archives (.a).
     # We assume it’s not a problem to pass it for other cases,
