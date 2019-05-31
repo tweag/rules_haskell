@@ -166,7 +166,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
                 package_ids = [
                     dep[HaskellLibraryInfo].package_id
                     for plugin in plugins
-                    for dep in plugin[GhcPluginInfo].deps
+                    for dep in plugin.deps
                     if HaskellLibraryInfo in dep
                 ],
                 package_databases = plugin_dep_info.package_databases,
