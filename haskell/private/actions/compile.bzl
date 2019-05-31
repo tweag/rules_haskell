@@ -205,7 +205,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         "-no-global-package-db",
         "-package-db", cache_file.dirname,
         "-package", pkg_name,
-        "-v"
     ]
 
     compile_flags.extend(
