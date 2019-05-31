@@ -147,7 +147,14 @@ def get_extra_libs(hs, dynamic, cc_info):
                 dynamic_libs.append(lib_to_link.interface_library)
             else:
                 continue
-    static_libs = depset(direct = static_libs, order = "topological")
+    # We cannot just use depset(direct = static_libs) because that would
+    # eliminate duplicates starting from the front. I.e. later duplicates of
+    # libraries would be removed. This would cause missing symbols during
+    # static linking.
+    static_libs = depset(
+        transitive = [depset(direct = [lib]) for lib in static_libs],
+        order = "topological",
+    )
     dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
 
