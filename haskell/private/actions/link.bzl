@@ -372,7 +372,7 @@ def link_binary(
         target_unique_name(hs, "link.db"),
         "link.conf",
     ))
-    pkg_name = target_unique_name(hs, "link")
+    pkg_name = target_unique_name(hs, "link").replace("_", "-")
     write_package_conf(hs, conf_file, {
         "name": pkg_name,
         "id": pkg_name,
