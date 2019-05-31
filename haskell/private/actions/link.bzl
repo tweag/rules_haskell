@@ -665,7 +665,7 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         target_unique_name(hs, "link-dynamic.db"),
         "link-dynamic.conf",
     ))
-    pkg_name = target_unique_name(hs, "link-dynamic")
+    pkg_name = target_unique_name(hs, "link-dynamic").replace("_", "-")
     write_package_conf(hs, conf_file, {
         "name": pkg_name,
         "id": pkg_name,
