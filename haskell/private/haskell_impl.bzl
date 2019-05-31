@@ -136,6 +136,11 @@ def _resolve_preprocessors(ctx, preprocessors):
         input_manifests = input_manifests,
     )
 
+def _expand_make_variables(ctx, targets):
+    targets = [ctx.expand_location(target, ctx.attr.tools) for target in targets]
+    targets = [ctx.expand_make_variables("targets", target, {}) for target in targets]
+    return targets
+
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
@@ -167,6 +172,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
+    user_compile_flags = _expand_make_variables(ctx, ctx.attr.compiler_flags)
     c = hs.toolchain.actions.compile_binary(
         hs,
         cc,
@@ -177,7 +183,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
-        user_compile_flags = ctx.attr.compiler_flags,
+        user_compile_flags = user_compile_flags,
         dynamic = dynamic,
         with_profiling = with_profiling,
         main_function = ctx.attr.main_function,
@@ -193,16 +199,18 @@ def _haskell_binary_common_impl(ctx, is_test):
         if HaskellCoverageInfo in dep:
             coverage_data += dep[HaskellCoverageInfo].coverage_data
 
+    user_compile_flags = _expand_make_variables(ctx, ctx.attr.compiler_flags)
     (binary, solibs) = link_binary(
         hs,
         cc,
         dep_info,
         ctx.files.extra_srcs,
-        ctx.attr.compiler_flags,
+        user_compile_flags,
         c.objects_dir,
         dynamic = dynamic,
         with_profiling = with_profiling,
         version = ctx.attr.version,
+        preprocessors = preprocessors,
     )
 
     hs_info = HaskellInfo(
@@ -224,12 +232,14 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     target_files = depset([binary])
 
+    user_compile_flags = _expand_make_variables(ctx, ctx.attr.compiler_flags)
+    repl_ghci_args = _expand_make_variables(ctx, ctx.attr.repl_ghci_args)
     build_haskell_repl(
         hs,
         ghci_script = ctx.file._ghci_script,
         ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
-        user_compile_flags = ctx.attr.compiler_flags,
-        repl_ghci_args = ctx.attr.repl_ghci_args,
+        user_compile_flags = user_compile_flags,
+        repl_ghci_args = repl_ghci_args,
         output = ctx.outputs.repl,
         package_databases = dep_info.package_databases,
         version = ctx.attr.version,
@@ -240,11 +250,13 @@ def _haskell_binary_common_impl(ctx, is_test):
     # See https://github.com/tweag/rules_haskell/pull/460.
     ln(hs, ctx.outputs.repl, ctx.outputs.repl_deprecated)
 
+    user_compile_flags = _expand_make_variables(ctx, ctx.attr.compiler_flags)
+    extra_args = _expand_make_variables(ctx, ctx.attr.runcompile_flags)
     build_haskell_runghc(
         hs,
         runghc_wrapper = ctx.file._ghci_repl_wrapper,
-        extra_args = ctx.attr.runcompile_flags,
-        user_compile_flags = ctx.attr.compiler_flags,
+        extra_args = extra_args,
+        user_compile_flags = user_compile_flags,
         output = ctx.outputs.runghc,
         package_databases = dep_info.package_databases,
         version = ctx.attr.version,
@@ -354,6 +366,7 @@ def haskell_library_impl(ctx):
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
+    user_compile_flags = _expand_make_variables(ctx, ctx.attr.compiler_flags)
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -363,7 +376,7 @@ def haskell_library_impl(ctx):
         srcs = srcs_files,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
-        user_compile_flags = ctx.attr.compiler_flags,
+        user_compile_flags = user_compile_flags,
         with_shared = with_shared,
         with_profiling = with_profiling,
         my_pkg_id = my_pkg_id,
@@ -468,12 +481,14 @@ def haskell_library_impl(ctx):
     target_files = depset([file for file in [static_library, dynamic_library] if file])
 
     if hasattr(ctx, "outputs"):
+        user_compile_flags = _expand_make_variables(ctx, ctx.attr.compiler_flags)
+        repl_ghci_args = _expand_make_variables(ctx, ctx.attr.repl_ghci_args)
         build_haskell_repl(
             hs,
             ghci_script = ctx.file._ghci_script,
             ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
-            repl_ghci_args = ctx.attr.repl_ghci_args,
-            user_compile_flags = ctx.attr.compiler_flags,
+            repl_ghci_args = repl_ghci_args,
+            user_compile_flags = user_compile_flags,
             output = ctx.outputs.repl,
             package_databases = dep_info.package_databases,
             version = ctx.attr.version,
@@ -485,11 +500,13 @@ def haskell_library_impl(ctx):
         # See https://github.com/tweag/rules_haskell/pull/460.
         ln(hs, ctx.outputs.repl, ctx.outputs.repl_deprecated)
 
+        extra_args = _expand_make_variables(ctx, ctx.attr.runcompile_flags)
+        user_compile_flags = _expand_make_variables(ctx, ctx.attr.compiler_flags)
         build_haskell_runghc(
             hs,
             runghc_wrapper = ctx.file._ghci_repl_wrapper,
-            extra_args = ctx.attr.runcompile_flags,
-            user_compile_flags = ctx.attr.compiler_flags,
+            extra_args = extra_args,
+            user_compile_flags = user_compile_flags,
             output = ctx.outputs.runghc,
             package_databases = dep_info.package_databases,
             version = ctx.attr.version,

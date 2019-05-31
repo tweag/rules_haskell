@@ -346,7 +346,8 @@ def link_binary(
         objects_dir,
         dynamic,
         with_profiling,
-        version):
+        version,
+        preprocessors):
     """Link Haskell binary from static object files.
 
     Returns:
@@ -455,7 +456,9 @@ def link_binary(
             dep_info.static_libraries,
             depset([objects_dir]),
             cc_link_libs,
+            preprocessors.inputs,
         ]),
+        input_manifests = preprocessors.input_manifests,
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
         arguments = args,

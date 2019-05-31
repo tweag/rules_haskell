@@ -75,13 +75,13 @@ _haskell_common_attrs = {
         allow_files = True,
     ),
     "compiler_flags": attr.string_list(
-        doc = "Flags to pass to Haskell compiler.",
+        doc = "Flags to pass to Haskell compiler. Subject to Make variable substitution.",
     ),
     "repl_ghci_args": attr.string_list(
-        doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
+        doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
     ),
     "runcompile_flags": attr.string_list(
-        doc = "Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
+        doc = "Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
     ),
     "plugins": attr.label_list(
         doc = "Compiler plugins to use during compilation.",
