@@ -244,7 +244,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
 
     hsc_inputs = []
     if version:
-        (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
+        (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info.hs_info)
         hsc_flags += ["--cflag=" + x for x in version_macro_flags]
         hsc_inputs += set.to_list(version_macro_headers)
 
