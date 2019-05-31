@@ -61,7 +61,7 @@ py_binary(
     data = [
         ":hs-lib-b-wrapped.so",
     ],
-    default_python_version = "PY3",
+    python_version = "PY3",
     srcs_version = "PY3ONLY",
     # This requires a shared object, which is not provided in profiling mode.
     # Hence we disable this test in profiling mode using requires_dynamic.
