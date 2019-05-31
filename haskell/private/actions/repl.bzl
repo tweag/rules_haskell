@@ -49,11 +49,8 @@ def build_haskell_repl(
     args = ["-package", "base", "-package", "directory"]
 
     pkg_ghc_info = expose_packages(
-        hs_info,
-        lib_info,
-        use_direct = False,
-        use_my_pkg_id = None,
-        custom_package_databases = package_databases,
+        package_ids = hs.package_ids,
+        package_databases = package_databases,
         version = version,
     )
     args += pkg_info_to_compile_flags(pkg_ghc_info)
@@ -132,7 +129,7 @@ def build_haskell_repl(
         library_path = library_path,
         ld_library_path = ld_library_path,
         package_ids = pkg_ghc_info.package_ids,
-        package_dbs = pkg_ghc_info.package_dbs,
+        package_dbs = pkg_ghc_info.package_databases,
         lib_imports = lib_imports,
         libraries = libraries,
         execs = struct(

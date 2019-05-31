@@ -14,6 +14,7 @@ load(":private/version_macros.bzl", "version_macro_includes")
 load(
     ":providers.bzl",
     "GhcPluginInfo",
+    "HaskellLibraryInfo",
     "get_libs_for_ghc_linker",
     "merge_HaskellCcInfo",
 )
@@ -153,11 +154,8 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     compile_flags.extend(
         pkg_info_to_compile_flags(
             expose_packages(
-                dep_info,
-                lib_info = None,
-                use_direct = True,
-                use_my_pkg_id = my_pkg_id,
-                custom_package_databases = None,
+                package_ids = hs.package_ids,
+                package_databases = dep_info.package_databases,
                 version = version,
             ),
         ),
@@ -165,11 +163,13 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
     compile_flags.extend(
         pkg_info_to_compile_flags(
             expose_packages(
-                plugin_dep_info,
-                lib_info = None,
-                use_direct = True,
-                use_my_pkg_id = my_pkg_id,
-                custom_package_databases = None,
+                package_ids = [
+                    dep[HaskellLibraryInfo].package_id
+                    for plugin in plugins
+                    for dep in plugin[GhcPluginInfo].deps
+                    if HaskellLibraryInfo in dep
+                ],
+                package_databases = plugin_dep_info.package_databases,
                 version = version,
             ),
             for_plugin = True,

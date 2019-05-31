@@ -140,11 +140,6 @@ def gather_dep_info(ctx, deps):
       HaskellInfo: Unified information about all dependencies.
     """
 
-    package_ids = [
-        dep[HaskellLibraryInfo].package_id
-        for dep in deps
-        if HaskellLibraryInfo in dep
-    ]
     package_databases = depset(transitive = [
         dep[HaskellInfo].package_databases
         for dep in deps
@@ -188,7 +183,6 @@ def gather_dep_info(ctx, deps):
             compile_flags.extend(dep[HaskellInfo].compile_flags)
 
     acc = HaskellInfo(
-        package_ids = package_ids,
         package_databases = package_databases,
         version_macros = set.empty(),
         static_libraries = static_libraries,
@@ -208,7 +202,6 @@ def gather_dep_info(ctx, deps):
             if HaskellLibraryInfo not in dep:
                 fail("Target {0} cannot depend on binary".format(ctx.attr.name))
             acc = HaskellInfo(
-                package_ids = acc.package_ids,
                 package_databases = acc.package_databases,
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
                 static_libraries = acc.static_libraries + binfo.static_libraries,
@@ -227,7 +220,6 @@ def gather_dep_info(ctx, deps):
             # in the `CcInfo` provider.
             hs_cc_info = _HaskellCcInfo_from_CcInfo(ctx, dep[CcInfo])
             acc = HaskellInfo(
-                package_ids = acc.package_ids,
                 package_databases = acc.package_databases,
                 version_macros = acc.version_macros,
                 import_dirs = acc.import_dirs,
