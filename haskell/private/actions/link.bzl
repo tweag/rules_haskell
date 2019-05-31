@@ -378,7 +378,7 @@ def link_binary(
         "id": pkg_name,
         "ld-static-libs": static_libs,
         "ld-dynamic-libs": dynamic_libs,
-        "ld-dynamic-libdirs": dynamic_libs,
+        "ld-libdirs": dynamic_libs,
         "ld-options":
             dep_info.cc_info.linking_context.user_link_flags
             + _infer_rpaths(hs.toolchain.is_darwin, executable, dynamic_libs).to_list(),

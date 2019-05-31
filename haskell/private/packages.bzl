@@ -118,6 +118,7 @@ def write_package_conf(ctx, conf_file, metadata):
         "cc-system-includes": ("add_joined", {"join_with": " ", "format_each": '"-isystem%s"', "format_joined": "cc-options: %s", "uniquify": True}),
         "ld-static-libs": ("add_joined", {"join_with": " ", "format_joined": "ld-options: %s"}),
         "ld-dynamic-libs": ("add_joined", {"join_with": " ", "map_each": get_lib_name, "format_joined": "extra-libraries: %s", "uniquify": True}),
+        "ld-libdirs": ("add_joined", {"join_with": " ", "map_each": get_dirname, "format_joined": "library-dirs: %s", "uniquify": True}),
         "ld-dynamic-libdirs": ("add_joined", {"join_with": " ", "map_each": get_dirname, "format_joined": "dynamic-library-dirs: %s", "uniquify": True}),
         # NOTE: Add additional fields as needed.
     }
