@@ -7,6 +7,7 @@ load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
+    "get_dirname",
     "get_lib_name",
     "module_name",
     "target_unique_name",
@@ -47,6 +48,12 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     args.add_all(["-l", cc.tools.cc])
     args.add("-ighcplatform.h")
     args.add("-ighcversion.h")
+    args.add_all(
+        hs.toolchain.hdrs,
+        map_each = get_dirname,
+        format_each = "-I%s",
+        uniquify = True,
+    )
     # XXX: Use cc_info
     args.add_all(["--cflag=" + f for f in cc.cpp_flags])
     args.add_all(["--cflag=" + f for f in cc.compiler_flags])
@@ -65,6 +72,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
 
     hs.actions.run(
         inputs = depset(transitive = [
+            depset(hs.toolchain.hdrs),
             depset(cc.hdrs),
             depset([hsc_file]),
             depset(cc.files),
@@ -181,6 +189,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         "name": pkg_name,
         "id": pkg_name,
         "include-dirs": depset(transitive = [
+            depset([hdr.dirname for hdr in hs.toolchain.hdrs]),
             dep_info.cc_info.compilation_context.includes,
             plugin_dep_info.cc_info.compilation_context.includes,
         ]),
@@ -374,6 +383,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         args = args,
         compile_flags = compile_flags,
         inputs = depset(transitive = [
+            depset(hs.toolchain.hdrs),
             depset(ghci_extra_libs),
             depset(header_files),
             depset(boot_files),

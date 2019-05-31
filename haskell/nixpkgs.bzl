@@ -49,12 +49,18 @@ filegroup(
     srcs = glob(["bin/*"]),
 )
 
+filegroup(
+    name = "include",
+    srcs = glob(["lib/ghc-*/include/ghc*.h"]),
+)
+
 {toolchain_libraries}
 
 haskell_toolchain(
     name = "toolchain-impl",
     tools = {tools},
     libraries = toolchain_libraries,
+    hdrs = [":include"],
     version = "{version}",
     compiler_flags = {compiler_flags} + {compiler_flags_select},
     haddock_flags = {haddock_flags},

@@ -194,6 +194,7 @@ fi
                 run_ghc = _run_ghc,
             ),
             libraries = libraries,
+            hdrs = ctx.files.hdrs,
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
             version = ctx.attr.version,
@@ -214,6 +215,10 @@ _haskell_toolchain = rule(
         ),
         "libraries": attr.label_list(
             doc = "The set of libraries that come with GHC.",
+            mandatory = True,
+        ),
+        "hdrs": attr.label_list(
+            doc = "The set of header files that come with GHC.",
             mandatory = True,
         ),
         "compiler_flags": attr.string_list(
@@ -259,6 +264,7 @@ def haskell_toolchain(
         version,
         tools,
         libraries,
+        hdrs,
         compiler_flags = [],
         repl_ghci_args = [],
         haddock_flags = [],
@@ -302,6 +308,7 @@ def haskell_toolchain(
         version = version,
         tools = tools,
         libraries = libraries,
+        hdrs = hdrs,
         compiler_flags = compiler_flags,
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
