@@ -167,6 +167,16 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         "compile.conf",
     ))
     pkg_name = target_unique_name(hs, "compile")
+    system_libraries = [
+        opt[2:]
+        for opt in dep_info.cc_info.linking_context.user_link_flags
+        if opt.startswith("-l")
+    ]
+    system_library_dirs = [
+        opt[2:]
+        for opt in dep_info.cc_info.linking_context.user_link_flags
+        if opt.startswith("-L")
+    ]
     write_package_conf(hs, conf_file, {
         "name": pkg_name,
         "id": pkg_name,
@@ -186,15 +196,16 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             dep_info.cc_info.compilation_context.system_includes,
             plugin_dep_info.cc_info.compilation_context.system_includes,
         ]),
-        "extra-ghci-libraries": [get_lib_name(lib) for lib in ghci_extra_libs],
-        "library-dirs": [lib.dirname for lib in ghci_extra_libs],
-        "ld-options": dep_info.cc_info.linking_context.user_link_flags,
+        # XXX: Follow link_binary/library example
+        "extra-ghci-libraries": [get_lib_name(lib) for lib in ghci_extra_libs] + system_libraries,
+        "library-dirs": [lib.dirname for lib in ghci_extra_libs] + system_library_dirs,
     })
     cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
     compile_flags += [
         "-no-global-package-db",
         "-package-db", cache_file.dirname,
         "-package", pkg_name,
+        "-v"
     ]
 
     compile_flags.extend(
@@ -311,6 +322,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         "-v0",
         "-no-link",
         "-fPIC",
+        "-fexternal-dynamic-refs",
         "-hide-all-packages",
         # Should never trigger in sandboxed builds, but can be useful
         # to debug issues in non-sandboxed builds.
@@ -359,15 +371,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         transitive = [extra_srcs, depset(header_files), depset(boot_files)],
     )
 
-    # Transitive library dependencies for runtime.
-    #(library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
-    #    hs,
-    #    merge_HaskellCcInfo(
-    #        dep_info.transitive_cc_dependencies,
-    #        plugin_dep_info.transitive_cc_dependencies,
-    #    ),
-    #)
-
     return struct(
         args = args,
         compile_flags = compile_flags,
@@ -386,8 +389,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             plugin_dep_info.hs_info.interface_dirs,
             plugin_dep_info.hs_info.static_libraries,
             plugin_dep_info.hs_info.dynamic_libraries,
-            #depset(library_deps),
-            #depset(ld_library_deps),
             java.inputs,
             locale_archive_depset,
             depset(transitive = plugin_tool_inputs),
@@ -401,7 +402,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         extra_source_files = depset(transitive = [extra_source_files, depset([optp_args_file])]),
         import_dirs = import_dirs,
         env = dicts.add(
-            #ghc_env,
             java.env,
             hs.env,
         ),

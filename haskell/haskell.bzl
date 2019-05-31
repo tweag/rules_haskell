@@ -306,6 +306,12 @@ haskell_import = rule(
         "shared_libraries": attr.label_list(allow_files = [".dll", ".dylib", ".so"]),
         "static_profiling_libraries": attr.label_list(allow_files = ["_p.a"]),
         "linkopts": attr.string_list(),
+        "dynamic_library_dirs": attr.string_list(
+            doc = "dynamic-library-dirs that are external to the Bazel workspace.",
+        ),
+        "library_dirs": attr.string_list(
+            doc = "library-dirs that are external to the Bazel workspace.",
+        ),
         "hdrs": attr.label_list(allow_files = True),
         "includes": attr.string_list(),
         "ghc_pkg": attr.label(
