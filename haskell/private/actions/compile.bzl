@@ -376,7 +376,12 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         args.add(f)
 
     extra_source_files = depset(
-        transitive = [extra_srcs, depset(header_files), depset(boot_files)],
+        direct = [cache_file],
+        transitive = [
+            extra_srcs,
+            depset(header_files),
+            depset(boot_files),
+        ],
     )
 
     return struct(
@@ -401,7 +406,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             java.inputs,
             locale_archive_depset,
             depset(transitive = plugin_tool_inputs),
-            depset([cache_file, optp_args_file]),
+            depset([optp_args_file]),
         ]),
         input_manifests = plugin_tool_input_manifests,
         objects_dir = objects_dir,

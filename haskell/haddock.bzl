@@ -6,6 +6,7 @@ load(
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
+    "get_ghci_extra_libs",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
@@ -103,8 +104,8 @@ def _haskell_doc_aspect_impl(target, ctx):
     )
 
     # Transitive library dependencies for runtime.
-    trans_link_ctx = target[HaskellInfo].transitive_cc_dependencies.dynamic_linking
-    trans_libs = trans_link_ctx.libraries_to_link.to_list()
+    # XXX: Should the target expose these more conveniently?
+    ghci_extra_libs = get_ghci_extra_libs(hs, target[CcInfo])
 
     ctx.actions.run(
         inputs = depset(transitive = [
@@ -113,7 +114,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             set.to_depset(target[HaskellInfo].source_files),
             target[HaskellInfo].extra_source_files,
             target[HaskellInfo].dynamic_libraries,
-            depset(trans_libs),
+            depset(ghci_extra_libs),
             depset(transitive_haddocks.values()),
             depset(transitive_html.values()),
             target[CcInfo].compilation_context.headers,
