@@ -1,5 +1,5 @@
 load(
-    "//:tests/inline_tests.bzl",
+    "//tests:inline_tests.bzl",
     "py_inline_test",
 )
 
