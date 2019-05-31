@@ -274,6 +274,7 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
 
     return objects_dir_manifest
 
+# XXX: Remove this
 def _link_dependencies(hs, dep_info, dynamic, binary, args):
     """Configure linker flags and inputs.
 
@@ -365,6 +366,7 @@ def link_binary(
 
     args = hs.actions.args()
 
+    # XXX: Collect dynamic_libs into _solibs directory to stay under MACH-O header size limit.
     (static_libs, dynamic_libs) = get_extra_libs(hs, dynamic, dep_info.cc_info)
     conf_file = hs.actions.declare_file(paths.join(
         target_unique_name(hs, "link.db"),
@@ -377,7 +379,9 @@ def link_binary(
         "ld-static-libs": static_libs,
         "ld-dynamic-libs": dynamic_libs,
         "ld-dynamic-libdirs": dynamic_libs,
-        "ld-options": dep_info.cc_info.linking_context.user_link_flags,
+        "ld-options":
+            dep_info.cc_info.linking_context.user_link_flags
+            + _infer_rpaths(hs.toolchain.is_darwin, executable, dynamic_libs).to_list(),
     })
     cache_file = ghc_pkg_recache(hs, hs.tools.ghc_pkg, conf_file)
     args.add_all([
@@ -542,7 +546,7 @@ def _add_external_libraries(args, ext_libs):
         ])
 
 def _infer_rpaths(is_darwin, target, solibs):
-    """Return set of RPATH values to be added to target so it can find all
+    """Return set of RPATH flags to be added to target so it can find all
     solibs
 
     The resulting paths look like:
@@ -556,25 +560,22 @@ def _infer_rpaths(is_darwin, target, solibs):
       solibs: A list of Files, shared objects that the target needs.
 
     Returns:
-      Set of strings: rpaths to add to target.
+      Set of strings: rpath flags to pass when linking target.
     """
-    r = set.empty()
-
     if is_darwin:
         prefix = "@loader_path"
     else:
         prefix = "$ORIGIN"
 
-    for solib in solibs:
-        rpath = create_rpath_entry(
+    return depset(direct = [
+        "-Wl,-rpath," + create_rpath_entry(
             binary = target,
-            dependency = solib,
+            dependency = lib,
             keep_filename = False,
             prefix = prefix,
         )
-        set.mutable_insert(r, rpath)
-
-    return r
+        for lib in solibs
+    ])
 
 def _so_extension(hs):
     """Returns the extension for shared libraries.
