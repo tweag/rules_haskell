@@ -17,6 +17,7 @@ load(":private/version_macros.bzl", "version_macro_includes")
 load(
     ":providers.bzl",
     "GhcPluginInfo",
+    "HaskellImportHack",
     "get_ghci_extra_libs",
     "get_libs_for_ghc_linker",
     "merge_HaskellCcInfo",
@@ -384,10 +385,18 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         ],
     )
 
+    # GHC requries the Rts.h header to build the main function.
+    args.add_all(
+        hs.toolchain.libraries["rts"][HaskellImportHack].includes,
+        format_each = "-optc-I%s",
+    )
+
     return struct(
         args = args,
         compile_flags = compile_flags,
         inputs = depset(transitive = [
+            # GHC requries the Rts.h header to build the main function.
+            hs.toolchain.libraries["rts"][HaskellImportHack].headers,
             depset(hs.toolchain.hdrs),
             depset(ghci_extra_libs),
             depset(header_files),
