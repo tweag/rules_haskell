@@ -174,7 +174,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
         target_unique_name(hs, "compile.db"),
         "compile.conf",
     ))
-    pkg_name = target_unique_name(hs, "compile")
+    pkg_name = target_unique_name(hs, "compile").replace("_", "-")
     system_libraries = [
         opt[2:]
         for opt in dep_info.cc_info.linking_context.user_link_flags
