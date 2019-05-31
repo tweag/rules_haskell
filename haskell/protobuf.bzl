@@ -158,6 +158,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         "deps": ctx.rule.attr.deps +
                 ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].deps,
         "plugins": [],
+        "tools": [],
         "_cc_toolchain": ctx.attr._cc_toolchain,
     }
 

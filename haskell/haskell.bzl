@@ -86,6 +86,10 @@ _haskell_common_attrs = {
     "plugins": attr.label_list(
         doc = "Compiler plugins to use during compilation.",
     ),
+    "tools": attr.label_list(
+        cfg = "host",
+        doc = "Extra tools needed at compile-time, like preprocessors.",
+    ),
     "_ghci_script": attr.label(
         allow_single_file = True,
         default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),

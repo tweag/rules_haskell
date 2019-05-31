@@ -82,7 +82,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins):
+def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins, preprocessors):
     """Compute variables common to all compilation targets (binary and library).
 
     Returns:
@@ -293,15 +293,15 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
 
     # Plugins
     for plugin in plugins:
-        args.add("-fplugin={}".format(plugin[GhcPluginInfo].module))
-        for opt in plugin[GhcPluginInfo].args:
-            args.add_all(["-fplugin-opt", "{}:{}".format(plugin[GhcPluginInfo].module, opt)])
+        args.add("-fplugin={}".format(plugin.module))
+        for opt in plugin.args:
+            args.add_all(["-fplugin-opt", "{}:{}".format(plugin.module, opt)])
 
-    plugin_tool_inputs = [plugin[GhcPluginInfo].tool_inputs for plugin in plugins]
+    plugin_tool_inputs = depset(transitive = [plugin.tool_inputs for plugin in plugins])
     plugin_tool_input_manifests = [
         manifest
         for plugin in plugins
-        for manifest in plugin[GhcPluginInfo].tool_input_manifests
+        for manifest in plugin.tool_input_manifests
     ]
 
     # Pass source files
@@ -342,10 +342,11 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_
             depset(ld_library_deps),
             java.inputs,
             locale_archive_depset,
-            depset(transitive = plugin_tool_inputs),
+            preprocessors.inputs,
+            plugin_tool_inputs,
             depset([optp_args_file]),
         ]),
-        input_manifests = plugin_tool_input_manifests,
+        input_manifests = preprocessors.input_manifests + plugin_tool_input_manifests,
         objects_dir = objects_dir,
         interfaces_dir = interfaces_dir,
         outputs = [objects_dir, interfaces_dir],
@@ -386,7 +387,8 @@ def compile_binary(
         main_function,
         version,
         inspect_coverage = False,
-        plugins = []):
+        plugins = [],
+        preprocessors = []):
     """Compile a Haskell target into object files suitable for linking.
 
     Returns:
@@ -396,7 +398,7 @@ def compile_binary(
         modules: set of module names
         source_files: set of Haskell source files
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins)
+    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins, preprocessors = preprocessors)
     c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
@@ -447,7 +449,8 @@ def compile_library(
         with_shared,
         with_profiling,
         my_pkg_id,
-        plugins = []):
+        plugins = [],
+        preprocessors = []):
     """Build arguments for Haskell package build.
 
     Returns:
@@ -461,7 +464,7 @@ def compile_library(
         source_files: set of Haskell module files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins)
+    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, preprocessors = preprocessors)
     if with_shared:
         c.args.add("-dynamic-too")
 

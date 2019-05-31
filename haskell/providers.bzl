@@ -215,7 +215,6 @@ GhcPluginInfo = provider(
         "module": "Plugin entrypoint.",
         "deps": "Plugin dependencies.",
         "args": "Plugin options.",
-        "tool_inputs": "Inputs required for plugin tools.",
-        "tool_input_manifests": "Plugin tools input manifests.",
+        "tools": "Plugin tools.",
     },
 )
