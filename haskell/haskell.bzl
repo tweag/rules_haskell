@@ -57,7 +57,7 @@ load(
 
 _haskell_common_attrs = {
     "src_strip_prefix": attr.string(
-        doc = "Directory in which module hierarchy starts.",
+        doc = "DEPRECATED. Attribute has no effect.",
     ),
     "srcs": attr.label_list(
         allow_files = [".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"],
