@@ -204,7 +204,7 @@ def gather_dep_info(ctx, deps):
             acc = HaskellInfo(
                 package_databases = acc.package_databases,
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
-                static_libraries = acc.static_libraries + binfo.static_libraries,
+                static_libraries = depset(transitive = [acc.static_libraries, binfo.static_libraries]),
                 dynamic_libraries = acc.dynamic_libraries,
                 interface_dirs = acc.interface_dirs,
                 import_dirs = import_dirs,
