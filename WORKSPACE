@@ -292,7 +292,7 @@ nixpkgs_package(
     # a workaround for
     # https://github.com/bazelbuild/bazel/issues/2927.
     nix_file_content = """
-    with import <nixpkgs> {};
+    with import <nixpkgs> { config = {}; };
     runCommand "nodejs-rules_haskell" { buildInputs = [ nodejs ]; } ''
       mkdir -p $out/nixpkgs_nodejs
       cd $out/nixpkgs_nodejs
