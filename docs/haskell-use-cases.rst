@@ -144,7 +144,7 @@ This definition assumes a ``ghc.nix`` file at the root of the
 repository. In this file, you can use the Nix expression language to
 construct a compiler with all the packages you depend on in scope::
 
-  with (import <nixpkgs> {});
+  with (import <nixpkgs> { config = {}; overlays = []; });
 
   haskellPackages.ghcWithPackages (p: with p; [
     containers
