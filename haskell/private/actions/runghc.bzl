@@ -4,7 +4,6 @@ load(":private/context.bzl", "render_env")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(
     ":private/path_utils.bzl",
-    "get_lib_name",
     "is_shared_library",
     "link_libraries",
     "ln",
@@ -14,7 +13,7 @@ load(
     ":private/set.bzl",
     "set",
 )
-load(":providers.bzl", "get_libs_for_ghc_linker")
+load(":providers.bzl", "get_ghci_extra_libs")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_runghc(
@@ -23,6 +22,7 @@ def build_haskell_runghc(
         user_compile_flags,
         extra_args,
         hs_info,
+        cc_info,
         output,
         package_databases,
         version,
@@ -52,18 +52,12 @@ def build_haskell_runghc(
         for idir in set.to_list(hs_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
-    link_ctx = hs_info.cc_dependencies.dynamic_linking
-    libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
-
-    # External C libraries that we need to make available to runghc.
-    link_libraries(libs_to_link, args)
-
-    # Transitive library dependencies to have in runfiles.
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
-        hs_info.transitive_cc_dependencies,
+        cc_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
+    link_libraries(ghci_extra_libs, args)
 
     runghc_file = hs.actions.declare_file(target_unique_name(hs, "runghc"))
 
@@ -105,8 +99,7 @@ def build_haskell_runghc(
             runghc_file,
         ]),
         package_databases,
-        depset(library_deps),
-        depset(ld_library_deps),
+        ghci_extra_libs,
         set.to_depset(hs_info.source_files),
     ])
     ln(hs, runghc_file, output, extra_inputs)

@@ -5,14 +5,16 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(
     ":private/path_utils.bzl",
+    "get_dirname",
     "get_lib_name",
+    "link_libraries",
 )
-load(":providers.bzl", "get_libs_for_ghc_linker")
 load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
+    "get_ghci_extra_libs",
 )
 
 def _doctest_toolchain_impl(ctx):
@@ -104,32 +106,9 @@ def _haskell_doctest_single(target, ctx):
     # Add any extra flags specified by the user.
     args.add_all(ctx.attr.doctest_flags)
 
-    # Direct C library dependencies to link against.
-    link_ctx = hs_info.cc_dependencies.dynamic_linking
-    libs_to_link = link_ctx.libraries_to_link.to_list()
-
-    # External libraries.
-    seen_libs = set.empty()
-    for lib in libs_to_link:
-        lib_name = get_lib_name(lib)
-        if not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            if hs.toolchain.is_darwin:
-                args.add_all([
-                    "-optl-l{0}".format(lib_name),
-                    "-optl-L{0}".format(paths.dirname(lib.path)),
-                ])
-            else:
-                args.add_all([
-                    "-l{0}".format(lib_name),
-                    "-L{0}".format(paths.dirname(lib.path)),
-                ])
-
-    # Transitive library dependencies for runtime.
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
-        hs,
-        hs_info.transitive_cc_dependencies,
-    )
+    # C library dependencies to link against.
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, cc_info)
+    link_libraries(ghci_extra_libs, args, prefix_optl = hs.toolchain.is_darwin)
 
     sources = set.to_list(hs_info.source_files)
 
@@ -145,8 +124,7 @@ def _haskell_doctest_single(target, ctx):
             hs_info.interface_dirs,
             hs_info.dynamic_libraries,
             cc_info.compilation_context.headers,
-            depset(library_deps),
-            depset(ld_library_deps),
+            ghci_extra_libs,
             depset(
                 toolchain.doctest +
                 [hs.tools.ghc],

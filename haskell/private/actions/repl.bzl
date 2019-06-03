@@ -10,11 +10,11 @@ load(
     "ln",
     "target_unique_name",
 )
-load(":providers.bzl", "get_libs_for_ghc_linker")
 load(
     ":private/set.bzl",
     "set",
 )
+load(":providers.bzl", "get_ghci_extra_libs")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
@@ -25,6 +25,7 @@ def build_haskell_repl(
         user_compile_flags,
         repl_ghci_args,
         hs_info,
+        cc_info,
         output,
         package_databases,
         version,
@@ -34,6 +35,7 @@ def build_haskell_repl(
     Args:
       hs: Haskell context.
       hs_info: HaskellInfo.
+      cc_info: CcInfo.
 
       package_databases: package caches excluding the cache file of the package
                       we're creating a REPL for.
@@ -61,20 +63,18 @@ def build_haskell_repl(
             args += ["-i{0}".format(idir)]
             lib_imports.append(idir)
 
-    link_ctx = hs_info.cc_dependencies.dynamic_linking
-    libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
-
-    # External C libraries that we need to make available to the REPL.
-    libraries = link_libraries(libs_to_link, args)
-
-    # Transitive library dependencies to have in runfiles.
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+    # Link C library dependencies
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
-        hs_info.transitive_cc_dependencies,
+        cc_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
-    library_path = [paths.dirname(lib.path) for lib in library_deps]
-    ld_library_path = [paths.dirname(lib.path) for lib in ld_library_deps]
+    link_libraries(ghci_extra_libs, args)
+
+    # NOTE: We can avoid constructing this in the future by instead generating
+    #   a dedicated package configuration file defining the required libraries.
+    library_path = [lib.dirname for lib in ghci_extra_libs]
+    libraries = [get_lib_name(lib) for lib in ghci_extra_libs]
 
     repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
 
@@ -127,7 +127,7 @@ def build_haskell_repl(
     ghc_info = struct(
         has_version = pkg_ghc_info.has_version,
         library_path = library_path,
-        ld_library_path = ld_library_path,
+        ld_library_path = library_path,
         package_ids = pkg_ghc_info.package_ids,
         package_dbs = pkg_ghc_info.package_databases,
         lib_imports = lib_imports,
@@ -164,8 +164,7 @@ def build_haskell_repl(
             ghc_info_file,
         ]),
         package_databases,
-        depset(library_deps),
-        depset(ld_library_deps),
+        ghci_extra_libs,
         set.to_depset(hs_info.source_files),
     ])
     ln(hs, repl_file, output, extra_inputs)

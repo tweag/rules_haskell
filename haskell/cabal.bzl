@@ -11,9 +11,7 @@ load(
     ":providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "empty_HaskellCcInfo",
-    "get_libs_for_ghc_linker",
-    "merge_HaskellCcInfo",
+    "get_ghci_extra_libs",
 )
 
 def _execute_or_fail_loudly(repository_ctx, arguments):
@@ -84,11 +82,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
     name = hs.label.name
     with_profiling = is_profiling_enabled(hs)
 
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
-        hs,
-        dep_info.transitive_cc_dependencies,
-    )
-    env = dicts.add(ghc_env, hs.env)
+    (ghci_extra_libs, env) = get_ghci_extra_libs(hs, cc_info)
 
     # TODO Instantiating this template could be done just once in the
     # toolchain rule.
@@ -113,7 +107,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
     package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
     extra_include_dirs = cc_info.compilation_context.includes
-    extra_lib_dirs = [file.dirname for file in library_deps]
+    extra_lib_dirs = [file.dirname for file in ghci_extra_libs]
     args.add_all([name, setup, cabal.dirname, package_database.dirname])
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")
@@ -128,8 +122,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
             depset(srcs),
             package_databases,
             extra_headers,
-            depset(library_deps),
-            depset(ld_library_deps),
+            ghci_extra_libs,
             dep_info.interface_dirs,
             dep_info.static_libraries,
             dep_info.dynamic_libraries,
@@ -234,8 +227,6 @@ def _haskell_cabal_library_impl(ctx):
         dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries]),
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
-        cc_dependencies = dep_info.cc_dependencies,
-        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
     lib_info = HaskellLibraryInfo(package_id = name, version = None)
     cc_toolchain = find_cpp_toolchain(ctx)
@@ -378,8 +369,6 @@ def _haskell_cabal_binary_impl(ctx):
         dynamic_libraries = dep_info.dynamic_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = [],
-        cc_dependencies = dep_info.cc_dependencies,
-        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
     default_info = DefaultInfo(
         files = depset([binary]),

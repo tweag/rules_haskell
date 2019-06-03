@@ -12,8 +12,8 @@ load(
     ":private/path_utils.bzl",
     "target_unique_name",
 )
-load(":providers.bzl", "get_libs_for_ghc_linker")
 load(":private/set.bzl", "set")
+load(":providers.bzl", "get_ghci_extra_libs")
 
 def _collect_lint_logs(deps):
     lint_logs = set.empty()
@@ -66,11 +66,12 @@ def _haskell_lint_aspect_impl(target, ctx):
         target_unique_name(hs, "lint-log"),
     )
 
-    # Transitive library dependencies for runtime.
-    (library_deps, ld_library_deps, _ghc_env) = get_libs_for_ghc_linker(
-        hs,
-        hs_info.transitive_cc_dependencies,
-    )
+    cc_info = cc_common.merge_cc_infos(cc_infos = [
+        dep[CcInfo]
+        for dep in ctx.rule.attr.deps
+        if CcInfo in dep
+    ] if hasattr(ctx.rule.attr, "deps") else [])
+    (ghci_extra_libs, _ghc_env) = get_ghci_extra_libs(hs, cc_info)
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
@@ -78,8 +79,7 @@ def _haskell_lint_aspect_impl(target, ctx):
             hs_info.package_databases,
             hs_info.interface_dirs,
             hs_info.dynamic_libraries,
-            depset(library_deps),
-            depset(ld_library_deps),
+            ghci_extra_libs,
             depset([hs.tools.ghc]),
         ]),
         outputs = [lint_log],
