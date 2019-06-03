@@ -1,4 +1,4 @@
-with import ./. { config = {}; };
+with import ./. { config = {}; overlays = []; };
 with darwin.apple_sdk.frameworks;
 
 # XXX On Darwin, workaround
