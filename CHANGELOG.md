@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.9.1] - 2019-06-03
+
+### Fixed
+
+- Bindists were broken on MacOS.
+  See [884](https://github.com/tweag/rules_haskell/issues/884).
+
 ## [0.9] - 2019-05-07
 
 ### Highlights
