@@ -13,7 +13,6 @@ load(":private/pkg_id.bzl", "pkg_id")
 load(":private/version_macros.bzl", "version_macro_includes")
 load(
     ":providers.bzl",
-    "GhcPluginInfo",
     "HaskellLibraryInfo",
     "get_ghci_extra_libs",
 )

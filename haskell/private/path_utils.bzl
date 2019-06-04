@@ -309,28 +309,6 @@ def link_libraries(libs, args, prefix_optl = False):
         args.extend([libfmt % get_lib_name(lib) for lib in cc_libs])
         args.extend(depset(direct = [dirfmt % lib.dirname for lib in cc_libs]).to_list())
 
-def is_shared_library(f):
-    """Check if the given File is a shared library.
-
-    Args:
-      f: The File to check.
-
-    Returns:
-      Bool: True if the given file `f` is a shared library, False otherwise.
-    """
-    return f.extension in ["so", "dylib"] or f.basename.find(".so.") != -1
-
-def is_static_library(f):
-    """Check if the given File is a static library.
-
-    Args:
-      f: The File to check.
-
-    Returns:
-      Bool: True if the given file `f` is a static library, False otherwise.
-    """
-    return f.extension in ["a"]
-
 def _rel_path_to_module(hs, f):
     """Make given file name relative to the directory where the module hierarchy
     starts.
@@ -404,37 +382,6 @@ def ln(hs, target, link, extra_inputs = depset()):
         ),
         use_default_shell_env = True,
     )
-
-def link_forest(ctx, srcs, basePath = ".", **kwargs):
-    """Write a symlink to each file in `srcs` into a destination directory
-    defined using the same arguments as `ctx.actions.declare_directory`"""
-    local_files = []
-    for src in srcs.to_list():
-        dest = ctx.actions.declare_file(
-            paths.join(basePath, src.basename),
-            **kwargs
-        )
-        local_files.append(dest)
-        ln(ctx, src, dest)
-    return local_files
-
-def copy_all(ctx, srcs, dest):
-    """Copy all the files in `srcs` into `dest`"""
-    if list(srcs.to_list()) == []:
-        ctx.actions.run_shell(
-            command = "mkdir -p {dest}".format(dest = dest.path),
-            outputs = [dest],
-        )
-    else:
-        args = ctx.actions.args()
-        args.add_all(srcs)
-        ctx.actions.run_shell(
-            inputs = depset(srcs),
-            outputs = [dest],
-            mnemonic = "Copy",
-            command = "mkdir -p {dest} && cp -L -R \"$@\" {dest}".format(dest = dest.path),
-            arguments = [args],
-        )
 
 def parse_pattern(ctx, pattern_str):
     """Parses a string label pattern.
