@@ -609,16 +609,17 @@ def haskell_library_impl(ctx):
 # TODO Get rid of this by computing a CcInfo in haskell_import
 # instead. Currently blocked on upstream.
 HaskellImportHack = provider()
+HaskellToolchainLibraries = provider()
 
 def haskell_toolchain_library_impl(ctx):
-    hs = haskell_context(ctx)
-
     if ctx.attr.package:
         package = ctx.attr.package
     else:
         package = ctx.label.name
 
-    target = hs.toolchain.libraries.get(package)
+    libraries = ctx.attr._toolchain_libraries[HaskellToolchainLibraries].libraries
+    target = libraries.get(package)
+
     if not target:
         fail(
             """
@@ -626,6 +627,18 @@ def haskell_toolchain_library_impl(ctx):
 Check that it ships with your version of GHC.
             """.format(package),
         )
+
+    return [
+        target.default_info,
+        target.hs_info,
+        target.hs_lib_info,
+        target.cc_info,
+        target.haddock_info,
+    ]
+
+def haskell_toolchain_libraries_impl(ctx):
+    hs = haskell_context(ctx)
+    with_profiling = is_profiling_enabled(hs)
 
     # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
     # Should be find_cpp_toolchain() instead.
@@ -636,61 +649,77 @@ Check that it ships with your version of GHC.
         unsupported_features = ctx.disabled_features,
     )
 
-    with_profiling = is_profiling_enabled(hs)
+    libraries = hs.toolchain.libraries
 
-    if with_profiling:
-        # GHC does not provide dynamic profiling mode libraries. The dynamic
-        # libraries that are available are missing profiling symbols, that
-        # other profiling mode build results will reference. Therefore, we
-        # don't import dynamic libraries in profiling mode.
-        libs = {
-            get_static_hs_lib_name(hs.toolchain.version, lib): {"static": lib}
-            for lib in target[HaskellImportHack].static_profiling_libraries.to_list()
-        }
-    else:
-        # Workaround for https://github.com/tweag/rules_haskell/issues/881
-        # Static and dynamic libraries don't necessarily pair up 1 to 1.
-        # E.g. the rts package in the Unix GHC bindist contains the
-        # dynamic libHSrts and the static libCffi and libHSrts.
-        libs = {
-            get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
-            for lib in target[HaskellImportHack].dynamic_libraries.to_list()
-        }
-        for lib in target[HaskellImportHack].static_libraries.to_list():
-            name = get_static_hs_lib_name(with_profiling, lib)
-            entry = libs.get(name, {})
-            entry["static"] = lib
-            libs[name] = entry
-    libraries_to_link = [
-        cc_common.create_library_to_link(
-            actions = ctx.actions,
-            feature_configuration = feature_configuration,
-            dynamic_library = lib.get("dynamic", None),
-            static_library = lib.get("static", None),
-            cc_toolchain = cc_toolchain,
+    # List of library in left-to-right post-ordering
+    # Meaning, if package B depends on package A, then A will appear before B.
+    ordered = depset(transitive = [
+        target[HaskellImportHack].transitive_depends
+        for target in hs.toolchain.libraries.values()
+    ])
+
+    library_dict = {}
+    for package in ordered:
+        target = libraries[package]
+
+        # Construct CcInfo
+        if with_profiling:
+            # GHC does not provide dynamic profiling mode libraries. The dynamic
+            # libraries that are available are missing profiling symbols, that
+            # other profiling mode build results will reference. Therefore, we
+            # don't import dynamic libraries in profiling mode.
+            libs = {
+                get_static_hs_lib_name(hs.toolchain.version, lib): {"static": lib}
+                for lib in target[HaskellImportHack].static_profiling_libraries
+            }
+        else:
+            # Workaround for https://github.com/tweag/rules_haskell/issues/881
+            # Static and dynamic libraries don't necessarily pair up 1 to 1.
+            # E.g. the rts package in the Unix GHC bindist contains the
+            # dynamic libHSrts and the static libCffi and libHSrts.
+            libs = {
+                get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
+                for lib in target[HaskellImportHack].dynamic_libraries
+            }
+            for lib in target[HaskellImportHack].static_libraries.to_list():
+                name = get_static_hs_lib_name(with_profiling, lib)
+                entry = libs.get(name, {})
+                entry["static"] = lib
+                libs[name] = entry
+        libraries_to_link = [
+            cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                dynamic_library = lib.get("dynamic", None),
+                static_library = lib.get("static", None),
+                cc_toolchain = cc_toolchain,
+            )
+            for lib in libs.values()
+        ]
+        compilation_context = cc_common.create_compilation_context(
+            headers = target[HaskellImportHack].headers,
+            includes = target[HaskellImportHack].includes,
         )
-        for lib in libs.values()
-    ]
-    compilation_context = cc_common.create_compilation_context(
-        headers = target[HaskellImportHack].headers,
-        includes = target[HaskellImportHack].includes,
-    )
-    linking_context = cc_common.create_linking_context(
-        libraries_to_link = libraries_to_link,
-        user_link_flags = target[HaskellImportHack].linkopts,
-    )
-    cc_info = CcInfo(
-        compilation_context = compilation_context,
-        linking_context = linking_context,
-    )
+        linking_context = cc_common.create_linking_context(
+            libraries_to_link = libraries_to_link,
+            user_link_flags = target[HaskellImportHack].linkopts,
+        )
+        cc_info = CcInfo(
+            compilation_context = compilation_context,
+            linking_context = linking_context,
+        )
+        library_dict[package] = struct(
+            default_info = target[DefaultInfo],
+            hs_info = target[HaskellInfo],
+            hs_lib_info = target[HaskellLibraryInfo],
+            cc_info = cc_common.merge_cc_infos(cc_infos = [cc_info] + [
+                library_dict[dep].cc_info
+                for dep in target[HaskellImportHack].depends
+            ]),
+            haddock_info = target[HaddockInfo],
+        )
 
-    return [
-        target[HaskellInfo],
-        cc_info,
-        target[DefaultInfo],
-        target[HaskellLibraryInfo],
-        target[HaddockInfo],
-    ]
+    return [HaskellToolchainLibraries(libraries = library_dict)]
 
 def haskell_import_impl(ctx):
     id = ctx.attr.id or ctx.attr.name
@@ -718,36 +747,23 @@ def haskell_import_impl(ctx):
     import_info = HaskellImportHack(
         # Make sure we're using the same order for dynamic_libraries,
         # static_libraries.
-        dynamic_libraries = depset(ctx.files.shared_libraries, order = "topological", transitive = [
-            dep[HaskellImportHack].dynamic_libraries
-            for dep in ctx.attr.deps
-        ]),
-        static_libraries = depset(ctx.files.static_libraries, order = "topological", transitive = [
-            dep[HaskellImportHack].static_libraries
-            for dep in ctx.attr.deps
-        ]),
+        dynamic_libraries = depset(ctx.files.shared_libraries),
+        static_libraries = depset(ctx.files.static_libraries, order = "topological"),
         # NOTE: haskell_import is evaluated as a toolchain rule. Even if we
         # bazel build with -c dbg, this rule is still executed with
         # ctx.var["COMPILATION_MODE"] == "opt". Therefore, we need to carry
         # both profiling and non-profiling libraries forward so that a later
         # haskell_toolchain_library can select the appropriate artifacts.
-        static_profiling_libraries = depset(ctx.files.static_profiling_libraries, order = "topological", transitive = [
-            dep[HaskellImportHack].static_profiling_libraries
-            for dep in ctx.attr.deps
-        ]),
-        headers = depset(ctx.files.hdrs, transitive = [
-            dep[HaskellImportHack].headers
-            for dep in ctx.attr.deps
-        ]),
-        includes = depset(ctx.attr.includes, transitive = [
-            dep[HaskellImportHack].includes
-            for dep in ctx.attr.deps
-        ]),
-        linkopts = ctx.attr.linkopts + [
-            opt
-            for dep in ctx.attr.deps
-            for opt in dep[HaskellImportHack].linkopts
-        ],
+        static_profiling_libraries = depset(ctx.files.static_profiling_libraries, order = "topological"),
+        headers = depset(ctx.files.hdrs),
+        includes = depset(ctx.attr.includes),
+        linkopts = ctx.attr.linkopts,
+        depends = [dep.label.name for dep in ctx.attr.deps],
+        transitive_depends = depset(
+            direct = [ctx.attr.name],
+            transitive = [dep[HaskellImportHack].transitive_depends for dep in ctx.attr.deps],
+            order = "postorder",
+        ),
     )
 
     coverage_info = HaskellCoverageInfo(coverage_data = [])

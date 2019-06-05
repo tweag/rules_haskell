@@ -1,3 +1,8 @@
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_toolchain_libraries",
+)
+
 exports_files(
     glob(["*.bzl"]) + [
         "assets/ghci_script",
@@ -50,5 +55,10 @@ toolchain_type(
 
 toolchain_type(
     name = "doctest-toolchain",
+    visibility = ["//visibility:public"],
+)
+
+haskell_toolchain_libraries(
+    name = "toolchain-libraries",
     visibility = ["//visibility:public"],
 )
