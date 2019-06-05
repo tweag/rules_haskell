@@ -618,20 +618,6 @@ def haskell_toolchain_library_impl(ctx):
     else:
         package = ctx.label.name
 
-    id_file = hs.actions.declare_file(target_unique_name(hs, "id"))
-    hs.actions.run_shell(
-        inputs = [hs.tools.ghc_pkg],
-        outputs = [id_file],
-        command = """
-        "$1" --simple-output -v1 field "$2" id > "$3"
-        """,
-        arguments = [
-            hs.tools.ghc_pkg.path,
-            package,
-            id_file.path,
-        ],
-    )
-
     target = hs.toolchain.libraries.get(package)
     if not target:
         fail(
