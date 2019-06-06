@@ -1,17 +1,12 @@
 """Actions for linking object code produced by compilation"""
 
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(
-    ":private/path_utils.bzl",
-    "get_lib_name",
-    "is_shared_library",
-    "is_static_library",
-    "ln",
-)
+load(":private/list.bzl", "list")
+load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
+load(":private/path_utils.bzl", "link_libraries")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":private/list.bzl", "list")
+load(":providers.bzl", "get_extra_libs")
 
 # tests in /tests/unit_tests/BUILD
 def parent_dir_path(path):
@@ -267,7 +262,7 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
 
     return objects_dir_manifest
 
-def _link_dependencies(hs, dep_info, dynamic, binary, args):
+def _link_dependencies(hs, cc_info, dynamic, binary, args):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -276,7 +271,7 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
 
     Args:
       hs: Haskell context.
-      dep_info: HaskellInfo provider.
+      cc_info: Combined CcInfo of dependencies.
       dynamic: Bool: Whether to link dynamically, or statically.
       binary: Final linked binary.
       args: Arguments to the linking action.
@@ -285,62 +280,22 @@ def _link_dependencies(hs, dep_info, dynamic, binary, args):
       depset: C library dependencies to provide as input to the linking action.
     """
 
-    # Pick linking context based on linking mode.
-    if dynamic:
-        link_ctx = dep_info.cc_dependencies.dynamic_linking
-        trans_link_ctx = dep_info.transitive_cc_dependencies.dynamic_linking
-    else:
-        link_ctx = dep_info.cc_dependencies.static_linking
-        trans_link_ctx = dep_info.transitive_cc_dependencies.static_linking
-
-    # Direct C library dependencies to link.
-    # I.e. not indirect through another Haskell dependency.
-    # Such indirect dependencies are linked by GHC based on the extra-libraries
-    # fields in the dependency's package configuration file.
-    libs_to_link = link_ctx.libraries_to_link.to_list()
-    _add_external_libraries(args, libs_to_link)
-
-    # Transitive library dependencies to have in scope for linking.
-    trans_libs_to_link = trans_link_ctx.libraries_to_link.to_list()
-
-    # Libraries to pass as inputs to linking action.
-    cc_link_libs = depset(transitive = [
-        depset(trans_libs_to_link),
-    ])
-
-    # Transitive dynamic library dependencies to have in RUNPATH.
-    cc_solibs = trans_link_ctx.dynamic_libraries_for_runtime.to_list()
-
-    # Collect Haskell dynamic library dependencies in common RUNPATH.
-    # This is to keep the number of RUNPATH entries low, for faster loading
-    # and to avoid exceeding the MACH-O header size limit on MacOS.
-    hs_solibs = []
-    if dynamic:
-        hs_solibs_prefix = "_hssolib_%s" % hs.name
-        for dep in dep_info.dynamic_libraries.to_list():
-            dep_link = hs.actions.declare_file(
-                paths.join(hs_solibs_prefix, dep.basename),
-                sibling = binary,
-            )
-            ln(hs, dep, dep_link)
-            hs_solibs.append(dep_link)
-
-    # Configure RUNPATH.
-    rpaths = _infer_rpaths(
-        hs.toolchain.is_darwin,
-        binary,
-        trans_link_ctx.dynamic_libraries_for_runtime.to_list() +
-        hs_solibs,
+    (static_libs, dynamic_libs) = get_extra_libs(hs, dynamic, cc_info)
+    link_libraries(static_libs, args)
+    link_libraries(dynamic_libs, args)
+    args.add_all(
+        [_infer_rpath(hs.toolchain.is_darwin, binary, lib) for lib in dynamic_libs],
+        format_each = "-optl-Wl,-rpath,%s",
+        uniquify = True,
     )
-    for rpath in set.to_list(rpaths):
-        args.add("-optl-Wl,-rpath," + rpath)
 
-    return (cc_link_libs, cc_solibs, hs_solibs)
+    return (static_libs, dynamic_libs)
 
 def link_binary(
         hs,
         cc,
         dep_info,
+        cc_info,
         extra_srcs,
         compiler_flags,
         objects_dir,
@@ -397,9 +352,9 @@ def link_binary(
         version = version,
     )))
 
-    (cc_link_libs, cc_solibs, hs_solibs) = _link_dependencies(
+    (static_libs, dynamic_libs) = _link_dependencies(
         hs = hs,
-        dep_info = dep_info,
+        cc_info = cc_info,
         dynamic = dynamic,
         binary = executable,
         args = args,
@@ -437,7 +392,7 @@ def link_binary(
             objects_dir,
             executable,
             dynamic,
-            cc_solibs,
+            dynamic_libs,
         )
 
     if extra_linker_flags_file != None:
@@ -454,7 +409,8 @@ def link_binary(
             dep_info.dynamic_libraries,
             dep_info.static_libraries,
             depset([objects_dir]),
-            cc_link_libs,
+            static_libs,
+            dynamic_libs,
         ]),
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
@@ -462,48 +418,10 @@ def link_binary(
         params_file = params_file,
     )
 
-    return (executable, cc_solibs + hs_solibs)
+    return (executable, dynamic_libs)
 
-def _add_external_libraries(args, ext_libs):
-    """Add options to `args` that allow us to link to `ext_libs`.
-
-    Args:
-      args: Args object.
-      ext_libs: C library dependencies.
-    """
-
-    # Deduplicate the list of ext_libs based on their
-    # library name (file name stripped of lib prefix and endings).
-    # This keeps the command lines short, e.g. when a C library
-    # like `liblz4.so` appears in multiple dependencies.
-    # XXX: this is only done in here
-    # Shouldn’t the deduplication be applied to *all* external libraries?
-    deduped = list.dedup_on(get_lib_name, ext_libs)
-
-    for lib in deduped:
-        # This test is a hack. When a CC library has a Haskell library
-        # as a dependency, we need to be careful to filter it out,
-        # otherwise it will end up polluting the linker flags. GHC
-        # already uses hs-libraries to link all Haskell libraries.
-        #
-        # TODO Get rid of this hack. See
-        # https://github.com/tweag/rules_haskell/issues/873.
-        if get_lib_name(lib).startswith("HS"):
-            continue
-        args.add_all([
-            "-L{0}".format(
-                paths.dirname(lib.path),
-            ),
-            "-l{0}".format(
-                # technically this is the second call to get_lib_name,
-                #  but the added clarity makes up for it.
-                get_lib_name(lib),
-            ),
-        ])
-
-def _infer_rpaths(is_darwin, target, solibs):
-    """Return set of RPATH values to be added to target so it can find all
-    solibs
+def _infer_rpath(is_darwin, target, solib):
+    """Return the RPATH for target so it can find solib
 
     The resulting paths look like:
     $ORIGIN/../../path/to/solib/dir
@@ -513,28 +431,22 @@ def _infer_rpaths(is_darwin, target, solibs):
     Args:
       is_darwin: Whether we're compiling on and for Darwin.
       target: File, executable or library we're linking.
-      solibs: A list of Files, shared objects that the target needs.
+      solib: File, shared object that the target needs.
 
     Returns:
-      Set of strings: rpaths to add to target.
+      String: rpath to add to target.
     """
-    r = set.empty()
-
     if is_darwin:
         prefix = "@loader_path"
     else:
         prefix = "$ORIGIN"
 
-    for solib in solibs:
-        rpath = create_rpath_entry(
-            binary = target,
-            dependency = solib,
-            keep_filename = False,
-            prefix = prefix,
-        )
-        set.mutable_insert(r, rpath)
-
-    return r
+    return create_rpath_entry(
+        binary = target,
+        dependency = solib,
+        keep_filename = False,
+        prefix = prefix,
+    )
 
 def _so_extension(hs):
     """Returns the extension for shared libraries.
@@ -602,7 +514,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
 
     return static_library
 
-def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
+def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_pkg_id):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -633,10 +545,15 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
         version = my_pkg_id.version if my_pkg_id else None,
     )))
 
-    (cc_link_libs, _cc_solibs, _hs_solibs) = _link_dependencies(
+    # When linking a dynamic library we still collect static libraries for
+    # dependencies where possible. This is so that a final binary that depends
+    # on this dynamic library, is linked statically itself, will not fail at
+    # link time due to missing transitive dynamic library dependencies. In this
+    # case transitive dependencies will still be linked in statically.
+    (static_libs, dynamic_libs) = _link_dependencies(
         hs = hs,
-        dep_info = dep_info,
-        dynamic = True,
+        cc_info = cc_info,
+        dynamic = False,
         binary = dynamic_library,
         args = args,
     )
@@ -658,7 +575,8 @@ def link_library_dynamic(hs, cc, dep_info, extra_srcs, objects_dir, my_pkg_id):
             depset(extra_srcs),
             dep_info.package_databases,
             dep_info.dynamic_libraries,
-            cc_link_libs,
+            static_libs,
+            dynamic_libs,
         ]),
         outputs = [dynamic_library],
         mnemonic = "HaskellLinkDynamicLibrary",

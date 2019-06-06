@@ -2,132 +2,10 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
-    "HaskellCcInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "empty_HaskellCcInfo",
-    "merge_HaskellCcInfo",
-)
-load(
-    ":private/path_utils.bzl",
-    "get_lib_name",
-    "is_shared_library",
-    "is_static_library",
-    "ln",
 )
 load(":private/set.bzl", "set")
-
-def _cc_get_static_lib(lib_info):
-    """Return the library to use in static linking mode.
-
-    This returns the first available library artifact in the following order:
-    - static_library
-    - pic_static_library
-    - dynamic_library
-    - interface_library
-
-    Args:
-      lib_info: LibraryToLink provider.
-
-    Returns:
-      File: The library to link against in static mode.
-    """
-    if lib_info.static_library:
-        return lib_info.static_library
-    elif lib_info.pic_static_library:
-        return lib_info.pic_static_library
-    elif lib_info.dynamic_library:
-        return lib_info.dynamic_library
-    else:
-        return lib_info.interface_library
-
-def _cc_get_dynamic_lib(lib_info):
-    """Return the library to use in dynamic linking mode.
-
-    This returns the first available library artifact in the following order:
-    - dynamic_library
-    - interface_library
-    - pic_static_library
-    - static_library
-
-    Args:
-      lib_info: LibraryToLink provider.
-
-    Returns:
-      File: The library to link against in dynamic mode.
-    """
-    if lib_info.dynamic_library:
-        return lib_info.dynamic_library
-    elif lib_info.interface_library:
-        return lib_info.interface_library
-    elif lib_info.pic_static_library:
-        return lib_info.pic_static_library
-    else:
-        return lib_info.static_library
-
-def _HaskellCcInfo_from_CcInfo(ctx, cc_info):
-    libs_to_link = cc_info.linking_context.libraries_to_link
-    static_libs_to_link = []
-    dynamic_libs_to_link = []
-    static_libs_for_runtime = []
-    dynamic_libs_for_runtime = []
-    for l in libs_to_link:
-        _static_lib = _cc_get_static_lib(l)
-        dynamic_lib = _cc_get_dynamic_lib(l)
-
-        # Bazel itself only mangles dynamic libraries, not static libraries.
-        # However, we need the library name of the static and dynamic version
-        # of a library to match so that we can refer to both with one entry in
-        # the package configuration file. Here we rename any static archives
-        # with mismatching mangled dynamic library name.
-        static_name = get_lib_name(_static_lib)
-        dynamic_name = get_lib_name(dynamic_lib)
-        if static_name != dynamic_name:
-            ext = _static_lib.extension
-            static_lib = ctx.actions.declare_file(
-                "lib%s.%s" % (dynamic_name, ext),
-            )
-            ln(ctx, _static_lib, static_lib)
-        else:
-            static_lib = _static_lib
-
-        static_libs_to_link.append(static_lib)
-        if is_shared_library(static_lib):
-            static_libs_for_runtime.append(static_lib)
-        dynamic_libs_to_link.append(dynamic_lib)
-        if is_shared_library(dynamic_lib):
-            dynamic_libs_for_runtime.append(dynamic_lib)
-
-    return HaskellCcInfo(
-        static_linking = struct(
-            libraries_to_link = depset(
-                direct = static_libs_to_link,
-                order = "topological",
-            ),
-            dynamic_libraries_for_runtime = depset(
-                direct = static_libs_for_runtime,
-                order = "topological",
-            ),
-            user_link_flags = depset(
-                direct = cc_info.linking_context.user_link_flags,
-                order = "topological",
-            ),
-        ),
-        dynamic_linking = struct(
-            libraries_to_link = depset(
-                direct = dynamic_libs_to_link,
-                order = "topological",
-            ),
-            dynamic_libraries_for_runtime = depset(
-                direct = dynamic_libs_for_runtime,
-                order = "topological",
-            ),
-            user_link_flags = depset(
-                direct = cc_info.linking_context.user_link_flags,
-                order = "topological",
-            ),
-        ),
-    )
 
 def gather_dep_info(ctx, deps):
     """Collapse dependencies into a single `HaskellInfo`.
@@ -192,8 +70,6 @@ def gather_dep_info(ctx, deps):
         import_dirs = import_dirs,
         extra_source_files = extra_source_files,
         compile_flags = compile_flags,
-        cc_dependencies = empty_HaskellCcInfo(),
-        transitive_cc_dependencies = empty_HaskellCcInfo(),
     )
 
     for dep in deps:
@@ -211,14 +87,11 @@ def gather_dep_info(ctx, deps):
                 compile_flags = compile_flags,
                 extra_source_files = extra_source_files,
                 source_files = source_files,
-                cc_dependencies = acc.cc_dependencies,
-                transitive_cc_dependencies = merge_HaskellCcInfo(acc.transitive_cc_dependencies, binfo.transitive_cc_dependencies),
             )
         elif CcInfo in dep and HaskellInfo not in dep:
             # The final link of a binary must include all static libraries we
             # depend on, including transitives ones. Theses libs are provided
             # in the `CcInfo` provider.
-            hs_cc_info = _HaskellCcInfo_from_CcInfo(ctx, dep[CcInfo])
             acc = HaskellInfo(
                 package_databases = acc.package_databases,
                 version_macros = acc.version_macros,
@@ -229,14 +102,6 @@ def gather_dep_info(ctx, deps):
                 dynamic_libraries = acc.dynamic_libraries,
                 extra_source_files = acc.extra_source_files,
                 interface_dirs = acc.interface_dirs,
-                cc_dependencies = merge_HaskellCcInfo(
-                    acc.cc_dependencies,
-                    hs_cc_info,
-                ),
-                transitive_cc_dependencies = merge_HaskellCcInfo(
-                    acc.transitive_cc_dependencies,
-                    hs_cc_info,
-                ),
             )
 
     return acc

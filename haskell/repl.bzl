@@ -14,9 +14,7 @@ load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "empty_HaskellCcInfo",
-    "get_libs_for_ghc_linker",
-    "merge_HaskellCcInfo",
+    "get_ghci_extra_libs",
 )
 load("@io_tweag_rules_haskell//haskell:private/set.bzl", "set")
 
@@ -27,7 +25,7 @@ HaskellReplLoadInfo = provider(
     """,
     fields = {
         "source_files": "Set of files that contain Haskell modules.",
-        "cc_dependencies": "Direct cc library dependencies. See HaskellCcInfo.",
+        "cc_info": "CcInfo of transitive C dependencies.",
         "compiler_flags": "Flags to pass to the Haskell compiler.",
         "repl_ghci_args": "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
     },
@@ -41,6 +39,7 @@ HaskellReplDepInfo = provider(
     fields = {
         "package_ids": "Set of workspace unique package identifiers.",
         "package_databases": "Set of package cache files.",
+        "cc_info": "CcInfo of the package itself (includes its transitive dependencies).",
     },
 )
 
@@ -53,7 +52,6 @@ HaskellReplCollectInfo = provider(
     fields = {
         "load_infos": "Dictionary from labels to HaskellReplLoadInfo.",
         "dep_infos": "Dictionary from labels to HaskellReplDepInfo.",
-        "transitive_cc_dependencies": "Transitive cc library dependencies. See HaskellCcInfo.",
     },
 )
 
@@ -66,28 +64,24 @@ HaskellReplInfo = provider(
     fields = {
         "load_info": "Combined HaskellReplLoadInfo.",
         "dep_info": "Combined HaskellReplDepInfo.",
-        "transitive_cc_dependencies": "Transitive cc library dependencies. See HaskellCcInfo.",
     },
 )
 
 def _merge_HaskellReplLoadInfo(load_infos):
     source_files = set.empty()
-    cc_dependencies = empty_HaskellCcInfo()
+    cc_infos = []
     compiler_flags = []
     repl_ghci_args = []
 
     for load_info in load_infos:
         set.mutable_union(source_files, load_info.source_files)
-        cc_dependencies = merge_HaskellCcInfo(
-            cc_dependencies,
-            load_info.cc_dependencies,
-        )
+        cc_infos.append(load_info.cc_info)
         compiler_flags += load_info.compiler_flags
         repl_ghci_args += load_info.repl_ghci_args
 
     return HaskellReplLoadInfo(
         source_files = source_files,
-        cc_dependencies = cc_dependencies,
+        cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
         compiler_flags = compiler_flags,
         repl_ghci_args = repl_ghci_args,
     )
@@ -95,14 +89,17 @@ def _merge_HaskellReplLoadInfo(load_infos):
 def _merge_HaskellReplDepInfo(dep_infos):
     package_ids = []
     package_databases = depset()
+    cc_infos = []
 
     for dep_info in dep_infos:
         package_ids += dep_info.package_ids
         package_databases = depset(transitive = [package_databases, dep_info.package_databases])
+        cc_infos.append(dep_info.cc_info)
 
     return HaskellReplDepInfo(
         package_ids = package_ids,
         package_databases = package_databases,
+        cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
     )
 
 def _create_HaskellReplCollectInfo(target, ctx):
@@ -110,11 +107,17 @@ def _create_HaskellReplCollectInfo(target, ctx):
     dep_infos = {}
 
     hs_info = target[HaskellInfo]
-    transitive_cc_dependencies = hs_info.transitive_cc_dependencies
 
     load_infos[target.label] = HaskellReplLoadInfo(
         source_files = hs_info.source_files,
-        cc_dependencies = hs_info.cc_dependencies,
+        cc_info = cc_common.merge_cc_infos(cc_infos = [
+            # Collect pure C library dependencies, no Haskell dependencies.
+            dep[CcInfo]
+            for deps in [getattr(ctx.rule.attr, "deps", None)]
+            if deps
+            for dep in deps
+            if CcInfo in dep and not HaskellInfo in dep
+        ]),
         compiler_flags = getattr(ctx.rule.attr, "compiler_flags", []),
         repl_ghci_args = getattr(ctx.rule.attr, "repl_ghci_args", []),
     )
@@ -123,30 +126,24 @@ def _create_HaskellReplCollectInfo(target, ctx):
         dep_infos[target.label] = HaskellReplDepInfo(
             package_ids = [lib_info.package_id],
             package_databases = hs_info.package_databases,
+            cc_info = target[CcInfo],
         )
 
     return HaskellReplCollectInfo(
         load_infos = load_infos,
         dep_infos = dep_infos,
-        transitive_cc_dependencies = transitive_cc_dependencies,
     )
 
 def _merge_HaskellReplCollectInfo(args):
     load_infos = {}
     dep_infos = {}
-    transitive_cc_dependencies = empty_HaskellCcInfo()
     for arg in args:
         load_infos.update(arg.load_infos)
         dep_infos.update(arg.dep_infos)
-        transitive_cc_dependencies = merge_HaskellCcInfo(
-            transitive_cc_dependencies,
-            arg.transitive_cc_dependencies,
-        )
 
     return HaskellReplCollectInfo(
         load_infos = load_infos,
         dep_infos = dep_infos,
-        transitive_cc_dependencies = transitive_cc_dependencies,
     )
 
 def _load_as_source(from_source, from_binary, lbl):
@@ -190,7 +187,6 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
     return HaskellReplInfo(
         load_info = load_info,
         dep_info = dep_info,
-        transitive_cc_dependencies = collect_info.transitive_cc_dependencies,
     )
 
 def _create_repl(hs, ctx, repl_info, output):
@@ -222,20 +218,16 @@ def _create_repl(hs, ctx, repl_info, output):
         ])
 
     # Load C library dependencies
-    link_ctx = repl_info.load_info.cc_dependencies.dynamic_linking
-    libs_to_link = link_ctx.dynamic_libraries_for_runtime.to_list()
-
-    # External C libraries that we need to make available to the REPL.
-    libraries = link_libraries(libs_to_link, args)
-
-    # Transitive library dependencies to have in runfiles.
-    (library_deps, ld_library_deps, ghc_env) = get_libs_for_ghc_linker(
+    cc_info = cc_common.merge_cc_infos(cc_infos = [
+        repl_info.load_info.cc_info,
+        repl_info.dep_info.cc_info,
+    ])
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
-        repl_info.transitive_cc_dependencies,
+        cc_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
-    library_path = [paths.dirname(lib.path) for lib in library_deps]
-    ld_library_path = [paths.dirname(lib.path) for lib in ld_library_deps]
+    link_libraries(ghci_extra_libs, args)
 
     # Load source files
     # Force loading by source with `:add *...`.
@@ -295,18 +287,18 @@ def _create_repl(hs, ctx, repl_info, output):
         },
     )
 
-    extra_inputs = [
-        hs.tools.ghci,
-        ghci_repl_script,
-    ]
-    extra_inputs.extend(set.to_list(repl_info.load_info.source_files))
-    extra_inputs.extend(repl_info.dep_info.package_databases.to_list())
-    extra_inputs.extend(library_deps)
-    extra_inputs.extend(ld_library_deps)
     return [DefaultInfo(
         executable = output,
         runfiles = ctx.runfiles(
-            files = extra_inputs,
+            files = [
+                hs.tools.ghci,
+                ghci_repl_script,
+            ],
+            transitive_files = depset(transitive = [
+                set.to_depset(repl_info.load_info.source_files),
+                repl_info.dep_info.package_databases,
+                ghci_extra_libs,
+            ]),
             collect_data = ctx.attr.collect_data,
         ),
     )]

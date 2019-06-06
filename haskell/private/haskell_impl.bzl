@@ -5,7 +5,6 @@ load(
     "C2hsLibraryInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "empty_HaskellCcInfo",
 )
 load(":cc.bzl", "cc_interop_info")
 load(
@@ -158,6 +157,18 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
     )
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [
+            dep[CcInfo]
+            for dep in ctx.attr.deps
+            if CcInfo in dep
+        ] + [
+            dep[CcInfo]
+            for plugin in ctx.attr.plugins
+            for dep in plugin[GhcPluginInfo].deps
+            if CcInfo in dep
+        ],
+    )
     package_ids = [
         dep[HaskellLibraryInfo].package_id
         for dep in ctx.attr.deps
@@ -189,6 +200,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         java,
         dep_info,
         plugin_dep_info,
+        cc_info,
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
@@ -214,6 +226,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         hs,
         cc,
         dep_info,
+        cc_info,
         ctx.files.extra_srcs,
         user_compile_flags,
         c.objects_dir,
@@ -232,8 +245,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         dynamic_libraries = dep_info.dynamic_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = c.compile_flags,
-        cc_dependencies = dep_info.cc_dependencies,
-        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
@@ -253,6 +264,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         package_databases = dep_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
+        cc_info = cc_info,
     )
 
     # XXX Temporary backwards compatibility hack. Remove eventually.
@@ -270,6 +282,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         package_databases = dep_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
+        cc_info = cc_info,
     )
 
     executable = binary
@@ -333,9 +346,8 @@ def _haskell_binary_common_impl(ctx, is_test):
             executable = executable,
             files = target_files,
             runfiles = ctx.runfiles(
-                files =
-                    solibs +
-                    extra_runfiles,
+                files = extra_runfiles,
+                transitive_files = solibs,
                 collect_data = True,
             ),
         ),
@@ -347,6 +359,18 @@ def haskell_library_impl(ctx):
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
+    )
+    cc_info = cc_common.merge_cc_infos(
+        cc_infos = [
+            dep[CcInfo]
+            for dep in ctx.attr.deps
+            if CcInfo in dep
+        ] + [
+            dep[CcInfo]
+            for plugin in ctx.attr.plugins
+            for dep in plugin[GhcPluginInfo].deps
+            if CcInfo in dep
+        ],
     )
     package_ids = [
         dep[HaskellLibraryInfo].package_id
@@ -382,6 +406,7 @@ def haskell_library_impl(ctx):
         java,
         dep_info,
         plugin_dep_info,
+        cc_info,
         srcs = srcs_files,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
@@ -418,6 +443,7 @@ def haskell_library_impl(ctx):
             hs,
             cc,
             dep_info,
+            cc_info,
             depset(ctx.files.extra_srcs),
             c.objects_dir,
             my_pkg_id,
@@ -430,9 +456,11 @@ def haskell_library_impl(ctx):
     conf_file, cache_file = package(
         hs,
         dep_info,
+        cc_info,
         c.interfaces_dir,
         static_library,
         dynamic_library,
+        with_shared,
         exposed_modules_file,
         other_modules,
         my_pkg_id,
@@ -470,8 +498,6 @@ def haskell_library_impl(ctx):
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
-        cc_dependencies = dep_info.cc_dependencies,
-        transitive_cc_dependencies = dep_info.transitive_cc_dependencies,
     )
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
@@ -502,6 +528,7 @@ def haskell_library_impl(ctx):
             package_databases = dep_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
+            cc_info = cc_info,
             lib_info = lib_info,
         )
 
@@ -520,6 +547,7 @@ def haskell_library_impl(ctx):
             package_databases = dep_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
+            cc_info = cc_info,
             lib_info = lib_info,
         )
 
@@ -698,8 +726,6 @@ def haskell_import_impl(ctx):
         dynamic_libraries = depset(),
         interface_dirs = depset(),
         compile_flags = [],
-        cc_dependencies = empty_HaskellCcInfo(),
-        transitive_cc_dependencies = empty_HaskellCcInfo(),
     )
     import_info = HaskellImportHack(
         # Make sure we're using the same order for dynamic_libraries,

@@ -127,71 +127,84 @@ def make_path(libs, prefix = None, sep = None):
 
     return sep.join(set.to_list(r))
 
-def darwin_convert_to_dylibs(hs, libs):
-    """Convert .so dynamic libraries to .dylib.
+def symlink_dynamic_library(hs, lib, outdir):
+    """Create a symbolic link for a dynamic library and fix the extension.
 
-    Bazel's cc_library rule will create .so files for dynamic libraries even
-    on MacOS. GHC's builtin linker, which is used during compilation, GHCi,
-    or doctests, hard-codes the assumption that all dynamic libraries on MacOS
-    end on .dylib. This function serves as an adaptor and produces symlinks
-    from a .dylib version to the .so version for every dynamic library
-    dependencies that does not end on .dylib.
+    This function is used for two reasons:
 
-    Args:
-      hs: Haskell context.
-      libs: List of library files dynamic or static.
+    1) GHCi expects specific file endings for dynamic libraries depending on
+       the platform: (Linux: .so, MacOS: .dylib, Windows: .dll). Bazel does not
+       follow this convention.
 
-    Returns:
-      List of library files where all dynamic libraries end on .dylib.
-    """
-    lib_prefix = "_dylibs"
-    new_libs = []
-    for lib in libs:
-        if is_shared_library(lib) and lib.extension != "dylib":
-            dylib_name = paths.join(
-                target_unique_name(hs, lib_prefix),
-                lib.dirname,
-                "lib" + get_lib_name(lib) + ".dylib",
-            )
-            dylib = hs.actions.declare_file(dylib_name)
-            ln(hs, lib, dylib)
-            new_libs.append(dylib)
-        else:
-            new_libs.append(lib)
-    return new_libs
-
-def windows_convert_to_dlls(hs, libs):
-    """Convert .so dynamic libraries to .dll.
-
-    Bazel's cc_library rule will create .so files for dynamic libraries even
-    on Windows. GHC's builtin linker, which is used during compilation, GHCi,
-    or doctests, hard-codes the assumption that all dynamic libraries on Windows
-    end on .dll. This function serves as an adaptor and produces symlinks
-    from a .dll version to the .so version for every dynamic library
-    dependencies that does not end on .dll.
+    2) MacOS applies a strict limit to the MACH-O header size. Many large
+       dynamic loading commands can quickly exceed this limit. To avoid this we
+       place all dynamic libraries into one directory, so that a single RPATH
+       entry is sufficient.
 
     Args:
       hs: Haskell context.
-      libs: List of library files dynamic or static.
+      lib: The dynamic library file.
+      outdir: Output directory for the symbolic link.
 
     Returns:
-      List of library files where all dynamic libraries end on .dll.
+      File, symbolic link to dynamic library.
     """
-    lib_prefix = "_dlls"
-    new_libs = []
-    for lib in libs:
-        if is_shared_library(lib) and lib.extension != "dll":
-            dll_name = paths.join(
-                target_unique_name(hs, lib_prefix),
-                paths.dirname(lib.short_path),
-                "lib" + get_lib_name(lib) + ".dll",
-            )
-            dll = hs.actions.declare_file(dll_name)
-            ln(hs, lib, dll)
-            new_libs.append(dll)
-        else:
-            new_libs.append(lib)
-    return new_libs
+    if hs.toolchain.is_darwin:
+        extension = "dylib"
+    elif hs.toolchain.is_windows:
+        extension = "dll"
+    else:
+        # On Linux we must preserve endings like .so.1.2.3. If those exist then
+        # there will be a matching .so symlink that points to the final
+        # library.
+        extension = get_lib_extension(lib)
+
+    link = hs.actions.declare_file(
+        paths.join(outdir, "lib" + get_lib_name(lib) + "." + extension),
+    )
+    ln(hs, lib, link)
+    return link
+
+def mangle_static_library(hs, dynamic_lib, static_lib, outdir):
+    """Mangle a static library to match a dynamic library name.
+
+    GHC expects static and dynamic C libraries to have matching library names.
+    Bazel produces static and dynamic C libraries with different names. The
+    dynamic library names are mangled, the static library names are not.
+
+    If the library is not a Haskell library (doesn't start with HS) and if the
+    dynamic library exists and if the static library exists and has a different
+    name. Then this function will create a symbolic link for the static library
+    to match the dynamic library's name.
+
+    Args:
+      hs: Haskell context.
+      dynamic_lib: File or None, the dynamic library.
+      static_lib: File or None, the static library.
+      outdir: Output director for the symbolic link, if necessary.
+
+    Returns:
+      The new static library symlink, if created, otherwise static_lib.
+    """
+    if dynamic_lib == None:
+        return static_lib
+    if static_lib == None:
+        return static_lib
+    libname = get_lib_name(dynamic_lib)
+    if libname.startswith("HS"):
+        return static_lib
+    if get_lib_name(static_lib) == libname:
+        return static_lib
+    else:
+        link = hs.actions.declare_file(
+            paths.join(outdir, "lib" + libname + "." + static_lib.extension),
+        )
+        ln(hs, static_lib, link)
+        return link
+
+def get_dirname(file):
+    """Return the path to the directory containing the file."""
+    return file.dirname
 
 def get_lib_name(lib):
     """Return name of library by dropping extension and "lib" prefix.
@@ -206,6 +219,21 @@ def get_lib_name(lib):
     base = lib.basename[3:] if lib.basename[:3] == "lib" else lib.basename
     n = base.find(".so.")
     end = paths.replace_extension(base, "") if n == -1 else base[:n]
+    return end
+
+def get_lib_extension(lib):
+    """Return extension of the library
+
+    Takes extensions such as so.1.2.3 into account.
+
+    Args:
+      lib: The library File.
+
+    Returns:
+      String: extension of the library.
+    """
+    n = lib.basename.find(".so.")
+    end = lib.extension if n == -1 else lib.basename[n + 1:]
     return end
 
 def get_dynamic_hs_lib_name(ghc_version, lib):
@@ -244,47 +272,42 @@ def get_static_hs_lib_name(with_profiling, lib):
         name = "ffi"
     return name
 
-def link_libraries(libs_to_link, args):
+def link_libraries(libs, args, prefix_optl = False):
     """Add linker flags to link against the given libraries.
 
     Args:
-      libs_to_link: List of library Files.
-      args: Append arguments to this list.
-
-    Returns:
-      List of library names that were linked.
+      libs: Sequence of File, libraries to link.
+      args: Args or List, append arguments to this object.
+      prefix_optl: Bool, whether to prefix linker flags by -optl
 
     """
-    seen_libs = set.empty()
-    libraries = []
-    for lib in libs_to_link:
-        lib_name = get_lib_name(lib)
-        if not set.is_member(seen_libs, lib_name):
-            set.mutable_insert(seen_libs, lib_name)
-            args += ["-l{0}".format(lib_name)]
-            libraries.append(lib_name)
 
-def is_shared_library(f):
-    """Check if the given File is a shared library.
+    # This test is a hack. When a CC library has a Haskell library
+    # as a dependency, we need to be careful to filter it out,
+    # otherwise it will end up polluting the linker flags. GHC
+    # already uses hs-libraries to link all Haskell libraries.
+    #
+    # TODO Get rid of this hack. See
+    # https://github.com/tweag/rules_haskell/issues/873.
+    cc_libs = depset(direct = [
+        lib
+        for lib in libs
+        if not get_lib_name(lib).startswith("HS")
+    ])
 
-    Args:
-      f: The File to check.
+    if prefix_optl:
+        libfmt = "-optl-l%s"
+        dirfmt = "-optl-L%s"
+    else:
+        libfmt = "-l%s"
+        dirfmt = "-L%s"
 
-    Returns:
-      Bool: True if the given file `f` is a shared library, False otherwise.
-    """
-    return f.extension in ["so", "dylib"] or f.basename.find(".so.") != -1
-
-def is_static_library(f):
-    """Check if the given File is a static library.
-
-    Args:
-      f: The File to check.
-
-    Returns:
-      Bool: True if the given file `f` is a static library, False otherwise.
-    """
-    return f.extension in ["a"]
+    if hasattr(args, "add_all"):
+        args.add_all(cc_libs, map_each = get_lib_name, format_each = libfmt)
+        args.add_all(cc_libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
+    else:
+        args.extend([libfmt % get_lib_name(lib) for lib in cc_libs])
+        args.extend(depset(direct = [dirfmt % lib.dirname for lib in cc_libs]).to_list())
 
 def _rel_path_to_module(hs, f):
     """Make given file name relative to the directory where the module hierarchy
@@ -359,37 +382,6 @@ def ln(hs, target, link, extra_inputs = depset()):
         ),
         use_default_shell_env = True,
     )
-
-def link_forest(ctx, srcs, basePath = ".", **kwargs):
-    """Write a symlink to each file in `srcs` into a destination directory
-    defined using the same arguments as `ctx.actions.declare_directory`"""
-    local_files = []
-    for src in srcs.to_list():
-        dest = ctx.actions.declare_file(
-            paths.join(basePath, src.basename),
-            **kwargs
-        )
-        local_files.append(dest)
-        ln(ctx, src, dest)
-    return local_files
-
-def copy_all(ctx, srcs, dest):
-    """Copy all the files in `srcs` into `dest`"""
-    if list(srcs.to_list()) == []:
-        ctx.actions.run_shell(
-            command = "mkdir -p {dest}".format(dest = dest.path),
-            outputs = [dest],
-        )
-    else:
-        args = ctx.actions.args()
-        args.add_all(srcs)
-        ctx.actions.run_shell(
-            inputs = depset(srcs),
-            outputs = [dest],
-            mnemonic = "Copy",
-            command = "mkdir -p {dest} && cp -L -R \"$@\" {dest}".format(dest = dest.path),
-            arguments = [args],
-        )
 
 def parse_pattern(ctx, pattern_str):
     """Parses a string label pattern.
