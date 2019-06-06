@@ -68,10 +68,11 @@ def _haskell_doc_aspect_impl(target, ctx):
             transitive_html.update(dep[HaddockInfo].transitive_html)
 
     for pid in transitive_haddocks:
-        args.add("--read-interface=../{0},{1}".format(
-            pid,
-            transitive_haddocks[pid].path,
-        ))
+        for interface in transitive_haddocks[pid]:
+            args.add("--read-interface=../{0},{1}".format(
+                pid,
+                interface.path,
+            ))
 
     compile_flags = ctx.actions.args()
     for x in target[HaskellInfo].compile_flags:
@@ -114,7 +115,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             target[HaskellInfo].extra_source_files,
             target[HaskellInfo].dynamic_libraries,
             ghci_extra_libs,
-            depset(transitive_haddocks.values()),
+            depset(transitive = [depset(i) for i in transitive_haddocks.values()]),
             depset(transitive_html.values()),
             target[CcInfo].compilation_context.headers,
             depset([
@@ -135,7 +136,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     )
 
     transitive_html.update({package_id: html_dir})
-    transitive_haddocks.update({package_id: haddock_file})
+    transitive_haddocks.update({package_id: [haddock_file]})
 
     haddock_info = HaddockInfo(
         package_id = package_id,
@@ -232,19 +233,21 @@ def _haskell_doc_rule_impl(ctx):
     if ctx.attr.index_transitive_deps:
         # Include all packages in the unified index.
         for package_id in html_dict_copied:
-            args.add("--read-interface=../{0},{1}".format(
-                package_id,
-                haddock_dict[package_id].path,
-            ))
+            for interface in haddock_dict[package_id]:
+                args.add("--read-interface=../{0},{1}".format(
+                    package_id,
+                    interface.path,
+                ))
     else:
         # Include only direct dependencies.
         for dep in ctx.attr.deps:
             if HaddockInfo in dep:
                 package_id = dep[HaddockInfo].package_id
-                args.add("--read-interface=../{0},{1}".format(
-                    package_id,
-                    haddock_dict[package_id].path,
-                ))
+                for interface in haddock_dict[package_id]:
+                    args.add("--read-interface=../{0},{1}".format(
+                        package_id,
+                        interface.path,
+                    ))
 
     args.add_all(all_caches, map_each = _dirname, format_each = "--optghc=-package-db=%s")
     locale_archive_depset = (
@@ -255,7 +258,7 @@ def _haskell_doc_rule_impl(ctx):
         inputs = depset(transitive = [
             all_caches,
             depset(html_dict_copied.values()),
-            depset(haddock_dict.values()),
+            depset(transitive = [depset(i) for i in haddock_dict.values()]),
             locale_archive_depset,
         ]),
         outputs = [index_root],
