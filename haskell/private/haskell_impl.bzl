@@ -3,6 +3,7 @@
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
+    "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
 )
@@ -702,6 +703,7 @@ Check that it ships with your version of GHC.
         cc_info,
         target[DefaultInfo],
         target[HaskellLibraryInfo],
+        target[HaddockInfo],
     ]
 
 def haskell_import_impl(ctx):
@@ -771,12 +773,28 @@ def haskell_import_impl(ctx):
         files = depset(target_files),
     )
 
+    # This package haddock informations
+    transitive_html = {id: ctx.file.haddock_html} if ctx.file.haddock_html else {}
+    transitive_haddocks = {id: ctx.files.haddock_interfaces}
+
+    # Add dependencies haddock informations
+    for dep in ctx.attr.deps:
+        transitive_html.update(dep[HaddockInfo].transitive_html)
+        transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)
+
+    haddock_info = HaddockInfo(
+        package_id = id,
+        transitive_html = transitive_html,
+        transitive_haddocks = transitive_haddocks,
+    )
+
     return [
         hs_info,
         import_info,
         coverage_info,
         default_info,
         lib_info,
+        haddock_info,
     ]
 
 def _exposed_modules_reexports(exports):
