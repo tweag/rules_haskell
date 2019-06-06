@@ -358,9 +358,9 @@ http_archive(
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "7525deb4d74e3aa4cb2b960da7d1c400257a324be4e497f75d265f2f508c518f",
-    strip_prefix = "buildtools-0.22.0",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/0.22.0.tar.gz"],
+    sha256 = "0a0920151acf18c51866331944d12db9023707a6861e78225366f5711efc845b",
+    strip_prefix = "buildtools-0.25.1",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/0.25.1.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README

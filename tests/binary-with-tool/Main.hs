@@ -1,4 +1,5 @@
-{-# OPTIONS_GHC -F -pgmF bazel-out/host/bin/tests/binary-with-tool/cat #-}
+{-# LANGUAGE CPP #-}
+{-# OPTIONS_GHC -F -pgmF CAT #-}
 
 module Main where
 

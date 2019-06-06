@@ -155,9 +155,11 @@ def _haskell_proto_aspect_impl(target, ctx):
         "exports": {},
         "name": "proto-autogen-" + ctx.rule.attr.name,
         "srcs": hs_files,
+        "extra_srcs": [],
         "deps": ctx.rule.attr.deps +
                 ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].deps,
         "plugins": [],
+        "data": [],
         "tools": [],
         "_cc_toolchain": ctx.attr._cc_toolchain,
     }
