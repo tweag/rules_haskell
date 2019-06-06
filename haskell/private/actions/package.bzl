@@ -59,9 +59,6 @@ def package(
         hs,
         dep_info,
         cc_info,
-        interfaces_dir,
-        static_library,
-        dynamic_library,
         with_shared,
         exposed_modules_file,
         other_modules,
@@ -70,9 +67,12 @@ def package(
 
     Args:
       hs: Haskell context.
-      interfaces_dir: Directory containing interface files.
-      static_library: Static library of the package.
-      dynamic_library: Dynamic library of the package.
+      dep_info: Combined HaskellInfo of dependencies.
+      cc_info: Combined CcInfo of dependencies.
+      with_shared: Whether to link dynamic libraries.
+      exposed_modules_file: File holding list of exposed modules.
+      other_modules: List of hidden modules.
+      my_pkg_id: Package id object for this package.
 
     Returns:
       (File, File): GHC package conf file, GHC package cache file
@@ -136,25 +136,9 @@ def package(
     )
 
     # Make the call to ghc-pkg and use the package configuration file
-    package_path = ":".join([c.dirname for c in dep_info.package_databases.to_list()]) + ":"
     hs.actions.run(
-        inputs = depset(transitive = [
-            dep_info.package_databases,
-            depset([interfaces_dir]),
-            depset([
-                input
-                for input in [
-                    static_library,
-                    conf_file,
-                    dynamic_library,
-                ]
-                if input
-            ]),
-        ]),
+        inputs = depset(direct = [conf_file]),
         outputs = [cache_file],
-        env = {
-            "GHC_PACKAGE_PATH": package_path,
-        },
         mnemonic = "HaskellRegisterPackage",
         progress_message = "HaskellRegisterPackage {}".format(hs.label),
         executable = hs.tools.ghc_pkg,
