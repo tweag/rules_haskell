@@ -1,0 +1,19 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_test(
+    name = "template-haskell-with-cbits",
+    srcs = [
+        "Main.hs",
+        "TH.hs",
+    ],
+    deps = [
+        "//tests/data:ourclibrary",
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+    ],
+)
