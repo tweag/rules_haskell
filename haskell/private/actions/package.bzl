@@ -89,32 +89,23 @@ def package(
 
     (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, with_shared, cc_info)
 
-    metadata_entries = {
+    # Create a file from which ghc-pkg will create the actual package
+    # from. List of exposed modules generated below.
+    metadata_file = hs.actions.declare_file(target_unique_name(hs, "metadata"))
+    write_package_conf(hs, metadata_file, {
         "name": my_pkg_id.package_name,
         "version": my_pkg_id.version,
         "id": pkg_id.to_string(my_pkg_id),
         "key": pkg_id.to_string(my_pkg_id),
         "exposed": "True",
-        "hidden-modules": " ".join(other_modules),
-        "import-dirs": import_dir,
-        "library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
-        "dynamic-library-dirs": " ".join(["${pkgroot}"] + extra_lib_dirs),
-        "hs-libraries": pkg_id.library_name(hs, my_pkg_id),
-        "extra-libraries": " ".join(extra_libs),
-        "depends": ", ".join(hs.package_ids),
-    }
-
-    # Create a file from which ghc-pkg will create the actual package
-    # from. List of exposed modules generated below.
-    metadata_file = hs.actions.declare_file(target_unique_name(hs, "metadata"))
-    hs.actions.write(
-        output = metadata_file,
-        content = "\n".join([
-            "{0}: {1}".format(k, v)
-            for k, v in metadata_entries.items()
-            if v
-        ]) + "\n",
-    )
+        "hidden-modules": other_modules,
+        "import-dirs": [import_dir],
+        "library-dirs": ["${pkgroot}"] + extra_lib_dirs,
+        "dynamic-library-dirs": ["${pkgroot}"] + extra_lib_dirs,
+        "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)],
+        "extra-libraries": extra_libs,
+        "depends": hs.package_ids,
+    })
 
     # Combine exposed modules and other metadata to form the package
     # configuration file.
@@ -137,6 +128,56 @@ def package(
     cache_file = ghc_pkg_recache(hs, conf_file)
 
     return conf_file, cache_file
+
+def write_package_conf(hs, conf_file, metadata):
+    """Write GHC package configuration file.
+
+    See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html
+
+    Args:
+      hs: Haskell context.
+      conf_file: The declared output file.
+      metadata: Dictionary from package configuration fields to their values.
+    """
+
+    # Use an Args object to avoid building up large strings in Starlark.
+    package_conf = hs.actions.args()
+    package_conf.set_param_file_format("multiline")
+
+    formatters = {
+        "name": ("add", {}),
+        "id": ("add", {}),
+        "key": ("add", {}),
+        "version": ("add", {}),
+        "exposed": ("add", {}),
+        "depends": ("add_joined", {"join_with": ", "}),
+        "exposed-modules": ("add_joined", {"join_with": " "}),
+        "hidden-modules": ("add_joined", {"join_with": " "}),
+        "import-dirs": ("add_joined", {"join_with": " "}),
+        "hs-libraries": ("add_joined", {"join_with": " "}),
+        "extra-libraries": ("add_joined", {"join_with": " "}),
+        "extra-ghci-libraries": ("add_joined", {"join_with": " "}),
+        "library-dirs": ("add_joined", {"join_with": " "}),
+        "dynamic-library-dirs": ("add_joined", {"join_with": " "}),
+        "ld-options": ("add_joined", {"join_with": " ", "format_each": '"%s"'}),
+    }
+
+    for (k, v) in metadata.items():
+        if not v:
+            continue
+        formatter = formatters.get(k)
+        if not formatter:
+            fail("Unknown package configuration field '{}'.".format(k))
+        (method, kwargs) = formatter
+        linefmt = "{}: %s".format(k)
+        if method == "add":
+            package_conf.add(v, format = linefmt, **kwargs)
+        elif method == "add_joined":
+            package_conf.add_joined(v, format_joined = linefmt, **kwargs)
+        else:
+            fail("Unknown Args method '{}'.".format(method))
+
+    hs.actions.write(conf_file, package_conf)
 
 def ghc_pkg_recache(hs, conf_file):
     """Run ghc-pkg recache on the given package configuration file.
