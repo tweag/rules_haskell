@@ -10,6 +10,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
+    "link_libraries",
     "module_name",
     "target_unique_name",
 )
@@ -320,6 +321,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
 
     # Transitive library dependencies for runtime.
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, cc_info)
+    link_libraries(ghci_extra_libs, args)
 
     return struct(
         args = args,
