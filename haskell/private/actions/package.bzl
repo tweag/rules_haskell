@@ -81,7 +81,6 @@ def package(
     conf_file = hs.actions.declare_file(
         paths.join(pkg_db_dir, "{0}.conf".format(pkg_db_dir)),
     )
-    cache_file = hs.actions.declare_file("package.cache", sibling = conf_file)
 
     import_dir = paths.join(
         "${pkgroot}",
@@ -135,12 +134,35 @@ def package(
         use_default_shell_env = True,
     )
 
+    cache_file = ghc_pkg_recache(hs, conf_file)
+
+    return conf_file, cache_file
+
+def ghc_pkg_recache(hs, conf_file):
+    """Run ghc-pkg recache on the given package configuration file.
+
+    Note, this will generate the file package.cache in the same directory as
+    conf_file. Calling this function on two different package configuration
+    files in the same directory is an error as it will generate conflicting
+    actions.
+
+    Args:
+      hs: Haskell context.
+      conf_file: The package configuration file.
+
+    Returns:
+      File, the generate package cache file.
+
+    """
+
+    cache_file = hs.actions.declare_file("package.cache", sibling = conf_file)
+
     # Make the call to ghc-pkg and use the package configuration file
     hs.actions.run(
         inputs = depset(direct = [conf_file]),
         outputs = [cache_file],
         mnemonic = "HaskellRegisterPackage",
-        progress_message = "HaskellRegisterPackage {}".format(hs.label),
+        progress_message = "HaskellRegisterPackage {}".format(conf_file.short_path),
         executable = hs.tools.ghc_pkg,
         # Registration of a new package consists in,
         #
@@ -173,4 +195,4 @@ def package(
         use_default_shell_env = hs.toolchain.is_windows,
     )
 
-    return conf_file, cache_file
+    return cache_file
