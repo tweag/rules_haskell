@@ -8,6 +8,7 @@ load(
 )
 load(
     ":private/path_utils.bzl",
+    "create_rpath_entry",
     "get_lib_name",
     "make_path",
     "mangle_static_library",
@@ -346,7 +347,16 @@ def create_link_config(hs, cc_info, dynamic, binary, args):
             rel_to_pkgroot(lib.dirname, conf_file.dirname)
             for lib in cc_static_libs + cc_dynamic_libs
         ]),
-        # XXX: Set user_link_flags and RPATH flags.
+        # XXX: Set user_link_flags.
+        "ld-options": depset(direct = [
+            "-Wl,-rpath,%s" % create_rpath_entry(
+                binary = binary,
+                dependency = lib,
+                keep_filename = False,
+                prefix = "@loader_path" if hs.toolchain.is_darwin else "$ORIGIN",
+            )
+            for lib in dynamic_libs
+        ]),
     })
     cache_file = ghc_pkg_recache(hs, conf_file)
 
