@@ -126,28 +126,6 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
 
     return objects_dir_manifest
 
-def _link_dependencies(hs, cc_info, dynamic, binary, args):
-    """Configure linker flags and inputs.
-
-    Configure linker flags for C library dependencies and runtime dynamic
-    library dependencies. And collect the C libraries to pass as inputs to
-    the linking action.
-
-    Args:
-      hs: Haskell context.
-      cc_info: Combined CcInfo of dependencies.
-      dynamic: Bool: Whether to link dynamically, or statically.
-      binary: Final linked binary.
-      args: Arguments to the linking action.
-
-    Returns:
-      depset: C library dependencies to provide as input to the linking action.
-    """
-
-    (cache_file, static_libs, dynamic_libs) = create_link_config(hs, cc_info, dynamic, binary, args)
-
-    return (cache_file, static_libs, dynamic_libs)
-
 def link_binary(
         hs,
         cc,
@@ -209,7 +187,7 @@ def link_binary(
         version = version,
     )))
 
-    (cache_file, static_libs, dynamic_libs) = _link_dependencies(
+    (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
         cc_info = cc_info,
         dynamic = dynamic,
@@ -379,7 +357,7 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
     # on this dynamic library, is linked statically itself, will not fail at
     # link time due to missing transitive dynamic library dependencies. In this
     # case transitive dependencies will still be linked in statically.
-    (cache_file, static_libs, dynamic_libs) = _link_dependencies(
+    (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
         cc_info = cc_info,
         dynamic = False,
