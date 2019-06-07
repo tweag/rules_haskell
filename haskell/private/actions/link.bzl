@@ -174,13 +174,6 @@ def link_binary(
 
     args.add_all(["-o", executable.path])
 
-    # De-duplicate optl calls while preserving ordering: we want last
-    # invocation of an object to remain last. That is `-optl foo -optl
-    # bar -optl foo` becomes `-optl bar -optl foo`. Do this by counting
-    # number of occurrences. That way we only build dict and add to args
-    # directly rather than doing multiple reversals with temporary
-    # lists.
-
     args.add_all(pkg_info_to_compile_flags(expose_packages(
         package_ids = hs.package_ids,
         package_databases = dep_info.package_databases,
