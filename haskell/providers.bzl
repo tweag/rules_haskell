@@ -1,5 +1,11 @@
 """Providers exposed by the Haskell rules."""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load(
+    ":private/packages.bzl",
+    "ghc_pkg_recache",
+    "write_package_conf",
+)
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -279,3 +285,77 @@ def get_extra_libs(hs, dynamic, cc_info):
     static_libs = depset(direct = static_libs)
     dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
+
+def create_link_config(hs, cc_info, dynamic, binary, args):
+    """Configure linker flags and inputs.
+
+    Configure linker flags for C library dependencies and runtime dynamic
+    library dependencies. And collect the C libraries to pass as inputs to
+    the linking action. Creates a package configuration file that captures
+    these flags.
+
+    Args:
+      hs: Haskell context.
+      cc_info: Combined CcInfo of dependencies.
+      dynamic: Bool: Whether to link dynamically, or statically.
+      binary: Final linked binary.
+      args: Arguments to the linking action.
+
+    Returns:
+      (cache_file, static_libs, dynamic_libs):
+        cache_file: File, the cached package configuration.
+        static_libs: depset of File, static library files.
+        dynamic_libs: depset of File, dynamic library files.
+    """
+
+    (static_libs, dynamic_libs) = get_extra_libs(hs, dynamic, cc_info)
+
+    # This test is a hack. When a CC library has a Haskell library
+    # as a dependency, we need to be careful to filter it out,
+    # otherwise it will end up polluting the linker flags. GHC
+    # already uses hs-libraries to link all Haskell libraries.
+    #
+    # TODO Get rid of this hack. See
+    # https://github.com/tweag/rules_haskell/issues/873.
+    cc_static_libs = depset(direct = [
+        lib
+        for lib in static_libs
+        if not get_lib_name(lib).startswith("HS")
+    ])
+    cc_dynamic_libs = depset(direct = [
+        lib
+        for lib in dynamic_libs
+        if not get_lib_name(lib).startswith("HS")
+    ])
+
+    package_name = target_unique_name(hs, "link-config").replace("_", "-")
+    conf_path = paths.join(package_name, package_name + ".conf")
+    conf_file = hs.actions.declare_file(conf_path)
+    write_package_conf(hs, conf_file, {
+        "name": package_name,
+        "extra-libraries": [
+            get_lib_name(lib)
+            for lib in cc_static_libs + cc_dynamic_libs
+        ],
+        "library-dirs": depset(direct = [
+            # XXX: ${pkgroot}
+            lib.dirname
+            for lib in cc_static_libs + cc_dynamic_libs
+        ]),
+        "dynamic-library-dirs": depset(direct = [
+            # XXX: ${pkgroot}
+            lib.dirname
+            for lib in cc_static_libs + cc_dynamic_libs
+        ]),
+        # XXX: Set user_link_flags and RPATH flags.
+    })
+    cache_file = ghc_pkg_recache(hs, conf_file)
+
+    args.add_all([
+        "-package-db",
+        cache_file.dirname,
+        "-package",
+        package_name,
+    ])
+
+    return (cache_file, static_libs, dynamic_libs)

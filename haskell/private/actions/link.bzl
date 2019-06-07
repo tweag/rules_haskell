@@ -6,7 +6,7 @@ load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/path_utils.bzl", "link_libraries")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":providers.bzl", "get_extra_libs")
+load(":providers.bzl", "create_link_config")
 
 # tests in /tests/unit_tests/BUILD
 def parent_dir_path(path):
@@ -280,16 +280,15 @@ def _link_dependencies(hs, cc_info, dynamic, binary, args):
       depset: C library dependencies to provide as input to the linking action.
     """
 
-    (static_libs, dynamic_libs) = get_extra_libs(hs, dynamic, cc_info)
-    link_libraries(static_libs, args)
-    link_libraries(dynamic_libs, args)
+    (cache_file, static_libs, dynamic_libs) = create_link_config(hs, cc_info, dynamic, binary, args)
+    # XXX: Move into create_link_config
     args.add_all(
         [_infer_rpath(hs.toolchain.is_darwin, binary, lib) for lib in dynamic_libs],
         format_each = "-optl-Wl,-rpath,%s",
         uniquify = True,
     )
 
-    return (static_libs, dynamic_libs)
+    return (cache_file, static_libs, dynamic_libs)
 
 def link_binary(
         hs,
@@ -352,7 +351,7 @@ def link_binary(
         version = version,
     )))
 
-    (static_libs, dynamic_libs) = _link_dependencies(
+    (cache_file, static_libs, dynamic_libs) = _link_dependencies(
         hs = hs,
         cc_info = cc_info,
         dynamic = dynamic,
@@ -408,7 +407,7 @@ def link_binary(
             dep_info.package_databases,
             dep_info.dynamic_libraries,
             dep_info.static_libraries,
-            depset([objects_dir]),
+            depset([cache_file, objects_dir]),
             static_libs,
             dynamic_libs,
         ]),
@@ -550,7 +549,7 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
     # on this dynamic library, is linked statically itself, will not fail at
     # link time due to missing transitive dynamic library dependencies. In this
     # case transitive dependencies will still be linked in statically.
-    (static_libs, dynamic_libs) = _link_dependencies(
+    (cache_file, static_libs, dynamic_libs) = _link_dependencies(
         hs = hs,
         cc_info = cc_info,
         dynamic = False,
@@ -571,7 +570,7 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
-        inputs = depset([objects_dir], transitive = [
+        inputs = depset([cache_file, objects_dir], transitive = [
             depset(extra_srcs),
             dep_info.package_databases,
             dep_info.dynamic_libraries,
