@@ -361,6 +361,21 @@ def _truly_relativize(target, relative_to):
 
     return "/".join(result)
 
+def rel_to_pkgroot(target, pkgdb):
+    """Construct path relative to the package root.
+
+    Args:
+      target: Target path.
+      pkgdb: Path to the package db directory. E.g. cache_file.dirname.
+
+    Returns:
+      Path relative to package root, e.g. ${pkgroot}/relative/path.
+    """
+    return paths.join(
+        "${pkgroot}",
+        _truly_relativize(target, paths.dirname(pkgdb)),
+    )
+
 def ln(hs, target, link, extra_inputs = depset()):
     """Create a symlink to target.
 

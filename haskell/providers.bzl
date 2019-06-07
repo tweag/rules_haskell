@@ -11,6 +11,7 @@ load(
     "get_lib_name",
     "make_path",
     "mangle_static_library",
+    "rel_to_pkgroot",
     "symlink_dynamic_library",
     "target_unique_name",
 )
@@ -338,13 +339,11 @@ def create_link_config(hs, cc_info, dynamic, binary, args):
             for lib in cc_static_libs + cc_dynamic_libs
         ],
         "library-dirs": depset(direct = [
-            # XXX: ${pkgroot}
-            lib.dirname
+            rel_to_pkgroot(lib.dirname, conf_file.dirname)
             for lib in cc_static_libs + cc_dynamic_libs
         ]),
         "dynamic-library-dirs": depset(direct = [
-            # XXX: ${pkgroot}
-            lib.dirname
+            rel_to_pkgroot(lib.dirname, conf_file.dirname)
             for lib in cc_static_libs + cc_dynamic_libs
         ]),
         # XXX: Set user_link_flags and RPATH flags.
