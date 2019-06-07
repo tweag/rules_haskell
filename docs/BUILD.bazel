@@ -34,6 +34,7 @@ skylark_doc(
         # sections are presented in the docs.
         "//haskell:haskell.bzl",
         "//haskell:haddock.bzl",
+        "//haskell:repl.bzl",
         "//haskell:lint.bzl",
         "//haskell:toolchain.bzl",
         "//haskell:protobuf.bzl",
