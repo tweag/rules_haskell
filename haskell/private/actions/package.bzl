@@ -185,8 +185,8 @@ def package(
             "-v0",
             "--no-expand-pkgroot",
         ],
-        # XXX: Seems required for this to work on Windows
-        use_default_shell_env = True,
+        # XXX: Seems required for this to work on Windows.
+        use_default_shell_env = hs.toolchain.is_windows,
     )
 
     return conf_file, cache_file
