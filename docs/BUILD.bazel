@@ -40,6 +40,7 @@ skylark_doc(
         "//haskell:repositories.bzl",
         "//haskell:ghc_bindist.bzl",
         "//haskell:nixpkgs.bzl",
+        "//haskell:plugins.bzl",
         "//haskell:protobuf.bzl",
         "//haskell:c2hs.bzl",
     ],
