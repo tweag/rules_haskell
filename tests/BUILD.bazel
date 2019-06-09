@@ -189,24 +189,6 @@ rule_test(
 )
 
 rule_test(
-    name = "test-haskell_lint-library",
-    size = "small",
-    generates = [
-        "lint-log-lib-b",
-    ],
-    rule = "//tests/haskell_lint:lint-lib-b",
-)
-
-rule_test(
-    name = "test-haskell_lint-binary",
-    size = "small",
-    generates = [
-        "lint-log-bin",
-    ],
-    rule = "//tests/haskell_lint:lint-bin",
-)
-
-rule_test(
     name = "test-haskell_doctest",
     size = "small",
     generates = [

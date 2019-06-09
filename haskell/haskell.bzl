@@ -21,11 +21,6 @@ load(
     _haskell_doc_aspect = "haskell_doc_aspect",
 )
 load(
-    ":lint.bzl",
-    _haskell_lint = "haskell_lint",
-    _haskell_lint_aspect = "haskell_lint_aspect",
-)
-load(
     ":private/haskell_impl.bzl",
     _haskell_binary_impl = "haskell_binary_impl",
     _haskell_import_impl = "haskell_import_impl",
@@ -364,10 +359,6 @@ of the compiler toolchain) available as targets.
 haskell_doc = _haskell_doc
 
 haskell_doc_aspect = _haskell_doc_aspect
-
-haskell_lint = _haskell_lint
-
-haskell_lint_aspect = _haskell_lint_aspect
 
 haskell_doctest = _haskell_doctest
 

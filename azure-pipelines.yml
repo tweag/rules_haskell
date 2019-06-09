@@ -95,7 +95,6 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/extra-source-files/..."
       /c/bazel/bazel.exe test --config windows "//tests/java_classpath/..."
       /c/bazel/bazel.exe test --config windows "//tests/generated-modules/..."
-      /c/bazel/bazel.exe test --config windows "//tests/haskell_lint/..."
       /c/bazel/bazel.exe test --config windows "//tests/haskell_test/..."
       /c/bazel/bazel.exe test --config windows "//tests/hs-boot/..."
       /c/bazel/bazel.exe test --config windows "//tests/indirect-link/..."
