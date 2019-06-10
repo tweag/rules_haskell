@@ -1,3 +1,5 @@
+"""GHC plugins"""
+
 load(":providers.bzl", "GhcPluginInfo", "HaskellLibraryInfo")
 
 def ghc_plugin_impl(ctx):
