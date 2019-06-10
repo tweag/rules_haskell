@@ -7,6 +7,7 @@ load(
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
@@ -191,12 +192,29 @@ def _haskell_proto_aspect_impl(target, ctx):
     # haskell_library_impl().
     [hs_info, cc_info, coverage_info, default_info, library_info] = _haskell_library_impl(patched_ctx)
 
+    # Build haddock informations
+    transitive_html = {}
+    transitive_haddocks = {}
+
+    # Add dependencies haddock informations
+    for dep in ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].deps:
+        if HaddockInfo in dep:
+            transitive_html.update(dep[HaddockInfo].transitive_html)
+            transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)
+
+    haddock_info = HaddockInfo(
+        package_id = None,
+        transitive_html = transitive_html,
+        transitive_haddocks = transitive_haddocks,
+    )
+
     return [
         cc_info,  # CcInfo
         hs_info,  # HaskellInfo
         library_info,  # HaskellLibraryInfo
         # We can't return DefaultInfo here because target already provides that.
         HaskellProtobufInfo(files = default_info.files),
+        haddock_info,
     ]
 
 _haskell_proto_aspect = aspect(
@@ -233,6 +251,7 @@ def _haskell_proto_library_impl(ctx):
         dep[HaskellInfo],
         dep[HaskellLibraryInfo],
         DefaultInfo(files = dep[HaskellProtobufInfo].files),
+        dep[HaddockInfo],
     ]
 
 haskell_proto_library = rule(
