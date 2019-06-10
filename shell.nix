@@ -23,8 +23,6 @@ mkShell {
     git
     # Needed to get correct locale for tests with encoding
     glibcLocales
-    # to check haddock outputs
-    linkchecker
     # to avoid CA certificate failures on MacOS CI
     cacert
     # Needed for debug/linking_utils

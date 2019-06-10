@@ -39,7 +39,7 @@ def path_to_label(path, pkgroot):
     """Substitute one pkgroot for another relative one to obtain a label."""
     topdir_relative_path = path.replace(pkgroot, "$topdir")
     if topdir_relative_path.find("$topdir") != -1:
-        return topdir_relative_path.replace("$topdir", topdir).replace('\\', '/')
+        return os.path.normpath(topdir_relative_path.replace("$topdir", topdir)).replace('\\', '/')
 
 def hs_library_pattern(name, mode = "static", config = ""):
     """Convert hs-libraries entry to glob patterns.
@@ -84,6 +84,8 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
         hs_libraries = [],
         ld_options = [],
         extra_libraries = [],
+        haddock_interfaces = [],
+        haddock_html = None,
     )
     for field in fields:
         key, value = field.split(":", 1)
@@ -108,6 +110,10 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
             pkg.ld_options += [opt.strip('"') for opt in value.split()]
         elif key == "extra-libraries":
             pkg.extra_libraries += value.split()
+        elif key == "haddock-interfaces":
+            pkg.haddock_interfaces += value.split()
+        elif key == "haddock-html":
+            pkg.haddock_html = value
 
     # pkgroot is not part of .conf files. It's a computed value. It is
     # defined to be the directory enclosing the package database
@@ -115,6 +121,49 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     pkg.pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
 
     pkg_id_map.append((pkg.name, pkg.id))
+
+    # Haddock handling
+    # Haddock files may be packaged inside your ghc distribution (as
+    # it is the case for ghc_bindist) or elsewhere if you pull GHC
+    # from something such as nixpkgs which split ghc from its
+    # documentation
+
+    # For each path in haddock_html and haddock_interfaces, we will
+    # first try to convert it to a path in the current WORKSPACE. if
+    # this does not work, we generate a path in the workspace and
+    # output a SYMLINK information for the parent process
+
+    symlinks = []
+
+    # first, try to get a path within the package
+    if pkg.haddock_html:
+        haddock_html = path_to_label(pkg.haddock_html, pkg.pkgroot)
+
+        if not haddock_html:
+            haddock_html = os.path.join("haddock", "html", pkg.name)
+            symlinks.append((pkg.haddock_html, haddock_html))
+    else:
+        haddock_html = None
+
+    haddock_interfaces = []
+
+    # If there is many interfaces, we give them a number
+    interface_id = 0
+
+    for interface_path in pkg.haddock_interfaces:
+        interface = path_to_label(interface_path, pkg.pkgroot)
+
+        if not interface:
+            interface = os.path.join("haddock", "interfaces", pkg.name + "_" + str(interface_id) + ".haddock")
+            symlinks.append((interface_path, interface))
+            interface_id += 1
+
+        haddock_interfaces.append(interface)
+
+    # Write the symlink macro for each paths
+    for (source, destination) in symlinks:
+        output.append("#SYMLINK: {} {}".format(destination, source))
+
     output += [
         # We substitute globs instead of actual paths because the
         # libraries could be anywhere in the various library dirs, in
@@ -132,6 +181,8 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                 static_profiling_libraries = {static_profiling_libraries},
                 version = "{version}",
                 visibility = ["//visibility:public"],
+                haddock_interfaces = {haddock_interfaces},
+                haddock_html = {haddock_html},
             )
             """.format(
                 name = pkg.name,
@@ -168,6 +219,8 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                     for dynamic_library_dir in pkg.dynamic_library_dirs + pkg.library_dirs
                     if path_to_label(dynamic_library_dir, pkg.pkgroot)
                 ]),
+                haddock_html = repr(haddock_html),
+                haddock_interfaces = repr(haddock_interfaces),
                 deps = pkg.depends,
                 linkopts = pkg.ld_options + [
                     "-L{}".format(library_dir)
