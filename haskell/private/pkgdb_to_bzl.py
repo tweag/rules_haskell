@@ -136,7 +136,9 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     symlinks = []
 
     # first, try to get a path within the package
-    if pkg.haddock_html:
+    # We check if the file exists because cabal will unconditionally
+    # generate the database entry even if no haddock was generated.
+    if pkg.haddock_html and os.path.exists(pkg.haddock_html):
         haddock_html = path_to_label(pkg.haddock_html, pkg.pkgroot)
 
         if not haddock_html:
@@ -151,14 +153,15 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     interface_id = 0
 
     for interface_path in pkg.haddock_interfaces:
-        interface = path_to_label(interface_path, pkg.pkgroot)
+        if os.path.exists(interface_path):
+            interface = path_to_label(interface_path, pkg.pkgroot)
 
-        if not interface:
-            interface = os.path.join("haddock", "interfaces", pkg.name + "_" + str(interface_id) + ".haddock")
-            symlinks.append((interface_path, interface))
-            interface_id += 1
+            if not interface:
+                interface = os.path.join("haddock", "interfaces", pkg.name + "_" + str(interface_id) + ".haddock")
+                symlinks.append((interface_path, interface))
+                interface_id += 1
 
-        haddock_interfaces.append(interface)
+            haddock_interfaces.append(interface)
 
     # Write the symlink macro for each paths
     for (source, destination) in symlinks:
