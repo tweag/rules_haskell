@@ -31,6 +31,7 @@ load(
     _haskell_import_impl = "haskell_import_impl",
     _haskell_library_impl = "haskell_library_impl",
     _haskell_test_impl = "haskell_test_impl",
+    _haskell_toolchain_libraries_impl = "haskell_toolchain_libraries_impl",
     _haskell_toolchain_library_impl = "haskell_toolchain_library_impl",
 )
 load(
@@ -301,6 +302,8 @@ haskell_import = rule(
         "linkopts": attr.string_list(),
         "hdrs": attr.label_list(allow_files = True),
         "includes": attr.string_list(),
+        "haddock_interfaces": attr.label_list(allow_files = True),
+        "haddock_html": attr.label(allow_files = True, single_file = True),
         "_version_macros": attr.label(
             executable = True,
             cfg = "host",
@@ -312,25 +315,28 @@ haskell_import = rule(
     },
 )
 
+haskell_toolchain_libraries = rule(
+    _haskell_toolchain_libraries_impl,
+    attrs = {
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+    },
+    toolchains = [
+        "@io_tweag_rules_haskell//haskell:toolchain",
+    ],
+)
+
 haskell_toolchain_library = rule(
     _haskell_toolchain_library_impl,
     attrs = dict(
         package = attr.string(
             doc = "The name of a GHC package not built by Bazel. Defaults to the name of the rule.",
         ),
-        _version_macros = attr.label(
-            executable = True,
-            cfg = "host",
-            default = Label("@io_tweag_rules_haskell//haskell:version_macros"),
-        ),
-        # XXX We'll no longer need this once HaskellImportHack is removed.
-        _cc_toolchain = attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        _toolchain_libraries = attr.label(
+            default = Label("@io_tweag_rules_haskell//haskell:toolchain-libraries"),
         ),
     ),
-    toolchains = [
-        "@io_tweag_rules_haskell//haskell:toolchain",
-    ],
 )
 """Import packages that are prebuilt outside of Bazel.
 

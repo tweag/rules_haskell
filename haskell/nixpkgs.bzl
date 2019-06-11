@@ -32,6 +32,14 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
     toolchain_libraries = result.stdout
 
+    # Haddock files on nixpkgs are stored outside of the ghc package
+    # The pkgdb_to_bzl.py program generates bazel labels for theses files
+    # and asks the parent process to generate the associated bazel symlink
+    for line in result.stdout.split("\n"):
+        if line.startswith("#SYMLINK:"):
+            _, name, path = line.split(" ")
+            repository_ctx.symlink(path, name)
+
     repository_ctx.file(
         "BUILD",
         executable = False,
