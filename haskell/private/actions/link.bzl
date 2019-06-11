@@ -354,6 +354,7 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
         hs = hs,
         cc_info = cc_info,
         dynamic = False,
+        pic = True,
         binary = dynamic_library,
         args = args,
     )

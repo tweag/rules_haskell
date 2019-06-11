@@ -22,8 +22,11 @@ def _get_extra_libraries(hs, with_shared, cc_info):
     # NOTE This is duplicated from path_utils.bzl link_libraries. This whole
     # function can go away once we track libraries outside of package
     # configuration files.
-    dynamic = with_shared
-    (static_libs, dynamic_libs) = get_extra_libs(hs, dynamic, cc_info)
+    (static_libs, dynamic_libs) = get_extra_libs(
+        hs,
+        cc_info,
+        pic = with_shared,
+    )
 
     # This test is a hack. When a CC library has a Haskell library
     # as a dependency, we need to be careful to filter it out,

@@ -238,7 +238,7 @@ def get_ghci_extra_libs(hs, cc_info, dynamic = True, path_prefix = None):
 
     return (depset(direct = libs), ghc_env)
 
-def get_extra_libs(hs, dynamic, cc_info):
+def get_extra_libs(hs, cc_info, dynamic = False, pic = None):
     """Get libraries appropriate for linking with GHC.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -252,6 +252,8 @@ def get_extra_libs(hs, dynamic, cc_info):
       hs: Haskell context.
       dynamic: Whether to prefer dynamic libraries.
       cc_info: Combined CcInfo provider of dependencies.
+      dynamic: Whether dynamic libraries are preferred.
+      pic: Whether position independent code is required.
 
     Returns:
       depset of File: the libraries that should be passed to GHC for linking.
@@ -261,6 +263,11 @@ def get_extra_libs(hs, dynamic, cc_info):
     libs_to_link = _get_unique_lib_files(cc_info)
     static_libs = []
     dynamic_libs = []
+    if pic == None:
+        pic = dynamic
+
+    # PIC is irrelevant on Windows.
+    pic_required = pic and not hs.toolchain.is_windows
     for lib_to_link in libs_to_link:
         dynamic_lib = None
         if lib_to_link.dynamic_library:
@@ -270,25 +277,27 @@ def get_extra_libs(hs, dynamic, cc_info):
         static_lib = None
         if lib_to_link.pic_static_library:
             static_lib = lib_to_link.pic_static_library
-        elif lib_to_link.static_library:
+        elif lib_to_link.static_library and not pic_required:
             static_lib = lib_to_link.static_library
 
         if dynamic_lib:
             dynamic_lib = symlink_dynamic_library(hs, dynamic_lib, fixed_lib_dir)
         static_lib = mangle_static_library(hs, dynamic_lib, static_lib, fixed_lib_dir)
 
-        if dynamic and dynamic_lib:
-            dynamic_libs.append(dynamic_lib)
-        elif not static_lib:
+        if static_lib and not (dynamic and dynamic_lib):
+            static_libs.append(static_lib)
+        elif dynamic_lib:
             dynamic_libs.append(dynamic_lib)
         else:
-            static_libs.append(static_lib)
+            # Fall back if no PIC static library is available. This typically
+            # happens during profiling builds.
+            static_libs.append(lib_to_link.static_library)
 
     static_libs = depset(direct = static_libs)
     dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
 
-def create_link_config(hs, cc_info, dynamic, binary, args):
+def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -299,9 +308,10 @@ def create_link_config(hs, cc_info, dynamic, binary, args):
     Args:
       hs: Haskell context.
       cc_info: Combined CcInfo of dependencies.
-      dynamic: Bool: Whether to link dynamically, or statically.
       binary: Final linked binary.
       args: Arguments to the linking action.
+      dynamic: Whether to link dynamically, or statically.
+      pic: Whether position independent code is required.
 
     Returns:
       (cache_file, static_libs, dynamic_libs):
@@ -310,7 +320,12 @@ def create_link_config(hs, cc_info, dynamic, binary, args):
         dynamic_libs: depset of File, dynamic library files.
     """
 
-    (static_libs, dynamic_libs) = get_extra_libs(hs, dynamic, cc_info)
+    (static_libs, dynamic_libs) = get_extra_libs(
+        hs,
+        cc_info,
+        dynamic = dynamic,
+        pic = pic,
+    )
 
     # This test is a hack. When a CC library has a Haskell library
     # as a dependency, we need to be careful to filter it out,
