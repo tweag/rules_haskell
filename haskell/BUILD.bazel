@@ -58,6 +58,10 @@ toolchain_type(
     visibility = ["//visibility:public"],
 )
 
+# XXX: This target is a work aroud for the lack toolchain transitions not being
+# implemented, yet. See
+# https://github.com/bazelbuild/proposals/blob/master/designs/2019-02-12-toolchain-transitions.md
+# This will need to be revisited once that proposal is implemented.
 haskell_toolchain_libraries(
     name = "toolchain-libraries",
     visibility = ["//visibility:public"],
