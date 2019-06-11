@@ -170,6 +170,9 @@ GHC_BINDIST = \
 def _execute_fail_loudly(ctx, args):
     """Execute a command and fail loudly if it fails.
 
+    ATTN: All commands have to be cross-compatible between BSD tools and GNU tools,
+    because we want to support MacOS. Please cross-reference the MacOS man-pages.
+
     Args:
       ctx: Repository rule context.
       args: Command and its arguments.
@@ -211,13 +214,17 @@ def _ghc_bindist_impl(ctx):
 
     # On Windows the bindist already contains the built executables
     if os != "windows":
-        _execute_fail_loudly(ctx, ["sed", "-i", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "mk/config.mk.in"])
+        # IMPORTANT: all these scripts have to be compatible with BSD tools!
+
+        # bsdcompatible is to work around the differences for -i on BSD sed
+        _execute_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-ibsdcompatible", "mk/config.mk.in"])
         _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
         _execute_fail_loudly(ctx, ["make", "install"])
-        ctx.file("patch_bins", executable = True, content = """#!/usr/bin/env bash
-grep -lZ {bindist_dir} bin/* | xargs -0 --verbose \\
-    sed -i \\
-        -e '2iDISTDIR="$( dirname "$(resolved="$0"; while tmp="$(readlink "$resolved")"; do resolved="$tmp"; done; echo "$resolved")" )/.."' \\
+        ctx.file("patch_bins", executable = True, content = r"""#!/usr/bin/env bash
+grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 \
+    sed -ibsdcompatible \
+        -e '2i\
+          DISTDIR="$( dirname "$(resolved="$0"; while tmp="$(readlink "$resolved")"; do resolved="$tmp"; done; echo "$resolved")" )/.."' \
         -e 's:{bindist_dir}:$DISTDIR:'
 """.format(
             bindist_dir = bindist_dir.realpath,
