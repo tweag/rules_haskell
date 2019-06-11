@@ -23,7 +23,7 @@ mkShell {
     git
     # Needed to get correct locale for tests with encoding
     glibcLocales
-    # to avoid CA certificate failures on MacOS CI
+    # to avoid CA certificate failures on macOS CI
     cacert
     # Needed for debug/linking_utils
     binutils

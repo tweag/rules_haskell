@@ -133,10 +133,10 @@ def symlink_dynamic_library(hs, lib, outdir):
     This function is used for two reasons:
 
     1) GHCi expects specific file endings for dynamic libraries depending on
-       the platform: (Linux: .so, MacOS: .dylib, Windows: .dll). Bazel does not
+       the platform: (Linux: .so, macOS: .dylib, Windows: .dll). Bazel does not
        follow this convention.
 
-    2) MacOS applies a strict limit to the MACH-O header size. Many large
+    2) macOS applies a strict limit to the MACH-O header size. Many large
        dynamic loading commands can quickly exceed this limit. To avoid this we
        place all dynamic libraries into one directory, so that a single RPATH
        entry is sufficient.

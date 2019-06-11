@@ -175,7 +175,7 @@ def _merge_parameter_files(hs, file1, file2):
     return params_file
 
 def _darwin_create_extra_linker_flags_file(hs, cc, objects_dir, executable, dynamic, solibs):
-    """Write additional linker flags required on MacOS to a parameter file.
+    """Write additional linker flags required on macOS to a parameter file.
 
     Args:
       hs: Haskell context.
@@ -197,7 +197,7 @@ def _darwin_create_extra_linker_flags_file(hs, cc, objects_dir, executable, dyna
     # Bazel's builtin cc rules, which assume that the final binary will load
     # all transitive shared library dependencies. In particlar shared libraries
     # produced by Bazel's cc rules never load shared libraries themselves. This
-    # causes missing symbols at runtime on MacOS, see #170.
+    # causes missing symbols at runtime on macOS, see #170.
     #
     # The following work-around applies the `-u` flag to the linker for any
     # symbol that is undefined in any transitive shared library dependency.
@@ -208,7 +208,7 @@ def _darwin_create_extra_linker_flags_file(hs, cc, objects_dir, executable, dyna
     # Unfortunately, this prohibits elimination of any truly redundant shared
     # library dependencies. Furthermore, the transitive closure of shared
     # library dependencies can be large, so this makes it more likely to exceed
-    # the MACH-O header size limit on MacOS.
+    # the MACH-O header size limit on macOS.
     #
     # This is a horrendous hack, but it seems to be forced on us by how Bazel
     # builds dynamic cc libraries.

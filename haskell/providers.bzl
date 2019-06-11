@@ -175,7 +175,7 @@ def get_ghci_extra_libs(hs, cc_info, dynamic = True, path_prefix = None):
 
     GHCi can load PIC static libraries (-fPIC -fexternal-dynamic-refs) and
     dynamic libraries. Preferring static libraries can be useful to reduce the
-    risk of exceeding the MACH-O header size limit on MacOS, and to reduce
+    risk of exceeding the MACH-O header size limit on macOS, and to reduce
     build times by avoiding to generate dynamic libraries. However, this
     requires GHCi to run with the statically linked rts library.
 

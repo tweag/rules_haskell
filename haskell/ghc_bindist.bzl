@@ -171,7 +171,7 @@ def _execute_fail_loudly(ctx, args):
     """Execute a command and fail loudly if it fails.
 
     ATTN: All commands have to be cross-compatible between BSD tools and GNU tools,
-    because we want to support MacOS. Please cross-reference the MacOS man-pages.
+    because we want to support macOS. Please cross-reference the macOS man-pages.
 
     Args:
       ctx: Repository rule context.

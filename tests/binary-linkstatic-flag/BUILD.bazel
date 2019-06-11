@@ -63,7 +63,7 @@ sh_inline_test(
     script = """
     set -eo pipefail
     binary="$1"
-    # Symbols are prefixed with underscore on MacOS but not on Linux.
+    # Symbols are prefixed with underscore on macOS but not on Linux.
     if nm -u "$binary" | grep -q "\<_\?value"; then
         echo "C library dependency not linked statically: ${binary}"
         exit 1
@@ -96,7 +96,7 @@ sh_inline_test(
         # Skip test in debug builds. Debug mode forces static linking.
         exit 0
     fi
-    # Symbols are prefixed with underscore on MacOS but not on Linux.
+    # Symbols are prefixed with underscore on macOS but not on Linux.
     if ! nm -u "$binary" | grep -q "\<_\?value"; then
         echo "C library dependency not linked dynamically"
         exit 1
