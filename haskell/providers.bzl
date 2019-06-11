@@ -199,33 +199,14 @@ def get_ghci_extra_libs(hs, cc_info, dynamic = True, path_prefix = None):
         ghc_env: dict, environment variables to set for GHCi.
 
     """
-    fixed_lib_dir = target_unique_name(hs, "_ghci_libs")
-    libs_to_link = _get_unique_lib_files(cc_info)
-    libs = []
-    for lib_to_link in libs_to_link:
-        dynamic_lib = None
-        if lib_to_link.dynamic_library:
-            dynamic_lib = lib_to_link.dynamic_library
-        elif lib_to_link.interface_library:
-            # XXX: Do these work with GHCi?
-            dynamic_lib = lib_to_link.interface_library
-        static_lib = None
-        if lib_to_link.pic_static_library:
-            static_lib = lib_to_link.pic_static_library
-        elif lib_to_link.static_library and hs.toolchain.is_windows:
-            # NOTE: GHCi cannot load non-PIC static libraries, except on Windows.
-            static_lib = lib_to_link.static_library
-
-        if dynamic_lib:
-            dynamic_lib = symlink_dynamic_library(hs, dynamic_lib, fixed_lib_dir)
-        static_lib = mangle_static_library(hs, dynamic_lib, static_lib, fixed_lib_dir)
-
-        lib = static_lib if static_lib else dynamic_lib
-        if dynamic and dynamic_lib:
-            lib = dynamic_lib
-
-        if lib:
-            libs.append(lib)
+    (static_libs, dynamic_libs) = get_extra_libs(
+        hs,
+        cc_info,
+        dynamic = dynamic,
+        pic = True,
+        fixup_dir = "_ghci_libs",
+    )
+    libs = depset(transitive = [static_libs, dynamic_libs])
 
     # NOTE: We can avoid constructing these in the future by instead generating
     #   a dedicated package configuration file defining the required libraries.
@@ -236,9 +217,9 @@ def get_ghci_extra_libs(hs, cc_info, dynamic = True, path_prefix = None):
         "LD_LIBRARY_PATH": library_path,
     }
 
-    return (depset(direct = libs), ghc_env)
+    return (libs, ghc_env)
 
-def get_extra_libs(hs, cc_info, dynamic = False, pic = None):
+def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"):
     """Get libraries appropriate for linking with GHC.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -254,12 +235,13 @@ def get_extra_libs(hs, cc_info, dynamic = False, pic = None):
       cc_info: Combined CcInfo provider of dependencies.
       dynamic: Whether dynamic libraries are preferred.
       pic: Whether position independent code is required.
+      fixup_dir: Generate symbolic links to libraries in this directory.
 
     Returns:
       depset of File: the libraries that should be passed to GHC for linking.
 
     """
-    fixed_lib_dir = target_unique_name(hs, "_libs")
+    fixed_lib_dir = target_unique_name(hs, fixup_dir)
     libs_to_link = _get_unique_lib_files(cc_info)
     static_libs = []
     dynamic_libs = []
