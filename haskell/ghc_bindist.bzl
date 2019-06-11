@@ -189,6 +189,7 @@ def _ghc_bindist_impl(ctx):
     version = ctx.attr.version
     target = ctx.attr.target
     os, _, arch = target.partition("_")
+    python_bin = _find_python(ctx)
 
     if GHC_BINDIST[version].get(target) == None:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
@@ -235,9 +236,8 @@ grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 \
     # Cannot use //haskell:pkgdb_to_bzl because that's a generated
     # target. ctx.path() only works on source files.
     pkgdb_to_bzl = ctx.path(Label("@io_tweag_rules_haskell//haskell:private/pkgdb_to_bzl.py"))
-    python = _find_python(ctx)
     result = ctx.execute([
-        python,
+        python_bin,
         pkgdb_to_bzl,
         ctx.attr.name,
         "lib",
