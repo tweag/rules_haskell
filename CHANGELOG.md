@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
-- Bindists were broken on MacOS.
+- Bindists were broken on macOS.
   See [884](https://github.com/tweag/rules_haskell/issues/884).
 
 ## [0.9] - 2019-05-07
@@ -336,14 +336,14 @@ of `rules_haskell`.
 * Template Haskell linking against `cc_library`. See
   [#218](https://github.com/tweag/rules_haskell/pull/218).
 
-* Linking issues on MacOS. See
+* Linking issues on macOS. See
   [#221](https://github.com/tweag/rules_haskell/pull/221).
 
 * GHC packages that correspond to targets with the same name but in
   different Bazel packages no longer clash. See
   [#219](https://github.com/tweag/rules_haskell/issues/219).
 
-* Build breakage on MacOS when XCode is not installed. See
+* Build breakage on macOS when XCode is not installed. See
   [#223](https://github.com/tweag/rules_haskell/pull/223).
 
 * Bug preventing Haddock generation because of missing dynamic shared
@@ -404,7 +404,7 @@ of `rules_haskell`.
 
 ### Added
 
-* Support for MacOS, courtesy of Judah Jacobson. See
+* Support for macOS, courtesy of Judah Jacobson. See
   [#165](https://github.com/tweag/rules_haskell/issues/165).
 
 * Support for `data` attributes in `haskell_binary` and `haskell_library`

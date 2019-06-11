@@ -172,7 +172,7 @@ def hazel_repositories(
         targets that provide the shared library and headers as a cc_library, or
         empty string if the library is a system library not defined by Bazel.
       ghc_workspaces: Dictionary mapping OS names to GHC workspaces.
-        Default: Linux/MacOS: "@ghc", Windows: "@ghc_windows".
+        Default: Linux/macOS: "@ghc", Windows: "@ghc_windows".
         Dictionary keys correspond to CPU values as returned by
         `get_cpu_value` from `@bazel_tools//tools/cpp:lib_cc_configure.bzl`.
     """
