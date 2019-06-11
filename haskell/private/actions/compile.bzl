@@ -546,6 +546,5 @@ def list_exposed_modules(
             reexported_modules_file.path,
             exposed_modules_file.path,
         ],
-        use_default_shell_env = True,
     )
     return exposed_modules_file
