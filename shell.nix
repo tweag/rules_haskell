@@ -41,9 +41,9 @@ mkShell {
       elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
         ARCH="linux"
       fi
-      echo "[!] It looks like you are using a ''${ARCH} nix-based system. In order to build this project, you probably need to add the two following host_platform entries to your .bazelrc.local file."
+      echo "[!] It looks like you are using a ''${ARCH} nix-based system. In order to build this project, you need to add the two following host_platform entries to your .bazelrc.local file."
       echo ""
-      echo "test --host_platform=@io_tweag_rules_haskell//haskell/platforms:''${ARCH}_x86_64_nixpkgs"
+      echo "common --host_platform=@io_tweag_rules_haskell//haskell/platforms:''${ARCH}_x86_64_nixpkgs"
     fi
 
     # source bazel bash completion
