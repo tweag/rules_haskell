@@ -16,6 +16,10 @@ load(
     "haskell_toolchain",
 )
 load(
+    "@io_tweag_rules_haskell//haskell:hlint.bzl",
+    "hlint_toolchain",
+)
+load(
     "//:constants.bzl",
     "test_ghc_version",
 )
@@ -79,6 +83,13 @@ c2hs_toolchain(
 #    toolchain = ":py_runtime_pair",
 #    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
 #)
+
+hlint_toolchain(
+    name = "hlint-toolchain",
+    testonly = False,
+    hlint = "@hlint//:bin",
+    tags = ["requires_hlint"],
+)
 
 rule_test_exe(
     name = "test-binary-simple",

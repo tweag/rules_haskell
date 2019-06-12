@@ -34,7 +34,7 @@ jobs:
             locale-gen
             wget "https://github.com/bazelbuild/bazel/releases/download/0.27.0/bazel_0.27.0-linux-x86_64.deb"
             dpkg -i bazel_0.27.0-linux-x86_64.deb
-            echo "common:ci --build_tag_filters -requires_hackage,-requires_lz4,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
+            echo "common:ci --build_tag_filters -requires_hackage,-requires_lz4,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_hlint,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
             # XXX: See .bazelrc [backward compatible options] for the the rational behind this flag
             echo "build --incompatible_use_python_toolchains=false" >> .bazelrc.local
       - run:
