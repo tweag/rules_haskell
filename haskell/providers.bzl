@@ -1,10 +1,18 @@
 """Providers exposed by the Haskell rules."""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load(
+    ":private/packages.bzl",
+    "ghc_pkg_recache",
+    "write_package_conf",
+)
 load(
     ":private/path_utils.bzl",
+    "create_rpath_entry",
     "get_lib_name",
     "make_path",
     "mangle_static_library",
+    "rel_to_pkgroot",
     "symlink_dynamic_library",
     "target_unique_name",
 )
@@ -191,33 +199,14 @@ def get_ghci_extra_libs(hs, cc_info, dynamic = True, path_prefix = None):
         ghc_env: dict, environment variables to set for GHCi.
 
     """
-    fixed_lib_dir = target_unique_name(hs, "_ghci_libs")
-    libs_to_link = _get_unique_lib_files(cc_info)
-    libs = []
-    for lib_to_link in libs_to_link:
-        dynamic_lib = None
-        if lib_to_link.dynamic_library:
-            dynamic_lib = lib_to_link.dynamic_library
-        elif lib_to_link.interface_library:
-            # XXX: Do these work with GHCi?
-            dynamic_lib = lib_to_link.interface_library
-        static_lib = None
-        if lib_to_link.pic_static_library:
-            static_lib = lib_to_link.pic_static_library
-        elif lib_to_link.static_library and hs.toolchain.is_windows:
-            # NOTE: GHCi cannot load non-PIC static libraries, except on Windows.
-            static_lib = lib_to_link.static_library
-
-        if dynamic_lib:
-            dynamic_lib = symlink_dynamic_library(hs, dynamic_lib, fixed_lib_dir)
-        static_lib = mangle_static_library(hs, dynamic_lib, static_lib, fixed_lib_dir)
-
-        lib = static_lib if static_lib else dynamic_lib
-        if dynamic and dynamic_lib:
-            lib = dynamic_lib
-
-        if lib:
-            libs.append(lib)
+    (static_libs, dynamic_libs) = get_extra_libs(
+        hs,
+        cc_info,
+        dynamic = dynamic,
+        pic = True,
+        fixup_dir = "_ghci_libs",
+    )
+    libs = depset(transitive = [static_libs, dynamic_libs])
 
     # NOTE: We can avoid constructing these in the future by instead generating
     #   a dedicated package configuration file defining the required libraries.
@@ -228,9 +217,9 @@ def get_ghci_extra_libs(hs, cc_info, dynamic = True, path_prefix = None):
         "LD_LIBRARY_PATH": library_path,
     }
 
-    return (depset(direct = libs), ghc_env)
+    return (libs, ghc_env)
 
-def get_extra_libs(hs, dynamic, cc_info):
+def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"):
     """Get libraries appropriate for linking with GHC.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -244,15 +233,23 @@ def get_extra_libs(hs, dynamic, cc_info):
       hs: Haskell context.
       dynamic: Whether to prefer dynamic libraries.
       cc_info: Combined CcInfo provider of dependencies.
+      dynamic: Whether dynamic libraries are preferred.
+      pic: Whether position independent code is required.
+      fixup_dir: Generate symbolic links to libraries in this directory.
 
     Returns:
       depset of File: the libraries that should be passed to GHC for linking.
 
     """
-    fixed_lib_dir = target_unique_name(hs, "_libs")
+    fixed_lib_dir = target_unique_name(hs, fixup_dir)
     libs_to_link = _get_unique_lib_files(cc_info)
     static_libs = []
     dynamic_libs = []
+    if pic == None:
+        pic = dynamic
+
+    # PIC is irrelevant on Windows.
+    pic_required = pic and not hs.toolchain.is_windows
     for lib_to_link in libs_to_link:
         dynamic_lib = None
         if lib_to_link.dynamic_library:
@@ -262,20 +259,109 @@ def get_extra_libs(hs, dynamic, cc_info):
         static_lib = None
         if lib_to_link.pic_static_library:
             static_lib = lib_to_link.pic_static_library
-        elif lib_to_link.static_library:
+        elif lib_to_link.static_library and not pic_required:
             static_lib = lib_to_link.static_library
 
         if dynamic_lib:
             dynamic_lib = symlink_dynamic_library(hs, dynamic_lib, fixed_lib_dir)
         static_lib = mangle_static_library(hs, dynamic_lib, static_lib, fixed_lib_dir)
 
-        if dynamic and dynamic_lib:
-            dynamic_libs.append(dynamic_lib)
-        elif not static_lib:
+        if static_lib and not (dynamic and dynamic_lib):
+            static_libs.append(static_lib)
+        elif dynamic_lib:
             dynamic_libs.append(dynamic_lib)
         else:
-            static_libs.append(static_lib)
+            # Fall back if no PIC static library is available. This typically
+            # happens during profiling builds.
+            static_libs.append(lib_to_link.static_library)
 
     static_libs = depset(direct = static_libs)
     dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
+
+def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
+    """Configure linker flags and inputs.
+
+    Configure linker flags for C library dependencies and runtime dynamic
+    library dependencies. And collect the C libraries to pass as inputs to
+    the linking action. Creates a package configuration file that captures
+    these flags.
+
+    Args:
+      hs: Haskell context.
+      cc_info: Combined CcInfo of dependencies.
+      binary: Final linked binary.
+      args: Arguments to the linking action.
+      dynamic: Whether to link dynamically, or statically.
+      pic: Whether position independent code is required.
+
+    Returns:
+      (cache_file, static_libs, dynamic_libs):
+        cache_file: File, the cached package configuration.
+        static_libs: depset of File, static library files.
+        dynamic_libs: depset of File, dynamic library files.
+    """
+
+    (static_libs, dynamic_libs) = get_extra_libs(
+        hs,
+        cc_info,
+        dynamic = dynamic,
+        pic = pic,
+    )
+
+    # This test is a hack. When a CC library has a Haskell library
+    # as a dependency, we need to be careful to filter it out,
+    # otherwise it will end up polluting the linker flags. GHC
+    # already uses hs-libraries to link all Haskell libraries.
+    #
+    # TODO Get rid of this hack. See
+    # https://github.com/tweag/rules_haskell/issues/873.
+    cc_static_libs = depset(direct = [
+        lib
+        for lib in static_libs
+        if not get_lib_name(lib).startswith("HS")
+    ])
+    cc_dynamic_libs = depset(direct = [
+        lib
+        for lib in dynamic_libs
+        if not get_lib_name(lib).startswith("HS")
+    ])
+
+    package_name = target_unique_name(hs, "link-config").replace("_", "-")
+    conf_path = paths.join(package_name, package_name + ".conf")
+    conf_file = hs.actions.declare_file(conf_path)
+    write_package_conf(hs, conf_file, {
+        "name": package_name,
+        "extra-libraries": [
+            get_lib_name(lib)
+            for lib in cc_static_libs + cc_dynamic_libs
+        ],
+        "library-dirs": depset(direct = [
+            rel_to_pkgroot(lib.dirname, conf_file.dirname)
+            for lib in cc_static_libs + cc_dynamic_libs
+        ]),
+        "dynamic-library-dirs": depset(direct = [
+            rel_to_pkgroot(lib.dirname, conf_file.dirname)
+            for lib in cc_static_libs + cc_dynamic_libs
+        ]),
+        # XXX: Set user_link_flags.
+        "ld-options": depset(direct = [
+            "-Wl,-rpath,%s" % create_rpath_entry(
+                binary = binary,
+                dependency = lib,
+                keep_filename = False,
+                prefix = "@loader_path" if hs.toolchain.is_darwin else "$ORIGIN",
+            )
+            for lib in dynamic_libs
+        ]),
+    })
+    cache_file = ghc_pkg_recache(hs, conf_file)
+
+    args.add_all([
+        "-package-db",
+        cache_file.dirname,
+        "-package",
+        package_name,
+    ])
+
+    return (cache_file, static_libs, dynamic_libs)
