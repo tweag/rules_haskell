@@ -69,6 +69,21 @@ haskell_hlint_aspect = aspect(
         "@io_tweag_rules_haskell//haskell/hlint:toolchain",
     ],
 )
+"""Lint Haskell source files using hlint.
+
+Applies [hlint][hlint] to the Haskell sources of a target and its transitive
+dependencies. Reports linter warnings to stdout as well as to generated html
+files. Fails if the linter produces any warnings.
+
+Requires an `hlint_toolchain` to be registered.
+
+Example:
+  ```
+  $ bazel test //some/haskell:target --aspects @io_tweag_rules_haskell//haskell:hlint.bzl%haskell_hlint_aspect
+  ```
+
+[hlint]: https://github.com/ndmitchell/hlint#readme
+"""
 
 def _haskell_hlint_rule_impl(ctx):
     return [DefaultInfo(
@@ -84,6 +99,30 @@ haskell_hlint = rule(
         ),
     },
 )
+"""Lint Haskell source files using hlint.
+
+Applies [hlint][hlint] to the Haskell sources of the targets specified in
+`deps` and their transitive dependencies. Reports linter warnings to stdout as
+well as to generated html files. Acts as a test and fails if the linter
+produces any warnings.
+
+Requires an `hlint_toolchain` to be registered.
+
+Example:
+  ```
+  haskell_library(
+    name = "my-lib",
+    ...
+  )
+
+  haskell_hlint(
+    name = "my-lib-hlint",
+    deps = [":my-lib"],
+  )
+  ```
+
+[hlint]: https://github.com/ndmitchell/hlint#readme
+"""
 
 def _hlint_toolchain_impl(ctx):
     return [platform_common.ToolchainInfo(
@@ -109,7 +148,14 @@ _hlint_toolchain = rule(
     },
 )
 
-def hlint_toolchain(name, hlint, **kwargs):
+def hlint_toolchain(name, hlint, hint = None, **kwargs):
+    """Define an hlint toolchain.
+
+    Args:
+      hlint: The hlint executable.
+      hint: (optional) The .hlint.yaml hint file.
+
+    """
     impl_name = name + "-impl"
     _hlint_toolchain(
         name = impl_name,

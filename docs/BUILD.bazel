@@ -36,6 +36,7 @@ skylark_doc(
         "//haskell:cabal.bzl",
         "//haskell:haddock.bzl",
         "//haskell:repl.bzl",
+        "//haskell:hlint.bzl",
         "//haskell:repositories.bzl",
         "//haskell:ghc_bindist.bzl",
         "//haskell:nixpkgs.bzl",
