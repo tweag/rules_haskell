@@ -4,6 +4,13 @@ Code for the [Bazel Haskell tutorial][bazel-haskell-tutorial].
 
 [bazel-haskell-tutorial]: https://rules-haskell.readthedocs.io/en/latest/haskell.html
 
+## **Important**
+
+Run all commands from the root of `rules_haskell`.
+If you `cd examples/`, bazel *will* [break on
+you](https://github.com/tweag/rules_haskell/issues/740).
+This is a current problem with bazel workspaces.
+
 ## Tutorial Workspace
 
 Build everything in the tutorial workspace with;
