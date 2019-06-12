@@ -6,143 +6,7 @@ load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/path_utils.bzl", "link_libraries")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
-load(":providers.bzl", "get_extra_libs")
-
-# tests in /tests/unit_tests/BUILD
-def parent_dir_path(path):
-    """Returns the path of the parent directory.
-    For a relative path with just a file, "." is returned.
-    The path is not normalized.
-
-    foo => .
-    foo/ => foo
-    foo/bar => foo
-    foo/bar/baz => foo/bar
-    foo/../bar => foo/..
-
-    Args:
-      a path string
-
-    Returns:
-      A path list of the form `["foo", "bar"]`
-    """
-    path_dir = paths.dirname(path)
-
-    # dirname returns "" if there is no parent directory
-    # In that case we return the identity path, which is ".".
-    if path_dir == "":
-        return ["."]
-    else:
-        return path_dir.split("/")
-
-def __check_dots(target, path):
-    # there’s still (non-leading) .. in split
-    if ".." in path:
-        fail("the short_path of target {} (which is {}) contains more dots than loading `../`. We can’t handle that.".format(
-            target,
-            target.short_path,
-        ))
-
-# skylark doesn’t allow nested defs, which is a mystery.
-def _get_target_parent_dir(target):
-    """get the parent dir and handle leading short_path dots,
-    which signify that the target is in an external repository.
-
-    Args:
-      target: a target, .short_path is used
-    Returns:
-      (is_external, parent_dir)
-      `is_external`: Bool whether the path points to an external repository
-      `parent_dir`: The parent directory, either up to the runfiles toplel,
-                    up to the external repository toplevel.
-                    Is `[]` if there is no parent dir.
-    """
-
-    parent_dir = parent_dir_path(target.short_path)
-
-    if parent_dir[0] == "..":
-        __check_dots(target, parent_dir[1:])
-        return (True, parent_dir[1:])
-    elif parent_dir[0] == ".":
-        return (False, [])
-    else:
-        __check_dots(target, parent_dir)
-        return (False, parent_dir)
-
-# tests in /tests/unit_tests/BUILD
-def create_rpath_entry(
-        binary,
-        dependency,
-        keep_filename,
-        prefix = ""):
-    """Return a (relative) path that points from `binary` to `dependecy`
-    while not leaving the current bazel runpath, taking into account weird
-    corner cases of `.short_path` concerning external repositories.
-    The resulting entry should be able to be inserted into rpath or similar.
-
-    Examples:
-
-      bin.short_path=foo/a.so and dep.short_path=bar/b.so
-        => create_rpath_entry(bin, dep, False) = ../bar
-           and
-           create_rpath_entry(bin, dep, True) = ../bar/b.so
-           and
-           create_rpath_entry(bin, dep, True, "$ORIGIN") = $ORIGIN/../bar/b.so
-
-    Args:
-      binary: target of current binary
-      dependency: target of dependency to relatively point to
-      keep_filename: whether to point to the filename or its parent dir
-      prefix: string path prefix to add before the relative path
-
-    Returns:
-      relative path string
-    """
-
-    (bin_is_external, bin_parent_dir) = _get_target_parent_dir(binary)
-    (dep_is_external, dep_parent_dir) = _get_target_parent_dir(dependency)
-
-    # backup through parent directories of the binary,
-    # to the runfiles directory
-    bin_backup = [".."] * len(bin_parent_dir)
-
-    # external repositories live in `target.runfiles/external`,
-    # while the internal repository lives in `target.runfiles`.
-    # The `.short_path`s of external repositories are strange,
-    # they start with `../`, but you cannot just append that in
-    # order to find the correct runpath. Instead you have to use
-    # the following logic to construct the correct runpaths:
-    if bin_is_external:
-        if dep_is_external:
-            # stay in `external`
-            path_segments = bin_backup
-        else:
-            # backup out of `external`
-            path_segments = [".."] + bin_backup
-    elif dep_is_external:
-        # go into `external`
-        path_segments = bin_backup + ["external"]
-    else:
-        # no special external traversal
-        path_segments = bin_backup
-
-    # then add the parent dir to our dependency
-    path_segments.extend(dep_parent_dir)
-
-    # optionally add the filename
-    if keep_filename:
-        path_segments.append(
-            paths.basename(dependency.short_path),
-        )
-
-    # normalize for good measure and create the final path
-    path = paths.normalize("/".join(path_segments))
-
-    # and add the prefix if applicable
-    if prefix == "":
-        return path
-    else:
-        return prefix + "/" + path
+load(":providers.bzl", "create_link_config")
 
 def _merge_parameter_files(hs, file1, file2):
     """Merge two GHC parameter files into one.
@@ -262,35 +126,6 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
 
     return objects_dir_manifest
 
-def _link_dependencies(hs, cc_info, dynamic, binary, args):
-    """Configure linker flags and inputs.
-
-    Configure linker flags for C library dependencies and runtime dynamic
-    library dependencies. And collect the C libraries to pass as inputs to
-    the linking action.
-
-    Args:
-      hs: Haskell context.
-      cc_info: Combined CcInfo of dependencies.
-      dynamic: Bool: Whether to link dynamically, or statically.
-      binary: Final linked binary.
-      args: Arguments to the linking action.
-
-    Returns:
-      depset: C library dependencies to provide as input to the linking action.
-    """
-
-    (static_libs, dynamic_libs) = get_extra_libs(hs, dynamic, cc_info)
-    link_libraries(static_libs, args)
-    link_libraries(dynamic_libs, args)
-    args.add_all(
-        [_infer_rpath(hs.toolchain.is_darwin, binary, lib) for lib in dynamic_libs],
-        format_each = "-optl-Wl,-rpath,%s",
-        uniquify = True,
-    )
-
-    return (static_libs, dynamic_libs)
-
 def link_binary(
         hs,
         cc,
@@ -339,20 +174,13 @@ def link_binary(
 
     args.add_all(["-o", executable.path])
 
-    # De-duplicate optl calls while preserving ordering: we want last
-    # invocation of an object to remain last. That is `-optl foo -optl
-    # bar -optl foo` becomes `-optl bar -optl foo`. Do this by counting
-    # number of occurrences. That way we only build dict and add to args
-    # directly rather than doing multiple reversals with temporary
-    # lists.
-
     args.add_all(pkg_info_to_compile_flags(expose_packages(
         package_ids = hs.package_ids,
         package_databases = dep_info.package_databases,
         version = version,
     )))
 
-    (static_libs, dynamic_libs) = _link_dependencies(
+    (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
         cc_info = cc_info,
         dynamic = dynamic,
@@ -408,7 +236,7 @@ def link_binary(
             dep_info.package_databases,
             dep_info.dynamic_libraries,
             dep_info.static_libraries,
-            depset([objects_dir]),
+            depset([cache_file, objects_dir]),
             static_libs,
             dynamic_libs,
         ]),
@@ -419,34 +247,6 @@ def link_binary(
     )
 
     return (executable, dynamic_libs)
-
-def _infer_rpath(is_darwin, target, solib):
-    """Return the RPATH for target so it can find solib
-
-    The resulting paths look like:
-    $ORIGIN/../../path/to/solib/dir
-    This means: "go upwards to your runfiles directory, then descend into
-    the parent folder of the solib".
-
-    Args:
-      is_darwin: Whether we're compiling on and for Darwin.
-      target: File, executable or library we're linking.
-      solib: File, shared object that the target needs.
-
-    Returns:
-      String: rpath to add to target.
-    """
-    if is_darwin:
-        prefix = "@loader_path"
-    else:
-        prefix = "$ORIGIN"
-
-    return create_rpath_entry(
-        binary = target,
-        dependency = solib,
-        keep_filename = False,
-        prefix = prefix,
-    )
 
 def _so_extension(hs):
     """Returns the extension for shared libraries.
@@ -550,10 +350,11 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
     # on this dynamic library, is linked statically itself, will not fail at
     # link time due to missing transitive dynamic library dependencies. In this
     # case transitive dependencies will still be linked in statically.
-    (static_libs, dynamic_libs) = _link_dependencies(
+    (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
         cc_info = cc_info,
         dynamic = False,
+        pic = True,
         binary = dynamic_library,
         args = args,
     )
@@ -571,7 +372,7 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
-        inputs = depset([objects_dir], transitive = [
+        inputs = depset([cache_file, objects_dir], transitive = [
             depset(extra_srcs),
             dep_info.package_databases,
             dep_info.dynamic_libraries,

@@ -3,7 +3,7 @@ load(
     "asserts",
     unit = "unittest",
 )
-load("//haskell:private/actions/link.bzl", "create_rpath_entry", "parent_dir_path")
+load("//haskell:private/path_utils.bzl", "create_rpath_entry", "parent_dir_path")
 load("//haskell:private/list.bzl", "list")
 
 def parent_dir_path_test_impl(ctx):
