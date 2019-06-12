@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## Upcoming release
+
+### Removed
+
+* The `haskell_lint` rule has been removed. It should have been
+  designed as a test rule and it should have had a different name. The
+  rule isn't even necessary for its current purpose: it's more
+  convenient to turn on compiler warnings globally in the toolchain
+  definition.
+
 ## [0.9.1] - 2019-06-03
 
 ### Fixed
