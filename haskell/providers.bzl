@@ -334,15 +334,15 @@ def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
         "name": package_name,
         "extra-libraries": [
             get_lib_name(lib)
-            for lib in cc_static_libs + cc_dynamic_libs
+            for lib in depset(transitive = [cc_static_libs, cc_dynamic_libs])
         ],
         "library-dirs": depset(direct = [
             rel_to_pkgroot(lib.dirname, conf_file.dirname)
-            for lib in cc_static_libs + cc_dynamic_libs
+            for lib in depset(transitive = [cc_static_libs, cc_dynamic_libs])
         ]),
         "dynamic-library-dirs": depset(direct = [
             rel_to_pkgroot(lib.dirname, conf_file.dirname)
-            for lib in cc_static_libs + cc_dynamic_libs
+            for lib in depset(transitive = [cc_static_libs, cc_dynamic_libs])
         ]),
         # XXX: Set user_link_flags.
         "ld-options": depset(direct = [
