@@ -1,0 +1,45 @@
+load(
+    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "haskell_library",
+)
+load(
+    "@io_tweag_rules_haskell//haskell:hlint.bzl",
+    "haskell_hlint",
+)
+
+haskell_library(
+    name = "good",
+    srcs = ["Good.hs"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_hlint(
+    name = "good-hlint",
+    tags = ["requires_hlint"],
+    deps = [
+        ":good",
+    ],
+)
+
+haskell_library(
+    name = "bad",
+    srcs = ["Bad.hs"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+# See //tests/failures:haskell_hlint_bad_hlint
+haskell_hlint(
+    name = "bad-hlint",
+    tags = [
+        "manual",  # must FAIL
+        "requires_hlint",
+    ],
+    visibility = ["//tests/failures:__pkg__"],
+    deps = [
+        ":bad",
+    ],
+)

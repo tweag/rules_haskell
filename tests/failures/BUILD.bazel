@@ -1,0 +1,5 @@
+alias(
+    name = "haskell_hlint_bad_hlint",
+    actual = "//tests/hlint:bad-hlint",
+    tags = ["manual"],
+)
