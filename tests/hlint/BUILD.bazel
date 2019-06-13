@@ -3,8 +3,8 @@ load(
     "haskell_library",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:hlint.bzl",
-    "haskell_hlint",
+    "@io_tweag_rules_haskell//haskell:lint.bzl",
+    "haskell_lint",
 )
 
 haskell_library(
@@ -15,7 +15,7 @@ haskell_library(
     ],
 )
 
-haskell_hlint(
+haskell_lint(
     name = "good-hlint",
     tags = ["requires_hlint"],
     deps = [
@@ -32,7 +32,7 @@ haskell_library(
 )
 
 # See //tests/failures:haskell_hlint_bad_hlint
-haskell_hlint(
+haskell_lint(
     name = "bad-hlint",
     tags = [
         "manual",  # must FAIL

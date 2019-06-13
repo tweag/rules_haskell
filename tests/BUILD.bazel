@@ -16,7 +16,7 @@ load(
     "haskell_toolchain",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:hlint.bzl",
+    "@io_tweag_rules_haskell//haskell:lint.bzl",
     "hlint_toolchain",
 )
 load(

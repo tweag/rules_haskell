@@ -226,7 +226,7 @@ any given target (or indeed all targets), like in the following:
 Linting your code
 -----------------
 
-The `haskell_hlint`_ rule runs hlint on all listed dependencies and their
+The `haskell_lint`_ rule runs hlint on all listed dependencies and their
 transitive dependencies. Warnings are treated as errors.
 
 Alternatively, you can directly check a target using
@@ -234,7 +234,7 @@ Alternatively, you can directly check a target using
 .. code-block:: console
 
   $ bazel test //my/haskell:target \
-      --aspects @io_tweag_rules_haskell//haskell:hlint.bzl%haskell_hlint_aspect
+      --aspects @io_tweag_rules_haskell//haskell:lint.bzl%haskell_lint_aspect
 
 In order to use hlint you must first configure an `hlint_toolchain`_. ::
 
@@ -244,8 +244,8 @@ In order to use hlint you must first configure an `hlint_toolchain`_. ::
     hint = "//:hlint.yaml",
   )
 
-.. _haskell_lint: http://api.haskell.build/haskell/hlint.html#haskell_hlint
-.. _hlint_toolchain: http://api.haskell.build/haskell/hlint.html#hlint_toolchain
+.. _haskell_lint: http://api.haskell.build/haskell/lint.html#haskell_lint
+.. _hlint_toolchain: http://api.haskell.build/haskell/lint.html#hlint_toolchain
 
 Checking code coverage
 ----------------------

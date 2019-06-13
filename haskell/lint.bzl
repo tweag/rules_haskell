@@ -14,8 +14,8 @@ def _collect_hlint_logs(deps):
         if HaskellHLintInfo in dep
     ])
 
-def _haskell_hlint_aspect_impl(target, ctx):
-    hlint_toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell/hlint:toolchain"]
+def _haskell_lint_aspect_impl(target, ctx):
+    hlint_toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell/lint:toolchain"]
     hint = hlint_toolchain.hint
 
     inputFiles = []
@@ -62,11 +62,11 @@ def _haskell_hlint_aspect_impl(target, ctx):
     output_files = OutputGroupInfo(default = outputs)
     return [lint_info, output_files]
 
-haskell_hlint_aspect = aspect(
-    _haskell_hlint_aspect_impl,
+haskell_lint_aspect = aspect(
+    _haskell_lint_aspect_impl,
     attr_aspects = ["deps"],
     toolchains = [
-        "@io_tweag_rules_haskell//haskell/hlint:toolchain",
+        "@io_tweag_rules_haskell//haskell/lint:toolchain",
     ],
 )
 """Lint Haskell source files using hlint.
@@ -79,22 +79,22 @@ Requires an `hlint_toolchain` to be registered.
 
 Example:
   ```
-  $ bazel test //some/haskell:target --aspects @io_tweag_rules_haskell//haskell:hlint.bzl%haskell_hlint_aspect
+  $ bazel test //some/haskell:target --aspects @io_tweag_rules_haskell//haskell:lint.bzl%haskell_lint_aspect
   ```
 
 [hlint]: https://github.com/ndmitchell/hlint#readme
 """
 
-def _haskell_hlint_rule_impl(ctx):
+def _haskell_lint_rule_impl(ctx):
     return [DefaultInfo(
         files = _collect_hlint_logs(ctx.attr.deps),
     )]
 
-haskell_hlint = rule(
-    _haskell_hlint_rule_impl,
+haskell_lint = rule(
+    _haskell_lint_rule_impl,
     attrs = {
         "deps": attr.label_list(
-            aspects = [haskell_hlint_aspect],
+            aspects = [haskell_lint_aspect],
             doc = "List of Haskell targets to lint.",
         ),
     },
@@ -115,7 +115,7 @@ Example:
     ...
   )
 
-  haskell_hlint(
+  haskell_lint(
     name = "my-lib-hlint",
     deps = [":my-lib"],
   )
@@ -165,6 +165,6 @@ def hlint_toolchain(name, hlint, hint = None, **kwargs):
     )
     native.toolchain(
         name = name,
-        toolchain_type = "@io_tweag_rules_haskell//haskell/hlint:toolchain",
+        toolchain_type = "@io_tweag_rules_haskell//haskell/lint:toolchain",
         toolchain = ":" + impl_name,
     )
