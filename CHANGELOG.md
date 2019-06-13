@@ -31,6 +31,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   haskell_library(name = "haskell-lib", deps = [":so-lib"], ...)
   ```
 
+### Added
+
+* The `haskell_hlint` rule has been added. It runs `hlint` on the sources of
+  the specified target and fails if `hlint` produces any warnings. An
+  `.hlint.yaml` configuration file can be specified using the `hlint_toolchain`
+  rule.
+
 ## [0.9.1] - 2019-06-03
 
 ### Fixed
