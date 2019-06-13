@@ -112,9 +112,8 @@ another. Please see languages listed below about how.
 
 ### C/C++
 
-C/C++ libraries can be specified as dependencies. Exporting Haskell libraries
-as C/C++ dependencies currently requires the `cc_haskell_import` rule. This is
-a temporary workaround to Bazel limitations.
+C/C++ libraries can be specified as dependencies. And Haskell libraries can be
+used as C/C++ dependencies.
 
 ### Java
 

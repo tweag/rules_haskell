@@ -13,6 +13,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   rule isn't even necessary for its current purpose: it's more
   convenient to turn on compiler warnings globally in the toolchain
   definition.
+* The `cc_haskell_import` and `haskell_cc_import` rules have been removed.
+  These rules were redundant since Haskell rules can directly interact with C
+  rules. Use the following patterns instead.
+
+  ```
+  # To import Haskell from C.
+  haskell_library(name = "haskell-lib", ...)
+  cc_library(name = "cc-lib", deps = [":haskell-lib"], ...)
+
+  # To import C from Haskell.
+  cc_library(name = "cc-lib", ...)
+  haskell_library(name = "haskell-lib", deps = [":cc-lib"], ...)
+
+  # To import a pre-built library.
+  cc_library(name = "so-lib", srcs = glob(["libxyz.so*", "libxyz.dylib", "libxyz.a", "libxyz.dll"]))
+  haskell_library(name = "haskell-lib", deps = [":so-lib"], ...)
+  ```
 
 ## [0.9.1] - 2019-06-03
 
