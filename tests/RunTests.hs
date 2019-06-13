@@ -71,10 +71,12 @@ main = hspec $ do
     outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-ignore-dot-ghci", "-e", "stdin"])
 
   it "bazel test examples" $ do
-    assertSuccess (bazel ["test", "@io_tweag_rules_haskell_examples//..."])
+    assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "./examples" }
+    assertSuccess $ (bazel ["test", "//..."]) { Process.cwd = Just "./examples" }
 
   it "bazel test tutorial" $ do
-    assertSuccess (bazel ["test", "@io_tweag_rules_haskell_tutorial//..."])
+    assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "./tutorial" }
+    assertSuccess (bazel ["test", "//..."]) { Process.cwd = Just "./tutorial" }
 
   describe "Hazel" $ do
     it "bazel test" $ do
