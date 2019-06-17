@@ -47,7 +47,7 @@ haskell_register_ghc_nixpkgs(
     repositories = {
         "nixpkgs": "@io_tweag_rules_haskell//nixpkgs:default.nix",
     },
-    version = "8.6.4",
+    version = "8.6.5",
 )
 
 load(
@@ -55,4 +55,4 @@ load(
     "haskell_register_ghc_bindists",
 )
 
-haskell_register_ghc_bindists(version = "8.6.4")
+haskell_register_ghc_bindists(version = "8.6.5")

@@ -11,7 +11,7 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
             "//conditions:default": [],
         },
     )
-    locale_archive = repr(repository_ctx.attr.locale_archive)
+    locale_archive = repository_ctx.attr.locale_archive
     nixpkgs_ghc_path = repository_ctx.path(repository_ctx.attr._nixpkgs_ghc).dirname
 
     # Symlink content of ghc external repo. In effect, this repo has
@@ -69,7 +69,7 @@ haskell_toolchain(
     repl_ghci_args = {repl_ghci_args},
     # On Darwin we don't need a locale archive. It's a Linux-specific
     # hack in Nixpkgs.
-    locale_archive = {locale_archive},
+    {locale_archive_arg}
     locale = {locale},
 )
         """.format(
@@ -80,7 +80,7 @@ haskell_toolchain(
             compiler_flags_select = compiler_flags_select,
             haddock_flags = repository_ctx.attr.haddock_flags,
             repl_ghci_args = repository_ctx.attr.repl_ghci_args,
-            locale_archive = locale_archive,
+            locale_archive_arg = "locale_archive = {},".format(repr(locale_archive)) if locale_archive else "",
             locale = repr(repository_ctx.attr.locale),
         ),
     )
