@@ -25,7 +25,6 @@ load("@bazel_skylib//:lib.bzl", sets = "new_sets")
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
-    "haskell_cc_import",
     "haskell_library",
 )
 load(

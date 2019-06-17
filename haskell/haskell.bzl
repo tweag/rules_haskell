@@ -1,11 +1,6 @@
 """Core Haskell rules"""
 
 load(
-    ":cc.bzl",
-    _cc_haskell_import = "cc_haskell_import",
-    _haskell_cc_import = "haskell_cc_import",
-)
-load(
     ":doctest.bzl",
     _haskell_doctest = "haskell_doctest",
     _haskell_doctest_toolchain = "haskell_doctest_toolchain",
@@ -379,9 +374,5 @@ haskell_proto_library = _haskell_proto_library
 haskell_proto_toolchain = _haskell_proto_toolchain
 
 ghc_bindist = _ghc_bindist
-
-haskell_cc_import = _haskell_cc_import
-
-cc_haskell_import = _cc_haskell_import
 
 ghc_plugin = _ghc_plugin
