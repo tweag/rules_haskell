@@ -14,6 +14,7 @@ load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
+    "HaskellToolchainLibraryInfo",
     "get_ghci_extra_libs",
 )
 load("@io_tweag_rules_haskell//haskell:private/set.bzl", "set")
@@ -108,19 +109,20 @@ def _create_HaskellReplCollectInfo(target, ctx):
 
     hs_info = target[HaskellInfo]
 
-    load_infos[target.label] = HaskellReplLoadInfo(
-        source_files = hs_info.source_files,
-        cc_info = cc_common.merge_cc_infos(cc_infos = [
-            # Collect pure C library dependencies, no Haskell dependencies.
-            dep[CcInfo]
-            for deps in [getattr(ctx.rule.attr, "deps", None)]
-            if deps
-            for dep in deps
-            if CcInfo in dep and not HaskellInfo in dep
-        ]),
-        compiler_flags = getattr(ctx.rule.attr, "compiler_flags", []),
-        repl_ghci_args = getattr(ctx.rule.attr, "repl_ghci_args", []),
-    )
+    if not HaskellToolchainLibraryInfo in target:
+        load_infos[target.label] = HaskellReplLoadInfo(
+            source_files = hs_info.source_files,
+            cc_info = cc_common.merge_cc_infos(cc_infos = [
+                # Collect pure C library dependencies, no Haskell dependencies.
+                dep[CcInfo]
+                for deps in [getattr(ctx.rule.attr, "deps", None)]
+                if deps
+                for dep in deps
+                if CcInfo in dep and not HaskellInfo in dep
+            ]),
+            compiler_flags = getattr(ctx.rule.attr, "compiler_flags", []),
+            repl_ghci_args = getattr(ctx.rule.attr, "repl_ghci_args", []),
+        )
     if HaskellLibraryInfo in target:
         lib_info = target[HaskellLibraryInfo]
         dep_infos[target.label] = HaskellReplDepInfo(
@@ -169,19 +171,21 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
     Returns:
       HaskellReplInfo provider.
     """
+    load_infos = collect_info.load_infos
+    dep_infos = collect_info.dep_infos
 
     # Collect all packages to load by source.
     load_info = _merge_HaskellReplLoadInfo([
         load_info
-        for (lbl, load_info) in collect_info.load_infos.items()
+        for (lbl, load_info) in load_infos.items()
         if _load_as_source(from_source, from_binary, lbl)
     ])
 
     # Collect all packages to load as binary packages.
     dep_info = _merge_HaskellReplDepInfo([
         dep_info
-        for (lbl, dep_info) in collect_info.dep_infos.items()
-        if not _load_as_source(from_source, from_binary, lbl)
+        for (lbl, dep_info) in dep_infos.items()
+        if not (lbl in load_infos and _load_as_source(from_source, from_binary, lbl))
     ])
 
     return HaskellReplInfo(

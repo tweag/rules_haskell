@@ -6,6 +6,7 @@ load(
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
+    "HaskellToolchainLibraryInfo",
 )
 load(":cc.bzl", "cc_interop_info")
 load(
@@ -631,6 +632,7 @@ Check that it ships with your version of GHC.
         target.hs_lib_info,
         target.cc_info,
         target.haddock_info,
+        HaskellToolchainLibraryInfo(),
     ]
 
 def haskell_toolchain_libraries_impl(ctx):
