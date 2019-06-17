@@ -40,6 +40,10 @@ HaskellLibraryInfo = provider(
     },
 )
 
+HaskellToolchainLibraryInfo = provider(
+    doc = "Library that was imported via haskell_toolchain_library.",
+)
+
 HaskellCoverageInfo = provider(
     doc = "Information about coverage instrumentation for Haskell files.",
     fields = {
