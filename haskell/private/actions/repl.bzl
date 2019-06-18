@@ -54,7 +54,12 @@ def build_haskell_repl(
         package_databases = package_databases,
         version = version,
     )
-    args += pkg_info_to_compile_flags(pkg_ghc_info)
+    (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
+        hs,
+        pkg_info = pkg_ghc_info,
+        prefix = "repl-",
+    )
+    args += pkg_info_args
 
     lib_imports = []
     if lib_info != None:
@@ -163,6 +168,7 @@ def build_haskell_repl(
             ghc_info_file,
         ]),
         package_databases,
+        pkg_info_inputs,
         ghci_extra_libs,
         set.to_depset(hs_info.source_files),
     ])
