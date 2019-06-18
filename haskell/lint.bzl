@@ -15,6 +15,9 @@ def _collect_hlint_logs(deps):
     ])
 
 def _haskell_lint_aspect_impl(target, ctx):
+    if not HaskellInfo in target:
+        return []
+
     hlint_toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell/lint:toolchain"]
     hint = hlint_toolchain.hint
 
