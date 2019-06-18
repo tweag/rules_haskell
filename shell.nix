@@ -1,7 +1,6 @@
 { pkgs ? import ./nixpkgs {}, docTools ? true }:
 
 with pkgs;
-
 mkShell {
   # XXX: hack for macosX, this flags disable bazel usage of xcode
   # Note: this is set even for linux so any regression introduced by this flag
