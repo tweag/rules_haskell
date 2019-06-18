@@ -41,11 +41,15 @@ def build_haskell_runghc(
       None.
     """
 
-    args = pkg_info_to_compile_flags(expose_packages(
-        package_ids = hs.package_ids,
-        package_databases = package_databases,
-        version = version,
-    ))
+    (pkg_info_inputs, args) = pkg_info_to_compile_flags(
+        hs,
+        pkg_info = expose_packages(
+            package_ids = hs.package_ids,
+            package_databases = package_databases,
+            version = version,
+        ),
+        prefix = "runghc-",
+    )
 
     if lib_info != None:
         for idir in set.to_list(hs_info.import_dirs):
@@ -98,6 +102,7 @@ def build_haskell_runghc(
             runghc_file,
         ]),
         package_databases,
+        pkg_info_inputs,
         ghci_extra_libs,
         set.to_depset(hs_info.source_files),
     ])

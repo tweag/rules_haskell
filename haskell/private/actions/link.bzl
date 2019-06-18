@@ -174,11 +174,16 @@ def link_binary(
 
     args.add_all(["-o", executable.path])
 
-    args.add_all(pkg_info_to_compile_flags(expose_packages(
-        package_ids = hs.package_ids,
-        package_databases = dep_info.package_databases,
-        version = version,
-    )))
+    (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
+        hs,
+        pkg_info = expose_packages(
+            package_ids = hs.package_ids,
+            package_databases = dep_info.package_databases,
+            version = version,
+        ),
+        prefix = "link-",
+    )
+    args.add_all(pkg_info_args)
 
     (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
@@ -237,6 +242,7 @@ def link_binary(
             dep_info.dynamic_libraries,
             dep_info.static_libraries,
             depset([cache_file, objects_dir]),
+            pkg_info_inputs,
             static_libs,
             dynamic_libs,
         ]),
@@ -339,11 +345,16 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
     if hs.toolchain.is_darwin:
         args.add("-optl-Wl,-dead_strip_dylibs")
 
-    args.add_all(pkg_info_to_compile_flags(expose_packages(
-        package_ids = hs.package_ids,
-        package_databases = dep_info.package_databases,
-        version = my_pkg_id.version if my_pkg_id else None,
-    )))
+    (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
+        hs,
+        pkg_info = expose_packages(
+            package_ids = hs.package_ids,
+            package_databases = dep_info.package_databases,
+            version = my_pkg_id.version if my_pkg_id else None,
+        ),
+        prefix = "link-",
+    )
+    args.add_all(pkg_info_args)
 
     # When linking a dynamic library we still collect static libraries for
     # dependencies where possible. This is so that a final binary that depends
@@ -376,6 +387,7 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
             depset(extra_srcs),
             dep_info.package_databases,
             dep_info.dynamic_libraries,
+            pkg_info_inputs,
             static_libs,
             dynamic_libs,
         ]),

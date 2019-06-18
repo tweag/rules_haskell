@@ -1,6 +1,10 @@
 """Actions for compiling Haskell source code"""
 
-load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
+load(
+    ":private/packages.bzl",
+    "expose_packages",
+    "pkg_info_to_compile_flags",
+)
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
@@ -149,30 +153,26 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
     if hs.toolchain.is_darwin:
         compile_flags += ["-optl-Wl,-dead_strip_dylibs"]
 
-    compile_flags.extend(
-        pkg_info_to_compile_flags(
-            expose_packages(
-                package_ids = hs.package_ids,
-                package_databases = dep_info.package_databases,
-                version = version,
-            ),
+    (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
+        hs,
+        pkg_info = expose_packages(
+            package_ids = hs.package_ids,
+            package_databases = dep_info.package_databases,
+            version = version,
         ),
-    )
-    compile_flags.extend(
-        pkg_info_to_compile_flags(
-            expose_packages(
-                package_ids = [
-                    dep[HaskellLibraryInfo].package_id
-                    for plugin in plugins
-                    for dep in plugin.deps
-                    if HaskellLibraryInfo in dep
-                ],
-                package_databases = plugin_dep_info.package_databases,
-                version = version,
-            ),
-            for_plugin = True,
+        plugin_pkg_info = expose_packages(
+            package_ids = [
+                dep[HaskellLibraryInfo].package_id
+                for plugin in plugins
+                for dep in plugin.deps
+                if HaskellLibraryInfo in dep
+            ],
+            package_databases = plugin_dep_info.package_databases,
+            version = version,
         ),
+        prefix = "compile-",
     )
+    compile_flags.extend(pkg_info_args)
 
     header_files = []
     boot_files = []
@@ -330,6 +330,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
             plugin_dep_info.interface_dirs,
             plugin_dep_info.static_libraries,
             plugin_dep_info.dynamic_libraries,
+            pkg_info_inputs,
             ghci_extra_libs,
             java.inputs,
             locale_archive_depset,
@@ -342,7 +343,11 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
         interfaces_dir = interfaces_dir,
         outputs = [objects_dir, interfaces_dir],
         source_files = source_files,
-        extra_source_files = depset(transitive = [extra_source_files, depset([optp_args_file])]),
+        extra_source_files = depset(transitive = [
+            extra_source_files,
+            pkg_info_inputs,
+            depset([optp_args_file]),
+        ]),
         import_dirs = import_dirs,
         env = dicts.add(
             ghc_env,

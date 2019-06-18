@@ -472,7 +472,7 @@ def _rel_path_to_module(hs, f):
 
 # TODO Consider merging with paths.relativize. See
 # https://github.com/bazelbuild/bazel-skylib/pull/44.
-def _truly_relativize(target, relative_to):
+def truly_relativize(target, relative_to):
     """Return a relative path to `target` from `relative_to`.
 
     Args:
@@ -509,7 +509,7 @@ def rel_to_pkgroot(target, pkgdb):
     """
     return paths.join(
         "${pkgroot}",
-        _truly_relativize(target, paths.dirname(pkgdb)),
+        truly_relativize(target, paths.dirname(pkgdb)),
     )
 
 def ln(hs, target, link, extra_inputs = depset()):
@@ -522,7 +522,7 @@ def ln(hs, target, link, extra_inputs = depset()):
     Returns:
       None
     """
-    relative_target = _truly_relativize(target.path, link.dirname)
+    relative_target = truly_relativize(target.path, link.dirname)
     hs.actions.run_shell(
         inputs = depset([target], transitive = [extra_inputs]),
         outputs = [link],
