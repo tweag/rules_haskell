@@ -18,30 +18,20 @@ def _haskell_lint_aspect_impl(target, ctx):
     hlint_toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell/lint:toolchain"]
     hint = hlint_toolchain.hint
 
-    inputFiles = []
-    inputPaths = []
-    if hasattr(ctx.rule.attr, "srcs"):
-        for src in ctx.rule.attr.srcs:
-            for f in src.files:
-                # We want to only do native Haskell source files, which
-                # seems to involve ignoring these generated paths
-                # (the f.is_source almost always returns True)
-                if all([
-                    f.path.endswith(".hs"),
-                    f.path.startswith("external/") == False,
-                    f.path.startswith("bazel-out/") == False,
-                    f.path.startswith("nix/") == False,
-                ]):
-                    inputFiles.append(f)
-                    inputPaths.append(f.path)
-
+    inputFiles = [
+        f
+        for src in getattr(ctx.rule.attr, "srcs", [])
+        for f in src.files
+        if f.is_source and f.extension in ["chs", "hs", "hs-boot", "hsc", "lhs", "lhs-boot"]
+    ]
     if len(inputFiles) == 0:
         return []
+
     output = ctx.actions.declare_file(target.label.name + "-hlint.html")
     args = ctx.actions.args()
     if hint:
         args.add(hint, format = "--hint=%s")
-    args.add_all(inputPaths)
+    args.add_all(inputFiles)
     args.add(output, format = "--report=%s")
     args.add("--verbose")
 
