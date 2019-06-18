@@ -1,14 +1,22 @@
 """Lint Haskell sources using hlint."""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load(
+    "@io_tweag_rules_haskell//haskell:private/path_utils.bzl",
+    "match_label",
+    "parse_pattern",
+)
+load("@io_tweag_rules_haskell//haskell:providers.bzl", "HaskellInfo")
+
 HaskellHLintInfo = provider(
     doc = "Provider that collects files produced by hlint",
     fields = {
-        "outputs": "depset of hlint log files.",
+        "outputs": "dict from target Label to hlint log File.",
     },
 )
 
 def _collect_hlint_logs(deps):
-    return depset(transitive = [
+    return dicts.add(*[
         dep[HaskellHLintInfo].outputs
         for dep in deps
         if HaskellHLintInfo in dep
@@ -47,12 +55,10 @@ def _haskell_lint_aspect_impl(target, ctx):
         arguments = [args],
     )
 
-    outputs = depset(
-        direct = [output],
-        transitive = [_collect_hlint_logs(ctx.rule.attr.deps)],
-    )
+    outputs = _collect_hlint_logs(ctx.rule.attr.deps)
+    outputs[target.label] = output
     lint_info = HaskellHLintInfo(outputs = outputs)
-    output_files = OutputGroupInfo(default = outputs)
+    output_files = OutputGroupInfo(default = [output])
     return [lint_info, output_files]
 
 haskell_lint_aspect = aspect(
@@ -78,10 +84,27 @@ Example:
 [hlint]: https://github.com/ndmitchell/hlint#readme
 """
 
+def _should_lint_target(whitelist, blacklist, label):
+    for pattern in blacklist:
+        if match_label(pattern, label):
+            return False
+
+    for pattern in whitelist:
+        if match_label(pattern, label):
+            return True
+
+    return False
+
 def _haskell_lint_rule_impl(ctx):
-    return [DefaultInfo(
-        files = _collect_hlint_logs(ctx.attr.deps),
-    )]
+    whitelist = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_lint_whitelist]
+    blacklist = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_lint_blacklist]
+    outputs = depset([
+        log
+        for (label, log) in _collect_hlint_logs(ctx.attr.deps).items()
+        if _should_lint_target(whitelist, blacklist, label)
+    ])
+
+    return [DefaultInfo(files = outputs)]
 
 haskell_lint = rule(
     _haskell_lint_rule_impl,
@@ -89,6 +112,30 @@ haskell_lint = rule(
         "deps": attr.label_list(
             aspects = [haskell_lint_aspect],
             doc = "List of Haskell targets to lint.",
+        ),
+        "experimental_lint_whitelist": attr.string_list(
+            doc = """List of targets to lint.
+
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
+            """,
+            default = ["//..."],
+        ),
+        "experimental_lint_blacklist": attr.string_list(
+            doc = """List of targets to not lint.
+
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
+            """,
+            default = [],
         ),
     },
 )
