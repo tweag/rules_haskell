@@ -11,12 +11,14 @@ haskell_library(
     name = "good",
     srcs = ["Good.hs"],
     deps = [
+        ":bad-indirect",
         "//tests/hackage:base",
     ],
 )
 
 haskell_lint(
     name = "good-hlint",
+    experimental_lint_blacklist = [":bad-indirect"],
     tags = ["requires_hlint"],
     deps = [
         ":good",
@@ -24,9 +26,18 @@ haskell_lint(
 )
 
 haskell_library(
+    name = "bad-indirect",
+    srcs = ["BadIndirect.hs"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
     name = "bad",
     srcs = ["Bad.hs"],
     deps = [
+        ":bad-indirect",
         "//tests/hackage:base",
     ],
 )
