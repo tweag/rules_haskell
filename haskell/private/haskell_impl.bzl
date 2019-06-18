@@ -147,8 +147,8 @@ def _expand_make_variables(name, ctx, strings):
         ctx.attr.plugins,
         ctx.attr.tools,
     ]
-    targets = [target for attr in label_attrs for target in attr]
-    strings = [ctx.expand_location(str, targets) for str in strings]
+    for attr in label_attrs:
+        strings = [ctx.expand_location(str, attr) for str in strings]
     strings = [ctx.expand_make_variables(name, str, {}) for str in strings]
     return strings
 
