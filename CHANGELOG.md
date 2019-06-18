@@ -6,15 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## Upcoming release
 
-### Changed
+### Added
 
-* The `haskell_lint` rule has been changed to run `hlint` on the sources of the
-  specified targets and their dependencies. The rule fails if `hlint` produces
-  any warnings. An `.hlint.yaml` configuration file can be specified using the
+* `haskell_lint_test` runs `hlint` on the source files of the specified targets
+  and their transitive dependencies. The test fails if `hlint` produces any
+  warnings. An `.hlint.yaml` configuration file can be specified using the
   `hlint_toolchain` rule.
 
 ### Removed
 
+* The `haskell_lint` rule has been removed. It should have been
+  designed as a test rule and it should have had a different name. The
+  rule isn't even necessary for its current purpose: it's more
+  convenient to turn on compiler warnings globally in the toolchain
+  definition.
 * The `cc_haskell_import` and `haskell_cc_import` rules have been removed.
   These rules were redundant since Haskell rules can directly interact with C
   rules. Use the following patterns instead.

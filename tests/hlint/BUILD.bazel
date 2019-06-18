@@ -4,7 +4,7 @@ load(
 )
 load(
     "@io_tweag_rules_haskell//haskell:lint.bzl",
-    "haskell_lint",
+    "haskell_lint_test",
 )
 
 haskell_library(
@@ -16,7 +16,7 @@ haskell_library(
     ],
 )
 
-haskell_lint(
+haskell_lint_test(
     name = "good-hlint",
     experimental_lint_blacklist = [":bad-indirect"],
     tags = ["requires_hlint"],
@@ -43,7 +43,7 @@ haskell_library(
 )
 
 # See //tests/failures:haskell_hlint_bad_hlint
-haskell_lint(
+haskell_lint_test(
     name = "bad-hlint",
     tags = [
         "manual",  # must FAIL
