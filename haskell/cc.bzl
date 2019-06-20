@@ -51,18 +51,18 @@ def cc_interop_info(ctx):
     for cc in ccs:
         cc_ctx = cc.compilation_context
         hdrs.append(cc_ctx.headers)
-        include_args.extend(["-I" + include for include in cc_ctx.includes])
+        include_args.extend(["-I" + include for include in cc_ctx.includes.to_list()])
         cpp_flags.extend(
             [
                 "-D" + define
-                for define in cc_ctx.defines
+                for define in cc_ctx.defines.to_list()
             ] + [
                 f
-                for include in cc_ctx.quote_includes
+                for include in cc_ctx.quote_includes.to_list()
                 for f in ["-iquote", include]
             ] + [
                 f
-                for include in cc_ctx.system_includes
+                for include in cc_ctx.system_includes.to_list()
                 for f in ["-isystem", include]
             ],
         )

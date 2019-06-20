@@ -107,7 +107,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
     package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
     extra_include_dirs = cc_info.compilation_context.includes
-    extra_lib_dirs = [file.dirname for file in ghci_extra_libs]
+    extra_lib_dirs = [file.dirname for file in ghci_extra_libs.to_list()]
     args.add_all([name, setup, cabal.dirname, package_database.dirname])
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")

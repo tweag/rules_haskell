@@ -37,14 +37,12 @@ build\
       --incompatible_new_actions_api=false\
       --incompatible_no_support_tools_in_action_inputs=false\
       --incompatible_require_ctx_in_configure_features=false\
-      --incompatible_depset_is_not_iterable=false\
       --incompatible_depset_union=false
 test\
       --incompatible_disable_deprecated_attr_params=false\
       --incompatible_new_actions_api=false\
       --incompatible_no_support_tools_in_action_inputs=false\
       --incompatible_require_ctx_in_configure_features=false\
-      --incompatible_depset_is_not_iterable=false\
       --incompatible_depset_union=false
 
 # test environment does not propagate locales by default

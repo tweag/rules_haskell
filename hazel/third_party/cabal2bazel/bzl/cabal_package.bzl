@@ -365,7 +365,7 @@ def _get_build_attrs(
     paths_module = _paths_module(desc)
     extra_modules_dict = _conditions_dict(extra_modules)
     other_modules_dict = _conditions_dict(build_info.otherModules)
-    for condition in depset(extra_modules_dict.keys() + other_modules_dict.keys()):
+    for condition in extra_modules_dict.keys() + other_modules_dict.keys():
         srcs[condition] = []
         deps[condition] = []
         cdeps[condition] = []
@@ -479,7 +479,7 @@ def _get_build_attrs(
                      "-w",
                  ]),
         defines = [o[2:] for o in build_info.ccOptions if o.startswith("-D")],
-        textual_hdrs = list(headers),
+        textual_hdrs = headers.to_list(),
         deps = ["@haskell_rts//:lib"] + select(cdeps) + cc_deps + elibs_targets,
         visibility = ["//visibility:public"],
         linkstatic = select({

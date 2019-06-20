@@ -77,8 +77,9 @@ def build_haskell_repl(
 
     # NOTE: We can avoid constructing this in the future by instead generating
     #   a dedicated package configuration file defining the required libraries.
-    library_path = [lib.dirname for lib in ghci_extra_libs]
-    libraries = [get_lib_name(lib) for lib in ghci_extra_libs]
+    ghci_extra_libs_list = ghci_extra_libs.to_list()
+    library_path = [lib.dirname for lib in ghci_extra_libs_list]
+    libraries = [get_lib_name(lib) for lib in ghci_extra_libs_list]
 
     repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
 

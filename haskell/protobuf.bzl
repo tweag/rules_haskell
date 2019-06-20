@@ -90,7 +90,7 @@ def _haskell_proto_aspect_impl(target, ctx):
     transitive_proto_paths = target.proto.transitive_proto_path
 
     args.add_all([
-        "-I{0}={1}".format(_proto_path(s, transitive_proto_paths), s.path)
+        "-I{0}={1}".format(_proto_path(s, transitive_proto_paths.to_list()), s.path)
         for s in target.proto.transitive_sources.to_list()
     ])
 
