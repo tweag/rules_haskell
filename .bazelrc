@@ -34,13 +34,11 @@ test:windows --experimental_enable_runfiles
 # WIP: bazel 0.27 fixs
 build\
       --incompatible_disable_deprecated_attr_params=false\
-      --incompatible_new_actions_api=false\
       --incompatible_no_support_tools_in_action_inputs=false\
       --incompatible_require_ctx_in_configure_features=false\
       --incompatible_depset_union=false
 test\
       --incompatible_disable_deprecated_attr_params=false\
-      --incompatible_new_actions_api=false\
       --incompatible_no_support_tools_in_action_inputs=false\
       --incompatible_require_ctx_in_configure_features=false\
       --incompatible_depset_union=false

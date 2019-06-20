@@ -28,14 +28,14 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_library")
 load("//tools:mangling.bzl", "hazel_library")
 
 def _impl_path_module_gen(ctx):
-    paths_file = ctx.new_file(ctx.label.name)
+    paths_file = ctx.actions.declare_file(ctx.label.name)
 
     base_dir = paths.join(
         ctx.label.package,
         ctx.attr.data_dir if ctx.attr.data_dir else "",
     )
 
-    ctx.template_action(
+    ctx.actions.expand_template(
         template = ctx.file._template,
         output = paths_file,
         substitutions = {

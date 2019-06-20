@@ -98,10 +98,14 @@ nixpkgs_package(
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "73fdad358857e120fd0fa19e071a96e15c0f23bb25f85d3f7009abfd4f264a2a",
-    strip_prefix = "protobuf-3.6.1.3",
-    urls = ["https://github.com/google/protobuf/archive/v3.6.1.3.tar.gz"],
+    sha256 = "03d2e5ef101aee4c2f6ddcf145d2a04926b9c19e7086944df3842b1b8502b783",
+    strip_prefix = "protobuf-3.8.0",
+    urls = ["https://github.com/google/protobuf/archive/v3.8.0.tar.gz"],
 )
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()  # configure and install zlib for protobuf
 
 nixpkgs_local_repository(
     name = "nixpkgs",
