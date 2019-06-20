@@ -19,6 +19,7 @@ load(
     "//:constants.bzl",
     "test_ghc_version",
 )
+load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
 
 package(default_testonly = 1)
 
@@ -59,6 +60,25 @@ c2hs_toolchain(
     c2hs = "@c2hs//:bin",
     tags = ["requires_c2hs"],
 )
+
+#py_runtime(
+#    name = "py3_runtime",
+#    testonly = False,
+#    interpreter = "@python3//:bin/python",
+#    python_version = "PY3",
+#    visibility = ["//visibility:public"],
+#)
+#
+#py_runtime_pair(
+#    name = "py_runtime_pair",
+#    py3_runtime = ":py3_runtime",
+#)
+#
+#toolchain(
+#    name = "python_toolchain",
+#    toolchain = ":py_runtime_pair",
+#    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+#)
 
 rule_test_exe(
     name = "test-binary-simple",

@@ -161,6 +161,9 @@ register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
+    # XXX: see .bazelrc for discussion, the python toolchain
+    # work in postponed to future bazel version
+    # "//tests:python_toolchain",
 )
 
 nixpkgs_cc_configure(
@@ -218,6 +221,12 @@ nixpkgs_package(
     attribute_path = "haskellPackages.proto-lens-protoc",
     repository = "@nixpkgs",
 )
+
+#nixpkgs_package(
+#    name = "python3",
+#    attribute_path = "python3",
+#    repository = "@nixpkgs",
+#)
 
 nixpkgs_package(
     name = "sphinx",
@@ -285,6 +294,13 @@ jvm_maven_import_external(
 local_repository(
     name = "c2hs_repo",
     path = "tests/c2hs/repo",
+)
+
+# python toolchain
+nixpkgs_package(
+    name = "python3",
+    attribute_path = "python3",
+    repository = "@nixpkgs",
 )
 
 load(

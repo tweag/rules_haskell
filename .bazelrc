@@ -14,6 +14,19 @@ build:ci --symlink_prefix=bazel-ci-
 common:ci --color=no
 test:ci --test_output=errors
 
+# Note [backward compatible options]
+
+# XXX: --incompatible_use_python_toolchains needs a specific setup for
+# each environment if python is provided by the system
+# That's complicated to setup. Bazel is supposed to provide automatic
+# detection utilities, see
+# https://github.com/bazelbuild/bazel/issues/7899
+# But it does not work on windows
+# see: https://github.com/bazelbuild/bazel/issues/7844
+# This is only used in rules_haskell tests, so user won't face this
+# issue.
+build  --incompatible_use_python_toolchains=false
+
 # Needed on Windows for //tests/binary-with-data
 # see: https://github.com/tweag/rules_haskell/issues/647#issuecomment-459001362
 test:windows --experimental_enable_runfiles
@@ -25,16 +38,14 @@ build\
       --incompatible_no_support_tools_in_action_inputs=false\
       --incompatible_require_ctx_in_configure_features=false\
       --incompatible_depset_is_not_iterable=false\
-      --incompatible_depset_union=false\
-      --incompatible_use_python_toolchains=false
+      --incompatible_depset_union=false
 test\
       --incompatible_disable_deprecated_attr_params=false\
       --incompatible_new_actions_api=false\
       --incompatible_no_support_tools_in_action_inputs=false\
       --incompatible_require_ctx_in_configure_features=false\
       --incompatible_depset_is_not_iterable=false\
-      --incompatible_depset_union=false\
-      --incompatible_use_python_toolchains=false
+      --incompatible_depset_union=false
 
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct
