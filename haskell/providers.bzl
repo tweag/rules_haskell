@@ -334,7 +334,7 @@ def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
     package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")
     conf_path = paths.join(package_name, package_name + ".conf")
     conf_file = hs.actions.declare_file(conf_path)
-    libs = (cc_static_libs + cc_dynamic_libs).to_list()
+    libs = cc_static_libs.to_list() + cc_dynamic_libs.to_list()
     write_package_conf(hs, conf_file, {
         "name": package_name,
         "extra-libraries": [
