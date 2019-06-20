@@ -231,6 +231,7 @@ def _haskell_cabal_library_impl(ctx):
     lib_info = HaskellLibraryInfo(package_id = name, version = None)
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
+        ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
@@ -277,6 +278,7 @@ haskell_cabal_library = rule(
         ),
     },
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    fragments = ["cpp"],
 )
 """Use Cabal to build a library.
 
@@ -401,6 +403,7 @@ haskell_cabal_binary = rule(
         ),
     },
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    fragments = ["cpp"],
 )
 """Use Cabal to build a binary.
 

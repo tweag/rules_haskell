@@ -73,6 +73,9 @@ def cc_interop_info(ctx):
     # Should be find_cpp_toolchain() instead.
     cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
     feature_configuration = cc_common.configure_features(
+        # XXX: protobuf is passing a "patched ctx"
+        # which includes the real ctx as "real_ctx"
+        ctx = getattr(ctx, "real_ctx", ctx),
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,

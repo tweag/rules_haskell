@@ -185,6 +185,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         label = ctx.label,
         toolchains = ctx.toolchains,
         var = ctx.var,
+        real_ctx = ctx,
     )
 
     # TODO this pattern match is very brittle. Let's not do this. The
@@ -242,6 +243,7 @@ _haskell_proto_aspect = aspect(
         "@io_tweag_rules_haskell//haskell:toolchain",
         "@io_tweag_rules_haskell//protobuf:toolchain",
     ],
+    fragments = ["cpp"],
 )
 
 def _haskell_proto_library_impl(ctx):

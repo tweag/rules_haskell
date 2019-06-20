@@ -31,12 +31,6 @@ build  --incompatible_use_python_toolchains=false
 # see: https://github.com/tweag/rules_haskell/issues/647#issuecomment-459001362
 test:windows --experimental_enable_runfiles
 
-# WIP: bazel 0.27 fixs
-build\
-      --incompatible_require_ctx_in_configure_features=false
-test\
-      --incompatible_require_ctx_in_configure_features=false
-
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct
 # environment variables, such as LOCALE_ARCHIVE

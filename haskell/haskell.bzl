@@ -187,6 +187,7 @@ def _mk_binary_rule(**kwargs):
         toolchains = [
             "@io_tweag_rules_haskell//haskell:toolchain",
         ],
+        fragments = ["cpp"],
         **kwargs
     )
 
@@ -257,6 +258,7 @@ haskell_library = rule(
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
     ],
+    fragments = ["cpp"],
 )
 """Build a library from Haskell source.
 
@@ -315,6 +317,7 @@ haskell_toolchain_libraries = rule(
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
     ],
+    fragments = ["cpp"],
 )
 
 haskell_toolchain_library = rule(
@@ -327,6 +330,7 @@ haskell_toolchain_library = rule(
             default = Label("@io_tweag_rules_haskell//haskell:toolchain-libraries"),
         ),
     ),
+    fragments = ["cpp"],
 )
 """Import packages that are prebuilt outside of Bazel.
 
