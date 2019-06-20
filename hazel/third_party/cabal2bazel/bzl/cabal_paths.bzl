@@ -58,10 +58,9 @@ _path_module_gen = rule(
     attrs = {
         "data_dir": attr.string(),
         "module": attr.string(),
-        "version": attr.int_list(mandatory = True, non_empty = True),
+        "version": attr.int_list(mandatory = True, allow_empty = False),
         "_template": attr.label(
-            allow_files = True,
-            single_file = True,
+            allow_single_file = True,
             default = Label(
                 "@ai_formation_hazel//:paths-template.hs",
             ),

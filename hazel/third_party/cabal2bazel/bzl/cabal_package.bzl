@@ -125,7 +125,7 @@ def _hazel_symlink_impl(ctx):
 hazel_symlink = rule(
     implementation = _hazel_symlink_impl,
     attrs = {
-        "src": attr.label(mandatory = True, allow_files = True, single_file = True),
+        "src": attr.label(mandatory = True, allow_single_file = True),
         "out": attr.string(mandatory = True),
     },
     outputs = {"out": "%{out}"},

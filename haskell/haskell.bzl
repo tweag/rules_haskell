@@ -293,7 +293,7 @@ haskell_import = rule(
         "hdrs": attr.label_list(allow_files = True),
         "includes": attr.string_list(),
         "haddock_interfaces": attr.label_list(allow_files = True),
-        "haddock_html": attr.label(allow_files = True, single_file = True),
+        "haddock_html": attr.label(allow_single_file = True),
         "_version_macros": attr.label(
             executable = True,
             cfg = "host",
