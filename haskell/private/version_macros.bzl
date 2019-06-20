@@ -13,7 +13,7 @@ def generate_version_macros(ctx, pkg_name, version):
     """
     version_macros_file = ctx.actions.declare_file("{}_version_macros.h".format(ctx.attr.name))
     ctx.actions.run_shell(
-        inputs = [ctx.executable._version_macros],
+        tools = [ctx.executable._version_macros],
         outputs = [version_macros_file],
         command = """
         "$1" "$2" "$3" > "$4"
