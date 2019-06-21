@@ -1,6 +1,5 @@
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_cc_import",
     "haskell_library",
     "haskell_toolchain_library",
 )
