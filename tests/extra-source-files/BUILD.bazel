@@ -35,6 +35,7 @@ haskell_test(
     compiler_flags = ["-optl-Wl,@tests/extra-source-files/ld-options.txt"],
     extra_srcs = [
         "file.txt",
+        "Foo.hs",  # Test "Multiple entries with same key" in expand_location
         "ld-options.txt",
     ],
     deps = [
