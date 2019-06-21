@@ -127,7 +127,7 @@ def make_path(libs, prefix = None, sep = None):
 
     return sep.join(set.to_list(r))
 
-def symlink_dynamic_library(hs, lib, outdir):
+def symlink_dynamic_library(hs, lib, outdir, ln_commands):
     """Create a symbolic link for a dynamic library and fix the extension.
 
     This function is used for two reasons:
@@ -145,6 +145,7 @@ def symlink_dynamic_library(hs, lib, outdir):
       hs: Haskell context.
       lib: The dynamic library file.
       outdir: Output directory for the symbolic link.
+      ln_commands: (output) Argument to create_links.
 
     Returns:
       File, symbolic link to dynamic library.
@@ -162,10 +163,10 @@ def symlink_dynamic_library(hs, lib, outdir):
     link = hs.actions.declare_file(
         paths.join(outdir, "lib" + get_lib_name(lib) + "." + extension),
     )
-    ln(hs, lib, link)
+    ln_commands.append((lib, link))
     return link
 
-def mangle_static_library(hs, dynamic_lib, static_lib, outdir):
+def mangle_static_library(hs, dynamic_lib, static_lib, outdir, ln_commands):
     """Mangle a static library to match a dynamic library name.
 
     GHC expects static and dynamic C libraries to have matching library names.
@@ -182,6 +183,7 @@ def mangle_static_library(hs, dynamic_lib, static_lib, outdir):
       dynamic_lib: File or None, the dynamic library.
       static_lib: File or None, the static library.
       outdir: Output director for the symbolic link, if necessary.
+      ln_commands: (output) Argument to create_links.
 
     Returns:
       The new static library symlink, if created, otherwise static_lib.
@@ -199,7 +201,7 @@ def mangle_static_library(hs, dynamic_lib, static_lib, outdir):
         link = hs.actions.declare_file(
             paths.join(outdir, "lib" + libname + "." + static_lib.extension),
         )
-        ln(hs, static_lib, link)
+        ln_commands.append((static_lib, link))
         return link
 
 def get_dirname(file):
@@ -510,6 +512,40 @@ def rel_to_pkgroot(target, pkgdb):
     return paths.join(
         "${pkgroot}",
         truly_relativize(target, paths.dirname(pkgdb)),
+    )
+
+def create_links(hs, ln_commands):
+    """Create a list of symbolic links in bulk.
+
+    This is a vectorized version of ln. For performance reasons it is
+    preferable to ln if applicable.
+
+    Args:
+      hs: Haskell context.
+      ln_commands: List of pairs of target and link.
+
+    """
+    if len(ln_commands) == 0:
+        return
+    inputs = [target for (target, _) in ln_commands]
+    outputs = [link for (_, link) in ln_commands]
+    args = [
+        arg
+        for (target, link) in ln_commands
+        for arg in [truly_relativize(target.path, link.dirname), link.path]
+    ]
+    hs.actions.run_shell(
+        inputs = inputs,
+        outputs = outputs,
+        arguments = args,
+        command = """
+        while [ $# -gt 0 ]; do
+          ln -s "$1" "$2"
+          shift 2
+        done
+        """,
+        mnemonic = "BulkSymlink",
+        use_default_shell_env = True,
     )
 
 def ln(hs, target, link, extra_inputs = depset()):

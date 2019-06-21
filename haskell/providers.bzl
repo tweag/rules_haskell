@@ -8,6 +8,7 @@ load(
 )
 load(
     ":private/path_utils.bzl",
+    "create_links",
     "create_rpath_entry",
     "get_lib_name",
     "make_path",
@@ -252,6 +253,8 @@ def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"
     if pic == None:
         pic = dynamic
 
+    ln_commands = []
+
     # PIC is irrelevant on Windows.
     pic_required = pic and not hs.toolchain.is_windows
     for lib_to_link in libs_to_link:
@@ -267,8 +270,8 @@ def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"
             static_lib = lib_to_link.static_library
 
         if dynamic_lib:
-            dynamic_lib = symlink_dynamic_library(hs, dynamic_lib, fixed_lib_dir)
-        static_lib = mangle_static_library(hs, dynamic_lib, static_lib, fixed_lib_dir)
+            dynamic_lib = symlink_dynamic_library(hs, dynamic_lib, fixed_lib_dir, ln_commands)
+        static_lib = mangle_static_library(hs, dynamic_lib, static_lib, fixed_lib_dir, ln_commands)
 
         if static_lib and not (dynamic and dynamic_lib):
             static_libs.append(static_lib)
@@ -278,6 +281,8 @@ def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"
             # Fall back if no PIC static library is available. This typically
             # happens during profiling builds.
             static_libs.append(lib_to_link.static_library)
+
+    create_links(hs, ln_commands)
 
     static_libs = depset(direct = static_libs)
     dynamic_libs = depset(direct = dynamic_libs)
