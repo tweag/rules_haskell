@@ -789,6 +789,9 @@ def haskell_import_impl(ctx):
         transitive_haddocks = transitive_haddocks,
     )
 
+    # TODO: fill this CcInfo structure
+    cc_info = cc_common.merge_cc_infos(cc_infos = [])
+
     return [
         hs_info,
         import_info,
@@ -796,6 +799,7 @@ def haskell_import_impl(ctx):
         default_info,
         lib_info,
         haddock_info,
+        cc_info,
     ]
 
 def _exposed_modules_reexports(exports):
