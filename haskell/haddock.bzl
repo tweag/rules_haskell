@@ -1,5 +1,6 @@
 """Haddock support"""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
@@ -88,6 +89,16 @@ def _haskell_doc_aspect_impl(target, ctx):
         depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
     )
 
+    # C library dependencies for runtime.
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
+        hs,
+        target[CcInfo],
+        # haddock changes directory during its execution. We prefix
+        # LD_LIBRARY_PATH with the current working directory on wrapper script
+        # startup.
+        path_prefix = "$PWD",
+    )
+
     # TODO(mboes): we should be able to instantiate this template only
     # once per toolchain instance, rather than here.
     haddock_wrapper = ctx.actions.declare_file("haddock_wrapper-{}".format(hs.name))
@@ -99,13 +110,10 @@ def _haskell_doc_aspect_impl(target, ctx):
             "%{haddock}": hs.tools.haddock.path,
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
-            "%{env}": render_env(hs.env),
+            "%{env}": render_env(dicts.add(hs.env, ghc_env)),
         },
         is_executable = True,
     )
-
-    # C library dependencies for runtime.
-    (ghci_extra_libs, _ghc_env) = get_ghci_extra_libs(hs, target[CcInfo])
 
     ctx.actions.run(
         inputs = depset(transitive = [
