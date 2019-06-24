@@ -331,7 +331,7 @@ def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
         if not get_lib_name(lib).startswith("HS")
     ])
 
-    package_name = target_unique_name(hs, "link-config").replace("_", "-")
+    package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")
     conf_path = paths.join(package_name, package_name + ".conf")
     conf_file = hs.actions.declare_file(conf_path)
     write_package_conf(hs, conf_file, {
