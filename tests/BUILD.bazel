@@ -8,10 +8,12 @@ load(
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
+    "haskell_library",
     "haskell_doctest_toolchain",
     "haskell_proto_toolchain",
     "haskell_test",
     "haskell_toolchain",
+    "haskell_doc",
 )
 load(
     "//:constants.bzl",
@@ -342,3 +344,31 @@ haskell_binary(
         "@stackage//:hspec-core",
     ],
 )
+
+
+haskell_library(
+    name = "lz4",
+    srcs = [
+        "LZ4.hs",
+    ],
+    src_strip_prefix = "src",
+    deps = [
+        "@lz4//:lz4",
+        "//tests/hackage:base",
+        "//tests/hackage:bytestring",
+    ],
+)
+
+haskell_library(
+    name = "utils",
+    srcs = ["Foo.hs"],
+    deps = [
+        ":lz4",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_doc(
+    name = "toto",
+    deps = [":utils"],
+    )
