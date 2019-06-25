@@ -34,7 +34,7 @@ jobs:
             locale-gen
             wget "https://github.com/bazelbuild/bazel/releases/download/0.24.0/bazel_0.24.0-linux-x86_64.deb"
             dpkg -i bazel_0.24.0-linux-x86_64.deb
-            echo "common:ci --build_tag_filters -requires_hackage,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
+            echo "common:ci --build_tag_filters -requires_hackage,-requires_lz4,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
       - run:
           name: Build tests
           command: |
