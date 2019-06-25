@@ -20,7 +20,6 @@ test:windows --experimental_enable_runfiles
 
 # WIP: bazel 0.27 fixs
 build\
-      --incompatible_disable_genrule_cc_toolchain_dependency=false\
       --incompatible_no_transitive_loads=false\
       --incompatible_disable_deprecated_attr_params=false\
       --incompatible_new_actions_api=false\
@@ -30,7 +29,6 @@ build\
       --incompatible_depset_union=false\
       --incompatible_use_python_toolchains=false
 test\
-      --incompatible_disable_genrule_cc_toolchain_dependency=false\
       --incompatible_no_transitive_loads=false\
       --incompatible_disable_deprecated_attr_params=false\
       --incompatible_new_actions_api=false\

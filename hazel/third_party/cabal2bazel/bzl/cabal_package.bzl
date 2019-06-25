@@ -36,6 +36,7 @@ load(":bzl/cabal_paths.bzl", "cabal_paths")
 load(":bzl/happy.bzl", "genhappy")
 load("//templates:templates.bzl", "templates")
 load("//tools:mangling.bzl", "hazel_cbits", "hazel_library")
+load("@bazel_tools//tools/cpp:cc_flags_supplier.bzl", "cc_flags_supplier")
 
 _conditions_default = "//conditions:default"
 
@@ -78,6 +79,7 @@ def _configure(desc):
         for f in desc.extraTmpFiles
         if f.split("/")[-1] not in _header_blacklist
     ]
+    cc_flags_supplier(name = "cc_flags")
     native.genrule(
         name = "run-configure",
         cmd = "\n".join([
@@ -94,7 +96,10 @@ def _configure(desc):
             for out in outputs
         ]),
         tools = ["configure"],
-        toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
+        toolchains = [
+            ":cc_flags",
+            "@bazel_tools//tools/cpp:current_cc_toolchain",
+        ],
         srcs = native.glob(["**"], exclude = outputs),
         outs = outputs,
     )
