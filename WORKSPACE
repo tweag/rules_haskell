@@ -188,6 +188,20 @@ cc_library(
 )
 
 nixpkgs_package(
+    name = "lz4",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+  name = "lz4",
+  srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"]),
+  includes = ["include"],
+)
+    """,
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
     name = "c2hs",
     attribute_path = "haskellPackages.c2hs",
     repository = "@nixpkgs",
