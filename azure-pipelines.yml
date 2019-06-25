@@ -109,4 +109,7 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
       /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
 
+      # Hazel tests that succeed
+      /c/bazel/bazel.exe test --config windows "@ai_formation_hazel//test:ghc-paths-test"
+
     displayName: 'Run Bazel'

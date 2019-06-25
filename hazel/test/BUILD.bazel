@@ -24,6 +24,15 @@ haskell_test(
     ],
 )
 
+haskell_test(
+    name = "ghc-paths-test",
+    srcs = ["ghc-paths-test.hs"],
+    deps = [
+        hazel_library("base"),
+        hazel_library("ghc-paths"),
+    ],
+)
+
 haskell_library(
     name = "DoctestExample",
     srcs = ["DoctestExample.hs"],
