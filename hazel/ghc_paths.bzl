@@ -12,7 +12,7 @@ module GHC.Paths (
 
 libdir, docdir, ghc, ghc_pkg :: FilePath
 
-libdir  = "$({ghc} --print-libdir | sed s:\\:/:g)"
+libdir  = "$({ghc} --print-libdir | sed 's:\\\\:/:g')"
 docdir  = "DOCDIR_IS_NOT_SET"
 
 ghc     = "{ghc}"
