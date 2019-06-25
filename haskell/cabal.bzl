@@ -8,24 +8,15 @@ load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(":private/set.bzl", "set")
 load(
+    ":private/workspace_utils.bzl",
+    _execute_or_fail_loudly = "execute_or_fail_loudly",
+)
+load(
     ":providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "get_ghci_extra_libs",
 )
-
-def _as_string(v):
-    if type(v) == "string":
-        return v
-    else:
-        return repr(v)
-
-def _execute_or_fail_loudly(repository_ctx, arguments):
-    exec_result = repository_ctx.execute(arguments)
-    if exec_result.return_code != 0:
-        arguments = [_as_string(x) for x in arguments]
-        fail("\n".join(["Command failed: " + " ".join(arguments), exec_result.stderr]))
-    return exec_result
 
 def _so_extension(hs):
     return "dylib" if hs.toolchain.is_darwin else "so"
@@ -177,10 +168,13 @@ def _haskell_cabal_library_impl(ctx):
         static_library_filename,
         sibling = cabal,
     )
-    dynamic_library = hs.actions.declare_file(
-        "_install/lib/libHS{}-ghc{}.{}".format(name, hs.toolchain.version, _so_extension(hs)),
-        sibling = cabal,
-    )
+    if hs.toolchain.is_static:
+        dynamic_library = None
+    else:
+        dynamic_library = hs.actions.declare_file(
+            "_install/lib/libHS{}-ghc{}.{}".format(name, hs.toolchain.version, _so_extension(hs)),
+            sibling = cabal,
+        )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
     c = _prepare_cabal_inputs(
         hs,
@@ -204,9 +198,8 @@ def _haskell_cabal_library_impl(ctx):
             package_database,
             interfaces_dir,
             static_library,
-            dynamic_library,
             data_dir,
-        ],
+        ] + ([dynamic_library] if dynamic_library != None else []),
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
         progress_message = "HaskellCabalLibrary {}".format(hs.label),
@@ -214,7 +207,7 @@ def _haskell_cabal_library_impl(ctx):
     )
 
     default_info = DefaultInfo(
-        files = depset([static_library, dynamic_library]),
+        files = depset([static_library] + ([dynamic_library] if dynamic_library != None else [])),
         runfiles = ctx.runfiles(
             files = [data_dir],
             collect_default = True,
@@ -231,7 +224,10 @@ def _haskell_cabal_library_impl(ctx):
             transitive = [dep_info.static_libraries],
             order = "topological",
         ),
-        dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries]),
+        dynamic_libraries = depset(
+            direct = [dynamic_library] if dynamic_library != None else [],
+            transitive = [dep_info.dynamic_libraries],
+        ),
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
     )

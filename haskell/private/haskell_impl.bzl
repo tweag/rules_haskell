@@ -185,11 +185,11 @@ def _haskell_binary_common_impl(ctx, is_test):
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
     dynamic = not ctx.attr.linkstatic
-    if with_profiling or hs.toolchain.is_windows:
+    if with_profiling or hs.toolchain.is_static:
         # NOTE We can't have profiling and dynamic code at the
         # same time, see:
         # https://ghc.haskell.org/trac/ghc/ticket/15394
-        # Also, GHC on Windows doesn't support dynamic code
+        # Also, static GHC doesn't support dynamic code
         dynamic = False
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
@@ -388,11 +388,11 @@ def haskell_library_impl(ctx):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
 
     with_shared = not ctx.attr.linkstatic
-    if with_profiling or hs.toolchain.is_windows:
+    if with_profiling or hs.toolchain.is_static:
         # NOTE We can't have profiling and dynamic code at the
         # same time, see:
         # https://ghc.haskell.org/trac/ghc/ticket/15394
-        # Also, GHC on Windows doesn't support dynamic code
+        # Also, static GHC doesn't support dynamic code
         with_shared = False
 
     package_name = getattr(ctx.attr, "package_name", None)

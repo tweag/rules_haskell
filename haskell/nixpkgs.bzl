@@ -4,6 +4,10 @@ load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_package",
 )
+load(
+    ":private/workspace_utils.bzl",
+    "ghc_is_static",
+)
 
 def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
     compiler_flags_select = "select({})".format(
@@ -64,6 +68,7 @@ haskell_toolchain(
     tools = {tools},
     libraries = toolchain_libraries,
     version = "{version}",
+    is_static = {is_static},
     compiler_flags = {compiler_flags} + {compiler_flags_select},
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
@@ -76,6 +81,7 @@ haskell_toolchain(
             toolchain_libraries = toolchain_libraries,
             tools = ["@io_tweag_rules_haskell_ghc_nixpkgs//:bin"],
             version = repository_ctx.attr.version,
+            is_static = ghc_is_static(repository_ctx),
             compiler_flags = repository_ctx.attr.compiler_flags,
             compiler_flags_select = compiler_flags_select,
             haddock_flags = repository_ctx.attr.haddock_flags,

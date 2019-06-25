@@ -252,8 +252,8 @@ def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"
     if pic == None:
         pic = dynamic
 
-    # PIC is irrelevant on Windows.
-    pic_required = pic and not hs.toolchain.is_windows
+    # PIC is irrelevant on static GHC.
+    pic_required = pic and not hs.toolchain.is_static
     for lib_to_link in libs_to_link:
         dynamic_lib = None
         if lib_to_link.dynamic_library:

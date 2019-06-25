@@ -1,6 +1,10 @@
 """Workspace rules (GHC binary distributions)"""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
+load(
+    ":private/workspace_utils.bzl",
+    "ghc_is_static",
+)
 
 _GHC_DEFAULT_VERSION = "8.6.5"
 
@@ -253,6 +257,7 @@ haskell_toolchain(
     tools = [":bin"],
     libraries = toolchain_libraries,
     version = "{version}",
+    is_static = {is_static},
     compiler_flags = {compiler_flags},
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
@@ -261,6 +266,7 @@ haskell_toolchain(
     """.format(
         toolchain_libraries = toolchain_libraries,
         version = ctx.attr.version,
+        is_static = ghc_is_static(ctx),
         compiler_flags = ctx.attr.compiler_flags,
         haddock_flags = ctx.attr.haddock_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,

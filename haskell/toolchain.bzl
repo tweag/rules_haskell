@@ -196,6 +196,7 @@ fi
             libraries = libraries,
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
+            is_static = ctx.attr.is_static,
             version = ctx.attr.version,
             # Pass through the version_file, that it can be required as
             # input in _run_ghc, to make every call to GHC depend on a
@@ -236,6 +237,9 @@ _haskell_toolchain = rule(
         "is_windows": attr.bool(
             doc = "Whether compile on and for Windows.",
             mandatory = True,
+        ),
+        "is_static": attr.bool(
+            doc = "Whether GHC was linked statically.",
         ),
         "locale": attr.string(
             default = "en_US.UTF-8",
