@@ -10,14 +10,18 @@ module GHC.Paths (
         ghc, ghc_pkg, libdir, docdir
   ) where
 
-libdir, docdir, ghc, ghc_pkg :: FilePath
-
-libdir  = "$({ghc} --print-libdir | sed 's:\\\\:/:g')"
-docdir  = "DOCDIR_IS_NOT_SET"
+ghc, ghc_pkg, docdir, libdir :: FilePath
 
 ghc     = "{ghc}"
 ghc_pkg = "{ghc_pkg}"
-EOM""".format(
+
+docdir  = "DOCDIR_IS_NOT_SET"
+EOM
+
+      echo -n 'libdir  = "' >> {out}
+      {ghc} --print-libdir | tr '\\' '/' | tr -d '[:space:]' >> {out}
+      echo '"' >> {out}
+""".format(
             ghc = ghc.path,
             ghc_pkg = tools.ghc_pkg.path,
             out = ctx.outputs.out.path,
