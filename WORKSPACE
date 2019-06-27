@@ -98,10 +98,14 @@ nixpkgs_package(
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "73fdad358857e120fd0fa19e071a96e15c0f23bb25f85d3f7009abfd4f264a2a",
-    strip_prefix = "protobuf-3.6.1.3",
-    urls = ["https://github.com/google/protobuf/archive/v3.6.1.3.tar.gz"],
+    sha256 = "03d2e5ef101aee4c2f6ddcf145d2a04926b9c19e7086944df3842b1b8502b783",
+    strip_prefix = "protobuf-3.8.0",
+    urls = ["https://github.com/google/protobuf/archive/v3.8.0.tar.gz"],
 )
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()  # configure and install zlib for protobuf
 
 nixpkgs_local_repository(
     name = "nixpkgs",
@@ -161,6 +165,9 @@ register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
+    # XXX: see .bazelrc for discussion, the python toolchain
+    # work in postponed to future bazel version
+    # "//tests:python_toolchain",
 )
 
 nixpkgs_cc_configure(
@@ -218,6 +225,12 @@ nixpkgs_package(
     attribute_path = "haskellPackages.proto-lens-protoc",
     repository = "@nixpkgs",
 )
+
+#nixpkgs_package(
+#    name = "python3",
+#    attribute_path = "python3",
+#    repository = "@nixpkgs",
+#)
 
 nixpkgs_package(
     name = "sphinx",
@@ -285,6 +298,13 @@ jvm_maven_import_external(
 local_repository(
     name = "c2hs_repo",
     path = "tests/c2hs/repo",
+)
+
+# python toolchain
+nixpkgs_package(
+    name = "python3",
+    attribute_path = "python3",
+    repository = "@nixpkgs",
 )
 
 load(
@@ -365,16 +385,16 @@ skydoc_repositories()
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "8be57ff66da79d9e4bd434c860dce589195b9101b2c187d144014bbca23b5166",
-    strip_prefix = "rules_go-0.16.3",
-    urls = ["https://github.com/bazelbuild/rules_go/archive/0.16.3.tar.gz"],
+    sha256 = "9084496dde809363c491137e077ace81780463ead0060a0a6c3c4c0f613e9fcb",
+    strip_prefix = "rules_go-0.18.6",
+    urls = ["https://github.com/bazelbuild/rules_go/archive/0.18.6.tar.gz"],
 )
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "0a0920151acf18c51866331944d12db9023707a6861e78225366f5711efc845b",
-    strip_prefix = "buildtools-0.25.1",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/0.25.1.tar.gz"],
+    sha256 = "86592d703ecbe0c5cbb5139333a63268cf58d7efd2c459c8be8e69e77d135e29",
+    strip_prefix = "buildtools-0.26.0",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/0.26.0.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
@@ -384,7 +404,7 @@ local_repository(
 )
 
 load(
-    "@io_bazel_rules_go//go:def.bzl",
+    "@io_bazel_rules_go//go:deps.bzl",
     "go_register_toolchains",
     "go_rules_dependencies",
 )

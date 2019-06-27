@@ -141,7 +141,7 @@ def _get_unique_lib_files(cc_info):
     # https://github.com/tweag/rules_haskell/issues/917
     libs_by_filename = {}
     filenames = []
-    for lib_to_link in libs_to_link:
+    for lib_to_link in libs_to_link.to_list():
         if lib_to_link.dynamic_library:
             lib = lib_to_link.dynamic_library
         elif lib_to_link.interface_library:
@@ -322,31 +322,32 @@ def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
     # https://github.com/tweag/rules_haskell/issues/873.
     cc_static_libs = depset(direct = [
         lib
-        for lib in static_libs
+        for lib in static_libs.to_list()
         if not get_lib_name(lib).startswith("HS")
     ])
     cc_dynamic_libs = depset(direct = [
         lib
-        for lib in dynamic_libs
+        for lib in dynamic_libs.to_list()
         if not get_lib_name(lib).startswith("HS")
     ])
 
     package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")
     conf_path = paths.join(package_name, package_name + ".conf")
     conf_file = hs.actions.declare_file(conf_path)
+    libs = cc_static_libs.to_list() + cc_dynamic_libs.to_list()
     write_package_conf(hs, conf_file, {
         "name": package_name,
         "extra-libraries": [
             get_lib_name(lib)
-            for lib in cc_static_libs + cc_dynamic_libs
+            for lib in libs
         ],
         "library-dirs": depset(direct = [
             rel_to_pkgroot(lib.dirname, conf_file.dirname)
-            for lib in cc_static_libs + cc_dynamic_libs
+            for lib in libs
         ]),
         "dynamic-library-dirs": depset(direct = [
             rel_to_pkgroot(lib.dirname, conf_file.dirname)
-            for lib in cc_static_libs + cc_dynamic_libs
+            for lib in libs
         ]),
         # XXX: Set user_link_flags.
         "ld-options": depset(direct = [
@@ -356,7 +357,7 @@ def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
                 keep_filename = False,
                 prefix = "@loader_path" if hs.toolchain.is_darwin else "$ORIGIN",
             )
-            for lib in dynamic_libs
+            for lib in dynamic_libs.to_list()
         ]),
     })
     cache_file = ghc_pkg_recache(hs, conf_file)

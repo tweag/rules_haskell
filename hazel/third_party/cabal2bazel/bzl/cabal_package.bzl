@@ -36,6 +36,7 @@ load(":bzl/cabal_paths.bzl", "cabal_paths")
 load(":bzl/happy.bzl", "genhappy")
 load("//templates:templates.bzl", "templates")
 load("//tools:mangling.bzl", "hazel_cbits", "hazel_library")
+load("@bazel_tools//tools/cpp:cc_flags_supplier.bzl", "cc_flags_supplier")
 
 _conditions_default = "//conditions:default"
 
@@ -78,6 +79,7 @@ def _configure(desc):
         for f in desc.extraTmpFiles
         if f.split("/")[-1] not in _header_blacklist
     ]
+    cc_flags_supplier(name = "cc_flags")
     native.genrule(
         name = "run-configure",
         cmd = "\n".join([
@@ -94,7 +96,10 @@ def _configure(desc):
             for out in outputs
         ]),
         tools = ["configure"],
-        toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
+        toolchains = [
+            ":cc_flags",
+            "@bazel_tools//tools/cpp:current_cc_toolchain",
+        ],
         srcs = native.glob(["**"], exclude = outputs),
         outs = outputs,
     )
@@ -120,7 +125,7 @@ def _hazel_symlink_impl(ctx):
 hazel_symlink = rule(
     implementation = _hazel_symlink_impl,
     attrs = {
-        "src": attr.label(mandatory = True, allow_files = True, single_file = True),
+        "src": attr.label(mandatory = True, allow_single_file = True),
         "out": attr.string(mandatory = True),
     },
     outputs = {"out": "%{out}"},
@@ -360,7 +365,7 @@ def _get_build_attrs(
     paths_module = _paths_module(desc)
     extra_modules_dict = _conditions_dict(extra_modules)
     other_modules_dict = _conditions_dict(build_info.otherModules)
-    for condition in depset(extra_modules_dict.keys() + other_modules_dict.keys()):
+    for condition in extra_modules_dict.keys() + other_modules_dict.keys():
         srcs[condition] = []
         deps[condition] = []
         cdeps[condition] = []
@@ -474,7 +479,7 @@ def _get_build_attrs(
                      "-w",
                  ]),
         defines = [o[2:] for o in build_info.ccOptions if o.startswith("-D")],
-        textual_hdrs = list(headers),
+        textual_hdrs = headers.to_list(),
         deps = ["@haskell_rts//:lib"] + select(cdeps) + cc_deps + elibs_targets,
         visibility = ["//visibility:public"],
         linkstatic = select({

@@ -107,7 +107,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
     package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
     extra_include_dirs = cc_info.compilation_context.includes
-    extra_lib_dirs = [file.dirname for file in ghci_extra_libs]
+    extra_lib_dirs = [file.dirname for file in ghci_extra_libs.to_list()]
     args.add_all([name, setup, cabal.dirname, package_database.dirname])
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")
@@ -231,6 +231,7 @@ def _haskell_cabal_library_impl(ctx):
     lib_info = HaskellLibraryInfo(package_id = name, version = None)
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
+        ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
@@ -277,6 +278,7 @@ haskell_cabal_library = rule(
         ),
     },
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    fragments = ["cpp"],
 )
 """Use Cabal to build a library.
 
@@ -401,6 +403,7 @@ haskell_cabal_binary = rule(
         ),
     },
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    fragments = ["cpp"],
 )
 """Use Cabal to build a binary.
 

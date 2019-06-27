@@ -569,6 +569,9 @@ def haskell_library_impl(ctx):
     # Should be find_cpp_toolchain() instead.
     cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
     feature_configuration = cc_common.configure_features(
+        # XXX: protobuf is passing a "patched ctx"
+        # which includes the real ctx as "real_ctx"
+        ctx = getattr(ctx, "real_ctx", ctx),
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
@@ -643,6 +646,7 @@ def haskell_toolchain_libraries_impl(ctx):
     # Should be find_cpp_toolchain() instead.
     cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
     feature_configuration = cc_common.configure_features(
+        ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
@@ -658,7 +662,7 @@ def haskell_toolchain_libraries_impl(ctx):
     ])
 
     library_dict = {}
-    for package in ordered:
+    for package in ordered.to_list():
         target = libraries[package]
 
         # Construct CcInfo
@@ -669,7 +673,7 @@ def haskell_toolchain_libraries_impl(ctx):
             # don't import dynamic libraries in profiling mode.
             libs = {
                 get_static_hs_lib_name(hs.toolchain.version, lib): {"static": lib}
-                for lib in target[HaskellImportHack].static_profiling_libraries
+                for lib in target[HaskellImportHack].static_profiling_libraries.to_list()
             }
         else:
             # Workaround for https://github.com/tweag/rules_haskell/issues/881
@@ -678,7 +682,7 @@ def haskell_toolchain_libraries_impl(ctx):
             # dynamic libHSrts and the static libCffi and libHSrts.
             libs = {
                 get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
-                for lib in target[HaskellImportHack].dynamic_libraries
+                for lib in target[HaskellImportHack].dynamic_libraries.to_list()
             }
             for lib in target[HaskellImportHack].static_libraries.to_list():
                 name = get_static_hs_lib_name(with_profiling, lib)

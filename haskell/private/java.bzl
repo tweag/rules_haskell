@@ -36,7 +36,7 @@ def java_interop_info(ctx):
     env_dict = dict()
     uniq_classpath = collections.uniq([
         f.path
-        for f in inputs
+        for f in inputs.to_list()
     ])
 
     if len(uniq_classpath) > 0:

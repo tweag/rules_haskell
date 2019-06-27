@@ -17,7 +17,10 @@ load(
 )
 load("@os_info//:os_info.bzl", "is_windows")
 load("//tools:ghc.bzl", "default_ghc_workspaces", "get_ghc_workspace")
-load("//tools:mangling.bzl", "hazel_binary", "hazel_library", "hazel_workspace")
+load("//tools:mangling.bzl", "hazel_binary", "hazel_workspace", _hazel_library = "hazel_library")
+
+# reexport hazel symbols
+hazel_library = _hazel_library
 
 def _cabal_haskell_repository_impl(ctx):
     ghc_workspace = get_ghc_workspace(ctx.attr.ghc_workspaces, ctx)

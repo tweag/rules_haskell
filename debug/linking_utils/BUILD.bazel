@@ -30,9 +30,7 @@ def contains_error(error):
     return f
 
 # output should have some runpaths
-assert \
-    ldd(identity, sys.argv[1])['runpath_dirs']\
-    > 0
+assert len(ldd(identity, sys.argv[1])['runpath_dirs']) > 0
 
 # some of the dependencies are implicit and not in NEEDED flags
 assert ldd(contains_error(LDD_UNKNOWN), sys.argv[1])
