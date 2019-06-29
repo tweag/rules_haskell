@@ -119,16 +119,36 @@ This works for any ``haskell_binary`` or ``haskell_library`` target.
 Modules of all libraries will be loaded in interpreted mode and can be
 reloaded using the ``:r`` GHCi command when source files change.
 
-Building code with Hackage dependencies (using Nix)
----------------------------------------------------
+Building Cabal packages
+-----------------------
 
-Each Haskell library or binary needs a simple build description to
-tell Bazel what source files to use and what the dependencies are, if
-any. Packages on Hackage don't usually ship with `BUILD.bazel` files.
-So if your code depends on them, you either need to write a build
-description for each package, generate one (see next section), or
-decide not to use Bazel to build packages published on Hackage. This
-section documents one way to do the latter.
+If you depend on third-party code hosted on Hackage_, these will have
+a build script that uses the Cabal_ framework. Bazel can build these
+with the `haskell_cabal_library`_ and `haskell_cabal_binary`_ rules.
+However, you seldom want to use them directly. Cabal packages
+typically have many dependencies, which themselves have dependencies
+and so on. It is tedious to describe all of these dependencies to
+Bazel by hand. You can use the `stack_snapshot`_ workspace rule
+to download the source of all necessary dependencies from Hackage,
+and extract a dependency graph from a Stackage_ snapshot.
+
+These rules are meant only to interoperate with third-party code. For
+code under your direct control, prefer using one of the core Haskell
+rules, which have more features, are more efficient and more
+customizable.
+
+.. _Cabal: https://haskell.org/cabal
+.. _Hackage: https://hackage.haskell.org
+.. _Stackage: https://stackage.org
+.. _haskell_cabal_library: https://api.haskell.build/haskell/cabal.html#haskell_cabal_library
+.. _haskell_cabal_binary: https://api.haskell.build/haskell/cabal.html#haskell_cabal_binary
+.. _stack_snapshot: https://api.haskell.build/haskell/cabal.html#stack_snapshot
+
+Building Cabal packages (using Nix)
+-----------------------------------
+
+An alternative to using Bazel to build Cabal packages (like in the
+previous section) is to leave this to Nix.
 
 Nix is a package manager. The set of package definitions is called
 Nixpkgs. This repository contains definitions for most actively
@@ -145,11 +165,11 @@ a compiler`_ for how to import Nixpkgs rules into your workspace and
 how to use a compiler from Nixpkgs. To use Cabal packages from
 Nixpkgs, replace the compiler definition with the following::
 
-  nixpkgs_package(
-      name = "ghc",
-      repositories = { "nixpkgs": "@nixpkgs//:default.nix" },
+  haskell_register_ghc_nixpkgs(
+      version = "X.Y.Z", # Any GHC version
       nix_file = "//:ghc.nix",
       build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
+      repositories = { "nixpkgs": "@nixpkgs" },
   )
 
 This definition assumes a ``ghc.nix`` file at the root of the
