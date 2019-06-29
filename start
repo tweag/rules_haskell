@@ -1,7 +1,7 @@
 #!/bin/sh
 
-MIN_BAZEL_MAJOR=0
-MIN_BAZEL_MINOR=24
+BAZEL_MAJOR=0
+BAZEL_MINOR=24
 
 set -e
 
@@ -20,14 +20,13 @@ check_bazel_version () {
 $actual_raw
 EOF
 
-    local expected=$MIN_BAZEL_MAJOR.$MIN_BAZEL_MINOR.0
+    local expected=$BAZEL_MAJOR.$BAZEL_MINOR.x
     local cmp=$expected'\n'$actual
 
-    if ! ( [ "$actual_major" -gt "$MIN_BAZEL_MAJOR" ] || (
-            [ "$actual_major" -eq "$MIN_BAZEL_MAJOR" ] &&
-                [ "$actual_minor" -ge "$MIN_BAZEL_MINOR" ] ) )
+    if [ "$actual_major" -ne "$BAZEL_MAJOR" ] ||
+        [ "$actual_minor" -ne "$BAZEL_MINOR" ]
     then
-        echo "Need at least Bazel v${expected}. v${actual_raw} detected." >/dev/stderr
+        echo "Need Bazel v${expected}. v${actual_raw} detected." >/dev/stderr
         exit 1
     fi
 }
