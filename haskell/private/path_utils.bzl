@@ -533,6 +533,13 @@ def ln(hs, target, link, extra_inputs = depset()):
             link = link.path,
         ),
         use_default_shell_env = True,
+        # Don't sandbox symlinking to reduce overhead.
+        # See https://github.com/tweag/rules_haskell/issues/958.
+        execution_requirements = {
+            "no-sandbox": "",
+            "no-cache": "",
+            "no-remote": "",
+        },
     )
 
 def parse_pattern(ctx, pattern_str):

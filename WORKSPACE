@@ -424,3 +424,13 @@ buildifier_dependencies()
 load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
 
 hazel_setup()
+
+# For profiling
+# Required to make use of `bazel build --profile`.
+
+# Dummy target //external:python_headers.
+# See https://github.com/protocolbuffers/protobuf/blob/d9ccd0c0e6bbda9bf4476088eeb46b02d7dcd327/util/python/BUILD
+bind(
+    name = "python_headers",
+    actual = "@com_google_protobuf//util/python:python_headers",
+)
