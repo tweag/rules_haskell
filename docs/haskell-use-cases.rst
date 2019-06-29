@@ -3,6 +3,18 @@
 Common Haskell Build Use Cases
 ==============================
 
+Starting a new project
+----------------------
+
+The fastest way to start a new project is::
+
+  $ curl https://haskell.build/start | sh
+
+The script checks that the version of Bazel installed on your system
+is known to be compatible with rules_haskell and creates a new Bazel
+workspace in the current working directory with a few dummy build
+targets. See the following sections about customizing the workspace.
+
 Picking a compiler
 ------------------
 
