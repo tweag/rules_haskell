@@ -14,9 +14,16 @@ load(
     "get_ghci_extra_libs",
 )
 
+def _as_string(v):
+    if type(v) == "string":
+        return v
+    else:
+        return repr(v)
+
 def _execute_or_fail_loudly(repository_ctx, arguments):
     exec_result = repository_ctx.execute(arguments)
     if exec_result.return_code != 0:
+        arguments = [_as_string(x) for x in arguments]
         fail("\n".join(["Command failed: " + " ".join(arguments), exec_result.stderr]))
     return exec_result
 
