@@ -205,6 +205,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         cc_info,
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
+        worker = ctx.executable._worker,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         user_compile_flags = user_compile_flags,
@@ -418,6 +419,7 @@ def haskell_library_impl(ctx):
         my_pkg_id = my_pkg_id,
         plugins = plugins,
         preprocessors = preprocessors,
+        worker = ctx.executable._worker,
     )
 
     other_modules = ctx.attr.hidden_modules

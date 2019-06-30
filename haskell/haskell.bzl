@@ -102,6 +102,11 @@ _haskell_common_attrs = {
     "_cc_toolchain": attr.label(
         default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
+    "_worker": attr.label(
+        executable = True,
+        cfg = "host",
+        default = Label("@io_tweag_rules_haskell//haskell:worker"),
+    ),
 }
 
 def _mk_binary_rule(**kwargs):
