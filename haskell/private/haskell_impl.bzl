@@ -228,6 +228,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     (binary, solibs) = link_binary(
         hs,
         cc,
+        ctx.executable._worker,
         dep_info,
         cc_info,
         ctx.files.extra_srcs,

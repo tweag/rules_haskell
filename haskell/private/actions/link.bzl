@@ -129,6 +129,7 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
 def link_binary(
         hs,
         cc,
+        worker,
         dep_info,
         cc_info,
         extra_srcs,
@@ -248,6 +249,7 @@ def link_binary(
         ]),
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
+        worker = worker,
         arguments = args,
         params_file = params_file,
     )
