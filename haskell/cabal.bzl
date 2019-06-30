@@ -485,15 +485,20 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
     if not versioned_packages and not unversioned_packages:
         return ({}, [])
 
-    # Unpack all given packages, then compute the transitive closure
-    # and unpack anything in the transitive closure as well.
     stack_cmd = repository_ctx.which("stack")
     if not stack_cmd:
         fail("Cannot find stack command in your PATH.")
-    stack = [stack_cmd, "--no-nix", "--skip-ghc-check", "--system-ghc"]
+    exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
+    stack_major_version = int(exec_result.stdout.split(" ")[0].split(".")[0])
+    if stack_major_version < 2:
+        fail("Stack 2.1 or above required.")
+
+    # Unpack all given packages, then compute the transitive closure
+    # and unpack anything in the transitive closure as well.
+    stack = [stack_cmd]
     if versioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
-    stack = [stack_cmd, "--no-nix", "--skip-ghc-check", "--system-ghc", "--resolver", repository_ctx.attr.snapshot]
+    stack = [stack_cmd, "--resolver", repository_ctx.attr.snapshot]
     if unversioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + unversioned_packages)
     exec_result = _execute_or_fail_loudly(repository_ctx, ["ls"])
@@ -502,7 +507,7 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
-        stack + ["ls", "dependencies", "--separator=-"],
+        stack + ["ls", "dependencies", "--global-hints", "--separator=-"],
     )
     transitive_unpacked_sdists = [
         unpacked_sdist
@@ -532,7 +537,7 @@ Specify a fully qualified package name of the form <package>-<version>.
     all_packages = [_chop_version(dir) for dir in transitive_unpacked_sdists + _CORE_PACKAGES]
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
-        stack + ["dot", "--external"],
+        stack + ["dot", "--global-hints", "--external"],
     )
     dependencies = {k: [] for k in all_packages}
     for line in exec_result.stdout.splitlines():
