@@ -34,7 +34,7 @@ py_binary(
 )
 
 sh_binary(
-    name = "woker",
+    name = "worker",
     srcs = ["private/worker.sh"],
     visibility = ["//visibility:public"],
 )

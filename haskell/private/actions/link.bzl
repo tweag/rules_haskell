@@ -320,7 +320,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
 
     return static_library
 
-def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_pkg_id):
+def link_library_dynamic(hs, cc, worker, dep_info, cc_info, extra_srcs, objects_dir, my_pkg_id):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -393,6 +393,7 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
         ]),
         outputs = [dynamic_library],
         mnemonic = "HaskellLinkDynamicLibrary",
+        worker=worker,
         arguments = args,
         params_file = objects_dir_manifest,
     )

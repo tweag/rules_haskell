@@ -407,6 +407,7 @@ def haskell_library_impl(ctx):
         hs,
         cc,
         java,
+        ctx.executable._worker,
         dep_info,
         plugin_dep_info,
         cc_info,
@@ -419,7 +420,6 @@ def haskell_library_impl(ctx):
         my_pkg_id = my_pkg_id,
         plugins = plugins,
         preprocessors = preprocessors,
-        worker = ctx.executable._worker,
     )
 
     other_modules = ctx.attr.hidden_modules
@@ -446,6 +446,7 @@ def haskell_library_impl(ctx):
         dynamic_library = link_library_dynamic(
             hs,
             cc,
+            ctx.executable._worker,
             dep_info,
             cc_info,
             depset(ctx.files.extra_srcs),

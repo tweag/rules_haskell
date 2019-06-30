@@ -50,7 +50,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, worker, arguments, params_file =
 
     compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
-
+    
     args.set_param_file_format("multiline")
     arguments.set_param_file_format("multiline")
     hs.actions.write(compile_flags_file, args)
@@ -93,6 +93,10 @@ while IFS= read -r line; do param_file_args+=("$line"); done < %s
     else:
         inputs += extra_inputs
 
+    # Pass parameters to the worker via a "flagfile"
+    flagfile = hs.actions.declare_file("flagfile.txt")
+    hs.actions.write(flagfile, content = "test")
+
     hs.actions.run(
         inputs = inputs,
         input_manifests = input_manifests,
@@ -101,7 +105,8 @@ while IFS= read -r line; do param_file_args+=("$line"); done < %s
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = [],
+        arguments = ["@" + flagfile.path],
+        execution_requirements = { "supports-workers": "1" },
     )
 
     return args
