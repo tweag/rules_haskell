@@ -25,55 +25,61 @@ file.
 
 There are two common sources for a compiler. One is to use the
 official binary distributions from `haskell.org`_. This is done using
-the `ghc_bindist`_ rule.
+the `ghc_bindist`_ rule. You don't normally need to call this rule
+directly. You can instead call the following macro, which exposes all
+binary distributions for all platforms (Bazel will select one during
+toolchain resolution based on the target platform)::
+
+  load(
+      "@io_tweag_rules_haskell//haskell:haskell.bzl",
+      "haskell_register_ghc_bindists",
+  )
+
+  haskell_register_ghc_bindists(
+      version = "X.Y.Z", # Any GHC version
+  )
+
 
 The compiler can also be pulled from Nixpkgs_, a set of package
 definitions for the `Nix package manager`_. Pulling the compiler from
 Nixpkgs makes the build more hermetic, because the transitive closure
 of the compiler and all its dependencies is precisely defined in the
-``WORKSPACE`` file. Use `rules_nixpkgs`_ to do so (where ``X.Y.Z``
-stands for any recent release)::
-
-  load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-  http_archive(
-      name = "io_tweag_rules_nixpkgs",
-      strip_prefix = "rules_nixpkgs-X.Y.Z",
-      urls = ["https://github.com/tweag/rules_nixpkgs/archive/vX.Y.Z.tar.gz"],
-  )
+``WORKSPACE`` file::
 
   load(
       "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
       "nixpkgs_git_repository",
-      "nixpkgs_package"
   )
 
   nixpkgs_git_repository(
       name = "nixpkgs",
-      revision = "18.09", # Any tag or commit hash
+      revision = "19.03", # Any tag or commit hash
   )
 
-  nixpkgs_package(
-      name = "ghc",
-      repositories = { "nixpkgs": "@nixpkgs//:default.nix" },
-      attribute_path = "haskell.compiler.ghc843", # Any compiler version
-      build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
+  load(
+      "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
+      "haskell_register_ghc_nixpkgs",
   )
 
-  register_toolchains("//:ghc")
+  haskell_register_ghc_nixpkgs(
+      version = "X.Y.Z", # Any GHC version
+      attribute_path = "ghc", # The Nix attribute path to the compiler.
+      repositories = {"nixpkgs": "@nixpkgs"},
+  )
 
 This workspace description specifies which Nixpkgs version to use,
-then exposes a Nixpkgs package containing the GHC compiler. The
-description assumes that there exists a ``BUILD`` file at the root of
-the repository that includes the following::
+then invokes a workspace macro that exposes a Nixpkgs package
+containing the GHC compiler and registers this compiler as a toolchain
+usable by Bazel's Haskell rules.
 
-  haskell_toolchain(
-    name = "ghc",
-    # Versions here and in WORKSPACE must match.
-    version = "8.4.3",
-    # Use binaries from @ghc//:bin to define //:ghc toolchain.
-    tools = ["@ghc//:bin"],
-  )
+You can register as many toolchains as you like. Nixpkgs toolchains do
+not conflict with binary distributions. For Bazel to select the
+Nixpkgs toolchain during `toolchain resolution`_, set the platform
+appropriately: ``linux_x86_64_nixpkgs``, ``darwin_x86_64_nixpkgs``
+etc. For example, you can have the following in your ``.bazelrc``
+file at the root of your project::
+
+  build --host_platform=@io_tweag_rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
 
 .. _Bazel+Nix blog post: https://www.tweag.io/posts/2018-03-15-bazel-nix.html
 .. _Nix package manager: https://nixos.org/nix
@@ -83,6 +89,7 @@ the repository that includes the following::
 .. _haskell_binary: http://api.haskell.build/haskell/haskell.html#haskell_binary
 .. _haskell_library: http://api.haskell.build/haskell/haskell.html#haskell_library
 .. _rules_nixpkgs: https://github.com/tweag/rules_nixpkgs
+.. _toolchain resolution: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
 
 Loading targets in a REPL
 -------------------------
@@ -119,16 +126,36 @@ This works for any ``haskell_binary`` or ``haskell_library`` target.
 Modules of all libraries will be loaded in interpreted mode and can be
 reloaded using the ``:r`` GHCi command when source files change.
 
-Building code with Hackage dependencies (using Nix)
----------------------------------------------------
+Building Cabal packages
+-----------------------
 
-Each Haskell library or binary needs a simple build description to
-tell Bazel what source files to use and what the dependencies are, if
-any. Packages on Hackage don't usually ship with `BUILD.bazel` files.
-So if your code depends on them, you either need to write a build
-description for each package, generate one (see next section), or
-decide not to use Bazel to build packages published on Hackage. This
-section documents one way to do the latter.
+If you depend on third-party code hosted on Hackage_, these will have
+a build script that uses the Cabal_ framework. Bazel can build these
+with the `haskell_cabal_library`_ and `haskell_cabal_binary`_ rules.
+However, you seldom want to use them directly. Cabal packages
+typically have many dependencies, which themselves have dependencies
+and so on. It is tedious to describe all of these dependencies to
+Bazel by hand. You can use the `stack_snapshot`_ workspace rule
+to download the source of all necessary dependencies from Hackage,
+and extract a dependency graph from a Stackage_ snapshot.
+
+These rules are meant only to interoperate with third-party code. For
+code under your direct control, prefer using one of the core Haskell
+rules, which have more features, are more efficient and more
+customizable.
+
+.. _Cabal: https://haskell.org/cabal
+.. _Hackage: https://hackage.haskell.org
+.. _Stackage: https://stackage.org
+.. _haskell_cabal_library: https://api.haskell.build/haskell/cabal.html#haskell_cabal_library
+.. _haskell_cabal_binary: https://api.haskell.build/haskell/cabal.html#haskell_cabal_binary
+.. _stack_snapshot: https://api.haskell.build/haskell/cabal.html#stack_snapshot
+
+Building Cabal packages (using Nix)
+-----------------------------------
+
+An alternative to using Bazel to build Cabal packages (like in the
+previous section) is to leave this to Nix.
 
 Nix is a package manager. The set of package definitions is called
 Nixpkgs. This repository contains definitions for most actively
@@ -145,11 +172,11 @@ a compiler`_ for how to import Nixpkgs rules into your workspace and
 how to use a compiler from Nixpkgs. To use Cabal packages from
 Nixpkgs, replace the compiler definition with the following::
 
-  nixpkgs_package(
-      name = "ghc",
-      repositories = { "nixpkgs": "@nixpkgs//:default.nix" },
+  haskell_register_ghc_nixpkgs(
+      version = "X.Y.Z", # Any GHC version
       nix_file = "//:ghc.nix",
       build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
+      repositories = { "nixpkgs": "@nixpkgs" },
   )
 
 This definition assumes a ``ghc.nix`` file at the root of the
