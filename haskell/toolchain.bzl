@@ -17,7 +17,7 @@ load(":private/actions/package.bzl", "package")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
-def _run_ghc(hs, cc, inputs, outputs, mnemonic, worker, arguments, params_file = None, env = None, progress_message = None, input_manifests = None):
+def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None, input_manifests = None):
     if not env:
         env = hs.env
 
@@ -50,7 +50,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, worker, arguments, params_file =
 
     compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
-    
+
     args.set_param_file_format("multiline")
     arguments.set_param_file_format("multiline")
     hs.actions.write(compile_flags_file, args)
@@ -96,13 +96,13 @@ while IFS= read -r line; do param_file_args+=("$line"); done < %s
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
     else:
-        inputs += extra_inputs 
+        inputs += extra_inputs
 
     hs.actions.run(
         inputs = inputs,
         input_manifests = input_manifests,
         outputs = outputs,
-        executable = worker,
+        executable = hs.worker,
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,

@@ -48,6 +48,7 @@ def haskell_context(ctx, attr = None):
         label = ctx.label,
         toolchain = toolchain,
         tools = toolchain.tools,
+        worker = ctx.executable._worker,
         package_ids = package_ids,
         src_root = src_root,
         package_root = ctx.label.workspace_root + ctx.label.package,

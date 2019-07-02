@@ -205,7 +205,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         cc_info,
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
-        worker = ctx.executable._worker,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         user_compile_flags = user_compile_flags,
@@ -228,7 +227,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     (binary, solibs) = link_binary(
         hs,
         cc,
-        ctx.executable._worker,
         dep_info,
         cc_info,
         ctx.files.extra_srcs,
@@ -408,7 +406,6 @@ def haskell_library_impl(ctx):
         hs,
         cc,
         java,
-        ctx.executable._worker,
         dep_info,
         plugin_dep_info,
         cc_info,
@@ -447,7 +444,6 @@ def haskell_library_impl(ctx):
         dynamic_library = link_library_dynamic(
             hs,
             cc,
-            ctx.executable._worker,
             dep_info,
             cc_info,
             depset(ctx.files.extra_srcs),
