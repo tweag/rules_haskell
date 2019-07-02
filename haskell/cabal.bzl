@@ -17,7 +17,7 @@ load(
 def _execute_or_fail_loudly(repository_ctx, arguments):
     exec_result = repository_ctx.execute(arguments)
     if exec_result.return_code != 0:
-        fail("\n".join(["Command failed: " + " ".join(arguments), exec_result.stderr]))
+        fail("\n".join(["Command failed: " + " ".join([repr(arg) for arg in arguments]), exec_result.stderr]))
     return exec_result
 
 def _so_extension(hs):
