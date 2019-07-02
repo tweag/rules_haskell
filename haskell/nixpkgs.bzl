@@ -12,7 +12,7 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         },
     )
     locale_archive = repository_ctx.attr.locale_archive
-    nixpkgs_ghc_path = repository_ctx.path(repository_ctx.attr._nixpkgs_ghc).dirname
+    nixpkgs_ghc_path = repository_ctx.path(repository_ctx.attr._nixpkgs_ghc).dirname.dirname
 
     # Symlink content of ghc external repo. In effect, this repo has
     # the same content, but with a BUILD file that includes generated
@@ -96,7 +96,13 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         "haddock_flags": attr.string_list(),
         "repl_ghci_args": attr.string_list(),
         "locale_archive": attr.string(),
-        "_nixpkgs_ghc": attr.label(default = "@io_tweag_rules_haskell_ghc_nixpkgs//:BUILD"),
+        # Unfortunately, repositories cannot depend on each other
+        # directly. They can only depend on files inside each
+        # repository. We need to be careful to depend on files that
+        # change anytime any content in a repository changes, like
+        # bin/ghc, which embeds the output path, which itself changes
+        # if any input to the derivation changed.
+        "_nixpkgs_ghc": attr.label(default = "@io_tweag_rules_haskell_ghc_nixpkgs//:bin/ghc"),
         "locale": attr.string(
             default = "en_US.UTF-8",
         ),
