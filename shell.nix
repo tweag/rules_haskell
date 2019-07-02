@@ -15,9 +15,8 @@ mkShell {
     perl
     python3
     bazel
-    # For stack_install. TODO Remove ghc when move to Stack 2.
+    # For stack_install.
     stack
-    ghc
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
     # Needed to get correct locale for tests with encoding
