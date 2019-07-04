@@ -24,29 +24,27 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     args = hs.actions.args()
     args.add(hs.tools.ghc)
 
-    # Do not use Bazel's CC toolchain on Windows, as it leads to linker and librarty compatibility issues.
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
     # C libraries with Haskell targets.
-    if not hs.toolchain.is_windows:
-        args.add_all([
-            # GHC uses C compiler for assemly, linking and preprocessing as well.
-            "-pgma",
-            cc.tools.cc,
-            "-pgmc",
-            cc.tools.cc,
-            "-pgml",
-            cc.tools.cc,
-            "-pgmP",
-            cc.tools.cc,
-            # Setting -pgm* flags explicitly has the unfortunate side effect
-            # of resetting any program flags in the GHC settings file. So we
-            # restore them here. See
-            # https://ghc.haskell.org/trac/ghc/ticket/7929.
-            "-optc-fno-stack-protector",
-            "-optP-E",
-            "-optP-undef",
-            "-optP-traditional",
-        ])
+    args.add_all([
+        # GHC uses C compiler for assemly, linking and preprocessing as well.
+        "-pgma",
+        cc.tools.cc,
+        "-pgmc",
+        cc.tools.cc,
+        "-pgml",
+        cc.tools.cc,
+        "-pgmP",
+        cc.tools.cc,
+        # Setting -pgm* flags explicitly has the unfortunate side effect
+        # of resetting any program flags in the GHC settings file. So we
+        # restore them here. See
+        # https://ghc.haskell.org/trac/ghc/ticket/7929.
+        "-optc-fno-stack-protector",
+        "-optP-E",
+        "-optP-undef",
+        "-optP-traditional",
+    ])
 
     compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
