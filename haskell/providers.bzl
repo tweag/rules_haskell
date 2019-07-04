@@ -186,7 +186,7 @@ def _get_unique_lib_files(cc_info):
         for filename in filenames
     ]
 
-def get_ghci_extra_libs(hs, cc_info, dynamic = True, path_prefix = None):
+def get_ghci_extra_libs(hs, cc_info, path_prefix = None):
     """Get libraries appropriate for GHCi's linker.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -197,16 +197,12 @@ def get_ghci_extra_libs(hs, cc_info, dynamic = True, path_prefix = None):
     directory to allow for less RPATH entries and to fix file extensions that
     GHCi does not support.
 
-    GHCi can load PIC static libraries (-fPIC -fexternal-dynamic-refs) and
-    dynamic libraries. Preferring static libraries can be useful to reduce the
-    risk of exceeding the MACH-O header size limit on macOS, and to reduce
-    build times by avoiding to generate dynamic libraries. However, this
-    requires GHCi to run with the statically linked rts library.
+    GHCi can load PIC static libraries (-fPIC -fexternal-dynamic-refs) with a
+    dynamic RTS and dynamic libraries with a dynamic RTS.
 
     Args:
       hs: Haskell context.
       cc_info: Combined CcInfo provider of dependencies.
-      dynamic: (optional) Whether to prefer dynamic libraries.
       path_prefix: (optional) Prefix for the entries in the generated library path.
 
     Returns:
@@ -218,7 +214,7 @@ def get_ghci_extra_libs(hs, cc_info, dynamic = True, path_prefix = None):
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         cc_info,
-        dynamic = dynamic,
+        dynamic = not hs.toolchain.is_static,
         pic = True,
         fixup_dir = "_ghci_libs",
     )
@@ -278,8 +274,6 @@ def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"
         elif lib_to_link.static_library and not pic_required:
             static_lib = lib_to_link.static_library
 
-        if dynamic_lib:
-            dynamic_lib = symlink_dynamic_library(hs, dynamic_lib, fixed_lib_dir)
         static_lib = mangle_static_library(hs, dynamic_lib, static_lib, fixed_lib_dir)
 
         if static_lib and not (dynamic and dynamic_lib):
