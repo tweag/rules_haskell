@@ -73,6 +73,9 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         extra_args_file,
     ] + cc.files
 
+    if hs.toolchain.locale_archive != None:
+        extra_inputs.append(hs.toolchain.locale_archive)
+
     flagsfile = extra_args_file
     if params_file:
         flagsfile = merge_parameter_files(hs, extra_args_file, params_file)
