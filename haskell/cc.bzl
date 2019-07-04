@@ -20,6 +20,7 @@ CcInteropInfo = provider(
         # See the following for why this is needed:
         # https://stackoverflow.com/questions/52769846/custom-c-rule-with-the-cc-common-api
         "files": "Files for all tools (input to any action that uses tools)",
+        "manifests": "Input manifests for all tools (input to any action that uses tools)",
         "hdrs": "CC headers",
         "cpp_flags": "Preprocessor flags",
         "compiler_flags": "Flags for compilation",
@@ -99,22 +100,10 @@ def cc_interop_info(ctx):
 
     # Generate cc wrapper script on Darwin that adjusts load commands.
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
-    if hs_toolchain.is_darwin:
-        cc_wrapper = ctx.actions.declare_file("osx_cc_wrapper")
-        cc = cc_wrapper.path
-        ctx.actions.expand_template(
-            template = hs_toolchain.osx_cc_wrapper_tpl,
-            output = cc_wrapper,
-            substitutions = {
-                "%{cc}": cc_toolchain.compiler_executable(),
-            },
-        )
-        cc_files = ctx.files._cc_toolchain + [
-            cc_wrapper,
-        ]
-    else:
-        cc = cc_toolchain.compiler_executable()
-        cc_files = ctx.files._cc_toolchain
+    cc_wrapper = hs_toolchain.cc_wrapper
+    cc = cc_wrapper.executable.path
+    cc_files = ctx.files._cc_toolchain + cc_wrapper.inputs.to_list()
+    cc_manifests = cc_wrapper.manifests
 
     # XXX Workaround https://github.com/bazelbuild/bazel/issues/6876.
     linker_flags = [flag for flag in linker_flags if flag not in ["-shared"]]
@@ -139,6 +128,7 @@ def cc_interop_info(ctx):
     return CcInteropInfo(
         tools = struct(**tools),
         files = cc_files,
+        manifests = cc_manifests,
         hdrs = hdrs.to_list(),
         cpp_flags = cpp_flags,
         include_args = include_args,

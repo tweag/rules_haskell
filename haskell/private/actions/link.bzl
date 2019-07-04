@@ -352,15 +352,10 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
     )
     args.add_all(pkg_info_args)
 
-    # When linking a dynamic library we still collect static libraries for
-    # dependencies where possible. This is so that a final binary that depends
-    # on this dynamic library, is linked statically itself, will not fail at
-    # link time due to missing transitive dynamic library dependencies. In this
-    # case transitive dependencies will still be linked in statically.
     (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
         cc_info = cc_info,
-        dynamic = False,
+        dynamic = True,
         pic = True,
         binary = dynamic_library,
         args = args,
