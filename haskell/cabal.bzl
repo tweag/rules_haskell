@@ -475,7 +475,7 @@ _CORE_PACKAGES = [
     "xhtml",
 ]
 
-def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_packages):
+def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unversioned_packages):
     """Given a list of root packages, compute a dependency graph.
 
     Returns:
@@ -500,7 +500,7 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
     stack = [stack_cmd]
     if versioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
-    stack = [stack_cmd, "--resolver", repository_ctx.attr.snapshot]
+    stack = [stack_cmd, "--resolver", snapshot]
     if unversioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + unversioned_packages)
     exec_result = _execute_or_fail_loudly(repository_ctx, ["ls"])
@@ -554,6 +554,15 @@ Specify a fully qualified package name of the form <package>-<version>.
     return (dependencies, transitive_unpacked_sdists)
 
 def _stack_snapshot_impl(repository_ctx):
+    if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
+        fail("Please specify either snapshot or repository_snapshot, not both")
+    elif repository_ctx.attr.snapshot:
+        snapshot = repository_ctx.attr.snapshot
+    elif repository_ctx.attr.local_snapshot:
+        snapshot = repository_ctx.path(repository_ctx.attr.local_snapshot)
+    else:
+        fail("Please specify one of snapshot or repository_snapshot")
+
     packages = repository_ctx.attr.packages
     non_core_packages = [
         package
@@ -569,6 +578,7 @@ def _stack_snapshot_impl(repository_ctx):
             unversioned_packages.append(package)
     (dependencies, transitive_unpacked_sdists) = _compute_dependency_graph(
         repository_ctx,
+        snapshot,
         versioned_packages,
         unversioned_packages,
     )
@@ -637,7 +647,11 @@ stack_snapshot = repository_rule(
     _stack_snapshot_impl,
     attrs = {
         "snapshot": attr.string(
-            doc = "The name of a Stackage snapshot.",
+            doc = "The name of a Stackage snapshot. Incompatible with local_snapshot.",
+        ),
+        "local_snapshot": attr.label(
+            doc = "A custom Stack snapshot file, as per the Stack documentation. Incompatible with snapshot.",
+            allow_single_file = True,
         ),
         "packages": attr.string_list(
             doc = "A set of package identifiers. For packages in the snapshot, version numbers can be omitted.",
