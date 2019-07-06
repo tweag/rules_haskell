@@ -12,15 +12,33 @@
 
 set -euo pipefail
 shopt -s nullglob
-execroot="$(pwd)"
 
-# Set these variables if unset.
-: ${LD_LIBRARY_PATH:=}
-: ${LIBRARY_PATH:=}
-export LD_LIBRARY_PATH=$execroot/${LD_LIBRARY_PATH//:/:$execroot/}
-export LIBRARY_PATH=$execroot/${LIBRARY_PATH//:/:$execroot/}
+# Poor man's realpath, because realpath is not available on macOS.
+function realpath()
+{
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+function canonicalize_path()
+{
+    new_path=""
+    while IFS=: read -r -d: entry
+    do
+	if [[ -n "$entry" ]]
+	then
+	    new_path="$new_path${new_path:+:}$(realpath "$entry")"
+	fi
+    done <<< "${1:-}:"
+    echo $new_path
+}
+
+# Remove any relative entries, because we'll be changing CWD shortly.
+LD_LIBRARY_PATH=$(canonicalize_path $LD_LIBRARY_PATH)
+LIBRARY_PATH=$(canonicalize_path $LIBRARY_PATH)
+PATH=$(canonicalize_path $PATH)
 
 name=$1
+execroot="$(pwd)"
 setup=$execroot/$2
 srcdir=$execroot/$3
 pkgroot="$(realpath $execroot/$4/..)" # By definition (see ghc-pkg source code).
