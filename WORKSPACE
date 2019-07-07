@@ -134,7 +134,7 @@ haskell_register_ghc_nixpkgs(
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
     repl_ghci_args = test_repl_ghci_args,
-    repositories = {"nixpkgs": "@nixpkgs"},
+    repository = "@nixpkgs",
     version = test_ghc_version,
 )
 

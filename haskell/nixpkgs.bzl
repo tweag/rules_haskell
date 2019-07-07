@@ -156,6 +156,7 @@ def haskell_register_ghc_nixpkgs(
         nix_file_deps = [],
         locale = None,
         repositories = {},
+        repository = None,
         nix_file_content = ""):
     """Register a package from Nixpkgs as a toolchain.
 
@@ -199,6 +200,7 @@ def haskell_register_ghc_nixpkgs(
         nix_file_deps = nix_file_deps,
         nix_file_content = nix_file_content,
         repositories = repositories,
+        repository = repository,
     )
 
     # haskell_toolchain + haskell_import definitions.
