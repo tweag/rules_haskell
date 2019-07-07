@@ -158,7 +158,7 @@ def haskell_register_ghc_nixpkgs(
         locale = None,
         repositories = {},
         repository = None,
-        nix_file_content = ""):
+        nix_file_content = None):
     """Register a package from Nixpkgs as a toolchain.
 
     Toolchains can be used to compile Haskell code. To have this
