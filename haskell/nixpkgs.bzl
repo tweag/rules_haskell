@@ -154,6 +154,7 @@ def haskell_register_ghc_nixpkgs(
         attribute_path = "haskellPackages.ghc",
         nix_file = None,
         nix_file_deps = [],
+        nixopts = None,
         locale = None,
         repositories = {},
         repository = None,
@@ -199,6 +200,7 @@ def haskell_register_ghc_nixpkgs(
         nix_file = nix_file,
         nix_file_deps = nix_file_deps,
         nix_file_content = nix_file_content,
+        nixopts = nixopts,
         repositories = repositories,
         repository = repository,
     )
