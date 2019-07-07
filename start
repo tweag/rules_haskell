@@ -85,6 +85,24 @@ load(
 haskell_register_ghc_bindists(version = "8.6.4")
 EOF
 
+cat > .bazelrc <<"EOF"
+build:ci --loading_phase_threads=1
+build:ci --jobs=2
+build:ci --verbose_failures
+common:ci --color=no
+test:ci --test_output=errors
+
+build --incompatible_use_python_toolchains=false
+
+# test environment does not propagate locales by default
+# some tests reads files written in UTF8, we need to propagate the correct
+# environment variables, such as LOCALE_ARCHIVE
+# We also need to setup an utf8 locale
+test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
+
+try-import .bazelrc.local
+EOF
+
 cat > BUILD.bazel <<"EOF"
 # Set all target’s visibility in this package to "public".
 package(default_visibility = ["//visibility:public"])
