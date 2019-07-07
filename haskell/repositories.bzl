@@ -15,3 +15,11 @@ def haskell_repositories():
             strip_prefix = "bazel-skylib-0.6.0",
             urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.6.0.tar.gz"],
         )
+
+    if "io_tweag_rules_nixpkgs" not in excludes:
+        http_archive(
+            name = "io_tweag_rules_nixpkgs",
+            sha256 = "5a384daa57b49abf9f0b672852f1a66a3c52aecf9d4d2ac64f6de0fd307690c8",
+            strip_prefix = "rules_nixpkgs-0.5.2",
+            urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.5.2.tar.gz"],
+        )
