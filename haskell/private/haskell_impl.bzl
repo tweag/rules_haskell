@@ -29,15 +29,14 @@ load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
     "get_dynamic_hs_lib_name",
-    "get_lib_name",
     "get_static_hs_lib_name",
     "ln",
     "match_label",
     "parse_pattern",
-    "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
+load(":private/list.bzl", "list")
 load(":private/version_macros.bzl", "generate_version_macros")
 load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
@@ -222,6 +221,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     for dep in ctx.attr.deps:
         if HaskellCoverageInfo in dep:
             coverage_data += dep[HaskellCoverageInfo].coverage_data
+            coverage_data = list.dedup_on(_get_mix_filepath, coverage_data)
 
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     (binary, solibs) = link_binary(
@@ -508,8 +508,11 @@ def haskell_library_impl(ctx):
         if HaskellCoverageInfo in dep:
             dep_coverage_data += dep[HaskellCoverageInfo].coverage_data
 
+    coverage_data = dep_coverage_data + c.coverage_data
+    coverage_data = list.dedup_on(_get_mix_filepath, coverage_data)
+
     coverage_info = HaskellCoverageInfo(
-        coverage_data = dep_coverage_data + c.coverage_data,
+        coverage_data = coverage_data,
     )
 
     target_files = depset([file for file in [static_library, dynamic_library] if file])
@@ -850,3 +853,8 @@ def _exposed_modules_reexports(exports):
             exposed_reexports.append(exposed_reexport)
 
     return exposed_reexports
+
+def _get_mix_filepath(coverage_datum):
+    """ Extracts mix file path from a coverage datum.
+    """
+    return coverage_datum.mix_file.short_path
