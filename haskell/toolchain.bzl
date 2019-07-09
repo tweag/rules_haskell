@@ -22,7 +22,6 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         env = hs.env
 
     args = hs.actions.args()
-    args.add(hs.tools.ghc)
 
     # Do not use Bazel's CC toolchain on Windows, as it leads to linker and librarty compatibility issues.
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
@@ -49,12 +48,8 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         ])
 
     compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
-    extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
-
-    args.set_param_file_format("multiline")
     arguments.set_param_file_format("multiline")
-    hs.actions.write(compile_flags_file, args)
-    hs.actions.write(extra_args_file, arguments)
+    hs.actions.write(compile_flags_file, arguments)
 
     extra_inputs = [
         hs.tools.ghc,
@@ -62,36 +57,14 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         # to ensure the version comparison check is run first.
         hs.toolchain.version_file,
         compile_flags_file,
-        extra_args_file,
     ] + cc.files
 
+    # TODO: figure out how to pass param)file to worker
     if params_file:
         params_file_src = params_file.path
         extra_inputs.append(params_file)
     else:
         params_file_src = "<(:)"  # a temporary file with no contents
-
-    script = """
-export PATH=${PATH:-} # otherwise GCC fails on Windows
-
-# this is equivalent to 'readarray'. We do not use 'readarray' in order to
-# support older bash versions.
-while IFS= read -r line; do compile_flags+=("$line"); done < %s
-while IFS= read -r line; do extra_args+=("$line"); done < %s
-while IFS= read -r line; do param_file_args+=("$line"); done < %s
-
-"${compile_flags[@]}" "${extra_args[@]}" ${param_file_args+"${param_file_args[@]}"}
-""" % (compile_flags_file.path, extra_args_file.path, params_file_src)
-
-    ghc_wrapper_name = "ghc_wrapper_%s_%s" % (hs.name, mnemonic)
-    ghc_wrapper = hs.actions.declare_file(ghc_wrapper_name)
-    hs.actions.write(ghc_wrapper, script, is_executable = True)
-    extra_inputs.append(ghc_wrapper)
-
-    # Pass parameters to the worker via a "flagfile"
-    flagfile = hs.actions.declare_file("flagfile.txt")
-    hs.actions.write(flagfile, content = "test")
-    extra_inputs.append(flagfile)
 
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
@@ -106,7 +79,7 @@ while IFS= read -r line; do param_file_args+=("$line"); done < %s
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = ["@" + flagfile.path],
+        arguments = [args, "@" + compile_flags_file.path],
         execution_requirements = { "supports-workers": "1" },
     )
 
