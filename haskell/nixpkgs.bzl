@@ -64,6 +64,7 @@ haskell_toolchain(
     tools = {tools},
     libraries = toolchain_libraries,
     version = "{version}",
+    is_static = {is_static},
     compiler_flags = {compiler_flags} + {compiler_flags_select},
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
@@ -76,6 +77,7 @@ haskell_toolchain(
             toolchain_libraries = toolchain_libraries,
             tools = ["@io_tweag_rules_haskell_ghc_nixpkgs//:bin"],
             version = repository_ctx.attr.version,
+            is_static = repository_ctx.attr.is_static,
             compiler_flags = repository_ctx.attr.compiler_flags,
             compiler_flags_select = compiler_flags_select,
             haddock_flags = repository_ctx.attr.haddock_flags,
@@ -91,6 +93,7 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         # These attributes just forward to haskell_toolchain.
         # They are documented there.
         "version": attr.string(),
+        "is_static": attr.bool(),
         "compiler_flags": attr.string_list(),
         "compiler_flags_select": attr.string_list_dict(),
         "haddock_flags": attr.string_list(),
@@ -144,6 +147,7 @@ _ghc_nixpkgs_toolchain = repository_rule(_ghc_nixpkgs_toolchain_impl)
 
 def haskell_register_ghc_nixpkgs(
         version,
+        is_static = False,
         build_file = None,
         build_file_content = None,
         compiler_flags = None,
@@ -209,6 +213,7 @@ def haskell_register_ghc_nixpkgs(
     _ghc_nixpkgs_haskell_toolchain(
         name = haskell_toolchain_repo_name,
         version = version,
+        is_static = is_static,
         compiler_flags = compiler_flags,
         compiler_flags_select = compiler_flags_select,
         haddock_flags = haddock_flags,

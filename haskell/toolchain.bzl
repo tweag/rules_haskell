@@ -196,6 +196,7 @@ fi
             libraries = libraries,
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
+            is_static = ctx.attr.is_static,
             version = ctx.attr.version,
             # Pass through the version_file, that it can be required as
             # input in _run_ghc, to make every call to GHC depend on a
@@ -237,6 +238,9 @@ _haskell_toolchain = rule(
             doc = "Whether compile on and for Windows.",
             mandatory = True,
         ),
+        "is_static": attr.bool(
+            doc = "Whether GHC was linked statically.",
+        ),
         "locale": attr.string(
             default = "en_US.UTF-8",
             doc = "Locale that will be set during compiler invocations.",
@@ -257,6 +261,7 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
 def haskell_toolchain(
         name,
         version,
+        is_static,
         tools,
         libraries,
         compiler_flags = [],
@@ -279,6 +284,7 @@ def haskell_toolchain(
       haskell_toolchain(
           name = "ghc",
           version = "1.2.3",
+          is_static = is_static,
           tools = ["@sys_ghc//:bin"],
           compiler_flags = ["-Wall"],
       )
@@ -300,6 +306,7 @@ def haskell_toolchain(
     _haskell_toolchain(
         name = name,
         version = version,
+        is_static = is_static,
         tools = tools,
         libraries = libraries,
         compiler_flags = compiler_flags,
