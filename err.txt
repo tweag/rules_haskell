@@ -1,59 +1,65 @@
-$ ./worker-build-lib.sh
+$ ./worker-build-bin.sh
 INFO: Starting clean (this may take a while). Consider using --async if the clean takes more than several minutes.
 Loading: 
 Loading: 0 packages loaded
-Analyzing: target @io_tweag_rules_haskell_tutorial//lib:booleans (1 packages loaded, 0 targets configured)
-INFO: Analyzed target @io_tweag_rules_haskell_tutorial//lib:booleans (30 packages loaded, 626 targets configured).
+Analyzing: target //tests/binary-simple:binary-simple (1 packages loaded, 0 targets configured)
+INFO: Analysed target //tests/binary-simple:binary-simple (36 packages loaded, 787 targets configured).
 INFO: Found 1 target...
 bazel: Entering directory `/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/execroot/io_tweag_rules_haskell/'
-[0 / 2] [Prepa] BazelWorkspaceStatusAction stable-status.txt
-INFO: From HaskellBuildLibrary @io_tweag_rules_haskell_tutorial//lib:booleans:
-All good
-ERROR: /home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell_tutorial/lib/BUILD.bazel:6:1: HaskellLinkDynamicLibrary external/io_tweag_rules_haskell_tutorial/lib/libHSexternalZSioZUtweagZUrulesZUhaskellZUtutorialZSlibZSbooleans-ghc8.6.5.so failed: Worker process did not return a WorkResponse:
+[0 / 2] [-----] BazelWorkspaceStatusAction stable-status.txt
+INFO: From HaskellBuildBinary //tests/binary-simple:binary-simple:
+All good.
+INFO: From HaskellLinkBinary tests/binary-simple/binary-simple:
+All good.
+ERROR: /home/artem/Dev/rules_haskell/tests/binary-simple/BUILD.bazel:8:1: output 'tests/binary-simple/binary-simple' was not created
+ERROR: /home/artem/Dev/rules_haskell/tests/binary-simple/BUILD.bazel:8:1: not all outputs were created or valid
+bazel: Leaving directory `/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/execroot/io_tweag_rules_haskell/'
+Target //tests/binary-simple:binary-simple failed to build
+Use --verbose_failures to see the command lines of failed build steps.
+INFO: Elapsed time: 1.667s, Critical Path: 0.47s
+INFO: 9 processes: 7 linux-sandbox, 2 worker.
+FAILED: Build did NOT complete successfully
+FAILED: Build did NOT complete successfully
 
----8<---8<--- Start of log, file at /home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/bazel-workers/worker-4-HaskellLinkDynamicLibrary.log ---8<---8<---
+
+LOG OUTPUT:
 Hello Worker!
 Args taken: ["-pgma","/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin/gcc","-pgmc","/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin/gcc","-pgml","/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin/gcc","-pgmP","/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin/gcc","-optc-fno-stack-protector","-optP-E","-optP-undef","-optP-traditional","--persistent_worker"]
 Server Starts
 Server: Waiting for a message...
 Server: got a message, decoding...
-Server: msg received: {arguments: "-optl-fuse-ld=gold" arguments: "-optl-Wl,-no-as-needed" arguments: "-optl-Wl,-z,relro,-z,now" arguments: "-optl-B/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin" arguments: "-optl-pass-exit-codes" arguments: "-optl-lstdc++" arguments: "-optl-lm" arguments: "-shared" arguments: "-dynamic" arguments: "-hide-all-packages" arguments: "-fno-version-macros" arguments: "-package-env" arguments: "bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/link-package_env-booleans" arguments: "-package-db" arguments: "bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/link-config-booleans" arguments: "-package" arguments: "link-config-booleans" arguments: "-o" arguments: "bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/libHSexternalZSioZUtweagZUrulesZUhaskellZUtutorialZSlibZSbooleans-ghc8.6.5.so" inputs { path: "bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/link-package_env-booleans" digest: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" } inputs { path: "bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/link-config-booleans/package.cache" digest: "ee90ba21d652e73937f19adf1552f0e4104ce9dd70c16c7ea60e1fa6e7ee4da5" } inputs { path: "bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/_obj/booleans/Bool.dyn_o" digest: "cb68384ce7a1defa14544efc075629498f891ceeb1f8884b4a337dadf97870c5" } inputs { path: "bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/_obj/booleans/Bool.o" digest: "b1f426bc8f865b4bc0622755e4af78fbbb044a1cc85ac332d4286f5cad8ae8f5" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs/bin/ghc" digest: "369943d8548ef430cc29c6ec3386feabbfb1e0f1407c3b8187880650a06bc7be" } inputs { path: "bazel-out/host/bin/external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/ghc-version" digest: "9f99b1ed6a7d5cc206f895cb034aa9d93e15845e9fc876f90e155b8097bb5401" } inputs { path: "bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/compile_flags_booleans_HaskellLinkDynamicLibrary" digest: "508a15e6e301ac1962d6f55ddcfb240800f5254cbf914644ae98d8dc25be27b4" } inputs { path: "bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/_obj/booleans.dynamic.manifest" digest: "b55bd1c4f3a72c03d3bc3428ccd1af6b4de51c8db99e2efefdfc970f68ee6b91" } inputs { path: "external/io_tweag_rules_haskell/haskell/private/worker.sh" digest: "19c9961219d53a5cbb5ac2cac0649d5c4c9fda3ecf4204954612d0743979d642" } inputs { path: "bazel-out/host/bin/external/io_tweag_rules_haskell/haskell/worker" digest: "19c9961219d53a5cbb5ac2cac0649d5c4c9fda3ecf4204954612d0743979d642" }}
-Loaded package environment from bazel-out/k8-fastbuild/bin/external/io_tweag_rules_haskell_tutorial/lib/link-package_env-booleans
-/nix/store/6yjpyqkx6d9k5f2s2g8h9kz40q6rz1yx-binutils-2.31.1/bin/ld.gold: error: cannot find -lgmp
-collect2: error: ld returned 1 exit status
-`gcc' failed in phase `Linker'. (Exit code: 1)
----8<---8<--- End of log ---8<---8<---
-bazel: Leaving directory `/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/execroot/io_tweag_rules_haskell/'
-Target @io_tweag_rules_haskell_tutorial//lib:booleans failed to build
-Use --verbose_failures to see the command lines of failed build steps.
-INFO: Elapsed time: 1.962s, Critical Path: 0.64s
-INFO: 6 processes: 5 linux-sandbox, 1 worker.
-FAILED: Build did NOT complete successfully
-FAILED: Build did NOT complete successfully
+Server: msg received: {arguments: "-optl-fuse-ld=gold" arguments: "-optl-Wl,-no-as-needed" arguments: "-optl-Wl,-z,relro,-z,now" arguments: "-optl-B/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin" arguments: "-optl-pass-exit-codes" arguments: "-optl-lstdc++" arguments: "-optl-lm" arguments: "-XStandaloneDeriving" arguments: "-threaded" arguments: "-DTESTS_TOOLCHAIN_COMPILER_FLAGS" arguments: "-XNoOverloadedStrings" arguments: "-optl-pthread" arguments: "-o" arguments: "bazel-out/k8-fastbuild/bin/tests/binary-simple/binary-simple" arguments: "-hide-all-packages" arguments: "-fno-version-macros" arguments: "-package-env" arguments: "bazel-out/k8-fastbuild/bin/tests/binary-simple/link-package_env-binary-simple" arguments: "-package-db" arguments: "bazel-out/k8-fastbuild/bin/tests/binary-simple/link-config-binary-simple" arguments: "-package" arguments: "link-config-binary-simple" arguments: "-optc-Wno-unused-command-line-argument" arguments: "-optl-Wno-unused-command-line-argument" inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/link-config-binary-simple/package.cache" digest: "6a80338f584cfda8da9babe4f0d0450ddafa60d108e90b050d315d6327809121" } inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/_obj/binary-simple/Main.o" digest: "08a92da15aa0d3e741a7b18ee533e9ef211e752468d5c192de0dac9d7a696e9c" } inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/link-package_env-binary-simple" digest: "53c2caaa79d0c3da63a494f21121e8675893340e982ebeeddd9d79e3c6648f16" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/lib/ghc-8.6.5/base-4.12.0.0/libHSbase-4.12.0.0.a" digest: "2c91f5ad3d20114c752cbc092cf3b21539db7be1eca0199ddaecec06d8f3aa4f" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/lib/ghc-8.6.5/integer-gmp-1.0.2.0/libHSinteger-gmp-1.0.2.0.a" digest: "939ef92024da46fd6b68b9c44b0335df22ffda21ab9b53b262ff0decc777667d" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/lib/ghc-8.6.5/ghc-prim-0.5.3/libHSghc-prim-0.5.3.a" digest: "a9399bbf1d4558babfaa097028a774e4739fb7bf327a32b884156487424963a3" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/lib/ghc-8.6.5/rts/libHSrts.a" digest: "17568c671c2d40f834e06e928db9eb0bf866c2f1b3accfad80657c29e4921442" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs/bin/ghc" digest: "369943d8548ef430cc29c6ec3386feabbfb1e0f1407c3b8187880650a06bc7be" } inputs { path: "bazel-out/host/bin/external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/ghc-version" digest: "9f99b1ed6a7d5cc206f895cb034aa9d93e15845e9fc876f90e155b8097bb5401" } inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/compile_flags_binary-simple_HaskellLinkBinary" digest: "ec8c21fed14b07cdf70cee571ec374c77078ec554d1ce1e0f4c5a8bdd62e7590" } inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/_obj/binary-simple.static.manifest" digest: "c72adb0a99fcf4ccda7638d7c79c5fac06d4c8df02f95d8e4d8ffbc790c57d1b" } inputs { path: "external/io_tweag_rules_haskell/haskell/private/worker.sh" digest: "b246b115775dd18ab6ad639ef8b722e714775eaf3d0d900dfbef1622abb0af3f" } inputs { path: "bazel-out/host/bin/external/io_tweag_rules_haskell/haskell/worker" digest: "b246b115775dd18ab6ad639ef8b722e714775eaf3d0d900dfbef1622abb0af3f" }}
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/binary-simple/link-package_env-binary-simple
+Using binary package database: /nix/store/9c7ma9kqd9n68j7wrx6q35zs84szvn3d-ghc-8.6.5/lib/ghc-8.6.5/package.conf.d/package.cache
+Using binary package database: bazel-out/k8-fastbuild/bin/tests/binary-simple/link-config-binary-simple/package.cache
+package flags [-package link-config-binary-simple{package link-config-binary-simple True ([])},
+               -package-id base-4.12.0.0{unit base-4.12.0.0 True ([])}]
+loading package database /nix/store/9c7ma9kqd9n68j7wrx6q35zs84szvn3d-ghc-8.6.5/lib/ghc-8.6.5/package.conf.d
+loading package database bazel-out/k8-fastbuild/bin/tests/binary-simple/link-config-binary-simple
+wired-in package ghc-prim mapped to ghc-prim-0.5.3
+wired-in package integer-gmp mapped to integer-gmp-1.0.2.0
+wired-in package base mapped to base-4.12.0.0
+wired-in package rts mapped to rts
+wired-in package template-haskell mapped to template-haskell-2.14.0.0
+wired-in package ghc mapped to ghc-8.6.5
+*** Chasing dependencies:
+Chasing modules from: 
+!!! Chasing dependencies: finished in 0.02 milliseconds, allocated 0.010 megabytes
+Stable obj: []
+Stable BCO: []
+Ready for upsweep []
+Upsweep completely successful.
+*** Deleting temp files:
+Deleting: 
+link(batch): upsweep (partially) failed OR
+   Main.main not exported; not linking.
 
-
-************************************************************************************************************************
-
-
-artem@prl1b:~/rh$ ./worker-build-bin.sh
-INFO: Starting clean (this may take a while). Consider using --async if the clean takes more than several minutes.
-Loading: 
-Loading: 0 packages loaded
-Analyzing: target //tests/binary-simple:binary-simple (1 packages loaded, 0 targets configured)
-ERROR: /home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/BUILD.bazel:71:1: in haskell_toolchain_libraries rule @io_tweag_rules_haskell//haskell:toolchain-libraries: 
-Traceback (most recent call last):
-	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/BUILD.bazel", line 71
-		haskell_toolchain_libraries(name = 'toolchain-libraries')
-	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/haskell_impl.bzl", line 639, in haskell_toolchain_libraries_impl
-		haskell_context(ctx)
-	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/context.bzl", line 45, in haskell_context
-		HaskellContext(name = attr.name, label = ctx.labe..., <12 more arguments>)
-	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/context.bzl", line 51, in HaskellContext
-		ctx.executable._worker
-No attribute '_worker' in executable. Make sure there is a label type attribute marked as 'executable' with this name
-Available attributes: 
-ERROR: Analysis of target '//tests/binary-simple:binary-simple' failed; build aborted: Analysis of target '@io_tweag_rules_haskell//haskell:toolchain-libraries' failed; build aborted
-INFO: Elapsed time: 1.044s
-INFO: 0 processes.
-FAILED: Build did NOT complete successfully (37 packages loaded, 788 targets configured)
-FAILED: Build did NOT complete successfully (37 packages loaded, 788 targets configured)
+<no location info>: error:
+    output was redirected with -o, but no output will be generated
+because there is no Main module.
+*** Deleting temp files:
+Deleting: 
+*** Deleting temp dirs:
+Deleting: 
+Server sent response...
+Server: Waiting for a message...
