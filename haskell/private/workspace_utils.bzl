@@ -40,28 +40,3 @@ def _find_ghc(repository_ctx):
         fail("Cannot find GHC executable in {}.".format(ghc))
 
     return ghc
-
-def ghc_is_static(repository_ctx):
-    """Query GHC for whether the RTS is static or dynamic
-
-    Requires the GHC executable to exist under `bin/` in the current workspace.
-
-    Returns:
-      Bool, True for static RTS, False for dynamic RTS.
-
-    """
-    ghc = _find_ghc(repository_ctx)
-    repository_ctx.file(
-        "_ghc_is_dynamic.ghci",
-        content = 'foreign import ccall unsafe "rts_isDynamic" isDynamic :: IO Int',
-        executable = False,
-    )
-    result = execute_or_fail_loudly(repository_ctx, [
-        ghc,
-        "--interactive",
-        "-ghci-script",
-        "_ghc_is_dynamic.ghci",
-        "-e",
-        "isDynamic",
-    ])
-    return result.stdout.strip() == "0"
