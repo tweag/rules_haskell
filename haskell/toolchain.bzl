@@ -80,7 +80,10 @@ while IFS= read -r line; do compile_flags+=("$line"); done < %s
 while IFS= read -r line; do extra_args+=("$line"); done < %s
 while IFS= read -r line; do param_file_args+=("$line"); done < %s
 
-"${compile_flags[@]}" "${extra_args[@]}" ${param_file_args+"${param_file_args[@]}"}
+# XXX Workaround https://gitlab.haskell.org/ghc/ghc/merge_requests/1308.
+set -o pipefail
+"${compile_flags[@]}" "${extra_args[@]}" ${param_file_args+"${param_file_args[@]}"} 2>&1 \
+  | while IFS= read -r line; do [[ $line =~ ^Loaded ]] || echo "$line"; done >&2
 """ % (compile_flags_file.path, extra_args_file.path, params_file_src)
 
     ghc_wrapper_name = "ghc_wrapper_%s_%s" % (hs.name, mnemonic)
