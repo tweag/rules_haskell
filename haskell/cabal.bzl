@@ -75,12 +75,16 @@ def _cabal_tool_flag(tool):
     if tool.basename in _CABAL_TOOLS:
         return "--with-{}={}".format(tool.basename, tool.path)
 
+def _make_path(hs, binaries):
+    return ":".join([binary.dirname for binary in binaries.to_list()] + ["$PATH"])
+
 def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_manifests, cabal, setup, srcs, cabal_wrapper_tpl, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     name = hs.label.name
     with_profiling = is_profiling_enabled(hs)
 
     (ghci_extra_libs, env) = get_ghci_extra_libs(hs, cc_info)
+    env["PATH"] = _make_path(hs, tool_inputs)
 
     # TODO Instantiating this template could be done just once in the
     # toolchain rule.
@@ -112,6 +116,8 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
     args.add_all(extra_lib_dirs, format_each = "--extra-lib-dirs=%s", uniquify = True)
     if with_profiling:
         args.add("--enable-profiling")
+
+    # Redundant with _make_path() above, but better be explicit when we can.
     args.add_all(tool_inputs, map_each = _cabal_tool_flag)
 
     inputs = depset(
