@@ -12,6 +12,7 @@ load(
     "link_binary",
     "link_library_dynamic",
     "link_library_static",
+    "merge_parameter_files",
 )
 load(":private/actions/package.bzl", "package")
 
@@ -59,12 +60,10 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         compile_flags_file,
     ] + cc.files
 
-    # TODO: figure out how to pass param)file to worker
+    flagsfile = compile_flags_file
     if params_file:
-        params_file_src = params_file.path
-        extra_inputs.append(params_file)
-    else:
-        params_file_src = "<(:)"  # a temporary file with no contents
+        flagsfile  = merge_parameter_files(hs, compile_flags_file, params_file)
+        extra_inputs.append(flagsfile)
 
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
@@ -79,7 +78,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = [args, "@" + compile_flags_file.path],
+        arguments = [args, "@" + flagsfile.path],
         execution_requirements = { "supports-workers": "1" },
     )
 
