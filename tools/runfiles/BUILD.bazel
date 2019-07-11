@@ -2,7 +2,16 @@ load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_library",
     "haskell_test",
+    "haskell_toolchain_library",
 )
+
+haskell_toolchain_library(name = "base")
+
+haskell_toolchain_library(name = "directory")
+
+haskell_toolchain_library(name = "filepath")
+
+haskell_toolchain_library(name = "process")
 
 haskell_library(
     name = "runfiles",
@@ -10,9 +19,9 @@ haskell_library(
     src_strip_prefix = "src",
     visibility = ["//visibility:public"],
     deps = [
-        "@stackage//:base",
-        "@stackage//:directory",
-        "@stackage//:filepath",
+        ":base",
+        ":directory",
+        ":filepath",
     ],
 )
 
@@ -23,9 +32,9 @@ haskell_test(
     data = ["bin-data.txt"],
     src_strip_prefix = "bin",
     deps = [
+        ":base",
+        ":filepath",
         ":runfiles",
-        "@stackage//:base",
-        "@stackage//:filepath",
     ],
 )
 
@@ -38,9 +47,9 @@ haskell_test(
     ],
     src_strip_prefix = "test",
     deps = [
+        ":base",
+        ":filepath",
+        ":process",
         ":runfiles",
-        "@stackage//:base",
-        "@stackage//:filepath",
-        "@stackage//:process",
     ],
 )
