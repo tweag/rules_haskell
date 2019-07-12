@@ -8,38 +8,31 @@ for building Haskell code.
 * [**rts:**](./rts/) demonstrates foreign exports and shows how to
   link against GHC's RTS library, i.e. `libHSrts.so`.
   
-## **Important**
-
-Run all commands from the root of `rules_haskell`.
-If you `cd examples/`, bazel *will* [break on
-you](https://github.com/tweag/rules_haskell/issues/740).
-This is a current problem with bazel workspaces.
-
 ## Root Workspace
 
 Build everything in the root workspace with;
 
 ```
-$ bazel build @io_tweag_rules_haskell_examples//...
+$ bazel build //...
 ```
 
 Show every target of the vector example;
 
 ```
-$ bazel query @io_tweag_rules_haskell_examples//vector/...
-@io_tweag_rules_haskell_examples//vector:vector
-@io_tweag_rules_haskell_examples//vector:semigroups
-@io_tweag_rules_haskell_examples//vector:primitive
-@io_tweag_rules_haskell_examples//vector:ghc-prim
-@io_tweag_rules_haskell_examples//vector:deepseq
-@io_tweag_rules_haskell_examples//vector:base
+$ bazel query //vector/...
+//vector:vector
+//vector:semigroups
+//vector:primitive
+//vector:ghc-prim
+//vector:deepseq
+//vector:base
 ```
 
 Build the two main Haskell targets;
 
 ```
-$ bazel build @io_tweag_rules_haskell_examples//vector
-$ bazel build @io_tweag_rules_haskell_examples//rts:add-one-hs
+$ bazel build //vector
+$ bazel build //rts:add-one-hs
 ```
 
 [rules_haskell]: https://github.com/tweag/rules_haskell
