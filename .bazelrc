@@ -27,10 +27,6 @@ test:ci --test_output=errors
 # issue.
 build  --incompatible_use_python_toolchains=false
 
-# Needed on Windows for //tests/binary-with-data
-# see: https://github.com/tweag/rules_haskell/issues/647#issuecomment-459001362
-test:windows --experimental_enable_runfiles
-
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct
 # environment variables, such as LOCALE_ARCHIVE

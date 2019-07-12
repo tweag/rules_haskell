@@ -5,9 +5,6 @@ load(
 
 package(default_testonly = 1)
 
-# XXX: on Windows those tests need `--experimental_enable_runfiles` to succeed
-# XXX: see: https://github.com/tweag/rules_haskell/issues/647#issuecomment-459001362
-
 haskell_test(
     name = "bin1",
     srcs = ["bin1.hs"],
