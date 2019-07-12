@@ -13,6 +13,8 @@ haskell_toolchain_library(name = "filepath")
 
 haskell_toolchain_library(name = "process")
 
+haskell_toolchain_library(name = "transformers")
+
 haskell_library(
     name = "runfiles",
     srcs = ["src/Bazel/Runfiles.hs"],
@@ -22,6 +24,7 @@ haskell_library(
         ":base",
         ":directory",
         ":filepath",
+        ":transformers",
     ],
 )
 
