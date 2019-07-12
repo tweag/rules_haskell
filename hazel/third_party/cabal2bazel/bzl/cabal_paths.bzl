@@ -40,12 +40,8 @@ def _impl_path_module_gen(ctx):
         output = paths_file,
         substitutions = {
             "%{module}": ctx.attr.module,
-            "%{base_dir}": paths.join(
-                # TODO: this probably won't work for packages not in external
-                # repositories.  See:
-                # https://github.com/bazelbuild/bazel/wiki/Updating-the-runfiles-tree-structure
-                "..",
-                paths.relativize(ctx.label.workspace_root, "external"),
+            "%{data_dir}": paths.join(
+                ctx.label.workspace_name,
                 base_dir,
             ),
             "%{version}": str(ctx.attr.version),
@@ -123,6 +119,7 @@ def cabal_paths(name = None, package = None, data_dir = "", data = [], version =
         deps = [
             hazel_library("base"),
             hazel_library("filepath"),
+            "@io_tweag_rules_haskell//tools/runfiles",
         ],
         # TODO: run directory resolution.
         **kwargs
