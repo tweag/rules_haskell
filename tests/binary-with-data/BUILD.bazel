@@ -31,5 +31,6 @@ haskell_test(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:process",
+        "//tools/runfiles",
     ],
 )
