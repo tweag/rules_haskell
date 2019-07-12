@@ -555,7 +555,7 @@ Specify a fully qualified package name of the form <package>-<version>.
 
 def _stack_snapshot_impl(repository_ctx):
     if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
-        fail("Please specify either snapshot or repository_snapshot, not both")
+        fail("Please specify either snapshot or local_snapshot, but not both.")
     elif repository_ctx.attr.snapshot:
         snapshot = repository_ctx.attr.snapshot
     elif repository_ctx.attr.local_snapshot:
