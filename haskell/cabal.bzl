@@ -667,7 +667,8 @@ stack_snapshot = repository_rule(
 )
 """Use Stack to download and extract Cabal source distributions.
 
-Example:
+Examples:
+
   ```bzl
   stack_snapshot(
       name = "stackage",
@@ -679,6 +680,24 @@ Example:
   ```
   defines `@stackage//:conduit`, `@stackage//:lens`,
   `@stackage//:zlib` library targets.
+
+  Alternatively
+  ```bzl
+  stack_snapshot(
+      name = "stackage",
+      packages = ["conduit", "lens", "zlib"],
+      tools = ["@happy//:happy", "@c2hs//:c2hs"],
+      local_Snapshot = "//:snapshot.yaml",
+      deps = ["@zlib.dev//:zlib"],
+  ```
+  Does the same as the previous example, provided there is a
+  `snapshot.yaml`, at the root of the repository with content
+  ```yaml
+  resolver: lts-13.15
+
+  packages:
+    - zlib-0.6.2
+  ```
 
 This rule will use Stack to compute the transitive closure of the
 subset of the given snapshot listed in the `packages` attribute, and
