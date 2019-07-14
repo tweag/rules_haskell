@@ -92,7 +92,7 @@ def _darwin_create_extra_linker_flags_file(hs, cc, objects_dir, executable, dyna
         done
         """.format(
             nm = cc.tools.nm,
-            solibs = " ".join(["\"" + l.path + "\"" for l in solibs]),
+            solibs = " ".join(["\"" + l.path + "\"" for l in solibs.to_list()]),
             out = linker_flags_file.path,
         ),
     )

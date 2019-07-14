@@ -9,7 +9,7 @@ def _dedup_on(f, list_):
     def compare_x(el):
       return el.x
 
-    dedup_on([struct(x=3), struct(x=4), struct(x=3)], compare_x)
+    dedup_on(compare_x, [struct(x=3), struct(x=4), struct(x=3)])
     => [struct(x=3), struct(x=4)]
     """
     seen = set.empty()

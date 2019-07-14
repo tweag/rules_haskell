@@ -1,9 +1,14 @@
+{-# LANGUAGE CPP #-}
+
 module Main where
 
+import qualified Bazel.Runfiles
 import Control.Monad (unless)
 
 main :: IO ()
 main = do
-    contents <- readFile "tests/binary-with-data/bin1-input"
+    runfiles <- Bazel.Runfiles.create
+    let path = Bazel.Runfiles.rlocation runfiles ("io_tweag_rules_haskell/" ++ BIN1_INPUT)
+    contents <- readFile path
     unless (contents == "contents\n")
       $ error $ "Incorrect input; got " ++ show contents

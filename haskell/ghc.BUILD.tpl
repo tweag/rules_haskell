@@ -39,7 +39,6 @@ cc_toolchain(
     ar_files = ":mingw",
     as_files = ":mingw",
     compiler_files = ":mingw",
-    cpu = "x64_windows",
     dwp_files = ":mingw",
     linker_files = ":mingw",
     objcopy_files = ":mingw",

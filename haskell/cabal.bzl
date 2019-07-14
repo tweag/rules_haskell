@@ -8,17 +8,15 @@ load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(":private/set.bzl", "set")
 load(
+    ":private/workspace_utils.bzl",
+    _execute_or_fail_loudly = "execute_or_fail_loudly",
+)
+load(
     ":providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "get_ghci_extra_libs",
 )
-
-def _execute_or_fail_loudly(repository_ctx, arguments):
-    exec_result = repository_ctx.execute(arguments)
-    if exec_result.return_code != 0:
-        fail("\n".join(["Command failed: " + " ".join(arguments), exec_result.stderr]))
-    return exec_result
 
 def _so_extension(hs):
     return "dylib" if hs.toolchain.is_darwin else "so"
@@ -77,12 +75,16 @@ def _cabal_tool_flag(tool):
     if tool.basename in _CABAL_TOOLS:
         return "--with-{}={}".format(tool.basename, tool.path)
 
+def _make_path(hs, binaries):
+    return ":".join([binary.dirname for binary in binaries.to_list()] + ["$PATH"])
+
 def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_manifests, cabal, setup, srcs, cabal_wrapper_tpl, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     name = hs.label.name
     with_profiling = is_profiling_enabled(hs)
 
     (ghci_extra_libs, env) = get_ghci_extra_libs(hs, cc_info)
+    env["PATH"] = _make_path(hs, tool_inputs)
 
     # TODO Instantiating this template could be done just once in the
     # toolchain rule.
@@ -107,13 +109,15 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
     package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
     extra_include_dirs = cc_info.compilation_context.includes
-    extra_lib_dirs = [file.dirname for file in ghci_extra_libs]
+    extra_lib_dirs = [file.dirname for file in ghci_extra_libs.to_list()]
     args.add_all([name, setup, cabal.dirname, package_database.dirname])
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")
     args.add_all(extra_lib_dirs, format_each = "--extra-lib-dirs=%s", uniquify = True)
     if with_profiling:
         args.add("--enable-profiling")
+
+    # Redundant with _make_path() above, but better be explicit when we can.
     args.add_all(tool_inputs, map_each = _cabal_tool_flag)
 
     inputs = depset(
@@ -170,10 +174,13 @@ def _haskell_cabal_library_impl(ctx):
         static_library_filename,
         sibling = cabal,
     )
-    dynamic_library = hs.actions.declare_file(
-        "_install/lib/libHS{}-ghc{}.{}".format(name, hs.toolchain.version, _so_extension(hs)),
-        sibling = cabal,
-    )
+    if hs.toolchain.is_static:
+        dynamic_library = None
+    else:
+        dynamic_library = hs.actions.declare_file(
+            "_install/lib/libHS{}-ghc{}.{}".format(name, hs.toolchain.version, _so_extension(hs)),
+            sibling = cabal,
+        )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
     c = _prepare_cabal_inputs(
         hs,
@@ -197,9 +204,8 @@ def _haskell_cabal_library_impl(ctx):
             package_database,
             interfaces_dir,
             static_library,
-            dynamic_library,
             data_dir,
-        ],
+        ] + ([dynamic_library] if dynamic_library != None else []),
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
         progress_message = "HaskellCabalLibrary {}".format(hs.label),
@@ -207,7 +213,7 @@ def _haskell_cabal_library_impl(ctx):
     )
 
     default_info = DefaultInfo(
-        files = depset([static_library, dynamic_library]),
+        files = depset([static_library] + ([dynamic_library] if dynamic_library != None else [])),
         runfiles = ctx.runfiles(
             files = [data_dir],
             collect_default = True,
@@ -224,13 +230,17 @@ def _haskell_cabal_library_impl(ctx):
             transitive = [dep_info.static_libraries],
             order = "topological",
         ),
-        dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries]),
+        dynamic_libraries = depset(
+            direct = [dynamic_library] if dynamic_library != None else [],
+            transitive = [dep_info.dynamic_libraries],
+        ),
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
     )
     lib_info = HaskellLibraryInfo(package_id = name, version = None)
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
+        ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
@@ -277,6 +287,7 @@ haskell_cabal_library = rule(
         ),
     },
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    fragments = ["cpp"],
 )
 """Use Cabal to build a library.
 
@@ -401,6 +412,7 @@ haskell_cabal_binary = rule(
         ),
     },
     toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    fragments = ["cpp"],
 )
 """Use Cabal to build a binary.
 
@@ -463,7 +475,7 @@ _CORE_PACKAGES = [
     "xhtml",
 ]
 
-def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_packages):
+def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unversioned_packages):
     """Given a list of root packages, compute a dependency graph.
 
     Returns:
@@ -475,15 +487,20 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
     if not versioned_packages and not unversioned_packages:
         return ({}, [])
 
-    # Unpack all given packages, then compute the transitive closure
-    # and unpack anything in the transitive closure as well.
     stack_cmd = repository_ctx.which("stack")
     if not stack_cmd:
         fail("Cannot find stack command in your PATH.")
-    stack = [stack_cmd, "--no-nix", "--skip-ghc-check", "--system-ghc"]
+    exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
+    stack_major_version = int(exec_result.stdout.split(" ")[0].split(".")[0])
+    if stack_major_version < 2:
+        fail("Stack 2.1 or above required.")
+
+    # Unpack all given packages, then compute the transitive closure
+    # and unpack anything in the transitive closure as well.
+    stack = [stack_cmd]
     if versioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
-    stack = [stack_cmd, "--no-nix", "--skip-ghc-check", "--system-ghc", "--resolver", repository_ctx.attr.snapshot]
+    stack = [stack_cmd, "--resolver", snapshot]
     if unversioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + unversioned_packages)
     exec_result = _execute_or_fail_loudly(repository_ctx, ["ls"])
@@ -492,7 +509,7 @@ def _compute_dependency_graph(repository_ctx, versioned_packages, unversioned_pa
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
-        stack + ["ls", "dependencies", "--separator=-"],
+        stack + ["ls", "dependencies", "--global-hints", "--separator=-"],
     )
     transitive_unpacked_sdists = [
         unpacked_sdist
@@ -522,7 +539,7 @@ Specify a fully qualified package name of the form <package>-<version>.
     all_packages = [_chop_version(dir) for dir in transitive_unpacked_sdists + _CORE_PACKAGES]
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
-        stack + ["dot", "--external"],
+        stack + ["dot", "--global-hints", "--external"],
     )
     dependencies = {k: [] for k in all_packages}
     for line in exec_result.stdout.splitlines():
@@ -537,6 +554,15 @@ Specify a fully qualified package name of the form <package>-<version>.
     return (dependencies, transitive_unpacked_sdists)
 
 def _stack_snapshot_impl(repository_ctx):
+    if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
+        fail("Please specify either snapshot or local_snapshot, but not both.")
+    elif repository_ctx.attr.snapshot:
+        snapshot = repository_ctx.attr.snapshot
+    elif repository_ctx.attr.local_snapshot:
+        snapshot = repository_ctx.path(repository_ctx.attr.local_snapshot)
+    else:
+        fail("Please specify one of snapshot or repository_snapshot")
+
     packages = repository_ctx.attr.packages
     non_core_packages = [
         package
@@ -552,6 +578,7 @@ def _stack_snapshot_impl(repository_ctx):
             unversioned_packages.append(package)
     (dependencies, transitive_unpacked_sdists) = _compute_dependency_graph(
         repository_ctx,
+        snapshot,
         versioned_packages,
         unversioned_packages,
     )
@@ -620,7 +647,11 @@ stack_snapshot = repository_rule(
     _stack_snapshot_impl,
     attrs = {
         "snapshot": attr.string(
-            doc = "The name of a Stackage snapshot.",
+            doc = "The name of a Stackage snapshot. Incompatible with local_snapshot.",
+        ),
+        "local_snapshot": attr.label(
+            doc = "A custom Stack snapshot file, as per the Stack documentation. Incompatible with snapshot.",
+            allow_single_file = True,
         ),
         "packages": attr.string_list(
             doc = "A set of package identifiers. For packages in the snapshot, version numbers can be omitted.",
@@ -636,7 +667,8 @@ stack_snapshot = repository_rule(
 )
 """Use Stack to download and extract Cabal source distributions.
 
-Example:
+Examples:
+
   ```bzl
   stack_snapshot(
       name = "stackage",
@@ -648,6 +680,24 @@ Example:
   ```
   defines `@stackage//:conduit`, `@stackage//:lens`,
   `@stackage//:zlib` library targets.
+
+  Alternatively
+  ```bzl
+  stack_snapshot(
+      name = "stackage",
+      packages = ["conduit", "lens", "zlib"],
+      tools = ["@happy//:happy", "@c2hs//:c2hs"],
+      local_Snapshot = "//:snapshot.yaml",
+      deps = ["@zlib.dev//:zlib"],
+  ```
+  Does the same as the previous example, provided there is a
+  `snapshot.yaml`, at the root of the repository with content
+  ```yaml
+  resolver: lts-13.15
+
+  packages:
+    - zlib-0.6.2
+  ```
 
 This rule will use Stack to compute the transitive closure of the
 subset of the given snapshot listed in the `packages` attribute, and

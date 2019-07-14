@@ -1,7 +1,13 @@
 #!/bin/sh
+#
+# Checks the version of Bazel found in the PATH, and then initializes
+# a new Bazel workspace with dummy Haskell build targets.
 
 MIN_BAZEL_MAJOR=0
 MIN_BAZEL_MINOR=24
+
+MAX_BAZEL_MAJOR=0
+MAX_BAZEL_MINOR=27
 
 set -e
 
@@ -20,14 +26,20 @@ check_bazel_version () {
 $actual_raw
 EOF
 
-    local expected=$MIN_BAZEL_MAJOR.$MIN_BAZEL_MINOR.0
-    local cmp=$expected'\n'$actual
+    local expected_min=$MIN_BAZEL_MAJOR.$MIN_BAZEL_MINOR.0
+    local expected_max=$MAX_BAZEL_MAJOR.$MAX_BAZEL_MINOR.x
 
-    if ! ( [ "$actual_major" -gt "$MIN_BAZEL_MAJOR" ] || (
-            [ "$actual_major" -eq "$MIN_BAZEL_MAJOR" ] &&
-                [ "$actual_minor" -ge "$MIN_BAZEL_MINOR" ] ) )
+    if [ "$actual_major" -gt "$MAX_BAZEL_MAJOR" ] || (
+        [ "$actual_major" -eq "$MAX_BAZEL_MAJOR" ] &&
+            [ "$actual_minor" -ge "$MAX_BAZEL_MINOR" ] )
     then
-        echo "Need at least Bazel v${expected}. v${actual_raw} detected." >/dev/stderr
+	echo "Warning: a too new version of Bazel detected: v${actual_raw}."  >/dev/stderr
+	echo "         Recommended versions are from v${expected_min} to v${expected_max}."  >/dev/stderr
+    elif [ "$actual_major" -lt "$MIN_BAZEL_MAJOR" ] || (
+          [ "$actual_major" -eq "$MIN_BAZEL_MAJOR" ] &&
+            [ "$actual_minor" -lt "$MIN_BAZEL_MINOR" ] )
+    then
+        echo "Error: Need at least Bazel v${expected_min} but v${actual_raw} detected." >/dev/stderr
         exit 1
     fi
 }
@@ -71,6 +83,24 @@ load(
 # Registers a haskell toolchain with a GHC binary
 # downloaded from haskell.org.
 haskell_register_ghc_bindists(version = "8.6.4")
+EOF
+
+cat > .bazelrc <<"EOF"
+build:ci --loading_phase_threads=1
+build:ci --jobs=2
+build:ci --verbose_failures
+common:ci --color=no
+test:ci --test_output=errors
+
+build --incompatible_use_python_toolchains=false
+
+# test environment does not propagate locales by default
+# some tests reads files written in UTF8, we need to propagate the correct
+# environment variables, such as LOCALE_ARCHIVE
+# We also need to setup an utf8 locale
+test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
+
+try-import .bazelrc.local
 EOF
 
 cat > BUILD.bazel <<"EOF"

@@ -28,24 +28,20 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_library")
 load("//tools:mangling.bzl", "hazel_library")
 
 def _impl_path_module_gen(ctx):
-    paths_file = ctx.new_file(ctx.label.name)
+    paths_file = ctx.actions.declare_file(ctx.label.name)
 
     base_dir = paths.join(
         ctx.label.package,
         ctx.attr.data_dir if ctx.attr.data_dir else "",
     )
 
-    ctx.template_action(
+    ctx.actions.expand_template(
         template = ctx.file._template,
         output = paths_file,
         substitutions = {
             "%{module}": ctx.attr.module,
-            "%{base_dir}": paths.join(
-                # TODO: this probably won't work for packages not in external
-                # repositories.  See:
-                # https://github.com/bazelbuild/bazel/wiki/Updating-the-runfiles-tree-structure
-                "..",
-                paths.relativize(ctx.label.workspace_root, "external"),
+            "%{data_dir}": paths.join(
+                ctx.label.workspace_name,
                 base_dir,
             ),
             "%{version}": str(ctx.attr.version),
@@ -58,10 +54,9 @@ _path_module_gen = rule(
     attrs = {
         "data_dir": attr.string(),
         "module": attr.string(),
-        "version": attr.int_list(mandatory = True, non_empty = True),
+        "version": attr.int_list(mandatory = True, allow_empty = False),
         "_template": attr.label(
-            allow_files = True,
-            single_file = True,
+            allow_single_file = True,
             default = Label(
                 "@ai_formation_hazel//:paths-template.hs",
             ),
@@ -124,6 +119,7 @@ def cabal_paths(name = None, package = None, data_dir = "", data = [], version =
         deps = [
             hazel_library("base"),
             hazel_library("filepath"),
+            "@io_tweag_rules_haskell//tools/runfiles",
         ],
         # TODO: run directory resolution.
         **kwargs

@@ -116,6 +116,7 @@ c2hs_library = rule(
         "@io_tweag_rules_haskell//haskell:toolchain",
         "@io_tweag_rules_haskell//haskell/c2hs:toolchain",
     ],
+    fragments = ["cpp"],
 )
 
 def _c2hs_toolchain_impl(ctx):

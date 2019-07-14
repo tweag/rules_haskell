@@ -71,19 +71,6 @@ stack_snapshot(
     deps = ["@zlib.dev//:zlib"],
 )
 
-rules_nixpkgs_version = "0.5.2"
-
-rules_nixpkgs_version_is_hash = False
-
-rules_nixpkgs_sha256 = "5a384daa57b49abf9f0b672852f1a66a3c52aecf9d4d2ac64f6de0fd307690c8"
-
-http_archive(
-    name = "io_tweag_rules_nixpkgs",
-    sha256 = rules_nixpkgs_sha256,
-    strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % rules_nixpkgs_version] if rules_nixpkgs_version_is_hash else ["https://github.com/tweag/rules_nixpkgs/archive/v%s.tar.gz" % rules_nixpkgs_version],
-)
-
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_cc_configure",
@@ -98,10 +85,14 @@ nixpkgs_package(
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "73fdad358857e120fd0fa19e071a96e15c0f23bb25f85d3f7009abfd4f264a2a",
-    strip_prefix = "protobuf-3.6.1.3",
-    urls = ["https://github.com/google/protobuf/archive/v3.6.1.3.tar.gz"],
+    sha256 = "03d2e5ef101aee4c2f6ddcf145d2a04926b9c19e7086944df3842b1b8502b783",
+    strip_prefix = "protobuf-3.8.0",
+    urls = ["https://github.com/google/protobuf/archive/v3.8.0.tar.gz"],
 )
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()  # configure and install zlib for protobuf
 
 nixpkgs_local_repository(
     name = "nixpkgs",
@@ -143,7 +134,7 @@ haskell_register_ghc_nixpkgs(
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
     repl_ghci_args = test_repl_ghci_args,
-    repositories = {"nixpkgs": "@nixpkgs"},
+    repository = "@nixpkgs",
     version = test_ghc_version,
 )
 
@@ -161,6 +152,9 @@ register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
+    # XXX: see .bazelrc for discussion, the python toolchain
+    # work in postponed to future bazel version
+    # "//tests:python_toolchain",
 )
 
 nixpkgs_cc_configure(
@@ -188,6 +182,20 @@ cc_library(
 )
 
 nixpkgs_package(
+    name = "lz4",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+  name = "lz4",
+  srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"]),
+  includes = ["include"],
+)
+    """,
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
     name = "c2hs",
     attribute_path = "haskellPackages.c2hs",
     repository = "@nixpkgs",
@@ -204,6 +212,12 @@ nixpkgs_package(
     attribute_path = "haskellPackages.proto-lens-protoc",
     repository = "@nixpkgs",
 )
+
+#nixpkgs_package(
+#    name = "python3",
+#    attribute_path = "python3",
+#    repository = "@nixpkgs",
+#)
 
 nixpkgs_package(
     name = "sphinx",
@@ -271,6 +285,13 @@ jvm_maven_import_external(
 local_repository(
     name = "c2hs_repo",
     path = "tests/c2hs/repo",
+)
+
+# python toolchain
+nixpkgs_package(
+    name = "python3",
+    attribute_path = "python3",
+    repository = "@nixpkgs",
 )
 
 load(
@@ -351,16 +372,16 @@ skydoc_repositories()
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "8be57ff66da79d9e4bd434c860dce589195b9101b2c187d144014bbca23b5166",
-    strip_prefix = "rules_go-0.16.3",
-    urls = ["https://github.com/bazelbuild/rules_go/archive/0.16.3.tar.gz"],
+    sha256 = "9084496dde809363c491137e077ace81780463ead0060a0a6c3c4c0f613e9fcb",
+    strip_prefix = "rules_go-0.18.6",
+    urls = ["https://github.com/bazelbuild/rules_go/archive/0.18.6.tar.gz"],
 )
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "0a0920151acf18c51866331944d12db9023707a6861e78225366f5711efc845b",
-    strip_prefix = "buildtools-0.25.1",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/0.25.1.tar.gz"],
+    sha256 = "86592d703ecbe0c5cbb5139333a63268cf58d7efd2c459c8be8e69e77d135e29",
+    strip_prefix = "buildtools-0.26.0",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/0.26.0.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
@@ -370,7 +391,7 @@ local_repository(
 )
 
 load(
-    "@io_bazel_rules_go//go:def.bzl",
+    "@io_bazel_rules_go//go:deps.bzl",
     "go_register_toolchains",
     "go_rules_dependencies",
 )
@@ -390,3 +411,13 @@ buildifier_dependencies()
 load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
 
 hazel_setup()
+
+# For profiling
+# Required to make use of `bazel build --profile`.
+
+# Dummy target //external:python_headers.
+# See https://github.com/protocolbuffers/protobuf/blob/d9ccd0c0e6bbda9bf4476088eeb46b02d7dcd327/util/python/BUILD
+bind(
+    name = "python_headers",
+    actual = "@com_google_protobuf//util/python:python_headers",
+)

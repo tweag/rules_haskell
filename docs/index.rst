@@ -11,6 +11,11 @@ more advanced use cases, see :ref:`Common Haskell Build Use Cases
 <use-cases>`. Refer to the `Bazel documentation`_ for more about
 Bazel.
 
+Requirements:
+
+* **Bazel:** See the `start script`_ for versions that are known to be
+  compatible.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
@@ -21,3 +26,4 @@ Bazel.
 
 .. _Bazel: https://bazel.build
 .. _Bazel documentation: https://docs.bazel.build/versions/master/getting-started.html
+.. _start script: https://haskell.build/start

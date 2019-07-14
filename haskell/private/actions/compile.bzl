@@ -267,6 +267,11 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
         # to debug issues in non-sandboxed builds.
         "-Wmissing-home-modules",
     ])
+    if hs.toolchain.is_static and not hs.toolchain.is_windows:
+        # A static GHC RTS requires -fPIC. However, on Unix we also require
+        # -fexternal-dynamic-refs, otherwise GHC still generates R_X86_64_PC32
+        # relocations which prevents loading these static libraries as PIC.
+        args.add("-fexternal-dynamic-refs")
 
     # Output directories
     args.add_all([

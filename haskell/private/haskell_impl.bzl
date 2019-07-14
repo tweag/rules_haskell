@@ -29,15 +29,14 @@ load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
     "get_dynamic_hs_lib_name",
-    "get_lib_name",
     "get_static_hs_lib_name",
     "ln",
     "match_label",
     "parse_pattern",
-    "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
+load(":private/list.bzl", "list")
 load(":private/version_macros.bzl", "generate_version_macros")
 load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
@@ -147,8 +146,19 @@ def _expand_make_variables(name, ctx, strings):
         ctx.attr.plugins,
         ctx.attr.tools,
     ]
-    targets = [target for attr in label_attrs for target in attr]
-    strings = [ctx.expand_location(str, targets) for str in strings]
+
+    # Deduplicate targets. Targets could be duplicated between attributes, e.g.
+    # srcs and extra_srcs. ctx.expand_location fails if any target occurs
+    # multiple times.
+    targets = {
+        target.label: target
+        for attr in label_attrs
+        for target in attr
+        # expand_location expects a list of targets, but haskell_proto_aspect
+        # can inject lists of files instead.
+        if hasattr(target, "label")
+    }.values()
+    strings = [ctx.expand_location(str, targets = targets) for str in strings]
     strings = [ctx.expand_make_variables(name, str, {}) for str in strings]
     return strings
 
@@ -186,11 +196,11 @@ def _haskell_binary_common_impl(ctx, is_test):
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
     dynamic = not ctx.attr.linkstatic
-    if with_profiling or hs.toolchain.is_windows:
+    if with_profiling or hs.toolchain.is_static:
         # NOTE We can't have profiling and dynamic code at the
         # same time, see:
         # https://ghc.haskell.org/trac/ghc/ticket/15394
-        # Also, GHC on Windows doesn't support dynamic code
+        # Also, static GHC doesn't support dynamic code
         dynamic = False
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
@@ -222,6 +232,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     for dep in ctx.attr.deps:
         if HaskellCoverageInfo in dep:
             coverage_data += dep[HaskellCoverageInfo].coverage_data
+            coverage_data = list.dedup_on(_get_mix_filepath, coverage_data)
 
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     (binary, solibs) = link_binary(
@@ -388,11 +399,11 @@ def haskell_library_impl(ctx):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
 
     with_shared = not ctx.attr.linkstatic
-    if with_profiling or hs.toolchain.is_windows:
+    if with_profiling or hs.toolchain.is_static:
         # NOTE We can't have profiling and dynamic code at the
         # same time, see:
         # https://ghc.haskell.org/trac/ghc/ticket/15394
-        # Also, GHC on Windows doesn't support dynamic code
+        # Also, static GHC doesn't support dynamic code
         with_shared = False
 
     package_name = getattr(ctx.attr, "package_name", None)
@@ -508,8 +519,11 @@ def haskell_library_impl(ctx):
         if HaskellCoverageInfo in dep:
             dep_coverage_data += dep[HaskellCoverageInfo].coverage_data
 
+    coverage_data = dep_coverage_data + c.coverage_data
+    coverage_data = list.dedup_on(_get_mix_filepath, coverage_data)
+
     coverage_info = HaskellCoverageInfo(
-        coverage_data = dep_coverage_data + c.coverage_data,
+        coverage_data = coverage_data,
     )
 
     target_files = depset([file for file in [static_library, dynamic_library] if file])
@@ -569,6 +583,9 @@ def haskell_library_impl(ctx):
     # Should be find_cpp_toolchain() instead.
     cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
     feature_configuration = cc_common.configure_features(
+        # XXX: protobuf is passing a "patched ctx"
+        # which includes the real ctx as "real_ctx"
+        ctx = getattr(ctx, "real_ctx", ctx),
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
@@ -643,6 +660,7 @@ def haskell_toolchain_libraries_impl(ctx):
     # Should be find_cpp_toolchain() instead.
     cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
     feature_configuration = cc_common.configure_features(
+        ctx = ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
@@ -658,7 +676,7 @@ def haskell_toolchain_libraries_impl(ctx):
     ])
 
     library_dict = {}
-    for package in ordered:
+    for package in ordered.to_list():
         target = libraries[package]
 
         # Construct CcInfo
@@ -669,7 +687,7 @@ def haskell_toolchain_libraries_impl(ctx):
             # don't import dynamic libraries in profiling mode.
             libs = {
                 get_static_hs_lib_name(hs.toolchain.version, lib): {"static": lib}
-                for lib in target[HaskellImportHack].static_profiling_libraries
+                for lib in target[HaskellImportHack].static_profiling_libraries.to_list()
             }
         else:
             # Workaround for https://github.com/tweag/rules_haskell/issues/881
@@ -678,7 +696,7 @@ def haskell_toolchain_libraries_impl(ctx):
             # dynamic libHSrts and the static libCffi and libHSrts.
             libs = {
                 get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
-                for lib in target[HaskellImportHack].dynamic_libraries
+                for lib in target[HaskellImportHack].dynamic_libraries.to_list()
             }
             for lib in target[HaskellImportHack].static_libraries.to_list():
                 name = get_static_hs_lib_name(with_profiling, lib)
@@ -846,3 +864,8 @@ def _exposed_modules_reexports(exports):
             exposed_reexports.append(exposed_reexport)
 
     return exposed_reexports
+
+def _get_mix_filepath(coverage_datum):
+    """ Extracts mix file path from a coverage datum.
+    """
+    return coverage_datum.mix_file.short_path

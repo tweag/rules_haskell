@@ -192,6 +192,7 @@ def _mk_binary_rule(**kwargs):
         toolchains = [
             "@io_tweag_rules_haskell//haskell:toolchain",
         ],
+        fragments = ["cpp"],
         **kwargs
     )
 
@@ -262,6 +263,7 @@ haskell_library = rule(
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
     ],
+    fragments = ["cpp"],
 )
 """Build a library from Haskell source.
 
@@ -298,7 +300,7 @@ haskell_import = rule(
         "hdrs": attr.label_list(allow_files = True),
         "includes": attr.string_list(),
         "haddock_interfaces": attr.label_list(allow_files = True),
-        "haddock_html": attr.label(allow_files = True, single_file = True),
+        "haddock_html": attr.label(allow_single_file = True),
         "_version_macros": attr.label(
             executable = True,
             cfg = "host",
@@ -320,6 +322,7 @@ haskell_toolchain_libraries = rule(
     toolchains = [
         "@io_tweag_rules_haskell//haskell:toolchain",
     ],
+    fragments = ["cpp"],
 )
 
 haskell_toolchain_library = rule(
@@ -332,6 +335,7 @@ haskell_toolchain_library = rule(
             default = Label("@io_tweag_rules_haskell//haskell:toolchain-libraries"),
         ),
     ),
+    fragments = ["cpp"],
 )
 """Import packages that are prebuilt outside of Bazel.
 

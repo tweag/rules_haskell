@@ -1,5 +1,6 @@
 """Multi target Haskell REPL."""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@io_tweag_rules_haskell//haskell:private/context.bzl", "haskell_context", "render_env")
@@ -280,7 +281,7 @@ def _create_repl(hs, ctx, repl_info, output):
         output = output,
         is_executable = True,
         substitutions = {
-            "{ENV}": render_env(ghc_env),
+            "{ENV}": render_env(dicts.add(hs.env, ghc_env)),
             "{TOOL}": hs.tools.ghci.path,
             "{ARGS}": " ".join(
                 args + [
@@ -302,6 +303,7 @@ def _create_repl(hs, ctx, repl_info, output):
                 set.to_depset(repl_info.load_info.source_files),
                 repl_info.dep_info.package_databases,
                 ghci_extra_libs,
+                depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
             ]),
             collect_data = ctx.attr.collect_data,
         ),

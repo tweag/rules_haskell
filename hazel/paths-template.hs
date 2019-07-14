@@ -5,6 +5,7 @@ module %{module} (
     getDataFileName,
     ) where
 
+import qualified Bazel.Runfiles as Runfiles
 import Data.Version (Version, makeVersion)
 import Prelude
 import System.FilePath ((</>), takeDirectory)
@@ -13,8 +14,8 @@ import System.Environment (getExecutablePath)
 -- TODO: automatically locate root directory
 getDataDir :: IO FilePath
 getDataDir = do
-    exePath <- getExecutablePath
-    return $ takeDirectory exePath </> "%{base_dir}"
+    r <- Runfiles.create
+    pure $! Runfiles.rlocation r "%{data_dir}"
 
 getDataFileName :: FilePath -> IO FilePath
 getDataFileName name = do

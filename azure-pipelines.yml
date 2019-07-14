@@ -9,7 +9,7 @@ jobs:
       architecture: 'x64'
   - bash: |
       set -e
-      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.24.0/bazel-0.24.0-windows-x86_64.exe
+      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.27.0/bazel-0.27.0-windows-x86_64.exe
       mv bazel-*.exe bazel.exe
       mkdir /c/bazel
       mv bazel.exe /c/bazel
@@ -108,5 +108,8 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/two-libs/..."
       /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
       /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
+
+      # Hazel tests that succeed
+      /c/bazel/bazel.exe test --config windows "@ai_formation_hazel//test:ghc-paths-test"
 
     displayName: 'Run Bazel'

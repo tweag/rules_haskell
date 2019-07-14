@@ -118,7 +118,7 @@ def make_path(libs, prefix = None, sep = None):
 
     sep = sep if sep else ":"
 
-    for lib in libs:
+    for lib in libs.to_list():
         lib_dir = paths.dirname(lib.path)
         if prefix:
             lib_dir = paths.join(prefix, lib_dir)
@@ -291,7 +291,7 @@ def link_libraries(libs, args, prefix_optl = False):
     # https://github.com/tweag/rules_haskell/issues/873.
     cc_libs = depset(direct = [
         lib
-        for lib in libs
+        for lib in libs.to_list()
         if not get_lib_name(lib).startswith("HS")
     ])
 
@@ -306,8 +306,9 @@ def link_libraries(libs, args, prefix_optl = False):
         args.add_all(cc_libs, map_each = get_lib_name, format_each = libfmt)
         args.add_all(cc_libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
     else:
-        args.extend([libfmt % get_lib_name(lib) for lib in cc_libs])
-        args.extend(depset(direct = [dirfmt % lib.dirname for lib in cc_libs]).to_list())
+        cc_libs_list = cc_libs.to_list()
+        args.extend([libfmt % get_lib_name(lib) for lib in cc_libs_list])
+        args.extend([dirfmt % lib.dirname for lib in cc_libs_list])
 
 # tests in /tests/unit_tests/BUILD
 def parent_dir_path(path):
@@ -532,6 +533,13 @@ def ln(hs, target, link, extra_inputs = depset()):
             link = link.path,
         ),
         use_default_shell_env = True,
+        # Don't sandbox symlinking to reduce overhead.
+        # See https://github.com/tweag/rules_haskell/issues/958.
+        execution_requirements = {
+            "no-sandbox": "",
+            "no-cache": "",
+            "no-remote": "",
+        },
     )
 
 def parse_pattern(ctx, pattern_str):

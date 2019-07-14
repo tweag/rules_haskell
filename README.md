@@ -105,34 +105,6 @@ See https://api.haskell.build for the reference documentation on provided
 rules. Using [./serve-docs.sh](./serve-docs.sh), you can also view
 this documentation locally.
 
-## Language interop
-
-We may be supporting interop with other languages in one way or
-another. Please see languages listed below about how.
-
-### C/C++
-
-C/C++ libraries can be specified as dependencies. And Haskell libraries can be
-used as C/C++ dependencies.
-
-### Java
-
-You can supply `java_*` rule targets in `deps` of
-[haskell_binary](#haskell_binary) and
-[haskell_library](#haskell_library). This will make jars produced by
-those dependencies available during Haskell source compilation phase
-(i.e. not during linking &c. but it's subject to change) and set the
-CLASSPATH for that phase as well.
-
-## Building Cabal packages published on Hackage
-
-This repository contains no special support for building Cabal
-packages. This is provided by downstream rule sets. We
-recommend [Hazel][hazel] for generating rules to build packages
-published on Hackage, or part of Stackage snapshots, using Bazel.
-
-[hazel]: ./hazel/README.md
-
 ## Troubleshooting
 
 ### No such file or directory

@@ -51,18 +51,18 @@ def cc_interop_info(ctx):
     for cc in ccs:
         cc_ctx = cc.compilation_context
         hdrs.append(cc_ctx.headers)
-        include_args.extend(["-I" + include for include in cc_ctx.includes])
+        include_args.extend(["-I" + include for include in cc_ctx.includes.to_list()])
         cpp_flags.extend(
             [
                 "-D" + define
-                for define in cc_ctx.defines
+                for define in cc_ctx.defines.to_list()
             ] + [
                 f
-                for include in cc_ctx.quote_includes
+                for include in cc_ctx.quote_includes.to_list()
                 for f in ["-iquote", include]
             ] + [
                 f
-                for include in cc_ctx.system_includes
+                for include in cc_ctx.system_includes.to_list()
                 for f in ["-isystem", include]
             ],
         )
@@ -73,6 +73,9 @@ def cc_interop_info(ctx):
     # Should be find_cpp_toolchain() instead.
     cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
     feature_configuration = cc_common.configure_features(
+        # XXX: protobuf is passing a "patched ctx"
+        # which includes the real ctx as "real_ctx"
+        ctx = getattr(ctx, "real_ctx", ctx),
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,

@@ -8,7 +8,9 @@ load(
 load(
     "@io_tweag_rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
+    "haskell_doc",
     "haskell_doctest_toolchain",
+    "haskell_library",
     "haskell_proto_toolchain",
     "haskell_test",
     "haskell_toolchain",
@@ -17,6 +19,7 @@ load(
     "//:constants.bzl",
     "test_ghc_version",
 )
+load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
 
 package(default_testonly = 1)
 
@@ -57,6 +60,25 @@ c2hs_toolchain(
     c2hs = "@c2hs//:bin",
     tags = ["requires_c2hs"],
 )
+
+#py_runtime(
+#    name = "py3_runtime",
+#    testonly = False,
+#    interpreter = "@python3//:bin/python",
+#    python_version = "PY3",
+#    visibility = ["//visibility:public"],
+#)
+#
+#py_runtime_pair(
+#    name = "py_runtime_pair",
+#    py3_runtime = ":py3_runtime",
+#)
+#
+#toolchain(
+#    name = "python_toolchain",
+#    toolchain = ":py_runtime_pair",
+#    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+#)
 
 rule_test_exe(
     name = "test-binary-simple",
@@ -341,4 +363,34 @@ haskell_binary(
         "@stackage//:hspec",
         "@stackage//:hspec-core",
     ],
+)
+
+haskell_library(
+    name = "lz4",
+    srcs = [
+        "LZ4.hs",
+    ],
+    src_strip_prefix = "src",
+    tags = ["requires_lz4"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:bytestring",
+        "@lz4",
+    ],
+)
+
+haskell_library(
+    name = "utils",
+    srcs = ["Foo.hs"],
+    tags = ["requires_lz4"],
+    deps = [
+        ":lz4",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_doc(
+    name = "toto",
+    tags = ["requires_lz4"],
+    deps = [":utils"],
 )

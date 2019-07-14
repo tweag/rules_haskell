@@ -12,7 +12,7 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         },
     )
     locale_archive = repository_ctx.attr.locale_archive
-    nixpkgs_ghc_path = repository_ctx.path(repository_ctx.attr._nixpkgs_ghc).dirname
+    nixpkgs_ghc_path = repository_ctx.path(repository_ctx.attr._nixpkgs_ghc).dirname.dirname
 
     # Symlink content of ghc external repo. In effect, this repo has
     # the same content, but with a BUILD file that includes generated
@@ -64,6 +64,7 @@ haskell_toolchain(
     tools = {tools},
     libraries = toolchain_libraries,
     version = "{version}",
+    is_static = {is_static},
     compiler_flags = {compiler_flags} + {compiler_flags_select},
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
@@ -76,6 +77,7 @@ haskell_toolchain(
             toolchain_libraries = toolchain_libraries,
             tools = ["@io_tweag_rules_haskell_ghc_nixpkgs//:bin"],
             version = repository_ctx.attr.version,
+            is_static = repository_ctx.attr.is_static,
             compiler_flags = repository_ctx.attr.compiler_flags,
             compiler_flags_select = compiler_flags_select,
             haddock_flags = repository_ctx.attr.haddock_flags,
@@ -91,12 +93,19 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         # These attributes just forward to haskell_toolchain.
         # They are documented there.
         "version": attr.string(),
+        "is_static": attr.bool(),
         "compiler_flags": attr.string_list(),
         "compiler_flags_select": attr.string_list_dict(),
         "haddock_flags": attr.string_list(),
         "repl_ghci_args": attr.string_list(),
         "locale_archive": attr.string(),
-        "_nixpkgs_ghc": attr.label(default = "@io_tweag_rules_haskell_ghc_nixpkgs//:BUILD"),
+        # Unfortunately, repositories cannot depend on each other
+        # directly. They can only depend on files inside each
+        # repository. We need to be careful to depend on files that
+        # change anytime any content in a repository changes, like
+        # bin/ghc, which embeds the output path, which itself changes
+        # if any input to the derivation changed.
+        "_nixpkgs_ghc": attr.label(default = "@io_tweag_rules_haskell_ghc_nixpkgs//:bin/ghc"),
         "locale": attr.string(
             default = "en_US.UTF-8",
         ),
@@ -138,6 +147,7 @@ _ghc_nixpkgs_toolchain = repository_rule(_ghc_nixpkgs_toolchain_impl)
 
 def haskell_register_ghc_nixpkgs(
         version,
+        is_static = False,
         build_file = None,
         build_file_content = None,
         compiler_flags = None,
@@ -148,9 +158,11 @@ def haskell_register_ghc_nixpkgs(
         attribute_path = "haskellPackages.ghc",
         nix_file = None,
         nix_file_deps = [],
+        nixopts = None,
         locale = None,
         repositories = {},
-        nix_file_content = ""):
+        repository = None,
+        nix_file_content = None):
     """Register a package from Nixpkgs as a toolchain.
 
     Toolchains can be used to compile Haskell code. To have this
@@ -192,13 +204,16 @@ def haskell_register_ghc_nixpkgs(
         nix_file = nix_file,
         nix_file_deps = nix_file_deps,
         nix_file_content = nix_file_content,
+        nixopts = nixopts,
         repositories = repositories,
+        repository = repository,
     )
 
     # haskell_toolchain + haskell_import definitions.
     _ghc_nixpkgs_haskell_toolchain(
         name = haskell_toolchain_repo_name,
         version = version,
+        is_static = is_static,
         compiler_flags = compiler_flags,
         compiler_flags_select = compiler_flags_select,
         haddock_flags = haddock_flags,
