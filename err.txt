@@ -1,65 +1,961 @@
-$ ./worker-build-bin.sh
+[nix-shell:~/rh]$ git co worker
+Switched to branch 'worker'
+Your branch is up to date with 'origin/worker'.
+
+[nix-shell:~/rh]$ bazel clean
 INFO: Starting clean (this may take a while). Consider using --async if the clean takes more than several minutes.
+
+[nix-shell:~/rh]$ cat ./worker-test-all.sh
+#!/bin/bash
+bazel test -k --strategy=HaskellLinkDynamicLibrary=worker --strategy=HaskellBuildLibrary=worker --strategy=HaskellBuildBinary=worker --strategy=HaskellLinkBinary=worker --worker_sandboxing //...
+# --test_verbose_timeout_warnings
+
+[nix-shell:~/rh]$ ./worker-test-all.sh
 Loading: 
 Loading: 0 packages loaded
-Analyzing: target //tests/binary-simple:binary-simple (1 packages loaded, 0 targets configured)
-INFO: Analysed target //tests/binary-simple:binary-simple (36 packages loaded, 787 targets configured).
-INFO: Found 1 target...
+Analyzing: 289 targets (82 packages loaded, 0 targets configured)
+Analyzing: 289 targets (248 packages loaded, 2923 targets configured)
+Analyzing: 289 targets (248 packages loaded, 2923 targets configured)
+ERROR: /home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/com_google_protobuf/BUILD:283:2: in @io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect aspect on proto_library rule @com_google_protobuf//:timestamp_proto: 
+Traceback (most recent call last):
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/com_google_protobuf/BUILD", line 283
+		@io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect(...)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/protobuf.bzl", line 194, in _haskell_proto_aspect_impl
+		_haskell_library_impl(patched_ctx)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/haskell_impl.bzl", line 416, in _haskell_library_impl
+		hs.toolchain.actions.compile_library(hs, cc, java, dep_info, <11 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/actions/compile.bzl", line 483, in hs.toolchain.actions.compile_library
+		hs.toolchain.actions.run_ghc(hs, cc, inputs = c.inputs, input_manif..., <5 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/toolchain.bzl", line 73, in hs.toolchain.actions.run_ghc
+		hs.actions.run(inputs = inputs, input_manifests =..., <7 more arguments>)
+expected value of type 'File or string or FilesToRunProvider' for parameter 'executable', for call to method run(outputs, inputs = [], unused_inputs_list = None, executable, tools = unbound, arguments = [], mnemonic = None, progress_message = None, use_default_shell_env = False, env = None, execution_requirements = None, input_manifests = None) of 'actions'
+ERROR: /home/artem/Dev/rules_haskell/tests/haskell_proto_library/BUILD.bazel:30:1: in @io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect aspect on proto_library rule //tests/haskell_proto_library:stripped_zip_code_proto: 
+Traceback (most recent call last):
+	File "/home/artem/Dev/rules_haskell/tests/haskell_proto_library/BUILD.bazel", line 30
+		@io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect(...)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/protobuf.bzl", line 194, in _haskell_proto_aspect_impl
+		_haskell_library_impl(patched_ctx)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/haskell_impl.bzl", line 416, in _haskell_library_impl
+		hs.toolchain.actions.compile_library(hs, cc, java, dep_info, <11 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/actions/compile.bzl", line 483, in hs.toolchain.actions.compile_library
+		hs.toolchain.actions.run_ghc(hs, cc, inputs = c.inputs, input_manif..., <5 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/toolchain.bzl", line 73, in hs.toolchain.actions.run_ghc
+		hs.actions.run(inputs = inputs, input_manifests =..., <7 more arguments>)
+expected value of type 'File or string or FilesToRunProvider' for parameter 'executable', for call to method run(outputs, inputs = [], unused_inputs_list = None, executable, tools = unbound, arguments = [], mnemonic = None, progress_message = None, use_default_shell_env = False, env = None, execution_requirements = None, input_manifests = None) of 'actions'
+ERROR: /home/artem/Dev/rules_haskell/tests/haskell_proto_library/BUILD.bazel:10:1: in @io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect aspect on proto_library rule //tests/haskell_proto_library:zip_code_proto: 
+Traceback (most recent call last):
+	File "/home/artem/Dev/rules_haskell/tests/haskell_proto_library/BUILD.bazel", line 10
+		@io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect(...)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/protobuf.bzl", line 194, in _haskell_proto_aspect_impl
+		_haskell_library_impl(patched_ctx)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/haskell_impl.bzl", line 416, in _haskell_library_impl
+		hs.toolchain.actions.compile_library(hs, cc, java, dep_info, <11 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/actions/compile.bzl", line 483, in hs.toolchain.actions.compile_library
+		hs.toolchain.actions.run_ghc(hs, cc, inputs = c.inputs, input_manif..., <5 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/toolchain.bzl", line 73, in hs.toolchain.actions.run_ghc
+		hs.actions.run(inputs = inputs, input_manifests =..., <7 more arguments>)
+expected value of type 'File or string or FilesToRunProvider' for parameter 'executable', for call to method run(outputs, inputs = [], unused_inputs_list = None, executable, tools = unbound, arguments = [], mnemonic = None, progress_message = None, use_default_shell_env = False, env = None, execution_requirements = None, input_manifests = None) of 'actions'
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:address_haskell_proto': it will not be built
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:hs-lib': it will not be built
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:docs': it will not be built
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:person_haskell_proto': it will not be built
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:stripped_address_haskell_proto': it will not be built
+INFO: Analysis succeeded for only 284 of 289 top-level targets
+INFO: Analyzed 289 targets (250 packages loaded, 3858 targets configured).
+INFO: Found 191 targets and 93 test targets...
 bazel: Entering directory `/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/execroot/io_tweag_rules_haskell/'
-[0 / 2] [-----] BazelWorkspaceStatusAction stable-status.txt
+[0 / 1] [Prepa] BazelWorkspaceStatusAction stable-status.txt
+INFO: From HaskellBuildLibrary //tests/multi_repl/a:a:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-with-cbits:library-with-cbits:
+All good.
+INFO: From HaskellBuildLibrary //tests/generated-modules:GenModule:
+All good.
+INFO: From HaskellBuildLibrary //tests/haskell_toolchain_library:Lib:
+All good.
+INFO: From HaskellBuildLibrary //tests/haddock:haddock-lib-deep:
+All good.
+INFO: From HaskellBuildLibrary //tests/generated-modules:BinModule:
+All good.
+INFO: From HaskellBuildBinary //tests/encoding:encoding:
+All good.
+INFO: From HaskellBuildLibrary //tests/indirect-link:mypkg:
+All good.
+INFO: From HaskellBuildLibrary //tools/runfiles:runfiles:
+All good.
+INFO: From HaskellBuildLibrary //tests/hidden-modules:lib-a:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/multi_repl/a/libHStestsZSmultiZUreplZSaZSa-ghc8.6.5.so:
+All good.
+[651 / 806] 1 / 93 tests; HaskellBuildLibrary //tests/binary-with-plugin:plugin-lib; 0s worker ... (32 actions, 29 running)
+INFO: From HaskellLinkDynamicLibrary tests/library-with-cbits/libHStestsZSlibrary-with-cbitsZSlibrary-with-cbits-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/binary-with-plugin:plugin-lib:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/generated-modules/libHStestsZSgenerated-modulesZSGenModule-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/haskell_toolchain_library/libHStestsZShaskellZUtoolchainZUlibraryZSLib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/haddock/libHStestsZShaddockZShaddock-lib-deep-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/generated-modules/libHStestsZSgenerated-modulesZSBinModule-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/multi_repl/bc:b:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/indirect-link/libHStestsZSindirect-linkZSmypkg-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-indirect-cbits:binary-indirect-cbits:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/hidden-modules/libHStestsZShidden-modulesZSlib-a-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tools/runfiles/libHStoolsZSrunfilesZSrunfiles-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/generated-modules:generated-modules:
+All good.
+INFO: From HaskellLinkBinary tests/encoding/encoding:
+All good.
+INFO: From HaskellBuildBinary //tools/runfiles:bin:
+All good.
+INFO: From HaskellBuildBinary //tests/haskell_toolchain_library:binary:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-data:binary-with-data:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-data:bin1:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/multi_repl/bc/libHStestsZSmultiZUreplZSbcZSb-ghc8.6.5.so:
+All good.
+[735 / 817] 1 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 1s linux-sandbox ... (32 actions, 31 running)
+INFO: From HaskellBuildLibrary //tests/haddock:haddock-lib-a:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/binary-with-plugin/libHStestsZSbinary-with-pluginZSplugin-lib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/binary-indirect-cbits/binary-indirect-cbits:
+All good.
+INFO: From HaskellBuildLibrary //tests/multi_repl/bc:c:
+All good.
+INFO: From HaskellLinkBinary tests/generated-modules/generated-modules:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/haddock/libHStestsZShaddockZShaddock-lib-a-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/multi_repl/bc/libHStestsZSmultiZUreplZSbcZSc-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tools/runfiles/bin:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-data/binary-with-data:
+All good.
+[780 / 848] 2 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 2s linux-sandbox ... (32 actions running)
+INFO: From HaskellLinkBinary tests/haskell_toolchain_library/binary:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-data/bin1:
+All good.
+[816 / 884] 5 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 3s linux-sandbox ... (32 actions, 31 running)
+[835 / 903] 5 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 5s linux-sandbox ... (32 actions, 31 running)
+[864 / 932] 5 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 6s linux-sandbox ... (32 actions, 31 running)
+[903 / 984] 5 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 8s linux-sandbox ... (32 actions, 31 running)
+INFO: From HaskellBuildLibrary //tests/cc_haskell_import:hs-lib-a:
+All good.
+INFO: From HaskellBuildLibrary //tests/cpp_macro_conflict:bytestring:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-tool:cat [for host]:
+All good.
+INFO: From HaskellBuildLibrary //tests/haskell_test:mylib:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/cc_haskell_import/libHStestsZSccZUhaskellZUimportZShs-lib-a-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-exports:sublib:
+All good.
+INFO: From HaskellBuildLibrary //tests/binary-linkstatic-flag:HsLib:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/cpp_macro_conflict/libHStestsZScppZUmacroZUconflictZSbytestring-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/haskell_test/libHStestsZShaskellZUtestZSmylib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/cpp_macro_conflict:macro_conflict:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-exports/libHStestsZSlibrary-exportsZSsublib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-with-cbits:library-with-cbits-static:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-tool/cat [for host]:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/binary-linkstatic-flag/libHStestsZSbinary-linkstatic-flagZSHsLib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/haskell_test:haskell_test:
+All good.
+INFO: From HaskellBuildLibrary //tests/version-macros:versioned-lib:
+All good.
+INFO: From HaskellBuildLibrary //tests/cc_haskell_import:hs-lib-b:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-exports:lib:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-tool:binary-with-tool:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-linkstatic-flag:binary-static:
+All good.
+INFO: From HaskellBuildLibrary //tests/haskell_import:add-one:
+All good.
+INFO: From HaskellBuildLibrary //tests/hsc:hsc-lib:
+All good.
+INFO: From HaskellBuildBinary //tools/runfiles:test:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-with-cbits/libHStestsZSlibrary-with-cbitsZSlibrary-with-cbits-static-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/haskell_doctest:lib-a:
+All good.
+INFO: From HaskellBuildLibrary //tests/c-compiles-still:foo:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/version-macros/libHStestsZSversion-macrosZSversioned-lib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/cc_haskell_import/libHStestsZSccZUhaskellZUimportZShs-lib-b-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-exports/libHStestsZSlibrary-exportsZSlib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-indirect-cbits:binary-indirect-cbits-fully-static:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-linkstatic-flag:library-static-and-dynamic:
+All good.
+[1,659 / 1,795] 9 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 10s linux-sandbox ... (32 actions, 30 running)
+INFO: From HaskellLinkDynamicLibrary tests/hsc/libHStestsZShscZShsc-lib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/haskell_import/libHStestsZShaskellZUimportZSadd-one-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-deps/sublib:sublib:
+All good.
+INFO: From HaskellLinkBinary tests/cpp_macro_conflict/macro_conflict:
+All good.
+INFO: From HaskellBuildLibrary //tests:lz4:
+All good.
+INFO: From HaskellLinkBinary tests/haskell_test/haskell_test:
+All good.
+INFO: From HaskellBuildBinary //tests/version-macros:version_macros_c2hs:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/c-compiles-still/libHStestsZSc-compiles-stillZSfoo-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/haskell_doctest/libHStestsZShaskellZUdoctestZSlib-a-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/library-exports:library-exports:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-linkstatic-flag/libHStestsZSlibrary-linkstatic-flagZSlibrary-static-and-dynamic-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-tool/binary-with-tool:
+All good.
+INFO: From HaskellBuildBinary //tests/hsc:hsc:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-simple:binary-simple [for host]:
+All good.
+INFO: From HaskellLinkBinary tests/binary-linkstatic-flag/binary-static:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-linkstatic-flag:binary-dynamic:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-deps/sublib/libHStestsZSlibrary-depsZSsublibZSsublib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/libHStestsZSlz4-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/binary-with-lib-dynamic:lib [for host]:
+All good.
+INFO: From HaskellLinkBinary tests/binary-indirect-cbits/binary-indirect-cbits-fully-static:
+All good.
+INFO: From HaskellBuildBinary //tests/repl-flags:repl_flags:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-link-flags:binary-with-link-flags:
+All good.
+INFO: From HaskellLinkBinary tools/runfiles/test:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-with-cbits:library-with-cbits-indirect:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-linkstatic-flag:library-static-only:
+All good.
+INFO: From HaskellBuildLibrary //tests/lhs:lhs-lib:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/binary-with-lib-dynamic/libHStestsZSbinary-with-lib-dynamicZSlib-ghc8.6.5.so [for host]:
+All good.
+INFO: From HaskellHaddock //tests:lz4:
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/compile-package_env-lz4
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/compile-package_env-lz4
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/compile-package_env-lz4
+INFO: From HaskellLinkBinary tests/version-macros/version_macros_c2hs:
+All good.
+INFO: From HaskellBuildLibrary //tests:utils:
+All good.
+INFO: From HaskellLinkBinary tests/library-exports/library-exports:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-custom-main:binary-custom-main:
+All good.
+INFO: From HaskellBuildLibrary //tests/binary-with-indirect-sysdeps:hs-lib:
+All good.
+INFO: From HaskellBuildLibrary //tests/hidden-modules:lib-b:
+All good.
+INFO: From HaskellBuildLibrary //tests/two-libs:one:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-with-cbits/libHStestsZSlibrary-with-cbitsZSlibrary-with-cbits-indirect-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-lib-dynamic:binary-with-lib-dynamic [for host]:
+All good.
+INFO: From HaskellLinkBinary tests/binary-linkstatic-flag/binary-dynamic:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/lhs/libHStestsZSlhsZSlhs-lib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/hsc/hsc:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-with-sysincludes:intermediate-library-other:
+All good.
+INFO: From HaskellLinkBinary tests/binary-simple/binary-simple [for host]:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/libHStestsZSutils-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/binary-with-indirect-sysdeps/libHStestsZSbinary-with-indirect-sysdepsZShs-lib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-dynamic:binary-dynamic:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/hidden-modules/libHStestsZShidden-modulesZSlib-b-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/lhs:lhs-bin:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-with-sysdeps:library-with-sysdeps:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/two-libs/libHStestsZStwo-libsZSone-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/repl-flags/repl_flags:
+All good.
+INFO: From HaskellBuildLibrary //tests/c2hs:c2hs:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-indirect-sysdeps:binary-with-indirect-sysdeps:
+All good.
+INFO: From HaskellBuildBinary //tests/textual-hdrs:textual-hdrs:
+All good.
+INFO: From HaskellBuildLibrary //tests/binary-with-lib:lib:
+All good.
+INFO: From HaskellBuildLibrary //tests/repl-targets:QuuxLib:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-with-sysincludes/libHStestsZSlibrary-with-sysincludesZSintermediate-library-other-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-lib-dynamic/binary-with-lib-dynamic [for host]:
+All good.
+INFO: From HaskellBuildLibrary //tests/package-id-clash-binary/a:foo:
+All good.
+INFO: From HaskellBuildLibrary //tests/two-libs:two:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-link-flags/binary-with-link-flags:
+All good.
+INFO: From HaskellLinkBinary tests/binary-custom-main/binary-custom-main:
+All good.
+INFO: From HaskellBuildLibrary //tests/package-id-clash-binary/b:foo:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-with-sysdeps/libHStestsZSlibrary-with-sysdepsZSlibrary-with-sysdeps-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/binary-dynamic/binary-dynamic:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-tool:cat:
+All good.
+INFO: From HaskellHaddock //tests:utils:
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/compile-package_env-utils
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/compile-package_env-utils
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/compile-package_env-utils
+INFO: From HaskellLinkDynamicLibrary tests/c2hs/libHStestsZSc2hsZSc2hs-ghc8.6.5.so:
+All good.
+[2,640 / 2,879] 30 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 13s linux-sandbox ... (32 actions, 31 running)
+INFO: From HaskellLinkDynamicLibrary tests/repl-targets/libHStestsZSrepl-targetsZSQuuxLib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/binary-with-lib/libHStestsZSbinary-with-libZSlib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/library-with-sysdeps:bin:
+All good.
+INFO: From HaskellBuildLibrary //tests/package-id-clash:sublib:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/package-id-clash-binary/a/libHStestsZSpackage-id-clash-binaryZSaZSfoo-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/binary-with-lib-dynamic:lib:
+All good.
+INFO: From HaskellBuildLibrary //tests/package-id-clash/sublib:sublib:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/package-id-clash-binary/b/libHStestsZSpackage-id-clash-binaryZSbZSfoo-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/two-libs/libHStestsZStwo-libsZStwo-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/lhs/lhs-bin:
+All good.
+INFO: From HaskellBuildBinary //tests/repl-targets:hs-bin:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-indirect-sysdeps/binary-with-indirect-sysdeps:
+All good.
+INFO: From HaskellLinkBinary tests/textual-hdrs/textual-hdrs:
+All good.
+INFO: From HaskellBuildLibrary //tests/package-name:lib-a_Z:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-plugin:binary-with-plugin:
+All good.
+INFO: From HaskellBuildBinary //tests/package-id-clash-binary:bin:
+All good.
+INFO: From HaskellBuildBinary //tests/two-libs:two-libs:
+All good.
+INFO: From HaskellBuildLibrary //tests/failures/transitive-deps:lib-a:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/package-id-clash/libHStestsZSpackage-id-clashZSsublib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/version-macros:version_macros:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/package-id-clash/sublib/libHStestsZSpackage-id-clashZSsublibZSsublib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/binary-with-lib-dynamic/libHStestsZSbinary-with-lib-dynamicZSlib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/target-name:lib0-a_Aa:
+All good.
+INFO: From HaskellBuildLibrary //tests/haskell_doctest:lib-b:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-tool/cat:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-main:binary-with-main:
+All good.
+INFO: From HaskellLinkBinary tests/library-with-sysdeps/bin:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/package-name/libHStestsZSpackage-nameZSlib-a-ZZ-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/failures/transitive-deps/libHStestsZSfailuresZStransitive-depsZSlib-a-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/package-id-clash:lib:
+All good.
+INFO: From HaskellHaddock //tests/haddock:haddock-lib-deep:
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/haddock/compile-package_env-haddock-lib-deep
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/haddock/compile-package_env-haddock-lib-deep
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/haddock/compile-package_env-haddock-lib-deep
+INFO: From HaskellLinkBinary tests/repl-targets/hs-bin:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/haskell_doctest/libHStestsZShaskellZUdoctestZSlib-b-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/package-name:bin:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/target-name/libHStestsZStarget-nameZSlib0-a-Aa-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/package-id-clash-binary/bin:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/package-id-clash/libHStestsZSpackage-id-clashZSlib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/two-libs/two-libs:
+All good.
+INFO: From HaskellBuildLibrary //tests/hs-boot:hs-boot-lib:
+All good.
+INFO: From HaskellBuildLibrary //tests/haddock:haddock-lib-b:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-plugin/binary-with-plugin:
+All good.
+INFO: From HaskellBuildBinary //tests/target-name:bin0-a_A@a:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-compiler-flags:binary-with-compiler-flags:
+All good.
+INFO: From HaskellBuildLibrary //tests/repl-name-conflicts:lib:
+All good.
+INFO: From HaskellBuildLibrary //tests/c-compiles:hs-lib:
+All good.
+INFO: From HaskellBuildLibrary //tests/failures/transitive-deps:lib-b:
+All good.
+INFO: From HaskellLinkBinary tests/version-macros/version_macros:
+All good.
+INFO: From HaskellBuildBinary //tests/repl-flags:compiler_flags:
+All good.
+INFO: From HaskellBuildBinary //tests/haskell_cabal_library:haskell_cabal_library:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/hs-boot/libHStestsZShs-bootZShs-boot-lib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-main/binary-with-main:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/haddock/libHStestsZShaddockZShaddock-lib-b-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/c-compiles/libHStestsZSc-compilesZShs-lib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/binary-with-lib:lib [for host]:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/failures/transitive-deps/libHStestsZSfailuresZStransitive-depsZSlib-b-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/package-name/bin:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/repl-name-conflicts/libHStestsZSrepl-name-conflictsZSlib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/haskell_doctest:bin:
+All good.
+INFO: From HaskellBuildBinary //tests/hs-boot:hs-boot:
+All good.
+INFO: From HaskellBuildLibrary //tests/c-compiles:hs-lib [for host]:
+All good.
+INFO: From HaskellBuildBinary //tests/java_classpath:java_classpath:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-with-sysincludes:library-with-sysincludes-other:
+All good.
+INFO: From HaskellBuildLibrary //tests/binary-with-import:lib:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-compiler-flags/binary-with-compiler-flags:
+All good.
+INFO: From HaskellLinkBinary tests/target-name/bin0-a_A@a:
+All good.
+INFO: From HaskellBuildBinary //tests/c-compiles:c-compiles:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-indirect-cbits:binary-indirect-cbits-partially-static:
+All good.
+INFO: From HaskellBuildLibrary //tests/failures/transitive-deps:lib-d:
+All good.
+INFO: From HaskellBuildLibrary //tests/extra-source-files:extra-source-files:
+All good.
+INFO: From HaskellBuildLibrary //tests/failures/transitive-deps:lib-c:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/binary-with-lib/libHStestsZSbinary-with-libZSlib-ghc8.6.5.so [for host]:
+All good.
+INFO: From HaskellHaddock //tests/haddock:haddock-lib-a:
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/haddock/compile-package_env-haddock-lib-a
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/haddock/compile-package_env-haddock-lib-a
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/haddock/compile-package_env-haddock-lib-a
+INFO: From HaskellBuildBinary //tests/extra-source-files:extra-source-files-bin:
+All good.
+INFO: From HaskellLinkBinary tests/repl-flags/compiler_flags:
+All good.
+INFO: From HaskellLinkBinary tests/haskell_cabal_library/haskell_cabal_library:
+All good.
+[3,769 / 3,993] 60 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 15s linux-sandbox ... (32 actions, 27 running)
+INFO: From HaskellLinkDynamicLibrary tests/c-compiles/libHStestsZSc-compilesZShs-lib-ghc8.6.5.so [for host]:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/binary-with-import/libHStestsZSbinary-with-importZSlib-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-with-sysincludes/libHStestsZSlibrary-with-sysincludesZSlibrary-with-sysincludes-other-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/failures/transitive-deps/libHStestsZSfailuresZStransitive-depsZSlib-d-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/failures/transitive-deps/libHStestsZSfailuresZStransitive-depsZSlib-c-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/hidden-modules:lib-c:
+All good.
+INFO: From HaskellLinkBinary tests/hs-boot/hs-boot:
+All good.
+INFO: From HaskellLinkBinary tests/haskell_doctest/bin:
+All good.
+INFO: From HaskellBuildBinary //tests/indirect-link:indirect-link-static:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/extra-source-files/libHStestsZSextra-source-filesZSextra-source-files-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-lib:binary-with-lib [for host]:
+All good.
+INFO: From HaskellBuildBinary //tests/c-compiles:c-compiles [for host]:
+All good.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/timestamp_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/api_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/empty_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/struct_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/source_context_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From HaskellLinkBinary tests/binary-indirect-cbits/binary-indirect-cbits-partially-static:
+All good.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/descriptor_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/type_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/wrappers_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/any_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/compiler/plugin_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/field_mask_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From ProtoCompile external/com_google_protobuf/python/google/protobuf/duration_pb2.py [for host]:
+external/com_google_protobuf/python: warning: directory does not exist.
+INFO: From HaskellBuildLibrary //tests/library-with-sysincludes:intermediate-library:
+All good.
+INFO: From HaskellLinkBinary tests/java_classpath/java_classpath:
+All good.
+INFO: From HaskellBuildLibrary @haskell_package_repository_dummy//:library-with-cbits:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-with-includes:library-with-includes:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/hidden-modules/libHStestsZShidden-modulesZSlib-c-ghc8.6.5.so:
+All good.
+INFO: From Generating Descriptor Set proto_library @com_google_protobuf//:timestamp_proto:
+external/com_google_protobuf: warning: directory does not exist.
 INFO: From HaskellBuildBinary //tests/binary-simple:binary-simple:
+All good.
+INFO: From Generating Descriptor Set proto_library //tests/haskell_proto_library:person_proto:
+external/com_google_protobuf: warning: directory does not exist.
+INFO: From HaskellLinkBinary tests/c-compiles/c-compiles:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-lib:binary-with-lib:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-with-sysincludes/libHStestsZSlibrary-with-sysincludesZSintermediate-library-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-deps:library-deps:
+All good.
+INFO: From HaskellHaddock //tests/haddock:haddock-lib-b:
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/haddock/compile-package_env-haddock-lib-b
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/haddock/compile-package_env-haddock-lib-b
+Loaded package environment from bazel-out/k8-fastbuild/bin/tests/haddock/compile-package_env-haddock-lib-b
+INFO: From HaskellBuildBinary //tests/binary-with-sysdeps:binary-with-sysdeps:
+All good.
+INFO: From HaskellLinkBinary tests/extra-source-files/extra-source-files-bin:
+All good.
+INFO: From HaskellLinkDynamicLibrary external/haskell_package_repository_dummy/libHSexternalZShaskellZUpackageZUrepositoryZUdummyZSlibrary-with-cbits-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-with-includes/libHStestsZSlibrary-with-includesZSlibrary-with-includes-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/repl-targets:hs-lib:
+All good.
+INFO: From HaskellLinkBinary tests/indirect-link/indirect-link-static:
+All good.
+INFO: From HaskellLinkBinary tests/c-compiles/c-compiles [for host]:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-exe-path:binary-exe-path:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-lib-dynamic:binary-with-lib-dynamic:
+All good.
+INFO: From HaskellBuildLibrary //tests/multi_repl/core_package_dep:core_package_dep:
+All good.
+INFO: From HaskellBuildBinary //tests/indirect-link:indirect-link-dynamic:
+All good.
+INFO: From HaskellBuildBinary //tests/library-deps:bin-deps:
+All good.
+INFO: From HaskellBuildBinary //tests/binary-with-import:binary-with-import:
+All good.
+INFO: From HaskellBuildBinary //tests/external-haskell-repository:external-haskell-repository:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-deps/libHStestsZSlibrary-depsZSlibrary-deps-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-lib/binary-with-lib [for host]:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/repl-targets/libHStestsZSrepl-targetsZShs-lib-ghc8.6.5.so:
+All good.
+INFO: From HaskellBuildLibrary //tests/library-with-sysincludes:library-with-sysincludes:
 All good.
 INFO: From HaskellLinkBinary tests/binary-simple/binary-simple:
 All good.
-ERROR: /home/artem/Dev/rules_haskell/tests/binary-simple/BUILD.bazel:8:1: output 'tests/binary-simple/binary-simple' was not created
-ERROR: /home/artem/Dev/rules_haskell/tests/binary-simple/BUILD.bazel:8:1: not all outputs were created or valid
-bazel: Leaving directory `/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/execroot/io_tweag_rules_haskell/'
-Target //tests/binary-simple:binary-simple failed to build
-Use --verbose_failures to see the command lines of failed build steps.
-INFO: Elapsed time: 1.667s, Critical Path: 0.47s
-INFO: 9 processes: 7 linux-sandbox, 2 worker.
-FAILED: Build did NOT complete successfully
-FAILED: Build did NOT complete successfully
+INFO: From HaskellLinkBinary tests/binary-with-lib/binary-with-lib:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-sysdeps/binary-with-sysdeps:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/library-with-sysincludes/libHStestsZSlibrary-with-sysincludesZSlibrary-with-sysincludes-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/binary-exe-path/binary-exe-path:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-lib-dynamic/binary-with-lib-dynamic:
+All good.
+INFO: From HaskellLinkDynamicLibrary tests/multi_repl/core_package_dep/libHStestsZSmultiZUreplZScoreZUpackageZUdepZScore-package-dep-ghc8.6.5.so:
+All good.
+INFO: From HaskellLinkBinary tests/library-deps/bin-deps:
+All good.
+INFO: From HaskellLinkBinary tests/external-haskell-repository/external-haskell-repository:
+All good.
+INFO: From HaskellLinkBinary tests/indirect-link/indirect-link-dynamic:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-import/binary-with-import:
+All good.
+[4,310 / 4,442] 92 / 93 tests; HaskellCabalBinary @happy//:happy [for host]; 19s linux-sandbox ... (2 actions running)
+INFO: From HaskellCabalBinary @happy//:happy [for host]:
 
+/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/sandbox/linux-sandbox/11745/execroot/io_tweag_rules_haskell/external/happy/Setup.lhs:48:22: warning: [-Wdeprecations]
+    In the use of `rawSystemProgramConf'
+    (imported from Distribution.Simple.Program):
+    Deprecated: "use runDbProgram instead. This symbol will be removed in Cabal-3.0 (est. Oct 2018)."
+   |
+48 |   let runProgram p = rawSystemProgramConf (fromFlagOrDefault normal (buildVerbosity flags))
+   |                      ^^^^^^^^^^^^^^^^^^^^
 
-LOG OUTPUT:
+/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/sandbox/linux-sandbox/11745/execroot/io_tweag_rules_haskell/external/happy/Setup.lhs:48:22: warning: [-Wdeprecations]
+    In the use of `rawSystemProgramConf'
+    (imported from Distribution.Simple.Program):
+    Deprecated: "use runDbProgram instead. This symbol will be removed in Cabal-3.0 (est. Oct 2018)."
+   |
+48 |   let runProgram p = rawSystemProgramConf (fromFlagOrDefault normal (buildVerbosity flags))
+   |                      ^^^^^^^^^^^^^^^^^^^^
+
+/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/sandbox/linux-sandbox/11745/execroot/io_tweag_rules_haskell/external/happy/Setup.lhs:48:22: warning: [-Wdeprecations]
+    In the use of `rawSystemProgramConf'
+    (imported from Distribution.Simple.Program):
+    Deprecated: "use runDbProgram instead. This symbol will be removed in Cabal-3.0 (est. Oct 2018)."
+   |
+48 |   let runProgram p = rawSystemProgramConf (fromFlagOrDefault normal (buildVerbosity flags))
+   |                      ^^^^^^^^^^^^^^^^^^^^
+[4,312 / 4,442] 92 / 93 tests; [Prepa] HaskellCabalLibrary @stackage//:transformers-compat-0.6.2
+INFO: From HaskellCabalLibrary @stackage//:clock-0.7.2:
+Clock.hsc:44:0: warning: "hsc_alignment" redefined
+In file included from /run/user/1001/tmp.SxcdnIJzWg/build/System/Clock_hsc_make.c:1:0:
+/nix/store/8b732fcj71j3mxp99g8104q9r88m5can-ghc-8.6.5/lib/ghc-8.6.5/template-hsc.h:91:0: note: this is the location of the previous definition
+ #define hsc_alignment(x...)                                           \
+ 
+[4,345 / 4,442] 92 / 93 tests; HaskellCabalLibrary @stackage//:transformers-compat-0.6.2; 4s linux-sandbox ... (7 actions, 6 running)
+[4,388 / 4,442] 92 / 93 tests; HaskellCabalLibrary @stackage//:primitive-0.6.4.0; 10s linux-sandbox ... (4 actions running)
+[4,406 / 4,442] 92 / 93 tests; HaskellCabalLibrary @stackage//:streaming-0.2.2.0; 7s linux-sandbox ... (2 actions running)
+ERROR: /home/artem/Dev/rules_haskell/tests/binary-with-prebuilt/BUILD.bazel:8:1: Couldn't build file tests/binary-with-prebuilt/_obj/binary-with-prebuilt: HaskellBuildBinary //tests/binary-with-prebuilt:binary-with-prebuilt failed: Worker process did not return a WorkResponse:
+
+---8<---8<--- Start of log, file at /home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/bazel-workers/worker-291-HaskellBuildBinary.log ---8<---8<---
 Hello Worker!
-Args taken: ["-pgma","/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin/gcc","-pgmc","/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin/gcc","-pgml","/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin/gcc","-pgmP","/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin/gcc","-optc-fno-stack-protector","-optP-E","-optP-undef","-optP-traditional","--persistent_worker"]
-Server Starts
-Server: Waiting for a message...
-Server: got a message, decoding...
-Server: msg received: {arguments: "-optl-fuse-ld=gold" arguments: "-optl-Wl,-no-as-needed" arguments: "-optl-Wl,-z,relro,-z,now" arguments: "-optl-B/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/nixpkgs_cc_toolchain/bin" arguments: "-optl-pass-exit-codes" arguments: "-optl-lstdc++" arguments: "-optl-lm" arguments: "-XStandaloneDeriving" arguments: "-threaded" arguments: "-DTESTS_TOOLCHAIN_COMPILER_FLAGS" arguments: "-XNoOverloadedStrings" arguments: "-optl-pthread" arguments: "-o" arguments: "bazel-out/k8-fastbuild/bin/tests/binary-simple/binary-simple" arguments: "-hide-all-packages" arguments: "-fno-version-macros" arguments: "-package-env" arguments: "bazel-out/k8-fastbuild/bin/tests/binary-simple/link-package_env-binary-simple" arguments: "-package-db" arguments: "bazel-out/k8-fastbuild/bin/tests/binary-simple/link-config-binary-simple" arguments: "-package" arguments: "link-config-binary-simple" arguments: "-optc-Wno-unused-command-line-argument" arguments: "-optl-Wno-unused-command-line-argument" inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/link-config-binary-simple/package.cache" digest: "6a80338f584cfda8da9babe4f0d0450ddafa60d108e90b050d315d6327809121" } inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/_obj/binary-simple/Main.o" digest: "08a92da15aa0d3e741a7b18ee533e9ef211e752468d5c192de0dac9d7a696e9c" } inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/link-package_env-binary-simple" digest: "53c2caaa79d0c3da63a494f21121e8675893340e982ebeeddd9d79e3c6648f16" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/lib/ghc-8.6.5/base-4.12.0.0/libHSbase-4.12.0.0.a" digest: "2c91f5ad3d20114c752cbc092cf3b21539db7be1eca0199ddaecec06d8f3aa4f" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/lib/ghc-8.6.5/integer-gmp-1.0.2.0/libHSinteger-gmp-1.0.2.0.a" digest: "939ef92024da46fd6b68b9c44b0335df22ffda21ab9b53b262ff0decc777667d" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/lib/ghc-8.6.5/ghc-prim-0.5.3/libHSghc-prim-0.5.3.a" digest: "a9399bbf1d4558babfaa097028a774e4739fb7bf327a32b884156487424963a3" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/lib/ghc-8.6.5/rts/libHSrts.a" digest: "17568c671c2d40f834e06e928db9eb0bf866c2f1b3accfad80657c29e4921442" } inputs { path: "external/io_tweag_rules_haskell_ghc_nixpkgs/bin/ghc" digest: "369943d8548ef430cc29c6ec3386feabbfb1e0f1407c3b8187880650a06bc7be" } inputs { path: "bazel-out/host/bin/external/io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain/ghc-version" digest: "9f99b1ed6a7d5cc206f895cb034aa9d93e15845e9fc876f90e155b8097bb5401" } inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/compile_flags_binary-simple_HaskellLinkBinary" digest: "ec8c21fed14b07cdf70cee571ec374c77078ec554d1ce1e0f4c5a8bdd62e7590" } inputs { path: "bazel-out/k8-fastbuild/bin/tests/binary-simple/_obj/binary-simple.static.manifest" digest: "c72adb0a99fcf4ccda7638d7c79c5fac06d4c8df02f95d8e4d8ffbc790c57d1b" } inputs { path: "external/io_tweag_rules_haskell/haskell/private/worker.sh" digest: "b246b115775dd18ab6ad639ef8b722e714775eaf3d0d900dfbef1622abb0af3f" } inputs { path: "bazel-out/host/bin/external/io_tweag_rules_haskell/haskell/worker" digest: "b246b115775dd18ab6ad639ef8b722e714775eaf3d0d900dfbef1622abb0af3f" }}
-Loaded package environment from bazel-out/k8-fastbuild/bin/tests/binary-simple/link-package_env-binary-simple
-Using binary package database: /nix/store/9c7ma9kqd9n68j7wrx6q35zs84szvn3d-ghc-8.6.5/lib/ghc-8.6.5/package.conf.d/package.cache
-Using binary package database: bazel-out/k8-fastbuild/bin/tests/binary-simple/link-config-binary-simple/package.cache
-package flags [-package link-config-binary-simple{package link-config-binary-simple True ([])},
-               -package-id base-4.12.0.0{unit base-4.12.0.0 True ([])}]
-loading package database /nix/store/9c7ma9kqd9n68j7wrx6q35zs84szvn3d-ghc-8.6.5/lib/ghc-8.6.5/package.conf.d
-loading package database bazel-out/k8-fastbuild/bin/tests/binary-simple/link-config-binary-simple
-wired-in package ghc-prim mapped to ghc-prim-0.5.3
-wired-in package integer-gmp mapped to integer-gmp-1.0.2.0
-wired-in package base mapped to base-4.12.0.0
-wired-in package rts mapped to rts
-wired-in package template-haskell mapped to template-haskell-2.14.0.0
-wired-in package ghc mapped to ghc-8.6.5
-*** Chasing dependencies:
-Chasing modules from: 
-!!! Chasing dependencies: finished in 0.02 milliseconds, allocated 0.010 megabytes
-Stable obj: []
-Stable BCO: []
-Ready for upsweep []
-Upsweep completely successful.
-*** Deleting temp files:
-Deleting: 
-link(batch): upsweep (partially) failed OR
-   Main.main not exported; not linking.
+worker: <stderr>: hDuplicateTo: resource busy (Device or resource busy)
+---8<---8<--- End of log ---8<---8<---
+[4,420 / 4,442] 93 / 93 tests, 1 failed; HaskellCabalLibrary @stackage//:QuickCheck-2.12.6.1; 4s linux-sandbox
+[4,421 / 4,442] 93 / 93 tests, 1 failed; [Prepa] action 'SolibSymlink _solib_k8/_U@stackage_S_S_CQuickCheck-2.12.6.1___Uexternal_Sstackage_SQuickCheck-2.12.6.1_S_Uinstall_Slib/libHSQuickCheck-2.12.6.1-ghc8.6.5.so'
+[4,431 / 4,442] 93 / 93 tests, 1 failed; HaskellCabalLibrary @stackage//:hspec-core-2.6.1; 7s linux-sandbox
+INFO: From HaskellBuildBinary //tests:run-tests:
+All good.
+INFO: From HaskellLinkBinary tests/run-tests:
+All good.
+bazel: Leaving directory `/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/execroot/io_tweag_rules_haskell/'
+INFO: Elapsed time: 94.387s, Critical Path: 89.16s
+INFO: 3020 processes: 1236 linux-sandbox, 1521 local, 263 worker.
+FAILED: Build did NOT complete successfully
+//debug/linking_utils:test-ldd                                           PASSED in 0.9s
+//tests:test-binary-custom-main                                          PASSED in 0.2s
+//tests:test-binary-simple                                               PASSED in 0.1s
+//tests:test-binary-with-data                                            PASSED in 0.2s
+//tests:test-binary-with-lib                                             PASSED in 0.1s
+//tests:test-binary-with-main                                            PASSED in 0.2s
+//tests:test-binary-with-prebuilt                                        PASSED in 0.1s
+//tests:test-binary-with-sysdeps                                         PASSED in 0.2s
+//tests:test-cc_haskell_import-cc-link                                   PASSED in 0.1s
+//tests:test-cc_haskell_import_python                                    PASSED in 0.3s
+//tests:test-haddock                                                     PASSED in 0.1s
+//tests:test-haskell_binary-with-link-flags                              PASSED in 0.2s
+//tests:test-haskell_doctest                                             PASSED in 0.1s
+//tests:test-haskell_test                                                PASSED in 0.1s
+//tests:test-hs-boot                                                     PASSED in 0.1s
+//tests:test-hsc                                                         PASSED in 0.1s
+//tests:test-java_classpath                                              PASSED in 0.1s
+//tests:test-lhs                                                         PASSED in 0.1s
+//tests:test-library-deps                                                PASSED in 0.2s
+//tests:test-run-bin-with-c-lib                                          PASSED in 0.1s
+//tests:test-run-bin-with-lib                                            PASSED in 0.1s
+//tests:test-run-bin-with-lib-dynamic                                    PASSED in 0.2s
+//tests:test-textual-hdrs                                                PASSED in 0.2s
+//tests:test-two-libs                                                    PASSED in 0.1s
+//tests/binary-custom-main:binary-custom-main                            PASSED in 0.2s
+//tests/binary-dynamic:binary-dynamic                                    PASSED in 0.1s
+//tests/binary-exe-path:binary-exe-path                                  PASSED in 0.1s
+//tests/binary-linkstatic-flag:binary-dynamic                            PASSED in 0.1s
+//tests/binary-linkstatic-flag:binary-static                             PASSED in 0.1s
+//tests/binary-linkstatic-flag:test-binary-dynamic-symbols               PASSED in 0.1s
+//tests/binary-linkstatic-flag:test-binary-static-symbols                PASSED in 0.2s
+//tests/binary-simple:binary-simple                                      PASSED in 0.1s
+//tests/binary-with-compiler-flags:binary-with-compiler-flags            PASSED in 0.2s
+//tests/binary-with-data:bin1                                            PASSED in 0.2s
+//tests/binary-with-data:binary-with-data                                PASSED in 0.2s
+//tests/binary-with-import:binary-with-import                            PASSED in 0.1s
+//tests/binary-with-indirect-sysdeps:binary-with-indirect-sysdeps        PASSED in 0.1s
+//tests/binary-with-lib:binary-with-lib                                  PASSED in 0.1s
+//tests/binary-with-lib-dynamic:binary-with-lib-dynamic                  PASSED in 0.1s
+//tests/binary-with-link-flags:binary-with-link-flags                    PASSED in 0.1s
+//tests/binary-with-main:binary-with-main                                PASSED in 0.2s
+//tests/binary-with-plugin:binary-with-plugin                            PASSED in 0.2s
+//tests/binary-with-sysdeps:binary-with-sysdeps                          PASSED in 0.1s
+//tests/binary-with-tool:binary-with-tool                                PASSED in 0.2s
+//tests/c-compiles:c-compiles                                            PASSED in 0.1s
+//tests/cpp_macro_conflict:macro_conflict                                PASSED in 0.2s
+//tests/encoding:encoding                                                PASSED in 0.2s
+//tests/external-haskell-repository:external-haskell-repository          PASSED in 0.1s
+//tests/extra-source-files:extra-source-files-bin                        PASSED in 0.2s
+//tests/generated-modules:generated-modules                              PASSED in 0.1s
+//tests/haskell_cabal_library:haskell_cabal_library                      PASSED in 0.1s
+//tests/haskell_doctest:bin                                              PASSED in 0.1s
+//tests/haskell_import:haskell_import                                    PASSED in 0.1s
+//tests/haskell_test:haskell_test                                        PASSED in 0.1s
+//tests/haskell_toolchain_library:binary                                 PASSED in 0.2s
+//tests/hs-boot:hs-boot                                                  PASSED in 0.2s
+//tests/hsc:hsc                                                          PASSED in 0.1s
+//tests/indirect-link:indirect-link-dynamic                              PASSED in 0.1s
+//tests/indirect-link:indirect-link-static                               PASSED in 0.1s
+//tests/java_classpath:java_classpath                                    PASSED in 0.2s
+//tests/lhs:lhs-bin                                                      PASSED in 0.1s
+//tests/library-deps:bin-deps                                            PASSED in 0.1s
+//tests/library-exports:library-exports                                  PASSED in 0.2s
+//tests/library-linkstatic-flag:library-linkstatic-flag                  PASSED in 0.2s
+//tests/library-linkstatic-flag:test-libraries-static-and-dynamic        PASSED in 0.2s
+//tests/library-with-sysdeps:bin                                         PASSED in 0.1s
+//tests/package-id-clash-binary:bin                                      PASSED in 0.1s
+//tests/package-name:bin                                                 PASSED in 0.1s
+//tests/repl-flags:compiler_flags                                        PASSED in 0.1s
+//tests/repl-flags:repl_flags                                            PASSED in 0.2s
+//tests/repl-targets:hs-bin                                              PASSED in 0.1s
+//tests/target-name:bin0-a_A@a                                           PASSED in 0.1s
+//tests/textual-hdrs:textual-hdrs                                        PASSED in 0.2s
+//tests/two-libs:two-libs                                                PASSED in 0.1s
+//tests/unit-tests:dedup_on_test                                         PASSED in 0.2s
+//tests/unit-tests:parent_dir                                            PASSED in 0.1s
+//tests/unit-tests:parent_dir_file                                       PASSED in 0.1s
+//tests/unit-tests:parent_dir_file_dots                                  PASSED in 0.1s
+//tests/unit-tests:parent_dir_just_file                                  PASSED in 0.1s
+//tests/unit-tests:parent_dir_rooted                                     PASSED in 0.2s
+//tests/unit-tests:rpath_entry_binary_leading_dots_bin                   PASSED in 0.1s
+//tests/unit-tests:rpath_entry_binary_leading_dots_both                  PASSED in 0.1s
+//tests/unit-tests:rpath_entry_binary_leading_dots_dep                   PASSED in 0.1s
+//tests/unit-tests:rpath_entry_binary_root                               PASSED in 0.1s
+//tests/unit-tests:rpath_entry_dep_root                                  PASSED in 0.1s
+//tests/unit-tests:rpath_entry_prefix                                    PASSED in 0.1s
+//tests/unit-tests:rpath_entry_simple                                    PASSED in 0.2s
+//tests/unit-tests:rpath_entry_simple_filename                           PASSED in 0.1s
+//tests/version-macros:version_macros                                    PASSED in 0.2s
+//tests/version-macros:version_macros_c2hs                               PASSED in 0.2s
+//tools/runfiles:bin                                                     PASSED in 0.2s
+//tools/runfiles:test                                                    PASSED in 0.2s
 
-<no location info>: error:
-    output was redirected with -o, but no output will be generated
-because there is no Main module.
-*** Deleting temp files:
-Deleting: 
-*** Deleting temp dirs:
-Deleting: 
-Server sent response...
-Server: Waiting for a message...
+Executed 92 out of 93 tests: 92 tests pass and 1 fails to build.
+There were tests whose specified size is too big. Use the --test_verbose_timeout_warnings command line option to see which ones these are.
+FAILED: Build did NOT complete successfully
+
+[nix-shell:~/rh]$ ./worker-test-all.sh
+Loading: 
+Loading: 0 packages loaded
+Analyzing: 289 targets (0 packages loaded, 0 targets configured)
+ERROR: /home/artem/Dev/rules_haskell/tests/haskell_proto_library/BUILD.bazel:10:1: in @io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect aspect on proto_library rule //tests/haskell_proto_library:zip_code_proto: 
+Traceback (most recent call last):
+	File "/home/artem/Dev/rules_haskell/tests/haskell_proto_library/BUILD.bazel", line 10
+		@io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect(...)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/protobuf.bzl", line 194, in _haskell_proto_aspect_impl
+		_haskell_library_impl(patched_ctx)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/haskell_impl.bzl", line 416, in _haskell_library_impl
+		hs.toolchain.actions.compile_library(hs, cc, java, dep_info, <11 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/actions/compile.bzl", line 483, in hs.toolchain.actions.compile_library
+		hs.toolchain.actions.run_ghc(hs, cc, inputs = c.inputs, input_manif..., <5 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/toolchain.bzl", line 73, in hs.toolchain.actions.run_ghc
+		hs.actions.run(inputs = inputs, input_manifests =..., <7 more arguments>)
+expected value of type 'File or string or FilesToRunProvider' for parameter 'executable', for call to method run(outputs, inputs = [], unused_inputs_list = None, executable, tools = unbound, arguments = [], mnemonic = None, progress_message = None, use_default_shell_env = False, env = None, execution_requirements = None, input_manifests = None) of 'actions'
+ERROR: /home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/com_google_protobuf/BUILD:283:2: in @io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect aspect on proto_library rule @com_google_protobuf//:timestamp_proto: 
+Traceback (most recent call last):
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/com_google_protobuf/BUILD", line 283
+		@io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect(...)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/protobuf.bzl", line 194, in _haskell_proto_aspect_impl
+		_haskell_library_impl(patched_ctx)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/haskell_impl.bzl", line 416, in _haskell_library_impl
+		hs.toolchain.actions.compile_library(hs, cc, java, dep_info, <11 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/actions/compile.bzl", line 483, in hs.toolchain.actions.compile_library
+		hs.toolchain.actions.run_ghc(hs, cc, inputs = c.inputs, input_manif..., <5 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/toolchain.bzl", line 73, in hs.toolchain.actions.run_ghc
+		hs.actions.run(inputs = inputs, input_manifests =..., <7 more arguments>)
+expected value of type 'File or string or FilesToRunProvider' for parameter 'executable', for call to method run(outputs, inputs = [], unused_inputs_list = None, executable, tools = unbound, arguments = [], mnemonic = None, progress_message = None, use_default_shell_env = False, env = None, execution_requirements = None, input_manifests = None) of 'actions'
+ERROR: /home/artem/Dev/rules_haskell/tests/haskell_proto_library/BUILD.bazel:30:1: in @io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect aspect on proto_library rule //tests/haskell_proto_library:stripped_zip_code_proto: 
+Traceback (most recent call last):
+	File "/home/artem/Dev/rules_haskell/tests/haskell_proto_library/BUILD.bazel", line 30
+		@io_tweag_rules_haskell//haskell:protobuf.bzl%_haskell_proto_aspect(...)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/protobuf.bzl", line 194, in _haskell_proto_aspect_impl
+		_haskell_library_impl(patched_ctx)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/haskell_impl.bzl", line 416, in _haskell_library_impl
+		hs.toolchain.actions.compile_library(hs, cc, java, dep_info, <11 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/private/actions/compile.bzl", line 483, in hs.toolchain.actions.compile_library
+		hs.toolchain.actions.run_ghc(hs, cc, inputs = c.inputs, input_manif..., <5 more arguments>)
+	File "/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/external/io_tweag_rules_haskell/haskell/toolchain.bzl", line 73, in hs.toolchain.actions.run_ghc
+		hs.actions.run(inputs = inputs, input_manifests =..., <7 more arguments>)
+expected value of type 'File or string or FilesToRunProvider' for parameter 'executable', for call to method run(outputs, inputs = [], unused_inputs_list = None, executable, tools = unbound, arguments = [], mnemonic = None, progress_message = None, use_default_shell_env = False, env = None, execution_requirements = None, input_manifests = None) of 'actions'
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:address_haskell_proto': it will not be built
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:hs-lib': it will not be built
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:docs': it will not be built
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:person_haskell_proto': it will not be built
+WARNING: errors encountered while analyzing target '//tests/haskell_proto_library:stripped_address_haskell_proto': it will not be built
+INFO: Analysis succeeded for only 284 of 289 top-level targets
+INFO: Analyzed 289 targets (0 packages loaded, 0 targets configured).
+INFO: Found 191 targets and 93 test targets...
+bazel: Entering directory `/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/execroot/io_tweag_rules_haskell/'
+[0 / 34] [Prepa] BazelWorkspaceStatusAction stable-status.txt
+INFO: From HaskellBuildBinary //tests/binary-with-prebuilt:binary-with-prebuilt:
+All good.
+INFO: From HaskellLinkBinary tests/binary-with-prebuilt/binary-with-prebuilt:
+All good.
+[97 / 98] 92 / 93 tests; Testing //tests/binary-with-prebuilt:binary-with-prebuilt; 0s linux-sandbox
+bazel: Leaving directory `/home/artem/.cache/bazel/_bazel_artem/0eb966e0346e954b32e36c8a276e4ea7/execroot/io_tweag_rules_haskell/'
+ERROR: command succeeded, but not all targets were analyzed
+INFO: Elapsed time: 1.651s, Critical Path: 1.11s
+INFO: 6 processes: 4 linux-sandbox, 2 worker.
+FAILED: Build did NOT complete successfully
+//debug/linking_utils:test-ldd                                  (cached) PASSED in 0.9s
+//tests:test-binary-custom-main                                 (cached) PASSED in 0.2s
+//tests:test-binary-simple                                      (cached) PASSED in 0.1s
+//tests:test-binary-with-data                                   (cached) PASSED in 0.2s
+//tests:test-binary-with-lib                                    (cached) PASSED in 0.1s
+//tests:test-binary-with-main                                   (cached) PASSED in 0.2s
+//tests:test-binary-with-prebuilt                               (cached) PASSED in 0.1s
+//tests:test-binary-with-sysdeps                                (cached) PASSED in 0.2s
+//tests:test-cc_haskell_import-cc-link                          (cached) PASSED in 0.1s
+//tests:test-cc_haskell_import_python                           (cached) PASSED in 0.3s
+//tests:test-haddock                                            (cached) PASSED in 0.1s
+//tests:test-haskell_binary-with-link-flags                     (cached) PASSED in 0.2s
+//tests:test-haskell_doctest                                    (cached) PASSED in 0.1s
+//tests:test-haskell_test                                       (cached) PASSED in 0.1s
+//tests:test-hs-boot                                            (cached) PASSED in 0.1s
+//tests:test-hsc                                                (cached) PASSED in 0.1s
+//tests:test-java_classpath                                     (cached) PASSED in 0.1s
+//tests:test-lhs                                                (cached) PASSED in 0.1s
+//tests:test-library-deps                                       (cached) PASSED in 0.2s
+//tests:test-run-bin-with-c-lib                                 (cached) PASSED in 0.1s
+//tests:test-run-bin-with-lib                                   (cached) PASSED in 0.1s
+//tests:test-run-bin-with-lib-dynamic                           (cached) PASSED in 0.2s
+//tests:test-textual-hdrs                                       (cached) PASSED in 0.2s
+//tests:test-two-libs                                           (cached) PASSED in 0.1s
+//tests/binary-custom-main:binary-custom-main                   (cached) PASSED in 0.2s
+//tests/binary-dynamic:binary-dynamic                           (cached) PASSED in 0.1s
+//tests/binary-exe-path:binary-exe-path                         (cached) PASSED in 0.1s
+//tests/binary-linkstatic-flag:binary-dynamic                   (cached) PASSED in 0.1s
+//tests/binary-linkstatic-flag:binary-static                    (cached) PASSED in 0.1s
+//tests/binary-linkstatic-flag:test-binary-dynamic-symbols      (cached) PASSED in 0.1s
+//tests/binary-linkstatic-flag:test-binary-static-symbols       (cached) PASSED in 0.2s
+//tests/binary-simple:binary-simple                             (cached) PASSED in 0.1s
+//tests/binary-with-compiler-flags:binary-with-compiler-flags   (cached) PASSED in 0.2s
+//tests/binary-with-data:bin1                                   (cached) PASSED in 0.2s
+//tests/binary-with-data:binary-with-data                       (cached) PASSED in 0.2s
+//tests/binary-with-import:binary-with-import                   (cached) PASSED in 0.1s
+//tests/binary-with-indirect-sysdeps:binary-with-indirect-sysdeps (cached) PASSED in 0.1s
+//tests/binary-with-lib:binary-with-lib                         (cached) PASSED in 0.1s
+//tests/binary-with-lib-dynamic:binary-with-lib-dynamic         (cached) PASSED in 0.1s
+//tests/binary-with-link-flags:binary-with-link-flags           (cached) PASSED in 0.1s
+//tests/binary-with-main:binary-with-main                       (cached) PASSED in 0.2s
+//tests/binary-with-plugin:binary-with-plugin                   (cached) PASSED in 0.2s
+//tests/binary-with-sysdeps:binary-with-sysdeps                 (cached) PASSED in 0.1s
+//tests/binary-with-tool:binary-with-tool                       (cached) PASSED in 0.2s
+//tests/c-compiles:c-compiles                                   (cached) PASSED in 0.1s
+//tests/cpp_macro_conflict:macro_conflict                       (cached) PASSED in 0.2s
+//tests/encoding:encoding                                       (cached) PASSED in 0.2s
+//tests/external-haskell-repository:external-haskell-repository (cached) PASSED in 0.1s
+//tests/extra-source-files:extra-source-files-bin               (cached) PASSED in 0.2s
+//tests/generated-modules:generated-modules                     (cached) PASSED in 0.1s
+//tests/haskell_cabal_library:haskell_cabal_library             (cached) PASSED in 0.1s
+//tests/haskell_doctest:bin                                     (cached) PASSED in 0.1s
+//tests/haskell_import:haskell_import                           (cached) PASSED in 0.1s
+//tests/haskell_test:haskell_test                               (cached) PASSED in 0.1s
+//tests/haskell_toolchain_library:binary                        (cached) PASSED in 0.2s
+//tests/hs-boot:hs-boot                                         (cached) PASSED in 0.2s
+//tests/hsc:hsc                                                 (cached) PASSED in 0.1s
+//tests/indirect-link:indirect-link-dynamic                     (cached) PASSED in 0.1s
+//tests/indirect-link:indirect-link-static                      (cached) PASSED in 0.1s
+//tests/java_classpath:java_classpath                           (cached) PASSED in 0.2s
+//tests/lhs:lhs-bin                                             (cached) PASSED in 0.1s
+//tests/library-deps:bin-deps                                   (cached) PASSED in 0.1s
+//tests/library-exports:library-exports                         (cached) PASSED in 0.2s
+//tests/library-linkstatic-flag:library-linkstatic-flag         (cached) PASSED in 0.2s
+//tests/library-linkstatic-flag:test-libraries-static-and-dynamic (cached) PASSED in 0.2s
+//tests/library-with-sysdeps:bin                                (cached) PASSED in 0.1s
+//tests/package-id-clash-binary:bin                             (cached) PASSED in 0.1s
+//tests/package-name:bin                                        (cached) PASSED in 0.1s
+//tests/repl-flags:compiler_flags                               (cached) PASSED in 0.1s
+//tests/repl-flags:repl_flags                                   (cached) PASSED in 0.2s
+//tests/repl-targets:hs-bin                                     (cached) PASSED in 0.1s
+//tests/target-name:bin0-a_A@a                                  (cached) PASSED in 0.1s
+//tests/textual-hdrs:textual-hdrs                               (cached) PASSED in 0.2s
+//tests/two-libs:two-libs                                       (cached) PASSED in 0.1s
+//tests/unit-tests:dedup_on_test                                (cached) PASSED in 0.2s
+//tests/unit-tests:parent_dir                                   (cached) PASSED in 0.1s
+//tests/unit-tests:parent_dir_file                              (cached) PASSED in 0.1s
+//tests/unit-tests:parent_dir_file_dots                         (cached) PASSED in 0.1s
+//tests/unit-tests:parent_dir_just_file                         (cached) PASSED in 0.1s
+//tests/unit-tests:parent_dir_rooted                            (cached) PASSED in 0.2s
+//tests/unit-tests:rpath_entry_binary_leading_dots_bin          (cached) PASSED in 0.1s
+//tests/unit-tests:rpath_entry_binary_leading_dots_both         (cached) PASSED in 0.1s
+//tests/unit-tests:rpath_entry_binary_leading_dots_dep          (cached) PASSED in 0.1s
+//tests/unit-tests:rpath_entry_binary_root                      (cached) PASSED in 0.1s
+//tests/unit-tests:rpath_entry_dep_root                         (cached) PASSED in 0.1s
+//tests/unit-tests:rpath_entry_prefix                           (cached) PASSED in 0.1s
+//tests/unit-tests:rpath_entry_simple                           (cached) PASSED in 0.2s
+//tests/unit-tests:rpath_entry_simple_filename                  (cached) PASSED in 0.1s
+//tests/version-macros:version_macros                           (cached) PASSED in 0.2s
+//tests/version-macros:version_macros_c2hs                      (cached) PASSED in 0.2s
+//tools/runfiles:bin                                            (cached) PASSED in 0.2s
+//tools/runfiles:test                                           (cached) PASSED in 0.2s
+//tests/binary-with-prebuilt:binary-with-prebuilt                        PASSED in 0.1s
+
+Executed 1 out of 93 tests: 93 tests pass.
+There were tests whose specified size is too big. Use the --test_verbose_timeout_warnings command line option to see which ones these are.
+All tests passed but there were other errors during the build.
+
+FAILED: Build did NOT complete successfully
+
+[nix-shell:~/rh]$ 
