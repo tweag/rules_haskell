@@ -33,7 +33,7 @@ def _haskell_lint_aspect_impl(target, ctx):
     inputFiles = [
         f
         for src in getattr(ctx.rule.attr, "srcs", [])
-        for f in src.files
+        for f in src.files.to_list()
         if f.is_source and f.extension in ["hs", "hs-boot", "hsc", "lhs", "lhs-boot"]
     ]
     if len(inputFiles) == 0:
