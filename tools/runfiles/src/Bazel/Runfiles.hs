@@ -189,4 +189,4 @@ parseManifest = map parseLine . lines
   where
     parseLine l =
         let (key, value) = span (/= ' ') l in
-        (key, dropWhile (== ' ') value)
+        (normalize key, normalize $ dropWhile (== ' ') value)
