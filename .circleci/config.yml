@@ -32,18 +32,15 @@ jobs:
             apt-get install -y wget gnupg golang make libgmp3-dev libtinfo-dev libtinfo5 pkg-config zip g++ zlib1g-dev unzip python python3 bash-completion locales
             echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
             locale-gen
-            wget "https://github.com/bazelbuild/bazel/releases/download/0.27.0/bazel_0.27.0-linux-x86_64.deb"
-            dpkg -i bazel_0.27.0-linux-x86_64.deb
+            wget "https://github.com/bazelbuild/bazel/releases/download/0.28.0/bazel_0.28.0-linux-x86_64.deb"
+            dpkg -i bazel_0.28.0-linux-x86_64.deb
             echo "common:ci --build_tag_filters -requires_hackage,-requires_lz4,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
             # XXX: See .bazelrc [backward compatible options] for the the rational behind this flag
             echo "build --incompatible_use_python_toolchains=false" >> .bazelrc.local
       - run:
           name: Build tests
           command: |
-            # XXX bazel 0.27 regression: https://github.com/bazelbuild/bazel/issues/8723
-            # tag filtering (used here to disable rules with dependency to nixpkgs) is broken for
-            # rule_test. Workaround here is to just ignore theses rules using -//...
-            bazel build --config ci //tests/... -- -//tests:test-haskell_doctest_impl -//tests:test-binary-with-prebuilt_impl -//tests:test-haddock_impl
+            bazel build --config ci //tests/...
       - run:
           name: Run tests
           command: |

@@ -359,9 +359,9 @@ node_repositories(
 
 http_archive(
     name = "io_bazel_skydoc",
-    sha256 = "19eb6c162075707df5703c274d3348127625873dbfa5ff83b1ef4b8f5dbaa449",
-    strip_prefix = "skydoc-0.2.0",
-    urls = ["https://github.com/bazelbuild/skydoc/archive/0.2.0.tar.gz"],
+    sha256 = "c2d66a0cc7e25d857e480409a8004fdf09072a1bd564d6824441ab2f96448eea",
+    strip_prefix = "skydoc-0.3.0",
+    urls = ["https://github.com/bazelbuild/skydoc/archive/0.3.0.tar.gz"],
 )
 
 load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
@@ -372,16 +372,16 @@ skydoc_repositories()
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "9084496dde809363c491137e077ace81780463ead0060a0a6c3c4c0f613e9fcb",
-    strip_prefix = "rules_go-0.18.6",
-    urls = ["https://github.com/bazelbuild/rules_go/archive/0.18.6.tar.gz"],
+    sha256 = "1ad10f384053ae50c050fdec7d595d12427c82c0a27c58f8554deb4437216892",
+    strip_prefix = "rules_go-0.18.7",
+    urls = ["https://github.com/bazelbuild/rules_go/archive/0.18.7.tar.gz"],
 )
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "86592d703ecbe0c5cbb5139333a63268cf58d7efd2c459c8be8e69e77d135e29",
-    strip_prefix = "buildtools-0.26.0",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/0.26.0.tar.gz"],
+    sha256 = "5ec71602e9b458b01717fab1d37492154c1c12ea83f881c745dbd88e9b2098d8",
+    strip_prefix = "buildtools-0.28.0",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/0.28.0.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
