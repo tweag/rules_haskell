@@ -34,3 +34,22 @@
   test it in a temporary directory, create PR against master, publish
   start script.
 - [ ] Announce the new version (on Twitter)
+
+
+## Bumping bazel version
+
+`rules_haskell` should always support the latest LTS release of bazel.
+
+We strive to always test against the latest non-LTS release
+nonetheless, so bumping bazel regularly is required.
+
+- [ ] Bump bazel download link for bazel in `.circleci/config.yml`
+- [ ] Bump bazel download link for bazel in `azure-pipelines.yml`
+- [ ] Update all bazel rules dependencies in `WORKSPACE` (e.g.
+      `io_bazel_skydoc`)
+- [ ] Update bazel in nixpkgs and bump `nixpkgs/default.nix`
+- [ ] Bump MAX_BAZEL_* in `start`
+- If we are updating to a new LTS:
+  - Bump `MIN_BAZEL_*` in `start`
+  - TODO
+- [ ] Add update notice to `CHANGELOG`

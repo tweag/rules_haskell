@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## Upcoming release
 
+### Highlights
+
+* The minimum supported Bazel version is now 0.27.
+  `rules_haskell` supports Bazel up to 0.28.
+
+  0.27 is a LTS release, which means upstream guarantees all new
+  releases are backwards-compatible to it for 3 months. See the [Bazel
+  Stability](https://blog.bazel.build/2019/06/06/Bazel-Semantic-Versioning.html)
+  blog post for more information.
+
 ### Removed
 
 * The `haskell_lint` rule has been removed. It should have been
