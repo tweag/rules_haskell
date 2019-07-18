@@ -17,6 +17,9 @@ mkShell {
     bazel
     # For stack_install.
     stack
+    # To build the worker.
+    ghc
+    cabal-install
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
     # Needed to get correct locale for tests with encoding
