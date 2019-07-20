@@ -1,7 +1,6 @@
 """Package list handling"""
 
 load(":private/path_utils.bzl", "target_unique_name", "truly_relativize")
-load(":private/set.bzl", "set")
 
 def pkg_info_to_compile_flags(hs, pkg_info, plugin_pkg_info = None, prefix = ""):
     """Map package info to GHC command-line arguments.

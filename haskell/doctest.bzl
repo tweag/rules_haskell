@@ -1,7 +1,6 @@
 """Doctest support"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/path_utils.bzl", "link_libraries")
 load(":private/set.bzl", "set")

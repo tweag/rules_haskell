@@ -1,11 +1,7 @@
 """Actions for linking object code produced by compilation"""
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/list.bzl", "list")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
-load(":private/path_utils.bzl", "link_libraries")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/set.bzl", "set")
 load(":providers.bzl", "create_link_config")
 
 def _merge_parameter_files(hs, file1, file2):

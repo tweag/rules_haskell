@@ -1,7 +1,6 @@
 """Workspace rules (GHC binary distributions)"""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 
 _GHC_DEFAULT_VERSION = "8.6.5"
 

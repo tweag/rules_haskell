@@ -4,7 +4,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(":private/path_utils.bzl", "get_lib_name", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/set.bzl", "set")
 load(":providers.bzl", "get_extra_libs")
 
 def _get_extra_libraries(hs, with_shared, cc_info):

@@ -4,7 +4,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
-    "HaskellInfo",
 )
 load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context")

@@ -3,15 +3,11 @@
 These rules are deprecated.
 """
 
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
     "CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME",
     "C_COMPILE_ACTION_NAME",
 )
-load(":private/path_utils.bzl", "ln")
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/set.bzl", "set")
 load(
     "@io_tweag_rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
