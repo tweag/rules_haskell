@@ -42,8 +42,8 @@ haskell_register_ghc_nixpkgs(
 )
 
 load(
-    "@rules_haskell//haskell:defs.bzl",
-    "haskell_register_ghc_bindists",
+    "@rules_haskell//haskell:repositories.bzl",
+    "rules_haskell_toolchains",
 )
 
-haskell_register_ghc_bindists(version = "8.6.5")
+rules_haskell_toolchains(version = "8.6.5")

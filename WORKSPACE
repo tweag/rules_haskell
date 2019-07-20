@@ -1,8 +1,5 @@
 workspace(name = "rules_haskell")
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@rules_haskell//haskell:repositories.bzl", "haskell_repositories")
-
 # Subrepositories of rules_haskell
 
 # various examples
@@ -31,7 +28,11 @@ os_info(name = "os_info")
 load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 
 # bazel dependencies
-haskell_repositories()
+load("//haskell:repositories.bzl", "rules_haskell_dependencies")
+
+rules_haskell_dependencies()
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "happy",
@@ -139,7 +140,7 @@ haskell_register_ghc_nixpkgs(
 )
 
 load(
-    "@rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:ghc_bindist.bzl",
     "haskell_register_ghc_bindists",
 )
 

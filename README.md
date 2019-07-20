@@ -69,21 +69,17 @@ Add the following to your `WORKSPACE` file, and select a `$VERSION`
 
 ```bzl
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
 http_archive(
-  name = "rules_haskell",
-  strip_prefix = "rules_haskell-$VERSION",
-  urls = ["https://github.com/tweag/rules_haskell/archive/v$VERSION.tar.gz"],
+    name = "rules_haskell",
+    strip_prefix = "rules_haskell-$VERSION",
+    urls = ["https://github.com/tweag/rules_haskell/archive/v$VERSION.tar.gz"],
 )
-
 load(
-    "@rules_haskell//haskell:haskell.bzl",
-	"haskell_repositories",
-	"haskell_register_toolchains",
+    "@rules_haskell//haskell:repositories.bzl",
+    "rules_haskell_dependencies",
+    "rules_haskell_toolchains",
 )
-
-haskell_repositories()
-
+rules_haskell_dependencies()
 haskell_register_toolchains()
 ```
 

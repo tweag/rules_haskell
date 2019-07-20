@@ -68,21 +68,16 @@ http_archive(
 
 load(
     "@rules_haskell//haskell:repositories.bzl",
-    "haskell_repositories"
+    "rules_haskell_dependencies",
+    "rules_haskell_toolchains",
 )
 
-# `haskell_repositories()` sets up all bazel dependencies
-# required by `rules_haskell`.
-haskell_repositories()
+# Setup all Bazel dependencies required by `rules_haskell`.
+rules_haskell_dependencies()
 
-load(
-    "@rules_haskell//haskell:defs.bzl",
-    "haskell_register_ghc_bindists",
-)
-
-# Registers a haskell toolchain with a GHC binary
-# downloaded from haskell.org.
-haskell_register_ghc_bindists(version = "8.6.4")
+# Download a GHC binary distribution from haskell.org
+# and register it as a toolchain.
+rules_haskell_toolchains()
 EOF
 
 cat > .bazelrc <<"EOF"

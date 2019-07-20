@@ -1,11 +1,6 @@
 """Core Haskell rules"""
 
 load(
-    ":ghc_bindist.bzl",
-    _ghc_bindist = "ghc_bindist",
-    _haskell_register_ghc_bindists = "haskell_register_ghc_bindists",
-)
-load(
     ":haddock.bzl",
     _haskell_doc = "haskell_doc",
     _haskell_doc_aspect = "haskell_doc_aspect",
@@ -351,15 +346,10 @@ haskell_doc_aspect = _haskell_doc_aspect
 
 haskell_register_toolchains = _haskell_register_toolchains
 
-haskell_register_ghc_bindists = _haskell_register_ghc_bindists
-
 haskell_repl = _haskell_repl
 
 haskell_repl_aspect = _haskell_repl_aspect
 
 haskell_toolchain = _haskell_toolchain
-
-
-ghc_bindist = _ghc_bindist
 
 ghc_plugin = _ghc_plugin

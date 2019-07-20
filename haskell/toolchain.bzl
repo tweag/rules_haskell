@@ -338,4 +338,5 @@ def haskell_register_toolchains(version):
     and register it as a toolchain. This currently has the same effect
     as just `haskell_register_ghc_bindists(version)`.
     """
+    print("DEPRECATED. Use rules_haskell_toolchains() in haskell/repositories.bzl instead.")
     haskell_register_ghc_bindists(version)
