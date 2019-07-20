@@ -58,16 +58,16 @@ load(
 )
 
 # Download `rules_haskell`.
-# and make it accessible `@io_tweag_rules_haskell`.
+# and make it accessible `@rules_haskell`.
 http_archive(
-    name = "io_tweag_rules_haskell",
+    name = "rules_haskell",
     strip_prefix = "rules_haskell-0.9.1",
     urls = ["https://github.com/tweag/rules_haskell/archive/v0.9.1.tar.gz"],
     sha256 = "36c52c9709555a6c939b71c04fe0053ba89425f8d89c3c23c9b0ddd3ad91120e",
 )
 
 load(
-    "@io_tweag_rules_haskell//haskell:repositories.bzl",
+    "@rules_haskell//haskell:repositories.bzl",
     "haskell_repositories"
 )
 
@@ -76,7 +76,7 @@ load(
 haskell_repositories()
 
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:haskell.bzl",
     "haskell_register_ghc_bindists",
 )
 
@@ -109,7 +109,7 @@ package(default_visibility = ["//visibility:public"])
 
 # Load `rules_haskell` rules.
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:haskell.bzl",
     "haskell_toolchain_library",
     "haskell_library",
     "haskell_binary",

@@ -53,7 +53,7 @@ argument on the command-line to select a Nixpkgs-based toolchain for
 the build:
 
 ```
-$ bazel build --host_platform=@io_tweag_rules_haskell//haskell/platforms:linux_x86_64_nixpkgs //...
+$ bazel build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs //...
 ```
 
 See [below](#saving-common-command-line-flags-to-a-file) to
@@ -71,13 +71,13 @@ Add the following to your `WORKSPACE` file, and select a `$VERSION`
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-  name = "io_tweag_rules_haskell",
+  name = "rules_haskell",
   strip_prefix = "rules_haskell-$VERSION",
   urls = ["https://github.com/tweag/rules_haskell/archive/v$VERSION.tar.gz"],
 )
 
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:haskell.bzl",
 	"haskell_repositories",
 	"haskell_register_toolchains",
 )
@@ -223,7 +223,7 @@ dependency, like so:
 
 ```
 http_archive(
-    name = "io_tweag_rules_haskell",
+    name = "rules_haskell",
     strip_prefix = "rules_haskell-" + version,
     sha256 = …,
     urls = …,
@@ -235,7 +235,7 @@ To reference a local checkout instead, use the
    
 ```
 bazel build/test/run/sync \
-  --override_repository io_tweag_rules_haskell=/path/to/checkout
+  --override_repository rules_haskell=/path/to/checkout
 ```
    
 If you don’t want to type that every time, [temporarily add it to

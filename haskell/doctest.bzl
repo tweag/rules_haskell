@@ -5,7 +5,7 @@ load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/path_utils.bzl", "link_libraries")
 load(":private/set.bzl", "set")
 load(
-    "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "@rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "get_ghci_extra_libs",
@@ -61,7 +61,7 @@ def haskell_doctest_toolchain(name, doctest, **kwargs):
     )
     native.toolchain(
         name = name,
-        toolchain_type = "@io_tweag_rules_haskell//haskell:doctest-toolchain",
+        toolchain_type = "@rules_haskell//haskell:doctest-toolchain",
         toolchain = ":" + impl_name,
     )
 
@@ -92,7 +92,7 @@ def _haskell_doctest_single(target, ctx):
         "doctest-log-" + ctx.label.name + "-" + target.label.name,
     )
 
-    toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:doctest-toolchain"]
+    toolchain = ctx.toolchains["@rules_haskell//haskell:doctest-toolchain"]
 
     # GHC flags we have prepared before.
     args.add_all(hs_info.compile_flags)
@@ -189,8 +189,8 @@ omitted, all exposed modules provided by `deps` will be tested.
         ),
     },
     toolchains = [
-        "@io_tweag_rules_haskell//haskell:toolchain",
-        "@io_tweag_rules_haskell//haskell:doctest-toolchain",
+        "@rules_haskell//haskell:toolchain",
+        "@rules_haskell//haskell:doctest-toolchain",
     ],
 )
 """Run doctest test on targets in `deps`.

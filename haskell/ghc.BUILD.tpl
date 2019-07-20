@@ -1,9 +1,9 @@
 load(
-    "@io_tweag_rules_haskell//haskell:cc_toolchain_config.bzl",
+    "@rules_haskell//haskell:cc_toolchain_config.bzl",
     "cc_toolchain_config",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:haskell.bzl",
     "haskell_import",
     "haskell_toolchain",
 )

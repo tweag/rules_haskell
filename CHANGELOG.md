@@ -16,6 +16,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   Stability](https://blog.bazel.build/2019/06/06/Bazel-Semantic-Versioning.html)
   blog post for more information.
 
+* The repository name has changed, to follow the
+  new [Bazel rule guidelines][bazel-rule-guidelines]. It was
+  previously called `@io_tweag_rules_haskell`. It is now called
+  `@rules_haskell`. You should adapt your `WORKSPACE` file to match
+  this, as well as your `.bazelrc.local` file, if any.
+
+[bazel-rule-guidelines]: https://docs.bazel.build/versions/master/skylark/deploying.html
+
 ### Removed
 
 * The `haskell_lint` rule has been removed. It should have been

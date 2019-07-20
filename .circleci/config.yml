@@ -78,7 +78,7 @@ jobs:
       - run:
           name: Configure
           command: |
-            echo "build:ci --host_platform=@io_tweag_rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
+            echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
       - run:
           name: Prefetch Stackage snapshot
           command: |
@@ -134,7 +134,7 @@ jobs:
           command: |
             mkdir -p ~/.cache/bazel/
 
-            echo "build:ci --host_platform=@io_tweag_rules_haskell//haskell/platforms:darwin_x86_64_nixpkgs" >> .bazelrc.local
+            echo "build:ci --host_platform=@rules_haskell//haskell/platforms:darwin_x86_64_nixpkgs" >> .bazelrc.local
             echo "build:ci --disk_cache=~/.cache/bazel/" >> .bazelrc.local
             echo "common:ci --test_tag_filters -dont_test_on_darwin" >> .bazelrc.local
 

@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
-    "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "@rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
 )
 load(":cc.bzl", "cc_interop_info")
@@ -21,7 +21,7 @@ def _c2hs_library_impl(ctx):
 
     cc = cc_interop_info(ctx)
     args = hs.actions.args()
-    c2hs = ctx.toolchains["@io_tweag_rules_haskell//haskell/c2hs:toolchain"].c2hs
+    c2hs = ctx.toolchains["@rules_haskell//haskell/c2hs:toolchain"].c2hs
 
     if len(ctx.files.srcs) != 1:
         fail("srcs field should contain exactly one file.")
@@ -112,8 +112,8 @@ c2hs_library = rule(
         ),
     },
     toolchains = [
-        "@io_tweag_rules_haskell//haskell:toolchain",
-        "@io_tweag_rules_haskell//haskell/c2hs:toolchain",
+        "@rules_haskell//haskell:toolchain",
+        "@rules_haskell//haskell/c2hs:toolchain",
     ],
     fragments = ["cpp"],
 )
@@ -178,6 +178,6 @@ def c2hs_toolchain(name, c2hs, **kwargs):
 
     native.toolchain(
         name = name,
-        toolchain_type = "@io_tweag_rules_haskell//haskell/c2hs:toolchain",
+        toolchain_type = "@rules_haskell//haskell/c2hs:toolchain",
         toolchain = ":" + impl_name,
     )

@@ -90,7 +90,7 @@ lowercase characters and left as-is.
 To depend on a third-party package in a `BUILD` file, use the macros provided by `hazel.bzl`:
 
 ```
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_test")
+load("@rules_haskell//haskell:haskell.bzl", "haskell_test")
 load("@ai_formation_hazel//:hazel.bzl", "hazel_library")
 
 haskell_library(

@@ -22,7 +22,7 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         repository_ctx.symlink(target, basename)
 
     # Generate BUILD file entries describing each prebuilt package.
-    pkgdb_to_bzl = repository_ctx.path(Label("@io_tweag_rules_haskell//haskell:private/pkgdb_to_bzl.py"))
+    pkgdb_to_bzl = repository_ctx.path(Label("@rules_haskell//haskell:private/pkgdb_to_bzl.py"))
     result = repository_ctx.execute([
         pkgdb_to_bzl,
         repository_ctx.attr.name,
@@ -45,7 +45,7 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         executable = False,
         content = """
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:haskell.bzl",
     "haskell_import",
     "haskell_toolchain",
 )
@@ -75,7 +75,7 @@ haskell_toolchain(
 )
         """.format(
             toolchain_libraries = toolchain_libraries,
-            tools = ["@io_tweag_rules_haskell_ghc_nixpkgs//:bin"],
+            tools = ["@rules_haskell_ghc_nixpkgs//:bin"],
             version = repository_ctx.attr.version,
             is_static = repository_ctx.attr.is_static,
             compiler_flags = repository_ctx.attr.compiler_flags,
@@ -105,7 +105,7 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         # change anytime any content in a repository changes, like
         # bin/ghc, which embeds the output path, which itself changes
         # if any input to the derivation changed.
-        "_nixpkgs_ghc": attr.label(default = "@io_tweag_rules_haskell_ghc_nixpkgs//:bin/ghc"),
+        "_nixpkgs_ghc": attr.label(default = "@rules_haskell_ghc_nixpkgs//:bin/ghc"),
         "locale": attr.string(
             default = "en_US.UTF-8",
         ),
@@ -124,7 +124,7 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     elif repository_ctx.os.name == "mac os x":
         target_constraints.append("@bazel_tools//platforms:osx")
     exec_constraints = list(target_constraints)
-    exec_constraints.append("@io_tweag_rules_haskell//haskell/platforms:nixpkgs")
+    exec_constraints.append("@rules_haskell//haskell/platforms:nixpkgs")
 
     repository_ctx.file(
         "BUILD",
@@ -132,8 +132,8 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
         content = """
 toolchain(
     name = "toolchain",
-    toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
-    toolchain = "@io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain//:toolchain-impl",
+    toolchain_type = "@rules_haskell//haskell:toolchain",
+    toolchain = "@rules_haskell_ghc_nixpkgs_haskell_toolchain//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
@@ -168,7 +168,7 @@ def haskell_register_ghc_nixpkgs(
     Toolchains can be used to compile Haskell code. To have this
     toolchain selected during [toolchain
     resolution][toolchain-resolution], set a host platform that
-    includes the `@io_tweag_rules_haskell//haskell/platforms:nixpkgs`
+    includes the `@rules_haskell//haskell/platforms:nixpkgs`
     constraint value.
 
     [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
@@ -187,13 +187,13 @@ def haskell_register_ghc_nixpkgs(
       in the following:
 
       ```
-      --host_platform=@io_tweag_rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
+      --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
       ```
 
     """
-    nixpkgs_ghc_repo_name = "io_tweag_rules_haskell_ghc_nixpkgs"
-    haskell_toolchain_repo_name = "io_tweag_rules_haskell_ghc_nixpkgs_haskell_toolchain"
-    toolchain_repo_name = "io_tweag_rules_haskell_ghc_nixpkgs_toolchain"
+    nixpkgs_ghc_repo_name = "rules_haskell_ghc_nixpkgs"
+    haskell_toolchain_repo_name = "rules_haskell_ghc_nixpkgs_haskell_toolchain"
+    toolchain_repo_name = "rules_haskell_ghc_nixpkgs_toolchain"
 
     # The package from the system.
     nixpkgs_package(

@@ -6,7 +6,7 @@ load(
 )
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
-    "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "@rules_haskell//haskell:providers.bzl",
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
@@ -72,7 +72,7 @@ def _proto_path(proto, proto_source_roots):
     )
 
 def _haskell_proto_aspect_impl(target, ctx):
-    pb = ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].tools
+    pb = ctx.toolchains["@rules_haskell//protobuf:toolchain"].tools
 
     args = ctx.actions.args()
 
@@ -158,7 +158,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         "srcs": hs_files,
         "extra_srcs": [],
         "deps": ctx.rule.attr.deps +
-                ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].deps,
+                ctx.toolchains["@rules_haskell//protobuf:toolchain"].deps,
         "plugins": [],
         "data": [],
         "tools": [],
@@ -198,7 +198,7 @@ def _haskell_proto_aspect_impl(target, ctx):
     transitive_haddocks = {}
 
     # Add dependencies haddock informations
-    for dep in ctx.toolchains["@io_tweag_rules_haskell//protobuf:toolchain"].deps:
+    for dep in ctx.toolchains["@rules_haskell//protobuf:toolchain"].deps:
         if HaddockInfo in dep:
             transitive_html.update(dep[HaddockInfo].transitive_html)
             transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)
@@ -224,24 +224,24 @@ _haskell_proto_aspect = aspect(
     attrs = {
         "_ghci_script": attr.label(
             allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
+            default = Label("@rules_haskell//haskell:assets/ghci_script"),
         ),
         "_ghci_repl_wrapper": attr.label(
             allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
+            default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
         ),
         "_ls_modules": attr.label(
             executable = True,
             cfg = "host",
-            default = Label("@io_tweag_rules_haskell//haskell:ls_modules"),
+            default = Label("@rules_haskell//haskell:ls_modules"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
     toolchains = [
-        "@io_tweag_rules_haskell//haskell:toolchain",
-        "@io_tweag_rules_haskell//protobuf:toolchain",
+        "@rules_haskell//haskell:toolchain",
+        "@rules_haskell//protobuf:toolchain",
     ],
     fragments = ["cpp"],
 )
@@ -267,8 +267,8 @@ haskell_proto_library = rule(
         ),
     },
     toolchains = [
-        "@io_tweag_rules_haskell//haskell:toolchain",
-        "@io_tweag_rules_haskell//protobuf:toolchain",
+        "@rules_haskell//haskell:toolchain",
+        "@rules_haskell//protobuf:toolchain",
     ],
 )
 
@@ -400,7 +400,7 @@ def haskell_proto_toolchain(
 
     native.toolchain(
         name = name,
-        toolchain_type = "@io_tweag_rules_haskell//protobuf:toolchain",
+        toolchain_type = "@rules_haskell//protobuf:toolchain",
         toolchain = ":" + impl_name,
         exec_compatible_with = [
             "@bazel_tools//platforms:x86_64",

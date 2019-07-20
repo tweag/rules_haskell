@@ -9,7 +9,7 @@ load(
     "C_COMPILE_ACTION_NAME",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "@rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
 )
 
@@ -98,7 +98,7 @@ def cc_interop_info(ctx):
     )
 
     # Generate cc wrapper script on Darwin that adjusts load commands.
-    hs_toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"]
+    hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     if hs_toolchain.is_darwin:
         cc_wrapper = ctx.actions.declare_file("osx_cc_wrapper")
         cc = cc_wrapper.path

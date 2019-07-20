@@ -1,6 +1,6 @@
 """Runs ghc --help"""
 
-hs_toolchain = "@io_tweag_rules_haskell//haskell:toolchain"
+hs_toolchain = "@rules_haskell//haskell:toolchain"
 
 def _impl(ctx):
     output = ctx.outputs.out

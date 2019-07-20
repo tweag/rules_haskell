@@ -83,21 +83,21 @@ _haskell_common_attrs = {
     ),
     "_ghci_script": attr.label(
         allow_single_file = True,
-        default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
+        default = Label("@rules_haskell//haskell:assets/ghci_script"),
     ),
     "_ghci_repl_wrapper": attr.label(
         allow_single_file = True,
-        default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
+        default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
     ),
     "_ls_modules": attr.label(
         executable = True,
         cfg = "host",
-        default = Label("@io_tweag_rules_haskell//haskell:ls_modules"),
+        default = Label("@rules_haskell//haskell:ls_modules"),
     ),
     "_version_macros": attr.label(
         executable = True,
         cfg = "host",
-        default = Label("@io_tweag_rules_haskell//haskell:version_macros"),
+        default = Label("@rules_haskell//haskell:version_macros"),
     ),
     "_cc_toolchain": attr.label(
         default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -166,7 +166,7 @@ def _mk_binary_rule(**kwargs):
             ),
             "_coverage_wrapper_template": attr.label(
                 allow_single_file = True,
-                default = Label("@io_tweag_rules_haskell//haskell:private/coverage_wrapper.sh.tpl"),
+                default = Label("@rules_haskell//haskell:private/coverage_wrapper.sh.tpl"),
             ),
             "_bash_runfiles": attr.label(
                 allow_single_file = True,
@@ -185,7 +185,7 @@ def _mk_binary_rule(**kwargs):
             "repl_deprecated": "%{name}-repl",
         },
         toolchains = [
-            "@io_tweag_rules_haskell//haskell:toolchain",
+            "@rules_haskell//haskell:toolchain",
         ],
         fragments = ["cpp"],
         **kwargs
@@ -256,7 +256,7 @@ haskell_library = rule(
         "repl_deprecated": "%{name}-repl",
     },
     toolchains = [
-        "@io_tweag_rules_haskell//haskell:toolchain",
+        "@rules_haskell//haskell:toolchain",
     ],
     fragments = ["cpp"],
 )
@@ -299,7 +299,7 @@ haskell_import = rule(
         "_version_macros": attr.label(
             executable = True,
             cfg = "host",
-            default = Label("@io_tweag_rules_haskell//haskell:version_macros"),
+            default = Label("@rules_haskell//haskell:version_macros"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -315,7 +315,7 @@ haskell_toolchain_libraries = rule(
         ),
     },
     toolchains = [
-        "@io_tweag_rules_haskell//haskell:toolchain",
+        "@rules_haskell//haskell:toolchain",
     ],
     fragments = ["cpp"],
 )
@@ -327,7 +327,7 @@ haskell_toolchain_library = rule(
             doc = "The name of a GHC package not built by Bazel. Defaults to the name of the rule.",
         ),
         _toolchain_libraries = attr.label(
-            default = Label("@io_tweag_rules_haskell//haskell:toolchain-libraries"),
+            default = Label("@rules_haskell//haskell:toolchain-libraries"),
         ),
     ),
     fragments = ["cpp"],

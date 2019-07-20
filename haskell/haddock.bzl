@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
-    "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "@rules_haskell//haskell:providers.bzl",
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
@@ -160,11 +160,11 @@ haskell_doc_aspect = aspect(
     attrs = {
         "_haddock_wrapper_tpl": attr.label(
             allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:private/haddock_wrapper.sh.tpl"),
+            default = Label("@rules_haskell//haskell:private/haddock_wrapper.sh.tpl"),
         ),
     },
     attr_aspects = ["deps"],
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = ["@rules_haskell//haskell:toolchain"],
 )
 
 def _dirname(file):
@@ -291,7 +291,7 @@ haskell_doc = rule(
             doc = "Whether to include documentation of transitive dependencies in index.",
         ),
     },
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = ["@rules_haskell//haskell:toolchain"],
 )
 """Create API documentation.
 

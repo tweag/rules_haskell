@@ -41,8 +41,8 @@ mkShell {
       fi
       echo "[!] It looks like you are using a ''${ARCH} nix-based system. In order to build this project, you need to add the two following host_platform entries to your .bazelrc.local file."
       echo ""
-      echo "build --host_platform=@io_tweag_rules_haskell//haskell/platforms:''${ARCH}_x86_64_nixpkgs"
-      echo "run --host_platform=@io_tweag_rules_haskell//haskell/platforms:''${ARCH}_x86_64_nixpkgs"
+      echo "build --host_platform=@rules_haskell//haskell/platforms:''${ARCH}_x86_64_nixpkgs"
+      echo "run --host_platform=@rules_haskell//haskell/platforms:''${ARCH}_x86_64_nixpkgs"
     fi
 
     # source bazel bash completion

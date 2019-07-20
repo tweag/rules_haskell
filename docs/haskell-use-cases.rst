@@ -31,7 +31,7 @@ binary distributions for all platforms (Bazel will select one during
 toolchain resolution based on the target platform)::
 
   load(
-      "@io_tweag_rules_haskell//haskell:haskell.bzl",
+      "@rules_haskell//haskell:haskell.bzl",
       "haskell_register_ghc_bindists",
   )
 
@@ -57,7 +57,7 @@ of the compiler and all its dependencies is precisely defined in the
   )
 
   load(
-      "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
+      "@rules_haskell//haskell:nixpkgs.bzl",
       "haskell_register_ghc_nixpkgs",
   )
 
@@ -79,7 +79,7 @@ appropriately: ``linux_x86_64_nixpkgs``, ``darwin_x86_64_nixpkgs``
 etc. For example, you can have the following in your ``.bazelrc``
 file at the root of your project::
 
-  build --host_platform=@io_tweag_rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
+  build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
 
 .. _Bazel+Nix blog post: https://www.tweag.io/posts/2018-03-15-bazel-nix.html
 .. _Nix package manager: https://nixos.org/nix
@@ -175,7 +175,7 @@ Nixpkgs, replace the compiler definition with the following::
   haskell_register_ghc_nixpkgs(
       version = "X.Y.Z", # Any GHC version
       nix_file = "//:ghc.nix",
-      build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
+      build_file = "@rules_haskell//haskell:ghc.BUILD",
       repositories = { "nixpkgs": "@nixpkgs" },
   )
 
@@ -212,14 +212,14 @@ a given library (using Haddock). Building a target called
 ``bazel-bin/my/pkg/mylib_docs/index/index.html``.
 
 Alternatively, you can use the
-``@io_tweag_rules_haskell//haskell:haskell.bzl%haskell_doc_aspect``
+``@rules_haskell//haskell:haskell.bzl%haskell_doc_aspect``
 aspect to ask Bazel from the command-line to build documentation for
 any given target (or indeed all targets), like in the following:
 
 .. code-block:: console
 
   $ bazel build //my/pkg:mylib \
-      --aspects @io_tweag_rules_haskell//haskell:haskell.bzl%haskell_doc_aspect
+      --aspects @rules_haskell//haskell:haskell.bzl%haskell_doc_aspect
 
 .. _haskell_doc: http://api.haskell.build/haskell/haddock.html#haskell_doc
 
@@ -235,7 +235,7 @@ Alternatively, you can directly check a target using
 .. code-block:: console
 
   $ bazel build //my/haskell:target \
-      --aspects @io_tweag_rules_haskell//haskell:haskell.bzl%haskell_lint_aspect
+      --aspects @rules_haskell//haskell:haskell.bzl%haskell_lint_aspect
 
 .. _haskell_lint: http://api.haskell.build/haskell/lint.html#haskell_lint
 

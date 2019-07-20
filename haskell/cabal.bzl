@@ -279,13 +279,13 @@ haskell_cabal_library = rule(
         ),
         "_cabal_wrapper_tpl": attr.label(
             allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
+            default = Label("@rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = ["@rules_haskell//haskell:toolchain"],
     fragments = ["cpp"],
 )
 """Use Cabal to build a library.
@@ -404,13 +404,13 @@ haskell_cabal_binary = rule(
         ),
         "_cabal_wrapper_tpl": attr.label(
             allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
+            default = Label("@rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = ["@rules_haskell//haskell:toolchain"],
     fragments = ["cpp"],
 )
 """Use Cabal to build a binary.
@@ -585,8 +585,8 @@ def _stack_snapshot_impl(repository_ctx):
     # Write out the dependency graph as a BUILD file.
     build_file_builder = []
     build_file_builder.append("""
-load("@io_tweag_rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_toolchain_library")
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load("@rules_haskell//haskell:haskell.bzl", "haskell_toolchain_library")
 """)
     extra_deps = [
         "@{}//{}:{}".format(label.workspace_name, label.package, label.name)

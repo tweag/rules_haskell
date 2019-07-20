@@ -1,12 +1,12 @@
 """Derived context with Haskell-specific fields and methods"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@io_tweag_rules_haskell//haskell:providers.bzl", "HaskellLibraryInfo")
+load("@rules_haskell//haskell:providers.bzl", "HaskellLibraryInfo")
 
 HaskellContext = provider()
 
 def haskell_context(ctx, attr = None):
-    toolchain = ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"]
+    toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
 
     if not attr:
         attr = ctx.attr

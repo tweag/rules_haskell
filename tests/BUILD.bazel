@@ -2,11 +2,11 @@ load(":inline_tests.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("//tests:rule_test_exe.bzl", "rule_test_exe")
 load(
-    "@io_tweag_rules_haskell//haskell:c2hs.bzl",
+    "@rules_haskell//haskell:c2hs.bzl",
     "c2hs_toolchain",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
     "haskell_doc",
     "haskell_doctest_toolchain",

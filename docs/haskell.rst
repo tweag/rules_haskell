@@ -50,7 +50,7 @@ The first thing to do is to::
 
 If you use the ``NixOS`` distribution, also run the following command::
 
-  $ echo 'test --host_platform=@io_tweag_rules_haskell//haskell/platforms:linux_x86_64_nixpkgs' >> .bazelrc.local
+  $ echo 'test --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs' >> .bazelrc.local
 
 Build with Bazel
 ----------------

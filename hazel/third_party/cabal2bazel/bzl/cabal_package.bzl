@@ -23,12 +23,12 @@ and {hash} is the Bazel hash of the original package name.
 load("@bazel_skylib//:lib.bzl", "paths")
 load("@bazel_skylib//:lib.bzl", sets = "new_sets")
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:haskell.bzl",
     "haskell_binary",
     "haskell_library",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:c2hs.bzl",
+    "@rules_haskell//haskell:c2hs.bzl",
     "c2hs_library",
 )
 load(":bzl/alex.bzl", "genalex")

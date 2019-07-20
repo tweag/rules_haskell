@@ -13,7 +13,7 @@ def _haskell_package_repository_dummy_impl(rep_ctx):
 repository(name={name})
 
 register_toolchains(
-  "@io_tweag_rules_haskell//tests/:ghc"
+  "@rules_haskell//tests/:ghc"
 )
 """.format(name = rep_ctx.name),
     )
@@ -25,12 +25,12 @@ register_toolchains(
         executable = False,
         content = """
 load(
-  "@io_tweag_rules_haskell//haskell:haskell.bzl",
+  "@rules_haskell//haskell:haskell.bzl",
   "haskell_toolchain",
   "haskell_library",
 )
 load(
-  "@io_tweag_rules_haskell//:constants.bzl",
+  "@rules_haskell//:constants.bzl",
   "test_ghc_version",
 )
 
@@ -38,8 +38,8 @@ haskell_library(
   name = "library-with-cbits",
   srcs = ["AddOne.hs"],
   deps = [
-      "@io_tweag_rules_haskell//tests/data:ourclibrary",
-      "@io_tweag_rules_haskell//tests/hackage:base",
+      "@rules_haskell//tests/data:ourclibrary",
+      "@rules_haskell//tests/hackage:base",
   ],
 
   linkstatic = False,
