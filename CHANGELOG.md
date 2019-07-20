@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   previously called `@io_tweag_rules_haskell`. It is now called
   `@rules_haskell`. You should adapt your `WORKSPACE` file to match
   this, as well as your `.bazelrc.local` file, if any.
+* The `haskell/haskell.bzl` entrypoint is deprecated. use
+  `haskell/defs.bzl` instead.
 
 [bazel-rule-guidelines]: https://docs.bazel.build/versions/master/skylark/deploying.html
 

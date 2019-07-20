@@ -31,7 +31,7 @@ binary distributions for all platforms (Bazel will select one during
 toolchain resolution based on the target platform)::
 
   load(
-      "@rules_haskell//haskell:haskell.bzl",
+      "@rules_haskell//haskell:defs.bzl",
       "haskell_register_ghc_bindists",
   )
 
@@ -212,14 +212,14 @@ a given library (using Haddock). Building a target called
 ``bazel-bin/my/pkg/mylib_docs/index/index.html``.
 
 Alternatively, you can use the
-``@rules_haskell//haskell:haskell.bzl%haskell_doc_aspect``
+``@rules_haskell//haskell:defs.bzl%haskell_doc_aspect``
 aspect to ask Bazel from the command-line to build documentation for
 any given target (or indeed all targets), like in the following:
 
 .. code-block:: console
 
   $ bazel build //my/pkg:mylib \
-      --aspects @rules_haskell//haskell:haskell.bzl%haskell_doc_aspect
+      --aspects @rules_haskell//haskell:defs.bzl%haskell_doc_aspect
 
 .. _haskell_doc: http://api.haskell.build/haskell/haddock.html#haskell_doc
 
@@ -235,7 +235,7 @@ Alternatively, you can directly check a target using
 .. code-block:: console
 
   $ bazel build //my/haskell:target \
-      --aspects @rules_haskell//haskell:haskell.bzl%haskell_lint_aspect
+      --aspects @rules_haskell//haskell:defs.bzl%haskell_lint_aspect
 
 .. _haskell_lint: http://api.haskell.build/haskell/lint.html#haskell_lint
 

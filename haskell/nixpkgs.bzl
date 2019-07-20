@@ -45,7 +45,7 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         executable = False,
         content = """
 load(
-    "@rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:defs.bzl",
     "haskell_import",
     "haskell_toolchain",
 )

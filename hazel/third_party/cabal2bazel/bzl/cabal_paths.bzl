@@ -24,7 +24,7 @@ For usage information, see the below documentation for that rule.
 """
 
 load("@bazel_skylib//:lib.bzl", "paths")
-load("@rules_haskell//haskell:haskell.bzl", "haskell_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
 load("//tools:mangling.bzl", "hazel_library")
 
 def _impl_path_module_gen(ctx):

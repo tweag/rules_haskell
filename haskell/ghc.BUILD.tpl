@@ -3,7 +3,7 @@ load(
     "cc_toolchain_config",
 )
 load(
-    "@rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:defs.bzl",
     "haskell_import",
     "haskell_toolchain",
 )

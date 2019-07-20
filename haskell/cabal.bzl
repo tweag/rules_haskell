@@ -586,7 +586,7 @@ def _stack_snapshot_impl(repository_ctx):
     build_file_builder = []
     build_file_builder.append("""
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
-load("@rules_haskell//haskell:haskell.bzl", "haskell_toolchain_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_toolchain_library")
 """)
     extra_deps = [
         "@{}//{}:{}".format(label.workspace_name, label.package, label.name)

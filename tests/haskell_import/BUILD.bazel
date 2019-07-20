@@ -1,5 +1,5 @@
 load(
-    "@rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
     "haskell_toolchain_library",
 )

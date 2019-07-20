@@ -76,7 +76,7 @@ load(
 haskell_repositories()
 
 load(
-    "@rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:defs.bzl",
     "haskell_register_ghc_bindists",
 )
 
@@ -109,7 +109,7 @@ package(default_visibility = ["//visibility:public"])
 
 # Load `rules_haskell` rules.
 load(
-    "@rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:defs.bzl",
     "haskell_toolchain_library",
     "haskell_library",
     "haskell_binary",

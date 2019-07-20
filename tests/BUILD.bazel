@@ -6,7 +6,7 @@ load(
     "c2hs_toolchain",
 )
 load(
-    "@rules_haskell//haskell:haskell.bzl",
+    "//haskell:defs.bzl",
     "haskell_binary",
     "haskell_doc",
     "haskell_doctest_toolchain",

@@ -367,7 +367,7 @@ def ghc_bindist(
        In `WORKSPACE` file:
 
        ```bzl
-       load("@rules_haskell//haskell:haskell.bzl", "ghc_bindist")
+       load("@rules_haskell//haskell:defs.bzl", "ghc_bindist")
 
        # This repository rule creates @ghc repository.
        ghc_bindist(

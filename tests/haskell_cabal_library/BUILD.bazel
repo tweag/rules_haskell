@@ -1,6 +1,6 @@
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
 load(
-    "@rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:defs.bzl",
     "haskell_test",
     "haskell_toolchain_library",
 )

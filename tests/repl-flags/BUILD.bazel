@@ -1,4 +1,4 @@
-load("@rules_haskell//haskell:haskell.bzl", "haskell_test")
+load("@rules_haskell//haskell:defs.bzl", "haskell_test")
 
 package(default_testonly = 1)
 

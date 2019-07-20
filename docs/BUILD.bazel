@@ -32,7 +32,7 @@ skylark_doc(
 
         # The order of these files defines the order in which the corresponding
         # sections are presented in the docs.
-        "//haskell:haskell.bzl",
+        "//haskell:defs.bzl",
         "//haskell:cabal.bzl",
         "//haskell:haddock.bzl",
         "//haskell:repl.bzl",
