@@ -1,4 +1,4 @@
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_library", "haskell_test", "haskell_toolchain_library")
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_library", "haskell_test")
 
 cc_library(
     name = "cbits-indirect",
