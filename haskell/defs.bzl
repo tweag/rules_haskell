@@ -1,11 +1,6 @@
 """Core Haskell rules"""
 
 load(
-    ":doctest.bzl",
-    _haskell_doctest = "haskell_doctest",
-    _haskell_doctest_toolchain = "haskell_doctest_toolchain",
-)
-load(
     ":ghc_bindist.bzl",
     _ghc_bindist = "ghc_bindist",
     _haskell_register_ghc_bindists = "haskell_register_ghc_bindists",
@@ -31,11 +26,6 @@ load(
 )
 
 # For re-exports:
-load(
-    ":protobuf.bzl",
-    _haskell_proto_library = "haskell_proto_library",
-    _haskell_proto_toolchain = "haskell_proto_toolchain",
-)
 load(
     ":toolchain.bzl",
     _haskell_register_toolchains = "haskell_register_toolchains",
@@ -359,10 +349,6 @@ haskell_doc = _haskell_doc
 
 haskell_doc_aspect = _haskell_doc_aspect
 
-haskell_doctest = _haskell_doctest
-
-haskell_doctest_toolchain = _haskell_doctest_toolchain
-
 haskell_register_toolchains = _haskell_register_toolchains
 
 haskell_register_ghc_bindists = _haskell_register_ghc_bindists
@@ -373,9 +359,6 @@ haskell_repl_aspect = _haskell_repl_aspect
 
 haskell_toolchain = _haskell_toolchain
 
-haskell_proto_library = _haskell_proto_library
-
-haskell_proto_toolchain = _haskell_proto_toolchain
 
 ghc_bindist = _ghc_bindist
 
