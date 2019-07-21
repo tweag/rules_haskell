@@ -414,7 +414,7 @@ def ghc_bindist(
     native.register_toolchains("@{}//:toolchain".format(toolchain_name))
 
 def haskell_register_ghc_bindists(
-        version,
+        version = None,
         compiler_flags = None,
         haddock_flags = None,
         repl_ghci_args = None):
@@ -429,6 +429,7 @@ def haskell_register_ghc_bindists(
     [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
 
     """
+    version = version or _GHC_DEFAULT_VERSION
     if not GHC_BINDIST.get(version):
         fail("Binary distribution of GHC {} not available.".format(version))
     for target in GHC_BINDIST[version]:
