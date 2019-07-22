@@ -82,11 +82,15 @@ main = hspec $ do
     assertSuccess (bazel ["test", "//..."]) { Process.cwd = Just "./tutorial" }
 
   describe "Hazel" $ do
-    it "bazel test" $ do
-      assertSuccess (bazel ["test", "@ai_formation_hazel//..."])
-    for_ hazelPackages $ \pkg -> do
-      it ("builds " ++ pkg) $ do
-        assertSuccess (bazel ["build", "@haskell_" ++ pkg ++ "//..."])
+    -- TODO Reenable Hazel tests. As of 2019-07, they are disabled due to no
+    -- large enough CircleCI resource class being available (need "large" at
+    -- a minimum).
+    return ()
+    -- it "bazel test" $ do
+    --   assertSuccess (bazel ["test", "@ai_formation_hazel//..."])
+    -- for_ hazelPackages $ \pkg -> do
+    --   it ("builds " ++ pkg) $ do
+    --     assertSuccess (bazel ["build", "@haskell_" ++ pkg ++ "//..."])
 
       where
         hazelPackages =
