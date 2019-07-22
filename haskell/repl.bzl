@@ -3,22 +3,22 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
-load("@io_tweag_rules_haskell//haskell:private/context.bzl", "haskell_context", "render_env")
+load("@rules_haskell//haskell:private/context.bzl", "haskell_context", "render_env")
 load(
-    "@io_tweag_rules_haskell//haskell:private/path_utils.bzl",
+    "@rules_haskell//haskell:private/path_utils.bzl",
     "link_libraries",
     "match_label",
     "parse_pattern",
     "target_unique_name",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "@rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellToolchainLibraryInfo",
     "get_ghci_extra_libs",
 )
-load("@io_tweag_rules_haskell//haskell:private/set.bzl", "set")
+load("@rules_haskell//haskell:private/set.bzl", "set")
 
 HaskellReplLoadInfo = provider(
     doc = """Haskell REPL target information.
@@ -358,11 +358,11 @@ haskell_repl = rule(
     attrs = {
         "_ghci_repl_script": attr.label(
             allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:assets/ghci_script"),
+            default = Label("@rules_haskell//haskell:assets/ghci_script"),
         ),
         "_ghci_repl_wrapper": attr.label(
             allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
+            default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
         ),
         "deps": attr.label_list(
             aspects = [haskell_repl_aspect],
@@ -409,7 +409,7 @@ haskell_repl = rule(
     outputs = {
         "repl": "%{name}@repl",
     },
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = ["@rules_haskell//haskell:toolchain"],
 )
 """Build a REPL for multiple targets.
 

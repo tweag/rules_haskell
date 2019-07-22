@@ -57,7 +57,7 @@ def _core_library_repository_impl(ctx):
         "BUILD",
         executable = False,
         content = """
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_toolchain_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_toolchain_library")
 haskell_toolchain_library(
     name = "lib",
     package = "{pkg}",

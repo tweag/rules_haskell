@@ -4,7 +4,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 
 _GHC_DEFAULT_VERSION = "8.6.5"
 
-# Generated with `bazel run @io_tweag_rules_haskell//haskell:gen-ghc-bindist`
+# Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist`
 # To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py,
 # regenerate the dict and copy it here.
 # We’d like to put this dict into its own file,
@@ -184,7 +184,7 @@ def _execute_fail_loudly(ctx, args):
 def _ghc_bindist_impl(ctx):
     # Avoid rule restart by resolving these labels early. See
     # https://github.com/bazelbuild/bazel/blob/master/tools/cpp/lib_cc_configure.bzl#L17.
-    ghc_build = ctx.path(Label("@io_tweag_rules_haskell//haskell:ghc.BUILD.tpl"))
+    ghc_build = ctx.path(Label("@rules_haskell//haskell:ghc.BUILD.tpl"))
 
     version = ctx.attr.version
     target = ctx.attr.target
@@ -235,7 +235,7 @@ grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 \
     # Generate BUILD file entries describing each prebuilt package.
     # Cannot use //haskell:pkgdb_to_bzl because that's a generated
     # target. ctx.path() only works on source files.
-    pkgdb_to_bzl = ctx.path(Label("@io_tweag_rules_haskell//haskell:private/pkgdb_to_bzl.py"))
+    pkgdb_to_bzl = ctx.path(Label("@rules_haskell//haskell:private/pkgdb_to_bzl.py"))
     result = ctx.execute([
         python_bin,
         pkgdb_to_bzl,
@@ -325,7 +325,7 @@ def _ghc_bindist_toolchain_impl(ctx):
         content = """
 toolchain(
     name = "toolchain",
-    toolchain_type = "@io_tweag_rules_haskell//haskell:toolchain",
+    toolchain_type = "@rules_haskell//haskell:toolchain",
     toolchain = "@{bindist_name}//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
@@ -367,7 +367,7 @@ def ghc_bindist(
        In `WORKSPACE` file:
 
        ```bzl
-       load("@io_tweag_rules_haskell//haskell:haskell.bzl", "ghc_bindist")
+       load("@rules_haskell//haskell:ghc_bindist.bzl", "ghc_bindist")
 
        # This repository rule creates @ghc repository.
        ghc_bindist(
@@ -383,9 +383,9 @@ def ghc_bindist(
     # https://gitlab.haskell.org/ghc/ghc/issues/16466
     # We work around this by patching the base configuration.
     patches = {
-        "8.6.2": ["@io_tweag_rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
-        "8.6.4": ["@io_tweag_rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"],
-        "8.6.5": ["@io_tweag_rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
+        "8.6.2": ["@rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
+        "8.6.4": ["@rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"],
+        "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
     }.get(version) if target == "windows_amd64" else None
 
     extra_attrs = {"patches": patches, "patch_args": ["-p0"]} if patches else {}
@@ -414,7 +414,7 @@ def ghc_bindist(
     native.register_toolchains("@{}//:toolchain".format(toolchain_name))
 
 def haskell_register_ghc_bindists(
-        version,
+        version = None,
         compiler_flags = None,
         haddock_flags = None,
         repl_ghci_args = None):
@@ -429,11 +429,12 @@ def haskell_register_ghc_bindists(
     [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
 
     """
+    version = version or _GHC_DEFAULT_VERSION
     if not GHC_BINDIST.get(version):
         fail("Binary distribution of GHC {} not available.".format(version))
     for target in GHC_BINDIST[version]:
         ghc_bindist(
-            name = "io_tweag_rules_haskell_ghc_{}".format(target),
+            name = "rules_haskell_ghc_{}".format(target),
             target = target,
             version = version,
             compiler_flags = compiler_flags,

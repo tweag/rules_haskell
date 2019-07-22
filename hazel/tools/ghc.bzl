@@ -3,7 +3,7 @@ load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 default_ghc_workspaces = {
     "k8": "@ghc",
     "darwin": "@ghc",
-    "x64_windows": "@io_tweag_rules_haskell_ghc_windows_amd64",
+    "x64_windows": "@rules_haskell_ghc_windows_amd64",
 }
 
 def get_ghc_workspace(ghc_workspaces, repository_ctx):

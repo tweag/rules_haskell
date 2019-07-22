@@ -1,5 +1,5 @@
 def _ghc_paths_module_impl(ctx):
-    tools = ctx.toolchains["@io_tweag_rules_haskell//haskell:toolchain"].tools
+    tools = ctx.toolchains["@rules_haskell//haskell:toolchain"].tools
     ghc = tools.ghc
     ctx.actions.run_shell(
         inputs = [ghc],
@@ -31,6 +31,6 @@ EOM
 
 ghc_paths_module = rule(
     _ghc_paths_module_impl,
-    toolchains = ["@io_tweag_rules_haskell//haskell:toolchain"],
+    toolchains = ["@rules_haskell//haskell:toolchain"],
     outputs = {"out": "GHC/Paths.hs"},
 )

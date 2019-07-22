@@ -256,7 +256,7 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
         ),
         "_osx_cc_wrapper_tpl": attr.label(
             allow_single_file = True,
-            default = Label("@io_tweag_rules_haskell//haskell:private/osx_cc_wrapper.sh.tpl"),
+            default = Label("@rules_haskell//haskell:private/osx_cc_wrapper.sh.tpl"),
         ),
     },
 )
@@ -316,18 +316,18 @@ def haskell_toolchain(
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
         is_darwin = select({
-            "@io_tweag_rules_haskell//haskell/platforms:darwin": True,
+            "@rules_haskell//haskell/platforms:darwin": True,
             "//conditions:default": False,
         }),
         is_windows = select({
-            "@io_tweag_rules_haskell//haskell/platforms:mingw32": True,
+            "@rules_haskell//haskell/platforms:mingw32": True,
             "//conditions:default": False,
         }),
         # Ignore this attribute on any platform that is not Linux. The
         # LOCALE_ARCHIVE environment variable is a Linux-specific
         # Nixpkgs hack.
         locale_archive = select({
-            "@io_tweag_rules_haskell//haskell/platforms:linux": locale_archive,
+            "@rules_haskell//haskell/platforms:linux": locale_archive,
             "//conditions:default": None,
         }),
         **kwargs
@@ -338,4 +338,5 @@ def haskell_register_toolchains(version):
     and register it as a toolchain. This currently has the same effect
     as just `haskell_register_ghc_bindists(version)`.
     """
+    print("DEPRECATED. Use rules_haskell_toolchains() in haskell/repositories.bzl instead.")
     haskell_register_ghc_bindists(version)

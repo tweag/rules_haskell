@@ -10,11 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 * The minimum supported Bazel version is now 0.27.
   `rules_haskell` supports Bazel up to 0.28.
-
   0.27 is a LTS release, which means upstream guarantees all new
   releases are backwards-compatible to it for 3 months. See the [Bazel
   Stability](https://blog.bazel.build/2019/06/06/Bazel-Semantic-Versioning.html)
   blog post for more information.
+* The repository name has changed, to follow the
+  new [Bazel rule guidelines][bazel-rule-guidelines]. It was
+  previously called `@io_tweag_rules_haskell`. It is now called
+  `@rules_haskell`. You should adapt your `WORKSPACE` file to match
+  this, as well as your `.bazelrc.local` file, if any.
+* The `haskell/haskell.bzl` entrypoint is deprecated. use
+  `haskell/defs.bzl` instead.
+* The `haskell_repositories()` macro is deprecated. Use
+  `rules_haskell_dependencies()` from `haskell/repositories.bzl`
+  instead.
+* The `haskell_register_toolchains()` macro is deprecated. Use
+  `rules_haskell_toolchains()` from `haskell/repositories.bzl`
+  instead.
+
+[bazel-rule-guidelines]: https://docs.bazel.build/versions/master/skylark/deploying.html
 
 ### Removed
 

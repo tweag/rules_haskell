@@ -26,5 +26,5 @@ cp $pwd/.bazelrc .bazelrc
 NIX_PATH=nixpkgs=$pwd/nixpkgs/default.nix \
   bazel build \
   --config=ci \
-  --override_repository=io_tweag_rules_haskell=$pwd \
+  --override_repository=rules_haskell=$pwd \
   //:example

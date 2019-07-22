@@ -1,19 +1,16 @@
-workspace(name = "io_tweag_rules_haskell")
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+workspace(name = "rules_haskell")
 
 # Subrepositories of rules_haskell
 
 # various examples
 local_repository(
-    name = "io_tweag_rules_haskell_examples",
+    name = "rules_haskell_examples",
     path = "examples",
 )
 
 # code for the tutorial
 local_repository(
-    name = "io_tweag_rules_haskell_tutorial",
+    name = "rules_haskell_tutorial",
     path = "tutorial",
 )
 
@@ -31,12 +28,16 @@ os_info(name = "os_info")
 load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 
 # bazel dependencies
-haskell_repositories()
+load("//haskell:repositories.bzl", "rules_haskell_dependencies")
+
+rules_haskell_dependencies()
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "happy",
     build_file_content = """
-load("@io_tweag_rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
 haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visibility:public"])
     """,
     sha256 = "22eb606c97105b396e1c7dc27e120ca02025a87f3e44d2ea52be6a653a52caed",
@@ -44,7 +45,7 @@ haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visib
     urls = ["http://hackage.haskell.org/package/happy-1.19.10/happy-1.19.10.tar.gz"],
 )
 
-load("@io_tweag_rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
@@ -120,11 +121,11 @@ test_repl_ghci_args = [
 ]
 
 load(
-    "@io_tweag_rules_haskell//:constants.bzl",
+    "@rules_haskell//:constants.bzl",
     "test_ghc_version",
 )
 load(
-    "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
+    "@rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
 
@@ -139,7 +140,7 @@ haskell_register_ghc_nixpkgs(
 )
 
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:ghc_bindist.bzl",
     "haskell_register_ghc_bindists",
 )
 
@@ -295,7 +296,7 @@ nixpkgs_package(
 )
 
 load(
-    "@io_tweag_rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
+    "@rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
     "haskell_package_repository_dummy",
 )
 

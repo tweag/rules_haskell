@@ -1,7 +1,7 @@
 """Implementation of core Haskell rules"""
 
 load(
-    "@io_tweag_rules_haskell//haskell:providers.bzl",
+    "@rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
     "HaddockInfo",
     "HaskellInfo",

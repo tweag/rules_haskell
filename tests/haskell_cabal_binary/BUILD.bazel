@@ -1,4 +1,4 @@
-load("@io_tweag_rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
 
 haskell_cabal_binary(
     name = "haskell_cabal_binary",

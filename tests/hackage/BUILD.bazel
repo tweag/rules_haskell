@@ -9,7 +9,7 @@ package(default_visibility = [
 ])
 
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
+    "@rules_haskell//haskell:defs.bzl",
     "haskell_toolchain_library",
 )
 

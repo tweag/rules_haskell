@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # because that truncates the source file which is needed
     # for bazel to run in the first place.
     print(""" \
-# Generated with `bazel run @io_tweag_rules_haskell//haskell:gen-ghc-bindist | sponge haskell/private/ghc_bindist_generated.bzl`
+# Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist | sponge haskell/private/ghc_bindist_generated.bzl`
 # To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py
 GHC_BINDIST = \\""")
     pprint.pprint(ghc_bindists)

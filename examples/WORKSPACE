@@ -1,12 +1,12 @@
-workspace(name = "io_tweag_rules_haskell_examples")
+workspace(name = "rules_haskell_examples")
 
 local_repository(
-    name = "io_tweag_rules_haskell",
+    name = "rules_haskell",
     path = "..",
 )
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+load("@rules_haskell//haskell:repositories.bzl", "haskell_repositories")
 
 haskell_repositories()
 
@@ -29,30 +29,30 @@ load(
 nixpkgs_package(
     name = "ghc",
     attribute_path = "haskellPackages.ghc",
-    build_file = "@io_tweag_rules_haskell//haskell:ghc.BUILD",
-    repository = "@io_tweag_rules_haskell//nixpkgs:default.nix",
+    build_file = "@rules_haskell//haskell:ghc.BUILD",
+    repository = "@rules_haskell//nixpkgs:default.nix",
 )
 
 nixpkgs_cc_configure(
-    nix_file = "@io_tweag_rules_haskell//nixpkgs:cc-toolchain.nix",
-    repository = "@io_tweag_rules_haskell//nixpkgs:default.nix",
+    nix_file = "@rules_haskell//nixpkgs:cc-toolchain.nix",
+    repository = "@rules_haskell//nixpkgs:default.nix",
 )
 
 load(
-    "@io_tweag_rules_haskell//haskell:nixpkgs.bzl",
+    "@rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
 
 haskell_register_ghc_nixpkgs(
     repositories = {
-        "nixpkgs": "@io_tweag_rules_haskell//nixpkgs:default.nix",
+        "nixpkgs": "@rules_haskell//nixpkgs:default.nix",
     },
     version = "8.6.5",
 )
 
 load(
-    "@io_tweag_rules_haskell//haskell:haskell.bzl",
-    "haskell_register_ghc_bindists",
+    "@rules_haskell//haskell:repositories.bzl",
+    "rules_haskell_toolchains",
 )
 
-haskell_register_ghc_bindists(version = "8.6.5")
+rules_haskell_toolchains(version = "8.6.5")
