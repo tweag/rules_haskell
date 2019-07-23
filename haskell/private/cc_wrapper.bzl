@@ -1,6 +1,5 @@
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
-load("@os_info//:os_info.bzl", "is_linux")
 
 def _cc_wrapper_impl(ctx):
     cc_toolchain = find_cpp_toolchain(ctx)
@@ -21,9 +20,16 @@ def _cc_wrapper_impl(ctx):
         is_executable = True,
         substitutions = {
             "{:cc:}": cc,
+            "{:workspace:}": ctx.workspace_name,
         },
     )
-    return [DefaultInfo(files = depset([cc_wrapper]))]
+    return [DefaultInfo(
+        files = depset([cc_wrapper]),
+        runfiles = ctx.runfiles(
+            transitive_files = cc_toolchain.all_files,
+            collect_data = True,
+        ),
+    )]
 
 _cc_wrapper = rule(
     implementation = _cc_wrapper_impl,
