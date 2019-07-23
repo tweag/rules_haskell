@@ -1,0 +1,14 @@
+steps:
+  - command: |
+      . /var/lib/buildkite-agent/.nix-profile/etc/profile.d/nix.sh
+      echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
+      nix-shell --arg docTools false --pure --run \
+          'bazel build --config ci //tests:run-tests'
+      # TODO(Profpatsch) re-add a nixpkgs startup script
+      # and enable this test again
+      nix-shell --arg docTools false --pure --run \
+          './bazel-ci-bin/tests/run-tests --skip "/startup script/"'
+      nix-shell --arg docTools false --pure --run \
+          'bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all'
+    label: "Run tests"
+    timeout: 30
