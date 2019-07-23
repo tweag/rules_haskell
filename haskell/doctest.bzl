@@ -1,6 +1,7 @@
 """Doctest support"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/path_utils.bzl", "link_libraries")
 load(":private/set.bzl", "set")
@@ -86,6 +87,27 @@ def _haskell_doctest_single(target, ctx):
     args = ctx.actions.args()
     args.add("--no-magic")
 
+    cc = cc_interop_info(ctx)
+    args.add_all([
+        # GHC uses C compiler for assemly, linking and preprocessing as well.
+        "-pgma",
+        cc.tools.cc,
+        "-pgmc",
+        cc.tools.cc,
+        "-pgml",
+        cc.tools.cc,
+        "-pgmP",
+        cc.tools.cc,
+        # Setting -pgm* flags explicitly has the unfortunate side effect
+        # of resetting any program flags in the GHC settings file. So we
+        # restore them here. See
+        # https://ghc.haskell.org/trac/ghc/ticket/7929.
+        "-optc-fno-stack-protector",
+        "-optP-E",
+        "-optP-undef",
+        "-optP-traditional",
+    ])
+
     doctest_log = ctx.actions.declare_file(
         "doctest-log-" + ctx.label.name + "-" + target.label.name,
     )
@@ -118,6 +140,7 @@ def _haskell_doctest_single(target, ctx):
             ghci_extra_libs,
             depset(
                 toolchain.doctest +
+                cc.files +
                 [hs.tools.ghc],
             ),
         ]),
@@ -183,7 +206,11 @@ haskell_doctest = rule(
 omitted, all exposed modules provided by `deps` will be tested.
 """,
         ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
     },
+    fragments = ["cpp"],
     toolchains = [
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell:doctest-toolchain",
