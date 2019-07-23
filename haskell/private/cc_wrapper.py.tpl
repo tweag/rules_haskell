@@ -745,7 +745,7 @@ def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
             # Bazel runfiles_manifest file uses "/" separators.
             cc = r.Rlocation("/".join([WORKSPACE, CC + ".exe"]))
         if cc is None:
-            print("CC not found '{}'.".format(CC), file=sys.stderr)
+            sys.stderr.write("CC not found '{}'.\n".format(CC))
             sys.exit(1)
 
     with response_file(args) as rsp:
