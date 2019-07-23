@@ -40,6 +40,7 @@ import subprocess
 import sys
 import tempfile
 
+WORKSPACE = "{:workspace:}"
 CC = "{:cc:}"
 INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
 OTOOL = "/usr/bin/otool"
@@ -731,8 +732,24 @@ def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
         new_kwargs.update(kwargs)
         kwargs = new_kwargs
 
+    if os.path.isfile(CC):
+        cc = CC
+    else:
+        # On macOS CC is a relative path to a wrapper script. If we're
+        # being called from a GHCi REPL then we need to find this wrapper
+        # script using Bazel runfiles.
+        r = bazel_runfiles.Create()
+        cc = r.Rlocation("/".join([WORKSPACE, CC]))
+        if cc is None and platform.system() == "Windows":
+            # We must use "/" instead of os.path.join on Windows, because the
+            # Bazel runfiles_manifest file uses "/" separators.
+            cc = r.Rlocation("/".join([WORKSPACE, CC + ".exe"]))
+        if cc is None:
+            print("CC not found '{}'.".format(CC), file=sys.stderr)
+            sys.exit(1)
+
     with response_file(args) as rsp:
-        res = subprocess.run([CC, "@" + rsp], **kwargs)
+        res = subprocess.run([cc, "@" + rsp], **kwargs)
 
     if exit_on_error and res.returncode != 0:
         if capture_output:

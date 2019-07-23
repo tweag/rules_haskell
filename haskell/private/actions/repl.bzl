@@ -118,6 +118,7 @@ def build_haskell_repl(
         substitutions = {
             "{ENV}": render_env(ghc_env),
             "{TOOL}": hs.tools.ghci.path,
+            "{CC}": hs.toolchain.cc_wrapper.executable.path,
             "{ARGS}": " ".join(
                 [
                     "-ghci-script",
@@ -174,5 +175,6 @@ def build_haskell_repl(
         pkg_info_inputs,
         ghci_extra_libs,
         hs_info.source_files,
+        hs.toolchain.cc_wrapper.runfiles.files,
     ])
     ln(hs, repl_file, output, extra_inputs)

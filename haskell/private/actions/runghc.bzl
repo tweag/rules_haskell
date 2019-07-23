@@ -87,6 +87,7 @@ def build_haskell_runghc(
         substitutions = {
             "{ENV}": render_env(ghc_env),
             "{TOOL}": hs.tools.runghc.path,
+            "{CC}": hs.toolchain.cc_wrapper.executable.path,
             "{ARGS}": " ".join([shell.quote(a) for a in runcompile_flags]),
         },
         is_executable = True,
@@ -105,5 +106,6 @@ def build_haskell_runghc(
         pkg_info_inputs,
         ghci_extra_libs,
         hs_info.source_files,
+        hs.toolchain.cc_wrapper.runfiles.files,
     ])
     ln(hs, runghc_file, output, extra_inputs)

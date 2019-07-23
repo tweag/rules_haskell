@@ -151,6 +151,10 @@ def _haskell_toolchain_impl(ctx):
     }
 
     (cc_wrapper_inputs, cc_wrapper_manifest) = ctx.resolve_tools(tools = [ctx.attr._cc_wrapper])
+    cc_wrapper_info = ctx.attr._cc_wrapper[DefaultInfo]
+    cc_wrapper_runfiles = cc_wrapper_info.default_runfiles.merge(
+        cc_wrapper_info.data_runfiles,
+    )
 
     return [
         platform_common.ToolchainInfo(
@@ -165,6 +169,7 @@ def _haskell_toolchain_impl(ctx):
                 executable = ctx.executable._cc_wrapper,
                 inputs = cc_wrapper_inputs,
                 manifests = cc_wrapper_manifest,
+                runfiles = cc_wrapper_runfiles,
             ),
             mode = ctx.var["COMPILATION_MODE"],
             actions = struct(
