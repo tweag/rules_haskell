@@ -453,7 +453,8 @@ def _get_build_attrs(
         ] +
         install_includes,
     )
-    ghcopts += ["-I" + native.package_name() + "/" + d for d in build_info.includeDirs]
+    includeOpts = ["-I" + paths.join("external", native.repository_name()[1:], native.package_name(), i) for i in build_info.includeDirs]
+    ghcopts += includeOpts
     for xs in deps.values():
         xs.append(cbits_name)
 
@@ -474,6 +475,7 @@ def _get_build_attrs(
         srcs = build_info.cSources,
         includes = build_info.includeDirs,
         copts = ([o for o in build_info.ccOptions if not o.startswith("-D")] +
+                 includeOpts +
                  [
                      "-D__GLASGOW_HASKELL__=" + ghc_version_string,
                      "-w",
