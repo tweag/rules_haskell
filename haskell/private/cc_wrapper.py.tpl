@@ -787,15 +787,16 @@ def response_file(args):
 
     """
     try:
-        with tempfile.NamedTemporaryFile(mode="w", prefix="rsp", delete=False) as f:
-            for arg in args:
-                line = generate_response_line(arg)
-                f.write(line)
-            f.close()
-            yield f.name
+        (fd, filename) = tempfile.mkstemp(prefix="rsp", text=True)
+        handle = os.fdopen(fd, "w")
+        for arg in args:
+            line = generate_response_line(arg)
+            handle.write(line)
+        handle.close()
+        yield filename
     finally:
         try:
-            os.remove(f.name)
+            os.remove(filename)
         except OSError:
             pass
 
