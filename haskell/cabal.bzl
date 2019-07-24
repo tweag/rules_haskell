@@ -490,7 +490,14 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
     if not stack_cmd:
         fail("Cannot find stack command in your PATH.")
     exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
-    stack_major_version = int(exec_result.stdout.split(" ")[0].split(".")[0])
+    stack_version_words = exec_result.stdout.split(" ")
+
+    # Stack version strings are sometimes prefixed by the word
+    # "Version", sometimes not.
+    if stack_version_words[0] == "Version":
+        stack_major_version = int(stack_version_words[1].split(".")[0])
+    else:
+        stack_major_version = int(stack_version_words[0].split(".")[0])
     if stack_major_version < 2:
         fail("Stack 2.1 or above required.")
 
