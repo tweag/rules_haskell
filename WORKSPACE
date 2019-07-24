@@ -164,7 +164,8 @@ nixpkgs_cc_configure(
 )
 
 nixpkgs_package(
-    name = "zlib",
+    name = "nixpkgs_zlib",
+    attribute_path = "zlib",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
@@ -183,12 +184,13 @@ cc_library(
 )
 
 nixpkgs_package(
-    name = "lz4",
+    name = "nixpkgs_lz4",
+    attribute_path = "lz4",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-  name = "lz4",
+  name = "nixpkgs_lz4",
   srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"]),
   includes = ["include"],
 )
@@ -250,7 +252,7 @@ filegroup (
 
 cc_library(
     name = "zlib",
-    deps = ["@zlib//:zlib"],
+    srcs = ["@nixpkgs_zlib//:lib"],
     hdrs = [":include"],
     strip_include_prefix = "include",
 )

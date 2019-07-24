@@ -381,7 +381,7 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:bytestring",
-        "@lz4",
+        "@nixpkgs_lz4",
     ],
 )
 
