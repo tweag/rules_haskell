@@ -69,6 +69,13 @@ stack_snapshot(
     ],
     snapshot = "lts-13.15",
     tools = ["@happy"],
+)
+
+# In a separate repo because not all platforms support zlib.
+stack_snapshot(
+    name = "stackage-zlib",
+    packages = ["zlib"],
+    snapshot = "lts-13.15",
     deps = ["@zlib.dev//:zlib"],
 )
 
@@ -172,12 +179,6 @@ package(default_visibility = ["//visibility:public"])
 filegroup(
     name = "lib",
     srcs = glob(["lib/**/*.so*", "lib/**/*.dylib", "lib/**/*.a"]),
-)
-
-cc_library(
-    name = "zlib",
-    linkstatic = 1,
-    srcs = [":lib"],
 )
 """,
     repository = "@nixpkgs",
