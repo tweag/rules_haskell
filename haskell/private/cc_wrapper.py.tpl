@@ -755,11 +755,13 @@ def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
 
     with response_file(args) as rsp:
         # subprocess.run is not supported in the bindist CI setup.
-        with subprocess.Popen([cc, "@" + rsp], **kwargs) as proc:
-            if capture_output:
-                (stdoutbuf, stderrbuf) = proc.communicate()
+        # subprocess.Popen does not support context manager on CI setup.
+        proc = subprocess.Popen([cc, "@" + rsp], **kwargs)
 
-            returncode = proc.wait()
+        if capture_output:
+            (stdoutbuf, stderrbuf) = proc.communicate()
+
+        returncode = proc.wait()
 
     if exit_on_error and returncode != 0:
         if capture_output:
