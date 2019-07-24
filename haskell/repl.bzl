@@ -211,7 +211,7 @@ def _create_repl(hs, ctx, repl_info, output):
 
     # The base and directory packages are necessary for the GHCi script we use
     # (loads source files and brings in scope the corresponding modules).
-    args = ["-package", "base", "-package", "directory"]
+    args = ["-hide-all-packages", "-package", "base", "-package", "directory"]
 
     # Load built dependencies (-package-id, -package-db)
     for package_id in repl_info.dep_info.package_ids:
