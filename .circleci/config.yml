@@ -18,38 +18,6 @@ version: 2
 #       doing it.
 
 jobs:
-  build-linux-ghc-bindist:
-    docker:
-      - image: debian
-    working_directory: ~/rules_haskell
-    resource_class: large
-    steps:
-      - checkout
-      - run:
-          name: Setup test environment
-          command: |
-            apt-get update
-            apt-get install -y wget gnupg golang make libgmp3-dev libtinfo-dev libtinfo5 pkg-config zip g++ zlib1g-dev unzip python python3 bash-completion locales
-            echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-            locale-gen
-            wget "https://github.com/bazelbuild/bazel/releases/download/0.28.0/bazel_0.28.0-linux-x86_64.deb"
-            dpkg -i bazel_0.28.0-linux-x86_64.deb
-            echo "common:ci --build_tag_filters -requires_hackage,-requires_lz4,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
-            # XXX: See .bazelrc [backward compatible options] for the the rational behind this flag
-            echo "build --incompatible_use_python_toolchains=false" >> .bazelrc.local
-      - run:
-          name: Build tests
-          command: |
-            bazel build --config ci //tests/...
-      - run:
-          name: Run tests
-          command: |
-            # Run the start script test.
-            # Doesn't use the test suite binary, because that depends on nixpkgs dependencies.
-            ./tests/run-start-script.sh
-            # TODO: enable all tests for bindists
-            # (this will require tests to both work with nixpkgs and hazel backends)
-
   build-darwin:
     macos:
       xcode: "9.0"
@@ -142,6 +110,5 @@ workflows:
   version: 2
   build:
     jobs:
-      - build-linux-ghc-bindist
       - build-darwin:
           context: org-global # for the cachix token
