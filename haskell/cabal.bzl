@@ -565,6 +565,11 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
         if _chop_version(unpacked_sdist) not in _CORE_PACKAGES
         if _chop_version(unpacked_sdist) not in _CABAL_TOOLS
     ]
+    indirect_unpacked_sdists = [
+        unpacked_sdist
+        for unpacked_sdist in transitive_unpacked_sdists
+        if unpacked_sdist not in unpacked_sdists
+    ]
     for unpacked_sdist in transitive_unpacked_sdists:
         package = _chop_version(unpacked_sdist)
         if _version(unpacked_sdist) == "<unknown>":
@@ -572,14 +577,8 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
 Could not resolve version of {}. It is not in the snapshot.
 Specify a fully qualified package name of the form <package>-<version>.
             """.format(package))
-    _execute_or_fail_loudly(
-        repository_ctx,
-        stack + ["unpack"] + [
-            unpacked_sdist
-            for unpacked_sdist in transitive_unpacked_sdists
-            if unpacked_sdist not in unpacked_sdists
-        ],
-    )
+    if indirect_unpacked_sdists:
+        _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + indirect_unpacked_sdists)
     stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists).to_json()
     repository_ctx.file("stack.yaml", stack_yaml_content, executable = False)
 
