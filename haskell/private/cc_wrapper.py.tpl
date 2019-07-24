@@ -668,23 +668,22 @@ def print_file_name(filename, args):
 
     """
     (basename, ext) = os.path.splitext(filename)
-    if is_darwin() and ext == ".dylib":
+    found = run_cc_print_file_name(filename, args)
+    if not found and is_darwin() and ext == ".dylib":
         # Bazel generates dynamic libraries with .so extension on Darwin.
         # However, GHC only looks for files with .dylib extension.
 
-        # Try with the .dylib extension first.
-        found, res = run_cc_print_file_name(filename, args)
-        if not found:
-            # Retry with .so extension.
-            found, so_res = run_cc_print_file_name("%s.so" % basename, args)
-            if found:
-                res = so_res
-    else:
-        _, res = run_cc_print_file_name(filename, args)
+        # Retry with .so extension.
+        found = run_cc_print_file_name("%s.so" % basename, args)
 
-    sys.stdout.write(res.stdout.decode())
-    sys.stderr.write(res.stderr.decode())
-    sys.exit(res.returncode)
+    # Note, gcc --print-file-name does not fail if the file was not found, but
+    # instead just returns the input filename.
+    if found:
+        print(found)
+    else:
+        print(filename)
+
+    sys.exit()
 
 
 def run_cc_print_file_name(filename, args):
@@ -701,14 +700,14 @@ def run_cc_print_file_name(filename, args):
 
     """
     args = args + ["--print-file-name", filename]
-    res = run_cc(args, capture_output=True, exit_on_error=True)
-    filename = res.stdout.decode().strip()
+    _, stdoutbuf, _ = run_cc(args, capture_output=True, exit_on_error=True)
+    filename = stdoutbuf.decode().strip()
     # Note, gcc --print-file-name does not fail if the file was not found, but
     # instead just returns the input filename.
     if os.path.isfile(filename):
-        return filename, res
+        return filename
     else:
-        return None, res
+        return None
 
 
 # --------------------------------------------------------------------
@@ -723,7 +722,10 @@ def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
       exit_on_error: Whether to exit on error. Will print captured output first.
 
     Returns:
-      CompletedProcess
+      (returncode, stdoutbuf, stderrbuf):
+        returncode: The exit code of the the process.
+        stdoutbuf: The captured standard output, None if not capture_output.
+        stderrbuf: The captured standard error, None if not capture_output.
 
     """
     if capture_output:
@@ -748,16 +750,24 @@ def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
             sys.stderr.write("CC not found '{}'.\n".format(CC))
             sys.exit(1)
 
+    stdoutbuf = None
+    stderrbuf = None
+
     with response_file(args) as rsp:
-        res = subprocess.run([cc, "@" + rsp], **kwargs)
+        # subprocess.run is not supported in the bindist CI setup.
+        with subprocess.Popen([cc, "@" + rsp], **kwargs) as proc:
+            if capture_output:
+                (stdoutbuf, stderrbuf) = proc.communicate()
 
-    if exit_on_error and res.returncode != 0:
+            returncode = proc.wait()
+
+    if exit_on_error and returncode != 0:
         if capture_output:
-            sys.stdout.write(res.stdout.decode())
-            sys.stderr.write(res.stderr.decode())
-        sys.exit(res.returncode)
+            sys.stdout.write(stdout.decode())
+            sys.stderr.write(stderr.decode())
+        sys.exit(returncode)
 
-    return res
+    return (returncode, stdoutbuf, stderrbuf)
 
 
 @contextmanager
