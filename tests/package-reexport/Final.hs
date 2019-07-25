@@ -1,9 +1,8 @@
 module Main where
 
-import qualified TransitiveDep 
-
-whoIsMySubDep :: String
-whoIsMySubDep = TransitiveDep.whoAmI
+import qualified TransitiveDep
+import qualified Dep
+import           Control.Exception (assert)
 
 main :: IO ()
-main = putStrLn whoIsMySubDep
+main = pure $ assert (TransitiveDep.whoAmI == Dep.whoIsMyDep) ()

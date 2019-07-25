@@ -365,7 +365,8 @@ def _haskell_binary_common_impl(ctx, is_test):
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    deps = ctx.attr.deps + ctx.attr.package_reexports
+    dep_info = gather_dep_info(ctx, deps)
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
@@ -373,7 +374,7 @@ def haskell_library_impl(ctx):
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [
             dep[CcInfo]
-            for dep in ctx.attr.deps
+            for dep in deps
             if CcInfo in dep
         ] + [
             dep[CcInfo]
@@ -382,7 +383,7 @@ def haskell_library_impl(ctx):
             if CcInfo in dep
         ],
     )
-    package_ids = all_dependencies_package_ids(ctx.attr.deps)
+    package_ids = all_dependencies_package_ids(deps)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -519,7 +520,7 @@ def haskell_library_impl(ctx):
     hs_info = gather_dep_info(ctx, [my_dummy_struct] + ctx.attr.package_reexports)
 
     dep_coverage_data = []
-    for dep in ctx.attr.deps:
+    for dep in deps:
         if HaskellCoverageInfo in dep:
             dep_coverage_data += dep[HaskellCoverageInfo].coverage_data
 
@@ -611,7 +612,7 @@ def haskell_library_impl(ctx):
                 compilation_context = compilation_context,
                 linking_context = linking_context,
             ),
-        ] + [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+        ] + [dep[CcInfo] for dep in deps if CcInfo in dep],
     )
 
     return [
