@@ -18,6 +18,7 @@ import Data.Char (toLower)
 import Data.Foldable (asum)
 import Data.List (find, isPrefixOf, isSuffixOf)
 import Data.Maybe (fromMaybe)
+import GHC.Stack
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.Environment (getExecutablePath, lookupEnv)
 import qualified System.FilePath
@@ -99,7 +100,7 @@ manifestOnlyEnv = "RUNFILES_MANIFEST_ONLY"
 --
 -- This behaves according to the specification in:
 -- https://docs.google.com/document/d/e/2PACX-1vSDIrFnFvEYhKsCMdGdD40wZRBX3m3aZ5HhVj4CtHPmiXKDCxioTUbYsDydjKtFDAzER5eg7OjJWs3V/pub
-create :: IO Runfiles
+create :: HasCallStack => IO Runfiles
 create = do
     exePath <- getExecutablePath
 
