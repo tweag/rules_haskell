@@ -1,0 +1,14 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_test")
+
+cc_library(
+    name = "cbits",
+    hdrs = ["include/ghcautoconf.h"],
+    includes = ["include"],
+)
+
+haskell_test(
+    name = "isystem-issue",
+    srcs = ["Main.hs"],
+    deps = ["@haskell_base//:lib", ":cbits"],
+    compiler_flags = ["-Itests/isystem-issue/include"],
+)
