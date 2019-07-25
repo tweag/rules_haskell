@@ -474,6 +474,60 @@ _CORE_PACKAGES = [
     "xhtml",
 ]
 
+_STACK_DEFAULT_VERSION = "2.1.3"
+
+# Only ever need one version, but use same structure as for GHC bindists.
+_STACK_BINDISTS = \
+    {
+        "2.1.3": {
+            "freebsd-x86_64": (
+                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-freebsd-x86_64.tar.gz",
+                "b646380bd1ee6c5f16ea111c31be494e6e85ed5050dea41cd29fac5973767821",
+            ),
+            "linux-aarch64": (
+                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-linux-aarch64.tar.gz",
+                "1212c3ef9c4e901c50b086f1d778c28d75eb27cb4529695d2f1a16ea3f898a6d",
+            ),
+            "linux-arm": (
+                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-linux-arm.tar.gz",
+                "6c8a2100183368d0fe8298bc99260681f10c81838423884be885baaa2e096e78",
+            ),
+            "linux-i386": (
+                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-linux-i386.tar.gz",
+                "4acd97f4c91b1d1333c8d84ea38f690f0b5ac5224ba591f8cdd1b9d0e8973807",
+            ),
+            "linux-x86_64": (
+                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-linux-x86_64.tar.gz",
+                "c724b207831fe5f06b087bac7e01d33e61a1c9cad6be0468f9c117d383ec5673",
+            ),
+            "osx-x86_64": (
+                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-osx-x86_64.tar.gz",
+                "84b05b9cdb280fbc4b3d5fe23d1fc82a468956c917e16af7eeeabec5e5815d9f",
+            ),
+            "windows-i386": (
+                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-windows-i386.tar.gz",
+                "9bc67a8dc0466b6fc12b44b3920ea6be3b00fa1c52cbeada1a7c092a5402ebb3",
+            ),
+            "windows-x86_64": (
+                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-windows-x86_64.tar.gz",
+                "075bcd9130cd437de4e726466e5738c92c8e47d5666aa3a15d339e6ba62f76b2",
+            ),
+        },
+    }
+
+def _stack_version_check(repository_ctx, stack_cmd):
+    """Returns False if version not recent enough."""
+    exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
+    stack_version_words = exec_result.stdout.split(" ")
+
+    # Stack version strings are sometimes prefixed by the word
+    # "Version", sometimes not.
+    if stack_version_words[0] == "Version":
+        stack_major_version = int(stack_version_words[1].split(".")[0])
+    else:
+        stack_major_version = int(stack_version_words[0].split(".")[0])
+    return stack_major_version >= 2
+
 def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unversioned_packages):
     """Given a list of root packages, compute a dependency graph.
 
@@ -486,23 +540,11 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
     if not versioned_packages and not unversioned_packages:
         return ({}, [])
 
-    stack_cmd = repository_ctx.which("stack")
-    if not stack_cmd:
-        fail("Cannot find stack command in your PATH.")
-    exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
-    stack_version_words = exec_result.stdout.split(" ")
-
-    # Stack version strings are sometimes prefixed by the word
-    # "Version", sometimes not.
-    if stack_version_words[0] == "Version":
-        stack_major_version = int(stack_version_words[1].split(".")[0])
-    else:
-        stack_major_version = int(stack_version_words[0].split(".")[0])
-    if stack_major_version < 2:
-        fail("Stack 2.1 or above required.")
-
     # Unpack all given packages, then compute the transitive closure
     # and unpack anything in the transitive closure as well.
+    stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
+    if not _stack_version_check(repository_ctx, stack_cmd):
+        fail("Stack version not recent enough. Need version 2.1 or newer.")
     stack = [stack_cmd]
     if versioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
@@ -649,75 +691,139 @@ haskell_cabal_library(
     build_file_content = "\n".join(build_file_builder)
     repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
 
-stack_snapshot = repository_rule(
+_stack_snapshot = repository_rule(
     _stack_snapshot_impl,
     attrs = {
-        "snapshot": attr.string(
-            doc = "The name of a Stackage snapshot. Incompatible with local_snapshot.",
-        ),
-        "local_snapshot": attr.label(
-            doc = "A custom Stack snapshot file, as per the Stack documentation. Incompatible with snapshot.",
-            allow_single_file = True,
-        ),
-        "packages": attr.string_list(
-            doc = "A set of package identifiers. For packages in the snapshot, version numbers can be omitted.",
-        ),
-        "deps": attr.label_list(
-            doc = "Dependencies of the package set, e.g. system libraries or C/C++ libraries.",
-        ),
-        "tools": attr.label_list(
-            doc = """Tool dependencies. They are built using the host configuration, since
-            the tools are executed as part of the build.""",
-        ),
+        "snapshot": attr.string(),
+        "local_snapshot": attr.label(allow_single_file = True),
+        "packages": attr.string_list(),
+        "deps": attr.label_list(),
+        "tools": attr.label_list(),
+        "stack": attr.label(),
     },
 )
-"""Use Stack to download and extract Cabal source distributions.
 
-Examples:
+def _get_platform(repository_ctx):
+    """Map OS name and architecture to Stack platform identifiers."""
+    os_name = repository_ctx.os.name.lower()
+    if os_name.startswith("linux"):
+        os = "linux"
+    elif os_name.startswith("mac os"):
+        os = "osx"
+    elif os_name.find("freebsd") != -1:
+        os = "freebsd"
+    elif os_name.find("windows") != -1:
+        os = "windows"
 
-  ```bzl
-  stack_snapshot(
-      name = "stackage",
-      packages = ["conduit", "lens", "zlib-0.6.2"],
-      tools = ["@happy//:happy", "@c2hs//:c2hs"],
-      snapshot = "lts-13.15",
-      deps = ["@zlib.dev//:zlib"],
-  )
-  ```
-  defines `@stackage//:conduit`, `@stackage//:lens`,
-  `@stackage//:zlib` library targets.
+    result = repository_ctx.execute(["uname", "-m"])
+    if result.stdout.strip() in ["arm", "armv7l"]:
+        arch = "arm"
+    elif result.stdout.strip() in ["aarch64"]:
+        arch = "aarch64"
+    elif result.stdout.strip() in ["amd64", "x86_64", "x64"]:
+        arch = "x86_64"
+    elif result.stdout.strip() in ["i386", "i486", "i586", "i686"]:
+        arch = "i386"
 
-  Alternatively
-  ```bzl
-  stack_snapshot(
-      name = "stackage",
-      packages = ["conduit", "lens", "zlib"],
-      tools = ["@happy//:happy", "@c2hs//:c2hs"],
-      local_Snapshot = "//:snapshot.yaml",
-      deps = ["@zlib.dev//:zlib"],
-  ```
-  Does the same as the previous example, provided there is a
-  `snapshot.yaml`, at the root of the repository with content
-  ```yaml
-  resolver: lts-13.15
+    return (os, arch)
 
-  packages:
-    - zlib-0.6.2
-  ```
+def _fetch_stack_impl(repository_ctx):
+    repository_ctx.file("BUILD.bazel")
+    stack_cmd = repository_ctx.which("stack")
+    if stack_cmd:
+        if _stack_version_check(repository_ctx, stack_cmd):
+            repository_ctx.symlink(stack_cmd, "stack")
+            return
+        else:
+            print("Stack version not recent enough. Downloading a newer version...")
 
-This rule will use Stack to compute the transitive closure of the
-subset of the given snapshot listed in the `packages` attribute, and
-generate a dependency graph. If a package in the closure depends on
-system libraries or other external libraries, use the `deps` attribute
-to list them. This attribute works like the
-`--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
+    # If we can't find Stack, download it.
+    (os, arch) = _get_platform(repository_ctx)
+    version = _STACK_DEFAULT_VERSION
+    (url, sha256) = _STACK_BINDISTS[version]["{}-{}".format(os, arch)]
+    repository_ctx.download_and_extract(url = url, sha256 = sha256)
+    stack_cmd = repository_ctx.path(
+        "stack-{}-{}-{}".format(version, os, arch),
+    ).get_child("stack")
+    _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
+    exec_result = repository_ctx.execute([stack_cmd, "--version"], quiet = True)
+    if exec_result.return_code != 0:
+        error_messsage = ["A Stack binary for your platform exists, but it failed to execute."]
+        if os == "linux":
+            error_messsage.append("HINT: If you are on NixOS,")
+            error_messsage.append("* make Stack available on the PATH, or")
+            error_messsage.append("* specify a Stack binary using the stack attribute.")
+        fail("\n".join(error_messsage).format(exec_result.return_code))
+    repository_ctx.symlink(stack_cmd, "stack")
 
-Packages that are in the snapshot need not have their versions
-specified. But any additional packages or version overrides will have
-to be specified with a package identifier of the form
-`<package>-<version>` in the `packages` attribute.
+_fetch_stack = repository_rule(
+    _fetch_stack_impl,
+)
+"""Find a suitably recent local Stack or download it."""
 
-In the external repository defined by the rule, all given packages are
-available as top-level targets named after each package.
+def stack_snapshot(stack = None, **kwargs):
+    """Use Stack to download and extract Cabal source distributions.
 
-"""
+    Args:
+      snapshot: The name of a Stackage snapshot. Incompatible with local_snapshot.
+      local_snapshot: A custom Stack snapshot file, as per the Stack documentation.
+        Incompatible with snapshot.
+      packages: A set of package identifiers. For packages in the snapshot,
+        version numbers can be omitted.
+      deps: Dependencies of the package set, e.g. system libraries or C/C++ libraries.
+      tools: Tool dependencies. They are built using the host configuration, since
+        the tools are executed as part of the build.
+      stack: The stack binary to use to enumerate package dependencies.
+
+    Examples:
+
+      ```bzl
+      stack_snapshot(
+          name = "stackage",
+          packages = ["conduit", "lens", "zlib-0.6.2"],
+          tools = ["@happy//:happy", "@c2hs//:c2hs"],
+          snapshot = "lts-13.15",
+          deps = ["@zlib.dev//:zlib"],
+      )
+      ```
+      defines `@stackage//:conduit`, `@stackage//:lens`,
+      `@stackage//:zlib` library targets.
+
+      Alternatively
+      ```bzl
+      stack_snapshot(
+          name = "stackage",
+          packages = ["conduit", "lens", "zlib"],
+          tools = ["@happy//:happy", "@c2hs//:c2hs"],
+          local_Snapshot = "//:snapshot.yaml",
+          deps = ["@zlib.dev//:zlib"],
+      ```
+      Does the same as the previous example, provided there is a
+      `snapshot.yaml`, at the root of the repository with content
+      ```yaml
+      resolver: lts-13.15
+
+      packages:
+        - zlib-0.6.2
+      ```
+
+    This rule will use Stack to compute the transitive closure of the
+    subset of the given snapshot listed in the `packages` attribute, and
+    generate a dependency graph. If a package in the closure depends on
+    system libraries or other external libraries, use the `deps` attribute
+    to list them. This attribute works like the
+    `--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
+
+    Packages that are in the snapshot need not have their versions
+    specified. But any additional packages or version overrides will have
+    to be specified with a package identifier of the form
+    `<package>-<version>` in the `packages` attribute.
+
+    In the external repository defined by the rule, all given packages are
+    available as top-level targets named after each package.
+
+    """
+    if not stack:
+        _fetch_stack(name = "rules_haskell_stack")
+        stack = Label("@rules_haskell_stack//:stack")
+    _stack_snapshot(stack = stack, **kwargs)

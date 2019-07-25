@@ -12,7 +12,7 @@ def execute_or_fail_loudly(repository_ctx, arguments):
       exec_result: The output of the command.
 
     """
-    exec_result = repository_ctx.execute(arguments)
+    exec_result = repository_ctx.execute(arguments, quiet = True)
     if exec_result.return_code != 0:
         arguments = [_as_string(x) for x in arguments]
         fail("\n".join(["Command failed: " + " ".join(arguments), exec_result.stderr]))
