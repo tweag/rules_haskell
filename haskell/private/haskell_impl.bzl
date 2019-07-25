@@ -7,6 +7,7 @@ load(
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellToolchainLibraryInfo",
+    "all_dependencies_package_ids",
 )
 load(":cc.bzl", "cc_interop_info")
 load(
@@ -181,11 +182,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             if CcInfo in dep
         ],
     )
-    package_ids = [
-        dep[HaskellLibraryInfo].package_id
-        for dep in ctx.attr.deps
-        if HaskellLibraryInfo in dep
-    ]
+    package_ids = all_dependencies_package_ids(ctx.attr.deps)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -385,11 +382,7 @@ def haskell_library_impl(ctx):
             if CcInfo in dep
         ],
     )
-    package_ids = [
-        dep[HaskellLibraryInfo].package_id
-        for dep in ctx.attr.deps
-        if HaskellLibraryInfo in dep
-    ]
+    package_ids = all_dependencies_package_ids(ctx.attr.deps)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -512,6 +505,7 @@ def haskell_library_impl(ctx):
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
         version = version,
+        package_reexports = [],
     )
 
     dep_coverage_data = []
@@ -787,6 +781,7 @@ def haskell_import_impl(ctx):
     lib_info = HaskellLibraryInfo(
         package_id = id,
         version = ctx.attr.version,
+        package_reexports = [],
     )
     default_info = DefaultInfo(
         files = depset(target_files),

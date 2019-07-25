@@ -239,7 +239,7 @@ def _haskell_cabal_library_impl(ctx):
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
     )
-    lib_info = HaskellLibraryInfo(package_id = name, version = None)
+    lib_info = HaskellLibraryInfo(package_id = name, version = None, package_reexports = [])
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,

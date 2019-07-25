@@ -37,8 +37,20 @@ HaskellLibraryInfo = provider(
     fields = {
         "package_id": "Workspace unique package identifier.",
         "version": "Package version.",
+        "package_reexports": "List of other `HaskellLibraryInfo` that this package reexports",
     },
 )
+
+def all_package_ids(lib_info):
+    return [lib_info.package_id] + [sublib_info.package_id for sublib_info in lib_info.package_reexports]
+
+# XXX: Does this belong here?
+def all_dependencies_package_ids(deps):
+    package_ids = []
+    for dep in deps:
+        if HaskellLibraryInfo in dep:
+            package_ids.extend(all_package_ids(dep[HaskellLibraryInfo]))
+    return package_ids
 
 HaskellToolchainLibraryInfo = provider(
     doc = "Library that was imported via haskell_toolchain_library.",
