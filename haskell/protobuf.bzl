@@ -163,6 +163,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         "data": [],
         "tools": [],
         "_cc_toolchain": ctx.attr._cc_toolchain,
+        "package_reexports": [],
     }
 
     patched_ctx = struct(

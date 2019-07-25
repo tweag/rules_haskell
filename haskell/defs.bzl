@@ -221,6 +221,10 @@ haskell_library = rule(
         exports = attr.label_keyed_string_dict(
             doc = "A dictionary mapping dependencies to module reexports that should be available for import by dependencies.",
         ),
+        package_reexports = attr.label_list(
+            default = [],
+            doc = "A list of other haskell libraries that will be transparently added as a dependency to every downstream rule",
+        ),
         linkstatic = attr.bool(
             default = False,
             doc = "Create a static library, not both a static and a shared library.",

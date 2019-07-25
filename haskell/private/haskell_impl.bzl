@@ -483,7 +483,7 @@ def haskell_library_impl(ctx):
             generate_version_macros(ctx, package_name, version),
         )
 
-    hs_info = HaskellInfo(
+    my_hs_info = HaskellInfo(
         package_databases = depset([cache_file], transitive = [dep_info.package_databases]),
         version_macros = version_macros,
         source_files = c.source_files,
@@ -502,11 +502,21 @@ def haskell_library_impl(ctx):
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
     )
+
+    package_reexports = [
+        reexp[HaskellLibraryInfo]
+        for reexp in ctx.attr.package_reexports
+        if HaskellCoverageInfo in reexp
+    ]
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
         version = version,
-        package_reexports = [],
+        package_reexports = package_reexports,
     )
+
+    my_dummy_struct = {HaskellInfo: my_hs_info, HaskellLibraryInfo: lib_info}
+
+    hs_info = gather_dep_info(ctx, [my_dummy_struct] + ctx.attr.package_reexports)
 
     dep_coverage_data = []
     for dep in ctx.attr.deps:
