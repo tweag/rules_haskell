@@ -13,7 +13,7 @@ def _cc_wrapper_impl(ctx):
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.c_compile,
     )
-    cc_wrapper = ctx.actions.declare_file(ctx.label.name + ".py")
+    cc_wrapper = ctx.actions.declare_file(ctx.label.name)
     ctx.actions.expand_template(
         template = ctx.file.template,
         output = cc_wrapper,
@@ -36,7 +36,6 @@ _cc_wrapper = rule(
     attrs = {
         "template": attr.label(
             allow_single_file = True,
-            default = Label("@rules_haskell//haskell:private/cc_wrapper.py.tpl"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -45,18 +44,43 @@ _cc_wrapper = rule(
     fragments = ["cpp"],
 )
 
-def cc_wrapper(name, template = None, **kwargs):
+def cc_wrapper(name, **kwargs):
     _cc_wrapper(
-        name = name + "-source",
-        template = template,
+        name = name + ".py",
+        template = "@rules_haskell//haskell:private/cc_wrapper.py.tpl",
+    )
+    _cc_wrapper(
+        name = name + ".sh",
+        template = "@rules_haskell//haskell:private/cc_wrapper.sh.tpl",
     )
     native.py_binary(
-        name = name,
-        srcs = [name + "-source"],
-        main = name + "-source.py",
+        name = name + "-python",
+        srcs = [name + ".py"],
         python_version = "PY3",
+        main = name + ".py",
         deps = [
             "@bazel_tools//tools/python/runfiles",
         ],
+        **kwargs
+    )
+
+    # This is a workaround for py_binary being too slow on Windows.
+    # See https://github.com/bazelbuild/bazel/issues/8981
+    # In principle the python cc_wrapper would be sufficient for all platforms,
+    # however, execution is too slow on Windows to be practical.
+    native.sh_binary(
+        name = name + "-bash",
+        srcs = [name + ".sh"],
+        deps = [
+            "@bazel_tools//tools/bash/runfiles",
+        ],
+        **kwargs
+    )
+    native.alias(
+        name = name,
+        actual = select({
+            "@rules_haskell//haskell/platforms:mingw32": name + "-bash",
+            "//conditions:default": name + "-python",
+        }),
         **kwargs
     )

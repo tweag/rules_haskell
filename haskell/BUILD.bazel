@@ -15,6 +15,7 @@ exports_files(
         "private/ghci_repl_wrapper.sh",
         "private/haddock_wrapper.sh.tpl",
         "private/cc_wrapper.py.tpl",
+        "private/cc_wrapper.sh.tpl",
         "private/pkgdb_to_bzl.py",
     ],
 )
