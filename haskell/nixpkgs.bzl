@@ -37,7 +37,7 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
     # and asks the parent process to generate the associated bazel symlink
     for line in result.stdout.split("\n"):
         if line.startswith("#SYMLINK:"):
-            _, name, path = line.split(" ")
+            _, path, name = line.split(" ")
             repository_ctx.symlink(path, name)
 
     repository_ctx.file(
