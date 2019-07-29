@@ -58,9 +58,6 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
 
     extra_inputs = [
         hs.tools.ghc,
-        # Depend on the version file of the Haskell toolchain,
-        # to ensure the version comparison check is run first.
-        hs.toolchain.version_file,
         compile_flags_file,
         extra_args_file,
     ] + cc.files
@@ -125,29 +122,6 @@ def _haskell_toolchain_impl(ctx):
         if not tool in ghc_binaries:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 
-    # Run a version check on the compiler.
-    version_file = ctx.actions.declare_file("ghc-version")
-    ghc = ghc_binaries["ghc"]
-    ctx.actions.run_shell(
-        inputs = [ghc],
-        outputs = [version_file],
-        mnemonic = "HaskellVersionCheck",
-        command = """
-{ghc} --numeric-version > {version_file}
-if [[ "{expected_version}" != "$(< {version_file})" ]]
-then
-    echo ERROR: GHC version does not match expected version.
-    echo Your haskell_toolchain specifies {expected_version},
-    echo but you have $(< {version_file}) in your environment.
-exit 1
-fi
-        """.format(
-            ghc = ghc.path,
-            version_file = version_file.path,
-            expected_version = ctx.attr.version,
-        ),
-    )
-
     # Get the versions of every prebuilt package.
     ghc_pkg = ghc_binaries["ghc-pkg"]
     pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
@@ -201,10 +175,6 @@ fi
             is_windows = ctx.attr.is_windows,
             is_static = ctx.attr.is_static,
             version = ctx.attr.version,
-            # Pass through the version_file, that it can be required as
-            # input in _run_ghc, to make every call to GHC depend on a
-            # successful version check.
-            version_file = version_file,
             global_pkg_db = pkgdb_file,
         ),
     ]

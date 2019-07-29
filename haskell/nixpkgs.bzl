@@ -23,10 +23,21 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
 
     # Generate BUILD file entries describing each prebuilt package.
     pkgdb_to_bzl = repository_ctx.path(Label("@rules_haskell//haskell:private/pkgdb_to_bzl.py"))
+    ghc_name = "ghc-{}".format(repository_ctx.attr.version)
+    result = repository_ctx.execute(["ls", "lib"])
+    if result.return_code or not ghc_name in result.stdout.splitlines():
+        fail(
+            """\
+GHC version does not match expected version.
+You specified {wanted}.
+Available versions:
+{actual}
+""".format(wanted = ghc_name, actual = result.stdout),
+        )
     result = repository_ctx.execute([
         pkgdb_to_bzl,
         repository_ctx.attr.name,
-        "lib/ghc-{}".format(repository_ctx.attr.version),
+        "lib/{}".format(ghc_name),
     ])
     if result.return_code:
         fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
