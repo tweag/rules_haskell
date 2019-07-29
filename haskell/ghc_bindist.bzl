@@ -215,15 +215,14 @@ def _ghc_bindist_impl(ctx):
 
     # On Windows the bindist already contains the built executables
     if os != "windows":
-        # IMPORTANT: all these scripts have to be compatible with BSD tools!
-
-        # bsdcompatible is to work around the differences for -i on BSD sed
-        _execute_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-ibsdcompatible", "mk/config.mk.in"])
+        # IMPORTANT: all these scripts have to be compatible with BSD
+        # tools! This means that sed -i always takes an argument.
+        _execute_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"])
         _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
         _execute_fail_loudly(ctx, ["make", "install"])
         ctx.file("patch_bins", executable = True, content = r"""#!/usr/bin/env bash
 grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 -n1 \
-    sed -ibsdcompatible \
+    sed -i.bak \
         -e '2i\
           DISTDIR="$( dirname "$(resolved="$0"; while tmp="$(readlink "$resolved")"; do resolved="$tmp"; done; echo "$resolved")" )/.."' \
         -e 's:{bindist_dir}:$DISTDIR:'
