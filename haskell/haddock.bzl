@@ -124,7 +124,6 @@ def _haskell_doc_aspect_impl(target, ctx):
             target[HaskellInfo].dynamic_libraries,
             ghci_extra_libs,
             depset(transitive = [depset(i) for i in transitive_haddocks.values()]),
-            depset(transitive_html.values()),
             target[CcInfo].compilation_context.headers,
             depset([
                 hs.tools.ghc_pkg,

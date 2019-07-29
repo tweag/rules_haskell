@@ -69,6 +69,13 @@ stack_snapshot(
     ],
     snapshot = "lts-13.15",
     tools = ["@happy"],
+)
+
+# In a separate repo because not all platforms support zlib.
+stack_snapshot(
+    name = "stackage-zlib",
+    packages = ["zlib"],
+    snapshot = "lts-13.15",
     deps = ["@zlib.dev//:zlib"],
 )
 
@@ -164,7 +171,8 @@ nixpkgs_cc_configure(
 )
 
 nixpkgs_package(
-    name = "zlib",
+    name = "nixpkgs_zlib",
+    attribute_path = "zlib",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
@@ -172,23 +180,18 @@ filegroup(
     name = "lib",
     srcs = glob(["lib/**/*.so*", "lib/**/*.dylib", "lib/**/*.a"]),
 )
-
-cc_library(
-    name = "zlib",
-    linkstatic = 1,
-    srcs = [":lib"],
-)
 """,
     repository = "@nixpkgs",
 )
 
 nixpkgs_package(
-    name = "lz4",
+    name = "nixpkgs_lz4",
+    attribute_path = "lz4",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-  name = "lz4",
+  name = "nixpkgs_lz4",
   srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"]),
   includes = ["include"],
 )
@@ -250,7 +253,7 @@ filegroup (
 
 cc_library(
     name = "zlib",
-    deps = ["@zlib//:zlib"],
+    srcs = ["@nixpkgs_zlib//:lib"],
     hdrs = [":include"],
     strip_include_prefix = "include",
 )
