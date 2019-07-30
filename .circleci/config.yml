@@ -82,13 +82,11 @@ jobs:
             # due to a clash between binutils and clang.
             # nix-shell --arg docTools false --pure --run \
             #   './tests/run-start-script.sh --use-nix'
-            nix-shell --arg docTools false --pure --run \
-              'bazel build --config ci //tests:run-tests'
-            nix-shell --arg docTools false --pure --run \
-              './bazel-ci-bin/tests/run-tests'
-            nix-shell --arg docTools false --pure --run \
-              'bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all'
-
+            nix-shell --arg docTools false --pure --run '
+            bazel build --config ci //tests:run-tests
+            ./bazel-ci-bin/tests/run-tests
+            bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
+            '
 
         # see note about 'Disk cache'
       - save_cache:
