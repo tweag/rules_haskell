@@ -2,14 +2,14 @@ steps:
   - command: |
       . /var/lib/buildkite-agent/.nix-profile/etc/profile.d/nix.sh
       echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
-      nix-shell --arg docTools false --pure --run \
-          'bazel build --config ci //tests:run-tests'
-      nix-shell --arg docTools false --pure --run \
-          './bazel-ci-bin/tests/run-tests'
       # TODO(Profpatsch) re-add a nixpkgs startup script
       # and enable this test again
       # nix-shell --arg docTools false --pure --run \
       #   './tests/run-start-script.sh'
+      nix-shell --arg docTools false --pure --run \
+          'bazel build --config ci //tests:run-tests'
+      nix-shell --arg docTools false --pure --run \
+          './bazel-ci-bin/tests/run-tests'
       nix-shell --arg docTools false --pure --run \
           'bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all'
     label: "Run tests (Nixpkgs)"
@@ -18,7 +18,7 @@ steps:
       echo "common:ci --build_tag_filters -requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
       # XXX: See .bazelrc [backward compatible options] for the the rational behind this flag
       echo "build --incompatible_use_python_toolchains=false" >> .bazelrc.local
-      bazel build --config ci //tests/...
       ./tests/run-start-script.sh
+      bazel build --config ci //tests/...
     label: "Run tests (bindists)"
     timeout: 30

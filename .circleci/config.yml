@@ -78,12 +78,12 @@ jobs:
             # Keep CI awake
             while true; do echo "."; sleep 60; done &
 
-            nix-shell --arg docTools false --pure --run \
-              'bazel build --config ci //tests:run-tests'
             # XXX 2019-01-22 Disable start script checking on Darwin
             # due to a clash between binutils and clang.
             # nix-shell --arg docTools false --pure --run \
             #   './tests/run-start-script.sh'
+            nix-shell --arg docTools false --pure --run \
+              'bazel build --config ci //tests:run-tests'
             nix-shell --arg docTools false --pure --run \
               './bazel-ci-bin/tests/run-tests'
             nix-shell --arg docTools false --pure --run \
