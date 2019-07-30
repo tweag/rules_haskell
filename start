@@ -31,10 +31,10 @@ EOF
 
     if [ "$actual_major" -gt "$MAX_BAZEL_MAJOR" ] || (
         [ "$actual_major" -eq "$MAX_BAZEL_MAJOR" ] &&
-            [ "$actual_minor" -ge "$MAX_BAZEL_MINOR" ] )
+            [ "$actual_minor" -gt "$MAX_BAZEL_MINOR" ] )
     then
-	echo "Warning: a too new version of Bazel detected: v${actual_raw}."  >/dev/stderr
-	echo "         Recommended versions are from v${expected_min} to v${expected_max}."  >/dev/stderr
+	      echo "Warning: a too new version of Bazel detected: v${actual_raw}."  >/dev/stderr
+	      echo "         Recommended versions are from v${expected_min} to v${expected_max}."  >/dev/stderr
     elif [ "$actual_major" -lt "$MIN_BAZEL_MAJOR" ] || (
           [ "$actual_major" -eq "$MIN_BAZEL_MAJOR" ] &&
             [ "$actual_minor" -lt "$MIN_BAZEL_MINOR" ] )
