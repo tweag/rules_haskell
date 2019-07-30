@@ -26,7 +26,7 @@ $pwd/start "$@"
 # Which in turn means the start script should pull in those changes too.
 
 NIX_PATH=nixpkgs=$pwd/nixpkgs/default.nix \
-  bazel build \
+  bazel run \
   --config=ci \
   --override_repository=rules_haskell=$pwd \
   //:example
