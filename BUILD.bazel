@@ -1,5 +1,7 @@
 load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
 
+exports_files(["start"])
+
 # Run this to check for errors in BUILD files.
 buildifier(
     name = "buildifier",
