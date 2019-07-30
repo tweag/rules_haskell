@@ -12,7 +12,8 @@ workdir=/tmp/bazel-run-start-script
 rm -rf $workdir
 mkdir $workdir
 cd $workdir
-$pwd/start --use-bindists
+# arguments are passed on to the start script
+$pwd/start "$@"
 
 # Copy the bazel configuration, this is only useful for CI
 mkdir tools
