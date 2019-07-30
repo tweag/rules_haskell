@@ -82,8 +82,10 @@ jobs:
               'bazel build --config ci //tests:run-tests'
             # XXX 2019-01-22 Disable start script checking on Darwin
             # due to a clash between binutils and clang.
+            # nix-shell --arg docTools false --pure --run \
+            #   './tests/run-start-script.sh'
             nix-shell --arg docTools false --pure --run \
-              './bazel-ci-bin/tests/run-tests --skip "/startup script/"'
+              './bazel-ci-bin/tests/run-tests'
             nix-shell --arg docTools false --pure --run \
               'bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all'
 
