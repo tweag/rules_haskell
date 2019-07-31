@@ -68,30 +68,6 @@ be executed on NixOS.
 [bazel-cli-commands]: https://docs.bazel.build/versions/master/command-line-reference.html#commands
 [nixpkgs]: https://nixos.org/nixpkgs/
 
-### Doing it manually
-
-Add the following to your `WORKSPACE` file, and select a `$VERSION`
-(or even an arbitrary commit hash) accordingly.
-
-```bzl
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-http_archive(
-    name = "rules_haskell",
-    strip_prefix = "rules_haskell-$VERSION",
-    urls = ["https://github.com/tweag/rules_haskell/archive/v$VERSION.tar.gz"],
-)
-load(
-    "@rules_haskell//haskell:repositories.bzl",
-    "rules_haskell_dependencies",
-    "rules_haskell_toolchains",
-)
-rules_haskell_dependencies()
-haskell_register_toolchains()
-```
-
-You will then need to write one `BUILD` file for each "package" you
-want to define. See below for examples.
-
 ## Tutorial and Examples
 
 We provide a [tutorial for writing your first rules][tutorial].
