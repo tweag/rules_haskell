@@ -4,7 +4,7 @@ load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":providers.bzl", "create_link_config")
 
-def _merge_parameter_files(hs, file1, file2):
+def merge_parameter_files(hs, file1, file2):
     """Merge two GHC parameter files into one.
 
     Args:
@@ -225,7 +225,7 @@ def link_binary(
         )
 
     if extra_linker_flags_file != None:
-        params_file = _merge_parameter_files(hs, objects_dir_manifest, extra_linker_flags_file)
+        params_file = merge_parameter_files(hs, objects_dir_manifest, extra_linker_flags_file)
     else:
         params_file = objects_dir_manifest
 

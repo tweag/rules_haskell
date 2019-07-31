@@ -172,6 +172,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         disabled_features = ctx.rule.attr.features,
         executable = struct(
             _ls_modules = ctx.executable._ls_modules,
+            _worker = ctx.executable._worker,
         ),
         # Necessary for CC interop (see cc.bzl).
         features = ctx.rule.attr.features,
@@ -237,6 +238,11 @@ _haskell_proto_aspect = aspect(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "_worker": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@rules_haskell//haskell:worker"),
         ),
     },
     toolchains = [

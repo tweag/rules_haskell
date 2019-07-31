@@ -12,6 +12,7 @@ load(
     "link_binary",
     "link_library_dynamic",
     "link_library_static",
+    "merge_parameter_files",
 )
 load(":private/actions/package.bzl", "package")
 
@@ -62,46 +63,33 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         extra_args_file,
     ] + cc.files
 
+    flagsfile = extra_args_file
     if params_file:
-        params_file_src = params_file.path
-        extra_inputs.append(params_file)
-    else:
-        params_file_src = "<(:)"  # a temporary file with no contents
-
-    script = """
-export PATH=${PATH:-} # otherwise GCC fails on Windows
-
-# this is equivalent to 'readarray'. We do not use 'readarray' in order to
-# support older bash versions.
-while IFS= read -r line; do compile_flags+=("$line"); done < %s
-while IFS= read -r line; do extra_args+=("$line"); done < %s
-while IFS= read -r line; do param_file_args+=("$line"); done < %s
-
-# XXX Workaround https://gitlab.haskell.org/ghc/ghc/merge_requests/1308.
-set -o pipefail
-"${compile_flags[@]}" "${extra_args[@]}" ${param_file_args+"${param_file_args[@]}"} 2>&1 \
-  | while IFS= read -r line; do [[ $line =~ ^Loaded ]] || echo "$line"; done >&2
-""" % (compile_flags_file.path, extra_args_file.path, params_file_src)
-
-    ghc_wrapper_name = "ghc_wrapper_%s_%s" % (hs.name, mnemonic)
-    ghc_wrapper = hs.actions.declare_file(ghc_wrapper_name)
-    hs.actions.write(ghc_wrapper, script, is_executable = True)
-    extra_inputs.append(ghc_wrapper)
+        flagsfile = merge_parameter_files(hs, extra_args_file, params_file)
+        extra_inputs.append(flagsfile)
 
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
     else:
         inputs += extra_inputs
 
-    hs.actions.run_shell(
+    # Detect persistent worker support
+    flagsfile_prefix = ""
+    execution_requirements = {}
+    if hs.toolchain.use_worker:
+        flagsfile_prefix = "@"
+        execution_requirements = {"supports-workers": "1"}
+
+    hs.actions.run(
         inputs = inputs,
         input_manifests = input_manifests,
         outputs = outputs,
-        command = ghc_wrapper.path,
+        executable = hs.worker,
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = [],
+        arguments = [compile_flags_file.path, flagsfile_prefix + flagsfile.path],
+        execution_requirements = execution_requirements,
     )
 
     return args
@@ -176,6 +164,7 @@ def _haskell_toolchain_impl(ctx):
             is_static = ctx.attr.is_static,
             version = ctx.attr.version,
             global_pkg_db = pkgdb_file,
+            use_worker = ctx.attr.use_worker,
         ),
     ]
 
@@ -228,6 +217,9 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:private/osx_cc_wrapper.sh.tpl"),
         ),
+        "use_worker": attr.bool(
+            doc = "Whether to use persistent worker strategy during the builds.",
+        ),
     },
 )
 
@@ -241,6 +233,7 @@ def haskell_toolchain(
         repl_ghci_args = [],
         haddock_flags = [],
         locale_archive = None,
+        use_worker = False,
         **kwargs):
     """Declare a compiler toolchain.
 
