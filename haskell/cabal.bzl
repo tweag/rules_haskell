@@ -84,6 +84,8 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
 
     (ghci_extra_libs, env) = get_ghci_extra_libs(hs, cc_info)
     env["PATH"] = _make_path(hs, tool_inputs)
+    if hs.toolchain.is_darwin:
+        env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
 
     # TODO Instantiating this template could be done just once in the
     # toolchain rule.
@@ -123,6 +125,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
         [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
         transitive = [
             depset(srcs),
+            depset(cc.files),
             package_databases,
             extra_headers,
             ghci_extra_libs,

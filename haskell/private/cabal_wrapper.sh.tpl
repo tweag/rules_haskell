@@ -44,6 +44,8 @@ srcdir=$execroot/$3
 pkgroot="$(realpath $execroot/$4/..)" # By definition (see ghc-pkg source code).
 shift 4
 
+ar=$(realpath %{ar})
+strip=$(realpath %{strip})
 distdir=$(mktemp -d)
 libdir=$pkgroot/iface
 dynlibdir=$pkgroot/lib
@@ -64,8 +66,8 @@ $execroot/%{runghc} $setup configure \
     --user \
     --with-compiler=$execroot/%{ghc} \
     --with-hc-pkg=$execroot/%{ghc_pkg} \
-    --with-ar=%{ar} \
-    --with-strip=%{strip} \
+    --with-ar=$ar \
+    --with-strip=$strip \
     --enable-deterministic \
     --enable-relocatable \
     --builddir=$distdir \
