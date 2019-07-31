@@ -24,16 +24,18 @@ The full reference documentation for rules is at https://haskell.build.
 
 You'll need [Bazel >= 0.27][bazel-getting-started] installed.
 
+If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
+
 ### The easy way
 
 In a fresh directory, run:
 
 ```console
-$ curl https://haskell.build/start | sh
+$ sh <(curl https://haskell.build/start) --use-bindists
 ```
 
 This will generate initial `WORKSPACE` and `BUILD` files for you. See the
-[examples](./tests) and the [API reference](#Rules) below to adapt these for
+[examples](./examples) and the [API reference](#Rules) below to adapt these for
 you project. Then,
 
 ```console
@@ -47,17 +49,21 @@ syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
 
 ### Nixpkgs
 
-This rule set supports [Nixpkgs][nixpkgs]. If you are on NixOS, or if
-you are using Nixpkgs on your project, consider passing the following
-argument on the command-line to select a Nixpkgs-based toolchain for
-the build:
+This rule set supports using [Nixpkgs][nixpkgs] to provision your GHC
+toolchain and to fetch hackage packages from there. To create your
+project, instead of passing `--use-bindists`, pass `--use-nix`, like
+so:
 
-```
-$ bazel build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs //...
+```console
+$ sh <(curl https://haskell.build/start) --use-nix
 ```
 
-See [below](#saving-common-command-line-flags-to-a-file) to
-permanently set that flag.
+This generates the same files as above, but uses `nixpkgs` to
+provision GHC.
+
+If you are on NixOS, this is the only way to set up your project,
+because the GHC toolchain provisioned through `--use-bindists` cannot
+be executed on NixOS.
 
 [bazel-cli-commands]: https://docs.bazel.build/versions/master/command-line-reference.html#commands
 [nixpkgs]: https://nixos.org/nixpkgs/
