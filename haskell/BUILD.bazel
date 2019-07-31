@@ -33,6 +33,12 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
+sh_binary(
+    name = "worker",
+    srcs = ["private/worker.sh"],
+    visibility = ["//visibility:public"],
+)
+
 py_binary(
     name = "version_macros",
     srcs = ["private/version_macros.py"],
