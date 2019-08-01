@@ -18,8 +18,8 @@ haskell_library(
 haskell_library(
     name = "dep",
     srcs = ["Dep.hs"],
-    package_reexports = [":transitive-dep"],
     visibility = ["//visibility:public"],
+    exports = [":transitive-dep"],
     deps = [
         "//tests/hackage:base",
     ],

@@ -365,7 +365,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
-    deps = ctx.attr.deps + ctx.attr.package_reexports
+    deps = ctx.attr.deps + ctx.attr.exports
     dep_info = gather_dep_info(ctx, deps)
     plugin_dep_info = gather_dep_info(
         ctx,
@@ -426,7 +426,7 @@ def haskell_library_impl(ctx):
     )
 
     other_modules = ctx.attr.hidden_modules
-    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
+    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.module_exports)
     exposed_modules_file = list_exposed_modules(
         hs,
         ls_modules = ctx.executable._ls_modules,
@@ -504,20 +504,20 @@ def haskell_library_impl(ctx):
         compile_flags = c.compile_flags,
     )
 
-    package_reexports = [
+    exports = [
         reexp[HaskellLibraryInfo]
-        for reexp in ctx.attr.package_reexports
+        for reexp in ctx.attr.exports
         if HaskellCoverageInfo in reexp
     ]
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
         version = version,
-        package_reexports = package_reexports,
+        exports = exports,
     )
 
     my_dummy_struct = {HaskellInfo: my_hs_info, HaskellLibraryInfo: lib_info}
 
-    hs_info = gather_dep_info(ctx, [my_dummy_struct] + ctx.attr.package_reexports)
+    hs_info = gather_dep_info(ctx, [my_dummy_struct] + ctx.attr.exports)
 
     dep_coverage_data = []
     for dep in deps:
@@ -792,7 +792,7 @@ def haskell_import_impl(ctx):
     lib_info = HaskellLibraryInfo(
         package_id = id,
         version = ctx.attr.version,
-        package_reexports = [],
+        exports = [],
     )
     default_info = DefaultInfo(
         files = depset(target_files),
@@ -822,7 +822,7 @@ def haskell_import_impl(ctx):
         haddock_info,
     ]
 
-def _exposed_modules_reexports(exports):
+def _exposed_modules_reexports(module_exports):
     """Creates a ghc-pkg-compatible list of reexport declarations.
 
     A ghc-pkg registration file declares reexports as part of the
@@ -844,14 +844,14 @@ def _exposed_modules_reexports(exports):
     }
 
     Args:
-      exports: a dictionary mapping package targets to "Cabal-style"
+      module_exports: a dictionary mapping package targets to "Cabal-style"
                reexported-modules declarations.
 
     Returns:
       a ghc-pkg-compatible list of reexport declarations.
     """
     exposed_reexports = []
-    for dep, cabal_decls in exports.items():
+    for dep, cabal_decls in module_exports.items():
         for cabal_decl in cabal_decls.split(","):
             stripped_cabal_decl = cabal_decl.strip()
             cabal_decl_parts = stripped_cabal_decl.split(" as ")

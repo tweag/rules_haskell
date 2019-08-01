@@ -218,10 +218,10 @@ haskell_library = rule(
         hidden_modules = attr.string_list(
             doc = "Modules that should be unavailable for import by dependencies.",
         ),
-        exports = attr.label_keyed_string_dict(
+        module_exports = attr.label_keyed_string_dict(
             doc = "A dictionary mapping dependencies to module reexports that should be available for import by dependencies.",
         ),
-        package_reexports = attr.label_list(
+        exports = attr.label_list(
             default = [],
             doc = "A list of other haskell libraries that will be transparently added as a dependency to every downstream rule",
         ),
@@ -260,7 +260,7 @@ Example:
       deps = [
           "//hello-sublib:lib",
       ],
-      exports = {
+      module_exports = {
           "//hello-sublib:lib": "Lib1 as HelloLib1, Lib2",
       },
   )
