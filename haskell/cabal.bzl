@@ -580,6 +580,14 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
 Could not resolve version of {}. It is not in the snapshot.
 Specify a fully qualified package name of the form <package>-<version>.
             """.format(package))
+
+    # We remove the version numbers prior to calling `unpack`. This
+    # way, stack will fetch the package sources from the snapshot
+    # rather than from Hackage. See #1027.
+    indirect_unpacked_sdists = [
+        _chop_version(unpacked_sdist)
+        for unpacked_sdist in indirect_unpacked_sdists
+    ]
     if indirect_unpacked_sdists:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + indirect_unpacked_sdists)
     stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists).to_json()
