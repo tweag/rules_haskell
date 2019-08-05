@@ -18,6 +18,7 @@ load(":private/version_macros.bzl", "version_macro_includes")
 load(
     ":providers.bzl",
     "HaskellLibraryInfo",
+    "all_dependencies_package_ids",
     "get_ghci_extra_libs",
 )
 load(":private/set.bzl", "set")
@@ -153,6 +154,10 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
     if hs.toolchain.is_darwin:
         compile_flags += ["-optl-Wl,-dead_strip_dylibs"]
 
+    package_ids = []
+    for plugin in plugins:
+        package_ids.extend(all_dependencies_package_ids(plugin.deps))
+
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
@@ -161,12 +166,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
             version = version,
         ),
         plugin_pkg_info = expose_packages(
-            package_ids = [
-                dep[HaskellLibraryInfo].package_id
-                for plugin in plugins
-                for dep in plugin.deps
-                if HaskellLibraryInfo in dep
-            ],
+            package_ids = package_ids,
             package_databases = plugin_dep_info.package_databases,
             version = version,
         ),
