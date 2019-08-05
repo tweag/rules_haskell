@@ -7,6 +7,7 @@ load(
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellToolchainLibraryInfo",
+    "all_dependencies_package_ids",
 )
 load(":cc.bzl", "cc_interop_info")
 load(
@@ -181,11 +182,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             if CcInfo in dep
         ],
     )
-    package_ids = [
-        dep[HaskellLibraryInfo].package_id
-        for dep in ctx.attr.deps
-        if HaskellLibraryInfo in dep
-    ]
+    package_ids = all_dependencies_package_ids(ctx.attr.deps)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -368,7 +365,8 @@ def _haskell_binary_common_impl(ctx, is_test):
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    deps = ctx.attr.deps + ctx.attr.exports
+    dep_info = gather_dep_info(ctx, deps)
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
@@ -376,7 +374,7 @@ def haskell_library_impl(ctx):
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [
             dep[CcInfo]
-            for dep in ctx.attr.deps
+            for dep in deps
             if CcInfo in dep
         ] + [
             dep[CcInfo]
@@ -385,11 +383,7 @@ def haskell_library_impl(ctx):
             if CcInfo in dep
         ],
     )
-    package_ids = [
-        dep[HaskellLibraryInfo].package_id
-        for dep in ctx.attr.deps
-        if HaskellLibraryInfo in dep
-    ]
+    package_ids = all_dependencies_package_ids(deps)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
@@ -432,7 +426,7 @@ def haskell_library_impl(ctx):
     )
 
     other_modules = ctx.attr.hidden_modules
-    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.exports)
+    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.reexported_modules)
     exposed_modules_file = list_exposed_modules(
         hs,
         ls_modules = ctx.executable._ls_modules,
@@ -490,7 +484,7 @@ def haskell_library_impl(ctx):
             generate_version_macros(ctx, package_name, version),
         )
 
-    hs_info = HaskellInfo(
+    my_hs_info = HaskellInfo(
         package_databases = depset([cache_file], transitive = [dep_info.package_databases]),
         version_macros = version_macros,
         source_files = c.source_files,
@@ -509,13 +503,24 @@ def haskell_library_impl(ctx):
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
     )
+
+    exports = [
+        reexp[HaskellLibraryInfo]
+        for reexp in ctx.attr.exports
+        if HaskellCoverageInfo in reexp
+    ]
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
         version = version,
+        exports = exports,
     )
 
+    my_dummy_struct = {HaskellInfo: my_hs_info, HaskellLibraryInfo: lib_info}
+
+    hs_info = gather_dep_info(ctx, [my_dummy_struct] + ctx.attr.exports)
+
     dep_coverage_data = []
-    for dep in ctx.attr.deps:
+    for dep in deps:
         if HaskellCoverageInfo in dep:
             dep_coverage_data += dep[HaskellCoverageInfo].coverage_data
 
@@ -607,7 +612,7 @@ def haskell_library_impl(ctx):
                 compilation_context = compilation_context,
                 linking_context = linking_context,
             ),
-        ] + [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+        ] + [dep[CcInfo] for dep in deps if CcInfo in dep],
     )
 
     return [
@@ -787,6 +792,7 @@ def haskell_import_impl(ctx):
     lib_info = HaskellLibraryInfo(
         package_id = id,
         version = ctx.attr.version,
+        exports = [],
     )
     default_info = DefaultInfo(
         files = depset(target_files),
@@ -816,7 +822,7 @@ def haskell_import_impl(ctx):
         haddock_info,
     ]
 
-def _exposed_modules_reexports(exports):
+def _exposed_modules_reexports(reexported_modules):
     """Creates a ghc-pkg-compatible list of reexport declarations.
 
     A ghc-pkg registration file declares reexports as part of the
@@ -838,14 +844,14 @@ def _exposed_modules_reexports(exports):
     }
 
     Args:
-      exports: a dictionary mapping package targets to "Cabal-style"
+      reexported_modules: a dictionary mapping package targets to "Cabal-style"
                reexported-modules declarations.
 
     Returns:
       a ghc-pkg-compatible list of reexport declarations.
     """
     exposed_reexports = []
-    for dep, cabal_decls in exports.items():
+    for dep, cabal_decls in reexported_modules.items():
         for cabal_decl in cabal_decls.split(","):
             stripped_cabal_decl = cabal_decl.strip()
             cabal_decl_parts = stripped_cabal_decl.split(" as ")

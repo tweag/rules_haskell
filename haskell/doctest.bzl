@@ -7,7 +7,6 @@ load(":private/set.bzl", "set")
 load(
     "@rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
-    "HaskellLibraryInfo",
     "get_ghci_extra_libs",
 )
 
@@ -83,7 +82,6 @@ def _haskell_doctest_single(target, ctx):
 
     hs_info = target[HaskellInfo]
     cc_info = target[CcInfo]
-    lib_info = target[HaskellLibraryInfo] if HaskellLibraryInfo in target else None
 
     args = ctx.actions.args()
     args.add("--no-magic")

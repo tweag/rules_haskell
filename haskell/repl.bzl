@@ -16,6 +16,7 @@ load(
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellToolchainLibraryInfo",
+    "all_package_ids",
     "get_ghci_extra_libs",
 )
 load("@rules_haskell//haskell:private/set.bzl", "set")
@@ -127,7 +128,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
     if HaskellLibraryInfo in target:
         lib_info = target[HaskellLibraryInfo]
         dep_infos[target.label] = HaskellReplDepInfo(
-            package_ids = [lib_info.package_id],
+            package_ids = all_package_ids(lib_info),
             package_databases = hs_info.package_databases,
             cc_info = target[CcInfo],
         )

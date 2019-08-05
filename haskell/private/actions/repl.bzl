@@ -64,6 +64,8 @@ def build_haskell_repl(
     lib_imports = []
     if lib_info != None:
         for idir in set.to_list(hs_info.import_dirs):
+            if type(idir) != type(""):  # idir can also be a `File`
+                idir = idir.path
             args += ["-i{0}".format(idir)]
             lib_imports.append(idir)
 
