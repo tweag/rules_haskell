@@ -153,7 +153,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         "_ghci_script": ctx.attr._ghci_script,
         "_ghci_repl_wrapper": ctx.attr._ghci_repl_wrapper,
         "hidden_modules": [],
-        "module_exports": {},
+        "reexported_modules": {},
         "name": "proto-autogen-" + ctx.rule.attr.name,
         "srcs": hs_files,
         "extra_srcs": [],

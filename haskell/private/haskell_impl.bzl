@@ -426,7 +426,7 @@ def haskell_library_impl(ctx):
     )
 
     other_modules = ctx.attr.hidden_modules
-    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.module_exports)
+    exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.reexported_modules)
     exposed_modules_file = list_exposed_modules(
         hs,
         ls_modules = ctx.executable._ls_modules,
@@ -822,7 +822,7 @@ def haskell_import_impl(ctx):
         haddock_info,
     ]
 
-def _exposed_modules_reexports(module_exports):
+def _exposed_modules_reexports(reexported_modules):
     """Creates a ghc-pkg-compatible list of reexport declarations.
 
     A ghc-pkg registration file declares reexports as part of the
@@ -844,14 +844,14 @@ def _exposed_modules_reexports(module_exports):
     }
 
     Args:
-      module_exports: a dictionary mapping package targets to "Cabal-style"
+      reexported_modules: a dictionary mapping package targets to "Cabal-style"
                reexported-modules declarations.
 
     Returns:
       a ghc-pkg-compatible list of reexport declarations.
     """
     exposed_reexports = []
-    for dep, cabal_decls in module_exports.items():
+    for dep, cabal_decls in reexported_modules.items():
         for cabal_decl in cabal_decls.split(","):
             stripped_cabal_decl = cabal_decl.strip()
             cabal_decl_parts = stripped_cabal_decl.split(" as ")
