@@ -27,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 * The `haskell_register_toolchains()` macro is deprecated. Use
   `rules_haskell_toolchains()` from `haskell/repositories.bzl`
   instead.
+- The `exports` attribute has been renamed to `reexported_modules`
+- A new `exports` attribtue allows to re-export other libraries
 
 [bazel-rule-guidelines]: https://docs.bazel.build/versions/master/skylark/deploying.html
 

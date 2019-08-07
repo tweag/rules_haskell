@@ -9,7 +9,7 @@ package(default_testonly = 1)
 haskell_library(
     name = "sublib",
     srcs = ["TestSubLib.hs"],
-    exports = {"//tests/hackage:containers": "Data.Map as SubLib.Map"},
+    reexported_modules = {"//tests/hackage:containers": "Data.Map as SubLib.Map"},
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:containers",
@@ -19,7 +19,7 @@ haskell_library(
 haskell_library(
     name = "lib",
     srcs = ["TestLib.hs"],
-    exports = {
+    reexported_modules = {
         ":sublib": "TestSubLib",
         "//tests/hackage:containers": "Data.Map as Lib.Map",
     },
@@ -30,7 +30,7 @@ haskell_library(
 )
 
 haskell_test(
-    name = "library-exports",
+    name = "library-reexported_modules",
     size = "small",
     srcs = ["Bin.hs"],
     visibility = ["//visibility:public"],
