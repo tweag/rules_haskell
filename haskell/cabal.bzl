@@ -520,15 +520,9 @@ _STACK_BINDISTS = \
 
 def _stack_version_check(repository_ctx, stack_cmd):
     """Returns False if version not recent enough."""
-    exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
-    stack_version_words = exec_result.stdout.split(" ")
+    exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--numeric-version"])
 
-    # Stack version strings are sometimes prefixed by the word
-    # "Version", sometimes not.
-    if stack_version_words[0] == "Version":
-        stack_major_version = int(stack_version_words[1].split(".")[0])
-    else:
-        stack_major_version = int(stack_version_words[0].split(".")[0])
+    stack_major_version = int(exec_result.stdout.split(".")[0])
     return stack_major_version >= 2
 
 def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unversioned_packages):
