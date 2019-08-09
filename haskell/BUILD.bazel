@@ -38,6 +38,15 @@ sh_binary(
     srcs = ["private/worker.sh"],
     visibility = ["//visibility:public"],
 )
+load(
+    "@rules_haskell//haskell:build_settings.bzl",
+    "use_worker_setting",
+)
+use_worker_setting(
+    name = "use_worker_setting",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
 
 py_binary(
     name = "version_macros",

@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_haskell//haskell:providers.bzl", "HaskellLibraryInfo")
+load("@rules_haskell//haskell:build_settings.bzl", "UseWorkerProvider")
 
 HaskellContext = provider()
 
@@ -46,6 +47,13 @@ def haskell_context(ctx, attr = None):
     if hasattr(ctx.executable, "_worker"):
         worker = ctx.executable._worker
 
+    use_worker = False
+    if hasattr(ctx.attr, "_use_worker"):
+        use_worker = attr._use_worker[UseWorkerProvider].use_worker
+        print("hey")
+        print(use_worker)
+    print("ho")
+
     return HaskellContext(
         # Fields
         name = attr.name,
@@ -53,6 +61,7 @@ def haskell_context(ctx, attr = None):
         toolchain = toolchain,
         tools = toolchain.tools,
         worker = worker,
+        use_worker = use_worker,
         package_ids = package_ids,
         src_root = src_root,
         package_root = ctx.label.workspace_root + ctx.label.package,

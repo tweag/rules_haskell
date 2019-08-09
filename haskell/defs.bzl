@@ -92,6 +92,10 @@ _haskell_common_attrs = {
         cfg = "host",
         default = Label("@rules_haskell//haskell:worker"),
     ),
+    "_use_worker": attr.label(
+        cfg = "host",
+        default = Label("@rules_haskell//haskell:use_worker_setting"),
+    ),
 }
 
 def _mk_binary_rule(**kwargs):
