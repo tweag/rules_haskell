@@ -436,16 +436,30 @@ def haskell_library_impl(ctx):
         with_profiling = with_profiling,
     )
 
-    static_library = link_library_static(
-        hs,
-        cc,
-        dep_info,
-        c.objects_dir,
-        my_pkg_id,
-        with_profiling = with_profiling,
-    )
+    if srcs_files:
+        static_library = link_library_static(
+            hs,
+            cc,
+            dep_info,
+            c.objects_dir,
+            my_pkg_id,
+            with_profiling = with_profiling,
+        )
 
-    if with_shared:
+        # NOTE We have to use lists for static libraries because the order is
+        # important for linker. Linker searches for unresolved symbols to the
+        # left, i.e. you first feed a library which has unresolved symbols and
+        # then you feed the library which resolves the symbols.
+        static_libraries = depset(
+            direct = [static_library],
+            transitive = [dep_info.static_libraries],
+            order = "topological",
+        )
+    else:
+        static_library = None
+        static_libraries = dep_info.static_libraries
+
+    if with_shared and srcs_files:
         dynamic_library = link_library_dynamic(
             hs,
             cc,
@@ -468,6 +482,7 @@ def haskell_library_impl(ctx):
         exposed_modules_file,
         other_modules,
         my_pkg_id,
+        srcs_files != [],
     )
 
     interface_dirs = depset(
@@ -490,15 +505,7 @@ def haskell_library_impl(ctx):
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        # NOTE We have to use lists for static libraries because the order is
-        # important for linker. Linker searches for unresolved symbols to the
-        # left, i.e. you first feed a library which has unresolved symbols and
-        # then you feed the library which resolves the symbols.
-        static_libraries = depset(
-            direct = [static_library],
-            transitive = [dep_info.static_libraries],
-            order = "topological",
-        ),
+        static_libraries = static_libraries,
         dynamic_libraries = dynamic_libraries,
         interface_dirs = interface_dirs,
         compile_flags = c.compile_flags,
@@ -595,16 +602,21 @@ def haskell_library_impl(ctx):
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
     )
-    library_to_link = cc_common.create_library_to_link(
-        actions = ctx.actions,
-        feature_configuration = feature_configuration,
-        dynamic_library = dynamic_library,
-        static_library = static_library,
-        cc_toolchain = cc_toolchain,
-    )
+    if dynamic_library or static_library:
+        libraries_to_link = [
+            cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                dynamic_library = dynamic_library,
+                static_library = static_library,
+                cc_toolchain = cc_toolchain,
+            ),
+        ]
+    else:
+        libraries_to_link = []
     compilation_context = cc_common.create_compilation_context()
     linking_context = cc_common.create_linking_context(
-        libraries_to_link = [library_to_link],
+        libraries_to_link = libraries_to_link,
     )
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [
