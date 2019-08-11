@@ -6,6 +6,12 @@ for building Haskell code.
 * [**vector:**](./vector/) shows how to build the `vector` package
   that is found on Hackage (as well as transitive dependencies
   `primitive` and `transformers`) without using Cabal.
+* [**cat_hs:**](./cat_hs/) is an example of a non-trivial application
+  with multiple third-party dependencies downloaded from Hackage,
+  C library dependencies and split up into multiple libraries and
+  a binary. We use a rule wrapping Cabal to build the Hackage
+  dependencies. This example requires Nix installed. It is used to
+  build (or download from a binary cache) the C library dependencies.
 * [**rts:**](./rts/) demonstrates foreign exports and shows how to
   link against GHC's RTS library, i.e. `libHSrts.so`.
   

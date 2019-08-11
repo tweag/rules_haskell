@@ -1,0 +1,30 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_library",
+)
+
+haskell_library(
+    name = "args",
+    srcs = glob(["src/**/*.hs"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@stackage//:base",
+        "@stackage//:optparse-applicative",
+    ],
+)
+
+haskell_test(
+    name = "unit",
+    srcs = glob(["test/**/*.hs"]),
+    deps = [
+        ":args",
+        "@stackage//:base",
+        "@stackage//:hspec",
+        "@stackage//:optparse-applicative",
+    ],
+)

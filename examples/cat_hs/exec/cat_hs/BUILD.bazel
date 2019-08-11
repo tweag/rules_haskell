@@ -1,0 +1,18 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+)
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_library",
+)
+
+haskell_binary(
+    name = "cat_hs",
+    srcs = glob(["src/**/*.hs"]),
+    deps = [
+        "//cat_hs/lib/args",
+        "//cat_hs/lib/cat",
+        "@stackage//:base",
+    ],
+)

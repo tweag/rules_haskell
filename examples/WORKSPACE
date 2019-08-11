@@ -54,3 +54,43 @@ load(
 )
 
 rules_haskell_toolchains(version = "8.6.5")
+
+# Everything below for the cat_hs example.
+
+nixpkgs_package(
+    name = "nixpkgs_zlib",
+    attribute_path = "zlib",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+nixpkgs_package(
+    name = "zlib.dev",
+    build_file_content = """
+cc_library(
+    name = "zlib",
+    srcs = ["@nixpkgs_zlib//:lib"],
+    hdrs = glob(["include/*.h"]),
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
+""",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+
+stack_snapshot(
+    name = "stackage",
+    packages = [
+        "base",
+        "bytestring",
+        "conduit",
+        "conduit-extra",
+        "hspec",
+        "optparse-applicative",
+        "text",
+        "text-show",
+    ],
+    snapshot = "lts-14.0",
+    deps = ["@zlib.dev//:zlib"],
+)
