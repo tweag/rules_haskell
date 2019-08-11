@@ -45,7 +45,7 @@ def gather_dep_info(ctx, deps):
     import_dirs = set.empty()
     for dep in deps:
         if HaskellInfo in dep:
-            import_dirs = set.mutable_union(source_files, dep[HaskellInfo].source_files)
+            import_dirs = set.mutable_union(import_dirs, dep[HaskellInfo].import_dirs)
 
     extra_source_files = depset(transitive = [
         dep[HaskellInfo].extra_source_files
