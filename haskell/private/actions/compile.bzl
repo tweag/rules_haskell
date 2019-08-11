@@ -174,10 +174,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
     )
     compile_flags.extend(pkg_info_args)
 
-    header_files = []
-    boot_files = []
-    source_files = set.empty()
-
     # Forward all "-D" and "-optP-D" flags to hsc2hs
     hsc_flags = []
     hsc_flags += ["--cflag=" + x for x in user_compile_flags if x.startswith("-D")]
@@ -201,17 +197,20 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
         paths.join(hs.genfiles_dir.path, hs.src_root),
     ])
 
+    header_files = []
+    boot_files = []
+    source_files = []
     for s in srcs:
         if s.extension == "h":
             header_files.append(s)
         elif s.extension == "hsc":
             s0, idir = _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, s)
-            set.mutable_insert(source_files, s0)
+            source_files.append(s0)
             set.mutable_insert(import_dirs, idir)
         elif s.extension in ["hs-boot", "lhs-boot"]:
             boot_files.append(s)
         else:
-            set.mutable_insert(source_files, s)
+            source_files.append(s)
 
         if s in import_dir_map:
             idir = import_dir_map[s]
@@ -308,11 +307,19 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
     ]
 
     # Pass source files
-    for f in set.to_list(source_files):
-        args.add(f)
+    args.add_all(source_files)
 
+    source_files = depset(source_files)
+    header_files = depset(header_files)
+    boot_files = depset(boot_files)
     extra_source_files = depset(
-        transitive = [extra_srcs, depset(header_files), depset(boot_files)],
+        transitive = [
+            extra_srcs,
+            header_files,
+            boot_files,
+            pkg_info_inputs,
+            depset([optp_args_file]),
+        ],
     )
 
     # Transitive library dependencies for runtime.
@@ -322,9 +329,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
         args = args,
         compile_flags = compile_flags,
         inputs = depset(transitive = [
-            depset(header_files),
-            depset(boot_files),
-            set.to_depset(source_files),
+            source_files,
             extra_source_files,
             depset(cc.hdrs),
             dep_info.package_databases,
@@ -335,24 +340,18 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
             plugin_dep_info.interface_dirs,
             plugin_dep_info.static_libraries,
             plugin_dep_info.dynamic_libraries,
-            pkg_info_inputs,
             ghci_extra_libs,
             java.inputs,
             locale_archive_depset,
             preprocessors.inputs,
             plugin_tool_inputs,
-            depset([optp_args_file]),
         ]),
         input_manifests = preprocessors.input_manifests + plugin_tool_input_manifests,
         objects_dir = objects_dir,
         interfaces_dir = interfaces_dir,
         outputs = [objects_dir, interfaces_dir],
         source_files = source_files,
-        extra_source_files = depset(transitive = [
-            extra_source_files,
-            pkg_info_inputs,
-            depset([optp_args_file]),
-        ]),
+        extra_source_files = extra_source_files,
         import_dirs = import_dirs,
         env = dicts.add(
             ghc_env,

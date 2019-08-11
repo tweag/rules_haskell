@@ -104,6 +104,6 @@ def build_haskell_runghc(
         package_databases,
         pkg_info_inputs,
         ghci_extra_libs,
-        set.to_depset(hs_info.source_files),
+        hs_info.source_files,
     ])
     ln(hs, runghc_file, output, extra_inputs)
