@@ -44,9 +44,7 @@ load(
 )
 
 haskell_register_ghc_nixpkgs(
-    repositories = {
-        "nixpkgs": "@rules_haskell//nixpkgs:default.nix",
-    },
+    repository = "@rules_haskell//nixpkgs:default.nix",
     version = "8.6.5",
 )
 
