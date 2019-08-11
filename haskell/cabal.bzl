@@ -69,6 +69,14 @@ main = defaultMain
 
 _CABAL_TOOLS = ["alex", "c2hs", "cpphs", "doctest", "happy"]
 
+# Some old packages are empty compatibility shims. Empty packages
+# cause Cabal to not produce the outputs it normally produces. Instead
+# of detecting that, we blacklist the offending packages, on the
+# assumption that such packages are old and rare.
+#
+# TODO: replace this with a more general solution.
+_EMPTY_PACKAGES_BLACKLIST = ["bytestring-builder", "nats"]
+
 def _cabal_tool_flag(tool):
     """Return a --with-PROG=PATH flag if input is a recognized Cabal tool. None otherwise."""
     if tool.basename in _CABAL_TOOLS:
@@ -654,7 +662,7 @@ def _stack_snapshot_impl(repository_ctx):
     build_file_builder = []
     build_file_builder.append("""
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
-load("@rules_haskell//haskell:defs.bzl", "haskell_toolchain_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_library")
 """)
     extra_deps = [
         "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
@@ -682,8 +690,23 @@ haskell_toolchain_library(name = "{name}", visibility = {visibility})
             visibility = ["//visibility:public"]
         else:
             visibility = ["//visibility:private"]
-        build_file_builder.append(
-            """
+        if unversioned_package in _EMPTY_PACKAGES_BLACKLIST:
+            build_file_builder.append(
+                """
+haskell_library(
+    name = "{name}",
+    version = "{version}",
+    visibility = {visibility},
+)
+""".format(
+                    name = unversioned_package,
+                    version = _version(package),
+                    visibility = visibility,
+                ),
+            )
+        else:
+            build_file_builder.append(
+                """
 haskell_cabal_library(
     name = "{name}",
     version = "{version}",
@@ -693,14 +716,14 @@ haskell_cabal_library(
     visibility = {visibility},
 )
 """.format(
-                name = unversioned_package,
-                version = _version(package),
-                dir = package,
-                deps = dependencies[unversioned_package] + extra_deps,
-                tools = tools,
-                visibility = visibility,
-            ),
-        )
+                    name = unversioned_package,
+                    version = _version(package),
+                    dir = package,
+                    deps = dependencies[unversioned_package] + extra_deps,
+                    tools = tools,
+                    visibility = visibility,
+                ),
+            )
         build_file_builder.append(
             """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
                 name = package,
