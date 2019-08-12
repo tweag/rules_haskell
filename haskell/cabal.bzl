@@ -77,9 +77,8 @@ def _cabal_tool_flag(tool):
 def _make_path(hs, binaries):
     return ":".join([binary.dirname for binary in binaries.to_list()] + ["$PATH"])
 
-def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_manifests, cabal, setup, srcs, cabal_wrapper_tpl, package_database):
+def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, cabal_wrapper_tpl, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
-    name = hs.label.name
     with_profiling = is_profiling_enabled(hs)
 
     (ghci_extra_libs, env) = get_ghci_extra_libs(hs, cc_info)
@@ -111,7 +110,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, tool_inputs, tool_input_man
     extra_headers = cc_info.compilation_context.headers
     extra_include_dirs = cc_info.compilation_context.includes
     extra_lib_dirs = [file.dirname for file in ghci_extra_libs.to_list()]
-    args.add_all([name, setup, cabal.dirname, package_database.dirname])
+    args.add_all([package_id, setup, cabal.dirname, package_database.dirname])
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")
     args.add_all(extra_lib_dirs, format_each = "--extra-lib-dirs=%s", uniquify = True)
@@ -152,7 +151,10 @@ def _haskell_cabal_library_impl(ctx):
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
     )
-    name = hs.label.name
+    package_id = "{}-{}".format(
+        ctx.attr.package_name if ctx.attr.package_name else hs.label.name,
+        ctx.attr.version,
+    )
     with_profiling = is_profiling_enabled(hs)
 
     cabal = _find_cabal(hs, ctx.files.srcs)
@@ -169,9 +171,9 @@ def _haskell_cabal_library_impl(ctx):
         "_install/data",
         sibling = cabal,
     )
-    static_library_filename = "_install/lib/libHS{}.a".format(name)
+    static_library_filename = "_install/lib/libHS{}.a".format(package_id)
     if with_profiling:
-        static_library_filename = "_install/lib/libHS{}_p.a".format(name)
+        static_library_filename = "_install/lib/libHS{}_p.a".format(package_id)
     static_library = hs.actions.declare_file(
         static_library_filename,
         sibling = cabal,
@@ -180,7 +182,11 @@ def _haskell_cabal_library_impl(ctx):
         dynamic_library = None
     else:
         dynamic_library = hs.actions.declare_file(
-            "_install/lib/libHS{}-ghc{}.{}".format(name, hs.toolchain.version, _so_extension(hs)),
+            "_install/lib/libHS{}-ghc{}.{}".format(
+                package_id,
+                hs.toolchain.version,
+                _so_extension(hs),
+            ),
             sibling = cabal,
         )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
@@ -189,6 +195,7 @@ def _haskell_cabal_library_impl(ctx):
         cc,
         dep_info,
         cc_info,
+        package_id = package_id,
         tool_inputs = tool_inputs,
         tool_input_manifests = tool_input_manifests,
         cabal = cabal,
@@ -224,7 +231,7 @@ def _haskell_cabal_library_impl(ctx):
     hs_info = HaskellInfo(
         package_databases = depset([package_database], transitive = [dep_info.package_databases]),
         version_macros = set.empty(),
-        source_files = set.empty(),
+        source_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
         static_libraries = depset(
@@ -239,7 +246,7 @@ def _haskell_cabal_library_impl(ctx):
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
     )
-    lib_info = HaskellLibraryInfo(package_id = name, version = None, exports = [])
+    lib_info = HaskellLibraryInfo(package_id = package_id, version = None, exports = [])
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
@@ -272,6 +279,13 @@ def _haskell_cabal_library_impl(ctx):
 haskell_cabal_library = rule(
     _haskell_cabal_library_impl,
     attrs = {
+        "package_name": attr.string(
+            doc = "Cabal package name. Defaults to name attribute.",
+        ),
+        "version": attr.string(
+            doc = "Version of the Cabal package.",
+            mandatory = True,
+        ),
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(),
         "tools": attr.label_list(
@@ -348,6 +362,7 @@ def _haskell_cabal_binary_impl(ctx):
         cc,
         dep_info,
         cc_info,
+        package_id = hs.label.name,
         tool_inputs = tool_inputs,
         tool_input_manifests = tool_input_manifests,
         cabal = cabal,
@@ -375,7 +390,7 @@ def _haskell_cabal_binary_impl(ctx):
     hs_info = HaskellInfo(
         package_databases = dep_info.package_databases,
         version_macros = set.empty(),
-        source_files = set.empty(),
+        source_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
         static_libraries = dep_info.static_libraries,
@@ -671,24 +686,25 @@ haskell_toolchain_library(name = "{name}", visibility = {visibility})
             """
 haskell_cabal_library(
     name = "{name}",
+    version = "{version}",
     srcs = glob(["{dir}/**"]),
     deps = {deps},
     tools = {tools},
     visibility = {visibility},
 )
 """.format(
-                name = package,
+                name = unversioned_package,
+                version = _version(package),
                 dir = package,
                 deps = dependencies[unversioned_package] + extra_deps,
                 tools = tools,
-                testonly = repository_ctx.attr.testonly,
                 visibility = visibility,
             ),
         )
         build_file_builder.append(
             """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
-                name = unversioned_package,
-                actual = package,
+                name = package,
+                actual = unversioned_package,
                 visibility = visibility,
             ),
         )

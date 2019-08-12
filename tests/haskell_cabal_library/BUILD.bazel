@@ -8,11 +8,12 @@ load(
 haskell_toolchain_library(name = "base")
 
 haskell_cabal_library(
-    name = "lib-0.1.0.0",
+    name = "lib",
     srcs = [
         "Lib.hs",
         "lib.cabal",
     ],
+    version = "0.1.0.0",
 )
 
 haskell_test(
@@ -20,6 +21,6 @@ haskell_test(
     srcs = ["Main.hs"],
     deps = [
         ":base",
-        ":lib-0.1.0.0",
+        ":lib",
     ],
 )

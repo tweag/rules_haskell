@@ -24,7 +24,7 @@ def _get_haddock_path(package_id):
     return package_id + ".haddock"
 
 def _haskell_doc_aspect_impl(target, ctx):
-    if not (HaskellLibraryInfo in target and set.to_list(target[HaskellInfo].source_files)):
+    if not (HaskellLibraryInfo in target and target[HaskellInfo].source_files.to_list()):
         return []
 
     # Packages imported via `//haskell:import.bzl%haskell_import` already
@@ -78,7 +78,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     compile_flags = ctx.actions.args()
     for x in target[HaskellInfo].compile_flags:
         compile_flags.add_all(["--optghc", x])
-    compile_flags.add_all([x.path for x in set.to_list(target[HaskellInfo].source_files)])
+    compile_flags.add_all(target[HaskellInfo].source_files)
     compile_flags.add("-v0")
 
     # haddock flags should take precedence over ghc args, hence are in
@@ -119,7 +119,7 @@ def _haskell_doc_aspect_impl(target, ctx):
         inputs = depset(transitive = [
             target[HaskellInfo].package_databases,
             target[HaskellInfo].interface_dirs,
-            set.to_depset(target[HaskellInfo].source_files),
+            target[HaskellInfo].source_files,
             target[HaskellInfo].extra_source_files,
             target[HaskellInfo].dynamic_libraries,
             ghci_extra_libs,

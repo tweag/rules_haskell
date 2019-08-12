@@ -85,7 +85,7 @@ def build_haskell_repl(
 
     repl_file = hs.actions.declare_file(target_unique_name(hs, "repl"))
 
-    add_sources = ["*" + f.path for f in set.to_list(hs_info.source_files)]
+    add_sources = ["*" + f.path for f in hs_info.source_files.to_list()]
 
     ghci_repl_script = hs.actions.declare_file(
         target_unique_name(hs, "ghci-repl-script"),
@@ -173,6 +173,6 @@ def build_haskell_repl(
         package_databases,
         pkg_info_inputs,
         ghci_extra_libs,
-        set.to_depset(hs_info.source_files),
+        hs_info.source_files,
     ])
     ln(hs, repl_file, output, extra_inputs)

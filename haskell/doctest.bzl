@@ -102,16 +102,14 @@ def _haskell_doctest_single(target, ctx):
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, cc_info)
     link_libraries(ghci_extra_libs, args, prefix_optl = hs.toolchain.is_darwin)
 
-    sources = set.to_list(hs_info.source_files)
-
     if ctx.attr.modules:
         inputs = ctx.attr.modules
     else:
-        inputs = [source.path for source in sources]
+        inputs = [source.path for source in hs_info.source_files.to_list()]
 
     ctx.actions.run_shell(
         inputs = depset(transitive = [
-            depset(sources),
+            hs_info.source_files,
             hs_info.package_databases,
             hs_info.interface_dirs,
             hs_info.extra_source_files,
