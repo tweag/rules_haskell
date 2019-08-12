@@ -71,13 +71,13 @@ HaskellReplInfo = provider(
 )
 
 def _merge_HaskellReplLoadInfo(load_infos):
-    source_files = set.empty()
+    source_files = depset()
     cc_infos = []
     compiler_flags = []
     repl_ghci_args = []
 
     for load_info in load_infos:
-        set.mutable_union(source_files, load_info.source_files)
+        source_files = depset(transitive = [source_files, load_info.source_files])
         cc_infos.append(load_info.cc_info)
         compiler_flags += load_info.compiler_flags
         repl_ghci_args += load_info.repl_ghci_args
@@ -240,7 +240,7 @@ def _create_repl(hs, ctx, repl_info, output):
     # See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/ghci.html#ghci-cmd-:add
     add_sources = [
         "*" + f.path
-        for f in set.to_list(repl_info.load_info.source_files)
+        for f in repl_info.load_info.source_files.to_list()
     ]
     ghci_repl_script = hs.actions.declare_file(
         target_unique_name(hs, "ghci-repl-script"),
@@ -301,7 +301,7 @@ def _create_repl(hs, ctx, repl_info, output):
                 ghci_repl_script,
             ],
             transitive_files = depset(transitive = [
-                set.to_depset(repl_info.load_info.source_files),
+                repl_info.load_info.source_files,
                 repl_info.dep_info.package_databases,
                 ghci_extra_libs,
                 depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
