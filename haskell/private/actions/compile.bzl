@@ -479,17 +479,24 @@ def compile_library(
             mix_file = hs.actions.declare_file(".hpc/{pkg}/{module}.mix".format(pkg = pkg_id_string, module = module))
             coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
 
-    hs.toolchain.actions.run_ghc(
-        hs,
-        cc,
-        inputs = c.inputs,
-        input_manifests = c.input_manifests,
-        outputs = c.outputs + [datum.mix_file for datum in coverage_data],
-        mnemonic = "HaskellBuildLibrary" + ("Prof" if with_profiling else ""),
-        progress_message = "HaskellBuildLibrary {}".format(hs.label),
-        env = c.env,
-        arguments = c.args,
-    )
+    if srcs:
+        hs.toolchain.actions.run_ghc(
+            hs,
+            cc,
+            inputs = c.inputs,
+            input_manifests = c.input_manifests,
+            outputs = c.outputs + [datum.mix_file for datum in coverage_data],
+            mnemonic = "HaskellBuildLibrary" + ("Prof" if with_profiling else ""),
+            progress_message = "HaskellBuildLibrary {}".format(hs.label),
+            env = c.env,
+            arguments = c.args,
+        )
+    else:
+        hs.actions.run_shell(
+            inputs = c.inputs,
+            outputs = c.outputs,
+            command = "exit 0",
+        )
 
     return struct(
         interfaces_dir = c.interfaces_dir,

@@ -65,7 +65,8 @@ def package(
         with_shared,
         exposed_modules_file,
         other_modules,
-        my_pkg_id):
+        my_pkg_id,
+        has_hs_library):
     """Create GHC package using ghc-pkg.
 
     Args:
@@ -76,6 +77,7 @@ def package(
       exposed_modules_file: File holding list of exposed modules.
       other_modules: List of hidden modules.
       my_pkg_id: Package id object for this package.
+      has_hs_library: Whether hs-libraries should be non-null.
 
     Returns:
       (File, File): GHC package conf file, GHC package cache file
@@ -105,7 +107,7 @@ def package(
         "import-dirs": [import_dir],
         "library-dirs": ["${pkgroot}"] + extra_lib_dirs,
         "dynamic-library-dirs": ["${pkgroot}"] + extra_lib_dirs,
-        "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)],
+        "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)] if has_hs_library else [],
         "extra-libraries": extra_libs,
         "depends": hs.package_ids,
     })
