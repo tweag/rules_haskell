@@ -758,9 +758,9 @@ def haskell_import_impl(ctx):
         # XXX Empty set of conf and cache files only works for global db.
         package_databases = depset(),
         version_macros = version_macros,
-        source_files = set.empty(),
-        import_dirs = depset(),
+        source_files = depset(),
         extra_source_files = depset(),
+        import_dirs = set.empty(),
         static_libraries = depset(),
         dynamic_libraries = depset(),
         interface_dirs = depset(),

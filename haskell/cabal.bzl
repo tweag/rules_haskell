@@ -231,7 +231,7 @@ def _haskell_cabal_library_impl(ctx):
     hs_info = HaskellInfo(
         package_databases = depset([package_database], transitive = [dep_info.package_databases]),
         version_macros = set.empty(),
-        source_files = set.empty(),
+        source_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
         static_libraries = depset(
@@ -390,7 +390,7 @@ def _haskell_cabal_binary_impl(ctx):
     hs_info = HaskellInfo(
         package_databases = dep_info.package_databases,
         version_macros = set.empty(),
-        source_files = set.empty(),
+        source_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
         static_libraries = dep_info.static_libraries,
