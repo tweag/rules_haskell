@@ -173,14 +173,6 @@ nixpkgs_cc_configure(
 nixpkgs_package(
     name = "nixpkgs_zlib",
     attribute_path = "zlib",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "lib",
-    srcs = glob(["lib/**/*.so*", "lib/**/*.dylib", "lib/**/*.a"]),
-)
-""",
     repository = "@nixpkgs",
 )
 
@@ -244,11 +236,10 @@ nixpkgs_package(
 nixpkgs_package(
     name = "zlib.dev",
     build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup (
+filegroup(
     name = "include",
     srcs = glob(["include/*.h"]),
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -256,6 +247,7 @@ cc_library(
     srcs = ["@nixpkgs_zlib//:lib"],
     hdrs = [":include"],
     strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
 )
 """,
     repository = "@nixpkgs",
