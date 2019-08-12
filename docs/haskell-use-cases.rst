@@ -239,6 +239,30 @@ Alternatively, you can directly check a target using
 
 .. _haskell_lint: http://api.haskell.build/haskell/lint.html#haskell_lint
 
+Using conditional compilation
+-----------------------------
+
+If all downstream users of a library live in the same repository (as
+is typically the case in the `monorepo`_ pattern), then conditional
+compilation of any part of the library is typically needed only in
+limited circumstances, like cross-platform support. Supporting
+multiple versions of upstream dependencies using conditional
+compilation is not normally required, because a single set of versions
+of all dependencies is known *a priori*. For this reason, compiler
+supplied `version macros`_ are disabled by default. Only libraries
+with a `version attribute`_ have version macros available during
+compilation, and only for those dependencies that themselves have
+a version number (this includes Cabal libraries).
+
+Bazel also has support for conditional compilation via the `select
+construct`_, which can be used to conditionally include source files
+in rule inputs (e.g. different source files for different platforms).
+
+.. _monorepo: https://en.wikipedia.org/wiki/Monorepo
+.. _Version macros: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/phases.html#standard-cpp-macros
+.. _version attribute: https://api.haskell.build/haskell/defs.html#haskell_library.version
+.. _select construct: https://docs.bazel.build/versions/master/configurable-attributes.html
+
 Checking code coverage
 ----------------------
 
