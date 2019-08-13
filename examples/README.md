@@ -17,13 +17,13 @@ for building Haskell code.
   
 ## Root Workspace
 
-Build everything in the root workspace with;
+Build everything in the root workspace with:
 
 ```
 $ bazel build //...
 ```
 
-Show every target of the vector example;
+Show every target of the vector example:
 
 ```
 $ bazel query //vector/...
@@ -35,9 +35,10 @@ $ bazel query //vector/...
 //vector:base
 ```
 
-Build the two main Haskell targets;
+Build the three main Haskell targets:
 
 ```
+$ bazel build //cat_hs/exec/cat_hs
 $ bazel build //vector
 $ bazel build //rts:add-one-hs
 ```
