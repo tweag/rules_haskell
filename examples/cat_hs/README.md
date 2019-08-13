@@ -20,22 +20,22 @@ will be managed using Nix.
 
 ## Instructions
 
-To build the package execute the following command in the checked out source
-repository.
+To build the package execute the following command *in the `examples/`
+directory*:
 
 ```
-$ nix-shell --pure --run "bazel build //..."
+$ nix-shell --pure --run "bazel build //cat_hs/..."
 ```
 
 To run the tests execute the following command.
 
 ```
-$ nix-shell --pure --run "bazel test //..."
+$ nix-shell --pure --run "bazel test //cat_hs/..."
 ```
 
 To run the executable enter the following commands.
 
 ```
-$ nix-shell --pure --run "bazel run //exec/cat_hs -- -h"
-$ nix-shell --pure --run "bazel run //exec/cat_hs -- $PWD/README.md"
+$ nix-shell --pure --run "bazel run //cat_hs/exec/cat_hs -- -h"
+$ nix-shell --pure --run "bazel run //cat_hs/exec/cat_hs -- $PWD/README.md"
 ```
