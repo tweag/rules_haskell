@@ -6,7 +6,12 @@
 set -e
 
 pwd=$(pwd)
-cd $(mktemp -d)
+# Always run start script in the same directory, for caching.
+# See https://docs.bazel.build/versions/master/output_directories.html.
+workdir=/tmp/bazel-run-start-script
+rm -rf $workdir
+mkdir $workdir
+cd $workdir
 $pwd/start
 
 # Copy the bazel configuration, this is only useful for CI
