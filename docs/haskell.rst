@@ -331,8 +331,9 @@ Further reading
 ---------------
 
 Congratulations! You now know the basics of building a Haskell project
-with Bazel. Next, read up on the most common :ref:`Common Haskell
-build use cases <use-cases>`. Then, check out the following:
+with Bazel. Next, read up on :ref:`Common Haskell build use cases
+<use-cases>` and have a look `cat_hs`_ for an example build
+description of a full application. Then, check out the following:
 
 * `External Dependencies`_ to learn more about working with local and
    remote repositories.
@@ -355,6 +356,7 @@ Happy building!
 
 .. note:: This tutorial is adapted from the Bazel `C++ build tutorial`_.
 
+.. _cat_hs: https://github.com/tweag/rules_haskell/tree/master/examples/cat_hs
 .. _install Bazel: https://docs.bazel.build/versions/master/install.html
 .. _haskell_binary: http://api.haskell.build/haskell/haskell.html#haskell_binary
 .. _haskell_toolchain_library: http://api.haskell.build/haskell/haskell.html#haskell_toolchain_library
