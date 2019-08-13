@@ -6,56 +6,31 @@ local_repository(
 )
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@rules_haskell//haskell:repositories.bzl", "haskell_repositories")
+load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
-haskell_repositories()
+rules_haskell_dependencies()
 
-rules_nixpkgs_version = "0.5.2"
-
-http_archive(
-    name = "io_tweag_rules_nixpkgs",
-    sha256 = "5a384daa57b49abf9f0b672852f1a66a3c52aecf9d4d2ac64f6de0fd307690c8",
-    strip_prefix = "rules_nixpkgs-%s" % rules_nixpkgs_version,
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/v%s.tar.gz" % rules_nixpkgs_version],
-)
-
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-    "nixpkgs_cc_configure",
-    "nixpkgs_package",
-)
-
-# For the rts example.
-nixpkgs_package(
-    name = "ghc",
-    attribute_path = "haskellPackages.ghc",
-    build_file = "@rules_haskell//haskell:ghc.BUILD",
-    repository = "@rules_haskell//nixpkgs:default.nix",
-)
-
-nixpkgs_cc_configure(
-    nix_file = "@rules_haskell//nixpkgs:cc-toolchain.nix",
-    repository = "@rules_haskell//nixpkgs:default.nix",
-)
-
-load(
-    "@rules_haskell//haskell:nixpkgs.bzl",
-    "haskell_register_ghc_nixpkgs",
-)
+load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
     repository = "@rules_haskell//nixpkgs:default.nix",
     version = "8.6.5",
 )
 
-load(
-    "@rules_haskell//haskell:repositories.bzl",
-    "rules_haskell_toolchains",
-)
+load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_toolchains")
 
 rules_haskell_toolchains(version = "8.6.5")
 
-# Everything below for the cat_hs example.
+load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_cc_configure")
+
+nixpkgs_cc_configure(
+    nix_file = "@rules_haskell//nixpkgs:cc-toolchain.nix",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+# For the cat_hs example.
+
+load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
 nixpkgs_package(
     name = "nixpkgs_zlib",
@@ -93,4 +68,15 @@ stack_snapshot(
     ],
     snapshot = "lts-14.0",
     deps = ["@zlib.dev//:zlib"],
+)
+
+# For the rts example.
+
+load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
+
+nixpkgs_package(
+    name = "ghc",
+    attribute_path = "haskellPackages.ghc",
+    build_file = "@rules_haskell//haskell:ghc.BUILD",
+    repository = "@rules_haskell//nixpkgs:default.nix",
 )
