@@ -266,6 +266,14 @@ haskell_toolchain(
         haddock_flags = ctx.attr.haddock_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
     )
+
+    if os == "windows":
+        # These libraries cause linking errors on Windows when linking
+        # pthreads, due to libwinpthread-1.dll not being loaded.
+        _execute_fail_loudly(ctx, ["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"])
+        _execute_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
+        _execute_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
+
     ctx.template(
         "BUILD",
         ghc_build,
