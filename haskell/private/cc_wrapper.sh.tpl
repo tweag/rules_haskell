@@ -19,18 +19,16 @@ set -euo pipefail
 # Find compiler
 
 find_exe() {
-    local exe="$1"
-    local location
+    local -n location="$1"
+    local exe="$2"
 
     location="$exe"
     if [[ -f "$location" ]]; then
-        echo "$location"
         return
     fi
 
     location="${exe}.exe"
     if [[ -f "$location" ]]; then
-        echo "$location"
         return
     fi
 
@@ -47,18 +45,17 @@ find_exe() {
 
     location="$(rlocation "{:workspace:}/$exe")"
     if [[ -f "$location" ]]; then
-        echo "$location"
         return
     fi
 
     location="$(rlocation "{:workspace:}/${exe}.exe")"
     if [[ -f "$location" ]]; then
-        echo "$location"
         return
     fi
 }
 
-CC="$(find_exe "{:cc:}")"
+declare CC
+find_exe CC "{:cc:}"
 
 # ----------------------------------------------------------
 # Handle response file
@@ -80,13 +77,14 @@ quote_arg() {
 }
 
 unquote_arg() {
-    local arg="$1"
-    if [[ "$arg" =~ ^\"(.*)\"[[:space:]]*$ ]]; then
-        arg="${BASH_REMATCH[1]}"
-        arg="${arg//\\\"/\"}"
-        arg="${arg//\\\\/\\}"
+    local -n output="$1"
+    local input="$2"
+    if [[ "$input" =~ ^\"(.*)\"[[:space:]]*$ ]]; then
+        input="${BASH_REMATCH[1]}"
+        input="${input//\\\"/\"}"
+        input="${input//\\\\/\\}"
     fi
-    echo "$arg"
+    output="$input"
 }
 
 add_arg() {
@@ -100,12 +98,12 @@ IN_RESPONSE_FILE=
 LIB_DIR_COMING=
 
 shorten_path() {
-    local input="$1"
-    local shortest="$input"
+    local -n shortest="$1"
+    local input="$2"
 
+    shortest="$input"
     if [[ ! -e "$shortest" ]]; then
         # realpath fails if the file does not exist.
-        echo "$shortest"
         return
     fi
 
@@ -118,19 +116,19 @@ shorten_path() {
     if [[ ${#relative} -lt ${#shortest} ]]; then
         shortest="$relative"
     fi
-
-    echo "$shortest"
 }
 
 handle_lib_dir() {
     local lib_dir="$1"
-    add_arg "-L$(shorten_path "$lib_dir")"
+    local shortened
+    shorten_path shortened "$lib_dir"
+    add_arg "-L$shortened"
 }
 
 handle_arg() {
     local arg="$1"
     if [[ $IN_RESPONSE_FILE = 1 ]]; then
-        arg="$(unquote_arg "$arg")"
+        unquote_arg arg "$arg"
     fi
     if [[ $LIB_DIR_COMING = 1 ]]; then
         LIB_DIR_COMING=
