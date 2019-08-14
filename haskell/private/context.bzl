@@ -48,8 +48,8 @@ def haskell_context(ctx, attr = None):
         worker = ctx.executable._worker
 
     use_worker = False
-    if hasattr(ctx.attr, "_use_worker"):
-        use_worker = attr._use_worker[UseWorkerProvider].use_worker
+    if hasattr(ctx.attr, "use_worker"):
+        use_worker = attr.use_worker[UseWorkerProvider].use_worker
         print("hey")
         print(use_worker)
     print("ho")

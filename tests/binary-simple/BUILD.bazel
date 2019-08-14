@@ -12,4 +12,10 @@ haskell_test(
     tags = ["coverage-compatible"],
     visibility = ["//visibility:public"],
     deps = ["//tests/hackage:base"],
+    # bazel build --//haskell:use_worker_setting=True //tests/binary-simple
+    # Prints ctx.build_setting_value True
+    # Comment the following out and it prints ctx.build_setting_value False
+    use_worker = "//haskell:use_worker_setting",
+    # Interestingly it stops working if we specify the workspace.
+    #use_worker = "@rules_haskell//haskell:use_worker_setting",
 )
