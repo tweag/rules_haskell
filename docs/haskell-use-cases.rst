@@ -196,13 +196,6 @@ Each package mentioned in ``ghc.nix`` can then be imported using
 
 .. _haskell_toolchain_library: http://api.haskell.build/haskell/haskell.html#haskell_toolchain_library
 
-Building code with Hackage dependencies (using Hazel)
------------------------------------------------------
-
-.. todo::
-
-   Explain how to use Hazel instead of Nix
-
 Generating API documentation
 ----------------------------
 
