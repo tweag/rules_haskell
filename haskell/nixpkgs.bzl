@@ -184,7 +184,7 @@ def haskell_register_ghc_nixpkgs(
       use_worker: This is a part of experimental support for the persistent worker mode.
         It is not intended for production usage, yet.
 
-      Toolchains can be used to compile Haskell code. To have this
+    Toolchains can be used to compile Haskell code. To have this
     toolchain selected during [toolchain
     resolution][toolchain-resolution], set a host platform that
     includes the `@rules_haskell//haskell/platforms:nixpkgs`
