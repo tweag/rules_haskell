@@ -755,6 +755,28 @@ def haskell_toolchain_libraries_impl(ctx):
 
     return [HaskellToolchainLibraries(libraries = library_dict)]
 
+haskell_toolchain_libraries = rule(
+    haskell_toolchain_libraries_impl,
+    attrs = {
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+    },
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+    ],
+    fragments = ["cpp"],
+)
+"""Generate Haskell toolchain libraries.
+
+This is an internal rule and should not be user facing.
+
+This rule is a work-around for toolchain transitions not being implemented,
+yet. See
+https://github.com/bazelbuild/proposals/blob/master/designs/2019-02-12-toolchain-transitions.md
+This will need to be revisited once that proposal is implemented.
+"""
+
 def haskell_import_impl(ctx):
     id = ctx.attr.id or ctx.attr.name
     target_files = [
