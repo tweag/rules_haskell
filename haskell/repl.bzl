@@ -28,6 +28,7 @@ HaskellReplLoadInfo = provider(
     """,
     fields = {
         "source_files": "Set of files that contain Haskell modules.",
+        "import_dirs": "Set of Haskell import directories.",
         "cc_info": "CcInfo of transitive C dependencies.",
         "compiler_flags": "Flags to pass to the Haskell compiler.",
         "repl_ghci_args": "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
@@ -72,18 +73,21 @@ HaskellReplInfo = provider(
 
 def _merge_HaskellReplLoadInfo(load_infos):
     source_files = depset()
+    import_dirs = depset()
     cc_infos = []
     compiler_flags = []
     repl_ghci_args = []
 
     for load_info in load_infos:
         source_files = depset(transitive = [source_files, load_info.source_files])
+        import_dirs = depset(transitive = [import_dirs, load_info.import_dirs])
         cc_infos.append(load_info.cc_info)
         compiler_flags += load_info.compiler_flags
         repl_ghci_args += load_info.repl_ghci_args
 
     return HaskellReplLoadInfo(
         source_files = source_files,
+        import_dirs = import_dirs,
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
         compiler_flags = compiler_flags,
         repl_ghci_args = repl_ghci_args,
@@ -114,6 +118,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
     if not HaskellToolchainLibraryInfo in target:
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = hs_info.source_files,
+            import_dirs = set.to_depset(hs_info.import_dirs),
             cc_info = cc_common.merge_cc_infos(cc_infos = [
                 # Collect pure C library dependencies, no Haskell dependencies.
                 dep[CcInfo]
@@ -234,6 +239,10 @@ def _create_repl(hs, ctx, repl_info, output):
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
     link_libraries(ghci_extra_libs, args)
+
+    # Add import directories
+    for import_dir in repl_info.load_info.import_dirs.to_list():
+        args.append("-i" + (import_dir if import_dir else "."))
 
     # Load source files
     # Force loading by source with `:add *...`.
