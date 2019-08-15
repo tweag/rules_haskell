@@ -2,6 +2,9 @@
 
 [![CircleCI](https://circleci.com/gh/tweag/rules_haskell/tree/master.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell/tree/master)
 
+**NOTE: Hazel is deprecated in favour of [Cabal rules][cabal-rules].
+Use those instead for new projects.**
+
 Hazel is a Bazel framework that manages build rules for third-party Haskell
 dependencies.
 
@@ -14,6 +17,8 @@ parsing their .cabal files and creating Haskell build rules.
 Hazel uses the [`rules_haskell`](https://github.com/tweag/rules_haskell)
 package for Haskell build rules. Hazel is now part of the `rules_haskell`
 repository.
+
+[cabal-rules]: https://api.haskell.build/haskell/cabal.html
 
 ## Status
 Hazel is still experimental, and its API is subject to change.  Most Hackage
