@@ -36,17 +36,12 @@ def haskell_context(ctx, attr = None):
     if hasattr(ctx, "configuration"):
         coverage_enabled = ctx.configuration.coverage_enabled
 
-    worker = None
-    if hasattr(ctx.executable, "_worker"):
-        worker = ctx.executable._worker
-
     return HaskellContext(
         # Fields
         name = attr.name,
         label = ctx.label,
         toolchain = toolchain,
         tools = toolchain.tools,
-        worker = worker,
         package_ids = package_ids,
         src_root = src_root,
         package_root = ctx.label.workspace_root + ctx.label.package,
