@@ -80,8 +80,8 @@ def _c2hs_library_impl(ctx):
             # not in PATH so we add it to PATH explicitely.
             (
                 """
-        export PATH=$PATH:{mingw-bin}
-        """.format(cc = paths.dirname(cc.tools.cc)) if hs.toolchain.is_windows else ""
+        export PATH=$PATH:{mingw_bin}
+        """.format(mingw_bin = paths.dirname(cc.tools.cc)) if hs.toolchain.is_windows else ""
             ) +
             """
         # Include libdir in include path just like hsc2hs does.
