@@ -2,6 +2,7 @@
 
 load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load(":cabal.bzl", "stack_snapshot")
 
 def rules_haskell_toolchains(**kwargs):
     """Register GHC binary distributions for all platforms as toolchains."""
@@ -27,6 +28,22 @@ def rules_haskell_dependencies():
             sha256 = "5a384daa57b49abf9f0b672852f1a66a3c52aecf9d4d2ac64f6de0fd307690c8",
             strip_prefix = "rules_nixpkgs-0.5.2",
             urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.5.2.tar.gz"],
+        )
+
+    if "rules_haskell_worker_dependencies" not in excludes:
+        stack_snapshot(
+            name = "rules_haskell_worker_dependencies",
+            packages = [
+                "bytestring",
+                "containers",
+                "deepseq",
+                "ghc",
+                "ghc-paths",
+                "microlens",
+                "mtl",
+                "proto-lens-0.5.1.0",
+                "text",
+            ],
         )
 
 def haskell_repositories():
