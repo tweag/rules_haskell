@@ -57,6 +57,8 @@ main = hspec $ do
     it "loads core library dependencies" $ do
       let p' (stdout, _stderr) = sort (lines stdout) == ["tests/multi_repl/core_package_dep/Lib.hs"]
       outputSatisfy p' (bazel ["run", "//tests/multi_repl:core_package_dep", "--", "-ignore-dot-ghci", "-e", ":show targets"])
+    it "allows to manually load modules" $ do
+      assertSuccess (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":load BC.C", "-e", "c"])
 
   it "startup script" $ do
     assertSuccess (safeShell ["./tests/run-start-script.sh"])

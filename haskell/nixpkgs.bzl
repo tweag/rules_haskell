@@ -83,6 +83,7 @@ haskell_toolchain(
     # hack in Nixpkgs.
     {locale_archive_arg}
     locale = {locale},
+    use_worker = {use_worker},
 )
         """.format(
             toolchain_libraries = toolchain_libraries,
@@ -95,6 +96,7 @@ haskell_toolchain(
             repl_ghci_args = repository_ctx.attr.repl_ghci_args,
             locale_archive_arg = "locale_archive = {},".format(repr(locale_archive)) if locale_archive else "",
             locale = repr(repository_ctx.attr.locale),
+            use_worker = repository_ctx.attr.use_worker,
         ),
     )
 
@@ -120,6 +122,7 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         "locale": attr.string(
             default = "en_US.UTF-8",
         ),
+        "use_worker": attr.bool(),
     },
 )
 
@@ -173,8 +176,13 @@ def haskell_register_ghc_nixpkgs(
         locale = None,
         repositories = {},
         repository = None,
-        nix_file_content = None):
+        nix_file_content = None,
+        use_worker = False):
     """Register a package from Nixpkgs as a toolchain.
+
+    Args:
+      use_worker: This is a part of experimental support for the persistent worker mode.
+        It is not intended for production usage, yet.
 
     Toolchains can be used to compile Haskell code. To have this
     toolchain selected during [toolchain
@@ -231,6 +239,7 @@ def haskell_register_ghc_nixpkgs(
         repl_ghci_args = repl_ghci_args,
         locale_archive = locale_archive,
         locale = locale,
+        use_worker = use_worker,
     )
 
     # toolchain definition.
