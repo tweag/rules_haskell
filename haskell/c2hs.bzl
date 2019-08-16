@@ -22,6 +22,7 @@ def _c2hs_library_impl(ctx):
     cc = cc_interop_info(ctx)
     args = hs.actions.args()
     c2hs = ctx.toolchains["@rules_haskell//haskell/c2hs:toolchain"].c2hs
+    c2hs_exe = ctx.toolchains["@rules_haskell//haskell/c2hs:toolchain"].c2hs_exe
 
     if len(ctx.files.srcs) != 1:
         fail("srcs field should contain exactly one file.")
@@ -39,6 +40,7 @@ def _c2hs_library_impl(ctx):
     args.add("-C-includeghcversion.h")
     args.add_all(["-C" + x for x in cc.cpp_flags])
     args.add_all(["-C" + x for x in cc.include_args])
+    args.add_all(ctx.attr.extra_args)
 
     dep_chi_files = [
         dep[C2hsLibraryInfo].chi_file
@@ -59,23 +61,36 @@ def _c2hs_library_impl(ctx):
         (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
         args.add_all(["-C" + x for x in version_macro_flags])
 
+    (inputs, input_manifests) = ctx.resolve_tools(tools = [c2hs])
+
     hs.actions.run_shell(
         inputs = depset(transitive = [
             depset(cc.hdrs),
-            depset([hs.tools.ghc, c2hs, chs_file]),
+            depset([chs_file]),
             depset(dep_chi_files),
             depset(cc.files),
             set.to_depset(version_macro_headers),
+            inputs,
         ]),
+        input_manifests = input_manifests,
+        tools = [hs.tools.ghc, c2hs_exe],
         outputs = [hs_file, chi_file],
-        command = """
+        command =
+            # cpp (called via c2hs) gets very unhappy if the mingw bin dir is
+            # not in PATH so we add it to PATH explicitely.
+            (
+                """
+        export PATH=$PATH:{mingw-bin}
+        """.format(cc = paths.dirname(cc.tools.cc)) if hs.toolchain.is_windows else ""
+            ) +
+            """
         # Include libdir in include path just like hsc2hs does.
         libdir=$({ghc} --print-libdir)
         {c2hs} -C-I$libdir/include "$@"
         """.format(
-            ghc = hs.tools.ghc.path,
-            c2hs = c2hs.path,
-        ),
+                ghc = hs.tools.ghc.path,
+                c2hs = c2hs_exe.path,
+            ),
         mnemonic = "HaskellC2Hs",
         arguments = [args],
         env = hs.env,
@@ -101,6 +116,9 @@ c2hs_library = rule(
     attrs = {
         "deps": attr.label_list(),
         "srcs": attr.label_list(allow_files = [".chs"]),
+        "extra_args": attr.string_list(
+            doc = "Extra arguments that should be passedto c2hs.",
+        ),
         "src_strip_prefix": attr.string(
             doc = "Directory in which module hierarchy starts.",
         ),
@@ -122,7 +140,12 @@ def _c2hs_toolchain_impl(ctx):
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,
-            c2hs = ctx.file.c2hs,
+            # We have both c2hs which points to the target and c2hs_exe
+            # which points to the file. The former is used to collect
+            # runfiles while the latter is used to get the path to
+            # c2hs.
+            c2hs = ctx.attr.c2hs,
+            c2hs_exe = ctx.executable.c2hs,
         ),
     ]
 
@@ -133,6 +156,8 @@ _c2hs_toolchain = rule(
             doc = "The c2hs executable.",
             mandatory = True,
             allow_single_file = True,
+            executable = True,
+            cfg = "host",
         ),
     },
 )
