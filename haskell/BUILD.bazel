@@ -1,5 +1,5 @@
 load(
-    "@rules_haskell//haskell:defs.bzl",
+    "@rules_haskell//haskell:private/haskell_impl.bzl",
     "haskell_toolchain_libraries",
 )
 
@@ -33,6 +33,12 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
+sh_binary(
+    name = "worker",
+    srcs = ["private/worker.sh"],
+    visibility = ["//visibility:public"],
+)
+
 py_binary(
     name = "version_macros",
     srcs = ["private/version_macros.py"],
@@ -58,7 +64,7 @@ toolchain_type(
     visibility = ["//visibility:public"],
 )
 
-# XXX: This target is a work aroud for the lack toolchain transitions not being
+# XXX: This target is a work-around for toolchain transitions not being
 # implemented, yet. See
 # https://github.com/bazelbuild/proposals/blob/master/designs/2019-02-12-toolchain-transitions.md
 # This will need to be revisited once that proposal is implemented.

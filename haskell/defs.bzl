@@ -11,7 +11,6 @@ load(
     _haskell_import_impl = "haskell_import_impl",
     _haskell_library_impl = "haskell_library_impl",
     _haskell_test_impl = "haskell_test_impl",
-    _haskell_toolchain_libraries_impl = "haskell_toolchain_libraries_impl",
     _haskell_toolchain_library_impl = "haskell_toolchain_library_impl",
 )
 load(
@@ -86,6 +85,11 @@ _haskell_common_attrs = {
     ),
     "_cc_toolchain": attr.label(
         default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+    ),
+    "_worker": attr.label(
+        executable = True,
+        cfg = "host",
+        default = Label("@rules_haskell//haskell:worker"),
     ),
 }
 
@@ -294,19 +298,6 @@ haskell_import = rule(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
-)
-
-haskell_toolchain_libraries = rule(
-    _haskell_toolchain_libraries_impl,
-    attrs = {
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
-    },
-    toolchains = [
-        "@rules_haskell//haskell:toolchain",
-    ],
-    fragments = ["cpp"],
 )
 
 haskell_toolchain_library = rule(
