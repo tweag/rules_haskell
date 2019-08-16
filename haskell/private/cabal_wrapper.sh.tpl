@@ -95,7 +95,7 @@ cd - >/dev/null
 # There were plans for controlling this, but they died. See:
 # https://github.com/haskell/cabal/pull/3982#issuecomment-254038734
 library=($libdir/libHS*.a)
-if [[ -n ${library+x} ]]
+if [[ -n ${library+x} && -f $package_database/$name.conf ]]
 then
     mv $libdir/libHS*.a $dynlibdir
     sed 's,library-dirs:.*,library-dirs: ${pkgroot}/lib,' \

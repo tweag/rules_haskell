@@ -29,6 +29,9 @@ main = hspec $ do
                   | otherwise      = "-requires_dynamic"
     assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only", "--test_tag_filters", tagFilter])
 
+  it "bazel build worker" $ do
+    assertSuccess (bazel ["build", "//tools/worker:bin"])
+
   describe "repl" $ do
     it "for libraries" $ do
       assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib@repl", "--", "-ignore-dot-ghci", "-e", "show (foo 10) ++ bar ++ baz ++ gen"])

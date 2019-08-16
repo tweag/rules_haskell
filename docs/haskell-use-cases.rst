@@ -337,3 +337,26 @@ There a couple of notes regarding the coverage analysis functionality:
   ``build`` / ``test`` performance.
 
 .. _hpc: https://hackage.haskell.org/package/hpc
+
+Persistent Worker Mode (experimental)
+-------------------------------------
+
+Bazel supports the special `persistent worker mode`_ when instead of calling the compiler
+from scratch to build every target separately, it spawns a resident process for this purpose
+and sends all compilation requests to it in the client-server fashion. This worker strategy
+may improve compilation times. We implemented a worker for GHC using GHC API.
+
+.. _persistent worker mode: https://blog.bazel.build/2015/12/10/java-workers.html
+
+To activate the persistent worker mode in ``rules_haskell`` the user adds a couple of lines
+in the ``WORKSPACE`` file to load worker's dependencies: ::
+
+  load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
+  rules_haskell_worker_dependencies()
+
+Then, the user will add ``--define use_worker=True`` in the command line when calling
+``bazel build`` or ``bazel test``.
+
+It is worth noting that Bazel's worker strategy is not sandboxed by default. This may
+confuse our worker relatively easily. Therefore, it is recommended to supply
+``--worker_sandboxing`` to ``bazel build`` -- possibly, via your ``.bazelrc.local`` file.

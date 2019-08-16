@@ -174,6 +174,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         executable = struct(
             _ls_modules = ctx.executable._ls_modules,
             _ghc_wrapper = ctx.executable._ghc_wrapper,
+            worker = None,
         ),
         # Necessary for CC interop (see cc.bzl).
         features = ctx.rule.attr.features,

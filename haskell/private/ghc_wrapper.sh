@@ -8,10 +8,9 @@ while IFS= read -r line; do compile_flags+=("$line"); done < $1
 
 # Detect if we are in the persistent worker mode
 if [ "$2" == "--persistent_worker" ]; then
-    compile_flags=("${compile_flags[@]:1}")  # remove ghc executable
-    # This is a proof-of-concept implementation, not ready for production usage:
-    # it assumes https://github.com/tweag/bazel-worker/ installed globally as ~/bin/worker
-    exec ~/bin/worker ${compile_flags[@]} --persistent_worker
+    # This runs our proof-of-concept implementation of a persistent worker
+    # wrapping GHC. Not ready for production usage.
+    exec ${compile_flags[@]} --persistent_worker
 else
     while IFS= read -r line; do extra_args+=("$line"); done < "$2"
     "${compile_flags[@]}" "${extra_args[@]}" 2>&1 \
