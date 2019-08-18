@@ -34,8 +34,8 @@ py_binary(
 )
 
 sh_binary(
-    name = "worker",
-    srcs = ["private/worker.sh"],
+    name = "ghc_wrapper",
+    srcs = ["private/ghc_wrapper.sh"],
     visibility = ["//visibility:public"],
 )
 

@@ -86,10 +86,10 @@ _haskell_common_attrs = {
     "_cc_toolchain": attr.label(
         default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
     ),
-    "_worker": attr.label(
+    "_ghc_wrapper": attr.label(
         executable = True,
         cfg = "host",
-        default = Label("@rules_haskell//haskell:worker"),
+        default = Label("@rules_haskell//haskell:ghc_wrapper"),
     ),
 }
 
