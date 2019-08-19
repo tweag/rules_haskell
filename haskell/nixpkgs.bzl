@@ -192,6 +192,11 @@ def haskell_register_ghc_nixpkgs(
 
     [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
 
+    Args:
+      compiler_flags_select: temporary workaround to pass conditional arguments.
+        See https://github.com/bazelbuild/bazel/issues/9199 for details.
+
+
     Example:
 
       ```
