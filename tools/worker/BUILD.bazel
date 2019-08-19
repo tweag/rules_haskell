@@ -1,5 +1,6 @@
-load("//haskell:defs.bzl", "haskell_doc", "haskell_library")
-load("//haskell:protobuf.bzl", "haskell_proto_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_library")
+load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_toolchain")
 
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
@@ -12,11 +13,10 @@ haskell_proto_toolchain(
         "@rules_haskell_worker_dependencies//:deepseq",
         "@rules_haskell_worker_dependencies//:mtl",
         "@rules_haskell_worker_dependencies//:text",
+        "@rules_haskell_worker_dependencies//:proto-lens",
         "@stackage//:data-default-class",
         "@stackage//:lens-family",
         "@stackage//:lens-family-core",
-        "@stackage//:lens-labels",
-        "@stackage//:proto-lens",
     ],
 )
 
@@ -33,7 +33,7 @@ haskell_proto_library(
 
 haskell_binary(
     name = "worker_bin",
-    srcs = ["Compile.hs", "Main.hs", " Server.hs"],
+    srcs = ["Compile.hs", "Main.hs", "Server.hs"],
     visibility = ["//visibility:public"],
     deps = [
         "@rules_haskell_worker_dependencies//:bytestring",
@@ -41,9 +41,11 @@ haskell_binary(
         "@rules_haskell_worker_dependencies//:ghc-paths",
         "@rules_haskell_worker_dependencies//:microlens",
         "@rules_haskell_worker_dependencies//:text",
+        "@rules_haskell_worker_dependencies//:proto-lens",
         "@stackage//:base",
         "@stackage//:filepath",
         "@stackage//:process",
-        "@stackage//:proto-lens",
+        ":worker_haskell_proto",
     ],
 )
+

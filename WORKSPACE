@@ -63,11 +63,10 @@ stack_snapshot(
         "hspec-core",
         "lens-family-core",
         "data-default-class",
-        "lens-labels",
         "proto-lens",
         "lens-family",
     ],
-    snapshot = "lts-13.15",
+    snapshot = "lts-14.1",
     tools = ["@happy"],
 )
 
@@ -75,9 +74,14 @@ stack_snapshot(
 stack_snapshot(
     name = "stackage-zlib",
     packages = ["zlib"],
-    snapshot = "lts-13.15",
+    snapshot = "lts-14.1",
     deps = ["@zlib.dev//:zlib"],
 )
+
+# tools dependencies
+load("//tools:repositories.bzl", "rules_haskell_tools_dependencies")
+
+rules_haskell_tools_dependencies()
 
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",

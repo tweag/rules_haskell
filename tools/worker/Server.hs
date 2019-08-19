@@ -8,8 +8,10 @@ import qualified Proto.Worker_Fields as W
 import Data.ProtoLens (defMessage, pprintMessage)
 import Data.ProtoLens.Encoding
   ( buildMessageDelimited
-  , decodeMessageDelimitedH )
+  , decodeMessageDelimitedH
+  )
 import Data.ProtoLens.Encoding.Bytes ( runBuilder )
+import Data.ProtoLens.Message
 import Lens.Micro
 
 import Control.Monad
