@@ -63,10 +63,11 @@ stack_snapshot(
         "hspec-core",
         "lens-family-core",
         "data-default-class",
+        "lens-labels",
         "proto-lens",
         "lens-family",
     ],
-    snapshot = "lts-14.1",
+    snapshot = "lts-13.15",
     tools = ["@happy"],
 )
 
@@ -74,7 +75,7 @@ stack_snapshot(
 stack_snapshot(
     name = "stackage-zlib",
     packages = ["zlib"],
-    snapshot = "lts-14.1",
+    snapshot = "lts-13.15",
     deps = ["@zlib.dev//:zlib"],
 )
 
