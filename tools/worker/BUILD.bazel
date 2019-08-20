@@ -4,7 +4,7 @@ load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_toolchain")
 
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
-    plugin = "@proto-lens-protoc//:bin/proto-lens-protoc",
+    plugin = "@proto-lens-protoc-0500//:proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     deps = [
         "@rules_haskell_worker_dependencies//:base",
