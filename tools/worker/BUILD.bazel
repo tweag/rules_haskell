@@ -1,53 +1,21 @@
 load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
-load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_library")
-load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_toolchain")
-
-haskell_proto_toolchain(
-    name = "protobuf-toolchain",
-    plugin = "@proto-lens-protoc-0500//:proto-lens-protoc",
-    protoc = "@com_google_protobuf//:protoc",
-    deps = [
-        "@rules_haskell_worker_dependencies//:base",
-        "@rules_haskell_worker_dependencies//:bytestring",
-        "@rules_haskell_worker_dependencies//:containers",
-        "@rules_haskell_worker_dependencies//:deepseq",
-        "@rules_haskell_worker_dependencies//:mtl",
-        "@rules_haskell_worker_dependencies//:text",
-        "@rules_haskell_worker_dependencies//:proto-lens",
-        "@rules_haskell_worker_dependencies//:data-default-class",
-        "@rules_haskell_worker_dependencies//:lens-family",
-        "@rules_haskell_worker_dependencies//:lens-family-core",
-        "@rules_haskell_worker_dependencies//:vector",
-    ],
-)
-
-proto_library(
-    name = "worker_proto",
-    srcs = ["worker.proto"],
-    strip_import_prefix = "/tools/worker",
-)
-
-haskell_proto_library(
-    name = "worker_haskell_proto",
-    deps = [":worker_proto"],
-)
 
 haskell_binary(
     name = "worker_bin",
-    srcs = ["Compile.hs", "Main.hs", "Server.hs"],
+    srcs = ["Compile.hs", "Main.hs", "Server.hs", 
+            "Proto/Worker.hs", "Proto/Worker_Fields.hs"],
     visibility = ["//visibility:public"],
     deps = [
+        "@rules_haskell_worker_dependencies//:base",
         "@rules_haskell_worker_dependencies//:bytestring",
+        "@rules_haskell_worker_dependencies//:filepath",
         "@rules_haskell_worker_dependencies//:ghc",
         "@rules_haskell_worker_dependencies//:ghc-paths",
         "@rules_haskell_worker_dependencies//:microlens",
-        "@rules_haskell_worker_dependencies//:text",
-        "@rules_haskell_worker_dependencies//:proto-lens",
-        "@rules_haskell_worker_dependencies//:base",
-        "@rules_haskell_worker_dependencies//:filepath",
         "@rules_haskell_worker_dependencies//:process",
+        "@rules_haskell_worker_dependencies//:proto-lens",
+        "@rules_haskell_worker_dependencies//:proto-lens-runtime",
+        "@rules_haskell_worker_dependencies//:text",
         "@rules_haskell_worker_dependencies//:vector",
-        ":worker_haskell_proto",
     ],
 )
-
