@@ -12,16 +12,25 @@ def rules_haskell_tools_dependencies():
         stack_snapshot(
             name = "rules_haskell_worker_dependencies",
             packages = [
+                "base",
                 "bytestring",
                 "containers",
+                "data-default-class",
                 "deepseq",
+                "filepath",
                 "ghc",
                 "ghc-paths",
+                "haskell-src-exts",
+                "lens-family",
+                "lens-family-core",
                 "microlens",
                 "mtl",
+                "process",
                 "proto-lens",
                 "text",
+                "vector",
             ],
             snapshot = "lts-14.1",
+            tools = ["@happy"],
         )
 

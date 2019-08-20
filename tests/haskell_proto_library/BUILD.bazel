@@ -76,7 +76,6 @@ haskell_library(
         ":person_haskell_proto",
         ":stripped_address_haskell_proto",
         "//tests/hackage:base",
-        "@stackage//:proto-lens",
     ],
 )
 

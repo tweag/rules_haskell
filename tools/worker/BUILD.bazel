@@ -4,19 +4,20 @@ load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_toolchain")
 
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
-    plugin = "@proto-lens-protoc//:bin/proto-lens-protoc",
+    plugin = "@proto-lens-protoc-0500//:proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     deps = [
-        "@stackage//tests/hackage:base",
+        "@rules_haskell_worker_dependencies//:base",
         "@rules_haskell_worker_dependencies//:bytestring",
         "@rules_haskell_worker_dependencies//:containers",
         "@rules_haskell_worker_dependencies//:deepseq",
         "@rules_haskell_worker_dependencies//:mtl",
         "@rules_haskell_worker_dependencies//:text",
         "@rules_haskell_worker_dependencies//:proto-lens",
-        "@stackage//:data-default-class",
-        "@stackage//:lens-family",
-        "@stackage//:lens-family-core",
+        "@rules_haskell_worker_dependencies//:data-default-class",
+        "@rules_haskell_worker_dependencies//:lens-family",
+        "@rules_haskell_worker_dependencies//:lens-family-core",
+        "@rules_haskell_worker_dependencies//:vector",
     ],
 )
 
@@ -42,9 +43,10 @@ haskell_binary(
         "@rules_haskell_worker_dependencies//:microlens",
         "@rules_haskell_worker_dependencies//:text",
         "@rules_haskell_worker_dependencies//:proto-lens",
-        "@stackage//:base",
-        "@stackage//:filepath",
-        "@stackage//:process",
+        "@rules_haskell_worker_dependencies//:base",
+        "@rules_haskell_worker_dependencies//:filepath",
+        "@rules_haskell_worker_dependencies//:process",
+        "@rules_haskell_worker_dependencies//:vector",
         ":worker_haskell_proto",
     ],
 )

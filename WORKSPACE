@@ -45,6 +45,26 @@ haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visib
     urls = ["http://hackage.haskell.org/package/happy-1.19.10/happy-1.19.10.tar.gz"],
 )
 
+http_archive(
+    name = "proto-lens-protoc-0500",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+haskell_cabal_binary(
+    name = "proto-lens-protoc",
+    srcs = glob(["**"]),
+    deps = [
+        "@rules_haskell_worker_dependencies//:haskell-src-exts",
+        "@rules_haskell_worker_dependencies//:lens-family",
+        "@rules_haskell_worker_dependencies//:proto-lens",
+    ],
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "161dcee2aed780f62c01522c86afce61721cf89c0143f157efefb1bd1fa1d164",
+    strip_prefix = "proto-lens-protoc-0.5.0.0",
+    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.5.0.0/proto-lens-protoc-0.5.0.0.tar.gz"],
+)
+
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
@@ -63,10 +83,11 @@ stack_snapshot(
         "hspec-core",
         "lens-family-core",
         "data-default-class",
+        "lens-labels",
         "proto-lens",
         "lens-family",
     ],
-    snapshot = "lts-14.1",
+    snapshot = "lts-13.15",
     tools = ["@happy"],
 )
 
@@ -74,7 +95,7 @@ stack_snapshot(
 stack_snapshot(
     name = "stackage-zlib",
     packages = ["zlib"],
-    snapshot = "lts-14.1",
+    snapshot = "lts-13.15",
     deps = ["@zlib.dev//:zlib"],
 )
 
@@ -163,7 +184,8 @@ haskell_register_ghc_bindists(
 register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
-    "//tests:protobuf-toolchain",
+    #"//tests:protobuf-toolchain",
+    "//tools/worker:protobuf-toolchain",
     # XXX: see .bazelrc for discussion, the python toolchain
     # work in postponed to future bazel version
     # "//tests:python_toolchain",
