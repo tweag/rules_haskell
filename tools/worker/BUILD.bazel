@@ -2,6 +2,7 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
 
 haskell_binary(
     name = "worker_bin",
+    bootstrap_worker = True,
     srcs = ["Compile.hs", "Main.hs", "Server.hs", 
             "Proto/Worker.hs", "Proto/Worker_Fields.hs"],
     visibility = ["//visibility:public"],

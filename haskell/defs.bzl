@@ -91,6 +91,10 @@ _haskell_common_attrs = {
         cfg = "host",
         default = Label("@rules_haskell//haskell:ghc_wrapper"),
     ),
+    "bootstrap_worker": attr.bool(
+        default = False,
+        doc = "The option is only used during bootstrapping of the persistent worker mode.",
+    ),
 }
 
 def _mk_binary_rule(**kwargs):

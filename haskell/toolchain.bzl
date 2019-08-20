@@ -76,7 +76,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     # Detect persistent worker support
     flagsfile_prefix = ""
     execution_requirements = {}
-    if hs.toolchain.use_worker:
+    if hs.toolchain.use_worker and not hs.bootstrap_worker:
         flagsfile_prefix = "@"
         execution_requirements = {"supports-workers": "1"}
 

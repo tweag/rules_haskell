@@ -40,6 +40,10 @@ def haskell_context(ctx, attr = None):
     if hasattr(ctx.executable, "_ghc_wrapper"):
         ghc_wrapper = ctx.executable._ghc_wrapper
 
+    bootstrap_worker = None
+    if hasattr(ctx.executable, "bootstrap_worker"):
+        bootstrap_worker = ctx.bootstrap_worker
+
     return HaskellContext(
         # Fields
         name = attr.name,
@@ -47,6 +51,7 @@ def haskell_context(ctx, attr = None):
         toolchain = toolchain,
         tools = toolchain.tools,
         ghc_wrapper = ghc_wrapper,
+        bootstrap_worker = bootstrap_worker,
         package_ids = package_ids,
         src_root = src_root,
         package_root = ctx.label.workspace_root + ctx.label.package,
