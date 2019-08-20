@@ -28,6 +28,7 @@ def rules_haskell_tools_dependencies():
                 "process",
                 "proto-lens",
                 "text",
+                "vector",
             ],
             snapshot = "lts-14.1",
             tools = ["@happy"],

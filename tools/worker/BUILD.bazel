@@ -45,6 +45,7 @@ haskell_binary(
         "@rules_haskell_worker_dependencies//:base",
         "@rules_haskell_worker_dependencies//:filepath",
         "@rules_haskell_worker_dependencies//:process",
+        "@rules_haskell_worker_dependencies//:vector",
         ":worker_haskell_proto",
     ],
 )
