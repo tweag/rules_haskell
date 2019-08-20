@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ueo pipefail
 export PATH=${PATH:-} # otherwise GCC fails on Windows
 
 # this is equivalent to 'readarray'. We do not use 'readarray' in order to
