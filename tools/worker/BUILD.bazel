@@ -17,6 +17,7 @@ haskell_proto_toolchain(
         "@rules_haskell_worker_dependencies//:data-default-class",
         "@rules_haskell_worker_dependencies//:lens-family",
         "@rules_haskell_worker_dependencies//:lens-family-core",
+        "@rules_haskell_worker_dependencies//:vector",
     ],
 )
 
