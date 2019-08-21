@@ -165,6 +165,7 @@ def _haskell_toolchain_impl(ctx):
             version = ctx.attr.version,
             global_pkg_db = pkgdb_file,
             use_worker = ctx.attr.use_worker,
+            worker = ctx.attr.worker,
         ),
     ]
 
@@ -218,7 +219,10 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
             default = Label("@rules_haskell//haskell:private/osx_cc_wrapper.sh.tpl"),
         ),
         "use_worker": attr.bool(
-            doc = "Whether to use persistent worker strategy during the builds.",
+            doc = "Experimental. Whether to use persistent worker strategy during the builds.",
+        ),
+        "worker": attr.label(
+            doc = "Experimental. Worker binary employed by Bazel's persistent worker mode.",
         ),
     },
 )
@@ -234,6 +238,7 @@ def haskell_toolchain(
         haddock_flags = [],
         locale_archive = None,
         use_worker = False,
+        worker = None,
         **kwargs):
     """Declare a compiler toolchain.
 
@@ -294,6 +299,7 @@ def haskell_toolchain(
             "//conditions:default": None,
         }),
         use_worker = use_worker,
+        worker = worker,
         **kwargs
     )
 

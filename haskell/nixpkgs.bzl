@@ -51,6 +51,12 @@ Available versions:
             _, path, name = line.split(" ")
             repository_ctx.symlink(path, name)
 
+    use_worker = repository_ctx.attr.use_worker
+    if use_worker:
+        worker = "\"@rules_haskell//tools/worker:worker_bin\""
+    else:
+        worker = "None"
+            
     repository_ctx.file(
         "BUILD",
         executable = False,
@@ -84,6 +90,7 @@ haskell_toolchain(
     {locale_archive_arg}
     locale = {locale},
     use_worker = {use_worker},
+    worker = {worker},
 )
         """.format(
             toolchain_libraries = toolchain_libraries,
@@ -96,7 +103,8 @@ haskell_toolchain(
             repl_ghci_args = repository_ctx.attr.repl_ghci_args,
             locale_archive_arg = "locale_archive = {},".format(repr(locale_archive)) if locale_archive else "",
             locale = repr(repository_ctx.attr.locale),
-            use_worker = repository_ctx.attr.use_worker,
+            use_worker = use_worker,
+            worker = worker,
         ),
     )
 
