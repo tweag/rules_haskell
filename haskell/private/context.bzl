@@ -42,7 +42,7 @@ def haskell_context(ctx, attr = None):
 
     worker = None
     if hasattr(ctx.executable, "worker"):
-        bootstrap_worker = ctx.worker
+        worker = ctx.executable.worker
 
     return HaskellContext(
         # Fields
