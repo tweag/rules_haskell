@@ -91,12 +91,12 @@ _haskell_common_attrs = {
         cfg = "host",
         default = Label("@rules_haskell//haskell:ghc_wrapper"),
     ),
-    "worker": attr.label(
-        default = Label("@rules_haskell//tools/worker:worker_bin"),
+    "_worker": attr.label(
+        default = Label("@rules_haskell//tools/worker:bin"),
         executable = True,
         cfg = "host",
-        doc = "Experimantal. Worker binary employed by Bazel's persistent worker mode.",
-    ), # Worker has to be public to solve bootstrapping.
+        doc = "Experimental. Worker binary employed by Bazel's persistent worker mode.",
+    ),
 }
 
 def _mk_binary_rule(**kwargs):

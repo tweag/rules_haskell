@@ -164,6 +164,7 @@ haskell_register_ghc_bindists(
 register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
+    "//tests:protobuf-toolchain",
     # XXX: see .bazelrc for discussion, the python toolchain
     # work in postponed to future bazel version
     # "//tests:python_toolchain",

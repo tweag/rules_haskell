@@ -41,8 +41,8 @@ def haskell_context(ctx, attr = None):
         ghc_wrapper = ctx.executable._ghc_wrapper
 
     worker = None
-    if hasattr(ctx.executable, "worker"):
-        worker = ctx.executable.worker
+    if hasattr(ctx.executable, "_worker"):
+        worker = ctx.executable._worker
 
     return HaskellContext(
         # Fields

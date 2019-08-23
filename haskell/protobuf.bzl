@@ -174,6 +174,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         executable = struct(
             _ls_modules = ctx.executable._ls_modules,
             _ghc_wrapper = ctx.executable._ghc_wrapper,
+            _worker = ctx.executable._worker,
         ),
         # Necessary for CC interop (see cc.bzl).
         features = ctx.rule.attr.features,
@@ -244,6 +245,12 @@ _haskell_proto_aspect = aspect(
             executable = True,
             cfg = "host",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
+        ),
+        "_worker": attr.label(
+            default = Label("@rules_haskell//tools/worker:bin"),
+            executable = True,
+            cfg = "host",
+            doc = "Experimental. Worker binary employed by Bazel's persistent worker mode.",
         ),
     },
     toolchains = [

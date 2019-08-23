@@ -11,7 +11,6 @@ import Data.ProtoLens.Encoding
   , decodeMessageDelimitedH
   )
 import Data.ProtoLens.Encoding.Bytes ( runBuilder )
-import Data.ProtoLens.Message
 import Lens.Micro
 
 import Control.Monad
