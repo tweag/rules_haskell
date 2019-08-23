@@ -484,6 +484,7 @@ _CORE_PACKAGES = [
     "haskeline",
     "hpc",
     "integer-gmp",
+    "integer-simple",
     "libiserv",
     "mtl",
     "parsec",
@@ -497,6 +498,7 @@ _CORE_PACKAGES = [
     "time",
     "transformers",
     "unix",
+    "Win32",
     "xhtml",
 ]
 
