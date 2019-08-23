@@ -484,6 +484,7 @@ _CORE_PACKAGES = [
     "haskeline",
     "hpc",
     "integer-gmp",
+    "integer-simple",
     "libiserv",
     "mtl",
     "parsec",
@@ -497,6 +498,7 @@ _CORE_PACKAGES = [
     "time",
     "transformers",
     "unix",
+    "Win32",
     "xhtml",
 ]
 
@@ -552,8 +554,13 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
     """Given a list of root packages, compute a dependency graph.
 
     Returns:
-      dependencies: adjacency list of packages, represented as a dictionary.
-      transitive_unpacked_sdists: directory names of unpacked source distributions.
+      dict(name: struct(name, version, versioned_name, deps, is_core_package, sdist)):
+        name: The unversioned package name.
+        version: The version of the package.
+        versioned_name: <name>-<version>.
+        deps: The list of dependencies.
+        is_core_package: Whether the package is a core package.
+        sdist: directory name of the unpackaged source distribution or None if core package.
 
     """
 
@@ -586,44 +593,51 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
         repository_ctx,
         stack + ["ls", "dependencies", "--global-hints", "--separator=-"],
     )
-    transitive_unpacked_sdists = [
-        unpacked_sdist
-        for unpacked_sdist in exec_result.stdout.splitlines()
-        if _chop_version(unpacked_sdist) not in _CORE_PACKAGES
-        if _chop_version(unpacked_sdist) not in _CABAL_TOOLS
-    ]
-    indirect_unpacked_sdists = [
-        unpacked_sdist
-        for unpacked_sdist in transitive_unpacked_sdists
-        if unpacked_sdist not in unpacked_sdists
-    ]
-    for unpacked_sdist in transitive_unpacked_sdists:
-        package = _chop_version(unpacked_sdist)
-        if _version(unpacked_sdist) == "<unknown>":
+    all_packages = {}
+    transitive_unpacked_sdists = []
+    indirect_unpacked_sdists = []
+    for package in exec_result.stdout.splitlines():
+        name = _chop_version(package)
+        if name in _CABAL_TOOLS:
+            continue
+
+        version = _version(package)
+        is_core_package = name in _CORE_PACKAGES
+        all_packages[name] = struct(
+            name = name,
+            version = version,
+            versioned_name = package,
+            deps = [],
+            is_core_package = is_core_package,
+            sdist = None if is_core_package else package,
+        )
+
+        if is_core_package:
+            continue
+
+        if version == "<unknown>":
             fail("""\
 Could not resolve version of {}. It is not in the snapshot.
 Specify a fully qualified package name of the form <package>-<version>.
             """.format(package))
 
-    # We remove the version numbers prior to calling `unpack`. This
+        transitive_unpacked_sdists.append(package)
+        if package not in unpacked_sdists:
+            indirect_unpacked_sdists.append(name)
+
+    # We removed the version numbers prior to calling `unpack`. This
     # way, stack will fetch the package sources from the snapshot
     # rather than from Hackage. See #1027.
-    indirect_unpacked_sdists = [
-        _chop_version(unpacked_sdist)
-        for unpacked_sdist in indirect_unpacked_sdists
-    ]
     if indirect_unpacked_sdists:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + indirect_unpacked_sdists)
     stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists, flags = package_flags).to_json()
     repository_ctx.file("stack.yaml", stack_yaml_content, executable = False)
 
     # Compute dependency graph.
-    all_packages = [_chop_version(dir) for dir in transitive_unpacked_sdists + _CORE_PACKAGES]
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
         stack + ["dot", "--global-hints", "--external"],
     )
-    dependencies = {k: [] for k in all_packages}
     for line in exec_result.stdout.splitlines():
         tokens = [w.strip('";') for w in line.split(" ")]
 
@@ -632,8 +646,8 @@ Specify a fully qualified package name of the form <package>-<version>.
         if len(tokens) == 3 and tokens[1] == "->":
             [src, _, dest] = tokens
             if src in all_packages and dest in all_packages:
-                dependencies[src].append(dest)
-    return (dependencies, transitive_unpacked_sdists)
+                all_packages[src].deps.append(dest)
+    return all_packages
 
 def _stack_snapshot_impl(repository_ctx):
     if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
@@ -658,7 +672,7 @@ def _stack_snapshot_impl(repository_ctx):
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)
-    (dependencies, transitive_unpacked_sdists) = _compute_dependency_graph(
+    all_packages = _compute_dependency_graph(
         repository_ctx,
         snapshot,
         versioned_packages,
@@ -679,25 +693,18 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_l
         "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
         for label in repository_ctx.attr.tools
     ]
-    for package in _CORE_PACKAGES:
-        if package in packages:
+    for package in all_packages.values():
+        if package.name in packages or package.versioned_name in packages:
             visibility = ["//visibility:public"]
         else:
             visibility = ["//visibility:private"]
-        build_file_builder.append(
-            """
+        if package.is_core_package:
+            build_file_builder.append(
+                """
 haskell_toolchain_library(name = "{name}", visibility = {visibility})
-""".format(name = package, visibility = visibility),
-        )
-    for package in transitive_unpacked_sdists:
-        unversioned_package = _chop_version(package)
-        if unversioned_package in _CORE_PACKAGES:
-            continue
-        if unversioned_package in unversioned_packages or package in versioned_packages:
-            visibility = ["//visibility:public"]
-        else:
-            visibility = ["//visibility:private"]
-        if unversioned_package in _EMPTY_PACKAGES_BLACKLIST:
+""".format(name = package.name, visibility = visibility),
+            )
+        elif package.name in _EMPTY_PACKAGES_BLACKLIST:
             build_file_builder.append(
                 """
 haskell_library(
@@ -706,8 +713,8 @@ haskell_library(
     visibility = {visibility},
 )
 """.format(
-                    name = unversioned_package,
-                    version = _version(package),
+                    name = package.name,
+                    version = package.version,
                     visibility = visibility,
                 ),
             )
@@ -723,18 +730,18 @@ haskell_cabal_library(
     visibility = {visibility},
 )
 """.format(
-                    name = unversioned_package,
-                    version = _version(package),
-                    dir = package,
-                    deps = dependencies[unversioned_package] + extra_deps,
+                    name = package.name,
+                    version = package.version,
+                    dir = package.sdist,
+                    deps = package.deps + extra_deps,
                     tools = tools,
                     visibility = visibility,
                 ),
             )
         build_file_builder.append(
             """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
-                name = package,
-                actual = unversioned_package,
+                name = package.versioned_name,
+                actual = package.name,
                 visibility = visibility,
             ),
         )
