@@ -573,7 +573,14 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + unversioned_packages)
     exec_result = _execute_or_fail_loudly(repository_ctx, ["ls"])
     unpacked_sdists = exec_result.stdout.splitlines()
-    stack_yaml_content = struct(resolver = "none", packages = unpacked_sdists).to_json()
+    package_flags = {
+        pkg_name: {
+            flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
+            for flag in flags
+        }
+        for (pkg_name, flags) in repository_ctx.attr.flags.items()
+    }
+    stack_yaml_content = struct(resolver = "none", packages = unpacked_sdists, flags = package_flags).to_json()
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
@@ -607,7 +614,7 @@ Specify a fully qualified package name of the form <package>-<version>.
     ]
     if indirect_unpacked_sdists:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + indirect_unpacked_sdists)
-    stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists).to_json()
+    stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists, flags = package_flags).to_json()
     repository_ctx.file("stack.yaml", stack_yaml_content, executable = False)
 
     # Compute dependency graph.
@@ -740,6 +747,7 @@ _stack_snapshot = repository_rule(
         "snapshot": attr.string(),
         "local_snapshot": attr.label(allow_single_file = True),
         "packages": attr.string_list(),
+        "flags": attr.string_list_dict(),
         "deps": attr.label_list(),
         "tools": attr.label_list(),
         "stack": attr.label(),
@@ -813,6 +821,7 @@ def stack_snapshot(stack = None, **kwargs):
         Incompatible with snapshot.
       packages: A set of package identifiers. For packages in the snapshot,
         version numbers can be omitted.
+      flags: A dict from package name to list of flags.
       deps: Dependencies of the package set, e.g. system libraries or C/C++ libraries.
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
@@ -837,6 +846,7 @@ def stack_snapshot(stack = None, **kwargs):
       stack_snapshot(
           name = "stackage",
           packages = ["conduit", "lens", "zlib"],
+          flags = {"zlib": ["-non-blocking-ffi"]},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
           local_Snapshot = "//:snapshot.yaml",
           deps = ["@zlib.dev//:zlib"],
