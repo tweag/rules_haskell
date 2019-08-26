@@ -731,14 +731,30 @@ def _stack_snapshot_impl(repository_ctx):
         vendored_packages,
     )
 
+    extra_deps = [_label_to_string(label) for label in repository_ctx.attr.deps]
+    tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
+
+    # Write out dependency graph as importable Starlark value.
+    repository_ctx.file(
+        "packages.bzl",
+        "packages = " + repr({
+            package.name: struct(
+                name = package.name,
+                version = package.version,
+                deps = [Label("@{}//:{}".format(repository_ctx.name, dep)) for dep in package.deps],
+                flags = package.flags,
+            )
+            for package in all_packages.values()
+        }),
+        executable = False,
+    )
+
     # Write out the dependency graph as a BUILD file.
     build_file_builder = []
     build_file_builder.append("""
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_library")
 """)
-    extra_deps = [_label_to_string(label) for label in repository_ctx.attr.deps]
-    tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
     for package in all_packages.values():
         if package.name in packages or package.versioned_name in packages or package.vendored != None:
             visibility = ["//visibility:public"]
@@ -940,7 +956,13 @@ def stack_snapshot(stack = None, vendored_packages = {}, **kwargs):
     `<package>-<version>` in the `packages` attribute.
 
     In the external repository defined by the rule, all given packages are
-    available as top-level targets named after each package.
+    available as top-level targets named after each package. Additionally, the
+    dependency graph is made available within `packages.bzl` as the `dict`
+    `packages` mapping unversioned package names to structs holding the fields
+      - name: The unversioned package name.
+      - version: The package version.
+      - deps: The list of package dependencies according to stack.
+      - flags: The list of Cabal flags.
     """
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
