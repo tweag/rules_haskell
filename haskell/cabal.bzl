@@ -568,6 +568,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         name: The unversioned package name.
         version: The version of the package.
         versioned_name: <name>-<version>.
+        flags: Cabal flags for this package.
         deps: The list of dependencies.
         is_core_package: Whether the package is a core package.
         sdist: directory name of the unpackaged source distribution or None if core package.
@@ -580,6 +581,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
             name = core_package,
             version = None,
             versioned_name = None,
+            flags = repository_ctx.attr.flags.get(core_package, []),
             deps = [],
             is_core_package = True,
             sdist = None,
@@ -627,6 +629,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
             name = name,
             version = version,
             versioned_name = package,
+            flags = repository_ctx.attr.flags.get(name, []),
             deps = [],
             is_core_package = is_core_package,
             sdist = None if is_core_package else package,
@@ -740,11 +743,15 @@ haskell_library(
                 ),
             )
         else:
+            flags = []
+            if package.flags:
+                flags.append("--flags=" + " ".join(package.flags))
             build_file_builder.append(
                 """
 haskell_cabal_library(
     name = "{name}",
     version = "{version}",
+    cabal_flags = {flags},
     srcs = glob(["{dir}/**"]),
     deps = {deps},
     tools = {tools},
@@ -753,6 +760,7 @@ haskell_cabal_library(
 """.format(
                     name = package.name,
                     version = package.version,
+                    flags = repr(flags),
                     dir = package.sdist,
                     deps = package.deps + extra_deps,
                     tools = tools,
