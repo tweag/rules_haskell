@@ -116,7 +116,11 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, to
     args = hs.actions.args()
     package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
-    extra_include_dirs = cc_info.compilation_context.includes
+    extra_include_dirs = depset(transitive = [
+        cc_info.compilation_context.includes,
+        cc_info.compilation_context.quote_includes,
+        cc_info.compilation_context.system_includes,
+    ])
     extra_lib_dirs = [
         file.dirname
         for file in ghci_extra_libs.to_list()
