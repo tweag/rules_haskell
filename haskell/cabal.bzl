@@ -550,7 +550,7 @@ def _stack_version_check(repository_ctx, stack_cmd):
     stack_major_version = int(exec_result.stdout.split(".")[0])
     return stack_major_version >= 2
 
-def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unversioned_packages):
+def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages):
     """Given a list of root packages, compute a dependency graph.
 
     Returns:
@@ -564,8 +564,19 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
 
     """
 
+    all_packages = {}
+    for core_package in core_packages:
+        all_packages[core_package] = struct(
+            name = core_package,
+            version = None,
+            versioned_name = None,
+            deps = [],
+            is_core_package = True,
+            sdist = None,
+        )
+
     if not versioned_packages and not unversioned_packages:
-        return ({}, [])
+        return all_packages
 
     # Unpack all given packages, then compute the transitive closure
     # and unpack anything in the transitive closure as well.
@@ -593,7 +604,6 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
         repository_ctx,
         stack + ["ls", "dependencies", "--global-hints", "--separator=-"],
     )
-    all_packages = {}
     transitive_unpacked_sdists = []
     indirect_unpacked_sdists = []
     for package in exec_result.stdout.splitlines():
@@ -660,21 +670,22 @@ def _stack_snapshot_impl(repository_ctx):
         fail("Please specify one of snapshot or repository_snapshot")
 
     packages = repository_ctx.attr.packages
-    non_core_packages = [
-        package
-        for package in packages
-        if package not in _CORE_PACKAGES
-    ]
+    core_packages = []
     versioned_packages = []
     unversioned_packages = []
-    for package in non_core_packages:
-        if _has_version(package):
+    for package in packages:
+        has_version = _has_version(package)
+        unversioned = _chop_version(package) if has_version else package
+        if unversioned in _CORE_PACKAGES:
+            core_packages.append(unversioned)
+        elif has_version:
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)
     all_packages = _compute_dependency_graph(
         repository_ctx,
         snapshot,
+        core_packages,
         versioned_packages,
         unversioned_packages,
     )
@@ -738,13 +749,14 @@ haskell_cabal_library(
                     visibility = visibility,
                 ),
             )
-        build_file_builder.append(
-            """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
-                name = package.versioned_name,
-                actual = package.name,
-                visibility = visibility,
-            ),
-        )
+        if package.versioned_name != None:
+            build_file_builder.append(
+                """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
+                    name = package.versioned_name,
+                    actual = package.name,
+                    visibility = visibility,
+                ),
+            )
     build_file_content = "\n".join(build_file_builder)
     repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
 
