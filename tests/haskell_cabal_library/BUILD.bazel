@@ -13,7 +13,10 @@ haskell_cabal_library(
         "Lib.hs",
         "lib.cabal",
     ],
-    cabal_flags = ["--flags=use-base expose-lib"],
+    flags = [
+        "use-base",
+        "expose-lib",
+    ],
     version = "0.1.0.0",
 )
 
