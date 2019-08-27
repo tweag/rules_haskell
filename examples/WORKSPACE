@@ -58,7 +58,10 @@ stack_snapshot(
     name = "stackage",
     flags = {
         # Sets the default explicitly to demonstrate the flags attribute.
-        "zlib": ["-non-blocking-ffi"],
+        "zlib": [
+            "-non-blocking-ffi",
+            "-pkg-config",
+        ],
     },
     packages = [
         "base",

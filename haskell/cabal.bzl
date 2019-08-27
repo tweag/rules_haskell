@@ -85,7 +85,7 @@ def _cabal_tool_flag(tool):
 def _make_path(hs, binaries):
     return ":".join([binary.dirname for binary in binaries.to_list()] + ["$PATH"])
 
-def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, cabal_wrapper_tpl, package_database):
+def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper_tpl, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -119,6 +119,8 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, to
     extra_include_dirs = cc_info.compilation_context.includes
     extra_lib_dirs = [file.dirname for file in ghci_extra_libs.to_list()]
     args.add_all([package_id, setup, cabal.dirname, package_database.dirname])
+    args.add("--flags=" + " ".join(flags))
+    args.add("--")
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")
     args.add_all(extra_lib_dirs, format_each = "--extra-lib-dirs=%s", uniquify = True)
@@ -209,6 +211,7 @@ def _haskell_cabal_library_impl(ctx):
         cabal = cabal,
         setup = setup,
         srcs = ctx.files.srcs,
+        flags = ctx.attr.flags,
         cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
         package_database = package_database,
     )
@@ -302,6 +305,9 @@ haskell_cabal_library = rule(
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
         ),
+        "flags": attr.string_list(
+            doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
+        ),
         "_cabal_wrapper_tpl": attr.label(
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
@@ -376,6 +382,7 @@ def _haskell_cabal_binary_impl(ctx):
         cabal = cabal,
         setup = setup,
         srcs = ctx.files.srcs,
+        flags = ctx.attr.flags,
         cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
         package_database = package_database,
     )
@@ -427,6 +434,9 @@ haskell_cabal_binary = rule(
             cfg = "host",
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
+        ),
+        "flags": attr.string_list(
+            doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
         ),
         "_cabal_wrapper_tpl": attr.label(
             allow_single_file = True,
@@ -558,6 +568,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         name: The unversioned package name.
         version: The version of the package.
         versioned_name: <name>-<version>.
+        flags: Cabal flags for this package.
         deps: The list of dependencies.
         is_core_package: Whether the package is a core package.
         sdist: directory name of the unpackaged source distribution or None if core package.
@@ -570,6 +581,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
             name = core_package,
             version = None,
             versioned_name = None,
+            flags = repository_ctx.attr.flags.get(core_package, []),
             deps = [],
             is_core_package = True,
             sdist = None,
@@ -617,6 +629,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
             name = name,
             version = version,
             versioned_name = package,
+            flags = repository_ctx.attr.flags.get(name, []),
             deps = [],
             is_core_package = is_core_package,
             sdist = None if is_core_package else package,
@@ -735,6 +748,7 @@ haskell_library(
 haskell_cabal_library(
     name = "{name}",
     version = "{version}",
+    flags = {flags},
     srcs = glob(["{dir}/**"]),
     deps = {deps},
     tools = {tools},
@@ -743,6 +757,7 @@ haskell_cabal_library(
 """.format(
                     name = package.name,
                     version = package.version,
+                    flags = package.flags,
                     dir = package.sdist,
                     deps = package.deps + extra_deps,
                     tools = tools,
