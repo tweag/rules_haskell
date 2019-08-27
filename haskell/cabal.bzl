@@ -117,7 +117,14 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, to
     package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
     extra_include_dirs = cc_info.compilation_context.includes
-    extra_lib_dirs = [file.dirname for file in ghci_extra_libs.to_list()]
+    extra_lib_dirs = [
+        file.dirname
+        for file in ghci_extra_libs.to_list()
+        # Exclude Haskell libraries, as these are already covered by
+        # package-dbs. This is to avoid command-line length overflow on
+        # collect2.
+        if not file.basename.startswith("libHS")
+    ]
     args.add_all([package_id, setup, cabal.dirname, package_database.dirname])
     args.add("--flags=" + " ".join(flags))
     args.add("--")
