@@ -85,7 +85,7 @@ def _cabal_tool_flag(tool):
 def _make_path(hs, binaries):
     return ":".join([binary.dirname for binary in binaries.to_list()] + ["$PATH"])
 
-def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, cabal_wrapper_tpl, package_database):
+def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper_tpl, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -116,9 +116,22 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, to
     args = hs.actions.args()
     package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
-    extra_include_dirs = cc_info.compilation_context.includes
-    extra_lib_dirs = [file.dirname for file in ghci_extra_libs.to_list()]
+    extra_include_dirs = depset(transitive = [
+        cc_info.compilation_context.includes,
+        cc_info.compilation_context.quote_includes,
+        cc_info.compilation_context.system_includes,
+    ])
+    extra_lib_dirs = [
+        file.dirname
+        for file in ghci_extra_libs.to_list()
+        # Exclude Haskell libraries, as these are already covered by
+        # package-dbs. This is to avoid command-line length overflow on
+        # collect2.
+        if not file.basename.startswith("libHS")
+    ]
     args.add_all([package_id, setup, cabal.dirname, package_database.dirname])
+    args.add("--flags=" + " ".join(flags))
+    args.add("--")
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")
     args.add_all(extra_lib_dirs, format_each = "--extra-lib-dirs=%s", uniquify = True)
@@ -209,6 +222,7 @@ def _haskell_cabal_library_impl(ctx):
         cabal = cabal,
         setup = setup,
         srcs = ctx.files.srcs,
+        flags = ctx.attr.flags,
         cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
         package_database = package_database,
     )
@@ -302,6 +316,9 @@ haskell_cabal_library = rule(
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
         ),
+        "flags": attr.string_list(
+            doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
+        ),
         "_cabal_wrapper_tpl": attr.label(
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
@@ -376,6 +393,7 @@ def _haskell_cabal_binary_impl(ctx):
         cabal = cabal,
         setup = setup,
         srcs = ctx.files.srcs,
+        flags = ctx.attr.flags,
         cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
         package_database = package_database,
     )
@@ -427,6 +445,9 @@ haskell_cabal_binary = rule(
             cfg = "host",
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
+        ),
+        "flags": attr.string_list(
+            doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
         ),
         "_cabal_wrapper_tpl": attr.label(
             allow_single_file = True,
@@ -484,6 +505,7 @@ _CORE_PACKAGES = [
     "haskeline",
     "hpc",
     "integer-gmp",
+    "integer-simple",
     "libiserv",
     "mtl",
     "parsec",
@@ -497,6 +519,7 @@ _CORE_PACKAGES = [
     "time",
     "transformers",
     "unix",
+    "Win32",
     "xhtml",
 ]
 
@@ -548,17 +571,35 @@ def _stack_version_check(repository_ctx, stack_cmd):
     stack_major_version = int(exec_result.stdout.split(".")[0])
     return stack_major_version >= 2
 
-def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unversioned_packages):
+def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages):
     """Given a list of root packages, compute a dependency graph.
 
     Returns:
-      dependencies: adjacency list of packages, represented as a dictionary.
-      transitive_unpacked_sdists: directory names of unpacked source distributions.
+      dict(name: struct(name, version, versioned_name, deps, is_core_package, sdist)):
+        name: The unversioned package name.
+        version: The version of the package.
+        versioned_name: <name>-<version>.
+        flags: Cabal flags for this package.
+        deps: The list of dependencies.
+        is_core_package: Whether the package is a core package.
+        sdist: directory name of the unpackaged source distribution or None if core package.
 
     """
 
+    all_packages = {}
+    for core_package in core_packages:
+        all_packages[core_package] = struct(
+            name = core_package,
+            version = None,
+            versioned_name = None,
+            flags = repository_ctx.attr.flags.get(core_package, []),
+            deps = [],
+            is_core_package = True,
+            sdist = None,
+        )
+
     if not versioned_packages and not unversioned_packages:
-        return ({}, [])
+        return all_packages
 
     # Unpack all given packages, then compute the transitive closure
     # and unpack anything in the transitive closure as well.
@@ -573,50 +614,64 @@ def _compute_dependency_graph(repository_ctx, snapshot, versioned_packages, unve
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + unversioned_packages)
     exec_result = _execute_or_fail_loudly(repository_ctx, ["ls"])
     unpacked_sdists = exec_result.stdout.splitlines()
-    stack_yaml_content = struct(resolver = "none", packages = unpacked_sdists).to_json()
+    package_flags = {
+        pkg_name: {
+            flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
+            for flag in flags
+        }
+        for (pkg_name, flags) in repository_ctx.attr.flags.items()
+    }
+    stack_yaml_content = struct(resolver = "none", packages = unpacked_sdists, flags = package_flags).to_json()
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
         stack + ["ls", "dependencies", "--global-hints", "--separator=-"],
     )
-    transitive_unpacked_sdists = [
-        unpacked_sdist
-        for unpacked_sdist in exec_result.stdout.splitlines()
-        if _chop_version(unpacked_sdist) not in _CORE_PACKAGES
-        if _chop_version(unpacked_sdist) not in _CABAL_TOOLS
-    ]
-    indirect_unpacked_sdists = [
-        unpacked_sdist
-        for unpacked_sdist in transitive_unpacked_sdists
-        if unpacked_sdist not in unpacked_sdists
-    ]
-    for unpacked_sdist in transitive_unpacked_sdists:
-        package = _chop_version(unpacked_sdist)
-        if _version(unpacked_sdist) == "<unknown>":
+    transitive_unpacked_sdists = []
+    indirect_unpacked_sdists = []
+    for package in exec_result.stdout.splitlines():
+        name = _chop_version(package)
+        if name in _CABAL_TOOLS:
+            continue
+
+        version = _version(package)
+        is_core_package = name in _CORE_PACKAGES
+        all_packages[name] = struct(
+            name = name,
+            version = version,
+            versioned_name = package,
+            flags = repository_ctx.attr.flags.get(name, []),
+            deps = [],
+            is_core_package = is_core_package,
+            sdist = None if is_core_package else package,
+        )
+
+        if is_core_package:
+            continue
+
+        if version == "<unknown>":
             fail("""\
 Could not resolve version of {}. It is not in the snapshot.
 Specify a fully qualified package name of the form <package>-<version>.
             """.format(package))
 
-    # We remove the version numbers prior to calling `unpack`. This
+        transitive_unpacked_sdists.append(package)
+        if package not in unpacked_sdists:
+            indirect_unpacked_sdists.append(name)
+
+    # We removed the version numbers prior to calling `unpack`. This
     # way, stack will fetch the package sources from the snapshot
     # rather than from Hackage. See #1027.
-    indirect_unpacked_sdists = [
-        _chop_version(unpacked_sdist)
-        for unpacked_sdist in indirect_unpacked_sdists
-    ]
     if indirect_unpacked_sdists:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + indirect_unpacked_sdists)
-    stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists).to_json()
+    stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists, flags = package_flags).to_json()
     repository_ctx.file("stack.yaml", stack_yaml_content, executable = False)
 
     # Compute dependency graph.
-    all_packages = [_chop_version(dir) for dir in transitive_unpacked_sdists + _CORE_PACKAGES]
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
         stack + ["dot", "--global-hints", "--external"],
     )
-    dependencies = {k: [] for k in all_packages}
     for line in exec_result.stdout.splitlines():
         tokens = [w.strip('";') for w in line.split(" ")]
 
@@ -625,8 +680,8 @@ Specify a fully qualified package name of the form <package>-<version>.
         if len(tokens) == 3 and tokens[1] == "->":
             [src, _, dest] = tokens
             if src in all_packages and dest in all_packages:
-                dependencies[src].append(dest)
-    return (dependencies, transitive_unpacked_sdists)
+                all_packages[src].deps.append(dest)
+    return all_packages
 
 def _stack_snapshot_impl(repository_ctx):
     if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
@@ -639,21 +694,22 @@ def _stack_snapshot_impl(repository_ctx):
         fail("Please specify one of snapshot or repository_snapshot")
 
     packages = repository_ctx.attr.packages
-    non_core_packages = [
-        package
-        for package in packages
-        if package not in _CORE_PACKAGES
-    ]
+    core_packages = []
     versioned_packages = []
     unversioned_packages = []
-    for package in non_core_packages:
-        if _has_version(package):
+    for package in packages:
+        has_version = _has_version(package)
+        unversioned = _chop_version(package) if has_version else package
+        if unversioned in _CORE_PACKAGES:
+            core_packages.append(unversioned)
+        elif has_version:
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)
-    (dependencies, transitive_unpacked_sdists) = _compute_dependency_graph(
+    all_packages = _compute_dependency_graph(
         repository_ctx,
         snapshot,
+        core_packages,
         versioned_packages,
         unversioned_packages,
     )
@@ -672,25 +728,18 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_l
         "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
         for label in repository_ctx.attr.tools
     ]
-    for package in _CORE_PACKAGES:
-        if package in packages:
+    for package in all_packages.values():
+        if package.name in packages or package.versioned_name in packages:
             visibility = ["//visibility:public"]
         else:
             visibility = ["//visibility:private"]
-        build_file_builder.append(
-            """
+        if package.is_core_package:
+            build_file_builder.append(
+                """
 haskell_toolchain_library(name = "{name}", visibility = {visibility})
-""".format(name = package, visibility = visibility),
-        )
-    for package in transitive_unpacked_sdists:
-        unversioned_package = _chop_version(package)
-        if unversioned_package in _CORE_PACKAGES:
-            continue
-        if unversioned_package in unversioned_packages or package in versioned_packages:
-            visibility = ["//visibility:public"]
-        else:
-            visibility = ["//visibility:private"]
-        if unversioned_package in _EMPTY_PACKAGES_BLACKLIST:
+""".format(name = package.name, visibility = visibility),
+            )
+        elif package.name in _EMPTY_PACKAGES_BLACKLIST:
             build_file_builder.append(
                 """
 haskell_library(
@@ -699,8 +748,8 @@ haskell_library(
     visibility = {visibility},
 )
 """.format(
-                    name = unversioned_package,
-                    version = _version(package),
+                    name = package.name,
+                    version = package.version,
                     visibility = visibility,
                 ),
             )
@@ -710,27 +759,30 @@ haskell_library(
 haskell_cabal_library(
     name = "{name}",
     version = "{version}",
+    flags = {flags},
     srcs = glob(["{dir}/**"]),
     deps = {deps},
     tools = {tools},
     visibility = {visibility},
 )
 """.format(
-                    name = unversioned_package,
-                    version = _version(package),
-                    dir = package,
-                    deps = dependencies[unversioned_package] + extra_deps,
+                    name = package.name,
+                    version = package.version,
+                    flags = package.flags,
+                    dir = package.sdist,
+                    deps = package.deps + extra_deps,
                     tools = tools,
                     visibility = visibility,
                 ),
             )
-        build_file_builder.append(
-            """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
-                name = package,
-                actual = unversioned_package,
-                visibility = visibility,
-            ),
-        )
+        if package.versioned_name != None:
+            build_file_builder.append(
+                """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
+                    name = package.versioned_name,
+                    actual = package.name,
+                    visibility = visibility,
+                ),
+            )
     build_file_content = "\n".join(build_file_builder)
     repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
 
@@ -740,6 +792,7 @@ _stack_snapshot = repository_rule(
         "snapshot": attr.string(),
         "local_snapshot": attr.label(allow_single_file = True),
         "packages": attr.string_list(),
+        "flags": attr.string_list_dict(),
         "deps": attr.label_list(),
         "tools": attr.label_list(),
         "stack": attr.label(),
@@ -813,6 +866,7 @@ def stack_snapshot(stack = None, **kwargs):
         Incompatible with snapshot.
       packages: A set of package identifiers. For packages in the snapshot,
         version numbers can be omitted.
+      flags: A dict from package name to list of flags.
       deps: Dependencies of the package set, e.g. system libraries or C/C++ libraries.
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
@@ -837,6 +891,7 @@ def stack_snapshot(stack = None, **kwargs):
       stack_snapshot(
           name = "stackage",
           packages = ["conduit", "lens", "zlib"],
+          flags = {"zlib": ["-non-blocking-ffi"]},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
           local_Snapshot = "//:snapshot.yaml",
           deps = ["@zlib.dev//:zlib"],

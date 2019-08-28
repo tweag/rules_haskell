@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 #
-# cabal_wrapper.sh <PKG_NAME> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [SETUP_ARGS...]
+# cabal_wrapper.sh <PKG_NAME> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
 #
 # This wrapper calls Cabal's configure/build/install steps one big
 # action so that we don't have to track all inputs explicitly between
 # steps.
+#
+# PKG_NAME: Package ID of the resulting package.
+# SETUP_PATH: Path to Setup.hs
+# PKG_DIR: Directory containing the Cabal file
+# PACKAGE_DB_PATH: Output package DB path.
+# EXTRA_ARGS: Additional args to Setup.hs configure.
+# PATH_ARGS: Additional args to Setup.hs configure where paths need to be prefixed with execroot.
 
 # TODO Remove once https://github.com/bazelbuild/bazel/issues/5980 is
 # fixed.
@@ -44,6 +51,13 @@ srcdir=$execroot/$3
 pkgroot="$(realpath $execroot/$4/..)" # By definition (see ghc-pkg source code).
 shift 4
 
+declare -a extra_args
+while [[ $1 != -- ]]; do
+    extra_args+=("$1")
+    shift 1
+done
+shift 1
+
 ar=$(realpath %{ar})
 strip=$(realpath %{strip})
 distdir=$(mktemp -d)
@@ -79,6 +93,7 @@ $execroot/%{runghc} $setup configure \
     --datadir=$datadir \
     --package-db=clear \
     --package-db=global \
+    "${extra_args[@]}" \
     "${@/=/=$execroot/}" \
     --package-db=$package_database # This arg must come last.
 $execroot/%{runghc} $setup build --verbose=0 --builddir=$distdir

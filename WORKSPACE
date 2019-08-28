@@ -55,6 +55,7 @@ stack_snapshot(
         "base",
         "directory",
         "filepath",
+        "ghc-heap",
         "process",
         # For tests
         "streaming",

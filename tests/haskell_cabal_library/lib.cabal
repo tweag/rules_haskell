@@ -3,7 +3,22 @@ name: lib
 version: 0.1.0.0
 build-type: Simple
 
+-- Example flags to test the Cabal flags attribute.
+flag use-base
+  default: False
+  manual: True
+  description: Depend on the base library.
+
+flag expose-lib
+  default: False
+  manual: True
+  description: Expose the Lib module.
+
 library
-  build-depends: base >=4.12 && <4.13
+  if flag(use-base)
+    build-depends: base >=4.12 && <4.13
   default-language: Haskell2010
-  exposed-modules: Lib
+  if flag(expose-lib)
+    exposed-modules: Lib
+  else
+    other-modules: Lib

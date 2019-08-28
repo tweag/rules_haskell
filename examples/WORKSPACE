@@ -56,6 +56,13 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
+    flags = {
+        # Sets the default explicitly to demonstrate the flags attribute.
+        "zlib": [
+            "-non-blocking-ffi",
+            "-pkg-config",
+        ],
+    },
     packages = [
         "base",
         "bytestring",

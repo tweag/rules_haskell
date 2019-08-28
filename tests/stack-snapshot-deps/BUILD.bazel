@@ -16,5 +16,7 @@ haskell_test(
     deps = [
         "@stackage-zlib//:zlib",
         "@stackage//:base",
+        # Core package that is no dependency of another item in the snapshot.
+        "@stackage//:ghc-heap",
     ],
 )
