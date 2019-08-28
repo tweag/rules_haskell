@@ -5,7 +5,8 @@ Usage: cc_wrapper [ARG]...
 
 Wraps the C compiler of the Bazel CC toolchain. Transforms arguments to work
 around limitations of Bazel and GHC and passes those via response file to the C
-compiler.
+compiler. A response file is a text file listing command-line arguments. It is
+used to avoid command line length limitations.
 
 - Shortens library search paths to stay below maximum path length on Windows.
 
