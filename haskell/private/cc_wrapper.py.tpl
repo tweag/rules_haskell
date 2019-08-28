@@ -200,6 +200,8 @@ class Args:
             if self._prev_ld_arg is None:
                 if ld_arg == "-rpath":
                     self._prev_ld_arg = ld_arg
+                elif ld_arg.startswith("-rpath="):
+                    self._handle_rpath(ld_arg[len("-rpath="):], out)
                 else:
                     out.extend(["-Xlinker", ld_arg])
             elif self._prev_ld_arg == "-rpath":
@@ -214,6 +216,8 @@ class Args:
             if len(ld_args) == 2 and ld_args[0] == "-rpath":
                 self._handle_rpath(ld_args[1], out)
                 return True
+            elif len(ld_args) == 1 and ld_args[0].startswith("-rpath="):
+                self._handle_rpath(ld_args[0][len("-rpath="):])
             else:
                 out.append(arg)
                 return True
