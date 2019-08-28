@@ -195,6 +195,10 @@ class Args:
         return consumed
 
     def _handle_linker_arg(self, arg, args, out):
+        # gcc allows to forward flags to the linker using either
+        #   -Xlinker <flag>
+        # or
+        #   -Wl,<flag1>,<flag2>...
         if arg == "-Xlinker":
             ld_arg = next(args)
             if self._prev_ld_arg is None:
