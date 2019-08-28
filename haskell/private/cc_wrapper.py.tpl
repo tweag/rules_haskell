@@ -162,48 +162,37 @@ class Args:
                 yield out_arg
 
     def _handle_output(self, arg, args, out):
-        if arg == "-o":
+        consumed, output = argument(arg, args, short = "-o")
+
+        if consumed:
             # Remember the output filename.
-            self.output = next(args)
+            self.output = output
             out.extend(["-o", self.output])
-            return True
-        else:
-            return False
+
+        return consumed
 
     def _handle_library(self, arg, args, out):
-        if arg == "-l" or arg == "--library":
-            library = next(args)
-        elif arg.startswith("-l"):
-            library = arg[2:]
-        elif arg.startswith("--library="):
-            library = arg[len("--library="):]
-        else:
-            return False
+        consumed, library = argument(arg, args, short = "-l", long = "--library")
 
-        # Remember the required libraries.
-        self.libraries.append(library)
-        out.append("-l{}".format(library))
+        if consumed:
+            # Remember the required libraries.
+            self.libraries.append(library)
+            out.append("-l{}".format(library))
 
-        return True
+        return consumed
 
     def _handle_library_path(self, arg, args, out):
-        if arg == "-L" or arg == "--library-path":
-            library_path = next(args)
-        elif arg.startswith("-L"):
-            library_path = arg[2:]
-        elif arg.startswith("--library-path="):
-            library_path = arg[len("--library-path="):]
-        else:
-            return False
+        consumed, library_path = argument(arg, args, short = "-L", long = "--library-path")
 
-        # Shorten the library search paths. On Windows library search paths may
-        # exceed the maximum path length.
-        shortened = shorten_path(library_path)
-        # Remember the library search paths.
-        self.library_paths.append(shortened)
-        out.append("-L{}".format(shortened))
+        if consumed:
+            # Shorten the library search paths. On Windows library search paths may
+            # exceed the maximum path length.
+            shortened = shorten_path(library_path)
+            # Remember the library search paths.
+            self.library_paths.append(shortened)
+            out.append("-L{}".format(shortened))
 
-        return True
+        return consumed
 
     def _handle_linker_arg(self, arg, args, out):
         if arg == "-Xlinker":
@@ -237,19 +226,15 @@ class Args:
         self.rpaths.append(rpath)
 
     def _handle_print_file_name(self, arg, args, out):
-        if arg == "--print-file-name":
-            print_file_name = next(args)
-        elif arg.startswith("--print-file-name="):
-            print_file_name = arg[len("--print-file-name="):]
-        else:
-            return False
+        consumed, print_file_name = argument(arg, args, long = "--print-file-name")
 
-        # Remember print-file-name action. Don't forward to allow for later
-        # manipulation.
-        self.print_file_name = print_file_name
-        self.action = Args.PRINT_FILE_NAME
+        if consumed:
+            # Remember print-file-name action. Don't forward to allow for later
+            # manipulation.
+            self.print_file_name = print_file_name
+            self.action = Args.PRINT_FILE_NAME
 
-        return True
+        return consumed
 
     def _handle_compile(self, arg, args, out):
         if arg == "-c":
@@ -259,6 +244,42 @@ class Args:
             return False
 
         return True
+
+
+def argument(arg, args, short = None, long = None):
+    """Parse an argument that takes a parameter.
+
+    I.e. arguments such as
+      -l <library>
+      -l<library>
+      --library <library>
+      --library=<library>
+
+    Args:
+      arg: The current command-line argument.
+      args: Iterator over the remaining arguments.
+      short: The short argument name, e.g. "-l".
+      long: The long argument name, e.g. "--library".
+
+    Returns:
+      consumed, value
+        consumed: bool, Whether the argument matched.
+        value: string, The value parameter or None.
+
+    """
+    if short:
+        if arg == short:
+            return True, next(args)
+        elif arg.startswith(short):
+            return True, arg[len(short):]
+
+    if long:
+        if arg == long:
+            return True, next(args)
+        elif arg.startswith(long + "="):
+            return True, arg[len(long + "="):]
+
+    return False, None
 
 
 def load_response_files(args):
