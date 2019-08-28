@@ -185,12 +185,16 @@ class Args:
         consumed, library_path = argument(arg, args, short = "-L", long = "--library-path")
 
         if consumed:
-            # Shorten the library search paths. On Windows library search paths may
-            # exceed the maximum path length.
-            shortened = shorten_path(library_path)
-            # Remember the library search paths.
-            self.library_paths.append(shortened)
-            out.append("-L{}".format(shortened))
+            # Skip non-existent library search paths. These can occur in static
+            # linking mode where dynamic libraries are not present in the
+            # sandbox, or with Cabal packages with bogus library-path entries.
+            if os.path.exists(library_path):
+                # Shorten the library search paths. On Windows library search
+                # paths may exceed the maximum path length.
+                shortened = shorten_path(library_path)
+                # Remember the library search paths.
+                self.library_paths.append(shortened)
+                out.append("-L{}".format(shortened))
 
         return consumed
 
@@ -331,13 +335,12 @@ def shorten_path(input_path):
       - Resolve symbolic links.
 
     Args:
-      input_path: The path to shorten.
+      input_path: The path to shorten, must exist.
 
     Returns:
       The shortened path.
 
     """
-    exists = os.path.exists(input_path)
     shortened = input_path
 
     # Try relativizing to current working directory.
@@ -351,7 +354,7 @@ def shorten_path(input_path):
         # Ensure that the path is still correct. Reducing up-level references
         # may change the meaning of the path in the presence of symbolic links.
         try:
-            if not exists or os.path.samefile(norm, shortened):
+            if os.path.samefile(norm, shortened):
                 shortened = norm
         except IOError:
             # stat may fail if the path became invalid or does not exist.
@@ -363,7 +366,7 @@ def shorten_path(input_path):
         if len(real) < len(shortened):
             shortened = real
     except IOError:
-        # realpath may fail if the path does not exist.
+        # may fail if the path does not exist or on dangling symlinks.
         pass
 
     return shortened
@@ -656,7 +659,9 @@ def resolve_rpath(rpath, output):
             else:
                 rpath = os.path.abspath(shorten_path(min(candidates)))
         else:
-            rpath = os.path.abspath(shorten_path(rpath))
+            if os.path.exists(rpath):
+                rpath = shorten_path(rpath)
+            rpath = os.path.abspath(rpath)
 
         return rpath, rpath
     else:
