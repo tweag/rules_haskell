@@ -418,3 +418,8 @@ bind(
     name = "python_headers",
     actual = "@com_google_protobuf//util/python:python_headers",
 )
+
+# For persistent worker (tools/worker)
+load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
+
+rules_haskell_worker_dependencies()
