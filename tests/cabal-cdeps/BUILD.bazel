@@ -1,0 +1,65 @@
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+
+cc_library(
+    name = "cdep",
+    srcs = ["cdep.c"],
+    hdrs = ["cinc/cdep.h"],
+    includes = ["cinc"],
+)
+
+haskell_toolchain_library(name = "base")
+
+haskell_cabal_library(
+    name = "lib-a",
+    version = "0.1.0.0",
+    srcs = [
+        "lib-a/A.hs",
+        "lib-a/lib-a.cabal",
+    ],
+    deps = [
+        ":base",
+        ":cdep",
+    ],
+)
+
+haskell_cabal_library(
+    name = "lib-b",
+    version = "0.1.0.0",
+    srcs = [
+        "lib-b/B.hs",
+        "lib-b/lib-b.cabal",
+    ],
+    deps = [
+        ":base",
+        ":cdep",
+    ],
+)
+
+haskell_cabal_library(
+    name = "lib-c",
+    version = "0.1.0.0",
+    srcs = [
+        "lib-c/C.hs",
+        "lib-c/lib-c.cabal",
+    ],
+    deps = [
+        ":base",
+        ":cdep",
+    ],
+)
+haskell_test(
+    name = "cabal-cdeps",
+    srcs = ["Main.hs"],
+    deps = [
+        ":base",
+        ":lib-a",
+        ":lib-b",
+        ":lib-c",
+    ],
+    compiler_flags = ["-v"],
+)
