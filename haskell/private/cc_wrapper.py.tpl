@@ -809,6 +809,27 @@ def run_cc_print_file_name(filename, args):
 # --------------------------------------------------------------------
 
 
+def find_cc():
+    """Find the path to the actual compiler executable."""
+    if os.path.isfile(CC):
+        cc = CC
+    else:
+        # On macOS CC is a relative path to a wrapper script. If we're
+        # being called from a GHCi REPL then we need to find this wrapper
+        # script using Bazel runfiles.
+        r = bazel_runfiles.Create()
+        cc = r.Rlocation("/".join([WORKSPACE, CC]))
+        if cc is None and is_windows():
+            # We must use "/" instead of os.path.join on Windows, because the
+            # Bazel runfiles_manifest file uses "/" separators.
+            cc = r.Rlocation("/".join([WORKSPACE, CC + ".exe"]))
+        if cc is None:
+            sys.stderr.write("CC not found '{}'.\n".format(CC))
+            sys.exit(1)
+
+    return cc
+
+
 def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
     """Execute cc with a response file holding the given arguments.
 
@@ -830,21 +851,7 @@ def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
         new_kwargs.update(kwargs)
         kwargs = new_kwargs
 
-    if os.path.isfile(CC):
-        cc = CC
-    else:
-        # On macOS CC is a relative path to a wrapper script. If we're
-        # being called from a GHCi REPL then we need to find this wrapper
-        # script using Bazel runfiles.
-        r = bazel_runfiles.Create()
-        cc = r.Rlocation("/".join([WORKSPACE, CC]))
-        if cc is None and is_windows():
-            # We must use "/" instead of os.path.join on Windows, because the
-            # Bazel runfiles_manifest file uses "/" separators.
-            cc = r.Rlocation("/".join([WORKSPACE, CC + ".exe"]))
-        if cc is None:
-            sys.stderr.write("CC not found '{}'.\n".format(CC))
-            sys.exit(1)
+    cc = find_cc()
 
     stdoutbuf = None
     stderrbuf = None
