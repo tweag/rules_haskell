@@ -68,8 +68,9 @@ class Args:
     Attrs:
       args: The collected and transformed arguments.
 
-      linking: The action is linking.
-      printing_file_name: The action is print-file-name.
+      linking: Gcc is called for linking (default).
+      compiling: Gcc is called for compiling (-c).
+      printing_file_name: Gcc is called with --print-file-name.
 
       output: The output binary or library when linking.
       library_paths: The library search paths when linking.
@@ -95,12 +96,16 @@ class Args:
           args: Iterable over command-line arguments.
 
         """
-        self.action = Args.LINK
         self.print_file_name = None
         self.libraries = []
         self.library_paths = []
         self.rpaths = []
         self.output = None
+        # gcc action, print-file-name (--print-file-name), compile (-c), or
+        # link (default)
+        self._action = Args.LINK
+        # The currently active linker option that expects an argument. E.g. if
+        # `-Xlinker -rpath` was encountered, then `-rpath`.
         self._prev_ld_arg = None
 
         self.args = list(self._handle_args(args))
@@ -113,17 +118,17 @@ class Args:
     @property
     def linking(self):
         """Whether this is a link invocation."""
-        return self.action == Args.LINK and self.output is not None
+        return self._action == Args.LINK and self.output is not None
 
     @property
     def compiling(self):
         """Whether this is a compile invocation."""
-        return self.action == Args.COMPILE
+        return self._action == Args.COMPILE
 
     @property
     def printing_file_name(self):
         """Whether this is a print-file-name invocation."""
-        return self.action == Args.PRINT_FILE_NAME and self.print_file_name is not None
+        return self._action == Args.PRINT_FILE_NAME and self.print_file_name is not None
 
     def _handle_args(self, args):
         """Argument handling pipeline.
@@ -244,13 +249,13 @@ class Args:
             # Remember print-file-name action. Don't forward to allow for later
             # manipulation.
             self.print_file_name = print_file_name
-            self.action = Args.PRINT_FILE_NAME
+            self._action = Args.PRINT_FILE_NAME
 
         return consumed
 
     def _handle_compile(self, arg, args, out):
         if arg == "-c":
-            self.action = Args.COMPILE
+            self._action = Args.COMPILE
             out.append(arg)
         else:
             return False
