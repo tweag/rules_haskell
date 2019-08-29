@@ -479,10 +479,27 @@ def darwin_shorten_rpaths(rpaths, libraries, output):
     # that. Alternatively, https://github.com/bazelbuild/bazel/pull/8888 would
     # also avoid this issue.
 
-    # Determine solib dir and rewrite load commands relative to solib dir. This
-    # allows to replace potentially many rpaths by a single one. On macOS load
-    # commands can use paths relative to rpath entries, e.g.
-    # `@rpath/some_dir/libsome_lib.dylib`.
+    # Determine solib dir and rewrite load commands relative to solib dir.
+    #
+    # This allows to replace potentially many rpaths by a single one on Darwin.
+    # Namely, Darwin allows to explicitly refer to the rpath in load commands.
+    # E.g.
+    #
+    #   LOAD @rpath/somedir/libsomelib.dylib
+    #
+    # With that we can avoid multiple rpath entries of the form
+    #
+    #   RPATH @loader_path/.../_solib_*/mangled_a
+    #   RPATH @loader_path/.../_solib_*/mangled_b
+    #   RPATH @loader_path/.../_solib_*/mangled_c
+    #
+    # And instead have a single rpath and load commands as follows
+    #
+    #   RPATH @loader_path/.../_solib_*
+    #   LOAD @rpath/mangled_a/lib_a
+    #   LOAD @rpath/mangled_b/lib_b
+    #   LOAD @rpath/mangled_c/lib_c
+    #
     solib_rpath = find_solib_rpath(input_rpaths, output)
     if libs_still_missing and solib_rpath is not None:
         solib_rpath, solib_dir = resolve_rpath(solib_rpath, output)
