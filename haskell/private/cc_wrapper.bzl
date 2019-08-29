@@ -21,6 +21,7 @@ def _cc_wrapper_impl(ctx):
         substitutions = {
             "{:cc:}": cc,
             "{:workspace:}": ctx.workspace_name,
+            "{:platform:}": ctx.attr.platform,
         },
     )
     return [DefaultInfo(
@@ -37,6 +38,7 @@ _cc_wrapper = rule(
         "template": attr.label(
             allow_single_file = True,
         ),
+        "platform": attr.string(),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
@@ -48,10 +50,20 @@ def cc_wrapper(name, **kwargs):
     _cc_wrapper(
         name = name + ".py",
         template = "@rules_haskell//haskell:private/cc_wrapper.py.tpl",
+        platform = select({
+            "@rules_haskell//haskell/platforms:darwin": "darwin",
+            "@rules_haskell//haskell/platforms:mingw32": "windows",
+            "//conditions:default": "linux",
+        }),
     )
     _cc_wrapper(
         name = name + ".sh",
         template = "@rules_haskell//haskell:private/cc_wrapper.sh.tpl",
+        platform = select({
+            "@rules_haskell//haskell/platforms:darwin": "darwin",
+            "@rules_haskell//haskell/platforms:mingw32": "windows",
+            "//conditions:default": "linux",
+        }),
     )
     native.py_binary(
         name = name + "-python",

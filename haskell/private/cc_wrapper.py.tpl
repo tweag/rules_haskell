@@ -35,7 +35,6 @@ from contextlib import contextmanager
 import glob
 import itertools
 import os
-import platform
 import shlex
 import subprocess
 import sys
@@ -43,6 +42,7 @@ import tempfile
 
 WORKSPACE = "{:workspace:}"
 CC = "{:cc:}"
+PLATFORM = "{:platform:}"
 INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
 OTOOL = "/usr/bin/otool"
 
@@ -530,11 +530,10 @@ def sort_rpaths(rpaths):
 
     """
     def rpath_priority(rpath):
-        system = platform.system()
-        if system == "Darwin":
+        if is_darwin():
             if rpath.startswith("@loader_path"):
                 return 0
-        elif system == "Linux":
+        elif is_linux():
             if rpath.startswith("$ORIGIN"):
                 return 0
         if os.path.isabs(rpath):
@@ -811,7 +810,7 @@ def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
         # script using Bazel runfiles.
         r = bazel_runfiles.Create()
         cc = r.Rlocation("/".join([WORKSPACE, CC]))
-        if cc is None and platform.system() == "Windows":
+        if cc is None and is_windows():
             # We must use "/" instead of os.path.join on Windows, because the
             # Bazel runfiles_manifest file uses "/" separators.
             cc = r.Rlocation("/".join([WORKSPACE, CC + ".exe"]))
@@ -879,7 +878,17 @@ def generate_response_line(arg):
 
 def is_darwin():
     """Whether the execution platform is Darwin."""
-    return platform.system() == "Darwin"
+    return PLATFORM == "darwin"
+
+
+def is_linux():
+    """Whether the execution platform is Linux."""
+    return PLATFORM == "linux"
+
+
+def is_windows():
+    """Whether the execution platform is Windows."""
+    return PLATFORM == "windows"
 
 
 def is_temporary_output(output):
