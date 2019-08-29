@@ -523,10 +523,21 @@ def darwin_shorten_rpaths(rpaths, libraries, output):
 def sort_rpaths(rpaths):
     """Sort RUNPATHs by preference.
 
-    Preference in descending order:
-      - Relative to target
-      - Absolute path
-      - Relative to CWD
+    We classify three types of rpaths (in descending order of preference):
+      - relative to output, i.e. $ORIGIN/... or @loader_path/...
+      - absolute, e.g. /nix/store/...
+      - relative, e.g. bazel-out/....
+
+    We prefer rpaths relative to the output. They tend to be shorter, and they
+    typically involve Bazel's _solib_* directory which bundles lots of
+    libraries (meaning less rpaths required). They're also less likely to leak
+    information about the local installation into the Bazel cache.
+
+    Next, we prefer absolute paths. They function regardless of execution
+    directory, and they are still likely to play well with the cache, e.g.
+    /nix/store/... or /usr/lib/....
+
+    Finally, we fall back to relative rpaths.
 
     """
     def rpath_priority(rpath):
