@@ -96,7 +96,7 @@ stack_snapshot(
     ],
     snapshot = "lts-14.0",
     vendored_packages = {"split": "@split//:split"},
-    deps = ["@zlib.dev//:zlib"],
+    deps = {"zlib": ["@zlib.dev//:zlib"]},
 )
 
 # For the rts example.

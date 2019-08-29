@@ -719,6 +719,25 @@ def _invert(d):
     """Invert a dictionary."""
     return dict(zip(d.values(), d.keys()))
 
+def _from_string_keyed_label_list_dict(d):
+    """Convert string_keyed_label_list_dict to label_keyed_string_dict."""
+    out = {}
+    for (string_key, label_list) in d.items():
+        for label in label_list:
+            if label in out:
+                out[label] += " " + string_key
+            else:
+                out[label] = string_key
+    return out
+
+def _to_string_keyed_label_list_dict(d):
+    """Convert label_keyed_string_dict to string_keyed_label_list_dict."""
+    out = {}
+    for (label, string_key_list) in d.items():
+        for string_key in string_key_list.split(" "):
+            out.setdefault(string_key, []).append(label)
+    return out
+
 def _label_to_string(label):
     return "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
 
@@ -757,7 +776,7 @@ def _stack_snapshot_impl(repository_ctx):
         vendored_packages,
     )
 
-    extra_deps = [_label_to_string(label) for label in repository_ctx.attr.deps]
+    extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.deps)
     tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
 
     # Write out dependency graph as importable Starlark value.
@@ -829,7 +848,10 @@ haskell_cabal_library(
                     version = package.version,
                     flags = package.flags,
                     dir = package.sdist,
-                    deps = package.deps + extra_deps,
+                    deps = package.deps + [
+                        _label_to_string(label)
+                        for label in extra_deps.get(package.name, [])
+                    ],
                     tools = tools,
                     visibility = visibility,
                 ),
@@ -853,7 +875,7 @@ _stack_snapshot = repository_rule(
         "packages": attr.string_list(),
         "vendored_packages": attr.label_keyed_string_dict(),
         "flags": attr.string_list_dict(),
-        "deps": attr.label_list(),
+        "deps": attr.label_keyed_string_dict(),
         "tools": attr.label_list(),
         "stack": attr.label(),
     },
@@ -932,7 +954,7 @@ _fetch_stack = repository_rule(
 )
 """Find a suitably recent local Stack or download it."""
 
-def stack_snapshot(stack = None, vendored_packages = {}, **kwargs):
+def stack_snapshot(stack = None, deps = {}, vendored_packages = {}, **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
     Args:
@@ -945,7 +967,7 @@ def stack_snapshot(stack = None, vendored_packages = {}, **kwargs):
         unpacked source distribution. Each package must contain a Cabal file
         named `<package-name>.cabal` in the package root.
       flags: A dict from package name to list of flags.
-      deps: Dependencies of the package set, e.g. system libraries or C/C++ libraries.
+      deps: Extra dependencies of packages, e.g. system libraries or C/C++ libraries.
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
@@ -959,7 +981,7 @@ def stack_snapshot(stack = None, vendored_packages = {}, **kwargs):
           vendored_packages = {"split": "//split:split"},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
           snapshot = "lts-13.15",
-          deps = ["@zlib.dev//:zlib"],
+          deps = {"zlib": ["@zlib.dev//:zlib"]},
       )
       ```
       defines `@stackage//:conduit`, `@stackage//:lens`,
@@ -973,7 +995,7 @@ def stack_snapshot(stack = None, vendored_packages = {}, **kwargs):
           flags = {"zlib": ["-non-blocking-ffi"]},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
           local_Snapshot = "//:snapshot.yaml",
-          deps = ["@zlib.dev//:zlib"],
+          deps = {"zlib": ["@zlib.dev//:zlib"]},
       ```
       Does the same as the previous example, provided there is a
       `snapshot.yaml`, at the root of the repository with content
@@ -1010,6 +1032,9 @@ def stack_snapshot(stack = None, vendored_packages = {}, **kwargs):
         stack = Label("@rules_haskell_stack//:stack")
     _stack_snapshot(
         stack = stack,
+        # TODO Remove _from_string_keyed_label_list_dict once following issue
+        # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
+        deps = _from_string_keyed_label_list_dict(deps),
         # TODO Remove _invert once following issue is resolved:
         # https://github.com/bazelbuild/bazel/issues/7989.
         vendored_packages = _invert(vendored_packages),

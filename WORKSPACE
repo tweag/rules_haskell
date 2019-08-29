@@ -77,7 +77,7 @@ stack_snapshot(
     name = "stackage-zlib",
     packages = ["zlib"],
     snapshot = "lts-13.15",
-    deps = ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"],
+    deps = {"zlib": ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"]},
 )
 
 load(
