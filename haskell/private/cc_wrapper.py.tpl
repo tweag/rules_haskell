@@ -430,19 +430,22 @@ def shorten_rpaths(rpaths, libraries, output):
 
     """
     input_rpaths = sort_rpaths(rpaths)
-    missing = set(libraries)
 
-    rpaths = []
+    # Keeps track of libraries that were not yet found in an rpath.
+    libs_still_missing = set(libraries)
+    # Keeps track of rpaths in which we found libraries.
+    required_rpaths = []
 
+    # Iterate over the given rpaths until all libraries are found.
     for rpath in input_rpaths:
-        if not missing:
+        if not libs_still_missing:
             break
         rpath, rpath_dir = resolve_rpath(rpath, output)
-        found, missing = find_library(missing, rpath_dir)
+        found, libs_still_missing = find_library(libs_still_missing, rpath_dir)
         if found:
-            rpaths.append(rpath)
+            required_rpaths.append(rpath)
 
-    return rpaths
+    return required_rpaths
 
 
 def darwin_shorten_rpaths(rpaths, libraries, output):
@@ -463,9 +466,12 @@ def darwin_shorten_rpaths(rpaths, libraries, output):
 
     """
     input_rpaths = sort_rpaths(rpaths)
-    missing = set(libraries)
 
-    rpaths = []
+    # Keeps track of libraries that were not yet found in an rpath.
+    libs_still_missing = set(libraries)
+    # Keeps track of rpaths in which we found libraries.
+    required_rpaths = []
+    # Keeps track of required rewrites of load commands.
     rewrites = []
 
     # References to core libs take up much space. Consider detecting the GHC
@@ -473,38 +479,45 @@ def darwin_shorten_rpaths(rpaths, libraries, output):
     # that. Alternatively, https://github.com/bazelbuild/bazel/pull/8888 would
     # also avoid this issue.
 
-    # Determine solib dir and rewrite load commands relative to solib dir.
-    # This allows to replace potentially many rpaths by one.
+    # Determine solib dir and rewrite load commands relative to solib dir. This
+    # allows to replace potentially many rpaths by a single one. On macOS load
+    # commands can use paths relative to rpath entries, e.g.
+    # `@rpath/some_dir/libsome_lib.dylib`.
     solib_rpath = find_solib_rpath(input_rpaths, output)
-    if missing and solib_rpath is not None:
+    if libs_still_missing and solib_rpath is not None:
         solib_rpath, solib_dir = resolve_rpath(solib_rpath, output)
 
-        found, missing = find_library_recursive(missing, solib_dir)
+        found, libs_still_missing = find_library_recursive(libs_still_missing, solib_dir)
         if found:
-            rpaths.append(solib_rpath)
+            required_rpaths.append(solib_rpath)
             for f in found.values():
+                # Determine rewrites of load commands to load libraries
+                # relative to the solib dir rpath entry.
                 soname = darwin_get_install_name(os.path.join(solib_dir, f))
                 rewrites.append((soname, f))
 
     # For the remaining missing libraries, determine which rpaths are required.
+    # Iterate over the given rpaths until all libraries are found.
     for rpath in input_rpaths:
-        if not missing:
+        if not libs_still_missing:
             break
         rpath, rpath_dir = resolve_rpath(rpath, output)
-        found, missing = find_library(missing, rpath_dir)
-        # Libraries with an absolute install_name don't require an rpath entry.
+        found, libs_still_missing = find_library(libs_still_missing, rpath_dir)
+        # Libraries with an absolute install_name don't require an rpath entry
+        # and can be filtered out.
         found = dict(itertools.filterfalse(
                 lambda item: os.path.isabs(darwin_get_install_name(os.path.join(rpath_dir, item[1]))),
                 found.items()))
         if len(found) == 1:
-            # Avoid unnecessary rpath if it is only relevant for one load command.
+            # If the rpath is only needed for one load command, then we can
+            # avoid the rpath entry by fusing the rpath into the load command.
             [filename] = found.values()
             soname = darwin_get_install_name(os.path.join(rpath_dir, filename))
             rewrites.append((soname, os.path.join(rpath, filename)))
         elif found:
-            rpaths.append(rpath)
+            required_rpaths.append(rpath)
 
-    return rpaths, rewrites
+    return required_rpaths, rewrites
 
 
 def sort_rpaths(rpaths):
@@ -565,26 +578,30 @@ def find_library_recursive(libraries, directory):
       directory: Root of directory tree.
 
     Returns:
-      (found, missing):
+      (found, libs_still_missing):
         found: Dict of found libraries {libname: path} relative to directory.
-        missing: Set of remaining missing libraries.
+        libs_still_missing: Set of remaining missing libraries.
 
     """
-    missing = set(libraries)
+    # Keeps track of libraries that were not yet found underneath directory.
+    libs_still_missing = set(libraries)
+    # Keeps track of libraries that were already found.
     found = {}
+    # Iterate over the directory tree until all libraries are found.
     for root, _, files in os.walk(directory, followlinks=True):
         prefix = os.path.relpath(root, directory)
-        if not missing:
+        if not libs_still_missing:
             break
         for f in files:
             libname = get_lib_name(f)
-            if libname and libname in missing:
+            if libname and libname in libs_still_missing:
                 found[libname] = os.path.join(prefix, f) if prefix != "." else f
-                missing.discard(libname)
-                if not missing:
+                libs_still_missing.discard(libname)
+                if not libs_still_missing:
+                    # Short-cut files iteration if no more libs are missing.
                     break
 
-    return found, missing
+    return found, libs_still_missing
 
 
 def find_library(libraries, directory):
@@ -595,23 +612,27 @@ def find_library(libraries, directory):
       directory: The directory in which to search for libraries.
 
     Returns:
-      (found, missing):
+      (found, libs_still_missing):
         found: Dict of found libraries {libname: path} relative to directory.
-        missing: Set of remaining missing libraries.
+        libs_still_missing: Set of remaining missing libraries.
 
     """
-    missing = set(libraries)
+    # Keeps track of libraries that were not yet found within directory.
+    libs_still_missing = set(libraries)
+    # Keeps track of libraries that were already found.
     found = {}
+    # Iterate over the files within directory until all libraries are found.
+    # This corresponds to a one level deep os.walk.
     for _, _, files in itertools.islice(os.walk(directory), 1):
-        if not missing:
+        if not libs_still_missing:
             break
         for f in files:
             libname = get_lib_name(f)
-            if libname and libname in missing:
+            if libname and libname in libs_still_missing:
                 found[libname] = f
-                missing.discard(libname)
+                libs_still_missing.discard(libname)
 
-    return found, missing
+    return found, libs_still_missing
 
 
 def get_lib_name(filename):
