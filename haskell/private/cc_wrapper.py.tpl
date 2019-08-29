@@ -510,7 +510,7 @@ def darwin_shorten_rpaths(rpaths, libraries, output):
 def sort_rpaths(rpaths):
     """Sort RUNPATHs by preference.
 
-    Preference in decsending order:
+    Preference in descending order:
       - Relative to target
       - Absolute path
       - Relative to CWD
