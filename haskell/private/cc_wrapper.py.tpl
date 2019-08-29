@@ -723,6 +723,14 @@ def darwin_rewrite_load_commands(rewrites, output):
 def print_file_name(filename, args):
     """Execute the print-file-name action.
 
+    From gcc(1)
+
+       -print-file-name=library
+           Print the full absolute name of the library file library that would
+           be used when linking---and don't do anything else.  With this
+           option, GCC does not compile or link anything; it just prints the
+           file name.
+
     Args:
       filename: The queried filename.
       args: The remaining arguments.
