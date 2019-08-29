@@ -833,8 +833,8 @@ def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
 
     if exit_on_error and returncode != 0:
         if capture_output:
-            sys.stdout.write(stdout.decode())
-            sys.stderr.write(stderr.decode())
+            sys.stdout.buffer.write(stdout)
+            sys.stderr.buffer.write(stderr)
         sys.exit(returncode)
 
     return (returncode, stdoutbuf, stderrbuf)
