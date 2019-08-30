@@ -39,6 +39,29 @@ function canonicalize_path()
     echo $new_path
 }
 
+# relative_to ORIGIN PATH
+# Compute the relative path from ORIGIN to PATH.
+function relative_to() {
+    local out=
+    # Split path into components
+    local -a relto; IFS="/\\" read -ra relto <<<"$1"
+    local -a path; IFS="/\\" read -ra path <<<"$2"
+    local off=0
+    while [[ "${relto[$off]}" == "${path[$off]}" ]]; do
+        if [[ $off -eq ${#relto[@]} || $off -eq ${#path[@]} ]]; then
+            break
+        fi
+        : $((off++))
+    done
+    for ((i=$off; i < ${#relto[@]}; i++)); do
+        out="$out${out:+/}.."
+    done
+    for ((i=$off; i < ${#path[@]}; i++)); do
+        out="$out${out:+/}${path[$i]}"
+    done
+    echo "$out"
+}
+
 # Remove any relative entries, because we'll be changing CWD shortly.
 LD_LIBRARY_PATH=$(canonicalize_path $LD_LIBRARY_PATH)
 LIBRARY_PATH=$(canonicalize_path $LIBRARY_PATH)
@@ -48,7 +71,7 @@ name=$1
 execroot="$(pwd)"
 setup=$execroot/$2
 srcdir=$execroot/$3
-pkgroot="$(realpath $execroot/$4/..)" # By definition (see ghc-pkg source code).
+pkgroot="$(realpath $execroot/$(dirname $4))" # By definition (see ghc-pkg source code).
 shift 4
 
 declare -a extra_args
@@ -113,8 +136,23 @@ library=($libdir/libHS*.a)
 if [[ -n ${library+x} && -f $package_database/$name.conf ]]
 then
     mv $libdir/libHS*.a $dynlibdir
-    sed 's,library-dirs:.*,library-dirs: ${pkgroot}/lib,' \
-        $package_database/$name.conf > $package_database/$name.conf.tmp
+    # The $execroot is an absolute path and should not leak into the output.
+    # Replace each ocurrence of execroot by a path relative to ${pkgroot}.
+    function replace_execroot() {
+        local line
+        local relpath
+        while IFS="" read -r line; do
+            while [[ $line =~ ("$execroot"[^[:space:]]*) ]]; do
+                relpath="$(relative_to "$pkgroot" "${BASH_REMATCH[1]}")"
+                line="${line/${BASH_REMATCH[1]}/\$\{pkgroot\}\/$relpath/}"
+            done
+            echo "$line"
+        done
+    }
+    sed -e 's,library-dirs:.*,library-dirs: ${pkgroot}/lib,' \
+        $package_database/$name.conf \
+        | replace_execroot \
+        > $package_database/$name.conf.tmp
     mv  $package_database/$name.conf.tmp $package_database/$name.conf
     %{ghc_pkg} recache --package-db=$package_database
 fi
