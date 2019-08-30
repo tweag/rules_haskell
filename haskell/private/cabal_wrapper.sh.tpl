@@ -31,10 +31,10 @@ function canonicalize_path()
     new_path=""
     while IFS=: read -r -d: entry
     do
-	if [[ -n "$entry" ]]
-	then
-	    new_path="$new_path${new_path:+:}$(realpath "$entry")"
-	fi
+        if [[ -n "$entry" ]]
+        then
+            new_path="$new_path${new_path:+:}$(realpath "$entry")"
+        fi
     done <<< "${1:-}:"
     echo $new_path
 }
@@ -114,7 +114,7 @@ if [[ -n ${library+x} && -f $package_database/$name.conf ]]
 then
     mv $libdir/libHS*.a $dynlibdir
     sed 's,library-dirs:.*,library-dirs: ${pkgroot}/lib,' \
-	$package_database/$name.conf > $package_database/$name.conf.tmp
+        $package_database/$name.conf > $package_database/$name.conf.tmp
     mv  $package_database/$name.conf.tmp $package_database/$name.conf
     %{ghc_pkg} recache --package-db=$package_database
 fi
