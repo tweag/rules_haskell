@@ -376,7 +376,6 @@ def haskell_proto_toolchain(
           "containers",
           "data-default-class",
           "lens-family",
-          "lens-labels",
           "proto-lens",
           "text",
         ],

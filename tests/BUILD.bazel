@@ -53,10 +53,10 @@ haskell_proto_toolchain(
         "@stackage//:deepseq",
         "@stackage//:lens-family",
         "@stackage//:lens-family-core",
-        "@stackage//:lens-labels",
         "@stackage//:mtl",
         "@stackage//:proto-lens",
         "@stackage//:text",
+        "@stackage//:vector",
     ],
 )
 

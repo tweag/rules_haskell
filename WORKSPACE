@@ -101,6 +101,7 @@ stack_snapshot(
         "mtl",
         "process",
         "text",
+        "vector",
         # For tests
         "network",
         "language-c",
@@ -110,12 +111,11 @@ stack_snapshot(
         "hspec-core",
         "lens-family-core",
         "data-default-class",
-        "lens-labels",
         "proto-lens",
         "proto-lens-protoc",
         "lens-family",
     ],
-    snapshot = "lts-13.15",
+    snapshot = "lts-14.4",
     tools = [
         "@alex",
         "@happy",
