@@ -56,8 +56,8 @@ haskell_proto_toolchain(
         "@stackage//:data-default-class",
         "@stackage//:lens-family",
         "@stackage//:lens-family-core",
-        "@stackage//:lens-labels",
         "@stackage//:proto-lens",
+        "@stackage//:vector",
     ],
 )
 
