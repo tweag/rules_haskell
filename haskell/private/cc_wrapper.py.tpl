@@ -853,26 +853,38 @@ def run_cc(args, capture_output=False, exit_on_error=False, **kwargs):
 
     cc = find_cc()
 
-    stdoutbuf = None
-    stderrbuf = None
-
-    with response_file(args) as rsp:
+    def _run_cc(args):
         # subprocess.run is not supported in the bindist CI setup.
         # subprocess.Popen does not support context manager on CI setup.
-        proc = subprocess.Popen([cc, "@" + rsp], **kwargs)
+        proc = subprocess.Popen([cc] + args, **kwargs)
 
         if capture_output:
             (stdoutbuf, stderrbuf) = proc.communicate()
+        else:
+            stdoutbuf = None
+            stderrbuf = None
 
         returncode = proc.wait()
 
-    if exit_on_error and returncode != 0:
-        if capture_output:
-            sys.stdout.buffer.write(stdout)
-            sys.stderr.buffer.write(stderr)
-        sys.exit(returncode)
+        if exit_on_error and returncode != 0:
+            if capture_output:
+                sys.stdout.buffer.write(stdoutbuf)
+                sys.stderr.buffer.write(stderrbuf)
+            sys.exit(returncode)
 
-    return (returncode, stdoutbuf, stderrbuf)
+        return (returncode, stdoutbuf, stderrbuf)
+
+    # Too avoid exceeding the OS command-line length limit we use response
+    # files. However, creating and removing temporary files causes overhead.
+    # For performance reasons we only create response files if there is a risk
+    # of exceeding the OS command-line length limit. For short cc_wrapper calls
+    # avoiding the response file reduces the runtime by about 60%.
+    if sum(map(len, args)) < 8000:
+        # Windows has the shortest command-line length limit at 8191 characters.
+        return _run_cc(args)
+    else:
+        with response_file(args) as rsp:
+            return _run_cc(["@" + rsp])
 
 
 @contextmanager
