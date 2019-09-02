@@ -1,0 +1,10 @@
+---
+tasks:
+  ubuntu1804:
+    build_flags:
+      - "--build_tag_filters=-requires_hackage,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist"
+      - "--incompatible_use_python_toolchains=false"
+    build_targets:
+      - "//tests/..."
+    test_targets:
+      - "//tests/..."
