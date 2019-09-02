@@ -31,7 +31,7 @@ If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
 In a fresh directory, run:
 
 ```console
-$ sh <(curl https://haskell.build/start) --use-bindists
+$ curl https://haskell.build/start | sh
 ```
 
 This will generate initial `WORKSPACE` and `BUILD` files for you. See the
@@ -51,8 +51,7 @@ syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
 
 This rule set supports using [Nixpkgs][nixpkgs] to provision your GHC
 toolchain and to fetch hackage packages from there. To create your
-project, instead of passing `--use-bindists`, pass `--use-nix`, like
-so:
+project, pass `--use-nix`, like so:
 
 ```console
 $ sh <(curl https://haskell.build/start) --use-nix
@@ -62,8 +61,8 @@ This generates the same files as above, but uses `nixpkgs` to
 provision GHC.
 
 If you are on NixOS, this is the only way to set up your project,
-because the GHC toolchain provisioned through `--use-bindists` cannot
-be executed on NixOS.
+because the GHC toolchain provisioned through binary distributions
+cannot be executed on NixOS.
 
 [bazel-cli-commands]: https://docs.bazel.build/versions/master/command-line-reference.html#commands
 [nixpkgs]: https://nixos.org/nixpkgs/

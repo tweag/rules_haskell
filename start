@@ -13,12 +13,15 @@ set -e
 
 usage () {
     cat >&2 <<"EOF"
-start [--use-bindists|--use-nix]
+start [--use-bindists|--use-nix|--help]
 
 Set up a minimal rules_haskell bazel configuration.
 
 --use-bindists: The project is set up to provision GHC from binary distributions. This does not require nix to build.
 --use-nix: The project is set up to provision GHC from nixpkgs. This requires nix to build.
+
+If no argument is given, `--use-bindists` is assumed
+and a helpful message is printed that `--use-nix` also exists.
 
 For more information visit https://haskell.build/
 EOF
@@ -27,9 +30,15 @@ EOF
 
 # either bindists or nix
 mode=
+print_nix_usage_info="no"
 
 parse_args () {
-    [ $# -lt 1 ] && usage 1
+    if [ $# -lt 1 ]; then
+        mode="bindists"
+        print_nix_usage_info="yes"
+        return
+    fi
+
     [ "$1" = "--help" ] && usage 0
     case "$1" in
         "--help") usage 0 ;;
@@ -79,9 +88,16 @@ insert_if_equal () {
     [ "$1" = "$2" ] && printf '%s' "$3"
 }
 
+
 parse_args "$@"
+
+if [ "$print_nix_usage_info" = "yes" ]; then
+    echo 'INFO: Creating a WORKSPACE file based on GHC bindists. If you want to use a nix-based setup (e.g. on NixOS), call with `--use-nix`. See `--help` for more info.' >&2
+fi
+
 check_files_dont_exist
 check_bazel_version
+
 
 bindist_toolchain=$(cat <<EOF
 # Download a GHC binary distribution from haskell.org and register it as a toolchain.
