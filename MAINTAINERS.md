@@ -43,7 +43,6 @@
 We strive to always test against the latest non-LTS release
 nonetheless, so bumping bazel regularly is required.
 
-- [ ] Bump bazel download link for bazel in `.circleci/config.yml`
 - [ ] Bump bazel download link for bazel in `azure-pipelines.yml`
 - [ ] Update all bazel rules dependencies in `WORKSPACE` (e.g.
       `io_bazel_skydoc`)
@@ -53,3 +52,4 @@ nonetheless, so bumping bazel regularly is required.
   - Bump `MIN_BAZEL_*` in `start`
   - TODO
 - [ ] Add update notice to `CHANGELOG`
+- [ ] Bump bazel version in .netlify/install.sh
