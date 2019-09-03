@@ -161,9 +161,7 @@ register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
-    # XXX: see .bazelrc for discussion, the python toolchain
-    # work in postponed to future bazel version
-    # "//tests:python_toolchain",
+    "//tests:python_toolchain",
 )
 
 nixpkgs_cc_configure(
@@ -210,11 +208,11 @@ nixpkgs_package(
     repository = "@nixpkgs",
 )
 
-#nixpkgs_package(
-#    name = "python3",
-#    attribute_path = "python3",
-#    repository = "@nixpkgs",
-#)
+nixpkgs_package(
+    name = "python3",
+    attribute_path = "python3",
+    repository = "@nixpkgs",
+)
 
 nixpkgs_package(
     name = "sphinx",
