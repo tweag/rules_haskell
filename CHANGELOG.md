@@ -6,19 +6,90 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## Upcoming release
 
+nothing yet
+
+## [0.10.0] - 2019-09-03
+
 ### Highlights
 
 * The minimum supported Bazel version is now 0.27.
+
   `rules_haskell` supports Bazel up to 0.28.
   0.27 is a LTS release, which means upstream guarantees all new
   releases are backwards-compatible to it for 3 months. See the [Bazel
   Stability](https://blog.bazel.build/2019/06/06/Bazel-Semantic-Versioning.html)
   blog post for more information.
+
 * The repository name has changed, to follow the
   new [Bazel rule guidelines][bazel-rule-guidelines]. It was
   previously called `@io_tweag_rules_haskell`. It is now called
   `@rules_haskell`. You should adapt your `WORKSPACE` file to match
   this, as well as your `.bazelrc.local` file, if any.
+
+* `haskell_cabal_library`/`haskell_cabal_binary`: Both use `cabal` to
+  build Haskell package dependencies.
+
+* `stack_snapshot`: Uses stack’s dependency resolving algorithm to
+  generate `haskell_cabal_library` targets automatically.
+  Requires `stack` > 2.1, which it will download if cannot be found in
+  `PATH`.
+
+* It is now possible to statically link Haskell libraries in CC
+  binaries.
+
+* A new example has been added.
+
+  [**cat_hs:**](./examples/cat_hs/) is an example of a non-trivial application
+  with multiple third-party dependencies downloaded from Hackage,
+  C library dependencies and split up into multiple libraries and
+  a binary. We use a rule wrapping Cabal to build the Hackage
+  dependencies. This example requires Nix installed. It is used to
+  build (or download from a binary cache) the C library dependencies.
+
+* Improved coverage reports.
+
+* Haddock links to prebuilt libraries.
+
+* Various improvements to reduce header size limits and command line
+  argument length, in order to better support macOS and Windows.
+
+[bazel-rule-guidelines]: https://docs.bazel.build/versions/master/skylark/deploying.html
+
+### Added
+
+* `haskell_cabal_library`/`haskell_cabal_binary`.
+  See [#879](https://github.com/tweag/rules_haskell/pull/879),
+  [#898](https://github.com/tweag/rules_haskell/pull/898) and
+  [#904](https://github.com/tweag/rules_haskell/pull/904).
+* `stack_snapshot`.
+  See [#887](https://github.com/tweag/rules_haskell/pull/887) (name
+  changed to `stack_snapshot` after this PR).
+  See also [#1011](https://github.com/tweag/rules_haskell/pull/1011).
+* `tools` arguments for stack and cabal rules.
+  See [#907](https://github.com/tweag/rules_haskell/pull/907).
+  They can be arbitrary tools,
+  see [#987](https://github.com/tweag/rules_haskell/pull/987).
+* `tools` attribute to core `haskell_*` rules. This attribute can be
+  used to expose GHC preprocessors.
+  See [#911](https://github.com/tweag/rules_haskell/pull/911).
+* Static GHC RTS can be specified in the toolchain.
+  See [#970](https://github.com/tweag/rules_haskell/pull/970).
+* `runfiles` library: manifest file support (for Windows).
+  See [#992](https://github.com/tweag/rules_haskell/pull/992).
+* Prototype implementation of bazel worker mode (not production-ready
+  yet).
+  See [#1024](https://github.com/tweag/rules_haskell/pull/1024)
+  and [#1055](https://github.com/tweag/rules_haskell/pull/1055)
+
+### Changed
+
+* The `haskell_toolchain` macro now no longer adds a `toolchain`
+  definition. You must now define yourself a `haskell_toolchain` and
+  a `toolchain` separately. This should be a mostly transparent
+  change, because nearly no one uses these functions directly. They
+  are normally only used transitively via
+  `haskell_register_toolchains` and related functions.
+  See [#843](https://github.com/tweag/rules_haskell/pull/843).
 * The `haskell/haskell.bzl` entrypoint is deprecated. use
   `haskell/defs.bzl` instead.
 * The `haskell_repositories()` macro is deprecated. Use
@@ -27,10 +98,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 * The `haskell_register_toolchains()` macro is deprecated. Use
   `rules_haskell_toolchains()` from `haskell/repositories.bzl`
   instead.
-- The `exports` attribute has been renamed to `reexported_modules`
-- A new `exports` attribtue allows to re-export other libraries
+* The `exports` attribute’s semantics are changed:
 
-[bazel-rule-guidelines]: https://docs.bazel.build/versions/master/skylark/deploying.html
+  ‘A list of other haskell libraries that will be transparently added
+  as a dependency to every downstream rule.’
+
+  The original `exports` is available under the new name
+  `reexported_modules`.
+  See [#1008](https://github.com/tweag/rules_haskell/pull/1008).
+* `@` is allowed in Haskell binary names.
+* `haskell_library` may be empty (no files in `srcs`).
+  See [#1035](https://github.com/tweag/rules_haskell/pull/1035).
 
 ### Removed
 
@@ -56,6 +134,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   cc_library(name = "so-lib", srcs = glob(["libxyz.so*", "libxyz.dylib", "libxyz.a", "libxyz.dll"]))
   haskell_library(name = "haskell-lib", deps = [":so-lib"], ...)
   ```
+
+### Fixed
+
+* `haskell_register_ghc_nixpkgs`: Forward all arguments to wrapped
+  rules. See [#886](https://github.com/tweag/rules_haskell/pull/886).
+  Also support `repository` argument and `nixopts`.
+* Haddock links to prebuilt libraries.
+  See [#928](https://github.com/tweag/rules_haskell/pull/928)
+  and [#934](https://github.com/tweag/rules_haskell/pull/934).
+* Documentation for GHC plugin targets is now included in
+  the API documentation.
+* The Multi-REPL recognizes `haskell_toolchain_library` dependencies.
+* Various imrovements to linking. See
+  [#930](https://github.com/tweag/rules_haskell/pull/930).
+* `$(location)` expansion for “expression is not a declared
+  prerequisite of this rule”.
+  See [#990](https://github.com/tweag/rules_haskell/pull/990).
+* Better error if the compiler version doesn’t match the one specified
+  in the toolchain.
+  See [#1014](https://github.com/tweag/rules_haskell/pull/1014).
+* macOS bindists correctly find `ar` and `sed` invocation was broken.
+  See [#1022](https://github.com/tweag/rules_haskell/pull/1022)
+  and [#1017](https://github.com/tweag/rules_haskell/pull/1017).
+* Allow arbitrary name for `haskell_cabal_library`. See
+  [#1034](https://github.com/tweag/rules_haskell/pull/1034).
+* Various fixes for `c2hs` on Windows
+  See [#1046](https://github.com/tweag/rules_haskell/pull/1046)
+  and [#1052](https://github.com/tweag/rules_haskell/pull/1052).
+* `:load` command in `ghci`
+  See [#1046](https://github.com/tweag/rules_haskell/pull/1046).
+
+### Improved
+
+* Profiling mode (`--compilation_mode="dbg"`).
+  See [#896](https://github.com/tweag/rules_haskell/pull/896).
+* GHC errors won’t be swallowed anymore.
+  See [#1050](https://github.com/tweag/rules_haskell/pull/1050).
 
 ## [0.9.1] - 2019-06-03
 
@@ -168,16 +283,6 @@ of `rules_haskell`.
   sed -i 's/^haskell_import/haskell_toolchain_library/' **/BUILD{,.bazel}
   sed -i 's/"haskell_import"/"haskell_toolchain_library"/' **/BUILD{,.bazel}
   ```
-* The `haskell_toolchain` macro now no longer adds a `toolchain`
-  definition. You must now define yourself a `haskell_toolchain` and
-  a `toolchain` separately. This should be a mostly transparent
-  change, because nearly no one uses these functions directly. They
-  are normally only used transitively via
-  `haskell_register_toolchains` and related functions.
-* It is now possible to statically link Haskell libraries in CC
-  binaries.
-
-  See [#843](https://github.com/tweag/rules_haskell/pull/843).
 
 * `haskell_toolchain`’s tools attribute is now a list of labels.
   Earlier entries take precendence. To migrate, add `[]` around your
