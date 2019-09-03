@@ -185,15 +185,15 @@ def _haskell_cabal_library_impl(ctx):
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
-        "_install/package.conf.d/package.cache",
+        "_install/{}.conf.d/package.cache".format(package_id),
         sibling = cabal,
     )
     interfaces_dir = hs.actions.declare_directory(
-        "_install/iface",
+        "_install/{}_iface".format(package_id),
         sibling = cabal,
     )
     data_dir = hs.actions.declare_directory(
-        "_install/data",
+        "_install/{}_data".format(package_id),
         sibling = cabal,
     )
     static_library_filename = "_install/lib/libHS{}.a".format(package_id)
@@ -374,7 +374,7 @@ def _haskell_cabal_binary_impl(ctx):
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
-        "_install/package.conf.d/package.cache",
+        "_install/{}.conf.d/package.cache".format(hs.label.name),
         sibling = cabal,
     )
     binary = hs.actions.declare_file(
@@ -385,7 +385,7 @@ def _haskell_cabal_binary_impl(ctx):
         sibling = cabal,
     )
     data_dir = hs.actions.declare_directory(
-        "_install/data",
+        "_install/{}_data".format(hs.label.name),
         sibling = cabal,
     )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)

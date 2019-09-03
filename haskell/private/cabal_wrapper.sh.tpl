@@ -84,11 +84,11 @@ shift 1
 ar=$(realpath %{ar})
 strip=$(realpath %{strip})
 distdir=$(mktemp -d)
-libdir=$pkgroot/iface
+libdir="$pkgroot/${name}_iface"
 dynlibdir=$pkgroot/lib
 bindir=$pkgroot/bin
-datadir=$pkgroot/data
-package_database=$pkgroot/package.conf.d
+datadir="$pkgroot/${name}_data"
+package_database="$pkgroot/${name}.conf.d"
 
 cleanup () {
   rm -rf "$distdir"
