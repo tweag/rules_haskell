@@ -85,6 +85,7 @@ toolchain(
     name = "python_toolchain",
     toolchain = ":py_runtime_pair",
     toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+    tags = ["requires_nixpkgs_python"],
 )
 
 rule_test_exe(

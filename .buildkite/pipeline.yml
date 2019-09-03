@@ -13,7 +13,7 @@ steps:
     label: "Run tests (Nixpkgs)"
     timeout: 30
   - command: |
-      echo "common:ci --build_tag_filters -requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
+      echo "common:ci --build_tag_filters -requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist,-requires_nixpkgs_python" > .bazelrc.local
       # XXX: See .bazelrc [backward compatible options] for the the rational behind this flag
       echo "build --incompatible_use_python_toolchains=false" >> .bazelrc.local
       bazel build --config ci //tests/...
