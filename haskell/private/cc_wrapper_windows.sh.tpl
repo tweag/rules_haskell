@@ -12,6 +12,13 @@
 #     references (..). This can exceed the maximum path length on Windows, which
 #     will cause linking failures. This wrapper shortens library search paths to
 #     avoid that issue.
+#
+# - Shortens include paths to stay below maximum path length.
+#
+#     GHC generates include paths that contain redundant up-level
+#     references (..). This can exceed the maximum path length, which
+#     will cause compiler failures. This wrapper shortens include paths
+#     to avoid that issue.
 
 set -euo pipefail
 
@@ -95,6 +102,8 @@ add_arg() {
 # Parse arguments
 
 IN_RESPONSE_FILE=
+INCLUDE_DIR_COMING=
+INCLUDE_FLAG=
 LIB_DIR_COMING=
 
 shorten_path() {
@@ -118,6 +127,14 @@ shorten_path() {
     fi
 }
 
+handle_include_dir() {
+    local flag="$1"
+    local include_dir="$2"
+    local shortened
+    shorten_path shortened "$include_dir"
+    add_arg "$flag$shortened"
+}
+
 handle_lib_dir() {
     local lib_dir="$1"
     local shortened
@@ -130,7 +147,11 @@ handle_arg() {
     if [[ $IN_RESPONSE_FILE = 1 ]]; then
         unquote_arg arg "$arg"
     fi
-    if [[ $LIB_DIR_COMING = 1 ]]; then
+    if [[ $INCLUDE_DIR_COMING = 1 ]]; then
+        INCLUDE_DIR_COMING=
+        INCLUDE_FLAG=
+        handle_include_dir "$INCLUDE_FLAG" "$arg"
+    elif [[ $LIB_DIR_COMING = 1 ]]; then
         LIB_DIR_COMING=
         handle_lib_dir "$arg"
     elif [[ "$arg" =~ ^@(.*)$ ]]; then
@@ -139,6 +160,11 @@ handle_arg() {
             handle_arg "$line"
         done < "${BASH_REMATCH[1]}"
         IN_RESPONSE_FILE=
+    elif [[ "$arg" =~ ^(-I|-iquote|-isystem|-idirafter)(.*)$ ]]; then
+        handle_include_dir "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+    elif [[ "$arg" = -I || "$arg" = -iquote || "$arg" = -isystem || "$arg" = -idirafter ]]; then
+        INCLUDE_DIR_COMING=1
+        INCLUDE_FLAG="$arg"
     elif [[ "$arg" =~ ^-L(.*)$ || "$arg" =~ ^--library-path=(.*)$ ]]; then
         handle_lib_dir "${BASH_REMATCH[1]}"
     elif [[ "$arg" = -L || "$arg" = --library-path ]]; then
