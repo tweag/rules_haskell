@@ -810,16 +810,31 @@ def _get_platform(repository_ctx):
         os = "freebsd"
     elif os_name.find("windows") != -1:
         os = "windows"
+    else:
+        fail("Unknown OS: '{}'".format(os_name))
 
-    result = repository_ctx.execute(["uname", "-m"])
-    if result.stdout.strip() in ["arm", "armv7l"]:
-        arch = "arm"
-    elif result.stdout.strip() in ["aarch64"]:
-        arch = "aarch64"
-    elif result.stdout.strip() in ["amd64", "x86_64", "x64"]:
-        arch = "x86_64"
-    elif result.stdout.strip() in ["i386", "i486", "i586", "i686"]:
-        arch = "i386"
+    if os == "windows":
+        reg_query = ["reg", "QUERY", "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", "/v", "PROCESSOR_ARCHITECTURE"]
+        result = repository_ctx.execute(reg_query)
+        value = result.stdout.strip().split(" ")[-1].lower()
+        if value in ["amd64", "ia64"]:
+            arch = "x86_64"
+        elif value in ["x86"]:
+            arch = "i386"
+        else:
+            fail("Failed to determine CPU architecture:\n{}\n{}".format(result.stdout, result.stderr))
+    else:
+        result = repository_ctx.execute(["uname", "-m"])
+        if result.stdout.strip() in ["arm", "armv7l"]:
+            arch = "arm"
+        elif result.stdout.strip() in ["aarch64"]:
+            arch = "aarch64"
+        elif result.stdout.strip() in ["amd64", "x86_64", "x64"]:
+            arch = "x86_64"
+        elif result.stdout.strip() in ["i386", "i486", "i586", "i686"]:
+            arch = "i386"
+        else:
+            fail("Failed to determine CPU architecture:\n{}\n{}".format(result.stdout, result.stderr))
 
     return (os, arch)
 
@@ -840,7 +855,7 @@ def _fetch_stack_impl(repository_ctx):
     repository_ctx.download_and_extract(url = url, sha256 = sha256)
     stack_cmd = repository_ctx.path(
         "stack-{}-{}-{}".format(version, os, arch),
-    ).get_child("stack")
+    ).get_child("stack.exe" if os == "windows" else "stack")
     _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
     exec_result = repository_ctx.execute([stack_cmd, "--version"], quiet = True)
     if exec_result.return_code != 0:
