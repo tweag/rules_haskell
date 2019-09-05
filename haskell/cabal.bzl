@@ -110,6 +110,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, to
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
             "%{env}": render_env(env),
+            "%{is_windows}": str(hs.toolchain.is_windows),
         },
     )
 

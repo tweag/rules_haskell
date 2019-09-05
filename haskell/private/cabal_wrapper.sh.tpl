@@ -92,6 +92,11 @@ package_database=$pkgroot/package.conf.d
 
 %{ghc_pkg} recache --package-db=$package_database
 
+ENABLE_RELOCATABLE=
+if [[ %{is_windows} != True ]]; then
+    ENABLE_RELOCATABLE=--enable-relocatable
+fi
+
 # Cabal really wants the current working directory to be directory
 # where the .cabal file is located. So we have no choice but to chance
 # cd into it, but then we have to rewrite all relative references into
@@ -106,7 +111,7 @@ $execroot/%{runghc} $setup configure \
     --with-ar=$ar \
     --with-strip=$strip \
     --enable-deterministic \
-    --enable-relocatable \
+    $ENABLE_RELOCATABLE \
     --builddir=$distdir \
     --prefix=$pkgroot \
     --libdir=$libdir \
