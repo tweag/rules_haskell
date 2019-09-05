@@ -612,6 +612,16 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     if not _stack_version_check(repository_ctx, stack_cmd):
         fail("Stack version not recent enough. Need version 2.1 or newer.")
     stack = [stack_cmd]
+
+    # Run `stack update` leniently to avoid hackage-security lock issues.
+    #
+    #   user error (hTryLock: lock already exists: ~/.stack/pantry/hackage/hackage-security-lock)
+    #
+    # See https://github.com/tweag/stackage-head/issues/29. If this doesn't
+    # help we may need to point --stack-root to a workspace local path. The
+    # issue appears when initializing two separate stack_snapshot instances in
+    # parallel.
+    repository_ctx.execute(stack + ["update"])
     if versioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
     stack = [stack_cmd, "--resolver", snapshot]
