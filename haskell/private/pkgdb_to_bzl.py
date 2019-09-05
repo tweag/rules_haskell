@@ -41,6 +41,11 @@ def path_to_label(path, pkgroot):
     if topdir_relative_path.find("$topdir") != -1:
         return os.path.normpath(topdir_relative_path.replace("$topdir", topdir)).replace('\\', '/')
 
+def path_replace_topdir(path, pkgroot):
+    """Substitute one pkgroot for another relative one to obtain a label."""
+    topdir_relative_path = path.replace(pkgroot, "$topdir")
+    return os.path.normpath(topdir_relative_path.replace("$topdir", topdir)).replace('\\', '/')
+
 def hs_library_pattern(name, mode = "static", profiling = False):
     """Convert hs-libraries entry to glob patterns.
 
@@ -149,20 +154,44 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     # output a SYMLINK information for the parent process
 
     # first, try to get a path within the package
+    haddock_html = None
+
     # We check if the file exists because cabal will unconditionally
     # generate the database entry even if no haddock was generated.
-    haddock_html = None
     if pkg.haddock_html:
+        # clean $topdir
+        haddock_html_path = path_replace_topdir(pkg.haddock_html, pkg.pkgroot)
+
+        # We check if the file exists because cabal will unconditionally
+        # generate the database entry even if no haddock was generated.
+        if not os.path.exists(haddock_html_path):
+            continue
+
+        # convert to label
         haddock_html = path_to_label(pkg.haddock_html, pkg.pkgroot)
+
+        # we symlink only if the path cannot be converted to a label
         if not haddock_html:
             haddock_html = os.path.join("haddock", "html", pkg.name)
-            output.append("#SYMLINK: {} {}".format(pkg.haddock_html, haddock_html))
+            output.append("#SYMLINK: {} {}".format(haddock_html_path, haddock_html))
 
     # If there is many interfaces, we give them a number
     interface_id = 0
     haddock_interfaces = []
     for interface_path in pkg.haddock_interfaces:
+        # clean $topdir
+        interface_path = path_replace_topdir(interface_path, pkg.pkgroot)
+
+        # We check if the file exists because cabal will unconditionally
+        # generate the database entry even if no haddock was generated.
+        if not os.path.exists(interface_path):
+            continue
+
+        # try to convert to a label
         interface = path_to_label(interface_path, pkg.pkgroot)
+
+        # not possible, it means that it is a file from outside this repository
+        # we generate a symlink
         if not interface:
             interface = os.path.join(
                 "haddock",
@@ -171,6 +200,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
             )
             output.append("#SYMLINK: {} {}".format(interface_path, interface))
             interface_id += 1
+
         haddock_interfaces.append(interface)
 
     output += [
