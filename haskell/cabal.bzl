@@ -143,7 +143,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, to
     args.add_all(tool_inputs, map_each = _cabal_tool_flag)
 
     inputs = depset(
-        [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
+        [cabal_wrapper, setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
         transitive = [
             depset(srcs),
             depset(cc.files),
@@ -227,8 +227,8 @@ def _haskell_cabal_library_impl(ctx):
         cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
         package_database = package_database,
     )
-    ctx.actions.run(
-        executable = c.cabal_wrapper,
+    ctx.actions.run_shell(
+        command = '{} "$@"'.format(c.cabal_wrapper.path),
         arguments = [c.args],
         inputs = c.inputs,
         input_manifests = c.input_manifests,
@@ -398,8 +398,8 @@ def _haskell_cabal_binary_impl(ctx):
         cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
         package_database = package_database,
     )
-    ctx.actions.run(
-        executable = c.cabal_wrapper,
+    ctx.actions.run_shell(
+        command = '{} "$@"'.format(c.cabal_wrapper.path),
         arguments = [c.args],
         inputs = c.inputs,
         input_manifests = c.input_manifests,
