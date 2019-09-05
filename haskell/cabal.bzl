@@ -375,7 +375,10 @@ def _haskell_cabal_binary_impl(ctx):
         sibling = cabal,
     )
     binary = hs.actions.declare_file(
-        "_install/bin/{}".format(hs.label.name),
+        "_install/bin/{name}{ext}".format(
+            name = hs.label.name,
+            ext = ".exe" if hs.toolchain.is_windows else "",
+        ),
         sibling = cabal,
     )
     data_dir = hs.actions.declare_directory(
