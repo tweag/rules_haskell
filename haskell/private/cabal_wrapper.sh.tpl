@@ -90,6 +90,11 @@ bindir=$pkgroot/bin
 datadir=$pkgroot/data
 package_database=$pkgroot/package.conf.d
 
+cleanup () {
+  rm -rf "$distdir"
+}
+trap cleanup EXIT
+
 %{ghc_pkg} recache --package-db=$package_database
 
 # Cabal really wants the current working directory to be directory
