@@ -81,6 +81,29 @@ while [[ $1 != -- ]]; do
 done
 shift 1
 
+declare -a include_dirs
+declare -a path_args
+for arg in $@; do
+    if [[ $arg =~ --extra-include-dirs=(.*) ]]; then
+      include_dirs+=("${BASH_REMATCH[1]}")
+    else
+      path_args+=("$arg")
+    fi
+done
+
+# Create one directory with a link to all the possibly needed header files.
+# This is required to avoid blowing-up the maximum command-line size when
+# there are too many include dirs
+local_include_dir="$execroot/local-package-db"
+mkdir "$local_include_dir"
+chmod +w $local_include_dir
+for db in "${include_dirs[@]}"; do
+    for conf_file in $db/*; do
+        ln -s "$(realpath $conf_file)" $local_include_dir/
+    done
+done
+extra_args+=("--extra-include-dirs=$local_include_dir")
+
 ar=$(realpath %{ar})
 strip=$(realpath %{strip})
 distdir=$(mktemp -d)
@@ -117,7 +140,7 @@ $execroot/%{runghc} $setup configure \
     --package-db=clear \
     --package-db=global \
     "${extra_args[@]}" \
-    "${@/=/=$execroot/}" \
+    "${path_args[@]/=/=$execroot/}" \
     --package-db=$package_database # This arg must come last.
 $execroot/%{runghc} $setup build --verbose=0 --builddir=$distdir
 $execroot/%{runghc} $setup install --verbose=0 --builddir=$distdir
