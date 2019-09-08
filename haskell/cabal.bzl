@@ -68,6 +68,7 @@ main = defaultMain
     return setup
 
 _CABAL_TOOLS = ["alex", "c2hs", "cpphs", "doctest", "happy"]
+_CABAL_TOOL_LIBRARIES = ["cpphs", "doctest"]
 
 # Some old packages are empty compatibility shims. Empty packages
 # cause Cabal to not produce the outputs it normally produces. Instead
@@ -645,7 +646,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     indirect_unpacked_sdists = []
     for package in exec_result.stdout.splitlines():
         name = _chop_version(package)
-        if name in _CABAL_TOOLS:
+        if name in _CABAL_TOOLS and not name in _CABAL_TOOL_LIBRARIES:
             continue
 
         version = _version(package)
