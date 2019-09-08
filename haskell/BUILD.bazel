@@ -72,3 +72,10 @@ haskell_toolchain_libraries(
     name = "toolchain-libraries",
     visibility = ["//visibility:public"],
 )
+
+config_setting(
+    name = "use_worker",
+    define_values = {
+        "use_worker": "True",
+    },
+)

@@ -91,6 +91,12 @@ _haskell_common_attrs = {
         cfg = "host",
         default = Label("@rules_haskell//haskell:ghc_wrapper"),
     ),
+    "worker": attr.label(
+        default = None,
+        executable = True,
+        cfg = "host",
+        doc = "Experimental. Worker binary employed by Bazel's persistent worker mode. See docs/haskell-use-cases.rst",
+    ),
 }
 
 def _mk_binary_rule(**kwargs):
@@ -180,42 +186,11 @@ def _mk_binary_rule(**kwargs):
         **kwargs
     )
 
-haskell_test = _mk_binary_rule(test = True)
-"""Build a test suite.
+_haskell_test = _mk_binary_rule(test = True)
 
-Additionally, it accepts [all common bazel test rule
-fields][bazel-test-attrs]. This allows you to influence things like
-timeout and resource allocation for the test.
+_haskell_binary = _mk_binary_rule()
 
-[bazel-test-attrs]: https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests
-"""
-
-haskell_binary = _mk_binary_rule()
-"""Build an executable from Haskell source.
-
-Example:
-  ```bzl
-  haskell_binary(
-      name = "hello",
-      srcs = ["Main.hs", "Other.hs"],
-      deps = ["//lib:some_lib"]
-  )
-  ```
-
-Every `haskell_binary` target also defines an optional REPL target that is
-not built by default, but can be built on request. The name of the REPL
-target is the same as the name of binary with `"@repl"` added at the end.
-For example, the target above also defines `main@repl`.
-
-You can call the REPL like this (requires Bazel 0.15 or later):
-
-```
-$ bazel run //:hello@repl
-```
-
-"""
-
-haskell_library = rule(
+_haskell_library = rule(
     _haskell_library_impl,
     attrs = dict(
         _haskell_common_attrs,
@@ -253,27 +228,83 @@ haskell_library = rule(
     ],
     fragments = ["cpp"],
 )
-"""Build a library from Haskell source.
 
-Example:
-  ```bzl
-  haskell_library(
-      name = "hello-lib",
-      srcs = glob(["src/**/*.hs"]),
-      src_strip_prefix = "src",
-      deps = [
-          "//hello-sublib:lib",
-      ],
-      reexported_modules = {
-          "//hello-sublib:lib": "Lib1 as HelloLib1, Lib2",
-      },
-  )
-  ```
+def _haskell_worker_wrapper(rule_type, **kwargs):
+    defaults = dict(
+        worker = select({
+            "@rules_haskell//haskell:use_worker": Label("@rules_haskell//tools/worker:bin"),
+            "//conditions:default": None,
+        }),
+    )
+    defaults.update(kwargs)
 
-Every `haskell_library` target also defines an optional REPL target that is
-not built by default, but can be built on request. It works the same way as
-for `haskell_binary`.
-"""
+    if rule_type == "binary":
+        _haskell_binary(**defaults)
+    elif rule_type == "test":
+        _haskell_test(**defaults)
+    elif rule_type == "library":
+        _haskell_library(**defaults)
+
+def haskell_binary(**kwargs):
+    """Build an executable from Haskell source.
+
+    Example:
+    ```bzl
+    haskell_binary(
+    name = "hello",
+    srcs = ["Main.hs", "Other.hs"],
+    deps = ["//lib:some_lib"]
+    )
+    ```
+
+    Every `haskell_binary` target also defines an optional REPL target that is
+    not built by default, but can be built on request. The name of the REPL
+    target is the same as the name of binary with `"@repl"` added at the end.
+    For example, the target above also defines `main@repl`.
+
+    You can call the REPL like this (requires Bazel 0.15 or later):
+
+    ```
+    $ bazel run //:hello@repl
+    ```
+
+    """
+    _haskell_worker_wrapper("binary", **kwargs)
+
+def haskell_test(**kwargs):
+    """Build a test suite.
+
+    Additionally, it accepts [all common bazel test rule
+    fields][bazel-test-attrs]. This allows you to influence things like
+    timeout and resource allocation for the test.
+
+    [bazel-test-attrs]: https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests
+    """
+    _haskell_worker_wrapper("test", **kwargs)
+
+def haskell_library(**kwargs):
+    """Build a library from Haskell source.
+
+    Example:
+    ```bzl
+    haskell_library(
+    name = "hello-lib",
+    srcs = glob(["src/**/*.hs"]),
+    src_strip_prefix = "src",
+    deps = [
+    "//hello-sublib:lib",
+    ],
+    reexported_modules = {
+    "//hello-sublib:lib": "Lib1 as HelloLib1, Lib2",
+    },
+    )
+    ```
+
+    Every `haskell_library` target also defines an optional REPL target that is
+    not built by default, but can be built on request. It works the same way as
+    for `haskell_binary`.
+    """
+    _haskell_worker_wrapper("library", **kwargs)
 
 haskell_import = rule(
     _haskell_import_impl,

@@ -23,7 +23,20 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         env = hs.env
 
     args = hs.actions.args()
-    args.add(hs.tools.ghc)
+    extra_inputs = []
+
+    # Detect persistent worker support
+    flagsfile_prefix = ""
+    execution_requirements = {}
+    tools = []
+    if hs.worker != None:
+        flagsfile_prefix = "@"
+        execution_requirements = {"supports-workers": "1"}
+        args.add(hs.worker.path)
+        tools = [hs.worker]
+    else:
+        args.add(hs.tools.ghc)
+        extra_inputs += [hs.tools.ghc]
 
     # Do not use Bazel's CC toolchain on Windows, as it leads to linker and librarty compatibility issues.
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
@@ -57,8 +70,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     hs.actions.write(compile_flags_file, args)
     hs.actions.write(extra_args_file, arguments)
 
-    extra_inputs = [
-        hs.tools.ghc,
+    extra_inputs += [
         compile_flags_file,
         extra_args_file,
     ] + cc.files
@@ -73,15 +85,9 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     else:
         inputs += extra_inputs
 
-    # Detect persistent worker support
-    flagsfile_prefix = ""
-    execution_requirements = {}
-    if hs.toolchain.use_worker:
-        flagsfile_prefix = "@"
-        execution_requirements = {"supports-workers": "1"}
-
     hs.actions.run(
         inputs = inputs,
+        tools = tools,
         input_manifests = input_manifests,
         outputs = outputs,
         executable = hs.ghc_wrapper,
@@ -164,7 +170,6 @@ def _haskell_toolchain_impl(ctx):
             is_static = ctx.attr.is_static,
             version = ctx.attr.version,
             global_pkg_db = pkgdb_file,
-            use_worker = ctx.attr.use_worker,
         ),
     ]
 
@@ -217,9 +222,6 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:private/osx_cc_wrapper.sh.tpl"),
         ),
-        "use_worker": attr.bool(
-            doc = "Whether to use persistent worker strategy during the builds.",
-        ),
     },
 )
 
@@ -233,7 +235,6 @@ def haskell_toolchain(
         repl_ghci_args = [],
         haddock_flags = [],
         locale_archive = None,
-        use_worker = False,
         **kwargs):
     """Declare a compiler toolchain.
 
@@ -293,7 +294,6 @@ def haskell_toolchain(
             "@rules_haskell//haskell/platforms:linux": locale_archive,
             "//conditions:default": None,
         }),
-        use_worker = use_worker,
         **kwargs
     )
 

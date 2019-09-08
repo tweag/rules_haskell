@@ -70,6 +70,7 @@ main = defaultMain
     return setup
 
 _CABAL_TOOLS = ["alex", "c2hs", "cpphs", "doctest", "happy"]
+_CABAL_TOOL_LIBRARIES = ["cpphs", "doctest"]
 
 # Some old packages are empty compatibility shims. Empty packages
 # cause Cabal to not produce the outputs it normally produces. Instead
@@ -112,14 +113,26 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, to
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
             "%{env}": render_env(env),
+            "%{is_windows}": str(hs.toolchain.is_windows),
         },
     )
 
     args = hs.actions.args()
     package_databases = dep_info.package_databases
     extra_headers = cc_info.compilation_context.headers
-    extra_include_dirs = cc_info.compilation_context.includes
-    extra_lib_dirs = [file.dirname for file in ghci_extra_libs.to_list()]
+    extra_include_dirs = depset(transitive = [
+        cc_info.compilation_context.includes,
+        cc_info.compilation_context.quote_includes,
+        cc_info.compilation_context.system_includes,
+    ])
+    extra_lib_dirs = [
+        file.dirname
+        for file in ghci_extra_libs.to_list()
+        # Exclude Haskell libraries, as these are already covered by
+        # package-dbs. This is to avoid command-line length overflow on
+        # collect2.
+        if not file.basename.startswith("libHS")
+    ]
     args.add_all([package_id, setup, cabal.dirname, package_database.dirname])
     args.add("--flags=" + " ".join(flags))
     args.add("--")
@@ -133,7 +146,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, to
     args.add_all(tool_inputs, map_each = _cabal_tool_flag)
 
     inputs = depset(
-        [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
+        [cabal_wrapper, setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
         transitive = [
             depset(srcs),
             depset(cc.files),
@@ -217,8 +230,8 @@ def _haskell_cabal_library_impl(ctx):
         cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
         package_database = package_database,
     )
-    ctx.actions.run(
-        executable = c.cabal_wrapper,
+    ctx.actions.run_shell(
+        command = '{} "$@"'.format(c.cabal_wrapper.path),
         arguments = [c.args],
         inputs = c.inputs,
         input_manifests = c.input_manifests,
@@ -365,7 +378,10 @@ def _haskell_cabal_binary_impl(ctx):
         sibling = cabal,
     )
     binary = hs.actions.declare_file(
-        "_install/bin/{}".format(hs.label.name),
+        "_install/bin/{name}{ext}".format(
+            name = hs.label.name,
+            ext = ".exe" if hs.toolchain.is_windows else "",
+        ),
         sibling = cabal,
     )
     data_dir = hs.actions.declare_directory(
@@ -388,8 +404,8 @@ def _haskell_cabal_binary_impl(ctx):
         cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
         package_database = package_database,
     )
-    ctx.actions.run(
-        executable = c.cabal_wrapper,
+    ctx.actions.run_shell(
+        command = '{} "$@"'.format(c.cabal_wrapper.path),
         arguments = [c.args],
         inputs = c.inputs,
         input_manifests = c.input_manifests,
@@ -600,6 +616,16 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     if not _stack_version_check(repository_ctx, stack_cmd):
         fail("Stack version not recent enough. Need version 2.1 or newer.")
     stack = [stack_cmd]
+
+    # Run `stack update` leniently to avoid hackage-security lock issues.
+    #
+    #   user error (hTryLock: lock already exists: ~/.stack/pantry/hackage/hackage-security-lock)
+    #
+    # See https://github.com/tweag/stackage-head/issues/29. If this doesn't
+    # help we may need to point --stack-root to a workspace local path. The
+    # issue appears when initializing two separate stack_snapshot instances in
+    # parallel.
+    repository_ctx.execute(stack + ["update"])
     if versioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
     stack = [stack_cmd, "--resolver", snapshot]
@@ -635,7 +661,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     indirect_unpacked_sdists = []
     for package in exec_result.stdout.splitlines():
         name = _chop_version(package)
-        if name in _CABAL_TOOLS:
+        if name in _CABAL_TOOLS and not name in _CABAL_TOOL_LIBRARIES:
             continue
 
         version = _version(package)
@@ -844,16 +870,31 @@ def _get_platform(repository_ctx):
         os = "freebsd"
     elif os_name.find("windows") != -1:
         os = "windows"
+    else:
+        fail("Unknown OS: '{}'".format(os_name))
 
-    result = repository_ctx.execute(["uname", "-m"])
-    if result.stdout.strip() in ["arm", "armv7l"]:
-        arch = "arm"
-    elif result.stdout.strip() in ["aarch64"]:
-        arch = "aarch64"
-    elif result.stdout.strip() in ["amd64", "x86_64", "x64"]:
-        arch = "x86_64"
-    elif result.stdout.strip() in ["i386", "i486", "i586", "i686"]:
-        arch = "i386"
+    if os == "windows":
+        reg_query = ["reg", "QUERY", "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", "/v", "PROCESSOR_ARCHITECTURE"]
+        result = repository_ctx.execute(reg_query)
+        value = result.stdout.strip().split(" ")[-1].lower()
+        if value in ["amd64", "ia64"]:
+            arch = "x86_64"
+        elif value in ["x86"]:
+            arch = "i386"
+        else:
+            fail("Failed to determine CPU architecture:\n{}\n{}".format(result.stdout, result.stderr))
+    else:
+        result = repository_ctx.execute(["uname", "-m"])
+        if result.stdout.strip() in ["arm", "armv7l"]:
+            arch = "arm"
+        elif result.stdout.strip() in ["aarch64"]:
+            arch = "aarch64"
+        elif result.stdout.strip() in ["amd64", "x86_64", "x64"]:
+            arch = "x86_64"
+        elif result.stdout.strip() in ["i386", "i486", "i586", "i686"]:
+            arch = "i386"
+        else:
+            fail("Failed to determine CPU architecture:\n{}\n{}".format(result.stdout, result.stderr))
 
     return (os, arch)
 
@@ -874,7 +915,7 @@ def _fetch_stack_impl(repository_ctx):
     repository_ctx.download_and_extract(url = url, sha256 = sha256)
     stack_cmd = repository_ctx.path(
         "stack-{}-{}-{}".format(version, os, arch),
-    ).get_child("stack")
+    ).get_child("stack.exe" if os == "windows" else "stack")
     _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
     exec_result = repository_ctx.execute([stack_cmd, "--version"], quiet = True)
     if exec_result.return_code != 0:
