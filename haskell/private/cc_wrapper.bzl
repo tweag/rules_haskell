@@ -20,6 +20,7 @@ def _cc_wrapper_impl(ctx):
         is_executable = True,
         substitutions = {
             "{:cc:}": cc,
+            "{:cpu:}": cc_toolchain.cpu,
             "{:workspace:}": ctx.workspace_name,
             "{:platform:}": ctx.attr.platform,
         },
