@@ -1,3 +1,7 @@
+{-# LANGUAGE ForeignFunctionInterface #-}
+
 module Lib where
 
-x = 2
+foreign import ccall "add" add :: Int -> Int -> Int
+
+x = add 1 1
