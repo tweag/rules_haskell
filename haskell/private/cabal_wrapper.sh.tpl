@@ -31,12 +31,35 @@ function canonicalize_path()
     new_path=""
     while IFS=: read -r -d: entry
     do
-	if [[ -n "$entry" ]]
-	then
-	    new_path="$new_path${new_path:+:}$(realpath "$entry")"
-	fi
+        if [[ -n "$entry" ]]
+        then
+            new_path="$new_path${new_path:+:}$(realpath "$entry")"
+        fi
     done <<< "${1:-}:"
     echo $new_path
+}
+
+# relative_to ORIGIN PATH
+# Compute the relative path from ORIGIN to PATH.
+function relative_to() {
+    local out=
+    # Split path into components
+    local -a relto; IFS="/\\" read -ra relto <<<"$1"
+    local -a path; IFS="/\\" read -ra path <<<"$2"
+    local off=0
+    while [[ "${relto[$off]}" == "${path[$off]}" ]]; do
+        if [[ $off -eq ${#relto[@]} || $off -eq ${#path[@]} ]]; then
+            break
+        fi
+        : $((off++))
+    done
+    for ((i=$off; i < ${#relto[@]}; i++)); do
+        out="$out${out:+/}.."
+    done
+    for ((i=$off; i < ${#path[@]}; i++)); do
+        out="$out${out:+/}${path[$i]}"
+    done
+    echo "$out"
 }
 
 # Remove any relative entries, because we'll be changing CWD shortly.
@@ -48,7 +71,7 @@ name=$1
 execroot="$(pwd)"
 setup=$execroot/$2
 srcdir=$execroot/$3
-pkgroot="$(realpath $execroot/$4/..)" # By definition (see ghc-pkg source code).
+pkgroot="$(realpath $execroot/$(dirname $4))" # By definition (see ghc-pkg source code).
 shift 4
 
 declare -a extra_args
@@ -67,7 +90,17 @@ bindir=$pkgroot/bin
 datadir=$pkgroot/data
 package_database=$pkgroot/package.conf.d
 
+cleanup () {
+  rm -rf "$distdir"
+}
+trap cleanup EXIT
+
 %{ghc_pkg} recache --package-db=$package_database
+
+ENABLE_RELOCATABLE=
+if [[ %{is_windows} != True ]]; then
+    ENABLE_RELOCATABLE=--enable-relocatable
+fi
 
 # Cabal really wants the current working directory to be directory
 # where the .cabal file is located. So we have no choice but to chance
@@ -83,7 +116,7 @@ $execroot/%{runghc} $setup configure \
     --with-ar=$ar \
     --with-strip=$strip \
     --enable-deterministic \
-    --enable-relocatable \
+    $ENABLE_RELOCATABLE \
     --builddir=$distdir \
     --prefix=$pkgroot \
     --libdir=$libdir \
@@ -113,8 +146,23 @@ library=($libdir/libHS*.a)
 if [[ -n ${library+x} && -f $package_database/$name.conf ]]
 then
     mv $libdir/libHS*.a $dynlibdir
-    sed 's,library-dirs:.*,library-dirs: ${pkgroot}/lib,' \
-	$package_database/$name.conf > $package_database/$name.conf.tmp
+    # The $execroot is an absolute path and should not leak into the output.
+    # Replace each ocurrence of execroot by a path relative to ${pkgroot}.
+    function replace_execroot() {
+        local line
+        local relpath
+        while IFS="" read -r line; do
+            while [[ $line =~ ("$execroot"[^[:space:]]*) ]]; do
+                relpath="$(relative_to "$pkgroot" "${BASH_REMATCH[1]}")"
+                line="${line/${BASH_REMATCH[1]}/\$\{pkgroot\}\/$relpath/}"
+            done
+            echo "$line"
+        done
+    }
+    sed -e 's,library-dirs:.*,library-dirs: ${pkgroot}/lib,' \
+        $package_database/$name.conf \
+        | replace_execroot \
+        > $package_database/$name.conf.tmp
     mv  $package_database/$name.conf.tmp $package_database/$name.conf
     %{ghc_pkg} recache --package-db=$package_database
 fi
