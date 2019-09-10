@@ -7,6 +7,12 @@ load(
 
 haskell_toolchain_library(name = "base")
 
+cc_library(
+    name = "c-lib",
+    srcs = ["c-lib.c"],
+    hdrs = ["c-lib.h"],
+)
+
 haskell_cabal_library(
     name = "lib",
     srcs = [
@@ -18,6 +24,7 @@ haskell_cabal_library(
         "expose-lib",
     ],
     version = "0.1.0.0",
+    deps = [":c-lib"],
 )
 
 haskell_test(
