@@ -48,10 +48,10 @@ function relative_to() {
     local -a path; IFS="/\\" read -ra path <<<"$2"
     local off=0
     while [[ "${relto[$off]}" == "${path[$off]}" ]]; do
+        : $((off++))
         if [[ $off -eq ${#relto[@]} || $off -eq ${#path[@]} ]]; then
             break
         fi
-        : $((off++))
     done
     for ((i=$off; i < ${#relto[@]}; i++)); do
         out="$out${out:+/}.."
