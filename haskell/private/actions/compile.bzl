@@ -230,10 +230,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
 
     compile_flags += cc.include_args
 
-    locale_archive_depset = (
-        depset([hs.toolchain.locale_archive]) if hs.toolchain.locale_archive != None else depset()
-    )
-
     # This is absolutely required otherwise GHC doesn't know what package it's
     # creating `Name`s for to put them in Haddock interface files which then
     # results in Haddock not being able to find names for linking in
@@ -323,7 +319,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
     )
 
     # Transitive library dependencies for runtime.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, cc_info, dynamic = False)
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, cc_info)
 
     return struct(
         args = args,
@@ -342,7 +338,6 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
             plugin_dep_info.dynamic_libraries,
             ghci_extra_libs,
             java.inputs,
-            locale_archive_depset,
             preprocessors.inputs,
             plugin_tool_inputs,
         ]),

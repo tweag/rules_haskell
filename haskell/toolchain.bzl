@@ -38,29 +38,27 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         args.add(hs.tools.ghc)
         extra_inputs += [hs.tools.ghc]
 
-    # Do not use Bazel's CC toolchain on Windows, as it leads to linker and librarty compatibility issues.
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
     # C libraries with Haskell targets.
-    if not hs.toolchain.is_windows:
-        args.add_all([
-            # GHC uses C compiler for assemly, linking and preprocessing as well.
-            "-pgma",
-            cc.tools.cc,
-            "-pgmc",
-            cc.tools.cc,
-            "-pgml",
-            cc.tools.cc,
-            "-pgmP",
-            cc.tools.cc,
-            # Setting -pgm* flags explicitly has the unfortunate side effect
-            # of resetting any program flags in the GHC settings file. So we
-            # restore them here. See
-            # https://ghc.haskell.org/trac/ghc/ticket/7929.
-            "-optc-fno-stack-protector",
-            "-optP-E",
-            "-optP-undef",
-            "-optP-traditional",
-        ])
+    args.add_all([
+        # GHC uses C compiler for assemly, linking and preprocessing as well.
+        "-pgma",
+        cc.tools.cc,
+        "-pgmc",
+        cc.tools.cc,
+        "-pgml",
+        cc.tools.cc,
+        "-pgmP",
+        cc.tools.cc,
+        # Setting -pgm* flags explicitly has the unfortunate side effect
+        # of resetting any program flags in the GHC settings file. So we
+        # restore them here. See
+        # https://ghc.haskell.org/trac/ghc/ticket/7929.
+        "-optc-fno-stack-protector",
+        "-optP-E",
+        "-optP-undef",
+        "-optP-traditional",
+    ])
 
     compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
@@ -75,6 +73,9 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         extra_args_file,
     ] + cc.files
 
+    if hs.toolchain.locale_archive != None:
+        extra_inputs.append(hs.toolchain.locale_archive)
+
     flagsfile = extra_args_file
     if params_file:
         flagsfile = merge_parameter_files(hs, extra_args_file, params_file)
@@ -84,6 +85,11 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         inputs = depset(extra_inputs, transitive = [inputs])
     else:
         inputs += extra_inputs
+
+    if input_manifests != None:
+        input_manifests = input_manifests + cc.manifests
+    else:
+        input_manifests = cc.manifests
 
     hs.actions.run(
         inputs = inputs,
@@ -144,6 +150,12 @@ def _haskell_toolchain_impl(ctx):
         for lib in ctx.attr.libraries
     }
 
+    (cc_wrapper_inputs, cc_wrapper_manifest) = ctx.resolve_tools(tools = [ctx.attr._cc_wrapper])
+    cc_wrapper_info = ctx.attr._cc_wrapper[DefaultInfo]
+    cc_wrapper_runfiles = cc_wrapper_info.default_runfiles.merge(
+        cc_wrapper_info.data_runfiles,
+    )
+
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,
@@ -153,7 +165,12 @@ def _haskell_toolchain_impl(ctx):
             haddock_flags = ctx.attr.haddock_flags,
             locale = ctx.attr.locale,
             locale_archive = locale_archive,
-            osx_cc_wrapper_tpl = ctx.file._osx_cc_wrapper_tpl,
+            cc_wrapper = struct(
+                executable = ctx.executable._cc_wrapper,
+                inputs = cc_wrapper_inputs,
+                manifests = cc_wrapper_manifest,
+                runfiles = cc_wrapper_runfiles,
+            ),
             mode = ctx.var["COMPILATION_MODE"],
             actions = struct(
                 compile_binary = compile_binary,
@@ -218,9 +235,10 @@ _haskell_toolchain = rule(
 Label pointing to the locale archive file to use. Mostly useful on NixOS.
 """,
         ),
-        "_osx_cc_wrapper_tpl": attr.label(
-            allow_single_file = True,
-            default = Label("@rules_haskell//haskell:private/osx_cc_wrapper.sh.tpl"),
+        "_cc_wrapper": attr.label(
+            cfg = "host",
+            default = Label("@rules_haskell//haskell:cc_wrapper"),
+            executable = True,
         ),
     },
 )

@@ -1,0 +1,10 @@
+load(":solib_test.bzl", "solib_test")
+
+# See rule docstring in solib_test.bzl for details.
+solib_test(
+    name = "solib_dir",
+    is_windows = select({
+        "@rules_haskell//haskell/platforms:mingw32": True,
+        "//conditions:default": False,
+    }),
+)
