@@ -12,11 +12,8 @@ workdir=/tmp/bazel-run-start-script
 rm -rf $workdir
 mkdir $workdir
 cd $workdir
-$pwd/start
-
-# Copy the bazel configuration, this is only useful for CI
-mkdir tools
-cp $pwd/.bazelrc .bazelrc
+# arguments are passed on to the start script
+$pwd/start "$@"
 
 # Set Nixpkgs in environment variable to avoid hardcoding it in
 # start script itself.
@@ -29,7 +26,7 @@ cp $pwd/.bazelrc .bazelrc
 # Which in turn means the start script should pull in those changes too.
 
 NIX_PATH=nixpkgs=$pwd/nixpkgs/default.nix \
-  bazel build \
+  bazel run \
   --config=ci \
   --override_repository=rules_haskell=$pwd \
   //:example

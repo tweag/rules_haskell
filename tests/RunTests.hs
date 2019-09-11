@@ -63,9 +63,6 @@ main = hspec $ do
     it "allows to manually load modules" $ do
       assertSuccess (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":load BC.C", "-e", "c"])
 
-  it "startup script" $ do
-    assertSuccess (safeShell ["./tests/run-start-script.sh"])
-
   describe "failures" $ do
     all_failure_tests <- bazelQuery "kind(rule, //tests/failures/...) intersect attr('tags', 'manual', //tests/failures/...)"
 

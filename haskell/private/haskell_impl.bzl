@@ -657,7 +657,9 @@ def haskell_toolchain_library_impl(ctx):
             """
 {} is not a toolchain library.
 Check that it ships with your version of GHC.
-            """.format(package),
+The following toolchain libraries are available:
+{}
+            """.format(package, libraries),
         )
 
     return [

@@ -25,6 +25,8 @@ mkShell {
     cacert
     # Needed for debug/linking_utils
     binutils
+    # check the start script for problems
+    shellcheck
   ] ++ lib.optionals docTools [graphviz python36Packages.sphinx zip unzip];
 
   shellHook = ''

@@ -11,43 +11,142 @@ MAX_BAZEL_MINOR=28
 
 set -e
 
+usage () {
+    cat >&2 <<"EOF"
+start [--use-bindists|--use-nix|--help]
+
+Set up a minimal rules_haskell bazel configuration.
+
+--use-bindists: The project is set up to provision GHC from binary distributions. This does not require nix to build.
+--use-nix: The project is set up to provision GHC from nixpkgs. This requires nix to build.
+
+If no argument is given, `--use-bindists` is assumed
+and a helpful message is printed that `--use-nix` also exists.
+
+For more information visit https://haskell.build/
+EOF
+    exit "$1"
+}
+
+# either bindists or nix
+mode=
+print_nix_usage_info="no"
+
+parse_args () {
+    if [ $# -lt 1 ]; then
+        mode="bindists"
+        print_nix_usage_info="yes"
+        return
+    fi
+
+    [ "$1" = "--help" ] && usage 0
+    case "$1" in
+        "--help") usage 0 ;;
+        "--use-bindists") mode="bindists" ;;
+        "--use-nix") mode="nix" ;;
+        *) usage 1 ;;
+    esac
+}
+
 check_files_dont_exist () {
     if [ -e WORKSPACE ] || [ -e BUILD ] || [ -e BazelExample.hs ]
     then
-        echo "Current directory already has WORKSPACE and/or BUILD and/or BazelExample.hs files." >/dev/stderr
+        echo "Current directory already has WORKSPACE and/or BUILD and/or BazelExample.hs files." >&2
         exit 1
     fi
 }
 
 check_bazel_version () {
-    local actual_raw=$(bazel version | egrep '^Build label:' | egrep -o '[0-9.]+')
+    actual_raw=$(bazel version | grep -E '^Build label:' | grep -E -o '[0-9.]+')
 
-    IFS=. read actual_major actual_minor actual_patch <<EOF
+    # shellcheck disable=SC2034
+    IFS=. read -r actual_major actual_minor actual_patch <<EOF
 $actual_raw
 EOF
 
-    local expected_min=$MIN_BAZEL_MAJOR.$MIN_BAZEL_MINOR.0
-    local expected_max=$MAX_BAZEL_MAJOR.$MAX_BAZEL_MINOR.x
+    expected_min=$MIN_BAZEL_MAJOR.$MIN_BAZEL_MINOR.0
+    expected_max=$MAX_BAZEL_MAJOR.$MAX_BAZEL_MINOR.x
 
-    if [ "$actual_major" -gt "$MAX_BAZEL_MAJOR" ] || (
+    if [ "$actual_major" -gt "$MAX_BAZEL_MAJOR" ] || {
         [ "$actual_major" -eq "$MAX_BAZEL_MAJOR" ] &&
-            [ "$actual_minor" -ge "$MAX_BAZEL_MINOR" ] )
+            [ "$actual_minor" -gt "$MAX_BAZEL_MINOR" ]
+         }
     then
-	echo "Warning: a too new version of Bazel detected: v${actual_raw}."  >/dev/stderr
-	echo "         Recommended versions are from v${expected_min} to v${expected_max}."  >/dev/stderr
-    elif [ "$actual_major" -lt "$MIN_BAZEL_MAJOR" ] || (
+	      echo "Warning: a too new version of Bazel detected: v${actual_raw}."  >&2
+	      echo "         Recommended versions are from v${expected_min} to v${expected_max}."  >&2
+    elif [ "$actual_major" -lt "$MIN_BAZEL_MAJOR" ] || {
           [ "$actual_major" -eq "$MIN_BAZEL_MAJOR" ] &&
-            [ "$actual_minor" -lt "$MIN_BAZEL_MINOR" ] )
+            [ "$actual_minor" -lt "$MIN_BAZEL_MINOR" ]
+         }
     then
-        echo "Error: Need at least Bazel v${expected_min} but v${actual_raw} detected." >/dev/stderr
+        echo "Error: Need at least Bazel v${expected_min} but v${actual_raw} detected." >&2
         exit 1
     fi
 }
 
+insert_if_equal () {
+    [ "$1" = "$2" ] && printf '%s' "$3"
+}
+
+
+parse_args "$@"
+
+if [ "$print_nix_usage_info" = "yes" ]; then
+    echo 'INFO: Creating a WORKSPACE file based on GHC bindists. If you want to use a nix-based setup (e.g. on NixOS), call with `--use-nix`. See `--help` for more info.' >&2
+fi
+
 check_files_dont_exist
 check_bazel_version
 
-cat > WORKSPACE <<"EOF"
+
+bindist_toolchain=$(cat <<EOF
+# Download a GHC binary distribution from haskell.org and register it as a toolchain.
+rules_haskell_toolchains()
+EOF
+)
+
+nix_toolchain=$(cat <<EOF
+# Load nixpkgs_git_repository from rules_nixpkgs,
+# which was already initialized by rules_haskell_dependencies above.
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_git_repository",
+)
+
+# Fetch a version of nixpkgs from GitHub.
+# For more information see the documentation of rules_nixpkgs at
+# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
+nixpkgs_git_repository(
+    name = "nixpkgs",
+    revision = "19.03",
+    # sha256 = …
+)
+
+load(
+    "@rules_haskell//haskell:nixpkgs.bzl",
+    "haskell_register_ghc_nixpkgs",
+)
+
+# Fetch a GHC binary distribution from nixpkgs and register it as a toolchain.
+# For more information:
+# https://api.haskell.build/haskell/nixpkgs.html#haskell_register_ghc_nixpkgs
+haskell_register_ghc_nixpkgs(
+    repository = "@nixpkgs",
+    attribute_path = "ghc",
+    version = "8.6.4",
+)
+EOF
+)
+
+get_toolchain () {
+    case $mode in
+        bindists) printf '%s' "$bindist_toolchain" ;;
+        nix) printf '%s' "$nix_toolchain" ;;
+    esac
+}
+
+echo "Creating WORKSPACE" >&2
+cat > WORKSPACE <<EOF
 # Give your project a name. :)
 workspace(name = "YOUR_PROJECT_NAME_HERE")
 
@@ -57,8 +156,7 @@ load(
     "http_archive"
 )
 
-# Download `rules_haskell`.
-# and make it accessible `@rules_haskell`.
+# Download rules_haskell and make it accessible as "@rules_haskell".
 http_archive(
     name = "rules_haskell",
     strip_prefix = "rules_haskell-0.10",
@@ -72,20 +170,26 @@ load(
     "rules_haskell_toolchains",
 )
 
-# Setup all Bazel dependencies required by `rules_haskell`.
+# Setup all Bazel dependencies required by rules_haskell.
 rules_haskell_dependencies()
 
-# Download a GHC binary distribution from haskell.org
-# and register it as a toolchain.
-rules_haskell_toolchains()
+$(get_toolchain)
 EOF
 
-cat > .bazelrc <<"EOF"
+echo "Creating .bazelrc" >&2
+cat > .bazelrc <<EOF
 build:ci --loading_phase_threads=1
 build:ci --jobs=2
 build:ci --verbose_failures
 common:ci --color=no
 test:ci --test_output=errors
+
+$(insert_if_equal $mode "nix" '
+# This project uses a GHC provisioned via nix.
+# We need to use the rules_haskell nix toolchain accordingly:
+build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
+run --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs'
+)
 
 build --incompatible_use_python_toolchains=false
 
@@ -98,11 +202,12 @@ test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
 try-import .bazelrc.local
 EOF
 
+echo "Creating BUILD.bazel" >&2
 cat > BUILD.bazel <<"EOF"
 # Set all target’s visibility in this package to "public".
 package(default_visibility = ["//visibility:public"])
 
-# Load `rules_haskell` rules.
+# Load rules_haskell rules.
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_toolchain_library",
@@ -110,12 +215,12 @@ load(
     "haskell_binary",
 )
 
-# `haskell_toolchain_library` can access builtin GHC packages
+# haskell_toolchain_library can access builtin GHC packages
 # and assign them a bazel target name, so that they
 # can be referenced as dependencies.
 haskell_toolchain_library(name = "base")
 
-# You can add your own libraries with `haskell_library`.
+# You can add your own libraries with haskell_library.
 # haskell_library(
 #     name = "MY_LIBRARY_NAME",
 #     src_strip_prefix = "src",
@@ -134,6 +239,7 @@ haskell_binary(
 )
 EOF
 
+echo "Creating Example.hs" >&2
 cat > Example.hs <<"EOF"
 module Main where
 
@@ -142,7 +248,7 @@ import Prelude (putStrLn)
 main = putStrLn "Hello from rules_haskell!"
 EOF
 
-cat <<"EOF"
+cat >&2 <<"EOF"
 WORKSPACE and initial BUILD files created. To run Bazel and build the example:
 
     $ bazel run //:example

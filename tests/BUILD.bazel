@@ -371,6 +371,16 @@ haskell_binary(
     ],
 )
 
+sh_inline_test(
+    name = "shellcheck-start-script",
+    size = "small",
+    args = ["$(location //:start)"],
+    data = ["//:start"],
+    script = """\
+shellcheck --color=always --shell=sh "$1"
+""",
+)
+
 haskell_library(
     name = "lz4",
     srcs = [
