@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 #
-# cabal_wrapper.sh <PKG_NAME> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
+# cabal_wrapper.sh <COMPONENT> <PKG_NAME> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
 #
 # This wrapper calls Cabal's configure/build/install steps one big
 # action so that we don't have to track all inputs explicitly between
 # steps.
 #
+# COMPONENT: Cabal component to build.
 # PKG_NAME: Package ID of the resulting package.
 # SETUP_PATH: Path to Setup.hs
 # PKG_DIR: Directory containing the Cabal file
@@ -67,12 +68,13 @@ LD_LIBRARY_PATH=$(canonicalize_path $LD_LIBRARY_PATH)
 LIBRARY_PATH=$(canonicalize_path $LIBRARY_PATH)
 PATH=$(canonicalize_path $PATH)
 
-name=$1
+component=$1
+name=$2
 execroot="$(pwd)"
-setup=$execroot/$2
-srcdir=$execroot/$3
-pkgroot="$(realpath $execroot/$(dirname $4))" # By definition (see ghc-pkg source code).
-shift 4
+setup=$execroot/$3
+srcdir=$execroot/$4
+pkgroot="$(realpath $execroot/$(dirname $5))" # By definition (see ghc-pkg source code).
+shift 5
 
 declare -a extra_args
 while [[ $1 != -- ]]; do
@@ -108,7 +110,10 @@ fi
 # absolute ones before doing so (using $execroot).
 cd $srcdir
 export HOME=/var/empty
+# Note, setting --datasubdir is required to work around
+#   https://github.com/haskell/cabal/issues/6235
 $execroot/%{runghc} $setup configure \
+    $component \
     --verbose=0 \
     --user \
     --with-compiler=$execroot/%{ghc} \
@@ -124,6 +129,7 @@ $execroot/%{runghc} $setup configure \
     --libsubdir= \
     --bindir=$bindir \
     --datadir=$datadir \
+    --datasubdir= \
     --package-db=clear \
     --package-db=global \
     "${extra_args[@]}" \
