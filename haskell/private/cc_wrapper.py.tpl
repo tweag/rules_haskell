@@ -32,6 +32,7 @@ used to avoid command line length limitations.
 
 from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
 from contextlib import contextmanager
+from collections import deque
 import glob
 import itertools
 import os
@@ -571,6 +572,30 @@ def sort_rpaths(rpaths):
     return sorted(rpaths, key=rpath_priority)
 
 
+def breadth_first_walk(top):
+    """Walk the directory tree starting from the given directory
+
+    Returns an iterator that will recursively walk through the directory
+    similar to `os.walk`. However, contrary to `os.walk` this function iterates
+    through the directory tree in a breadth first fashion.
+
+    Yields:
+      (root, dirnames, filenames)
+        root: The current directory relative to `top`.
+        dirnames: List of directory names contained in `root`.
+        filenames: List of file names contained in `root`.
+
+    """
+    stack = deque([top])
+    while stack:
+        current = stack.popleft()
+        # os.walk performs the separation of file and directory entries. But,
+        # it iterates depth-first. So, we only use os.walk one level deep.
+        for root, dirs, files in itertools.islice(os.walk(current, followlinks = True), 1):
+            yield (root, dirs, files)
+            stack.extend(os.path.join(root, dirname) for dirname in dirs)
+
+
 def find_solib_rpath(rpaths, output):
     """Find the solib directory rpath entry.
 
@@ -590,9 +615,9 @@ def find_solib_rpath(rpaths, output):
         # GHC generates temporary libraries outside the execroot. In that case
         # the Bazel generated RPATHs are not forwarded, and the solib directory
         # is not visible on the command-line.
-        candidates = glob.glob("**/bin/_solib_*", recursive=True)
-        if candidates:
-            return min(candidates)
+        for (root, dirnames, _) in breadth_first_walk("."):
+            if "_solib_{:cpu:}" in dirnames:
+                return os.path.join(root, "_solib_{:cpu:}")
 
     return None
 
