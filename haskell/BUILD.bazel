@@ -6,11 +6,16 @@ load(
     "@rules_haskell//haskell:private/cc_wrapper.bzl",
     "cc_wrapper",
 )
+load(
+    "@rules_haskell//haskell:cabal_wrapper.bzl",
+    "cabal_wrapper",
+)
 
 exports_files(
     glob(["*.bzl"]) + [
         "assets/ghci_script",
         "private/cabal_wrapper.sh.tpl",
+        "private/cabal_wrapper.py.tpl",
         "private/coverage_wrapper.sh.tpl",
         "private/ghci_repl_wrapper.sh",
         "private/haddock_wrapper.sh.tpl",
@@ -28,6 +33,11 @@ exports_files(
 
 cc_wrapper(
     name = "cc_wrapper",
+    visibility = ["//visibility:public"],
+)
+
+cabal_wrapper(
+    name = "cabal_wrapper",
     visibility = ["//visibility:public"],
 )
 
