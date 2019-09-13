@@ -381,6 +381,16 @@ shellcheck --color=always --shell=sh "$1"
 """,
 )
 
+sh_inline_test(
+    name = "shellcheck-cc-wrapper-windows",
+    size = "small",
+    args = ["$(location //haskell:private/cc_wrapper_windows.sh.tpl)"],
+    data = ["//haskell:private/cc_wrapper_windows.sh.tpl"],
+    script = """\
+shellcheck --color=always --shell=bash "$1"
+""",
+)
+
 haskell_library(
     name = "lz4",
     srcs = [

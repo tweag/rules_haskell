@@ -20,6 +20,10 @@
 #     will cause compiler failures. This wrapper shortens include paths
 #     to avoid that issue.
 
+# The runfiles.bash initialization triggers "Can't follow non-constant source".
+# Disabling the warning locally is insufficient, so we disable it globally.
+# shellcheck disable=SC1090
+
 set -euo pipefail
 
 # ----------------------------------------------------------
@@ -91,6 +95,9 @@ unquote_arg() {
         input="${input//\\\"/\"}"
         input="${input//\\\\/\\}"
     fi
+    # shellcheck disable=SC2034
+    # nameref assignment is a "variable use"
+    # https://github.com/koalaman/shellcheck/issues/1543
     output="$input"
 }
 
@@ -116,12 +123,14 @@ shorten_path() {
         return
     fi
 
-    local normalized="$(realpath "$shortest")"
+    local normalized
+    normalized="$(realpath "$shortest")"
     if [[ ${#normalized} -lt ${#shortest} ]]; then
         shortest="$normalized"
     fi
 
-    local relative="$(realpath --relative-to="$PWD" "$shortest")"
+    local relative
+    relative="$(realpath --relative-to="$PWD" "$shortest")"
     if [[ ${#relative} -lt ${#shortest} ]]; then
         shortest="$relative"
     fi
