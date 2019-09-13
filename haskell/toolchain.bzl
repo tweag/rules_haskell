@@ -226,7 +226,7 @@ _haskell_toolchain = rule(
             doc = "Whether GHC was linked statically.",
         ),
         "locale": attr.string(
-            default = "en_US.UTF-8",
+            default = "C.UTF-8",
             doc = "Locale that will be set during compiler invocations.",
         ),
         "locale_archive": attr.label(

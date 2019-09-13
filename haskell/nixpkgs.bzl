@@ -118,7 +118,7 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         # if any input to the derivation changed.
         "_nixpkgs_ghc": attr.label(default = "@rules_haskell_ghc_nixpkgs//:bin/ghc"),
         "locale": attr.string(
-            default = "en_US.UTF-8",
+            default = "C.UTF-8",
         ),
     },
 )
