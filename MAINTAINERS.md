@@ -32,10 +32,11 @@
     - copy the changelog section into the description
     - release
 - [ ] Push `rules_haskell` version in start script to new release tag,
-  test it in a temporary directory, create PR against master, publish
-  start script.
-- [ ] Check whether https://haskell.build/start has the newest start
-      script (netlify has problems sometimes).
+  test it in a temporary directory, create PR against master
+  - [ ] Publish start script and website by merging the commit into
+        the `release` branch.
+  - [ ] Check whether https://haskell.build/start has the newest start
+        script (netlify has problems sometimes).
 - [ ] Announce the new version (on Twitter)
 
 ### Remove these PRs from minor releases
