@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
 
+# cabal_wrapper.py <PKG_NAME> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
+#
+# This wrapper calls Cabal's configure/build/install steps one big
+# action so that we don't have to track all inputs explicitly between
+# steps.
+#
+# PKG_NAME: Package ID of the resulting package.
+# SETUP_PATH: Path to Setup.hs
+# PKG_DIR: Directory containing the Cabal file
+# PACKAGE_DB_PATH: Output package DB path.
+# EXTRA_ARGS: Additional args to Setup.hs configure.
+# PATH_ARGS: Additional args to Setup.hs configure where paths need to be prefixed with execroot.
+
 from glob import glob
 import os
 import os.path
@@ -9,9 +22,12 @@ import subprocess
 import sys
 import tempfile
 
+debug = False
+
 def run(cmd, *args, **kwargs):
-    # print("+ " + " ".join([shlex.quote(arg) for arg in cmd]), file=sys.stderr)
-    # sys.stderr.flush()
+    if debug:
+        print("+ " + " ".join([shlex.quote(arg) for arg in cmd]), file=sys.stderr)
+        sys.stderr.flush()
     subprocess.run(cmd, *args, **kwargs)
 
 def canonicalize_path(path):
@@ -31,6 +47,7 @@ name = sys.argv.pop(1)
 execroot = os.getcwd()
 setup = os.path.join(execroot, sys.argv.pop(1))
 srcdir = os.path.join(execroot, sys.argv.pop(1))
+# By definition (see ghc-pkg source code).
 pkgroot = os.path.realpath(os.path.join(execroot, os.path.dirname(sys.argv.pop(1))))
 libdir = os.path.join(pkgroot, "iface")
 dynlibdir = os.path.join(pkgroot, "lib")
@@ -38,16 +55,16 @@ bindir = os.path.join(pkgroot, "bin")
 datadir = os.path.join(pkgroot, "data")
 package_database = os.path.join(pkgroot, "package.conf.d")
 
-ghc_pkg = "%{ghc_pkg}"
-runghc = os.path.join(execroot, "%{runghc}")
-ghc = os.path.join(execroot, "%{ghc}")
-ghc_pkg = os.path.join(execroot, "%{ghc_pkg}")
+runghc = os.path.join(execroot, r"%{runghc}")
+ghc = os.path.join(execroot, r"%{ghc}")
+ghc_pkg = os.path.join(execroot, r"%{ghc_pkg}")
 
 extra_args = []
 current_arg = sys.argv.pop(1)
 while current_arg != "--":
     extra_args.append(current_arg)
     current_arg = sys.argv.pop(1)
+del current_arg
 
 path_args = sys.argv[1:]
 
@@ -75,6 +92,9 @@ with tempfile.TemporaryDirectory() as distdir:
         "--with-ar=" + ar,
         "--with-strip=" + strip,
         "--enable-deterministic", \
+        ] +
+        enable_relocatable_flags + \
+        [ \
         "--builddir=" + distdir, \
         "--prefix=" + pkgroot, \
         "--libdir=" + libdir, \
@@ -85,7 +105,6 @@ with tempfile.TemporaryDirectory() as distdir:
         "--package-db=clear", \
         "--package-db=global", \
         ] + \
-        enable_relocatable_flags + \
         extra_args + \
         [ arg.replace("=", "=" + execroot + "/") for arg in path_args ] + \
         [ "--package-db=" + package_database ], # This arg must come last.
@@ -113,6 +132,8 @@ def make_relocatable_paths(line):
         abspath=matchobj.group(0)
         return os.path.join("${pkgroot}", os.path.relpath(abspath, start=pkgroot))
 
+    # The $execroot is an absolute path and should not leak into the output.
+    # Replace each ocurrence of execroot by a path relative to ${pkgroot}.
     line = re.sub(execroot + '\S*', make_relative_to_pkgroot, line)
     return line
 
