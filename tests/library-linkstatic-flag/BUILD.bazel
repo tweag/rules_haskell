@@ -94,11 +94,22 @@ sh_inline_test(
     script = """
 set -euo pipefail
 is_dynamic () {
-    # taken from https://github.com/NixOS/nixpkgs/blob/0b3f50f844e2a6b507b18d7c5259bb850b382f87/pkgs/build-support/setup-hooks/auto-patchelf.sh#L167-L170
-    readelf -l -- "$1" | grep -q "^ *INTERP\\>"
+    local res=1
+    if type file >/dev/null; then
+        file --dereference -- "$1"
+        file --dereference -- "$1" | grep -q "dynamically linked"
+        res=$?
+    else
+        echo 'file found in environment, please install either' >&2
+        exit 127
+    fi
+    return $res
 }
 
 for f in "$@"; do
+    if [[ ! -e "$f" ]]; then
+      printf "does not exist: %s" "$f" >&2
+    fi
     if [[ "$f" =~ .a$ ]] && is_dynamic "$f"; then
         echo "should be a static executable: $f"
         exit 1
