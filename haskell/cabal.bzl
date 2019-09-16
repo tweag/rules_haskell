@@ -9,12 +9,14 @@ load(":private/expansions.bzl", "expand_make_variables")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(":private/path_utils.bzl", "join_path_list", "truly_relativize")
 load(":private/set.bzl", "set")
+load(":haddock.bzl", "generate_unified_haddock_info")
 load(
     ":private/workspace_utils.bzl",
     _execute_or_fail_loudly = "execute_or_fail_loudly",
 )
 load(
     ":providers.bzl",
+    "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "get_ghci_extra_libs",
@@ -195,6 +197,14 @@ def _haskell_cabal_library_impl(ctx):
         "_install/{}_data".format(package_id),
         sibling = cabal,
     )
+    haddock_file = hs.actions.declare_file(
+        "_install/{}_haddock/{}.haddock".format(package_id, ctx.attr.name),
+        sibling = cabal,
+    )
+    haddock_html_dir = hs.actions.declare_directory(
+        "_install/{}_haddock_html".format(package_id),
+        sibling = cabal,
+    )
     static_library_filename = "_install/lib/libHS{}.a".format(package_id)
     if with_profiling:
         static_library_filename = "_install/lib/libHS{}_p.a".format(package_id)
@@ -246,6 +256,8 @@ def _haskell_cabal_library_impl(ctx):
             interfaces_dir,
             static_library,
             data_dir,
+            haddock_file,
+            haddock_html_dir,
         ] + ([dynamic_library] if dynamic_library != None else []),
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
@@ -278,6 +290,12 @@ def _haskell_cabal_library_impl(ctx):
         compile_flags = [],
     )
     lib_info = HaskellLibraryInfo(package_id = package_id, version = None, exports = [])
+    doc_info = generate_unified_haddock_info(
+        this_package_id = package_id,
+        this_package_html = haddock_html_dir,
+        this_package_haddock = haddock_file,
+        deps = ctx.attr.deps,
+    )
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
@@ -305,7 +323,7 @@ def _haskell_cabal_library_impl(ctx):
             cc_info,
         ],
     )
-    return [default_info, hs_info, cc_info, lib_info]
+    return [default_info, hs_info, cc_info, lib_info, doc_info]
 
 haskell_cabal_library = rule(
     _haskell_cabal_library_impl,

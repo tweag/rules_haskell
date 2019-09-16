@@ -73,6 +73,8 @@ dynlibdir = os.path.join(pkgroot, "lib")
 bindir = os.path.join(pkgroot, "bin")
 datadir = os.path.join(pkgroot, "{}_data".format(name))
 package_database = os.path.join(pkgroot, "{}.conf.d".format(name))
+haddockdir = os.path.join(pkgroot, "{}_haddock".format(name))
+htmldir = os.path.join(pkgroot, "{}_haddock_html".format(name))
 
 runghc = find_exe(r"%{runghc}")
 ghc = find_exe(r"%{ghc}")
@@ -118,6 +120,8 @@ with tmpdir() as distdir:
     old_cwd = os.getcwd()
     os.chdir(srcdir)
     os.putenv("HOME", "/var/empty")
+    os.putenv("TMPDIR",os.path.join(distdir, "tmp"))
+    os.makedirs(os.path.join(distdir, "tmp"))
     run([runghc, setup, "configure", \
         component, \
         "--verbose=0", \
@@ -141,6 +145,8 @@ with tmpdir() as distdir:
         # Note, setting --datasubdir is required to work around
         #   https://github.com/haskell/cabal/issues/6235
         "--datasubdir=", \
+        "--haddockdir=" + haddockdir, \
+        "--htmldir=" + htmldir, \
         "--package-db=clear", \
         "--package-db=global", \
         ] + \
@@ -149,6 +155,7 @@ with tmpdir() as distdir:
         [ "--package-db=" + package_database ], # This arg must come last.
         )
     run([runghc, setup, "build", "--verbose=0", "--builddir=" + distdir])
+    run([runghc, setup, "haddock", "--verbose=0", "--builddir=" + distdir])
     run([runghc, setup, "install", "--verbose=0", "--builddir=" + distdir])
     # Bazel builds are not sandboxed on Windows and can be non-sandboxed on
     # other OSs. Operations like executing `configure` scripts can modify the

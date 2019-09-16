@@ -12,6 +12,29 @@ load(
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
 
+def generate_unified_haddock_info(this_package_id, this_package_haddock, this_package_html, deps):
+    """Collapse dependencies into a single `HaddockInfo`.
+
+    Returns:
+      HaddockInfo: Unified information about this package and all its dependencies.
+    """
+    haddock_dict = {}
+    html_dict = {}
+
+    for dep in deps:
+        if HaddockInfo in dep:
+            html_dict.update(dep[HaddockInfo].transitive_html)
+            haddock_dict.update(dep[HaddockInfo].transitive_haddocks)
+
+    html_dict[this_package_id] = this_package_html
+    haddock_dict[this_package_id] = [this_package_haddock]
+
+    return HaddockInfo(
+        package_id = this_package_id,
+        transitive_html = html_dict,
+        transitive_haddocks = haddock_dict,
+    )
+
 def _get_haddock_path(package_id):
     """Get path to Haddock file of a package given its id.
 
