@@ -13,11 +13,14 @@
 # EXTRA_ARGS: Additional args to Setup.hs configure.
 # PATH_ARGS: Additional args to Setup.hs configure where paths need to be prefixed with execroot.
 
+from __future__ import print_function
+
+from contextlib import contextmanager
 from glob import glob
 import os
 import os.path
 import re
-import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -26,9 +29,9 @@ debug = False
 
 def run(cmd, *args, **kwargs):
     if debug:
-        print("+ " + " ".join([shlex.quote(arg) for arg in cmd]), file=sys.stderr)
+        print("+ " + " ".join(["'{}'".format(arg) for arg in cmd]), file=sys.stderr)
         sys.stderr.flush()
-    subprocess.run(cmd, *args, **kwargs)
+    subprocess.call(cmd, *args, **kwargs)
 
 def canonicalize_path(path):
     return ":".join([
@@ -40,7 +43,20 @@ def canonicalize_path(path):
 # Remove any relative entries, because we'll be changing CWD shortly.
 os.environ["LD_LIBRARY_PATH"] = canonicalize_path(os.getenv("LD_LIBRARY_PATH", ""))
 os.environ["LIBRARY_PATH"] = canonicalize_path(os.getenv("LIBRARY_PATH", ""))
-os.environ["PATH"] = canonicalize_path(os.getenv("PATH", ""))
+
+# XXX: Big hack: The ghc* wrappers expect a few coreutils to be available, but
+# this means that we must have a "standard" path available.
+# To get this path, we call `sh` with an empty path because it is expected that
+# in that case it will set the path to a sensible default value.
+# In well-behaving platforms such as NixOS this will be a dummy path (but the
+# ghc tools will be wrapped to get everything they need in path).
+#
+# Note that as big a hack as this might be, this is just making explicit what
+# happens in all the sh scripts that bazel runs with `PATH` unset. So nothing
+# new under the sun.
+base_path = subprocess.check_output(["/bin/sh", "-c", "echo $PATH"], env={}).strip()
+os.environ["PATH"] = canonicalize_path(os.getenv("EXTRA_PATH", "") + ":" + base_path)
+
 
 component = sys.argv.pop(1)
 name = sys.argv.pop(1)
@@ -76,7 +92,18 @@ def recache_db():
 
 recache_db()
 
-with tempfile.TemporaryDirectory() as distdir:
+@contextmanager
+def tmpdir():
+    """This is a reimplementation of `tempfile.TemporaryDirectory` because
+    the latter isn't available in python2
+    """
+    distdir = tempfile.mkdtemp()
+    try:
+        yield distdir
+    finally:
+        shutil.rmtree(distdir)
+
+with tmpdir() as distdir:
     enable_relocatable_flags = ["--enable-relocatable"] \
             if "%{is_windows}" != "True" else []
 
