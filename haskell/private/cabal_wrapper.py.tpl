@@ -54,7 +54,7 @@ os.environ["LIBRARY_PATH"] = canonicalize_path(os.getenv("LIBRARY_PATH", ""))
 # Note that as big a hack as this might be, this is just making explicit what
 # happens in all the sh scripts that bazel runs with `PATH` unset. So nothing
 # new under the sun.
-base_path = subprocess.check_output(["/bin/sh", "-c", "echo $PATH"], env={}).strip()
+base_path = subprocess.check_output(["/bin/sh", "-c", "echo $PATH"], env={}).strip().decode()
 os.environ["PATH"] = canonicalize_path(os.getenv("EXTRA_PATH", "") + ":" + base_path)
 
 
