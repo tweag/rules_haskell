@@ -27,11 +27,21 @@ haskell_cabal_library(
     deps = [":c-lib"],
 )
 
+haskell_cabal_library(
+    name = "second-lib",
+    srcs = [
+        "SecondLib.hs",
+        "second-lib.cabal",
+    ],
+    version = "0.1.0.0",
+)
+
 haskell_test(
     name = "haskell_cabal_library",
     srcs = ["Main.hs"],
     deps = [
         ":base",
         ":lib",
+        ":second-lib",
     ],
 )
