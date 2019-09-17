@@ -721,6 +721,9 @@ def _invert(d):
 
 def _from_string_keyed_label_list_dict(d):
     """Convert string_keyed_label_list_dict to label_keyed_string_dict."""
+
+    # TODO Remove _from_string_keyed_label_list_dict once following issue
+    # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
     out = {}
     for (string_key, label_list) in d.items():
         for label in label_list:
@@ -732,6 +735,9 @@ def _from_string_keyed_label_list_dict(d):
 
 def _to_string_keyed_label_list_dict(d):
     """Convert label_keyed_string_dict to string_keyed_label_list_dict."""
+
+    # TODO Remove _to_string_keyed_label_list_dict once following issue
+    # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
     out = {}
     for (label, string_key_list) in d.items():
         for string_key in string_key_list.split(" "):
