@@ -100,7 +100,7 @@ is_dynamic () {
         file --dereference -- "$1" | grep -q "dynamically linked"
         res=$?
     else
-        echo 'file found in environment, please install either' >&2
+        echo 'file not found in environment, please install it' >&2
         exit 127
     fi
     return $res
