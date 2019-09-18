@@ -374,23 +374,23 @@ haskell_binary(
 sh_inline_test(
     name = "shellcheck-start-script",
     size = "small",
-    tags = ["requires_shellcheck"],
     args = ["$(location //:start)"],
     data = ["//:start"],
     script = """\
 shellcheck --color=always --shell=sh "$1"
 """,
+    tags = ["requires_shellcheck"],
 )
 
 sh_inline_test(
     name = "shellcheck-cc-wrapper-windows",
     size = "small",
-    tags = ["requires_shellcheck"],
     args = ["$(location //haskell:private/cc_wrapper_windows.sh.tpl)"],
     data = ["//haskell:private/cc_wrapper_windows.sh.tpl"],
     script = """\
 shellcheck --color=always --shell=bash "$1"
 """,
+    tags = ["requires_shellcheck"],
 )
 
 haskell_library(
