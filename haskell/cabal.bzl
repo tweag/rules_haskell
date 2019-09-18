@@ -782,7 +782,7 @@ def _stack_snapshot_impl(repository_ctx):
         vendored_packages,
     )
 
-    extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.deps)
+    extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.extra_deps)
     tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
 
     # Write out dependency graph as importable Starlark value.
@@ -881,7 +881,7 @@ _stack_snapshot = repository_rule(
         "packages": attr.string_list(),
         "vendored_packages": attr.label_keyed_string_dict(),
         "flags": attr.string_list_dict(),
-        "deps": attr.label_keyed_string_dict(),
+        "extra_deps": attr.label_keyed_string_dict(),
         "tools": attr.label_list(),
         "stack": attr.label(),
     },
@@ -960,7 +960,7 @@ _fetch_stack = repository_rule(
 )
 """Find a suitably recent local Stack or download it."""
 
-def stack_snapshot(stack = None, deps = {}, vendored_packages = {}, **kwargs):
+def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
     Args:
@@ -973,7 +973,7 @@ def stack_snapshot(stack = None, deps = {}, vendored_packages = {}, **kwargs):
         unpacked source distribution. Each package must contain a Cabal file
         named `<package-name>.cabal` in the package root.
       flags: A dict from package name to list of flags.
-      deps: Extra dependencies of packages, e.g. system libraries or C/C++ libraries.
+      extra_deps: Extra dependencies of packages, e.g. system libraries or C/C++ libraries.
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
@@ -987,7 +987,7 @@ def stack_snapshot(stack = None, deps = {}, vendored_packages = {}, **kwargs):
           vendored_packages = {"split": "//split:split"},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
           snapshot = "lts-13.15",
-          deps = {"zlib": ["@zlib.dev//:zlib"]},
+          extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       )
       ```
       defines `@stackage//:conduit`, `@stackage//:lens`,
@@ -1001,7 +1001,7 @@ def stack_snapshot(stack = None, deps = {}, vendored_packages = {}, **kwargs):
           flags = {"zlib": ["-non-blocking-ffi"]},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
           local_Snapshot = "//:snapshot.yaml",
-          deps = {"zlib": ["@zlib.dev//:zlib"]},
+          extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       ```
       Does the same as the previous example, provided there is a
       `snapshot.yaml`, at the root of the repository with content
@@ -1015,8 +1015,8 @@ def stack_snapshot(stack = None, deps = {}, vendored_packages = {}, **kwargs):
     This rule will use Stack to compute the transitive closure of the
     subset of the given snapshot listed in the `packages` attribute, and
     generate a dependency graph. If a package in the closure depends on
-    system libraries or other external libraries, use the `deps` attribute
-    to list them. This attribute works like the
+    system libraries or other external libraries, use the `extra_deps`
+    attribute to list them. This attribute works like the
     `--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
 
     Packages that are in the snapshot need not have their versions
@@ -1040,7 +1040,7 @@ def stack_snapshot(stack = None, deps = {}, vendored_packages = {}, **kwargs):
         stack = stack,
         # TODO Remove _from_string_keyed_label_list_dict once following issue
         # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
-        deps = _from_string_keyed_label_list_dict(deps),
+        extra_deps = _from_string_keyed_label_list_dict(extra_deps),
         # TODO Remove _invert once following issue is resolved:
         # https://github.com/bazelbuild/bazel/issues/7989.
         vendored_packages = _invert(vendored_packages),

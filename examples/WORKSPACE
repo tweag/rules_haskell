@@ -77,6 +77,7 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
+    extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
     flags = {
         # Sets the default explicitly to demonstrate the flags attribute.
         "zlib": [
@@ -96,7 +97,6 @@ stack_snapshot(
     ],
     snapshot = "lts-14.0",
     vendored_packages = {"split": "@split//:split"},
-    deps = {"zlib": ["@zlib.dev//:zlib"]},
 )
 
 # For the rts example.
