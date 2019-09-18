@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## Upcoming release
 
-nothing yet
+### Changed
+
+* The `deps` attribute to `stack_snapshot` has been replaced by the
+  `extra_deps` attribute. It no longer takes a list of dependencies to be added
+  to all packages, but instead a dictionary specifying additional dependencies
+  to select packages. See `stack_snapshot` API docs for an example. See
+  [#1068](https://github.com/tweag/rules_haskell/pull/1068).
 
 ## [0.10.0] - 2019-09-03
 
