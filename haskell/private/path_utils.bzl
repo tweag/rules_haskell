@@ -580,7 +580,7 @@ def parse_pattern(ctx, pattern_str):
         pattern_str = "//{package}{target}".format(package = ctx.label.package, target = pattern_str)
 
     # Separate package and target (if present).
-    package_target = pattern_str[2:].split(":", maxsplit = 2)
+    package_target = pattern_str[2:].split(":", 2)
     package_str = package_target[0]
     target_str = None
     if len(package_target) == 2:
