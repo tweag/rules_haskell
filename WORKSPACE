@@ -75,9 +75,9 @@ stack_snapshot(
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
     name = "stackage-zlib",
+    extra_deps = {"zlib": ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"]},
     packages = ["zlib"],
     snapshot = "lts-13.15",
-    deps = ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"],
 )
 
 load(
