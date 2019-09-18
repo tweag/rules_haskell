@@ -27,6 +27,7 @@ mkShell {
     binutils
     # check the start script for problems
     shellcheck
+    file
   ] ++ lib.optionals docTools [graphviz python36Packages.sphinx zip unzip];
 
   shellHook = ''

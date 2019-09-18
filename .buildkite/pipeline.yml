@@ -4,6 +4,7 @@ steps:
       . /var/lib/buildkite-agent/.nix-profile/etc/profile.d/nix.sh
       echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
       nix-shell --arg docTools false --pure --run '
+      set -e
       ./tests/run-start-script.sh --use-nix
       bazel build --config ci //tests:run-tests
       ./bazel-ci-bin/tests/run-tests

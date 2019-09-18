@@ -92,6 +92,7 @@ insert_if_equal () {
 parse_args "$@"
 
 if [ "$print_nix_usage_info" = "yes" ]; then
+    # shellcheck disable=SC2016
     echo 'INFO: Creating a WORKSPACE file based on GHC bindists. If you want to use a nix-based setup (e.g. on NixOS), call with `--use-nix`. See `--help` for more info.' >&2
 fi
 
