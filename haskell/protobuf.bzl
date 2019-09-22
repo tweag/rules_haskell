@@ -12,6 +12,7 @@ load(
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
 )
+load(":private/pkg_id.bzl", "pkg_id")
 
 def _capitalize_first_letter(c):
     """Capitalize the first letter of the input. Unlike the built-in
@@ -206,8 +207,20 @@ def _haskell_proto_aspect_impl(target, ctx):
             transitive_html.update(dep[HaddockInfo].transitive_html)
             transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)
 
+    package_id = library_info.package_id
+
+    # TODO
+    # Missing haddock information for this build
+    # See bug https://github.com/tweag/rules_haskell/issues/1030
+    # We instead declare empty documentation directories / file
+    haddock_files = []
+    html_dir = None
+
+    #transitive_html.update({package_id: html_dir})
+    transitive_haddocks.update({package_id: haddock_files})
+
     haddock_info = HaddockInfo(
-        package_id = None,
+        package_id = package_id,
         transitive_html = transitive_html,
         transitive_haddocks = transitive_haddocks,
     )
