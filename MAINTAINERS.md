@@ -10,6 +10,7 @@
 - [ ] Remove any feature that is still too experimental to go into a
   release, by cherry-picking reverts (or by manually deleting the
   feature).
+  - Check the list below for PRs to remove.
 - [ ] Write `CHANGELOG` by going through all pull requests since last
   release (https://github.com/tweag/rules_haskell/pulls?q=is%3Apr).
   - Add Highlights section for major improvements/changes
@@ -33,7 +34,13 @@
 - [ ] Push `rules_haskell` version in start script to new release tag,
   test it in a temporary directory, create PR against master, publish
   start script.
+- [ ] Check whether https://haskell.build/start has the newest start
+      script (netlify has problems sometimes).
 - [ ] Announce the new version (on Twitter)
+
+### Remove these PRs from minor releases
+
+- [ ] https://github.com/tweag/rules_haskell/pull/1076
 
 
 ## Bumping bazel version
