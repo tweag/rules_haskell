@@ -88,7 +88,7 @@ def _cabal_tool_flag(tool):
 def _make_path(hs, binaries):
     return ":".join([binary.dirname for binary in binaries.to_list()] + ["$PATH"])
 
-def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper_tpl, package_database):
+def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper_tpl, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -133,7 +133,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, package_id, tool_inputs, to
         # collect2.
         if not file.basename.startswith("libHS")
     ]
-    args.add_all([package_id, setup, cabal.dirname, package_database.dirname])
+    args.add_all([component, package_id, setup, cabal.dirname, package_database.dirname])
     args.add("--flags=" + " ".join(flags))
     args.add("--")
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
@@ -220,6 +220,9 @@ def _haskell_cabal_library_impl(ctx):
         cc,
         dep_info,
         cc_info,
+        component = "lib:{}".format(
+            ctx.attr.package_name if ctx.attr.package_name else hs.label.name,
+        ),
         package_id = package_id,
         tool_inputs = tool_inputs,
         tool_input_manifests = tool_input_manifests,
@@ -394,6 +397,7 @@ def _haskell_cabal_binary_impl(ctx):
         cc,
         dep_info,
         cc_info,
+        component = "exe:{}".format(hs.label.name),
         package_id = hs.label.name,
         tool_inputs = tool_inputs,
         tool_input_manifests = tool_input_manifests,
