@@ -86,17 +86,17 @@ def _haskell_proto_aspect_impl(target, ctx):
     hs_files = []
     inputs = []
 
-    direct_proto_paths = [target.proto.proto_source_root]
-    transitive_proto_paths = target.proto.transitive_proto_path
+    direct_proto_paths = [target[ProtoInfo].proto_source_root]
+    transitive_proto_paths = target[ProtoInfo].transitive_proto_path
 
     args.add_all([
         "-I{0}={1}".format(_proto_path(s, transitive_proto_paths.to_list()), s.path)
-        for s in target.proto.transitive_sources.to_list()
+        for s in target[ProtoInfo].transitive_sources.to_list()
     ])
 
-    inputs.extend(target.proto.transitive_sources.to_list())
+    inputs.extend(target[ProtoInfo].transitive_sources.to_list())
 
-    for src in target.proto.direct_sources:
+    for src in target[ProtoInfo].direct_sources:
         inputs.append(src)
 
         # As with the native rules, require the .proto file to be in the same
@@ -128,7 +128,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         ))
 
     args.add_all([
-        "--proto_path=" + target.proto.proto_source_root,
+        "--proto_path=" + target[ProtoInfo].proto_source_root,
         "--haskell_out=no-runtime:" + paths.join(
             hs_files[0].root.path,
             src_prefix,
