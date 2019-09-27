@@ -4,6 +4,10 @@ load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_package",
 )
+load(
+    "@rules_haskell//haskell/private/unix:unix_nixpkgs.bzl",
+    "unix_nixpkgs",
+)
 
 def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
     compiler_flags_select = "select({})".format(
@@ -167,6 +171,7 @@ def haskell_register_ghc_nixpkgs(
         repl_ghci_args = None,
         locale_archive = None,
         attribute_path = "haskellPackages.ghc",
+        unix_attributes = None,
         nix_file = None,
         nix_file_deps = [],
         nixopts = None,
@@ -187,6 +192,7 @@ def haskell_register_ghc_nixpkgs(
     Args:
       compiler_flags_select: temporary workaround to pass conditional arguments.
         See https://github.com/bazelbuild/bazel/issues/9199 for details.
+      unix_attributes: List of attribute paths to extract standard Unix shell tools from.
 
 
     Example:
@@ -208,6 +214,7 @@ def haskell_register_ghc_nixpkgs(
 
     """
     nixpkgs_ghc_repo_name = "rules_haskell_ghc_nixpkgs"
+    nixpkgs_unix_repo_name = "rules_haskell_unix_nixpkgs"
     haskell_toolchain_repo_name = "rules_haskell_ghc_nixpkgs_haskell_toolchain"
     toolchain_repo_name = "rules_haskell_ghc_nixpkgs_toolchain"
 
@@ -241,6 +248,19 @@ def haskell_register_ghc_nixpkgs(
     # toolchain definition.
     _ghc_nixpkgs_toolchain(name = toolchain_repo_name)
     native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
+
+    # Unix tools toolchain required for Cabal packages
+    unix_nixpkgs_kwargs = dict(
+        nixopts = nixopts,
+        repositories = repositories,
+        repository = repository,
+    )
+    if unix_attributes != None:
+        unix_nixpkgs_kwargs["packages"] = unix_attributes
+    unix_nixpkgs(
+        name = nixpkgs_unix_repo_name,
+        **unix_nixpkgs_kwargs
+    )
 
 def _find_children(repository_ctx, target_dir):
     find_args = [
