@@ -39,7 +39,9 @@ def _haskell_doc_aspect_impl(target, ctx):
     transitive_haddocks = {}
     transitive_html = {}
 
-    for dep in ctx.rule.attr.deps:
+    re_exports = getattr(ctx.rule.attr, "exports", [])
+    all_deps = ctx.rule.attr.deps + re_exports
+    for dep in all_deps:
         if HaddockInfo in dep:
             transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)
             transitive_html.update(dep[HaddockInfo].transitive_html)
@@ -79,7 +81,6 @@ def _haskell_doc_aspect_impl(target, ctx):
         "--title={0}".format(package_id),
         "--hyperlinked-source",
     ])
-
 
     for pid in transitive_haddocks:
         for interface in transitive_haddocks[pid]:
@@ -175,7 +176,7 @@ haskell_doc_aspect = aspect(
             default = Label("@rules_haskell//haskell:private/haddock_wrapper.sh.tpl"),
         ),
     },
-    attr_aspects = ["deps"],
+    attr_aspects = ["deps", "exports"],
     toolchains = ["@rules_haskell//haskell:toolchain"],
 )
 
