@@ -507,9 +507,9 @@ def haskell_library_impl(ctx):
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = set.mutable_union(c.import_dirs, export_infos.import_dirs),
-        static_libraries = depset(transitive=[static_libraries, export_infos.static_libraries]),
-        dynamic_libraries = depset(transitive=[dynamic_libraries, export_infos.dynamic_libraries]),
-        interface_dirs = depset(transitive=[interface_dirs, export_infos.interface_dirs]),
+        static_libraries = depset(transitive = [static_libraries, export_infos.static_libraries]),
+        dynamic_libraries = depset(transitive = [dynamic_libraries, export_infos.dynamic_libraries]),
+        interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
         compile_flags = c.compile_flags,
     )
 
