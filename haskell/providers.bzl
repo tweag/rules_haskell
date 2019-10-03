@@ -13,7 +13,6 @@ load(
     "make_path",
     "mangle_static_library",
     "rel_to_pkgroot",
-    "symlink_dynamic_library",
     "target_unique_name",
 )
 

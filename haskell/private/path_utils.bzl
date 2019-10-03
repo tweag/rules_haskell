@@ -127,44 +127,6 @@ def make_path(libs, prefix = None, sep = None):
 
     return sep.join(set.to_list(r))
 
-def symlink_dynamic_library(hs, lib, outdir):
-    """Create a symbolic link for a dynamic library and fix the extension.
-
-    This function is used for two reasons:
-
-    1) GHCi expects specific file endings for dynamic libraries depending on
-       the platform: (Linux: .so, macOS: .dylib, Windows: .dll). Bazel does not
-       follow this convention.
-
-    2) macOS applies a strict limit to the MACH-O header size. Many large
-       dynamic loading commands can quickly exceed this limit. To avoid this we
-       place all dynamic libraries into one directory, so that a single RPATH
-       entry is sufficient.
-
-    Args:
-      hs: Haskell context.
-      lib: The dynamic library file.
-      outdir: Output directory for the symbolic link.
-
-    Returns:
-      File, symbolic link to dynamic library.
-    """
-    if hs.toolchain.is_darwin:
-        extension = "dylib"
-    elif hs.toolchain.is_windows:
-        extension = "dll"
-    else:
-        # On Linux we must preserve endings like .so.1.2.3. If those exist then
-        # there will be a matching .so symlink that points to the final
-        # library.
-        extension = get_lib_extension(lib)
-
-    link = hs.actions.declare_file(
-        paths.join(outdir, "lib" + get_lib_name(lib) + "." + extension),
-    )
-    ln(hs, lib, link)
-    return link
-
 def mangle_static_library(hs, dynamic_lib, static_lib, outdir):
     """Mangle a static library to match a dynamic library name.
 
