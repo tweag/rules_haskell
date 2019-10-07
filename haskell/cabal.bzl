@@ -109,6 +109,7 @@ def _prepare_cabal_inputs(hs, cc, unix, dep_info, cc_info, component, package_id
             "%{ghc_pkg}": hs.tools.ghc_pkg.path,
             "%{runghc}": hs.tools.runghc.path,
             "%{ar}": cc.tools.ar,
+            "%{cc}": cc.tools.cc,
             "%{strip}": cc.tools.strip,
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
