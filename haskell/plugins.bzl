@@ -60,4 +60,6 @@ attribute to Haskell rules. Plugins are haskell libraries with some
 extra metadata, like the name of the module that acts as the
 entrypoint for the plugin and plugin options.
 
+See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/extending_ghc.html#writing-compiler-plugins
+for more information.
 """
