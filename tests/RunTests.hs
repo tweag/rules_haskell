@@ -68,7 +68,7 @@ main = hspec $ do
 
     for_ all_failure_tests $ \test -> do
       it test $ do
-        assertFailure (bazel ["build", "test"])
+        assertFailure (bazel ["build", test])
 
   -- Test that the repl still works if we shadow some Prelude functions
   it "repl name shadowing" $ do
