@@ -11,9 +11,14 @@ def _unix_nixpkgs(name, packages, **kwargs):
 with import <nixpkgs> {{ config = {{}}; overlays = []; }};
 
 let
-  cmd_glob =
-    builtins.concatStringsSep " "
-      (builtins.map (x: "${{x}}/bin/*") [ {} ]);
+  # `packages` might include lists, e.g. `stdenv.initialPath` is a list itself,
+  # so we need to flatten `packages`.
+  flatten = builtins.concatMap (x: if builtins.isList x then x else [x]);
+  env = buildEnv {{
+    name = "unix-toolchain";
+    paths = flatten [ {} ];
+  }};
+  cmd_glob = "${{env}}/bin/*";
   os = if stdenv.isDarwin then "osx" else "linux";
 in
 
@@ -93,7 +98,7 @@ _unix_nixpkgs_toolchain = repository_rule(
     },
 )
 
-def unix_nixpkgs(name, packages = ["bash", "coreutils", "gnused", "gnugrep", "gawk"], **kwargs):
+def unix_nixpkgs(name, packages = ["stdenv.initialPath"], **kwargs):
     """Create a unix toolchain from nixpkgs.
 
     Loads the given Nix packages, scans them for standard Unix tools, and
