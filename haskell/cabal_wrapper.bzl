@@ -7,6 +7,15 @@ def _cabal_wrapper_impl(ctx):
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
 
+    # If running on darwin but XCode is not installed (i.e., only the Command
+    # Line Tools are available), then Bazel will make ar_executable point to
+    # "/usr/bin/libtool". Since we call ar directly, override it.
+    # TODO: remove this if Bazel fixes its behavior.
+    # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
+    ar = cc_toolchain.ar_executable()
+    if ar.find("libtool") >= 0:
+        ar = "/usr/bin/ar"
+
     cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl
     cabal_wrapper = hs.actions.declare_file("cabal_wrapper.py")
     hs.actions.expand_template(
@@ -17,7 +26,7 @@ def _cabal_wrapper_impl(ctx):
             "%{ghc}": hs.tools.ghc.path,
             "%{ghc_pkg}": hs.tools.ghc_pkg.path,
             "%{runghc}": hs.tools.runghc.path,
-            "%{ar}": cc_toolchain.ar_executable(),
+            "%{ar}": ar,
             "%{cc}": hs_toolchain.cc_wrapper.executable.path,
             "%{strip}": cc_toolchain.strip_executable(),
             "%{is_windows}": str(hs.toolchain.is_windows),
