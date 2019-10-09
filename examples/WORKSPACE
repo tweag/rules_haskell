@@ -52,15 +52,6 @@ cc_library(
     repository = "@rules_haskell//nixpkgs:default.nix",
 )
 
-nixpkgs_package(
-    name = "stdenv",
-    repository = "@rules_haskell//nixpkgs:default.nix",
-    nix_file_content = """
-let p = import <nixpkgs> {}; in
-p.buildEnv { name = "stdenv-env"; paths = p.stdenv.initialPath; }
-    """,
-)
-
 # Demonstrates a vendored Stackage package to bump a version bound.
 http_archive(
     name = "split",
@@ -106,7 +97,6 @@ stack_snapshot(
     ],
     snapshot = "lts-14.0",
     vendored_packages = {"split": "@split//:split"},
-    tools = [ "@stdenv//:bin/{}".format(tool) for tool in ["sh", "grep", "sed", "awk"]],
 )
 
 # For the rts example.
