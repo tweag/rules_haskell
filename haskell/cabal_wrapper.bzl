@@ -18,12 +18,17 @@ def _cabal_wrapper_impl(ctx):
             "%{ghc_pkg}": hs.tools.ghc_pkg.path,
             "%{runghc}": hs.tools.runghc.path,
             "%{ar}": cc_toolchain.ar_executable(),
+            "%{cc}": hs_toolchain.cc_wrapper.executable.path,
             "%{strip}": cc_toolchain.strip_executable(),
             "%{is_windows}": str(hs.toolchain.is_windows),
         },
     )
     return [DefaultInfo(
         files = depset([cabal_wrapper]),
+        runfiles = hs.toolchain.cc_wrapper.runfiles.merge(ctx.runfiles(
+            transitive_files = cc_toolchain.all_files,
+            collect_data = True,
+        )),
     )]
 
 _cabal_wrapper = rule(
