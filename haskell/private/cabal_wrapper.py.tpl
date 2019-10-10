@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-# cabal_wrapper.py <PKG_NAME> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
+# cabal_wrapper.py <COMPONENT> <PKG_NAME> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
 #
 # This wrapper calls Cabal's configure/build/install steps one big
 # action so that we don't have to track all inputs explicitly between
 # steps.
 #
+# COMPONENT: Cabal component to build.
 # PKG_NAME: Package ID of the resulting package.
 # SETUP_PATH: Path to Setup.hs
 # PKG_DIR: Directory containing the Cabal file
