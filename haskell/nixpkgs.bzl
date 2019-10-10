@@ -251,6 +251,7 @@ def haskell_register_ghc_nixpkgs(
 
     # Unix tools toolchain required for Cabal packages
     unix_nixpkgs_kwargs = dict(
+        nix_file_deps = nix_file_deps,
         nixopts = nixopts,
         repositories = repositories,
         repository = repository,
