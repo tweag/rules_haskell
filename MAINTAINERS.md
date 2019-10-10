@@ -40,7 +40,7 @@
 
 ### Remove these PRs from minor releases
 
-- [ ] https://github.com/tweag/rules_haskell/pull/1076
+- --
 
 
 ## Bumping bazel version
