@@ -131,6 +131,9 @@ with tmpdir() as distdir:
         "--libsubdir=", \
         "--bindir=" + bindir, \
         "--datadir=" + datadir, \
+        # Note, setting --datasubdir is required to work around
+        #   https://github.com/haskell/cabal/issues/6235
+        "--datasubdir=", \
         "--package-db=clear", \
         "--package-db=global", \
         ] + \
