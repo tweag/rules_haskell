@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## Upcoming release
 
+nothing yet
+
+## [0.11.0] - 2019-10-10
+
+### Highlights
+
+* Various improvements to `cabal_binary/library` and `stack_snapshot`.
+
+* Initial experimental Windows support for `cabal_binary/library` and
+  `stack_snapshot`.
+  
+* [`start`](./start) script for setting up `rules_haskell` allows to set up a nixpkgs-based
+  bazel workspace, for NixOS users, via the `--use-nix` option.
+  
+### Added
+
+* Windows-support for cabal/stack.
+  See [#1074](https://github.com/tweag/rules_haskell/pull/1074).
+* `stack_snapshot`: `vendored_packages` attribute for manually
+  overriding packages in a stack snapshot.
+  There is an example in [./examples/WORKSPACE](./examples/WORKSPACE).
+  See [#1060](https://github.com/tweag/rules_haskell/pull/1060).
+  
+### Removed
+
+* The `haskell/haskell.bzl` entrypoint, which was deprecated in the
+  previous release, was removed. Please use `haskell/defs.bzl`
+  instead.
+
 ### Changed
 
 * The `deps` attribute to `stack_snapshot` has been replaced by the
@@ -13,6 +42,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   to all packages, but instead a dictionary specifying additional dependencies
   to select packages. See `stack_snapshot` API docs for an example. See
   [#1068](https://github.com/tweag/rules_haskell/pull/1068).
+  
+### Fixed
+
+* Unified the `cc_wrapper` on all OSes.
+  * Consistently shortens paths of library dependencies to work around
+    size limits on Windows and macOS
+  * fixes `.so/.dylib` ending confusing on macOS
+  * improves the REPL on macOS
+  See [#1039](https://github.com/tweag/rules_haskell/pull/1039).
+* `cabal_binary/library` targets don’t name-clash anymore
+* `haskell_cabal_library` no longer builds `exe` components, speeding
+  up builds.
+  See [#1095](https://github.com/tweag/rules_haskell/pull/1095).
+* Haddock information for protobuf rules generates correctly.
+  See [#1108](https://github.com/tweag/rules_haskell/pull/1108).
 
 ## [0.10.0] - 2019-09-03
 
