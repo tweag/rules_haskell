@@ -299,3 +299,4 @@ We set `--builders ""` and `--max-jobs 0` on CI to be sure all
 dependencies are coming from binary caches. You might need to add an
 exception (TODO: where to add exception) or [switch to a different
 nixpkgs pin](#nixpkgs-pin).
+
