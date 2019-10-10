@@ -217,7 +217,6 @@ def _haskell_cabal_library_impl(ctx):
         package_database = package_database,
     )
     ctx.actions.run(
-        # command = '{} "$@"'.format(c.cabal_wrapper.path),
         executable = c.cabal_wrapper,
         arguments = [c.args],
         inputs = c.inputs,
@@ -399,7 +398,6 @@ def _haskell_cabal_binary_impl(ctx):
         package_database = package_database,
     )
     ctx.actions.run(
-        # command = '{} "$@"'.format(c.cabal_wrapper.path),
         executable = c.cabal_wrapper,
         arguments = [c.args],
         inputs = c.inputs,
