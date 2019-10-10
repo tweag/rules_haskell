@@ -8,6 +8,9 @@ mkShell {
   # See: https://github.com/bazelbuild/bazel/issues/4231
   BAZEL_USE_CPP_ONLY_TOOLCHAIN=1;
 
+  # Set UTF-8 local so that run-tests can parse GHC's unicode output.
+  LANG="C.UTF-8";
+
   buildInputs = [
     go
     nix
