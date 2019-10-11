@@ -1,4 +1,7 @@
-load("@rules_haskell//haskell:defs.bzl", "haskell_test")
+# https://github.com/tweag/rules_haskell/issues/1010
+
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+load("@rules_haskell//tests:failing-repros/should_fail.bzl", "should_fail")
 
 cc_library(
     name = "cbits",
@@ -6,9 +9,18 @@ cc_library(
     includes = ["include"],
 )
 
-haskell_test(
-    name = "isystem-issue",
+haskell_binary(
+    name = "bin",
     srcs = ["Main.hs"],
-    deps = ["@haskell_base//:lib", ":cbits"],
     compiler_flags = ["-Itests/isystem-issue/include"],
+    deps = [
+        ":cbits",
+        "@haskell_base//:lib",
+    ],
+)
+
+should_fail(
+    name = "isystem-issue",
+    exitcode = 1,
+    target = ":bin",
 )
