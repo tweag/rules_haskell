@@ -43,20 +43,7 @@ def canonicalize_path(path):
 # Remove any relative entries, because we'll be changing CWD shortly.
 os.environ["LD_LIBRARY_PATH"] = canonicalize_path(os.getenv("LD_LIBRARY_PATH", ""))
 os.environ["LIBRARY_PATH"] = canonicalize_path(os.getenv("LIBRARY_PATH", ""))
-
-# XXX: Big hack: The ghc* wrappers expect a few coreutils to be available, but
-# this means that we must have a "standard" path available.
-# To get this path, we call `sh` with an empty path because it is expected that
-# in that case it will set the path to a sensible default value.
-# In well-behaving platforms such as NixOS this will be a dummy path (but the
-# ghc tools will be wrapped to get everything they need in path).
-#
-# Note that as big a hack as this might be, this is just making explicit what
-# happens in all the sh scripts that bazel runs with `PATH` unset. So nothing
-# new under the sun.
-base_path = subprocess.check_output(["/bin/sh", "-c", "echo $PATH"], env={}).strip().decode()
-os.environ["PATH"] = canonicalize_path(os.getenv("EXTRA_PATH", "") + ":" + base_path)
-
+os.environ["PATH"] = canonicalize_path(os.getenv("PATH", ""))
 
 component = sys.argv.pop(1)
 name = sys.argv.pop(1)
