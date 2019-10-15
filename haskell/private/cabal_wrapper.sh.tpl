@@ -84,6 +84,7 @@ done
 shift 1
 
 ar=$(realpath %{ar})
+cc=$(realpath %{cc})
 strip=$(realpath %{strip})
 distdir=$(mktemp -d)
 libdir="$pkgroot/${name}_iface"
@@ -98,6 +99,15 @@ cleanup () {
 trap cleanup EXIT
 
 %{ghc_pkg} recache --package-db=$package_database
+
+WITH_GCC=
+if [[ %{is_windows} != True ]]; then
+    # Use the cc-wrapper for Cabal builds.
+    # Note, we cannot currently use it on Windows because the solution to the
+    # following issue is not released, yet.
+    #   https://github.com/bazelbuild/bazel/issues/9390
+    WITH_GCC="--with-gcc=$cc"
+fi
 
 ENABLE_RELOCATABLE=
 if [[ %{is_windows} != True ]]; then
@@ -119,6 +129,7 @@ $execroot/%{runghc} $setup configure \
     --with-compiler=$execroot/%{ghc} \
     --with-hc-pkg=$execroot/%{ghc_pkg} \
     --with-ar=$ar \
+    $WITH_GCC \
     --with-strip=$strip \
     --enable-deterministic \
     $ENABLE_RELOCATABLE \

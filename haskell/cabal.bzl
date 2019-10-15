@@ -88,12 +88,12 @@ def _cabal_tool_flag(tool):
 def _make_path(hs, binaries):
     return ":".join([binary.dirname for binary in binaries.to_list()] + ["$PATH"])
 
-def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper_tpl, package_database):
+def _prepare_cabal_inputs(hs, cc, unix, dep_info, cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper_tpl, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
     (ghci_extra_libs, env) = get_ghci_extra_libs(hs, cc_info)
-    env["PATH"] = _make_path(hs, tool_inputs)
+    env["PATH"] = _make_path(hs, tool_inputs) + ":" + ":".join(unix.paths)
     if hs.toolchain.is_darwin:
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
 
@@ -109,6 +109,7 @@ def _prepare_cabal_inputs(hs, cc, dep_info, cc_info, component, package_id, tool
             "%{ghc_pkg}": hs.tools.ghc_pkg.path,
             "%{runghc}": hs.tools.runghc.path,
             "%{ar}": cc.tools.ar,
+            "%{cc}": cc.tools.cc,
             "%{strip}": cc.tools.strip,
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
@@ -176,6 +177,7 @@ def _haskell_cabal_library_impl(ctx):
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
     )
+    unix = ctx.toolchains["@rules_haskell//haskell/private/unix:toolchain_type"]
     package_id = "{}-{}".format(
         ctx.attr.package_name if ctx.attr.package_name else hs.label.name,
         ctx.attr.version,
@@ -218,6 +220,7 @@ def _haskell_cabal_library_impl(ctx):
     c = _prepare_cabal_inputs(
         hs,
         cc,
+        unix,
         dep_info,
         cc_info,
         component = "lib:{}".format(
@@ -334,7 +337,10 @@ haskell_cabal_library = rule(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
-    toolchains = ["@rules_haskell//haskell:toolchain"],
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+        "@rules_haskell//haskell/private/unix:toolchain_type",
+    ],
     fragments = ["cpp"],
 )
 """Use Cabal to build a library.
@@ -373,6 +379,7 @@ def _haskell_cabal_binary_impl(ctx):
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
     )
+    unix = ctx.toolchains["@rules_haskell//haskell/private/unix:toolchain_type"]
 
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
@@ -395,6 +402,7 @@ def _haskell_cabal_binary_impl(ctx):
     c = _prepare_cabal_inputs(
         hs,
         cc,
+        unix,
         dep_info,
         cc_info,
         component = "exe:{}".format(hs.label.name),
@@ -468,7 +476,10 @@ haskell_cabal_binary = rule(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
-    toolchains = ["@rules_haskell//haskell:toolchain"],
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+        "@rules_haskell//haskell/private/unix:toolchain_type",
+    ],
     fragments = ["cpp"],
 )
 """Use Cabal to build a binary.
