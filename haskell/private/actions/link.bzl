@@ -111,7 +111,7 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
         inputs = [objects_dir],
         outputs = [objects_dir_manifest],
         command = """
-        find {dir} -name '*.{ext}' > {out}
+        find {dir} -name '*.{ext}' | sort > {out}
         """.format(
             dir = objects_dir.path,
             ext = ext,
