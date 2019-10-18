@@ -10,6 +10,7 @@ load(
     ":private/path_utils.bzl",
     "create_rpath_entry",
     "get_lib_name",
+    "is_hs_library",
     "make_path",
     "mangle_static_library",
     "rel_to_pkgroot",
@@ -328,12 +329,12 @@ def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
     cc_static_libs = depset(direct = [
         lib
         for lib in static_libs.to_list()
-        if not get_lib_name(lib).startswith("HS")
+        if not is_hs_library(get_lib_name(lib))
     ])
     cc_dynamic_libs = depset(direct = [
         lib
         for lib in dynamic_libs.to_list()
-        if not get_lib_name(lib).startswith("HS")
+        if not is_hs_library(get_lib_name(lib))
     ])
 
     package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")

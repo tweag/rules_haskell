@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
-load(":private/path_utils.bzl", "get_lib_name", "target_unique_name")
+load(":private/path_utils.bzl", "get_lib_name", "is_hs_library", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":providers.bzl", "get_extra_libs")
 
@@ -37,12 +37,12 @@ def _get_extra_libraries(hs, with_shared, cc_info):
     cc_static_libs = depset(direct = [
         lib
         for lib in static_libs.to_list()
-        if not get_lib_name(lib).startswith("HS")
+        if not is_hs_library(get_lib_name(lib))
     ])
     cc_dynamic_libs = depset(direct = [
         lib
         for lib in dynamic_libs.to_list()
-        if not get_lib_name(lib).startswith("HS")
+        if not is_hs_library(get_lib_name(lib))
     ])
     cc_libs = cc_static_libs.to_list() + cc_dynamic_libs.to_list()
 
