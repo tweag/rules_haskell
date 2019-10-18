@@ -675,6 +675,7 @@ The following toolchain libraries are available:
 def haskell_toolchain_libraries_impl(ctx):
     hs = haskell_context(ctx)
     with_profiling = is_profiling_enabled(hs)
+    with_threaded = "-threaded" in hs.toolchain.compiler_flags
 
     # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
     # Should be find_cpp_toolchain() instead.
@@ -738,6 +739,21 @@ def haskell_toolchain_libraries_impl(ctx):
                 entry = libs.get(name, {})
                 entry["static"] = lib
                 libs[name] = entry
+
+            # Avoid duplicate runtime and ffi libraries. These libraries come
+            # in threaded and non-threaded flavors. Depending on the
+            # compilation mode we want to forward only one or the other.
+            # XXX: Threaded mode should be a per-target property. Use Bazel
+            # build configurations and transitions to select the threaded or
+            # non-threaded runtime and ffi on a per-target basis.
+            if "HSrts_thr" in libs:
+                if with_threaded:
+                    libs["HSrts"] = libs["HSrts_thr"]
+                libs.pop("HSrts_thr")
+            if "Cffi_thr" in libs:
+                if with_threaded:
+                    libs["ffi"]["static"] = libs["Cffi_thr"]["static"]
+                libs.pop("Cffi_thr")
         libraries_to_link = [
             cc_common.create_library_to_link(
                 actions = ctx.actions,
