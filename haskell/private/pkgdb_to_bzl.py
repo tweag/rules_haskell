@@ -74,7 +74,7 @@ def hs_library_pattern(name, mode = "static", profiling = False):
     if mode == "dynamic" and name != "Cffi":
         libnames = [libname + "-ghc*" for libname in libnames]
     if mode == "dynamic":
-        exts = ["so", "dylib", "dll"]
+        exts = ["so", "so.*", "dylib", "dll"]
     else:
         exts = ["a"]
     return [

@@ -30,6 +30,7 @@ load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
     "get_dynamic_hs_lib_name",
+    "get_lib_extension",
     "get_static_hs_lib_name",
     "ln",
     "match_label",
@@ -699,6 +700,7 @@ def haskell_toolchain_libraries_impl(ctx):
         target = libraries[package]
 
         # Construct CcInfo
+        additional_link_inputs = []
         if with_profiling:
             # GHC does not provide dynamic profiling mode libraries. The dynamic
             # libraries that are available are missing profiling symbols, that
@@ -713,10 +715,24 @@ def haskell_toolchain_libraries_impl(ctx):
             # Static and dynamic libraries don't necessarily pair up 1 to 1.
             # E.g. the rts package in the Unix GHC bindist contains the
             # dynamic libHSrts and the static libCffi and libHSrts.
-            libs = {
-                get_dynamic_hs_lib_name(hs.toolchain.version, lib): {"dynamic": lib}
-                for lib in target[HaskellImportHack].dynamic_libraries.to_list()
-            }
+            libs = {}
+            for lib in target[HaskellImportHack].dynamic_libraries.to_list():
+                libname = get_dynamic_hs_lib_name(hs.toolchain.version, lib)
+                if libname == "ffi" and libname in libs:
+                    # Make sure that the file of libffi matching its soname
+                    # ends up in target runfiles. Otherwise, execution will
+                    # fail with "cannot open shared object file" errors.
+                    # On Linux libffi comes in three shapes:
+                    #   libffi.so, libffi.so.7, libffi.so.7.1.0
+                    # (version numbers may vary)
+                    # The soname is then libffi.so.7, meaning, at runtime the
+                    # dynamic linker will look for libffi.so.7. So, that file
+                    # should be the LibraryToLink.dynamic_library.
+                    ext_components = get_lib_extension(lib).split(".")
+                    if len(ext_components) == 2 and ext_components[0] == "so":
+                        libs[libname]["dynamic"] = lib
+                else:
+                    libs[libname] = {"dynamic": lib}
             for lib in target[HaskellImportHack].static_libraries.to_list():
                 name = get_static_hs_lib_name(with_profiling, lib)
                 entry = libs.get(name, {})
@@ -780,6 +796,17 @@ This will need to be revisited once that proposal is implemented.
 """
 
 def haskell_import_impl(ctx):
+    # The `allow_files` attribute of `rule` cannot define patterns of accepted
+    # file extensions like `.so.*`. Instead, we check for the correct file
+    # extensions here.
+    for lib in ctx.files.shared_libraries:
+        msg = "in shared_libraries attribute of haskell_import rule {}: " + \
+              "source file '{}' is misplaced here " + \
+              "(expected .dll, .dylib, .so or .so.*)"
+        ext = get_lib_extension(lib)
+        if not (ext in ["dll", "dylib", "so"] or ext.startswith("so.")):
+            fail(msg.format(str(ctx.label), str(lib.short_path)))
+
     id = ctx.attr.id or ctx.attr.name
     target_files = [
         file
