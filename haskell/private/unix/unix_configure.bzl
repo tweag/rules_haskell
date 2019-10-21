@@ -43,7 +43,10 @@ toolchain(
             for (cmd, cmd_path) in commands.items()
             if cmd_path
         ]),
-        os = "osx" if cpu == "darwin" else "linux",
+        os = {
+            "darwin": "osx",
+            "x64_windows": "windows",
+        }.get(cpu, "linux"),
     ))
 
 unix_config = repository_rule(
