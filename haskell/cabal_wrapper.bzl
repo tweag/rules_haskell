@@ -30,6 +30,7 @@ def _cabal_wrapper_impl(ctx):
             "%{cc}": hs_toolchain.cc_wrapper.executable.path,
             "%{strip}": cc_toolchain.strip_executable(),
             "%{is_windows}": str(hs.toolchain.is_windows),
+            "%{workspace}": ctx.workspace_name,
         },
     )
     return [DefaultInfo(

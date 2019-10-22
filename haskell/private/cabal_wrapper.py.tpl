@@ -16,6 +16,7 @@
 
 from __future__ import print_function
 
+from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
 from contextlib import contextmanager
 from glob import glob
 import os
@@ -33,6 +34,18 @@ def run(cmd, *args, **kwargs):
         print("+ " + " ".join(["'{}'".format(arg) for arg in cmd]), file=sys.stderr)
         sys.stderr.flush()
     subprocess.call(cmd, *args, **kwargs)
+
+def find_exe(exe):
+    if os.path.isfile(exe):
+        path = os.path.abspath(exe)
+    elif "%{is_windows}" == "True" and os.path.isfile(exe + ".exe"):
+        path = os.path.abspath(exe + ".exe")
+    else:
+        r = bazel_runfiles.Create()
+        path = r.Rlocation("%{workspace}/" + exe)
+        if not os.path.isfile(path) and "%{is_windows}" == "True":
+            path = r.Rlocation("%{workspace}/" + exe + ".exe")
+    return path
 
 path_list_sep = ";" if "%{is_windows}" == "True" else ":"
 
@@ -61,9 +74,9 @@ bindir = os.path.join(pkgroot, "bin")
 datadir = os.path.join(pkgroot, "{}_data".format(name))
 package_database = os.path.join(pkgroot, "{}.conf.d".format(name))
 
-runghc = os.path.join(execroot, r"%{runghc}")
-ghc = os.path.join(execroot, r"%{ghc}")
-ghc_pkg = os.path.join(execroot, r"%{ghc_pkg}")
+runghc = find_exe(r"%{runghc}")
+ghc = find_exe(r"%{ghc}")
+ghc_pkg = find_exe(r"%{ghc_pkg}")
 
 extra_args = []
 current_arg = sys.argv.pop(1)
@@ -74,9 +87,9 @@ del current_arg
 
 path_args = sys.argv[1:]
 
-ar = os.path.realpath("%{ar}")
-cc = os.path.realpath("%{cc}")
-strip = os.path.realpath("%{strip}")
+ar = find_exe("%{ar}")
+cc = find_exe("%{cc}")
+strip = find_exe("%{strip}")
 
 def recache_db():
     run([ghc_pkg, "recache", "--package-db=" + package_database])
