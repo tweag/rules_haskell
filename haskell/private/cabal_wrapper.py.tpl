@@ -166,7 +166,7 @@ def make_relocatable_paths(line):
 
     # The $execroot is an absolute path and should not leak into the output.
     # Replace each ocurrence of execroot by a path relative to ${pkgroot}.
-    line = re.sub(execroot + '\S*', make_relative_to_pkgroot, line)
+    line = re.sub(re.escape(execroot) + '\S*', make_relative_to_pkgroot, line)
     return line
 
 if libraries != [] and os.path.isfile(package_conf_file):
