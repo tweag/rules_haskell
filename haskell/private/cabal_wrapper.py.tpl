@@ -108,12 +108,6 @@ def tmpdir():
         shutil.rmtree(distdir)
 
 with tmpdir() as distdir:
-    # Use the cc-wrapper for Cabal builds.
-    # Note, we cannot currently use it on Windows because the solution to the
-    # following issue is not released, yet.
-    #   https://github.com/bazelbuild/bazel/issues/9390
-    with_gcc_flags = ["--with-gcc=" + cc] \
-            if "%{is_windows}" != "True" else []
     enable_relocatable_flags = ["--enable-relocatable"] \
             if "%{is_windows}" != "True" else []
 
@@ -131,9 +125,7 @@ with tmpdir() as distdir:
         "--with-compiler=" + ghc,
         "--with-hc-pkg=" + ghc_pkg,
         "--with-ar=" + ar,
-        ] +
-        with_gcc_flags + \
-        [ \
+        "--with-gcc=" + cc,
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
