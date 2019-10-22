@@ -34,10 +34,12 @@ def run(cmd, *args, **kwargs):
         sys.stderr.flush()
     subprocess.call(cmd, *args, **kwargs)
 
+path_list_sep = ";" if "%{is_windows}" == "True" else ":"
+
 def canonicalize_path(path):
-    return ":".join([
+    return path_list_sep.join([
         os.path.abspath(entry)
-        for entry in path.split(":")
+        for entry in path.split(path_list_sep)
         if entry != ""
     ])
 

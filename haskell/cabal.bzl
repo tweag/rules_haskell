@@ -86,7 +86,8 @@ def _cabal_tool_flag(tool):
         return "--with-{}={}".format(tool.basename, tool.path)
 
 def _make_path(hs, binaries):
-    return ":".join([binary.dirname for binary in binaries.to_list()])
+    path_list_sep = ";" if hs.toolchain.is_windows else ":"
+    return path_list_sep.join([binary.dirname for binary in binaries.to_list()])
 
 def _prepare_cabal_inputs(hs, cc, unix, dep_info, cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
@@ -94,7 +95,8 @@ def _prepare_cabal_inputs(hs, cc, unix, dep_info, cc_info, component, package_id
 
     (ghci_extra_libs, env) = get_ghci_extra_libs(hs, cc_info)
     env.update(**hs.env)
-    env["PATH"] = _make_path(hs, tool_inputs) + ":" + ":".join(unix.paths)
+    path_list_sep = ";" if hs.toolchain.is_windows else ":"
+    env["PATH"] = _make_path(hs, tool_inputs) + path_list_sep + path_list_sep.join(unix.paths)
     if hs.toolchain.is_darwin:
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
 
