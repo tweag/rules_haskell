@@ -33,7 +33,7 @@ def run(cmd, *args, **kwargs):
     if debug:
         print("+ " + " ".join(["'{}'".format(arg) for arg in cmd]), file=sys.stderr)
         sys.stderr.flush()
-    subprocess.call(cmd, *args, **kwargs)
+    subprocess.check_call(cmd, *args, **kwargs)
 
 def find_exe(exe):
     if os.path.isfile(exe):
