@@ -122,6 +122,7 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/two-libs/..."
       /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
       /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
+      /c/bazel/bazel.exe test --config windows "//tests/stack-snapshot-deps/..."
 
       # Hazel tests that succeed
       /c/bazel/bazel.exe test --config windows "@ai_formation_hazel//test:ghc-paths-test"
