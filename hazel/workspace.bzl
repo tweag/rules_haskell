@@ -63,18 +63,21 @@ cc_library(
         package_name = "zlib",
         version = "0.6.2",
         build_file = "@ai_formation_hazel//third_party/haskell:BUILD.zlib",
+        sha256 = "0dcc7d925769bdbeb323f83b66884101084167501f11d74d21eb9bc515707fed",
     )
 
     hazel_custom_package_hackage(
         package_name = "vault",
         version = "0.3.1.1",
         build_file = "@ai_formation_hazel//third_party/haskell:BUILD.vault",
+        sha256 = "b2a4150699db8a45d189cc93c34c36c3bfc1082b4ca94612e242aefd4e8e2e28",
     )
 
     hazel_custom_package_hackage(
         package_name = "ghc-paths",
         version = "0.1.0.9",
         build_file = "@ai_formation_hazel//third_party/haskell:BUILD.ghc-paths",
+        sha256 = "afa68fb86123004c37c1dc354286af2d87a9dcfb12ddcb80e8bd0cd55bc87945",
     )
 
     hazel_custom_package_github(
