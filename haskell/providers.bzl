@@ -222,8 +222,7 @@ def get_ghci_extra_libs(hs, cc_info, path_prefix = None):
 
     # NOTE: We can avoid constructing these in the future by instead generating
     #   a dedicated package configuration file defining the required libraries.
-    sep = ";" if hs.toolchain.is_windows else None
-    library_path = make_library_path(libs, prefix = path_prefix, sep = sep)
+    library_path = make_library_path(hs, libs, prefix = path_prefix)
     ghc_env = {
         "LIBRARY_PATH": library_path,
         "LD_LIBRARY_PATH": library_path,
