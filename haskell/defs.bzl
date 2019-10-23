@@ -313,7 +313,7 @@ haskell_import = rule(
         "version": attr.string(),
         "deps": attr.label_list(),
         "static_libraries": attr.label_list(allow_files = [".a"]),
-        "shared_libraries": attr.label_list(allow_files = [".dll", ".dylib", ".so"]),
+        "shared_libraries": attr.label_list(allow_files = True),
         "static_profiling_libraries": attr.label_list(allow_files = ["_p.a"]),
         "linkopts": attr.string_list(),
         "hdrs": attr.label_list(allow_files = True),
