@@ -11,7 +11,7 @@ load(
     "create_rpath_entry",
     "get_lib_name",
     "is_hs_library",
-    "make_path",
+    "make_library_path",
     "mangle_static_library",
     "rel_to_pkgroot",
     "target_unique_name",
@@ -223,7 +223,7 @@ def get_ghci_extra_libs(hs, cc_info, path_prefix = None):
     # NOTE: We can avoid constructing these in the future by instead generating
     #   a dedicated package configuration file defining the required libraries.
     sep = ";" if hs.toolchain.is_windows else None
-    library_path = make_path(libs, prefix = path_prefix, sep = sep)
+    library_path = make_library_path(libs, prefix = path_prefix, sep = sep)
     ghc_env = {
         "LIBRARY_PATH": library_path,
         "LD_LIBRARY_PATH": library_path,

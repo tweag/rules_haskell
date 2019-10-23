@@ -103,7 +103,7 @@ def declare_compiled(hs, src, ext, directory = None, rel_path = None):
 
     return hs.actions.declare_file(fp_with_dir)
 
-def make_path(libs, prefix = None, sep = None):
+def make_library_path(libs, prefix = None, sep = None):
     """Return a string value for using as LD_LIBRARY_PATH or similar.
 
     Args:
