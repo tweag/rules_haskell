@@ -86,37 +86,17 @@ def _cabal_tool_flag(tool):
         return "--with-{}={}".format(tool.basename, tool.path)
 
 def _make_path(hs, binaries):
-    return ":".join([binary.dirname for binary in binaries.to_list()] + ["$PATH"])
+    return ":".join([binary.dirname for binary in binaries.to_list()])
 
-def _prepare_cabal_inputs(hs, cc, unix, dep_info, cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper_tpl, package_database):
+def _prepare_cabal_inputs(hs, cc, unix, dep_info, cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
     (ghci_extra_libs, env) = get_ghci_extra_libs(hs, cc_info)
+    env.update(**hs.env)
     env["PATH"] = _make_path(hs, tool_inputs) + ":" + ":".join(unix.paths)
     if hs.toolchain.is_darwin:
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
-
-    # TODO Instantiating this template could be done just once in the
-    # toolchain rule.
-    cabal_wrapper = hs.actions.declare_file("cabal_wrapper-{}.sh".format(hs.label.name))
-    hs.actions.expand_template(
-        template = cabal_wrapper_tpl,
-        output = cabal_wrapper,
-        is_executable = True,
-        substitutions = {
-            "%{ghc}": hs.tools.ghc.path,
-            "%{ghc_pkg}": hs.tools.ghc_pkg.path,
-            "%{runghc}": hs.tools.runghc.path,
-            "%{ar}": cc.tools.ar,
-            "%{cc}": cc.tools.cc,
-            "%{strip}": cc.tools.strip,
-            # XXX Workaround
-            # https://github.com/bazelbuild/bazel/issues/5980.
-            "%{env}": render_env(env),
-            "%{is_windows}": str(hs.toolchain.is_windows),
-        },
-    )
 
     args = hs.actions.args()
     package_databases = dep_info.package_databases
@@ -147,7 +127,7 @@ def _prepare_cabal_inputs(hs, cc, unix, dep_info, cc_info, component, package_id
     args.add_all(tool_inputs, map_each = _cabal_tool_flag)
 
     inputs = depset(
-        [cabal_wrapper, setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
+        [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
         transitive = [
             depset(srcs),
             depset(cc.files),
@@ -233,14 +213,15 @@ def _haskell_cabal_library_impl(ctx):
         setup = setup,
         srcs = ctx.files.srcs,
         flags = ctx.attr.flags,
-        cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
+        cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
     )
-    ctx.actions.run_shell(
-        command = '{} "$@"'.format(c.cabal_wrapper.path),
+    ctx.actions.run(
+        executable = c.cabal_wrapper,
         arguments = [c.args],
         inputs = c.inputs,
         input_manifests = c.input_manifests,
+        tools = [c.cabal_wrapper],
         outputs = [
             package_database,
             interfaces_dir,
@@ -250,7 +231,6 @@ def _haskell_cabal_library_impl(ctx):
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
         progress_message = "HaskellCabalLibrary {}".format(hs.label),
-        use_default_shell_env = True,
     )
 
     default_info = DefaultInfo(
@@ -329,9 +309,10 @@ haskell_cabal_library = rule(
         "flags": attr.string_list(
             doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
         ),
-        "_cabal_wrapper_tpl": attr.label(
-            allow_single_file = True,
-            default = Label("@rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
+        "_cabal_wrapper": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
@@ -413,11 +394,11 @@ def _haskell_cabal_binary_impl(ctx):
         setup = setup,
         srcs = ctx.files.srcs,
         flags = ctx.attr.flags,
-        cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl,
+        cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
     )
-    ctx.actions.run_shell(
-        command = '{} "$@"'.format(c.cabal_wrapper.path),
+    ctx.actions.run(
+        executable = c.cabal_wrapper,
         arguments = [c.args],
         inputs = c.inputs,
         input_manifests = c.input_manifests,
@@ -426,10 +407,10 @@ def _haskell_cabal_binary_impl(ctx):
             binary,
             data_dir,
         ],
+        tools = [c.cabal_wrapper],
         env = c.env,
         mnemonic = "HaskellCabalBinary",
         progress_message = "HaskellCabalBinary {}".format(hs.label),
-        use_default_shell_env = True,
     )
 
     hs_info = HaskellInfo(
@@ -468,9 +449,10 @@ haskell_cabal_binary = rule(
         "flags": attr.string_list(
             doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
         ),
-        "_cabal_wrapper_tpl": attr.label(
-            allow_single_file = True,
-            default = Label("@rules_haskell//haskell:private/cabal_wrapper.sh.tpl"),
+        "_cabal_wrapper": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
