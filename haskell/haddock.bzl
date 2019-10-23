@@ -24,7 +24,7 @@ def _get_haddock_path(package_id):
     return package_id + ".haddock"
 
 def _haskell_doc_aspect_impl(target, ctx):
-    if not (HaskellLibraryInfo in target and target[HaskellInfo].source_files.to_list()):
+    if not (HaskellLibraryInfo in target):
         return []
 
     # Packages imported via `//haskell:import.bzl%haskell_import` already
@@ -35,6 +35,28 @@ def _haskell_doc_aspect_impl(target, ctx):
     hs = haskell_context(ctx, ctx.rule.attr)
 
     package_id = target[HaskellLibraryInfo].package_id
+
+    transitive_haddocks = {}
+    transitive_html = {}
+
+    re_exports = getattr(ctx.rule.attr, "exports", [])
+    all_deps = ctx.rule.attr.deps + re_exports
+    for dep in all_deps:
+        if HaddockInfo in dep:
+            transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)
+            transitive_html.update(dep[HaddockInfo].transitive_html)
+
+    # If the current package has no source file, just returns the haddocks for
+    # its dependencies
+    if (target[HaskellInfo].source_files.to_list() == []):
+        haddock_info = HaddockInfo(
+            package_id = package_id,
+            transitive_html = transitive_html,
+            transitive_haddocks = transitive_haddocks,
+        )
+        ctx.actions.do_nothing(mnemonic = "HaskellHaddock")
+        return [haddock_info]
+
     html_dir_raw = "doc-{0}".format(package_id)
     html_dir = ctx.actions.declare_directory(html_dir_raw)
     haddock_file = ctx.actions.declare_file(_get_haddock_path(package_id))
@@ -59,14 +81,6 @@ def _haskell_doc_aspect_impl(target, ctx):
         "--title={0}".format(package_id),
         "--hyperlinked-source",
     ])
-
-    transitive_haddocks = {}
-    transitive_html = {}
-
-    for dep in ctx.rule.attr.deps:
-        if HaddockInfo in dep:
-            transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)
-            transitive_html.update(dep[HaddockInfo].transitive_html)
 
     for pid in transitive_haddocks:
         for interface in transitive_haddocks[pid]:
@@ -162,7 +176,7 @@ haskell_doc_aspect = aspect(
             default = Label("@rules_haskell//haskell:private/haddock_wrapper.sh.tpl"),
         ),
     },
-    attr_aspects = ["deps"],
+    attr_aspects = ["deps", "exports"],
     toolchains = ["@rules_haskell//haskell:toolchain"],
 )
 

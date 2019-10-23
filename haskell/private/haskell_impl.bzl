@@ -500,15 +500,16 @@ def haskell_library_impl(ctx):
             generate_version_macros(ctx, package_name, version),
         )
 
-    my_hs_info = HaskellInfo(
-        package_databases = depset([cache_file], transitive = [dep_info.package_databases]),
+    export_infos = gather_dep_info(ctx, ctx.attr.exports)
+    hs_info = HaskellInfo(
+        package_databases = depset([cache_file], transitive = [dep_info.package_databases, export_infos.package_databases]),
         version_macros = version_macros,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
-        import_dirs = c.import_dirs,
-        static_libraries = static_libraries,
-        dynamic_libraries = dynamic_libraries,
-        interface_dirs = interface_dirs,
+        import_dirs = set.mutable_union(c.import_dirs, export_infos.import_dirs),
+        static_libraries = depset(transitive = [static_libraries, export_infos.static_libraries]),
+        dynamic_libraries = depset(transitive = [dynamic_libraries, export_infos.dynamic_libraries]),
+        interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
         compile_flags = c.compile_flags,
     )
 
@@ -522,10 +523,6 @@ def haskell_library_impl(ctx):
         version = version,
         exports = exports,
     )
-
-    my_dummy_struct = {HaskellInfo: my_hs_info, HaskellLibraryInfo: lib_info}
-
-    hs_info = gather_dep_info(ctx, [my_dummy_struct] + ctx.attr.exports)
 
     dep_coverage_data = []
     for dep in deps:
