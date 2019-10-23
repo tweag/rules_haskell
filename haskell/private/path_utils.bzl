@@ -103,6 +103,15 @@ def declare_compiled(hs, src, ext, directory = None, rel_path = None):
 
     return hs.actions.declare_file(fp_with_dir)
 
+def join_path_list(hs, paths):
+    """Join the given paths suitable for env vars like PATH.
+
+    Joins the list of given paths into a single string separated by ':' on Unix
+    or ';' on Windows.
+    """
+    sep = ";" if hs.toolchain.is_windows else ":"
+    return sep.join(paths)
+
 def make_library_path(libs, prefix = None, sep = None):
     """Return a string value for using as LD_LIBRARY_PATH or similar.
 
