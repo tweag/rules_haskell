@@ -16,6 +16,7 @@
 
 from __future__ import print_function
 
+from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
 from contextlib import contextmanager
 from glob import glob
 import os
@@ -32,12 +33,26 @@ def run(cmd, *args, **kwargs):
     if debug:
         print("+ " + " ".join(["'{}'".format(arg) for arg in cmd]), file=sys.stderr)
         sys.stderr.flush()
-    subprocess.call(cmd, *args, **kwargs)
+    subprocess.check_call(cmd, *args, **kwargs)
+
+def find_exe(exe):
+    if os.path.isfile(exe):
+        path = os.path.abspath(exe)
+    elif "%{is_windows}" == "True" and os.path.isfile(exe + ".exe"):
+        path = os.path.abspath(exe + ".exe")
+    else:
+        r = bazel_runfiles.Create()
+        path = r.Rlocation("%{workspace}/" + exe)
+        if not os.path.isfile(path) and "%{is_windows}" == "True":
+            path = r.Rlocation("%{workspace}/" + exe + ".exe")
+    return path
+
+path_list_sep = ";" if "%{is_windows}" == "True" else ":"
 
 def canonicalize_path(path):
-    return ":".join([
+    return path_list_sep.join([
         os.path.abspath(entry)
-        for entry in path.split(":")
+        for entry in path.split(path_list_sep)
         if entry != ""
     ])
 
@@ -59,9 +74,9 @@ bindir = os.path.join(pkgroot, "bin")
 datadir = os.path.join(pkgroot, "{}_data".format(name))
 package_database = os.path.join(pkgroot, "{}.conf.d".format(name))
 
-runghc = os.path.join(execroot, r"%{runghc}")
-ghc = os.path.join(execroot, r"%{ghc}")
-ghc_pkg = os.path.join(execroot, r"%{ghc_pkg}")
+runghc = find_exe(r"%{runghc}")
+ghc = find_exe(r"%{ghc}")
+ghc_pkg = find_exe(r"%{ghc_pkg}")
 
 extra_args = []
 current_arg = sys.argv.pop(1)
@@ -72,9 +87,9 @@ del current_arg
 
 path_args = sys.argv[1:]
 
-ar = os.path.realpath("%{ar}")
-cc = os.path.realpath("%{cc}")
-strip = os.path.realpath("%{strip}")
+ar = find_exe("%{ar}")
+cc = find_exe("%{cc}")
+strip = find_exe("%{strip}")
 
 def recache_db():
     run([ghc_pkg, "recache", "--package-db=" + package_database])
@@ -93,12 +108,6 @@ def tmpdir():
         shutil.rmtree(distdir)
 
 with tmpdir() as distdir:
-    # Use the cc-wrapper for Cabal builds.
-    # Note, we cannot currently use it on Windows because the solution to the
-    # following issue is not released, yet.
-    #   https://github.com/bazelbuild/bazel/issues/9390
-    with_gcc_flags = ["--with-gcc=" + cc] \
-            if "%{is_windows}" != "True" else []
     enable_relocatable_flags = ["--enable-relocatable"] \
             if "%{is_windows}" != "True" else []
 
@@ -116,9 +125,7 @@ with tmpdir() as distdir:
         "--with-compiler=" + ghc,
         "--with-hc-pkg=" + ghc_pkg,
         "--with-ar=" + ar,
-        ] +
-        with_gcc_flags + \
-        [ \
+        "--with-gcc=" + cc,
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
@@ -166,7 +173,7 @@ def make_relocatable_paths(line):
 
     # The $execroot is an absolute path and should not leak into the output.
     # Replace each ocurrence of execroot by a path relative to ${pkgroot}.
-    line = re.sub(execroot + '\S*', make_relative_to_pkgroot, line)
+    line = re.sub(re.escape(execroot) + '\S*', make_relative_to_pkgroot, line)
     return line
 
 if libraries != [] and os.path.isfile(package_conf_file):
