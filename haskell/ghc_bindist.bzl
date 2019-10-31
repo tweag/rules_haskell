@@ -1,10 +1,7 @@
 """Workspace rules (GHC binary distributions)"""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
-load(
-    "@rules_haskell//haskell/private/unix:unix_configure.bzl",
-    "unix_configure",
-)
+load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
 
 _GHC_DEFAULT_VERSION = "8.6.5"
 
@@ -452,9 +449,9 @@ def haskell_register_ghc_bindists(
             haddock_flags = haddock_flags,
             repl_ghci_args = repl_ghci_args,
         )
-    local_unix_repo_name = "rules_haskell_unix_local"
-    if local_unix_repo_name not in native.existing_rules():
-        unix_configure(name = local_unix_repo_name)
+    local_sh_posix_repo_name = "rules_haskell_sh_posix_local"
+    if local_sh_posix_repo_name not in native.existing_rules():
+        sh_posix_configure(name = local_sh_posix_repo_name)
 
 def _find_python(repository_ctx):
     python = repository_ctx.which("python3")

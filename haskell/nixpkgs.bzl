@@ -3,10 +3,7 @@
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_package",
-)
-load(
-    "@rules_haskell//haskell/private/unix:unix_nixpkgs.bzl",
-    "unix_nixpkgs",
+    "nixpkgs_sh_posix_configure",
 )
 
 def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
@@ -171,7 +168,7 @@ def haskell_register_ghc_nixpkgs(
         repl_ghci_args = None,
         locale_archive = None,
         attribute_path = "haskellPackages.ghc",
-        unix_attributes = None,
+        sh_posix_attributes = None,
         nix_file = None,
         nix_file_deps = [],
         nixopts = None,
@@ -192,7 +189,8 @@ def haskell_register_ghc_nixpkgs(
     Args:
       compiler_flags_select: temporary workaround to pass conditional arguments.
         See https://github.com/bazelbuild/bazel/issues/9199 for details.
-      unix_attributes: List of attribute paths to extract standard Unix shell tools from.
+      sh_posix_attributes: List of attribute paths to extract standard Unix shell tools from.
+        Passed to nixpkgs_sh_posix_configure.
 
 
     Example:
@@ -214,7 +212,7 @@ def haskell_register_ghc_nixpkgs(
 
     """
     nixpkgs_ghc_repo_name = "rules_haskell_ghc_nixpkgs"
-    nixpkgs_unix_repo_name = "rules_haskell_unix_nixpkgs"
+    nixpkgs_sh_posix_repo_name = "rules_haskell_sh_posix_nixpkgs"
     haskell_toolchain_repo_name = "rules_haskell_ghc_nixpkgs_haskell_toolchain"
     toolchain_repo_name = "rules_haskell_ghc_nixpkgs_toolchain"
 
@@ -250,17 +248,17 @@ def haskell_register_ghc_nixpkgs(
     native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
 
     # Unix tools toolchain required for Cabal packages
-    unix_nixpkgs_kwargs = dict(
+    sh_posix_nixpkgs_kwargs = dict(
         nix_file_deps = nix_file_deps,
         nixopts = nixopts,
         repositories = repositories,
         repository = repository,
     )
-    if unix_attributes != None:
-        unix_nixpkgs_kwargs["packages"] = unix_attributes
-    unix_nixpkgs(
-        name = nixpkgs_unix_repo_name,
-        **unix_nixpkgs_kwargs
+    if sh_posix_attributes != None:
+        sh_posix_nixpkgs_kwargs["packages"] = sh_posix_attributes
+    nixpkgs_sh_posix_configure(
+        name = nixpkgs_sh_posix_repo_name,
+        **sh_posix_nixpkgs_kwargs
     )
 
 def _find_children(repository_ctx, target_dir):

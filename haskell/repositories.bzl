@@ -16,6 +16,14 @@ def rules_haskell_dependencies():
             urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.6.0.tar.gz"],
         )
 
+    if "rules_sh" not in excludes:
+        http_archive(
+            name = "rules_sh",
+            sha256 = "2613156e96b41fe0f91ac86a65edaea7da910b7130f2392ca02e8270f674a734",
+            strip_prefix = "rules_sh-0.1.0",
+            urls = ["https://github.com/tweag/rules_sh/archive/v0.1.0.tar.gz"],
+        )
+
     if "io_tweag_rules_nixpkgs" not in excludes:
         http_archive(
             name = "io_tweag_rules_nixpkgs",
