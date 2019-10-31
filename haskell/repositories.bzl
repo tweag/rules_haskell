@@ -1,11 +1,6 @@
 """Workspace rules (repositories)"""
 
-load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-def rules_haskell_toolchains(**kwargs):
-    """Register GHC binary distributions for all platforms as toolchains."""
-    haskell_register_ghc_bindists(**kwargs)
 
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to

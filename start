@@ -168,11 +168,15 @@ http_archive(
 load(
     "@rules_haskell//haskell:repositories.bzl",
     "rules_haskell_dependencies",
-    "rules_haskell_toolchains",
 )
 
 # Setup all Bazel dependencies required by rules_haskell.
 rules_haskell_dependencies()
+
+load(
+    "@rules_haskell//haskell:toolchain.bzl",
+    "rules_haskell_toolchains",
+)
 
 $(get_toolchain)
 EOF
