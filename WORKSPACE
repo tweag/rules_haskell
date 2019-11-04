@@ -60,6 +60,30 @@ haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visib
     urls = ["http://hackage.haskell.org/package/happy-1.19.10/happy-1.19.10.tar.gz"],
 )
 
+http_archive(
+    name = "proto-lens-protoc",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+haskell_cabal_binary(
+    name = "proto-lens-protoc",
+    srcs = glob(["**"]),
+    deps = [
+      "@stackage//:base",
+      "@stackage//:bytestring",
+      "@stackage//:containers",
+      "@stackage//:lens-family",
+      "@stackage//:proto-lens",
+      "@stackage//:proto-lens-protoc",
+      "@stackage//:text",
+    ],
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "d10e4e43673bff435cf6256145f91fbb60dd37510320fcae56be18ac90af2fee",
+    strip_prefix = "proto-lens-protoc-0.4.0.1",
+    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.4.0.1/proto-lens-protoc-0.4.0.1.tar.gz"],
+)
+
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
@@ -68,10 +92,15 @@ stack_snapshot(
         # Core libraries
         "array",
         "base",
+        "bytestring",
+        "containers",
+        "deepseq",
         "directory",
         "filepath",
         "ghc-heap",
+        "mtl",
         "process",
+        "text",
         # For tests
         "network",
         "language-c",
@@ -83,6 +112,7 @@ stack_snapshot(
         "data-default-class",
         "lens-labels",
         "proto-lens",
+        "proto-lens-protoc",
         "lens-family",
     ],
     snapshot = "lts-13.15",
@@ -221,12 +251,6 @@ nixpkgs_package(
 nixpkgs_package(
     name = "doctest",
     attribute_path = "haskellPackages.doctest",
-    repository = "@nixpkgs",
-)
-
-nixpkgs_package(
-    name = "proto-lens-protoc",
-    attribute_path = "haskellPackages.proto-lens-protoc",
     repository = "@nixpkgs",
 )
 

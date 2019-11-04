@@ -9,7 +9,6 @@ haskell_test(
     name = "stack-snapshot-deps",
     srcs = ["Main.hs"],
     tags = [
-        "requires_hackage",
         "requires_zlib",
     ],
     visibility = ["//visibility:public"],
