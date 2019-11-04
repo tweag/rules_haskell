@@ -110,6 +110,12 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
     hs.actions.run_shell(
         inputs = [objects_dir],
         outputs = [objects_dir_manifest],
+
+        # Note: The output of `find` is not stable. The order of the
+        # lines in the output depend on the filesystem. By using
+        # `sort`, we force the output to be stable. This is mandatory
+        # for efficient caching. See
+        # https://github.com/tweag/rules_haskell/issues/1126.
         command = """
         find {dir} -name '*.{ext}' | sort > {out}
         """.format(
