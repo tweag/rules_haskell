@@ -111,7 +111,6 @@ rule_test(
     size = "small",
     generates = ["binary-with-prebuilt"],
     rule = "//tests/binary-with-prebuilt",
-    tags = ["requires_hackage"],
 )
 
 rule_test(
@@ -135,7 +134,6 @@ sh_test(
     srcs = ["//tests/binary-with-data"],
     args = ["$(location //tests/binary-with-data:bin1)"],
     data = ["//tests/binary-with-data:bin1"],
-    tags = ["requires_hackage"],
 )
 
 config_setting(
@@ -212,7 +210,6 @@ rule_test(
         "haddock/testsZShaddockZShaddock-lib-deep",
     ],
     rule = "//tests/haddock",
-    tags = ["requires_hackage"],
 )
 
 rule_test(
@@ -361,7 +358,6 @@ rule_test(
 haskell_binary(
     name = "run-tests",
     srcs = ["RunTests.hs"],
-    tags = ["requires_hackage"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:process",
