@@ -40,24 +40,23 @@ haskell_doctest_toolchain(
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
     testonly = 0,
-    plugin = "@proto-lens-protoc//:bin/proto-lens-protoc",
+    plugin = "@proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     tags = [
-        "requires_hackage",
         "requires_proto",
     ],
     deps = [
-        "//tests/hackage:base",
-        "//tests/hackage:bytestring",
-        "//tests/hackage:containers",
-        "//tests/hackage:deepseq",
-        "//tests/hackage:mtl",
-        "//tests/hackage:text",
+        "@stackage//:base",
+        "@stackage//:bytestring",
+        "@stackage//:containers",
         "@stackage//:data-default-class",
+        "@stackage//:deepseq",
         "@stackage//:lens-family",
         "@stackage//:lens-family-core",
         "@stackage//:lens-labels",
+        "@stackage//:mtl",
         "@stackage//:proto-lens",
+        "@stackage//:text",
     ],
 )
 
