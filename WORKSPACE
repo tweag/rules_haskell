@@ -345,13 +345,6 @@ local_repository(
     path = "tests/c2hs/repo",
 )
 
-# python toolchain
-nixpkgs_package(
-    name = "python3",
-    attribute_path = "python3",
-    repository = "@nixpkgs",
-)
-
 load(
     "@rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
     "haskell_package_repository_dummy",
