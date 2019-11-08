@@ -260,7 +260,7 @@ nixpkgs_package(
 
 nixpkgs_package(
     name = "sphinx",
-    attribute_path = "python36Packages.sphinx",
+    attribute_path = "python37Packages.sphinx",
     repository = "@nixpkgs",
 )
 

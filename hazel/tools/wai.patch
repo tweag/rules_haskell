@@ -13,10 +13,3 @@ index 2338b45d..8d86747e 100644
  staticAppPieces ss rawPieces req sendResponse = liftIO $ do
      case toPieces rawPieces of
          Just pieces -> checkPieces ss pieces req >>= response
-diff --git "a/\327\247\327\250\327\250\327\250\327\250.html" "b/\327\247\327\250\327\250\327\250\327\250.html"
-deleted file mode 100644
-index 2e52da08..00000000
---- "a/\327\247\327\250\327\250\327\250\327\250.html"
-+++ /dev/null
-@@ -1 +0,0 @@
--<h1>HELLO WORLD</h1>

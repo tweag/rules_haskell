@@ -31,7 +31,7 @@ mkShell {
     # check the start script for problems
     shellcheck
     file
-  ] ++ lib.optionals docTools [graphviz python36Packages.sphinx zip unzip];
+  ] ++ lib.optionals docTools [graphviz python37Packages.sphinx zip unzip];
 
   shellHook = ''
     # Add nix config flags to .bazelrc.local.
