@@ -139,7 +139,7 @@ load(
 
 nixpkgs_package(
     name = "ghc",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 http_archive(
@@ -154,7 +154,7 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()  # configure and install zlib for protobuf
 
 nixpkgs_local_repository(
-    name = "nixpkgs",
+    name = "nixpkgs_default",
     nix_file = "//nixpkgs:default.nix",
 )
 
@@ -193,7 +193,7 @@ haskell_register_ghc_nixpkgs(
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
     repl_ghci_args = test_repl_ghci_args,
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
     version = test_ghc_version,
 )
 
@@ -216,13 +216,14 @@ register_toolchains(
 
 nixpkgs_cc_configure(
     nix_file = "//nixpkgs:cc-toolchain.nix",
-    repository = "@nixpkgs",
+    nix_file_deps = ["//nixpkgs:default.nix"],
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "nixpkgs_zlib",
     attribute_path = "zlib",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
@@ -237,43 +238,43 @@ cc_library(
   includes = ["include"],
 )
     """,
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "c2hs",
     attribute_path = "haskellPackages.c2hs",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "doctest",
     attribute_path = "haskellPackages.doctest",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "python3",
     attribute_path = "python3",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "sphinx",
     attribute_path = "python37Packages.sphinx",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "graphviz",
     attribute_path = "graphviz",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "zip",
     attribute_path = "zip",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
@@ -293,7 +294,7 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 """,
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
@@ -307,7 +308,7 @@ filegroup(
     srcs = ["lib/locale/locale-archive"],
 )
 """,
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 http_archive(
@@ -376,7 +377,7 @@ nixpkgs_package(
         "sandbox",
         "false",
     ],
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 http_archive(

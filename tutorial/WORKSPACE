@@ -25,5 +25,6 @@ load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_cc_configure")
 
 nixpkgs_cc_configure(
     nix_file = "@rules_haskell//nixpkgs:cc-toolchain.nix",
+    nix_file_deps = ["@rules_haskell//nixpkgs:default.nix"],
     repository = "@rules_haskell//nixpkgs:default.nix",
 )

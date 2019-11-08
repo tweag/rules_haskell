@@ -10,9 +10,9 @@ load(":list.bzl", "declare_config_settings")
 
 declare_config_settings()
 
-constraint_value(
+alias(
     name = "nixpkgs",
-    constraint_setting = "@bazel_tools//tools/cpp:cc_compiler",
+    actual = "@io_tweag_rules_nixpkgs//nixpkgs/constraints:nixpkgs",
     visibility = ["//visibility:public"],
 )
 

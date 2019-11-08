@@ -35,12 +35,12 @@ cc_library(
   ]),
 )
 """,
-        repository = "@nixpkgs",
+        repository = "@nixpkgs_default",
     )
 
     nixpkgs_package(
         name = "postgresql",
-        repository = "@nixpkgs",
+        repository = "@nixpkgs_default",
         build_file_content = """
 package(default_visibility = ["//visibility:public"])
 

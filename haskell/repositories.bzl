@@ -24,9 +24,9 @@ def rules_haskell_dependencies():
     if "io_tweag_rules_nixpkgs" not in excludes:
         http_archive(
             name = "io_tweag_rules_nixpkgs",
-            sha256 = "5a384daa57b49abf9f0b672852f1a66a3c52aecf9d4d2ac64f6de0fd307690c8",
-            strip_prefix = "rules_nixpkgs-0.5.2",
-            urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.5.2.tar.gz"],
+            sha256 = "b13cb651e972b3aa06bab75603923071d7647c9ee3f8acb707e3831aa606e911",
+            strip_prefix = "rules_nixpkgs-bdc802f8e716c66d50cc91f7ad22505edf13c48b",
+            urls = ["https://github.com/tweag/rules_nixpkgs/archive/bdc802f8e716c66d50cc91f7ad22505edf13c48b.tar.gz"],
         )
 
 def haskell_repositories():
