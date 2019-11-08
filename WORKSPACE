@@ -135,6 +135,7 @@ load(
     "nixpkgs_cc_configure",
     "nixpkgs_local_repository",
     "nixpkgs_package",
+    "nixpkgs_python_configure",
 )
 
 nixpkgs_package(
@@ -211,12 +212,15 @@ register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
-    "//tests:python_toolchain",
 )
 
 nixpkgs_cc_configure(
     nix_file = "//nixpkgs:cc-toolchain.nix",
     nix_file_deps = ["//nixpkgs:default.nix"],
+    repository = "@nixpkgs_default",
+)
+
+nixpkgs_python_configure(
     repository = "@nixpkgs_default",
 )
 

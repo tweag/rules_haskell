@@ -192,8 +192,6 @@ build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
 run --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs'
 )
 
-build --incompatible_use_python_toolchains=false
-
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct
 # environment variables, such as LOCALE_ARCHIVE
