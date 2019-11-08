@@ -2,18 +2,6 @@ workspace(name = "rules_haskell")
 
 # Subrepositories of rules_haskell
 
-# various examples
-local_repository(
-    name = "rules_haskell_examples",
-    path = "examples",
-)
-
-# code for the tutorial
-local_repository(
-    name = "rules_haskell_tutorial",
-    path = "tutorial",
-)
-
 # hazel, a way to generate bazel libraries from [st/h]ackage
 local_repository(
     name = "ai_formation_hazel",
