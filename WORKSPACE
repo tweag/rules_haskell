@@ -416,16 +416,18 @@ skydoc_repositories()
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "1ad10f384053ae50c050fdec7d595d12427c82c0a27c58f8554deb4437216892",
-    strip_prefix = "rules_go-0.18.7",
-    urls = ["https://github.com/bazelbuild/rules_go/archive/0.18.7.tar.gz"],
+    sha256 = "b9aa86ec08a292b97ec4591cf578e020b35f98e12173bbd4a921f84f583aebd9",
+    urls = [
+        "https://storage.googleapis.com/bazel-mirror/github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
+    ],
 )
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "5ec71602e9b458b01717fab1d37492154c1c12ea83f881c745dbd88e9b2098d8",
-    strip_prefix = "buildtools-0.28.0",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/0.28.0.tar.gz"],
+    sha256 = "f3ef44916e6be705ae862c0520bac6834dd2ff1d4ac7e5abc61fe9f12ce7a865",
+    strip_prefix = "buildtools-0.29.0",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/0.29.0.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
