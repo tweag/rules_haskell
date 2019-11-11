@@ -5,6 +5,10 @@ steps:
       echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
       nix-shell --arg docTools false --pure --run '
       set -e
+      # Ensure that the Nixpkgs bazel version matches the one specified in
+      # `.buildkite/bazel-version` and fetched in
+      # `.buildkite/bindists-pipeline` for the bindists version.
+      .buildkite/check-bazel-version
       ./tests/run-start-script.sh --use-nix
       bazel build --config ci //tests:run-tests
       ./bazel-ci-bin/tests/run-tests
@@ -13,10 +17,5 @@ steps:
     timeout: 30
 
   - label: "Run tests (bindists)"
-    command: |
-      echo "common:ci --build_tag_filters -requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
-      # XXX: See .bazelrc [backward compatible options] for the the rational behind this flag
-      echo "build --incompatible_use_python_toolchains=false" >> .bazelrc.local
-      ./tests/run-start-script.sh --use-bindists
-      bazel build --config ci //tests/...
+    command: ".buildkite/bindists-pipeline"
     timeout: 30
