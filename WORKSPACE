@@ -67,9 +67,9 @@ haskell_cabal_binary(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "d10e4e43673bff435cf6256145f91fbb60dd37510320fcae56be18ac90af2fee",
-    strip_prefix = "proto-lens-protoc-0.4.0.1",
-    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.4.0.1/proto-lens-protoc-0.4.0.1.tar.gz"],
+    sha256 = "161dcee2aed780f62c01522c86afce61721cf89c0143f157efefb1bd1fa1d164",
+    strip_prefix = "proto-lens-protoc-0.5.0.0",
+    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.5.0.0/proto-lens-protoc-0.5.0.0.tar.gz"],
 )
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
