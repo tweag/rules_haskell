@@ -23,7 +23,7 @@ This file exports the "cabal_paths" rule for auto-generating that Paths module.
 For usage information, see the below documentation for that rule.
 """
 
-load("@bazel_skylib//:lib.bzl", "paths")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library")
 load("//tools:mangling.bzl", "hazel_library")
 

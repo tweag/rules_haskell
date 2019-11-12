@@ -20,8 +20,8 @@ where {package} is the lower-cased package name with - replaced by _
 and {hash} is the Bazel hash of the original package name.
 """
 
-load("@bazel_skylib//:lib.bzl", "paths")
-load("@bazel_skylib//:lib.bzl", sets = "new_sets")
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", new_sets = "sets")
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_binary",
