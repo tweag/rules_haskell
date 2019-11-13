@@ -189,6 +189,9 @@ def _haskell_binary_common_impl(ctx, is_test):
     cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
 
+    # Make shell tools available.
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
@@ -236,6 +239,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     (binary, solibs) = link_binary(
         hs,
         cc,
+        posix,
         dep_info,
         cc_info,
         ctx.files.extra_srcs,
@@ -390,6 +394,9 @@ def haskell_library_impl(ctx):
     cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
 
+    # Make shell tools available.
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
 
@@ -441,6 +448,7 @@ def haskell_library_impl(ctx):
         static_library = link_library_static(
             hs,
             cc,
+            posix,
             dep_info,
             c.objects_dir,
             my_pkg_id,
@@ -464,6 +472,7 @@ def haskell_library_impl(ctx):
         dynamic_library = link_library_dynamic(
             hs,
             cc,
+            posix,
             dep_info,
             cc_info,
             depset(ctx.files.extra_srcs),
