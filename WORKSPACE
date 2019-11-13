@@ -374,17 +374,15 @@ nixpkgs_package(
 
 http_archive(
     name = "build_bazel_rules_nodejs",
-    sha256 = "f79f605a920145216e64991d6eff4e23babc48810a9efd63a31744bb6637b01e",
-    strip_prefix = "rules_nodejs-b4dad57d2ecc63d74db1f5523593639a635e447d",
-    # Tip of https://github.com/bazelbuild/rules_nodejs/pull/471.
-    urls = ["https://github.com/mboes/rules_nodejs/archive/b4dad57d2ecc63d74db1f5523593639a635e447d.tar.gz"],
+    sha256 = "9901bc17138a79135048fb0c107ee7a56e91815ec6594c08cb9a17b80276d62b",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/0.40.0/rules_nodejs-0.40.0.tar.gz"],
 )
 
 http_archive(
     name = "io_bazel_rules_sass",
-    sha256 = "1e135452dc627f52eab39a50f4d5b8d13e8ed66cba2e6da56ac4cbdbd776536c",
-    strip_prefix = "rules_sass-1.15.2",
-    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.15.2.tar.gz"],
+    sha256 = "d5e0c0d16fb52f3dcce5bd7830d92d4813eb01bac0211119e74ec9e65eaf3b86",
+    strip_prefix = "rules_sass-1.23.3",
+    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.23.3.tar.gz"],
 )
 
 load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
