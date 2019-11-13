@@ -19,6 +19,7 @@ load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_repl(
         hs,
+        posix,
         ghci_script,
         ghci_repl_wrapper,
         user_compile_flags,
@@ -72,6 +73,7 @@ def build_haskell_repl(
     # Link C library dependencies
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
+        posix,
         cc_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
@@ -177,4 +179,4 @@ def build_haskell_repl(
         hs_info.source_files,
         hs.toolchain.cc_wrapper.runfiles.files,
     ])
-    ln(hs, repl_file, output, extra_inputs)
+    ln(hs, posix, repl_file, output, extra_inputs)

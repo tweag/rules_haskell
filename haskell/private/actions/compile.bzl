@@ -86,7 +86,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins, preprocessors):
+def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, cc_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins, preprocessors):
     """Compute variables common to all compilation targets (binary and library).
 
     Returns:
@@ -320,7 +320,7 @@ def _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs
     )
 
     # Transitive library dependencies for runtime.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, cc_info)
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_info)
     link_libraries(ghci_extra_libs, args)
 
     return struct(
@@ -372,6 +372,7 @@ def compile_binary(
         hs,
         cc,
         java,
+        posix,
         dep_info,
         plugin_dep_info,
         cc_info,
@@ -396,7 +397,7 @@ def compile_binary(
         modules: set of module names
         source_files: set of Haskell source files
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, cc_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins, preprocessors = preprocessors)
     c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
@@ -438,6 +439,7 @@ def compile_library(
         hs,
         cc,
         java,
+        posix,
         dep_info,
         plugin_dep_info,
         cc_info,
@@ -463,7 +465,7 @@ def compile_library(
         source_files: set of Haskell module files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, dep_info, plugin_dep_info, cc_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, cc_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, preprocessors = preprocessors)
     if with_shared:
         c.args.add("-dynamic-too")
 

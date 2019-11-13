@@ -211,6 +211,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         hs,
         cc,
         java,
+        posix,
         dep_info,
         plugin_dep_info,
         cc_info,
@@ -271,6 +272,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     repl_ghci_args = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args)
     build_haskell_repl(
         hs,
+        posix,
         ghci_script = ctx.file._ghci_script,
         ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
         user_compile_flags = user_compile_flags,
@@ -284,12 +286,13 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     # XXX Temporary backwards compatibility hack. Remove eventually.
     # See https://github.com/tweag/rules_haskell/pull/460.
-    ln(hs, ctx.outputs.repl, ctx.outputs.repl_deprecated)
+    ln(hs, posix, ctx.outputs.repl, ctx.outputs.repl_deprecated)
 
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
     build_haskell_runghc(
         hs,
+        posix,
         runghc_wrapper = ctx.file._ghci_repl_wrapper,
         extra_args = extra_args,
         user_compile_flags = user_compile_flags,
@@ -419,6 +422,7 @@ def haskell_library_impl(ctx):
         hs,
         cc,
         java,
+        posix,
         dep_info,
         plugin_dep_info,
         cc_info,
@@ -553,6 +557,7 @@ def haskell_library_impl(ctx):
         repl_ghci_args = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args)
         build_haskell_repl(
             hs,
+            posix,
             ghci_script = ctx.file._ghci_script,
             ghci_repl_wrapper = ctx.file._ghci_repl_wrapper,
             repl_ghci_args = repl_ghci_args,
@@ -567,12 +572,13 @@ def haskell_library_impl(ctx):
 
         # XXX Temporary backwards compatibility hack. Remove eventually.
         # See https://github.com/tweag/rules_haskell/pull/460.
-        ln(hs, ctx.outputs.repl, ctx.outputs.repl_deprecated)
+        ln(hs, posix, ctx.outputs.repl, ctx.outputs.repl_deprecated)
 
         extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
         user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
         build_haskell_runghc(
             hs,
+            posix,
             runghc_wrapper = ctx.file._ghci_repl_wrapper,
             extra_args = extra_args,
             user_compile_flags = user_compile_flags,

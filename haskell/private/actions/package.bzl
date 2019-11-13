@@ -6,7 +6,7 @@ load(":private/path_utils.bzl", "get_lib_name", "is_hs_library", "target_unique_
 load(":private/pkg_id.bzl", "pkg_id")
 load(":providers.bzl", "get_extra_libs")
 
-def _get_extra_libraries(hs, with_shared, cc_info):
+def _get_extra_libraries(hs, posix, with_shared, cc_info):
     """Get directories and library names for extra library dependencies.
 
     Args:
@@ -23,6 +23,7 @@ def _get_extra_libraries(hs, with_shared, cc_info):
     # configuration files.
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
+        posix,
         cc_info,
         pic = with_shared,
     )
@@ -94,7 +95,7 @@ def package(
         paths.join(pkg_db_dir, "_iface"),
     )
 
-    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, with_shared, cc_info)
+    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, posix, with_shared, cc_info)
 
     # Create a file from which ghc-pkg will create the actual package
     # from. List of exposed modules generated below.

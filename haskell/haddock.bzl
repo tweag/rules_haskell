@@ -33,6 +33,7 @@ def _haskell_doc_aspect_impl(target, ctx):
         return []
 
     hs = haskell_context(ctx, ctx.rule.attr)
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     package_id = target[HaskellLibraryInfo].package_id
 
@@ -106,6 +107,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     # C library dependencies for runtime.
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
+        posix,
         target[CcInfo],
         # haddock changes directory during its execution. We prefix
         # LD_LIBRARY_PATH with the current working directory on wrapper script
@@ -177,7 +179,10 @@ haskell_doc_aspect = aspect(
         ),
     },
     attr_aspects = ["deps", "exports"],
-    toolchains = ["@rules_haskell//haskell:toolchain"],
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
 )
 
 def _dirname(file):
