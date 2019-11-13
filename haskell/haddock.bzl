@@ -155,7 +155,9 @@ def _haskell_doc_aspect_impl(target, ctx):
             args,
             compile_flags,
         ],
-        use_default_shell_env = True,
+        env = {
+            "PATH": (";" if hs.toolchain.is_windows else ":").join(posix.paths),
+        },
     )
 
     transitive_html.update({package_id: html_dir})
