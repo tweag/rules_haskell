@@ -60,6 +60,7 @@ def _get_extra_libraries(hs, with_shared, cc_info):
 
 def package(
         hs,
+        posix,
         dep_info,
         cc_info,
         with_shared,
@@ -71,6 +72,7 @@ def package(
 
     Args:
       hs: Haskell context.
+      posix: POSIX toolchain.
       dep_info: Combined HaskellInfo of dependencies.
       cc_info: Combined CcInfo of dependencies.
       with_shared: Whether to link dynamic libraries.
@@ -119,15 +121,15 @@ def package(
         inputs = [metadata_file, exposed_modules_file],
         outputs = [conf_file],
         command = """
-            cat $1 > $3
-            echo "exposed-modules: `cat $2`" >> $3
+            "$1" $2 > $4
+            echo "exposed-modules: `"$1" $3`" >> $4
 """,
         arguments = [
+            posix.commands["cat"],
             metadata_file.path,
             exposed_modules_file.path,
             conf_file.path,
         ],
-        use_default_shell_env = True,
     )
 
     cache_file = ghc_pkg_recache(hs, conf_file)

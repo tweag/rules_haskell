@@ -486,6 +486,7 @@ def haskell_library_impl(ctx):
 
     conf_file, cache_file = package(
         hs,
+        posix,
         dep_info,
         cc_info,
         with_shared,
