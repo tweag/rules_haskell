@@ -401,9 +401,10 @@ node_repositories(
 
 http_archive(
     name = "io_bazel_skydoc",
-    sha256 = "c2d66a0cc7e25d857e480409a8004fdf09072a1bd564d6824441ab2f96448eea",
-    strip_prefix = "skydoc-0.3.0",
-    urls = ["https://github.com/bazelbuild/skydoc/archive/0.3.0.tar.gz"],
+    sha256 = "0f77e715e6cf683548a0af9ab84909e57a8f4609de1e847920444d0434259eb4",
+    # XXX: Update to 0.4.0 and Stardoc, the Skydoc API has been deprecated.
+    strip_prefix = "stardoc-0.3.0",
+    urls = ["https://github.com/bazelbuild/stardoc/archive/0.3.0.tar.gz"],
 )
 
 load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
