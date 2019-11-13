@@ -190,6 +190,7 @@ def link_binary(
 
     (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
+        posix = posix,
         cc_info = cc_info,
         dynamic = dynamic,
         binary = executable,
@@ -363,6 +364,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, cc_info, extra_srcs, objects_d
 
     (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
+        posix = posix,
         cc_info = cc_info,
         dynamic = True,
         pic = True,

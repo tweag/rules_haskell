@@ -288,7 +288,7 @@ def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"
     dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
 
-def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
+def create_link_config(hs, posix, cc_info, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -365,7 +365,7 @@ def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
             for lib in dynamic_libs.to_list()
         ]),
     })
-    cache_file = ghc_pkg_recache(hs, conf_file)
+    cache_file = ghc_pkg_recache(hs, posix, conf_file)
 
     args.add_all([
         "-package-db",

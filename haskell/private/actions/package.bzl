@@ -132,6 +132,6 @@ def package(
         ],
     )
 
-    cache_file = ghc_pkg_recache(hs, conf_file)
+    cache_file = ghc_pkg_recache(hs, posix, conf_file)
 
     return conf_file, cache_file
