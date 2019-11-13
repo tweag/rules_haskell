@@ -23,6 +23,7 @@ mv WORKSPACE.tmp WORKSPACE
 # generation either.
 sed -i 's/vendored_node = "@nixpkgs_nodejs"/vendored_node = None/' WORKSPACE
 
-bazel build //docs:api_html
+# XXX: Remove --host_force_python=PY2 after updating to Starlark 0.4.0
+bazel build --host_force_python=PY2 //docs:api_html
 unzip -d public bazel-bin/docs/api_html-skydoc.zip
 cp start public
