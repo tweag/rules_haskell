@@ -5,6 +5,7 @@ load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/dependencies.bzl", "gather_dep_info")
+load(":private/expansions.bzl", "expand_make_variables")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(":private/path_utils.bzl", "join_path_list", "truly_relativize")
 load(":private/set.bzl", "set")
@@ -88,7 +89,7 @@ def _cabal_tool_flag(tool):
 def _binary_paths(binaries):
     return [binary.dirname for binary in binaries.to_list()]
 
-def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, flags, cabal_wrapper, package_database):
+def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, cabal_wrapper, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -116,6 +117,7 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, component, package_i
     ]
     args.add_all([component, package_id, setup, cabal.dirname, package_database.dirname])
     args.add("--flags=" + " ".join(flags))
+    args.add_all(compiler_flags, format_each = "--ghc-option=%s")
     args.add("--")
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(extra_include_dirs, format_each = "--extra-include-dirs=%s")
@@ -164,6 +166,7 @@ def _haskell_cabal_library_impl(ctx):
     )
     with_profiling = is_profiling_enabled(hs)
 
+    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
@@ -212,6 +215,7 @@ def _haskell_cabal_library_impl(ctx):
         cabal = cabal,
         setup = setup,
         srcs = ctx.files.srcs,
+        compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
@@ -300,6 +304,10 @@ haskell_cabal_library = rule(
         ),
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(),
+        "compiler_flags": attr.string_list(
+            doc = """Flags to pass to Haskell compiler, in addition to those defined
+            the cabal file. Subject to Make variable substitution.""",
+        ),
         "tools": attr.label_list(
             cfg = "host",
             allow_files = True,
@@ -362,6 +370,7 @@ def _haskell_cabal_binary_impl(ctx):
     )
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
+    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
@@ -393,6 +402,7 @@ def _haskell_cabal_binary_impl(ctx):
         cabal = cabal,
         setup = setup,
         srcs = ctx.files.srcs,
+        compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
@@ -441,6 +451,10 @@ haskell_cabal_binary = rule(
     attrs = {
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(),
+        "compiler_flags": attr.string_list(
+            doc = """Flags to pass to Haskell compiler, in addition to those defined
+            the cabal file. Subject to Make variable substitution.""",
+        ),
         "tools": attr.label_list(
             cfg = "host",
             doc = """Tool dependencies. They are built using the host configuration, since
@@ -1043,3 +1057,10 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
         vendored_packages = _invert(vendored_packages),
         **kwargs
     )
+
+def _expand_make_variables(name, ctx, strings):
+    extra_label_attrs = [
+        ctx.attr.srcs,
+        ctx.attr.tools,
+    ]
+    return expand_make_variables(name, ctx, strings, extra_label_attrs)
