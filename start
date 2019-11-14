@@ -4,7 +4,7 @@
 # a new Bazel workspace with dummy Haskell build targets.
 
 MIN_BAZEL_MAJOR=0
-MIN_BAZEL_MINOR=27
+MIN_BAZEL_MINOR=29
 
 MAX_BAZEL_MAJOR=1
 MAX_BAZEL_MINOR=1
