@@ -249,7 +249,6 @@ nixpkgs_package(
 
 nixpkgs_package(
     name = "python3",
-    attribute_path = "python3",
     repository = "@nixpkgs_default",
 )
 
