@@ -25,6 +25,7 @@ load(":private/actions/repl.bzl", "build_haskell_repl")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
+load(":private/expansions.bzl", "expand_make_variables")
 load(":private/java.bzl", "java_interop_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
@@ -140,29 +141,14 @@ def _resolve_preprocessors(ctx, preprocessors):
 
 def _expand_make_variables(name, ctx, strings):
     # All labels in all attributes should be location-expandable.
-    label_attrs = [
+    extra_label_attrs = [
         ctx.attr.srcs,
         ctx.attr.extra_srcs,
         ctx.attr.data,
-        ctx.attr.deps,
         ctx.attr.plugins,
         ctx.attr.tools,
     ]
-
-    # Deduplicate targets. Targets could be duplicated between attributes, e.g.
-    # srcs and extra_srcs. ctx.expand_location fails if any target occurs
-    # multiple times.
-    targets = {
-        target.label: target
-        for attr in label_attrs
-        for target in attr
-        # expand_location expects a list of targets, but haskell_proto_aspect
-        # can inject lists of files instead.
-        if hasattr(target, "label")
-    }.values()
-    strings = [ctx.expand_location(str, targets = targets) for str in strings]
-    strings = [ctx.expand_make_variables(name, str, {}) for str in strings]
-    return strings
+    return expand_make_variables(name, ctx, strings, extra_label_attrs)
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
@@ -417,7 +403,7 @@ def haskell_library_impl(ctx):
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
-    user_compile_flags = _expand_make_variables("compile_flags", ctx, ctx.attr.compiler_flags)
+    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
