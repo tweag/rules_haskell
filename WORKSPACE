@@ -209,7 +209,7 @@ nixpkgs_cc_configure(
 )
 
 nixpkgs_python_configure(
-    # XXX: Remove python2_attribute_path after updating to Starlark 0.4.0
+    # XXX: Remove python2_attribute_path after updating to Stardoc 0.4.0
     python2_attribute_path = "python2",
     repository = "@nixpkgs_default",
 )
