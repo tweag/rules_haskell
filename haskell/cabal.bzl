@@ -859,6 +859,7 @@ haskell_cabal_library(
     deps = {deps},
     tools = {tools},
     visibility = {visibility},
+    compiler_flags = ["-w", "-optF=-w"],
 )
 """.format(
                     name = package.name,
