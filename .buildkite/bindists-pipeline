@@ -9,8 +9,6 @@ BAZEL_DIR="$(.buildkite/fetch-bazel-bindist)"
 trap "rm -rf '$BAZEL_DIR'" EXIT
 export PATH="$BAZEL_DIR:$PATH"
 echo "common:ci --build_tag_filters -requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
-# XXX: See .bazelrc [backward compatible options] for the the rational behind this flag
-echo "build --incompatible_use_python_toolchains=false" >> .bazelrc.local
 # XXX: Remove once all rules using `use_default_shell_env = True` have been
 #   converted to using `rules_sh`'s POSIX toolchain.
 echo "build:ci --experimental_strict_action_env" >> .bazelrc.local

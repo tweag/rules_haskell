@@ -6,8 +6,8 @@
 MIN_BAZEL_MAJOR=0
 MIN_BAZEL_MINOR=27
 
-MAX_BAZEL_MAJOR=0
-MAX_BAZEL_MINOR=29
+MAX_BAZEL_MAJOR=1
+MAX_BAZEL_MINOR=1
 
 set -e
 
@@ -191,8 +191,6 @@ $(insert_if_equal $mode "nix" '
 build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
 run --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs'
 )
-
-build --incompatible_use_python_toolchains=false
 
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct

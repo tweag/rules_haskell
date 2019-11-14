@@ -16,17 +16,6 @@ test:ci --test_output=errors
 
 # Note [backward compatible options]
 
-# XXX: --incompatible_use_python_toolchains needs a specific setup for
-# each environment if python is provided by the system
-# That's complicated to setup. Bazel is supposed to provide automatic
-# detection utilities, see
-# https://github.com/bazelbuild/bazel/issues/7899
-# But it does not work on windows
-# see: https://github.com/bazelbuild/bazel/issues/7844
-# This is only used in rules_haskell tests, so user won't face this
-# issue.
-build  --incompatible_use_python_toolchains=false
-
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct
 # environment variables, such as LOCALE_ARCHIVE

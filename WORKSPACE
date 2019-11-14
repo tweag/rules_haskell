@@ -2,18 +2,6 @@ workspace(name = "rules_haskell")
 
 # Subrepositories of rules_haskell
 
-# various examples
-local_repository(
-    name = "rules_haskell_examples",
-    path = "examples",
-)
-
-# code for the tutorial
-local_repository(
-    name = "rules_haskell_tutorial",
-    path = "tutorial",
-)
-
 # hazel, a way to generate bazel libraries from [st/h]ackage
 local_repository(
     name = "ai_formation_hazel",
@@ -79,9 +67,9 @@ haskell_cabal_binary(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "d10e4e43673bff435cf6256145f91fbb60dd37510320fcae56be18ac90af2fee",
-    strip_prefix = "proto-lens-protoc-0.4.0.1",
-    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.4.0.1/proto-lens-protoc-0.4.0.1.tar.gz"],
+    sha256 = "161dcee2aed780f62c01522c86afce61721cf89c0143f157efefb1bd1fa1d164",
+    strip_prefix = "proto-lens-protoc-0.5.0.0",
+    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.5.0.0/proto-lens-protoc-0.5.0.0.tar.gz"],
 )
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
@@ -101,6 +89,7 @@ stack_snapshot(
         "mtl",
         "process",
         "text",
+        "vector",
         # For tests
         "network",
         "language-c",
@@ -110,12 +99,11 @@ stack_snapshot(
         "hspec-core",
         "lens-family-core",
         "data-default-class",
-        "lens-labels",
         "proto-lens",
         "proto-lens-protoc",
         "lens-family",
     ],
-    snapshot = "lts-13.15",
+    snapshot = "lts-14.4",
     tools = [
         "@alex",
         "@happy",
@@ -135,18 +123,19 @@ load(
     "nixpkgs_cc_configure",
     "nixpkgs_local_repository",
     "nixpkgs_package",
+    "nixpkgs_python_configure",
 )
 
 nixpkgs_package(
     name = "ghc",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "03d2e5ef101aee4c2f6ddcf145d2a04926b9c19e7086944df3842b1b8502b783",
-    strip_prefix = "protobuf-3.8.0",
-    urls = ["https://github.com/google/protobuf/archive/v3.8.0.tar.gz"],
+    sha256 = "6adf73fd7f90409e479d6ac86529ade2d45f50494c5c10f539226693cb8fe4f7",
+    strip_prefix = "protobuf-3.10.1",
+    urls = ["https://github.com/google/protobuf/archive/v3.10.1.tar.gz"],
 )
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
@@ -154,7 +143,7 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()  # configure and install zlib for protobuf
 
 nixpkgs_local_repository(
-    name = "nixpkgs",
+    name = "nixpkgs_default",
     nix_file = "//nixpkgs:default.nix",
 )
 
@@ -193,7 +182,7 @@ haskell_register_ghc_nixpkgs(
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
     repl_ghci_args = test_repl_ghci_args,
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
     version = test_ghc_version,
 )
 
@@ -211,20 +200,24 @@ register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
-    # XXX: see .bazelrc for discussion, the python toolchain
-    # work in postponed to future bazel version
-    # "//tests:python_toolchain",
 )
 
 nixpkgs_cc_configure(
     nix_file = "//nixpkgs:cc-toolchain.nix",
-    repository = "@nixpkgs",
+    nix_file_deps = ["//nixpkgs:default.nix"],
+    repository = "@nixpkgs_default",
+)
+
+nixpkgs_python_configure(
+    # XXX: Remove python2_attribute_path after updating to Stardoc 0.4.0
+    python2_attribute_path = "python2",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "nixpkgs_zlib",
     attribute_path = "zlib",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
@@ -239,43 +232,42 @@ cc_library(
   includes = ["include"],
 )
     """,
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "c2hs",
     attribute_path = "haskellPackages.c2hs",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "doctest",
     attribute_path = "haskellPackages.doctest",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
-#nixpkgs_package(
-#    name = "python3",
-#    attribute_path = "python3",
-#    repository = "@nixpkgs",
-#)
+nixpkgs_package(
+    name = "python3",
+    repository = "@nixpkgs_default",
+)
 
 nixpkgs_package(
     name = "sphinx",
-    attribute_path = "python36Packages.sphinx",
-    repository = "@nixpkgs",
+    attribute_path = "python37Packages.sphinx",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "graphviz",
     attribute_path = "graphviz",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "zip",
     attribute_path = "zip",
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
@@ -295,7 +287,7 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 """,
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
@@ -309,7 +301,7 @@ filegroup(
     srcs = ["lib/locale/locale-archive"],
 )
 """,
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 http_archive(
@@ -347,13 +339,6 @@ local_repository(
     path = "tests/c2hs/repo",
 )
 
-# python toolchain
-nixpkgs_package(
-    name = "python3",
-    attribute_path = "python3",
-    repository = "@nixpkgs",
-)
-
 load(
     "@rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
     "haskell_package_repository_dummy",
@@ -385,22 +370,20 @@ nixpkgs_package(
         "sandbox",
         "false",
     ],
-    repository = "@nixpkgs",
+    repository = "@nixpkgs_default",
 )
 
 http_archive(
     name = "build_bazel_rules_nodejs",
-    sha256 = "f79f605a920145216e64991d6eff4e23babc48810a9efd63a31744bb6637b01e",
-    strip_prefix = "rules_nodejs-b4dad57d2ecc63d74db1f5523593639a635e447d",
-    # Tip of https://github.com/bazelbuild/rules_nodejs/pull/471.
-    urls = ["https://github.com/mboes/rules_nodejs/archive/b4dad57d2ecc63d74db1f5523593639a635e447d.tar.gz"],
+    sha256 = "9901bc17138a79135048fb0c107ee7a56e91815ec6594c08cb9a17b80276d62b",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/0.40.0/rules_nodejs-0.40.0.tar.gz"],
 )
 
 http_archive(
     name = "io_bazel_rules_sass",
-    sha256 = "1e135452dc627f52eab39a50f4d5b8d13e8ed66cba2e6da56ac4cbdbd776536c",
-    strip_prefix = "rules_sass-1.15.2",
-    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.15.2.tar.gz"],
+    sha256 = "d5e0c0d16fb52f3dcce5bd7830d92d4813eb01bac0211119e74ec9e65eaf3b86",
+    strip_prefix = "rules_sass-1.23.3",
+    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.23.3.tar.gz"],
 )
 
 load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
@@ -419,9 +402,10 @@ node_repositories(
 
 http_archive(
     name = "io_bazel_skydoc",
-    sha256 = "c2d66a0cc7e25d857e480409a8004fdf09072a1bd564d6824441ab2f96448eea",
-    strip_prefix = "skydoc-0.3.0",
-    urls = ["https://github.com/bazelbuild/skydoc/archive/0.3.0.tar.gz"],
+    sha256 = "0f77e715e6cf683548a0af9ab84909e57a8f4609de1e847920444d0434259eb4",
+    # XXX: Update to 0.4.0 and Stardoc, the Skydoc API has been deprecated.
+    strip_prefix = "stardoc-0.3.0",
+    urls = ["https://github.com/bazelbuild/stardoc/archive/0.3.0.tar.gz"],
 )
 
 load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
@@ -432,16 +416,18 @@ skydoc_repositories()
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "1ad10f384053ae50c050fdec7d595d12427c82c0a27c58f8554deb4437216892",
-    strip_prefix = "rules_go-0.18.7",
-    urls = ["https://github.com/bazelbuild/rules_go/archive/0.18.7.tar.gz"],
+    sha256 = "b9aa86ec08a292b97ec4591cf578e020b35f98e12173bbd4a921f84f583aebd9",
+    urls = [
+        "https://storage.googleapis.com/bazel-mirror/github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
+    ],
 )
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "5ec71602e9b458b01717fab1d37492154c1c12ea83f881c745dbd88e9b2098d8",
-    strip_prefix = "buildtools-0.28.0",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/0.28.0.tar.gz"],
+    sha256 = "f3ef44916e6be705ae862c0520bac6834dd2ff1d4ac7e5abc61fe9f12ce7a865",
+    strip_prefix = "buildtools-0.29.0",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/0.29.0.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
