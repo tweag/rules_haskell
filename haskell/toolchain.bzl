@@ -315,10 +315,6 @@ def haskell_toolchain(
         **kwargs
     )
 
-def haskell_register_toolchains(version):
-    """Download the binary distribution of GHC for your current platform
-    and register it as a toolchain. This currently has the same effect
-    as just `haskell_register_ghc_bindists(version)`.
-    """
-    print("DEPRECATED. Use rules_haskell_toolchains() in haskell/repositories.bzl instead.")
-    haskell_register_ghc_bindists(version)
+def rules_haskell_toolchains(**kwargs):
+    """Register GHC binary distributions for all platforms as toolchains."""
+    haskell_register_ghc_bindists(**kwargs)

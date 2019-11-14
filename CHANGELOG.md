@@ -6,7 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## Upcoming release
 
-nothing yet
+### Changed
+
+* The `haskell_register_toolchains()` is no longer defined in
+  `haskell/repositories.bzl`, load it from `haskell/toolchain.bzl` instead.
 
 ## [0.11.0] - 2019-10-10
 

@@ -4,7 +4,7 @@
 # a new Bazel workspace with dummy Haskell build targets.
 
 MIN_BAZEL_MAJOR=0
-MIN_BAZEL_MINOR=27
+MIN_BAZEL_MINOR=29
 
 MAX_BAZEL_MAJOR=1
 MAX_BAZEL_MINOR=1
@@ -168,11 +168,15 @@ http_archive(
 load(
     "@rules_haskell//haskell:repositories.bzl",
     "rules_haskell_dependencies",
-    "rules_haskell_toolchains",
 )
 
 # Setup all Bazel dependencies required by rules_haskell.
 rules_haskell_dependencies()
+
+load(
+    "@rules_haskell//haskell:toolchain.bzl",
+    "rules_haskell_toolchains",
+)
 
 $(get_toolchain)
 EOF

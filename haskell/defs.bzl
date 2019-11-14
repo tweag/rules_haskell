@@ -22,7 +22,7 @@ load(
 # For re-exports:
 load(
     ":toolchain.bzl",
-    _haskell_register_toolchains = "haskell_register_toolchains",
+    _haskell_register_toolchains = "rules_haskell_toolchains",
     _haskell_toolchain = "haskell_toolchain",
 )
 load(
