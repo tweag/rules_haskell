@@ -2,12 +2,6 @@ workspace(name = "rules_haskell")
 
 # Subrepositories of rules_haskell
 
-# hazel, a way to generate bazel libraries from [st/h]ackage
-local_repository(
-    name = "ai_formation_hazel",
-    path = "hazel",
-)
-
 # Some helpers for platform-dependent configuration
 load("//tools:os_info.bzl", "os_info")
 
@@ -350,7 +344,7 @@ load(
     "haskell_package_repository_dummy",
 )
 
-# dummy repo for the external haskell repo test (hazel)
+# dummy repo for the external haskell repo test
 haskell_package_repository_dummy(
     name = "haskell_package_repository_dummy",
 )
@@ -469,12 +463,6 @@ go_register_toolchains(go_version = "host") if is_nix_shell else go_register_too
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
 buildifier_dependencies()
-
-# Hazel
-
-load("@ai_formation_hazel//:workspace.bzl", "hazel_setup")
-
-hazel_setup()
 
 # For profiling
 # Required to make use of `bazel build --profile`.

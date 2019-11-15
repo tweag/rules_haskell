@@ -15,7 +15,7 @@ haskell_binary(
     compiler_flags = ["-Itests/isystem-issue/include"],
     deps = [
         ":cbits",
-        "@haskell_base//:lib",
+        "//tests/hackage:base",
     ],
 )
 

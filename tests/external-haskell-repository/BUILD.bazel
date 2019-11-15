@@ -1,5 +1,5 @@
 # Tests correct linking of haskell packages that were created
-# in a different bazel repository, e.g. with hazel.
+# in a different bazel repository.
 
 load(
     "@rules_haskell//haskell:defs.bzl",
