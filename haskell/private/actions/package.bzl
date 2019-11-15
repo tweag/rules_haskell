@@ -6,7 +6,7 @@ load(":private/path_utils.bzl", "get_lib_name", "is_hs_library", "target_unique_
 load(":private/pkg_id.bzl", "pkg_id")
 load(":providers.bzl", "get_extra_libs")
 
-def _get_extra_libraries(hs, with_shared, cc_info):
+def _get_extra_libraries(hs, posix, with_shared, cc_info):
     """Get directories and library names for extra library dependencies.
 
     Args:
@@ -23,6 +23,7 @@ def _get_extra_libraries(hs, with_shared, cc_info):
     # configuration files.
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
+        posix,
         cc_info,
         pic = with_shared,
     )
@@ -60,6 +61,7 @@ def _get_extra_libraries(hs, with_shared, cc_info):
 
 def package(
         hs,
+        posix,
         dep_info,
         cc_info,
         with_shared,
@@ -71,6 +73,7 @@ def package(
 
     Args:
       hs: Haskell context.
+      posix: POSIX toolchain.
       dep_info: Combined HaskellInfo of dependencies.
       cc_info: Combined CcInfo of dependencies.
       with_shared: Whether to link dynamic libraries.
@@ -92,7 +95,7 @@ def package(
         paths.join(pkg_db_dir, "_iface"),
     )
 
-    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, with_shared, cc_info)
+    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, posix, with_shared, cc_info)
 
     # Create a file from which ghc-pkg will create the actual package
     # from. List of exposed modules generated below.
@@ -119,17 +122,17 @@ def package(
         inputs = [metadata_file, exposed_modules_file],
         outputs = [conf_file],
         command = """
-            cat $1 > $3
-            echo "exposed-modules: `cat $2`" >> $3
+            "$1" $2 > $4
+            echo "exposed-modules: `"$1" $3`" >> $4
 """,
         arguments = [
+            posix.commands["cat"],
             metadata_file.path,
             exposed_modules_file.path,
             conf_file.path,
         ],
-        use_default_shell_env = True,
     )
 
-    cache_file = ghc_pkg_recache(hs, conf_file)
+    cache_file = ghc_pkg_recache(hs, posix, conf_file)
 
     return conf_file, cache_file

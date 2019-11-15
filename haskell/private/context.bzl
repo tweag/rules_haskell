@@ -67,11 +67,11 @@ def render_env(env):
     Example:
 
       >>> render_env({"PATH": "foo:bar", "LANG": "lang"})
-      export PATH=foo:bar
-      export LANG=lang
+      export PATH="foo:bar"
+      export LANG="lang"
 
     """
     return "\n".join([
-        "export {}={}".format(k, v)
+        'export {}="{}"'.format(k, v)
         for k, v in env.items()
     ])

@@ -135,7 +135,7 @@ def make_library_path(hs, libs, prefix = None):
 
     return join_path_list(hs, set.to_list(r))
 
-def mangle_static_library(hs, dynamic_lib, static_lib, outdir):
+def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
     """Mangle a static library to match a dynamic library name.
 
     GHC expects static and dynamic C libraries to have matching library names.
@@ -169,7 +169,7 @@ def mangle_static_library(hs, dynamic_lib, static_lib, outdir):
         link = hs.actions.declare_file(
             paths.join(outdir, "lib" + libname + "." + static_lib.extension),
         )
-        ln(hs, static_lib, link)
+        ln(hs, posix, static_lib, link)
         return link
 
 def get_dirname(file):
@@ -487,7 +487,7 @@ def rel_to_pkgroot(target, pkgdb):
         truly_relativize(target, paths.dirname(pkgdb)),
     )
 
-def ln(hs, target, link, extra_inputs = depset()):
+def ln(hs, posix, target, link, extra_inputs = depset()):
     """Create a symlink to target.
 
     Args:
@@ -502,11 +502,11 @@ def ln(hs, target, link, extra_inputs = depset()):
         inputs = depset([target], transitive = [extra_inputs]),
         outputs = [link],
         mnemonic = "Symlink",
-        command = "ln -s {target} {link}".format(
+        command = '"{ln}" -s {target} {link}'.format(
+            ln = posix.commands["ln"],
             target = relative_target,
             link = link.path,
         ),
-        use_default_shell_env = True,
         # Don't sandbox symlinking to reduce overhead.
         # See https://github.com/tweag/rules_haskell/issues/958.
         execution_requirements = {

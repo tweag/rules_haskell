@@ -263,6 +263,7 @@ _haskell_proto_aspect = aspect(
     toolchains = [
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//protobuf:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
     ],
     fragments = ["cpp"],
 )

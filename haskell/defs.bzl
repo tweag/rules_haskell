@@ -181,6 +181,7 @@ def _mk_binary_rule(**kwargs):
         },
         toolchains = [
             "@rules_haskell//haskell:toolchain",
+            "@rules_sh//sh/posix:toolchain_type",
         ],
         fragments = ["cpp"],
         **kwargs
@@ -225,6 +226,7 @@ _haskell_library = rule(
     },
     toolchains = [
         "@rules_haskell//haskell:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
     ],
     fragments = ["cpp"],
 )

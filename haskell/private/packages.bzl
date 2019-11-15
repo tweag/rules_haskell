@@ -132,7 +132,7 @@ def write_package_conf(hs, conf_file, metadata):
 
     hs.actions.write(conf_file, package_conf)
 
-def ghc_pkg_recache(hs, conf_file):
+def ghc_pkg_recache(hs, posix, conf_file):
     """Run ghc-pkg recache on the given package configuration file.
 
     Note, this will generate the file package.cache in the same directory as
@@ -185,8 +185,9 @@ def ghc_pkg_recache(hs, conf_file):
             "-v0",
             "--no-expand-pkgroot",
         ],
-        # XXX: Seems required for this to work on Windows
-        use_default_shell_env = hs.toolchain.is_windows,
+        env = {
+            "PATH": (";" if hs.toolchain.is_windows else ":").join(posix.paths),
+        },
     )
 
     return cache_file

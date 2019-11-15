@@ -200,7 +200,7 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
         dep_info = dep_info,
     )
 
-def _create_repl(hs, ctx, repl_info, output):
+def _create_repl(hs, posix, ctx, repl_info, output):
     """Build a multi target REPL.
 
     Args:
@@ -235,6 +235,7 @@ def _create_repl(hs, ctx, repl_info, output):
     ])
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
+        posix,
         cc_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
@@ -364,7 +365,8 @@ def _haskell_repl_impl(ctx):
     from_binary = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_from_binary]
     repl_info = _create_HaskellReplInfo(from_source, from_binary, collect_info)
     hs = haskell_context(ctx)
-    return _create_repl(hs, ctx, repl_info, ctx.outputs.repl)
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+    return _create_repl(hs, posix, ctx, repl_info, ctx.outputs.repl)
 
 haskell_repl = rule(
     implementation = _haskell_repl_impl,
@@ -422,7 +424,10 @@ haskell_repl = rule(
     outputs = {
         "repl": "%{name}@repl",
     },
-    toolchains = ["@rules_haskell//haskell:toolchain"],
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
 )
 """Build a REPL for multiple targets.
 

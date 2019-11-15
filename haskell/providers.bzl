@@ -186,7 +186,7 @@ def _get_unique_lib_files(cc_info):
         for filename in filenames
     ]
 
-def get_ghci_extra_libs(hs, cc_info, path_prefix = None):
+def get_ghci_extra_libs(hs, posix, cc_info, path_prefix = None):
     """Get libraries appropriate for GHCi's linker.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -213,6 +213,7 @@ def get_ghci_extra_libs(hs, cc_info, path_prefix = None):
     """
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
+        posix,
         cc_info,
         dynamic = not hs.toolchain.is_static,
         pic = True,
@@ -230,7 +231,7 @@ def get_ghci_extra_libs(hs, cc_info, path_prefix = None):
 
     return (libs, ghc_env)
 
-def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"):
+def get_extra_libs(hs, posix, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"):
     """Get libraries appropriate for linking with GHC.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -273,7 +274,7 @@ def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"
         elif lib_to_link.static_library and not pic_required:
             static_lib = lib_to_link.static_library
 
-        static_lib = mangle_static_library(hs, dynamic_lib, static_lib, fixed_lib_dir)
+        static_lib = mangle_static_library(hs, posix, dynamic_lib, static_lib, fixed_lib_dir)
 
         if static_lib and not (dynamic and dynamic_lib):
             static_libs.append(static_lib)
@@ -288,7 +289,7 @@ def get_extra_libs(hs, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"
     dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
 
-def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
+def create_link_config(hs, posix, cc_info, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -313,6 +314,7 @@ def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
 
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
+        posix,
         cc_info,
         dynamic = dynamic,
         pic = pic,
@@ -365,7 +367,7 @@ def create_link_config(hs, cc_info, binary, args, dynamic = None, pic = None):
             for lib in dynamic_libs.to_list()
         ]),
     })
-    cache_file = ghc_pkg_recache(hs, conf_file)
+    cache_file = ghc_pkg_recache(hs, posix, conf_file)
 
     args.add_all([
         "-package-db",

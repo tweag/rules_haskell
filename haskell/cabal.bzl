@@ -92,7 +92,7 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, component, package_i
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
-    (ghci_extra_libs, env) = get_ghci_extra_libs(hs, cc_info)
+    (ghci_extra_libs, env) = get_ghci_extra_libs(hs, posix, cc_info)
     env.update(**hs.env)
     env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)
     if hs.toolchain.is_darwin:

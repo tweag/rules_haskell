@@ -80,6 +80,7 @@ def _haskell_doctest_single(target, ctx):
         return []
 
     hs = haskell_context(ctx, ctx.attr)
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     hs_info = target[HaskellInfo]
     cc_info = target[CcInfo]
@@ -121,7 +122,7 @@ def _haskell_doctest_single(target, ctx):
     args.add_all(ctx.attr.doctest_flags)
 
     # C library dependencies to link against.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, cc_info)
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_info)
     link_libraries(ghci_extra_libs, args, prefix_optl = hs.toolchain.is_darwin)
 
     if ctx.attr.modules:
@@ -214,6 +215,7 @@ omitted, all exposed modules provided by `deps` will be tested.
     toolchains = [
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell:doctest-toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
     ],
 )
 """Run doctest test on targets in `deps`.

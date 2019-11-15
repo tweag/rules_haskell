@@ -17,6 +17,7 @@ load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_runghc(
         hs,
+        posix,
         runghc_wrapper,
         user_compile_flags,
         extra_args,
@@ -57,6 +58,7 @@ def build_haskell_runghc(
 
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
+        posix,
         cc_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
@@ -108,4 +110,4 @@ def build_haskell_runghc(
         hs_info.source_files,
         hs.toolchain.cc_wrapper.runfiles.files,
     ])
-    ln(hs, runghc_file, output, extra_inputs)
+    ln(hs, posix, runghc_file, output, extra_inputs)
