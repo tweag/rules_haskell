@@ -10,8 +10,7 @@ for building Haskell code.
   with multiple third-party dependencies downloaded from Hackage,
   C library dependencies and split up into multiple libraries and
   a binary. We use a rule wrapping Cabal to build the Hackage
-  dependencies. This example requires Nix installed. It is used to
-  build (or download from a binary cache) the C library dependencies.
+  dependencies.
 * [**rts:**](./rts/) demonstrates foreign exports and shows how to
   link against GHC's RTS library, i.e. `libHSrts.so`.
   
