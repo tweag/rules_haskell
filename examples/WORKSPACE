@@ -104,14 +104,3 @@ stack_snapshot(
     snapshot = "lts-14.0",
     vendored_packages = {"split": "@split//:split"},
 )
-
-# For the rts example.
-
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
-
-nixpkgs_package(
-    name = "ghc",
-    attribute_path = "haskellPackages.ghc",
-    build_file = "@rules_haskell//haskell:ghc.BUILD",
-    repository = "@rules_haskell//nixpkgs:default.nix",
-)
