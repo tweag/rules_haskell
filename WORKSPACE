@@ -135,7 +135,10 @@ http_archive(
     name = "com_google_protobuf",
     sha256 = "6adf73fd7f90409e479d6ac86529ade2d45f50494c5c10f539226693cb8fe4f7",
     strip_prefix = "protobuf-3.10.1",
-    urls = ["https://github.com/google/protobuf/archive/v3.10.1.tar.gz"],
+    urls = [
+        "https://mirror.bazel.build/github.com/google/protobuf/archive/v3.10.1.tar.gz",
+        "https://github.com/google/protobuf/archive/v3.10.1.tar.gz",
+    ],
 )
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
@@ -320,7 +323,10 @@ cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
 """,
     sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
     strip_prefix = "zlib-1.2.11",
-    urls = ["http://zlib.net/zlib-1.2.11.tar.gz"],
+    urls = [
+        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
+        "http://zlib.net/zlib-1.2.11.tar.gz",
+    ],
 )
 
 load("@bazel_tools//tools/build_defs/repo:jvm.bzl", "jvm_maven_import_external")
@@ -376,14 +382,20 @@ nixpkgs_package(
 http_archive(
     name = "build_bazel_rules_nodejs",
     sha256 = "9901bc17138a79135048fb0c107ee7a56e91815ec6594c08cb9a17b80276d62b",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/0.40.0/rules_nodejs-0.40.0.tar.gz"],
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_nodejs/releases/download/0.40.0/rules_nodejs-0.40.0.tar.gz",
+        "https://github.com/bazelbuild/rules_nodejs/releases/download/0.40.0/rules_nodejs-0.40.0.tar.gz",
+    ],
 )
 
 http_archive(
     name = "io_bazel_rules_sass",
     sha256 = "d5e0c0d16fb52f3dcce5bd7830d92d4813eb01bac0211119e74ec9e65eaf3b86",
     strip_prefix = "rules_sass-1.23.3",
-    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.23.3.tar.gz"],
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_sass/archive/1.23.3.tar.gz",
+        "https://github.com/bazelbuild/rules_sass/archive/1.23.3.tar.gz",
+    ],
 )
 
 load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
@@ -405,7 +417,10 @@ http_archive(
     sha256 = "0f77e715e6cf683548a0af9ab84909e57a8f4609de1e847920444d0434259eb4",
     # XXX: Update to 0.4.0 and Stardoc, the Skydoc API has been deprecated.
     strip_prefix = "stardoc-0.3.0",
-    urls = ["https://github.com/bazelbuild/stardoc/archive/0.3.0.tar.gz"],
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/archive/0.3.0.tar.gz",
+        "https://github.com/bazelbuild/stardoc/archive/0.3.0.tar.gz",
+    ],
 )
 
 load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
@@ -418,7 +433,7 @@ http_archive(
     name = "io_bazel_rules_go",
     sha256 = "b9aa86ec08a292b97ec4591cf578e020b35f98e12173bbd4a921f84f583aebd9",
     urls = [
-        "https://storage.googleapis.com/bazel-mirror/github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
         "https://github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
     ],
 )
@@ -427,7 +442,10 @@ http_archive(
     name = "com_github_bazelbuild_buildtools",
     sha256 = "f3ef44916e6be705ae862c0520bac6834dd2ff1d4ac7e5abc61fe9f12ce7a865",
     strip_prefix = "buildtools-0.29.0",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/0.29.0.tar.gz"],
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/buildtools/archive/0.29.0.tar.gz",
+        "https://github.com/bazelbuild/buildtools/archive/0.29.0.tar.gz",
+    ],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
