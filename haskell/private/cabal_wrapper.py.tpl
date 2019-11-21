@@ -97,6 +97,42 @@ def recache_db():
 recache_db()
 
 @contextmanager
+def in_srctree():
+    """Change into the source directory.
+
+    Cabal really wants the current working directory to be directory
+    where the .cabal file is located. So we have no choice but to chance
+    cd into it, but then we have to rewrite all relative references into
+    absolute ones before doing so (using $execroot).
+
+    On Windows Bazel builds are not sandboxed and operations like executing
+    configure scripts can modify the source tree. If the `srcs` attribute uses
+    a glob like `glob(["**"])`, then these modified files will enter `srcs` on
+    the next execution and invalidate the cache. To avoid this we copy the
+    source tree on Windows.
+    """
+    old_cwd = os.getcwd()
+    if "%{is_windows}" == "True":
+        try:
+            destdir = tempfile.mkdtemp()
+            shutil.copytree(
+                srcdir,
+                os.path.join(destdir, "src"),
+                symlinks=True,
+                ignore_dangling_symlinks=True)
+            os.chdir(os.path.join(destdir, "src"))
+            yield
+        finally:
+            os.chdir(old_cwd)
+            shutil.rmtree(destdir)
+    else:
+        try:
+            os.chdir(srcdir)
+            yield
+        finally:
+            os.chdir(old_cwd)
+
+@contextmanager
 def tmpdir():
     """This is a reimplementation of `tempfile.TemporaryDirectory` because
     the latter isn't available in python2
@@ -107,50 +143,44 @@ def tmpdir():
     finally:
         shutil.rmtree(distdir)
 
-with tmpdir() as distdir:
-    enable_relocatable_flags = ["--enable-relocatable"] \
-            if "%{is_windows}" != "True" else []
+with in_srctree():
+    with tmpdir() as distdir:
+        enable_relocatable_flags = ["--enable-relocatable"] \
+                if "%{is_windows}" != "True" else []
 
-    # Cabal really wants the current working directory to be directory
-    # where the .cabal file is located. So we have no choice but to chance
-    # cd into it, but then we have to rewrite all relative references into
-    # absolute ones before doing so (using $execroot).
-    old_cwd = os.getcwd()
-    os.chdir(srcdir)
-    os.putenv("HOME", "/var/empty")
-    run([runghc, setup, "configure", \
-        component, \
-        "--verbose=0", \
-        "--user", \
-        "--with-compiler=" + ghc,
-        "--with-hc-pkg=" + ghc_pkg,
-        "--with-ar=" + ar,
-        "--with-gcc=" + cc,
-        "--with-strip=" + strip,
-        "--enable-deterministic", \
-        ] +
-        enable_relocatable_flags + \
-        [ \
-        "--builddir=" + distdir, \
-        "--prefix=" + pkgroot, \
-        "--libdir=" + libdir, \
-        "--dynlibdir=" + dynlibdir, \
-        "--libsubdir=", \
-        "--bindir=" + bindir, \
-        "--datadir=" + datadir, \
-        # Note, setting --datasubdir is required to work around
-        #   https://github.com/haskell/cabal/issues/6235
-        "--datasubdir=", \
-        "--package-db=clear", \
-        "--package-db=global", \
-        ] + \
-        extra_args + \
-        [ arg.replace("=", "=" + execroot + "/") for arg in path_args ] + \
-        [ "--package-db=" + package_database ], # This arg must come last.
-        )
-    run([runghc, setup, "build", "--verbose=0", "--builddir=" + distdir])
-    run([runghc, setup, "install", "--verbose=0", "--builddir=" + distdir])
-    os.chdir(old_cwd)
+        os.putenv("HOME", "/var/empty")
+        run([runghc, setup, "configure", \
+            component, \
+            "--verbose=0", \
+            "--user", \
+            "--with-compiler=" + ghc,
+            "--with-hc-pkg=" + ghc_pkg,
+            "--with-ar=" + ar,
+            "--with-gcc=" + cc,
+            "--with-strip=" + strip,
+            "--enable-deterministic", \
+            ] +
+            enable_relocatable_flags + \
+            [ \
+            "--builddir=" + distdir, \
+            "--prefix=" + pkgroot, \
+            "--libdir=" + libdir, \
+            "--dynlibdir=" + dynlibdir, \
+            "--libsubdir=", \
+            "--bindir=" + bindir, \
+            "--datadir=" + datadir, \
+            # Note, setting --datasubdir is required to work around
+            #   https://github.com/haskell/cabal/issues/6235
+            "--datasubdir=", \
+            "--package-db=clear", \
+            "--package-db=global", \
+            ] + \
+            extra_args + \
+            [ arg.replace("=", "=" + execroot + "/") for arg in path_args ] + \
+            [ "--package-db=" + package_database ], # This arg must come last.
+            )
+        run([runghc, setup, "build", "--verbose=0", "--builddir=" + distdir])
+        run([runghc, setup, "install", "--verbose=0", "--builddir=" + distdir])
 
 # XXX Cabal has a bizarre layout that we can't control directly. It
 # confounds the library-dir and the import-dir (but not the
