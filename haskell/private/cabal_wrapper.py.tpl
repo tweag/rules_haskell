@@ -105,7 +105,7 @@ def tmpdir():
     try:
         yield distdir
     finally:
-        shutil.rmtree(distdir, ignore_errors = "%{is_windows}" == "True")
+        shutil.rmtree(distdir, ignore_errors = True)
 
 with tmpdir() as distdir:
     enable_relocatable_flags = ["--enable-relocatable"] \
@@ -150,15 +150,12 @@ with tmpdir() as distdir:
         )
     run([runghc, setup, "build", "--verbose=0", "--builddir=" + distdir])
     run([runghc, setup, "install", "--verbose=0", "--builddir=" + distdir])
-    if "%{is_windows}" == "True":
-        # Bazel builds are not sandboxed on Windows and operations like
-        # executing `configure` scripts can modify the source tree. If the
-        # `srcs` attribute uses a glob like `glob(["**"])`, then these modified
-        # files will enter `srcs` on the next execution and invalidate the
-        # cache. To avoid this we remove generated files.
-        # XXX: Remove this once Windows sandboxing is implemented.
-        #   https://github.com/bazelbuild/bazel/issues/5136
-        run([runghc, setup, "clean", "--verbose=0", "--builddir=" + distdir])
+    # Bazel builds are not sandboxed on Windows and can be non-sandboxed on
+    # other OSs. Operations like executing `configure` scripts can modify the
+    # source tree. If the `srcs` attribute uses a glob like `glob(["**"])`,
+    # then these modified files will enter `srcs` on the next execution and
+    # invalidate the cache. To avoid this we remove generated files.
+    run([runghc, setup, "clean", "--verbose=0", "--builddir=" + distdir])
     os.chdir(old_cwd)
 
 # XXX Cabal has a bizarre layout that we can't control directly. It
