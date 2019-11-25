@@ -1,10 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This is a happy-path tool to download the bindist
 # download paths and hashes, for maintainers.
 # It uses the hashes provided by download.haskell.org.
-
-from __future__ import print_function
 
 import pprint
 import sys
