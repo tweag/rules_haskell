@@ -27,6 +27,10 @@ You'll need [Bazel >= 0.29][bazel-getting-started] installed.
 
 If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
 
+### System dependencies
+
+Refer to the "Before you begin" section in [the documentation](docs/haskell.rst).
+
 ### The easy way
 
 In a fresh directory, run:
