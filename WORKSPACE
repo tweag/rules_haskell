@@ -13,7 +13,7 @@ load("//tools:os_info.bzl", "os_info")
 
 os_info(name = "os_info")
 
-load("@os_info//:os_info.bzl", "is_linux", "is_windows")
+load("@os_info//:os_info.bzl", "is_linux", "is_nix_shell", "is_windows")
 
 # bazel dependencies
 load("//haskell:repositories.bzl", "rules_haskell_dependencies")
@@ -462,9 +462,9 @@ load(
 
 go_rules_dependencies()
 
-# If Windows, ask Bazel to download a Go SDK. Otherwise use the nix-shell
-# provided GO SDK.
-go_register_toolchains() if is_windows else go_register_toolchains(go_version = "host")
+# If in nix-shell, use the Go SDK provided by Nix.
+# Otherwise, ask Bazel to download a Go SDK.
+go_register_toolchains(go_version = "host") if is_nix_shell else go_register_toolchains()
 
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
