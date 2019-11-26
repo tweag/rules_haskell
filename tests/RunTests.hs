@@ -83,36 +83,6 @@ main = hspec $ do
     assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "./tutorial" }
     assertSuccess (bazel ["test", "//..."]) { Process.cwd = Just "./tutorial" }
 
-  describe "Hazel" $ do
-    it "bazel test" $ do
-      assertSuccess (bazel ["test", "@ai_formation_hazel//..."])
-    for_ hazelPackages $ \pkg -> do
-      it ("builds " ++ pkg) $ do
-        assertSuccess (bazel ["build", "@haskell_" ++ pkg ++ "//..."])
-
-      where
-        hazelPackages =
-          [ "aeson"
-          , "aeson__extra"
-          , "alex"
-          , "cassava"
-          , "conduit"
-          , "entropy"
-          , "fuzzyset"
-          , "happy"
-          , "htaglib"
-          , "http__client"
-          , "lens"
-          , "network"
-          , "postgresql__libpq"
-          , "pretty__show"
-          , "text__metrics"
-          , "unix__compat"
-          , "unix__time"
-          , "wai__app__static"
-          , "zlib"
-          ]
-
 -- * Bazel commands
 
 -- | Returns a bazel command line suitable for CI
