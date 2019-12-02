@@ -1,1 +1,1 @@
-test_ghc_version = "8.6.5"
+test_ghc_version = "8.8.1"

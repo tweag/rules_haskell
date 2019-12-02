@@ -43,9 +43,9 @@ http_archive(
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
 haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visibility:public"])
     """,
-    sha256 = "22eb606c97105b396e1c7dc27e120ca02025a87f3e44d2ea52be6a653a52caed",
-    strip_prefix = "happy-1.19.10",
-    urls = ["http://hackage.haskell.org/package/happy-1.19.10/happy-1.19.10.tar.gz"],
+    sha256 = "fb9a23e41401711a3b288f93cf0a66db9f97da1ce32ec4fffea4b78a0daeb40f",
+    strip_prefix = "happy-1.19.12",
+    urls = ["http://hackage.haskell.org/package/happy-1.19.12/happy-1.19.12.tar.gz"],
 )
 
 http_archive(
@@ -180,7 +180,8 @@ load(
 )
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "ghc",
+    attribute_path = "",
+    nix_file_content = "with import <nixpkgs> {}; haskell.packages.ghc881.ghcWithPackages(p: [p.data-default-instances-old-locale])",
     compiler_flags = test_compiler_flags,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
