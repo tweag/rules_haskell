@@ -79,7 +79,12 @@ _CABAL_TOOL_LIBRARIES = ["cpphs", "doctest"]
 # assumption that such packages are old and rare.
 #
 # TODO: replace this with a more general solution.
-_EMPTY_PACKAGES_BLACKLIST = ["bytestring-builder", "mtl-compat", "nats"]
+_EMPTY_PACKAGES_BLACKLIST = [
+    "bytestring-builder",
+    "fail",
+    "mtl-compat",
+    "nats",
+]
 
 def _cabal_tool_flag(tool):
     """Return a --with-PROG=PATH flag if input is a recognized Cabal tool. None otherwise."""
