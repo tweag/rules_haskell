@@ -41,9 +41,9 @@ http_archive(
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
 haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visibility:public"])
     """,
-    sha256 = "22eb606c97105b396e1c7dc27e120ca02025a87f3e44d2ea52be6a653a52caed",
-    strip_prefix = "happy-1.19.10",
-    urls = ["http://hackage.haskell.org/package/happy-1.19.10/happy-1.19.10.tar.gz"],
+    sha256 = "fb9a23e41401711a3b288f93cf0a66db9f97da1ce32ec4fffea4b78a0daeb40f",
+    strip_prefix = "happy-1.19.12",
+    urls = ["http://hackage.haskell.org/package/happy-1.19.12/happy-1.19.12.tar.gz"],
 )
 
 http_archive(
@@ -65,11 +65,16 @@ haskell_cabal_binary(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "161dcee2aed780f62c01522c86afce61721cf89c0143f157efefb1bd1fa1d164",
-    strip_prefix = "proto-lens-protoc-0.5.0.0",
-    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.5.0.0/proto-lens-protoc-0.5.0.0.tar.gz"],
+    sha256 = "b946740b94c8d300cd8e278ded9045905ef1985824cef6b81af0d79b119927be",
+    strip_prefix = "proto-lens-protoc-0.6.0.0",
+    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.6.0.0/proto-lens-protoc-0.6.0.0.tar.gz"],
 )
 
+load(
+    "@rules_haskell//:constants.bzl",
+    "test_ghc_version",
+    "test_stack_snapshot",
+)
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
@@ -99,9 +104,10 @@ stack_snapshot(
         "data-default-class",
         "proto-lens",
         "proto-lens-protoc",
+        "proto-lens-runtime",
         "lens-family",
     ],
-    snapshot = "lts-14.4",
+    snapshot = test_stack_snapshot,
     tools = [
         "@alex",
         "@happy",
@@ -113,7 +119,7 @@ stack_snapshot(
     name = "stackage-zlib",
     extra_deps = {"zlib": ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"]},
     packages = ["zlib"],
-    snapshot = "lts-13.15",
+    snapshot = test_stack_snapshot,
 )
 
 load(
@@ -166,19 +172,16 @@ test_repl_ghci_args = [
 ]
 
 load(
-    "@rules_haskell//:constants.bzl",
-    "test_ghc_version",
-)
-load(
     "@rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc865",
+    attribute_path = "",
     compiler_flags = test_compiler_flags,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc883.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
