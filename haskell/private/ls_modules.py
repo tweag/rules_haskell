@@ -26,10 +26,60 @@ hidden_modules_file = sys.argv[4]
 reexported_modules_file = sys.argv[5]
 results_file = sys.argv[6]
 
+def read_config_file(f):
+    """
+    Read GHC package database format, which is mostly key:values lines
+
+    `f` is an open file descriptor
+    it returns a generator of (key, [values])
+    """
+
+    current_field_name = None
+    current_field_values = []
+
+
+    # we parse the file line by line, looking for "fieldName:" markers
+    # and then consuming all the following line if they are indented.
+    for line in f:
+        # we have an indented line, that's a field
+        if line.startswith("    "):
+            line = line.strip()
+            if line:
+                current_field_values.append(line.strip())
+        else:
+            # Dump the currently read field
+            if current_field_name:
+                yield (current_field_name, current_field_values)
+
+            # this is a new field
+            if ':' in line:
+               items = line.split(':')
+               current_field_name = items[0].strip()
+
+               if len(items) == 2:
+                   maybefield = items[1].strip()
+
+                   if maybefield:
+                       current_field_values = [maybefield]
+                   else:
+                       current_field_values = []
+            else:
+                current_field_name = None
+                current_field_values = []
+
 with io.open(global_pkg_db_dump, "r", encoding='utf8') as f:
-    names = [line.split()[1] for line in f if line.startswith("name:")]
-    f.seek(0)
-    ids = [line.split()[1] for line in f if line.startswith("id:")]
+    names = []
+    ids = []
+
+    # read names and ids entries from the database
+    for (field, values) in read_config_file(f):
+        if field == "name" and len(values) == 1:
+            names.append(values[0])
+        if field == "id" and len(values) == 1:
+            ids.append(values[0])
+
+    names.sort()
+    ids.sort()
 
     # A few sanity checks.
     assert len(names) == len(ids)
