@@ -10,6 +10,6 @@ plugin = defaultPlugin { installCoreToDos = install }
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install [arg] todo = do
   when ('$' `elem` arg) $
-    fail "Make variable not expanded."
+    error "Make variable not expanded."
   _ <- liftIO $ readProcess arg [] ""
   return todo
