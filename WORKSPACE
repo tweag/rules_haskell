@@ -174,10 +174,16 @@ load(
 )
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "ghc",
+    attribute_path = "",
     compiler_flags = test_compiler_flags,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
+
+    # The data-default-instances-old-locale package was is a reproduction sample for #1165
+    nix_file_content = """
+    with import <nixpkgs> {};
+    haskellPackages.ghcWithPackages(p: [p.data-default-instances-old-locale])
+    """,
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
