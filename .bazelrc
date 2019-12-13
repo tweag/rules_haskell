@@ -5,7 +5,8 @@
 # https://bazel.build/roadmaps/platforms.html#replace---cpu-and---host_cpu-flags.
 build:windows --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain -s --verbose_failures --sandbox_debug
 
-build:ci --disk_cache=/tmp/bazel-disk-cache
+build:ci_darwin --disk_cache=/tmp/bazel-disk-cache
+build:ci_linux --remote_http_cache=https://storage.googleapis.com/tweag-bazel-cache-buildkite --remote_upload_local_results=true --google_default_credentials
 build:ci --loading_phase_threads=1
 build:ci --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
