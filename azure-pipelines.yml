@@ -7,6 +7,14 @@ jobs:
     inputs:
       versionSpec: '3.7'
       architecture: 'x64'
+
+  - powershell: |
+      choco list --local-only
+      choco search msys2
+      choco list
+      choco install msys2
+    displayName: 'DEBUG'
+
   - bash: |
       set -e
       curl -LO https://github.com/bazelbuild/bazel/releases/download/1.1.0/bazel-1.1.0-windows-x86_64.exe
@@ -16,10 +24,6 @@ jobs:
       /c/bazel/bazel.exe info release
 
     displayName: 'Install Bazel'
-
-  - powershell: |
-      choco install msys2
-    displayName: 'Install msys2'
 
   - powershell: |
         Write-Host "Enable long path behavior"
