@@ -468,6 +468,7 @@ def haskell_library_impl(ctx):
             depset(ctx.files.extra_srcs),
             c.objects_dir,
             my_pkg_id,
+            user_compile_flags,
         )
         dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries])
     else:

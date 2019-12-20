@@ -326,7 +326,7 @@ def link_library_static(hs, cc, posix, dep_info, objects_dir, my_pkg_id, with_pr
 
     return static_library
 
-def link_library_dynamic(hs, cc, posix, dep_info, cc_info, extra_srcs, objects_dir, my_pkg_id):
+def link_library_dynamic(hs, cc, posix, dep_info, cc_info, extra_srcs, objects_dir, my_pkg_id, compiler_flags):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -344,6 +344,8 @@ def link_library_dynamic(hs, cc, posix, dep_info, cc_info, extra_srcs, objects_d
     args = hs.actions.args()
     args.add_all(["-optl" + f for f in cc.linker_flags])
     args.add_all(["-shared", "-dynamic"])
+    args.add_all(hs.toolchain.compiler_flags)
+    args.add_all(compiler_flags)
 
     # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
     # not yet in a release; plus, we still want to support older versions of
