@@ -22,6 +22,8 @@ def rules_haskell_dependencies():
             sha256 = "2613156e96b41fe0f91ac86a65edaea7da910b7130f2392ca02e8270f674a734",
             strip_prefix = "rules_sh-0.1.0",
             urls = ["https://github.com/tweag/rules_sh/archive/v0.1.0.tar.gz"],
+            patches = ["@rules_haskell//:rules_sh.patch"],
+            patch_args = ["-p1"],
         )
 
     if "io_tweag_rules_nixpkgs" not in excludes:

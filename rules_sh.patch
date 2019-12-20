@@ -1,0 +1,57 @@
+diff --git a/sh/posix.bzl b/sh/posix.bzl
+index 81f0f43..af40152 100644
+--- a/sh/posix.bzl
++++ b/sh/posix.bzl
+@@ -250,16 +250,49 @@ Example:
+     toolchains = [TOOLCHAIN_TYPE],
+ )
+ 
++def _windows_detect_sh_dir(repository_ctx):
++    # Taken and adapted from @bazel_tools//tools/sh/sh_configure.bzl.
++    sh_path = repository_ctx.os.environ.get("BAZEL_SH")
++    if not sh_path:
++        sh_path = repository_ctx.which("bash.exe")
++        if sh_path:
++            # repository_ctx.which returns a path object, convert that to
++            # string so we can call string.startswith on it.
++            sh_path = str(sh_path)
++            # When the Windows Subsystem for Linux is installed there's a
++            # bash.exe under %WINDIR%\system32\bash.exe that launches Ubuntu
++            # Bash which cannot run native Windows programs so it's not what
++            # we want.
++            windir = repository_ctx.os.environ.get("WINDIR")
++            if windir and sh_path.startswith(windir):
++                sh_path = None
++
++    if sh_path != None:
++        sh_dir = repository_ctx.path(sh_path).dirname
++
++    return sh_dir
++
+ def _sh_posix_config_impl(repository_ctx):
+     cpu = get_cpu_value(repository_ctx)
+     env = repository_ctx.os.environ
++
++    windows_sh_dir = None
++    if cpu == "x64_windows":
++        windows_sh_dir = _windows_detect_sh_dir(repository_ctx)
++
+     commands = {}
+     for cmd in _commands:
+         cmd_path = env.get("POSIX_%s" % cmd.upper(), None)
+-        if cmd_path == None:
++        if cmd_path == None and cpu != "x64_windows":
+             cmd_path = repository_ctx.which(cmd)
+-        if cmd_path == None and cpu == "x64_windows":
+-            cmd_path = repository_ctx.which(cmd + ".exe")
++        elif cmd_path == None and cpu == "x64_windows":
++            # Autodetection using `repository_ctx.which` is not safe on
++            # Windows, as it may turn up false friends. E.g. Windows has a
++            # `find.exe` which is unrelated to POSIX `find`. Instead we use
++            # tools next to `bash.exe`.
++            cmd_path = repository_ctx.path(windows_sh_dir + "/" + cmd + ".exe")
++            if not cmd_path.exists:
++                cmd_path = None
+         commands[cmd] = cmd_path
+     repository_ctx.file("BUILD.bazel", executable = False, content = """
+ load("@rules_sh//sh:posix.bzl", "sh_posix_toolchain")
