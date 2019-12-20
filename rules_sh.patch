@@ -1,8 +1,8 @@
 diff --git a/sh/posix.bzl b/sh/posix.bzl
-index 81f0f43..954b2a5 100644
+index 81f0f43..e3e028b 100644
 --- a/sh/posix.bzl
 +++ b/sh/posix.bzl
-@@ -250,16 +250,49 @@ Example:
+@@ -250,17 +250,51 @@ Example:
      toolchains = [TOOLCHAIN_TYPE],
  )
  
@@ -53,5 +53,7 @@ index 81f0f43..954b2a5 100644
 +            if not cmd_path.exists:
 +                cmd_path = None
          commands[cmd] = cmd_path
++    print("sh_posix_config", commands)
      repository_ctx.file("BUILD.bazel", executable = False, content = """
  load("@rules_sh//sh:posix.bzl", "sh_posix_toolchain")
+ sh_posix_toolchain(
