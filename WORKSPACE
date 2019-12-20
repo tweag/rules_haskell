@@ -205,7 +205,7 @@ nixpkgs_cc_configure(
     nix_file = "//nixpkgs:cc-toolchain.nix",
     nix_file_deps = ["//nixpkgs:default.nix"],
     repository = "@nixpkgs_default",
-)
+) if not is_windows else None
 
 nixpkgs_python_configure(
     # XXX: Remove python2_attribute_path after updating to Stardoc 0.4.0
