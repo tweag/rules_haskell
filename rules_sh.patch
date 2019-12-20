@@ -1,5 +1,5 @@
 diff --git a/sh/posix.bzl b/sh/posix.bzl
-index 81f0f43..af40152 100644
+index 81f0f43..954b2a5 100644
 --- a/sh/posix.bzl
 +++ b/sh/posix.bzl
 @@ -250,16 +250,49 @@ Example:
@@ -24,7 +24,7 @@ index 81f0f43..af40152 100644
 +                sh_path = None
 +
 +    if sh_path != None:
-+        sh_dir = repository_ctx.path(sh_path).dirname
++        sh_dir = str(repository_ctx.path(sh_path).dirname)
 +
 +    return sh_dir
 +
