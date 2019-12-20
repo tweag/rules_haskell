@@ -8,11 +8,14 @@ jobs:
       versionSpec: '3.7'
       architecture: 'x64'
 
-  - powershell: |
-      choco list --local-only
-      choco search msys2
-      choco list
-      choco install msys2
+  - bash: |
+      set -x
+      echo $SHELL
+      which true
+      which ls
+      which make
+      which find
+      set +x
     displayName: 'DEBUG'
 
   - bash: |
