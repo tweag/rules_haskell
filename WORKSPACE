@@ -1,6 +1,8 @@
 workspace(name = "rules_haskell")
 
 # Subrepositories of rules_haskell
+load("//:debug.bzl", "debug")
+debug(name = "debug")
 
 # Some helpers for platform-dependent configuration
 load("//tools:os_info.bzl", "os_info")
