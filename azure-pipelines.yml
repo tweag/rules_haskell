@@ -40,6 +40,12 @@ jobs:
   - bash: |
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
+
+      # Remove 'C:\Program Files ' (ending on space) from PATH.
+      # See https://github.com/bazelbuild/bazel/issues/10481
+      export PATH="$(sed 's,:/c/Program Files $,,' <<<"$PATH")"
+      echo "PATH='$PATH'"
+
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."
