@@ -35,6 +35,17 @@ jobs:
     displayName: "Enable da long paths"
 
   - bash: |
+      set -e
+      export MSYS2_ARG_CONV_EXCL="*"
+
+      # DEBUG
+      /c/bazel/bazel.exe build --config windows "@debug//..."
+
+      export PATH="C:\\Program Files "
+      /c/bazel/bazel.exe build --config windows "@debug//..."
+    displayName: "@debug"
+
+  - bash: |
         # rules_haskell can automatically install stack if it is not in $PATH,
         # yet. However, if the index has not been updated before building. Then
         # multiple parallel invocations of `stack` will both attempt to update
@@ -51,9 +62,6 @@ jobs:
   - bash: |
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
-
-      # DEBUG
-      /c/bazel/bazel.exe build --config windows "@debug//..."
 
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
