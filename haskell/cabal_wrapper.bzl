@@ -12,7 +12,7 @@ def _cabal_wrapper_impl(ctx):
     # "/usr/bin/libtool". Since we call ar directly, override it.
     # TODO: remove this if Bazel fixes its behavior.
     # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
-    ar = cc_toolchain.ar_executable()
+    ar = cc_toolchain.ar_executable
     if ar.find("libtool") >= 0:
         ar = "/usr/bin/ar"
 
@@ -28,7 +28,7 @@ def _cabal_wrapper_impl(ctx):
             "%{runghc}": hs.tools.runghc.path,
             "%{ar}": ar,
             "%{cc}": hs_toolchain.cc_wrapper.executable.path,
-            "%{strip}": cc_toolchain.strip_executable(),
+            "%{strip}": cc_toolchain.strip_executable,
             "%{is_windows}": str(hs.toolchain.is_windows),
             "%{workspace}": ctx.workspace_name,
         },
