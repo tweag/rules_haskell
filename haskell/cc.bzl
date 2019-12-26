@@ -109,12 +109,12 @@ def cc_interop_info(ctx):
     linker_flags = [flag for flag in linker_flags if flag not in ["-shared"]]
 
     tools = {
-        "ar": cc_toolchain.ar_executable(),
+        "ar": cc_toolchain.ar_executable,
         "cc": cc,
-        "ld": cc_toolchain.ld_executable(),
-        "cpp": cc_toolchain.preprocessor_executable(),
-        "nm": cc_toolchain.nm_executable(),
-        "strip": cc_toolchain.strip_executable(),
+        "ld": cc_toolchain.ld_executable,
+        "cpp": cc_toolchain.preprocessor_executable,
+        "nm": cc_toolchain.nm_executable,
+        "strip": cc_toolchain.strip_executable,
     }
 
     # If running on darwin but XCode is not installed (i.e., only the Command
