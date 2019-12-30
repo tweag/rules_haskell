@@ -183,7 +183,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         files = struct(
             srcs = hs_files,
             _cc_toolchain = ctx.files._cc_toolchain,
-            extra_srcs = depset(),
+            extra_srcs = [],
         ),
         genfiles_dir = ctx.genfiles_dir,
         label = ctx.label,
