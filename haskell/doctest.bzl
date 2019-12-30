@@ -213,6 +213,7 @@ omitted, all exposed modules provided by `deps` will be tested.
     },
     fragments = ["cpp"],
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell:doctest-toolchain",
         "@rules_sh//sh/posix:toolchain_type",

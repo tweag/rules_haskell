@@ -180,6 +180,7 @@ def _mk_binary_rule(**kwargs):
             "repl_deprecated": "%{name}-repl",
         },
         toolchains = [
+            "@bazel_tools//tools/cpp:toolchain_type",
             "@rules_haskell//haskell:toolchain",
             "@rules_sh//sh/posix:toolchain_type",
         ],
@@ -225,6 +226,7 @@ _haskell_library = rule(
         "repl_deprecated": "%{name}-repl",
     },
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -327,9 +329,6 @@ haskell_import = rule(
             cfg = "host",
             default = Label("@rules_haskell//haskell:version_macros"),
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
-        ),
     },
 )
 
@@ -343,7 +342,6 @@ haskell_toolchain_library = rule(
             default = Label("@rules_haskell//haskell:toolchain-libraries"),
         ),
     ),
-    fragments = ["cpp"],
 )
 """Import packages that are prebuilt outside of Bazel.
 

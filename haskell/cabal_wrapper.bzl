@@ -52,7 +52,10 @@ _cabal_wrapper = rule(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
-    toolchains = ["@rules_haskell//haskell:toolchain"],
+    toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_haskell//haskell:toolchain",
+    ],
     fragments = ["cpp"],
 )
 

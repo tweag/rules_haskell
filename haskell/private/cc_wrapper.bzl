@@ -45,6 +45,7 @@ _cc_wrapper = rule(
         ),
     },
     fragments = ["cpp"],
+    toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
 
 def cc_wrapper(name, **kwargs):
