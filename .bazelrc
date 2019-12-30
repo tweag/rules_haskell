@@ -17,6 +17,8 @@ test:ci --test_output=errors
 # Note [backward compatible options]
 common:ci --incompatible_enable_cc_toolchain_resolution
 common:ci --incompatible_load_cc_rules_from_bzl
+# Blocked by https://github.com/bazelbuild/buildtools/issues/757
+#common:ci --incompatible_load_proto_rules_from_bzl
 common:ci --incompatible_load_python_rules_from_bzl
 
 # test environment does not propagate locales by default
