@@ -389,7 +389,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, cc_info, extra_srcs, objects_d
         hs,
         cc,
         inputs = depset([cache_file, objects_dir], transitive = [
-            depset(extra_srcs),
+            extra_srcs,
             dep_info.package_databases,
             dep_info.dynamic_libraries,
             pkg_info_inputs,
