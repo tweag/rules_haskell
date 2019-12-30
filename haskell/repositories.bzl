@@ -8,6 +8,14 @@ def rules_haskell_dependencies():
     """
     excludes = native.existing_rules().keys()
 
+    if "platforms" not in excludes:
+        http_archive(
+            name = "platforms",
+            sha256 = "23566db029006fe23d8140d14514ada8c742d82b51973b4d331ee423c75a0bfa",
+            strip_prefix = "platforms-46993efdd33b73649796c5fc5c9efb193ae19d51",
+            urls = ["https://github.com/bazelbuild/platforms/archive/46993efdd33b73649796c5fc5c9efb193ae19d51.tar.gz"],
+        )
+
     if "bazel_skylib" not in excludes:
         http_archive(
             name = "bazel_skylib",

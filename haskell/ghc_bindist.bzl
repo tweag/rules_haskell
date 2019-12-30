@@ -336,9 +336,9 @@ _ghc_bindist = repository_rule(
 def _ghc_bindist_toolchain_impl(ctx):
     os, _, arch = ctx.attr.target.partition("_")
     exec_constraints = [{
-        "darwin": "@bazel_tools//platforms:osx",
-        "linux": "@bazel_tools//platforms:linux",
-        "windows": "@bazel_tools//platforms:windows",
+        "darwin": "@platforms//os:osx",
+        "linux": "@platforms//os:linux",
+        "windows": "@platforms//os:windows",
     }.get(os)]
     target_constraints = exec_constraints
     ctx.file(

@@ -425,6 +425,6 @@ def haskell_proto_toolchain(
         toolchain_type = "@rules_haskell//protobuf:toolchain",
         toolchain = ":" + impl_name,
         exec_compatible_with = [
-            "@bazel_tools//platforms:x86_64",
+            "@platforms//cpu:x86_64",
         ],
     )
