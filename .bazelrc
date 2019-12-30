@@ -16,6 +16,7 @@ common:ci --color=no
 test:ci --test_output=errors
 
 # Note [backward compatible options]
+common:ci --incompatible_enable_cc_toolchain_resolution
 
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct
