@@ -130,6 +130,7 @@ c2hs_library = rule(
         ),
     },
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell/c2hs:toolchain",
     ],

@@ -360,6 +360,7 @@ haskell_cabal_library = rule(
         ),
     },
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -518,6 +519,7 @@ haskell_cabal_binary = rule(
         ),
     },
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],

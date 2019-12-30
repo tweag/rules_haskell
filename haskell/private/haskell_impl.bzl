@@ -797,6 +797,7 @@ haskell_toolchain_libraries = rule(
         ),
     },
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
     ],
     fragments = ["cpp"],

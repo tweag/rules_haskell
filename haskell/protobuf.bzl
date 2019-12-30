@@ -261,6 +261,7 @@ _haskell_proto_aspect = aspect(
         ),
     },
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//protobuf:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
