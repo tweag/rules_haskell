@@ -25,9 +25,8 @@ def unfold_fields(content):
     """Unfold fields that were split over multiple lines.
 
     Returns:
-        A list of string, each string containing multiples lines
-        grouped by indentation level. Indentation (spaces) is
-        preserved, but line breaks between indented lines are removed.
+        A list of strings. Each string represents one field (a name/value pair
+        separated by a colon).
 
     >>> unfold_fields("foo  \n   bar  \n   baz  \nbiz   \nboz   ")
     ['foo     bar     baz  ', 'biz   ', 'boz   ']
