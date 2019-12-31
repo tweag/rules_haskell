@@ -130,11 +130,11 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     # platform. But they are important to state because Bazel
     # toolchain resolution prefers other toolchains with more specific
     # constraints otherwise.
-    target_constraints = ["@bazel_tools//platforms:x86_64"]
+    target_constraints = ["@platforms//cpu:x86_64"]
     if repository_ctx.os.name == "linux":
-        target_constraints.append("@bazel_tools//platforms:linux")
+        target_constraints.append("@platforms//os:linux")
     elif repository_ctx.os.name == "mac os x":
-        target_constraints.append("@bazel_tools//platforms:osx")
+        target_constraints.append("@platforms//os:osx")
     exec_constraints = list(target_constraints)
     exec_constraints.append("@rules_haskell//haskell/platforms:nixpkgs")
 
