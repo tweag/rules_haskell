@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
 load(
     "@rules_haskell//haskell:defs.bzl",

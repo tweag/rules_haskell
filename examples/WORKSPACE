@@ -42,6 +42,7 @@ nixpkgs_python_configure(
 http_archive(
     name = "zlib",
     build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "zlib",
     # Import `:z` as `srcs` to enforce the library name `libz.so`. Otherwise,

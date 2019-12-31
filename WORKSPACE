@@ -222,6 +222,7 @@ nixpkgs_package(
     attribute_path = "lz4",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
   name = "nixpkgs_lz4",
@@ -270,6 +271,8 @@ nixpkgs_package(
 nixpkgs_package(
     name = "zlib.dev",
     build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 filegroup(
     name = "include",
     srcs = glob(["include/*.h"]),
@@ -304,6 +307,7 @@ filegroup(
 http_archive(
     name = "zlib.win",
     build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "zlib",
     # Import `:z` as `srcs` to enforce the library name `libz.so`. Otherwise,
