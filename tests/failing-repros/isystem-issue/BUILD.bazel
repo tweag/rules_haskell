@@ -1,5 +1,6 @@
 # https://github.com/tweag/rules_haskell/issues/1010
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
 load("@rules_haskell//tests:failing-repros/should_fail.bzl", "should_fail")
 
