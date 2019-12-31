@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# cabal_wrapper.py <COMPONENT> <PKG_NAME> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
+# cabal_wrapper.py <COMPONENT> <PKG_NAME> <HADDOCK> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
 #
 # This wrapper calls Cabal's configure/build/install steps one big
 # action so that we don't have to track all inputs explicitly between
@@ -8,6 +8,7 @@
 #
 # COMPONENT: Cabal component to build.
 # PKG_NAME: Package ID of the resulting package.
+# HADDOCK: Whether to generate haddock documentation.
 # SETUP_PATH: Path to Setup.hs
 # PKG_DIR: Directory containing the Cabal file
 # PACKAGE_DB_PATH: Output package DB path.
@@ -63,6 +64,7 @@ os.environ["PATH"] = canonicalize_path(os.getenv("PATH", ""))
 
 component = sys.argv.pop(1)
 name = sys.argv.pop(1)
+haddock = sys.argv.pop(1) == "true"
 execroot = os.getcwd()
 setup = os.path.join(execroot, sys.argv.pop(1))
 srcdir = os.path.join(execroot, sys.argv.pop(1))
@@ -155,7 +157,8 @@ with tmpdir() as distdir:
         [ "--package-db=" + package_database ], # This arg must come last.
         )
     run([runghc, setup, "build", "--verbose=0", "--builddir=" + distdir])
-    run([runghc, setup, "haddock", "--verbose=0", "--builddir=" + distdir])
+    if haddock:
+        run([runghc, setup, "haddock", "--verbose=0", "--builddir=" + distdir])
     run([runghc, setup, "install", "--verbose=0", "--builddir=" + distdir])
     # Bazel builds are not sandboxed on Windows and can be non-sandboxed on
     # other OSs. Operations like executing `configure` scripts can modify the

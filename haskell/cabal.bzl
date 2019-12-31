@@ -97,7 +97,7 @@ def _cabal_tool_flag(tool):
 def _binary_paths(binaries):
     return [binary.dirname for binary in binaries.to_list()]
 
-def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, cabal_wrapper, package_database):
+def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, generate_haddock, cabal_wrapper, package_database):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -121,7 +121,7 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, comp
         direct_cc_info.compilation_context.system_includes,
     ])
     direct_lib_dirs = [file.dirname for file in direct_libs.to_list()]
-    args.add_all([component, package_id, setup, cabal.dirname, package_database.dirname])
+    args.add_all([component, package_id, generate_haddock, setup, cabal.dirname, package_database.dirname])
     args.add("--flags=" + " ".join(flags))
     args.add_all(compiler_flags, format_each = "--ghc-option=%s")
     args.add("--")
@@ -198,14 +198,18 @@ def _haskell_cabal_library_impl(ctx):
         "_install/{}_data".format(package_id),
         sibling = cabal,
     )
-    haddock_file = hs.actions.declare_file(
-        "_install/{}_haddock/{}.haddock".format(package_id, ctx.attr.name),
-        sibling = cabal,
-    )
-    haddock_html_dir = hs.actions.declare_directory(
-        "_install/{}_haddock_html".format(package_id),
-        sibling = cabal,
-    )
+    if ctx.attr.haddock:
+        haddock_file = hs.actions.declare_file(
+            "_install/{}_haddock/{}.haddock".format(package_id, ctx.attr.name),
+            sibling = cabal,
+        )
+        haddock_html_dir = hs.actions.declare_directory(
+            "_install/{}_haddock_html".format(package_id),
+            sibling = cabal,
+        )
+    else:
+        haddock_file = None
+        haddock_html_dir = None
     static_library_filename = "_install/lib/libHS{}.a".format(package_id)
     if with_profiling:
         static_library_filename = "_install/lib/libHS{}_p.a".format(package_id)
@@ -243,23 +247,27 @@ def _haskell_cabal_library_impl(ctx):
         srcs = ctx.files.srcs,
         compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
+        generate_haddock = ctx.attr.haddock,
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
     )
+    outputs = [
+        package_database,
+        interfaces_dir,
+        static_library,
+        data_dir,
+    ]
+    if ctx.attr.haddock:
+        outputs.extend([haddock_file, haddock_html_dir])
+    if dynamic_library != None:
+        outputs.append(dynamic_library)
     ctx.actions.run(
         executable = c.cabal_wrapper,
         arguments = [c.args],
         inputs = c.inputs,
         input_manifests = c.input_manifests,
         tools = [c.cabal_wrapper],
-        outputs = [
-            package_database,
-            interfaces_dir,
-            static_library,
-            data_dir,
-            haddock_file,
-            haddock_html_dir,
-        ] + ([dynamic_library] if dynamic_library != None else []),
+        outputs = outputs,
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
         progress_message = "HaskellCabalLibrary {}".format(hs.label),
@@ -291,12 +299,15 @@ def _haskell_cabal_library_impl(ctx):
         compile_flags = [],
     )
     lib_info = HaskellLibraryInfo(package_id = package_id, version = None, exports = [])
-    doc_info = generate_unified_haddock_info(
-        this_package_id = package_id,
-        this_package_html = haddock_html_dir,
-        this_package_haddock = haddock_file,
-        deps = ctx.attr.deps,
-    )
+    if ctx.attr.haddock:
+        doc_info = generate_unified_haddock_info(
+            this_package_id = package_id,
+            this_package_html = haddock_html_dir,
+            this_package_haddock = haddock_file,
+            deps = ctx.attr.deps,
+        )
+    else:
+        doc_info = None
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
@@ -324,7 +335,10 @@ def _haskell_cabal_library_impl(ctx):
             cc_info,
         ],
     )
-    return [default_info, hs_info, cc_info, lib_info, doc_info]
+    result = [default_info, hs_info, cc_info, lib_info]
+    if ctx.attr.haddock:
+        result.append(doc_info)
+    return result
 
 haskell_cabal_library = rule(
     _haskell_cabal_library_impl,
@@ -335,6 +349,10 @@ haskell_cabal_library = rule(
         "version": attr.string(
             doc = "Version of the Cabal package.",
             mandatory = True,
+        ),
+        "haddock": attr.bool(
+            default = True,
+            doc = "Whether to generate haddock documentation.",
         ),
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(),
@@ -451,6 +469,7 @@ def _haskell_cabal_binary_impl(ctx):
         srcs = ctx.files.srcs,
         compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
+        generate_haddock = False,
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
     )
