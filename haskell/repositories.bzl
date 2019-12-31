@@ -24,6 +24,14 @@ def rules_haskell_dependencies():
             urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.6.0.tar.gz"],
         )
 
+    if "rules_cc" not in excludes:
+        http_archive(
+            name = "rules_cc",
+            sha256 = "dafda2ff2a913028ce1718253b6b2f353b2d2163470f3069ca810a0d8d55a5a9",
+            strip_prefix = "rules_cc-cd7e8a690caf526e0634e3ca55b10308ee23182d",
+            urls = ["https://github.com/bazelbuild/rules_cc/archive/cd7e8a690caf526e0634e3ca55b10308ee23182d.tar.gz"],
+        )
+
     if "rules_sh" not in excludes:
         http_archive(
             name = "rules_sh",
