@@ -950,17 +950,16 @@ _stack_update = repository_rule(
     attrs = {
         "stack": attr.label(),
     },
-    doc = """\
-Execute stack update.
-
-This is extracted into a singleton repository rule to avoid concurrent
-invocations of stack update.
-See https://github.com/tweag/rules_haskell/issues/1090
-""",
     # Marked as local so that stack update is always executed before
     # _stack_snapshot is executed.
     local = True,
 )
+"""Execute stack update.
+
+This is extracted into a singleton repository rule to avoid concurrent
+invocations of stack update.
+See https://github.com/tweag/rules_haskell/issues/1090
+"""
 
 def _get_platform(repository_ctx):
     """Map OS name and architecture to Stack platform identifiers."""
