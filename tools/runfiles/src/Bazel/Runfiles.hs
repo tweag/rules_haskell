@@ -164,7 +164,7 @@ containsOneDataFile = loop
     loop fp = do
         isDir <- doesDirectoryExist fp
         if isDir
-            then anyM loop =<< listDirectory fp
+            then anyM loop =<< fmap (map (fp </>)) (listDirectory fp)
             else pure $! fp /= "MANIFEST"
 
 -- | Check if the given predicate holds on any of the given values.
