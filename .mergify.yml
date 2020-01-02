@@ -2,7 +2,7 @@ pull_request_rules:
   - name: automatic merge
     conditions:
       - "status-success=build"
-      - "status-success=buildkite/rules-haskell"
+      - "status-success=buildkite/rules-haskell/pr"
       - "status-success=tweag.rules_haskell"
       - "status-success=deploy/netlify"
       - "#approved-reviews-by>=1"
