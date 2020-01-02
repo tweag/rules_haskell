@@ -32,6 +32,14 @@ def rules_haskell_dependencies():
             urls = ["https://github.com/bazelbuild/rules_cc/archive/cd7e8a690caf526e0634e3ca55b10308ee23182d.tar.gz"],
         )
 
+    if "rules_python" not in excludes:
+        http_archive(
+            name = "rules_python",
+            sha256 = "fa53cc0afe276d8f6675df1a424592e00e4f37b2a497e48399123233902e2e76",
+            strip_prefix = "rules_python-0.0.1",
+            urls = ["https://github.com/bazelbuild/rules_python/archive/0.0.1.tar.gz"],
+        )
+
     if "rules_sh" not in excludes:
         http_archive(
             name = "rules_sh",

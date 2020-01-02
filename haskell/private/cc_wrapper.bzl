@@ -1,5 +1,6 @@
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 def _cc_wrapper_impl(ctx):
     cc_toolchain = find_cpp_toolchain(ctx)
@@ -67,7 +68,7 @@ def cc_wrapper(name, **kwargs):
             "//conditions:default": "linux",
         }),
     )
-    native.py_binary(
+    py_binary(
         name = name + "-python",
         srcs = [name + ".py"],
         python_version = "PY3",

@@ -1,6 +1,7 @@
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":cc.bzl", "cc_interop_info")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 def _cabal_wrapper_impl(ctx):
     hs = haskell_context(ctx)
@@ -63,7 +64,7 @@ def cabal_wrapper(name, **kwargs):
     _cabal_wrapper(
         name = name + ".py",
     )
-    native.py_binary(
+    py_binary(
         name = name,
         srcs = [name + ".py"],
         python_version = "PY3",
