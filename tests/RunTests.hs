@@ -91,7 +91,7 @@ bazel :: [String] -> Process.CreateProcess
 -- Note: --config=ci is intercalated between the action and the list
 -- of arguments. It should appears after the action, but before any
 -- @--@ following argument.
-bazel (command:args) = Process.proc "bazel" (command:"--config=ci":args)
+bazel (command:args) = Process.proc "bazel" (command:"--config=ci":"--config=ci_linux":args)
 bazel [] = Process.proc "bazel" []
 
 -- | Runs a bazel query and return the list of matching targets
