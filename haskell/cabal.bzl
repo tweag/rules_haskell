@@ -1,6 +1,7 @@
 """Cabal packages"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context", "render_env")
@@ -675,15 +676,6 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         fail("Stack version not recent enough. Need version 2.1 or newer.")
     stack = [stack_cmd]
 
-    # Run `stack update` leniently to avoid hackage-security lock issues.
-    #
-    #   user error (hTryLock: lock already exists: ~/.stack/pantry/hackage/hackage-security-lock)
-    #
-    # See https://github.com/tweag/stackage-head/issues/29. If this doesn't
-    # help we may need to point --stack-root to a workspace local path. The
-    # issue appears when initializing two separate stack_snapshot instances in
-    # parallel.
-    repository_ctx.execute(stack + ["update"])
     if versioned_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
     stack = [stack_cmd, "--resolver", snapshot]
@@ -943,8 +935,31 @@ _stack_snapshot = repository_rule(
         "extra_deps": attr.label_keyed_string_dict(),
         "tools": attr.label_list(),
         "stack": attr.label(),
+        "stack_update": attr.label(),
     },
 )
+
+def _stack_update_impl(repository_ctx):
+    stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
+    _execute_or_fail_loudly(repository_ctx, [stack_cmd, "update"])
+    repository_ctx.file("stack_update")
+    repository_ctx.file("BUILD.bazel", content = "exports_files(['stack_update'])")
+
+_stack_update = repository_rule(
+    _stack_update_impl,
+    attrs = {
+        "stack": attr.label(),
+    },
+    # Marked as local so that stack update is always executed before
+    # _stack_snapshot is executed.
+    local = True,
+)
+"""Execute stack update.
+
+This is extracted into a singleton repository rule to avoid concurrent
+invocations of stack update.
+See https://github.com/tweag/rules_haskell/issues/1090
+"""
 
 def _get_platform(repository_ctx):
     """Map OS name and architecture to Stack platform identifiers."""
@@ -1095,8 +1110,20 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
         stack = Label("@rules_haskell_stack//:stack")
+
+    # Execute stack update once before executing _stack_snapshot.
+    # This is to avoid multiple concurrent executions of stack update,
+    # which may fail due to ~/.stack/pantry/hackage/hackage-security-lock.
+    # See https://github.com/tweag/rules_haskell/issues/1090.
+    maybe(
+        _stack_update,
+        name = "rules_haskell_stack_update",
+        stack = stack,
+    )
     _stack_snapshot(
         stack = stack,
+        # Dependency for ordered execution, stack update before stack unpack.
+        stack_update = "@rules_haskell_stack_update//:stack_update",
         # TODO Remove _from_string_keyed_label_list_dict once following issue
         # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
         extra_deps = _from_string_keyed_label_list_dict(extra_deps),
