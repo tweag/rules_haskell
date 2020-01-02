@@ -21,7 +21,7 @@ filegroup(
 
 filegroup(
     name = "mingw",
-    srcs = glob(["mingw/**"]),
+    srcs = glob(["mingw/**"], allow_empty = True),
 )
 
 cc_toolchain_suite(
