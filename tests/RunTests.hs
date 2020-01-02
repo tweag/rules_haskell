@@ -88,9 +88,9 @@ main = hspec $ do
 -- | Returns a bazel command line suitable for CI
 -- This should be called with the action as first item of the list. e.g 'bazel ["build", "//..."]'.
 bazel :: [String] -> Process.CreateProcess
--- Note: --config=ci is intercalated between the action and the list
--- of arguments. It should appears after the action, but before any
--- @--@ following argument.
+-- Note: --config=ci is intercalated between the action and the list of
+-- arguments. It should appear after the action, but before any @--@
+-- following argument.
 bazel (command:args) = Process.proc "bazel" (command:"--config=ci":args)
 bazel [] = Process.proc "bazel" []
 
@@ -112,7 +112,7 @@ outputSatisfy predicate cmd = do
     ExitSuccess -> (stdout, stderr) `shouldSatisfy` predicate
     ExitFailure _ -> expectationFailure (formatOutput exitCode stdout stderr)
 
--- | The command must success
+-- | The command must succeed
 assertSuccess :: Process.CreateProcess -> IO ()
 assertSuccess = outputSatisfy (const True)
 
