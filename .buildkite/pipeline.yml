@@ -11,11 +11,11 @@ steps:
       .buildkite/check-bazel-version
       ./tests/run-start-script.sh --use-nix
       bazel build --config ci --config ci_linux //tests:run-tests
-      ./bazel-ci-bin/tests/run-tests
-      bazel coverage //tests/... --config ci --config ci_linux --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
+      # ./bazel-ci-bin/tests/run-tests
+      # bazel coverage //tests/... --config ci --config ci_linux --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
       '
-    timeout: 100
+    timeout: 200
 
-  - label: "Run tests (bindists)"
-    command: ".buildkite/bindists-pipeline"
-    timeout: 100
+  # - label: "Run tests (bindists)"
+  #   command: ".buildkite/bindists-pipeline"
+  #   timeout: 200
