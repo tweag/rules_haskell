@@ -2,6 +2,7 @@
 # which are like their respective builtin rules,
 # but their scripts can be given inline as a string.
 
+load("@rules_python//python:defs.bzl", "py_test")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def quote_make_variables(s):
@@ -81,7 +82,7 @@ def py_inline_test(name, script, **kwargs):
     deps = kwargs.pop("deps", [])
     srcs = kwargs.pop("srcs", [])
 
-    native.py_test(
+    py_test(
         name = name,
         srcs = [script_name] + srcs,
         main = script_name,
