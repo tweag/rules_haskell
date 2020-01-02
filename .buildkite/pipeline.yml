@@ -10,7 +10,7 @@ steps:
       # `.buildkite/bindists-pipeline` for the bindists version.
       .buildkite/check-bazel-version
       ./tests/run-start-script.sh --use-nix
-      bazel build --config ci --config ci_linux //tests:run-tests
+      bazel build --config ci --config ci_linux --profile=/var/lib/buildkite-agent/.cache/bazel/_bazel_buildkite-agent/debug-profile/command.profile.gz //tests:run-tests
       ./bazel-ci-bin/tests/run-tests
       bazel coverage //tests/... --config ci --config ci_linux --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
       '
