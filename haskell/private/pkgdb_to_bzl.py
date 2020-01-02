@@ -22,14 +22,7 @@ else:
     sys.exit("Usage: pkgdb_to_bzl.py <REPO_NAME> <TOPDIR>")
 
 def unfold_fields(content):
-    """Unfold fields that were split over multiple lines.
-
-    Returns:
-        A list of strings. Each string represents one field (a name/value pair
-        separated by a colon).
-
-    >>> unfold_fields("foo  \n   bar  \n   baz  \nbiz   \nboz   ")
-    ['foo     bar     baz  ', 'biz   ', 'boz   ']
+    """
     """
     fields = []
     for line in content.splitlines():

@@ -45,7 +45,8 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     hs_out = declare_compiled(hs, hsc_file, ".hs", directory = hsc_dir_raw)
     args.add_all([hsc_file.path, "-o", hs_out.path])
 
-    args.add_all(["-c", cc.tools.cc])
+    args.add("-c")
+    args.add(cc.tools.cc)
     args.add_all(["-l", cc.tools.cc])
     args.add("-ighcplatform.h")
     args.add("-ighcversion.h")
