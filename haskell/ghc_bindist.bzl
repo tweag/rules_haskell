@@ -2,6 +2,7 @@
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
+load(":private/workspace_utils.bzl", "execute_or_fail_loudly")
 
 _GHC_DEFAULT_VERSION = "8.6.5"
 
@@ -182,20 +183,6 @@ GHC_BINDIST = \
         },
     }
 
-def _execute_fail_loudly(ctx, args):
-    """Execute a command and fail loudly if it fails.
-
-    ATTN: All commands have to be cross-compatible between BSD tools and GNU tools,
-    because we want to support macOS. Please cross-reference the macOS man-pages.
-
-    Args:
-      ctx: Repository rule context.
-      args: Command and its arguments.
-    """
-    eresult = ctx.execute(args, quiet = False)
-    if eresult.return_code != 0:
-        fail("{0} failed, aborting creation of GHC bindist".format(" ".join(args)))
-
 def _ghc_bindist_impl(ctx):
     # Avoid rule restart by resolving these labels early. See
     # https://github.com/bazelbuild/bazel/blob/master/tools/cpp/lib_cc_configure.bzl#L17.
@@ -226,15 +213,15 @@ def _ghc_bindist_impl(ctx):
 
     # As the patches may touch the package DB we regenerate the cache.
     if len(ctx.attr.patches) > 0:
-        _execute_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
+        execute_or_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
 
     # On Windows the bindist already contains the built executables
     if os != "windows":
         # IMPORTANT: all these scripts have to be compatible with BSD
         # tools! This means that sed -i always takes an argument.
-        _execute_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"])
-        _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
-        _execute_fail_loudly(ctx, ["make", "install"])
+        execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"])
+        execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
+        execute_or_fail_loudly(ctx, ["make", "install"])
         ctx.file("patch_bins", executable = True, content = r"""#!/usr/bin/env bash
 grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 -n1 \
     sed -i.bak \
@@ -244,7 +231,7 @@ grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 -n1 \
 """.format(
             bindist_dir = bindist_dir.realpath,
         ))
-        _execute_fail_loudly(ctx, ["./patch_bins"])
+        execute_or_fail_loudly(ctx, ["./patch_bins"])
 
     # Generate BUILD file entries describing each prebuilt package.
     # Cannot use //haskell:pkgdb_to_bzl because that's a generated
@@ -285,9 +272,9 @@ haskell_toolchain(
     if os == "windows":
         # These libraries cause linking errors on Windows when linking
         # pthreads, due to libwinpthread-1.dll not being loaded.
-        _execute_fail_loudly(ctx, ["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"])
-        _execute_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
-        _execute_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
 
     ctx.template(
         "BUILD",
