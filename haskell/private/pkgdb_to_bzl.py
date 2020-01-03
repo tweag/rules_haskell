@@ -201,7 +201,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                 name = pkg.name,
                 id = pkg.id,
                 version = pkg.version,
-                hdrs = "glob({})".format([
+                hdrs = "glob({}, allow_empty = True)".format([
                     path_to_label("{}/**/*.h".format(include_dir), pkg.pkgroot)
                     for include_dir in pkg.include_dirs
                     if path_to_label(include_dir, pkg.pkgroot)
@@ -211,21 +211,21 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                     for include_dir in pkg.include_dirs
                     if path_to_label(include_dir, pkg.pkgroot)
                 ],
-                static_libraries = "glob({})".format([
+                static_libraries = "glob({}, allow_empty = True)".format([
                     path_to_label("{}/{}".format(library_dir, pattern), pkg.pkgroot)
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "static", profiling = False)
                     for library_dir in pkg.library_dirs
                     if path_to_label(library_dir, pkg.pkgroot)
                 ]),
-                static_profiling_libraries = "glob({})".format([
+                static_profiling_libraries = "glob({}, allow_empty = True)".format([
                     path_to_label("{}/{}".format(library_dir, pattern), pkg.pkgroot)
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "static", profiling = True)
                     for library_dir in pkg.library_dirs
                     if path_to_label(library_dir, pkg.pkgroot)
                 ]),
-                shared_libraries = "glob({})".format([
+                shared_libraries = "glob({}, allow_empty = True)".format([
                     path_to_label("{}/{}".format(dynamic_library_dir, pattern), pkg.pkgroot)
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "dynamic", profiling = False)
