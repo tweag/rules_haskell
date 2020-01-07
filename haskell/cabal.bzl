@@ -932,6 +932,7 @@ haskell_cabal_library(
     tools = {tools},
     visibility = {visibility},
     compiler_flags = ["-w", "-optF=-w"],
+    verbose = {verbose},
 )
 """.format(
                     name = package.name,
@@ -945,6 +946,7 @@ haskell_cabal_library(
                     ],
                     tools = tools,
                     visibility = visibility,
+                    verbose = repr(repository_ctx.attr.verbose),
                 ),
             )
         if package.versioned_name != None:
