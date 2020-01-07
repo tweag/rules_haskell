@@ -113,7 +113,7 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, comp
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
 
     if verbose:
-      env["CABAL_VERBOSE"] = "True"
+        env["CABAL_VERBOSE"] = "True"
 
     args = hs.actions.args()
     package_databases = dep_info.package_databases
