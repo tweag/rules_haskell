@@ -41,8 +41,10 @@ def run(cmd, *args, **kwargs):
         try:
             subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, *args, **kwargs)
         except subprocess.CalledProcessError as err:
-            print(err.stdout.decode())
-            print(err.stderr.decode(), file=sys.stderr)
+            sys.stdout.buffer.write(err.stdout)
+            sys.stderr.buffer.write(err.stderr)
+            # print(err.stdout.decode())
+            # print(err.stderr.decode(), file=sys.stderr)
             raise
 
 def find_exe(exe):
