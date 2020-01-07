@@ -29,7 +29,7 @@ import sys
 import tempfile
 
 debug = False
-verbose = os.environ.get("CABAL_VERBOSE", False)
+verbose = os.environ.get("CABAL_VERBOSE", "") == "True"
 
 def run(cmd, *args, **kwargs):
     if debug:
