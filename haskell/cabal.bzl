@@ -97,7 +97,7 @@ def _cabal_tool_flag(tool):
 def _binary_paths(binaries):
     return [binary.dirname for binary in binaries.to_list()]
 
-def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, generate_haddock, cabal_wrapper, package_database):
+def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, generate_haddock, cabal_wrapper, package_database, verbose):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -111,6 +111,9 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, comp
     env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)
     if hs.toolchain.is_darwin:
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
+
+    if verbose:
+      env["CABAL_VERBOSE"] = "True"
 
     args = hs.actions.args()
     package_databases = dep_info.package_databases
@@ -250,6 +253,7 @@ def _haskell_cabal_library_impl(ctx):
         generate_haddock = ctx.attr.haddock,
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
+        verbose = ctx.attr.verbose,
     )
     outputs = [
         package_database,
@@ -377,6 +381,10 @@ haskell_cabal_library = rule(
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
+        "verbose": attr.bool(
+            default = True,
+            doc = "Whether to show the output of the build",
+        ),
     },
     toolchains = [
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -472,6 +480,7 @@ def _haskell_cabal_binary_impl(ctx):
         generate_haddock = False,
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
+        verbose = ctx.attr.verbose,
     )
     ctx.actions.run(
         executable = c.cabal_wrapper,
@@ -536,6 +545,10 @@ haskell_cabal_binary = rule(
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "verbose": attr.bool(
+            default = True,
+            doc = "Whether to show the output of the build",
         ),
     },
     toolchains = [
@@ -961,6 +974,10 @@ _stack_snapshot = repository_rule(
         "tools": attr.label_list(),
         "stack": attr.label(),
         "stack_update": attr.label(),
+        "verbose": attr.bool(
+            default = False,
+            doc = "Whether to show the output of the build",
+        ),
     },
 )
 
