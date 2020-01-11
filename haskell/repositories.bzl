@@ -56,6 +56,46 @@ def rules_haskell_dependencies():
             urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.6.0.tar.gz"],
         )
 
+    if "com_google_protobuf" not in excludes:
+        http_archive(
+            name = "com_google_protobuf",
+            sha256 = "e8c7601439dbd4489fe5069c33d374804990a56c2f710e00227ee5d8fd650e67",
+            strip_prefix = "protobuf-3.11.2",
+            urls = [
+                "https://mirror.bazel.build/github.com/google/protobuf/archive/v3.11.2.tar.gz",
+                "https://github.com/google/protobuf/archive/v3.11.2.tar.gz",
+            ],
+        )
+
+    # Dependencies of com_google_protobuf.
+    # TODO(judahjacobson): this is a bit of a hack.
+    # We can't call that repository's protobuf_deps() function
+    # from here, because load()ing it from this .bzl file would lead
+    # to a cycle:
+    # https://github.com/bazelbuild/bazel/issues/1550
+    # https://github.com/bazelbuild/bazel/issues/1943
+    # For now, just hard-code the subset that's needed to use `protoc`.
+    # Alternately, consider adding another function from another
+    # .bzl file that needs to be called from WORKSPACE, similar to:
+    # https://github.com/grpc/grpc/blob/8c9dcf7c35e489c2072a9ad86635dbc4e28f88ea/bazel/grpc_extra_deps.bzl#L10
+    if "zlib" not in excludes:
+        http_archive(
+            name = "zlib",
+            build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+            sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
+            strip_prefix = "zlib-1.2.11",
+            urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
+        )
+
+    if "rules_python" not in excludes:
+        http_archive(
+            name = "rules_python",
+            sha256 = "e5470e92a18aa51830db99a4d9c492cc613761d5bdb7131c04bd92b9834380f6",
+            strip_prefix = "rules_python-4b84ad270387a7c439ebdccfd530e2339601ef27",
+            urls = ["https://github.com/bazelbuild/rules_python/archive/4b84ad270387a7c439ebdccfd530e2339601ef27.tar.gz"],
+        )
+
+
 def haskell_repositories():
     """DEPRECATED alias for rules_haskell_dependencies"""
     rules_haskell_dependencies()

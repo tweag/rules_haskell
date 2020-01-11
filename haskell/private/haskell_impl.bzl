@@ -1,5 +1,6 @@
 """Implementation of core Haskell rules"""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(
     "@rules_haskell//haskell:providers.bzl",
     "C2hsLibraryInfo",
@@ -13,6 +14,11 @@ load(":cc.bzl", "cc_interop_info")
 load(
     ":private/actions/compile.bzl",
     "list_exposed_modules",
+)
+load(
+    ":private/actions/info.bzl",
+    "compile_info_output_groups",
+    "library_info_output_groups",
 )
 load(
     ":private/actions/link.bzl",
@@ -355,6 +361,14 @@ def _haskell_binary_common_impl(ctx, is_test):
                 collect_data = True,
             ),
         ),
+        OutputGroupInfo(**compile_info_output_groups(
+            name = ctx.label.name,
+            workspace_name = ctx.workspace_name,
+            hs = hs,
+            c = c,
+            posix = posix,
+            cc_info = cc_info,
+            runfiles = ctx.runfiles(collect_data = True).files))
     ]
 
 def haskell_library_impl(ctx):
@@ -634,6 +648,26 @@ def haskell_library_impl(ctx):
         coverage_info,
         default_info,
         lib_info,
+        OutputGroupInfo(**dicts.add(
+            compile_info_output_groups(
+                # For haskell_proto_aspect, which doesn't have a ctx.workspace_name,
+                # just set it to "".  It won't matter in practice because those rules don't
+                # have runfiles and won't be compiled directly anyway.
+                workspace_name = ctx.workspace_name if hasattr(ctx, "workspace_name") else "",
+                hs = hs,
+                name = ctx.label.name,
+                c = c,
+                posix = posix,
+                cc_info = cc_info,
+                runfiles = default_info.default_runfiles.files
+                if hasattr(default_info, "default_runfiles") and default_info.default_runfiles else depset(),
+            ),
+            library_info_output_groups(
+                name = ctx.label.name,
+                hs = hs,
+                hs_info = hs_info,
+                lib_info = lib_info,
+            )))
     ]
 
 # We should not need this provider. It exists purely as a workaround
@@ -645,6 +679,7 @@ HaskellImportHack = provider()
 HaskellToolchainLibraries = provider()
 
 def haskell_toolchain_library_impl(ctx):
+    hs = haskell_context(ctx)
     if ctx.attr.package:
         package = ctx.attr.package
     else:
@@ -670,6 +705,11 @@ The following toolchain libraries are available:
         target.cc_info,
         target.haddock_info,
         HaskellToolchainLibraryInfo(),
+        OutputGroupInfo(**library_info_output_groups(
+            hs = hs,
+            name = ctx.label.name,
+            hs_info = target.hs_info,
+            lib_info = target.hs_lib_info)),
     ]
 
 def haskell_toolchain_libraries_impl(ctx):

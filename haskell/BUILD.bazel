@@ -11,6 +11,10 @@ load(
     "@rules_haskell//haskell:cabal_wrapper.bzl",
     "cabal_wrapper",
 )
+load(
+    "@rules_haskell//haskell:toolchain_info.bzl",
+    "haskell_toolchain_info",
+)
 
 exports_files(
     glob(["*.bzl"]) + [
@@ -99,4 +103,8 @@ config_setting(
     define_values = {
         "use_worker": "True",
     },
+)
+
+haskell_toolchain_info(
+    name = "toolchain_info",
 )
