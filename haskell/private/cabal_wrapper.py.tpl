@@ -29,12 +29,21 @@ import sys
 import tempfile
 
 debug = False
+verbose = os.environ.get("CABAL_VERBOSE", "") == "True"
 
 def run(cmd, *args, **kwargs):
     if debug:
         print("+ " + " ".join(["'{}'".format(arg) for arg in cmd]), file=sys.stderr)
         sys.stderr.flush()
-    subprocess.check_call(cmd, *args, **kwargs)
+    if verbose:
+        subprocess.run(cmd, check=True, *args, **kwargs)
+    else:
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, *args, **kwargs)
+        except subprocess.CalledProcessError as err:
+            sys.stdout.buffer.write(err.stdout)
+            sys.stderr.buffer.write(err.stderr)
+            raise
 
 def find_exe(exe):
     if os.path.isfile(exe):
