@@ -1,7 +1,7 @@
 steps:
   - label: "Run tests (Nixpkgs)"
     command: |
-      . /var/lib/buildkite-agent/.nix-profile/etc/profile.d/nix.sh
+      . /home/buildkite-agent/.nix-profile/etc/profile.d/nix.sh
       echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
       echo "build:ci --config=ci_linux" >> .bazelrc.local
       nix-shell --arg docTools false --pure --run '
