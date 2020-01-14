@@ -3,8 +3,8 @@ steps:
     command: |
       . /home/buildkite-agent/.nix-profile/etc/profile.d/nix.sh
       which nix-shell
-      echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
-      echo "build:ci --config=ci_linux" >> .bazelrc.local
+      # echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
+      # echo "build:ci --config=ci_linux" >> .bazelrc.local
       # nix-shell --arg docTools false --pure --run '
       # set -e
       # # Ensure that the Nixpkgs bazel version matches the one specified in
@@ -15,7 +15,7 @@ steps:
       # bazel build --config ci //tests:run-tests
       # ./bazel-ci-bin/tests/run-tests
       # bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
-      '
+      # '
     timeout: 100
 
   - label: "Run tests (bindists)"
