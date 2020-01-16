@@ -340,7 +340,7 @@ jvm_maven_import_external(
     artifact = "org.apache.spark:spark-core_2.10:1.6.0",
     artifact_sha256 = "28aad0602a5eea97e9cfed3a7c5f2934cd5afefdb7f7c1d871bb07985453ea6e",
     licenses = ["notice"],
-    server_urls = ["http://central.maven.org/maven2"],
+    server_urls = ["https://repo.maven.apache.org/maven2"],
 )
 
 # c2hs rule in its own repository
