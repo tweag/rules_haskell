@@ -653,14 +653,14 @@ def haskell_library_impl(ctx):
                 # For haskell_proto_aspect, which doesn't have a ctx.workspace_name,
                 # just set it to "".  It won't matter in practice because those rules don't
                 # have runfiles and won't be compiled directly anyway.
-                workspace_name = ctx.workspace_name if hasattr(ctx, "workspace_name") else "",
+                workspace_name = getattr(ctx, "workspace_name", ""),
                 hs = hs,
                 name = ctx.label.name,
                 c = c,
                 posix = posix,
                 cc_info = cc_info,
                 runfiles = default_info.default_runfiles.files
-                if hasattr(default_info, "default_runfiles") and default_info.default_runfiles else depset(),
+                if getattr(default_info, "default_runfiles", None) else depset(),
             ),
             library_info_output_groups(
                 name = ctx.label.name,

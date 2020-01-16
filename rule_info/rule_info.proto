@@ -29,6 +29,7 @@ message CompileInfo {
 
 // Information about a built library.
 message LibraryInfo {
+  reserved 3;
   // The GHC package ID of this target.
   string package_id = 1;
 
@@ -38,10 +39,6 @@ message LibraryInfo {
   // Does not include the "core" package DB which is part of the GHC build
   // itself and produces packages like "base", "ghc", etc.
   repeated string transitive_package_dbs = 2;
-
-  // Shared libraries containing built Haskell code for this library
-  // and its dependencies.
-  repeated string transitive_haskell_shared_libs = 3;
 
   // The package IDs of all libraries that this target depends on transitively,
   // including itself.

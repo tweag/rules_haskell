@@ -67,7 +67,7 @@ def rules_haskell_dependencies():
             ],
         )
 
-    # Dependencies of com_google_protobuf.
+    # Dependency of com_google_protobuf.
     # TODO(judahjacobson): this is a bit of a hack.
     # We can't call that repository's protobuf_deps() function
     # from here, because load()ing it from this .bzl file would lead
@@ -85,14 +85,6 @@ def rules_haskell_dependencies():
             sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
             strip_prefix = "zlib-1.2.11",
             urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
-        )
-
-    if "rules_python" not in excludes:
-        http_archive(
-            name = "rules_python",
-            sha256 = "e5470e92a18aa51830db99a4d9c492cc613761d5bdb7131c04bd92b9834380f6",
-            strip_prefix = "rules_python-4b84ad270387a7c439ebdccfd530e2339601ef27",
-            urls = ["https://github.com/bazelbuild/rules_python/archive/4b84ad270387a7c439ebdccfd530e2339601ef27.tar.gz"],
         )
 
 

@@ -14,13 +14,13 @@ def write_proto_file(hs, output_name, proto_type, content):
     Writes a file with the text format encoding, and then runs "protoc"
     to convert it to the wire encoding.
 
-    Using the wire encoding allows us use released versions of tools
+    The wire encoding allows us to use released versions of tools
     with different versions of the Haskell rules (within reason).
 
     Args:
       hs: The current rule context.
       output_name: The output filename.  The text-encoded file will be named
-        {output_name}.txt, and the encoded file will be named {file_name}.pb.
+        {output_name}.txt, and the encoded file will be named {output_name}.pb.
       proto_type: The type of the proto (e.g. foo.Bar).  It must be defined
         in rule_info.proto.
       content: The contents of the text file, as a Bazel struct.
