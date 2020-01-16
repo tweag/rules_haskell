@@ -51,13 +51,6 @@ def write_proto_file(hs, output_name, proto_type, content):
     )
     return proto_pb
 
-# Copied from haskell/repl.bzl; not sure if there's a more general solution.
-_COMMON_REPL_OPTIONS = [
-    "-hide-all-packages",
-    "-package=base",
-    "-package=directory",
-]
-
 def _filter_package_env(flags):
     # Strips out -package-env from the command-line flags.  Consumers of these output
     # groups will be responsible for setting the right GHC flags themselves,
@@ -90,7 +83,7 @@ def _write_haskell_compile_info(
             source_files = [f.path for f in c.source_files.to_list()],
             # TODO: currently, this will duplicate the common, target-independent options for
             # each build target.  We should instead move them into GhcConfig.common_options.
-            options = _filter_package_env(c.compile_flags) + _COMMON_REPL_OPTIONS,
+            options = _filter_package_env(c.compile_flags),
             transitive_cc_shared_libs = [lib.path for lib in cc_libs],
             # Follows the new runfiles tree organization of:
             # https://github.com/bazelbuild/bazel/wiki/Updating-the-runfiles-tree-structure
