@@ -22,9 +22,10 @@ message CompileInfo {
   // nor flags related to dependent packages ("-package-id" and "-package-db").
   repeated string options = 9;
 
-  // Shared libraries for cc_library rules that this target depends on
-  // transitively.
-  repeated string transitive_cc_shared_libs = 11;
+  // Libraries for cc_library rules that this target depends on
+  // transitively.  Should be either static or dynamic, depending on how the
+  // GHC RTS was linked.
+  repeated string transitive_cc_libs = 11;
 }
 
 // Information about a built library.

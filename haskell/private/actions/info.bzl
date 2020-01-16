@@ -84,7 +84,7 @@ def _write_haskell_compile_info(
             # TODO: currently, this will duplicate the common, target-independent options for
             # each build target.  We should instead move them into GhcConfig.common_options.
             options = _filter_package_env(c.compile_flags),
-            transitive_cc_shared_libs = [lib.path for lib in cc_libs],
+            transitive_cc_libs = [lib.path for lib in cc_libs],
             # Follows the new runfiles tree organization of:
             # https://github.com/bazelbuild/bazel/wiki/Updating-the-runfiles-tree-structure
             runfiles = [
