@@ -160,7 +160,7 @@ def compile_info_output_groups(
     cc_libs = [lib for lib in ghci_extra_libs.to_list()
                 if not is_hs_library(get_lib_name(lib)) and get_lib_name(lib) != "ffi"]
     return {
-        "haskell_cdeps_shared_lib": depset(cc_libs),
+        "haskell_cdep_libs": depset(cc_libs),
         "haskell_runfiles": runfiles,
         "haskell_source_files": depset(transitive =
             [c.source_files, c.extra_source_files]),
