@@ -43,9 +43,9 @@ def rules_haskell_dependencies():
     if "rules_sh" not in excludes:
         http_archive(
             name = "rules_sh",
-            sha256 = "2613156e96b41fe0f91ac86a65edaea7da910b7130f2392ca02e8270f674a734",
-            strip_prefix = "rules_sh-0.1.0",
-            urls = ["https://github.com/tweag/rules_sh/archive/v0.1.0.tar.gz"],
+            sha256 = "fc20982bffb0d67c173362b39ef9fab3b3afe0563c80502851e06b5714386766",
+            strip_prefix = "rules_sh-b985a161a369397f3a7b18506704309d8f519d7d",
+            urls = ["https://github.com/tweag/rules_sh/archive/b985a161a369397f3a7b18506704309d8f519d7d.tar.gz"],
         )
 
     if "io_tweag_rules_nixpkgs" not in excludes:
