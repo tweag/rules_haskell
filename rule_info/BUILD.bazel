@@ -10,6 +10,6 @@ proto_library(
 
 haskell_proto_library(
     name = "rule_info_haskell_proto",
-    deps = [":rule_info_proto"],
     visibility = ["//visibility:public"],
+    deps = [":rule_info_proto"],
 )

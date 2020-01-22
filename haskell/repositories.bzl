@@ -87,7 +87,6 @@ def rules_haskell_dependencies():
             urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
         )
 
-
 def haskell_repositories():
     """DEPRECATED alias for rules_haskell_dependencies"""
     rules_haskell_dependencies()

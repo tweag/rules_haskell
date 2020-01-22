@@ -251,7 +251,6 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
             allow_single_file = True,
             default = Label("@rules_haskell//rule_info:rule_info_proto"),
         ),
-
     },
 )
 

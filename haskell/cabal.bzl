@@ -344,7 +344,8 @@ def _haskell_cabal_library_impl(ctx):
         name = ctx.label.name,
         hs = hs,
         hs_info = hs_info,
-        lib_info = lib_info))
+        lib_info = lib_info,
+    ))
     result = [default_info, hs_info, cc_info, lib_info, output_group_info]
     if ctx.attr.haddock:
         result.append(doc_info)

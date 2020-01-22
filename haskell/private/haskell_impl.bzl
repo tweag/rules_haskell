@@ -368,7 +368,8 @@ def _haskell_binary_common_impl(ctx, is_test):
             c = c,
             posix = posix,
             cc_info = cc_info,
-            runfiles = ctx.runfiles(collect_data = True).files))
+            runfiles = ctx.runfiles(collect_data = True).files,
+        )),
     ]
 
 def haskell_library_impl(ctx):
@@ -659,15 +660,15 @@ def haskell_library_impl(ctx):
                 c = c,
                 posix = posix,
                 cc_info = cc_info,
-                runfiles = default_info.default_runfiles.files
-                if getattr(default_info, "default_runfiles", None) else depset(),
+                runfiles = default_info.default_runfiles.files if getattr(default_info, "default_runfiles", None) else depset(),
             ),
             library_info_output_groups(
                 name = ctx.label.name,
                 hs = hs,
                 hs_info = hs_info,
                 lib_info = lib_info,
-            )))
+            ),
+        )),
     ]
 
 # We should not need this provider. It exists purely as a workaround
@@ -709,7 +710,8 @@ The following toolchain libraries are available:
             hs = hs,
             name = ctx.label.name,
             hs_info = target.hs_info,
-            lib_info = target.hs_lib_info)),
+            lib_info = target.hs_lib_info,
+        )),
     ]
 
 def haskell_toolchain_libraries_impl(ctx):
