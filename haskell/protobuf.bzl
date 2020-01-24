@@ -232,7 +232,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         # We can't return DefaultInfo here because target already provides that.
         HaskellProtobufInfo(files = default_info.files),
         haddock_info,
-        output_groups
+        output_groups,
     ]
 
 _haskell_proto_aspect = aspect(

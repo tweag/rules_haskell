@@ -1,4 +1,5 @@
 """Defines output groups that are consumed by tools such as 'hrepl'."""
+
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":providers.bzl", "all_package_ids", "get_ghci_extra_libs")
@@ -91,12 +92,14 @@ def _write_haskell_compile_info(
                 struct(
                     full_path = f.path,
                     short_path = paths.join(
-                        f.owner.workspace_name or workspace_name, f.short_path))
+                        f.owner.workspace_name or workspace_name,
+                        f.short_path,
+                    ),
+                )
                 for f in runfiles.to_list()
             ],
         ),
     )
-
 
 def library_info_output_groups(
         name,
@@ -122,14 +125,17 @@ def library_info_output_groups(
             # TODO(google/hrepl#4): currently, we only expose the immediate dependencies.
             transitive_package_ids = [lib_info.package_id],
             transitive_package_dbs =
-                [db.dirname for db in hs_info.package_databases.to_list()]))
+                [db.dirname for db in hs_info.package_databases.to_list()],
+        ),
+    )
     return {
         "haskell_transitive_deps": depset(
-          transitive = [
+            transitive = [
                 hs_info.package_databases,
                 hs_info.interface_dirs,
                 hs_info.dynamic_libraries,
-            ]),
+            ],
+        ),
         "haskell_library_info": depset([proto_file]),
     }
 
@@ -157,18 +163,22 @@ def compile_info_output_groups(
       A dict whose keys are output groups and values are depsets of Files.
     """
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_info)
-    cc_libs = [lib for lib in ghci_extra_libs.to_list()
-                if not is_hs_library(get_lib_name(lib)) and get_lib_name(lib) != "ffi"]
+    cc_libs = [
+        lib
+        for lib in ghci_extra_libs.to_list()
+        if not is_hs_library(get_lib_name(lib)) and get_lib_name(lib) != "ffi"
+    ]
     return {
         "haskell_cdep_libs": depset(cc_libs),
         "haskell_runfiles": runfiles,
         "haskell_source_files": depset(transitive =
-            [c.source_files, c.extra_source_files]),
+                                           [c.source_files, c.extra_source_files]),
         "haskell_compile_info": depset([_write_haskell_compile_info(
             workspace_name = workspace_name,
             hs = hs,
             name = name + ".HaskellCompile",
             c = c,
             cc_libs = cc_libs,
-            runfiles = runfiles)]),
+            runfiles = runfiles,
+        )]),
     }
