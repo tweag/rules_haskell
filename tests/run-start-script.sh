@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Run the start script in its own workspace
 # and build the example binary target.

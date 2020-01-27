@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Checks the version of Bazel found in the PATH, and then initializes
 # a new Bazel workspace with dummy Haskell build targets.
@@ -88,7 +88,6 @@ insert_if_equal () {
     [ "$1" = "$2" ] && printf '%s' "$3"
 }
 
-
 parse_args "$@"
 
 if [ "$print_nix_usage_info" = "yes" ]; then
@@ -98,7 +97,6 @@ fi
 
 check_files_dont_exist
 check_bazel_version
-
 
 bindist_toolchain=$(cat <<EOF
 # Download a GHC binary distribution from haskell.org and register it as a toolchain.
@@ -112,6 +110,11 @@ nix_toolchain=$(cat <<EOF
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_git_repository",
+    "nixpkgs_python_configure",
+)
+
+nixpkgs_python_configure(
+    repository = "@nixpkgs",
 )
 
 # Fetch a version of nixpkgs from GitHub.

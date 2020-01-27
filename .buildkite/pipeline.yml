@@ -1,7 +1,6 @@
 steps:
   - label: "Run tests (Nixpkgs)"
     command: |
-      . /var/lib/buildkite-agent/.nix-profile/etc/profile.d/nix.sh
       echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
       echo "build:ci --config=ci_linux" >> .bazelrc.local
       nix-shell --arg docTools false --pure --run '
@@ -18,5 +17,9 @@ steps:
     timeout: 100
 
   - label: "Run tests (bindists)"
-    command: ".buildkite/bindists-pipeline"
+    command: |
+      mkdir -p "$HOME/bindists/repo_cache"
+      mkdir -p "$HOME/bindists/.cache/bazel"
+      mkdir -p "$HOME/bindists/.stack"
+      docker run -it --network host -v $(pwd):/home/buildkite-agent/rules_haskell:rw -v $HOME/bindists/repo_cache:/home/buildkite-agent/repo_cache:rw -v $HOME/bindists/.cache/bazel:/home/buildkite-agent/.cache/bazel:rw -v $HOME/bindists/.stack:/home/buildkite-agent/.stack:rw --workdir /home/buildkite-agent/rules_haskell --user 1000 mrkkrp/rules_haskell:0.1.0 .buildkite/bindists-pipeline
     timeout: 100
