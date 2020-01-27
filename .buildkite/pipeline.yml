@@ -18,7 +18,8 @@ steps:
 
   - label: "Run tests (bindists)"
     command: |
-      mkdir -p "$HOME/repo_cache"
-      mkdir -p "$HOME/.cache/bazel"
-      docker run -it --network host -v $(pwd):/home/buildkite-agent/rules_haskell:rw -v $HOME/repo_cache:/home/buildkite-agent/repo_cache:rw -v $HOME/.cache/bazel:/home/buildkite-agent/.cache/bazel:rw -v $HOME/.stack:/home/buildkite-agent/.stack:rw --workdir /home/buildkite-agent/rules_haskell --user 1000 mrkkrp/rules_haskell:0.1.0 .buildkite/bindists-pipeline
+      mkdir -p "$HOME/bindists/repo_cache"
+      mkdir -p "$HOME/bindists/.cache/bazel"
+      mkdir -p "$HOME/bindists/.stack"
+      docker run -it --network host -v $(pwd):/home/buildkite-agent/rules_haskell:rw -v $HOME/bindists/repo_cache:/home/buildkite-agent/repo_cache:rw -v $HOME/bindists/.cache/bazel:/home/buildkite-agent/.cache/bazel:rw -v $HOME/bindists/.stack:/home/buildkite-agent/.stack:rw --workdir /home/buildkite-agent/rules_haskell --user 1000 mrkkrp/rules_haskell:0.1.0 .buildkite/bindists-pipeline
     timeout: 100
