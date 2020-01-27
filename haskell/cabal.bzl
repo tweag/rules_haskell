@@ -1099,6 +1099,16 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
         named `<package-name>.cabal` in the package root.
       flags: A dict from package name to list of flags.
       extra_deps: Extra dependencies of packages, e.g. system libraries or C/C++ libraries.
+        Dict of stackage package names to a list of targets. The list of targets is given
+        as input to the named stackage package.
+        ```
+        {
+            "postgresql-libpq": ["@postgresql//:include"],
+            "zlib": ["@zlib.dev//:zlib"]
+        }
+        ```
+        means `@postgresql//:include` is passed to the stackage package `postgresql-libpq`
+        while `@zlib.dev//:zlib` is passed to the stackage package `zlib`.
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
