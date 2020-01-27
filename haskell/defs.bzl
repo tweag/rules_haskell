@@ -342,6 +342,9 @@ haskell_toolchain_library = rule(
             default = Label("@rules_haskell//haskell:toolchain-libraries"),
         ),
     ),
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+    ],
 )
 """Import packages that are prebuilt outside of Bazel.
 

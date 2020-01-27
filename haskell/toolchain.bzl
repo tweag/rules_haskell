@@ -187,6 +187,8 @@ def _haskell_toolchain_impl(ctx):
             is_static = ctx.attr.is_static,
             version = ctx.attr.version,
             global_pkg_db = pkgdb_file,
+            protoc = ctx.executable._protoc,
+            rule_info_proto = ctx.attr._rule_info_proto,
         ),
     ]
 
@@ -239,6 +241,15 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
             cfg = "host",
             default = Label("@rules_haskell//haskell:cc_wrapper"),
             executable = True,
+        ),
+        "_protoc": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@com_google_protobuf//:protoc"),
+        ),
+        "_rule_info_proto": attr.label(
+            allow_single_file = True,
+            default = Label("@rules_haskell//rule_info:rule_info_proto"),
         ),
     },
 )

@@ -1,0 +1,75 @@
+// Proto messages that Haskell build rules output, for use by tools like
+// "hrepl".
+syntax = "proto3";
+
+package haskell;
+
+// Information about a HaskellCompile action.
+message CompileInfo {
+  reserved 1, 3, 4, 7, 8, 10, 13, 14;
+  // The source files that are being compiled (.hs and .lhs files).
+  // Does not contain "boot" files (e.g. ".hs-boot").
+  repeated string source_files = 2;
+  // Modules that should not be exposed.  (For libraries only.)
+  repeated string hidden_modules = 12;
+  // The runfiles that should be collected for this target.
+  repeated Runfile runfiles = 5;
+  // The Haskell package name.  Should only be set for third-party libraries
+  // (namely, those with the "cabal_version" attribute).
+  string package_name = 6;
+
+  // Arguments to GHC for compiling this target.  Does not include source files,
+  // nor flags related to dependent packages ("-package-id" and "-package-db").
+  repeated string options = 9;
+
+  // Libraries for cc_library rules that this target depends on
+  // transitively.  Should be either static or dynamic, depending on how the
+  // GHC RTS was linked.
+  repeated string transitive_cc_libs = 11;
+}
+
+// Information about a built library.
+message LibraryInfo {
+  reserved 3;
+  // The GHC package ID of this target.
+  string package_id = 1;
+
+  // The package DBs that we need to explicitly pass to GHC in order to use
+  // this target.  Namely, the DBs needed for all dependencies transitively,
+  // including itself.
+  // Does not include the "core" package DB which is part of the GHC build
+  // itself and produces packages like "base", "ghc", etc.
+  repeated string transitive_package_dbs = 2;
+
+  // The package IDs of all libraries that this target depends on transitively,
+  // including itself.
+  repeated string transitive_package_ids = 4;
+}
+
+message Runfile {
+  // The path under the execution root.  For example, "foo/bar.txt"
+  // for a source file, or "bazel-out/k8-fastbuild/bin/foo/bar.txt" for a
+  // generated file.
+  string full_path = 1;
+  // The path where this file is expected to be in the runfiles directory.
+  // For example, "foo/bar.txt" in both of the above cases.
+  string short_path = 2;
+}
+
+// Information about the Haskell compiler.
+// This is similar information as in the ghc_paths library, but comes directly
+// from the build rules, rather than being embedded in a Haskell binary (which
+// might have been compiled with a different version of GHC).
+message GhcConfig {
+  // The path to the GHC executable.
+  string ghc = 1;
+  // The directory containing GHC's libraries, which should be the
+  // argument of the "-B" flag.
+  // TODO(judahjacobson): Currently, rules_haskell does not set this
+  // flag.  hrepl doesn't need it since it calls GHC as a binary.
+  string library_root = 2;
+  // Arguments that should be passed to every invocation of GHC.
+  // Note that this does *not* contain "-B".  It is not relevant for users of
+  // the GHC API, which should pull that value from library_root instead.
+  repeated string common_options = 3;
+}

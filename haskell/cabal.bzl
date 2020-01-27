@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":cc.bzl", "cc_interop_info")
+load(":private/actions/info.bzl", "library_info_output_groups")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -339,7 +340,13 @@ def _haskell_cabal_library_impl(ctx):
             cc_info,
         ],
     )
-    result = [default_info, hs_info, cc_info, lib_info]
+    output_group_info = OutputGroupInfo(**library_info_output_groups(
+        name = ctx.label.name,
+        hs = hs,
+        hs_info = hs_info,
+        lib_info = lib_info,
+    ))
+    result = [default_info, hs_info, cc_info, lib_info, output_group_info]
     if ctx.attr.haddock:
         result.append(doc_info)
     return result
