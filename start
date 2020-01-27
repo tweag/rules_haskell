@@ -114,8 +114,6 @@ load(
 )
 
 nixpkgs_python_configure(
-    # XXX: Remove python2_attribute_path after updating to Stardoc 0.4.0
-    python2_attribute_path = "python2",
     repository = "@nixpkgs",
 )
 
