@@ -34,66 +34,6 @@ def merge_parameter_files(hs, file1, file2):
     )
     return params_file
 
-def _darwin_create_extra_linker_flags_file(hs, cc, objects_dir, executable, dynamic, solibs):
-    """Write additional linker flags required on macOS to a parameter file.
-
-    Args:
-      hs: Haskell context.
-      cc: CcInteropInfo, information about C dependencies.
-      objects_dir: Directory storing object files.
-        Used to determine output file location.
-      executable: The executable being built.
-      dynamic: Bool: Whether to link dynamically or statically.
-      solibs: List of dynamic library dependencies.
-
-    Returns:
-      File: Parameter file with additional linker flags. To be passed to GHC.
-    """
-
-    # On Darwin GHC will pass the dead_strip_dylibs flag to the linker. This
-    # flag will remove any shared library loads from the binary's header that
-    # are not directly resolving undefined symbols in the binary. I.e. any
-    # indirect shared library dependencies will be removed. This conflicts with
-    # Bazel's builtin cc rules, which assume that the final binary will load
-    # all transitive shared library dependencies. In particlar shared libraries
-    # produced by Bazel's cc rules never load shared libraries themselves. This
-    # causes missing symbols at runtime on macOS, see #170.
-    #
-    # The following work-around applies the `-u` flag to the linker for any
-    # symbol that is undefined in any transitive shared library dependency.
-    # This forces the linker to resolve these undefined symbols in all
-    # transitive shared library dependencies and keep the corresponding load
-    # commands in the binary's header.
-    #
-    # Unfortunately, this prohibits elimination of any truly redundant shared
-    # library dependencies. Furthermore, the transitive closure of shared
-    # library dependencies can be large, so this makes it more likely to exceed
-    # the MACH-O header size limit on macOS.
-    #
-    # This is a horrendous hack, but it seems to be forced on us by how Bazel
-    # builds dynamic cc libraries.
-    suffix = ".dynamic.linker_flags" if dynamic else ".static.linker_flags"
-    linker_flags_file = hs.actions.declare_file(
-        executable.basename + suffix,
-        sibling = objects_dir,
-    )
-
-    hs.actions.run_shell(
-        inputs = solibs,
-        outputs = [linker_flags_file],
-        command = """
-        touch {out}
-        for lib in {solibs}; do
-            {nm} -u "$lib" | sed 's/^/-optl-Wl,-u,/' >> {out}
-        done
-        """.format(
-            nm = cc.tools.nm,
-            solibs = " ".join(["\"" + l.path + "\"" for l in solibs.to_list()]),
-            out = linker_flags_file.path,
-        ),
-    )
-    return linker_flags_file
-
 def _create_objects_dir_manifest(hs, posix, objects_dir, dynamic, with_profiling):
     suffix = ".dynamic.manifest" if dynamic else ".static.manifest"
     objects_dir_manifest = hs.actions.declare_file(
@@ -214,7 +154,6 @@ def link_binary(
         with_profiling = with_profiling,
     )
 
-    extra_linker_flags_file = None
     if hs.toolchain.is_darwin:
         args.add("-optl-Wl,-headerpad_max_install_names")
 
@@ -224,20 +163,6 @@ def link_binary(
         # should do always when using a toolchain from Nixpkgs.
         # TODO remove this gross hack.
         args.add("-liconv")
-
-        extra_linker_flags_file = _darwin_create_extra_linker_flags_file(
-            hs,
-            cc,
-            objects_dir,
-            executable,
-            dynamic,
-            dynamic_libs,
-        )
-
-    if extra_linker_flags_file != None:
-        params_file = merge_parameter_files(hs, objects_dir_manifest, extra_linker_flags_file)
-    else:
-        params_file = objects_dir_manifest
 
     hs.toolchain.actions.run_ghc(
         hs,
@@ -255,7 +180,7 @@ def link_binary(
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
         arguments = args,
-        params_file = params_file,
+        params_file = objects_dir_manifest,
     )
 
     return (executable, dynamic_libs)
