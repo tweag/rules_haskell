@@ -149,12 +149,6 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, cc_inf
     compile_flags += hs.toolchain.compiler_flags
     compile_flags += user_compile_flags
 
-    # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
-    # not yet in a release; plus, we still want to support older versions of
-    # GHC.  For details, see: https://phabricator.haskell.org/D4714
-    if hs.toolchain.is_darwin:
-        compile_flags += ["-optl-Wl,-dead_strip_dylibs"]
-
     package_ids = []
     for plugin in plugins:
         package_ids.extend(all_dependencies_package_ids(plugin.deps))

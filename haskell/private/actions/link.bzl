@@ -348,12 +348,6 @@ def link_library_dynamic(hs, cc, posix, dep_info, cc_info, extra_srcs, objects_d
     args.add_all(hs.toolchain.compiler_flags)
     args.add_all(compiler_flags)
 
-    # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
-    # not yet in a release; plus, we still want to support older versions of
-    # GHC.  For details, see: https://phabricator.haskell.org/D4714
-    if hs.toolchain.is_darwin:
-        args.add("-optl-Wl,-dead_strip_dylibs")
-
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
