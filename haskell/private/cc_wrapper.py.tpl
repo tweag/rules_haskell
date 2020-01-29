@@ -494,7 +494,16 @@ def darwin_shorten_rpaths(rpaths, libraries, output):
         rewrites: List of load command rewrites.
 
     """
-    input_rpaths = sort_rpaths(rpaths)
+    if rpaths:
+        input_rpaths = sort_rpaths(rpaths)
+    else:
+        # GHC with Template Haskell or tools like hsc2hs build temporary
+        # Haskell binaries linked against libraries, but do not speficy the
+        # required runpaths on the command-line in the context of Bazel. Bazel
+        # generated libraries have relative library names which don't work in a
+        # temporary directory, or the Cabal working directory. As a fall-back
+        # we use the contents of `LD_LIBRARY_PATH` in these situations.
+        input_rpaths = sort_rpaths(os.environ.get("LD_LIBRARY_PATH", "").split(":"))
 
     # Keeps track of libraries that were not yet found in an rpath.
     libs_still_missing = set(libraries)
