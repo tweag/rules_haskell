@@ -83,6 +83,7 @@ jobs:
             # nix-shell --arg docTools false --pure --run \
             #   './tests/run-start-script.sh --use-nix'
             nix-shell --arg docTools false --pure --run '
+            set -euo pipefail
             bazel build --config ci //tests:run-tests
             ./bazel-ci-bin/tests/run-tests
             bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
