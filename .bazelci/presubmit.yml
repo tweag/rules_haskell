@@ -6,7 +6,6 @@ tasks:
       LANG: "C.UTF-8"
     build_flags:
       - "--build_tag_filters=-requires_zlib,-requires_lz4,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-requires_shellcheck,-dont_test_with_bindist,-dont_test_on_bazelci"
-      - "--incompatible_use_python_toolchains=false"
     build_targets:
       - "//tests/..."
     test_flags:
