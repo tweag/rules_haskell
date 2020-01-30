@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## Upcoming release
 
+### Added
+
+* Support for Bazel 2.0.0.
+
 ### Changed
 
 * The `haskell_register_toolchains()` is no longer defined in
