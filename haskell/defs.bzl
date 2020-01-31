@@ -330,7 +330,28 @@ def haskell_binary(
         **kwargs
     )
 
-def haskell_test(**kwargs):
+def haskell_test(
+        name,
+        src_strip_prefix = "",
+        srcs = [],
+        extra_srcs = [],
+        deps = [],
+        data = [],
+        compiler_flags = [],
+        repl_ghci_args = [],
+        runcompile_flags = [],
+        plugins = [],
+        tools = [],
+        worker = None,
+        linkstatic = True,
+        main_function = "Main.main",
+        version = None,
+        expected_covered_expressions_percentage = -1,
+        expected_uncovered_expression_count = -1,
+        strict_coverage_analysis = False,
+        coverage_report_format = "text",
+        experimental_coverage_source_patterns = ["//..."],
+        **kwargs):
     """Build a test suite.
 
     Additionally, it accepts [all common bazel test rule
@@ -338,8 +359,62 @@ def haskell_test(**kwargs):
     timeout and resource allocation for the test.
 
     [bazel-test-attrs]: https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests
+
+    Args:
+      name: A unique name for this rule.
+      src_strip_prefix: DEPRECATED. Attribute has no effect.
+      srcs: Haskell source files.
+      extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
+      deps: List of other Haskell libraries to be linked to this target.
+      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
+      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation.
+      tools: Extra tools needed at compile-time, like preprocessors.
+      worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
+      linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
+      main_function: A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.
+      version:Executable version. If this is specified, CPP version macros will be generated for this build.
+      expected_covered_expressions_percentage: The expected percentage of expressions covered by testing.
+      expected_uncovered_expression_count: The expected number of expressions which are not covered by testing.
+      strict_coverage_analysis: Requires that the coverage metric is matched exactly, even doing better than expected is not allowed.
+      coverage_report_format: The format to output the coverage report in.
+
+        Supported values: "text", "html". Default: "text".
+
+        Report can be seen in the testlog XML file, or by setting --test_output=all when running bazel coverage.
+      experimental_coverage_source_patterns: The path patterns specifying which targets to analyze for test coverage metrics.
+
+          Wild-card targets such as //... or //:all are allowed. The paths must be relative to the workspace, which means they must start with "//".
+
+          Note, this attribute may leave experimental status depending on the outcome of https://github.com/bazelbuild/bazel/issues/7763.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
-    _haskell_worker_wrapper("test", **kwargs)
+    _haskell_worker_wrapper(
+        "test",
+        name = name,
+        src_strip_prefix = src_strip_prefix,
+        srcs = srcs,
+        extra_srcs = extra_srcs,
+        deps = deps,
+        data = data,
+        compiler_flags = compiler_flags,
+        repl_ghci_args = repl_ghci_args,
+        runcompile_flags = runcompile_flags,
+        plugins = plugins,
+        tools = tools,
+        worker = worker,
+        linkstatic = linkstatic,
+        main_function = main_function,
+        version = version,
+        expected_covered_expressions_percentage = expected_covered_expressions_percentage,
+        expected_uncovered_expression_count = expected_uncovered_expression_count,
+        strict_coverage_analysis = strict_coverage_analysis,
+        coverage_report_format = coverage_report_format,
+        experimental_coverage_source_patterns = experimental_coverage_source_patterns,
+        **kwargs
+    )
 
 def haskell_library(**kwargs):
     """Build a library from Haskell source.
