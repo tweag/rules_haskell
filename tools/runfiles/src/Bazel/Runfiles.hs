@@ -22,7 +22,7 @@ import GHC.Stack
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.Environment (getExecutablePath, lookupEnv)
 import qualified System.FilePath
-import System.FilePath (FilePath, (</>), (<.>), addTrailingPathSeparator)
+import System.FilePath (FilePath, (</>), (<.>), addTrailingPathSeparator, takeFileName)
 import System.Info (os)
 
 -- | Reference to Bazel runfiles, runfiles root or manifest file.
@@ -165,7 +165,7 @@ containsOneDataFile = loop
         isDir <- doesDirectoryExist fp
         if isDir
             then anyM loop =<< fmap (map (fp </>)) (listDirectory fp)
-            else pure $! fp /= "MANIFEST"
+            else pure $! takeFileName fp /= "MANIFEST"
 
 -- | Check if the given predicate holds on any of the given values.
 --
