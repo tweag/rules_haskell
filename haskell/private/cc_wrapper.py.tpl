@@ -245,25 +245,32 @@ class Args:
         #   -Xlinker <flag>
         # or
         #   -Wl,<flag1>,<flag2>...
-
-        # On Darwin GHC will pass the dead_strip_dylibs flag to the linker.
-        # This flag will remove any shared library loads from the binary's
-        # header that are not directly resolving undefined symbols in the
-        # binary. I.e. any indirect shared library dependencies will be
-        # removed. This conflicts with Bazel's builtin cc rules, which assume
-        # that the final binary will load all transitive shared library
-        # dependencies. In particlar shared libraries produced by Bazel's cc
-        # rules never load shared libraries themselves. This causes missing
-        # symbols at runtime on macOS, see #170. To avoid this issue, we drop
-        # the -dead_strip_dylibs flag if it is set.
+        ld_args = []
         if arg == "-Xlinker":
-            ld_arg = next(args)
+            ld_args.append(next(args))
+        elif arg.startswith("-Wl,"):
+            ld_args.extend(arg.split(",")[1:])
+        else:
+            # Not a linker argument, continue pattern matching in _handle_args.
+            return False
+
+        for ld_arg in ld_args:
             if self._prev_ld_arg is None:
                 if ld_arg == "-rpath":
                     self._prev_ld_arg = ld_arg
                 elif ld_arg.startswith("-rpath="):
                     self._handle_rpath(ld_arg[len("-rpath="):], out)
                 elif ld_arg == "-dead_strip_dylibs":
+                    # On Darwin GHC will pass the dead_strip_dylibs flag to the linker.
+                    # This flag will remove any shared library loads from the binary's
+                    # header that are not directly resolving undefined symbols in the
+                    # binary. I.e. any indirect shared library dependencies will be
+                    # removed. This conflicts with Bazel's builtin cc rules, which assume
+                    # that the final binary will load all transitive shared library
+                    # dependencies. In particlar shared libraries produced by Bazel's cc
+                    # rules never load shared libraries themselves. This causes missing
+                    # symbols at runtime on macOS, see #170. To avoid this issue, we drop
+                    # the -dead_strip_dylibs flag if it is set.
                     pass
                 else:
                     out.extend(["-Xlinker", ld_arg])
@@ -273,21 +280,8 @@ class Args:
             else:
                 # This indicates a programmer error and should not happen.
                 raise RuntimeError("Unhandled _prev_ld_arg '{}'.".format(self._prev_ld_arg))
-            return True
-        elif arg.startswith("-Wl,"):
-            ld_args = arg.split(",")[1:]
-            if len(ld_args) == 2 and ld_args[0] == "-rpath":
-                self._handle_rpath(ld_args[1], out)
-                return True
-            elif len(ld_args) == 1 and ld_args[0].startswith("-rpath="):
-                self._handle_rpath(ld_args[0][len("-rpath="):])
-            elif ld_args == ["-dead_strip_dylibs"]:
-                return True
-            else:
-                out.append(arg)
-                return True
-        else:
-            return False
+
+        return True
 
     def _handle_rpath(self, rpath, out):
         # Filter out all RPATH flags for now and manually add the needed ones
