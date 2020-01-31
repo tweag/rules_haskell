@@ -64,7 +64,7 @@ main = hspec $ do
       assertSuccess (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":load BC.C", "-e", "c"])
 
   describe "failures" $ do
-    all_failure_tests <- bazelQuery "kind(rule, //tests/failures/...) intersect attr('tags', 'manual', //tests/failures/...)"
+    all_failure_tests <- bazelQuery "kind('haskell_library|haskell_binary|haskell_test', //tests/failures/...) intersect attr('tags', 'manual', //tests/failures/...)"
 
     for_ all_failure_tests $ \test -> do
       it test $ do
