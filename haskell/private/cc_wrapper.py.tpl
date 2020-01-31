@@ -245,15 +245,22 @@ class Args:
         #   -Xlinker <flag>
         # or
         #   -Wl,<flag1>,<flag2>...
+        # It's important to maintain the style of argument passing.
+        # E.g. -Xlinker is incompatible with linker response files. Meaning,
+        # -Xlinker @ld.args.txt will fail, because gcc/clang/... will read the
+        # response file instead of passing it on to ld.
         ld_args = []
         if arg == "-Xlinker":
             ld_args.append(next(args))
+            use_xlinker = True
         elif arg.startswith("-Wl,"):
             ld_args.extend(arg.split(",")[1:])
+            use_xlinker = False
         else:
             # Not a linker argument, continue pattern matching in _handle_args.
             return False
 
+        forward_ld_args = []
         for ld_arg in ld_args:
             if self._prev_ld_arg is None:
                 if ld_arg == "-rpath":
@@ -273,13 +280,23 @@ class Args:
                     # the -dead_strip_dylibs flag if it is set.
                     pass
                 else:
-                    out.extend(["-Xlinker", ld_arg])
+                    forward_ld_args.append(ld_arg)
             elif self._prev_ld_arg == "-rpath":
                 self._prev_ld_arg = None
                 self._handle_rpath(ld_arg, out)
             else:
                 # This indicates a programmer error and should not happen.
                 raise RuntimeError("Unhandled _prev_ld_arg '{}'.".format(self._prev_ld_arg))
+
+        if forward_ld_args:
+            if use_xlinker:
+                out.extend(
+                    arg
+                    for ld_arg in forward_ld_args
+                    for arg in ["-Xlinker", ld_arg]
+                )
+            else:
+                out.append(",".join(["-Wl"] + forward_ld_args))
 
         return True
 
