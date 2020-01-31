@@ -416,29 +416,93 @@ def haskell_test(
         **kwargs
     )
 
-def haskell_library(**kwargs):
+def haskell_library(
+        name,
+        src_strip_prefix = "",
+        srcs = [],
+        extra_srcs = [],
+        deps = [],
+        data = [],
+        compiler_flags = [],
+        repl_ghci_args = [],
+        runcompile_flags = [],
+        plugins = [],
+        tools = [],
+        worker = None,
+        hidden_modules = [],
+        reexported_modules = {},
+        exports = [],
+        linkstatic = False,
+        package_name = "",
+        version = "",
+        **kwargs):
     """Build a library from Haskell source.
-
-    Example:
-    ```bzl
-    haskell_library(
-    name = "hello-lib",
-    srcs = glob(["src/**/*.hs"]),
-    src_strip_prefix = "src",
-    deps = [
-    "//hello-sublib:lib",
-    ],
-    reexported_modules = {
-    "//hello-sublib:lib": "Lib1 as HelloLib1, Lib2",
-    },
-    )
-    ```
 
     Every `haskell_library` target also defines an optional REPL target that is
     not built by default, but can be built on request. It works the same way as
     for `haskell_binary`.
+
+    Args:
+      name: A unique name for this rule.
+      src_strip_prefix: DEPRECATED. Attribute has no effect.
+      srcs: Haskell source files.
+      extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
+      deps: List of other Haskell libraries to be linked to this target.
+      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
+      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation.
+      tools: Extra tools needed at compile-time, like preprocessors.
+      worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
+      hidden_modules: Modules that should be unavailable for import by dependencies.
+      reexported_modules: A dictionary mapping dependencies to module reexports that should be available for import by dependencies.
+      exports: A list of other haskell libraries that will be transparently added as a dependency to every downstream rule
+      linkstatic: Create a static library, not both a static and a shared library.
+      package_name: Library name used in version macro generation. Only used
+        if the version attribute is defined, see version attribute
+        documentation. Optional, defaults to target name.
+      version: Library version. Not normally necessary unless to build a library
+        originally defined as a Cabal package. If this is specified, CPP version macro will be generated.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
+
+    Example:
+      ```bzl
+      haskell_library(
+          name = "hello-lib",
+          srcs = glob(["src/**/*.hs"]),
+          src_strip_prefix = "src",
+          deps = [
+              "//hello-sublib:lib",
+          ],
+          reexported_modules = {
+              "//hello-sublib:lib": "Lib1 as HelloLib1, Lib2",
+          },
+      )
+      ```
     """
-    _haskell_worker_wrapper("library", **kwargs)
+    _haskell_worker_wrapper(
+        "library",
+        name = name,
+        src_strip_prefix = src_strip_prefix,
+        srcs = srcs,
+        extra_srcs = extra_srcs,
+        deps = deps,
+        data = data,
+        compiler_flags = compiler_flags,
+        repl_ghci_args = repl_ghci_args,
+        runcompile_flags = runcompile_flags,
+        plugins = plugins,
+        tools = tools,
+        worker = worker,
+        hidden_modules = hidden_modules,
+        reexported_modules = reexported_modules,
+        exports = exports,
+        linkstatic = linkstatic,
+        package_name = package_name,
+        version = version,
+        **kwargs
+    )
 
 haskell_import = rule(
     _haskell_import_impl,
