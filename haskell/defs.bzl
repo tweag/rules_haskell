@@ -30,6 +30,9 @@ load(
     _ghc_plugin = "ghc_plugin",
 )
 
+# NOTE: Documentation needs to be added to the wrapper macros below.
+#   Currently it is not possible to automatically inherit rule documentation in
+#   wrapping macros. See https://github.com/bazelbuild/stardoc/issues/27
 _haskell_common_attrs = {
     "src_strip_prefix": attr.string(
         doc = "DEPRECATED. Attribute has no effect.",
@@ -249,17 +252,24 @@ def _haskell_worker_wrapper(rule_type, **kwargs):
     elif rule_type == "library":
         _haskell_library(**defaults)
 
-def haskell_binary(**kwargs):
+def haskell_binary(
+        name,
+        src_strip_prefix = "",
+        srcs = [],
+        extra_srcs = [],
+        deps = [],
+        data = [],
+        compiler_flags = [],
+        repl_ghci_args = [],
+        runcompile_flags = [],
+        plugins = [],
+        tools = [],
+        worker = None,
+        linkstatic = True,
+        main_function = "Main.main",
+        version = None,
+        **kwargs):
     """Build an executable from Haskell source.
-
-    Example:
-    ```bzl
-    haskell_binary(
-    name = "hello",
-    srcs = ["Main.hs", "Other.hs"],
-    deps = ["//lib:some_lib"]
-    )
-    ```
 
     Every `haskell_binary` target also defines an optional REPL target that is
     not built by default, but can be built on request. The name of the REPL
@@ -272,8 +282,53 @@ def haskell_binary(**kwargs):
     $ bazel run //:hello@repl
     ```
 
+    Args:
+      name: A unique name for this rule.
+      src_strip_prefix: DEPRECATED. Attribute has no effect.
+      srcs: Haskell source files.
+      extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
+      deps: List of other Haskell libraries to be linked to this target.
+      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
+      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation.
+      tools: Extra tools needed at compile-time, like preprocessors.
+      worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
+      linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
+      main_function: A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.
+      version:Executable version. If this is specified, CPP version macros will be generated for this build.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
+
+    Example:
+      ```bzl
+      haskell_binary(
+          name = "hello",
+          srcs = ["Main.hs", "Other.hs"],
+          deps = ["//lib:some_lib"]
+      )
+      ```
+
     """
-    _haskell_worker_wrapper("binary", **kwargs)
+    _haskell_worker_wrapper(
+        "binary",
+        name = name,
+        src_strip_prefix = src_strip_prefix,
+        srcs = srcs,
+        extra_srcs = extra_srcs,
+        deps = deps,
+        data = data,
+        compiler_flags = compiler_flags,
+        repl_ghci_args = repl_ghci_args,
+        runcompile_flags = runcompile_flags,
+        plugins = plugins,
+        tools = tools,
+        worker = worker,
+        linkstatic = linkstatic,
+        main_function = main_function,
+        version = version,
+        **kwargs
+    )
 
 def haskell_test(**kwargs):
     """Build a test suite.
