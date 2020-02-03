@@ -153,8 +153,6 @@ def _mk_binary_rule(**kwargs):
         attrs = attrs,
         outputs = {
             "runghc": "%{name}@runghc",
-            "repl": "%{name}@repl",
-            "repl_deprecated": "%{name}-repl",
         },
         toolchains = [
             "@bazel_tools//tools/cpp:toolchain_type",
@@ -189,8 +187,6 @@ _haskell_library = rule(
     ),
     outputs = {
         "runghc": "%{name}@runghc",
-        "repl": "%{name}@repl",
-        "repl_deprecated": "%{name}-repl",
     },
     toolchains = [
         "@bazel_tools//tools/cpp:toolchain_type",
@@ -294,6 +290,26 @@ def haskell_binary(
         **kwargs
     )
 
+    repl_kwargs = {
+        attr: kwargs[attr]
+        for attr in ["testonly", "tags"]
+        if attr in kwargs
+    }
+    native.alias(
+        # XXX Temporary backwards compatibility hack. Remove eventually.
+        # See https://github.com/tweag/rules_haskell/pull/460.
+        name = "%s-repl" % name,
+        actual = "%s@repl" % name,
+        **repl_kwargs
+    )
+    haskell_repl(
+        name = "%s@repl" % name,
+        deps = [name],
+        experimental_from_source = [":%s" % name],
+        repl_ghci_args = repl_ghci_args,
+        **repl_kwargs
+    )
+
 def haskell_test(
         name,
         src_strip_prefix = "",
@@ -378,6 +394,28 @@ def haskell_test(
         coverage_report_format = coverage_report_format,
         experimental_coverage_source_patterns = experimental_coverage_source_patterns,
         **kwargs
+    )
+
+    repl_kwargs = {
+        attr: kwargs[attr]
+        for attr in ["tags"]
+        if attr in kwargs
+    }
+    native.alias(
+        # XXX Temporary backwards compatibility hack. Remove eventually.
+        # See https://github.com/tweag/rules_haskell/pull/460.
+        name = "%s-repl" % name,
+        actual = "%s@repl" % name,
+        testonly = kwargs.get("testonly", True),
+        **repl_kwargs
+    )
+    haskell_repl(
+        name = "%s@repl" % name,
+        deps = [name],
+        experimental_from_source = [":%s" % name],
+        repl_ghci_args = repl_ghci_args,
+        testonly = kwargs.get("testonly", True),
+        **repl_kwargs
     )
 
 def haskell_library(
@@ -466,6 +504,26 @@ def haskell_library(
         package_name = package_name,
         version = version,
         **kwargs
+    )
+
+    repl_kwargs = {
+        attr: kwargs[attr]
+        for attr in ["testonly", "tags"]
+        if attr in kwargs
+    }
+    native.alias(
+        # XXX Temporary backwards compatibility hack. Remove eventually.
+        # See https://github.com/tweag/rules_haskell/pull/460.
+        name = "%s-repl" % name,
+        actual = "%s@repl" % name,
+        **repl_kwargs
+    )
+    haskell_repl(
+        name = "%s@repl" % name,
+        deps = [name],
+        experimental_from_source = [":%s" % name],
+        repl_ghci_args = repl_ghci_args,
+        **repl_kwargs
     )
 
 haskell_import = rule(
