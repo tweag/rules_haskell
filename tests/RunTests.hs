@@ -64,6 +64,8 @@ main = hspec $ do
       assertSuccess (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":load BC.C", "-e", "c"])
 
   describe "failures" $ do
+    -- Make sure not to include haskell_repl (@repl) or alias (-repl) targets
+    -- in the query. Those would not fail under bazel test.
     all_failure_tests <- bazelQuery "kind('haskell_library|haskell_binary|haskell_test', //tests/failures/...) intersect attr('tags', 'manual', //tests/failures/...)"
 
     for_ all_failure_tests $ \test -> do
