@@ -2,7 +2,7 @@
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
-def rules_haskell_worker_dependencies():
+def rules_haskell_worker_dependencies(**stack_kwargs):
     """Provide all repositories that are necessary for `rules_haskell`'s tools to
     function.
     """
@@ -25,4 +25,5 @@ def rules_haskell_worker_dependencies():
                 "vector",
             ],
             snapshot = "lts-14.1",
+            **stack_kwargs
         )
