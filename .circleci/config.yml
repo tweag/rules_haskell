@@ -24,32 +24,44 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Disk size
+          command: |
+            df -h
+      - run:
           name: Install Nix
           command: |
+            df -h
             curl https://nixos.org/nix/install | sh
+            df -h
 
       - run:
           name: Install cachix
           shell: /bin/bash -eilo pipefail
           command: |
+            df -h
             nix-env -iA cachix -f https://github.com/NixOS/nixpkgs/tarball/db557aab7b690f5e0e3348459f2e4dc8fd0d9298
+            df -h
 
       - run:
           name: Run cachix
           shell: /bin/bash -eilo pipefail
           command: |
+            df -h
             cachix use tweag
             cachix push tweag --watch-store
+            df -h
           background: true
 
       - run:
           name: Configure
           command: |
+            df -h
             mkdir -p ~/.cache/bazel/
 
             echo "build:ci --host_platform=@rules_haskell//haskell/platforms:darwin_x86_64_nixpkgs" >> .bazelrc.local
             echo "build:ci --disk_cache=~/.cache/bazel/" >> .bazelrc.local
             echo "common:ci --test_tag_filters -dont_test_on_darwin" >> .bazelrc.local
+            df -h
 
       - restore_cache:
           keys: # see note about 'Disk cache'
@@ -61,19 +73,24 @@ jobs:
           name: Prefetch Stackage snapshot
           shell: /bin/bash -eilo pipefail
           command: |
+            df -h
             # Retry if needed due to network flakiness.
             nix-shell --arg docTools false --pure --run \
               'cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd'
+            df -h
       - run:
           name: Build tests
           shell: /bin/bash -eilo pipefail
           command: |
+            df -h
             nix-shell --arg docTools false --pure --run \
               'bazel build --config ci //tests/...'
+            df -h
       - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
           command: |
+            df -h
 
             # Keep CI awake
             while true; do echo "."; sleep 60; done &
@@ -88,6 +105,7 @@ jobs:
             ./bazel-ci-bin/tests/run-tests
             bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
             '
+            df -h
 
         # see note about 'Disk cache'
       - save_cache:
@@ -99,8 +117,10 @@ jobs:
           name: Clean up cache
           shell: /bin/bash -eilo pipefail
           command: |
+            df -h
             rm -rf ~/.cache/bazel/
             mkdir -p ~/.cache/bazel/
+            df -h
 
       - save_cache:
           key: v1-rules_haskell-empty-master-{{ .BuildNum }}
