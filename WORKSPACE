@@ -359,6 +359,7 @@ haskell_package_repository_dummy(
 
 nixpkgs_package(
     name = "nixpkgs_nodejs",
+    build_file_content = 'exports_files(glob(["nixpkgs_nodejs/**"]))',
     # XXX Indirection derivation to make all of NodeJS rooted in
     # a single directory. We shouldn't need this, but it's
     # a workaround for
@@ -388,6 +389,12 @@ http_archive(
     ],
 )
 
+load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories")
+
+node_repositories(
+    vendored_node = "@nixpkgs_nodejs",
+)
+
 http_archive(
     name = "io_bazel_rules_sass",
     sha256 = "d5e0c0d16fb52f3dcce5bd7830d92d4813eb01bac0211119e74ec9e65eaf3b86",
@@ -405,12 +412,6 @@ rules_sass_dependencies()
 load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
 
 sass_repositories()
-
-load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories")
-
-node_repositories(
-    vendored_node = "@nixpkgs_nodejs",
-)
 
 http_archive(
     name = "io_bazel_skydoc",
