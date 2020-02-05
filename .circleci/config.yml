@@ -93,7 +93,7 @@ jobs:
             df -h
 
             # Keep CI awake
-            while true; do echo "."; sleep 60; done &
+            while true; do df -h; sleep 60; done &
 
             # XXX 2019-01-22 Disable start script checking on Darwin
             # due to a clash between binutils and clang.
