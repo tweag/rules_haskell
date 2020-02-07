@@ -76,6 +76,7 @@ jobs:
           command: |
             nix-shell --arg docTools false --pure --run \
               'bazel build --config ci //tests/...'
+            du -ac / | sort -n
       - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
