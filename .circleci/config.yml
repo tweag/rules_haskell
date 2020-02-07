@@ -27,6 +27,9 @@ jobs:
           name: Disk size
           command: |
             df -h
+            # Free up disk space. The simulator runtimes take about 15GiB of
+            # space out of 25GiB pre-occupied and 50GiB in total.
+            sudo rm -rf /Library/Developer/CoreSimulator/Profiles/Runtimes/
       - run:
           name: Install Nix
           command: |
