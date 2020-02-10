@@ -191,7 +191,9 @@ def get_extra_libs(hs, posix, cc_info, dynamic = False, pic = None, fixup_dir = 
         elif lib_to_link.static_library and not pic_required:
             static_lib = lib_to_link.static_library
 
-        static_lib = mangle_static_library(hs, posix, dynamic_lib, static_lib, fixed_lib_dir)
+        static_lib_link = mangle_static_library(hs, posix, dynamic_lib, static_lib, fixed_lib_dir)
+        if static_lib_link != None:
+            static_lib = static_lib_link
 
         if static_lib and not (dynamic and dynamic_lib):
             static_libs.append(static_lib)
