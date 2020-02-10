@@ -154,17 +154,13 @@ def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
       outdir: Output director for the symbolic link, if necessary.
 
     Returns:
-      The new static library symlink, if created, otherwise static_lib.
+      The new static library symlink, if created, otherwise None.
     """
-    if dynamic_lib == None:
-        return static_lib
-    if static_lib == None:
-        return static_lib
+    if dynamic_lib == None or static_lib == None:
+        return None
     libname = get_lib_name(dynamic_lib)
-    if is_hs_library(libname):
-        return static_lib
-    if get_lib_name(static_lib) == libname:
-        return static_lib
+    if is_hs_library(libname) or get_lib_name(static_lib) == libname:
+        return None
     else:
         link = hs.actions.declare_file(
             paths.join(outdir, "lib" + libname + "." + static_lib.extension),
