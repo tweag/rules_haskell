@@ -12,7 +12,7 @@ load(
     ":private/set.bzl",
     "set",
 )
-load(":providers.bzl", "get_ghci_extra_libs")
+load(":private/cc_libraries.bzl", "get_ghci_extra_libs")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_runghc(

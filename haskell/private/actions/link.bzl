@@ -2,7 +2,7 @@
 
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":providers.bzl", "create_link_config")
+load(":private/cc_libraries.bzl", "create_link_config")
 
 def merge_parameter_files(hs, file1, file2):
     """Merge two GHC parameter files into one.
