@@ -21,6 +21,9 @@ load(
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
+)
+load(
+    ":private/cc_libraries.bzl",
     "get_ghci_extra_libs",
 )
 

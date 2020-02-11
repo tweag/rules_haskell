@@ -7,6 +7,9 @@ load(
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
+)
+load(
+    "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_ghci_extra_libs",
 )
 load(":private/context.bzl", "haskell_context", "render_env")

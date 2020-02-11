@@ -20,6 +20,9 @@ load(
     ":providers.bzl",
     "HaskellLibraryInfo",
     "all_dependencies_package_ids",
+)
+load(
+    ":private/cc_libraries.bzl",
     "get_ghci_extra_libs",
 )
 load(":private/set.bzl", "set")

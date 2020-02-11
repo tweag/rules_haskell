@@ -2,7 +2,8 @@
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":providers.bzl", "all_package_ids", "get_ghci_extra_libs")
+load(":providers.bzl", "all_package_ids")
+load(":private/cc_libraries.bzl", "get_ghci_extra_libs")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",

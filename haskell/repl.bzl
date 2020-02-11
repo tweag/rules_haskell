@@ -17,6 +17,9 @@ load(
     "HaskellLibraryInfo",
     "HaskellToolchainLibraryInfo",
     "all_package_ids",
+)
+load(
+    "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_ghci_extra_libs",
 )
 load(":private/set.bzl", "set")

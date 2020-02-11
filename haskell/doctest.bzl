@@ -8,6 +8,9 @@ load(":private/set.bzl", "set")
 load(
     "@rules_haskell//haskell:providers.bzl",
     "HaskellInfo",
+)
+load(
+    "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_ghci_extra_libs",
 )
 
