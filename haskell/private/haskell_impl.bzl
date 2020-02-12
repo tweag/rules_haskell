@@ -592,7 +592,7 @@ def haskell_library_impl(ctx):
     linking_context = cc_common.create_linking_context(
         libraries_to_link = libraries_to_link,
     )
-    cc_info = cc_common.merge_cc_infos(
+    out_cc_info = cc_common.merge_cc_infos(
         cc_infos = [
             CcInfo(
                 compilation_context = compilation_context,
@@ -603,7 +603,7 @@ def haskell_library_impl(ctx):
 
     return [
         hs_info,
-        cc_info,
+        out_cc_info,
         coverage_info,
         default_info,
         lib_info,
