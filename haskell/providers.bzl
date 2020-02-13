@@ -86,3 +86,25 @@ GhcPluginInfo = provider(
         "tools": "Plugin tools.",
     },
 )
+
+HaskellCcLibrariesInfo = provider(
+    doc = "Collects information to CcInfo dependencies to a Haskell target.",
+    fields = {
+        "libraries": "dict, maps the cc_library_key of a LibraryToLink to HaskellCcLibraryInfo.",
+    },
+)
+
+HaskellCcLibraryInfo = provider(
+    doc = """Extends a LibraryToLink for compatibility with GHC.
+
+        Provides symbolic links for static libraries that don't match the
+        dynamic library name due to Bazel's name mangling.
+
+        Tracks whether a library is a Haskell or C library.
+    """,
+    fields = {
+        "static_library_link": "File or None, mangled static library if required.",
+        "pic_static_library_link": "File or None, mangled PIC static library if required.",
+        "is_haskell": "bool, whether the library is a Haskell library.",
+    },
+)

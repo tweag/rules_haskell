@@ -4,6 +4,7 @@ This includes C and Haskell libraries as both are tracked in CcInfo
 providers.
 """
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/packages.bzl",
@@ -19,6 +20,12 @@ load(
     "mangle_static_library",
     "rel_to_pkgroot",
     "target_unique_name",
+)
+load(
+    ":providers.bzl",
+    "HaskellCcLibrariesInfo",
+    "HaskellCcLibraryInfo",
+    "HaskellInfo",
 )
 
 def _min_lib_to_link(a, b):
@@ -296,3 +303,109 @@ def create_link_config(hs, posix, cc_info, binary, args, dynamic = None, pic = N
     ])
 
     return (cache_file, static_libs, dynamic_libs)
+
+def cc_library_key(library_to_link):
+    """Convert a LibraryToLink into a hashable dictionary key."""
+    return struct(
+        dynamic_library = library_to_link.dynamic_library,
+        interface_library = library_to_link.interface_library,
+        static_library = library_to_link.static_library,
+        pic_static_library = library_to_link.pic_static_library,
+    )
+
+def merge_HaskellCcLibrariesInfo(infos):
+    """Merge multiple HaskellCcLibrariesInfo."""
+    return HaskellCcLibrariesInfo(
+        libraries = dicts.add(*[info.libraries for info in infos]),
+    )
+
+def extend_HaskellCcLibrariesInfo(
+        ctx,
+        cc_libraries_info,
+        cc_info,
+        is_haskell):
+    """Adapt new LibraryToLink and add to HaskellCcLibrariesInfo.
+
+    Generate a new HaskellCcLibraryInfo for each LibraryToLink in cc_info that
+    is not already contained in cc_libraries_info and return a new extended
+    CcLibrariesInfo.
+
+    Args:
+      ctx: Aspect or rule context.
+      cc_libraries_info: HaskellCcLibrariesInfo of all dependencies.
+      cc_info: CcInfo of the current target.
+      is_haskell: Bool, whether the current target is a Haskell library.
+
+    Returns:
+      HaskellCcLibrariesInfo
+    """
+    hs = ctx.toolchains["@rules_haskell//haskell:toolchain"]
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+    libraries = dict(cc_libraries_info.libraries)
+
+    for lib_to_link in cc_info.linking_context.libraries_to_link.to_list():
+        key = cc_library_key(lib_to_link)
+        if key in libraries:
+            continue
+        if is_haskell:
+            libraries[key] = HaskellCcLibraryInfo(
+                static_library_link = None,
+                pic_static_library_link = None,
+                is_haskell = True,
+            )
+        else:
+            libraries[key] = HaskellCcLibraryInfo(
+                static_library_link = mangle_static_library(
+                    ctx,
+                    posix,
+                    lib_to_link.dynamic_library,
+                    lib_to_link.static_library,
+                    outdir = "_ghc_a",
+                ),
+                pic_static_library_link = mangle_static_library(
+                    ctx,
+                    posix,
+                    lib_to_link.dynamic_library,
+                    lib_to_link.pic_static_library,
+                    outdir = "_ghc_pic_a",
+                ),
+                is_haskell = False,
+            )
+
+    return HaskellCcLibrariesInfo(libraries = libraries)
+
+def _haskell_cc_libraries_aspect_impl(target, ctx):
+    hs = ctx.toolchains["@rules_haskell//haskell:toolchain"]
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+
+    cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = [
+        dep[HaskellCcLibrariesInfo]
+        for attr in ["deps", "exports", "plugins"]
+        for dep in getattr(ctx.rule.attr, attr, [])
+        if HaskellCcLibrariesInfo in dep
+    ])
+
+    if CcInfo in target:
+        cc_libraries_info = extend_HaskellCcLibrariesInfo(
+            ctx = ctx,
+            cc_libraries_info = cc_libraries_info,
+            cc_info = target[CcInfo],
+            is_haskell = HaskellInfo in target,
+        )
+
+    return [cc_libraries_info]
+
+haskell_cc_libraries_aspect = aspect(
+    implementation = _haskell_cc_libraries_aspect_impl,
+    attr_aspects = ["deps", "exports", "plugins"],
+    provides = [HaskellCcLibrariesInfo],
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
+)
+"""Extend LibraryToLink of C dependencies for GHC compatibility
+
+Create a symbolic link for each static library whose name doesn't match the
+mangled name of the corresponding dynamic library.
+"""
