@@ -112,29 +112,6 @@ def join_path_list(hs, paths):
     sep = ";" if hs.toolchain.is_windows else ":"
     return sep.join(paths)
 
-def make_library_path(hs, libs, prefix = None):
-    """Return a string value for using as LD_LIBRARY_PATH or similar.
-
-    Args:
-      hs: Haskell context.
-      libs: List of library files that should be available
-      prefix: String, an optional prefix to add to every path.
-
-    Returns:
-      String: paths to the given library directories separated by ":" (Unix) or
-        ";" (Windows).
-    """
-    r = set.empty()
-
-    for lib in libs.to_list():
-        lib_dir = paths.dirname(lib.path)
-        if prefix:
-            lib_dir = paths.join(prefix, lib_dir)
-
-        set.mutable_insert(r, lib_dir)
-
-    return join_path_list(hs, set.to_list(r))
-
 def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
     """Mangle a static library to match a dynamic library name.
 
