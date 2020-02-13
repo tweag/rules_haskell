@@ -5,6 +5,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":providers.bzl",
     "HaddockInfo",
+    "HaskellCcLibrariesInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
 )
@@ -208,6 +209,7 @@ haskell_doc_aspect = aspect(
         ),
     },
     attr_aspects = ["deps", "exports"],
+    required_aspect_providers = [HaskellCcLibrariesInfo],
     toolchains = [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
