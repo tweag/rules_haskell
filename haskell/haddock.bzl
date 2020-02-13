@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
-    "@rules_haskell//haskell:providers.bzl",
+    ":providers.bzl",
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
@@ -335,15 +335,16 @@ haskell_doc = rule(
         ),
     },
     toolchains = ["@rules_haskell//haskell:toolchain"],
-)
-"""Create API documentation.
+    doc = """\
+Create API documentation.
 
 Builds API documentation (using [Haddock][haddock]) for the given
 Haskell libraries. It will automatically build documentation for any
 transitive dependencies to allow for cross-package documentation
 linking.
 
-Example:
+### Examples
+
   ```bzl
   haskell_library(
     name = "my-lib",
@@ -357,4 +358,5 @@ Example:
   ```
 
 [haddock]: http://haskell-haddock.readthedocs.io/en/latest/
-"""
+""",
+)

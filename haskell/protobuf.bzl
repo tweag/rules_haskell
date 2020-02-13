@@ -6,7 +6,7 @@ load(
 )
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
-    "@rules_haskell//haskell:providers.bzl",
+    ":providers.bzl",
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
@@ -294,12 +294,13 @@ haskell_proto_library = rule(
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//protobuf:toolchain",
     ],
-)
+    doc = """\
+Generate Haskell library allowing to use protobuf definitions.
 
-"""Generate Haskell library allowing to use protobuf definitions with help
-of [`proto-lens`](https://github.com/google/proto-lens#readme).
+Uses [`proto-lens`](https://github.com/google/proto-lens#readme).
 
-Example:
+### Examples
+
   ```bzl
   proto_library(
     name = "foo_proto",
@@ -314,7 +315,8 @@ Example:
 
 `haskell_proto_library` targets require `haskell_proto_toolchain` to be
 registered.
-"""
+""",
+)
 
 def _protobuf_toolchain_impl(ctx):
     return [
@@ -364,7 +366,7 @@ def haskell_proto_toolchain(
     need to *register* the toolchain using `register_toolchains` in your
     `WORKSPACE` file (see example below).
 
-    Example:
+    ### Examples
 
       In a `BUILD` file:
 

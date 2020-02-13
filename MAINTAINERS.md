@@ -53,7 +53,7 @@ nonetheless, so bumping bazel regularly is required.
 
 - [ ] Bump bazel download link for bazel in `azure-pipelines.yml`
 - [ ] Update all bazel rules dependencies in `WORKSPACE` (e.g.
-      `io_bazel_skydoc`)
+      `io_bazel_stardoc`)
 - [ ] Update bazel in nixpkgs and bump `nixpkgs/default.nix`
 - [ ] Bump MAX_BAZEL_* in `start`
 - If we are updating to a new LTS:

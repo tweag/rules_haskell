@@ -3,9 +3,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def rules_haskell_dependencies():
-    """Provide all repositories that are necessary for `rules_haskell` to
-    function.
-    """
+    """Provide all repositories that are necessary for `rules_haskell` to function."""
     excludes = native.existing_rules().keys()
 
     if "platforms" not in excludes:
@@ -43,17 +41,17 @@ def rules_haskell_dependencies():
     if "rules_sh" not in excludes:
         http_archive(
             name = "rules_sh",
-            sha256 = "8f2722359c0e13a258c341aac69b8faa96b21e8f3382bd375d78c52f8b5a3d34",
-            strip_prefix = "rules_sh-0.1.1",
-            urls = ["https://github.com/tweag/rules_sh/archive/v0.1.1.tar.gz"],
+            sha256 = "2ccea268d08e2acf956536417108c1be7e04836f5fcd1a060dbeea6261afc438",
+            strip_prefix = "rules_sh-66f37c9709b66f52b26d2b19c2ec0cfd5a06203a",
+            urls = ["https://github.com/tweag/rules_sh/archive/66f37c9709b66f52b26d2b19c2ec0cfd5a06203a.tar.gz"],
         )
 
     if "io_tweag_rules_nixpkgs" not in excludes:
         http_archive(
             name = "io_tweag_rules_nixpkgs",
-            sha256 = "fdd669b5b1f594d92b185dce554db23fc407ea56285d79613e52c7426abb472f",
-            strip_prefix = "rules_nixpkgs-49d527ca4679d0279098c931d788256fc63c127f",
-            urls = ["https://github.com/tweag/rules_nixpkgs/archive/49d527ca4679d0279098c931d788256fc63c127f.tar.gz"],
+            sha256 = "75f6b0309c2e4e44680e039a70e0e92608aa411f39cb60d12f29b0b537606d6b",
+            strip_prefix = "rules_nixpkgs-9a7ba0c47d001c9be97e7db2daca724743495810",
+            urls = ["https://github.com/tweag/rules_nixpkgs/archive/9a7ba0c47d001c9be97e7db2daca724743495810.tar.gz"],
         )
 
     if "com_google_protobuf" not in excludes:
@@ -88,5 +86,9 @@ def rules_haskell_dependencies():
         )
 
 def haskell_repositories():
-    """DEPRECATED alias for rules_haskell_dependencies"""
+    """Alias for rules_haskell_dependencies
+
+    Deprecated:
+      Use rules_haskell_dependencies instead.
+    """
     rules_haskell_dependencies()

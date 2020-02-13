@@ -272,7 +272,7 @@ def haskell_toolchain(
     the toolchain using `register_toolchains` in your `WORKSPACE` file (see
     example below).
 
-    Example:
+    ### Examples
 
       In a `BUILD` file:
 

@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
-    "@rules_haskell//haskell:providers.bzl",
+    ":providers.bzl",
     "C2hsLibraryInfo",
 )
 load(":cc.bzl", "cc_interop_info")
@@ -171,7 +171,7 @@ def c2hs_toolchain(name, c2hs, **kwargs):
     need to *register* the toolchain using `register_toolchains` in
     your `WORKSPACE` file (see example below).
 
-    Example:
+    ### Examples
 
       In a `BUILD` file:
 

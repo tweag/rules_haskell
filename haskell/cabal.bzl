@@ -399,10 +399,11 @@ haskell_cabal_library = rule(
         "@rules_sh//sh/posix:toolchain_type",
     ],
     fragments = ["cpp"],
-)
-"""Use Cabal to build a library.
+    doc = """\
+Use Cabal to build a library.
 
-Example:
+### Examples
+
   ```bzl
   haskell_cabal_library(
       name = "lib-0.1.0.0",
@@ -427,7 +428,8 @@ A `haskell_cabal_library` can be substituted for any
 However, using a plain `haskell_library` sometimes leads to better
 build times, and does not require drafting a `.cabal` file.
 
-"""
+""",
+)
 
 def _haskell_cabal_binary_impl(ctx):
     hs = haskell_context(ctx)
@@ -564,10 +566,11 @@ haskell_cabal_binary = rule(
         "@rules_sh//sh/posix:toolchain_type",
     ],
     fragments = ["cpp"],
-)
-"""Use Cabal to build a binary.
+    doc = """\
+Use Cabal to build a binary.
 
-Example:
+### Examples
+
   ```bzl
   haskell_cabal_binary(
       name = "happy",
@@ -583,7 +586,8 @@ This rule does not use `cabal-install`. It calls the package's
 All sources files that would have been part of a Cabal sdist need to
 be listed in `srcs` (crucially, including the `.cabal` file).
 
-"""
+""",
+)
 
 # Temporary hardcoded list of core libraries. This will no longer be
 # necessary once Stack 2.0 is released.
@@ -1088,6 +1092,64 @@ _fetch_stack = repository_rule(
 def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
+    This rule will use Stack to compute the transitive closure of the
+    subset of the given snapshot listed in the `packages` attribute, and
+    generate a dependency graph. If a package in the closure depends on
+    system libraries or other external libraries, use the `extra_deps`
+    attribute to list them. This attribute works like the
+    `--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
+
+    Packages that are in the snapshot need not have their versions
+    specified. But any additional packages or version overrides will have
+    to be specified with a package identifier of the form
+    `<package>-<version>` in the `packages` attribute.
+
+    In the external repository defined by the rule, all given packages are
+    available as top-level targets named after each package. Additionally, the
+    dependency graph is made available within `packages.bzl` as the `dict`
+    `packages` mapping unversioned package names to structs holding the fields
+      - name: The unversioned package name.
+      - version: The package version.
+      - deps: The list of package dependencies according to stack.
+      - flags: The list of Cabal flags.
+
+    ### Examples
+
+      ```bzl
+      stack_snapshot(
+          name = "stackage",
+          packages = ["conduit", "lens", "zlib-0.6.2"],
+          vendored_packages = {"split": "//split:split"},
+          tools = ["@happy//:happy", "@c2hs//:c2hs"],
+          snapshot = "lts-13.15",
+          extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
+      )
+      ```
+      defines `@stackage//:conduit`, `@stackage//:lens`,
+      `@stackage//:zlib` library targets.
+
+      Alternatively
+
+      ```bzl
+      stack_snapshot(
+          name = "stackage",
+          packages = ["conduit", "lens", "zlib"],
+          flags = {"zlib": ["-non-blocking-ffi"]},
+          tools = ["@happy//:happy", "@c2hs//:c2hs"],
+          local_Snapshot = "//:snapshot.yaml",
+          extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
+      ```
+
+      Does the same as the previous example, provided there is a
+      `snapshot.yaml`, at the root of the repository with content
+
+      ```yaml
+      resolver: lts-13.15
+
+      packages:
+        - zlib-0.6.2
+      ```
+
     Args:
       snapshot: The name of a Stackage snapshot. Incompatible with local_snapshot.
       local_snapshot: A custom Stack snapshot file, as per the Stack documentation.
@@ -1112,61 +1174,6 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
-
-    Examples:
-
-      ```bzl
-      stack_snapshot(
-          name = "stackage",
-          packages = ["conduit", "lens", "zlib-0.6.2"],
-          vendored_packages = {"split": "//split:split"},
-          tools = ["@happy//:happy", "@c2hs//:c2hs"],
-          snapshot = "lts-13.15",
-          extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
-      )
-      ```
-      defines `@stackage//:conduit`, `@stackage//:lens`,
-      `@stackage//:zlib` library targets.
-
-      Alternatively
-      ```bzl
-      stack_snapshot(
-          name = "stackage",
-          packages = ["conduit", "lens", "zlib"],
-          flags = {"zlib": ["-non-blocking-ffi"]},
-          tools = ["@happy//:happy", "@c2hs//:c2hs"],
-          local_Snapshot = "//:snapshot.yaml",
-          extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
-      ```
-      Does the same as the previous example, provided there is a
-      `snapshot.yaml`, at the root of the repository with content
-      ```yaml
-      resolver: lts-13.15
-
-      packages:
-        - zlib-0.6.2
-      ```
-
-    This rule will use Stack to compute the transitive closure of the
-    subset of the given snapshot listed in the `packages` attribute, and
-    generate a dependency graph. If a package in the closure depends on
-    system libraries or other external libraries, use the `extra_deps`
-    attribute to list them. This attribute works like the
-    `--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
-
-    Packages that are in the snapshot need not have their versions
-    specified. But any additional packages or version overrides will have
-    to be specified with a package identifier of the form
-    `<package>-<version>` in the `packages` attribute.
-
-    In the external repository defined by the rule, all given packages are
-    available as top-level targets named after each package. Additionally, the
-    dependency graph is made available within `packages.bzl` as the `dict`
-    `packages` mapping unversioned package names to structs holding the fields
-      - name: The unversioned package name.
-      - version: The package version.
-      - deps: The list of package dependencies according to stack.
-      - flags: The list of Cabal flags.
     """
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")

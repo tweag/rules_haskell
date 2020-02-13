@@ -18,7 +18,7 @@ trap finish EXIT
 
 bazel build //docs:api_html
 mkdir $SCRATCH/api
-unzip -d $SCRATCH/api bazel-bin/docs/api_html-skydoc.zip
+unzip -d $SCRATCH/api bazel-bin/docs/api_html-stardoc.zip
 
 bazel build //docs:guide_html
 mkdir $SCRATCH/guide

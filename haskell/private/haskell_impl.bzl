@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(
-    "@rules_haskell//haskell:providers.bzl",
+    ":providers.bzl",
     "C2hsLibraryInfo",
     "HaddockInfo",
     "HaskellInfo",

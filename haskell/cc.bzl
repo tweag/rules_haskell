@@ -9,7 +9,7 @@ load(
     "C_COMPILE_ACTION_NAME",
 )
 load(
-    "@rules_haskell//haskell:providers.bzl",
+    "//haskell:providers.bzl",
     "HaskellInfo",
 )
 
