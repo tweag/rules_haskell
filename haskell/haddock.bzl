@@ -11,6 +11,7 @@ load(
 load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_ghci_extra_libs",
+    "haskell_cc_libraries_aspect",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
@@ -329,7 +330,10 @@ haskell_doc = rule(
     _haskell_doc_rule_impl,
     attrs = {
         "deps": attr.label_list(
-            aspects = [haskell_doc_aspect],
+            aspects = [
+                haskell_cc_libraries_aspect,
+                haskell_doc_aspect,
+            ],
             doc = "List of Haskell libraries to generate documentation for.",
         ),
         "index_transitive_deps": attr.bool(

@@ -18,6 +18,7 @@ load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
     "extend_HaskellCcLibrariesInfo",
+    "haskell_cc_libraries_aspect",
 )
 
 def _capitalize_first_letter(c):
@@ -306,7 +307,10 @@ haskell_proto_library = rule(
         "deps": attr.label_list(
             mandatory = True,
             allow_files = False,
-            aspects = [_haskell_proto_aspect],
+            aspects = [
+                _haskell_proto_aspect,
+                haskell_cc_libraries_aspect,
+            ],
             doc = "List of `proto_library` targets to use for generation.",
         ),
     },
@@ -369,6 +373,7 @@ _protobuf_toolchain = rule(
         ),
         "deps": attr.label_list(
             doc = "List of other Haskell libraries to be linked to protobuf libraries.",
+            aspects = [haskell_cc_libraries_aspect],
         ),
     },
 )

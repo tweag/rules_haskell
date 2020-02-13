@@ -21,6 +21,7 @@ load(
 load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_ghci_extra_libs",
+    "haskell_cc_libraries_aspect",
 )
 load(":private/set.bzl", "set")
 
@@ -383,7 +384,10 @@ haskell_repl = rule(
             default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
         ),
         "deps": attr.label_list(
-            aspects = [haskell_repl_aspect],
+            aspects = [
+                haskell_cc_libraries_aspect,
+                haskell_repl_aspect,
+            ],
             doc = "List of Haskell targets to load into the REPL",
         ),
         "experimental_from_source": attr.string_list(

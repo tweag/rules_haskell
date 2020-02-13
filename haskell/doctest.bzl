@@ -12,6 +12,7 @@ load(
 load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_ghci_extra_libs",
+    "haskell_cc_libraries_aspect",
 )
 
 def _doctest_toolchain_impl(ctx):
@@ -201,6 +202,7 @@ haskell_doctest = rule(
     attrs = {
         "deps": attr.label_list(
             doc = "List of Haskell targets to lint.",
+            aspects = [haskell_cc_libraries_aspect],
         ),
         "doctest_flags": attr.string_list(
             doc = "Extra flags to pass to doctest executable.",

@@ -18,6 +18,7 @@ load(
     _haskell_repl = "haskell_repl",
     _haskell_repl_aspect = "haskell_repl_aspect",
 )
+load(":private/cc_libraries.bzl", "haskell_cc_libraries_aspect")
 
 # For re-exports:
 load(
@@ -41,14 +42,18 @@ _haskell_common_attrs = {
     "extra_srcs": attr.label_list(
         allow_files = True,
     ),
-    "deps": attr.label_list(),
+    "deps": attr.label_list(
+        aspects = [haskell_cc_libraries_aspect],
+    ),
     "data": attr.label_list(
         allow_files = True,
     ),
     "compiler_flags": attr.string_list(),
     "repl_ghci_args": attr.string_list(),
     "runcompile_flags": attr.string_list(),
-    "plugins": attr.label_list(),
+    "plugins": attr.label_list(
+        aspects = [haskell_cc_libraries_aspect],
+    ),
     "tools": attr.label_list(
         cfg = "host",
     ),
@@ -178,6 +183,7 @@ _haskell_library = rule(
         reexported_modules = attr.label_keyed_string_dict(),
         exports = attr.label_list(
             default = [],
+            aspects = [haskell_cc_libraries_aspect],
         ),
         linkstatic = attr.bool(
             default = False,
