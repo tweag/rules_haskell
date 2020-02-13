@@ -28,6 +28,7 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
+load(":private/cc_libraries.bzl", "deps_HaskellCcLibrariesInfo")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -162,6 +163,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
     )
+    cc_libraries_info = deps_HaskellCcLibrariesInfo(ctx.attr.deps + ctx.attr.plugins)
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [
             dep[CcInfo]
@@ -205,6 +207,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         posix,
         dep_info,
         plugin_dep_info,
+        cc_libraries_info,
         cc_info,
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
@@ -233,6 +236,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         cc,
         posix,
         dep_info,
+        cc_libraries_info,
         cc_info,
         ctx.files.extra_srcs,
         user_compile_flags,
@@ -271,6 +275,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         package_databases = dep_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
+        cc_libraries_info = cc_libraries_info,
         cc_info = cc_info,
     )
 
@@ -346,6 +351,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             hs = hs,
             c = c,
             posix = posix,
+            cc_libraries_info = cc_libraries_info,
             cc_info = cc_info,
             runfiles = ctx.runfiles(collect_data = True).files,
         )),
@@ -359,6 +365,7 @@ def haskell_library_impl(ctx):
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
     )
+    cc_libraries_info = deps_HaskellCcLibrariesInfo(ctx.attr.deps + ctx.attr.exports + ctx.attr.plugins)
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [
             dep[CcInfo]
@@ -405,6 +412,7 @@ def haskell_library_impl(ctx):
         posix,
         dep_info,
         plugin_dep_info,
+        cc_libraries_info,
         cc_info,
         srcs = srcs_files,
         import_dir_map = import_dir_map,
@@ -458,6 +466,7 @@ def haskell_library_impl(ctx):
             cc,
             posix,
             dep_info,
+            cc_libraries_info,
             cc_info,
             depset(ctx.files.extra_srcs),
             c.objects_dir,
@@ -473,6 +482,7 @@ def haskell_library_impl(ctx):
         hs,
         posix,
         dep_info,
+        cc_libraries_info,
         cc_info,
         with_shared,
         exposed_modules_file,
@@ -546,6 +556,7 @@ def haskell_library_impl(ctx):
             package_databases = dep_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
+            cc_libraries_info = cc_libraries_info,
             cc_info = cc_info,
             lib_info = lib_info,
         )
@@ -617,6 +628,7 @@ def haskell_library_impl(ctx):
                 name = ctx.label.name,
                 c = c,
                 posix = posix,
+                cc_libraries_info = cc_libraries_info,
                 cc_info = cc_info,
                 runfiles = default_info.default_runfiles.files if getattr(default_info, "default_runfiles", None) else depset(),
             ),

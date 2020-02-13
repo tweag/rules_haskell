@@ -22,6 +22,7 @@ def build_haskell_runghc(
         user_compile_flags,
         extra_args,
         hs_info,
+        cc_libraries_info,
         cc_info,
         output,
         package_databases,
@@ -59,6 +60,7 @@ def build_haskell_runghc(
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
         posix,
+        cc_libraries_info,
         cc_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
