@@ -205,7 +205,12 @@ def get_lib_extension(lib):
 def is_hs_library(lib):
     """Returns True if the library belongs into the hs-libraries field."""
     libname = get_lib_name(lib)
-    return libname.startswith("HS") or libname.startswith("Cffi")
+
+    # The toolchain libraries may contain C libraries, which should not be
+    # linked against directly, but rather through the package configuration. In
+    # particular ffi, if included in the GHC bindist, comes in different
+    # flavours for different GHC ways (e.g. threaded).
+    return libname.startswith("HS") or lib.owner == Label("@rules_haskell//haskell:toolchain-libraries")
 
 def get_dynamic_hs_lib_name(ghc_version, lib):
     """Return name of library by dropping extension,
