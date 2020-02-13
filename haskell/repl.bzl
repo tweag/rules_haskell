@@ -13,6 +13,7 @@ load(
 )
 load(
     ":providers.bzl",
+    "HaskellCcLibrariesInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellToolchainLibraryInfo",
@@ -20,8 +21,10 @@ load(
 )
 load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
+    "deps_HaskellCcLibrariesInfo",
     "get_ghci_extra_libs",
     "haskell_cc_libraries_aspect",
+    "merge_HaskellCcLibrariesInfo",
 )
 load(":private/set.bzl", "set")
 
@@ -33,6 +36,7 @@ HaskellReplLoadInfo = provider(
     fields = {
         "source_files": "Set of files that contain Haskell modules.",
         "import_dirs": "Set of Haskell import directories.",
+        "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of transitive C dependencies.",
         "compiler_flags": "Flags to pass to the Haskell compiler.",
         "repl_ghci_args": "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
@@ -47,6 +51,7 @@ HaskellReplDepInfo = provider(
     fields = {
         "package_ids": "Set of workspace unique package identifiers.",
         "package_databases": "Set of package cache files.",
+        "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of the package itself (includes its transitive dependencies).",
     },
 )
@@ -78,6 +83,7 @@ HaskellReplInfo = provider(
 def _merge_HaskellReplLoadInfo(load_infos):
     source_files = depset()
     import_dirs = depset()
+    cc_libraries_infos = []
     cc_infos = []
     compiler_flags = []
     repl_ghci_args = []
@@ -85,6 +91,7 @@ def _merge_HaskellReplLoadInfo(load_infos):
     for load_info in load_infos:
         source_files = depset(transitive = [source_files, load_info.source_files])
         import_dirs = depset(transitive = [import_dirs, load_info.import_dirs])
+        cc_libraries_infos.append(load_info.cc_libraries_info)
         cc_infos.append(load_info.cc_info)
         compiler_flags += load_info.compiler_flags
         repl_ghci_args += load_info.repl_ghci_args
@@ -92,6 +99,7 @@ def _merge_HaskellReplLoadInfo(load_infos):
     return HaskellReplLoadInfo(
         source_files = source_files,
         import_dirs = import_dirs,
+        cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = cc_libraries_infos),
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
         compiler_flags = compiler_flags,
         repl_ghci_args = repl_ghci_args,
@@ -100,16 +108,19 @@ def _merge_HaskellReplLoadInfo(load_infos):
 def _merge_HaskellReplDepInfo(dep_infos):
     package_ids = []
     package_databases = depset()
+    cc_libraries_infos = []
     cc_infos = []
 
     for dep_info in dep_infos:
         package_ids += dep_info.package_ids
         package_databases = depset(transitive = [package_databases, dep_info.package_databases])
+        cc_libraries_infos.append(dep_info.cc_libraries_info)
         cc_infos.append(dep_info.cc_info)
 
     return HaskellReplDepInfo(
         package_ids = package_ids,
         package_databases = package_databases,
+        cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = cc_libraries_infos),
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
     )
 
@@ -123,6 +134,11 @@ def _create_HaskellReplCollectInfo(target, ctx):
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = hs_info.source_files,
             import_dirs = set.to_depset(hs_info.import_dirs),
+            cc_libraries_info = deps_HaskellCcLibrariesInfo([
+                dep
+                for dep in getattr(ctx.rule.attr, "deps", [])
+                if CcInfo in dep and not HaskellInfo in dep
+            ]),
             cc_info = cc_common.merge_cc_infos(cc_infos = [
                 # Collect pure C library dependencies, no Haskell dependencies.
                 dep[CcInfo]
@@ -139,6 +155,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
         dep_infos[target.label] = HaskellReplDepInfo(
             package_ids = all_package_ids(lib_info),
             package_databases = hs_info.package_databases,
+            cc_libraries_info = target[HaskellCcLibrariesInfo],
             cc_info = target[CcInfo],
         )
 
@@ -351,6 +368,7 @@ def _haskell_repl_aspect_impl(target, ctx):
 haskell_repl_aspect = aspect(
     implementation = _haskell_repl_aspect_impl,
     attr_aspects = ["deps"],
+    required_aspect_providers = [HaskellCcLibrariesInfo],
     doc = """\
 Haskell REPL aspect.
 
