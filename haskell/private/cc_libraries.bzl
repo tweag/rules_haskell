@@ -111,7 +111,7 @@ def _get_unique_lib_files(cc_info):
         for filename in filenames
     ]
 
-def get_ghci_extra_libs(hs, posix, cc_info, path_prefix = None):
+def get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info, path_prefix = None):
     """Get libraries appropriate for GHCi's linker.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -127,6 +127,7 @@ def get_ghci_extra_libs(hs, posix, cc_info, path_prefix = None):
 
     Args:
       hs: Haskell context.
+      cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
       cc_info: Combined CcInfo provider of dependencies.
       path_prefix: (optional) Prefix for the entries in the generated library path.
 
@@ -139,6 +140,7 @@ def get_ghci_extra_libs(hs, posix, cc_info, path_prefix = None):
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         posix,
+        cc_libraries_info,
         cc_info,
         dynamic = not hs.toolchain.is_static,
         pic = True,
@@ -156,7 +158,7 @@ def get_ghci_extra_libs(hs, posix, cc_info, path_prefix = None):
 
     return (libs, ghc_env)
 
-def get_extra_libs(hs, posix, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"):
+def get_extra_libs(hs, posix, cc_libraries_info, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"):
     """Get libraries appropriate for linking with GHC.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -169,6 +171,7 @@ def get_extra_libs(hs, posix, cc_info, dynamic = False, pic = None, fixup_dir = 
     Args:
       hs: Haskell context.
       dynamic: Whether to prefer dynamic libraries.
+      cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
       cc_info: Combined CcInfo provider of dependencies.
       dynamic: Whether dynamic libraries are preferred.
       pic: Whether position independent code is required.
@@ -188,6 +191,7 @@ def get_extra_libs(hs, posix, cc_info, dynamic = False, pic = None, fixup_dir = 
     # PIC is irrelevant on static GHC.
     pic_required = pic and not hs.toolchain.is_static
     for lib_to_link in libs_to_link:
+        cc_library_info = cc_libraries_info.libraries[cc_library_key(lib_to_link)]
         dynamic_lib = None
         if lib_to_link.dynamic_library:
             dynamic_lib = lib_to_link.dynamic_library
@@ -195,13 +199,13 @@ def get_extra_libs(hs, posix, cc_info, dynamic = False, pic = None, fixup_dir = 
             dynamic_lib = lib_to_link.interface_library
         static_lib = None
         if lib_to_link.pic_static_library:
-            static_lib = lib_to_link.pic_static_library
+            static_lib = cc_library_info.pic_static_library_link
+            if static_lib == None:
+                static_lib = lib_to_link.pic_static_library
         elif lib_to_link.static_library and not pic_required:
-            static_lib = lib_to_link.static_library
-
-        static_lib_link = mangle_static_library(hs, posix, dynamic_lib, static_lib, fixed_lib_dir)
-        if static_lib_link != None:
-            static_lib = static_lib_link
+            static_lib = cc_library_info.static_library_link
+            if static_lib == None:
+                static_lib = lib_to_link.static_library
 
         if static_lib and not (dynamic and dynamic_lib):
             static_libs.append(static_lib)
@@ -216,7 +220,7 @@ def get_extra_libs(hs, posix, cc_info, dynamic = False, pic = None, fixup_dir = 
     dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
 
-def create_link_config(hs, posix, cc_info, binary, args, dynamic = None, pic = None):
+def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -226,6 +230,7 @@ def create_link_config(hs, posix, cc_info, binary, args, dynamic = None, pic = N
 
     Args:
       hs: Haskell context.
+      cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
       cc_info: Combined CcInfo of dependencies.
       binary: Final linked binary.
       args: Arguments to the linking action.
@@ -242,6 +247,7 @@ def create_link_config(hs, posix, cc_info, binary, args, dynamic = None, pic = N
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         posix,
+        cc_libraries_info,
         cc_info,
         dynamic = dynamic,
         pic = pic,

@@ -7,6 +7,7 @@ load(":private/path_utils.bzl", "link_libraries")
 load(":private/set.bzl", "set")
 load(
     "@rules_haskell//haskell:providers.bzl",
+    "HaskellCcLibrariesInfo",
     "HaskellInfo",
 )
 load(
@@ -88,6 +89,7 @@ def _haskell_doctest_single(target, ctx):
 
     hs_info = target[HaskellInfo]
     cc_info = target[CcInfo]
+    cc_libraries_info = target[HaskellCcLibrariesInfo]
 
     args = ctx.actions.args()
     args.add("--no-magic")
@@ -126,7 +128,7 @@ def _haskell_doctest_single(target, ctx):
     args.add_all(ctx.attr.doctest_flags)
 
     # C library dependencies to link against.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_info)
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
     link_libraries(ghci_extra_libs, args, prefix_optl = hs.toolchain.is_darwin)
 
     if ctx.attr.modules:

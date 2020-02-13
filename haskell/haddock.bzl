@@ -136,6 +136,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
         posix,
+        target[HaskellCcLibrariesInfo],
         target[CcInfo],
         # haddock changes directory during its execution. We prefix
         # LD_LIBRARY_PATH with the current working directory on wrapper script
