@@ -66,6 +66,7 @@ HaskellProtobufInfo = provider(
     doc = "Provider that wraps providers of auto-generated Haskell libraries",
     fields = {
         "files": "files",
+        "cc_libraries_info": "HaskellCcLibrariesInfo over the auto-generated Haskell libraries of this proto_library target and its dependencies.",
     },
 )
 

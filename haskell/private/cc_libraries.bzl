@@ -26,6 +26,7 @@ load(
     "HaskellCcLibrariesInfo",
     "HaskellCcLibraryInfo",
     "HaskellInfo",
+    "HaskellProtobufInfo",
 )
 
 def _min_lib_to_link(a, b):
@@ -313,8 +314,32 @@ def cc_library_key(library_to_link):
         pic_static_library = library_to_link.pic_static_library,
     )
 
+def deps_HaskellCcLibrariesInfo(deps):
+    """Merge the HaskellCcLibrariesInfo over all given dependencies.
+
+    Works on proto_library dependencies as well, where HaskellCcLibrariesInfo
+    needs to be constructed by _haskell_proto_aspect.
+
+    Args:
+      deps: list of Target, extracts HaskellCcLibrariesInfo from the target
+        directly, or from HaskellProtobufInfo if present.
+
+    Returns:
+      HaskellCcLibrariesInfo
+    """
+    infos = []
+    for dep in deps:
+        if HaskellCcLibrariesInfo in dep:
+            infos.append(dep[HaskellCcLibrariesInfo])
+        elif HaskellProtobufInfo in dep:
+            infos.append(dep[HaskellProtobufInfo].cc_libraries_info)
+    return merge_HaskellCcLibrariesInfo(infos = infos)
+
 def merge_HaskellCcLibrariesInfo(infos):
-    """Merge multiple HaskellCcLibrariesInfo."""
+    """Merge multiple HaskellCcLibrariesInfo.
+
+    Prefer deps_HaskellCcLibrariesInfo if possible.
+    """
     return HaskellCcLibrariesInfo(
         libraries = dicts.add(*[info.libraries for info in infos]),
     )
@@ -375,6 +400,18 @@ def extend_HaskellCcLibrariesInfo(
     return HaskellCcLibrariesInfo(libraries = libraries)
 
 def _haskell_cc_libraries_aspect_impl(target, ctx):
+    if HaskellProtobufInfo in target:
+        # haskell_cc_libraries_aspect depends on the CcInfo and optionally
+        # HaskellInfo providers of a target. In the case of proto_library
+        # targets these providers are returned by the _haskell_proto_aspect.
+        # That aspect in turn requires HaskellCcLibrariesInfo in all its
+        # dependencies. Bazel does not allow this kind of cyclic dependency and
+        # one aspect will not be able to observe the other.
+        #
+        # To work around this we instead generate HaskellCcLibrariesInfo within
+        # _haskell_proto_aspect and bundle it in HaskellProtobufInfo.
+        return target[HaskellProtobufInfo].cc_libraries_info
+
     hs = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
@@ -399,6 +436,7 @@ haskell_cc_libraries_aspect = aspect(
     implementation = _haskell_cc_libraries_aspect_impl,
     attr_aspects = ["deps", "exports", "plugins"],
     provides = [HaskellCcLibrariesInfo],
+    required_aspect_providers = [HaskellProtobufInfo],
     toolchains = [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
