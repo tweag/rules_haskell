@@ -27,9 +27,9 @@ jobs:
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
 
-      # Remove 'C:\Program Files ' (ending on space) from PATH.
+      # Fix PATH entries ending on space as they crash Bazel.
       # See https://github.com/bazelbuild/bazel/issues/10481
-      export PATH="$(sed 's,:/c/Program Files $,,' <<<"$PATH")"
+      export PATH="$(sed 's, \+\(:\|$\),\1,g' <<<"$PATH")"
       echo "PATH='$PATH'"
 
       # Tests that build but don't run
