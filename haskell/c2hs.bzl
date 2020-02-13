@@ -6,6 +6,10 @@ load(
     "C2hsLibraryInfo",
 )
 load(":cc.bzl", "cc_interop_info")
+load(
+    ":private/cc_libraries.bzl",
+    "haskell_cc_libraries_aspect",
+)
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(
@@ -114,7 +118,9 @@ def _c2hs_library_impl(ctx):
 c2hs_library = rule(
     _c2hs_library_impl,
     attrs = {
-        "deps": attr.label_list(),
+        "deps": attr.label_list(
+            aspects = [haskell_cc_libraries_aspect],
+        ),
         "srcs": attr.label_list(allow_files = [".chs"]),
         "extra_args": attr.string_list(
             doc = "Extra arguments that should be passedto c2hs.",

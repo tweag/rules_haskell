@@ -25,6 +25,7 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "get_ghci_extra_libs",
+    "haskell_cc_libraries_aspect",
 )
 
 def _so_extension(hs):
@@ -369,7 +370,9 @@ haskell_cabal_library = rule(
             doc = "Whether to generate haddock documentation.",
         ),
         "srcs": attr.label_list(allow_files = True),
-        "deps": attr.label_list(),
+        "deps": attr.label_list(
+            aspects = [haskell_cc_libraries_aspect],
+        ),
         "compiler_flags": attr.string_list(
             doc = """Flags to pass to Haskell compiler, in addition to those defined
             the cabal file. Subject to Make variable substitution.""",
@@ -535,7 +538,9 @@ haskell_cabal_binary = rule(
     executable = True,
     attrs = {
         "srcs": attr.label_list(allow_files = True),
-        "deps": attr.label_list(),
+        "deps": attr.label_list(
+            aspects = [haskell_cc_libraries_aspect],
+        ),
         "compiler_flags": attr.string_list(
             doc = """Flags to pass to Haskell compiler, in addition to those defined
             the cabal file. Subject to Make variable substitution.""",
