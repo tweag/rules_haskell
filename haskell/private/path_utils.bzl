@@ -159,7 +159,7 @@ def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
     if dynamic_lib == None or static_lib == None:
         return None
     libname = get_lib_name(dynamic_lib)
-    if is_hs_library(libname) or get_lib_name(static_lib) == libname:
+    if is_hs_library(dynamic_lib) or get_lib_name(static_lib) == libname:
         return None
     else:
         link = hs.actions.declare_file(
@@ -202,8 +202,9 @@ def get_lib_extension(lib):
     end = lib.extension if n == -1 else lib.basename[n + 1:]
     return end
 
-def is_hs_library(libname):
+def is_hs_library(lib):
     """Returns True if the library belongs into the hs-libraries field."""
+    libname = get_lib_name(lib)
     return libname.startswith("HS") or libname.startswith("Cffi")
 
 def get_dynamic_hs_lib_name(ghc_version, lib):
@@ -262,7 +263,7 @@ def link_libraries(libs, args, prefix_optl = False):
     cc_libs = depset(direct = [
         lib
         for lib in libs.to_list()
-        if not is_hs_library(get_lib_name(lib))
+        if not is_hs_library(lib)
     ])
 
     if prefix_optl:

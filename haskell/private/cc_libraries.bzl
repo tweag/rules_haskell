@@ -263,12 +263,12 @@ def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dyna
     cc_static_libs = depset(direct = [
         lib
         for lib in static_libs.to_list()
-        if not is_hs_library(get_lib_name(lib))
+        if not is_hs_library(lib)
     ])
     cc_dynamic_libs = depset(direct = [
         lib
         for lib in dynamic_libs.to_list()
-        if not is_hs_library(get_lib_name(lib))
+        if not is_hs_library(lib)
     ])
 
     package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")

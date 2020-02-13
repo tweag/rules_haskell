@@ -168,7 +168,7 @@ def compile_info_output_groups(
     cc_libs = [
         lib
         for lib in ghci_extra_libs.to_list()
-        if not is_hs_library(get_lib_name(lib)) and get_lib_name(lib) != "ffi"
+        if not is_hs_library(lib) and get_lib_name(lib) != "ffi"
     ]
     return {
         "haskell_cdep_libs": depset(cc_libs),

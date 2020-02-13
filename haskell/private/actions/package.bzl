@@ -39,12 +39,12 @@ def _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info):
     cc_static_libs = depset(direct = [
         lib
         for lib in static_libs.to_list()
-        if not is_hs_library(get_lib_name(lib))
+        if not is_hs_library(lib)
     ])
     cc_dynamic_libs = depset(direct = [
         lib
         for lib in dynamic_libs.to_list()
-        if not is_hs_library(get_lib_name(lib))
+        if not is_hs_library(lib)
     ])
     cc_libs = cc_static_libs.to_list() + cc_dynamic_libs.to_list()
 
