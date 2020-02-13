@@ -142,9 +142,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
             cc_info = cc_common.merge_cc_infos(cc_infos = [
                 # Collect pure C library dependencies, no Haskell dependencies.
                 dep[CcInfo]
-                for deps in [getattr(ctx.rule.attr, "deps", None)]
-                if deps
-                for dep in deps
+                for dep in getattr(ctx.rule.attr, "deps", [])
                 if CcInfo in dep and not HaskellInfo in dep
             ]),
             compiler_flags = getattr(ctx.rule.attr, "compiler_flags", []),
