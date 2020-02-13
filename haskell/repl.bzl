@@ -256,7 +256,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         repl_info.load_info.cc_info,
         repl_info.dep_info.cc_info,
     ])
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
+    ghci_extra_libs = get_ghci_extra_libs(
         hs,
         posix,
         cc_libraries_info,
@@ -316,7 +316,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         output = output,
         is_executable = True,
         substitutions = {
-            "{ENV}": render_env(dicts.add(hs.env, ghc_env)),
+            "{ENV}": render_env(hs.env),
             "{TOOL}": hs.tools.ghci.path,
             "{CC}": hs.toolchain.cc_wrapper.executable.path,
             "{ARGS}": " ".join(

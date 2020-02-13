@@ -164,7 +164,7 @@ def compile_info_output_groups(
     Returns:
       A dict whose keys are output groups and values are depsets of Files.
     """
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
+    ghci_extra_libs = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
     cc_libs = [
         lib
         for lib in ghci_extra_libs.to_list()

@@ -323,7 +323,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, cc_lib
     )
 
     # Transitive library dependencies for runtime.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
+    ghci_extra_libs = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
     link_libraries(ghci_extra_libs, args)
 
     return struct(
@@ -354,7 +354,6 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, cc_lib
         extra_source_files = extra_source_files,
         import_dirs = import_dirs,
         env = dicts.add(
-            ghc_env,
             java.env,
             hs.env,
         ),
