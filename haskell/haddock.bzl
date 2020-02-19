@@ -5,9 +5,14 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":providers.bzl",
     "HaddockInfo",
+    "HaskellCcLibrariesInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
+)
+load(
+    ":private/cc_libraries.bzl",
     "get_ghci_extra_libs",
+    "haskell_cc_libraries_aspect",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
@@ -131,6 +136,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
         hs,
         posix,
+        target[HaskellCcLibrariesInfo],
         target[CcInfo],
         # haddock changes directory during its execution. We prefix
         # LD_LIBRARY_PATH with the current working directory on wrapper script
@@ -204,6 +210,7 @@ haskell_doc_aspect = aspect(
         ),
     },
     attr_aspects = ["deps", "exports"],
+    required_aspect_providers = [HaskellCcLibrariesInfo],
     toolchains = [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
@@ -326,7 +333,10 @@ haskell_doc = rule(
     _haskell_doc_rule_impl,
     attrs = {
         "deps": attr.label_list(
-            aspects = [haskell_doc_aspect],
+            aspects = [
+                haskell_cc_libraries_aspect,
+                haskell_doc_aspect,
+            ],
             doc = "List of Haskell libraries to generate documentation for.",
         ),
         "index_transitive_deps": attr.bool(

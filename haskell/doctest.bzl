@@ -7,8 +7,13 @@ load(":private/path_utils.bzl", "link_libraries")
 load(":private/set.bzl", "set")
 load(
     "@rules_haskell//haskell:providers.bzl",
+    "HaskellCcLibrariesInfo",
     "HaskellInfo",
+)
+load(
+    "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_ghci_extra_libs",
+    "haskell_cc_libraries_aspect",
 )
 
 def _doctest_toolchain_impl(ctx):
@@ -84,6 +89,7 @@ def _haskell_doctest_single(target, ctx):
 
     hs_info = target[HaskellInfo]
     cc_info = target[CcInfo]
+    cc_libraries_info = target[HaskellCcLibrariesInfo]
 
     args = ctx.actions.args()
     args.add("--no-magic")
@@ -122,7 +128,7 @@ def _haskell_doctest_single(target, ctx):
     args.add_all(ctx.attr.doctest_flags)
 
     # C library dependencies to link against.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_info)
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
     link_libraries(ghci_extra_libs, args, prefix_optl = hs.toolchain.is_darwin)
 
     if ctx.attr.modules:
@@ -198,6 +204,7 @@ haskell_doctest = rule(
     attrs = {
         "deps": attr.label_list(
             doc = "List of Haskell targets to lint.",
+            aspects = [haskell_cc_libraries_aspect],
         ),
         "doctest_flags": attr.string_list(
             doc = "Extra flags to pass to doctest executable.",

@@ -2,7 +2,7 @@
 
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":providers.bzl", "create_link_config")
+load(":private/cc_libraries.bzl", "create_link_config")
 
 def merge_parameter_files(hs, file1, file2):
     """Merge two GHC parameter files into one.
@@ -134,6 +134,7 @@ def link_binary(
         cc,
         posix,
         dep_info,
+        cc_libraries_info,
         cc_info,
         extra_srcs,
         compiler_flags,
@@ -192,6 +193,7 @@ def link_binary(
     (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
         posix = posix,
+        cc_libraries_info = cc_libraries_info,
         cc_info = cc_info,
         dynamic = dynamic,
         binary = executable,
@@ -327,7 +329,7 @@ def link_library_static(hs, cc, posix, dep_info, objects_dir, my_pkg_id, with_pr
 
     return static_library
 
-def link_library_dynamic(hs, cc, posix, dep_info, cc_info, extra_srcs, objects_dir, my_pkg_id, compiler_flags):
+def link_library_dynamic(hs, cc, posix, dep_info, cc_libraries_info, cc_info, extra_srcs, objects_dir, my_pkg_id, compiler_flags):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -368,6 +370,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, cc_info, extra_srcs, objects_d
     (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
         posix = posix,
+        cc_libraries_info = cc_libraries_info,
         cc_info = cc_info,
         dynamic = True,
         pic = True,

@@ -2,7 +2,8 @@
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":providers.bzl", "all_package_ids", "get_ghci_extra_libs")
+load(":providers.bzl", "all_package_ids")
+load(":private/cc_libraries.bzl", "get_ghci_extra_libs")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -145,6 +146,7 @@ def compile_info_output_groups(
         hs,
         c,
         posix,
+        cc_libraries_info,
         cc_info,
         runfiles):
     """Output groups for compiling a Haskell target.
@@ -162,11 +164,11 @@ def compile_info_output_groups(
     Returns:
       A dict whose keys are output groups and values are depsets of Files.
     """
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_info)
+    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
     cc_libs = [
         lib
         for lib in ghci_extra_libs.to_list()
-        if not is_hs_library(get_lib_name(lib)) and get_lib_name(lib) != "ffi"
+        if not is_hs_library(lib) and get_lib_name(lib) != "ffi"
     ]
     return {
         "haskell_cdep_libs": depset(cc_libs),

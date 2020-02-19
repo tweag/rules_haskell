@@ -154,17 +154,13 @@ def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
       outdir: Output director for the symbolic link, if necessary.
 
     Returns:
-      The new static library symlink, if created, otherwise static_lib.
+      The new static library symlink, if created, otherwise None.
     """
-    if dynamic_lib == None:
-        return static_lib
-    if static_lib == None:
-        return static_lib
+    if dynamic_lib == None or static_lib == None:
+        return None
     libname = get_lib_name(dynamic_lib)
-    if is_hs_library(libname):
-        return static_lib
-    if get_lib_name(static_lib) == libname:
-        return static_lib
+    if is_hs_library(dynamic_lib) or get_lib_name(static_lib) == libname:
+        return None
     else:
         link = hs.actions.declare_file(
             paths.join(outdir, "lib" + libname + "." + static_lib.extension),
@@ -206,9 +202,15 @@ def get_lib_extension(lib):
     end = lib.extension if n == -1 else lib.basename[n + 1:]
     return end
 
-def is_hs_library(libname):
+def is_hs_library(lib):
     """Returns True if the library belongs into the hs-libraries field."""
-    return libname.startswith("HS") or libname.startswith("Cffi")
+    libname = get_lib_name(lib)
+
+    # The toolchain libraries may contain C libraries, which should not be
+    # linked against directly, but rather through the package configuration. In
+    # particular ffi, if included in the GHC bindist, comes in different
+    # flavours for different GHC ways (e.g. threaded).
+    return libname.startswith("HS") or lib.owner == Label("@rules_haskell//haskell:toolchain-libraries")
 
 def get_dynamic_hs_lib_name(ghc_version, lib):
     """Return name of library by dropping extension,
@@ -266,7 +268,7 @@ def link_libraries(libs, args, prefix_optl = False):
     cc_libs = depset(direct = [
         lib
         for lib in libs.to_list()
-        if not is_hs_library(get_lib_name(lib))
+        if not is_hs_library(lib)
     ])
 
     if prefix_optl:
