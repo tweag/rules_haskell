@@ -10,7 +10,7 @@ load(
     "HaskellLibraryInfo",
 )
 load(
-    "@rules_haskell//haskell:private/cc_libraries.bzl",
+    ":private/cc_libraries.bzl",
     "get_ghci_extra_libs",
     "haskell_cc_libraries_aspect",
 )
