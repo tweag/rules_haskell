@@ -33,10 +33,11 @@ ghc_plugin = rule(
             doc = "Tools needed by the plugin when it used.",
         ),
     },
-)
-"""Declare a GHC plugin.
+    doc = """\
+Declare a GHC plugin.
 
 Example:
+
   ```bzl
   haskell_library(
       name = "plugin-lib",
@@ -62,4 +63,5 @@ entrypoint for the plugin and plugin options.
 
 See https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/extending_ghc.html#writing-compiler-plugins
 for more information.
-"""
+""",
+)

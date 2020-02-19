@@ -186,14 +186,7 @@ def haskell_register_ghc_nixpkgs(
 
     [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
 
-    Args:
-      compiler_flags_select: temporary workaround to pass conditional arguments.
-        See https://github.com/bazelbuild/bazel/issues/9199 for details.
-      sh_posix_attributes: List of attribute paths to extract standard Unix shell tools from.
-        Passed to nixpkgs_sh_posix_configure.
-
-
-    Example:
+    ### Examples
 
       ```
       haskell_register_ghc_nixpkgs(
@@ -210,6 +203,11 @@ def haskell_register_ghc_nixpkgs(
       --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
       ```
 
+    Args:
+      compiler_flags_select: temporary workaround to pass conditional arguments.
+        See https://github.com/bazelbuild/bazel/issues/9199 for details.
+      sh_posix_attributes: List of attribute paths to extract standard Unix shell tools from.
+        Passed to nixpkgs_sh_posix_configure.
     """
     nixpkgs_ghc_repo_name = "rules_haskell_ghc_nixpkgs"
     nixpkgs_sh_posix_repo_name = "rules_haskell_sh_posix_nixpkgs"

@@ -1,3 +1,4 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load(
     "@rules_haskell//haskell:private/haskell_impl.bzl",
@@ -34,6 +35,31 @@ exports_files(
 exports_files(
     ["private/actions/link.bzl"],
     visibility = ["//tests/unit-tests:__pkg__"],
+)
+
+# @bazel_tools//tools does not define a bzl_library itself, instead we are
+# supposed to define our own using the @bazel_tools//tools:bzl_srcs filegroup.
+# See https://github.com/bazelbuild/skydoc/issues/166
+bzl_library(
+    name = "bazel_tools",
+    srcs = [
+        "@bazel_tools//tools:bzl_srcs",
+    ],
+)
+
+bzl_library(
+    name = "haskell",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":bazel_tools",
+        "@bazel_skylib//lib:collections",
+        "@bazel_skylib//lib:dicts",
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//lib:shell",
+        "@io_tweag_rules_nixpkgs//nixpkgs",
+        "@rules_sh//sh:posix",
+    ],
 )
 
 cc_wrapper(

@@ -3,23 +3,23 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
-load("@rules_haskell//haskell:private/context.bzl", "haskell_context", "render_env")
+load(":private/context.bzl", "haskell_context", "render_env")
 load(
-    "@rules_haskell//haskell:private/path_utils.bzl",
+    ":private/path_utils.bzl",
     "link_libraries",
     "match_label",
     "parse_pattern",
     "target_unique_name",
 )
 load(
-    "@rules_haskell//haskell:providers.bzl",
+    ":providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellToolchainLibraryInfo",
     "all_package_ids",
     "get_ghci_extra_libs",
 )
-load("@rules_haskell//haskell:private/set.bzl", "set")
+load(":private/set.bzl", "set")
 
 HaskellReplLoadInfo = provider(
     doc = """Haskell REPL target information.
@@ -347,13 +347,13 @@ def _haskell_repl_aspect_impl(target, ctx):
 haskell_repl_aspect = aspect(
     implementation = _haskell_repl_aspect_impl,
     attr_aspects = ["deps"],
-)
-"""
+    doc = """\
 Haskell REPL aspect.
 
 Used to implement the haskell_repl rule. Does not generate an executable REPL
 by itself.
-"""
+""",
+)
 
 def _haskell_repl_impl(ctx):
     collect_info = _merge_HaskellReplCollectInfo([
@@ -428,10 +428,11 @@ haskell_repl = rule(
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
-)
-"""Build a REPL for multiple targets.
+    doc = """\
+Build a REPL for multiple targets.
 
-Example:
+### Examples
+
   ```bzl
   haskell_repl(
       name = "repl",
@@ -461,4 +462,5 @@ Example:
 $ bazel run //:repl
 ```
 
-"""
+""",
+)

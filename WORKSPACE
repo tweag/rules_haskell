@@ -207,11 +207,7 @@ nixpkgs_cc_configure(
     repository = "@nixpkgs_default",
 )
 
-nixpkgs_python_configure(
-    # XXX: Remove python2_attribute_path after updating to Stardoc 0.4.0
-    python2_attribute_path = "python2",
-    repository = "@nixpkgs_default",
-)
+nixpkgs_python_configure(repository = "@nixpkgs_default")
 
 nixpkgs_package(
     name = "nixpkgs_zlib",
@@ -355,7 +351,7 @@ haskell_package_repository_dummy(
     name = "haskell_package_repository_dummy",
 )
 
-# For Skydoc
+# For Stardoc
 
 nixpkgs_package(
     name = "nixpkgs_nodejs",
@@ -414,19 +410,34 @@ load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
 sass_repositories()
 
 http_archive(
-    name = "io_bazel_skydoc",
-    sha256 = "0f77e715e6cf683548a0af9ab84909e57a8f4609de1e847920444d0434259eb4",
-    # XXX: Update to 0.4.0 and Stardoc, the Skydoc API has been deprecated.
-    strip_prefix = "stardoc-0.3.0",
+    name = "io_bazel_stardoc",
+    sha256 = "6d07d18c15abb0f6d393adbd6075cd661a2219faab56a9517741f0fc755f6f3c",
+    strip_prefix = "stardoc-0.4.0",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/archive/0.3.0.tar.gz",
-        "https://github.com/bazelbuild/stardoc/archive/0.3.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/archive/0.4.0.tar.gz",
+        "https://github.com/bazelbuild/stardoc/archive/0.4.0.tar.gz",
     ],
 )
 
-load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
+load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
 
-skydoc_repositories()
+stardoc_repositories()
+
+load(
+    "@rules_haskell//docs/pandoc:pandoc.bzl",
+    "import_pandoc_bindists",
+    "nixpkgs_pandoc_configure",
+)
+
+nixpkgs_pandoc_configure(repository = "@nixpkgs_default")
+
+import_pandoc_bindists()
+
+register_toolchains(
+    "@rules_haskell//docs/pandoc:nixpkgs",
+    "@rules_haskell//docs/pandoc:linux",
+    "@rules_haskell//docs/pandoc:macos",
+)
 
 # For buildifier
 

@@ -376,8 +376,9 @@ def ghc_bindist(
         compiler_flags = None,
         haddock_flags = None,
         repl_ghci_args = None):
-    """Create a new repository from binary distributions of GHC. The
-    repository exports two targets:
+    """Create a new repository from binary distributions of GHC.
+
+    The repository exports two targets:
 
     * a `bin` filegroup containing all GHC commands,
     * a `threaded-rts` CC library.
@@ -386,7 +387,8 @@ def ghc_bindist(
     platform. Only the platforms that have a "binary package" on the GHC
     [download page](https://www.haskell.org/ghc/) are supported.
 
-    Example:
+    ### Examples
+
        In `WORKSPACE` file:
 
        ```bzl

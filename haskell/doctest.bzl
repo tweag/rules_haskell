@@ -37,7 +37,7 @@ def haskell_doctest_toolchain(name, doctest, **kwargs):
     for `haskell_doctest` to work.  Once declared, you then need to *register*
     the toolchain using `register_toolchains` in your `WORKSPACE` file.
 
-    Example:
+    ### Examples
 
       In a `BUILD` file:
 
