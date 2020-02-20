@@ -190,6 +190,36 @@ protects against this problem. If sandboxing is not an option, simply
 put the source files for each target in a separate directory (you can
 still use a single `BUILD` file to define all targets).
 
+### hGetContents: invalid argument (invalid byte sequence)
+
+If you are using the GHC bindists and see an error message like this:
+
+```
+haddock: internal error: /tmp/tmputn68mya/doc/html/path-io/haddock-response300-1.txt: hGetContents: invalid argument (invalid byte sequence)
+```
+
+It means that the default locale (`C.UTF-8`) does not work on your system.
+You can use a locale that your system has. For example, if your system has the
+locale `en_US.UTF-8`, you can specify that locale:
+
+```bzl
+rules_haskell_toolchains(
+    locale = "en_US.UTF-8", # <----
+    version = "8.4.1",
+)
+```
+
+To find available locales, run `locale -a` in a terminal. You should see output like the following:
+
+```console
+$ locale -a
+C
+en_US
+en_US.iso88591
+en_US.utf8
+POSIX
+```
+
 ## For `rules_haskell` developers
 
 ### Saving common command-line flags to a file
