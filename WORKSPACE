@@ -201,6 +201,8 @@ register_toolchains(
     "//tests:protobuf-toolchain",
 )
 
+register_toolchains("//:my_toolchain")
+
 nixpkgs_cc_configure(
     nix_file = "//nixpkgs:cc-toolchain.nix",
     nix_file_deps = ["//nixpkgs:default.nix"],
