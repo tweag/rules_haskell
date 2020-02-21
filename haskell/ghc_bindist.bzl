@@ -273,6 +273,7 @@ haskell_toolchain(
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
     visibility = ["//visibility:public"],
+    locale = "{locale}",
 )
     """.format(
         toolchain_libraries = toolchain_libraries,
@@ -281,6 +282,7 @@ haskell_toolchain(
         compiler_flags = ctx.attr.compiler_flags,
         haddock_flags = ctx.attr.haddock_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
+        locale = ctx.attr.locale,
     )
 
     if os == "windows":
@@ -331,6 +333,10 @@ _ghc_bindist = repository_rule(
             default = [],
             doc = "Sequence of commands to be applied after patches are applied.",
         ),
+        "locale": attr.string(
+            default = "C.UTF-8",
+            doc = "Locale that will be set during compiler invocations.",
+        ),
     },
 )
 
@@ -375,7 +381,8 @@ def ghc_bindist(
         target,
         compiler_flags = None,
         haddock_flags = None,
-        repl_ghci_args = None):
+        repl_ghci_args = None,
+        locale = None):
     """Create a new repository from binary distributions of GHC.
 
     The repository exports two targets:
@@ -429,6 +436,7 @@ def ghc_bindist(
         haddock_flags = haddock_flags,
         repl_ghci_args = repl_ghci_args,
         target = target,
+        locale = locale,
         **extra_attrs
     )
     _ghc_bindist_toolchain(
@@ -442,7 +450,8 @@ def haskell_register_ghc_bindists(
         version = None,
         compiler_flags = None,
         haddock_flags = None,
-        repl_ghci_args = None):
+        repl_ghci_args = None,
+        locale = None):
     """Register GHC binary distributions for all platforms as toolchains.
 
     Toolchains can be used to compile Haskell code. This function
@@ -465,6 +474,7 @@ def haskell_register_ghc_bindists(
             compiler_flags = compiler_flags,
             haddock_flags = haddock_flags,
             repl_ghci_args = repl_ghci_args,
+            locale = locale,
         )
     local_sh_posix_repo_name = "rules_haskell_sh_posix_local"
     if local_sh_posix_repo_name not in native.existing_rules():
