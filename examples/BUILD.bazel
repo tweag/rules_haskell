@@ -2,7 +2,7 @@ load("@rules_python//python:defs.bzl", "py_runtime_pair")
 
 py_runtime(
         name = "my_py3_runtime",
-        interpreter_path = "/Users/brianhealey/.pyenv/shims/python3",
+        interpreter_path = "~/.pyenv/shims/python3",
         python_version = "PY3",
 )
 
