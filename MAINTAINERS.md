@@ -52,7 +52,7 @@ We strive to always test against the latest non-LTS release
 nonetheless, so bumping bazel regularly is required.
 
 - [ ] Use `.ci/update-bazel-version` to update `.ci/bazelversion` and
-      `.ci/bazel-sha256`.
+      `.ci/bazel-*.sha256`.
 - [ ] Update all bazel rules dependencies in `WORKSPACE` (e.g.
       `io_bazel_stardoc`)
 - [ ] Update bazel in nixpkgs and bump `nixpkgs/default.nix`

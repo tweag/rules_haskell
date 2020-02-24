@@ -5,7 +5,7 @@ TOP="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
 usage() {
   cat >&2 <<EOF
 USAGE: update-bazel-version VERSION
-Updates .ci/bazelversion and .ci/bazel-sha256
+Updates .ci/bazelversion and .ci/bazel-*.sha256
 EOF
 }
 trap usage ERR
@@ -18,8 +18,7 @@ fi
 VERSION="$1"
 echo "$VERSION" >"$TOP/.ci/bazelversion"
 mkdir -p "$TOP/.ci"
->"$TOP/.ci/bazel-sha256"
 for OSEXT in windows-x86_64.exe linux-x86_64 darwin-x86_64; do
   URL="https://github.com/bazelbuild/bazel/releases/download/$VERSION/bazel-$VERSION-$OSEXT.sha256"
-  curl -L "$URL" >>"$TOP/.ci/bazel-sha256"
+  (cd "$TOP/.ci" && curl -LO "$URL")
 done

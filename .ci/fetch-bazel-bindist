@@ -18,12 +18,12 @@ if [[ $OS = windows-x86_64 ]]; then
   #
   # even when the hashes match upon manual inspection.
   SHA256="$(cd "$INSTALL" && sha256sum --text bazel-$VERSION-$OS$EXT)"
-  if ! grep -q "$SHA256" "$TOP/.ci/bazel-sha256" >&2; then
+  if ! grep -q "$SHA256" "$TOP/.ci/bazel-$VERSION-$OS$EXT.sha256" >&2; then
     echo "sha256 mismatch (compare .ci/bazel-sha256): $SHA256" >&2
     exit 1
   fi
 else
-  (cd "$INSTALL" && sha256sum --quiet --ignore-missing -c "$TOP/.ci/bazel-sha256") >&2
+  (cd "$INSTALL" && sha256sum --quiet -c "$TOP/.ci/bazel-$VERSION-$OS$EXT.sha256") >&2
 fi
 mv "$INSTALL/bazel-$VERSION-$OS$EXT" "$INSTALL/bazel$EXT"
 chmod +x "$INSTALL/bazel$EXT"
