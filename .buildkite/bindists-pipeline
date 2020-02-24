@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-BAZEL_DIR="$(.buildkite/fetch-bazel-bindist)"
+BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
 REPO_CACHE="$HOME/repo_cache"
 
 trap "rm -rf '$BAZEL_DIR'" EXIT
