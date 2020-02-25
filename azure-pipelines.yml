@@ -9,11 +9,10 @@ jobs:
       architecture: 'x64'
   - bash: |
       set -e
-      curl -LO https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-windows-x86_64.exe
-      mv bazel-*.exe bazel.exe
-      mkdir /c/bazel
-      mv bazel.exe /c/bazel
+      INSTALL="$(.ci/fetch-bazel-bindist)"
+      mv "$INSTALL" /c/bazel
       /c/bazel/bazel.exe info release
+      PATH="/c/bazel:$PATH" .ci/check-bazel-version
 
     displayName: 'Install Bazel'
 

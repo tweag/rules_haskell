@@ -58,6 +58,12 @@ jobs:
               - v1-rules_haskell-cache-master-
 
       - run:
+          name: Check Bazel version
+          shell: /bin/bash -eilo pipefail
+          command: |
+            nix-shell --arg docTools false --pure --run \
+              '.ci/check-bazel-version'
+      - run:
           name: Prefetch Stackage snapshot
           shell: /bin/bash -eilo pipefail
           command: |

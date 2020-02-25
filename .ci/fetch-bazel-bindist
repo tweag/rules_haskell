@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+TOP="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
+
+case "$OSTYPE" in
+  linux-gnu) OS=linux-x86_64; EXT=;;
+  darwin) OS=darwin-x86_64; EXT=;;
+  cygwin|msys|win32) OS=windows-x86_64; EXT=.exe;;
+  **) echo "Unknown operating system" >&2; exit 1;;
+esac
+VERSION=$(cat "$TOP/.ci/bazelversion")
+INSTALL="$(mktemp -d)"
+(cd "$INSTALL" && curl -LO "https://github.com/bazelbuild/bazel/releases/download/$VERSION/bazel-$VERSION-$OS$EXT" >&2)
+(cd "$INSTALL" && sha256sum --quiet -c "$TOP/.ci/bazel-$VERSION-$OS$EXT.sha256") >&2
+mv "$INSTALL/bazel-$VERSION-$OS$EXT" "$INSTALL/bazel$EXT"
+chmod +x "$INSTALL/bazel$EXT"
+echo -n "$INSTALL"
