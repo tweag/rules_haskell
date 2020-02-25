@@ -6,11 +6,16 @@ load(":private/path_utils.bzl", "get_lib_name", "is_hs_library", "target_unique_
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/cc_libraries.bzl", "get_extra_libs")
 
-def _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info):
+def _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info, dynamic = False):
     """Get directories and library names for extra library dependencies.
 
     Args:
+      hs: Haskell context.
+      posix: POSIX toolchain.
+      with_shared: Whether the library is built with both static and shared library outputs.
+      cc_libraries_info: HaskellCcLibrariesInfo.
       cc_info: Combined CcInfo provider of the package's dependencies.
+      dynamic: Whether to collect dynamic library dependencies.
 
     Returns:
       (dirs, libs):
@@ -27,6 +32,7 @@ def _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info):
         cc_libraries_info,
         cc_info,
         pic = with_shared,
+        dynamic = dynamic,
     )
 
     # This test is a hack. When a CC library has a Haskell library
@@ -98,6 +104,10 @@ def package(
     )
 
     (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info)
+    if with_shared:
+        (extra_dynamic_lib_dirs, _) = _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info, dynamic = True)
+    else:
+        extra_dynamic_lib_dirs = extra_lib_dirs
 
     # Create a file from which ghc-pkg will create the actual package
     # from. List of exposed modules generated below.
@@ -111,7 +121,7 @@ def package(
         "hidden-modules": other_modules,
         "import-dirs": [import_dir],
         "library-dirs": ["${pkgroot}"] + extra_lib_dirs,
-        "dynamic-library-dirs": ["${pkgroot}"] + extra_lib_dirs,
+        "dynamic-library-dirs": ["${pkgroot}"] + extra_dynamic_lib_dirs,
         "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)] if has_hs_library else [],
         "extra-libraries": extra_libs,
         "depends": hs.package_ids,

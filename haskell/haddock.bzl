@@ -133,7 +133,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     )
 
     # C library dependencies for runtime.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
+    ghci_extra_libs = get_ghci_extra_libs(
         hs,
         posix,
         target[HaskellCcLibrariesInfo],
@@ -155,7 +155,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             "%{haddock}": hs.tools.haddock.path,
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
-            "%{env}": render_env(dicts.add(hs.env, ghc_env)),
+            "%{env}": render_env(hs.env),
         },
         is_executable = True,
     )

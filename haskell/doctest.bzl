@@ -128,7 +128,7 @@ def _haskell_doctest_single(target, ctx):
     args.add_all(ctx.attr.doctest_flags)
 
     # C library dependencies to link against.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
+    ghci_extra_libs = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
     link_libraries(ghci_extra_libs, args, prefix_optl = hs.toolchain.is_darwin)
 
     if ctx.attr.modules:
@@ -166,14 +166,7 @@ def _haskell_doctest_single(target, ctx):
             env = render_env(hs.env),
         ),
         arguments = [args],
-        # NOTE It looks like we must specify the paths here as well as via -L
-        # flags because there are at least two different "consumers" of the info
-        # (ghc and linker?) and they seem to prefer to get it in different ways
-        # in this case.
-        env = dicts.add(
-            ghc_env,
-            hs.env,
-        ),
+        env = hs.env,
         execution_requirements = {
             # Prevents a race condition among concurrent doctest tests on Linux.
             #

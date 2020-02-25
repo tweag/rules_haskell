@@ -111,9 +111,9 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, d
     # already covered by their corresponding package-db entries. We only need
     # to add libraries and headers for direct C library dependencies to the
     # command line.
-    (direct_libs, _) = get_ghci_extra_libs(hs, posix, cc_libraries_info, direct_cc_info)
-    (transitive_libs, env) = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
-    env.update(**hs.env)
+    direct_libs = get_ghci_extra_libs(hs, posix, cc_libraries_info, direct_cc_info)
+    transitive_libs = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
+    env = dict(hs.env)
     env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)
     if hs.toolchain.is_darwin:
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
