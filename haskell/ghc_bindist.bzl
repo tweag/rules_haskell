@@ -195,6 +195,20 @@ GHC_BINDIST = \
                 "e25d9b16ee62cafc7387af2cd021eea676a99cd2c32b83533b016162c63065d9",
             ),
         },
+        "8.8.3": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-apple-darwin.tar.xz",
+                "7016de90dd226b06fc79d0759c5d4c83c2ab01d8c678905442c28bd948dbb782",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-deb8-linux.tar.xz",
+                "92b9fadc442976968d2c190c14e000d737240a7d721581cda8d8741b7bd402f0",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-unknown-mingw32.tar.xz",
+                "e22586762af0911c06e8140f1792e3ca381a3a482a20d67b9054883038b3a422",
+            ),
+        },
     }
 
 def _ghc_bindist_impl(ctx):
