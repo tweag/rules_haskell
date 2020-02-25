@@ -4,7 +4,7 @@ TOP="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
 
 case "$OSTYPE" in
   linux-gnu) OS=linux-x86_64; EXT=;;
-  darwin) OS=darwin-x86_64; EXT=;;
+  darwin*) OS=darwin-x86_64; EXT=;;
   cygwin|msys|win32) OS=windows-x86_64; EXT=.exe;;
   **) echo "Unknown operating system" >&2; exit 1;;
 esac
