@@ -173,7 +173,6 @@ jobs:
             # XXX 2019-01-22 Disable start script checking on Darwin
             # due to a clash between binutils and clang.
             # ./tests/run-start-script.sh --use-bindists
-            bazel build --config ci //tests/...
             bazel test --config ci //tests/...
 
         # see note about 'Disk cache'
