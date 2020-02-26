@@ -160,7 +160,7 @@ def link_libraries(libs, args, prefix_optl = False):
         args.extend([libfmt % get_lib_name(lib) for lib in cc_libs_list])
         args.extend([dirfmt % lib.dirname for lib in cc_libs_list])
 
-def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dynamic = None, pic = None):
+def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -171,7 +171,7 @@ def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dyna
     Args:
       hs: Haskell context.
       cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
-      cc_info: Combined CcInfo of dependencies.
+      libraries_to_link: list of LibraryToLink.
       binary: Final linked binary.
       args: Arguments to the linking action.
       dynamic: Whether to link dynamically, or statically.
@@ -187,7 +187,7 @@ def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dyna
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         cc_libraries_info,
-        cc_info.linking_context.libraries_to_link.to_list(),
+        libraries_to_link,
         dynamic = dynamic,
         pic = pic,
     )
