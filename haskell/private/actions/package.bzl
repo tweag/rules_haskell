@@ -2,9 +2,9 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
-load(":private/path_utils.bzl", "get_lib_name", "is_hs_library", "target_unique_name")
+load(":private/path_utils.bzl", "get_lib_name", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/cc_libraries.bzl", "get_library_files")
+load(":private/cc_libraries.bzl", "get_cc_libraries", "get_library_files")
 
 def _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = False):
     """Get directories and library names for extra library dependencies.
@@ -26,31 +26,13 @@ def _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = 
     # NOTE This is duplicated from path_utils.bzl link_libraries. This whole
     # function can go away once we track libraries outside of package
     # configuration files.
-    (static_libs, dynamic_libs) = get_library_files(
+    (cc_static_libs, cc_dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
-        cc_info.linking_context.libraries_to_link.to_list(),
+        get_cc_libraries(cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list()),
         pic = with_shared,
         dynamic = dynamic,
     )
-
-    # This test is a hack. When a CC library has a Haskell library
-    # as a dependency, we need to be careful to filter it out,
-    # otherwise it will end up polluting the linker flags. GHC
-    # already uses hs-libraries to link all Haskell libraries.
-    #
-    # TODO Get rid of this hack. See
-    # https://github.com/tweag/rules_haskell/issues/873.
-    cc_static_libs = depset(direct = [
-        lib
-        for lib in static_libs.to_list()
-        if not is_hs_library(lib)
-    ])
-    cc_dynamic_libs = depset(direct = [
-        lib
-        for lib in dynamic_libs.to_list()
-        if not is_hs_library(lib)
-    ])
     cc_libs = cc_static_libs.to_list() + cc_dynamic_libs.to_list()
 
     lib_dirs = depset(direct = [

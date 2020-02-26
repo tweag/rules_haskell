@@ -29,6 +29,26 @@ load(
     "HaskellProtobufInfo",
 )
 
+def get_cc_libraries(cc_libraries_info, libraries_to_link):
+    """Return only the C libraries out of a list of `LibraryToLink`.
+
+    Filters out libraries that are produced by Haskell target using the
+    information provided by `cc_libraries_info`.
+
+    Args:
+      cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
+      libraries_to_link: list of LibraryToLink.
+
+    Returns:
+      list of LibraryToLink, C libraries.
+
+    """
+    return [
+        lib_to_link
+        for lib_to_link in libraries_to_link
+        if not cc_libraries_info.libraries[cc_library_key(lib_to_link)].is_haskell
+    ]
+
 def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None):
     """Get libraries appropriate for linking with GHC.
 
@@ -159,23 +179,13 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
         pic = pic,
     )
 
-    # This test is a hack. When a CC library has a Haskell library
-    # as a dependency, we need to be careful to filter it out,
-    # otherwise it will end up polluting the linker flags. GHC
-    # already uses hs-libraries to link all Haskell libraries.
-    #
-    # TODO Get rid of this hack. See
-    # https://github.com/tweag/rules_haskell/issues/873.
-    cc_static_libs = depset(direct = [
-        lib
-        for lib in static_libs.to_list()
-        if not is_hs_library(lib)
-    ])
-    cc_dynamic_libs = depset(direct = [
-        lib
-        for lib in dynamic_libs.to_list()
-        if not is_hs_library(lib)
-    ])
+    (cc_static_libs, cc_dynamic_libs) = get_library_files(
+        hs,
+        cc_libraries_info,
+        get_cc_libraries(cc_libraries_info, libraries_to_link),
+        dynamic = dynamic,
+        pic = pic,
+    )
 
     package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")
     conf_path = paths.join(package_name, package_name + ".conf")

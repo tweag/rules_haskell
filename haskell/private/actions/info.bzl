@@ -3,11 +3,10 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":providers.bzl", "all_package_ids")
-load(":private/cc_libraries.bzl", "get_library_files")
+load(":private/cc_libraries.bzl", "get_cc_libraries", "get_library_files")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
-    "is_hs_library",
 )
 
 def write_proto_file(hs, output_name, proto_type, content):
@@ -167,16 +166,11 @@ def compile_info_output_groups(
     (static_libs, dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
-        cc_info.linking_context.libraries_to_link.to_list(),
+        get_cc_libraries(cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list()),
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
-    ghci_extra_libs = depset(transitive = [static_libs, dynamic_libs])
-    cc_libs = [
-        lib
-        for lib in ghci_extra_libs.to_list()
-        if not is_hs_library(lib) and get_lib_name(lib) != "ffi"
-    ]
+    cc_libs = static_libs.to_list() + dynamic_libs.to_list()
     return {
         "haskell_cdep_libs": depset(cc_libs),
         "haskell_runfiles": runfiles,
