@@ -1,6 +1,7 @@
 """Workspace rules (GHC binary distributions)"""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
+load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
 load(":private/workspace_utils.bzl", "execute_or_fail_loudly")
 
@@ -493,6 +494,9 @@ def haskell_register_ghc_bindists(
     local_sh_posix_repo_name = "rules_haskell_sh_posix_local"
     if local_sh_posix_repo_name not in native.existing_rules():
         sh_posix_configure(name = local_sh_posix_repo_name)
+    local_python_repo_name = "rules_haskell_python_local"
+    if local_python_repo_name not in native.existing_rules():
+        _configure_python3_toolchain(name = local_python_repo_name)
 
 def _find_python(repository_ctx):
     python = repository_ctx.which("python3")
@@ -502,3 +506,88 @@ def _find_python(repository_ctx):
         if not result.stdout.startswith("Python 3"):
             fail("rules_haskell requires Python >= 3.3.")
     return python
+
+def _configure_python3_toolchain_impl(repository_ctx):
+    cpu = get_cpu_value(repository_ctx)
+    python3_path = _find_python(repository_ctx)
+    repository_ctx.file("BUILD.bazel", executable = False, content = """
+load(
+    "@bazel_tools//tools/python:toolchain.bzl",
+    "py_runtime_pair",
+)
+py_runtime(
+    name = "python3_runtime",
+    interpreter_path = "{python3}",
+    python_version = "PY3",
+)
+py_runtime_pair(
+    name = "py_runtime_pair",
+    py3_runtime = ":python3_runtime",
+)
+toolchain(
+    name = "toolchain",
+    toolchain = ":py_runtime_pair",
+    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:{os}",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:{os}",
+    ],
+)
+""".format(
+        python3 = python3_path,
+        os = {
+            "darwin": "osx",
+            "x64_windows": "windows",
+        }.get(cpu, "linux"),
+    ))
+
+_config_python3_toolchain = repository_rule(
+    _configure_python3_toolchain_impl,
+    configure = True,
+    environ = ["PATH"],
+)
+
+def _configure_python3_toolchain(name):
+    """Autoconfigure python3 toolchain for GHC bindist
+
+    `rules_haskell` requires Python 3 to build Haskell targets. Under Nix we
+    use `rules_nixpkgs`'s `nixpkgs_python_configure` repository rule to use a
+    nixpkgs provisioned Python toolchain. However, outside of Nix we have to
+    rely on whatever Python toolchain is installed on the system.
+
+    Bazel provides `@bazel_tools//tools/python:autodetecting_toolchain` for
+    this purpose. However, in its current form, that toolchain does not
+    support Python toolchains installed outside of standard system paths
+    such as `/usr/bin:/bin:/usr/sbin`. The reason is that the toolchain does
+    not look for a Python interpreter in a repository rule. Instead it uses
+    wrapper scripts that look for a Python interpreter in `$PATH` within the
+    sandboxed build actions.
+
+    On MacOS, which, at the time of writing, only includes Python 2.7, users
+    will want to install Python 3 in a non-system path, e.g. via homebrew or
+    py_env. The auto detecting toolchain will not find this interpreter and
+    builds will fail with the following error:
+
+    ```
+    Error occurred while attempting to use the default Python toolchain (@rules_python//python:autodetecting_toolchain).
+    According to '/usr/bin/python -V', version is 'Python 2.7.10', but we need version 3. PATH is:
+
+    /usr/bin:/bin:/usr/sbin
+
+    Please ensure an interpreter with version 3 is available on this platform as 'python3' or 'python', or else register an appropriate Python toolchain as per the documentation for py_runtime_pair (https://github.com/bazelbuild/rules_python/blob/master/docs/python.md#py_runtime_pair).
+
+    Note that prior to Bazel 0.27, there was no check to ensure that the interpreter's version matched the version declared by the target (#4815). If your build worked prior to Bazel 0.27, and you're sure your targets do not require Python 3, you can opt out of this version check by using the non-strict autodetecting toolchain instead of the standard autodetecting toolchain. This can be done by passing the flag `--extra_toolchains=@rules_python//python:autodetecting_toolchain_nonstrict` on the command line or adding it to your bazelrc.
+    ```
+
+    This function defins a custom auto detcting Python toolchain that looks for
+    a Python 3 interpreter within a repository rule, so that Bazel's sandboxing
+    does not restrict the visible installation paths. It then registers an
+    appropriate Python toolchain, so that build actions themselves can still be
+    sandboxed.
+    """
+    _config_python3_toolchain(name = name)
+    native.register_toolchains("@{}//:toolchain".format(name))
