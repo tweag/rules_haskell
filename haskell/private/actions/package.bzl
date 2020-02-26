@@ -29,7 +29,7 @@ def _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = 
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         cc_libraries_info,
-        cc_info,
+        cc_info.linking_context.libraries_to_link.to_list(),
         pic = with_shared,
         dynamic = dynamic,
     )

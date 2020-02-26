@@ -29,7 +29,7 @@ load(
     "HaskellProtobufInfo",
 )
 
-def get_ghci_extra_libs(hs, cc_libraries_info, cc_info):
+def get_ghci_extra_libs(hs, cc_libraries_info, libraries_to_link):
     """Get libraries appropriate for GHCi's linker.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -46,7 +46,7 @@ def get_ghci_extra_libs(hs, cc_libraries_info, cc_info):
     Args:
       hs: Haskell context.
       cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
-      cc_info: Combined CcInfo provider of dependencies.
+      libraries_to_link: list of LibraryToLink.
 
     Returns:
       libs: depset of File, the libraries that should be passed to GHCi.
@@ -55,7 +55,7 @@ def get_ghci_extra_libs(hs, cc_libraries_info, cc_info):
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         cc_libraries_info,
-        cc_info,
+        libraries_to_link,
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
@@ -63,7 +63,7 @@ def get_ghci_extra_libs(hs, cc_libraries_info, cc_info):
 
     return libs
 
-def get_extra_libs(hs, cc_libraries_info, cc_info, dynamic = False, pic = None):
+def get_extra_libs(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None):
     """Get libraries appropriate for linking with GHC.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -77,7 +77,7 @@ def get_extra_libs(hs, cc_libraries_info, cc_info, dynamic = False, pic = None):
       hs: Haskell context.
       dynamic: Whether to prefer dynamic libraries.
       cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
-      cc_info: Combined CcInfo provider of dependencies.
+      libraries_to_link: list of LibraryToLink.
       dynamic: Whether dynamic libraries are preferred.
       pic: Whether position independent code is required.
 
@@ -85,7 +85,6 @@ def get_extra_libs(hs, cc_libraries_info, cc_info, dynamic = False, pic = None):
       depset of File: the libraries that should be passed to GHC for linking.
 
     """
-    libs_to_link = cc_info.linking_context.libraries_to_link.to_list()
     static_libs = []
     dynamic_libs = []
     if pic == None:
@@ -93,7 +92,7 @@ def get_extra_libs(hs, cc_libraries_info, cc_info, dynamic = False, pic = None):
 
     # PIC is irrelevant on static GHC.
     pic_required = pic and not hs.toolchain.is_static
-    for lib_to_link in libs_to_link:
+    for lib_to_link in libraries_to_link:
         cc_library_info = cc_libraries_info.libraries[cc_library_key(lib_to_link)]
         dynamic_lib = None
         if lib_to_link.dynamic_library:
@@ -188,7 +187,7 @@ def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dyna
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         cc_libraries_info,
-        cc_info,
+        cc_info.linking_context.libraries_to_link.to_list(),
         dynamic = dynamic,
         pic = pic,
     )

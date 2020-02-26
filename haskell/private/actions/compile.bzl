@@ -323,7 +323,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, cc_lib
     )
 
     # Transitive library dependencies for runtime.
-    ghci_extra_libs = get_ghci_extra_libs(hs, cc_libraries_info, cc_info)
+    ghci_extra_libs = get_ghci_extra_libs(hs, cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list())
     link_libraries(ghci_extra_libs, args)
 
     return struct(

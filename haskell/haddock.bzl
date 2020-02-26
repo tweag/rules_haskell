@@ -136,7 +136,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     ghci_extra_libs = get_ghci_extra_libs(
         hs,
         target[HaskellCcLibrariesInfo],
-        target[CcInfo],
+        target[CcInfo].linking_context.libraries_to_link.to_list(),
     )
 
     # TODO(mboes): we should be able to instantiate this template only

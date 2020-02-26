@@ -63,7 +63,7 @@ def build_haskell_runghc(
     ghci_extra_libs = get_ghci_extra_libs(
         hs,
         cc_libraries_info,
-        cc_info,
+        cc_info.linking_context.libraries_to_link.to_list(),
     )
     link_libraries(ghci_extra_libs, args)
 

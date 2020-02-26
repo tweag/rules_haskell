@@ -111,8 +111,8 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, d
     # already covered by their corresponding package-db entries. We only need
     # to add libraries and headers for direct C library dependencies to the
     # command line.
-    direct_libs = get_ghci_extra_libs(hs, cc_libraries_info, direct_cc_info)
-    transitive_libs = get_ghci_extra_libs(hs, cc_libraries_info, cc_info)
+    direct_libs = get_ghci_extra_libs(hs, cc_libraries_info, direct_cc_info.linking_context.libraries_to_link.to_list())
+    transitive_libs = get_ghci_extra_libs(hs, cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list())
     env = dict(hs.env)
     env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)
     if hs.toolchain.is_darwin:
