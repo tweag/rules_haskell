@@ -21,7 +21,7 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
-    "get_extra_libs",
+    "get_library_files",
     "haskell_cc_libraries_aspect",
     "link_libraries",
     "merge_HaskellCcLibrariesInfo",
@@ -256,7 +256,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         repl_info.load_info.cc_info,
         repl_info.dep_info.cc_info,
     ])
-    (static_libs, dynamic_libs) = get_extra_libs(
+    (static_libs, dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
         cc_info.linking_context.libraries_to_link.to_list(),

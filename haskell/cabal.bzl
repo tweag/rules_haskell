@@ -25,7 +25,7 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
-    "get_extra_libs",
+    "get_library_files",
     "haskell_cc_libraries_aspect",
 )
 
@@ -111,9 +111,9 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, d
     # already covered by their corresponding package-db entries. We only need
     # to add libraries and headers for direct C library dependencies to the
     # command line.
-    (direct_static_libs, direct_dynamic_libs) = get_extra_libs(hs, cc_libraries_info, direct_cc_info.linking_context.libraries_to_link.to_list(), dynamic = not hs.toolchain.is_static, pic = True)
+    (direct_static_libs, direct_dynamic_libs) = get_library_files(hs, cc_libraries_info, direct_cc_info.linking_context.libraries_to_link.to_list(), dynamic = not hs.toolchain.is_static, pic = True)
     direct_libs = depset(transitive = [direct_static_libs, direct_dynamic_libs])
-    (transitive_static_libs, transitive_dynamic_libs) = get_extra_libs(hs, cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list(), dynamic = not hs.toolchain.is_static, pic = True)
+    (transitive_static_libs, transitive_dynamic_libs) = get_library_files(hs, cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list(), dynamic = not hs.toolchain.is_static, pic = True)
     transitive_libs = depset(transitive = [transitive_static_libs, transitive_dynamic_libs])
     env = dict(hs.env)
     env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)

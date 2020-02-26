@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":providers.bzl", "all_package_ids")
-load(":private/cc_libraries.bzl", "get_extra_libs")
+load(":private/cc_libraries.bzl", "get_library_files")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -164,7 +164,7 @@ def compile_info_output_groups(
     Returns:
       A dict whose keys are output groups and values are depsets of Files.
     """
-    (static_libs, dynamic_libs) = get_extra_libs(
+    (static_libs, dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
         cc_info.linking_context.libraries_to_link.to_list(),

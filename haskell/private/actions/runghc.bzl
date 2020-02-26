@@ -13,7 +13,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_extra_libs",
+    "get_library_files",
     "link_libraries",
 )
 load("@bazel_skylib//lib:shell.bzl", "shell")
@@ -60,7 +60,7 @@ def build_haskell_runghc(
         for idir in set.to_list(hs_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
-    (static_libs, dynamic_libs) = get_extra_libs(
+    (static_libs, dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
         cc_info.linking_context.libraries_to_link.to_list(),

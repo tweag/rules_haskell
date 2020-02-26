@@ -22,7 +22,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_extra_libs",
+    "get_library_files",
     "link_libraries",
 )
 load(":private/set.bzl", "set")
@@ -323,7 +323,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, cc_lib
     )
 
     # Transitive library dependencies for runtime.
-    (static_libs, dynamic_libs) = get_extra_libs(
+    (static_libs, dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
         cc_info.linking_context.libraries_to_link.to_list(),

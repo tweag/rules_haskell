@@ -11,7 +11,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_extra_libs",
+    "get_library_files",
     "haskell_cc_libraries_aspect",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
@@ -133,7 +133,7 @@ def _haskell_doc_aspect_impl(target, ctx):
     )
 
     # C library dependencies for runtime.
-    (static_libs, dynamic_libs) = get_extra_libs(
+    (static_libs, dynamic_libs) = get_library_files(
         hs,
         target[HaskellCcLibrariesInfo],
         target[CcInfo].linking_context.libraries_to_link.to_list(),

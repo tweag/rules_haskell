@@ -29,26 +29,27 @@ load(
     "HaskellProtobufInfo",
 )
 
-def get_extra_libs(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None):
+def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None):
     """Get libraries appropriate for linking with GHC.
+
+    Takes a list of LibraryToLink and returns a list of the appropriate
+    components for linking with GHC or GHCi.
 
     GHC expects dynamic and static versions of the same library to have the
     same library name. Static libraries for which this is not the case will be
     symlinked to a matching name.
 
-    Furthermore, dynamic libraries will be symbolically linked into a common
-    directory to allow for less RPATH entries.
-
     Args:
       hs: Haskell context.
-      dynamic: Whether to prefer dynamic libraries.
       cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
       libraries_to_link: list of LibraryToLink.
       dynamic: Whether dynamic libraries are preferred.
       pic: Whether position independent code is required.
 
     Returns:
-      depset of File: the libraries that should be passed to GHC for linking.
+      (static_libraries, dynamic_libraries):
+        static_libraries: depset of File, the static libraries that should be passed to GHC for linking.
+        dynamic_libraries: depset of File, the dynamic libraries that should be passed to GHC for linking.
 
     """
     static_libs = []
@@ -150,7 +151,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
         dynamic_libs: depset of File, dynamic library files.
     """
 
-    (static_libs, dynamic_libs) = get_extra_libs(
+    (static_libs, dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
         libraries_to_link,

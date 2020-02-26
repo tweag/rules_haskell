@@ -11,7 +11,7 @@ load(
 )
 load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
-    "get_extra_libs",
+    "get_library_files",
     "haskell_cc_libraries_aspect",
     "link_libraries",
 )
@@ -128,7 +128,7 @@ def _haskell_doctest_single(target, ctx):
     args.add_all(ctx.attr.doctest_flags)
 
     # C library dependencies to link against.
-    (static_libs, dynamic_libs) = get_extra_libs(hs, cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list(), dynamic = not hs.toolchain.is_static, pic = True)
+    (static_libs, dynamic_libs) = get_library_files(hs, cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list(), dynamic = not hs.toolchain.is_static, pic = True)
     ghci_extra_libs = depset(transitive = [static_libs, dynamic_libs])
     link_libraries(ghci_extra_libs, args, prefix_optl = hs.toolchain.is_darwin)
 

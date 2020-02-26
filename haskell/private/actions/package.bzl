@@ -4,7 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(":private/path_utils.bzl", "get_lib_name", "is_hs_library", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/cc_libraries.bzl", "get_extra_libs")
+load(":private/cc_libraries.bzl", "get_library_files")
 
 def _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = False):
     """Get directories and library names for extra library dependencies.
@@ -26,7 +26,7 @@ def _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = 
     # NOTE This is duplicated from path_utils.bzl link_libraries. This whole
     # function can go away once we track libraries outside of package
     # configuration files.
-    (static_libs, dynamic_libs) = get_extra_libs(
+    (static_libs, dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
         cc_info.linking_context.libraries_to_link.to_list(),
