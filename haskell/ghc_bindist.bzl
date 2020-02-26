@@ -262,6 +262,12 @@ grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 -n1 \
         ))
         execute_or_fail_loudly(ctx, ["./patch_bins"])
 
+    # The default locale is OS specific.
+    if ctx.attr.locale:
+        locale = ctx.attr.locale
+    else:
+        locale = "en_US.UTF-8" if os == "darwin" else "C.UTF-8"
+
     # Generate BUILD file entries describing each prebuilt package.
     # Cannot use //haskell:pkgdb_to_bzl because that's a generated
     # target. ctx.path() only works on source files.
@@ -297,7 +303,7 @@ haskell_toolchain(
         compiler_flags = ctx.attr.compiler_flags,
         haddock_flags = ctx.attr.haddock_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
-        locale = ctx.attr.locale,
+        locale = locale,
     )
 
     if os == "windows":
@@ -349,8 +355,8 @@ _ghc_bindist = repository_rule(
             doc = "Sequence of commands to be applied after patches are applied.",
         ),
         "locale": attr.string(
-            default = "C.UTF-8",
-            doc = "Locale that will be set during compiler invocations.",
+            doc = "Locale that will be set during compiler invocations. Default: C.UTF-8 (en_US.UTF-8 on MacOS)",
+            mandatory = False,
         ),
     },
 )
