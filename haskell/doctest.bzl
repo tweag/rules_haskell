@@ -3,7 +3,6 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context", "render_env")
-load(":private/path_utils.bzl", "link_libraries")
 load(":private/set.bzl", "set")
 load(
     "@rules_haskell//haskell:providers.bzl",
@@ -14,6 +13,7 @@ load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_ghci_extra_libs",
     "haskell_cc_libraries_aspect",
+    "link_libraries",
 )
 
 def _doctest_toolchain_impl(ctx):

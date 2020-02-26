@@ -14,6 +14,7 @@ load(
 load(
     ":private/path_utils.bzl",
     "create_rpath_entry",
+    "get_dirname",
     "get_lib_name",
     "is_hs_library",
     "mangle_static_library",
@@ -121,6 +122,44 @@ def get_extra_libs(hs, cc_libraries_info, cc_info, dynamic = False, pic = None):
     static_libs = depset(direct = static_libs)
     dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
+
+def link_libraries(libs, args, prefix_optl = False):
+    """Add linker flags to link against the given libraries.
+
+    Args:
+      libs: Sequence of File, libraries to link.
+      args: Args or List, append arguments to this object.
+      prefix_optl: Bool, whether to prefix linker flags by -optl
+
+    """
+
+    # This test is a hack. When a CC library has a Haskell library
+    # as a dependency, we need to be careful to filter it out,
+    # otherwise it will end up polluting the linker flags. GHC
+    # already uses hs-libraries to link all Haskell libraries.
+    #
+    # TODO Get rid of this hack. See
+    # https://github.com/tweag/rules_haskell/issues/873.
+    cc_libs = depset(direct = [
+        lib
+        for lib in libs.to_list()
+        if not is_hs_library(lib)
+    ])
+
+    if prefix_optl:
+        libfmt = "-optl-l%s"
+        dirfmt = "-optl-L%s"
+    else:
+        libfmt = "-l%s"
+        dirfmt = "-L%s"
+
+    if hasattr(args, "add_all"):
+        args.add_all(cc_libs, map_each = get_lib_name, format_each = libfmt)
+        args.add_all(cc_libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
+    else:
+        cc_libs_list = cc_libs.to_list()
+        args.extend([libfmt % get_lib_name(lib) for lib in cc_libs_list])
+        args.extend([dirfmt % lib.dirname for lib in cc_libs_list])
 
 def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.

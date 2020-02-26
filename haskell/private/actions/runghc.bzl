@@ -4,7 +4,6 @@ load(":private/context.bzl", "render_env")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(
     ":private/path_utils.bzl",
-    "link_libraries",
     "ln",
     "target_unique_name",
 )
@@ -12,7 +11,11 @@ load(
     ":private/set.bzl",
     "set",
 )
-load(":private/cc_libraries.bzl", "get_ghci_extra_libs")
+load(
+    ":private/cc_libraries.bzl",
+    "get_ghci_extra_libs",
+    "link_libraries",
+)
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_runghc(

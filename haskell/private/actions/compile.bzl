@@ -10,7 +10,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
-    "link_libraries",
     "module_name",
     "target_unique_name",
 )
@@ -24,6 +23,7 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "get_ghci_extra_libs",
+    "link_libraries",
 )
 load(":private/set.bzl", "set")
 

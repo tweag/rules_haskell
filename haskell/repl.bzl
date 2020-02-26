@@ -6,7 +6,6 @@ load("@bazel_skylib//lib:shell.bzl", "shell")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(
     ":private/path_utils.bzl",
-    "link_libraries",
     "match_label",
     "parse_pattern",
     "target_unique_name",
@@ -24,6 +23,7 @@ load(
     "deps_HaskellCcLibrariesInfo",
     "get_ghci_extra_libs",
     "haskell_cc_libraries_aspect",
+    "link_libraries",
     "merge_HaskellCcLibrariesInfo",
 )
 load(":private/set.bzl", "set")
