@@ -220,6 +220,14 @@ en_US.utf8
 POSIX
 ```
 
+### MacOS: Error: DEVELOPER_DIR not set.
+
+Make sure to set the following environment variable:
+```
+export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+```
+This ensures that Bazel picks the correct C compiler.
+
 ## For `rules_haskell` developers
 
 ### Saving common command-line flags to a file
