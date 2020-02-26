@@ -59,10 +59,8 @@ def build_haskell_runghc(
 
     ghci_extra_libs = get_ghci_extra_libs(
         hs,
-        posix,
         cc_libraries_info,
         cc_info,
-        path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
     link_libraries(ghci_extra_libs, args)
 

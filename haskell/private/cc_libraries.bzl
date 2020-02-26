@@ -110,7 +110,7 @@ def _get_unique_lib_files(cc_info):
         for filename in filenames
     ]
 
-def get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info, path_prefix = None):
+def get_ghci_extra_libs(hs, cc_libraries_info, cc_info):
     """Get libraries appropriate for GHCi's linker.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -128,7 +128,6 @@ def get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info, path_prefix = Non
       hs: Haskell context.
       cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
       cc_info: Combined CcInfo provider of dependencies.
-      path_prefix: (optional) Prefix for the entries in the generated library path.
 
     Returns:
       libs: depset of File, the libraries that should be passed to GHCi.
@@ -136,18 +135,16 @@ def get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info, path_prefix = Non
     """
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
-        posix,
         cc_libraries_info,
         cc_info,
         dynamic = not hs.toolchain.is_static,
         pic = True,
-        fixup_dir = "_ghci_libs",
     )
     libs = depset(transitive = [static_libs, dynamic_libs])
 
     return libs
 
-def get_extra_libs(hs, posix, cc_libraries_info, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"):
+def get_extra_libs(hs, cc_libraries_info, cc_info, dynamic = False, pic = None):
     """Get libraries appropriate for linking with GHC.
 
     GHC expects dynamic and static versions of the same library to have the
@@ -164,13 +161,11 @@ def get_extra_libs(hs, posix, cc_libraries_info, cc_info, dynamic = False, pic =
       cc_info: Combined CcInfo provider of dependencies.
       dynamic: Whether dynamic libraries are preferred.
       pic: Whether position independent code is required.
-      fixup_dir: Generate symbolic links to libraries in this directory.
 
     Returns:
       depset of File: the libraries that should be passed to GHC for linking.
 
     """
-    fixed_lib_dir = target_unique_name(hs, fixup_dir)
     libs_to_link = _get_unique_lib_files(cc_info)
     static_libs = []
     dynamic_libs = []
@@ -235,7 +230,6 @@ def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dyna
 
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
-        posix,
         cc_libraries_info,
         cc_info,
         dynamic = dynamic,

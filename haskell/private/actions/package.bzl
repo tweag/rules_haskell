@@ -6,7 +6,7 @@ load(":private/path_utils.bzl", "get_lib_name", "is_hs_library", "target_unique_
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/cc_libraries.bzl", "get_extra_libs")
 
-def _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info, dynamic = False):
+def _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = False):
     """Get directories and library names for extra library dependencies.
 
     Args:
@@ -28,7 +28,6 @@ def _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info, dyn
     # configuration files.
     (static_libs, dynamic_libs) = get_extra_libs(
         hs,
-        posix,
         cc_libraries_info,
         cc_info,
         pic = with_shared,
@@ -103,9 +102,9 @@ def package(
         paths.join(pkg_db_dir, "_iface"),
     )
 
-    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info)
+    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info)
     if with_shared:
-        (extra_dynamic_lib_dirs, _) = _get_extra_libraries(hs, posix, with_shared, cc_libraries_info, cc_info, dynamic = True)
+        (extra_dynamic_lib_dirs, _) = _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = True)
     else:
         extra_dynamic_lib_dirs = extra_lib_dirs
 
