@@ -29,40 +29,6 @@ load(
     "HaskellProtobufInfo",
 )
 
-def get_ghci_extra_libs(hs, cc_libraries_info, libraries_to_link):
-    """Get libraries appropriate for GHCi's linker.
-
-    GHC expects dynamic and static versions of the same library to have the
-    same library name. Static libraries for which this is not the case will be
-    symlinked to a matching name.
-
-    Furthermore, dynamic libraries will be symbolically linked into a common
-    directory to allow for less RPATH entries and to fix file extensions that
-    GHCi does not support.
-
-    GHCi can load PIC static libraries (-fPIC -fexternal-dynamic-refs) with a
-    dynamic RTS and dynamic libraries with a dynamic RTS.
-
-    Args:
-      hs: Haskell context.
-      cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
-      libraries_to_link: list of LibraryToLink.
-
-    Returns:
-      libs: depset of File, the libraries that should be passed to GHCi.
-
-    """
-    (static_libs, dynamic_libs) = get_extra_libs(
-        hs,
-        cc_libraries_info,
-        libraries_to_link,
-        dynamic = not hs.toolchain.is_static,
-        pic = True,
-    )
-    libs = depset(transitive = [static_libs, dynamic_libs])
-
-    return libs
-
 def get_extra_libs(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None):
     """Get libraries appropriate for linking with GHC.
 

@@ -13,7 +13,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_ghci_extra_libs",
+    "get_extra_libs",
     "link_libraries",
 )
 load("@bazel_skylib//lib:shell.bzl", "shell")
@@ -60,11 +60,14 @@ def build_haskell_runghc(
         for idir in set.to_list(hs_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
-    ghci_extra_libs = get_ghci_extra_libs(
+    (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         cc_libraries_info,
         cc_info.linking_context.libraries_to_link.to_list(),
+        dynamic = not hs.toolchain.is_static,
+        pic = True,
     )
+    ghci_extra_libs = depset(transitive = [static_libs, dynamic_libs])
     link_libraries(ghci_extra_libs, args)
 
     runghc_file = hs.actions.declare_file(target_unique_name(hs, "runghc"))

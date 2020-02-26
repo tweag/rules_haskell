@@ -11,7 +11,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_ghci_extra_libs",
+    "get_extra_libs",
     "haskell_cc_libraries_aspect",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
@@ -133,11 +133,14 @@ def _haskell_doc_aspect_impl(target, ctx):
     )
 
     # C library dependencies for runtime.
-    ghci_extra_libs = get_ghci_extra_libs(
+    (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         target[HaskellCcLibrariesInfo],
         target[CcInfo].linking_context.libraries_to_link.to_list(),
+        dynamic = not hs.toolchain.is_static,
+        pic = True,
     )
+    ghci_extra_libs = depset(transitive = [static_libs, dynamic_libs])
 
     # TODO(mboes): we should be able to instantiate this template only
     # once per toolchain instance, rather than here.

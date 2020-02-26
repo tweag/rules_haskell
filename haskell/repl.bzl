@@ -21,7 +21,7 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
-    "get_ghci_extra_libs",
+    "get_extra_libs",
     "haskell_cc_libraries_aspect",
     "link_libraries",
     "merge_HaskellCcLibrariesInfo",
@@ -256,11 +256,14 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         repl_info.load_info.cc_info,
         repl_info.dep_info.cc_info,
     ])
-    ghci_extra_libs = get_ghci_extra_libs(
+    (static_libs, dynamic_libs) = get_extra_libs(
         hs,
         cc_libraries_info,
         cc_info.linking_context.libraries_to_link.to_list(),
+        dynamic = not hs.toolchain.is_static,
+        pic = True,
     )
+    ghci_extra_libs = depset(transitive = [static_libs, dynamic_libs])
     link_libraries(ghci_extra_libs, args)
 
     # Add import directories

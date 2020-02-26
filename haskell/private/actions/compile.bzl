@@ -22,7 +22,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_ghci_extra_libs",
+    "get_extra_libs",
     "link_libraries",
 )
 load(":private/set.bzl", "set")
@@ -323,7 +323,14 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, cc_lib
     )
 
     # Transitive library dependencies for runtime.
-    ghci_extra_libs = get_ghci_extra_libs(hs, cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list())
+    (static_libs, dynamic_libs) = get_extra_libs(
+        hs,
+        cc_libraries_info,
+        cc_info.linking_context.libraries_to_link.to_list(),
+        dynamic = not hs.toolchain.is_static,
+        pic = True,
+    )
+    ghci_extra_libs = depset(transitive = [static_libs, dynamic_libs])
     link_libraries(ghci_extra_libs, args)
 
     return struct(
