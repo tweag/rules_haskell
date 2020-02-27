@@ -12,7 +12,7 @@ load(
 load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_cc_libraries",
-    "get_library_files",
+    "get_ghci_library_files",
     "haskell_cc_libraries_aspect",
     "link_libraries",
 )
@@ -129,22 +129,8 @@ def _haskell_doctest_single(target, ctx):
     args.add_all(ctx.attr.doctest_flags)
 
     # C library dependencies to link against.
-    (input_static_libraries, input_dynamic_libraries) = get_library_files(
-        hs,
-        cc_libraries_info,
-        cc.transitive_libraries.to_list(),
-        dynamic = not hs.toolchain.is_static,
-        pic = True,
-    )
-    (link_static_libraries, link_dynamic_libraries) = get_library_files(
-        hs,
-        cc_libraries_info,
-        cc.cc_libraries.to_list(),
-        dynamic = not hs.toolchain.is_static,
-        pic = True,
-    )
     link_libraries(
-        link_static_libraries + link_dynamic_libraries,
+        get_ghci_library_files(hs, cc_libraries_info, cc.cc_libraries.to_list()),
         args,
         prefix_optl = hs.toolchain.is_darwin,
     )
@@ -162,7 +148,7 @@ def _haskell_doctest_single(target, ctx):
             hs_info.extra_source_files,
             hs_info.dynamic_libraries,
             cc_info.compilation_context.headers,
-            depset(input_static_libraries + input_dynamic_libraries),
+            depset(get_ghci_library_files(hs, cc_libraries_info, cc.transitive_libraries.to_list())),
             depset(
                 toolchain.doctest +
                 cc.files +

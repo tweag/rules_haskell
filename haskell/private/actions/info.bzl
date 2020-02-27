@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":providers.bzl", "all_package_ids")
-load(":private/cc_libraries.bzl", "get_library_files")
+load(":private/cc_libraries.bzl", "get_ghci_library_files")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
@@ -162,14 +162,7 @@ def compile_info_output_groups(
     Returns:
       A dict whose keys are output groups and values are depsets of Files.
     """
-    (static_libs, dynamic_libs) = get_library_files(
-        hs,
-        cc.cc_libraries_info,
-        cc.cc_libraries.to_list(),
-        dynamic = not hs.toolchain.is_static,
-        pic = True,
-    )
-    cc_libs = static_libs + dynamic_libs
+    cc_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries.to_list())
     return {
         "haskell_cdep_libs": depset(cc_libs),
         "haskell_runfiles": runfiles,

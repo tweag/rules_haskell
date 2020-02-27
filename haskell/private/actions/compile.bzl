@@ -22,7 +22,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_library_files",
+    "get_ghci_library_files",
     "link_libraries",
 )
 load(":private/set.bzl", "set")
@@ -324,22 +324,9 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
 
     # Transitive library dependencies for runtime.
     all_libraries = depset(transitive = [cc.transitive_libraries, cc.plugin_libraries]).to_list()
-    (input_static_libraries, input_dynamic_libraries) = get_library_files(
-        hs,
-        cc.cc_libraries_info,
-        all_libraries,
-        dynamic = not hs.toolchain.is_static,
-        pic = True,
-    )
-    (link_static_libraries, link_dynamic_libraries) = get_library_files(
-        hs,
-        cc.cc_libraries_info,
-        cc.cc_libraries.to_list(),
-        dynamic = not hs.toolchain.is_static,
-        pic = True,
-    )
+    input_libraries = get_ghci_library_files(hs, cc.cc_libraries_info, all_libraries)
     link_libraries(
-        link_static_libraries + link_dynamic_libraries,
+        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries.to_list()),
         args,
     )
 
@@ -358,7 +345,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             plugin_dep_info.interface_dirs,
             plugin_dep_info.static_libraries,
             plugin_dep_info.dynamic_libraries,
-            depset(input_static_libraries + input_dynamic_libraries),
+            depset(input_libraries),
             java.inputs,
             preprocessors.inputs,
             plugin_tool_inputs,

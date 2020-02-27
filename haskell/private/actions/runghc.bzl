@@ -13,7 +13,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_library_files",
+    "get_ghci_library_files",
     "link_libraries",
 )
 load("@bazel_skylib//lib:shell.bzl", "shell")
@@ -60,22 +60,9 @@ def build_haskell_runghc(
             args += ["-i{0}".format(idir)]
 
     all_libraries = depset(transitive = [cc.transitive_libraries, cc.plugin_libraries]).to_list()
-    (input_static_libraries, input_dynamic_libraries) = get_library_files(
-        hs,
-        cc.cc_libraries_info,
-        all_libraries,
-        dynamic = not hs.toolchain.is_static,
-        pic = True,
-    )
-    (link_static_libraries, link_dynamic_libraries) = get_library_files(
-        hs,
-        cc.cc_libraries_info,
-        cc.cc_libraries.to_list(),
-        dynamic = not hs.toolchain.is_static,
-        pic = True,
-    )
+    input_libraries = get_ghci_library_files(hs, cc.cc_libraries_info, all_libraries)
     link_libraries(
-        link_static_libraries + link_dynamic_libraries,
+        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries.to_list()),
         args,
     )
 
@@ -121,7 +108,7 @@ def build_haskell_runghc(
         ]),
         package_databases,
         pkg_info_inputs,
-        depset(input_static_libraries + input_dynamic_libraries),
+        depset(input_libraries),
         hs_info.source_files,
         hs.toolchain.cc_wrapper.runfiles.files,
     ])
