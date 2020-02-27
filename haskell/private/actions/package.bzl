@@ -21,10 +21,6 @@ def _get_extra_libraries(hs, cc, with_shared, dynamic = False):
       dirs: list: Library search directories for extra library dependencies.
       libs: list: Extra library dependencies.
     """
-
-    # NOTE This is duplicated from path_utils.bzl link_libraries. This whole
-    # function can go away once we track libraries outside of package
-    # configuration files.
     (cc_static_libs, cc_dynamic_libs) = get_library_files(
         hs,
         cc.cc_libraries_info,
