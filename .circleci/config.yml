@@ -113,9 +113,90 @@ jobs:
           paths:
               - ~/.cache/bazel/
 
+  build-darwin-bindist:
+    macos:
+      xcode: "9.0"
+    steps:
+      - checkout
+      - run:
+          name: Install Python3
+          command: |
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install python3
+      - run:
+          name: Install Bazel
+          command: |
+            BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
+            mv $BAZEL_DIR $HOME/bazel
+      - run:
+          name: Configure
+          command: |
+            mkdir -p ~/.cache/bazel/
+
+            cat >$HOME/.bashrc_rules_haskell <<'EOF'
+            export PATH="$HOME/bazel:$PATH"
+            export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+            EOF
+
+            echo "build:ci --disk_cache=~/.cache/bazel/" >> .bazelrc.local
+            EXCLUDED="-dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist"
+            echo "common:ci --build_tag_filters $EXCLUDED" >> .bazelrc.local
+            echo "common:ci --test_tag_filters $EXCLUDED" >> .bazelrc.local
+
+      - restore_cache:
+          keys: # see note about 'Disk cache'
+              - v1-rules_haskell-bindist-empty-{{ .Branch }}-
+              - v1-rules_haskell-bindist-cache-{{ .Branch }}-
+              - v1-rules_haskell-bindist-cache-master-
+
+      - run:
+          name: Prefetch Stackage snapshot
+          shell: /bin/bash -eilo pipefail
+          command: |
+            . $HOME/.bashrc_rules_haskell
+            # Retry if needed due to network flakiness.
+            cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd
+      - run:
+          name: Build tests
+          shell: /bin/bash -eilo pipefail
+          command: |
+            . $HOME/.bashrc_rules_haskell
+            bazel build --config ci //tests/...
+      - run:
+          name: Run tests
+          shell: /bin/bash -eilo pipefail
+          command: |
+            . $HOME/.bashrc_rules_haskell
+
+            # Keep CI awake
+            while true; do echo "."; sleep 60; done &
+
+            # XXX 2019-01-22 Disable start script checking on Darwin
+            # due to a clash between binutils and clang.
+            # ./tests/run-start-script.sh --use-bindists
+            bazel test --config ci //tests/...
+
+        # see note about 'Disk cache'
+      - save_cache:
+          key: v1-rules_haskell-bindist-cache-{{ .Branch }}-{{ .BuildNum }}
+          paths:
+              - ~/.cache/bazel/
+
+      - run:
+          name: Clean up cache
+          shell: /bin/bash -eilo pipefail
+          command: |
+            rm -rf ~/.cache/bazel/
+            mkdir -p ~/.cache/bazel/
+
+      - save_cache:
+          key: v1-rules_haskell-bindist-empty-master-{{ .BuildNum }}
+          paths:
+              - ~/.cache/bazel/
+
 workflows:
   version: 2
   build:
     jobs:
       - build-darwin:
           context: org-global # for the cachix token
+      - build-darwin-bindist: {}
