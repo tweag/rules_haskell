@@ -6,15 +6,14 @@ load(":private/path_utils.bzl", "get_lib_name", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/cc_libraries.bzl", "get_cc_libraries", "get_library_files")
 
-def _get_extra_libraries(hs, with_shared, cc_libraries_info, libraries_to_link, dynamic = False):
+def _get_extra_libraries(hs, cc, with_shared, dynamic = False):
     """Get directories and library names for extra library dependencies.
 
     Args:
       hs: Haskell context.
+      cc: CcInteropInfo.
       posix: POSIX toolchain.
       with_shared: Whether the library is built with both static and shared library outputs.
-      cc_libraries_info: HaskellCcLibrariesInfo.
-      libraries_to_link: list of LibraryToLink.
       dynamic: Whether to collect dynamic library dependencies.
 
     Returns:
@@ -28,8 +27,8 @@ def _get_extra_libraries(hs, with_shared, cc_libraries_info, libraries_to_link, 
     # configuration files.
     (cc_static_libs, cc_dynamic_libs) = get_library_files(
         hs,
-        cc_libraries_info,
-        get_cc_libraries(cc_libraries_info, libraries_to_link),
+        cc.cc_libraries_info,
+        get_cc_libraries(cc.cc_libraries_info, cc.transitive_libraries.to_list()),
         pic = with_shared,
         dynamic = dynamic,
     )
@@ -49,10 +48,9 @@ def _get_extra_libraries(hs, with_shared, cc_libraries_info, libraries_to_link, 
 
 def package(
         hs,
+        cc,
         posix,
         dep_info,
-        cc_libraries_info,
-        libraries_to_link,
         with_shared,
         exposed_modules_file,
         other_modules,
@@ -84,9 +82,9 @@ def package(
         paths.join(pkg_db_dir, "_iface"),
     )
 
-    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, with_shared, cc_libraries_info, libraries_to_link)
+    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, cc, with_shared)
     if with_shared:
-        (extra_dynamic_lib_dirs, _) = _get_extra_libraries(hs, with_shared, cc_libraries_info, libraries_to_link, dynamic = True)
+        (extra_dynamic_lib_dirs, _) = _get_extra_libraries(hs, cc, with_shared, dynamic = True)
     else:
         extra_dynamic_lib_dirs = extra_lib_dirs
 

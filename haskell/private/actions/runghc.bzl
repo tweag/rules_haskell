@@ -20,13 +20,12 @@ load("@bazel_skylib//lib:shell.bzl", "shell")
 
 def build_haskell_runghc(
         hs,
+        cc,
         posix,
         runghc_wrapper,
         user_compile_flags,
         extra_args,
         hs_info,
-        cc_libraries_info,
-        libraries_to_link,
         output,
         package_databases,
         version,
@@ -62,8 +61,8 @@ def build_haskell_runghc(
 
     (static_libs, dynamic_libs) = get_library_files(
         hs,
-        cc_libraries_info,
-        libraries_to_link,
+        cc.cc_libraries_info,
+        depset(transitive = [cc.transitive_libraries, cc.plugin_libraries]).to_list(),
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )

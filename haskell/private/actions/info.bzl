@@ -143,10 +143,9 @@ def compile_info_output_groups(
         name,
         workspace_name,
         hs,
+        cc,
         c,
         posix,
-        cc_libraries_info,
-        libraries_to_link,
         runfiles):
     """Output groups for compiling a Haskell target.
 
@@ -155,9 +154,9 @@ def compile_info_output_groups(
         workspace_name: The workspace this target was defined in.
           Used for organizing its runfiles.
         hs: The Haskell context.
+        cc: CcInteropInfo.
         c: A struct with information about the compilation step.
         posix: The posix toolchain.
-        libraries_to_link: list of LibraryToLink.
         runfiles: A depset of Files.
 
     Returns:
@@ -165,8 +164,11 @@ def compile_info_output_groups(
     """
     (static_libs, dynamic_libs) = get_library_files(
         hs,
-        cc_libraries_info,
-        get_cc_libraries(cc_libraries_info, libraries_to_link),
+        cc.cc_libraries_info,
+        get_cc_libraries(
+            cc.cc_libraries_info,
+            depset(transitive = [cc.transitive_libraries, cc.plugin_libraries]).to_list(),
+        ),
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
