@@ -273,7 +273,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         pic = True,
     )
     link_libraries(
-        depset(transitive = [link_static_libraries, link_dynamic_libraries]).to_list(),
+        link_static_libraries + link_dynamic_libraries,
         args,
     )
 
@@ -350,8 +350,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
             transitive_files = depset(transitive = [
                 repl_info.load_info.source_files,
                 repl_info.dep_info.package_databases,
-                input_static_libraries,
-                input_dynamic_libraries,
+                depset(input_static_libraries + input_dynamic_libraries),
                 depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
             ]),
             collect_data = ctx.attr.collect_data,

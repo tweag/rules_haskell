@@ -339,7 +339,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         pic = True,
     )
     link_libraries(
-        depset(transitive = [link_static_libraries, link_dynamic_libraries]).to_list(),
+        link_static_libraries + link_dynamic_libraries,
         args,
     )
 
@@ -358,8 +358,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             plugin_dep_info.interface_dirs,
             plugin_dep_info.static_libraries,
             plugin_dep_info.dynamic_libraries,
-            input_static_libraries,
-            input_dynamic_libraries,
+            depset(input_static_libraries + input_dynamic_libraries),
             java.inputs,
             preprocessors.inputs,
             plugin_tool_inputs,

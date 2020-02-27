@@ -105,8 +105,6 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
             # happens during profiling builds.
             static_libs.append(lib_to_link.static_library)
 
-    static_libs = depset(direct = static_libs)
-    dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
 
 def link_libraries(libs, args, prefix_optl = False):
@@ -179,7 +177,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
     package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")
     conf_path = paths.join(package_name, package_name + ".conf")
     conf_file = hs.actions.declare_file(conf_path)
-    libs = cc_static_libs.to_list() + cc_dynamic_libs.to_list()
+    libs = cc_static_libs + cc_dynamic_libs
     write_package_conf(hs, conf_file, {
         "name": package_name,
         "extra-libraries": [
@@ -202,7 +200,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
                 keep_filename = False,
                 prefix = "@loader_path" if hs.toolchain.is_darwin else "$ORIGIN",
             )
-            for lib in dynamic_libs.to_list()
+            for lib in dynamic_libs
         ]),
     })
     cache_file = ghc_pkg_recache(hs, posix, conf_file)

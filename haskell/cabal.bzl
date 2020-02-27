@@ -112,9 +112,9 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, d
     # to add libraries and headers for direct C library dependencies to the
     # command line.
     (direct_static_libs, direct_dynamic_libs) = get_library_files(hs, cc_libraries_info, direct_cc_info.linking_context.libraries_to_link.to_list(), dynamic = not hs.toolchain.is_static, pic = True)
-    direct_libs = depset(transitive = [direct_static_libs, direct_dynamic_libs])
+    direct_libs = direct_static_libs + direct_dynamic_libs
     (transitive_static_libs, transitive_dynamic_libs) = get_library_files(hs, cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list(), dynamic = not hs.toolchain.is_static, pic = True)
-    transitive_libs = depset(transitive = [transitive_static_libs, transitive_dynamic_libs])
+    transitive_libs = transitive_static_libs + transitive_dynamic_libs
     env = dict(hs.env)
     env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)
     if hs.toolchain.is_darwin:
@@ -131,7 +131,7 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, d
         direct_cc_info.compilation_context.quote_includes,
         direct_cc_info.compilation_context.system_includes,
     ])
-    direct_lib_dirs = [file.dirname for file in direct_libs.to_list()]
+    direct_lib_dirs = [file.dirname for file in direct_libs]
     args.add_all([component, package_id, generate_haddock, setup, cabal.dirname, package_database.dirname])
     args.add("--flags=" + " ".join(flags))
     args.add_all(compiler_flags, format_each = "--ghc-option=%s")
@@ -152,7 +152,7 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, d
             depset(cc.files),
             package_databases,
             transitive_headers,
-            transitive_libs,
+            depset(transitive_libs),
             dep_info.interface_dirs,
             dep_info.static_libraries,
             dep_info.dynamic_libraries,

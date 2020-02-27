@@ -28,7 +28,7 @@ def _get_extra_libraries(hs, cc, with_shared, dynamic = False):
         pic = with_shared,
         dynamic = dynamic,
     )
-    cc_libs = cc_static_libs.to_list() + cc_dynamic_libs.to_list()
+    cc_libs = cc_static_libs + cc_dynamic_libs
 
     lib_dirs = depset(direct = [
         lib.dirname

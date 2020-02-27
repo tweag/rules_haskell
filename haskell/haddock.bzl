@@ -140,7 +140,6 @@ def _haskell_doc_aspect_impl(target, ctx):
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
-    ghci_extra_libs = depset(transitive = [static_libs, dynamic_libs])
 
     # TODO(mboes): we should be able to instantiate this template only
     # once per toolchain instance, rather than here.
@@ -165,7 +164,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             target[HaskellInfo].source_files,
             target[HaskellInfo].extra_source_files,
             target[HaskellInfo].dynamic_libraries,
-            ghci_extra_libs,
+            depset(static_libs + dynamic_libs),
             depset(transitive = [depset(i) for i in transitive_haddocks.values()]),
             target[CcInfo].compilation_context.headers,
             depset([

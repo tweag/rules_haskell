@@ -75,7 +75,7 @@ def build_haskell_runghc(
         pic = True,
     )
     link_libraries(
-        depset(transitive = [link_static_libraries, link_dynamic_libraries]).to_list(),
+        link_static_libraries + link_dynamic_libraries,
         args,
     )
 
@@ -121,8 +121,7 @@ def build_haskell_runghc(
         ]),
         package_databases,
         pkg_info_inputs,
-        input_static_libraries,
-        input_dynamic_libraries,
+        depset(input_static_libraries + input_dynamic_libraries),
         hs_info.source_files,
         hs.toolchain.cc_wrapper.runfiles.files,
     ])

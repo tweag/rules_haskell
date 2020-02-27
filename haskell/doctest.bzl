@@ -144,7 +144,7 @@ def _haskell_doctest_single(target, ctx):
         pic = True,
     )
     link_libraries(
-        depset(transitive = [link_static_libraries, link_dynamic_libraries]).to_list(),
+        link_static_libraries + link_dynamic_libraries,
         args,
         prefix_optl = hs.toolchain.is_darwin,
     )
@@ -162,8 +162,7 @@ def _haskell_doctest_single(target, ctx):
             hs_info.extra_source_files,
             hs_info.dynamic_libraries,
             cc_info.compilation_context.headers,
-            input_static_libraries,
-            input_dynamic_libraries,
+            depset(input_static_libraries + input_dynamic_libraries),
             depset(
                 toolchain.doctest +
                 cc.files +

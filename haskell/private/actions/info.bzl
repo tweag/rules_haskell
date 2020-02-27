@@ -169,7 +169,7 @@ def compile_info_output_groups(
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
-    cc_libs = static_libs.to_list() + dynamic_libs.to_list()
+    cc_libs = static_libs + dynamic_libs
     return {
         "haskell_cdep_libs": depset(cc_libs),
         "haskell_runfiles": runfiles,

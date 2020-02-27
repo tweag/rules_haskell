@@ -88,7 +88,7 @@ def _darwin_create_extra_linker_flags_file(hs, cc, objects_dir, executable, dyna
         done
         """.format(
             nm = cc.tools.nm,
-            solibs = " ".join(["\"" + l.path + "\"" for l in solibs.to_list()]),
+            solibs = " ".join(["\"" + l.path + "\"" for l in solibs]),
             out = linker_flags_file.path,
         ),
     )
@@ -249,8 +249,7 @@ def link_binary(
             dep_info.static_libraries,
             depset([cache_file, objects_dir]),
             pkg_info_inputs,
-            static_libs,
-            dynamic_libs,
+            depset(static_libs + dynamic_libs),
         ]),
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
@@ -395,8 +394,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, my_pk
             dep_info.package_databases,
             dep_info.dynamic_libraries,
             pkg_info_inputs,
-            static_libs,
-            dynamic_libs,
+            depset(static_libs + dynamic_libs),
         ]),
         outputs = [dynamic_library],
         mnemonic = "HaskellLinkDynamicLibrary",
