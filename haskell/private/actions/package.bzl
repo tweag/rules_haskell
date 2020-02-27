@@ -4,7 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(":private/path_utils.bzl", "get_lib_name", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/cc_libraries.bzl", "get_cc_libraries", "get_library_files")
+load(":private/cc_libraries.bzl", "get_library_files")
 
 def _get_extra_libraries(hs, cc, with_shared, dynamic = False):
     """Get directories and library names for extra library dependencies.
@@ -24,7 +24,7 @@ def _get_extra_libraries(hs, cc, with_shared, dynamic = False):
     (cc_static_libs, cc_dynamic_libs) = get_library_files(
         hs,
         cc.cc_libraries_info,
-        get_cc_libraries(cc.cc_libraries_info, cc.transitive_libraries.to_list()),
+        cc.cc_libraries.to_list(),
         pic = with_shared,
         dynamic = dynamic,
     )

@@ -22,7 +22,6 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_cc_libraries",
     "get_library_files",
     "link_libraries",
 )
@@ -335,7 +334,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     (link_static_libraries, link_dynamic_libraries) = get_library_files(
         hs,
         cc.cc_libraries_info,
-        get_cc_libraries(cc.cc_libraries_info, all_libraries),
+        cc.cc_libraries.to_list(),
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )

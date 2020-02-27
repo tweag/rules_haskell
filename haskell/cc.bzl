@@ -29,6 +29,7 @@ CcInteropInfo = provider(
         "linker_flags": "Flags to forward to the linker",
         "include_args": "Extra include dirs",
         "cc_libraries_info": "HaskellCcLibrariesInfo",
+        "cc_libraries": "depset, C libraries from direct linking dependencies.",
         "transitive_libraries": "depset, C and Haskell libraries from transitive linking dependencies.",
         "plugin_libraries": "depset, C and Haskell libraries from transitive plugin dependencies.",
     },
@@ -145,6 +146,7 @@ def cc_interop_info(ctx):
         cc_libraries_info = deps_HaskellCcLibrariesInfo(
             ctx.attr.deps + getattr(ctx.attr, "plugins", []),
         ),
+        cc_libraries = cc_common.merge_cc_infos(cc_infos = ccs).linking_context.libraries_to_link,
         transitive_libraries = cc_common.merge_cc_infos(cc_infos = [
             dep[CcInfo]
             for dep in ctx.attr.deps
