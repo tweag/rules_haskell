@@ -345,6 +345,7 @@ haskell_binary(
         "@stackage//:hspec",
         "@stackage//:hspec-core",
     ],
+    compiler_flags = ["-v"],
 )
 
 sh_inline_test(
