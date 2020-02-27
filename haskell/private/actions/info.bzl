@@ -162,7 +162,7 @@ def compile_info_output_groups(
     Returns:
       A dict whose keys are output groups and values are depsets of Files.
     """
-    cc_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries.to_list())
+    cc_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries)
     return {
         "haskell_cdep_libs": depset(cc_libs),
         "haskell_runfiles": runfiles,

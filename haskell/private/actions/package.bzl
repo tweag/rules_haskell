@@ -24,7 +24,7 @@ def _get_extra_libraries(hs, cc, with_shared, dynamic = False):
     (cc_static_libs, cc_dynamic_libs) = get_library_files(
         hs,
         cc.cc_libraries_info,
-        cc.cc_libraries.to_list(),
+        cc.cc_libraries,
         pic = with_shared,
         dynamic = dynamic,
     )

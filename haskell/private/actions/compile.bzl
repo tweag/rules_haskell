@@ -323,10 +323,8 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     )
 
     # Transitive library dependencies for runtime.
-    all_libraries = depset(transitive = [cc.transitive_libraries, cc.plugin_libraries]).to_list()
-    input_libraries = get_ghci_library_files(hs, cc.cc_libraries_info, all_libraries)
     link_libraries(
-        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries.to_list()),
+        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries),
         args,
     )
 
@@ -345,7 +343,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             plugin_dep_info.interface_dirs,
             plugin_dep_info.static_libraries,
             plugin_dep_info.dynamic_libraries,
-            depset(input_libraries),
+            depset(get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries + cc.plugin_libraries)),
             java.inputs,
             preprocessors.inputs,
             plugin_tool_inputs,

@@ -146,16 +146,16 @@ def cc_interop_info(ctx):
         cc_libraries_info = deps_HaskellCcLibrariesInfo(
             ctx.attr.deps + getattr(ctx.attr, "plugins", []),
         ),
-        cc_libraries = cc_common.merge_cc_infos(cc_infos = ccs).linking_context.libraries_to_link,
+        cc_libraries = cc_common.merge_cc_infos(cc_infos = ccs).linking_context.libraries_to_link.to_list(),
         transitive_libraries = cc_common.merge_cc_infos(cc_infos = [
             dep[CcInfo]
             for dep in ctx.attr.deps
             if CcInfo in dep
-        ]).linking_context.libraries_to_link,
+        ]).linking_context.libraries_to_link.to_list(),
         plugin_libraries = cc_common.merge_cc_infos(cc_infos = [
             dep[CcInfo]
             for plugin in getattr(ctx.attr, "plugins", [])
             for dep in plugin[GhcPluginInfo].deps
             if CcInfo in dep
-        ]).linking_context.libraries_to_link,
+        ]).linking_context.libraries_to_link.to_list(),
     )

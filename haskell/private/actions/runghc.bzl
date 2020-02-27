@@ -59,10 +59,8 @@ def build_haskell_runghc(
         for idir in set.to_list(hs_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
-    all_libraries = depset(transitive = [cc.transitive_libraries, cc.plugin_libraries]).to_list()
-    input_libraries = get_ghci_library_files(hs, cc.cc_libraries_info, all_libraries)
     link_libraries(
-        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries.to_list()),
+        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries),
         args,
     )
 
@@ -108,7 +106,7 @@ def build_haskell_runghc(
         ]),
         package_databases,
         pkg_info_inputs,
-        depset(input_libraries),
+        depset(get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries + cc.plugin_libraries)),
         hs_info.source_files,
         hs.toolchain.cc_wrapper.runfiles.files,
     ])
