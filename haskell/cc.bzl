@@ -10,8 +10,10 @@ load(
 )
 load(
     "//haskell:providers.bzl",
+    "GhcPluginInfo",
     "HaskellInfo",
 )
+load(":private/cc_libraries.bzl", "deps_HaskellCcLibrariesInfo")
 
 CcInteropInfo = provider(
     doc = "Information needed for interop with cc rules.",
@@ -26,6 +28,9 @@ CcInteropInfo = provider(
         "compiler_flags": "Flags for compilation",
         "linker_flags": "Flags to forward to the linker",
         "include_args": "Extra include dirs",
+        "cc_libraries_info": "HaskellCcLibrariesInfo",
+        "transitive_libraries": "depset, C and Haskell libraries from transitive linking dependencies.",
+        "plugin_libraries": "depset, C and Haskell libraries from transitive plugin dependencies.",
     },
 )
 
@@ -137,4 +142,18 @@ def cc_interop_info(ctx):
         # but this will anyways all be replaced (once implemented) by
         # https://github.com/bazelbuild/bazel/issues/4571.
         linker_flags = linker_flags,
+        cc_libraries_info = deps_HaskellCcLibrariesInfo(
+            ctx.attr.deps + getattr(ctx.attr, "plugins", []),
+        ),
+        transitive_libraries = cc_common.merge_cc_infos(cc_infos = [
+            dep[CcInfo]
+            for dep in ctx.attr.deps
+            if CcInfo in dep
+        ]).linking_context.libraries_to_link,
+        plugin_libraries = cc_common.merge_cc_infos(cc_infos = [
+            dep[CcInfo]
+            for plugin in getattr(ctx.attr, "plugins", [])
+            for dep in plugin[GhcPluginInfo].deps
+            if CcInfo in dep
+        ]).linking_context.libraries_to_link,
     )
