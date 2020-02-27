@@ -113,16 +113,15 @@ def join_path_list(hs, paths):
     return sep.join(paths)
 
 def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
-    """Mangle a static library to match a dynamic library name.
+    """Mangle a static C library to match a dynamic C library name.
 
     GHC expects static and dynamic C libraries to have matching library names.
     Bazel produces static and dynamic C libraries with different names. The
     dynamic library names are mangled, the static library names are not.
 
-    If the library is not a Haskell library (doesn't start with HS) and if the
-    dynamic library exists and if the static library exists and has a different
-    name. Then this function will create a symbolic link for the static library
-    to match the dynamic library's name.
+    If the dynamic library exists and if the static library exists and has a
+    different name. Then this function will create a symbolic link for the
+    static library to match the dynamic library's name.
 
     Args:
       hs: Haskell context.
@@ -136,7 +135,7 @@ def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
     if dynamic_lib == None or static_lib == None:
         return None
     libname = get_lib_name(dynamic_lib)
-    if is_hs_library(dynamic_lib) or get_lib_name(static_lib) == libname:
+    if get_lib_name(static_lib) == libname:
         return None
     else:
         link = hs.actions.declare_file(
