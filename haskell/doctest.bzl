@@ -11,7 +11,6 @@ load(
 )
 load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
-    "get_cc_libraries",
     "get_ghci_library_files",
     "haskell_cc_libraries_aspect",
     "link_libraries",
