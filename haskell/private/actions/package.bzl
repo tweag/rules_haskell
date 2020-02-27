@@ -6,7 +6,7 @@ load(":private/path_utils.bzl", "get_lib_name", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/cc_libraries.bzl", "get_cc_libraries", "get_library_files")
 
-def _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = False):
+def _get_extra_libraries(hs, with_shared, cc_libraries_info, libraries_to_link, dynamic = False):
     """Get directories and library names for extra library dependencies.
 
     Args:
@@ -14,7 +14,7 @@ def _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = 
       posix: POSIX toolchain.
       with_shared: Whether the library is built with both static and shared library outputs.
       cc_libraries_info: HaskellCcLibrariesInfo.
-      cc_info: Combined CcInfo provider of the package's dependencies.
+      libraries_to_link: list of LibraryToLink.
       dynamic: Whether to collect dynamic library dependencies.
 
     Returns:
@@ -29,7 +29,7 @@ def _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = 
     (cc_static_libs, cc_dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
-        get_cc_libraries(cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list()),
+        get_cc_libraries(cc_libraries_info, libraries_to_link),
         pic = with_shared,
         dynamic = dynamic,
     )
@@ -52,7 +52,7 @@ def package(
         posix,
         dep_info,
         cc_libraries_info,
-        cc_info,
+        libraries_to_link,
         with_shared,
         exposed_modules_file,
         other_modules,
@@ -64,7 +64,7 @@ def package(
       hs: Haskell context.
       posix: POSIX toolchain.
       dep_info: Combined HaskellInfo of dependencies.
-      cc_info: Combined CcInfo of dependencies.
+      libraries_to_link: list of LibraryToLink.
       with_shared: Whether to link dynamic libraries.
       exposed_modules_file: File holding list of exposed modules.
       other_modules: List of hidden modules.
@@ -84,9 +84,9 @@ def package(
         paths.join(pkg_db_dir, "_iface"),
     )
 
-    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info)
+    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, with_shared, cc_libraries_info, libraries_to_link)
     if with_shared:
-        (extra_dynamic_lib_dirs, _) = _get_extra_libraries(hs, with_shared, cc_libraries_info, cc_info, dynamic = True)
+        (extra_dynamic_lib_dirs, _) = _get_extra_libraries(hs, with_shared, cc_libraries_info, libraries_to_link, dynamic = True)
     else:
         extra_dynamic_lib_dirs = extra_lib_dirs
 

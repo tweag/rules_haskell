@@ -208,7 +208,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         dep_info,
         plugin_dep_info,
         cc_libraries_info,
-        cc_info,
+        cc_info.linking_context.libraries_to_link.to_list(),
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
@@ -237,7 +237,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         posix,
         dep_info,
         cc_libraries_info,
-        cc_info,
+        cc_info.linking_context.libraries_to_link.to_list(),
         ctx.files.extra_srcs,
         user_compile_flags,
         c.objects_dir,
@@ -276,7 +276,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         version = ctx.attr.version,
         hs_info = hs_info,
         cc_libraries_info = cc_libraries_info,
-        cc_info = cc_info,
+        libraries_to_link = cc_info.linking_context.libraries_to_link.to_list(),
     )
 
     executable = binary
@@ -352,7 +352,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             c = c,
             posix = posix,
             cc_libraries_info = cc_libraries_info,
-            cc_info = cc_info,
+            libraries_to_link = cc_info.linking_context.libraries_to_link.to_list(),
             runfiles = ctx.runfiles(collect_data = True).files,
         )),
     ]
@@ -413,7 +413,7 @@ def haskell_library_impl(ctx):
         dep_info,
         plugin_dep_info,
         cc_libraries_info,
-        cc_info,
+        cc_info.linking_context.libraries_to_link.to_list(),
         srcs = srcs_files,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
@@ -467,7 +467,7 @@ def haskell_library_impl(ctx):
             posix,
             dep_info,
             cc_libraries_info,
-            cc_info,
+            cc_info.linking_context.libraries_to_link.to_list(),
             depset(ctx.files.extra_srcs),
             c.objects_dir,
             my_pkg_id,
@@ -483,7 +483,7 @@ def haskell_library_impl(ctx):
         posix,
         dep_info,
         cc_libraries_info,
-        cc_info,
+        cc_info.linking_context.libraries_to_link.to_list(),
         with_shared,
         exposed_modules_file,
         other_modules,
@@ -557,7 +557,7 @@ def haskell_library_impl(ctx):
             version = ctx.attr.version,
             hs_info = hs_info,
             cc_libraries_info = cc_libraries_info,
-            cc_info = cc_info,
+            libraries_to_link = cc_info.linking_context.libraries_to_link.to_list(),
             lib_info = lib_info,
         )
 
@@ -629,7 +629,7 @@ def haskell_library_impl(ctx):
                 c = c,
                 posix = posix,
                 cc_libraries_info = cc_libraries_info,
-                cc_info = cc_info,
+                libraries_to_link = cc_info.linking_context.libraries_to_link.to_list(),
                 runfiles = default_info.default_runfiles.files if getattr(default_info, "default_runfiles", None) else depset(),
             ),
             library_info_output_groups(

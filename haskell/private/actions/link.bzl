@@ -135,7 +135,7 @@ def link_binary(
         posix,
         dep_info,
         cc_libraries_info,
-        cc_info,
+        libraries_to_link,
         extra_srcs,
         compiler_flags,
         objects_dir,
@@ -194,7 +194,7 @@ def link_binary(
         hs = hs,
         posix = posix,
         cc_libraries_info = cc_libraries_info,
-        libraries_to_link = cc_info.linking_context.libraries_to_link.to_list(),
+        libraries_to_link = libraries_to_link,
         dynamic = dynamic,
         binary = executable,
         args = args,
@@ -329,7 +329,7 @@ def link_library_static(hs, cc, posix, dep_info, objects_dir, my_pkg_id, with_pr
 
     return static_library
 
-def link_library_dynamic(hs, cc, posix, dep_info, cc_libraries_info, cc_info, extra_srcs, objects_dir, my_pkg_id, compiler_flags):
+def link_library_dynamic(hs, cc, posix, dep_info, cc_libraries_info, libraries_to_link, extra_srcs, objects_dir, my_pkg_id, compiler_flags):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -371,7 +371,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, cc_libraries_info, cc_info, ex
         hs = hs,
         posix = posix,
         cc_libraries_info = cc_libraries_info,
-        libraries_to_link = cc_info.linking_context.libraries_to_link.to_list(),
+        libraries_to_link = libraries_to_link,
         dynamic = True,
         pic = True,
         binary = dynamic_library,

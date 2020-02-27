@@ -26,7 +26,7 @@ def build_haskell_runghc(
         extra_args,
         hs_info,
         cc_libraries_info,
-        cc_info,
+        libraries_to_link,
         output,
         package_databases,
         version,
@@ -63,7 +63,7 @@ def build_haskell_runghc(
     (static_libs, dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
-        cc_info.linking_context.libraries_to_link.to_list(),
+        libraries_to_link,
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )

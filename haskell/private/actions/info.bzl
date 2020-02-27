@@ -146,7 +146,7 @@ def compile_info_output_groups(
         c,
         posix,
         cc_libraries_info,
-        cc_info,
+        libraries_to_link,
         runfiles):
     """Output groups for compiling a Haskell target.
 
@@ -157,7 +157,7 @@ def compile_info_output_groups(
         hs: The Haskell context.
         c: A struct with information about the compilation step.
         posix: The posix toolchain.
-        cc_info: A CcInfo provider.
+        libraries_to_link: list of LibraryToLink.
         runfiles: A depset of Files.
 
     Returns:
@@ -166,7 +166,7 @@ def compile_info_output_groups(
     (static_libs, dynamic_libs) = get_library_files(
         hs,
         cc_libraries_info,
-        get_cc_libraries(cc_libraries_info, cc_info.linking_context.libraries_to_link.to_list()),
+        get_cc_libraries(cc_libraries_info, libraries_to_link),
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
