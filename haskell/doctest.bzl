@@ -129,19 +129,17 @@ def _haskell_doctest_single(target, ctx):
     args.add_all(ctx.attr.doctest_flags)
 
     # C library dependencies to link against.
-
-    all_libraries = cc_info.linking_context.libraries_to_link.to_list()
     (input_static_libraries, input_dynamic_libraries) = get_library_files(
         hs,
         cc_libraries_info,
-        all_libraries,
+        cc.transitive_libraries.to_list(),
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
     (link_static_libraries, link_dynamic_libraries) = get_library_files(
         hs,
         cc_libraries_info,
-        get_cc_libraries(cc_libraries_info, all_libraries),
+        cc.cc_libraries.to_list(),
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
