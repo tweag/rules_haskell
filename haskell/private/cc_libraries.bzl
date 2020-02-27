@@ -16,7 +16,6 @@ load(
     "create_rpath_entry",
     "get_dirname",
     "get_lib_name",
-    "is_hs_library",
     "mangle_static_library",
     "rel_to_pkgroot",
     "target_unique_name",
