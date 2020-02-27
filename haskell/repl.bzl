@@ -21,6 +21,7 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
+    "get_cc_libraries",
     "get_library_files",
     "haskell_cc_libraries_aspect",
     "link_libraries",
@@ -256,15 +257,25 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         repl_info.load_info.cc_info,
         repl_info.dep_info.cc_info,
     ])
-    (static_libs, dynamic_libs) = get_library_files(
+    all_libraries = cc_info.linking_context.libraries_to_link.to_list()
+    (input_static_libraries, input_dynamic_libraries) = get_library_files(
         hs,
         cc_libraries_info,
-        cc_info.linking_context.libraries_to_link.to_list(),
+        all_libraries,
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
-    ghci_extra_libs = depset(transitive = [static_libs, dynamic_libs])
-    link_libraries(ghci_extra_libs, args)
+    (link_static_libraries, link_dynamic_libraries) = get_library_files(
+        hs,
+        cc_libraries_info,
+        get_cc_libraries(cc_libraries_info, all_libraries),
+        dynamic = not hs.toolchain.is_static,
+        pic = True,
+    )
+    link_libraries(
+        depset(transitive = [link_static_libraries, link_dynamic_libraries]).to_list(),
+        args,
+    )
 
     # Add import directories
     for import_dir in repl_info.load_info.import_dirs.to_list():
@@ -339,7 +350,8 @@ def _create_repl(hs, posix, ctx, repl_info, output):
             transitive_files = depset(transitive = [
                 repl_info.load_info.source_files,
                 repl_info.dep_info.package_databases,
-                ghci_extra_libs,
+                input_static_libraries,
+                input_dynamic_libraries,
                 depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
             ]),
             collect_data = ctx.attr.collect_data,

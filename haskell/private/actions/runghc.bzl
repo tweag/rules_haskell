@@ -13,6 +13,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
+    "get_cc_libraries",
     "get_library_files",
     "link_libraries",
 )
@@ -59,15 +60,25 @@ def build_haskell_runghc(
         for idir in set.to_list(hs_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
-    (static_libs, dynamic_libs) = get_library_files(
+    all_libraries = depset(transitive = [cc.transitive_libraries, cc.plugin_libraries]).to_list()
+    (input_static_libraries, input_dynamic_libraries) = get_library_files(
         hs,
         cc.cc_libraries_info,
-        depset(transitive = [cc.transitive_libraries, cc.plugin_libraries]).to_list(),
+        all_libraries,
         dynamic = not hs.toolchain.is_static,
         pic = True,
     )
-    ghci_extra_libs = depset(transitive = [static_libs, dynamic_libs])
-    link_libraries(ghci_extra_libs, args)
+    (link_static_libraries, link_dynamic_libraries) = get_library_files(
+        hs,
+        cc.cc_libraries_info,
+        get_cc_libraries(cc.cc_libraries_info, all_libraries),
+        dynamic = not hs.toolchain.is_static,
+        pic = True,
+    )
+    link_libraries(
+        depset(transitive = [link_static_libraries, link_dynamic_libraries]).to_list(),
+        args,
+    )
 
     runghc_file = hs.actions.declare_file(target_unique_name(hs, "runghc"))
 
@@ -111,7 +122,8 @@ def build_haskell_runghc(
         ]),
         package_databases,
         pkg_info_inputs,
-        ghci_extra_libs,
+        input_static_libraries,
+        input_dynamic_libraries,
         hs_info.source_files,
         hs.toolchain.cc_wrapper.runfiles.files,
     ])
