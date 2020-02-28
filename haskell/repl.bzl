@@ -7,6 +7,7 @@ load(":cc.bzl", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(
     ":private/path_utils.bzl",
+    "ln",
     "match_label",
     "parse_pattern",
     "target_unique_name",
@@ -380,6 +381,30 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         ),
     )]
 
+def _create_hie_bios(hs, posix, ctx, repl_info):
+    """Build a hie-bios argument file.
+
+    Args:
+      hs: Haskell context.
+      ctx: Rule context.
+      repl_info: HaskellReplInfo provider.
+      output: The output for the executable REPL script.
+
+    Returns:
+      List of providers:
+        OutputGroupInfo provider for the hie-bios argument file.
+    """
+    args, inputs = _compiler_flags_and_inputs(hs, repl_info)
+    args.extend(hs.toolchain.compiler_flags)
+    args.extend(repl_info.load_info.compiler_flags)
+
+    args_file = ctx.actions.declare_file(".%s.hie-bios" % ctx.label.name)
+    args_link = ctx.actions.declare_file("%s@hie-bios" % ctx.label.name)
+    ctx.actions.write(args_file, "\n".join(args))
+    ln(hs, posix, args_file, args_link, extra_inputs = inputs)
+
+    return [OutputGroupInfo(hie_bios = [args_link])]
+
 def _haskell_repl_aspect_impl(target, ctx):
     if HaskellInfo not in target:
         return []
@@ -424,7 +449,8 @@ def _haskell_repl_impl(ctx):
     repl_info = _create_HaskellReplInfo(from_source, from_binary, collect_info)
     hs = haskell_context(ctx)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
-    return _create_repl(hs, posix, ctx, repl_info, ctx.outputs.repl)
+    return _create_repl(hs, posix, ctx, repl_info, ctx.outputs.repl) + \
+           _create_hie_bios(hs, posix, ctx, repl_info)
 
 haskell_repl = rule(
     implementation = _haskell_repl_impl,
