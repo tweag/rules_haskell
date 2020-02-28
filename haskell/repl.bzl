@@ -220,6 +220,67 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
         dep_info = dep_info,
     )
 
+def _compiler_flags_and_inputs(hs, repl_info, path_prefix = ""):
+    """Collect compiler flags and inputs.
+
+    Compiler flags:
+      - Package databases and identifiers.
+      - Linker flags for C library dependencies.
+      - Haskell include directory flags.
+
+    Inputs:
+      - Source files.
+      - Package databases.
+      - C library dependencies.
+      - Locale archive if required.
+
+    Args:
+      hs: Haskell context.
+      args: list of string, output, the arguments to extend.
+      path_prefix: string, optional, Prefix for package db paths.
+
+    Returns:
+      (args, inputs):
+        args: list of string, the compiler flags.
+        inputs: depset of File, inputs required by the compiler.
+    """
+    args = []
+
+    # Load built dependencies (-package-id, -package-db)
+    for package_id in repl_info.dep_info.package_ids:
+        args.extend(["-package-id", package_id])
+    for package_cache in repl_info.dep_info.package_databases.to_list():
+        args.extend(["-package-db", paths.join(path_prefix, package_cache.dirname)])
+
+    # Load C library dependencies
+    cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = [
+        repl_info.load_info.cc_libraries_info,
+        repl_info.dep_info.cc_libraries_info,
+    ])
+    cc_info = cc_common.merge_cc_infos(cc_infos = [
+        repl_info.load_info.cc_info,
+        repl_info.dep_info.cc_info,
+    ])
+    all_libraries = cc_info.linking_context.libraries_to_link.to_list()
+    cc_libraries = get_cc_libraries(cc_libraries_info, all_libraries)
+    link_libraries(
+        get_ghci_library_files(hs, cc_libraries_info, cc_libraries),
+        args,
+    )
+
+    # Add import directories
+    for import_dir in repl_info.load_info.import_dirs.to_list():
+        args.append("-i" + (import_dir if import_dir else "."))
+
+    inputs = depset(transitive = [
+        repl_info.load_info.source_files,
+        repl_info.dep_info.package_databases,
+        depset(get_ghci_library_files(hs, cc_libraries_info, all_libraries)),
+        depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
+    ])
+
+    return (args, inputs)
+
 def _create_repl(hs, posix, ctx, repl_info, output):
     """Build a multi target REPL.
 
@@ -239,35 +300,8 @@ def _create_repl(hs, posix, ctx, repl_info, output):
     # (loads source files and brings in scope the corresponding modules).
     args = ["-hide-all-packages", "-package", "base", "-package", "directory"]
 
-    # Load built dependencies (-package-id, -package-db)
-    for package_id in repl_info.dep_info.package_ids:
-        args.extend(["-package-id", package_id])
-    for package_cache in repl_info.dep_info.package_databases.to_list():
-        args.extend([
-            "-package-db",
-            paths.join("$RULES_HASKELL_EXEC_ROOT", package_cache.dirname),
-        ])
-
-    # Load C library dependencies
-    cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = [
-        repl_info.load_info.cc_libraries_info,
-        repl_info.dep_info.cc_libraries_info,
-    ])
-    cc_info = cc_common.merge_cc_infos(cc_infos = [
-        repl_info.load_info.cc_info,
-        repl_info.dep_info.cc_info,
-    ])
-    all_libraries = cc_info.linking_context.libraries_to_link.to_list()
-    input_libraries = get_ghci_library_files(hs, cc_libraries_info, all_libraries)
-    cc_libraries = get_cc_libraries(cc_libraries_info, all_libraries)
-    link_libraries(
-        get_ghci_library_files(hs, cc_libraries_info, cc_libraries),
-        args,
-    )
-
-    # Add import directories
-    for import_dir in repl_info.load_info.import_dirs.to_list():
-        args.append("-i" + (import_dir if import_dir else "."))
+    compiler_flags, inputs = _compiler_flags_and_inputs(hs, repl_info, path_prefix = "$RULES_HASKELL_EXEC_ROOT")
+    args.extend(compiler_flags)
 
     # Load source files
     # Force loading by source with `:add *...`.
@@ -335,12 +369,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
                 hs.tools.ghci,
                 ghci_repl_script,
             ],
-            transitive_files = depset(transitive = [
-                repl_info.load_info.source_files,
-                repl_info.dep_info.package_databases,
-                depset(input_libraries),
-                depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
-            ]),
+            transitive_files = inputs,
             collect_data = ctx.attr.collect_data,
         ).merge(
             hs.toolchain.cc_wrapper.runfiles,
