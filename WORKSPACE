@@ -116,6 +116,78 @@ stack_snapshot(
     snapshot = "lts-13.15",
 )
 
+stack_snapshot(
+    name = "stackage_ghcide",
+    extra_deps = {"zlib": ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"]},
+    haddock = False,
+    local_snapshot = "//:ghcide-stack-snapshot.yaml",
+    packages = [
+        "base",
+        "base16-bytestring",
+        "binary",
+        "bytestring",
+        "containers",
+        "cryptohash-sha1",
+        "data-default",
+        "deepseq",
+        "directory",
+        "extra",
+        "filepath",
+        "ghc",
+        "ghc-paths",
+        "ghcide",
+        "gitrev",
+        "hashable",
+        "haskell-lsp",
+        "hie-bios",
+        "hslogger",
+        "optparse-applicative",
+        "shake",
+        "text",
+        "unordered-containers",
+    ],
+)
+
+http_archive(
+    name = "ghcide",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+haskell_cabal_binary(
+    name = "ghcide",
+    srcs = glob(["**"]),
+    deps = [
+        "@stackage_ghcide//:hslogger",
+        "@stackage_ghcide//:base",
+        "@stackage_ghcide//:binary",
+        "@stackage_ghcide//:base16-bytestring",
+        "@stackage_ghcide//:bytestring",
+        "@stackage_ghcide//:containers",
+        "@stackage_ghcide//:cryptohash-sha1",
+        "@stackage_ghcide//:data-default",
+        "@stackage_ghcide//:deepseq",
+        "@stackage_ghcide//:directory",
+        "@stackage_ghcide//:extra",
+        "@stackage_ghcide//:filepath",
+        "@stackage_ghcide//:ghc-paths",
+        "@stackage_ghcide//:ghc",
+        "@stackage_ghcide//:gitrev",
+        "@stackage_ghcide//:hashable",
+        "@stackage_ghcide//:haskell-lsp",
+        "@stackage_ghcide//:hie-bios",
+        "@stackage_ghcide//:ghcide",
+        "@stackage_ghcide//:optparse-applicative",
+        "@stackage_ghcide//:shake",
+        "@stackage_ghcide//:text",
+        "@stackage_ghcide//:unordered-containers",
+    ],
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "bdac4be9b2b9254876edefc788d56ff15dbf6d861dc4bf9ad4fa5ffb795e7c0d",
+    strip_prefix = "ghcide-ff62fdd87de813573167419809273fe07893678d",
+    urls = ["https://github.com/digital-asset/ghcide/archive/ff62fdd87de813573167419809273fe07893678d.tar.gz"],
+)
+
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_cc_configure",
