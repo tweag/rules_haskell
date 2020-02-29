@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+bazel build @ghcide//:ghcide
+bazel-bin/external/ghcide/_install/bin/ghcide "$@"
