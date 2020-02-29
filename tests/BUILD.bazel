@@ -10,6 +10,7 @@ load(
     "haskell_binary",
     "haskell_doc",
     "haskell_library",
+    "haskell_repl",
 )
 load(
     "//haskell:doctest.bzl",
@@ -383,4 +384,11 @@ haskell_doc(
     name = "toto",
     tags = ["requires_lz4"],
     deps = [":utils"],
+)
+
+haskell_repl(
+    name = "hie-bios",
+    deps = [
+        "//tests:run-tests",
+    ],
 )
