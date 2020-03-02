@@ -28,7 +28,6 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
-load(":private/cc_libraries.bzl", "deps_HaskellCcLibrariesInfo")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -163,19 +162,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
     )
-    cc_libraries_info = deps_HaskellCcLibrariesInfo(ctx.attr.deps + ctx.attr.plugins)
-    cc_info = cc_common.merge_cc_infos(
-        cc_infos = [
-            dep[CcInfo]
-            for dep in ctx.attr.deps
-            if CcInfo in dep
-        ] + [
-            dep[CcInfo]
-            for plugin in ctx.attr.plugins
-            for dep in plugin[GhcPluginInfo].deps
-            if CcInfo in dep
-        ],
-    )
     package_ids = all_dependencies_package_ids(ctx.attr.deps)
 
     # Add any interop info for other languages.
@@ -207,8 +193,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         posix,
         dep_info,
         plugin_dep_info,
-        cc_libraries_info,
-        cc_info,
         srcs = srcs_files,
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
@@ -236,8 +220,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         cc,
         posix,
         dep_info,
-        cc_libraries_info,
-        cc_info,
         ctx.files.extra_srcs,
         user_compile_flags,
         c.objects_dir,
@@ -267,6 +249,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
     build_haskell_runghc(
         hs,
+        cc,
         posix,
         runghc_wrapper = ctx.file._ghci_repl_wrapper,
         extra_args = extra_args,
@@ -275,8 +258,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         package_databases = dep_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
-        cc_libraries_info = cc_libraries_info,
-        cc_info = cc_info,
     )
 
     executable = binary
@@ -331,7 +312,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             ctx.file._bash_runfiles,
             hs.toolchain.tools.hpc,
             binary,
-        ] + mix_runfiles + srcs_runfiles
+        ] + mix_runfiles + srcs_runfiles + solibs
 
     return [
         hs_info,
@@ -341,7 +322,6 @@ def _haskell_binary_common_impl(ctx, is_test):
             files = target_files,
             runfiles = ctx.runfiles(
                 files = extra_runfiles,
-                transitive_files = solibs,
                 collect_data = True,
             ),
         ),
@@ -349,10 +329,9 @@ def _haskell_binary_common_impl(ctx, is_test):
             name = ctx.label.name,
             workspace_name = ctx.workspace_name,
             hs = hs,
+            cc = cc,
             c = c,
             posix = posix,
-            cc_libraries_info = cc_libraries_info,
-            cc_info = cc_info,
             runfiles = ctx.runfiles(collect_data = True).files,
         )),
     ]
@@ -364,19 +343,6 @@ def haskell_library_impl(ctx):
     plugin_dep_info = gather_dep_info(
         ctx,
         [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
-    )
-    cc_libraries_info = deps_HaskellCcLibrariesInfo(ctx.attr.deps + ctx.attr.exports + ctx.attr.plugins)
-    cc_info = cc_common.merge_cc_infos(
-        cc_infos = [
-            dep[CcInfo]
-            for dep in deps
-            if CcInfo in dep
-        ] + [
-            dep[CcInfo]
-            for plugin in ctx.attr.plugins
-            for dep in plugin[GhcPluginInfo].deps
-            if CcInfo in dep
-        ],
     )
     package_ids = all_dependencies_package_ids(deps)
 
@@ -412,8 +378,6 @@ def haskell_library_impl(ctx):
         posix,
         dep_info,
         plugin_dep_info,
-        cc_libraries_info,
-        cc_info,
         srcs = srcs_files,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
@@ -466,8 +430,6 @@ def haskell_library_impl(ctx):
             cc,
             posix,
             dep_info,
-            cc_libraries_info,
-            cc_info,
             depset(ctx.files.extra_srcs),
             c.objects_dir,
             my_pkg_id,
@@ -480,10 +442,9 @@ def haskell_library_impl(ctx):
 
     conf_file, cache_file = package(
         hs,
+        cc,
         posix,
         dep_info,
-        cc_libraries_info,
-        cc_info,
         with_shared,
         exposed_modules_file,
         other_modules,
@@ -548,6 +509,7 @@ def haskell_library_impl(ctx):
         user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
         build_haskell_runghc(
             hs,
+            cc,
             posix,
             runghc_wrapper = ctx.file._ghci_repl_wrapper,
             extra_args = extra_args,
@@ -556,8 +518,6 @@ def haskell_library_impl(ctx):
             package_databases = dep_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
-            cc_libraries_info = cc_libraries_info,
-            cc_info = cc_info,
             lib_info = lib_info,
         )
 
@@ -625,11 +585,10 @@ def haskell_library_impl(ctx):
                 # have runfiles and won't be compiled directly anyway.
                 workspace_name = getattr(ctx, "workspace_name", ""),
                 hs = hs,
+                cc = cc,
                 name = ctx.label.name,
                 c = c,
                 posix = posix,
-                cc_libraries_info = cc_libraries_info,
-                cc_info = cc_info,
                 runfiles = default_info.default_runfiles.files if getattr(default_info, "default_runfiles", None) else depset(),
             ),
             library_info_output_groups(

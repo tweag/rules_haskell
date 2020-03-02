@@ -6,7 +6,6 @@ load("@bazel_skylib//lib:shell.bzl", "shell")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(
     ":private/path_utils.bzl",
-    "link_libraries",
     "match_label",
     "parse_pattern",
     "target_unique_name",
@@ -22,8 +21,10 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
-    "get_ghci_extra_libs",
+    "get_cc_libraries",
+    "get_ghci_library_files",
     "haskell_cc_libraries_aspect",
+    "link_libraries",
     "merge_HaskellCcLibrariesInfo",
 )
 load(":private/set.bzl", "set")
@@ -256,14 +257,13 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         repl_info.load_info.cc_info,
         repl_info.dep_info.cc_info,
     ])
-    ghci_extra_libs = get_ghci_extra_libs(
-        hs,
-        posix,
-        cc_libraries_info,
-        cc_info,
-        path_prefix = "$RULES_HASKELL_EXEC_ROOT",
+    all_libraries = cc_info.linking_context.libraries_to_link.to_list()
+    input_libraries = get_ghci_library_files(hs, cc_libraries_info, all_libraries)
+    cc_libraries = get_cc_libraries(cc_libraries_info, all_libraries)
+    link_libraries(
+        get_ghci_library_files(hs, cc_libraries_info, cc_libraries),
+        args,
     )
-    link_libraries(ghci_extra_libs, args)
 
     # Add import directories
     for import_dir in repl_info.load_info.import_dirs.to_list():
@@ -338,7 +338,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
             transitive_files = depset(transitive = [
                 repl_info.load_info.source_files,
                 repl_info.dep_info.package_databases,
-                ghci_extra_libs,
+                depset(input_libraries),
                 depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
             ]),
             collect_data = ctx.attr.collect_data,

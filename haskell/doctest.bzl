@@ -3,7 +3,6 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(":cc.bzl", "cc_interop_info")
 load(":private/context.bzl", "haskell_context", "render_env")
-load(":private/path_utils.bzl", "link_libraries")
 load(":private/set.bzl", "set")
 load(
     "@rules_haskell//haskell:providers.bzl",
@@ -12,8 +11,9 @@ load(
 )
 load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
-    "get_ghci_extra_libs",
+    "get_ghci_library_files",
     "haskell_cc_libraries_aspect",
+    "link_libraries",
 )
 
 def _doctest_toolchain_impl(ctx):
@@ -128,8 +128,11 @@ def _haskell_doctest_single(target, ctx):
     args.add_all(ctx.attr.doctest_flags)
 
     # C library dependencies to link against.
-    ghci_extra_libs = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
-    link_libraries(ghci_extra_libs, args, prefix_optl = hs.toolchain.is_darwin)
+    link_libraries(
+        get_ghci_library_files(hs, cc_libraries_info, cc.cc_libraries),
+        args,
+        prefix_optl = hs.toolchain.is_darwin,
+    )
 
     if ctx.attr.modules:
         inputs = ctx.attr.modules
@@ -144,7 +147,7 @@ def _haskell_doctest_single(target, ctx):
             hs_info.extra_source_files,
             hs_info.dynamic_libraries,
             cc_info.compilation_context.headers,
-            ghci_extra_libs,
+            depset(get_ghci_library_files(hs, cc_libraries_info, cc.transitive_libraries)),
             depset(
                 toolchain.doctest +
                 cc.files +

@@ -25,7 +25,7 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
-    "get_ghci_extra_libs",
+    "get_ghci_library_files",
     "haskell_cc_libraries_aspect",
 )
 
@@ -103,7 +103,7 @@ def _cabal_tool_flag(tool):
 def _binary_paths(binaries):
     return [binary.dirname for binary in binaries.to_list()]
 
-def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, direct_cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, generate_haddock, cabal_wrapper, package_database, verbose):
+def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, generate_haddock, cabal_wrapper, package_database, verbose):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -111,8 +111,8 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, d
     # already covered by their corresponding package-db entries. We only need
     # to add libraries and headers for direct C library dependencies to the
     # command line.
-    direct_libs = get_ghci_extra_libs(hs, posix, cc_libraries_info, direct_cc_info)
-    transitive_libs = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
+    direct_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries)
+    transitive_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries)
     env = dict(hs.env)
     env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)
     if hs.toolchain.is_darwin:
@@ -129,7 +129,7 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, d
         direct_cc_info.compilation_context.quote_includes,
         direct_cc_info.compilation_context.system_includes,
     ])
-    direct_lib_dirs = [file.dirname for file in direct_libs.to_list()]
+    direct_lib_dirs = [file.dirname for file in direct_libs]
     args.add_all([component, package_id, generate_haddock, setup, cabal.dirname, package_database.dirname])
     args.add("--flags=" + " ".join(flags))
     args.add_all(compiler_flags, format_each = "--ghc-option=%s")
@@ -150,7 +150,7 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_libraries_info, cc_info, d
             depset(cc.files),
             package_databases,
             transitive_headers,
-            transitive_libs,
+            depset(transitive_libs),
             dep_info.interface_dirs,
             dep_info.static_libraries,
             dep_info.dynamic_libraries,
@@ -173,7 +173,6 @@ def _haskell_cabal_library_impl(ctx):
     cc = cc_interop_info(ctx)
 
     # All C and Haskell library dependencies.
-    cc_libraries_info = deps_HaskellCcLibrariesInfo(ctx.attr.deps)
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
     )
@@ -244,7 +243,6 @@ def _haskell_cabal_library_impl(ctx):
         cc,
         posix,
         dep_info,
-        cc_libraries_info,
         cc_info,
         direct_cc_info,
         component = "lib:{}".format(
@@ -446,7 +444,6 @@ def _haskell_cabal_binary_impl(ctx):
     cc = cc_interop_info(ctx)
 
     # All C and Haskell library dependencies.
-    cc_libraries_info = deps_HaskellCcLibrariesInfo(ctx.attr.deps)
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
     )
@@ -485,7 +482,6 @@ def _haskell_cabal_binary_impl(ctx):
         cc,
         posix,
         dep_info,
-        cc_libraries_info,
         cc_info,
         direct_cc_info,
         component = "exe:{}".format(hs.label.name),

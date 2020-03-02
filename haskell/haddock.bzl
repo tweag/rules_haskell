@@ -11,7 +11,7 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "get_ghci_extra_libs",
+    "get_ghci_library_files",
     "haskell_cc_libraries_aspect",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
@@ -133,15 +133,10 @@ def _haskell_doc_aspect_impl(target, ctx):
     )
 
     # C library dependencies for runtime.
-    ghci_extra_libs = get_ghci_extra_libs(
+    cc_libraries = get_ghci_library_files(
         hs,
-        posix,
         target[HaskellCcLibrariesInfo],
-        target[CcInfo],
-        # haddock changes directory during its execution. We prefix
-        # LD_LIBRARY_PATH with the current working directory on wrapper script
-        # startup.
-        path_prefix = "$PWD",
+        target[CcInfo].linking_context.libraries_to_link.to_list(),
     )
 
     # TODO(mboes): we should be able to instantiate this template only
@@ -167,7 +162,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             target[HaskellInfo].source_files,
             target[HaskellInfo].extra_source_files,
             target[HaskellInfo].dynamic_libraries,
-            ghci_extra_libs,
+            depset(cc_libraries),
             depset(transitive = [depset(i) for i in transitive_haddocks.values()]),
             target[CcInfo].compilation_context.headers,
             depset([

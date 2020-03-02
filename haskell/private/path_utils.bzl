@@ -113,16 +113,15 @@ def join_path_list(hs, paths):
     return sep.join(paths)
 
 def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
-    """Mangle a static library to match a dynamic library name.
+    """Mangle a static C library to match a dynamic C library name.
 
     GHC expects static and dynamic C libraries to have matching library names.
     Bazel produces static and dynamic C libraries with different names. The
     dynamic library names are mangled, the static library names are not.
 
-    If the library is not a Haskell library (doesn't start with HS) and if the
-    dynamic library exists and if the static library exists and has a different
-    name. Then this function will create a symbolic link for the static library
-    to match the dynamic library's name.
+    If the dynamic library exists and if the static library exists and has a
+    different name. Then this function will create a symbolic link for the
+    static library to match the dynamic library's name.
 
     Args:
       hs: Haskell context.
@@ -136,7 +135,7 @@ def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
     if dynamic_lib == None or static_lib == None:
         return None
     libname = get_lib_name(dynamic_lib)
-    if is_hs_library(dynamic_lib) or get_lib_name(static_lib) == libname:
+    if get_lib_name(static_lib) == libname:
         return None
     else:
         link = hs.actions.declare_file(
@@ -179,16 +178,6 @@ def get_lib_extension(lib):
     end = lib.extension if n == -1 else lib.basename[n + 1:]
     return end
 
-def is_hs_library(lib):
-    """Returns True if the library belongs into the hs-libraries field."""
-    libname = get_lib_name(lib)
-
-    # The toolchain libraries may contain C libraries, which should not be
-    # linked against directly, but rather through the package configuration. In
-    # particular ffi, if included in the GHC bindist, comes in different
-    # flavours for different GHC ways (e.g. threaded).
-    return libname.startswith("HS") or lib.owner == Label("@rules_haskell//haskell:toolchain-libraries")
-
 def get_dynamic_hs_lib_name(ghc_version, lib):
     """Return name of library by dropping extension,
     "lib" prefix, and GHC version suffix.
@@ -224,44 +213,6 @@ def get_static_hs_lib_name(with_profiling, lib):
     if name == "Cffi":
         name = "ffi"
     return name
-
-def link_libraries(libs, args, prefix_optl = False):
-    """Add linker flags to link against the given libraries.
-
-    Args:
-      libs: Sequence of File, libraries to link.
-      args: Args or List, append arguments to this object.
-      prefix_optl: Bool, whether to prefix linker flags by -optl
-
-    """
-
-    # This test is a hack. When a CC library has a Haskell library
-    # as a dependency, we need to be careful to filter it out,
-    # otherwise it will end up polluting the linker flags. GHC
-    # already uses hs-libraries to link all Haskell libraries.
-    #
-    # TODO Get rid of this hack. See
-    # https://github.com/tweag/rules_haskell/issues/873.
-    cc_libs = depset(direct = [
-        lib
-        for lib in libs.to_list()
-        if not is_hs_library(lib)
-    ])
-
-    if prefix_optl:
-        libfmt = "-optl-l%s"
-        dirfmt = "-optl-L%s"
-    else:
-        libfmt = "-l%s"
-        dirfmt = "-L%s"
-
-    if hasattr(args, "add_all"):
-        args.add_all(cc_libs, map_each = get_lib_name, format_each = libfmt)
-        args.add_all(cc_libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
-    else:
-        cc_libs_list = cc_libs.to_list()
-        args.extend([libfmt % get_lib_name(lib) for lib in cc_libs_list])
-        args.extend([dirfmt % lib.dirname for lib in cc_libs_list])
 
 # tests in /tests/unit_tests/BUILD
 def parent_dir_path(path):

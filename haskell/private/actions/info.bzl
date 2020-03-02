@@ -3,11 +3,10 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":providers.bzl", "all_package_ids")
-load(":private/cc_libraries.bzl", "get_ghci_extra_libs")
+load(":private/cc_libraries.bzl", "get_ghci_library_files")
 load(
     ":private/path_utils.bzl",
     "get_lib_name",
-    "is_hs_library",
 )
 
 def write_proto_file(hs, output_name, proto_type, content):
@@ -144,10 +143,9 @@ def compile_info_output_groups(
         name,
         workspace_name,
         hs,
+        cc,
         c,
         posix,
-        cc_libraries_info,
-        cc_info,
         runfiles):
     """Output groups for compiling a Haskell target.
 
@@ -156,20 +154,15 @@ def compile_info_output_groups(
         workspace_name: The workspace this target was defined in.
           Used for organizing its runfiles.
         hs: The Haskell context.
+        cc: CcInteropInfo.
         c: A struct with information about the compilation step.
         posix: The posix toolchain.
-        cc_info: A CcInfo provider.
         runfiles: A depset of Files.
 
     Returns:
       A dict whose keys are output groups and values are depsets of Files.
     """
-    ghci_extra_libs = get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info)
-    cc_libs = [
-        lib
-        for lib in ghci_extra_libs.to_list()
-        if not is_hs_library(lib) and get_lib_name(lib) != "ffi"
-    ]
+    cc_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries)
     return {
         "haskell_cdep_libs": depset(cc_libs),
         "haskell_runfiles": runfiles,

@@ -14,8 +14,8 @@ load(
 load(
     ":private/path_utils.bzl",
     "create_rpath_entry",
+    "get_dirname",
     "get_lib_name",
-    "is_hs_library",
     "mangle_static_library",
     "rel_to_pkgroot",
     "target_unique_name",
@@ -28,150 +28,63 @@ load(
     "HaskellProtobufInfo",
 )
 
-def _min_lib_to_link(a, b):
-    """Return the smaller of two LibraryToLink objects.
+def get_cc_libraries(cc_libraries_info, libraries_to_link):
+    """Return only the C libraries out of a list of `LibraryToLink`.
 
-    Determined by component-wise comparison.
-    """
-    a_tuple = (
-        a.dynamic_library,
-        a.interface_library,
-        a.static_library,
-        a.pic_static_library,
-    )
-    b_tuple = (
-        b.dynamic_library,
-        b.interface_library,
-        b.static_library,
-        b.pic_static_library,
-    )
-    if a_tuple < b_tuple:
-        return a
-    else:
-        return b
-
-def _get_unique_lib_files(cc_info):
-    """Deduplicate library dependencies.
-
-    This function removes duplicate filenames in the list of library
-    dependencies to avoid clashes when creating symlinks. Such duplicates can
-    occur due to dependencies on haskell_toolchain_library targets which each
-    duplicate their core library dependencies. See
-    https://github.com/tweag/rules_haskell/issues/917.
-
-    This function preserves correct static linking order.
-
-    This function is deterministic in which LibraryToLink is chosen as the
-    unique representative independent of their order of appearance.
+    Filters out libraries that are produced by Haskell target using the
+    information provided by `cc_libraries_info`.
 
     Args:
-      cc_info: Combined CcInfo provider of dependencies.
+      cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
+      libraries_to_link: list of LibraryToLink.
 
     Returns:
-      List of LibraryToLink: list of unique libraries to link.
+      list of LibraryToLink, C libraries.
+
     """
-    libs_to_link = cc_info.linking_context.libraries_to_link
-
-    # This is a workaround for duplicated libraries due to
-    # haskell_toolchain_library dependencies. See
-    # https://github.com/tweag/rules_haskell/issues/917
-    libs_by_filename = {}
-    filenames = []
-    for lib_to_link in libs_to_link.to_list():
-        if lib_to_link.dynamic_library:
-            lib = lib_to_link.dynamic_library
-        elif lib_to_link.interface_library:
-            lib = lib_to_link.interface_library
-        elif lib_to_link.static_library:
-            lib = lib_to_link.static_library
-        elif lib_to_link.pic_static_library:
-            lib = lib_to_link.pic_static_library
-        else:
-            fail("Empty CcInfo.linking_context.libraries_to_link entry.")
-        prev = libs_by_filename.get(lib.basename)
-        if prev:
-            # To be deterministic we always use File that compares smaller.
-            # This is so that this function can be used multiple times for the
-            # same target without generating conflicting actions. E.g. for the
-            # compilation step as well as the runghc generation step.
-            libs_by_filename[lib.basename] = _min_lib_to_link(prev, lib_to_link)
-        else:
-            libs_by_filename[lib.basename] = lib_to_link
-        filenames.append(lib.basename)
-
-    # Deduplicate the library names. Make sure to preserve static linking order.
-    filenames = depset(
-        transitive = [depset(direct = [filename]) for filename in filenames],
-        order = "topological",
-    ).to_list()
-
     return [
-        libs_by_filename[filename]
-        for filename in filenames
+        lib_to_link
+        for lib_to_link in libraries_to_link
+        if not cc_libraries_info.libraries[cc_library_key(lib_to_link)].is_haskell
     ]
 
-def get_ghci_extra_libs(hs, posix, cc_libraries_info, cc_info, path_prefix = None):
-    """Get libraries appropriate for GHCi's linker.
+def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link):
+    """Get libraries appropriate for loading with GHCi.
 
-    GHC expects dynamic and static versions of the same library to have the
-    same library name. Static libraries for which this is not the case will be
-    symlinked to a matching name.
-
-    Furthermore, dynamic libraries will be symbolically linked into a common
-    directory to allow for less RPATH entries and to fix file extensions that
-    GHCi does not support.
-
-    GHCi can load PIC static libraries (-fPIC -fexternal-dynamic-refs) with a
-    dynamic RTS and dynamic libraries with a dynamic RTS.
-
-    Args:
-      hs: Haskell context.
-      cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
-      cc_info: Combined CcInfo provider of dependencies.
-      path_prefix: (optional) Prefix for the entries in the generated library path.
-
-    Returns:
-      libs: depset of File, the libraries that should be passed to GHCi.
-
+    See get_library_files for further information.
     """
-    (static_libs, dynamic_libs) = get_extra_libs(
+    static_libs, dynamic_libs = get_library_files(
         hs,
-        posix,
         cc_libraries_info,
-        cc_info,
+        libraries_to_link,
         dynamic = not hs.toolchain.is_static,
         pic = True,
-        fixup_dir = "_ghci_libs",
     )
-    libs = depset(transitive = [static_libs, dynamic_libs])
+    return static_libs + dynamic_libs
 
-    return libs
-
-def get_extra_libs(hs, posix, cc_libraries_info, cc_info, dynamic = False, pic = None, fixup_dir = "_libs"):
+def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None):
     """Get libraries appropriate for linking with GHC.
+
+    Takes a list of LibraryToLink and returns a list of the appropriate
+    components for linking with GHC or GHCi.
 
     GHC expects dynamic and static versions of the same library to have the
     same library name. Static libraries for which this is not the case will be
     symlinked to a matching name.
 
-    Furthermore, dynamic libraries will be symbolically linked into a common
-    directory to allow for less RPATH entries.
-
     Args:
       hs: Haskell context.
-      dynamic: Whether to prefer dynamic libraries.
       cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
-      cc_info: Combined CcInfo provider of dependencies.
+      libraries_to_link: list of LibraryToLink.
       dynamic: Whether dynamic libraries are preferred.
       pic: Whether position independent code is required.
-      fixup_dir: Generate symbolic links to libraries in this directory.
 
     Returns:
-      depset of File: the libraries that should be passed to GHC for linking.
+      (static_libraries, dynamic_libraries):
+        static_libraries: depset of File, the static libraries that should be passed to GHC for linking.
+        dynamic_libraries: depset of File, the dynamic libraries that should be passed to GHC for linking.
 
     """
-    fixed_lib_dir = target_unique_name(hs, fixup_dir)
-    libs_to_link = _get_unique_lib_files(cc_info)
     static_libs = []
     dynamic_libs = []
     if pic == None:
@@ -179,7 +92,7 @@ def get_extra_libs(hs, posix, cc_libraries_info, cc_info, dynamic = False, pic =
 
     # PIC is irrelevant on static GHC.
     pic_required = pic and not hs.toolchain.is_static
-    for lib_to_link in libs_to_link:
+    for lib_to_link in libraries_to_link:
         cc_library_info = cc_libraries_info.libraries[cc_library_key(lib_to_link)]
         dynamic_lib = None
         if lib_to_link.dynamic_library:
@@ -205,11 +118,36 @@ def get_extra_libs(hs, posix, cc_libraries_info, cc_info, dynamic = False, pic =
             # happens during profiling builds.
             static_libs.append(lib_to_link.static_library)
 
-    static_libs = depset(direct = static_libs)
-    dynamic_libs = depset(direct = dynamic_libs)
     return (static_libs, dynamic_libs)
 
-def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dynamic = None, pic = None):
+def link_libraries(libs, args, prefix_optl = False):
+    """Add linker flags to link against the given libraries.
+
+    This function is intended for linking C library dependencies. Haskell
+    libraries are linked by GHC automatically based on `-package(-id)` flags
+    and the corresponding package configuration.
+
+    Args:
+      libs: Sequence of File, libraries to link.
+      args: Args or List, append arguments to this object.
+      prefix_optl: Bool, whether to prefix linker flags by -optl
+
+    """
+    if prefix_optl:
+        libfmt = "-optl-l%s"
+        dirfmt = "-optl-L%s"
+    else:
+        libfmt = "-l%s"
+        dirfmt = "-L%s"
+
+    if hasattr(args, "add_all"):
+        args.add_all(libs, map_each = get_lib_name, format_each = libfmt)
+        args.add_all(libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
+    else:
+        args.extend([libfmt % get_lib_name(lib) for lib in libs])
+        args.extend([dirfmt % lib.dirname for lib in libs])
+
+def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -220,7 +158,7 @@ def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dyna
     Args:
       hs: Haskell context.
       cc_libraries_info: Combined HaskellCcLibrariesInfo of dependencies.
-      cc_info: Combined CcInfo of dependencies.
+      libraries_to_link: list of LibraryToLink.
       binary: Final linked binary.
       args: Arguments to the linking action.
       dynamic: Whether to link dynamically, or statically.
@@ -233,37 +171,26 @@ def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dyna
         dynamic_libs: depset of File, dynamic library files.
     """
 
-    (static_libs, dynamic_libs) = get_extra_libs(
+    (static_libs, dynamic_libs) = get_library_files(
         hs,
-        posix,
         cc_libraries_info,
-        cc_info,
+        libraries_to_link,
         dynamic = dynamic,
         pic = pic,
     )
 
-    # This test is a hack. When a CC library has a Haskell library
-    # as a dependency, we need to be careful to filter it out,
-    # otherwise it will end up polluting the linker flags. GHC
-    # already uses hs-libraries to link all Haskell libraries.
-    #
-    # TODO Get rid of this hack. See
-    # https://github.com/tweag/rules_haskell/issues/873.
-    cc_static_libs = depset(direct = [
-        lib
-        for lib in static_libs.to_list()
-        if not is_hs_library(lib)
-    ])
-    cc_dynamic_libs = depset(direct = [
-        lib
-        for lib in dynamic_libs.to_list()
-        if not is_hs_library(lib)
-    ])
+    (cc_static_libs, cc_dynamic_libs) = get_library_files(
+        hs,
+        cc_libraries_info,
+        get_cc_libraries(cc_libraries_info, libraries_to_link),
+        dynamic = dynamic,
+        pic = pic,
+    )
 
     package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")
     conf_path = paths.join(package_name, package_name + ".conf")
     conf_file = hs.actions.declare_file(conf_path)
-    libs = cc_static_libs.to_list() + cc_dynamic_libs.to_list()
+    libs = cc_static_libs + cc_dynamic_libs
     write_package_conf(hs, conf_file, {
         "name": package_name,
         "extra-libraries": [
@@ -286,7 +213,7 @@ def create_link_config(hs, posix, cc_libraries_info, cc_info, binary, args, dyna
                 keep_filename = False,
                 prefix = "@loader_path" if hs.toolchain.is_darwin else "$ORIGIN",
             )
-            for lib in dynamic_libs.to_list()
+            for lib in dynamic_libs
         ]),
     })
     cache_file = ghc_pkg_recache(hs, posix, conf_file)
