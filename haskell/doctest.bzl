@@ -1,7 +1,7 @@
 """Doctest support"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load(":cc.bzl", "cc_interop_info")
+load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
 load(
@@ -95,25 +95,7 @@ def _haskell_doctest_single(target, ctx):
     args.add("--no-magic")
 
     cc = cc_interop_info(ctx)
-    args.add_all([
-        # GHC uses C compiler for assemly, linking and preprocessing as well.
-        "-pgma",
-        cc.tools.cc,
-        "-pgmc",
-        cc.tools.cc,
-        "-pgml",
-        cc.tools.cc,
-        "-pgmP",
-        cc.tools.cc,
-        # Setting -pgm* flags explicitly has the unfortunate side effect
-        # of resetting any program flags in the GHC settings file. So we
-        # restore them here. See
-        # https://ghc.haskell.org/trac/ghc/ticket/7929.
-        "-optc-fno-stack-protector",
-        "-optP-E",
-        "-optP-undef",
-        "-optP-traditional",
-    ])
+    args.add_all(ghc_cc_program_args(cc.tools.cc))
 
     doctest_log = ctx.actions.declare_file(
         "doctest-log-" + ctx.label.name + "-" + target.label.name,

@@ -159,3 +159,32 @@ def cc_interop_info(ctx):
             if CcInfo in dep
         ]).linking_context.libraries_to_link.to_list(),
     )
+
+def ghc_cc_program_args(cc):
+    """Retruns the -pgm* flags required to override cc.
+
+    Args:
+      cc: string, path to the C compiler (cc_wrapper).
+
+    Returns:
+      list of string, GHC arguments.
+    """
+    return [
+        # GHC uses C compiler for assemly, linking and preprocessing as well.
+        "-pgma",
+        cc,
+        "-pgmc",
+        cc,
+        "-pgml",
+        cc,
+        "-pgmP",
+        cc,
+        # Setting -pgm* flags explicitly has the unfortunate side effect
+        # of resetting any program flags in the GHC settings file. So we
+        # restore them here. See
+        # https://ghc.haskell.org/trac/ghc/ticket/7929.
+        "-optc-fno-stack-protector",
+        "-optP-E",
+        "-optP-undef",
+        "-optP-traditional",
+    ]

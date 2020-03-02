@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
+load(":cc.bzl", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(
     ":private/path_utils.bzl",
@@ -268,6 +269,10 @@ def _compiler_flags_and_inputs(hs, repl_info, path_prefix = ""):
         args,
     )
 
+    args.extend(ghc_cc_program_args(
+        paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path),
+    ))
+
     # Add import directories
     for import_dir in repl_info.load_info.import_dirs.to_list():
         args.append("-i" + (import_dir if import_dir else "."))
@@ -352,7 +357,6 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         substitutions = {
             "{ENV}": render_env(hs.env),
             "{TOOL}": hs.tools.ghci.path,
-            "{CC}": hs.toolchain.cc_wrapper.executable.path,
             "{ARGS}": " ".join(
                 args + [
                     shell.quote(a)
