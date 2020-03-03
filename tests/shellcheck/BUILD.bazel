@@ -1,34 +1,19 @@
-load("//tests:inline_tests.bzl", "sh_inline_test")
+load("//tests/shellcheck:shellcheck.bzl", "shellcheck")
 
-sh_inline_test(
-    name = "shellcheck-serve-docs",
-    size = "small",
+shellcheck(
+    name = "serve-docs",
     args = ["$(location //:serve-docs.sh)"],
     data = ["//:serve-docs.sh"],
-    script = """\
-shellcheck --color=always --shell=sh "$1"
-""",
-    tags = ["requires_shellcheck"],
 )
 
-sh_inline_test(
+shellcheck(
     name = "shellcheck-start-script",
-    size = "small",
     args = ["$(location //:start)"],
     data = ["//:start"],
-    script = """\
-shellcheck --color=always --shell=sh "$1"
-""",
-    tags = ["requires_shellcheck"],
 )
 
-sh_inline_test(
+shellcheck(
     name = "shellcheck-cc-wrapper-windows",
-    size = "small",
     args = ["$(location //haskell:private/cc_wrapper_windows.sh.tpl)"],
     data = ["//haskell:private/cc_wrapper_windows.sh.tpl"],
-    script = """\
-shellcheck --color=always --shell=bash "$1"
-""",
-    tags = ["requires_shellcheck"],
 )
