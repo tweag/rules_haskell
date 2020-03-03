@@ -24,6 +24,8 @@ load(
     "test_ghc_version",
 )
 
+exports_files(["run-start-script.sh"])
+
 package(default_testonly = 1)
 
 haskell_doctest_toolchain(

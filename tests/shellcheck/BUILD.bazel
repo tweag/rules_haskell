@@ -1,19 +1,26 @@
 load("//tests/shellcheck:shellcheck.bzl", "shellcheck")
 
 shellcheck(
+    name = "cc-wrapper-windows",
+    args = ["$(location //haskell:private/cc_wrapper_windows.sh.tpl)"],
+    data = ["//haskell:private/cc_wrapper_windows.sh.tpl"],
+)
+
+shellcheck(
     name = "serve-docs",
     args = ["$(location //:serve-docs.sh)"],
     data = ["//:serve-docs.sh"],
 )
 
 shellcheck(
-    name = "shellcheck-start-script",
+    name = "start-script",
     args = ["$(location //:start)"],
     data = ["//:start"],
 )
 
 shellcheck(
-    name = "shellcheck-cc-wrapper-windows",
-    args = ["$(location //haskell:private/cc_wrapper_windows.sh.tpl)"],
-    data = ["//haskell:private/cc_wrapper_windows.sh.tpl"],
+    name = "run-start-script",
+    args = ["$(location //tests:run-start-script.sh)"],
+    data = ["//tests:run-start-script.sh"],
 )
+

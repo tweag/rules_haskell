@@ -13,7 +13,7 @@ rm -rf $workdir
 mkdir $workdir
 cd $workdir
 # arguments are passed on to the start script
-$pwd/start "$@"
+"$pwd/start" "$@"
 
 # Set Nixpkgs in environment variable to avoid hardcoding it in
 # start script itself.
@@ -25,8 +25,8 @@ $pwd/start "$@"
 # changes, then we need to adapt to those changes in the branch.
 # Which in turn means the start script should pull in those changes too.
 
-NIX_PATH=nixpkgs=$pwd/nixpkgs/default.nix \
+NIX_PATH=nixpkgs="$pwd/nixpkgs/default.nix" \
   bazel run \
   --config=ci \
-  --override_repository=rules_haskell=$pwd \
+  --override_repository=rules_haskell="$pwd" \
   //:example
