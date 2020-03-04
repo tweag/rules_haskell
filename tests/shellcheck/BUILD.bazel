@@ -4,12 +4,14 @@ shellcheck(
     name = "cc-wrapper-windows",
     args = ["$(location //haskell:private/cc_wrapper_windows.sh.tpl)"],
     data = ["//haskell:private/cc_wrapper_windows.sh.tpl"],
+    sh_flavor = "bash" # XXX Is that correct?
 )
 
 shellcheck(
     name = "serve-docs",
     args = ["$(location //:serve-docs.sh)"],
     data = ["//:serve-docs.sh"],
+    sh_flavor = "sh"
 )
 
 shellcheck(
