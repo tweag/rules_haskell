@@ -14,6 +14,12 @@ shellcheck(
 )
 
 shellcheck(
+    name = "haddock_wrapper.sh",
+    args = ["$(location //haskell:private/haddock_wrapper.sh.tpl)"],
+    data = ["//haskell:private/haddock_wrapper.sh.tpl"],
+)
+
+shellcheck(
     name = "netlify-build",
     args = ["$(location //:.netlify/build.sh)"],
     data = ["//:.netlify/build.sh"],
