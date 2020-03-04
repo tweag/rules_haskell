@@ -8,6 +8,20 @@ shellcheck(
 )
 
 shellcheck(
+    name = "netlify-build",
+    args = ["$(location //:.netlify/build.sh)"],
+    data = ["//:.netlify/build.sh"],
+    sh_flavor = "sh"
+)
+
+shellcheck(
+    name = "netlify-install",
+    args = ["$(location //:.netlify/install.sh)"],
+    data = ["//:.netlify/install.sh"],
+    sh_flavor = "sh"
+)
+
+shellcheck(
     name = "serve-docs",
     args = ["$(location //:serve-docs.sh)"],
     data = ["//:serve-docs.sh"],
