@@ -8,7 +8,7 @@ exports_files(
         ".netlify/install.sh",
         "serve-docs.sh",
     ],
-    visibility = ["//tests/shellcheck:__subpackages__"],
+    visibility = ["//tests/shellcheck:__pkg__"],
 )
 
 # Run this to check for errors in BUILD files.
