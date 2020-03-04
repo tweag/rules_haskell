@@ -39,3 +39,10 @@ shellcheck(
     args = ["$(location //:start)"],
     data = ["//:start"],
 )
+
+shellcheck(
+    name = "tests/scripts/exec.sh",
+    args = ["$(location //tests:scripts/exec.sh)"],
+    data = ["//tests:scripts/exec.sh"],
+    sh_flavor = "sh"
+)
