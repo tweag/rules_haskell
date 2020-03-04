@@ -96,6 +96,7 @@ stack_snapshot(
         "proto-lens",
         "proto-lens-protoc",
         "lens-family",
+        "microlens",
     ],
     snapshot = "lts-14.4",
     tools = [

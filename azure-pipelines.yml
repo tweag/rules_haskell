@@ -31,6 +31,9 @@ jobs:
       export PATH="$(sed 's, \+\(:\|$\),\1,g' <<<"$PATH")"
       echo "PATH='$PATH'"
 
+      # Encoding test
+      /c/bazel/bazel.exe build --config windows "@stackage//:microlens"
+
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."
