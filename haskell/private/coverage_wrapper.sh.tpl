@@ -13,8 +13,10 @@ if [[ ! -d "${RUNFILES_DIR:-/dev/null}" && ! -f "${RUNFILES_MANIFEST_FILE:-/dev/
   fi
 fi
 if [[ -f "${RUNFILES_DIR:-/dev/null}/bazel_tools/tools/bash/runfiles/runfiles.bash" ]]; then
+  # shellcheck source=/dev/null
   source "${RUNFILES_DIR}/bazel_tools/tools/bash/runfiles/runfiles.bash"
 elif [[ -f "${RUNFILES_MANIFEST_FILE:-/dev/null}" ]]; then
+  # shellcheck source=/dev/null
   source "$(grep -m1 "^bazel_tools/tools/bash/runfiles/runfiles.bash " \
             "$RUNFILES_MANIFEST_FILE" | cut -d ' ' -f 2-)"
 else
@@ -25,31 +27,31 @@ fi
 
 ERRORCOLOR='\033[1;31m'
 CLEARCOLOR='\033[0m'
-binary_path=$(rlocation {binary_path})
-hpc_path=$(rlocation {hpc_path})
-tix_file_path={tix_file_path}
-coverage_report_format={coverage_report_format}
-strict_coverage_analysis={strict_coverage_analysis}
-package_path={package_path}
+binary_path=$(rlocation "{binary_path}")
+hpc_path=$(rlocation "{hpc_path}")
+tix_file_path="{tix_file_path}"
+coverage_report_format="{coverage_report_format}"
+strict_coverage_analysis="{strict_coverage_analysis}"
+package_path="{package_path}"
 
 # either of the two expected coverage metrics should be set to -1 if they're meant to be unused
-expected_covered_expressions_percentage={expected_covered_expressions_percentage}
-expected_uncovered_expression_count={expected_uncovered_expression_count}
+expected_covered_expressions_percentage="{expected_covered_expressions_percentage}"
+expected_uncovered_expression_count="{expected_uncovered_expression_count}"
 
 # gather the hpc directories
 hpc_dir_args=""
-mix_file_paths={mix_file_paths}
+mix_file_paths="{mix_file_paths}"
 for m in "${mix_file_paths[@]}"
 do
   absolute_mix_file_path=$(rlocation $m)
-  hpc_parent_dir=$(dirname $absolute_mix_file_path)
-  trimmed_hpc_parent_dir=$(echo "${hpc_parent_dir%%.hpc*}")
+  hpc_parent_dir=$(dirname "$absolute_mix_file_path")
+  trimmed_hpc_parent_dir="${hpc_parent_dir%%.hpc*}"
   hpc_dir_args="$hpc_dir_args --hpcdir=$trimmed_hpc_parent_dir.hpc"
 done
 
 # gather the modules to exclude from the coverage analysis
 hpc_exclude_args=""
-modules_to_exclude={modules_to_exclude}
+modules_to_exclude="{modules_to_exclude}"
 for m in "${modules_to_exclude[@]}"
 do
   hpc_exclude_args="$hpc_exclude_args --exclude=$m"
@@ -57,6 +59,8 @@ done
 
 # run the test binary, and then generate the report
 $binary_path "$@" > /dev/null 2>&1
+# Disabling SC2086: we want word splitting on hpc_dir_args and hpc_exclude_args
+# shellcheck disable=2086
 $hpc_path report "$tix_file_path" $hpc_dir_args $hpc_exclude_args \
   --srcdir "." --srcdir "$package_path" > __hpc_coverage_report
 
@@ -74,13 +78,13 @@ then
   if [ "$covered_expression_percentage" -lt "$expected_covered_expressions_percentage" ]
   then
     echo -e "\n==>$ERRORCOLOR Inadequate expression coverage percentage.$CLEARCOLOR"
-    echo -e "==> Expected $expected_covered_expressions_percentage%, but the actual coverage was $ERRORCOLOR$(($covered_expression_percentage))%$CLEARCOLOR.\n"
+    echo -e "==> Expected $expected_covered_expressions_percentage%, but the actual coverage was $ERRORCOLOR$((covered_expression_percentage))%$CLEARCOLOR.\n"
     exit 1
   elif [ "$strict_coverage_analysis" == "True" ] && [ "$covered_expression_percentage" -gt "$expected_covered_expressions_percentage" ]
   then
     echo -e "\n==>$ERRORCOLOR ** BECAUSE STRICT COVERAGE ANALYSIS IS ENABLED **$CLEARCOLOR"
     echo -e "==> Your coverage percentage is now higher than expected.$CLEARCOLOR"
-    echo -e "==> Expected $expected_covered_expressions_percentage% of expressions covered, but the actual value is $ERRORCOLOR$(($covered_expression_percentage))%$CLEARCOLOR."
+    echo -e "==> Expected $expected_covered_expressions_percentage% of expressions covered, but the actual value is $ERRORCOLOR$((covered_expression_percentage))%$CLEARCOLOR."
     echo -e "==> Please increase the expected coverage percentage to match.\n"
     exit 1
   fi
@@ -91,17 +95,17 @@ if [ "$expected_uncovered_expression_count" -ne -1 ]
 then
   coverage_numerator=$(grep "expressions used" __hpc_coverage_report | sed s:.*\(::g | cut -f1 -d "/")
   coverage_denominator=$(grep "expressions used" __hpc_coverage_report | sed s:.*/::g | cut -f1 -d ")")
-  uncovered_expression_count="$(($coverage_denominator - $coverage_numerator))"
+  uncovered_expression_count="$((coverage_denominator - coverage_numerator))"
   if [ "$uncovered_expression_count" -gt "$expected_uncovered_expression_count" ]
   then
     echo -e "\n==>$ERRORCOLOR Too many uncovered expressions.$CLEARCOLOR"
-    echo -e "==> Expected $expected_uncovered_expression_count uncovered expressions, but the actual count was $ERRORCOLOR$(($uncovered_expression_count))$CLEARCOLOR.\n"
+    echo -e "==> Expected $expected_uncovered_expression_count uncovered expressions, but the actual count was $ERRORCOLOR$((uncovered_expression_count))$CLEARCOLOR.\n"
     exit 1
   elif [ "$strict_coverage_analysis" == "True" ] && [ "$uncovered_expression_count" -lt "$expected_uncovered_expression_count" ]
   then
     echo -e "\n==>$ERRORCOLOR ** BECAUSE STRICT COVERAGE ANALYSIS IS ENABLED **$CLEARCOLOR"
     echo -e "==>$ERRORCOLOR Your uncovered expression count is now lower than expected.$CLEARCOLOR"
-    echo -e "==> Expected $expected_uncovered_expression_count uncovered expressions, but there is $ERRORCOLOR$(($uncovered_expression_count))$CLEARCOLOR."
+    echo -e "==> Expected $expected_uncovered_expression_count uncovered expressions, but there is $ERRORCOLOR$((uncovered_expression_count))$CLEARCOLOR."
     echo -e "==> Please lower the expected uncovered expression count to match.\n"
     exit 1
   fi
@@ -111,6 +115,8 @@ fi
 # and feed its generated files into stdout, wrapped in XML tags
 if [ "$coverage_report_format" == "html" ]
 then
+  # Disabling SC2086: we want word splitting on hpc_dir_args and hpc_exclude_args
+  # shellcheck disable=2086
   $hpc_path markup "$tix_file_path" $hpc_dir_args $hpc_exclude_args \
     --srcdir "." --srcdir "$package_path" --destdir=hpc_out > /dev/null 2>&1
   cd hpc_out
@@ -120,7 +126,7 @@ then
     [ -e "$file" ] || continue
     echo "<coverage-report-part name=\"$file\">"
     echo '<![CDATA['
-    cat $file
+    cat "$file"
     echo ']]>'
     echo "</coverage-report-part>"
   done
