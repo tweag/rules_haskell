@@ -549,5 +549,22 @@ Build a REPL for multiple targets.
 $ bazel run //:repl
 ```
 
+### IDE Support (Experimental)
+
+`haskell_repl` targets provide the `hie_bios` output group to optionally
+generate GHCi flags for [hie-bios](https://github.com/mpickering/hie-bios)'s
+`bios` cradle. You can use this for IDE support with
+[ghcide](https://github.com/digital-asset/ghcide).
+
+Given a `haskell_repl` target `//:repl` an example `.hie-bios` script could
+look as follows. Please refer to the `hie-bios` documentation for further
+information.
+
+  ```shell
+  #!/usr/bin/env bash
+  set -euo pipefail
+  bazel build //:repl --output_groups=hie_bios
+  cat bazel-bin/repl@hie-bios >"$HIE_BIOS_OUTPUT"
+  ```
 """,
 )
