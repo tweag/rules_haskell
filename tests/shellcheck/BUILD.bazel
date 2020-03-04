@@ -22,6 +22,12 @@ shellcheck(
 )
 
 shellcheck(
+    name = "run-start-script",
+    args = ["$(location //tests:run-start-script.sh)"],
+    data = ["//tests:run-start-script.sh"],
+)
+
+shellcheck(
     name = "serve-docs",
     args = ["$(location //:serve-docs.sh)"],
     data = ["//:serve-docs.sh"],
@@ -33,10 +39,3 @@ shellcheck(
     args = ["$(location //:start)"],
     data = ["//:start"],
 )
-
-shellcheck(
-    name = "run-start-script",
-    args = ["$(location //tests:run-start-script.sh)"],
-    data = ["//tests:run-start-script.sh"],
-)
-
