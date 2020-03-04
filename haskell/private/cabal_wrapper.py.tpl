@@ -206,7 +206,7 @@ if libraries != [] and os.path.isfile(package_conf_file):
         os.rename(lib, os.path.join(dynlibdir, os.path.basename(lib)))
 
     tmp_package_conf_file = package_conf_file + ".tmp"
-    with open(package_conf_file, 'r') as package_conf:
+    with open(package_conf_file, 'r', encoding="utf-8") as package_conf:
         with open(tmp_package_conf_file, 'w') as tmp_package_conf:
             for line in package_conf.readlines():
                 print(make_relocatable_paths(line), file=tmp_package_conf)
