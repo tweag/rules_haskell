@@ -37,6 +37,11 @@ exports_files(
     visibility = ["//tests/unit-tests:__pkg__"],
 )
 
+exports_files(
+    ["private/ghc_wrapper.sh"],
+    visibility = ["//tests/shellcheck:__pkg__"],
+)
+
 # @bazel_tools//tools does not define a bzl_library itself, instead we are
 # supposed to define our own using the @bazel_tools//tools:bzl_srcs filegroup.
 # See https://github.com/bazelbuild/skydoc/issues/166

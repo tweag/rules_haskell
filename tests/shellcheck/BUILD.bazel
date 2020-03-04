@@ -8,6 +8,12 @@ shellcheck(
 )
 
 shellcheck(
+    name = "ghc_wrapper.sh",
+    args = ["$(location //haskell:private/ghc_wrapper.sh)"],
+    data = ["//haskell:private/ghc_wrapper.sh"],
+)
+
+shellcheck(
     name = "netlify-build",
     args = ["$(location //:.netlify/build.sh)"],
     data = ["//:.netlify/build.sh"],
