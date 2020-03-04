@@ -25,7 +25,7 @@ load(
 )
 
 exports_files(["run-start-script.sh", "scripts/exec.sh"],
-              visibility=["//tests/shellcheck:__subpackages__"])
+              visibility=["//tests/shellcheck:__pkg__"])
 
 package(default_testonly = 1)
 
