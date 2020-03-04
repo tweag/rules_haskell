@@ -25,5 +25,13 @@ steps:
       echo "RUN useradd -ms /bin/bash --uid $(id -u $USER) $USER" >> Dockerfile
       docker build . -t tweag/rules_haskell:latest
       popd
-      docker run -it --network host -v $(pwd):/home/$USER/rules_haskell:rw -v $HOME/bindists/repo_cache:/home/$USER/repo_cache:rw -v $HOME/bindists/.cache/bazel:/home/$USER/.cache/bazel:rw -v $HOME/bindists/.stack:/home/$USER/.stack:rw --workdir /home/$USER/rules_haskell --user $(id -u $USER) tweag/rules_haskell:latest .buildkite/bindists-pipeline
+      docker run -it --network host \
+        -v $(pwd):$HOME/rules_haskell:rw \
+        -v $HOME/bindists/repo_cache:$HOME/repo_cache:rw \
+        -v $HOME/bindists/.cache/bazel:$HOME/.cache/bazel:rw \
+        -v $HOME/bindists/.stack:$HOME/.stack:rw \
+        --workdir $HOME/rules_haskell \
+        --user $USER \
+        tweag/rules_haskell:latest \
+        .buildkite/bindists-pipeline
     timeout: 100
