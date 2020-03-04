@@ -8,6 +8,12 @@ shellcheck(
 )
 
 shellcheck(
+    name = "coverage_wrapper.sh.tpl",
+    args = ["$(location //haskell:private/coverage_wrapper.sh.tpl)"],
+    data = ["//haskell:private/coverage_wrapper.sh.tpl"],
+)
+
+shellcheck(
     name = "ghc_wrapper.sh",
     args = ["$(location //haskell:private/ghc_wrapper.sh)"],
     data = ["//haskell:private/ghc_wrapper.sh"],
