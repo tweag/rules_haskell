@@ -161,7 +161,7 @@ def cc_interop_info(ctx):
     )
 
 def ghc_cc_program_args(cc):
-    """Retruns the -pgm* flags required to override cc.
+    """Returns the -pgm* flags required to override cc.
 
     Args:
       cc: string, path to the C compiler (cc_wrapper).
