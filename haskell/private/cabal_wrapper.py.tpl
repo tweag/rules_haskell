@@ -106,6 +106,7 @@ strip = find_exe("%{strip}")
 
 def recache_db():
     run([ghc_pkg, "recache", "--package-db=" + package_database])
+    subprocess.run([ghc_pkg, "dump", "--package-db=" + package_database])
 
 recache_db()
 
