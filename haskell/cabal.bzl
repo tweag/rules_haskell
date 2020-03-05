@@ -9,7 +9,12 @@ load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "expand_make_variables")
 load(":private/mode.bzl", "is_profiling_enabled")
-load(":private/path_utils.bzl", "join_path_list", "truly_relativize")
+load(
+    ":private/path_utils.bzl",
+    "create_rpath_entry",
+    "join_path_list",
+    "truly_relativize",
+)
 load(":private/set.bzl", "set")
 load(":haddock.bzl", "generate_unified_haddock_info")
 load(
@@ -103,7 +108,7 @@ def _cabal_tool_flag(tool):
 def _binary_paths(binaries):
     return [binary.dirname for binary in binaries.to_list()]
 
-def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, generate_haddock, cabal_wrapper, package_database, verbose):
+def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, generate_haddock, cabal_wrapper, package_database, verbose, dynamic_binary = None):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -133,6 +138,19 @@ def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, comp
     args.add_all([component, package_id, generate_haddock, setup, cabal.dirname, package_database.dirname])
     args.add("--flags=" + " ".join(flags))
     args.add_all(compiler_flags, format_each = "--ghc-option=%s")
+    if dynamic_binary:
+        args.add_all(
+            [
+                "--ghc-option=-optl-Wl,-rpath," + create_rpath_entry(
+                    binary = dynamic_binary,
+                    dependency = lib,
+                    keep_filename = False,
+                    prefix = "@loader_path" if hs.toolchain.is_darwin else "$ORIGIN",
+                )
+                for lib in direct_libs
+            ],
+            uniquify = True,
+        )
     args.add("--")
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(direct_include_dirs, format_each = "--extra-include-dirs=%s")
@@ -260,6 +278,7 @@ def _haskell_cabal_library_impl(ctx):
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
         verbose = ctx.attr.verbose,
+        dynamic_binary = dynamic_library,
     )
     outputs = [
         package_database,
@@ -497,6 +516,7 @@ def _haskell_cabal_binary_impl(ctx):
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
         verbose = ctx.attr.verbose,
+        dynamic_binary = binary,
     )
     ctx.actions.run(
         executable = c.cabal_wrapper,
