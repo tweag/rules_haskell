@@ -24,8 +24,13 @@ load(
     "test_ghc_version",
 )
 
-exports_files(["run-start-script.sh", "scripts/exec.sh"],
-              visibility=["//tests/shellcheck:__subpackages__"])
+exports_files(
+    [
+        "run-start-script.sh",
+        "scripts/exec.sh",
+    ],
+    visibility = ["//tests/shellcheck:__subpackages__"],
+)
 
 package(default_testonly = 1)
 
