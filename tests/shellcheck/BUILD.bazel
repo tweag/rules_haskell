@@ -4,7 +4,7 @@ shellcheck(
     name = "cc-wrapper-windows",
     args = ["$(location //haskell:private/cc_wrapper_windows.sh.tpl)"],
     data = ["//haskell:private/cc_wrapper_windows.sh.tpl"],
-    sh_flavor = "bash" # XXX Is that correct?
+    sh_flavor = "bash",  # XXX Is that correct?
 )
 
 shellcheck(
