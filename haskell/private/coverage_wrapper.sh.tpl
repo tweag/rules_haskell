@@ -40,7 +40,9 @@ expected_uncovered_expression_count="{expected_uncovered_expression_count}"
 
 # gather the hpc directories
 hpc_dir_args=""
-mix_file_paths="{mix_file_paths}"
+# We want word splitting on mix_file_paths, that holds a list of values
+# shellcheck disable=SC1083
+mix_file_paths={mix_file_paths}
 for m in "${mix_file_paths[@]}"
 do
   absolute_mix_file_path=$(rlocation $m)
@@ -51,10 +53,12 @@ done
 
 # gather the modules to exclude from the coverage analysis
 hpc_exclude_args=""
-modules_to_exclude="{modules_to_exclude}"
+# We want word splitting on modules_to_exclude, that holds a list of values
+# shellcheck disable=SC1083
+modules_to_exclude={modules_to_exclude}
 for m in "${modules_to_exclude[@]}"
 do
-  hpc_exclude_args="$hpc_exclude_args --exclude=$m"
+  hpc_exclude_args+=" --exclude=$m"
 done
 
 # run the test binary, and then generate the report
