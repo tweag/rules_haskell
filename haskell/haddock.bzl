@@ -146,7 +146,7 @@ def _haskell_doc_aspect_impl(target, ctx):
         template = ctx.file._haddock_wrapper_tpl,
         output = haddock_wrapper,
         substitutions = {
-            "%{ghc-pkg}": hs.tools.ghc_pkg.path,
+            "%{ghc-pkg}": hs.tools.ghc_pkg.path,  # not mentioned in bash XXX delete?
             "%{haddock}": hs.tools.haddock.path,
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.

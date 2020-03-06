@@ -27,12 +27,20 @@ fi
 
 ERRORCOLOR='\033[1;31m'
 CLEARCOLOR='\033[0m'
-binary_path=$(rlocation "{binary_path}")
-hpc_path=$(rlocation "{hpc_path}")
-tix_file_path="{tix_file_path}"
-coverage_report_format="{coverage_report_format}"
+# Variables quoted in bazel (shell.quote) should not
+# be quoted twice (export f=f; "'$f'" gets evaluated to 'f', not f).
+# Hence why we need to turn off shellcheck's SC1083 on already quoted variables.
+# shellcheck disable=SC1083
+binary_path=$(rlocation {binary_path})
+# shellcheck disable=SC1083
+hpc_path=$(rlocation {hpc_path})
+# shellcheck disable=SC1083
+tix_file_path={tix_file_path}
+# shellcheck disable=SC1083
+coverage_report_format={coverage_report_format}
 strict_coverage_analysis="{strict_coverage_analysis}"
-package_path="{package_path}"
+# shellcheck disable=SC1083
+package_path={package_path}
 
 # either of the two expected coverage metrics should be set to -1 if they're meant to be unused
 expected_covered_expressions_percentage="{expected_covered_expressions_percentage}"
