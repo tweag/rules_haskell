@@ -13,6 +13,7 @@ load(
     ":private/path_utils.bzl",
     "create_rpath_entry",
     "join_path_list",
+    "relative_rpath_prefix",
     "truly_relativize",
 )
 load(":private/set.bzl", "set")
@@ -165,7 +166,7 @@ def _prepare_cabal_inputs(
                     binary = dynamic_binary,
                     dependency = lib,
                     keep_filename = False,
-                    prefix = "@loader_path" if hs.toolchain.is_darwin else "$ORIGIN",
+                    prefix = relative_rpath_prefix(hs.toolchain.is_darwin),
                 )
                 for lib in direct_libs
             ],
