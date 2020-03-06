@@ -327,6 +327,15 @@ the history clean.
 
 [buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
 
+To automate tests and formatting, you may use the pre-commit hook
+`tests/pre-commit`. It forbids a commit if `bazel test //...` fails
+and automatically amends commits to format `*.bz` and `*.bazel` files.
+Install it as follows:
+
+```
+ln -sr tests/pre-commit .git/hooks/
+```
+
 ### <a name="nixpkgs-pin" />How to update the nixpkgs pin
 
 You have to find a new git commit where all our `shell.nix`

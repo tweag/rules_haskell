@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+# Hook that executes the tests and format *.bz,*.bazel files automatically
+
+set -e
+
+function format_bazel() {
+  # Adapted from https://prettier.io/docs/en/precommit.html
+  FILES=$(git diff --cached --name-only --diff-filter=ACMR "*.bz" "*.bazel" | sed 's| |\\ |g')
+  [ -z "$FILES" ] && return 0
+
+  # Format all files (it's imprecise as we know only $FILES need modifications, but it'll do)
+  nix-shell --pure --command "bazel run //:buildifier-fix" || return 1
+
+  # Add back the modified files (if any) to staging
+  echo "$FILES" | xargs git add
+
+  return 0
+}
+
+# Run tests
+nix-shell --pure --command "bazel test //..."
+
+# Format *.{bz,BAZEL} files
+format_bazel
