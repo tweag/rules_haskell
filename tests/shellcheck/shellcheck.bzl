@@ -10,7 +10,7 @@ def shellcheck(name, args, data, sh_flavor = "sh", excludes = [], visibility = N
         args = args,
         data = data,
         script = """\
-shellcheck --color=always {} {} $1
+shellcheck --color=always {} {} "$1"
 """.format(shell_arg, excludes_arg),
         tags = ["requires_shellcheck"],
     )
