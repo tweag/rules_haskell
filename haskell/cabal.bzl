@@ -108,7 +108,27 @@ def _cabal_tool_flag(tool):
 def _binary_paths(binaries):
     return [binary.dirname for binary in binaries.to_list()]
 
-def _prepare_cabal_inputs(hs, cc, posix, dep_info, cc_info, direct_cc_info, component, package_id, tool_inputs, tool_input_manifests, cabal, setup, srcs, compiler_flags, flags, generate_haddock, cabal_wrapper, package_database, verbose, dynamic_binary = None):
+def _prepare_cabal_inputs(
+        hs,
+        cc,
+        posix,
+        dep_info,
+        cc_info,
+        direct_cc_info,
+        component,
+        package_id,
+        tool_inputs,
+        tool_input_manifests,
+        cabal,
+        setup,
+        srcs,
+        compiler_flags,
+        flags,
+        generate_haddock,
+        cabal_wrapper,
+        package_database,
+        verbose,
+        dynamic_binary = None):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
