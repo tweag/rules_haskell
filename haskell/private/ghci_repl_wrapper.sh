@@ -58,11 +58,11 @@ TOOL_LOCATION="$RULES_HASKELL_EXEC_ROOT/%{TOOL}"
 # of resetting any program flags in the GHC settings file. So we
 # restore them here. See
 # https://ghc.haskell.org/trac/ghc/ticket/7929.
-PGM_ARGS="-pgma %{CC} -pgmc %{CC} -pgml %{CC} -pgmP %{CC} -optc-fno-stack-protector -optP-E -optP-undef -optP-traditional"
+PGM_ARGS=("-pgma" "%{CC}" "-pgmc" "%{CC}" "-pgml" "%{CC}" "-pgmP" "%{CC}" "-optc-fno-stack-protector" "-optP-E" "-optP-undef" "-optP-traditional")
+# shellcheck disable=SC1083
+ARGS=%{ARGS}
 
 # shellcheck disable=SC1083
 %{ENV}
 
-# Disabling 2086, because we indeed want word splitting on PGM_ARGS
-# shellcheck disable=SC1083 disable=SC2086
-"$TOOL_LOCATION" $PGM_ARGS %{ARGS} "$@"
+"$TOOL_LOCATION" "${PGM_ARGS[@]}" "${ARGS[@]}" "$@"

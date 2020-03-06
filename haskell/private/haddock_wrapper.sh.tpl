@@ -14,5 +14,6 @@ cleanup() { rm -rf "$TEMP"; }
 # XXX Override TMPDIR to prevent race conditions on certain platforms.
 # This is a workaround for
 # https://github.com/haskell/haddock/issues/894.
-TMPDIR=$TEMP "%{haddock}" "$@"
+# shellcheck disable=SC1083
+TMPDIR=$TEMP %{haddock} "$@"
 cleanup

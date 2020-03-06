@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:shell.bzl", "shell")
 load(
     ":providers.bzl",
     "HaddockInfo",
@@ -147,7 +148,7 @@ def _haskell_doc_aspect_impl(target, ctx):
         output = haddock_wrapper,
         substitutions = {
             "%{ghc-pkg}": hs.tools.ghc_pkg.path,  # not mentioned in bash XXX delete?
-            "%{haddock}": hs.tools.haddock.path,
+            "%{haddock}": shell.quote(hs.tools.haddock.path),
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
             "%{env}": render_env(hs.env),

@@ -319,12 +319,12 @@ def _create_repl(hs, posix, ctx, repl_info, output):
             "%{ENV}": render_env(hs.env),
             "%{TOOL}": hs.tools.ghci.path,
             "%{CC}": hs.toolchain.cc_wrapper.executable.path,
-            "%{ARGS}": " ".join(
+            "%{ARGS}": "(" + " ".join(
                 args + [
                     shell.quote(a)
                     for a in quote_args
                 ],
-            ),
+            ) + ")",
         },
     )
 
