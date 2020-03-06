@@ -40,31 +40,25 @@ expected_uncovered_expression_count="{expected_uncovered_expression_count}"
 
 # gather the hpc directories
 hpc_dir_args=""
-# We want word splitting on mix_file_paths, that holds a list of values
-# shellcheck disable=SC1083
 mix_file_paths={mix_file_paths}
 for m in "${mix_file_paths[@]}"
 do
   absolute_mix_file_path=$(rlocation $m)
   hpc_parent_dir=$(dirname "$absolute_mix_file_path")
-  trimmed_hpc_parent_dir="${hpc_parent_dir%%.hpc*}"
+  trimmed_hpc_parent_dir=$(echo "${hpc_parent_dir%%.hpc*}")
   hpc_dir_args="$hpc_dir_args --hpcdir=$trimmed_hpc_parent_dir.hpc"
 done
 
 # gather the modules to exclude from the coverage analysis
 hpc_exclude_args=""
-# We want word splitting on modules_to_exclude, that holds a list of values
-# shellcheck disable=SC1083
 modules_to_exclude={modules_to_exclude}
 for m in "${modules_to_exclude[@]}"
 do
-  hpc_exclude_args+=" --exclude=$m"
+  hpc_exclude_args="$hpc_exclude_args --exclude=$m"
 done
 
 # run the test binary, and then generate the report
 $binary_path "$@" > /dev/null 2>&1
-# Disabling SC2086: we want word splitting on hpc_dir_args and hpc_exclude_args
-# shellcheck disable=2086
 $hpc_path report "$tix_file_path" $hpc_dir_args $hpc_exclude_args \
   --srcdir "." --srcdir "$package_path" > __hpc_coverage_report
 
@@ -119,8 +113,6 @@ fi
 # and feed its generated files into stdout, wrapped in XML tags
 if [ "$coverage_report_format" == "html" ]
 then
-  # Disabling SC2086: we want word splitting on hpc_dir_args and hpc_exclude_args
-  # shellcheck disable=2086
   $hpc_path markup "$tix_file_path" $hpc_dir_args $hpc_exclude_args \
     --srcdir "." --srcdir "$package_path" --destdir=hpc_out > /dev/null 2>&1
   cd hpc_out
