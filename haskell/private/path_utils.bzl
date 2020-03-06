@@ -275,6 +275,20 @@ def _get_target_parent_dir(target):
         __check_dots(target, parent_dir)
         return (False, parent_dir)
 
+def relative_rpath_prefix(is_darwin):
+    """Returns the prefix for relative RUNPATH entries.
+
+    Args:
+      is_darwin: Whether the target platform is Darwin.
+
+    Returns:
+      string, `@loader_path` on Darwin, `$ORIGIN` otherwise.
+    """
+    if is_darwin:
+        return "@loader_path"
+    else:
+        return "$ORIGIN"
+
 # tests in /tests/unit_tests/BUILD
 def create_rpath_entry(
         binary,
