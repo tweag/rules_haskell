@@ -29,10 +29,10 @@ ERRORCOLOR='\033[1;31m'
 CLEARCOLOR='\033[0m'
 binary_path=$(rlocation {binary_path})
 hpc_path=$(rlocation {hpc_path})
-tix_file_path={tix_file_path}
+tix_file_path="{tix_file_path}"
 coverage_report_format="{coverage_report_format}"
 strict_coverage_analysis="{strict_coverage_analysis}"
-package_path={package_path}
+package_path="{package_path}"
 
 # either of the two expected coverage metrics should be set to -1 if they're meant to be unused
 expected_covered_expressions_percentage="{expected_covered_expressions_percentage}"
