@@ -29,10 +29,10 @@ ERRORCOLOR='\033[1;31m'
 CLEARCOLOR='\033[0m'
 binary_path=$(rlocation {binary_path})
 hpc_path=$(rlocation {hpc_path})
-tix_file_path="{tix_file_path}"
+tix_file_path={tix_file_path}
 coverage_report_format="{coverage_report_format}"
 strict_coverage_analysis="{strict_coverage_analysis}"
-package_path="{package_path}"
+package_path={package_path}
 
 # either of the two expected coverage metrics should be set to -1 if they're meant to be unused
 expected_covered_expressions_percentage="{expected_covered_expressions_percentage}"
@@ -44,7 +44,7 @@ mix_file_paths={mix_file_paths}
 for m in "${mix_file_paths[@]}"
 do
   absolute_mix_file_path=$(rlocation $m)
-  hpc_parent_dir=$(dirname "$absolute_mix_file_path")
+  hpc_parent_dir=$(dirname $absolute_mix_file_path)
   trimmed_hpc_parent_dir=$(echo "${hpc_parent_dir%%.hpc*}")
   hpc_dir_args="$hpc_dir_args --hpcdir=$trimmed_hpc_parent_dir.hpc"
 done
