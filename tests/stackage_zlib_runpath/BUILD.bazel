@@ -19,12 +19,12 @@ dynamic_libraries(
     tags = ["requires_zlib"],
 )
 
-# This test case tests that haskell_cabal_library will generate a relative
-# RUNPATH entry for the dependency on the nixpkgs provided libz. Relative
-# meaning an entry that starts with $ORIGIN (Linux) or @loader_path (MacOS).
-# The alternative is an absolute path, which would be wrong for the nixpkgs
-# provided libz, as we want the RUNPATH entry to point to Bazel's _solib_<cpu>
-# directory and its absolute path depends on the output root or execroot.
+# Tests that haskell_cabal_library will generate a relative RUNPATH entry for
+# the dependency on the nixpkgs provided libz. Relative meaning an entry that
+# starts with $ORIGIN (Linux) or @loader_path (MacOS). The alternative is an
+# absolute path, which would be wrong for the nixpkgs provided libz, as we want
+# the RUNPATH entry to point to Bazel's _solib_<cpu> directory and its absolute
+# path depends on the output root or execroot.
 #
 # It uses :libz_soname generated above to determine the expected RUNPATH entry
 # for the libz dependency. The :libz_soname file will contain the file names of
