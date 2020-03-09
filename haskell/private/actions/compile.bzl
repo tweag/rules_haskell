@@ -89,7 +89,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins, preprocessors):
+def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, module_map, import_dir_map, extra_srcs, user_compile_flags, output_mode, with_profiling, my_pkg_id, version, plugins, preprocessors):
     """Compute variables common to all compilation targets (binary and library).
 
     Returns:
@@ -99,8 +99,8 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         inputs: default inputs
         input_manifests: input manifests
         outputs: default outputs
-        objects_dir: object files directory
-        interfaces_dir: interface files directory
+        object_files: object files
+        interface_files: interface files
         source_files: set of files that contain Haskell modules
         extra_source_files: depset of non-Haskell source files
         import_dirs: c2hs Import hierarchy roots
@@ -121,32 +121,51 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     ]
     compile_flags += cc_args
 
+    # Determine file directories.
+    #
+    # objects|interfaces_dir is the directory relative to the package.
+    # objects|interfaces_dir_flag is the directory relative to the execroot.
     interface_dir_raw = "_iface"
     object_dir_raw = "_obj"
-
-    # Declare file directories.
-    #
-    # NOTE: We could have used -outputdir here and a single output
-    # directory. But keeping interface and object files separate has
-    # one advantage: if interface files are invariant under
-    # a particular code change, then we don't need to rebuild
-    # downstream.
     if my_pkg_id:
         # If we're compiling a package, put the interfaces inside the
         # package directory.
-        interfaces_dir = hs.actions.declare_directory(
-            paths.join(
-                pkg_id.to_string(my_pkg_id),
-                interface_dir_raw,
-            ),
-        )
+        interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), interface_dir_raw)
     else:
-        interfaces_dir = hs.actions.declare_directory(
-            paths.join(interface_dir_raw, hs.name),
-        )
-    objects_dir = hs.actions.declare_directory(
-        paths.join(object_dir_raw, hs.name),
-    )
+        interfaces_dir = paths.join(interface_dir_raw, hs.name)
+    objects_dir = paths.join(object_dir_raw, hs.name)
+    interfaces_dir_flag = paths.join(hs.bin_dir.path, hs.package_root, interfaces_dir)
+    objects_dir_flag = paths.join(hs.bin_dir.path, hs.package_root, objects_dir)
+
+    # Determine file extensions.
+    if with_profiling:
+        interface_exts = [".p_hi"]
+        object_exts = [".p_o"]
+    elif output_mode == "dynamic-too":
+        interface_exts = [".hi", ".dyn_hi"]
+        object_exts = [".o", ".dyn_o"]
+    elif output_mode == "dynamic":
+        interface_exts = [".hi"]
+        object_exts = [".dyn_o"]
+    else:
+        interface_exts = [".hi"]
+        object_exts = [".o"]
+
+    # Declare output files.
+    interface_files = [
+        hs.actions.declare_file(paths.join(interfaces_dir, filename))
+        for (module_name, module_info) in module_map.items()
+        for interface_ext in interface_exts
+        for filename_prefix in [module_name.replace(".", "/") + interface_ext]
+        for filename in [filename_prefix, filename_prefix + "-boot" if module_info.boot else None]
+        if filename
+    ]
+    object_files = [
+        hs.actions.declare_file(paths.join(objects_dir, filename))
+        for module_name in module_map.keys()
+        for object_ext in object_exts
+        for filename in [module_name.replace(".", "/") + object_ext]
+    ]
 
     # Default compiler flags.
     compile_flags += hs.toolchain.compiler_flags
@@ -267,9 +286,9 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     # Output directories
     args.add_all([
         "-odir",
-        objects_dir.path,
+        objects_dir_flag,
         "-hidir",
-        interfaces_dir.path,
+        interfaces_dir_flag,
     ])
 
     # Interface files with profiling have to have the extension "p_hi":
@@ -341,9 +360,9 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             plugin_tool_inputs,
         ]),
         input_manifests = preprocessors.input_manifests + plugin_tool_input_manifests,
-        objects_dir = objects_dir,
-        interfaces_dir = interfaces_dir,
-        outputs = [objects_dir, interfaces_dir],
+        object_files = object_files,
+        interface_files = interface_files,
+        outputs = object_files + interface_files,
         source_files = source_files,
         extra_source_files = extra_source_files,
         import_dirs = import_dirs,
@@ -372,6 +391,7 @@ def compile_binary(
         dep_info,
         plugin_dep_info,
         srcs,
+        module_map,
         ls_modules,
         import_dir_map,
         extra_srcs,
@@ -392,7 +412,7 @@ def compile_binary(
         modules: set of module names
         source_files: set of Haskell source files
     """
-    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, module_map, import_dir_map, extra_srcs, user_compile_flags, "dynamic" if dynamic else "static", with_profiling, my_pkg_id = None, version = version, plugins = plugins, preprocessors = preprocessors)
     c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
@@ -422,7 +442,7 @@ def compile_binary(
     )
 
     return struct(
-        objects_dir = c.objects_dir,
+        object_files = c.object_files,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
@@ -438,6 +458,7 @@ def compile_library(
         dep_info,
         plugin_dep_info,
         srcs,
+        module_map,
         import_dir_map,
         extra_srcs,
         user_compile_flags,
@@ -459,7 +480,7 @@ def compile_library(
         source_files: set of Haskell module files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, module_map, import_dir_map, extra_srcs, user_compile_flags, "dynamic-too" if with_shared else "static", with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, preprocessors = preprocessors)
     if with_shared:
         c.args.add("-dynamic-too")
 
@@ -484,16 +505,10 @@ def compile_library(
             env = c.env,
             arguments = c.args,
         )
-    else:
-        hs.actions.run_shell(
-            inputs = c.inputs,
-            outputs = c.outputs,
-            command = "exit 0",
-        )
 
     return struct(
-        interfaces_dir = c.interfaces_dir,
-        objects_dir = c.objects_dir,
+        interface_files = c.interface_files,
+        object_files = c.object_files,
         compile_flags = c.compile_flags,
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
