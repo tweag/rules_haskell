@@ -13,7 +13,7 @@ def parent_dir_path_test_impl(ctx):
         expected = ctx.attr.output,
         actual = parent_dir_path(ctx.attr.filename),
     )
-    unit.end(env)
+    return unit.end(env)
 
 parent_dir_path_test = unit.make(
     parent_dir_path_test_impl,
@@ -39,7 +39,7 @@ def create_rpath_entry_test_impl(ctx):
             prefix = ctx.attr.prefix,
         ),
     )
-    unit.end(env)
+    return unit.end(env)
 
 create_rpath_entry_test = unit.make(
     create_rpath_entry_test_impl,
@@ -78,6 +78,6 @@ def dedup_on_test_impl(ctx):
             [struct(x = 3), struct(x = 4), struct(x = 3), struct(x = 5), struct(x = 3)],
         ),
     )
-    unit.end(env)
+    return unit.end(env)
 
 dedup_on_test = unit.make(dedup_on_test_impl)
