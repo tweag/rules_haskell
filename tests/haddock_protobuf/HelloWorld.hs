@@ -1,4 +1,4 @@
-module Bar (bar) where
+module HelloWorld (bar) where
 
 import Proto.Tests.HaddockProtobuf.HelloWorld
 

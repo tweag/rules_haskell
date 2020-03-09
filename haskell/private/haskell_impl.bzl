@@ -205,6 +205,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         dep_info,
         plugin_dep_info,
         srcs = srcs_files,
+        module_map = module_map,
         ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
@@ -234,7 +235,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         dep_info,
         ctx.files.extra_srcs,
         user_compile_flags,
-        c.objects_dir,
+        c.object_files,
         dynamic = dynamic,
         with_profiling = with_profiling,
         version = ctx.attr.version,
@@ -404,6 +405,7 @@ def haskell_library_impl(ctx):
         dep_info,
         plugin_dep_info,
         srcs = srcs_files,
+        module_map = module_map,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         user_compile_flags = user_compile_flags,
@@ -417,15 +419,10 @@ def haskell_library_impl(ctx):
 
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.reexported_modules)
-    exposed_modules_file = list_exposed_modules(
-        hs,
-        ls_modules = ctx.executable._ls_modules,
-        modules = modules,
-        other_modules = other_modules,
-        exposed_modules_reexports = exposed_modules_reexports,
-        interfaces_dir = c.interfaces_dir,
-        with_profiling = with_profiling,
-    )
+    # TODO[AH] Add haskell_module modules.
+    exposed_modules = set.from_list(module_map.keys() + exposed_modules_reexports)
+    set.mutable_difference(exposed_modules, set.from_list(other_modules))
+    exposed_modules = set.to_list(exposed_modules)
 
     if non_empty:
         static_library = link_library_static(
@@ -433,8 +430,7 @@ def haskell_library_impl(ctx):
             cc,
             posix,
             dep_info,
-            c.objects_dir,
-            extra_objects,
+            c.object_files + extra_objects,
             my_pkg_id,
             with_profiling = with_profiling,
         )
@@ -448,8 +444,7 @@ def haskell_library_impl(ctx):
             posix,
             dep_info,
             depset(ctx.files.extra_srcs),
-            c.objects_dir,
-            extra_objects,
+            c.object_files + extra_objects,
             my_pkg_id,
             user_compile_flags,
         )
@@ -463,14 +458,14 @@ def haskell_library_impl(ctx):
         dep_info,
         with_shared,
         modules,
-        exposed_modules_file,
+        exposed_modules,
         other_modules,
         my_pkg_id,
         non_empty,
     )
 
     interface_dirs = depset(
-        direct = [c.interfaces_dir] + [m[HaskellModuleInfo].interface_file for m in modules],
+        direct = c.interface_files + [m[HaskellModuleInfo].interface_file for m in modules],
         transitive = [dep_info.interface_dirs],
     )
 
