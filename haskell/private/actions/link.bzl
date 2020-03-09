@@ -35,43 +35,6 @@ def merge_parameter_files(hs, file1, file2):
     )
     return params_file
 
-def _create_objects_dir_manifest(hs, posix, objects_dir, extra_objects, dynamic, with_profiling):
-    suffix = ".dynamic.manifest" if dynamic else ".static.manifest"
-    objects_dir_manifest = hs.actions.declare_file(
-        objects_dir.basename + suffix,
-        sibling = objects_dir,
-    )
-
-    if with_profiling:
-        ext = "p_o"
-    elif dynamic:
-        ext = "dyn_o"
-    else:
-        ext = "o"
-    hs.actions.run_shell(
-        inputs = [objects_dir],
-        outputs = [objects_dir_manifest],
-
-        # Note: The output of `find` is not stable. The order of the
-        # lines in the output depend on the filesystem. By using
-        # `sort`, we force the output to be stable. This is mandatory
-        # for efficient caching. See
-        # https://github.com/tweag/rules_haskell/issues/1126.
-        command = """
-        "{cat}" <("{find}" {dir} -name '*.{ext}') <(echo -n "{extra}") | "{sort}" > {out}
-        """.format(
-            find = posix.commands["find"],
-            sort = posix.commands["sort"],
-            cat = posix.commands["cat"],
-            dir = objects_dir.path,
-            ext = ext,
-            extra = "\n".join([e.path for e in extra_objects]),
-            out = objects_dir_manifest.path,
-        ),
-    )
-
-    return objects_dir_manifest
-
 def link_binary(
         hs,
         cc,
@@ -79,7 +42,7 @@ def link_binary(
         dep_info,
         extra_srcs,
         compiler_flags,
-        objects_dir,
+        object_files,
         extra_objects,
         dynamic,
         with_profiling,
@@ -158,14 +121,8 @@ def link_binary(
         "-optl-Wno-unused-command-line-argument",
     ])
 
-    objects_dir_manifest = _create_objects_dir_manifest(
-        hs,
-        posix,
-        objects_dir,
-        extra_objects,
-        dynamic = dynamic,
-        with_profiling = with_profiling,
-    )
+    args.add_all(object_files)
+    args.add_all(extra_objects)
 
     if hs.toolchain.is_darwin:
         args.add("-optl-Wl,-headerpad_max_install_names")
@@ -184,14 +141,13 @@ def link_binary(
             depset(extra_srcs),
             dep_info.package_databases,
             dep_info.hs_libraries,
-            depset([cache_file, objects_dir] + extra_objects),
+            depset([cache_file] + object_files + extra_objects),
             pkg_info_inputs,
             depset(static_libs + dynamic_libs),
         ]),
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
         arguments = args,
-        params_file = objects_dir_manifest,
         env = dicts.add(hs.env, cc.env),
     )
 
@@ -251,33 +207,22 @@ def _so_extension(hs):
     """
     return "dylib" if hs.toolchain.is_darwin else "so"
 
-def link_library_static(hs, cc, posix, dep_info, objects_dir, extra_objects, my_pkg_id, with_profiling):
+def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_profiling):
     """Link a static library for the package using given object files.
 
     Returns:
       File: Produced static library.
     """
+    object_files = [obj for obj in object_files if obj.extension != "dyn_o"]
     static_library = hs.actions.declare_file(
         "lib{0}.a".format(pkg_id.library_name(hs, my_pkg_id, prof_suffix = with_profiling)),
     )
-    objects_dir_manifest = _create_objects_dir_manifest(
-        hs,
-        posix,
-        objects_dir,
-        extra_objects,
-        dynamic = False,
-        with_profiling = with_profiling,
-    )
     args = hs.actions.args()
-    inputs = [objects_dir, objects_dir_manifest] + extra_objects + cc.files
+    inputs = object_files + cc.files
+    args.add_all(["qc", static_library])
+    args.add_all(object_files)
 
     if hs.toolchain.is_darwin:
-        # On Darwin, ar doesn't support params files.
-        args.add_all([
-            static_library,
-            objects_dir_manifest.path,
-        ])
-
         # TODO Get ar location from the CC toolchain. This is
         # complicated by the fact that the CC toolchain does not
         # always use ar, and libtool has an entirely different CLI.
@@ -286,18 +231,13 @@ def link_library_static(hs, cc, posix, dep_info, objects_dir, extra_objects, my_
             inputs = inputs,
             outputs = [static_library],
             mnemonic = "HaskellLinkStaticLibrary",
-            command = "{ar} qc $1 $(< $2)".format(ar = cc.tools.ar),
+            command = "{ar} $@".format(ar = cc.tools.ar),
             arguments = [args],
 
             # Use the default macosx toolchain
             env = {"SDKROOT": "macosx"},
         )
     else:
-        args.add_all([
-            "qc",
-            static_library,
-            "@" + objects_dir_manifest.path,
-        ])
         hs.actions.run(
             inputs = inputs,
             outputs = [static_library],
@@ -308,12 +248,13 @@ def link_library_static(hs, cc, posix, dep_info, objects_dir, extra_objects, my_
 
     return static_library
 
-def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, extra_objects, my_pkg_id, compiler_flags):
+def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_pkg_id, compiler_flags):
     """Link a dynamic library for the package using given object files.
 
     Returns:
       File: Produced dynamic library.
     """
+    object_files = [obj for obj in object_files if obj.extension == "dyn_o"]
 
     dynamic_library = hs.actions.declare_file(
         "lib{0}-ghc{1}.{2}".format(
@@ -353,20 +294,12 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, extra
 
     args.add_all(["-o", dynamic_library.path])
 
-    # Profiling not supported for dynamic libraries.
-    objects_dir_manifest = _create_objects_dir_manifest(
-        hs,
-        posix,
-        objects_dir,
-        extra_objects,
-        dynamic = True,
-        with_profiling = False,
-    )
+    args.add_all(object_files)
 
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
-        inputs = depset([cache_file, objects_dir] + extra_objects, transitive = [
+        inputs = depset([cache_file] + object_files, transitive = [
             extra_srcs,
             dep_info.package_databases,
             dep_info.hs_libraries,
@@ -376,7 +309,6 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, extra
         outputs = [dynamic_library],
         mnemonic = "HaskellLinkDynamicLibrary",
         arguments = args,
-        params_file = objects_dir_manifest,
         env = dicts.add(hs.env, cc.env),
     )
 

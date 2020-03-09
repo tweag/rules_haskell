@@ -50,7 +50,7 @@ def package(
         dep_info,
         with_shared,
         modules,
-        exposed_modules_file,
+        exposed_modules,
         other_modules,
         my_pkg_id,
         has_hs_library):
@@ -63,7 +63,7 @@ def package(
       libraries_to_link: list of LibraryToLink.
       with_shared: Whether to link dynamic libraries.
       modules: List of haskell_module()s. This feature is experimental.
-      exposed_modules_file: File holding list of exposed modules.
+      exposed_modules: List of exposed modules.
       other_modules: List of hidden modules.
       my_pkg_id: Package id object for this package.
       has_hs_library: Whether hs-libraries should be non-null.
@@ -88,9 +88,8 @@ def package(
         extra_dynamic_lib_dirs = extra_lib_dirs
 
     # Create a file from which ghc-pkg will create the actual package
-    # from. List of exposed modules generated below.
-    metadata_file = hs.actions.declare_file(target_unique_name(hs, "metadata"))
-    write_package_conf(hs, metadata_file, {
+    # from.
+    write_package_conf(hs, conf_file, {
         "name": my_pkg_id.package_name,
         "version": my_pkg_id.version,
         "id": pkg_id.to_string(my_pkg_id),
@@ -109,27 +108,9 @@ def package(
         "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)] if has_hs_library else [],
         "extra-libraries": extra_libs,
         "depends": hs.package_ids,
+        # TODO[AH] Add haskell_module modules
+        "exposed-modules": exposed_modules,
     })
-
-    # Combine exposed modules and other metadata to form the package
-    # configuration file.
-
-    hs.actions.run_shell(
-        inputs = [metadata_file, exposed_modules_file],
-        outputs = [conf_file],
-        command = """
-            (
-              "$1" $2
-              echo "exposed-modules: `"$1" $3`"
-            ) > $4
-        """,
-        arguments = [
-            posix.commands["cat"],
-            metadata_file.path,
-            exposed_modules_file.path,
-            conf_file.path,
-        ],
-    )
 
     cache_file = ghc_pkg_recache(hs, posix, conf_file)
 
