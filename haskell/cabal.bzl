@@ -11,6 +11,7 @@ load(":private/expansions.bzl", "expand_make_variables")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(":private/path_utils.bzl", "join_path_list", "truly_relativize")
 load(":private/set.bzl", "set")
+load(":private/typing.bzl", "typecheck_stackage_extradeps")
 load(":haddock.bzl", "generate_unified_haddock_info")
 load(
     ":private/workspace_utils.bzl",
@@ -1184,17 +1185,7 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
     """
-    if extra_deps:
-        if type(extra_deps) != "dict":
-            fail("stack_snapshot extra_deps requires a dict from dependency name to list of targets, but was given: " + type(extra_deps))
-        for extra_deps_key in extra_deps.keys():
-            if type(extra_deps_key) != "string":
-                fail("stack_snapshot extra_deps's dict requires string keys, but key \"%s\" has type %s" %
-                     (extra_deps_key, type(extra_deps_key)))
-        for extra_deps_value in extra_deps.values():
-            if type(extra_deps_value) != "list":
-                fail("stack_snapshot extra_deps's dict requires list values, but value \"%s\" has type %s" %
-                     (extra_deps_value, type(extra_deps_value)))
+    typecheck_stackage_extradeps(extra_deps)
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
         stack = Label("@rules_haskell_stack//:stack")
