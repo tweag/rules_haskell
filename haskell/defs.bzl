@@ -116,6 +116,10 @@ def _mk_binary_rule(**kwargs):
         main_function = attr.string(
             default = "Main.main",
         ),
+        main_file = attr.label(
+            allow_single_file = True,
+            mandatory = False,
+        ),
         version = attr.string(),
     )
 
@@ -233,9 +237,28 @@ def haskell_binary(
         worker = None,
         linkstatic = True,
         main_function = "Main.main",
+        main_file = None,
         version = None,
         **kwargs):
     """Build an executable from Haskell source.
+
+    Haskell source file names must match their module names. E.g.
+    ```
+    My/Module.hs  -->  module My.Module
+    ```
+    Any invalid path prefix is stripped. E.g.
+    ```
+    Some/prefix/My/Module.hs  -->  module My.Module
+    ```
+
+    Binary targets require a main module named `Main` or with the module name
+    defined by `main_function`. If `main_file` is specified then it must have
+    the main module name. Otherwise, the following heuristics define the main
+    module file.
+
+    - The source file that matches the main module name. E.g. `Main.hs`.
+    - The source file that matches no valid module name. E.g. `exe.hs`.
+    - The only source file of the target.
 
     Every `haskell_binary` target also defines an optional REPL target that is
     not built by default, but can be built on request. The name of the REPL
@@ -261,7 +284,7 @@ def haskell_binary(
     Args:
       name: A unique name for this rule.
       src_strip_prefix: DEPRECATED. Attribute has no effect.
-      srcs: Haskell source files.
+      srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
@@ -273,6 +296,7 @@ def haskell_binary(
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
       linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
       main_function: A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.
+      main_file: The source file that defines the `Main` module or the module containing `main_function`.
       version: Executable version. If this is specified, CPP version macros will be generated for this build.
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
@@ -292,6 +316,7 @@ def haskell_binary(
         worker = worker,
         linkstatic = linkstatic,
         main_function = main_function,
+        main_file = main_file,
         version = version,
         **kwargs
     )
@@ -331,6 +356,7 @@ def haskell_test(
         worker = None,
         linkstatic = True,
         main_function = "Main.main",
+        main_file = None,
         version = None,
         expected_covered_expressions_percentage = -1,
         expected_uncovered_expression_count = -1,
@@ -339,6 +365,24 @@ def haskell_test(
         experimental_coverage_source_patterns = ["//..."],
         **kwargs):
     """Build a test suite.
+
+    Haskell source file names must match their module names. E.g.
+    ```
+    My/Module.hs  -->  module My.Module
+    ```
+    Any invalid path prefix is stripped. E.g.
+    ```
+    Some/prefix/My/Module.hs  -->  module My.Module
+    ```
+
+    Binary targets require a main module named `Main` or with the module name
+    defined by `main_function`. If `main_file` is specified then it must have
+    the main module name. Otherwise, the following heuristics define the main
+    module file.
+
+    - The source file that matches the main module name. E.g. `Main.hs`.
+    - The source file that matches no valid module name. E.g. `exe.hs`.
+    - The only source file of the target.
 
     Additionally, it accepts [all common bazel test rule
     fields][bazel-test-attrs]. This allows you to influence things like
@@ -349,7 +393,7 @@ def haskell_test(
     Args:
       name: A unique name for this rule.
       src_strip_prefix: DEPRECATED. Attribute has no effect.
-      srcs: Haskell source files.
+      srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
@@ -361,6 +405,7 @@ def haskell_test(
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
       linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
       main_function: A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.
+      main_file: The source file that defines the `Main` module or the module containing `main_function`.
       version: Executable version. If this is specified, CPP version macros will be generated for this build.
       expected_covered_expressions_percentage: The expected percentage of expressions covered by testing.
       expected_uncovered_expression_count: The expected number of expressions which are not covered by testing.
@@ -393,6 +438,7 @@ def haskell_test(
         worker = worker,
         linkstatic = linkstatic,
         main_function = main_function,
+        main_file = main_file,
         version = version,
         expected_covered_expressions_percentage = expected_covered_expressions_percentage,
         expected_uncovered_expression_count = expected_uncovered_expression_count,
@@ -446,6 +492,15 @@ def haskell_library(
         **kwargs):
     """Build a library from Haskell source.
 
+    Haskell source file names must match their module names. E.g.
+    ```
+    My/Module.hs  -->  module My.Module
+    ```
+    Any invalid path prefix is stripped. E.g.
+    ```
+    Some/prefix/My/Module.hs  -->  module My.Module
+    ```
+
     Every `haskell_library` target also defines an optional REPL target that is
     not built by default, but can be built on request. It works the same way as
     for `haskell_binary`.
@@ -469,7 +524,7 @@ def haskell_library(
     Args:
       name: A unique name for this rule.
       src_strip_prefix: DEPRECATED. Attribute has no effect.
-      srcs: Haskell source files.
+      srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,

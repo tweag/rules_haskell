@@ -35,6 +35,7 @@ load(":private/java.bzl", "java_interop_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
+    "determine_module_names",
     "get_dynamic_hs_lib_name",
     "get_lib_extension",
     "get_static_hs_lib_name",
@@ -173,6 +174,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+    module_map = determine_module_names(srcs_files, True, ctx.attr.main_function, ctx.file.main_file)
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
     dynamic = not ctx.attr.linkstatic
@@ -355,6 +357,7 @@ def haskell_library_impl(ctx):
 
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+    module_map = determine_module_names(srcs_files)
 
     with_shared = not ctx.attr.linkstatic
     if with_profiling or hs.toolchain.is_static:
