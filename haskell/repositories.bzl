@@ -17,9 +17,9 @@ def rules_haskell_dependencies():
     if "bazel_skylib" not in excludes:
         http_archive(
             name = "bazel_skylib",
-            sha256 = "2c62d8cd4ab1e65c08647eb4afe38f51591f43f7f0885e7769832fa137633dcb",
-            strip_prefix = "bazel-skylib-0.7.0",
-            urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.7.0.tar.gz"],
+            sha256 = "e5d90f0ec952883d56747b7604e2a15ee36e288bb556c3d0ed33e818a4d971f2",
+            strip_prefix = "bazel-skylib-1.0.2",
+            urls = ["https://github.com/bazelbuild/bazel-skylib/archive/1.0.2.tar.gz"],
         )
 
     if "rules_cc" not in excludes:
