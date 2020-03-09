@@ -54,6 +54,7 @@ haskell_test(
         "MainC2hs.hs",
         ":c2hs-lib",
     ],
+    main_file = "MainC2hs.hs",
     tags = [
         # See https://github.com/tweag/rules_haskell/issues/1486
         "dont_test_on_darwin_with_bindist",
