@@ -479,7 +479,10 @@ And you may want to use ``rules_docker`` to push your docker image as follows ::
       tag = "{BUILD_USER}",
  )
 
-*n.b* This obviously requires a linux build machine!
+*n.b* Due to the `current inability`_ of nix to be used on macOS (darwin) for building docker images, it's currently
+not possible to build docker images for haskell binaries as above using rules_docker and nixpkgs on macOS.
+
+.. _current inability: https://github.com/NixOS/nixpkgs/issues/16696
 
 Following these steps you should end up with a fairly lightweight docker image, bringing the flexibility of nix
 as a docker base image manager and the power of ``rules_haskell`` for your haskell build together.
