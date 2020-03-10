@@ -87,11 +87,6 @@ _haskell_common_attrs = {
         allow_single_file = True,
         default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
     ),
-    "_ls_modules": attr.label(
-        executable = True,
-        cfg = "host",
-        default = Label("@rules_haskell//haskell:ls_modules"),
-    ),
     "_version_macros": attr.label(
         executable = True,
         cfg = "host",
