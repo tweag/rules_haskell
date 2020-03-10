@@ -392,7 +392,6 @@ def compile_binary(
         plugin_dep_info,
         srcs,
         module_map,
-        ls_modules,
         import_dir_map,
         extra_srcs,
         user_compile_flags,
@@ -515,60 +514,3 @@ def compile_library(
         import_dirs = c.import_dirs,
         coverage_data = coverage_data,
     )
-
-def list_exposed_modules(
-        hs,
-        ls_modules,
-        other_modules,
-        exposed_modules_reexports,
-        interfaces_dir,
-        with_profiling):
-    """Construct file listing the exposed modules of this package.
-
-    Args:
-      hs: The Haskell context.
-      ls_modules: The ls_modules.py executable.
-      other_modules: List of hidden modules.
-      exposed_modules_reexports: List of re-exported modules.
-      interfaces_dir: The directory containing the interface files.
-      with_profiling: Whether we're building in profiling mode.
-
-    Returns:
-      File: File holding the package ceonfiguration exposed-modules value.
-    """
-    hidden_modules_file = hs.actions.declare_file(
-        target_unique_name(hs, "hidden-modules"),
-    )
-    hs.actions.write(
-        output = hidden_modules_file,
-        content = ", ".join(other_modules),
-    )
-    reexported_modules_file = hs.actions.declare_file(
-        target_unique_name(hs, "reexported-modules"),
-    )
-    hs.actions.write(
-        output = reexported_modules_file,
-        content = ", ".join(exposed_modules_reexports),
-    )
-    exposed_modules_file = hs.actions.declare_file(
-        target_unique_name(hs, "exposed-modules"),
-    )
-    hs.actions.run(
-        inputs = [
-            interfaces_dir,
-            hs.toolchain.global_pkg_db,
-            hidden_modules_file,
-            reexported_modules_file,
-        ],
-        outputs = [exposed_modules_file],
-        executable = ls_modules,
-        arguments = [
-            str(with_profiling),
-            interfaces_dir.path,
-            hs.toolchain.global_pkg_db.path,
-            hidden_modules_file.path,
-            reexported_modules_file.path,
-            exposed_modules_file.path,
-        ],
-    )
-    return exposed_modules_file

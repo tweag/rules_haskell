@@ -180,7 +180,6 @@ def _haskell_proto_aspect_impl(target, ctx):
         bin_dir = ctx.bin_dir,
         disabled_features = ctx.rule.attr.features,
         executable = struct(
-            _ls_modules = ctx.executable._ls_modules,
             _ghc_wrapper = ctx.executable._ghc_wrapper,
             worker = None,
         ),
@@ -266,11 +265,6 @@ _haskell_proto_aspect = aspect(
         "_ghci_repl_wrapper": attr.label(
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
-        ),
-        "_ls_modules": attr.label(
-            executable = True,
-            cfg = "host",
-            default = Label("@rules_haskell//haskell:ls_modules"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),

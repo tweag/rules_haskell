@@ -12,10 +12,6 @@ load(
 )
 load(":cc.bzl", "cc_interop_info")
 load(
-    ":private/actions/compile.bzl",
-    "list_exposed_modules",
-)
-load(
     ":private/actions/info.bzl",
     "compile_info_output_groups",
     "library_info_output_groups",
@@ -197,7 +193,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         plugin_dep_info,
         srcs = srcs_files,
         module_map = module_map,
-        ls_modules = ctx.executable._ls_modules,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         user_compile_flags = user_compile_flags,

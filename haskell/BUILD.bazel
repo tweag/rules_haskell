@@ -83,12 +83,6 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
-py_binary(
-    name = "ls_modules",
-    srcs = ["private/ls_modules.py"],
-    visibility = ["//visibility:public"],
-)
-
 sh_binary(
     name = "ghc_wrapper",
     srcs = ["private/ghc_wrapper.sh"],
