@@ -57,8 +57,9 @@ nonetheless, so bumping bazel regularly is required.
 - [ ] Update all bazel rules dependencies in `WORKSPACE` (e.g.
       `io_bazel_stardoc`)
 - [ ] Update bazel in nixpkgs and bump `nixpkgs/default.nix`
-- [ ] Bump MAX_BAZEL_* in `start`
+- [ ] Bump `MAX_BAZEL_*` in `start`
 - If we are updating to a new LTS:
   - Bump `MIN_BAZEL_*` in `start`
   - TODO
+- [ ] Change `expected_version` in `haskell/private/versions.bzl`
 - [ ] Add update notice to `CHANGELOG`

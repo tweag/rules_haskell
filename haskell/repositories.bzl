@@ -1,10 +1,13 @@
 """Workspace rules (repositories)"""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load(":private/versions.bzl", "check_version")
 
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
     excludes = native.existing_rules().keys()
+    if "bazel_version" in dir(native):
+        check_version(native.bazel_version)
 
     if "platforms" not in excludes:
         http_archive(
