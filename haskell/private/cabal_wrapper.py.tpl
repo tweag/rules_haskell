@@ -131,7 +131,9 @@ with tmpdir() as distdir:
     old_cwd = os.getcwd()
     os.chdir(srcdir)
     os.putenv("HOME", "/var/empty")
-    os.putenv("TMPDIR",os.path.join(distdir, "tmp"))
+    os.putenv("TMPDIR", os.path.join(distdir, "tmp"))
+    os.putenv("TMP", os.path.join(distdir, "tmp"))
+    os.putenv("TEMP", os.path.join(distdir, "tmp"))
     os.makedirs(os.path.join(distdir, "tmp"))
     run([runghc, setup, "configure", \
         component, \
