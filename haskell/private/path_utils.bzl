@@ -150,32 +150,6 @@ Found boot file without matching source file:
 
     return module_map
 
-def module_name(hs, f, rel_path = None):
-    """Given Haskell source file path, turn it into a dot-separated module name.
-
-    module_name(
-      hs,
-      "some-workspace/some-package/src/Foo/Bar/Baz.hs",
-    ) => "Foo.Bar.Baz"
-
-    Args:
-      hs:  Haskell context.
-      f:   Haskell source file.
-      rel_path: Explicit relative path from import root to the module, or None
-        if it should be deduced.
-
-    Returns:
-      string: Haskell module name.
-    """
-
-    rpath = rel_path
-
-    if not rpath:
-        rpath = _rel_path_to_module(hs, f)
-
-    (hsmod, _) = paths.split_extension(rpath.replace("/", "."))
-    return hsmod
-
 def target_unique_name(hs, name_prefix):
     """Make a target-unique name.
 
