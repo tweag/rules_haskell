@@ -199,32 +199,6 @@ def target_unique_name(hs, name_prefix):
     """
     return "{0}-{1}".format(name_prefix, hs.name)
 
-def module_unique_name(hs, source_file, name_prefix):
-    """Make a target- and module- unique name.
-
-    module_unique_name(
-      hs,
-      "some-workspace/some-package/src/Foo/Bar/Baz.hs",
-      "libdir"
-    ) => "libdir-foo-Foo.Bar.Baz"
-
-    This is quite similar to `target_unique_name` but also uses a path built
-    from `source_file` to prevent clashes with other names produced using the
-    same `name_prefix`.
-
-    Args:
-      hs:          Haskell context.
-      source_file: Source file name.
-      name_prefix: Template for the name.
-
-    Returns:
-      string: Target- and source-unique name.
-    """
-    return "{0}-{1}".format(
-        target_unique_name(hs, name_prefix),
-        module_name(hs, source_file),
-    )
-
 def declare_compiled(hs, src, ext, directory = None, rel_path = None):
     """Given a Haskell-ish source file, declare its output.
 
