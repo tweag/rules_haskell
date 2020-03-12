@@ -228,6 +228,28 @@ export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
 ```
 This ensures that Bazel picks the correct C compiler.
 
+### Windows: Incorrect `cc_toolchain` used
+
+If you're using Windows, bazel might use a different `cc_toolchain`
+than is required to build. This might happen if the environment has a
+`cc_toolchain` from Visual Studio. This might show up with an error like:
+```
+Traceback (most recent call last):
+  File "\\?\C:\Users\appveyor\AppData\Local\Temp\1\Bazel.runfiles_w5rfpqk5\runfiles\rules_haskell\haskell\cabal_wrapper.py", line 105, in <module>
+    strip = find_exe("external/local_config_cc/wrapper/bin/msvc_nop.bat")
+  File "\\?\C:\Users\appveyor\AppData\Local\Temp\1\Bazel.runfiles_w5rfpqk5\runfiles\rules_haskell\haskell\cabal_wrapper.py", line 56, in find_exe
+    if not os.path.isfile(path) and "True" == "True":
+  File "C:\Python37\lib\genericpath.py", line 30, in isfile
+    st = os.stat(path)
+TypeError: stat: path should be string, bytes, os.PathLike or integer, not NoneType
+```
+
+You can override the `cc_toolchain` chosen with the following flag:
+```
+--crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain
+```
+This chooses the `cc_toolchain` bundled with GHC.
+
 ## For `rules_haskell` developers
 
 ### Saving common command-line flags to a file

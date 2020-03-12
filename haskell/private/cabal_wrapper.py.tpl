@@ -131,7 +131,9 @@ with tmpdir() as distdir:
     old_cwd = os.getcwd()
     os.chdir(srcdir)
     os.putenv("HOME", "/var/empty")
-    os.putenv("TMPDIR",os.path.join(distdir, "tmp"))
+    os.putenv("TMPDIR", os.path.join(distdir, "tmp"))
+    os.putenv("TMP", os.path.join(distdir, "tmp"))
+    os.putenv("TEMP", os.path.join(distdir, "tmp"))
     os.makedirs(os.path.join(distdir, "tmp"))
     run([runghc, setup, "configure", \
         component, \
@@ -206,8 +208,8 @@ if libraries != [] and os.path.isfile(package_conf_file):
         os.rename(lib, os.path.join(dynlibdir, os.path.basename(lib)))
 
     tmp_package_conf_file = package_conf_file + ".tmp"
-    with open(package_conf_file, 'r') as package_conf:
-        with open(tmp_package_conf_file, 'w') as tmp_package_conf:
+    with open(package_conf_file, 'r', errors='surrogateescape') as package_conf:
+        with open(tmp_package_conf_file, 'w', errors='surrogateescape') as tmp_package_conf:
             for line in package_conf.readlines():
                 print(make_relocatable_paths(line), file=tmp_package_conf)
     os.remove(package_conf_file)

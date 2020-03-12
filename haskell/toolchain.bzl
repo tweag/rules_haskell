@@ -15,6 +15,7 @@ load(
     "merge_parameter_files",
 )
 load(":private/actions/package.bzl", "package")
+load(":cc.bzl", "ghc_cc_program_args")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
@@ -40,25 +41,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
 
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
     # C libraries with Haskell targets.
-    args.add_all([
-        # GHC uses C compiler for assemly, linking and preprocessing as well.
-        "-pgma",
-        cc.tools.cc,
-        "-pgmc",
-        cc.tools.cc,
-        "-pgml",
-        cc.tools.cc,
-        "-pgmP",
-        cc.tools.cc,
-        # Setting -pgm* flags explicitly has the unfortunate side effect
-        # of resetting any program flags in the GHC settings file. So we
-        # restore them here. See
-        # https://ghc.haskell.org/trac/ghc/ticket/7929.
-        "-optc-fno-stack-protector",
-        "-optP-E",
-        "-optP-undef",
-        "-optP-traditional",
-    ])
+    args.add_all(ghc_cc_program_args(cc.tools.cc))
 
     compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))

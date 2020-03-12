@@ -18,6 +18,7 @@ load(
     "get_lib_name",
     "mangle_static_library",
     "rel_to_pkgroot",
+    "relative_rpath_prefix",
     "target_unique_name",
 )
 load(
@@ -211,7 +212,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
                 binary = binary,
                 dependency = lib,
                 keep_filename = False,
-                prefix = "@loader_path" if hs.toolchain.is_darwin else "$ORIGIN",
+                prefix = relative_rpath_prefix(hs.toolchain.is_darwin),
             )
             for lib in dynamic_libs
         ]),
