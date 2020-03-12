@@ -10,7 +10,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
-    "module_name",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
@@ -444,10 +443,9 @@ def compile_binary(
     coverage_data = []
     if inspect_coverage:
         c.args.add_all(_hpc_compiler_args(hs))
-        for src_file in srcs:
-            module = module_name(hs, src_file)
+        for (module, info) in module_map.items():
             mix_file = hs.actions.declare_file("{name}_.hpc/{module}.mix".format(name = hs.name, module = module))
-            coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
+            coverage_data.append(_coverage_datum(mix_file, info.src, hs.label))
 
     if srcs:
         hs.toolchain.actions.run_ghc(
@@ -525,11 +523,10 @@ def compile_library(
     coverage_data = []
     if hs.coverage_enabled:
         c.args.add_all(_hpc_compiler_args(hs))
-        for src_file in srcs:
-            pkg_id_string = pkg_id.to_string(my_pkg_id)
-            module = module_name(hs, src_file)
+        pkg_id_string = pkg_id.to_string(my_pkg_id)
+        for (module, info) in module_map.items():
             mix_file = hs.actions.declare_file("{name}_.hpc/{pkg}/{module}.mix".format(name = hs.name, pkg = pkg_id_string, module = module))
-            coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
+            coverage_data.append(_coverage_datum(mix_file, info.src, hs.label))
 
     if srcs:
         hs.toolchain.actions.run_ghc(
