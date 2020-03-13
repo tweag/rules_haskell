@@ -1,0 +1,75 @@
+load("//tests/shellcheck:shellcheck.bzl", "shellcheck")
+
+shellcheck(
+    name = "cc-wrapper-windows",
+    args = ["$(location //haskell:private/cc_wrapper_windows.sh.tpl)"],
+    data = ["//haskell:private/cc_wrapper_windows.sh.tpl"],
+    sh_flavor = "bash",  # XXX Is that correct?
+)
+
+shellcheck(
+    name = "coverage_wrapper.sh.tpl",
+    args = ["$(location //haskell:private/coverage_wrapper.sh.tpl)"],
+    data = ["//haskell:private/coverage_wrapper.sh.tpl"],
+    sh_flavor = "bash",
+)
+
+shellcheck(
+    name = "ghc_wrapper.sh",
+    args = ["$(location //haskell:private/ghc_wrapper.sh)"],
+    data = ["//haskell:private/ghc_wrapper.sh"],
+    sh_flavor = "bash",
+)
+
+shellcheck(
+    name = "ghci_repl_wrapper.sh",
+    args = ["$(location //haskell:private/ghci_repl_wrapper.sh)"],
+    data = ["//haskell:private/ghci_repl_wrapper.sh"],
+    sh_flavor = "bash",
+)
+
+shellcheck(
+    name = "haddock_wrapper.sh",
+    args = ["$(location //haskell:private/haddock_wrapper.sh.tpl)"],
+    data = ["//haskell:private/haddock_wrapper.sh.tpl"],
+    sh_flavor = "bash",
+)
+
+shellcheck(
+    name = "netlify-build",
+    args = ["$(location //:.netlify/build.sh)"],
+    data = ["//:.netlify/build.sh"],
+)
+
+shellcheck(
+    name = "netlify-install",
+    args = ["$(location //:.netlify/install.sh)"],
+    data = ["//:.netlify/install.sh"],
+)
+
+shellcheck(
+    name = "run-start-script",
+    args = ["$(location //tests:run-start-script.sh)"],
+    data = ["//tests:run-start-script.sh"],
+    sh_flavor = "bash",
+)
+
+shellcheck(
+    name = "serve-docs",
+    args = ["$(location //:serve-docs.sh)"],
+    data = ["//:serve-docs.sh"],
+)
+
+shellcheck(
+    name = "start-script",
+    args = ["$(location //:start)"],
+    data = ["//:start"],
+    sh_flavor = "bash",
+)
+
+shellcheck(
+    name = "tests/scripts/exec.sh",
+    args = ["$(location //tests:scripts/exec.sh)"],
+    data = ["//tests:scripts/exec.sh"],
+    sh_flavor = "bash",
+)

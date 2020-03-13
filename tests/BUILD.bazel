@@ -24,6 +24,14 @@ load(
     "test_ghc_version",
 )
 
+exports_files(
+    [
+        "run-start-script.sh",
+        "scripts/exec.sh",
+    ],
+    visibility = ["//tests/shellcheck:__pkg__"],
+)
+
 package(default_testonly = 1)
 
 haskell_doctest_toolchain(
@@ -345,28 +353,6 @@ haskell_binary(
         "@stackage//:hspec",
         "@stackage//:hspec-core",
     ],
-)
-
-sh_inline_test(
-    name = "shellcheck-start-script",
-    size = "small",
-    args = ["$(location //:start)"],
-    data = ["//:start"],
-    script = """\
-shellcheck --color=always --shell=sh "$1"
-""",
-    tags = ["requires_shellcheck"],
-)
-
-sh_inline_test(
-    name = "shellcheck-cc-wrapper-windows",
-    size = "small",
-    args = ["$(location //haskell:private/cc_wrapper_windows.sh.tpl)"],
-    data = ["//haskell:private/cc_wrapper_windows.sh.tpl"],
-    script = """\
-shellcheck --color=always --shell=bash "$1"
-""",
-    tags = ["requires_shellcheck"],
 )
 
 haskell_library(

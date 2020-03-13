@@ -2,6 +2,15 @@ load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
 
 exports_files(["start"])
 
+exports_files(
+    [
+        ".netlify/build.sh",
+        ".netlify/install.sh",
+        "serve-docs.sh",
+    ],
+    visibility = ["//tests/shellcheck:__pkg__"],
+)
+
 # Run this to check for errors in BUILD files.
 buildifier(
     name = "buildifier",

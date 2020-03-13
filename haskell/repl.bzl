@@ -356,14 +356,14 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         output = output,
         is_executable = True,
         substitutions = {
-            "{ENV}": render_env(hs.env),
-            "{TOOL}": hs.tools.ghci.path,
-            "{ARGS}": " ".join(
+            "%{ENV}": render_env(hs.env),
+            "%{TOOL}": hs.tools.ghci.path,
+            "%{ARGS}": "(" + " ".join(
                 args + [
                     shell.quote(a)
                     for a in quote_args
                 ],
-            ),
+            ) + ")",
         },
     )
 
