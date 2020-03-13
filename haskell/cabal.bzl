@@ -17,6 +17,7 @@ load(
     "truly_relativize",
 )
 load(":private/set.bzl", "set")
+load(":private/typing.bzl", "typecheck_stackage_extradeps")
 load(":haddock.bzl", "generate_unified_haddock_info")
 load(
     ":private/workspace_utils.bzl",
@@ -1225,6 +1226,7 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
     """
+    typecheck_stackage_extradeps(extra_deps)
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
         stack = Label("@rules_haskell_stack//:stack")
