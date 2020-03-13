@@ -214,8 +214,6 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             idir = import_dir_map[s]
             set.mutable_insert(import_dirs, idir)
 
-    compile_flags += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
-
     # Write the -optP flags to a parameter file because they can be very long on Windows
     # e.g. 27Kb for grpc-haskell
     # Equivalent to: compile_flags += ["-optP" + f for f in cc.cpp_flags]
