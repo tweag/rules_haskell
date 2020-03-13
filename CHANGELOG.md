@@ -6,14 +6,71 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## Upcoming release
 
-### Added
+nothing yet
 
-* Support for Bazel 2.0.0.
+### [0.12.0] - 2020-03-DD TODO set day
 
-### Changed
+## Highlights
+
+* Various improvements to Windows support.
+
+* Support for Bazel 2.0.0
+
+* Minimum supported Bazel version is now 0.29
+
+## Added
+
+* `haskell_repl` now has a `hie_bios` output group
+* Added support for [hrepl](https://github.com/google/hrepl)
+* `haskell_cabal_library`, `haskell_cabal_binary`, and `stack_snapshot`
+  now have a `verbose` argument, to allow suppressing their output.
+  See [#1208](https://github.com/tweag/rules_haskell/pull/1208).
+* `haskell_cabal_library` and `stack_snapshot` now have a
+  Boolean parameter `haddock` to specify whether haddock generation
+  should be performed (defaulted to `True`).
+* Added support for GHC bindist versions `8.8.3`, `8.8.2`, and `8.8.1`.
+* Windows: support for `cabal`
+  See [#1133](https://github.com/tweag/rules_haskell/pull/1133).
+* `haskell_cabal_library` now builds and exports haddock documentation
+  See [#1102](https://github.com/tweag/rules_haskell/pull/1102).
+
+## Removed
+
+* `hazel` has been deleted, please use `stack_snapshot` instead.
+
+## Changed
 
 * The `haskell_register_toolchains()` is no longer defined in
   `haskell/repositories.bzl`, load it from `haskell/toolchain.bzl` instead.
+* `cabal` wrapper: specify `python3` as a requirement,
+  to enhance error messages on macOS
+* `ghc_bindist` and `haskell_register_ghc_bindists` now have
+  a `locale` argument. Set it to circumvent issues on systems without
+  the default `C.UTF-8` locale.
+  See [#1249](https://github.com/tweag/rules_haskell/pull/1249).
+* macOS: `BAZEL_USE_CPP_ONLY_TOOLCHAIN = 1` must be set for Bazel
+  to pick the correct C compiler.
+  See [#1159](https://github.com/tweag/rules_haskell/pull/1159).
+  See [#1158](https://github.com/tweag/rules_haskell/pull/1158).
+* `stack_snapshot`: warning of stackage dependencies are not shown anymore,
+  as they are irrelevant.
+  See [#1146](https://github.com/tweag/rules_haskell/pull/1146) and
+  [#1026](https://github.com/tweag/rules_haskell/issues/1026).
+* Sorted the content of generated manifest files, hereby avoid some spurious
+  rebuilds (more builds caching).
+  See [#1128](https://github.com/tweag/rules_haskell/pull/1128) and
+  [#1126](https://github.com/tweag/rules_haskell/issues/1126).
+
+## Fixed
+
+* `haskell_cabal_library` and `haskell_library` now set relative
+  `RUNPATH` entries.
+  See [#1267](https://github.com/tweag/rules_haskell/pull/1267)
+* Fixed that GHC bindist could contain absolute `RUNPATH` to `rts`
+  See [#1131](https://github.com/tweag/rules_haskell/pull/1131).
+* Documentations of rules `haskelly_library`, `haskell_binary`,
+  and `haskell_test` now show the documentation of attributes.
+  See [#1122](https://github.com/tweag/rules_haskell/issues/1122).
 
 ## [0.11.0] - 2019-10-10
 

@@ -12,7 +12,8 @@
   feature).
   - Check the list below for PRs to remove.
 - [ ] Write `CHANGELOG` by going through all pull requests since last
-  release (https://github.com/tweag/rules_haskell/pulls?q=is%3Apr).
+  release (https://github.com/tweag/rules_haskell/is%3Apr+merged%3A>%3DYYYY-MM-DD)
+  replacing YYYY-MM-DD by the date of the last release.
   - Add Highlights section for major improvements/changes
   - `Added`, `Removed`, `Changed`, `Fixed` as necessary
   - If relevant, add corresponding PRs to the changes
