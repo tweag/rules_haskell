@@ -118,6 +118,7 @@ def _haskell_doctest_single(target, ctx):
 
     if ctx.attr.modules:
         inputs = ctx.attr.modules
+        args.add_all(set.to_list(hs_info.import_dirs), format_each = "-i%s")
     else:
         inputs = [source.path for source in hs_info.source_files.to_list()]
 
