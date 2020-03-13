@@ -2,7 +2,7 @@ load(
     "//tests:inline_tests.bzl",
     "py_inline_test",
 )
-load("dynamic_libraries.bzl", "dynamic_libraries")
+load(":dynamic_libraries.bzl", "dynamic_libraries")
 
 dynamic_libraries(
     name = "libz",
