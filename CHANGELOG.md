@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 nothing yet
 
-### [0.12.0] - 2020-03-DD TODO set day
+### [0.12.0] - 2020-03-16
 
 ## Highlights
 
@@ -16,34 +16,51 @@ nothing yet
 
 * Support for Bazel 2.0.0
 
-* Minimum supported Bazel version is now 0.29
+* Minimum supported Bazel version is now 0.29, but GHC bindist is known to
+  [fail on macOS](https://app.circleci.com/jobs/github/tweag/rules_haskell/8684)
+  with Bazel 0.29. Please use a more recent version for macOS.
 
 ## Added
 
 * `haskell_repl` now has a `hie_bios` output group
+  See [#1263](https://github.com/tweag/rules_haskell/pull/1263)
 * Added support for [hrepl](https://github.com/google/hrepl)
+  (a standalone binary that runs REPLS for Bazel Haskell targets).
+  See [#1210](https://github.com/tweag/rules_haskell/pull/1210).
 * `haskell_cabal_library`, `haskell_cabal_binary`, and `stack_snapshot`
   now have a `verbose` argument, to allow suppressing their output.
   See [#1208](https://github.com/tweag/rules_haskell/pull/1208).
 * `haskell_cabal_library` and `stack_snapshot` now have a
   Boolean parameter `haddock` to specify whether haddock generation
   should be performed (defaulted to `True`).
+  See [#1200](https://github.com/tweag/rules_haskell/pull/1200)
 * Added support for GHC bindist versions `8.8.3`, `8.8.2`, and `8.8.1`.
 * Windows: support for `cabal`
   See [#1133](https://github.com/tweag/rules_haskell/pull/1133).
 * `haskell_cabal_library` now builds and exports haddock documentation
   See [#1102](https://github.com/tweag/rules_haskell/pull/1102).
+* rules_haskell now depends on [rules_sh](https://github.com/tweag/rules_sh),
+  a toolchain for common shell commands.
+  See [#1117](https://github.com/tweag/rules_haskell/pull/1117),
+  [#1143](https://github.com/tweag/rules_haskell/pull/1143), and
+  [#1136](https://github.com/tweag/rules_haskell/pull/1136) for motivation.
+  See [#1096](https://github.com/tweag/rules_haskell/issues/1096)
+  for the issue that triggered this train of thought.
 
 ## Removed
 
 * `hazel` has been deleted, please use `stack_snapshot` instead.
+  See [#1158](https://github.com/tweag/rules_haskell/pull/1158).
 
 ## Changed
 
 * The `haskell_register_toolchains()` is no longer defined in
   `haskell/repositories.bzl`, load it from `haskell/toolchain.bzl` instead.
 * `cabal` wrapper: specify `python3` as a requirement,
-  to enhance error messages on macOS
+  to enhance error messages on macOS and reduce cache invalidations.
+  See [#1251](https://github.com/tweag/rules_haskell/pull/1251),
+  [#1097](https://github.com/tweag/rules_haskell/pull/1097), and
+  [#1096](https://github.com/tweag/rules_haskell/issues/1096).
 * `ghc_bindist` and `haskell_register_ghc_bindists` now have
   a `locale` argument. Set it to circumvent issues on systems without
   the default `C.UTF-8` locale.
@@ -60,6 +77,10 @@ nothing yet
   rebuilds (more builds caching).
   See [#1128](https://github.com/tweag/rules_haskell/pull/1128) and
   [#1126](https://github.com/tweag/rules_haskell/issues/1126).
+* Windows: possible race condition on `stack update` is now avoided,
+  by calling `stack update` only once.
+  See [#1199](https://github.com/tweag/rules_haskell/pull/1199) and
+  [#1090](https://github.com/tweag/rules_haskell/issues/1090).
 
 ## Fixed
 
