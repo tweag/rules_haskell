@@ -32,7 +32,9 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
+    "get_cc_libraries",
     "get_ghci_library_files",
+    "get_library_files",
     "haskell_cc_libraries_aspect",
 )
 
@@ -110,6 +112,9 @@ def _cabal_tool_flag(tool):
 def _binary_paths(binaries):
     return [binary.dirname for binary in binaries.to_list()]
 
+def _concat(sequences):
+    return [item for sequence in sequences for item in sequence]
+
 def _prepare_cabal_inputs(
         hs,
         cc,
@@ -139,7 +144,26 @@ def _prepare_cabal_inputs(
     # to add libraries and headers for direct C library dependencies to the
     # command line.
     direct_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries)
-    transitive_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries)
+
+    # The regular Haskell rules perform mostly static linking, i.e. where
+    # possible all C library dependencies are linked statically. Cabal has no
+    # such mode, and since we have to provide dynamic C libraries for
+    # compilation, they will also be used for linking. Hence, we need to add
+    # RUNPATH flags for all dynamic C library dependencies.
+    (_, dynamic_libs) = get_library_files(
+        hs,
+        cc.cc_libraries_info,
+        get_cc_libraries(cc.cc_libraries_info, cc.transitive_libraries),
+        dynamic = True,
+    )
+
+    # The regular Haskell rules have separate actions for linking and
+    # compilation to which we pass different sets of libraries as inputs. The
+    # Cabal rules, in contrast, only have a single action for compilation and
+    # linking, so we must provide both sets of libraries as inputs to the same
+    # action.
+    transitive_compile_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries)
+    transitive_link_libs = _concat(get_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries))
     env = dict(hs.env)
     env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)
     if hs.toolchain.is_darwin:
@@ -169,7 +193,7 @@ def _prepare_cabal_inputs(
                     keep_filename = False,
                     prefix = relative_rpath_prefix(hs.toolchain.is_darwin),
                 )
-                for lib in direct_libs
+                for lib in dynamic_libs
             ],
             uniquify = True,
         )
@@ -190,7 +214,8 @@ def _prepare_cabal_inputs(
             depset(cc.files),
             package_databases,
             transitive_headers,
-            depset(transitive_libs),
+            depset(transitive_compile_libs),
+            depset(transitive_link_libs),
             dep_info.interface_dirs,
             dep_info.static_libraries,
             dep_info.dynamic_libraries,
@@ -205,6 +230,7 @@ def _prepare_cabal_inputs(
         inputs = inputs,
         input_manifests = input_manifests,
         env = env,
+        runfiles = depset(direct = dynamic_libs),
     )
 
 def _haskell_cabal_library_impl(ctx):
@@ -572,6 +598,7 @@ def _haskell_cabal_binary_impl(ctx):
         executable = binary,
         runfiles = ctx.runfiles(
             files = [data_dir],
+            transitive_files = c.runfiles,
             collect_default = True,
         ),
     )
