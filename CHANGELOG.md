@@ -30,15 +30,13 @@ nothing yet
 * `haskell_cabal_library`, `haskell_cabal_binary`, and `stack_snapshot`
   now have a `verbose` argument, to allow suppressing their output.
   See [#1208](https://github.com/tweag/rules_haskell/pull/1208).
-* `haskell_cabal_library` and `stack_snapshot` now have a
-  Boolean parameter `haddock` to specify whether haddock generation
-  should be performed (defaulted to `True`).
-  See [#1200](https://github.com/tweag/rules_haskell/pull/1200)
+* `haskell_cabal_library` and `stack_snapshot` now build the Haddock
+  documentation if the parameter `haddock` is set to `True` (the default).
+  See [#1102](https://github.com/tweag/rules_haskell/pull/1102) and
+  [#1200](https://github.com/tweag/rules_haskell/pull/1200).
 * Added support for GHC bindist versions `8.8.3`, `8.8.2`, and `8.8.1`.
 * Windows: support for `cabal`
   See [#1133](https://github.com/tweag/rules_haskell/pull/1133).
-* `haskell_cabal_library` now builds and exports haddock documentation
-  See [#1102](https://github.com/tweag/rules_haskell/pull/1102).
 * rules_haskell now depends on [rules_sh](https://github.com/tweag/rules_sh),
   a toolchain for common shell commands.
   See [#1117](https://github.com/tweag/rules_haskell/pull/1117),
