@@ -66,7 +66,6 @@ nothing yet
 * macOS: `BAZEL_USE_CPP_ONLY_TOOLCHAIN = 1` must be set for Bazel
   to pick the correct C compiler.
   See [#1159](https://github.com/tweag/rules_haskell/pull/1159).
-  See [#1158](https://github.com/tweag/rules_haskell/pull/1158).
 * `stack_snapshot`: warning of stackage dependencies are not shown anymore,
   as they are irrelevant.
   See [#1146](https://github.com/tweag/rules_haskell/pull/1146) and
