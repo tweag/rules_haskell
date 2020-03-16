@@ -1,22 +1,37 @@
 steps:
   - label: "Run tests (Nixpkgs)"
     command: |
-      . /var/lib/buildkite-agent/.nix-profile/etc/profile.d/nix.sh
       echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
+      echo "build:ci --config=ci_linux" >> .bazelrc.local
       nix-shell --arg docTools false --pure --run '
       set -e
+      # Ensure that the Nixpkgs bazel version matches the one specified in
+      # `.bazelversion` and fetched in
+      # `.buildkite/bindists-pipeline` for the bindists version.
+      .ci/check-bazel-version
       ./tests/run-start-script.sh --use-nix
       bazel build --config ci //tests:run-tests
       ./bazel-ci-bin/tests/run-tests
       bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
       '
-    timeout: 30
+    timeout: 100
 
   - label: "Run tests (bindists)"
     command: |
-      echo "common:ci --build_tag_filters -requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-dont_test_with_bindist" > .bazelrc.local
-      # XXX: See .bazelrc [backward compatible options] for the the rational behind this flag
-      echo "build --incompatible_use_python_toolchains=false" >> .bazelrc.local
-      ./tests/run-start-script.sh --use-bindists
-      bazel build --config ci //tests/...
-    timeout: 30
+      mkdir -p "$HOME/bindists/repo_cache"
+      mkdir -p "$HOME/bindists/.cache/bazel"
+      mkdir -p "$HOME/bindists/.stack"
+      pushd .buildkite/image
+      echo "RUN useradd -ms /bin/bash --uid $(id -u $USER) $USER" >> Dockerfile
+      docker build . -t tweag/rules_haskell:latest
+      popd
+      docker run -it --network host \
+        -v $(pwd):$HOME/rules_haskell:rw \
+        -v $HOME/bindists/repo_cache:$HOME/repo_cache:rw \
+        -v $HOME/bindists/.cache/bazel:$HOME/.cache/bazel:rw \
+        -v $HOME/bindists/.stack:$HOME/.stack:rw \
+        --workdir $HOME/rules_haskell \
+        --user $USER \
+        tweag/rules_haskell:latest \
+        .buildkite/bindists-pipeline
+    timeout: 100

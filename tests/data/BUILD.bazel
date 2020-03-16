@@ -1,5 +1,7 @@
 # Generic data files and targets that are used by multiple tests
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 cc_library(
     name = "ourclibrary",
     srcs = [":ourclibrary.c"],

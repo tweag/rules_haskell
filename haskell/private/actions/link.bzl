@@ -2,7 +2,7 @@
 
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":providers.bzl", "create_link_config")
+load(":private/cc_libraries.bzl", "create_link_config")
 
 def merge_parameter_files(hs, file1, file2):
     """Merge two GHC parameter files into one.
@@ -34,67 +34,7 @@ def merge_parameter_files(hs, file1, file2):
     )
     return params_file
 
-def _darwin_create_extra_linker_flags_file(hs, cc, objects_dir, executable, dynamic, solibs):
-    """Write additional linker flags required on macOS to a parameter file.
-
-    Args:
-      hs: Haskell context.
-      cc: CcInteropInfo, information about C dependencies.
-      objects_dir: Directory storing object files.
-        Used to determine output file location.
-      executable: The executable being built.
-      dynamic: Bool: Whether to link dynamically or statically.
-      solibs: List of dynamic library dependencies.
-
-    Returns:
-      File: Parameter file with additional linker flags. To be passed to GHC.
-    """
-
-    # On Darwin GHC will pass the dead_strip_dylibs flag to the linker. This
-    # flag will remove any shared library loads from the binary's header that
-    # are not directly resolving undefined symbols in the binary. I.e. any
-    # indirect shared library dependencies will be removed. This conflicts with
-    # Bazel's builtin cc rules, which assume that the final binary will load
-    # all transitive shared library dependencies. In particlar shared libraries
-    # produced by Bazel's cc rules never load shared libraries themselves. This
-    # causes missing symbols at runtime on macOS, see #170.
-    #
-    # The following work-around applies the `-u` flag to the linker for any
-    # symbol that is undefined in any transitive shared library dependency.
-    # This forces the linker to resolve these undefined symbols in all
-    # transitive shared library dependencies and keep the corresponding load
-    # commands in the binary's header.
-    #
-    # Unfortunately, this prohibits elimination of any truly redundant shared
-    # library dependencies. Furthermore, the transitive closure of shared
-    # library dependencies can be large, so this makes it more likely to exceed
-    # the MACH-O header size limit on macOS.
-    #
-    # This is a horrendous hack, but it seems to be forced on us by how Bazel
-    # builds dynamic cc libraries.
-    suffix = ".dynamic.linker_flags" if dynamic else ".static.linker_flags"
-    linker_flags_file = hs.actions.declare_file(
-        executable.basename + suffix,
-        sibling = objects_dir,
-    )
-
-    hs.actions.run_shell(
-        inputs = solibs,
-        outputs = [linker_flags_file],
-        command = """
-        touch {out}
-        for lib in {solibs}; do
-            {nm} -u "$lib" | sed 's/^/-optl-Wl,-u,/' >> {out}
-        done
-        """.format(
-            nm = cc.tools.nm,
-            solibs = " ".join(["\"" + l.path + "\"" for l in solibs.to_list()]),
-            out = linker_flags_file.path,
-        ),
-    )
-    return linker_flags_file
-
-def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
+def _create_objects_dir_manifest(hs, posix, objects_dir, dynamic, with_profiling):
     suffix = ".dynamic.manifest" if dynamic else ".static.manifest"
     objects_dir_manifest = hs.actions.declare_file(
         objects_dir.basename + suffix,
@@ -110,14 +50,21 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
     hs.actions.run_shell(
         inputs = [objects_dir],
         outputs = [objects_dir_manifest],
+
+        # Note: The output of `find` is not stable. The order of the
+        # lines in the output depend on the filesystem. By using
+        # `sort`, we force the output to be stable. This is mandatory
+        # for efficient caching. See
+        # https://github.com/tweag/rules_haskell/issues/1126.
         command = """
-        find {dir} -name '*.{ext}' > {out}
+        "{find}" {dir} -name '*.{ext}' | "{sort}" > {out}
         """.format(
+            find = posix.commands["find"],
+            sort = posix.commands["sort"],
             dir = objects_dir.path,
             ext = ext,
             out = objects_dir_manifest.path,
         ),
-        use_default_shell_env = True,
     )
 
     return objects_dir_manifest
@@ -125,8 +72,8 @@ def _create_objects_dir_manifest(hs, objects_dir, dynamic, with_profiling):
 def link_binary(
         hs,
         cc,
+        posix,
         dep_info,
-        cc_info,
         extra_srcs,
         compiler_flags,
         objects_dir,
@@ -183,7 +130,9 @@ def link_binary(
 
     (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
-        cc_info = cc_info,
+        posix = posix,
+        cc_libraries_info = cc.cc_libraries_info,
+        libraries_to_link = cc.transitive_libraries,
         dynamic = dynamic,
         binary = executable,
         args = args,
@@ -199,12 +148,12 @@ def link_binary(
 
     objects_dir_manifest = _create_objects_dir_manifest(
         hs,
+        posix,
         objects_dir,
         dynamic = dynamic,
         with_profiling = with_profiling,
     )
 
-    extra_linker_flags_file = None
     if hs.toolchain.is_darwin:
         args.add("-optl-Wl,-headerpad_max_install_names")
 
@@ -214,20 +163,6 @@ def link_binary(
         # should do always when using a toolchain from Nixpkgs.
         # TODO remove this gross hack.
         args.add("-liconv")
-
-        extra_linker_flags_file = _darwin_create_extra_linker_flags_file(
-            hs,
-            cc,
-            objects_dir,
-            executable,
-            dynamic,
-            dynamic_libs,
-        )
-
-    if extra_linker_flags_file != None:
-        params_file = merge_parameter_files(hs, objects_dir_manifest, extra_linker_flags_file)
-    else:
-        params_file = objects_dir_manifest
 
     hs.toolchain.actions.run_ghc(
         hs,
@@ -239,13 +174,12 @@ def link_binary(
             dep_info.static_libraries,
             depset([cache_file, objects_dir]),
             pkg_info_inputs,
-            static_libs,
-            dynamic_libs,
+            depset(static_libs + dynamic_libs),
         ]),
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
         arguments = args,
-        params_file = params_file,
+        params_file = objects_dir_manifest,
     )
 
     return (executable, dynamic_libs)
@@ -261,7 +195,7 @@ def _so_extension(hs):
     """
     return "dylib" if hs.toolchain.is_darwin else "so"
 
-def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling):
+def link_library_static(hs, cc, posix, dep_info, objects_dir, my_pkg_id, with_profiling):
     """Link a static library for the package using given object files.
 
     Returns:
@@ -272,6 +206,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
     )
     objects_dir_manifest = _create_objects_dir_manifest(
         hs,
+        posix,
         objects_dir,
         dynamic = False,
         with_profiling = with_profiling,
@@ -316,7 +251,7 @@ def link_library_static(hs, cc, dep_info, objects_dir, my_pkg_id, with_profiling
 
     return static_library
 
-def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_pkg_id):
+def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, my_pkg_id, compiler_flags):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -334,12 +269,8 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
     args = hs.actions.args()
     args.add_all(["-optl" + f for f in cc.linker_flags])
     args.add_all(["-shared", "-dynamic"])
-
-    # Work around macOS linker limits.  This fix has landed in GHC HEAD, but is
-    # not yet in a release; plus, we still want to support older versions of
-    # GHC.  For details, see: https://phabricator.haskell.org/D4714
-    if hs.toolchain.is_darwin:
-        args.add("-optl-Wl,-dead_strip_dylibs")
+    args.add_all(hs.toolchain.compiler_flags)
+    args.add_all(compiler_flags)
 
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
@@ -354,7 +285,9 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
 
     (cache_file, static_libs, dynamic_libs) = create_link_config(
         hs = hs,
-        cc_info = cc_info,
+        posix = posix,
+        cc_libraries_info = cc.cc_libraries_info,
+        libraries_to_link = cc.transitive_libraries,
         dynamic = True,
         pic = True,
         binary = dynamic_library,
@@ -366,6 +299,7 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
     # Profiling not supported for dynamic libraries.
     objects_dir_manifest = _create_objects_dir_manifest(
         hs,
+        posix,
         objects_dir,
         dynamic = True,
         with_profiling = False,
@@ -375,12 +309,11 @@ def link_library_dynamic(hs, cc, dep_info, cc_info, extra_srcs, objects_dir, my_
         hs,
         cc,
         inputs = depset([cache_file, objects_dir], transitive = [
-            depset(extra_srcs),
+            extra_srcs,
             dep_info.package_databases,
             dep_info.dynamic_libraries,
             pkg_info_inputs,
-            static_libs,
-            dynamic_libs,
+            depset(static_libs + dynamic_libs),
         ]),
         outputs = [dynamic_library],
         mnemonic = "HaskellLinkDynamicLibrary",

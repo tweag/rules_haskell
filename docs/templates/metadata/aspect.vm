@@ -1,0 +1,3 @@
+  - name: ${aspectName}
+    type: aspect
+    summary: ${aspectInfo.getDocString().split("\n").get(0)}

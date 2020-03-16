@@ -38,7 +38,7 @@ fi
 # bazel run //some:target@repl will be executed from the workspace directory.
 # bazel run //some:haskell_repl will be executed from its execroot.
 # Explicitly change into the workspace root in that case.
-cd "$BUILD_WORKSPACE_DIRECTORY"
+cd "$BUILD_WORKSPACE_DIRECTORY" || { echo "Cannot cd into $BUILD_WORKSPACE_DIRECTORY"; exit 1; }
 
 # This is a workaround for https://github.com/bazelbuild/bazel/issues/5506
 # and also for the fact that REPL script relies on so-called “convenience
@@ -52,13 +52,11 @@ cd "$BUILD_WORKSPACE_DIRECTORY"
 # location of exec root reliably and then prefix locations of various
 # components, such as shared libraries with that exec root.
 
-RULES_HASKELL_EXEC_ROOT=$(dirname $(readlink ${BUILD_WORKSPACE_DIRECTORY}/bazel-out))
-TOOL_LOCATION="$RULES_HASKELL_EXEC_ROOT/{TOOL}"
-# Setting -pgm* flags explicitly has the unfortunate side effect
-# of resetting any program flags in the GHC settings file. So we
-# restore them here. See
-# https://ghc.haskell.org/trac/ghc/ticket/7929.
-PGM_ARGS="-pgma {CC} -pgmc {CC} -pgml {CC} -pgmP {CC} -optc-fno-stack-protector -optP-E -optP-undef -optP-traditional"
+RULES_HASKELL_EXEC_ROOT=$(dirname "$(readlink "${BUILD_WORKSPACE_DIRECTORY}"/bazel-out)")
+TOOL_LOCATION="$RULES_HASKELL_EXEC_ROOT/%{TOOL}"
+# shellcheck disable=SC1083
+ARGS=%{ARGS}
 
-{ENV}
-"$TOOL_LOCATION" $PGM_ARGS {ARGS} "$@"
+# shellcheck disable=SC1083
+%{ENV}
+"$TOOL_LOCATION" "${ARGS[@]}" "$@"

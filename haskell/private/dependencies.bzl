@@ -1,5 +1,5 @@
 load(
-    "@rules_haskell//haskell:providers.bzl",
+    "//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
 )

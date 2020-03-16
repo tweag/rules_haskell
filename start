@@ -1,13 +1,13 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Checks the version of Bazel found in the PATH, and then initializes
 # a new Bazel workspace with dummy Haskell build targets.
 
 MIN_BAZEL_MAJOR=0
-MIN_BAZEL_MINOR=27
+MIN_BAZEL_MINOR=29
 
-MAX_BAZEL_MAJOR=0
-MAX_BAZEL_MINOR=29
+MAX_BAZEL_MAJOR=2
+MAX_BAZEL_MINOR=0
 
 set -e
 
@@ -88,7 +88,6 @@ insert_if_equal () {
     [ "$1" = "$2" ] && printf '%s' "$3"
 }
 
-
 parse_args "$@"
 
 if [ "$print_nix_usage_info" = "yes" ]; then
@@ -98,7 +97,6 @@ fi
 
 check_files_dont_exist
 check_bazel_version
-
 
 bindist_toolchain=$(cat <<EOF
 # Download a GHC binary distribution from haskell.org and register it as a toolchain.
@@ -112,6 +110,11 @@ nix_toolchain=$(cat <<EOF
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_git_repository",
+    "nixpkgs_python_configure",
+)
+
+nixpkgs_python_configure(
+    repository = "@nixpkgs",
 )
 
 # Fetch a version of nixpkgs from GitHub.
@@ -160,19 +163,23 @@ load(
 # Download rules_haskell and make it accessible as "@rules_haskell".
 http_archive(
     name = "rules_haskell",
-    strip_prefix = "rules_haskell-0.11",
-    urls = ["https://github.com/tweag/rules_haskell/archive/v0.11.tar.gz"],
-    sha256 = "40fd6de12324b515042634ba13b02fa19f5c6e274eae6350be2e4d1e023fcd90",
+    strip_prefix = "rules_haskell-0.12",
+    urls = ["https://github.com/tweag/rules_haskell/archive/v0.12.tar.gz"],
+    sha256 = "56a8e6337df8802f1e0e7d2b3d12d12d5d96c929c8daecccc5738a0f41d9c1e4",
 )
 
 load(
     "@rules_haskell//haskell:repositories.bzl",
     "rules_haskell_dependencies",
-    "rules_haskell_toolchains",
 )
 
 # Setup all Bazel dependencies required by rules_haskell.
 rules_haskell_dependencies()
+
+load(
+    "@rules_haskell//haskell:toolchain.bzl",
+    "rules_haskell_toolchains",
+)
 
 $(get_toolchain)
 EOF
@@ -191,8 +198,6 @@ $(insert_if_equal $mode "nix" '
 build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
 run --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs'
 )
-
-build --incompatible_use_python_toolchains=false
 
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct

@@ -1,14 +1,19 @@
 """Doctest support"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load(":cc.bzl", "cc_interop_info")
+load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
-load(":private/path_utils.bzl", "link_libraries")
 load(":private/set.bzl", "set")
 load(
     "@rules_haskell//haskell:providers.bzl",
+    "HaskellCcLibrariesInfo",
     "HaskellInfo",
-    "get_ghci_extra_libs",
+)
+load(
+    "@rules_haskell//haskell:private/cc_libraries.bzl",
+    "get_ghci_library_files",
+    "haskell_cc_libraries_aspect",
+    "link_libraries",
 )
 
 def _doctest_toolchain_impl(ctx):
@@ -37,7 +42,7 @@ def haskell_doctest_toolchain(name, doctest, **kwargs):
     for `haskell_doctest` to work.  Once declared, you then need to *register*
     the toolchain using `register_toolchains` in your `WORKSPACE` file.
 
-    Example:
+    ### Examples
 
       In a `BUILD` file:
 
@@ -80,33 +85,17 @@ def _haskell_doctest_single(target, ctx):
         return []
 
     hs = haskell_context(ctx, ctx.attr)
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     hs_info = target[HaskellInfo]
     cc_info = target[CcInfo]
+    cc_libraries_info = target[HaskellCcLibrariesInfo]
 
     args = ctx.actions.args()
     args.add("--no-magic")
 
     cc = cc_interop_info(ctx)
-    args.add_all([
-        # GHC uses C compiler for assemly, linking and preprocessing as well.
-        "-pgma",
-        cc.tools.cc,
-        "-pgmc",
-        cc.tools.cc,
-        "-pgml",
-        cc.tools.cc,
-        "-pgmP",
-        cc.tools.cc,
-        # Setting -pgm* flags explicitly has the unfortunate side effect
-        # of resetting any program flags in the GHC settings file. So we
-        # restore them here. See
-        # https://ghc.haskell.org/trac/ghc/ticket/7929.
-        "-optc-fno-stack-protector",
-        "-optP-E",
-        "-optP-undef",
-        "-optP-traditional",
-    ])
+    args.add_all(ghc_cc_program_args(cc.tools.cc))
 
     doctest_log = ctx.actions.declare_file(
         "doctest-log-" + ctx.label.name + "-" + target.label.name,
@@ -121,8 +110,11 @@ def _haskell_doctest_single(target, ctx):
     args.add_all(ctx.attr.doctest_flags)
 
     # C library dependencies to link against.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(hs, cc_info)
-    link_libraries(ghci_extra_libs, args, prefix_optl = hs.toolchain.is_darwin)
+    link_libraries(
+        get_ghci_library_files(hs, cc_libraries_info, cc.cc_libraries),
+        args,
+        prefix_optl = hs.toolchain.is_darwin,
+    )
 
     if ctx.attr.modules:
         inputs = ctx.attr.modules
@@ -137,7 +129,7 @@ def _haskell_doctest_single(target, ctx):
             hs_info.extra_source_files,
             hs_info.dynamic_libraries,
             cc_info.compilation_context.headers,
-            ghci_extra_libs,
+            depset(get_ghci_library_files(hs, cc_libraries_info, cc.transitive_libraries)),
             depset(
                 toolchain.doctest +
                 cc.files +
@@ -159,14 +151,7 @@ def _haskell_doctest_single(target, ctx):
             env = render_env(hs.env),
         ),
         arguments = [args],
-        # NOTE It looks like we must specify the paths here as well as via -L
-        # flags because there are at least two different "consumers" of the info
-        # (ghc and linker?) and they seem to prefer to get it in different ways
-        # in this case.
-        env = dicts.add(
-            ghc_env,
-            hs.env,
-        ),
+        env = hs.env,
         execution_requirements = {
             # Prevents a race condition among concurrent doctest tests on Linux.
             #
@@ -197,6 +182,7 @@ haskell_doctest = rule(
     attrs = {
         "deps": attr.label_list(
             doc = "List of Haskell targets to lint.",
+            aspects = [haskell_cc_libraries_aspect],
         ),
         "doctest_flags": attr.string_list(
             doc = "Extra flags to pass to doctest executable.",
@@ -212,8 +198,10 @@ omitted, all exposed modules provided by `deps` will be tested.
     },
     fragments = ["cpp"],
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell:doctest-toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
     ],
 )
 """Run doctest test on targets in `deps`.

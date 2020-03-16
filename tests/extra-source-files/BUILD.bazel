@@ -18,6 +18,10 @@ haskell_library(
         "file.txt",
         "ld-options.txt",
     ],
+    tags = [
+        # ld on darwin does not support response files.
+        "dont_test_on_darwin_with_bindist",
+    ],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
@@ -37,6 +41,10 @@ haskell_test(
         "file.txt",
         "Foo.hs",  # Test "Multiple entries with same key" in expand_location
         "ld-options.txt",
+    ],
+    tags = [
+        # ld on darwin does not support response files.
+        "dont_test_on_darwin_with_bindist",
     ],
     deps = [
         "//tests/hackage:base",

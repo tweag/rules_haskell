@@ -2,15 +2,44 @@
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:shell.bzl", "shell")
 load(
-    "@rules_haskell//haskell:providers.bzl",
+    ":providers.bzl",
     "HaddockInfo",
+    "HaskellCcLibrariesInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "get_ghci_extra_libs",
+)
+load(
+    ":private/cc_libraries.bzl",
+    "get_ghci_library_files",
+    "haskell_cc_libraries_aspect",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
+
+def generate_unified_haddock_info(this_package_id, this_package_haddock, this_package_html, deps):
+    """Collapse dependencies into a single `HaddockInfo`.
+
+    Returns:
+      HaddockInfo: Unified information about this package and all its dependencies.
+    """
+    haddock_dict = {}
+    html_dict = {}
+
+    for dep in deps:
+        if HaddockInfo in dep:
+            html_dict.update(dep[HaddockInfo].transitive_html)
+            haddock_dict.update(dep[HaddockInfo].transitive_haddocks)
+
+    html_dict[this_package_id] = this_package_html
+    haddock_dict[this_package_id] = [this_package_haddock]
+
+    return HaddockInfo(
+        package_id = this_package_id,
+        transitive_html = html_dict,
+        transitive_haddocks = haddock_dict,
+    )
 
 def _get_haddock_path(package_id):
     """Get path to Haddock file of a package given its id.
@@ -24,7 +53,7 @@ def _get_haddock_path(package_id):
     return package_id + ".haddock"
 
 def _haskell_doc_aspect_impl(target, ctx):
-    if not (HaskellLibraryInfo in target and target[HaskellInfo].source_files.to_list()):
+    if not (HaskellLibraryInfo in target):
         return []
 
     # Packages imported via `//haskell:import.bzl%haskell_import` already
@@ -33,8 +62,31 @@ def _haskell_doc_aspect_impl(target, ctx):
         return []
 
     hs = haskell_context(ctx, ctx.rule.attr)
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     package_id = target[HaskellLibraryInfo].package_id
+
+    transitive_haddocks = {}
+    transitive_html = {}
+
+    re_exports = getattr(ctx.rule.attr, "exports", [])
+    all_deps = ctx.rule.attr.deps + re_exports
+    for dep in all_deps:
+        if HaddockInfo in dep:
+            transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)
+            transitive_html.update(dep[HaddockInfo].transitive_html)
+
+    # If the current package has no source file, just returns the haddocks for
+    # its dependencies
+    if (target[HaskellInfo].source_files.to_list() == []):
+        haddock_info = HaddockInfo(
+            package_id = package_id,
+            transitive_html = transitive_html,
+            transitive_haddocks = transitive_haddocks,
+        )
+        ctx.actions.do_nothing(mnemonic = "HaskellHaddock")
+        return [haddock_info]
+
     html_dir_raw = "doc-{0}".format(package_id)
     html_dir = ctx.actions.declare_directory(html_dir_raw)
     haddock_file = ctx.actions.declare_file(_get_haddock_path(package_id))
@@ -60,14 +112,6 @@ def _haskell_doc_aspect_impl(target, ctx):
         "--hyperlinked-source",
     ])
 
-    transitive_haddocks = {}
-    transitive_html = {}
-
-    for dep in ctx.rule.attr.deps:
-        if HaddockInfo in dep:
-            transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)
-            transitive_html.update(dep[HaddockInfo].transitive_html)
-
     for pid in transitive_haddocks:
         for interface in transitive_haddocks[pid]:
             args.add("--read-interface=../{0},{1}".format(
@@ -90,13 +134,10 @@ def _haskell_doc_aspect_impl(target, ctx):
     )
 
     # C library dependencies for runtime.
-    (ghci_extra_libs, ghc_env) = get_ghci_extra_libs(
+    cc_libraries = get_ghci_library_files(
         hs,
-        target[CcInfo],
-        # haddock changes directory during its execution. We prefix
-        # LD_LIBRARY_PATH with the current working directory on wrapper script
-        # startup.
-        path_prefix = "$PWD",
+        target[HaskellCcLibrariesInfo],
+        target[CcInfo].linking_context.libraries_to_link.to_list(),
     )
 
     # TODO(mboes): we should be able to instantiate this template only
@@ -106,11 +147,11 @@ def _haskell_doc_aspect_impl(target, ctx):
         template = ctx.file._haddock_wrapper_tpl,
         output = haddock_wrapper,
         substitutions = {
-            "%{ghc-pkg}": hs.tools.ghc_pkg.path,
-            "%{haddock}": hs.tools.haddock.path,
+            "%{ghc-pkg}": hs.tools.ghc_pkg.path,  # not mentioned in bash XXX delete?
+            "%{haddock}": shell.quote(hs.tools.haddock.path),
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
-            "%{env}": render_env(dicts.add(hs.env, ghc_env)),
+            "%{env}": render_env(hs.env),
         },
         is_executable = True,
     )
@@ -122,7 +163,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             target[HaskellInfo].source_files,
             target[HaskellInfo].extra_source_files,
             target[HaskellInfo].dynamic_libraries,
-            ghci_extra_libs,
+            depset(cc_libraries),
             depset(transitive = [depset(i) for i in transitive_haddocks.values()]),
             target[CcInfo].compilation_context.headers,
             depset([
@@ -139,7 +180,9 @@ def _haskell_doc_aspect_impl(target, ctx):
             args,
             compile_flags,
         ],
-        use_default_shell_env = True,
+        env = {
+            "PATH": (";" if hs.toolchain.is_windows else ":").join(posix.paths),
+        },
     )
 
     transitive_html.update({package_id: html_dir})
@@ -162,8 +205,12 @@ haskell_doc_aspect = aspect(
             default = Label("@rules_haskell//haskell:private/haddock_wrapper.sh.tpl"),
         ),
     },
-    attr_aspects = ["deps"],
-    toolchains = ["@rules_haskell//haskell:toolchain"],
+    attr_aspects = ["deps", "exports"],
+    required_aspect_providers = [HaskellCcLibrariesInfo],
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
 )
 
 def _dirname(file):
@@ -282,7 +329,10 @@ haskell_doc = rule(
     _haskell_doc_rule_impl,
     attrs = {
         "deps": attr.label_list(
-            aspects = [haskell_doc_aspect],
+            aspects = [
+                haskell_cc_libraries_aspect,
+                haskell_doc_aspect,
+            ],
             doc = "List of Haskell libraries to generate documentation for.",
         ),
         "index_transitive_deps": attr.bool(
@@ -291,15 +341,16 @@ haskell_doc = rule(
         ),
     },
     toolchains = ["@rules_haskell//haskell:toolchain"],
-)
-"""Create API documentation.
+    doc = """\
+Create API documentation.
 
 Builds API documentation (using [Haddock][haddock]) for the given
 Haskell libraries. It will automatically build documentation for any
 transitive dependencies to allow for cross-package documentation
 linking.
 
-Example:
+### Examples
+
   ```bzl
   haskell_library(
     name = "my-lib",
@@ -313,4 +364,5 @@ Example:
   ```
 
 [haddock]: http://haskell-haddock.readthedocs.io/en/latest/
-"""
+""",
+)

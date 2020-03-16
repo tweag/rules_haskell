@@ -9,11 +9,10 @@ jobs:
       architecture: 'x64'
   - bash: |
       set -e
-      curl -LO https://github.com/bazelbuild/bazel/releases/download/0.28.0/bazel-0.28.0-windows-x86_64.exe
-      mv bazel-*.exe bazel.exe
-      mkdir /c/bazel
-      mv bazel.exe /c/bazel
+      INSTALL="$(.ci/fetch-bazel-bindist)"
+      mv "$INSTALL" /c/bazel
       /c/bazel/bazel.exe info release
+      PATH="/c/bazel:$PATH" .ci/check-bazel-version
 
     displayName: 'Install Bazel'
 
@@ -24,60 +23,14 @@ jobs:
     displayName: "Enable da long paths"
 
   - bash: |
-        # rules_haskell can automatically install stack if it is not in $PATH,
-        # yet. However, if the index has not been updated before building. Then
-        # multiple parallel invocations of `stack` will both attempt to update
-        # the index during build. This will fail with the following error.
-        #
-        #   user error (hTryLock: lock already exists: C:\Users\VssAdministrator\AppData\Roaming\stack\pantry\hackage\hackage-security-lock)
-        #
-        # To avoid this issue we install stack and update the index beforehand.
-        # See https://github.com/tweag/stackage-head/issues/29.
-        curl -sSL https://get.haskellstack.org/ | sh
-        stack update
-    displayName: "Install Stack"
-
-  - bash: |
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
 
-      /c/bazel/bazel.exe build --config windows "@haskell_aeson//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_aeson__extra//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_cassava//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_conduit//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_fuzzyset//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_lens//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_network//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_text__metrics//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_cryptonite//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_unix__compat//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_hostname//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_zlib//..."
-      /c/bazel/bazel.exe build --config windows "@haskell_ghc__paths//..."
+      # Fix PATH entries ending on space as they crash Bazel.
+      # See https://github.com/bazelbuild/bazel/issues/10481
+      export PATH="$(sed 's, \+\(:\|$\),\1,g' <<<"$PATH")"
+      echo "PATH='$PATH'"
 
-      # FIXME: needs network, warp, cryptonite, etc...
-      # /c/bazel/bazel.exe build --config windows "@haskell_wai__app__static//..."
-
-      # FIXME: Needs to provide advapi32 extra lib.
-      # /c/bazel/bazel.exe build --config windows "@haskell_entropy//..."
-
-      # FIXME: no such package '@taglib//': Platform is not supported (see 'fail_not_supported') and referenced by '@haskell_htaglib//:htaglib'
-      # /c/bazel/bazel.exe build --config windows "@haskell_htaglib//..."
-
-      # FIXME: Cabal version macros issue
-      # /c/bazel/bazel.exe build --config windows "@haskell_pretty__show//..."
-
-      # FIXME: need custom builds
-      # /c/bazel/bazel.exe build --config windows "@haskell_postgresql_libpq_275795853//..."
-
-      # FIXME: depends on network
-      # /c/bazel/bazel.exe build --config windows "@haskell_http__client//..."
-
-    displayName: 'Hazel Tests'
-
-  - bash: |
-      set -e
-      export MSYS2_ARG_CONV_EXCL="*"
       # Tests that build but don't run
       /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."
@@ -122,8 +75,6 @@ jobs:
       /c/bazel/bazel.exe test --config windows "//tests/two-libs/..."
       /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
       /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
-
-      # Hazel tests that succeed
-      /c/bazel/bazel.exe test --config windows "@ai_formation_hazel//test:ghc-paths-test"
+      /c/bazel/bazel.exe test --config windows "//tests/stack-snapshot-deps/..."
 
     displayName: 'Run Bazel'

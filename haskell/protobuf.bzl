@@ -6,13 +6,20 @@ load(
 )
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
-    "@rules_haskell//haskell:providers.bzl",
+    ":providers.bzl",
     "HaddockInfo",
+    "HaskellCcLibrariesInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
 )
 load(":private/pkg_id.bzl", "pkg_id")
+load(
+    ":private/cc_libraries.bzl",
+    "deps_HaskellCcLibrariesInfo",
+    "extend_HaskellCcLibrariesInfo",
+    "haskell_cc_libraries_aspect",
+)
 
 def _capitalize_first_letter(c):
     """Capitalize the first letter of the input. Unlike the built-in
@@ -183,7 +190,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         files = struct(
             srcs = hs_files,
             _cc_toolchain = ctx.files._cc_toolchain,
-            extra_srcs = depset(),
+            extra_srcs = [],
         ),
         genfiles_dir = ctx.genfiles_dir,
         label = ctx.label,
@@ -195,7 +202,7 @@ def _haskell_proto_aspect_impl(target, ctx):
     # TODO this pattern match is very brittle. Let's not do this. The
     # order should match the order in the return value expression in
     # haskell_library_impl().
-    [hs_info, cc_info, coverage_info, default_info, library_info] = _haskell_library_impl(patched_ctx)
+    [hs_info, cc_info, coverage_info, default_info, library_info, output_groups] = _haskell_library_impl(patched_ctx)
 
     # Build haddock informations
     transitive_html = {}
@@ -225,13 +232,27 @@ def _haskell_proto_aspect_impl(target, ctx):
         transitive_haddocks = transitive_haddocks,
     )
 
+    # Mimic haskell_cc_libraries_aspect acting on haskell_library.
+    # See comment in implementation of haskell_cc_libraries_aspect.
+    cc_libraries_info = extend_HaskellCcLibrariesInfo(
+        ctx = ctx,
+        cc_libraries_info = deps_HaskellCcLibrariesInfo([
+            dep
+            for attr in ["deps", "exports", "plugins"]
+            for dep in getattr(ctx.rule.attr, attr, [])
+        ]),
+        cc_info = cc_info,
+        is_haskell = True,
+    )
+
     return [
         cc_info,  # CcInfo
         hs_info,  # HaskellInfo
         library_info,  # HaskellLibraryInfo
         # We can't return DefaultInfo here because target already provides that.
-        HaskellProtobufInfo(files = default_info.files),
+        HaskellProtobufInfo(files = default_info.files, cc_libraries_info = cc_libraries_info),
         haddock_info,
+        output_groups,
     ]
 
 _haskell_proto_aspect = aspect(
@@ -260,9 +281,12 @@ _haskell_proto_aspect = aspect(
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
     },
+    provides = [HaskellProtobufInfo],
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//protobuf:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
     ],
     fragments = ["cpp"],
 )
@@ -283,7 +307,10 @@ haskell_proto_library = rule(
         "deps": attr.label_list(
             mandatory = True,
             allow_files = False,
-            aspects = [_haskell_proto_aspect],
+            aspects = [
+                _haskell_proto_aspect,
+                haskell_cc_libraries_aspect,
+            ],
             doc = "List of `proto_library` targets to use for generation.",
         ),
     },
@@ -291,12 +318,13 @@ haskell_proto_library = rule(
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//protobuf:toolchain",
     ],
-)
+    doc = """\
+Generate Haskell library allowing to use protobuf definitions.
 
-"""Generate Haskell library allowing to use protobuf definitions with help
-of [`proto-lens`](https://github.com/google/proto-lens#readme).
+Uses [`proto-lens`](https://github.com/google/proto-lens#readme).
 
-Example:
+### Examples
+
   ```bzl
   proto_library(
     name = "foo_proto",
@@ -311,7 +339,8 @@ Example:
 
 `haskell_proto_library` targets require `haskell_proto_toolchain` to be
 registered.
-"""
+""",
+)
 
 def _protobuf_toolchain_impl(ctx):
     return [
@@ -344,6 +373,7 @@ _protobuf_toolchain = rule(
         ),
         "deps": attr.label_list(
             doc = "List of other Haskell libraries to be linked to protobuf libraries.",
+            aspects = [haskell_cc_libraries_aspect],
         ),
     },
 )
@@ -361,7 +391,7 @@ def haskell_proto_toolchain(
     need to *register* the toolchain using `register_toolchains` in your
     `WORKSPACE` file (see example below).
 
-    Example:
+    ### Examples
 
       In a `BUILD` file:
 
@@ -376,7 +406,6 @@ def haskell_proto_toolchain(
           "containers",
           "data-default-class",
           "lens-family",
-          "lens-labels",
           "proto-lens",
           "text",
         ],
@@ -424,6 +453,6 @@ def haskell_proto_toolchain(
         toolchain_type = "@rules_haskell//protobuf:toolchain",
         toolchain = ":" + impl_name,
         exec_compatible_with = [
-            "@bazel_tools//platforms:x86_64",
+            "@platforms//cpu:x86_64",
         ],
     )

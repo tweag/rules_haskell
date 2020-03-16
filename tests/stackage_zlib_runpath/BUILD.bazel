@@ -1,0 +1,122 @@
+load(
+    "//tests:inline_tests.bzl",
+    "py_inline_test",
+)
+load("dynamic_libraries.bzl", "dynamic_libraries")
+
+dynamic_libraries(
+    name = "libz",
+    srcs = ["@zlib.dev//:zlib"],
+    filter = "libz",
+    solib_names = "libz_soname",
+    tags = ["requires_zlib"],
+)
+
+dynamic_libraries(
+    name = "libHSzlib",
+    srcs = ["@stackage-zlib//:zlib"],
+    filter = "libHSz",
+    tags = ["requires_zlib"],
+)
+
+# Tests that haskell_cabal_library will generate a relative RUNPATH entry for
+# the dependency on the nixpkgs provided libz. Relative meaning an entry that
+# starts with $ORIGIN (Linux) or @loader_path (MacOS). The alternative is an
+# absolute path, which would be wrong for the nixpkgs provided libz, as we want
+# the RUNPATH entry to point to Bazel's _solib_<cpu> directory and its absolute
+# path depends on the output root or execroot.
+#
+# It uses :libz_soname generated above to determine the expected RUNPATH entry
+# for the libz dependency. The :libz_soname file will contain the file names of
+# the libz library files underneath the `_solib_<cpu>` directory.
+#
+# It uses :libHSzlib to access the dynamic library output of
+# haskell_cabal_library and read the RUNPATH entries.
+#
+# Note, ideally we would test that haskell_cabal_library _only_ generates a
+# relative RUNPATH entry and no absolute entries that leak the execroot into
+# the cache. Unfortunately, haskell_cabal_library generates such an entry at
+# the moment. See https://github.com/tweag/rules_haskell/issues/1130.
+py_inline_test(
+    name = "stackage_zlib_runpath",
+    args = [
+        "$(rootpath :libz_soname)",
+        "$(rootpath :libHSzlib)",
+    ],
+    data = [
+        ":libHSzlib",
+        ":libz_soname",
+    ],
+    script = """\
+from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
+import itertools
+import os
+import platform
+import subprocess
+import sys
+r = bazel_runfiles.Create()
+
+# Determine libz solib directory
+libz_soname = r.Rlocation(os.path.join(
+    os.environ["TEST_WORKSPACE"],
+    sys.argv[1],
+))
+with open(libz_soname) as fh:
+    sofile = fh.read().splitlines()[1]
+    sodir = os.path.dirname(sofile)
+
+# Determine libHSzlib RUNPATH
+libHSzlib = r.Rlocation(os.path.join(
+    os.environ["TEST_WORKSPACE"],
+    sys.argv[2],
+))
+runpaths = []
+if platform.system() == "Darwin":
+    dynamic_section = iter(subprocess.check_output(["otool", "-l", libHSzlib]).decode().splitlines())
+    # otool produces lines of the form
+    #
+    #   Load command ...
+    #             cmd LC_RPATH
+    #         cmdsize ...
+    #            path ...
+    #
+    for line in dynamic_section:
+        # Find LC_RPATH entry
+        if line.find("cmd LC_RPATH") != -1:
+            break
+        # Skip until path field
+        for line in dynamic_section:
+            if line.strip().startswith("path"):
+                break
+        runpaths.append(line.split()[1])
+else:
+    dynamic_section = subprocess.check_output(["objdump", "--private-headers", libHSzlib]).decode().splitlines()
+    # objdump produces lines of the form
+    #
+    #   Dynamic Section:
+    #     ...
+    #     RUNPATH              ...
+    #     ...
+    for line in dynamic_section:
+        if not line.strip().startswith("RUNPATH"):
+            continue
+        runpaths.extend(line.split()[1].split(":"))
+
+# Check that the binary contains a relative RUNPATH for sodir.
+found = False
+for runpath in runpaths:
+    if runpath.find(sodir) == -1:
+        continue
+    if runpath.startswith("$ORIGIN") or runpath.startswith("@loader_path"):
+        found = True
+    # XXX: Enable once #1130 is fixed.
+    #if os.path.isabs(runpath):
+    #    print("Absolute RUNPATH entry discovered for %s: %s" % (sodir, runpath))
+    #    sys.exit(1)
+
+if not found:
+    print("Did not find a relative RUNPATH entry for %s among %s." % (sodir, runpaths))
+    sys.exit(1)
+""",
+    tags = ["requires_zlib"],
+)

@@ -1,3 +1,4 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//haskell:defs.bzl", "haskell_doc", "haskell_library")
 load("//haskell:protobuf.bzl", "haskell_proto_library")
 
@@ -39,7 +40,6 @@ proto_library(
 haskell_proto_library(
     name = "address_haskell_proto",
     tags = [
-        "requires_hackage",
         "requires_proto",
     ],
     deps = [":address_proto"],
@@ -48,7 +48,6 @@ haskell_proto_library(
 haskell_proto_library(
     name = "stripped_address_haskell_proto",
     tags = [
-        "requires_hackage",
         "requires_proto",
     ],
     deps = [":stripped_address_proto"],
@@ -57,7 +56,6 @@ haskell_proto_library(
 haskell_proto_library(
     name = "person_haskell_proto",
     tags = [
-        "requires_hackage",
         "requires_proto",
     ],
     deps = [":person_proto"],
@@ -67,7 +65,6 @@ haskell_library(
     name = "hs-lib",
     srcs = ["Bar.hs"],
     tags = [
-        "requires_hackage",
         "requires_proto",
     ],
     visibility = ["//visibility:public"],
@@ -82,7 +79,6 @@ haskell_library(
 haskell_doc(
     name = "docs",
     tags = [
-        "requires_hackage",
         "requires_proto",
     ],
     deps = [":hs-lib"],

@@ -2,6 +2,7 @@
 
 # Haskell rules for [Bazel][bazel]
 
+[![Build status](https://badge.buildkite.com/e2c5c0df5e33572bab10dbf230b6f2204f1fcce51c42fdc760.svg?branch=master)](https://buildkite.com/tweag-1/rules-haskell)
 [![CircleCI](https://circleci.com/gh/tweag/rules_haskell.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell)
 [![Build Status](https://dev.azure.com/tweag/rules_haskell/_apis/build/status/tweag.rules_haskell?branchName=master)](https://dev.azure.com/tweag/rules_haskell/_build/latest?definitionId=1?branchName=master)
 
@@ -22,9 +23,13 @@ The full reference documentation for rules is at https://haskell.build.
 
 ## Setup
 
-You'll need [Bazel >= 0.27][bazel-getting-started] installed.
+You'll need [Bazel >= 0.29][bazel-getting-started] installed.
 
 If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
+
+### System dependencies
+
+Refer to the "Before you begin" section in [the documentation](docs/haskell.rst).
 
 ### The easy way
 
@@ -63,6 +68,9 @@ provision GHC.
 If you are on NixOS, this is the only way to set up your project,
 because the GHC toolchain provisioned through binary distributions
 cannot be executed on NixOS.
+
+If you are on macOS, you will have to set the environment variable
+`BAZEL_USE_CPP_ONLY_TOOLCHAIN = 1`, so that Bazel picks the correct C compiler.
 
 [bazel-cli-commands]: https://docs.bazel.build/versions/master/command-line-reference.html#commands
 [nixpkgs]: https://nixos.org/nixpkgs/
@@ -181,6 +189,66 @@ Turning sandboxing on (this is Bazel's default on Linux and macOS)
 protects against this problem. If sandboxing is not an option, simply
 put the source files for each target in a separate directory (you can
 still use a single `BUILD` file to define all targets).
+
+### hGetContents: invalid argument (invalid byte sequence)
+
+If you are using the GHC bindists and see an error message like this:
+
+```
+haddock: internal error: /tmp/tmputn68mya/doc/html/path-io/haddock-response300-1.txt: hGetContents: invalid argument (invalid byte sequence)
+```
+
+It means that the default locale (`C.UTF-8`) does not work on your system.
+You can use a locale that your system has. For example, if your system has the
+locale `en_US.UTF-8`, you can specify that locale:
+
+```bzl
+rules_haskell_toolchains(
+    locale = "en_US.UTF-8", # <----
+    version = "8.4.1",
+)
+```
+
+To find available locales, run `locale -a` in a terminal. You should see output like the following:
+
+```console
+$ locale -a
+C
+en_US
+en_US.iso88591
+en_US.utf8
+POSIX
+```
+
+### MacOS: Error: DEVELOPER_DIR not set.
+
+Make sure to set the following environment variable:
+```
+export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+```
+This ensures that Bazel picks the correct C compiler.
+
+### Windows: Incorrect `cc_toolchain` used
+
+If you're using Windows, bazel might use a different `cc_toolchain`
+than is required to build. This might happen if the environment has a
+`cc_toolchain` from Visual Studio. This might show up with an error like:
+```
+Traceback (most recent call last):
+  File "\\?\C:\Users\appveyor\AppData\Local\Temp\1\Bazel.runfiles_w5rfpqk5\runfiles\rules_haskell\haskell\cabal_wrapper.py", line 105, in <module>
+    strip = find_exe("external/local_config_cc/wrapper/bin/msvc_nop.bat")
+  File "\\?\C:\Users\appveyor\AppData\Local\Temp\1\Bazel.runfiles_w5rfpqk5\runfiles\rules_haskell\haskell\cabal_wrapper.py", line 56, in find_exe
+    if not os.path.isfile(path) and "True" == "True":
+  File "C:\Python37\lib\genericpath.py", line 30, in isfile
+    st = os.stat(path)
+TypeError: stat: path should be string, bytes, os.PathLike or integer, not NoneType
+```
+
+You can override the `cc_toolchain` chosen with the following flag:
+```
+--crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain
+```
+This chooses the `cc_toolchain` bundled with GHC.
 
 ## For `rules_haskell` developers
 

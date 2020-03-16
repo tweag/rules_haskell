@@ -1,7 +1,7 @@
 """Derived context with Haskell-specific fields and methods"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@rules_haskell//haskell:providers.bzl", "HaskellLibraryInfo", "all_dependencies_package_ids")
+load("//haskell:providers.bzl", "HaskellLibraryInfo", "all_dependencies_package_ids")
 
 HaskellContext = provider()
 
@@ -52,7 +52,7 @@ def haskell_context(ctx, attr = None):
         worker = worker,
         package_ids = package_ids,
         src_root = src_root,
-        package_root = ctx.label.workspace_root + ctx.label.package,
+        package_root = paths.join(ctx.label.workspace_root, ctx.label.package),
         env = env,
         mode = ctx.var["COMPILATION_MODE"],
         actions = ctx.actions,
@@ -64,14 +64,14 @@ def haskell_context(ctx, attr = None):
 def render_env(env):
     """Render environment dict to shell exports.
 
-    Example:
+    ### Examples
 
       >>> render_env({"PATH": "foo:bar", "LANG": "lang"})
-      export PATH=foo:bar
-      export LANG=lang
+      export PATH="foo:bar"
+      export LANG="lang"
 
     """
     return "\n".join([
-        "export {}={}".format(k, v)
+        'export {}="{}"'.format(k, v)
         for k, v in env.items()
     ])

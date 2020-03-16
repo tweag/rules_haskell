@@ -18,11 +18,12 @@ load(
     _haskell_repl = "haskell_repl",
     _haskell_repl_aspect = "haskell_repl_aspect",
 )
+load(":private/cc_libraries.bzl", "haskell_cc_libraries_aspect")
 
 # For re-exports:
 load(
     ":toolchain.bzl",
-    _haskell_register_toolchains = "haskell_register_toolchains",
+    _haskell_register_toolchains = "rules_haskell_toolchains",
     _haskell_toolchain = "haskell_toolchain",
 )
 load(
@@ -30,40 +31,31 @@ load(
     _ghc_plugin = "ghc_plugin",
 )
 
+# NOTE: Documentation needs to be added to the wrapper macros below.
+#   Currently it is not possible to automatically inherit rule documentation in
+#   wrapping macros. See https://github.com/bazelbuild/stardoc/issues/27
 _haskell_common_attrs = {
-    "src_strip_prefix": attr.string(
-        doc = "DEPRECATED. Attribute has no effect.",
-    ),
+    "src_strip_prefix": attr.string(),
     "srcs": attr.label_list(
         allow_files = [".hs", ".hsc", ".lhs", ".hs-boot", ".lhs-boot", ".h"],
-        doc = "Haskell source files.",
     ),
     "extra_srcs": attr.label_list(
         allow_files = True,
-        doc = "Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).",
     ),
     "deps": attr.label_list(
-        doc = "List of other Haskell libraries to be linked to this target.",
+        aspects = [haskell_cc_libraries_aspect],
     ),
     "data": attr.label_list(
-        doc = "See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).",
         allow_files = True,
     ),
-    "compiler_flags": attr.string_list(
-        doc = "Flags to pass to Haskell compiler. Subject to Make variable substitution.",
-    ),
-    "repl_ghci_args": attr.string_list(
-        doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
-    ),
-    "runcompile_flags": attr.string_list(
-        doc = "Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
-    ),
+    "compiler_flags": attr.string_list(),
+    "repl_ghci_args": attr.string_list(),
+    "runcompile_flags": attr.string_list(),
     "plugins": attr.label_list(
-        doc = "Compiler plugins to use during compilation.",
+        aspects = [haskell_cc_libraries_aspect],
     ),
     "tools": attr.label_list(
         cfg = "host",
-        doc = "Extra tools needed at compile-time, like preprocessors.",
     ),
     "_ghci_script": attr.label(
         allow_single_file = True,
@@ -95,7 +87,6 @@ _haskell_common_attrs = {
         default = None,
         executable = True,
         cfg = "host",
-        doc = "Experimental. Worker binary employed by Bazel's persistent worker mode. See docs/haskell-use-cases.rst",
     ),
 }
 
@@ -114,50 +105,41 @@ def _mk_binary_rule(**kwargs):
 
     is_test = kwargs.get("test", False)
 
+    # NOTE: Documentation needs to be added to the wrapper macros below.
+    #   Currently it is not possible to automatically inherit rule documentation
+    #   in wrapping macros. See https://github.com/bazelbuild/stardoc/issues/27
     attrs = dict(
         _haskell_common_attrs,
         linkstatic = attr.bool(
             default = True,
-            doc = "Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.",
         ),
         main_function = attr.string(
             default = "Main.main",
-            doc = """A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.""",
         ),
-        version = attr.string(
-            doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
-        ),
+        version = attr.string(),
     )
 
     # Tests have an extra fields regarding code coverage.
+    #
+    # NOTE: Documentation needs to be added to the wrapper macros below.
+    #   Currently it is not possible to automatically inherit rule documentation
+    #   in wrapping macros. See https://github.com/bazelbuild/stardoc/issues/27
     if is_test:
         attrs.update({
             "expected_covered_expressions_percentage": attr.int(
                 default = -1,
-                doc = "The expected percentage of expressions covered by testing.",
             ),
             "expected_uncovered_expression_count": attr.int(
                 default = -1,
-                doc = "The expected number of expressions which are not covered by testing.",
             ),
             "strict_coverage_analysis": attr.bool(
                 default = False,
-                doc = "Requires that the coverage metric is matched exactly, even doing better than expected is not allowed.",
             ),
             "coverage_report_format": attr.string(
                 default = "text",
-                doc = """The format to output the coverage report in. Supported values: "text", "html". Default: "text".
-                Report can be seen in the testlog XML file, or by setting --test_output=all when running bazel coverage.
-                """,
             ),
             "experimental_coverage_source_patterns": attr.string_list(
                 default = ["//..."],
-                doc = """The path patterns specifying which targets to analyze for test coverage metrics.
-
-                Wild-card targets such as //... or //:all are allowed. The paths must be relative to the workspace, which means they must start with "//".
-
-                Note, this attribute may leave experimental status depending on the outcome of https://github.com/bazelbuild/bazel/issues/7763.
-                """,
             ),
             "_coverage_wrapper_template": attr.label(
                 allow_single_file = True,
@@ -176,11 +158,11 @@ def _mk_binary_rule(**kwargs):
         attrs = attrs,
         outputs = {
             "runghc": "%{name}@runghc",
-            "repl": "%{name}@repl",
-            "repl_deprecated": "%{name}-repl",
         },
         toolchains = [
+            "@bazel_tools//tools/cpp:toolchain_type",
             "@rules_haskell//haskell:toolchain",
+            "@rules_sh//sh/posix:toolchain_type",
         ],
         fragments = ["cpp"],
         **kwargs
@@ -192,39 +174,30 @@ _haskell_binary = _mk_binary_rule()
 
 _haskell_library = rule(
     _haskell_library_impl,
+    # NOTE: Documentation needs to be added to the wrapper macros below.
+    #   Currently it is not possible to automatically inherit rule documentation
+    #   in wrapping macros. See https://github.com/bazelbuild/stardoc/issues/27
     attrs = dict(
         _haskell_common_attrs,
-        hidden_modules = attr.string_list(
-            doc = "Modules that should be unavailable for import by dependencies.",
-        ),
-        reexported_modules = attr.label_keyed_string_dict(
-            doc = "A dictionary mapping dependencies to module reexports that should be available for import by dependencies.",
-        ),
+        hidden_modules = attr.string_list(),
+        reexported_modules = attr.label_keyed_string_dict(),
         exports = attr.label_list(
             default = [],
-            doc = "A list of other haskell libraries that will be transparently added as a dependency to every downstream rule",
+            aspects = [haskell_cc_libraries_aspect],
         ),
         linkstatic = attr.bool(
             default = False,
-            doc = "Create a static library, not both a static and a shared library.",
         ),
-        package_name = attr.string(
-            doc = """Library name used in version macro generation. Only used
-            if the version attribute is defined, see version attribute
-            documentation. Optional, defaults to target name.""",
-        ),
-        version = attr.string(
-            doc = """Library version. Not normally necessary unless to build a library
-            originally defined as a Cabal package. If this is specified, CPP version macro will be generated.""",
-        ),
+        package_name = attr.string(),
+        version = attr.string(),
     ),
     outputs = {
         "runghc": "%{name}@runghc",
-        "repl": "%{name}@repl",
-        "repl_deprecated": "%{name}-repl",
     },
     toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
         "@rules_haskell//haskell:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
     ],
     fragments = ["cpp"],
 )
@@ -245,17 +218,24 @@ def _haskell_worker_wrapper(rule_type, **kwargs):
     elif rule_type == "library":
         _haskell_library(**defaults)
 
-def haskell_binary(**kwargs):
+def haskell_binary(
+        name,
+        src_strip_prefix = "",
+        srcs = [],
+        extra_srcs = [],
+        deps = [],
+        data = [],
+        compiler_flags = [],
+        repl_ghci_args = [],
+        runcompile_flags = [],
+        plugins = [],
+        tools = [],
+        worker = None,
+        linkstatic = True,
+        main_function = "Main.main",
+        version = None,
+        **kwargs):
     """Build an executable from Haskell source.
-
-    Example:
-    ```bzl
-    haskell_binary(
-    name = "hello",
-    srcs = ["Main.hs", "Other.hs"],
-    deps = ["//lib:some_lib"]
-    )
-    ```
 
     Every `haskell_binary` target also defines an optional REPL target that is
     not built by default, but can be built on request. The name of the REPL
@@ -268,10 +248,96 @@ def haskell_binary(**kwargs):
     $ bazel run //:hello@repl
     ```
 
-    """
-    _haskell_worker_wrapper("binary", **kwargs)
+    ### Examples
 
-def haskell_test(**kwargs):
+      ```bzl
+      haskell_binary(
+          name = "hello",
+          srcs = ["Main.hs", "Other.hs"],
+          deps = ["//lib:some_lib"]
+      )
+      ```
+
+    Args:
+      name: A unique name for this rule.
+      src_strip_prefix: DEPRECATED. Attribute has no effect.
+      srcs: Haskell source files.
+      extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
+      deps: List of other Haskell libraries to be linked to this target.
+      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
+      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation.
+      tools: Extra tools needed at compile-time, like preprocessors.
+      worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
+      linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
+      main_function: A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.
+      version: Executable version. If this is specified, CPP version macros will be generated for this build.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
+    """
+    _haskell_worker_wrapper(
+        "binary",
+        name = name,
+        src_strip_prefix = src_strip_prefix,
+        srcs = srcs,
+        extra_srcs = extra_srcs,
+        deps = deps,
+        data = data,
+        compiler_flags = compiler_flags,
+        repl_ghci_args = repl_ghci_args,
+        runcompile_flags = runcompile_flags,
+        plugins = plugins,
+        tools = tools,
+        worker = worker,
+        linkstatic = linkstatic,
+        main_function = main_function,
+        version = version,
+        **kwargs
+    )
+
+    repl_kwargs = {
+        attr: kwargs[attr]
+        for attr in ["testonly", "tags"]
+        if attr in kwargs
+    }
+    native.alias(
+        # XXX Temporary backwards compatibility hack. Remove eventually.
+        # See https://github.com/tweag/rules_haskell/pull/460.
+        name = "%s-repl" % name,
+        actual = "%s@repl" % name,
+        **repl_kwargs
+    )
+    haskell_repl(
+        name = "%s@repl" % name,
+        deps = [name],
+        experimental_from_source = [":%s" % name],
+        repl_ghci_args = repl_ghci_args,
+        **repl_kwargs
+    )
+
+def haskell_test(
+        name,
+        src_strip_prefix = "",
+        srcs = [],
+        extra_srcs = [],
+        deps = [],
+        data = [],
+        compiler_flags = [],
+        repl_ghci_args = [],
+        runcompile_flags = [],
+        plugins = [],
+        tools = [],
+        worker = None,
+        linkstatic = True,
+        main_function = "Main.main",
+        version = None,
+        expected_covered_expressions_percentage = -1,
+        expected_uncovered_expression_count = -1,
+        strict_coverage_analysis = False,
+        coverage_report_format = "text",
+        experimental_coverage_source_patterns = ["//..."],
+        **kwargs):
     """Build a test suite.
 
     Additionally, it accepts [all common bazel test rule
@@ -279,32 +345,193 @@ def haskell_test(**kwargs):
     timeout and resource allocation for the test.
 
     [bazel-test-attrs]: https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes-tests
+
+    Args:
+      name: A unique name for this rule.
+      src_strip_prefix: DEPRECATED. Attribute has no effect.
+      srcs: Haskell source files.
+      extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
+      deps: List of other Haskell libraries to be linked to this target.
+      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
+      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation.
+      tools: Extra tools needed at compile-time, like preprocessors.
+      worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
+      linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
+      main_function: A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.
+      version: Executable version. If this is specified, CPP version macros will be generated for this build.
+      expected_covered_expressions_percentage: The expected percentage of expressions covered by testing.
+      expected_uncovered_expression_count: The expected number of expressions which are not covered by testing.
+      strict_coverage_analysis: Requires that the coverage metric is matched exactly, even doing better than expected is not allowed.
+      coverage_report_format: The format to output the coverage report in.
+
+        Supported values: "text", "html". Default: "text".
+
+        Report can be seen in the testlog XML file, or by setting --test_output=all when running bazel coverage.
+      experimental_coverage_source_patterns: The path patterns specifying which targets to analyze for test coverage metrics.
+
+          Wild-card targets such as //... or //:all are allowed. The paths must be relative to the workspace, which means they must start with "//".
+
+          Note, this attribute may leave experimental status depending on the outcome of https://github.com/bazelbuild/bazel/issues/7763.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
-    _haskell_worker_wrapper("test", **kwargs)
-
-def haskell_library(**kwargs):
-    """Build a library from Haskell source.
-
-    Example:
-    ```bzl
-    haskell_library(
-    name = "hello-lib",
-    srcs = glob(["src/**/*.hs"]),
-    src_strip_prefix = "src",
-    deps = [
-    "//hello-sublib:lib",
-    ],
-    reexported_modules = {
-    "//hello-sublib:lib": "Lib1 as HelloLib1, Lib2",
-    },
+    _haskell_worker_wrapper(
+        "test",
+        name = name,
+        src_strip_prefix = src_strip_prefix,
+        srcs = srcs,
+        extra_srcs = extra_srcs,
+        deps = deps,
+        data = data,
+        compiler_flags = compiler_flags,
+        repl_ghci_args = repl_ghci_args,
+        runcompile_flags = runcompile_flags,
+        plugins = plugins,
+        tools = tools,
+        worker = worker,
+        linkstatic = linkstatic,
+        main_function = main_function,
+        version = version,
+        expected_covered_expressions_percentage = expected_covered_expressions_percentage,
+        expected_uncovered_expression_count = expected_uncovered_expression_count,
+        strict_coverage_analysis = strict_coverage_analysis,
+        coverage_report_format = coverage_report_format,
+        experimental_coverage_source_patterns = experimental_coverage_source_patterns,
+        **kwargs
     )
-    ```
+
+    repl_kwargs = {
+        attr: kwargs[attr]
+        for attr in ["tags"]
+        if attr in kwargs
+    }
+    native.alias(
+        # XXX Temporary backwards compatibility hack. Remove eventually.
+        # See https://github.com/tweag/rules_haskell/pull/460.
+        name = "%s-repl" % name,
+        actual = "%s@repl" % name,
+        testonly = kwargs.get("testonly", True),
+        **repl_kwargs
+    )
+    haskell_repl(
+        name = "%s@repl" % name,
+        deps = [name],
+        experimental_from_source = [":%s" % name],
+        repl_ghci_args = repl_ghci_args,
+        testonly = kwargs.get("testonly", True),
+        **repl_kwargs
+    )
+
+def haskell_library(
+        name,
+        src_strip_prefix = "",
+        srcs = [],
+        extra_srcs = [],
+        deps = [],
+        data = [],
+        compiler_flags = [],
+        repl_ghci_args = [],
+        runcompile_flags = [],
+        plugins = [],
+        tools = [],
+        worker = None,
+        hidden_modules = [],
+        reexported_modules = {},
+        exports = [],
+        linkstatic = False,
+        package_name = "",
+        version = "",
+        **kwargs):
+    """Build a library from Haskell source.
 
     Every `haskell_library` target also defines an optional REPL target that is
     not built by default, but can be built on request. It works the same way as
     for `haskell_binary`.
+
+    ### Examples
+
+      ```bzl
+      haskell_library(
+          name = "hello-lib",
+          srcs = glob(["src/**/*.hs"]),
+          src_strip_prefix = "src",
+          deps = [
+              "//hello-sublib:lib",
+          ],
+          reexported_modules = {
+              "//hello-sublib:lib": "Lib1 as HelloLib1, Lib2",
+          },
+      )
+      ```
+
+    Args:
+      name: A unique name for this rule.
+      src_strip_prefix: DEPRECATED. Attribute has no effect.
+      srcs: Haskell source files.
+      extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
+      deps: List of other Haskell libraries to be linked to this target.
+      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
+      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation.
+      tools: Extra tools needed at compile-time, like preprocessors.
+      worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
+      hidden_modules: Modules that should be unavailable for import by dependencies.
+      reexported_modules: A dictionary mapping dependencies to module reexports that should be available for import by dependencies.
+      exports: A list of other haskell libraries that will be transparently added as a dependency to every downstream rule
+      linkstatic: Create a static library, not both a static and a shared library.
+      package_name: Library name used in version macro generation. Only used
+        if the version attribute is defined, see version attribute
+        documentation. Optional, defaults to target name.
+      version: Library version. Not normally necessary unless to build a library
+        originally defined as a Cabal package. If this is specified, CPP version macro will be generated.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
-    _haskell_worker_wrapper("library", **kwargs)
+    _haskell_worker_wrapper(
+        "library",
+        name = name,
+        src_strip_prefix = src_strip_prefix,
+        srcs = srcs,
+        extra_srcs = extra_srcs,
+        deps = deps,
+        data = data,
+        compiler_flags = compiler_flags,
+        repl_ghci_args = repl_ghci_args,
+        runcompile_flags = runcompile_flags,
+        plugins = plugins,
+        tools = tools,
+        worker = worker,
+        hidden_modules = hidden_modules,
+        reexported_modules = reexported_modules,
+        exports = exports,
+        linkstatic = linkstatic,
+        package_name = package_name,
+        version = version,
+        **kwargs
+    )
+
+    repl_kwargs = {
+        attr: kwargs[attr]
+        for attr in ["testonly", "tags"]
+        if attr in kwargs
+    }
+    native.alias(
+        # XXX Temporary backwards compatibility hack. Remove eventually.
+        # See https://github.com/tweag/rules_haskell/pull/460.
+        name = "%s-repl" % name,
+        actual = "%s@repl" % name,
+        **repl_kwargs
+    )
+    haskell_repl(
+        name = "%s@repl" % name,
+        deps = [name],
+        experimental_from_source = [":%s" % name],
+        repl_ghci_args = repl_ghci_args,
+        **repl_kwargs
+    )
 
 haskell_import = rule(
     _haskell_import_impl,
@@ -313,7 +540,7 @@ haskell_import = rule(
         "version": attr.string(),
         "deps": attr.label_list(),
         "static_libraries": attr.label_list(allow_files = [".a"]),
-        "shared_libraries": attr.label_list(allow_files = [".dll", ".dylib", ".so"]),
+        "shared_libraries": attr.label_list(allow_files = True),
         "static_profiling_libraries": attr.label_list(allow_files = ["_p.a"]),
         "linkopts": attr.string_list(),
         "hdrs": attr.label_list(allow_files = True),
@@ -324,9 +551,6 @@ haskell_import = rule(
             executable = True,
             cfg = "host",
             default = Label("@rules_haskell//haskell:version_macros"),
-        ),
-        "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
 )
@@ -341,11 +565,14 @@ haskell_toolchain_library = rule(
             default = Label("@rules_haskell//haskell:toolchain-libraries"),
         ),
     ),
-    fragments = ["cpp"],
-)
-"""Import packages that are prebuilt outside of Bazel.
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+    ],
+    doc = """\
+Import packages that are prebuilt outside of Bazel.
 
-Example:
+### Examples
+
   ```bzl
   haskell_toolchain_library(
       name = "base_pkg",
@@ -364,7 +591,8 @@ Example:
 
 Use this rule to make dependencies that are prebuilt (supplied as part
 of the compiler toolchain) available as targets.
-"""
+""",
+)
 
 haskell_doc = _haskell_doc
 

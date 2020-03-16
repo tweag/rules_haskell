@@ -103,41 +103,25 @@ def declare_compiled(hs, src, ext, directory = None, rel_path = None):
 
     return hs.actions.declare_file(fp_with_dir)
 
-def make_path(libs, prefix = None, sep = None):
-    """Return a string value for using as LD_LIBRARY_PATH or similar.
+def join_path_list(hs, paths):
+    """Join the given paths suitable for env vars like PATH.
 
-    Args:
-      libs: List of library files that should be available
-      prefix: String, an optional prefix to add to every path.
-      sep: String, the path separator, defaults to ":".
-
-    Returns:
-      String: paths to the given library directories separated by ":".
+    Joins the list of given paths into a single string separated by ':' on Unix
+    or ';' on Windows.
     """
-    r = set.empty()
+    sep = ";" if hs.toolchain.is_windows else ":"
+    return sep.join(paths)
 
-    sep = sep if sep else ":"
-
-    for lib in libs.to_list():
-        lib_dir = paths.dirname(lib.path)
-        if prefix:
-            lib_dir = paths.join(prefix, lib_dir)
-
-        set.mutable_insert(r, lib_dir)
-
-    return sep.join(set.to_list(r))
-
-def mangle_static_library(hs, dynamic_lib, static_lib, outdir):
-    """Mangle a static library to match a dynamic library name.
+def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
+    """Mangle a static C library to match a dynamic C library name.
 
     GHC expects static and dynamic C libraries to have matching library names.
     Bazel produces static and dynamic C libraries with different names. The
     dynamic library names are mangled, the static library names are not.
 
-    If the library is not a Haskell library (doesn't start with HS) and if the
-    dynamic library exists and if the static library exists and has a different
-    name. Then this function will create a symbolic link for the static library
-    to match the dynamic library's name.
+    If the dynamic library exists and if the static library exists and has a
+    different name. Then this function will create a symbolic link for the
+    static library to match the dynamic library's name.
 
     Args:
       hs: Haskell context.
@@ -146,22 +130,18 @@ def mangle_static_library(hs, dynamic_lib, static_lib, outdir):
       outdir: Output director for the symbolic link, if necessary.
 
     Returns:
-      The new static library symlink, if created, otherwise static_lib.
+      The new static library symlink, if created, otherwise None.
     """
-    if dynamic_lib == None:
-        return static_lib
-    if static_lib == None:
-        return static_lib
+    if dynamic_lib == None or static_lib == None:
+        return None
     libname = get_lib_name(dynamic_lib)
-    if libname.startswith("HS"):
-        return static_lib
     if get_lib_name(static_lib) == libname:
-        return static_lib
+        return None
     else:
         link = hs.actions.declare_file(
             paths.join(outdir, "lib" + libname + "." + static_lib.extension),
         )
-        ln(hs, static_lib, link)
+        ln(hs, posix, static_lib, link)
         return link
 
 def get_dirname(file):
@@ -234,44 +214,6 @@ def get_static_hs_lib_name(with_profiling, lib):
         name = "ffi"
     return name
 
-def link_libraries(libs, args, prefix_optl = False):
-    """Add linker flags to link against the given libraries.
-
-    Args:
-      libs: Sequence of File, libraries to link.
-      args: Args or List, append arguments to this object.
-      prefix_optl: Bool, whether to prefix linker flags by -optl
-
-    """
-
-    # This test is a hack. When a CC library has a Haskell library
-    # as a dependency, we need to be careful to filter it out,
-    # otherwise it will end up polluting the linker flags. GHC
-    # already uses hs-libraries to link all Haskell libraries.
-    #
-    # TODO Get rid of this hack. See
-    # https://github.com/tweag/rules_haskell/issues/873.
-    cc_libs = depset(direct = [
-        lib
-        for lib in libs.to_list()
-        if not get_lib_name(lib).startswith("HS")
-    ])
-
-    if prefix_optl:
-        libfmt = "-optl-l%s"
-        dirfmt = "-optl-L%s"
-    else:
-        libfmt = "-l%s"
-        dirfmt = "-L%s"
-
-    if hasattr(args, "add_all"):
-        args.add_all(cc_libs, map_each = get_lib_name, format_each = libfmt)
-        args.add_all(cc_libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
-    else:
-        cc_libs_list = cc_libs.to_list()
-        args.extend([libfmt % get_lib_name(lib) for lib in cc_libs_list])
-        args.extend([dirfmt % lib.dirname for lib in cc_libs_list])
-
 # tests in /tests/unit_tests/BUILD
 def parent_dir_path(path):
     """Returns the path of the parent directory.
@@ -332,6 +274,20 @@ def _get_target_parent_dir(target):
     else:
         __check_dots(target, parent_dir)
         return (False, parent_dir)
+
+def relative_rpath_prefix(is_darwin):
+    """Returns the prefix for relative RUNPATH entries.
+
+    Args:
+      is_darwin: Whether the target platform is Darwin.
+
+    Returns:
+      string, `@loader_path` on Darwin, `$ORIGIN` otherwise.
+    """
+    if is_darwin:
+        return "@loader_path"
+    else:
+        return "$ORIGIN"
 
 # tests in /tests/unit_tests/BUILD
 def create_rpath_entry(
@@ -475,7 +431,7 @@ def rel_to_pkgroot(target, pkgdb):
         truly_relativize(target, paths.dirname(pkgdb)),
     )
 
-def ln(hs, target, link, extra_inputs = depset()):
+def ln(hs, posix, target, link, extra_inputs = depset()):
     """Create a symlink to target.
 
     Args:
@@ -490,11 +446,11 @@ def ln(hs, target, link, extra_inputs = depset()):
         inputs = depset([target], transitive = [extra_inputs]),
         outputs = [link],
         mnemonic = "Symlink",
-        command = "ln -s {target} {link}".format(
+        command = '"{ln}" -s {target} {link}'.format(
+            ln = posix.commands["ln"],
             target = relative_target,
             link = link.path,
         ),
-        use_default_shell_env = True,
         # Don't sandbox symlinking to reduce overhead.
         # See https://github.com/tweag/rules_haskell/issues/958.
         execution_requirements = {

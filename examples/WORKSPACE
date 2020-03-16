@@ -17,39 +17,49 @@ haskell_register_ghc_nixpkgs(
     version = "8.6.5",
 )
 
-load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_toolchains")
+load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
 rules_haskell_toolchains(version = "8.6.5")
 
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_cc_configure")
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_cc_configure",
+    "nixpkgs_python_configure",
+)
 
 nixpkgs_cc_configure(
     nix_file = "@rules_haskell//nixpkgs:cc-toolchain.nix",
+    nix_file_deps = ["@rules_haskell//nixpkgs:default.nix"],
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+nixpkgs_python_configure(
     repository = "@rules_haskell//nixpkgs:default.nix",
 )
 
 # For the cat_hs example.
 
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
-
-nixpkgs_package(
-    name = "nixpkgs_zlib",
-    attribute_path = "zlib",
-    repository = "@rules_haskell//nixpkgs:default.nix",
-)
-
-nixpkgs_package(
-    name = "zlib.dev",
+http_archive(
+    name = "zlib.hs",
     build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
-    name = "zlib",
-    srcs = ["@nixpkgs_zlib//:lib"],
-    hdrs = glob(["include/*.h"]),
-    strip_include_prefix = "include",
+    name = "zlib.hs",
+    # Import `:z` as `srcs` to enforce the library name `libz.so`. Otherwise,
+    # Bazel would mangle the library name and e.g. Cabal wouldn't recognize it.
+    srcs = [":z"],
+    hdrs = glob(["*.h"]),
+    includes = ["."],
     visibility = ["//visibility:public"],
 )
+cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
 """,
-    repository = "@rules_haskell//nixpkgs:default.nix",
+    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+    strip_prefix = "zlib-1.2.11",
+    urls = [
+        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
+        "http://zlib.net/zlib-1.2.11.tar.gz",
+    ],
 )
 
 # Demonstrates a vendored Stackage package to bump a version bound.
@@ -77,7 +87,7 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
-    extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
+    extra_deps = {"zlib": ["@zlib.hs"]},
     flags = {
         # Sets the default explicitly to demonstrate the flags attribute.
         "zlib": [
@@ -97,15 +107,4 @@ stack_snapshot(
     ],
     snapshot = "lts-14.0",
     vendored_packages = {"split": "@split//:split"},
-)
-
-# For the rts example.
-
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
-
-nixpkgs_package(
-    name = "ghc",
-    attribute_path = "haskellPackages.ghc",
-    build_file = "@rules_haskell//haskell:ghc.BUILD",
-    repository = "@rules_haskell//nixpkgs:default.nix",
 )

@@ -3,6 +3,7 @@
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_package",
+    "nixpkgs_sh_posix_configure",
 )
 
 def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
@@ -129,11 +130,11 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     # platform. But they are important to state because Bazel
     # toolchain resolution prefers other toolchains with more specific
     # constraints otherwise.
-    target_constraints = ["@bazel_tools//platforms:x86_64"]
+    target_constraints = ["@platforms//cpu:x86_64"]
     if repository_ctx.os.name == "linux":
-        target_constraints.append("@bazel_tools//platforms:linux")
+        target_constraints.append("@platforms//os:linux")
     elif repository_ctx.os.name == "mac os x":
-        target_constraints.append("@bazel_tools//platforms:osx")
+        target_constraints.append("@platforms//os:osx")
     exec_constraints = list(target_constraints)
     exec_constraints.append("@rules_haskell//haskell/platforms:nixpkgs")
 
@@ -167,6 +168,7 @@ def haskell_register_ghc_nixpkgs(
         repl_ghci_args = None,
         locale_archive = None,
         attribute_path = "haskellPackages.ghc",
+        sh_posix_attributes = None,
         nix_file = None,
         nix_file_deps = [],
         nixopts = None,
@@ -184,12 +186,7 @@ def haskell_register_ghc_nixpkgs(
 
     [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
 
-    Args:
-      compiler_flags_select: temporary workaround to pass conditional arguments.
-        See https://github.com/bazelbuild/bazel/issues/9199 for details.
-
-
-    Example:
+    ### Examples
 
       ```
       haskell_register_ghc_nixpkgs(
@@ -206,8 +203,14 @@ def haskell_register_ghc_nixpkgs(
       --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
       ```
 
+    Args:
+      compiler_flags_select: temporary workaround to pass conditional arguments.
+        See https://github.com/bazelbuild/bazel/issues/9199 for details.
+      sh_posix_attributes: List of attribute paths to extract standard Unix shell tools from.
+        Passed to nixpkgs_sh_posix_configure.
     """
     nixpkgs_ghc_repo_name = "rules_haskell_ghc_nixpkgs"
+    nixpkgs_sh_posix_repo_name = "rules_haskell_sh_posix_nixpkgs"
     haskell_toolchain_repo_name = "rules_haskell_ghc_nixpkgs_haskell_toolchain"
     toolchain_repo_name = "rules_haskell_ghc_nixpkgs_toolchain"
 
@@ -241,6 +244,20 @@ def haskell_register_ghc_nixpkgs(
     # toolchain definition.
     _ghc_nixpkgs_toolchain(name = toolchain_repo_name)
     native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
+
+    # Unix tools toolchain required for Cabal packages
+    sh_posix_nixpkgs_kwargs = dict(
+        nix_file_deps = nix_file_deps,
+        nixopts = nixopts,
+        repositories = repositories,
+        repository = repository,
+    )
+    if sh_posix_attributes != None:
+        sh_posix_nixpkgs_kwargs["packages"] = sh_posix_attributes
+    nixpkgs_sh_posix_configure(
+        name = nixpkgs_sh_posix_repo_name,
+        **sh_posix_nixpkgs_kwargs
+    )
 
 def _find_children(repository_ctx, target_dir):
     find_args = [

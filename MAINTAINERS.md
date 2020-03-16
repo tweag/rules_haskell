@@ -12,7 +12,8 @@
   feature).
   - Check the list below for PRs to remove.
 - [ ] Write `CHANGELOG` by going through all pull requests since last
-  release (https://github.com/tweag/rules_haskell/pulls?q=is%3Apr).
+  release (https://github.com/tweag/rules_haskell/is%3Apr+merged%3A>%3DYYYY-MM-DD)
+  replacing YYYY-MM-DD by the date of the last release.
   - Add Highlights section for major improvements/changes
   - `Added`, `Removed`, `Changed`, `Fixed` as necessary
   - If relevant, add corresponding PRs to the changes
@@ -32,10 +33,11 @@
     - copy the changelog section into the description
     - release
 - [ ] Push `rules_haskell` version in start script to new release tag,
-  test it in a temporary directory, create PR against master, publish
-  start script.
-- [ ] Check whether https://haskell.build/start has the newest start
-      script (netlify has problems sometimes).
+  test it in a temporary directory, create PR against master
+  - [ ] Publish start script and website by merging the commit into
+        the `release` branch.
+  - [ ] Check whether https://haskell.build/start has the newest start
+        script (netlify has problems sometimes).
 - [ ] Announce the new version (on Twitter)
 
 ### Remove these PRs from minor releases
@@ -50,13 +52,13 @@
 We strive to always test against the latest non-LTS release
 nonetheless, so bumping bazel regularly is required.
 
-- [ ] Bump bazel download link for bazel in `azure-pipelines.yml`
+- [ ] Use `.ci/update-bazel-version` to update `.ci/bazelversion` and
+      `.ci/bazel-*.sha256`.
 - [ ] Update all bazel rules dependencies in `WORKSPACE` (e.g.
-      `io_bazel_skydoc`)
+      `io_bazel_stardoc`)
 - [ ] Update bazel in nixpkgs and bump `nixpkgs/default.nix`
 - [ ] Bump MAX_BAZEL_* in `start`
 - If we are updating to a new LTS:
   - Bump `MIN_BAZEL_*` in `start`
   - TODO
 - [ ] Add update notice to `CHANGELOG`
-- [ ] Bump bazel version in .netlify/install.sh

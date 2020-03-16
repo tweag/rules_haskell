@@ -15,6 +15,7 @@ load(
     "merge_parameter_files",
 )
 load(":private/actions/package.bzl", "package")
+load(":cc.bzl", "ghc_cc_program_args")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
@@ -40,25 +41,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
 
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
     # C libraries with Haskell targets.
-    args.add_all([
-        # GHC uses C compiler for assemly, linking and preprocessing as well.
-        "-pgma",
-        cc.tools.cc,
-        "-pgmc",
-        cc.tools.cc,
-        "-pgml",
-        cc.tools.cc,
-        "-pgmP",
-        cc.tools.cc,
-        # Setting -pgm* flags explicitly has the unfortunate side effect
-        # of resetting any program flags in the GHC settings file. So we
-        # restore them here. See
-        # https://ghc.haskell.org/trac/ghc/ticket/7929.
-        "-optc-fno-stack-protector",
-        "-optP-E",
-        "-optP-undef",
-        "-optP-traditional",
-    ])
+    args.add_all(ghc_cc_program_args(cc.tools.cc))
 
     compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
@@ -187,6 +170,8 @@ def _haskell_toolchain_impl(ctx):
             is_static = ctx.attr.is_static,
             version = ctx.attr.version,
             global_pkg_db = pkgdb_file,
+            protoc = ctx.executable._protoc,
+            rule_info_proto = ctx.attr._rule_info_proto,
         ),
     ]
 
@@ -240,6 +225,15 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
             default = Label("@rules_haskell//haskell:cc_wrapper"),
             executable = True,
         ),
+        "_protoc": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@com_google_protobuf//:protoc"),
+        ),
+        "_rule_info_proto": attr.label(
+            allow_single_file = True,
+            default = Label("@rules_haskell//rule_info:rule_info_proto"),
+        ),
     },
 )
 
@@ -261,7 +255,7 @@ def haskell_toolchain(
     the toolchain using `register_toolchains` in your `WORKSPACE` file (see
     example below).
 
-    Example:
+    ### Examples
 
       In a `BUILD` file:
 
@@ -315,10 +309,6 @@ def haskell_toolchain(
         **kwargs
     )
 
-def haskell_register_toolchains(version):
-    """Download the binary distribution of GHC for your current platform
-    and register it as a toolchain. This currently has the same effect
-    as just `haskell_register_ghc_bindists(version)`.
-    """
-    print("DEPRECATED. Use rules_haskell_toolchains() in haskell/repositories.bzl instead.")
-    haskell_register_ghc_bindists(version)
+def rules_haskell_toolchains(**kwargs):
+    """Register GHC binary distributions for all platforms as toolchains."""
+    haskell_register_ghc_bindists(**kwargs)

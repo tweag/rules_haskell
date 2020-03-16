@@ -9,7 +9,6 @@ haskell_test(
     name = "stack-snapshot-deps",
     srcs = ["Main.hs"],
     tags = [
-        "requires_hackage",
         "requires_zlib",
     ],
     visibility = ["//visibility:public"],
@@ -18,5 +17,8 @@ haskell_test(
         "@stackage//:base",
         # Core package that is no dependency of another item in the snapshot.
         "@stackage//:ghc-heap",
+        # Packages using ./configure scripts are problematic on Windows.
+        "@stackage//:network",
+        "@stackage//:language-c",
     ],
 )

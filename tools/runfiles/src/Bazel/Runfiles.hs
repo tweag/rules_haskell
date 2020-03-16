@@ -22,7 +22,7 @@ import GHC.Stack
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.Environment (getExecutablePath, lookupEnv)
 import qualified System.FilePath
-import System.FilePath (FilePath, (</>), (<.>), addTrailingPathSeparator)
+import System.FilePath (FilePath, (</>), (<.>), addTrailingPathSeparator, takeFileName)
 import System.Info (os)
 
 -- | Reference to Bazel runfiles, runfiles root or manifest file.
@@ -46,10 +46,9 @@ rlocation (RunfilesManifest _ m) g = fromMaybe g' $ asum [lookup g' m, lookupDir
 -- | Lookup a directory in the manifest file.
 --
 -- Bazel's manifest file only lists files. However, the @RunfilesRoot@ method
--- supports looking up directories, and this is an important feature for Cabal
--- path modules in Hazel. This function allows to lookup a directory in a
--- manifest file, by looking for the first entry with a matching prefix and
--- then stripping the superfluous suffix.
+-- supports looking up directories. This function allows to lookup a directory
+-- in a manifest file, by looking for the first entry with a matching prefix
+-- and then stripping the superfluous suffix.
 lookupDir :: FilePath -> [(FilePath, FilePath)] -> Maybe FilePath
 lookupDir p = fmap stripSuffix . find match
   where
@@ -165,8 +164,8 @@ containsOneDataFile = loop
     loop fp = do
         isDir <- doesDirectoryExist fp
         if isDir
-            then anyM loop =<< listDirectory fp
-            else pure $! fp /= "MANIFEST"
+            then anyM loop =<< fmap (map (fp </>)) (listDirectory fp)
+            else pure $! takeFileName fp /= "MANIFEST"
 
 -- | Check if the given predicate holds on any of the given values.
 --

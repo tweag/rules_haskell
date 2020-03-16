@@ -5,7 +5,7 @@
 # https://bazel.build/roadmaps/platforms.html#replace---cpu-and---host_cpu-flags.
 build:windows --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain -s --verbose_failures --sandbox_debug
 
-build:ci --disk_cache=/tmp/bazel-disk-cache
+build:ci_linux --remote_http_cache=https://storage.googleapis.com/tweag-bazel-cache-buildkite --remote_upload_local_results=true --google_default_credentials
 build:ci --loading_phase_threads=1
 build:ci --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
@@ -15,17 +15,11 @@ common:ci --color=no
 test:ci --test_output=errors
 
 # Note [backward compatible options]
-
-# XXX: --incompatible_use_python_toolchains needs a specific setup for
-# each environment if python is provided by the system
-# That's complicated to setup. Bazel is supposed to provide automatic
-# detection utilities, see
-# https://github.com/bazelbuild/bazel/issues/7899
-# But it does not work on windows
-# see: https://github.com/bazelbuild/bazel/issues/7844
-# This is only used in rules_haskell tests, so user won't face this
-# issue.
-build  --incompatible_use_python_toolchains=false
+common:ci --incompatible_enable_cc_toolchain_resolution
+common:ci --incompatible_load_cc_rules_from_bzl
+# Blocked by https://github.com/bazelbuild/buildtools/issues/757
+#common:ci --incompatible_load_proto_rules_from_bzl
+common:ci --incompatible_load_python_rules_from_bzl
 
 # test environment does not propagate locales by default
 # some tests reads files written in UTF8, we need to propagate the correct
@@ -33,4 +27,4 @@ build  --incompatible_use_python_toolchains=false
 # We also need to setup an utf8 locale
 test --test_env=LANG=C.UTF-8 --test_env=LOCALE_ARCHIVE
 
-try-import .bazelrc.local
+try-import %workspace%/.bazelrc.local

@@ -17,13 +17,22 @@ haskell_register_ghc_nixpkgs(
     version = "8.6.5",
 )
 
-load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_toolchains")
+load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
 rules_haskell_toolchains(version = "8.6.5")
 
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_cc_configure")
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_cc_configure",
+    "nixpkgs_python_configure",
+)
 
 nixpkgs_cc_configure(
     nix_file = "@rules_haskell//nixpkgs:cc-toolchain.nix",
+    nix_file_deps = ["@rules_haskell//nixpkgs:default.nix"],
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+nixpkgs_python_configure(
     repository = "@rules_haskell//nixpkgs:default.nix",
 )

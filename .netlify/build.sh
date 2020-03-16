@@ -23,8 +23,7 @@ mv WORKSPACE.tmp WORKSPACE
 # generation either.
 sed -i 's/vendored_node = "@nixpkgs_nodejs"/vendored_node = None/' WORKSPACE
 
-# XXX: see .bazelrc note [backward compatible options] for rational behind
-# the --incompatible_use_python_toolchains flag
-bazel build --incompatible_use_python_toolchains=false //docs:api_html
-unzip -d public bazel-bin/docs/api_html-skydoc.zip
+bazel build //docs:api_html
+mkdir -p public
+unzip -d public bazel-bin/docs/api_html-stardoc.zip
 cp start public

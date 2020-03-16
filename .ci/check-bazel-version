@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# Ideally we would place .bazelversion in the top-level so it could be used by
+# tools like bazelisk. However, this breaks the nixpkgs provided Bazel
+# installation, see https://github.com/NixOS/nixpkgs/issues/80950.
+VERSION_EXPECTED="bazel $(cat "$DIR/bazelversion")"
+VERSION_ACTUAL=$(bazel version --gnu_format)
+# nixpkgs Bazel version ends on '- (@non-git)'.
+[[ "$VERSION_ACTUAL" =~ ^"$VERSION_EXPECTED"("- (@non-git)")?$ ]] || {
+  echo "Expected Bazel version $VERSION_EXPECTED but found $VERSION_ACTUAL." >&2
+  exit 1
+}

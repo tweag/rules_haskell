@@ -4,47 +4,31 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(":private/path_utils.bzl", "get_lib_name", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":providers.bzl", "get_extra_libs")
+load(":private/cc_libraries.bzl", "get_library_files")
 
-def _get_extra_libraries(hs, with_shared, cc_info):
+def _get_extra_libraries(hs, cc, with_shared, dynamic = False):
     """Get directories and library names for extra library dependencies.
 
     Args:
-      cc_info: Combined CcInfo provider of the package's dependencies.
+      hs: Haskell context.
+      cc: CcInteropInfo.
+      posix: POSIX toolchain.
+      with_shared: Whether the library is built with both static and shared library outputs.
+      dynamic: Whether to collect dynamic library dependencies.
 
     Returns:
       (dirs, libs):
       dirs: list: Library search directories for extra library dependencies.
       libs: list: Extra library dependencies.
     """
-
-    # NOTE This is duplicated from path_utils.bzl link_libraries. This whole
-    # function can go away once we track libraries outside of package
-    # configuration files.
-    (static_libs, dynamic_libs) = get_extra_libs(
+    (cc_static_libs, cc_dynamic_libs) = get_library_files(
         hs,
-        cc_info,
+        cc.cc_libraries_info,
+        cc.cc_libraries,
         pic = with_shared,
+        dynamic = dynamic,
     )
-
-    # This test is a hack. When a CC library has a Haskell library
-    # as a dependency, we need to be careful to filter it out,
-    # otherwise it will end up polluting the linker flags. GHC
-    # already uses hs-libraries to link all Haskell libraries.
-    #
-    # TODO Get rid of this hack. See
-    # https://github.com/tweag/rules_haskell/issues/873.
-    cc_static_libs = depset(direct = [
-        lib
-        for lib in static_libs.to_list()
-        if not get_lib_name(lib).startswith("HS")
-    ])
-    cc_dynamic_libs = depset(direct = [
-        lib
-        for lib in dynamic_libs.to_list()
-        if not get_lib_name(lib).startswith("HS")
-    ])
-    cc_libs = cc_static_libs.to_list() + cc_dynamic_libs.to_list()
+    cc_libs = cc_static_libs + cc_dynamic_libs
 
     lib_dirs = depset(direct = [
         lib.dirname
@@ -60,8 +44,9 @@ def _get_extra_libraries(hs, with_shared, cc_info):
 
 def package(
         hs,
+        cc,
+        posix,
         dep_info,
-        cc_info,
         with_shared,
         exposed_modules_file,
         other_modules,
@@ -71,8 +56,9 @@ def package(
 
     Args:
       hs: Haskell context.
+      posix: POSIX toolchain.
       dep_info: Combined HaskellInfo of dependencies.
-      cc_info: Combined CcInfo of dependencies.
+      libraries_to_link: list of LibraryToLink.
       with_shared: Whether to link dynamic libraries.
       exposed_modules_file: File holding list of exposed modules.
       other_modules: List of hidden modules.
@@ -92,7 +78,11 @@ def package(
         paths.join(pkg_db_dir, "_iface"),
     )
 
-    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, with_shared, cc_info)
+    (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, cc, with_shared)
+    if with_shared:
+        (extra_dynamic_lib_dirs, _) = _get_extra_libraries(hs, cc, with_shared, dynamic = True)
+    else:
+        extra_dynamic_lib_dirs = extra_lib_dirs
 
     # Create a file from which ghc-pkg will create the actual package
     # from. List of exposed modules generated below.
@@ -106,7 +96,7 @@ def package(
         "hidden-modules": other_modules,
         "import-dirs": [import_dir],
         "library-dirs": ["${pkgroot}"] + extra_lib_dirs,
-        "dynamic-library-dirs": ["${pkgroot}"] + extra_lib_dirs,
+        "dynamic-library-dirs": ["${pkgroot}"] + extra_dynamic_lib_dirs,
         "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)] if has_hs_library else [],
         "extra-libraries": extra_libs,
         "depends": hs.package_ids,
@@ -119,17 +109,17 @@ def package(
         inputs = [metadata_file, exposed_modules_file],
         outputs = [conf_file],
         command = """
-            cat $1 > $3
-            echo "exposed-modules: `cat $2`" >> $3
+            "$1" $2 > $4
+            echo "exposed-modules: `"$1" $3`" >> $4
 """,
         arguments = [
+            posix.commands["cat"],
             metadata_file.path,
             exposed_modules_file.path,
             conf_file.path,
         ],
-        use_default_shell_env = True,
     )
 
-    cache_file = ghc_pkg_recache(hs, conf_file)
+    cache_file = ghc_pkg_recache(hs, posix, conf_file)
 
     return conf_file, cache_file

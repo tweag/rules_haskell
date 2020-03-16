@@ -34,7 +34,6 @@ haskell_library(
         ":codegen",
     ],
     tags = [
-        "requires_hackage",
         "requires_zlib",
     ],
     visibility = ["//visibility:public"],

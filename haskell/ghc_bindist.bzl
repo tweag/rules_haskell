@@ -1,6 +1,9 @@
 """Workspace rules (GHC binary distributions)"""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
+load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
+load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
+load(":private/workspace_utils.bzl", "execute_or_fail_loudly")
 
 _GHC_DEFAULT_VERSION = "8.6.5"
 
@@ -165,21 +168,49 @@ GHC_BINDIST = \
                 "457024c6ea43bdce340af428d86319931f267089398b859b00efdfe2fd4ce93f",
             ),
         },
+        "8.8.1": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-apple-darwin.tar.xz",
+                "38c8917b47c31bedf58c9305dfca3abe198d8d35570366f0773c4e2948bd8abe",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-deb8-linux.tar.xz",
+                "fd96eb851971fbc3332bf2fa7821732cfa8b37e5a076a69f6a06f83f0ea7ccc5",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.1/ghc-8.8.1-x86_64-unknown-mingw32.tar.xz",
+                "29e56e6af38017a5a76b2b6995a39d3988fa58131e4b55b62dd317ba7186ac9b",
+            ),
+        },
+        "8.8.2": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-apple-darwin.tar.xz",
+                "25c5c1a70036abf3f22b2b19c10d26adfdb08e8f8574f89d4b2042de5947f990",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-deb8-linux.tar.xz",
+                "fbe69652eba75dadb758d00292247d17fb018c29cac5acd79843e56311256c9f",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.2/ghc-8.8.2-x86_64-unknown-mingw32.tar.xz",
+                "e25d9b16ee62cafc7387af2cd021eea676a99cd2c32b83533b016162c63065d9",
+            ),
+        },
+        "8.8.3": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-apple-darwin.tar.xz",
+                "7016de90dd226b06fc79d0759c5d4c83c2ab01d8c678905442c28bd948dbb782",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-deb8-linux.tar.xz",
+                "92b9fadc442976968d2c190c14e000d737240a7d721581cda8d8741b7bd402f0",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-unknown-mingw32.tar.xz",
+                "e22586762af0911c06e8140f1792e3ca381a3a482a20d67b9054883038b3a422",
+            ),
+        },
     }
-
-def _execute_fail_loudly(ctx, args):
-    """Execute a command and fail loudly if it fails.
-
-    ATTN: All commands have to be cross-compatible between BSD tools and GNU tools,
-    because we want to support macOS. Please cross-reference the macOS man-pages.
-
-    Args:
-      ctx: Repository rule context.
-      args: Command and its arguments.
-    """
-    eresult = ctx.execute(args, quiet = False)
-    if eresult.return_code != 0:
-        fail("{0} failed, aborting creation of GHC bindist".format(" ".join(args)))
 
 def _ghc_bindist_impl(ctx):
     # Avoid rule restart by resolving these labels early. See
@@ -211,15 +242,15 @@ def _ghc_bindist_impl(ctx):
 
     # As the patches may touch the package DB we regenerate the cache.
     if len(ctx.attr.patches) > 0:
-        _execute_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
+        execute_or_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
 
     # On Windows the bindist already contains the built executables
     if os != "windows":
         # IMPORTANT: all these scripts have to be compatible with BSD
         # tools! This means that sed -i always takes an argument.
-        _execute_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"])
-        _execute_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
-        _execute_fail_loudly(ctx, ["make", "install"])
+        execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"])
+        execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
+        execute_or_fail_loudly(ctx, ["make", "install"])
         ctx.file("patch_bins", executable = True, content = r"""#!/usr/bin/env bash
 grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 -n1 \
     sed -i.bak \
@@ -229,7 +260,13 @@ grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 -n1 \
 """.format(
             bindist_dir = bindist_dir.realpath,
         ))
-        _execute_fail_loudly(ctx, ["./patch_bins"])
+        execute_or_fail_loudly(ctx, ["./patch_bins"])
+
+    # The default locale is OS specific.
+    if ctx.attr.locale:
+        locale = ctx.attr.locale
+    else:
+        locale = "en_US.UTF-8" if os == "darwin" else "C.UTF-8"
 
     # Generate BUILD file entries describing each prebuilt package.
     # Cannot use //haskell:pkgdb_to_bzl because that's a generated
@@ -257,6 +294,7 @@ haskell_toolchain(
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
     visibility = ["//visibility:public"],
+    locale = "{locale}",
 )
     """.format(
         toolchain_libraries = toolchain_libraries,
@@ -265,14 +303,15 @@ haskell_toolchain(
         compiler_flags = ctx.attr.compiler_flags,
         haddock_flags = ctx.attr.haddock_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
+        locale = locale,
     )
 
     if os == "windows":
         # These libraries cause linking errors on Windows when linking
         # pthreads, due to libwinpthread-1.dll not being loaded.
-        _execute_fail_loudly(ctx, ["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"])
-        _execute_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
-        _execute_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
 
     ctx.template(
         "BUILD",
@@ -315,15 +354,19 @@ _ghc_bindist = repository_rule(
             default = [],
             doc = "Sequence of commands to be applied after patches are applied.",
         ),
+        "locale": attr.string(
+            doc = "Locale that will be set during compiler invocations. Default: C.UTF-8 (en_US.UTF-8 on MacOS)",
+            mandatory = False,
+        ),
     },
 )
 
 def _ghc_bindist_toolchain_impl(ctx):
     os, _, arch = ctx.attr.target.partition("_")
     exec_constraints = [{
-        "darwin": "@bazel_tools//platforms:osx",
-        "linux": "@bazel_tools//platforms:linux",
-        "windows": "@bazel_tools//platforms:windows",
+        "darwin": "@platforms//os:osx",
+        "linux": "@platforms//os:linux",
+        "windows": "@platforms//os:windows",
     }.get(os)]
     target_constraints = exec_constraints
     ctx.file(
@@ -359,9 +402,11 @@ def ghc_bindist(
         target,
         compiler_flags = None,
         haddock_flags = None,
-        repl_ghci_args = None):
-    """Create a new repository from binary distributions of GHC. The
-    repository exports two targets:
+        repl_ghci_args = None,
+        locale = None):
+    """Create a new repository from binary distributions of GHC.
+
+    The repository exports two targets:
 
     * a `bin` filegroup containing all GHC commands,
     * a `threaded-rts` CC library.
@@ -370,7 +415,8 @@ def ghc_bindist(
     platform. Only the platforms that have a "binary package" on the GHC
     [download page](https://www.haskell.org/ghc/) are supported.
 
-    Example:
+    ### Examples
+
        In `WORKSPACE` file:
 
        ```bzl
@@ -411,6 +457,7 @@ def ghc_bindist(
         haddock_flags = haddock_flags,
         repl_ghci_args = repl_ghci_args,
         target = target,
+        locale = locale,
         **extra_attrs
     )
     _ghc_bindist_toolchain(
@@ -424,7 +471,8 @@ def haskell_register_ghc_bindists(
         version = None,
         compiler_flags = None,
         haddock_flags = None,
-        repl_ghci_args = None):
+        repl_ghci_args = None,
+        locale = None):
     """Register GHC binary distributions for all platforms as toolchains.
 
     Toolchains can be used to compile Haskell code. This function
@@ -447,7 +495,14 @@ def haskell_register_ghc_bindists(
             compiler_flags = compiler_flags,
             haddock_flags = haddock_flags,
             repl_ghci_args = repl_ghci_args,
+            locale = locale,
         )
+    local_sh_posix_repo_name = "rules_haskell_sh_posix_local"
+    if local_sh_posix_repo_name not in native.existing_rules():
+        sh_posix_configure(name = local_sh_posix_repo_name)
+    local_python_repo_name = "rules_haskell_python_local"
+    if local_python_repo_name not in native.existing_rules():
+        _configure_python3_toolchain(name = local_python_repo_name)
 
 def _find_python(repository_ctx):
     python = repository_ctx.which("python3")
@@ -457,3 +512,88 @@ def _find_python(repository_ctx):
         if not result.stdout.startswith("Python 3"):
             fail("rules_haskell requires Python >= 3.3.")
     return python
+
+def _configure_python3_toolchain_impl(repository_ctx):
+    cpu = get_cpu_value(repository_ctx)
+    python3_path = _find_python(repository_ctx)
+    repository_ctx.file("BUILD.bazel", executable = False, content = """
+load(
+    "@bazel_tools//tools/python:toolchain.bzl",
+    "py_runtime_pair",
+)
+py_runtime(
+    name = "python3_runtime",
+    interpreter_path = "{python3}",
+    python_version = "PY3",
+)
+py_runtime_pair(
+    name = "py_runtime_pair",
+    py3_runtime = ":python3_runtime",
+)
+toolchain(
+    name = "toolchain",
+    toolchain = ":py_runtime_pair",
+    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:{os}",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:{os}",
+    ],
+)
+""".format(
+        python3 = python3_path,
+        os = {
+            "darwin": "osx",
+            "x64_windows": "windows",
+        }.get(cpu, "linux"),
+    ))
+
+_config_python3_toolchain = repository_rule(
+    _configure_python3_toolchain_impl,
+    configure = True,
+    environ = ["PATH"],
+)
+
+def _configure_python3_toolchain(name):
+    """Autoconfigure python3 toolchain for GHC bindist
+
+    `rules_haskell` requires Python 3 to build Haskell targets. Under Nix we
+    use `rules_nixpkgs`'s `nixpkgs_python_configure` repository rule to use a
+    nixpkgs provisioned Python toolchain. However, outside of Nix we have to
+    rely on whatever Python toolchain is installed on the system.
+
+    Bazel provides `@bazel_tools//tools/python:autodetecting_toolchain` for
+    this purpose. However, in its current form, that toolchain does not
+    support Python toolchains installed outside of standard system paths
+    such as `/usr/bin:/bin:/usr/sbin`. The reason is that the toolchain does
+    not look for a Python interpreter in a repository rule. Instead it uses
+    wrapper scripts that look for a Python interpreter in `$PATH` within the
+    sandboxed build actions.
+
+    On MacOS, which, at the time of writing, only includes Python 2.7, users
+    will want to install Python 3 in a non-system path, e.g. via homebrew or
+    py_env. The auto detecting toolchain will not find this interpreter and
+    builds will fail with the following error:
+
+    ```
+    Error occurred while attempting to use the default Python toolchain (@rules_python//python:autodetecting_toolchain).
+    According to '/usr/bin/python -V', version is 'Python 2.7.10', but we need version 3. PATH is:
+
+    /usr/bin:/bin:/usr/sbin
+
+    Please ensure an interpreter with version 3 is available on this platform as 'python3' or 'python', or else register an appropriate Python toolchain as per the documentation for py_runtime_pair (https://github.com/bazelbuild/rules_python/blob/master/docs/python.md#py_runtime_pair).
+
+    Note that prior to Bazel 0.27, there was no check to ensure that the interpreter's version matched the version declared by the target (#4815). If your build worked prior to Bazel 0.27, and you're sure your targets do not require Python 3, you can opt out of this version check by using the non-strict autodetecting toolchain instead of the standard autodetecting toolchain. This can be done by passing the flag `--extra_toolchains=@rules_python//python:autodetecting_toolchain_nonstrict` on the command line or adding it to your bazelrc.
+    ```
+
+    This function defins a custom auto detcting Python toolchain that looks for
+    a Python 3 interpreter within a repository rule, so that Bazel's sandboxing
+    does not restrict the visible installation paths. It then registers an
+    appropriate Python toolchain, so that build actions themselves can still be
+    sandboxed.
+    """
+    _config_python3_toolchain(name = name)
+    native.register_toolchains("@{}//:toolchain".format(name))
