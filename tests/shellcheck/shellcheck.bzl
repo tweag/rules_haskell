@@ -1,8 +1,10 @@
 load("//tests:inline_tests.bzl", "sh_inline_test")
+load("@bazel_skylib//lib:shell.bzl", "shell")
 
-def shellcheck(name, args, data, sh_flavor = "sh", excludes = [], visibility = None):
-    excludes_arg = "--exclude=" + ",".join(excludes) if excludes else ""
-    shell_arg = "--shell " + sh_flavor if sh_flavor else ""
+def shellcheck(name, args, data, sh_flavor = "sh", visibility = None):
+    cmd = ["shellcheck", "--color=always"]
+    if sh_flavor != None:
+        cmd += ["--shell", sh_flavor]
     sh_inline_test(
         name = name,
         visibility = visibility,
@@ -10,7 +12,7 @@ def shellcheck(name, args, data, sh_flavor = "sh", excludes = [], visibility = N
         args = args,
         data = data,
         script = """\
-shellcheck --color=always {} {} "$1"
-""".format(shell_arg, excludes_arg),
+{} "$1"
+""".format(" ".join([shell.quote(x) for x in cmd])),
         tags = ["requires_shellcheck"],
     )
