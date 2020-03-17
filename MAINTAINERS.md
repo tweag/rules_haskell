@@ -30,8 +30,10 @@
 - [ ] Go to the [release page](https://github.com/tweag/rules_haskell/releases)
     - click on “Draft a new release”
     - name `v<major>.<minor>`
+    - select the tag you created in the previous item, it should be in
+      github's dropdown list
     - copy the changelog section into the description
-    - you don't need to provide `.zip` and `.tar.gz` archives,
+    - you don't need to provide the source `.zip` and `.tar.gz` archives,
       github does it automatically.
     - release
 - [ ] Push `rules_haskell` version in start script to new release tag,
@@ -42,7 +44,7 @@
   - [ ] Check whether https://haskell.build/start has the newest start
         script (netlify has problems sometimes).
 - [ ] Announce the new version (on Twitter) by asking someone with Twitter
-      rights, such as `@chak` on Slack
+      rights.
 
 ### Remove these PRs from minor releases
 
