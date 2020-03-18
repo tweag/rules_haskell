@@ -60,7 +60,6 @@ def rules_haskell_dependencies():
             sha256 = "e8c7601439dbd4489fe5069c33d374804990a56c2f710e00227ee5d8fd650e67",
             strip_prefix = "protobuf-3.11.2",
             urls = [
-                "https://mirror.bazel.build/github.com/google/protobuf/archive/v3.11.2.tar.gz",
                 "https://github.com/google/protobuf/archive/v3.11.2.tar.gz",
             ],
         )
