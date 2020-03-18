@@ -259,15 +259,15 @@ in rule inputs (e.g. different source files for different platforms).
 Checking code coverage
 ----------------------
 
-"Code coverage" is the name given to metrics that describe how much source 
-code is covered by a given test suite.  A specific code coverage metric 
-implemented here is expression coverage, or the number of expressions in 
+"Code coverage" is the name given to metrics that describe how much source
+code is covered by a given test suite.  A specific code coverage metric
+implemented here is expression coverage, or the number of expressions in
 the source code that are explored when the tests are run.
 
-Haskell's ``ghc`` compiler has built-in support for code coverage analysis, 
-through the hpc_ tool. The Haskell rules allow the use of this tool to analyse 
-``haskell_library`` coverage by ``haskell_test`` rules. To do so, you have a 
-few options. You can add 
+Haskell's ``ghc`` compiler has built-in support for code coverage analysis,
+through the hpc_ tool. The Haskell rules allow the use of this tool to analyse
+``haskell_library`` coverage by ``haskell_test`` rules. To do so, you have a
+few options. You can add
 ``expected_covered_expressions_percentage=<some integer between 0 and 100>`` to
 the attributes of a ``haskell_test``, and if the expression coverage percentage
 is lower than this amount, the test will fail. Alternatively, you can add
@@ -276,7 +276,7 @@ the attributes of a ``haskell_test``, and instead the test will fail if the
 number of uncovered expressions is greater than this amount. Finally, you could
 do both at once, and have both of these checks analyzed by the coverage runner.
 To see the coverage details of the test suite regardless of if the test passes
-or fails, add ``--test_output=all`` as a flag when invoking the test, and there 
+or fails, add ``--test_output=all`` as a flag when invoking the test, and there
 will be a report in the test output. You will only see the report if you
 required a certain level of expression coverage in the rule attributes.
 
@@ -301,7 +301,7 @@ For example, your BUILD file might look like this: ::
     expected_uncovered_expression_count = 10,
   )
 
-And if you ran ``bazel coverage //somepackage:test --test_output=all``, you 
+And if you ran ``bazel coverage //somepackage:test --test_output=all``, you
 might see a result like this: ::
 
   INFO: From Testing //somepackage:test:
@@ -360,3 +360,129 @@ Then, the user will add ``--define use_worker=True`` in the command line when ca
 It is worth noting that Bazel's worker strategy is not sandboxed by default. This may
 confuse our worker relatively easily. Therefore, it is recommended to supply
 ``--worker_sandboxing`` to ``bazel build`` -- possibly, via your ``.bazelrc.local`` file.
+
+Containerization with rules_docker
+-------------------------------------
+
+Making use of both ``rules_docker`` and ``rules_nixpkgs``, it's possible to containerize
+``rules_haskell`` ``haskell_binary`` build targets for deployment. In a nutshell, first we must use
+``rules_nixpkgs`` to build a ``dockerTools.buildLayeredImage`` target with the basic library dependencies
+required to run a typical haskell binary. Thereafter, we can use ``rules_docker`` to use this as
+a base image upon which we can layer a bazel built haskell binary.
+
+Step one is to ensure you have all the necessary ``rules_docker`` paraphernalia loaded in your ``WORKSPACE``
+file: ::
+
+  http_archive(
+      name = "io_bazel_rules_docker",
+      sha256 = "df13123c44b4a4ff2c2f337b906763879d94871d16411bf82dcfeba892b58607",
+      strip_prefix = "rules_docker-0.13.0",
+      urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.13.0/rules_docker-v0.13.0.tar.gz"],
+  )
+
+  load("@io_bazel_rules_docker//toolchains/docker:toolchain.bzl", docker_toolchain_configure="toolchain_configure")
+
+To make full use of post-build ``rules_docker`` functionality, we'll want to make sure this is set
+to the docker binary's location ::
+
+  docker_toolchain_configure(
+      name = "docker_config",
+      docker_path = "/usr/bin/docker"
+  )
+
+  load("@io_bazel_rules_docker//container:container.bzl", "container_load")
+
+  load("@io_bazel_rules_docker//repositories:repositories.bzl", container_repositories = "repositories")
+  container_repositories()
+
+  load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
+  container_deps()
+
+Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nixpkgs_package`` rule for ``rules_docker`` to layer its products on top of ::
+
+  nixpkgs_package(
+      name = "raw-haskell-base-image",
+      repository = "//nixpkgs:default.nix",
+      nix_file = "//nixpkgs:haskellBaseImageDocker.nix", # See below for how to define this
+      build_file_content = """
+  package(default_visibility = [ "//visibility:public" ]),
+  exports_file(["image"])
+      """,
+  )
+
+And finally use the ``rules_docker`` ``container_load`` functionality to grab the docker image built by the previous ``raw-haskell-base-image`` target ::
+
+  container_load(
+      name = "haskell-base-image",
+      file = "@raw-haskell-base-image//:image",
+  )
+
+Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as follows ::
+
+  # nixpkgs is provisioned by rules_nixpkgs for us which we set to be ./default.nix
+  with import <nixpkgs> { system = "x86_64-linux"; };
+
+  # Build the base image.
+  # The output of this derivation will be a docker archive in the same format as
+  # the output of `docker save` that we can feed to
+  # [container_load](https://github.com/bazelbuild/rules_docker#container_load)
+  let
+    haskellBase = dockerTools.buildLayeredImage {
+      name = "haskell-base-image-unwrapped";
+      created = "now";
+      contents = [ glibc libffi gmp zlib iana-etc cacert ]; # Here we can specify nix-provisioned libraries our haskell_binary products may need at runtime
+    };
+    # rules_nixpkgs require the nix output to be a directory,
+    # so we create one in which we put the image we've just created
+  in runCommand "haskell-base-image" { } ''
+    mkdir -p $out
+    gunzip -c ${haskellBase} > $out/image
+  ''
+
+Step three pulls all this together in a build file to actually assemble our final docker image. In a BUILD.bazel file, we'll need the following ::
+
+  load("@io_bazel_rules_docker//cc:image.bzl", "cc_image")
+  load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+
+  haskell_binary(
+      name = "my_binary,
+      srcs = ["Main.hs"],
+      compiler_flags = [
+          "-O2",
+          "-threaded",
+          "-rtsopts",
+          "-with-rtsopts=-N",
+      ],
+      deps = [
+          ":my_haskell_library_dep", # for example...
+          # ...
+      ],
+  )
+
+  cc_image(
+      name = "my_binary_image",
+      base = "@haskell-base-image//image",
+      binary = ":my_binary",
+      ports = [ "8000/tcp" ],
+      creation_time = "{BUILD_TIMESTAMP}",
+      stamp = True,
+  )
+
+And you may want to use ``rules_docker`` to push your docker image as follows ::
+
+  container_push(
+      name = "my_binary_push",
+      image = ":my_binary_image",
+      format = "Docker",
+      registry = "gcr.io", # For example using a GCP GCR repository
+      repository = "$project-name-here/$my_binary_image_label",
+      tag = "{BUILD_USER}",
+ )
+
+*n.b* Due to the `current inability`_ of nix to be used on macOS (darwin) for building docker images, it's currently
+not possible to build docker images for haskell binaries as above using rules_docker and nixpkgs on macOS.
+
+.. _current inability: https://github.com/NixOS/nixpkgs/issues/16696
+
+Following these steps you should end up with a fairly lightweight docker image, bringing the flexibility of nix
+as a docker base image manager and the power of ``rules_haskell`` for your haskell build together.
