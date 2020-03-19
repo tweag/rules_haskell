@@ -5,7 +5,8 @@ load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
 load(":private/workspace_utils.bzl", "execute_or_fail_loudly")
 
-_GHC_DEFAULT_VERSION = "8.6.5"
+_GHC_DEFAULT_VERSION = "8.6.5"  # If you change this, change stackage's version
+# in the start script (see stackage.org)
 
 # Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist`
 # To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py,

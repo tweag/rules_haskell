@@ -181,6 +181,19 @@ load(
     "rules_haskell_toolchains",
 )
 
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "stack_snapshot"
+)
+
+stack_snapshot(
+    name = "stackage",
+    packages = [
+        "time", # Provides the dependency @stackage//:time
+    ],
+    snapshot = "lts-14.27" # Last snapshot published for ghc-8.6.5
+    # the default version picked up by rules_haskell
+)
 $(get_toolchain)
 EOF
 
@@ -237,11 +250,11 @@ haskell_toolchain_library(name = "base")
 # )
 
 # An example binary using the Prelude module from the
-# GHC base package, to print the hello world.
+# GHC base package, and time from stackage, to print the hello world.
 haskell_binary(
     name = "example",
     srcs = [":Example.hs"],
-    deps = [":base"],
+    deps = [":base", "@stackage//:time"],
 )
 EOF
 
@@ -249,9 +262,13 @@ echo "Creating Example.hs" >&2
 cat > Example.hs <<"EOF"
 module Main where
 
-import Prelude (putStrLn)
+import Data.Time (getCurrentTime, utctDay)
+import Prelude ((++), putStrLn, show)
 
-main = putStrLn "Hello from rules_haskell!"
+main = do
+  currentTime <- getCurrentTime
+  putStrLn ("Today is " ++ show (utctDay currentTime))
+  putStrLn "Hello from rules_haskell!"
 EOF
 
 cat >&2 <<"EOF"
