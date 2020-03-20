@@ -75,7 +75,7 @@ def package(
 
     import_dir = paths.join(
         "${pkgroot}",
-        paths.join(pkg_db_dir, "_iface"),
+        paths.join(pkg_db_dir, "_build"),
     )
 
     (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, cc, with_shared)

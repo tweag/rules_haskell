@@ -120,52 +120,6 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     ]
     compile_flags += cc_args
 
-    # Determine file directories.
-    #
-    # objects|interfaces_dir is the directory relative to the package.
-    # objects|interfaces_dir_flag is the directory relative to the execroot.
-    interface_dir_raw = "_iface"
-    object_dir_raw = "_obj"
-    if my_pkg_id:
-        # If we're compiling a package, put the interfaces inside the
-        # package directory.
-        interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), interface_dir_raw)
-    else:
-        interfaces_dir = paths.join(interface_dir_raw, hs.name)
-    objects_dir = paths.join(object_dir_raw, hs.name)
-    interfaces_dir_flag = paths.join(hs.bin_dir.path, hs.package_root, interfaces_dir)
-    objects_dir_flag = paths.join(hs.bin_dir.path, hs.package_root, objects_dir)
-
-    # Determine file extensions.
-    if with_profiling:
-        interface_exts = [".p_hi"]
-        object_exts = [".p_o"]
-    elif output_mode == "dynamic-too":
-        interface_exts = [".hi", ".dyn_hi"]
-        object_exts = [".o", ".dyn_o"]
-    elif output_mode == "dynamic":
-        interface_exts = [".hi"]
-        object_exts = [".dyn_o"]
-    else:
-        interface_exts = [".hi"]
-        object_exts = [".o"]
-
-    # Declare output files.
-    interface_files = [
-        hs.actions.declare_file(paths.join(interfaces_dir, filename))
-        for (module_name, module_info) in module_map.items()
-        for interface_ext in interface_exts
-        for filename_prefix in [module_name.replace(".", "/") + interface_ext]
-        for filename in [filename_prefix, filename_prefix + "-boot" if module_info.boot else None]
-        if filename
-    ]
-    object_files = [
-        hs.actions.declare_file(paths.join(objects_dir, filename))
-        for module_name in module_map.keys()
-        for object_ext in object_exts
-        for filename in [module_name.replace(".", "/") + object_ext]
-    ]
-
     # Default compiler flags.
     compile_flags += hs.toolchain.compiler_flags
     compile_flags += user_compile_flags
@@ -213,6 +167,10 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         paths.join(hs.genfiles_dir.path, hs.src_root),
     ])
 
+    if my_pkg_id:
+        build_dir = paths.join(pkg_id.to_string(my_pkg_id), "_build")
+    else:
+        build_dir = paths.join("_build", hs.name)
     header_files = []
     boot_files = []
     source_files = []
@@ -224,13 +182,47 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             source_files.append(s0)
             set.mutable_insert(import_dirs, idir)
         elif s.extension in ["hs-boot", "lhs-boot"]:
-            boot_files.append(s)
+            copy = hs.actions.declare_file(paths.join(build_dir, s.short_path))
+            hs.actions.expand_template(template = s, output = copy, substitutions = {})
+            boot_files.append(copy)
         else:
-            source_files.append(s)
+            copy = hs.actions.declare_file(paths.join(build_dir, s.short_path))
+            hs.actions.expand_template(template = s, output = copy, substitutions = {})
+            source_files.append(copy)
 
         if s in import_dir_map:
             idir = import_dir_map[s]
             set.mutable_insert(import_dirs, idir)
+
+    # Determine file extensions.
+    if with_profiling:
+        interface_exts = [".p_hi"]
+        object_exts = [".p_o"]
+    elif output_mode == "dynamic-too":
+        interface_exts = [".hi", ".dyn_hi"]
+        object_exts = [".o", ".dyn_o"]
+    elif output_mode == "dynamic":
+        interface_exts = [".hi"]
+        object_exts = [".dyn_o"]
+    else:
+        interface_exts = [".hi"]
+        object_exts = [".o"]
+
+    # Declare output files.
+    interface_files = [
+        hs.actions.declare_file(paths.replace_extension(source.basename, interface_ext), sibling = source)
+        for source in source_files
+        for interface_ext in interface_exts
+    ] + [
+        hs.actions.declare_file(paths.replace_extension(source.basename, interface_ext + "-boot"), sibling = source)
+        for source in boot_files
+        for interface_ext in interface_exts
+    ]
+    object_files = [
+        hs.actions.declare_file(paths.replace_extension(source.basename, object_ext), sibling = source)
+        for source in source_files
+        for object_ext in object_exts
+    ]
 
     # Write the -optP flags to a parameter file because they can be very long on Windows
     # e.g. 27Kb for grpc-haskell
@@ -281,14 +273,6 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         # -fexternal-dynamic-refs, otherwise GHC still generates R_X86_64_PC32
         # relocations which prevents loading these static libraries as PIC.
         args.add("-fexternal-dynamic-refs")
-
-    # Output directories
-    args.add_all([
-        "-odir",
-        objects_dir_flag,
-        "-hidir",
-        interfaces_dir_flag,
-    ])
 
     # Interface files with profiling have to have the extension "p_hi":
     # https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/packages.html#installedpackageinfo-a-package-specification
