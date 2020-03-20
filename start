@@ -256,6 +256,36 @@ haskell_binary(
     srcs = [":Example.hs"],
     deps = [":base", "@stackage//:time"],
 )
+
+# Load cabal rules
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_binary",
+)
+
+# An alternative way to compile Example.hs, using cabal to provide
+# the dependencies: note how neither base nor time is specified here. It's
+# specified in example.cabal instead
+# Use 'bazel run //:example' to build and execute it.
+haskell_cabal_binary(
+    name = "cabalexample",
+    srcs = [":Example.hs", "example.cabal"], # Include your Setup.hs
+    # file if you don't want to use the default
+)
+EOF
+
+echo "Creating example.cabal" >&2
+cat > example.cabal <<"EOF"
+cabal-version:       >=1.10
+name:                afancyname
+version:             0.1.0.0
+build-type:          Simple
+
+executable cabalexample
+  main-is:             Example.hs
+  build-depends:       base
+                     , time
+  default-language:    Haskell2010
 EOF
 
 echo "Creating Example.hs" >&2
@@ -274,5 +304,6 @@ EOF
 cat >&2 <<"EOF"
 WORKSPACE and initial BUILD files created. To run Bazel and build the example:
 
-    $ bazel run //:example
+    $ bazel run //:example # Build using stackage
+    $ bazel run //:cabalexample # Build using cabal
 EOF
