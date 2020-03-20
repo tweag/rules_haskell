@@ -169,6 +169,31 @@ EOF
 )
 
 nix_zlib=$(cat <<EOF
+nixpkgs_package(
+    name = "nixpkgs_zlib",
+    attribute_path = "zlib",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "zlib.dev",
+    build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+filegroup(
+    name = "include",
+    srcs = glob(["include/*.h"]),
+    visibility = ["//visibility:public"],
+)
+cc_library(
+    name = "zlib",
+    srcs = ["@nixpkgs_zlib//:lib"],
+    hdrs = [":include"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
+""",
+    repository = "@nixpkgs",
+)
 EOF
 )
 
