@@ -142,10 +142,48 @@ haskell_register_ghc_nixpkgs(
 EOF
 )
 
+bindist_zlib=$(cat <<EOF
+http_archive(
+    name = "zlib.dev",
+    build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+cc_library(
+    name = "zlib",
+    # Import ':z' as 'srcs' to enforce the library name 'libz.so'. Otherwise,
+    # Bazel would mangle the library name and e.g. Cabal wouldn't recognize it.
+    srcs = [":z"],
+    hdrs = glob(["*.h"]),
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+""",
+    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+    strip_prefix = "zlib-1.2.11",
+    urls = [
+        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
+        "http://zlib.net/zlib-1.2.11.tar.gz",
+    ],
+)
+EOF
+)
+
+nix_zlib=$(cat <<EOF
+EOF
+)
+
+
 get_toolchain () {
     case $mode in
         bindists) printf '%s' "$bindist_toolchain" ;;
         nix) printf '%s' "$nix_toolchain" ;;
+    esac
+}
+
+get_zlib () {
+    case $mode in
+        bindists) printf '%s' "$bindist_zlib" ;;
+        nix) printf '%s' "$nix_zlib" ;;
     esac
 }
 
@@ -214,13 +252,15 @@ load(
 
 stack_snapshot(
     name = "stackage",
-    packages = [
-        "time",
-    ],
+    extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
+    packages = ["zlib"],
     snapshot = "lts-14.27" # Last snapshot published for ghc-8.6.5
     # the default version picked up by rules_haskell
 )
+
 $(get_toolchain)
+
+$(get_zlib)
 EOF
 
 echo "Creating .bazelrc" >&2
@@ -276,27 +316,17 @@ haskell_toolchain_library(name = "base")
 # )
 
 # An example binary using the Prelude module from the
-# GHC base package, and time from stackage, to print the hello world.
+# GHC base package, and zlib from stackage, to print the hello world.
 haskell_binary(
     name = "example",
     srcs = [":Example.hs"],
-    deps = [":base", "@stackage//:time"],
+    deps = [":base", "@stackage//:zlib"],
 )
 
 # Load cabal rules
 load(
     "@rules_haskell//haskell:cabal.bzl",
     "haskell_cabal_binary",
-)
-
-# An alternative way to compile Example.hs, using cabal to provide
-# the dependencies: note how neither base nor time is specified here. It's
-# specified in example.cabal instead
-# Use 'bazel run //:example' to build and execute it.
-haskell_cabal_binary(
-    name = "cabalexample",
-    srcs = [":Example.hs", "example.cabal"], # Include your Setup.hs
-    # file if you don't want to use the default
 )
 
 # Example usage of alex, use 'bazel builds //:words' to execute it
@@ -308,38 +338,21 @@ genrule(
 )
 EOF
 
-echo "Creating example.cabal" >&2
-cat > example.cabal <<"EOF"
-cabal-version:       >=1.10
-name:                afancyname
-version:             0.1.0.0
-build-type:          Simple
-
-executable cabalexample
-  main-is:             Example.hs
-  build-depends:       base
-                     , time
-  default-language:    Haskell2010
-EOF
-
 echo "Creating Example.hs" >&2
 cat > Example.hs <<"EOF"
 module Main where
 
-import Data.Time (getCurrentTime, utctDay)
-import Prelude ((++), putStrLn, show)
+import Codec.Compression.Zlib (compress, decompress)
+import Prelude ((.), putStrLn)
 
-main = do
-  currentTime <- getCurrentTime
-  putStrLn ("Today is " ++ show (utctDay currentTime))
-  putStrLn "Hello from rules_haskell!"
+main = putStrLn "Hello from rules_haskell!"
+
+slowId = decompress . compress
 EOF
 
 cat >&2 <<"EOF"
 WORKSPACE and initial BUILD files created. To run Bazel and build the example:
 
     $ bazel build //:words # Build a file with alex
-
     $ bazel run //:example # Build Example.hs using stackage
-    $ bazel run //:cabalexample # Build Example.hs using cabal
 EOF
