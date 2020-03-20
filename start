@@ -157,7 +157,8 @@ workspace(name = "YOUR_PROJECT_NAME_HERE")
 # Load the repository rule to download an http archive.
 load(
     "@bazel_tools//tools/build_defs/repo:http.bzl",
-    "http_archive"
+    "http_archive",
+    "http_file",
 )
 
 # Download rules_haskell and make it accessible as "@rules_haskell".
@@ -179,6 +180,31 @@ rules_haskell_dependencies()
 load(
     "@rules_haskell//haskell:toolchain.bzl",
     "rules_haskell_toolchains",
+)
+
+# Download alex and make it accessible as @alex
+http_archive(
+    name = "alex",
+    # Specify to build alex using cabal:
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+haskell_cabal_binary(
+    name = "alex",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "d58e4d708b14ff332a8a8edad4fa8989cb6a9f518a7c6834e96281ac5f8ff232",
+    strip_prefix = "alex-3.2.4",
+    urls = ["http://hackage.haskell.org/package/alex-3.2.4/alex-3.2.4.tar.gz"],
+)
+
+# Download alex input file and make it accessible as @alex_example//file
+http_file(
+    name = "alex_example",
+    downloaded_file_path = "words.x",
+    sha256 = "2fb093eb46385e61abbfffa9ccc675b4cda3775d205f3da1917d33ab4e21ed0c",
+    urls = ["https://raw.githubusercontent.com/simonmar/alex/60d59327fdebc98ea1d8738ce07c174ba7e76f23/examples/words.x"],
 )
 
 load(
@@ -272,6 +298,14 @@ haskell_cabal_binary(
     srcs = [":Example.hs", "example.cabal"], # Include your Setup.hs
     # file if you don't want to use the default
 )
+
+# Example usage of alex, use 'bazel builds //:words' to execute it
+genrule(
+    name = "words",
+    srcs = ["@alex", "@alex_example//file"],
+    outs = ["Words.hs"],
+    cmd = "$(location @alex) $(location @alex_example//file) -o $(location Words.hs)",
+)
 EOF
 
 echo "Creating example.cabal" >&2
@@ -304,6 +338,8 @@ EOF
 cat >&2 <<"EOF"
 WORKSPACE and initial BUILD files created. To run Bazel and build the example:
 
-    $ bazel run //:example # Build using stackage
-    $ bazel run //:cabalexample # Build using cabal
+    $ bazel build //:words # Build a file with alex
+
+    $ bazel run //:example # Build Example.hs using stackage
+    $ bazel run //:cabalexample # Build Example.hs using cabal
 EOF
