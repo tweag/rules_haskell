@@ -10,6 +10,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
+    "module_source_path",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
@@ -182,11 +183,11 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             source_files.append(s0)
             set.mutable_insert(import_dirs, idir)
         elif s.extension in ["hs-boot", "lhs-boot"]:
-            copy = hs.actions.declare_file(paths.join(build_dir, s.short_path))
+            copy = hs.actions.declare_file(paths.join(build_dir, module_source_path(s.short_path)))
             hs.actions.expand_template(template = s, output = copy, substitutions = {})
             boot_files.append(copy)
         else:
-            copy = hs.actions.declare_file(paths.join(build_dir, s.short_path))
+            copy = hs.actions.declare_file(paths.join(build_dir, module_source_path(s.short_path)))
             hs.actions.expand_template(template = s, output = copy, substitutions = {})
             source_files.append(copy)
 

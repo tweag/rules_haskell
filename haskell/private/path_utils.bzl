@@ -24,6 +24,19 @@ def is_valid_module_component(component):
             return False
     return True
 
+def module_source_path(path):
+    """Strip any non-module components from the given path.
+
+    Always keeps the basename intact, e.g. `foo/bar.hs --> bar.hs`.
+    """
+    components = path.split("/")
+    cutoff = 0
+    for i in range(len(components) - 1, 0, -1):
+        if not is_valid_module_component(components[i - 1]):
+            cutoff = i
+            break
+    return "/".join(components[cutoff:len(components)])
+
 def longest_valid_module_name(path):
     """Determine the expected module name from a source file path.
 
