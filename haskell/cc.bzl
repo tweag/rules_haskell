@@ -13,7 +13,7 @@ load(
     "GhcPluginInfo",
     "HaskellInfo",
 )
-load(":private/cc_libraries.bzl", "deps_HaskellCcLibrariesInfo")
+load(":private/cc_libraries.bzl", "deps_HaskellCcLibrariesInfo", "get_cc_libraries")
 
 CcInteropInfo = provider(
     doc = "Information needed for interop with cc rules.",
@@ -131,6 +131,9 @@ def cc_interop_info(ctx):
     if tools["ar"].find("libtool") >= 0:
         tools["ar"] = "/usr/bin/ar"
 
+    cc_libraries_info = deps_HaskellCcLibrariesInfo(
+        ctx.attr.deps + getattr(ctx.attr, "plugins", []),
+    )
     return CcInteropInfo(
         tools = struct(**tools),
         files = cc_files,
@@ -143,10 +146,8 @@ def cc_interop_info(ctx):
         # but this will anyways all be replaced (once implemented) by
         # https://github.com/bazelbuild/bazel/issues/4571.
         linker_flags = linker_flags,
-        cc_libraries_info = deps_HaskellCcLibrariesInfo(
-            ctx.attr.deps + getattr(ctx.attr, "plugins", []),
-        ),
-        cc_libraries = cc_common.merge_cc_infos(cc_infos = ccs).linking_context.libraries_to_link.to_list(),
+        cc_libraries_info = cc_libraries_info,
+        cc_libraries = get_cc_libraries(cc_libraries_info, cc_common.merge_cc_infos(cc_infos = ccs).linking_context.libraries_to_link.to_list()),
         transitive_libraries = cc_common.merge_cc_infos(cc_infos = [
             dep[CcInfo]
             for dep in ctx.attr.deps
