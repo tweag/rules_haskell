@@ -52,8 +52,8 @@ def check_version(actual_version):
     if (min_bazel <= actual) and (actual <= max_bazel):
         return  # All good
 
-    min_bazel_string = ".".join([str(x) for x in list(min_bazel)])
-    max_bazel_string = ".".join([str(x) for x in list(max_bazel)])
+    min_bazel_string = ".".join([str(x) for x in min_bazel])
+    max_bazel_string = ".".join([str(x) for x in max_bazel])
 
     adjective = "old" if actual < min_bazel else "recent"
 
