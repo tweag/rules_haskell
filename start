@@ -239,7 +239,7 @@ workspace(name = "YOUR_PROJECT_NAME_HERE")
 # Load the repository rule to download an http archive.
 load(
     "@bazel_tools//tools/build_defs/repo:http.bzl",
-    "http_archive",
+    "http_archive"
 )
 
 # Download rules_haskell and make it accessible as "@rules_haskell".
@@ -379,5 +379,6 @@ EOF
 
 cat >&2 <<"EOF"
 WORKSPACE and initial BUILD files created. To run Bazel and build the example:
+
     $ bazel run //:example
 EOF
