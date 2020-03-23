@@ -143,11 +143,16 @@ haskell_register_ghc_nixpkgs(
 EOF
 )
 
-bindist_zlib=$(cat <<EOF
-http_archive(
-    name = "zlib.dev",
-    build_file_content = """
+declare -r ALEX_BUILD_FILE="alex.BUILD.bazel"
+declare -r ZLIB_BUILD_FILE="zlib.BUILD.bazel"
+
+echo "Creating $ZLIB_BUILD_FILE" >&2
+case "$mode" in
+    "bindists")
+
+    cat > "$ZLIB_BUILD_FILE" <<"EOF"
 load("@rules_cc//cc:defs.bzl", "cc_library")
+
 cc_library(
     name = "zlib",
     # Import ':z' as 'srcs' to enforce the library name 'libz.so'. Otherwise,
@@ -158,28 +163,14 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
-""",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-    strip_prefix = "zlib-1.2.11",
-    urls = [
-        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
-        "http://zlib.net/zlib-1.2.11.tar.gz",
-    ],
-)
 EOF
-)
+    ;;
 
-nix_zlib=$(cat <<EOF
-nixpkgs_package(
-    name = "nixpkgs_zlib",
-    attribute_path = "zlib",
-    repository = "@nixpkgs",
-)
+    "nix")
 
-nixpkgs_package(
-    name = "zlib.dev",
-    build_file_content = """
+    cat > "$ZLIB_BUILD_FILE" <<"EOF"
 load("@rules_cc//cc:defs.bzl", "cc_library")
+
 filegroup(
     name = "include",
     srcs = glob(["include/*.h"]),
@@ -192,7 +183,34 @@ cc_library(
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
 )
-""",
+EOF
+esac
+
+bindist_zlib=$(cat <<EOF
+http_archive(
+    name = "zlib.dev",
+    build_file = "//:$ZLIB_BUILD_FILE",
+    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+    strip_prefix = "zlib-1.2.11",
+    urls = [
+        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
+        "http://zlib.net/zlib-1.2.11.tar.gz",
+    ],
+)
+EOF
+)
+
+nix_zlib=$(cat <<EOF
+# For $ZLIB_BUILD_FILE
+nixpkgs_package(
+    name = "nixpkgs_zlib",
+    attribute_path = "zlib",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "zlib.dev",
+    build_file = "//:$ZLIB_BUILD_FILE",
     repository = "@nixpkgs",
 )
 EOF
@@ -222,7 +240,6 @@ workspace(name = "YOUR_PROJECT_NAME_HERE")
 load(
     "@bazel_tools//tools/build_defs/repo:http.bzl",
     "http_archive",
-    "http_file",
 )
 
 # Download rules_haskell and make it accessible as "@rules_haskell".
@@ -246,29 +263,15 @@ load(
     "rules_haskell_toolchains",
 )
 
-# Download alex and make it accessible as @alex
+# Download alex and make it accessible as @alex.
+# Delete this block, alex.BUILD.bazel, and the reference in
+# stack_snapshot's tools if you don't use alex.
 http_archive(
     name = "alex",
-    # Specify to build alex using cabal:
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-haskell_cabal_binary(
-    name = "alex",
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
-)
-    """,
+    build_file = "//:$ALEX_BUILD_FILE",
     sha256 = "d58e4d708b14ff332a8a8edad4fa8989cb6a9f518a7c6834e96281ac5f8ff232",
     strip_prefix = "alex-3.2.4",
     urls = ["http://hackage.haskell.org/package/alex-3.2.4/alex-3.2.4.tar.gz"],
-)
-
-# Download alex input file and make it accessible as @alex_example//file
-http_file(
-    name = "alex_example",
-    downloaded_file_path = "words.x",
-    sha256 = "2fb093eb46385e61abbfffa9ccc675b4cda3775d205f3da1917d33ab4e21ed0c",
-    urls = ["https://raw.githubusercontent.com/simonmar/alex/60d59327fdebc98ea1d8738ce07c174ba7e76f23/examples/words.x"],
 )
 
 load(
@@ -280,13 +283,25 @@ stack_snapshot(
     name = "stackage",
     extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
     packages = ["zlib"],
-    snapshot = "lts-14.27" # Last snapshot published for ghc-8.6.5
+    tools = [ "@alex" ],
+    snapshot = "lts-14.27", # Last snapshot published for ghc-8.6.5
     # the default version picked up by rules_haskell
 )
 
 $(get_toolchain)
 
 $(get_zlib)
+EOF
+
+echo "Creating $ALEX_BUILD_FILE" >&2
+cat > "$ALEX_BUILD_FILE" <<EOF
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+
+haskell_cabal_binary(
+    name = "alex",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
 EOF
 
 echo "Creating .bazelrc" >&2
@@ -348,20 +363,6 @@ haskell_binary(
     srcs = [":Example.hs"],
     deps = [":base", "@stackage//:zlib"],
 )
-
-# Load cabal rules
-load(
-    "@rules_haskell//haskell:cabal.bzl",
-    "haskell_cabal_binary",
-)
-
-# Example usage of alex, use 'bazel builds //:words' to execute it
-genrule(
-    name = "words",
-    srcs = ["@alex", "@alex_example//file"],
-    outs = ["Words.hs"],
-    cmd = "$(location @alex) $(location @alex_example//file) -o $(location Words.hs)",
-)
 EOF
 
 echo "Creating Example.hs" >&2
@@ -378,7 +379,5 @@ EOF
 
 cat >&2 <<"EOF"
 WORKSPACE and initial BUILD files created. To run Bazel and build the example:
-
-    $ bazel build //:words # Build a file with alex
-    $ bazel run //:example # Build Example.hs using stackage
+    $ bazel run //:example
 EOF
