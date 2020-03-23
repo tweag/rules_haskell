@@ -4,8 +4,9 @@
 
 - Copy this list of steps into a `rules_haskell` issue
 - Create & checkout release branch (`release-<major>.<minor>`).
-- [ ] Fix minimal bazel version in [the `start` script](./start) and
-  [the README](./README.md), add to the [`CHANGELOG`](./CHANGELOG.md)
+- [ ] Fix minimal bazel version in [the `start` script](./start),
+  [haskell/private/versions.bzl](./haskell/private/versions.bzl), and
+  [the README](./README.md); add to the [`CHANGELOG`](./CHANGELOG.md)
   if it changed.
 - [ ] Remove any feature that is still too experimental to go into a
   release, by cherry-picking reverts (or by manually deleting the
@@ -57,8 +58,8 @@ nonetheless, so bumping bazel regularly is required.
 - [ ] Update all bazel rules dependencies in `WORKSPACE` (e.g.
       `io_bazel_stardoc`)
 - [ ] Update bazel in nixpkgs and bump `nixpkgs/default.nix`
-- [ ] Bump MAX_BAZEL_* in `start`
+- [ ] Bump `MAX_BAZEL_*` in `start` and `haskell/private/versions.bzl`
 - If we are updating to a new LTS:
-  - Bump `MIN_BAZEL_*` in `start`
+  - Bump `MIN_BAZEL_*` in `start` and `haskell/private/versions.bzl`
   - TODO
 - [ ] Add update notice to `CHANGELOG`
