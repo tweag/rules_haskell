@@ -110,6 +110,7 @@ nix_toolchain=$(cat <<EOF
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_git_repository",
+    "nixpkgs_package",
     "nixpkgs_python_configure",
 )
 
