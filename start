@@ -110,6 +110,7 @@ nix_toolchain=$(cat <<EOF
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_git_repository",
+    "nixpkgs_package",
     "nixpkgs_python_configure",
 )
 
@@ -142,10 +143,91 @@ haskell_register_ghc_nixpkgs(
 EOF
 )
 
+declare -r ALEX_BUILD_FILE="alex.BUILD.bazel"
+declare -r ZLIB_BUILD_FILE="zlib.BUILD.bazel"
+
+echo "Creating $ZLIB_BUILD_FILE" >&2
+case "$mode" in
+    "bindists")
+
+    cat > "$ZLIB_BUILD_FILE" <<"EOF"
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "zlib",
+    # Import ':z' as 'srcs' to enforce the library name 'libz.so'. Otherwise,
+    # Bazel would mangle the library name and e.g. Cabal wouldn't recognize it.
+    srcs = [":z"],
+    hdrs = glob(["*.h"]),
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+EOF
+    ;;
+
+    "nix")
+
+    cat > "$ZLIB_BUILD_FILE" <<"EOF"
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+filegroup(
+    name = "include",
+    srcs = glob(["include/*.h"]),
+    visibility = ["//visibility:public"],
+)
+cc_library(
+    name = "zlib",
+    srcs = ["@nixpkgs_zlib//:lib"],
+    hdrs = [":include"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
+EOF
+esac
+
+bindist_zlib=$(cat <<EOF
+http_archive(
+    name = "zlib.dev",
+    build_file = "//:$ZLIB_BUILD_FILE",
+    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+    strip_prefix = "zlib-1.2.11",
+    urls = [
+        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
+        "http://zlib.net/zlib-1.2.11.tar.gz",
+    ],
+)
+EOF
+)
+
+nix_zlib=$(cat <<EOF
+# For $ZLIB_BUILD_FILE
+nixpkgs_package(
+    name = "nixpkgs_zlib",
+    attribute_path = "zlib",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "zlib.dev",
+    build_file = "//:$ZLIB_BUILD_FILE",
+    repository = "@nixpkgs",
+)
+EOF
+)
+
+
 get_toolchain () {
     case $mode in
         bindists) printf '%s' "$bindist_toolchain" ;;
         nix) printf '%s' "$nix_toolchain" ;;
+    esac
+}
+
+get_zlib () {
+    case $mode in
+        bindists) printf '%s' "$bindist_zlib" ;;
+        nix) printf '%s' "$nix_zlib" ;;
     esac
 }
 
@@ -181,7 +263,46 @@ load(
     "rules_haskell_toolchains",
 )
 
+# Download alex and make it accessible as @alex.
+# Delete this block, alex.BUILD.bazel, and the reference in
+# stack_snapshot's tools if you don't use alex.
+http_archive(
+    name = "alex",
+    build_file = "//:$ALEX_BUILD_FILE",
+    sha256 = "d58e4d708b14ff332a8a8edad4fa8989cb6a9f518a7c6834e96281ac5f8ff232",
+    strip_prefix = "alex-3.2.4",
+    urls = ["http://hackage.haskell.org/package/alex-3.2.4/alex-3.2.4.tar.gz"],
+)
+
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "stack_snapshot"
+)
+
+stack_snapshot(
+    name = "stackage",
+    extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
+    packages = ["zlib"],
+    tools = [ "@alex" ],
+    snapshot = "lts-14.27", # Last snapshot published for ghc-8.6.5
+    # the default version picked up by rules_haskell
+)
+
 $(get_toolchain)
+
+$(get_zlib)
+EOF
+
+echo "Creating $ALEX_BUILD_FILE" >&2
+cat > "$ALEX_BUILD_FILE" <<EOF
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+
+haskell_cabal_binary(
+    name = "alex",
+    srcs = glob(["**"]),
+    verbose = False,
+    visibility = ["//visibility:public"],
+)
 EOF
 
 echo "Creating .bazelrc" >&2
@@ -237,11 +358,11 @@ haskell_toolchain_library(name = "base")
 # )
 
 # An example binary using the Prelude module from the
-# GHC base package, to print the hello world.
+# GHC base package, and zlib from stackage, to print the hello world.
 haskell_binary(
     name = "example",
     srcs = [":Example.hs"],
-    deps = [":base"],
+    deps = [":base", "@stackage//:zlib"],
 )
 EOF
 
@@ -249,9 +370,12 @@ echo "Creating Example.hs" >&2
 cat > Example.hs <<"EOF"
 module Main where
 
-import Prelude (putStrLn)
+import Codec.Compression.Zlib (compress, decompress)
+import Prelude ((.), putStrLn)
 
 main = putStrLn "Hello from rules_haskell!"
+
+slowId = decompress . compress
 EOF
 
 cat >&2 <<"EOF"
