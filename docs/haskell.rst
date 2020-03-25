@@ -101,17 +101,12 @@ this tutorial.
 Understand the WORKSPACE file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-File ``tutorial/WORKSPACE`` defines how to obtain ``rules_haskell``
-and a compiler toolchain.  Because this tutorial lives in ``rules_haskell``'s
-repository, ``rules_haskell`` is made available as follows::
+File ``tutorial/WORKSPACE`` defines how to obtain ``rules_haskell``.
+This file works within the ``rules_haskell``
+repository: for your own project, run the start_ script
+to create a ``WORKSPACE`` file that makes ``rules_haskell`` available
+by `downloading it`_.
 
-  local_repository(
-      name = "rules_haskell",
-      path = "..",
-  )
-
-We refer to the template created by the start_ script
-to make ``rules_haskell`` available outside a local clone.
 The ``WORKSPACE`` file also defines how to obtain the compiler toolchain,
 as detailed in section `picking a compiler`_.
 
@@ -398,6 +393,7 @@ Happy building!
 .. _haskell_library: http://api.haskell.build/haskell/haskell.html#haskell_library
 .. _graphviz: https://www.graphviz.org/
 .. _start: https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#starting-a-new-project
+.. _downloading it: https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#making-rules-haskell-available
 .. _picking a compiler: https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#picking-a-compiler
 .. _external dependencies: https://docs.bazel.build/versions/master/external.html
 .. _build encyclopedia: https://docs.bazel.build/versions/master/be/overview.html
