@@ -15,6 +15,24 @@ is known to be compatible with rules_haskell and creates a new Bazel
 workspace in the current working directory with a few dummy build
 targets. See the following sections about customizing the workspace.
 
+Making rules_haskell available
+----------------------------------
+
+First of all, the ``WORKSPACE`` file must specify how to obtain
+rules_haskell. To use a released version, do the following::
+
+  load(
+      "@bazel_tools//tools/build_defs/repo:http.bzl",
+      "http_archive"
+  )
+
+  http_archive(
+      name = "rules_haskell",
+      strip_prefix = "rules_haskell-0.12",
+      urls = ["https://github.com/tweag/rules_haskell/archive/v0.12.tar.gz"],
+      sha256 = "56a8e6337df8802f1e0e7d2b3d12d12d5d96c929c8daecccc5738a0f41d9c1e4",
+  )
+
 Picking a compiler
 ------------------
 
