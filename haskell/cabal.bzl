@@ -114,6 +114,7 @@ def _prepare_cabal_inputs(
         hs,
         cc,
         posix,
+        py,
         dep_info,
         cc_info,
         direct_cc_info,
@@ -141,7 +142,13 @@ def _prepare_cabal_inputs(
     direct_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries)
     transitive_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries)
     env = dict(hs.env)
-    env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)
+
+    # Because python_stub_template.txt uses the shebang '/usr/bin/env python'
+    # we must have python in PATH to execute cabal_wrapper.py.tpl.
+    # It's put last to minimize disturbance.
+    # See https://github.com/tweag/rules_haskell/issues/1173
+    py_path = [paths.dirname(py.py3_runtime.interpreter_path)]
+    env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths + py_path)
     if hs.toolchain.is_darwin:
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
 
@@ -211,6 +218,7 @@ def _haskell_cabal_library_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
     cc = cc_interop_info(ctx)
+    py = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"]
 
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(
@@ -282,6 +290,7 @@ def _haskell_cabal_library_impl(ctx):
         hs,
         cc,
         posix,
+        py,
         dep_info,
         cc_info,
         direct_cc_info,
@@ -443,6 +452,7 @@ haskell_cabal_library = rule(
     },
     toolchains = [
         "@bazel_tools//tools/cpp:toolchain_type",
+        "@bazel_tools//tools/python:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -498,6 +508,7 @@ def _haskell_cabal_binary_impl(ctx):
         ],
     )
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+    py = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"]
 
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     cabal = _find_cabal(hs, ctx.files.srcs)
@@ -522,6 +533,7 @@ def _haskell_cabal_binary_impl(ctx):
         hs,
         cc,
         posix,
+        py,
         dep_info,
         cc_info,
         direct_cc_info,
@@ -613,6 +625,7 @@ haskell_cabal_binary = rule(
     },
     toolchains = [
         "@bazel_tools//tools/cpp:toolchain_type",
+        "@bazel_tools//tools/python:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
