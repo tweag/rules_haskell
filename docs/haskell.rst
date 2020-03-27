@@ -101,8 +101,8 @@ this tutorial.
 Understand the WORKSPACE file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-File ``tutorial/WORKSPACE`` defines how to obtain ``rules_haskell``.
-This file works within the ``rules_haskell``
+The file ``tutorial/WORKSPACE`` defines how to obtain ``rules_haskell``.
+This file only works within the ``rules_haskell``
 repository: for your own project, run the start_ script
 to create a ``WORKSPACE`` file that makes ``rules_haskell`` available
 by `downloading it`_.
