@@ -220,6 +220,7 @@ def _prepare_cabal_inputs(
             dep_info.static_libraries,
             dep_info.dynamic_libraries,
             tool_inputs,
+            hs.toolchain.full_ghc,
         ],
     )
     input_manifests = tool_input_manifests

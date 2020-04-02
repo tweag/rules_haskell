@@ -109,5 +109,6 @@ def build_haskell_runghc(
         depset(get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries + cc.plugin_libraries)),
         hs_info.source_files,
         hs.toolchain.cc_wrapper.runfiles.files,
+        hs.toolchain.full_ghc,
     ])
     ln(hs, posix, runghc_file, output, extra_inputs)

@@ -17,6 +17,11 @@ filegroup(
     srcs = glob(["bin/*"]),
 )
 
+filegroup(
+    name = "bin-extras",
+    srcs = glob(["lib/**"]),
+)
+
 # Expose embedded MinGW toolchain when on Windows.
 
 filegroup(

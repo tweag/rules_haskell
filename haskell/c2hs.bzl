@@ -75,6 +75,7 @@ def _c2hs_library_impl(ctx):
             depset(cc.files),
             set.to_depset(version_macro_headers),
             inputs,
+            hs.toolchain.full_ghc,
         ]),
         input_manifests = input_manifests,
         tools = [hs.tools.ghc, c2hs_exe],

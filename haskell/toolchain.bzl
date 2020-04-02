@@ -65,9 +65,10 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         extra_inputs.append(flagsfile)
 
     if type(inputs) == type(depset()):
-        inputs = depset(extra_inputs, transitive = [inputs])
+        inputs = depset(extra_inputs, transitive = [inputs, hs.toolchain.full_ghc])
     else:
         inputs += extra_inputs
+        inputs += hs.toolchain.full_ghc.to_list()
 
     if input_manifests != None:
         input_manifests = input_manifests + cc.manifests
@@ -105,11 +106,13 @@ def _haskell_toolchain_impl(ctx):
         if not tool in ghc_binaries:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 
+    full_ghc = depset(transitive = [x.files for x in ctx.attr.full_ghc])
+
     # Get the versions of every prebuilt package.
     ghc_pkg = ghc_binaries["ghc-pkg"]
     pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
     ctx.actions.run_shell(
-        inputs = [ghc_pkg],
+        inputs = [ghc_pkg] + full_ghc.to_list(),
         outputs = [pkgdb_file],
         mnemonic = "HaskellPackageDatabaseDump",
         command = "{ghc_pkg} dump --global > {output}".format(
@@ -143,6 +146,7 @@ def _haskell_toolchain_impl(ctx):
         platform_common.ToolchainInfo(
             name = ctx.label.name,
             tools = struct(**tools_struct_args),
+            full_ghc = full_ghc,
             compiler_flags = ctx.attr.compiler_flags,
             repl_ghci_args = ctx.attr.repl_ghci_args,
             haddock_flags = ctx.attr.haddock_flags,
@@ -181,6 +185,10 @@ _haskell_toolchain = rule(
         "tools": attr.label_list(
             doc = "GHC and executables that come with it. First item take precedance.",
             mandatory = True,
+        ),
+        "full_ghc": attr.label_list(
+            # doc TODO,
+            # mandatory TODO,
         ),
         "libraries": attr.label_list(
             doc = "The set of libraries that come with GHC.",
@@ -242,6 +250,7 @@ def haskell_toolchain(
         version,
         is_static,
         tools,
+        full_ghc,
         libraries,
         compiler_flags = [],
         repl_ghci_args = [],
@@ -287,6 +296,7 @@ def haskell_toolchain(
         version = version,
         is_static = is_static,
         tools = tools,
+        full_ghc = full_ghc,
         libraries = libraries,
         compiler_flags = compiler_flags,
         repl_ghci_args = corrected_ghci_args,

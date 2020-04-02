@@ -288,6 +288,7 @@ grep --files-with-matches --null {bindist_dir} bin/* | xargs -0 -n1 \
 haskell_toolchain(
     name = "toolchain-impl",
     tools = [":bin"],
+    full_ghc = [":bin-extras"],
     libraries = toolchain_libraries,
     version = "{version}",
     is_static = {is_static},

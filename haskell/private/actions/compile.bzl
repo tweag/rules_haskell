@@ -73,6 +73,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
             depset([hsc_file]),
             depset(cc.files),
             depset(hsc_inputs),
+            hs.toolchain.full_ghc,
         ]),
         outputs = [hs_out],
         mnemonic = "HaskellHsc2hs",
