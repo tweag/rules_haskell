@@ -15,7 +15,8 @@ cc_library(
 )
 
 haskell_cabal_library(
-    name = "lib",
+    name = "first-lib",
+    package_name = "lib",
     srcs = [
         "Lib.hs",
         "lib.cabal",
@@ -43,7 +44,7 @@ haskell_test(
     srcs = ["Main.hs"],
     deps = [
         ":base",
-        ":lib",
+        ":first-lib",
         ":second-lib",
     ],
 )
