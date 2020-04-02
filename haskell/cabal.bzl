@@ -252,8 +252,9 @@ def _haskell_cabal_library_impl(ctx):
         ],
     )
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+    package_name = ctx.attr.package_name if ctx.attr.package_name else hs.label.name
     package_id = "{}-{}".format(
-        ctx.attr.package_name if ctx.attr.package_name else hs.label.name,
+        package_name,
         ctx.attr.version,
     )
     with_profiling = is_profiling_enabled(hs)
@@ -275,7 +276,7 @@ def _haskell_cabal_library_impl(ctx):
     )
     if ctx.attr.haddock:
         haddock_file = hs.actions.declare_file(
-            "_install/{}_haddock/{}.haddock".format(package_id, ctx.attr.name),
+            "_install/{}_haddock/{}.haddock".format(package_id, package_name),
             sibling = cabal,
         )
         haddock_html_dir = hs.actions.declare_directory(
