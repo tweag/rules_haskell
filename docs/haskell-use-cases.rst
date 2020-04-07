@@ -143,6 +143,231 @@ This works for any ``haskell_binary`` or ``haskell_library`` target.
 Modules of all libraries will be loaded in interpreted mode and can be
 reloaded using the ``:r`` GHCi command when source files change.
 
+Configuring IDE integration with ghcide
+---------------------------------------
+
+rules_haskell has preliminary support for IDE integration using `ghcide`_. The
+ghcide project provides IDE features for Haskell projects through the Language
+Server Protocol. To set this up you can define a `haskell_repl`_ target that
+will collect the required compiler flags for your Haskell targets and pass them
+to `hie-bios`_ which will then forward them to ghcide.
+
+Let's set this up for the following example project::
+
+  haskell_toolchain_library(
+      name = "base",
+  )
+
+  haskell_library(
+      name = "library-a",
+      srcs = ["Lib/A.hs"],
+      deps = [":base"],
+  )
+
+  haskell_library(
+      name = "library-b",
+      srcs = ["Lib/B.hs"],
+      deps = [":base"],
+  )
+
+  haskell_binary(
+      name = "binary",
+      srcs = ["Main.hs"],
+      deps = [
+          ":base",
+          ":library-a",
+          ":library-b",
+      ],
+  )
+
+We want to configure ghcide to provide IDE integration for all these three
+targets. Start by defining a ``haskell_repl`` target as follows::
+
+  haskell_repl(
+    name = "hie-bios",
+    collect_data = False,
+    deps = [
+      ":binary",
+      # ":library-a",
+      # ":library-b",
+    ],
+  )
+
+Note, that ``library-a`` and ``library-b`` do not have to be listed explicitly.
+By default haskell_repl will include all transitive dependencies that are not
+external dependencies. Refer to the API documentation of `haskell_repl`_ for
+details.
+
+We also disable building runtime dependencies using ``collect_data = False`` as
+they are not required for an IDE session.
+
+You can test if this provides the expected compiler flags by running the
+following Bazel command and taking a look at the generated file::
+
+  bazel build //:hie-bios --output_groups=hie_bios
+
+Next, we need to hook this up to `hie-bios`_ using the `bios cradle`_. To that
+end, define a small shell script named ``.hie-bios`` that looks as follows::
+
+  #!/usr/bin/env bash
+  set -euo pipefail
+  bazel build //:hie-bios --output_groups=hie_bios
+  cat bazel-bin/hie-bios@hie-bios >"$HIE_BIOS_OUTPUT"
+
+Then configure `hie-bios`_ to use this script in the bios cradle with the
+following ``hie.yaml`` file::
+
+  cradle:
+    bios:
+      program: ".hie-bios"
+
+Now the hie-bios cradle is ready to use. The last step is to install ghcide.
+Unfortunately, ghcide has to be compiled with the exact same GHC that you're
+using to build your project. The easiest way to do this is in this context is
+to build it with Bazel as part of your rules_haskell project.
+
+First, define a custom stack snapshot that provides the package versions that
+ghcide requires based on `ghcide's stack.yaml`_ file. Let's call it
+``ghcide-stack-snapshot.yaml``. Copy the ``resolver`` field and turn the
+``extra-deps`` field into a ``packages`` field. Then add another entry to
+``packages`` for the ghcide library itself::
+
+  # Taken from ghcide's stack.yaml
+  resolver: nightly-2019-09-21
+  packages:
+    # Taken from the extra-deps field.
+    - haskell-lsp-0.21.0.0
+    - haskell-lsp-types-0.21.0.0
+    - lsp-test-0.10.2.0
+    - hie-bios-0.4.0
+    - fuzzy-0.1.0.0
+    - regex-pcre-builtin-0.95.1.1.8.43
+    - regex-base-0.94.0.0
+    - regex-tdfa-1.3.1.0
+    - shake-0.18.5
+    - parser-combinators-1.2.1
+    - haddock-library-1.8.0
+    - tasty-rerun-1.1.17
+    - ghc-check-0.1.0.3
+    # Point to the ghcide revision that you would like to use.
+    - github: digital-asset/ghcide
+      commit: "39605333c34039241768a1809024c739df3fb2bd"
+      sha256: "47cca96a6e5031b3872233d5b9ca14d45f9089da3d45a068e1b587989fec4364"
+
+Then define a dedicated ``stack_snapshot`` for ghcide in your ``WORKSPACE``
+file. In the ``packages`` attribute we expose all dependencies of the ghcide
+executable::
+
+  stack_snapshot(
+      name = "stackage_ghcide",
+      # The rules_haskell example project shows how to import libz.
+      # https://github.com/tweag/rules_haskell/blob/123e3817156f9135dfa44dcb5a796c424df1f436/examples/WORKSPACE#L42-L63
+      extra_deps = {"zlib": ["@zlib.hs"]},
+      haddock = False,
+      local_snapshot = "//:ghcide-stack-snapshot.yaml",
+      packages = [
+          "hslogger",
+          "aeson",
+          "base",
+          "binary",
+          "base16-bytestring",
+          "bytestring",
+          "containers",
+          "cryptohash-sha1",
+          "data-default",
+          "deepseq",
+          "directory",
+          "extra",
+          "filepath",
+          "ghc-check",
+          "ghc-paths",
+          "ghc",
+          "gitrev",
+          "hashable",
+          "haskell-lsp",
+          "haskell-lsp-types",
+          "hie-bios",
+          "ghcide",
+          "optparse-applicative",
+          "shake",
+          "text",
+          "unordered-containers",
+      ],
+  )
+
+Finally, define a ``haskell_cabal_binary`` target for the ghcide executable
+itself. (Unfortunately, ``stack_snapshot`` does not support building
+executables)::
+
+  http_archive(
+      name = "ghcide",
+      build_file_content = """
+  load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+  haskell_cabal_binary(
+      name = "ghcide",
+      srcs = glob(["**"]),
+      deps = [
+          # From build-depends field of executable section in ghcide.cabal
+          "@stackage_ghcide//:hslogger",
+          "@stackage_ghcide//:aeson",
+          "@stackage_ghcide//:base",
+          "@stackage_ghcide//:binary",
+          "@stackage_ghcide//:base16-bytestring",
+          "@stackage_ghcide//:bytestring",
+          "@stackage_ghcide//:containers",
+          "@stackage_ghcide//:cryptohash-sha1",
+          "@stackage_ghcide//:data-default",
+          "@stackage_ghcide//:deepseq",
+          "@stackage_ghcide//:directory",
+          "@stackage_ghcide//:extra",
+          "@stackage_ghcide//:filepath",
+          "@stackage_ghcide//:ghc-check",
+          "@stackage_ghcide//:ghc-paths",
+          "@stackage_ghcide//:ghc",
+          "@stackage_ghcide//:gitrev",
+          "@stackage_ghcide//:hashable",
+          "@stackage_ghcide//:haskell-lsp",
+          "@stackage_ghcide//:haskell-lsp-types",
+          "@stackage_ghcide//:hie-bios",
+          "@stackage_ghcide//:ghcide",
+          "@stackage_ghcide//:optparse-applicative",
+          "@stackage_ghcide//:shake",
+          "@stackage_ghcide//:text",
+          "@stackage_ghcide//:unordered-containers",
+      ],
+      visibility = ["//visibility:public"],
+  )
+      """,
+      # Keep these in sync with ghcide-stack-snapshot.yaml
+      sha256 = "47cca96a6e5031b3872233d5b9ca14d45f9089da3d45a068e1b587989fec4364",
+      strip_prefix = "ghcide-39605333c34039241768a1809024c739df3fb2bd",
+      urls = ["https://github.com/digital-asset/ghcide/archive/39605333c34039241768a1809024c739df3fb2bd.tar.gz"],
+  )
+
+You can test if this worked by building and executing ghcide as follows::
+
+  bazel build @ghcide//:ghcide
+  bazel-bin/external/ghcide/_install/bin/ghcide
+
+Write a small shell script to make it easy to invoke ghcide from your editor::
+
+  #!/usr/bin/env bash
+  set -euo pipefail
+  bazel build @ghcide//:ghcide
+  bazel-bin/external/ghcide/_install/bin/ghcide "$@"
+
+And, the last step, configure your editor to use ghcide. The upstream
+documentation provides `ghcide setup instructions`_ for a few popular editors.
+Note, that if you are using Nix, then you may need to invoke ghcide within a
+``nix-shell``.
+
+.. _ghcide: https://github.com/digital-asset/ghcide
+.. _haskell_repl: https://api.haskell.build/haskell/defs.html#haskell_repl
+.. _hie-bios: https://github.com/mpickering/hie-bios
+.. _bios cradle: https://github.com/mpickering/hie-bios#bios
+.. _ghcide's stack.yaml: https://github.com/digital-asset/ghcide/blob/39605333c34039241768a1809024c739df3fb2bd/stack.yaml
+.. _ghcide setup instructions: https://github.com/digital-asset/ghcide#using-with-vs-code
+
 Building Cabal packages
 -----------------------
 
