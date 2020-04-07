@@ -1,11 +1,10 @@
+# Taken from ghcide's stack.yaml
 resolver: nightly-2019-09-21
 packages:
-  - github: digital-asset/ghcide
-    commit: "ff62fdd87de813573167419809273fe07893678d"
-    sha256: "bdac4be9b2b9254876edefc788d56ff15dbf6d861dc4bf9ad4fa5ffb795e7c0d"
-  - haskell-lsp-0.20.0.0
-  - haskell-lsp-types-0.20.0.0
-  - lsp-test-0.10.1.0
+  # Taken from the extra-deps field.
+  - haskell-lsp-0.21.0.0
+  - haskell-lsp-types-0.21.0.0
+  - lsp-test-0.10.2.0
   - hie-bios-0.4.0
   - fuzzy-0.1.0.0
   - regex-pcre-builtin-0.95.1.1.8.43
@@ -14,3 +13,9 @@ packages:
   - shake-0.18.5
   - parser-combinators-1.2.1
   - haddock-library-1.8.0
+  - tasty-rerun-1.1.17
+  - ghc-check-0.1.0.3
+  # Point to the ghcide revision that you would like to use.
+  - github: digital-asset/ghcide
+    commit: "39605333c34039241768a1809024c739df3fb2bd"
+    sha256: "47cca96a6e5031b3872233d5b9ca14d45f9089da3d45a068e1b587989fec4364"
