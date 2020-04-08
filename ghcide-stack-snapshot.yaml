@@ -17,5 +17,5 @@ packages:
   - ghc-check-0.1.0.3
   # Point to the ghcide revision that you would like to use.
   - github: digital-asset/ghcide
-    commit: "39605333c34039241768a1809024c739df3fb2bd"
-    sha256: "47cca96a6e5031b3872233d5b9ca14d45f9089da3d45a068e1b587989fec4364"
+    commit: "c43a078c829be65d002c6ebcd3b1c9f2f534ca43"
+    sha256: "1768b6dc7ffb0de0c223bc35da2413acd5367e4ca036b2cdd21326e24f346a43"

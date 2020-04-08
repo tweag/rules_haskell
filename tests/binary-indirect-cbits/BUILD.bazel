@@ -1,6 +1,7 @@
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_binary",
+    "haskell_repl",
 )
 
 haskell_binary(
@@ -31,5 +32,12 @@ haskell_binary(
     deps = [
         "//tests/hackage:base",
         "//tests/library-with-cbits:library-with-cbits-static",
+    ],
+)
+
+haskell_repl(
+    name = "hie-bios",
+    deps = [
+        "binary-indirect-cbits",
     ],
 )

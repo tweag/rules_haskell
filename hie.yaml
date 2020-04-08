@@ -1,1 +1,6 @@
-cradle: {bios: {program: ".hie-bios"}}
+cradle:
+  multi:
+    - path: "tests"
+      config: {cradle: {bios: {program: ".hie-bios"}}}
+    - path: "tests/binary-indirect-cbits"
+      config: {cradle: {bios: {program: "tests/binary-indirect-cbits/.hie-bios"}}}
