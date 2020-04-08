@@ -392,3 +392,9 @@ haskell_repl(
         "//tests:run-tests",
     ],
 )
+
+sh_test(
+    name = "ghcide-smoke-test",
+    srcs = ["@ghcide"],
+    args = ["--version"],
+)
