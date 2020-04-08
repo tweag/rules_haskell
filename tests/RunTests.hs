@@ -63,6 +63,10 @@ main = hspec $ do
     it "allows to manually load modules" $ do
       assertSuccess (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":load BC.C", "-e", "c"])
 
+  describe "ghcide" $ do
+    it "loads RunTests.hs" $
+      assertSuccess (Process.proc "./.ghcide" ["tests/RunTests.hs"])
+
   describe "failures" $ do
     -- Make sure not to include haskell_repl (@repl) or alias (-repl) targets
     -- in the query. Those would not fail under bazel test.
