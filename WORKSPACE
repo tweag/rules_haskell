@@ -120,14 +120,14 @@ stack_snapshot(
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
     name = "stackage-zlib",
-    extra_deps = {"zlib": ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"]},
+    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
     packages = ["zlib"],
     snapshot = test_stack_snapshot,
 )
 
 stack_snapshot(
     name = "stackage_ghcide",
-    extra_deps = {"zlib": ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"]},
+    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
     haddock = False,
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
     packages = [
@@ -386,7 +386,7 @@ filegroup(
 )
 
 http_archive(
-    name = "zlib.win",
+    name = "zlib.hs",
     build_file_content = """
 load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
