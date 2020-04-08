@@ -50,6 +50,7 @@ jobs:
             echo "build:ci --host_platform=@rules_haskell//haskell/platforms:darwin_x86_64_nixpkgs" >> .bazelrc.local
             echo "build:ci --disk_cache=~/.cache/bazel/" >> .bazelrc.local
             echo "common:ci --test_tag_filters -dont_test_on_darwin" >> .bazelrc.local
+            echo "common --config ci" >> .bazelrc.local
 
       - restore_cache:
           keys: # see note about 'Disk cache'
@@ -75,7 +76,7 @@ jobs:
           shell: /bin/bash -eilo pipefail
           command: |
             nix-shell --arg docTools false --pure --run \
-              'bazel build --config ci //tests/...'
+              'bazel build //tests/...'
       - run:
           name: Run tests
           shell: /bin/bash -eilo pipefail
@@ -90,9 +91,9 @@ jobs:
             #   './tests/run-start-script.sh --use-nix'
             nix-shell --arg docTools false --pure --run '
             set -euo pipefail
-            bazel build --config ci //tests:run-tests
+            bazel build //tests:run-tests
             ./bazel-ci-bin/tests/run-tests
-            bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
+            bazel coverage //tests/... --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
             '
 
         # see note about 'Disk cache'
