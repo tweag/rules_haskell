@@ -1,6 +1,7 @@
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
+    "haskell_repl",
     "haskell_test",
 )
 
@@ -25,4 +26,9 @@ haskell_test(
         "//tests/hackage:base",
         "//tests/library-deps/sublib",
     ],
+)
+
+haskell_repl(
+    name = "hie-bios",
+    deps = [":bin-deps"],
 )

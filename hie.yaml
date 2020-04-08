@@ -4,3 +4,5 @@ cradle:
       config: {cradle: {bios: {program: ".hie-bios"}}}
     - path: "tests/binary-indirect-cbits"
       config: {cradle: {bios: {program: "tests/binary-indirect-cbits/.hie-bios"}}}
+    - path: "tests/library-deps"
+      config: {cradle: {bios: {program: "tests/library-deps/.hie-bios"}}}
