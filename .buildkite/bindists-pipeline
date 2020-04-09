@@ -6,18 +6,13 @@
 set -euo pipefail
 
 BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
-REPO_CACHE="$HOME/repo_cache"
 
 trap "rm -rf '$BAZEL_DIR'" EXIT
 export PATH="$BAZEL_DIR:$PATH"
-EXCLUDED="-requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist"
-echo "common:ci --build_tag_filters $EXCLUDED" > .bazelrc.local
-echo "common:ci --test_tag_filters $EXCLUDED" >> .bazelrc.local
-echo "build:ci --config=ci_linux" >> .bazelrc.local
-echo "common:ci --repository_cache $REPO_CACHE" >> .bazelrc.local
-# XXX: @com_google_protobuf sets `use_default_shell_env = True`, so we enable
-#   strict action env to avoid changes in `PATH` invalidating the cache.
-echo "build:ci --experimental_strict_action_env" >> .bazelrc.local
+cat >.bazelrc.local <<EOF
+common --config=ci
+build --config=linux-bindist --config=ci-linux-bindist
+EOF
 ./tests/run-start-script.sh --use-bindists
-bazel build --config ci //tests/...
-bazel test --config ci //tests/...
+bazel build //tests/...
+bazel test //tests/...
