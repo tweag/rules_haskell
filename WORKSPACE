@@ -306,6 +306,54 @@ filegroup(
     repository = "@nixpkgs_default",
 )
 
+# Postgresql testing setup
+nixpkgs_package(
+    name = "nixpkgs_postgres",
+    attribute_path = "postgresql96",
+    repository = "//nixpkgs:default.nix",
+)
+nixpkgs_package(
+    name = "postgresql96",
+    build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+filegroup(
+    name = "include",
+    srcs = glob(["include/**/*.h"]),
+    visibility = ["//visibility:public"],
+)
+cc_library(
+    name = "postgresql96",
+    linkstatic = 1,
+    srcs = ["@nixpkgs_postgres//:lib"],
+    hdrs = [":include"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
+""",
+    repository = "//nixpkgs:default.nix",
+)
+
+stack_snapshot(
+    name = "stackage-postgresql",
+    packages = [
+        "base",
+        "postgresql-libpq",
+    ],
+    extra_deps = {
+        "zlib": [
+            "@zlib.dev//:zlib",
+        ],
+        "postgresql-libpq": [
+            "@postgresql96//:postgresql96",
+        ],
+    },
+    tools = [
+        "@happy",
+        "@nixpkgs_postgres//:bin/pg_config",
+    ],
+    snapshot = "lts-13.15",
+)
+
 http_archive(
     name = "zlib.win",
     build_file_content = """

@@ -1,0 +1,37 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_repl",
+    "haskell_binary",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "library-with-static-deps",
+    srcs = ["PostgresqlImport.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@stackage-postgresql//:base",
+        "@stackage-postgresql//:postgresql-libpq",
+    ],
+)
+
+haskell_repl(
+    name = "repl-library-with-static-deps",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@stackage-postgresql//:base",
+        ":library-with-static-deps",
+    ],
+)
+
+haskell_binary(
+    name = "bin-library-with-static-deps",
+    srcs = ["Main.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@stackage-postgresql//:base",
+        ":library-with-static-deps",
+    ],
+)
