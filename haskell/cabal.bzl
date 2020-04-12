@@ -1215,7 +1215,7 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
           packages = ["conduit", "lens", "zlib"],
           flags = {"zlib": ["-non-blocking-ffi"]},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
-          local_Snapshot = "//:snapshot.yaml",
+          local_snapshot = "//:snapshot.yaml",
           extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       ```
 
