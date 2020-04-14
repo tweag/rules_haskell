@@ -265,6 +265,7 @@ def _compiler_flags_and_inputs(hs, repl_info, path_prefix = ""):
     ])
     all_libraries = cc_info.linking_context.libraries_to_link.to_list()
     cc_libraries = get_cc_libraries(cc_libraries_info, all_libraries)
+    print(get_ghci_library_files(hs, cc_libraries_info, cc_libraries))
     link_libraries(
         get_ghci_library_files(hs, cc_libraries_info, cc_libraries),
         args,

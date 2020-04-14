@@ -146,6 +146,7 @@ def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):
 
 def get_dirname(file):
     """Return the path to the directory containing the file."""
+    print(file.owner.workspace_root, file)
     return file.dirname
 
 def get_lib_name(lib):

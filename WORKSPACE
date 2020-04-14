@@ -311,6 +311,30 @@ nixpkgs_package(
     name = "nixpkgs_postgres",
     attribute_path = "postgresql96",
     repository = "//nixpkgs:default.nix",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "bin",
+    srcs = glob(["bin/*"], allow_empty = True),
+)
+
+lib_files = glob(["lib/**/*.so*", "lib/**/*.dylib", "lib/**/*.a"], allow_empty = True) 
+gen_files = ["gen/" + lib for lib in lib_files]
+genrule(
+    name = "lib",
+    srcs = lib_files,
+    outs = gen_files,
+    cmd = " && ".join(["mkdir -p gen/lib"] + [
+        "cp $(execpath {}) $(execpath {})".format(lib, "gen/" + lib)
+        for (lib, gen) in zip(lib_files, gen_files)
+    ]),
+)
+
+filegroup(
+    name = "include",
+    srcs = glob(["include/**/*.h"], allow_empty = True),
+)
+""",
 )
 nixpkgs_package(
     name = "postgresql96",

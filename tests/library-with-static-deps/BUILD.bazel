@@ -24,6 +24,7 @@ haskell_repl(
         "@stackage-postgresql//:base",
         ":library-with-static-deps",
     ],
+    repl_ghci_args = ["-v"],
 )
 
 haskell_binary(

@@ -146,7 +146,7 @@ def link_libraries(libs, args, prefix_optl = False):
         args.add_all(libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
     else:
         args.extend([libfmt % get_lib_name(lib) for lib in libs])
-        args.extend([dirfmt % lib.dirname for lib in libs])
+        args.extend([dirfmt % get_dirname(lib) for lib in libs])
 
 def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.
