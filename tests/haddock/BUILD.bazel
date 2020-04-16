@@ -56,8 +56,32 @@ haskell_doc(
     deps = [":haddock-lib-b"],
 )
 
+sh_test(
+    name = "data-dependency",
+    srcs = ["data_dependency.sh"],
+    args = ["$(rootpaths :haddock)"],
+    data = [":haddock"],
+    tags = [
+        # Fails in profiling mode due to missing haddocks for Deep.
+        "requires_dynamic",
+    ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
 haskell_doc(
     name = "haddock-transitive",
     index_transitive_deps = True,
     deps = [":haddock-lib-b"],
+)
+
+sh_test(
+    name = "data-dependency-transitive",
+    srcs = ["data_dependency.sh"],
+    args = ["$(rootpaths :haddock-transitive)"],
+    data = [":haddock-transitive"],
+    tags = [
+        # Fails in profiling mode due to missing haddocks for Deep.
+        "requires_dynamic",
+    ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
