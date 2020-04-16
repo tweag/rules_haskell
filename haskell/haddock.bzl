@@ -323,6 +323,7 @@ def _haskell_doc_rule_impl(ctx):
 
     return [DefaultInfo(
         files = depset(html_dict_copied.values() + [index_root]),
+        runfiles = ctx.runfiles(html_dict_copied.values() + [index_root]),
     )]
 
 haskell_doc = rule(
