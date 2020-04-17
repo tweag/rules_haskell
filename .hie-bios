@@ -10,7 +10,12 @@ hie_bios_flags() {
         while ((getline line < substr($1, 4)) > 0) {
           print line
         }
-      }'
+        next
+      }
+      {
+        print $0 > "/dev/stderr"
+      }
+    '
 }
 if [[ -z "${HIE_BIOS_OUTPUT-}" ]]; then
   hie_bios_flags
