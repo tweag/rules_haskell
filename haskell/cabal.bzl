@@ -1227,16 +1227,18 @@ def _stack_resolve_impl(repository_ctx):
     else:
         fail("Please specify one of snapshot or repository_snapshot")
 
+    meta_package = "rules-haskell-stack-resolve"
     repository_ctx.file(
-        "rules-haskell-stack-resolve/rules-haskell-stack-resolve.cabal",
+        "{name}/{name}.cabal".format(name = meta_package),
         content = """\
-name: rules-haskell-stack-resolve
+name: {name}
 cabal-version: >= 1.2
 version: 1.0
 library
   build-depends:
     {packages}
 """.format(
+            name = meta_package,
             packages = ",\n    ".join(repository_ctx.attr.packages),
         ),
         executable = False,
@@ -1245,7 +1247,7 @@ library
         "stack.yaml",
         content = struct(
             resolver = snapshot,
-            packages = ["rules-haskell-stack-resolve"],
+            packages = [meta_package],
         ).to_json(),
         executable = False,
     )
@@ -1261,14 +1263,44 @@ library
         content = "packages = " + ls_deps_result.stdout,
         executable = False,
     )
+    build_file_builder = ["""\
+exports_files(["packages.bzl"])
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary", "haskell_cabal_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_library")
+"""]
 
     packages = _parse_json(ls_deps_result.stdout)
+    for package in packages:
+        name = package["name"]
+        version = package["version"]
+        location = package.get("location")
+        dependencies = package["dependencies"]
+        if name == meta_package:
+            continue
+        elif not location:
+            build_file_builder.append("""\
+haskell_toolchain_library(
+    name = {name},
+    visibility = {visibility},
+)
+""".format(
+                name = repr(name),
+                visibility = repr(["//visibility:public"]), # TODO
+            ))
+        elif location.get("type") == "hackage":
+            build_file_builder.append("""\
+""")
+            # TODO: Use checksums for lock-file.
+            repository_ctx.download_and_extract(
+                url = "%s.tar.gz" % location["url"],
+                output = name,
+            )
+        else:
+            fail("Unknown package location: %s" % str(location))
 
     repository_ctx.file(
         "BUILD.bazel",
-        content = """\
-exports_files(["packages.bzl"])
-""",
+        content = "\n".join(build_file_builder),
         executable = False,
     )
 
