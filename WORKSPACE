@@ -46,30 +46,6 @@ haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visib
     urls = ["http://hackage.haskell.org/package/happy-1.19.12/happy-1.19.12.tar.gz"],
 )
 
-http_archive(
-    name = "proto-lens-protoc",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-haskell_cabal_binary(
-    name = "proto-lens-protoc",
-    srcs = glob(["**"]),
-    deps = [
-      "@stackage//:base",
-      "@stackage//:bytestring",
-      "@stackage//:containers",
-      "@stackage//:lens-family",
-      "@stackage//:proto-lens",
-      "@stackage//:proto-lens-protoc",
-      "@stackage//:text",
-    ],
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "b946740b94c8d300cd8e278ded9045905ef1985824cef6b81af0d79b119927be",
-    strip_prefix = "proto-lens-protoc-0.6.0.0",
-    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.6.0.0/proto-lens-protoc-0.6.0.0.tar.gz"],
-)
-
 load(
     "@rules_haskell//:constants.bzl",
     "test_ghc_version",
@@ -79,6 +55,12 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
+    components = {
+        "proto-lens-protoc": [
+            "lib",
+            "exe",
+        ],
+    },
     packages = [
         # Core libraries
         "array",
