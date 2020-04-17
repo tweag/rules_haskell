@@ -48,7 +48,7 @@ haskell_doctest_toolchain(
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
     testonly = 0,
-    plugin = "@proto-lens-protoc",
+    plugin = "@stackage//:proto-lens-protoc_exe_proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     tags = [
         "requires_proto",

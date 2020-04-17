@@ -399,7 +399,7 @@ def haskell_proto_toolchain(
       haskell_proto_toolchain(
         name = "protobuf-toolchain",
         protoc = "@com_google_protobuf//:protoc",
-        plugin = "@hackage-proto-lens-protoc//:bin/proto-lens-protoc",
+        plugin = "@stackage//proto-lens-protoc_exe_proto-lens-protoc",
         deps = [
           "base",
           "bytestring",
