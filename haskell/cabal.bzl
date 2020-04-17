@@ -1276,6 +1276,7 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_l
         version = package["version"]
         location = package.get("location")
         dependencies = package["dependencies"]
+        sha256 = repository_ctx.attr.checksums.get(name, None)
         if name == meta_package:
             continue
         elif not location:
@@ -1293,6 +1294,7 @@ haskell_toolchain_library(
 """)
             checksums[name] = repository_ctx.download_and_extract(
                 url = "%s.tar.gz" % location["url"],
+                sha256 = sha256,
                 output = name,
             ).sha256
         else:
@@ -1316,6 +1318,7 @@ _stack_resolve = repository_rule(
         "snapshot": attr.string(),
         "local_snapshot": attr.label(allow_single_file = True),
         "packages": attr.string_list(),
+        "checksums": attr.string_dict(),
         "stack": attr.label(),
     },
 )

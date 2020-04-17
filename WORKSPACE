@@ -60,6 +60,7 @@ stack_snapshot(
 )
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_resolve")
+load("//:checksums.bzl", _stack_resolve_sha256 = "checksums")
 
 stack_resolve(
     name = "resolve",
@@ -90,6 +91,8 @@ stack_resolve(
         "proto-lens-protoc",
         "lens-family",
     ],
+    # TODO: Make this easier to use.
+    checksums = _stack_resolve_sha256,
     snapshot = "lts-14.4",
 )
 
