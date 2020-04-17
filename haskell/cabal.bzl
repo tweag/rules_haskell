@@ -1157,6 +1157,66 @@ _stack_snapshot = repository_rule(
     },
 )
 
+_top = "top"
+_string = "string"
+_list = "list"
+_pair = "pair"
+_map = "map"
+
+def _insert_value(stack, value):
+    (state, container) = stack[-1]
+    if state == _top:
+        stack[-1] = (state, value)
+    elif state == _list:
+        container.append(value)
+    elif state == _pair:
+        container.append(value)
+    elif state == _map:
+        container.update([value])
+
+def _parse_json(json):
+    stack = [(_top, None)]
+    for char in json.elems():
+        (state, value) = stack[-1]
+        if state == _string:
+            if char == '"':
+                stack.pop()
+                _insert_value(stack, value)
+            else:
+                stack[-1] = (state, value + char)
+        elif char == '"':
+            stack.append((_string, ""))
+        elif char == "[":
+            stack.append((_list, []))
+        elif char == "]":
+            if state != _list:
+                fail("Malformed JSON unexpected ']'.")
+            stack.pop()
+            _insert_value(stack, value)
+        elif char == "{":
+            stack.append((_map, {}))
+            stack.append((_pair, []))
+        elif char == "}":
+            if state != _pair:
+                fail("Malformed JSON unexpected '}'.")
+            stack.pop()
+            _insert_value(stack, value)
+            _insert_value(stack, stack.pop()[1])
+        elif char == ",":
+            if not state in [_list, _pair]:
+                fail("Malformed JSON unexpected ','")
+            if state == _pair:
+                stack.pop()
+                _insert_value(stack, value)
+                stack.append((_pair, []))
+
+    if len(stack) > 1:
+        fail("Malformed JSON unterminated %s" % stack[-1][0])
+    elif len(stack) == 0:
+        fail("Malformed JSON")
+
+    return stack[-1][1]
+
 def _stack_resolve_impl(repository_ctx):
     if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
         fail("Please specify either snapshot or local_snapshot, but not both.")
@@ -1201,6 +1261,8 @@ library
         content = "packages = " + ls_deps_result.stdout,
         executable = False,
     )
+
+    packages = _parse_json(ls_deps_result.stdout)
 
     repository_ctx.file(
         "BUILD.bazel",
