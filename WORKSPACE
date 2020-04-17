@@ -59,6 +59,41 @@ stack_snapshot(
     snapshot = "lts-14.4",
 )
 
+load("@rules_haskell//haskell:cabal.bzl", "stack_resolve")
+
+stack_resolve(
+    name = "resolve",
+    packages = [
+        # Core libraries
+        "array",
+        "base",
+        "bytestring",
+        "containers",
+        "deepseq",
+        "directory",
+        "filepath",
+        "ghc-heap",
+        "mtl",
+        "process",
+        "text",
+        "vector",
+        # For tests
+        "network",
+        "language-c",
+        "streaming",
+        "void",
+        "hspec",
+        "hspec-core",
+        "lens-family-core",
+        "data-default-class",
+        "proto-lens",
+        "proto-lens-protoc",
+        "lens-family",
+    ],
+    snapshot = "lts-14.4",
+)
+
+
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
     name = "stackage-zlib",

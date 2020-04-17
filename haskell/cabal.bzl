@@ -1157,6 +1157,76 @@ _stack_snapshot = repository_rule(
     },
 )
 
+def _stack_resolve_impl(repository_ctx):
+    if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
+        fail("Please specify either snapshot or local_snapshot, but not both.")
+    elif repository_ctx.attr.snapshot:
+        snapshot = repository_ctx.attr.snapshot
+    elif repository_ctx.attr.local_snapshot:
+        snapshot = repository_ctx.path(repository_ctx.attr.local_snapshot)
+    else:
+        fail("Please specify one of snapshot or repository_snapshot")
+
+    repository_ctx.file(
+        "rules-haskell-stack-resolve/rules-haskell-stack-resolve.cabal",
+        content = """\
+name: rules-haskell-stack-resolve
+cabal-version: >= 1.2
+version: 1.0
+library
+  build-depends:
+    {packages}
+""".format(
+            packages = ",\n    ".join(repository_ctx.attr.packages),
+        ),
+        executable = False,
+    )
+    repository_ctx.file(
+        "stack.yaml",
+        content = struct(
+            resolver = snapshot,
+            packages = ["rules-haskell-stack-resolve"],
+        ).to_json(),
+        executable = False,
+    )
+
+    stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
+    ls_deps_result = _execute_or_fail_loudly(
+        repository_ctx,
+        # TODO: Forward Cabal flags
+        [stack_cmd, "ls", "dependencies", "json", "--global-hints"],
+    )
+    repository_ctx.file(
+        "packages.bzl",
+        content = "packages = " + ls_deps_result.stdout,
+        executable = False,
+    )
+
+    repository_ctx.file(
+        "BUILD.bazel",
+        content = """\
+exports_files(["packages.bzl"])
+""",
+        executable = False,
+    )
+
+_stack_resolve = repository_rule(
+    _stack_resolve_impl,
+    attrs = {
+        "snapshot": attr.string(),
+        "local_snapshot": attr.label(allow_single_file = True),
+        "packages": attr.string_list(),
+        "stack": attr.label(),
+    },
+)
+
+def stack_resolve(**kwargs):
+    stack = kwargs.pop("stack", None)
+    if not stack:
+        _fetch_stack(name = "rules_haskell_stack")
+        stack = Label("@rules_haskell_stack//:stack")
+    _stack_resolve(stack = stack, **kwargs)
+
 def _stack_update_impl(repository_ctx):
     stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
     _execute_or_fail_loudly(repository_ctx, [stack_cmd, "update"])
