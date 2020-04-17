@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
-bazel build @ghcide//:ghcide
-bazel-bin/external/ghcide/_install/bin/ghcide "$@"
+build_ghcide() {
+  bazel build @ghcide//:ghcide \
+    --experimental_show_artifacts \
+    2>&1 \
+    | awk '
+      /^>>>/ { print substr($1, 4); next }
+      { print $0 > "/dev/stderr" }
+    '
+}
+ghcide="$(build_ghcide)"
+"$ghcide" "$@"
