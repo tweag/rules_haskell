@@ -1270,6 +1270,7 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_l
 """]
 
     packages = _parse_json(ls_deps_result.stdout)
+    checksums = {}
     for package in packages:
         name = package["name"]
         version = package["version"]
@@ -1290,17 +1291,22 @@ haskell_toolchain_library(
         elif location.get("type") == "hackage":
             build_file_builder.append("""\
 """)
-            # TODO: Use checksums for lock-file.
-            repository_ctx.download_and_extract(
+            checksums[name] = repository_ctx.download_and_extract(
                 url = "%s.tar.gz" % location["url"],
                 output = name,
-            )
+            ).sha256
         else:
             fail("Unknown package location: %s" % str(location))
 
     repository_ctx.file(
         "BUILD.bazel",
         content = "\n".join(build_file_builder),
+        executable = False,
+    )
+
+    repository_ctx.file(
+        "checksums.bzl",
+        content = "checksums = %s" % repr(checksums),
         executable = False,
     )
 
