@@ -1,5 +1,6 @@
 """Cabal packages"""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
@@ -828,7 +829,59 @@ def _stack_version_check(repository_ctx, stack_cmd):
     stack_major_version = int(exec_result.stdout.split(".")[0])
     return stack_major_version >= 2
 
-def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages, vendored_packages):
+def _parse_components(package, components):
+    """Parse and validate a list of Cabal components.
+
+    Components take the following shape:
+      * `lib`: The library component.
+      * `lib:<package>`: The library component.
+      * `exe`: The executable component `exe:<package>`.
+      * `exe:<name>`: An executable component.
+
+    Args:
+      package: string, The package name.
+      components: list of string, The Cabal components
+
+    Returns:
+      struct(lib, exe):
+        lib: bool, Whether the package has a library component.
+        exe: list of string, List of executables.
+    """
+    lib = False
+    exe = []
+
+    for component in components:
+        if component == "lib":
+            lib = True
+        elif component.startswith("lib:"):
+            if component == "lib:%s" % package:
+                lib = True
+            else:
+                fail("Sublibrary components are not supported: %s in %s" % (component, package), "components")
+        elif component == "exe":
+            exe.append(package)
+        elif component.startswith("exe:"):
+            exe.append(component[4:])
+        elif component.startswith("test"):
+            fail("Cabal test components are not supported: %s in %s" % (component, package), "components")
+        else:
+            fail("Invalid Cabal component: %s in %s" % (component, package), "components")
+
+    if package in _CORE_PACKAGES:
+        if not lib or exe != []:
+            fail("Invalid core package components: %s" % package, "components")
+
+    return struct(lib = lib, exe = exe)
+
+_default_components = {
+    "alex": ["exe"],
+    "c2hs": ["exe"],
+    "cpphs": ["lib", "exe"],
+    "doctest": ["lib", "exe"],
+    "happy": ["exe"],
+}
+
+def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages, vendored_packages, user_components):
     """Given a list of root packages, compute a dependency graph.
 
     Returns:
@@ -839,15 +892,16 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         flags: Cabal flags for this package.
         deps: The list of dependencies.
         vendored: Label of vendored package, None if not vendored.
+        user_components: Mapping from package names to Cabal components.
         is_core_package: Whether the package is a core package.
         sdist: directory name of the unpackaged source distribution or None if core package or vendored.
 
     """
-
     all_packages = {}
     for core_package in core_packages:
         all_packages[core_package] = struct(
             name = core_package,
+            components = struct(lib = True, exe = []),
             version = None,
             versioned_name = None,
             flags = repository_ctx.attr.flags.get(core_package, []),
@@ -900,6 +954,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     )
     transitive_unpacked_sdists = []
     indirect_unpacked_sdists = []
+    remaining_components = dicts.add(_default_components, user_components)
     for package in exec_result.stdout.splitlines():
         name = _chop_version(package)
         if name in _CABAL_TOOLS and not name in _CABAL_TOOL_LIBRARIES:
@@ -910,6 +965,10 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         is_core_package = name in _CORE_PACKAGES
         all_packages[name] = struct(
             name = name,
+            components = _parse_components(
+                name,
+                remaining_components.pop(name, ["lib"]),
+            ),
             version = version,
             versioned_name = package,
             flags = repository_ctx.attr.flags.get(name, []),
@@ -931,6 +990,10 @@ Specify a fully qualified package name of the form <package>-<version>.
         transitive_unpacked_sdists.append(package)
         if package not in unpacked_sdists:
             indirect_unpacked_sdists.append(name)
+
+    for package in remaining_components.keys():
+        if not package in _default_components:
+            fail("Unknown package: %s" % package, "components")
 
     # We removed the version numbers prior to calling `unpack`. This
     # way, stack will fetch the package sources from the snapshot
@@ -1026,6 +1089,7 @@ def _stack_snapshot_impl(repository_ctx):
         versioned_packages,
         unversioned_packages,
         vendored_packages,
+        repository_ctx.attr.components,
     )
 
     extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.extra_deps)
@@ -1049,7 +1113,7 @@ def _stack_snapshot_impl(repository_ctx):
     # Write out the dependency graph as a BUILD file.
     build_file_builder = []
     build_file_builder.append("""
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary", "haskell_cabal_library")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_library")
 """)
     for package in all_packages.values():
@@ -1084,8 +1148,21 @@ haskell_library(
                 ),
             )
         else:
-            build_file_builder.append(
-                """
+            library_deps = [
+                dep
+                for dep in package.deps
+                if all_packages[dep].components.lib
+            ] + [
+                _label_to_string(label)
+                for label in extra_deps.get(package.name, [])
+            ]
+            setup_deps = [
+                _label_to_string(Label("@{}//:{}".format(repository_ctx.name, package.name)).relative(label))
+                for label in repository_ctx.attr.setup_deps.get(package.name, [])
+            ]
+            if package.components.lib:
+                build_file_builder.append(
+                    """
 haskell_cabal_library(
     name = "{name}",
     version = "{version}",
@@ -1101,32 +1178,52 @@ haskell_cabal_library(
     unique_name = True,
 )
 """.format(
-                    name = package.name,
-                    version = package.version,
-                    haddock = repr(repository_ctx.attr.haddock),
-                    flags = package.flags,
-                    dir = package.sdist,
-                    deps = package.deps + [
-                        _label_to_string(label)
-                        for label in extra_deps.get(package.name, [])
-                    ],
-                    setup_deps = [
-                        _label_to_string(Label("@{}//:{}".format(repository_ctx.name, package.name)).relative(label))
-                        for label in repository_ctx.attr.setup_deps.get(package.name, [])
-                    ],
-                    tools = tools,
-                    visibility = visibility,
-                    verbose = repr(repository_ctx.attr.verbose),
-                ),
-            )
-        if package.versioned_name != None:
-            build_file_builder.append(
-                """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
-                    name = package.versioned_name,
-                    actual = package.name,
-                    visibility = visibility,
-                ),
-            )
+                        name = package.name,
+                        version = package.version,
+                        haddock = repr(repository_ctx.attr.haddock),
+                        flags = package.flags,
+                        dir = package.sdist,
+                        deps = library_deps,
+                        setup_deps = setup_deps,
+                        tools = tools,
+                        visibility = visibility,
+                        verbose = repr(repository_ctx.attr.verbose),
+                    ),
+                )
+                if package.versioned_name != None:
+                    build_file_builder.append(
+                        """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
+                            name = package.versioned_name,
+                            actual = package.name,
+                            visibility = visibility,
+                        ),
+                    )
+            for exe in package.components.exe:
+                build_file_builder.append(
+                    """
+haskell_cabal_binary(
+    name = "{name}_exe_{exe}",
+    exe_name = "{exe}",
+    flags = {flags},
+    srcs = glob(["{dir}/**"]),
+    deps = {deps},
+    tools = {tools},
+    visibility = {visibility},
+    compiler_flags = ["-w", "-optF=-w"],
+    verbose = {verbose},
+)
+""".format(
+                        name = package.name,
+                        exe = exe,
+                        flags = package.flags,
+                        dir = package.sdist,
+                        deps = library_deps + ([package.name] if package.components.lib else []),
+                        setup_deps = setup_deps,
+                        tools = tools,
+                        visibility = visibility,
+                        verbose = repr(repository_ctx.attr.verbose),
+                    ),
+                )
     build_file_content = "\n".join(build_file_builder)
     repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
 
@@ -1142,6 +1239,7 @@ _stack_snapshot = repository_rule(
         "extra_deps": attr.label_keyed_string_dict(),
         "setup_deps": attr.string_list_dict(),
         "tools": attr.label_list(),
+        "components": attr.string_list_dict(),
         "stack": attr.label(),
         "stack_update": attr.label(),
         "verbose": attr.bool(default = False),
@@ -1253,6 +1351,7 @@ def stack_snapshot(
         haddock = True,
         setup_deps = {},
         tools = [],
+        components = {},
         stack_update = None,
         verbose = False,
         **kwargs):
@@ -1355,6 +1454,12 @@ def stack_snapshot(
         Dict of stackage package names to a list of targets in the same format as for `extra_deps`.
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
+      components: Defines which Cabal components to build for each package.
+        A dict from package name to list of components. Use `lib` for the
+        library component and `exe:<exe-name>` for an executable component,
+        `exe` is a short-cut for `exe:<package-name>`. The library component
+        will have the label `//:<package>` and an executable component will
+        have the label `//:<package>_exe_<exe-name>`.
       stack: The stack binary to use to enumerate package dependencies.
       haddock: Whether to generate haddock documentation.
       verbose: Whether to show the output of the build.
@@ -1392,6 +1497,7 @@ def stack_snapshot(
         haddock = haddock,
         setup_deps = setup_deps,
         tools = tools,
+        components = components,
         verbose = verbose,
         **kwargs
     )
