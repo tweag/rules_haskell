@@ -18,8 +18,9 @@ haskell_cabal_library(
 )
 
 haskell_cabal_binary(
-    name = "haskell_cabal_package",
+    name = "exe",
     srcs = glob(["**"]),
+    exe_name = "haskell_cabal_package",
     deps = [
         ":base",
         ":lib",
