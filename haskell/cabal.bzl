@@ -90,7 +90,6 @@ main = defaultMain
     return setup
 
 _CABAL_TOOLS = ["alex", "c2hs", "cpphs", "doctest", "happy"]
-_CABAL_TOOL_LIBRARIES = ["cpphs", "doctest"]
 
 # Some old packages are empty compatibility shims. Empty packages
 # cause Cabal to not produce the outputs it normally produces. Instead
@@ -892,9 +891,6 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     remaining_components = dicts.add(_default_components, user_components)
     for package in exec_result.stdout.splitlines():
         name = _chop_version(package)
-        if name in _CABAL_TOOLS and not name in _CABAL_TOOL_LIBRARIES:
-            continue
-
         version = _version(package)
         vendored = vendored_packages.get(name, None)
         is_core_package = name in _CORE_PACKAGES
@@ -1086,6 +1082,11 @@ haskell_library(
                 _label_to_string(label)
                 for label in extra_deps.get(package.name, [])
             ]
+            library_tools = [
+                "%s_exe_%s" % (dep, exe)
+                for dep in package.deps
+                for exe in all_packages[dep].components.exe
+            ] + tools
             if package.components.lib:
                 build_file_builder.append(
                     """
@@ -1108,7 +1109,7 @@ haskell_cabal_library(
                         flags = package.flags,
                         dir = package.sdist,
                         deps = library_deps,
-                        tools = tools,
+                        tools = library_tools,
                         visibility = visibility,
                         verbose = repr(repository_ctx.attr.verbose),
                     ),
@@ -1141,7 +1142,7 @@ haskell_cabal_binary(
                         flags = package.flags,
                         dir = package.sdist,
                         deps = library_deps + ([package.name] if package.components.lib else []),
-                        tools = tools,
+                        tools = library_tools,
                         visibility = visibility,
                         verbose = repr(repository_ctx.attr.verbose),
                     ),
