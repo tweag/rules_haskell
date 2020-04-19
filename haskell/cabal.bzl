@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@bazel_tools//tools/build_defs/repo:git_worker.bzl", "git_repo")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":cc.bzl", "cc_interop_info")
 load(":private/actions/info.bzl", "library_info_output_groups")
@@ -1246,7 +1247,8 @@ library
     repository_ctx.file(
         "stack.yaml",
         content = struct(
-            resolver = snapshot,
+            # TODO: Avoid absolute path.
+            resolver = str(snapshot),
             packages = [meta_package],
         ).to_json(),
         executable = False,
@@ -1259,8 +1261,8 @@ library
         [stack_cmd, "ls", "dependencies", "json", "--global-hints"],
     )
     repository_ctx.file(
-        "packages.bzl",
-        content = "packages = " + ls_deps_result.stdout,
+        "packages.json",
+        content = ls_deps_result.stdout,
         executable = False,
     )
     build_file_builder = ["""\
@@ -1290,14 +1292,51 @@ haskell_toolchain_library(
                 visibility = repr(["//visibility:public"]), # TODO
             ))
         elif location.get("type") == "hackage":
+            # TODO: Define haskell_cabal_library|binary targets
             build_file_builder.append("""\
 """)
-            checksums[name] = repository_ctx.download_and_extract(
-                url = "%s.tar.gz" % location["url"],
-                sha256 = sha256,
-                output = name,
-            ).sha256
+            url = "%s.tar.gz" % location["url"]
+            args = dict(url = url, output = name)
+            if sha256:
+                args.update(sha256 = sha256)
+            checksums[name] = repository_ctx.download_and_extract(**args).sha256
+        elif location.get("type") == "archive":
+            # TODO: Define haskell_cabal_library|binary targets
+            build_file_builder.append("""\
+""")
+            url = location["url"]
+            args = dict(url = url, output = name)
+            if sha256:
+                args.update(sha256 = sha256)
+            checksums[name] = repository_ctx.download_and_extract(**args).sha256
+        elif location.get("type") == "git":
+            # TODO: Define haskell_cabal_library|binary targets
+            # TODO: Use `location["subdir"]` as a glob prefix.
+            build_file_builder.append("""\
+""")
+            # TODO: Avoid duplicate git repository checkouts.
+            git_ctx = struct(
+                attr = struct(
+                    remote = location["url"],
+                    commit = location["commit"],
+                    shallow_since = "",
+                    tag = "",
+                    branch = "",
+                    init_submodules = False,
+                    verbose = False,
+                    strip_prefix = "", # `git_repo` ignores `strip_prefix`.
+                    patches = [],
+                    patch_tool = "",
+                    patch_args = [],
+                    patch_cmds = [],
+                    patch_cmds_win = [],
+                ),
+                **{k: getattr(repository_ctx, k) for k in dir(repository_ctx) if k != "attr"}
+            )
+            git_repo(git_ctx, name)
+            # TODO: Extend checksums to handle `get_repo` result `struct(commit, shallow_since)`.
         else:
+            # TODO: How to handle, say, git dependencies?
             fail("Unknown package location: %s" % str(location))
 
     repository_ctx.file(

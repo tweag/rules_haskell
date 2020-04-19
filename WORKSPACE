@@ -65,35 +65,15 @@ load("//:checksums.bzl", _stack_resolve_sha256 = "checksums")
 stack_resolve(
     name = "resolve",
     packages = [
-        # Core libraries
-        "array",
-        "base",
-        "bytestring",
-        "containers",
-        "deepseq",
-        "directory",
-        "filepath",
-        "ghc-heap",
-        "mtl",
-        "process",
-        "text",
-        "vector",
-        # For tests
-        "network",
+        "attoparsec",
+        "auto-update",
         "language-c",
-        "streaming",
+        "microlens",
         "void",
-        "hspec",
-        "hspec-core",
-        "lens-family-core",
-        "data-default-class",
-        "proto-lens",
-        "proto-lens-protoc",
-        "lens-family",
     ],
     # TODO: Make this easier to use.
     checksums = _stack_resolve_sha256,
-    snapshot = "lts-14.4",
+    local_snapshot = "//:stack-snapshot.yaml",
 )
 
 

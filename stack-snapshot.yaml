@@ -1,0 +1,11 @@
+resolver: lts-14.4
+packages:
+  - microlens-0.4.11.2
+  - archive: https://github.com/bos/attoparsec/archive/18f4f8ec4f3257d2ddc8a911b398b2d3e640a11c.tar.gz
+    sha256: 6ca98cdb75106f61c269449d2d0582f12f9fbf654ad198d8b229fcc4dd26edae
+  - github: ekmett/void
+    commit: a5e349f642aaefa87fc101e9c0ae5a199f1759e8
+  - git: git@github.com:yesodweb/wai
+    commit: caf604a397a8003a09deddf5f0f433483b433368
+    subdirs:
+      - auto-update
