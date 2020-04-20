@@ -180,7 +180,7 @@ load(
 )
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "ghc",
+    attribute_path = "haskell.compiler.ghc865",
     compiler_flags = test_compiler_flags,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
