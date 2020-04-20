@@ -553,6 +553,7 @@ def haskell_library_impl(ctx):
                 actions = ctx.actions,
                 feature_configuration = feature_configuration,
                 dynamic_library = dynamic_library,
+                dynamic_library_symlink_path = dynamic_library.basename if dynamic_library else "",
                 static_library = static_library,
                 cc_toolchain = cc_toolchain,
             ),
@@ -730,6 +731,7 @@ def haskell_toolchain_libraries_impl(ctx):
                 actions = ctx.actions,
                 feature_configuration = feature_configuration,
                 dynamic_library = lib.get("dynamic", None),
+                dynamic_library_symlink_path = lib["dynamic"].basename if lib.get("dynamic") else "",
                 static_library = lib.get("static", None),
                 cc_toolchain = cc_toolchain,
             )
