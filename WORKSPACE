@@ -20,6 +20,22 @@ bazel_skylib_workspace()
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+http_archive(
+    name = "alex",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+haskell_cabal_binary(
+    name = "alex",
+    srcs = glob(["**"]),
+    verbose = False,
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "d58e4d708b14ff332a8a8edad4fa8989cb6a9f518a7c6834e96281ac5f8ff232",
+    strip_prefix = "alex-3.2.4",
+    urls = ["http://hackage.haskell.org/package/alex-3.2.4/alex-3.2.4.tar.gz"],
+)
+
 load(
     "@rules_haskell//:constants.bzl",
     "test_ghc_version",
@@ -30,6 +46,7 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 stack_snapshot(
     name = "stackage",
     components = {
+        "alex": [],
         "proto-lens-protoc": [
             "lib",
             "exe",
@@ -67,6 +84,13 @@ stack_snapshot(
     ],
     setup_deps = {"polysemy": ["cabal-doctest"]},
     snapshot = test_stack_snapshot,
+    tools = [
+        # This is not required, as `stack_snapshot` would build alex
+        # automatically, however it is used as a test for user provided
+        # `tools`. We also override alex's components to avoid building it
+        # twice.
+        "@alex",
+    ],
 )
 
 # In a separate repo because not all platforms support zlib.
