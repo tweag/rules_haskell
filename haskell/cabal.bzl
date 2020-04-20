@@ -890,7 +890,8 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         version: The version of the package.
         versioned_name: <name>-<version>.
         flags: Cabal flags for this package.
-        deps: The list of dependencies.
+        deps: The list of library dependencies.
+        tools: The list of build tools.
         vendored: Label of vendored package, None if not vendored.
         user_components: Mapping from package names to Cabal components.
         is_core_package: Whether the package is a core package.
@@ -906,6 +907,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
             versioned_name = None,
             flags = repository_ctx.attr.flags.get(core_package, []),
             deps = [],
+            tools = [],
             vendored = None,
             is_core_package = True,
             sdist = None,
@@ -970,6 +972,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
             versioned_name = package,
             flags = repository_ctx.attr.flags.get(name, []),
             deps = [],
+            tools = [],
             vendored = vendored,
             is_core_package = is_core_package,
             sdist = None if is_core_package or vendored != None else package,
@@ -1013,7 +1016,13 @@ Specify a fully qualified package name of the form <package>-<version>.
         if len(tokens) == 3 and tokens[1] == "->":
             [src, _, dest] = tokens
             if src in all_packages and dest in all_packages:
-                all_packages[src].deps.append(dest)
+                if all_packages[dest].components.lib:
+                    all_packages[src].deps.append(dest)
+                if all_packages[dest].components.exe:
+                    all_packages[src].tools.extend([
+                        (dest, exe)
+                        for exe in all_packages[dest].components.exe
+                    ])
     return all_packages
 
 def _invert(d):
@@ -1102,6 +1111,7 @@ def _stack_snapshot_impl(repository_ctx):
                 library = package.components.lib,
                 executables = package.components.exe,
                 deps = [Label("@{}//:{}".format(repository_ctx.name, dep)) for dep in package.deps],
+                tools = [Label("@{}-exe//{}:{}".format(repository_ctx.name, dep, exe)) for (dep, exe) in package.tools],
                 flags = package.flags,
             )
             for package in all_packages.values()
@@ -1147,18 +1157,13 @@ haskell_library(
                 ),
             )
         else:
-            library_deps = [
-                dep
-                for dep in package.deps
-                if all_packages[dep].components.lib
-            ] + [
+            library_deps = package.deps + [
                 _label_to_string(label)
                 for label in extra_deps.get(package.name, [])
             ]
             library_tools = [
                 "_%s_exe_%s" % (dep, exe)
-                for dep in package.deps
-                for exe in all_packages[dep].components.exe
+                for (dep, exe) in package.tools
             ] + tools
             setup_deps = [
                 _label_to_string(Label("@{}//:{}".format(repository_ctx.name, package.name)).relative(label))
@@ -1424,7 +1429,8 @@ def stack_snapshot(
       - version: The package version.
       - library: Whether the package has a declared library component.
       - executables: List of declared executable components.
-      - deps: The list of package dependencies according to stack.
+      - deps: The list of library dependencies according to stack.
+      - tools: The list of tool dependencies according to stack.
       - flags: The list of Cabal flags.
 
     **NOTE:** Make sure your GHC version matches the version expected by the
