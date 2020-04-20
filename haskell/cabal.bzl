@@ -638,7 +638,7 @@ haskell_cabal_binary = rule(
     executable = True,
     attrs = {
         "exe_name": attr.string(
-            doc = "Cabal executable component name. Defaults to name attribute.",
+            doc = "Cabal executable component name. Defaults to the value of the name attribute.",
         ),
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(
