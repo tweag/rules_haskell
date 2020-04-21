@@ -23,6 +23,13 @@ jobs:
     displayName: "Enable da long paths"
 
   - bash: |
+      cat >.bazelrc.local <<EOF
+      common --config=ci
+      build --config=windows-bindist --config=ci-windows-bindist
+      EOF
+    displayName: "Configure Bazel"
+
+  - bash: |
       set -e
       export MSYS2_ARG_CONV_EXCL="*"
 
@@ -32,49 +39,49 @@ jobs:
       echo "PATH='$PATH'"
 
       # Tests that build but don't run
-      /c/bazel/bazel.exe build --config windows "//tests/c-compiles-still/..."
-      /c/bazel/bazel.exe build --config windows "//tests/binary-with-data/..."
-      /c/bazel/bazel.exe build --config windows "//tests/binary-indirect-cbits"
+      /c/bazel/bazel.exe build "//tests/c-compiles-still/..."
+      /c/bazel/bazel.exe build "//tests/binary-with-data/..."
+      /c/bazel/bazel.exe build "//tests/binary-indirect-cbits"
 
       # Tests that only require building
       # (when using 'test' CI fails with:
       #     ERROR: No test targets were found, yet testing was requested
       # )
       # See https://github.com/bazelbuild/bazel/issues/7291
-      /c/bazel/bazel.exe build --config windows "//tests/data/..."
-      /c/bazel/bazel.exe build --config windows "//tests/failures/..."
-      /c/bazel/bazel.exe build --config windows "//tests/hidden-modules/..."
-      /c/bazel/bazel.exe build --config windows "//tests/package-id-clash/..."
+      /c/bazel/bazel.exe build "//tests/data/..."
+      /c/bazel/bazel.exe build "//tests/failures/..."
+      /c/bazel/bazel.exe build "//tests/hidden-modules/..."
+      /c/bazel/bazel.exe build "//tests/package-id-clash/..."
 
       # Tests that succeed
-      /c/bazel/bazel.exe test --config windows "//tests:test-binary-simple"
-      /c/bazel/bazel.exe test --config windows "//tests:test-binary-custom-main"
-      /c/bazel/bazel.exe test --config windows "//tests/binary-custom-main/..."
-      /c/bazel/bazel.exe test --config windows "//tests/binary-exe-path/..."
-      /c/bazel/bazel.exe test --config windows "//tests/binary-with-data/..."
-      /c/bazel/bazel.exe test --config windows "//tests/binary-with-lib/..."
-      /c/bazel/bazel.exe test --config windows "//tests/binary-with-main/..."
-      /c/bazel/bazel.exe test --config windows "//tests/binary-simple/..."
-      /c/bazel/bazel.exe test --config windows "//tests/binary-with-compiler-flags/..."
-      /c/bazel/bazel.exe test --config windows "//tests/binary-with-import/..."
-      /c/bazel/bazel.exe test --config windows "//tests/binary-with-link-flags/..."
-      /c/bazel/bazel.exe test --config windows "//tests/cpp_macro_conflict/..."
-      /c/bazel/bazel.exe test --config windows "//tests/extra-source-files/..."
-      /c/bazel/bazel.exe test --config windows "//tests/java_classpath/..."
-      /c/bazel/bazel.exe test --config windows "//tests/generated-modules/..."
-      /c/bazel/bazel.exe test --config windows "//tests/haskell_test/..."
-      /c/bazel/bazel.exe test --config windows "//tests/hs-boot/..."
-      /c/bazel/bazel.exe test --config windows "//tests/indirect-link/..."
-      /c/bazel/bazel.exe test --config windows "//tests/library-deps/..."
-      /c/bazel/bazel.exe test --config windows "//tests/library-exports/..."
-      /c/bazel/bazel.exe test --config windows "//tests/library-linkstatic-flag/..."
-      /c/bazel/bazel.exe test --config windows "//tests/lhs/..."
-      /c/bazel/bazel.exe test --config windows "//tests/package-id-clash-binary/..."
-      /c/bazel/bazel.exe test --config windows "//tests/package-name/..."
-      /c/bazel/bazel.exe test --config windows "//tests/textual-hdrs/..."
-      /c/bazel/bazel.exe test --config windows "//tests/two-libs/..."
-      /c/bazel/bazel.exe test --config windows "//tests/encoding/..."
-      /c/bazel/bazel.exe test --config windows "//tests/c-compiles/..."
-      /c/bazel/bazel.exe test --config windows "//tests/stack-snapshot-deps/..."
+      /c/bazel/bazel.exe test "//tests:test-binary-simple"
+      /c/bazel/bazel.exe test "//tests:test-binary-custom-main"
+      /c/bazel/bazel.exe test "//tests/binary-custom-main/..."
+      /c/bazel/bazel.exe test "//tests/binary-exe-path/..."
+      /c/bazel/bazel.exe test "//tests/binary-with-data/..."
+      /c/bazel/bazel.exe test "//tests/binary-with-lib/..."
+      /c/bazel/bazel.exe test "//tests/binary-with-main/..."
+      /c/bazel/bazel.exe test "//tests/binary-simple/..."
+      /c/bazel/bazel.exe test "//tests/binary-with-compiler-flags/..."
+      /c/bazel/bazel.exe test "//tests/binary-with-import/..."
+      /c/bazel/bazel.exe test "//tests/binary-with-link-flags/..."
+      /c/bazel/bazel.exe test "//tests/cpp_macro_conflict/..."
+      /c/bazel/bazel.exe test "//tests/extra-source-files/..."
+      /c/bazel/bazel.exe test "//tests/java_classpath/..."
+      /c/bazel/bazel.exe test "//tests/generated-modules/..."
+      /c/bazel/bazel.exe test "//tests/haskell_test/..."
+      /c/bazel/bazel.exe test "//tests/hs-boot/..."
+      /c/bazel/bazel.exe test "//tests/indirect-link/..."
+      /c/bazel/bazel.exe test "//tests/library-deps/..."
+      /c/bazel/bazel.exe test "//tests/library-exports/..."
+      /c/bazel/bazel.exe test "//tests/library-linkstatic-flag/..."
+      /c/bazel/bazel.exe test "//tests/lhs/..."
+      /c/bazel/bazel.exe test "//tests/package-id-clash-binary/..."
+      /c/bazel/bazel.exe test "//tests/package-name/..."
+      /c/bazel/bazel.exe test "//tests/textual-hdrs/..."
+      /c/bazel/bazel.exe test "//tests/two-libs/..."
+      /c/bazel/bazel.exe test "//tests/encoding/..."
+      /c/bazel/bazel.exe test "//tests/c-compiles/..."
+      /c/bazel/bazel.exe test "//tests/stack-snapshot-deps/..."
 
     displayName: 'Run Bazel'
