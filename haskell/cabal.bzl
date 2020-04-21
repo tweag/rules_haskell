@@ -929,6 +929,9 @@ def _stack_snapshot_impl(repository_ctx):
     else:
         fail("Please specify one of snapshot or repository_snapshot")
 
+    # Enforce dependency on stack_update
+    repository_ctx.read(repository_ctx.attr.stack_update)
+
     vendored_packages = _invert(repository_ctx.attr.vendored_packages)
     packages = repository_ctx.attr.packages
     core_packages = []
