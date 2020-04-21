@@ -124,11 +124,6 @@ load(
     "nixpkgs_python_configure",
 )
 
-nixpkgs_package(
-    name = "ghc",
-    repository = "@nixpkgs_default",
-)
-
 http_archive(
     name = "rules_proto",
     sha256 = "73ebe9d15ba42401c785f9d0aeebccd73bd80bf6b8ac78f74996d31f2c0ad7a6",
@@ -180,7 +175,7 @@ load(
 )
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "ghc",
+    attribute_path = "haskell.compiler.ghc865",
     compiler_flags = test_compiler_flags,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
@@ -237,13 +232,13 @@ cc_library(
 
 nixpkgs_package(
     name = "c2hs",
-    attribute_path = "haskellPackages.c2hs",
+    attribute_path = "haskell.packages.ghc865.c2hs",
     repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "doctest",
-    attribute_path = "haskellPackages.doctest",
+    attribute_path = "haskell.packages.ghc865.doctest",
     repository = "@nixpkgs_default",
 )
 

@@ -13,6 +13,7 @@ rules_haskell_dependencies()
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
+    attribute_path = "haskell.compiler.ghc865",
     repository = "@rules_haskell//nixpkgs:default.nix",
     version = "8.6.5",
 )
