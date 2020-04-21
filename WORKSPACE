@@ -124,11 +124,6 @@ load(
     "nixpkgs_python_configure",
 )
 
-nixpkgs_package(
-    name = "ghc",
-    repository = "@nixpkgs_default",
-)
-
 http_archive(
     name = "rules_proto",
     sha256 = "73ebe9d15ba42401c785f9d0aeebccd73bd80bf6b8ac78f74996d31f2c0ad7a6",
