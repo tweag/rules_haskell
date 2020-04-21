@@ -21,7 +21,7 @@ GHC_BINDIST = \
                 "b7cad2ea7badb7006621105fbf24b4bd364d2e51c1a75661978d9280d68e83a8",
             ),
             "linux_amd64": (
-                "https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-x86_64-deb8-linux.tar.xz",
+                "https://downloads.haskell.org/~ghc/7.10.3/ghc-7.10.3-x86_64-deb9-linux.tar.xz",
                 "804c75c4635353bf987c1ca120b8531c7bb4957c5b84d29c7adc4894b6fd579d",
             ),
             "windows_amd64": (
@@ -209,6 +209,20 @@ GHC_BINDIST = \
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/8.8.3/ghc-8.8.3-x86_64-unknown-mingw32.tar.xz",
                 "e22586762af0911c06e8140f1792e3ca381a3a482a20d67b9054883038b3a422",
+            ),
+        },
+        "8.10.1": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-apple-darwin.tar.xz",
+                "65b1ca361093de4804a7e40b3e68178e1ef720f84f743641ec8d95e56a45b3a8",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-deb8-linux.tar.xz",
+                "d1cf7886f27af070f3b7dbe1975a78b43ef2d32b86362cbe953e79464fe70761",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-unknown-mingw32.tar.xz",
+                "38a3166ea50cccd5bae7e1680eae3aae2b4ae31b61f82a1d8168fb821f43bd67",
             ),
         },
     }
