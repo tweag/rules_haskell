@@ -1,0 +1,17 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+)
+
+package(default_testonly = 1)
+
+haskell_binary(
+    name = "binary-simple",
+    srcs = ["Main.hs"],
+    compiler_flags = ["-Wunused-packages", "-Werror"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:containers",
+    ],
+)
