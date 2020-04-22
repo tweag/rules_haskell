@@ -39,16 +39,12 @@ mkShell {
     BAZELRC_LOCAL=".bazelrc.local"
     if [ ! -e "$BAZELRC_LOCAL" ]
     then
-      ARCH=""
-      if [ "$(uname)" == "Darwin" ]; then
-        ARCH="darwin"
-      elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-        ARCH="linux"
-      fi
-      echo "[!] It looks like you are using a ''${ARCH} nix-based system. In order to build this project, you need to add the two following host_platform entries to your .bazelrc.local file."
-      echo ""
-      echo "build --host_platform=@rules_haskell//haskell/platforms:''${ARCH}_x86_64_nixpkgs"
-      echo "run --host_platform=@rules_haskell//haskell/platforms:''${ARCH}_x86_64_nixpkgs"
+      echo "[!] It looks like you are using a Nix-based system."
+      echo "In order to build this project, you need to add the two"
+      echo "following host_platform entries to your .bazelrc.local file:"
+      echo
+      echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
+      echo "run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
     fi
 
     # source bazel bash completion

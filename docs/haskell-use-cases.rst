@@ -93,11 +93,10 @@ usable by Bazel's Haskell rules.
 You can register as many toolchains as you like. Nixpkgs toolchains do
 not conflict with binary distributions. For Bazel to select the
 Nixpkgs toolchain during `toolchain resolution`_, set the platform
-appropriately: ``linux_x86_64_nixpkgs``, ``darwin_x86_64_nixpkgs``
-etc. For example, you can have the following in your ``.bazelrc``
-file at the root of your project::
+accordingly. For example, you can have the following in your
+``.bazelrc`` file at the root of your project::
 
-  build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
+  build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
 
 .. _Bazel+Nix blog post: https://www.tweag.io/posts/2018-03-15-bazel-nix.html
 .. _Nix package manager: https://nixos.org/nix

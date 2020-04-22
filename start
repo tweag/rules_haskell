@@ -316,8 +316,8 @@ test:ci --test_output=errors
 $(insert_if_equal $mode "nix" '
 # This project uses a GHC provisioned via nix.
 # We need to use the rules_haskell nix toolchain accordingly:
-build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
-run --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs'
+build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host'
 )
 
 # test environment does not propagate locales by default

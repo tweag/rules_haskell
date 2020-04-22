@@ -44,17 +44,17 @@ def rules_haskell_dependencies():
     if "rules_sh" not in excludes:
         http_archive(
             name = "rules_sh",
-            sha256 = "8371b7b7b05ef374719dbedd1fdf2c0225b158d997f6043e55a437e4dfb98a95",
-            strip_prefix = "rules_sh-0c274ad480ed3eade49250abd04ff71655a07820",
-            urls = ["https://github.com/tweag/rules_sh/archive/0c274ad480ed3eade49250abd04ff71655a07820.tar.gz"],
+            sha256 = "83a065ba6469135a35786eb741e17d50f360ca92ab2897857475ab17c0d29931",
+            strip_prefix = "rules_sh-0.2.0",
+            urls = ["https://github.com/tweag/rules_sh/archive/v0.2.0.tar.gz"],
         )
 
     if "io_tweag_rules_nixpkgs" not in excludes:
         http_archive(
             name = "io_tweag_rules_nixpkgs",
-            sha256 = "1bcc4a040b083b6ac436b49a8b4c22885274ee47c6fe8b353846a7f68bad852b",
-            strip_prefix = "rules_nixpkgs-531804b50fc373de73984e697300beaf94e260c7",
-            urls = ["https://github.com/tweag/rules_nixpkgs/archive/531804b50fc373de73984e697300beaf94e260c7.tar.gz"],
+            sha256 = "5c80f5ed7b399a857dd04aa81e66efcb012906b268ce607aaf491d8d71f456c8",
+            strip_prefix = "rules_nixpkgs-0.7.0",
+            urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.7.0.tar.gz"],
         )
 
     if "com_google_protobuf" not in excludes:

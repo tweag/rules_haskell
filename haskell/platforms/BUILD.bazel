@@ -12,7 +12,7 @@ declare_config_settings()
 
 alias(
     name = "nixpkgs",
-    actual = "@io_tweag_rules_nixpkgs//nixpkgs/constraints:nixpkgs",
+    actual = "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
     visibility = ["//visibility:public"],
 )
 
@@ -25,6 +25,7 @@ platform(
         "@platforms//os:linux",
         ":nixpkgs",
     ],
+    deprecation = "Use @io_tweag_rules_nixpkgs//nixpkgs/platforms:host instead.",
     visibility = ["//visibility:public"],
 )
 
@@ -35,5 +36,6 @@ platform(
         "@platforms//os:osx",
         ":nixpkgs",
     ],
+    deprecation = "Use @io_tweag_rules_nixpkgs//nixpkgs/platforms:host instead.",
     visibility = ["//visibility:public"],
 )
