@@ -644,6 +644,11 @@ The following toolchain libraries are available:
         )),
     ]
 
+def _toolchain_library_symlink(dynamic_library):
+    prefix = dynamic_library.owner.workspace_root.replace("_", "_U").replace("/", "_S")
+    basename = dynamic_library.basename
+    return paths.join(prefix, basename)
+
 def haskell_toolchain_libraries_impl(ctx):
     hs = haskell_context(ctx)
     with_profiling = is_profiling_enabled(hs)
@@ -731,7 +736,8 @@ def haskell_toolchain_libraries_impl(ctx):
                 actions = ctx.actions,
                 feature_configuration = feature_configuration,
                 dynamic_library = lib.get("dynamic", None),
-                dynamic_library_symlink_path = lib["dynamic"].basename if lib.get("dynamic") else "",
+                dynamic_library_symlink_path =
+                    _toolchain_library_symlink(lib["dynamic"]) if lib.get("dynamic") else "",
                 static_library = lib.get("static", None),
                 cc_toolchain = cc_toolchain,
             )
