@@ -400,4 +400,12 @@ sh_test(
     name = "ghcide-smoke-test",
     srcs = ["@ghcide"],
     args = ["--version"],
+    tags = [
+        # Building ghcide fails in profiling mode with:
+        #
+        #   exe/Rules.hs:106:28: fatal:
+        #       cannot find object file ‘/run/user/1000/tmp7b54rlve/build/ghcide/ghcide-tmp/Util.dyn_o’
+        #       while linking an interpreted expression
+        "requires_dynamic",
+    ],
 )
