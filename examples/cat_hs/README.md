@@ -9,6 +9,16 @@ third-party dependencies downloadable from Hackage.
 [bazel]: https://bazel.build/
 [rules_haskell]: https://haskell.build/
 
+## Source tree
+
+* `exec` - Defines the executable using the `haskell_binary` rule
+* `src` - Defines two libraries:
+  - `args` - Command line parser
+  - `cat` - The main functionality
+
+The top-level `BUILD` file defines API documentation.
+
+
 ## Instructions
 
 To build the package execute the following command *in the `examples/`
