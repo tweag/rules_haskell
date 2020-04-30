@@ -2,6 +2,7 @@ load(
     "@rules_haskell//haskell:cabal.bzl",
     "haskell_cabal_binary",
 )
+load("@os_info//:os_info.bzl", "is_nix_shell")
 load(
     "//tests:inline_tests.bzl",
     "py_inline_test",
@@ -10,23 +11,20 @@ load("dynamic_libraries.bzl", "dynamic_libraries")
 
 dynamic_libraries(
     name = "libz",
-    srcs = ["@zlib.dev//:zlib"],
+    srcs = ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"],
     filter = "libz",
     solib_names = "libz_soname",
-    tags = ["requires_zlib"],
 )
 
 dynamic_libraries(
     name = "libHSzlib",
     srcs = ["@stackage-zlib//:zlib"],
     filter = "libHSz",
-    tags = ["requires_zlib"],
 )
 
 haskell_cabal_binary(
     name = "cabal-binary",
     srcs = glob(["cabal-binary/**"]),
-    tags = ["requires_zlib"],
     deps = [
         "//tests/hackage:base",
         # Depend transitively on libz.
@@ -82,7 +80,7 @@ libz_soname = r.Rlocation(os.path.join(
     sys.argv[1],
 ))
 with open(libz_soname) as fh:
-    sofile = fh.read().splitlines()[1]
+    sofile = fh.read().splitlines()[0]
     sodir = os.path.dirname(sofile)
 
 # Locate test artifacts.
@@ -152,5 +150,4 @@ def test_binary(binary, sodir):
 if not all(test_binary(binary, sodir) for binary in [libHSzlib, cabal_binary]):
     sys.exit(1)
 """,
-    tags = ["requires_zlib"],
 )
