@@ -63,7 +63,8 @@ cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
     ],
 )
 
-# Demonstrates a vendored Stackage package to bump a version bound.
+# Demonstrates a patched Stackage package to bump a version bound
+# in the 'split' package
 http_archive(
     name = "split",
     build_file_content = """
