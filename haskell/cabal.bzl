@@ -725,43 +725,23 @@ _CORE_PACKAGES = [
     "xhtml",
 ]
 
-_STACK_DEFAULT_VERSION = "2.1.3"
+_STACK_DEFAULT_VERSION = "2.3.1"
 
 # Only ever need one version, but use same structure as for GHC bindists.
 _STACK_BINDISTS = \
     {
-        "2.1.3": {
-            "freebsd-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-freebsd-x86_64.tar.gz",
-                "b646380bd1ee6c5f16ea111c31be494e6e85ed5050dea41cd29fac5973767821",
-            ),
-            "linux-aarch64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-linux-aarch64.tar.gz",
-                "1212c3ef9c4e901c50b086f1d778c28d75eb27cb4529695d2f1a16ea3f898a6d",
-            ),
-            "linux-arm": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-linux-arm.tar.gz",
-                "6c8a2100183368d0fe8298bc99260681f10c81838423884be885baaa2e096e78",
-            ),
-            "linux-i386": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-linux-i386.tar.gz",
-                "4acd97f4c91b1d1333c8d84ea38f690f0b5ac5224ba591f8cdd1b9d0e8973807",
-            ),
+        "2.3.1": {
             "linux-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-linux-x86_64.tar.gz",
-                "c724b207831fe5f06b087bac7e01d33e61a1c9cad6be0468f9c117d383ec5673",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.3.1/stack-2.3.1-linux-x86_64-static.tar.gz",
+                "4bae8830b2614dddf3638a6d1a7bbbc3a5a833d05b2128eae37467841ac30e47",
             ),
             "osx-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-osx-x86_64.tar.gz",
-                "84b05b9cdb280fbc4b3d5fe23d1fc82a468956c917e16af7eeeabec5e5815d9f",
-            ),
-            "windows-i386": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-windows-i386.tar.gz",
-                "9bc67a8dc0466b6fc12b44b3920ea6be3b00fa1c52cbeada1a7c092a5402ebb3",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.3.1/stack-2.3.1-osx-x86_64.tar.gz",
+                "73eee7e5f24d11fd0af00cb05f16119e86be5d578c35083250e6b85ed1ca3621",
             ),
             "windows-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.1.3/stack-2.1.3-windows-x86_64.tar.gz",
-                "075bcd9130cd437de4e726466e5738c92c8e47d5666aa3a15d339e6ba62f76b2",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.3.1/stack-2.3.1-windows-x86_64.tar.gz",
+                "440588c92ffcb42b88fd6455dc68728dae9b08bdd1a683d1cf5f80aa9aa8b014",
             ),
         },
     }
@@ -1165,10 +1145,9 @@ def _fetch_stack_impl(repository_ctx):
     (os, arch) = _get_platform(repository_ctx)
     version = _STACK_DEFAULT_VERSION
     (url, sha256) = _STACK_BINDISTS[version]["{}-{}".format(os, arch)]
+    prefix = paths.basename(url)[:-len(".tar.gz")]
     repository_ctx.download_and_extract(url = url, sha256 = sha256)
-    stack_cmd = repository_ctx.path(
-        "stack-{}-{}-{}".format(version, os, arch),
-    ).get_child("stack.exe" if os == "windows" else "stack")
+    stack_cmd = repository_ctx.path(prefix).get_child("stack.exe" if os == "windows" else "stack")
     _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
     exec_result = repository_ctx.execute([stack_cmd, "--version"], quiet = True)
     if exec_result.return_code != 0:
