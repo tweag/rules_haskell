@@ -4,68 +4,26 @@ export PATH=${PATH:-} # otherwise GCC fails on Windows
 
 echo ">>>>> $@"
 
-echo 223
+CAT=/nix/store/fs0h13zxb5hcv1vr6yf2ijzp943jb6hy-coreutils-8.31/bin/cat
 
+$CAT << EOF > test-package-env
+package-id base-4.14.0.0
+package-id containers-0.6.2.1
+EOF
+
+$CAT << EOF > Main.hs
+module Main where
+main = putStrLn "hello world"
+EOF
+
+# GHC 8.10.1, from Nixpkgs
+# See https://github.com/tweag/rules_haskell/commit/82ace43c74f098f67def7cbbb485f2bd737c5c26
+# See https://github.com/tweag/rules_haskell/issues/1309
 external/rules_haskell_ghc_nixpkgs/bin/ghc \
--pgma \
-bazel-out/host/bin/haskell/cc_wrapper-python \
--pgmc \
-bazel-out/host/bin/haskell/cc_wrapper-python \
--pgml \
-bazel-out/host/bin/haskell/cc_wrapper-python \
--pgmP \
-bazel-out/host/bin/haskell/cc_wrapper-python \
--optc-fno-stack-protector \
--optP-E \
--optP-undef \
--optP-traditional \
--static \
--v0 \
--no-link \
--fPIC \
--hide-all-packages \
--Wmissing-home-modules \
--odir \
-bazel-out/k8-fastbuild/bin/tests/unused_packages/_obj/binary-simple \
--hidir \
-bazel-out/k8-fastbuild/bin/tests/unused_packages/_iface/binary-simple \
--optc-U_FORTIFY_SOURCE \
--optc-fstack-protector \
--optc-Wall \
--optc-Wunused-but-set-parameter \
--optc-Wno-free-nonheap-object \
--optc-fno-omit-frame-pointer \
--optc-fno-canonical-system-headers \
--optc-Wno-builtin-macro-redefined \
--optc-D__DATE__="redacted" \
--optc-D__TIMESTAMP__="redacted" \
--optc-D__TIME__="redacted" \
--opta-U_FORTIFY_SOURCE \
--opta-fstack-protector \
--opta-Wall \
--opta-Wunused-but-set-parameter \
--opta-Wno-free-nonheap-object \
--opta-fno-omit-frame-pointer \
--opta-fno-canonical-system-headers \
--opta-Wno-builtin-macro-redefined \
--opta-D__DATE__="redacted" \
--opta-D__TIMESTAMP__="redacted" \
--opta-D__TIME__="redacted" \
--XStandaloneDeriving \
--threaded \
--DTESTS_TOOLCHAIN_COMPILER_FLAGS \
--XNoOverloadedStrings \
--Werror \
 -Wunused-packages \
--hide-all-packages \
--fno-version-macros \
--package-env \
-bazel-out/k8-fastbuild/bin/tests/unused_packages/compile-package_env-binary-simple \
--hide-all-plugin-packages \
--optP@bazel-out/k8-fastbuild/bin/tests/unused_packages/optp_args_binary-simple \
-tests/unused_packages/Main.hs \
--main-is \
-Main.main
+-package-env test-package-env \
+Main.hs \
+-main-is Main.main
 
 # # this is equivalent to 'readarray'. We do not use 'readarray' in order to
 # # support older bash versions.
