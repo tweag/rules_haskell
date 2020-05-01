@@ -1,4 +1,9 @@
 load(
+    "@rules_cc//cc:defs.bzl",
+    "cc_toolchain",
+    "cc_toolchain_suite",
+)
+load(
     "@rules_haskell//haskell:cc_toolchain_config.bzl",
     "cc_toolchain_config",
 )

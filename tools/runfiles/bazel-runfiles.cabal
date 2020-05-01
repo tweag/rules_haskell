@@ -5,7 +5,7 @@
 -- hash: bd1c2ce5b0ffa0157650e1c2409d31b818889736ef09aaf51de71e54d9a7d3fc
 
 name:           bazel-runfiles
-version:        0.7.0.1
+version:        0.12
 synopsis:       Locate Bazel runfiles location
 description:    Please see the README on GitHub at <https://github.com/tweag/rules_haskell/blob/master/tools/runfiles/README.md>
 category:       Build Tool

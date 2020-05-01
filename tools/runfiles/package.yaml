@@ -1,5 +1,5 @@
 name:                bazel-runfiles
-version:             0.7.0.1
+version:             0.12
 github:              "tweag/rules_haskell"
 license:             Apache-2.0
 author:              "Tweag I/O Limited"

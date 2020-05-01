@@ -1,30 +1,74 @@
 # See https://docs.bazel.build/versions/master/user-manual.html#bazelrc.
 
+# Global Configuration
+# --------------------
+
+# test environment does not propagate locales by default some tests reads files
+# written in UTF8, we need to propagate the correct environment variables, such
+# as LOCALE_ARCHIVE We also need to setup an utf8 locale
+test --test_env=LANG=C.UTF-8 --test_env=LOCALE_ARCHIVE
+
+# Platform / Toolchain Selection
+# ------------------------------
+build:linux-nixpkgs --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
+build:macos-nixpkgs --host_platform=@rules_haskell//haskell/platforms:darwin_x86_64_nixpkgs
 # Use this configuration when targeting Windows. Eventually this will
 # no longer be required:
 # https://bazel.build/roadmaps/platforms.html#replace---cpu-and---host_cpu-flags.
-build:windows --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain -s --verbose_failures --sandbox_debug
+build:windows-bindist --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain
 
-build:ci_linux --remote_http_cache=https://storage.googleapis.com/tweag-bazel-cache-buildkite --remote_upload_local_results=true --google_default_credentials
+# Build and Test Filters
+# ----------------------
+# Note tag filters do not compose. If you wish to augment these filters on the
+# command-line you have to repeat the full list.
+build:linux-bindist --build_tag_filters -requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:linux-bindist --test_tag_filters  -requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+
+build:macos-nixpkgs --build_tag_filters -dont_test_on_darwin
+build:macos-nixpkgs --test_tag_filters  -dont_test_on_darwin
+
+build:macos-bindist --build_tag_filters -dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:macos-bindist --test_tag_filters  -dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_proto,-requires_zlib,-requires_doctest,-requires_c2hs,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+
+# CI Configuration
+# ----------------
+common:ci --color=no
+
 build:ci --loading_phase_threads=1
 build:ci --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
 # can be changed by user.
 build:ci --symlink_prefix=bazel-ci-
-common:ci --color=no
+
 test:ci --test_output=errors
 
+build:ci-linux-bindist --remote_http_cache=https://storage.googleapis.com/tweag-bazel-cache-buildkite --remote_upload_local_results=true --google_default_credentials
+build:ci-linux-nixpkgs --remote_http_cache=https://storage.googleapis.com/tweag-bazel-cache-buildkite --remote_upload_local_results=true --google_default_credentials
+
+build:ci-linux-bindist --repository_cache ~/repo_cache
+# XXX: @com_google_protobuf sets `use_default_shell_env = True`, so we enable
+#   strict action env to avoid changes in `PATH` invalidating the cache.
+build:ci-linux-bindist --experimental_strict_action_env
+
+build:ci-macos-bindist --disk_cache=~/.cache/bazel/
+build:ci-macos-nixpkgs --disk_cache=~/.cache/bazel/
+
+build:ci-windows-bindist --subcommands --sandbox_debug
+
 # Note [backward compatible options]
-common:ci --incompatible_enable_cc_toolchain_resolution
-common:ci --incompatible_load_cc_rules_from_bzl
+build:ci-linux-bindist --incompatible_enable_cc_toolchain_resolution
+build:ci-macos-bindist --incompatible_enable_cc_toolchain_resolution
+# rules_nixpkgs is not yet compatible with cc toolchain resolution, see
+# https://github.com/tweag/rules_nixpkgs/issues/88
+#build:ci-linux-nixpkgs --incompatible_enable_cc_toolchain_resolution
+#build:ci-macos-nixpkgs --incompatible_enable_cc_toolchain_resolution
+# Windows still uses --crosstool_top.
+#build:ci-windows-bindist --incompatible_enable_cc_toolchain_resolution
+build:ci --incompatible_load_cc_rules_from_bzl
 # Blocked by https://github.com/bazelbuild/buildtools/issues/757
-#common:ci --incompatible_load_proto_rules_from_bzl
-common:ci --incompatible_load_python_rules_from_bzl
+#build:ci --incompatible_load_proto_rules_from_bzl
+build:ci --incompatible_load_python_rules_from_bzl
 
-# test environment does not propagate locales by default
-# some tests reads files written in UTF8, we need to propagate the correct
-# environment variables, such as LOCALE_ARCHIVE
-# We also need to setup an utf8 locale
-test --test_env=LANG=C.UTF-8 --test_env=LOCALE_ARCHIVE
-
+# User Configuration
+# ------------------
 try-import %workspace%/.bazelrc.local

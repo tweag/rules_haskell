@@ -90,11 +90,7 @@ main = hspec $ do
 -- | Returns a bazel command line suitable for CI
 -- This should be called with the action as first item of the list. e.g 'bazel ["build", "//..."]'.
 bazel :: [String] -> Process.CreateProcess
--- Note: --config=ci is intercalated between the action and the list of
--- arguments. It should appear after the action, but before any @--@
--- following argument.
-bazel (command:args) = Process.proc "bazel" (command:"--config=ci":args)
-bazel [] = Process.proc "bazel" []
+bazel args = Process.proc "bazel" args
 
 -- | Runs a bazel query and return the list of matching targets
 bazelQuery :: String -> SpecM a [String]
