@@ -136,7 +136,7 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     elif repository_ctx.os.name == "mac os x":
         target_constraints.append("@platforms//os:osx")
     exec_constraints = list(target_constraints)
-    exec_constraints.append("@rules_haskell//haskell/platforms:nixpkgs")
+    exec_constraints.append("@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix")
 
     repository_ctx.file(
         "BUILD",
@@ -181,7 +181,8 @@ def haskell_register_ghc_nixpkgs(
     Toolchains can be used to compile Haskell code. To have this
     toolchain selected during [toolchain
     resolution][toolchain-resolution], set a host platform that
-    includes the `@rules_haskell//haskell/platforms:nixpkgs`
+    includes the
+    `@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix`
     constraint value.
 
     [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
@@ -200,7 +201,7 @@ def haskell_register_ghc_nixpkgs(
       in the following:
 
       ```
-      --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
+      --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
       ```
 
     Args:

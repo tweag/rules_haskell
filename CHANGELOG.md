@@ -6,7 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## Upcoming release
 
-nothing yet
+### Changed
+
+* The platform name for Nix users has changed. The platforms in
+  `@//haskell/platforms/...` are still supported, but are deprecated.
+  Use `@io_tweag_rules_nixpkgs//nixpkgs/platforms:host` instead.
 
 ### [0.12.0] - 2020-03-16
 
