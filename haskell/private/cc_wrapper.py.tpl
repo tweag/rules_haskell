@@ -54,6 +54,12 @@ PLATFORM = "{:platform:}"
 INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
 OTOOL = "/usr/bin/otool"
 
+# To debug the cc_wrapper uncomment the following and call `debug` to collect
+# debug information in the debug log file.
+#
+#   debug_file = open("/tmp/cc_wrapper.log", "a")
+#   def debug(*args, **kwargs):
+#       print(*args, file=debug_file, **kwargs)
 
 def main():
     parsed = Args(load_response_files(sys.argv[1:]))
