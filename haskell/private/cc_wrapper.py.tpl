@@ -84,6 +84,7 @@ class Args:
       library_paths: The library search paths when linking.
       libraries: The required libraries when linking.
       rpaths: The provided rpaths when linking.
+      preprocessor_args: The arguments to the preprocessor -Xpreprocessor.
 
       print_file_name: The queried file name on print-file-name.
 
@@ -111,6 +112,7 @@ class Args:
         self.libraries = []
         self.library_paths = []
         self.rpaths = []
+        self.preprocessor_args = []
         self.output = None
         # gcc action, print-file-name (--print-file-name), compile (-c),
         # assembly (-S) or link (default)
@@ -179,6 +181,8 @@ class Args:
                 pass
             elif self._handle_library_path(arg, args, out):
                 pass
+            elif self._handle_preprocessor_arg(arg, args, out):
+                pass
             elif self._handle_linker_arg(arg, args, out):
                 pass
             elif self._handle_print_file_name(arg, args, out):
@@ -245,6 +249,14 @@ class Args:
                 # Remember the library search paths.
                 self.library_paths.append(shortened)
                 out.append("-L{}".format(shortened))
+
+        return consumed
+
+    def _handle_preprocessor_arg(self, arg, args, out):
+        consumed, preprocessor_arg = argument(arg, args, long = "-Xpreprocessor")
+
+        if consumed:
+            self.preprocessor_args.append(preprocessor_arg)
 
         return consumed
 
