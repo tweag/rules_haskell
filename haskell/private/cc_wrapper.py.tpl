@@ -90,6 +90,7 @@ class Args:
     """
     LINK = "link"
     COMPILE = "compile"
+    ASSEMBLY = "assembly"
     PRINT_FILE_NAME = "print-file-name"
 
     def __init__(self, args):
@@ -111,8 +112,8 @@ class Args:
         self.library_paths = []
         self.rpaths = []
         self.output = None
-        # gcc action, print-file-name (--print-file-name), compile (-c), or
-        # link (default)
+        # gcc action, print-file-name (--print-file-name), compile (-c),
+        # assembly (-S) or link (default)
         self._action = Args.LINK
         # The currently active linker option that expects an argument. E.g. if
         # `-Xlinker -rpath` was encountered, then `-rpath`.
@@ -141,6 +142,11 @@ class Args:
     def compiling(self):
         """Whether this is a compile invocation."""
         return self._action == Args.COMPILE
+
+    @property
+    def assembling(self):
+        """Whether this is an assembly invocation."""
+        return self._action == Args.ASSEMBLY
 
     @property
     def printing_file_name(self):
@@ -178,6 +184,8 @@ class Args:
             elif self._handle_print_file_name(arg, args, out):
                 pass
             elif self._handle_compile(arg, args, out):
+                pass
+            elif self._handle_assembly(arg, args, out):
                 pass
             else:
                 yield arg
@@ -319,6 +327,15 @@ class Args:
     def _handle_compile(self, arg, args, out):
         if arg == "-c":
             self._action = Args.COMPILE
+            out.append(arg)
+        else:
+            return False
+
+        return True
+
+    def _handle_assembly(self, arg, args, out):
+        if arg == "-S":
+            self._action = Args.ASSEMBLY
             out.append(arg)
         else:
             return False
