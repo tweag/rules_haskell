@@ -388,6 +388,7 @@ filegroup(
 http_archive(
     name = "zlib.hs",
     build_file_content = """
+load("@os_info//:os_info.bzl", "is_darwin")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "zlib",
@@ -396,9 +397,18 @@ cc_library(
     srcs = [":z"],
     hdrs = glob(["*.h"]),
     includes = ["."],
+    linkstatic = 1,
     visibility = ["//visibility:public"],
 )
-cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+cc_library(
+    name = "z",
+    srcs = glob(["*.c"]),
+    hdrs = glob(["*.h"]),
+    # Cabal packages depending on dynamic C libraries fail on MacOS
+    # due to `-rpath` flags being forwarded indiscriminately.
+    # See https://github.com/tweag/rules_haskell/issues/1317
+    linkstatic = is_darwin,
+)
 """,
     sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
     strip_prefix = "zlib-1.2.11",
