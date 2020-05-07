@@ -53,7 +53,13 @@ mkShell {
       echo
       echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
       echo "run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
+      echo
     fi
+  echo
+  echo "WARNING: Using temporary sandbox setup"
+  echo "- Nix shell was run with 'cargo install sandboxfs' in the shell hook"
+  echo "- Binary is in ~/.cargo/bin/sandboxfs"
+  echo "- Use like this: bazel build  --experimental_use_sandboxfs --experimental_sandboxfs_path=HOME/.cargo/bin/sandboxfs //..."
 
     # source bazel bash completion
     source ${pkgs.bazel}/share/bash-completion/completions/bazel
