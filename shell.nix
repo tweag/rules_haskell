@@ -13,6 +13,11 @@ mkShell {
 
   buildInputs = [
     go
+
+    fuse
+    pkgconfig
+    cargo
+
     nix
     which
     perl
@@ -34,6 +39,9 @@ mkShell {
   ] ++ lib.optionals docTools [graphviz python37Packages.sphinx zip unzip];
 
   shellHook = ''
+    # Install sandboxfs
+    cargo install sandboxfs
+
     # Add nix config flags to .bazelrc.local.
     #
     BAZELRC_LOCAL=".bazelrc.local"
