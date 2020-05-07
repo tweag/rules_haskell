@@ -146,6 +146,7 @@ with tmpdir() as distdir:
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
+        [ "--ghc-option=" + flag.replace("$CC", cc) for flag in %{ghc_cc_args} ] +
         enable_relocatable_flags + \
         [ \
         "--builddir=" + distdir, \
