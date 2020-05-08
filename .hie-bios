@@ -16,6 +16,8 @@ hie_bios_flags() {
         print $0 > "/dev/stderr"
       }
     '
+  # Make warnings non-fatal
+  echo -Wwarn
 }
 if [[ -z "${HIE_BIOS_OUTPUT-}" ]]; then
   hie_bios_flags
