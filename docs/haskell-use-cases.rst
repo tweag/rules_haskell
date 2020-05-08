@@ -360,8 +360,9 @@ Write a small shell script to make it easy to invoke ghcide from your editor::
 
 And, the last step, configure your editor to use ghcide. The upstream
 documentation provides `ghcide setup instructions`_ for a few popular editors.
-Note, that if you are using Nix, then you may need to invoke ghcide within a
-``nix-shell``.
+Be sure to configure your editor to invoke the above wrapper script instead of
+another instance of `ghcide`. Also note, that if you are using Nix, then you
+may need to invoke ghcide within a ``nix-shell``.
 
 .. _ghcide: https://github.com/digital-asset/ghcide
 .. _haskell_repl: https://api.haskell.build/haskell/defs.html#haskell_repl
