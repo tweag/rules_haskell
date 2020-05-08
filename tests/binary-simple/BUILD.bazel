@@ -10,6 +10,10 @@ package(default_testonly = 1)
 #         "execvp(external/rules_haskell_ghc_nixpkgs/bin/ghc-pkg, 0x10758c0)": No such file or directory
 # `
 
+# TODO we can view the Bazel DAG like this:
+#    bazel query 'deps(//tests/binary-simple/...)' --output graph >gr.txt
+# Understand why things like rules_haskell_ghc_nixpkgs do not show up here
+
 haskell_binary(
     name = "binary-simple",
     srcs = ["Main.hs"],
