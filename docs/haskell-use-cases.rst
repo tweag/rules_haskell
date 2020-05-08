@@ -213,6 +213,8 @@ end, define a small shell script named ``.hie-bios`` that looks as follows::
   set -euo pipefail
   bazel build //:hie-bios --output_groups=hie_bios
   cat bazel-bin/hie-bios@hie-bios >"$HIE_BIOS_OUTPUT"
+  # Make warnings non-fatal
+  echo -Wwarn >>"$HIE_BIOS_OUTPUT"
 
 Then configure `hie-bios`_ to use this script in the bios cradle with the
 following ``hie.yaml`` file::
