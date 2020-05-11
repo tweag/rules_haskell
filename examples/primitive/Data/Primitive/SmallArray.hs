@@ -808,8 +808,6 @@ instance Monad SmallArray where
      copySmallArray smb off sb 0 (length sb)
        *> fill (off + length sb) sbs smb
 
-  fail _ = emptySmallArray
-
 instance MonadPlus SmallArray where
   mzero = empty
   mplus = (<|>)

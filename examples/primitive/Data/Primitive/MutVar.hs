@@ -26,7 +26,8 @@ module Data.Primitive.MutVar (
 
 import Control.Monad.Primitive ( PrimMonad(..), primitive_ )
 import GHC.Prim ( MutVar#, sameMutVar#, newMutVar#,
-                  readMutVar#, writeMutVar#, atomicModifyMutVar# )
+                  readMutVar#, writeMutVar# )
+import GHC.Exts ( atomicModifyMutVar# )
 import Data.Primitive.Internal.Compat ( isTrue# )
 import Data.Typeable ( Typeable )
 

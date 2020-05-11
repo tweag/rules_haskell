@@ -691,7 +691,7 @@ instance Monad Array where
      = copyArray smb off sb 0 (lsb)
          *> fill (off + lsb) sbs smb
 
-  fail _ = empty
+  -- fail _ = empty
 
 instance MonadPlus Array where
   mzero = empty

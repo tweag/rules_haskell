@@ -341,9 +341,6 @@ instance Monad Vector where
   {-# INLINE (>>=) #-}
   (>>=) = flip concatMap
 
-  {-# INLINE fail #-}
-  fail _ = empty
-
 instance MonadPlus Vector where
   {-# INLINE mzero #-}
   mzero = empty
