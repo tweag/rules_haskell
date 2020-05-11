@@ -13,14 +13,14 @@ rules_haskell_dependencies()
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc865",
+    attribute_path = "haskell.compiler.ghc883",
     repository = "@rules_haskell//nixpkgs:default.nix",
-    version = "8.6.5",
+    version = "8.8.3",
 )
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
-rules_haskell_toolchains(version = "8.6.5")
+rules_haskell_toolchains(version = "8.8.3")
 
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
@@ -64,25 +64,25 @@ cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
 )
 
 # Demonstrates a vendored Stackage package to bump a version bound.
-http_archive(
-    name = "split",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
-load("@stackage//:packages.bzl", "packages")
-haskell_cabal_library(
-    name = "split",
-    version = packages["split"].version,
-    srcs = glob(["**"]),
-    deps = packages["split"].deps,
-    visibility = ["//visibility:public"],
-)
-    """,
-    patch_args = ["-p1"],
-    patches = ["@rules_haskell_examples//:split.patch"],
-    sha256 = "1dcd674f7c5f276f33300f5fd59e49d1ac6fc92ae949fd06a0f6d3e9d9ac1413",
-    strip_prefix = "split-0.2.3.3",
-    urls = ["http://hackage.haskell.org/package/split-0.2.3.3/split-0.2.3.3.tar.gz"],
-)
+# http_archive(
+#     name = "split",
+#     build_file_content = """
+# load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+# load("@stackage//:packages.bzl", "packages")
+# haskell_cabal_library(
+#     name = "split",
+#     version = packages["split"].version,
+#     srcs = glob(["**"]),
+#     deps = packages["split"].deps,
+#     visibility = ["//visibility:public"],
+# )
+#     """,
+#     patch_args = ["-p1"],
+#     patches = ["@rules_haskell_examples//:split.patch"],
+#     sha256 = "1dcd674f7c5f276f33300f5fd59e49d1ac6fc92ae949fd06a0f6d3e9d9ac1413",
+#     strip_prefix = "split-0.2.3.3",
+#     urls = ["http://hackage.haskell.org/package/split-0.2.3.3/split-0.2.3.3.tar.gz"],
+# )
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
@@ -106,6 +106,6 @@ stack_snapshot(
         "text",
         "text-show",
     ],
-    snapshot = "lts-14.0",
-    vendored_packages = {"split": "@split//:split"},
+    snapshot = "lts-15.2",
+    # vendored_packages = {"split": "@split//:split"},
 )
