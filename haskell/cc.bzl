@@ -170,7 +170,7 @@ def ghc_cc_program_args(cc):
     Returns:
       list of string, GHC arguments.
     """
-    return [
+    args = [
         # GHC uses C compiler for assemly, linking and preprocessing as well.
         "-pgma",
         cc,
@@ -178,14 +178,19 @@ def ghc_cc_program_args(cc):
         cc,
         "-pgml",
         cc,
-        "-pgmP",
-        cc,
         # Setting -pgm* flags explicitly has the unfortunate side effect
         # of resetting any program flags in the GHC settings file. So we
         # restore them here. See
         # https://ghc.haskell.org/trac/ghc/ticket/7929.
+        #
+        # Since GHC 8.8 the semantics of `-optP` have changed and these flags
+        # are now also forwarded to `cc` via `-Xpreprocessor`, which breaks the
+        # default flags `-E -undef -traditional`. GHC happens to word split the
+        # argument to `-pgmP` which allows to pass these flags to `gcc` itself
+        # as the preprocessor. See
+        # https://gitlab.haskell.org/ghc/ghc/issues/17185#note_261599.
+        "-pgmP",
+        cc + " -E -undef -traditional",
         "-optc-fno-stack-protector",
-        "-optP-E",
-        "-optP-undef",
-        "-optP-traditional",
     ]
+    return args

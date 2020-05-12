@@ -62,6 +62,7 @@ bzl_library(
         "@bazel_skylib//lib:dicts",
         "@bazel_skylib//lib:paths",
         "@bazel_skylib//lib:shell",
+        "@bazel_skylib//lib:versions",
         "@io_tweag_rules_nixpkgs//nixpkgs",
         "@rules_sh//sh:posix",
     ],
