@@ -36,6 +36,7 @@
     - you don't need to provide the source `.zip` and `.tar.gz` archives,
       github does it automatically.
     - release
+- [ ] Update the tag name and checksum in `docs/haskell-use-cases.rst`
 - [ ] Push `rules_haskell` version in start script to new release tag,
       test it in a temporary directory, create PR against master
   - [ ] Once PR has been merged, publish start script and website
