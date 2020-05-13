@@ -35,6 +35,17 @@ used to avoid command line length limitations.
     gcc's --print-file-name feature to work around this mismatch in file
     extension.
 
+- Corrects instances of `-Xpreprocessor @rsp`.
+
+    Starting from version 8.8 GHC forwards `-optP` flags to `cc` prefixed by
+    `-Xpreprocessor`, including response file arguments. `gcc` will then inline
+    the contents of the response file into its own command-line without
+    prefixing each argument with `-Xpreprocessor` which will wrongly pass
+    preprocessor arguments to cpp itself. This wrapper corrects this by loading
+    the response file and prefixing each argument with `-Xpreprocessor`.
+
+    See https://gitlab.haskell.org/ghc/ghc/issues/17185.
+
 """
 
 from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
@@ -165,7 +176,9 @@ class Args:
             # reference to the list of arguments to forward. The handler must
             # return True if it consumes the argument, and return False if
             # another handler should consume the argument.
-            if self._handle_output(arg, args, out):
+            if self._handle_xpreprocessor(arg, args, out):
+                pass
+            elif self._handle_output(arg, args, out):
                 pass
             elif self._handle_include_path(arg, args, out):
                 pass
@@ -184,6 +197,14 @@ class Args:
 
             for out_arg in out:
                 yield out_arg
+
+    def _handle_xpreprocessor(self, arg, args, out):
+        consumed, cpp_arg = argument(arg, args, long = "-Xpreprocessor")
+
+        if consumed:
+            out.extend(["-Xpreprocessor", cpp_arg])
+
+        return consumed
 
     def _handle_output(self, arg, args, out):
         consumed, output = argument(arg, args, short = "-o")
@@ -362,29 +383,53 @@ def argument(arg, args, short = None, long = None):
     return False, None
 
 
-def load_response_files(args):
+def load_response_files(args, max_depth=100):
     """Generator that loads arguments from response files.
 
     Passes through any regular arguments.
 
+    Recursively loads arguments from response files. I.e. if a response file
+    points to another response file that will be followed recursively up to
+    `max_depth`.
+
     Args:
       args: Iterable of arguments.
+      max_depth: Maximum response file nesting depth.
 
     Yields:
       All arguments, with response files replaced by their contained arguments.
 
     """
+    def response_file_iter(filename):
+        if max_depth == 0:
+            sys.stderr.write("Exceeded maximum response file nesting depth.")
+            sys.exit(1)
+        with open(filename, "r") as rsp:
+            rsp_args = (
+                arg
+                for line in rsp
+                for arg in parse_response_line(line)
+            )
+            for arg in load_response_files(rsp_args, max_depth - 1):
+                yield arg
     args = iter(args)
     for arg in args:
         if arg == "-install_name":
             # macOS only: The install_name may start with an '@' character.
             yield arg
             yield next(args)
+        elif arg == "-Xpreprocessor":
+            cpp_arg = next(args)
+            if cpp_arg.startswith("@"):
+                for rsp_arg in response_file_iter(cpp_arg[1:]):
+                    yield "-Xpreprocessor"
+                    yield rsp_arg
+            else:
+                yield arg
+                yield cpp_arg
         elif arg.startswith("@"):
-            with open(arg[1:], "r") as rsp:
-                for line in rsp:
-                    for rsp_arg in parse_response_line(line):
-                        yield rsp_arg
+            for rsp_arg in response_file_iter(arg[1:]):
+                yield rsp_arg
         else:
             yield arg
 
