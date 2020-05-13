@@ -235,13 +235,13 @@ cc_library(
 
 nixpkgs_package(
     name = "c2hs",
-    attribute_path = "haskell.packages.ghc865.c2hs",
+    attribute_path = "haskell.packages.ghc883.c2hs",
     repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "doctest",
-    attribute_path = "haskell.packages.ghc865.doctest",
+    attribute_path = "haskell.packages.ghc883.doctest",
     repository = "@nixpkgs_default",
 )
 
