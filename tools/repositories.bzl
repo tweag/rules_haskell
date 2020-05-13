@@ -24,6 +24,6 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
                 "text",
                 "vector",
             ],
-            snapshot = "lts-14.1",
+            snapshot = "lts-15.4",
             **stack_kwargs
         )
