@@ -186,7 +186,20 @@ rule_test(
     name = "test-haddock",
     size = "small",
     generates =
-    ["haddock/array-0.5.4.0", "haddock/base-4.13.0.0", "haddock/deepseq-1.4.4.0", "haddock/ghc-boot-th-8.8.3", "haddock/ghc-prim-0.5.3", "haddock/index", "haddock/integer-gmp-1.0.2.0", "haddock/pretty-1.1.3.6", "haddock/template-haskell-2.15.0.0", "haddock/testsZShaddockZShaddock-lib-a", "haddock/testsZShaddockZShaddock-lib-b", "haddock/testsZShaddockZShaddock-lib-deep"],
+        [
+            "haddock/array-0.5.4.0",
+            "haddock/base-4.13.0.0",
+            "haddock/deepseq-1.4.4.0",
+            "haddock/ghc-boot-th-8.8.3",
+            "haddock/ghc-prim-0.5.3",
+            "haddock/index",
+            "haddock/integer-gmp-1.0.2.0",
+            "haddock/pretty-1.1.3.6",
+            "haddock/template-haskell-2.15.0.0",
+            "haddock/testsZShaddockZShaddock-lib-a",
+            "haddock/testsZShaddockZShaddock-lib-b",
+            "haddock/testsZShaddockZShaddock-lib-deep",
+        ],
     rule = "//tests/haddock",
 )
 
