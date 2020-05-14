@@ -927,7 +927,7 @@ def _stack_snapshot_impl(repository_ctx):
     elif repository_ctx.attr.local_snapshot:
         snapshot = repository_ctx.path(repository_ctx.attr.local_snapshot)
     else:
-        fail("Please specify one of snapshot or repository_snapshot")
+        fail("Please specify one of snapshot or local_snapshot")
 
     # Enforce dependency on stack_update
     repository_ctx.read(repository_ctx.attr.stack_update)
