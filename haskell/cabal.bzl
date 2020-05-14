@@ -783,6 +783,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         )
 
     if not versioned_packages and not unversioned_packages and not vendored_packages:
+        print("WARNING: all packages listed in stack_snapshot {} are core packages. Core packages are built into GHC and stack_snapshot cannot override them. stack is not being invoked at all to create this repository, and the snapshot will be ignored.".format(repr(repository_ctx.attr.name)))
         return all_packages
 
     # Unpack all given packages, then compute the transitive closure
@@ -937,11 +938,15 @@ def _stack_snapshot_impl(repository_ctx):
         if unversioned in vendored_packages:
             fail("Duplicate package '{}'. Packages may not be listed in both 'packages' and 'vendored_packages'.".format(package))
         if unversioned in _CORE_PACKAGES:
+            if has_version:
+                fail("{} is a core package, built into GHC. Its version is determined entirely by the version of GHC you are using. You cannot pin it to {}.".format(unversioned, _version(package)))
             core_packages.append(unversioned)
         elif has_version:
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)
+    if core_packages:
+        print("WARNING: core packages are provided by your GHC distribution, not the Stack snapshot.\nTherefore, the following packages from the {} repository may have versions that do not match the corresponding snapshot:\n\t{}".format(repr(repository_ctx.attr.name), core_packages))
     all_packages = _compute_dependency_graph(
         repository_ctx,
         snapshot,
