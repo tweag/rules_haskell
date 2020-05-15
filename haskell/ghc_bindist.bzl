@@ -454,6 +454,9 @@ def ghc_bindist(
         "8.6.2": ["@rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
         "8.6.4": ["@rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"],
         "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
+        "8.8.1": ["@rules_haskell//haskell:assets/ghc_8_8_1_win_base.patch"],
+        "8.8.2": ["@rules_haskell//haskell:assets/ghc_8_8_2_win_base.patch"],
+        "8.8.3": ["@rules_haskell//haskell:assets/ghc_8_8_3_win_base.patch"],
     }.get(version) if target == "windows_amd64" else None
 
     extra_attrs = {"patches": patches, "patch_args": ["-p0"]} if patches else {}
