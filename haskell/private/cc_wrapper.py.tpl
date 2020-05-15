@@ -402,8 +402,7 @@ def load_response_files(args, max_depth=100):
     """
     def response_file_iter(filename):
         if max_depth == 0:
-            sys.stderr.write("Exceeded maximum response file nesting depth.")
-            sys.exit(1)
+            raise RuntimeError("Exceeded maximum response file nesting depth.")
         with open(filename, "r") as rsp:
             rsp_args = (
                 arg
