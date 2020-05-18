@@ -20,6 +20,9 @@ steps:
 
   - label: "Run tests (bindists)"
     command: |
+      # The directories should exist before we call docker run because
+      # otherwise they will be created but with root as owner which causes
+      # troubles later.
       mkdir -p "$HOME/bindists/repo_cache"
       mkdir -p "$HOME/bindists/.cache/bazel"
       mkdir -p "$HOME/bindists/.stack"
@@ -27,6 +30,9 @@ steps:
       echo "RUN useradd -ms /bin/bash --uid $(id -u $USER) $USER" >> Dockerfile
       docker build . -t tweag/rules_haskell:latest
       popd
+      # --network host is necessary because the computation inside the
+      # container should have access to host's network. Otherwise features
+      # like google default credentials do not work.
       docker run -it --network host \
         -v $(pwd):$HOME/rules_haskell:rw \
         -v $HOME/bindists/repo_cache:$HOME/repo_cache:rw \
