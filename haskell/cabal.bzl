@@ -135,6 +135,7 @@ def _prepare_cabal_inputs(
         cabal_wrapper,
         package_database,
         verbose,
+        transitive_haddocks,
         dynamic_binary = None):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
@@ -216,6 +217,7 @@ def _prepare_cabal_inputs(
             transitive_headers,
             depset(transitive_compile_libs),
             depset(transitive_link_libs),
+            depset(transitive_haddocks),
             dep_info.interface_dirs,
             dep_info.static_libraries,
             dep_info.dynamic_libraries,
@@ -231,6 +233,16 @@ def _prepare_cabal_inputs(
         input_manifests = input_manifests,
         env = env,
         runfiles = depset(direct = dynamic_libs),
+    )
+
+def _gather_transitive_haddocks(deps):
+    transitive_haddocks_list = []
+    for dep in deps:
+        if HaddockInfo in dep:
+            for haddock_files in dep[HaddockInfo].transitive_haddocks.values():
+                transitive_haddocks_list.extend(haddock_files)
+    return depset(
+        direct = transitive_haddocks_list,
     )
 
 def _haskell_cabal_library_impl(ctx):
@@ -328,6 +340,7 @@ def _haskell_cabal_library_impl(ctx):
         package_database = package_database,
         verbose = ctx.attr.verbose,
         dynamic_binary = dynamic_library,
+        transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
     )
     outputs = [
         package_database,
@@ -566,6 +579,7 @@ def _haskell_cabal_binary_impl(ctx):
         package_database = package_database,
         verbose = ctx.attr.verbose,
         dynamic_binary = binary,
+        transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
     )
     ctx.actions.run(
         executable = c.cabal_wrapper,
