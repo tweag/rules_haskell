@@ -1,0 +1,34 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
+)
+
+haskell_test(
+    name = "one",
+    srcs = ["Main.hs"],
+    coverage_report_format = "html",
+    expected_covered_expressions_percentage = 55,
+    expected_uncovered_expression_count = 4,
+    tags = ["coverage-compatible"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "two",
+    srcs = ["Main.hs"],
+    coverage_report_format = "html",
+    expected_covered_expressions_percentage = 55,
+    expected_uncovered_expression_count = 4,
+    tags = ["coverage-compatible"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
