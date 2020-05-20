@@ -117,7 +117,13 @@ def tmpdir():
     # Build into a sibling path of the final binary output location.
     # This is to ensure that relative `RUNPATH`s are valid in the intermediate
     # output in the `--builddir` as well as in the final output in `--bindir`.
-    distdir = tempfile.mkdtemp(dir=os.path.dirname(pkgroot))
+    # Executables are placed into `<distdir>/build/<package-name>/<binary>`.
+    # Libraries are placed into `<distdir>/build/<library>`. I.e. there is an
+    # extra subdirectory for libraries.
+    if component.startswith("exe:"):
+        distdir = tempfile.mkdtemp(dir=os.path.dirname(os.path.dirname(pkgroot)))
+    else:
+        distdir = tempfile.mkdtemp(dir=os.path.dirname(pkgroot))
     try:
         yield distdir
     finally:
