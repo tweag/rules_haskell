@@ -82,8 +82,11 @@ libz_soname = r.Rlocation(os.path.join(
     sys.argv[1],
 ))
 with open(libz_soname) as fh:
-    sofile = fh.read().splitlines()[1]
-    sodir = os.path.dirname(sofile)
+    if platform.system() == "Darwin":
+        sofile = fh.read().splitlines()[2]
+    else:
+        sofile = fh.read().splitlines()[1]
+    (sodir, sobase) = os.path.split(sofile)
 
 # Locate test artifacts.
 libHSzlib = r.Rlocation(os.path.join(
@@ -95,27 +98,50 @@ cabal_binary = r.Rlocation(os.path.join(
     sys.argv[3],
 ))
 
-def read_runpaths(binary):
-    runpaths = []
+def read_runpaths(binary, sobase):
     if platform.system() == "Darwin":
+        lc_rpaths = []
+        lc_load_dylibs = []
         dynamic_section = iter(subprocess.check_output(["otool", "-l", binary]).decode().splitlines())
         # otool produces lines of the form
         #
         #   Load command ...
+        #             cmd LC_LOAD_DYLIB
+        #         cmdsize ...
+        #            name ...
+        #         ...
         #             cmd LC_RPATH
         #         cmdsize ...
         #            path ...
         #
+        # Load commands can refer to names like
+        # `@rpath/some/path/libfoo.dylib`. In that case we want to extract
+        # `some/path` and consider `RUNPATH/some/path` part of the `RUNPATH`s.
         for line in dynamic_section:
-            # Find LC_RPATH entry
+            # Find load command
+            if line.find("cmd LC_") == -1:
+                continue
             if line.find("cmd LC_RPATH") != -1:
-                break
-            # Skip until path field
-            for line in dynamic_section:
-                if line.strip().startswith("path"):
-                    break
-            runpaths.append(line.split()[1])
+                # Skip until path field
+                for line in dynamic_section:
+                    if line.strip().startswith("path"):
+                        break
+                lc_rpaths.append(line.split()[1])
+            elif line.find("cmd LC_LOAD_DYLIB") != -1:
+                # Skip until name field
+                for line in dynamic_section:
+                    if line.strip().startswith("name"):
+                        break
+                lc_load_dylib = line.split()[1]
+                if lc_load_dylib.endswith(sobase) and lc_load_dylib.startswith("@rpath"):
+                    lc_load_dylibs.append("/".join(lc_load_dylib.split("/")[1:-1]))
+        runpaths = [
+            os.path.join(rpath, libdir)
+            for rpath in lc_rpaths
+            for libdir in lc_load_dylibs
+        ]
     else:
+        runpaths = []
         dynamic_section = subprocess.check_output(["objdump", "--private-headers", binary]).decode().splitlines()
         # objdump produces lines of the form
         #
@@ -131,7 +157,7 @@ def read_runpaths(binary):
     return runpaths
 
 def test_binary(binary, sodir):
-    runpaths = read_runpaths(binary)
+    runpaths = read_runpaths(binary, sobase)
     # Check that the binary contains a relative RUNPATH for sodir.
     found = False
     for runpath in runpaths:
