@@ -364,7 +364,6 @@ haskell_library(
     srcs = [
         "LZ4.hs",
     ],
-    src_strip_prefix = "src",
     tags = ["requires_lz4"],
     deps = [
         "//tests/hackage:base",
