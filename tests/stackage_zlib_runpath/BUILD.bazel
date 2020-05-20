@@ -139,10 +139,9 @@ def test_binary(binary, sodir):
             continue
         if runpath.startswith("$ORIGIN") or runpath.startswith("@loader_path"):
             found = True
-        # XXX: Enable once #1130 is fixed.
-        #if os.path.isabs(runpath):
-        #    print("Absolute RUNPATH entry discovered for %s: %s" % (sodir, runpath))
-        #    sys.exit(1)
+        if os.path.isabs(runpath):
+            print("Absolute RUNPATH entry discovered for %s: %s" % (sodir, runpath))
+            sys.exit(1)
 
     if not found:
         print("Did not find a relative RUNPATH entry for %s among %s." % (sodir, runpaths))
