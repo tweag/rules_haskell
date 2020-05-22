@@ -783,7 +783,6 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         )
 
     if not versioned_packages and not unversioned_packages and not vendored_packages:
-        print("WARNING: all packages listed in stack_snapshot {} are core packages. Core packages are built into GHC and stack_snapshot cannot override them. stack is not being invoked at all to create this repository, and the snapshot will be ignored.".format(repr(repository_ctx.attr.name)))
         return all_packages
 
     # Unpack all given packages, then compute the transitive closure
@@ -945,8 +944,6 @@ def _stack_snapshot_impl(repository_ctx):
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)
-    if core_packages:
-        print("WARNING: core packages are provided by your GHC distribution, not the Stack snapshot.\nTherefore, the following packages from the {} repository may have versions that do not match the corresponding snapshot:\n\t{}".format(repr(repository_ctx.attr.name), core_packages))
     all_packages = _compute_dependency_graph(
         repository_ctx,
         snapshot,
@@ -1182,16 +1179,28 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
     Packages that are in the snapshot need not have their versions
     specified. But any additional packages or version overrides will have
     to be specified with a package identifier of the form
-    `<package>-<version>` in the `packages` attribute.
+    `<package>-<version>` in the `packages` attribute. Note that you cannot
+    override the version of any [packages built into GHC][ghc-builtins].
 
     In the external repository defined by the rule, all given packages are
     available as top-level targets named after each package. Additionally, the
     dependency graph is made available within `packages.bzl` as the `dict`
     `packages` mapping unversioned package names to structs holding the fields
+
       - name: The unversioned package name.
       - version: The package version.
       - deps: The list of package dependencies according to stack.
       - flags: The list of Cabal flags.
+
+    **NOTE:** Make sure your GHC version matches the version expected by the
+    snapshot. e.g. if you pass `snapshot = "lts-13.15"`, make sure you use
+    GHC 8.6.4 (e.g. by invoking `rules_haskell_toolchains(version="8.6.4")`).
+    Sadly, rules_haskell cannot maintain this correspondence for you. You will
+    need to manage it yourself. If you have a version mismatch, you will end up
+    with versions of [core GHC packages][ghc-builtins] which do not match the
+    versions listed in the snapshot, and potentially other problems.
+
+    [ghc-builtins]: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/8.10.1-notes.html#included-libraries
 
     ### Examples
 
