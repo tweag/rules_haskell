@@ -42,6 +42,10 @@ main = hspec $ do
 
       assertSuccess (bazel ["run", "//tests/binary-indirect-cbits:binary-indirect-cbits@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
+    it "with rebindable syntax" $ do
+      let p' (stdout, _stderr) = lines stdout == ["True"]
+      outputSatisfy p' (bazel ["run", "//tests/repl-targets:rebindable-syntax@repl", "--", "-ignore-dot-ghci", "-e", "check"])
+
     -- Test `compiler_flags` from toolchain and rule for REPL
     it "compiler flags" $ do
       assertSuccess (bazel ["run", "//tests/repl-flags:compiler_flags@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
