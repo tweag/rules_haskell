@@ -147,7 +147,7 @@ with tmpdir() as distdir:
     os.makedirs(os.path.join(distdir, "tmp"))
     run([runghc, setup, "configure", \
         component, \
-        "--verbose=0", \
+        "--verbose=3", \
         "--user", \
         "--with-compiler=" + ghc,
         "--with-hc-pkg=" + ghc_pkg,
@@ -183,10 +183,10 @@ with tmpdir() as distdir:
         [ arg.replace("=", "=" + execroot + "/") for arg in path_args ] + \
         [ "--package-db=" + package_database ], # This arg must come last.
         )
-    run([runghc, setup, "build", "--verbose=0", "--builddir=" + distdir])
+    run([runghc, setup, "build", "--verbose=3", "--builddir=" + distdir])
     if haddock:
-        run([runghc, setup, "haddock", "--verbose=0", "--builddir=" + distdir])
-    run([runghc, setup, "install", "--verbose=0", "--builddir=" + distdir])
+        run([runghc, setup, "haddock", "--verbose=3", "--builddir=" + distdir])
+    run([runghc, setup, "install", "--verbose=3", "--builddir=" + distdir])
     # Bazel builds are not sandboxed on Windows and can be non-sandboxed on
     # other OSs. Operations like executing `configure` scripts can modify the
     # source tree. If the `srcs` attribute uses a glob like `glob(["**"])`,
