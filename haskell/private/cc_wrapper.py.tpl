@@ -54,9 +54,16 @@ PLATFORM = "{:platform:}"
 INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
 OTOOL = "/usr/bin/otool"
 
+debug_file = open("/tmp/cc_wrapper.log", "a")
+def debug(*args, **kwargs):
+    print(*args, file=debug_file, flush=True, **kwargs)
+
 
 def main():
     parsed = Args(load_response_files(sys.argv[1:]))
+    debug("============================================================")
+    debug("ARGS\n  " + "\n  ".join(parsed.args))
+    debug("RUNPATH\n  " + "\n  ".join(parsed.rpaths))
 
     if parsed.linking:
         link(parsed.output, parsed.libraries, parsed.rpaths, parsed.args)
