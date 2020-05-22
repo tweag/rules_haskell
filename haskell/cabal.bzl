@@ -149,11 +149,20 @@ def _prepare_cabal_inputs(
     # possible all C library dependencies are linked statically. Cabal has no
     # such mode, and since we have to provide dynamic C libraries for
     # compilation, they will also be used for linking. Hence, we need to add
-    # RUNPATH flags for all dynamic C library dependencies.
+    # RUNPATH flags for all dynamic C library dependencies. Cabal also produces
+    # a dynamic and a static Haskell library in one go. The dynamic library
+    # will link other Haskell libraries dynamically. For those we need to also
+    # provide RUNPATH flags for dynamic Haskell libraries.
     (_, dynamic_libs) = get_library_files(
         hs,
         cc.cc_libraries_info,
         get_cc_libraries(cc.cc_libraries_info, cc.transitive_libraries),
+        dynamic = True,
+    )
+    (_, rpath_libs) = get_library_files(
+        hs,
+        cc.cc_libraries_info,
+        cc.transitive_libraries,
         dynamic = True,
     )
 
@@ -193,7 +202,7 @@ def _prepare_cabal_inputs(
                     keep_filename = False,
                     prefix = relative_rpath_prefix(hs.toolchain.is_darwin),
                 )
-                for lib in dynamic_libs
+                for lib in rpath_libs
             ],
             uniquify = True,
         )
