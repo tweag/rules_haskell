@@ -3,6 +3,11 @@
 import qualified GHC.IO.Handle as Handle
 import qualified System.IO as IO
 import qualified System.Directory as Dir
+:set -Wno-name-shadowing
+(>>=) = (Prelude.>>=)
+(>>) = (Prelude.>>)
+return = Prelude.return
+fromString = Prelude.id
 rules_haskell_stdout_dupe <- Handle.hDuplicate IO.stdout
 :{
 (rules_haskell_stdout_copy_file, rules_haskell_stdout_copy_h) <- do
