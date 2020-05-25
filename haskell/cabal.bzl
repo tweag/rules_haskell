@@ -1193,7 +1193,7 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
       - flags: The list of Cabal flags.
 
     **NOTE:** Make sure your GHC version matches the version expected by the
-    snapshot. e.g. if you pass `snapshot = "lts-13.15"`, make sure you use
+    snapshot. E.g. if you pass `snapshot = "lts-13.15"`, make sure you use
     GHC 8.6.4 (e.g. by invoking `rules_haskell_toolchains(version="8.6.4")`).
     Sadly, rules_haskell cannot maintain this correspondence for you. You will
     need to manage it yourself. If you have a version mismatch, you will end up
