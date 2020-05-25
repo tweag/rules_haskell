@@ -78,3 +78,14 @@ haskell_test(
         "//tests/hackage:base",
     ],
 )
+
+haskell_library(
+    name = "rebindable-syntax",
+    srcs = ["RebindableSyntax.hs"],
+    compiler_flags = [
+        "-XRebindableSyntax",
+        "-Wname-shadowing",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["//tests/hackage:base"],
+)
