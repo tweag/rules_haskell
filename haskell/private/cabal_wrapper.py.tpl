@@ -114,7 +114,16 @@ def tmpdir():
     """This is a reimplementation of `tempfile.TemporaryDirectory` because
     the latter isn't available in python2
     """
-    distdir = tempfile.mkdtemp()
+    # Build into a sibling path of the final binary output location.
+    # This is to ensure that relative `RUNPATH`s are valid in the intermediate
+    # output in the `--builddir` as well as in the final output in `--bindir`.
+    # Executables are placed into `<distdir>/build/<package-name>/<binary>`.
+    # Libraries are placed into `<distdir>/build/<library>`. I.e. there is an
+    # extra subdirectory for libraries.
+    if component.startswith("exe:"):
+        distdir = tempfile.mkdtemp(dir=os.path.dirname(os.path.dirname(pkgroot)))
+    else:
+        distdir = tempfile.mkdtemp(dir=os.path.dirname(pkgroot))
     try:
         yield distdir
     finally:
@@ -146,9 +155,15 @@ with tmpdir() as distdir:
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
+        [ "--ghc-option=" + flag.replace("$CC", cc) for flag in %{ghc_cc_args} ] +
         enable_relocatable_flags + \
         [ \
-        "--builddir=" + distdir, \
+        # Make `--builddir` a relative path. Using an absolute path would
+        # confuse the `RUNPATH` patching logic in `cc_wrapper`. It assumes that
+        # absolute paths refer the temporary directory that GHC uses for
+        # intermediate template Haskell outputs. `cc_wrapper` should improved
+        # in that regard.
+        "--builddir=" + os.path.relpath(distdir), \
         "--prefix=" + pkgroot, \
         "--libdir=" + libdir, \
         "--dynlibdir=" + dynlibdir, \

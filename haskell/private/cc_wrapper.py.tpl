@@ -121,7 +121,7 @@ class Args:
         self.args = list(self._handle_args(args))
 
         if self.linking:
-            if os.path.isabs(self.output):
+            if is_temporary_output(self.output):
                 # GHC with Template Haskell or tools like hsc2hs builds
                 # temporary Haskell binaries linked against libraries, but does
                 # not speficy the required runpaths on the command-line in the
@@ -1041,7 +1041,7 @@ def is_temporary_output(output):
     # into cache keys. If this turns out to be wrong we could instead look for
     # path components matching Bazel's output directory hierarchy.
     # See https://docs.bazel.build/versions/master/output_directories.html
-    return os.path.isabs(output)
+    return os.path.isabs(output) or output.endswith("hsc_make")
 
 
 # --------------------------------------------------------------------
