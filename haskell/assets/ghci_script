@@ -3,7 +3,7 @@
 import qualified GHC.IO.Handle as Handle
 import qualified System.IO as IO
 import qualified System.Directory as Dir
-:set -Wno-name-shadowing
+:seti -Wno-name-shadowing
 (>>=) = (Prelude.>>=)
 (>>) = (Prelude.>>)
 return = Prelude.return
