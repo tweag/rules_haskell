@@ -1,0 +1,15 @@
+cabal-version: >=1.10
+name: lib
+version: 0.1.0.0
+build-type: Custom
+
+custom-setup
+ setup-depends:
+   base >= 4 && <5,
+   Cabal,
+   cabal-doctest >= 1 && <1.1
+
+library
+  build-depends: base >=4.12 && <4.13
+  default-language: Haskell2010
+  exposed-modules: Lib
