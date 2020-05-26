@@ -10,7 +10,7 @@ executable bin
   main-is:             Main.hs
   other-modules:       Server, Compile, Proto.Worker, Proto.Worker_Fields
   ghc-options: -threaded "-with-rtsopts=-N2"
-  build-depends:       base ^>=4.12.0.0,
+  build-depends:       base ^>=4.13.0.0,
                        bytestring,
                        filepath,
                        ghc,

@@ -270,9 +270,13 @@ def _compiler_flags_and_inputs(hs, repl_info, path_prefix = ""):
         args,
     )
 
-    args.extend(ghc_cc_program_args(
-        paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path),
-    ))
+    # The `-pgmP` argument needs to be quoted.
+    args.extend([
+        '"{}"'.format(arg)
+        for arg in ghc_cc_program_args(
+            paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path),
+        )
+    ])
 
     # Add import directories
     for import_dir in repl_info.load_info.import_dirs.to_list():
