@@ -55,6 +55,9 @@ main = hspec $ do
     it "repl flags" $ do
       assertSuccess (bazel ["run", "//tests/repl-flags:repl_flags@repl", "--", "-ignore-dot-ghci", "-e", "foo"])
 
+    it "fails on multiple definitions" $ do
+      assertFailure (bazel ["run", "//tests/repl-multiple-definition:repl", "--", "-ignore-dot-ghci", "-e", "final"])
+
   describe "multi_repl" $ do
     it "loads transitive library dependencies" $ do
       let p' (stdout, _stderr) = lines stdout == ["tests/multi_repl/bc/src/BC/C.hs"]
