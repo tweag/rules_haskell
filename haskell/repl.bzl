@@ -282,10 +282,6 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         cc_library_files = get_ghci_library_files(hs, cc_libraries_info, cc_libraries)
     link_libraries(cc_library_files, args)
 
-    # Add import directories
-    for import_dir in repl_info.load_info.import_dirs.to_list():
-        args.append("-i" + (import_dir if import_dir else "."))
-
     if static:
         all_library_files = _concat(get_library_files(hs, cc_libraries_info, all_libraries, include_real_paths = True))
     else:
