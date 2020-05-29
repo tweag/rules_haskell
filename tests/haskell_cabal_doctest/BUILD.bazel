@@ -11,6 +11,7 @@ haskell_cabal_library(
         "Setup.hs",
         "lib.cabal",
     ],
+    setup_deps = ["@stackage//:cabal-doctest"],
     version = "0.1.0.0",
     deps = [":base"],
 )

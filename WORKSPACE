@@ -94,6 +94,7 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
+        "cabal-doctest",
         "network",
         "language-c",
         "streaming",

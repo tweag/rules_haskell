@@ -467,6 +467,9 @@ haskell_cabal_library = rule(
         "deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
         ),
+        "setup_deps": attr.label_list(
+            aspects = [haskell_cc_libraries_aspect],
+        ),
         "compiler_flags": attr.string_list(
             doc = """Flags to pass to Haskell compiler, in addition to those defined
             the cabal file. Subject to Make variable substitution.""",
@@ -642,6 +645,9 @@ haskell_cabal_binary = rule(
         ),
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(
+            aspects = [haskell_cc_libraries_aspect],
+        ),
+        "setup_deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
         ),
         "compiler_flags": attr.string_list(
