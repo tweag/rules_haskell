@@ -277,14 +277,6 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         cc_library_files = get_ghci_library_files(hs, cc_libraries_info, cc_libraries)
     link_libraries(cc_library_files, args)
 
-    # The `-pgmP` argument needs to be quoted.
-    args.extend([
-        '"{}"'.format(arg)
-        for arg in ghc_cc_program_args(
-            paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path),
-        )
-    ])
-
     # Add import directories
     for import_dir in repl_info.load_info.import_dirs.to_list():
         args.append("-i" + (import_dir if import_dir else "."))
@@ -323,6 +315,13 @@ def _create_repl(hs, posix, ctx, repl_info, output):
 
     compiler_flags, inputs = _compiler_flags_and_inputs(hs, repl_info, path_prefix = "$RULES_HASKELL_EXEC_ROOT")
     args.extend(compiler_flags)
+    args.extend([
+        '"{}"'.format(arg)
+        for arg in ghc_cc_program_args(paths.join(
+            "$RULES_HASKELL_EXEC_ROOT",
+            hs.toolchain.cc_wrapper.executable.path,
+        ))
+    ])
 
     # Load source files
     # Force loading by source with `:add *...`.
@@ -410,6 +409,7 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
         OutputGroupInfo provider for the hie-bios argument file.
     """
     args, inputs = _compiler_flags_and_inputs(hs, repl_info, static = True)
+    args.extend(ghc_cc_program_args(hs.toolchain.cc_wrapper.executable.path))
     args.extend(hs.toolchain.compiler_flags)
     args.extend(repl_info.load_info.compiler_flags)
 
