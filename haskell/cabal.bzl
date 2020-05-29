@@ -493,6 +493,7 @@ haskell_cabal_library = rule(
         ),
         "setup_deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
+            doc = "Dependencies for custom setup Setup.hs.",
         ),
         "compiler_flags": attr.string_list(
             doc = """Flags to pass to Haskell compiler, in addition to those defined
@@ -677,6 +678,7 @@ haskell_cabal_binary = rule(
         ),
         "setup_deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
+            doc = "Dependencies for custom setup Setup.hs.",
         ),
         "compiler_flags": attr.string_list(
             doc = """Flags to pass to Haskell compiler, in addition to those defined
