@@ -277,6 +277,11 @@ def _gather_transitive_haddocks(deps):
         direct = transitive_haddocks_list,
     )
 
+def _shorten_library_symlink(dynamic_library):
+    prefix = dynamic_library.owner.workspace_root.replace("_", "_U").replace("/", "_S")
+    basename = dynamic_library.basename
+    return paths.join(prefix, basename)
+
 def _haskell_cabal_library_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
@@ -446,6 +451,8 @@ def _haskell_cabal_library_impl(ctx):
         actions = ctx.actions,
         feature_configuration = feature_configuration,
         dynamic_library = dynamic_library,
+        dynamic_library_symlink_path =
+            _shorten_library_symlink(dynamic_library) if dynamic_library and ctx.attr.unique_name else "",
         static_library = static_library,
         cc_toolchain = cc_toolchain,
     )
@@ -519,6 +526,14 @@ haskell_cabal_library = rule(
         "verbose": attr.bool(
             default = True,
             doc = "Whether to show the output of the build",
+        ),
+        "unique_name": attr.bool(
+            default = False,
+            doc = """Whether the library name is known to be unique within the
+            workspace. This is used by `stack_snapshot` where library names are
+            known to be unique within the snapshot. If true, then the dynamic
+            library symlink underneath `_solib_<cpu>` will be shortened to
+            avoid exceeding the MACH-O header size limit on MacOS.""",
         ),
     },
     toolchains = [
@@ -1075,6 +1090,7 @@ haskell_cabal_library(
     visibility = {visibility},
     compiler_flags = ["-w", "-optF=-w"],
     verbose = {verbose},
+    unique_name = True,
 )
 """.format(
                     name = package.name,
