@@ -28,8 +28,8 @@ import subprocess
 import sys
 import tempfile
 
-debug = False
-verbose = os.environ.get("CABAL_VERBOSE", "") == "True"
+debug = True
+verbose = True
 
 def run(cmd, *args, **kwargs):
     if debug:
@@ -127,7 +127,8 @@ def tmpdir():
     try:
         yield distdir
     finally:
-        shutil.rmtree(distdir, ignore_errors = True)
+        #shutil.rmtree(distdir, ignore_errors = True)
+        pass
 
 with tmpdir() as distdir:
     enable_relocatable_flags = ["--enable-relocatable"] \
@@ -191,7 +192,7 @@ with tmpdir() as distdir:
     # source tree. If the `srcs` attribute uses a glob like `glob(["**"])`,
     # then these modified files will enter `srcs` on the next execution and
     # invalidate the cache. To avoid this we remove generated files.
-    run([runghc, setup, "clean", "--verbose=0", "--builddir=" + distdir])
+    #run([runghc, setup, "clean", "--verbose=0", "--builddir=" + distdir])
     os.chdir(old_cwd)
 
 # XXX Cabal has a bizarre layout that we can't control directly. It

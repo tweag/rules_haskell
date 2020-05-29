@@ -65,9 +65,16 @@ PLATFORM = "{:platform:}"
 INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
 OTOOL = "/usr/bin/otool"
 
+debug_file = open("/Users/builder/rules_haskell/cc_wrapper.log", "a")
+def debug(*args, **kwargs):
+    print(*args, file=debug_file, flush=True, **kwargs)
+
 
 def main():
     parsed = Args(load_response_files(sys.argv[1:]))
+    debug("============================================================")
+    debug("ARGS\n  " + "\n  ".join(parsed.args))
+    debug("RUNPATH\n  " + "\n  ".join(parsed.rpaths))
 
     if parsed.linking:
         link(parsed.output, parsed.libraries, parsed.rpaths, parsed.args)
@@ -872,6 +879,7 @@ def darwin_rewrite_load_commands(rewrites, output):
         args.extend(["-change", old, os.path.join("@rpath", new)])
     if args:
         subprocess.check_call([INSTALL_NAME_TOOL] + args + [output])
+        subprocess.call([OTOOL, "-l", output])
 
 
 # --------------------------------------------------------------------
