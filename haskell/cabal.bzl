@@ -1004,7 +1004,6 @@ def _stack_snapshot_impl(repository_ctx):
     )
 
     extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.extra_deps)
-    setup_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.setup_deps)
     tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
 
     # Write out dependency graph as importable Starlark value.
@@ -1086,8 +1085,8 @@ haskell_cabal_library(
                         for label in extra_deps.get(package.name, [])
                     ],
                     setup_deps = [
-                        _label_to_string(label)
-                        for label in setup_deps.get(package.name, [])
+                        _label_to_string(Label("@{}//:{}".format(repository_ctx.name, package.name)).relative(label))
+                        for label in repository_ctx.attr.setup_deps.get(package.name, [])
                     ],
                     tools = tools,
                     visibility = visibility,
@@ -1118,7 +1117,7 @@ _stack_snapshot = repository_rule(
             doc = "Whether to generate haddock documentation",
         ),
         "extra_deps": attr.label_keyed_string_dict(),
-        "setup_deps": attr.label_keyed_string_dict(),
+        "setup_deps": attr.string_list_dict(),
         "tools": attr.label_list(),
         "stack": attr.label(),
         "stack_update": attr.label(),
@@ -1223,7 +1222,7 @@ _fetch_stack = repository_rule(
 )
 """Find a suitably recent local Stack or download it."""
 
-def stack_snapshot(stack = None, extra_deps = {}, setup_deps = {}, vendored_packages = {}, **kwargs):
+def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
     This rule will use Stack to compute the transitive closure of the
@@ -1325,8 +1324,7 @@ def stack_snapshot(stack = None, extra_deps = {}, setup_deps = {}, vendored_pack
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
     """
-    typecheck_stackage_extradeps(extra_deps, "extra_deps")
-    typecheck_stackage_extradeps(setup_deps, "setup_deps")
+    typecheck_stackage_extradeps(extra_deps)
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
         stack = Label("@rules_haskell_stack//:stack")
@@ -1347,9 +1345,6 @@ def stack_snapshot(stack = None, extra_deps = {}, setup_deps = {}, vendored_pack
         # TODO Remove _from_string_keyed_label_list_dict once following issue
         # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
         extra_deps = _from_string_keyed_label_list_dict(extra_deps),
-        # TODO Remove _from_string_keyed_label_list_dict once following issue
-        # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
-        setup_deps = _from_string_keyed_label_list_dict(setup_deps),
         # TODO Remove _invert once following issue is resolved:
         # https://github.com/bazelbuild/bazel/issues/7989.
         vendored_packages = _invert(vendored_packages),
