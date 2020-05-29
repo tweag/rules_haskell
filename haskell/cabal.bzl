@@ -1004,6 +1004,7 @@ def _stack_snapshot_impl(repository_ctx):
     )
 
     extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.extra_deps)
+    setup_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.setup_deps)
     tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
 
     # Write out dependency graph as importable Starlark value.
@@ -1068,6 +1069,7 @@ haskell_cabal_library(
     flags = {flags},
     srcs = glob(["{dir}/**"]),
     deps = {deps},
+    setup_deps = {setup_deps},
     tools = {tools},
     visibility = {visibility},
     compiler_flags = ["-w", "-optF=-w"],
@@ -1082,6 +1084,10 @@ haskell_cabal_library(
                     deps = package.deps + [
                         _label_to_string(label)
                         for label in extra_deps.get(package.name, [])
+                    ],
+                    setup_deps = [
+                        _label_to_string(label)
+                        for label in setup_deps.get(package.name, [])
                     ],
                     tools = tools,
                     visibility = visibility,
@@ -1112,6 +1118,7 @@ _stack_snapshot = repository_rule(
             doc = "Whether to generate haddock documentation",
         ),
         "extra_deps": attr.label_keyed_string_dict(),
+        "setup_deps": attr.label_keyed_string_dict(),
         "tools": attr.label_list(),
         "stack": attr.label(),
         "stack_update": attr.label(),
@@ -1216,7 +1223,7 @@ _fetch_stack = repository_rule(
 )
 """Find a suitably recent local Stack or download it."""
 
-def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwargs):
+def stack_snapshot(stack = None, extra_deps = {}, setup_deps = {}, vendored_packages = {}, **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
     This rule will use Stack to compute the transitive closure of the
@@ -1225,6 +1232,8 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
     system libraries or other external libraries, use the `extra_deps`
     attribute to list them. This attribute works like the
     `--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
+    If a package has a custom setup with setup dependencies, use the
+    `setup_deps` attribute to list them.
 
     Packages that are in the snapshot need not have their versions
     specified. But any additional packages or version overrides will have
@@ -1310,11 +1319,14 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
         ```
         means `@postgresql//:include` is passed to the stackage package `postgresql-libpq`
         while `@zlib.dev//:zlib` is passed to the stackage package `zlib`.
+      setup_deps: Setup dependencies of packages, e.g. `cabal-doctest`.
+        Dict of stackage package names to a list of targets in the same format as for `extra_deps`.
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
     """
-    typecheck_stackage_extradeps(extra_deps)
+    typecheck_stackage_extradeps(extra_deps, "extra_deps")
+    typecheck_stackage_extradeps(setup_deps, "setup_deps")
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
         stack = Label("@rules_haskell_stack//:stack")
@@ -1335,6 +1347,9 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
         # TODO Remove _from_string_keyed_label_list_dict once following issue
         # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
         extra_deps = _from_string_keyed_label_list_dict(extra_deps),
+        # TODO Remove _from_string_keyed_label_list_dict once following issue
+        # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
+        setup_deps = _from_string_keyed_label_list_dict(setup_deps),
         # TODO Remove _invert once following issue is resolved:
         # https://github.com/bazelbuild/bazel/issues/7989.
         vendored_packages = _invert(vendored_packages),
