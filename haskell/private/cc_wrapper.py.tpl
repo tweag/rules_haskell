@@ -65,7 +65,7 @@ PLATFORM = "{:platform:}"
 INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
 OTOOL = "/usr/bin/otool"
 
-debug_file = open("/Users/builder/rules_haskell/cc_wrapper.log", "a")
+debug_file = open("/tmp/cc_wrapper.log", "a")
 def debug(*args, **kwargs):
     print(*args, file=debug_file, flush=True, **kwargs)
 
