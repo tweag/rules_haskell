@@ -20,5 +20,7 @@ haskell_test(
         # Packages using ./configure scripts are problematic on Windows.
         "@stackage//:network",
         "@stackage//:language-c",
+        # Package that has a setup dependency.
+        "@stackage//:polysemy",
     ],
 )
