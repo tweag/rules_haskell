@@ -195,9 +195,9 @@ haskell_cabal_binary(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "47cca96a6e5031b3872233d5b9ca14d45f9089da3d45a068e1b587989fec4364",
-    strip_prefix = "ghcide-39605333c34039241768a1809024c739df3fb2bd",
-    urls = ["https://github.com/digital-asset/ghcide/archive/39605333c34039241768a1809024c739df3fb2bd.tar.gz"],
+    sha256 = "fa1f0cfb0357e7bfa6c86076493f038e0ea5fcd75c470473f2ede7e32566cd9a",
+    strip_prefix = "ghcide-0c9a0961abbeef851b4117e6408f15a6d46eb1f1",
+    urls = ["https://github.com/digital-asset/ghcide/archive/0c9a0961abbeef851b4117e6408f15a6d46eb1f1.tar.gz"],
 )
 
 load(
