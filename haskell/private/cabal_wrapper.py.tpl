@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# cabal_wrapper.py <COMPONENT> <PKG_NAME> <HADDOCK> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
+# cabal_wrapper.py <COMPONENT> <PKG_NAME> <HADDOCK> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> <RUNGHC_ARGS> [EXTRA_ARGS...] -- [PATH_ARGS...]
 #
 # This wrapper calls Cabal's configure/build/install steps one big
 # action so that we don't have to track all inputs explicitly between
@@ -86,6 +86,7 @@ datadir = os.path.join(pkgroot, "{}_data".format(name))
 package_database = os.path.join(pkgroot, "{}.conf.d".format(name))
 haddockdir = os.path.join(pkgroot, "{}_haddock".format(name))
 htmldir = os.path.join(pkgroot, "{}_haddock_html".format(name))
+runghc_args = sys.argv.pop(1).split()
 
 runghc = find_exe(r"%{runghc}")
 ghc = find_exe(r"%{ghc}")
@@ -144,7 +145,8 @@ with tmpdir() as distdir:
     os.putenv("TMP", os.path.join(distdir, "tmp"))
     os.putenv("TEMP", os.path.join(distdir, "tmp"))
     os.makedirs(os.path.join(distdir, "tmp"))
-    run([runghc, setup, "configure", \
+    runghc_args = [arg.replace("./", execroot + "/") for arg in runghc_args]
+    run([runghc] + runghc_args + [setup, "configure", \
         component, \
         "--verbose=0", \
         "--user", \
@@ -182,16 +184,16 @@ with tmpdir() as distdir:
         [ arg.replace("=", "=" + execroot + "/") for arg in path_args ] + \
         [ "--package-db=" + package_database ], # This arg must come last.
         )
-    run([runghc, setup, "build", "--verbose=0", "--builddir=" + distdir])
+    run([runghc] + runghc_args + [setup, "build", "--verbose=0", "--builddir=" + distdir])
     if haddock:
-        run([runghc, setup, "haddock", "--verbose=0", "--builddir=" + distdir])
-    run([runghc, setup, "install", "--verbose=0", "--builddir=" + distdir])
+        run([runghc] + runghc_args + [setup, "haddock", "--verbose=0", "--builddir=" + distdir])
+    run([runghc] + runghc_args + [setup, "install", "--verbose=0", "--builddir=" + distdir])
     # Bazel builds are not sandboxed on Windows and can be non-sandboxed on
     # other OSs. Operations like executing `configure` scripts can modify the
     # source tree. If the `srcs` attribute uses a glob like `glob(["**"])`,
     # then these modified files will enter `srcs` on the next execution and
     # invalidate the cache. To avoid this we remove generated files.
-    run([runghc, setup, "clean", "--verbose=0", "--builddir=" + distdir])
+    run([runghc] + runghc_args + [setup, "clean", "--verbose=0", "--builddir=" + distdir])
     os.chdir(old_cwd)
 
 # XXX Cabal has a bizarre layout that we can't control directly. It

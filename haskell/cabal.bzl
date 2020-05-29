@@ -28,6 +28,7 @@ load(
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
+    "all_dependencies_package_ids",
 )
 load(
     ":private/cc_libraries.bzl",
@@ -128,6 +129,8 @@ def _prepare_cabal_inputs(
         tool_input_manifests,
         cabal,
         setup,
+        setup_deps,
+        setup_dep_info,
         srcs,
         compiler_flags,
         flags,
@@ -170,6 +173,9 @@ def _prepare_cabal_inputs(
         dynamic = True,
     )
 
+    # Setup dependencies are loaded by runghc.
+    setup_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.setup_libraries)
+
     # The regular Haskell rules have separate actions for linking and
     # compilation to which we pass different sets of libraries as inputs. The
     # Cabal rules, in contrast, only have a single action for compilation and
@@ -195,6 +201,15 @@ def _prepare_cabal_inputs(
     ])
     direct_lib_dirs = [file.dirname for file in direct_libs]
     args.add_all([component, package_id, generate_haddock, setup, cabal.dirname, package_database.dirname])
+    args.add_joined([
+        arg
+        for package_id in setup_deps
+        for arg in ["-package-id", package_id]
+    ] + [
+        arg
+        for package_db in setup_dep_info.package_databases.to_list()
+        for arg in ["-package-db", "./" + _dirname(package_db)]
+    ], join_with = " ", format_each = "--ghc-arg=%s", omit_if_empty = False)
     args.add("--flags=" + " ".join(flags))
     args.add_all(compiler_flags, format_each = "--ghc-option=%s")
     if dynamic_binary:
@@ -226,10 +241,15 @@ def _prepare_cabal_inputs(
             depset(srcs),
             depset(cc.files),
             package_databases,
+            setup_dep_info.package_databases,
             transitive_headers,
+            depset(setup_libs),
             depset(transitive_compile_libs),
             depset(transitive_link_libs),
             depset(transitive_haddocks),
+            setup_dep_info.interface_dirs,
+            setup_dep_info.static_libraries,
+            setup_dep_info.dynamic_libraries,
             dep_info.interface_dirs,
             dep_info.static_libraries,
             dep_info.dynamic_libraries,
@@ -260,6 +280,8 @@ def _gather_transitive_haddocks(deps):
 def _haskell_cabal_library_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
+    setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
     cc = cc_interop_info(ctx)
 
     # All C and Haskell library dependencies.
@@ -344,6 +366,8 @@ def _haskell_cabal_library_impl(ctx):
         tool_input_manifests = tool_input_manifests,
         cabal = cabal,
         setup = setup,
+        setup_deps = setup_deps,
+        setup_dep_info = setup_dep_info,
         srcs = ctx.files.srcs,
         compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
@@ -537,6 +561,8 @@ build times, and does not require drafting a `.cabal` file.
 def _haskell_cabal_binary_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
+    setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
     cc = cc_interop_info(ctx)
 
     # All C and Haskell library dependencies.
@@ -587,6 +613,8 @@ def _haskell_cabal_binary_impl(ctx):
         tool_input_manifests = tool_input_manifests,
         cabal = cabal,
         setup = setup,
+        setup_deps = setup_deps,
+        setup_dep_info = setup_dep_info,
         srcs = ctx.files.srcs,
         compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,

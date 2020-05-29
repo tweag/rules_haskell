@@ -32,6 +32,7 @@ CcInteropInfo = provider(
         "cc_libraries": "depset, C libraries from direct linking dependencies.",
         "transitive_libraries": "depset, C and Haskell libraries from transitive linking dependencies.",
         "plugin_libraries": "depset, C and Haskell libraries from transitive plugin dependencies.",
+        "setup_libraries": "depset, C and Haskell libraries from Cabal setup dependencies.",
     },
 )
 
@@ -132,7 +133,7 @@ def cc_interop_info(ctx):
         tools["ar"] = "/usr/bin/ar"
 
     cc_libraries_info = deps_HaskellCcLibrariesInfo(
-        ctx.attr.deps + getattr(ctx.attr, "plugins", []),
+        ctx.attr.deps + getattr(ctx.attr, "plugins", []) + getattr(ctx.attr, "setup_deps", []),
     )
     return CcInteropInfo(
         tools = struct(**tools),
@@ -157,6 +158,11 @@ def cc_interop_info(ctx):
             dep[CcInfo]
             for plugin in getattr(ctx.attr, "plugins", [])
             for dep in plugin[GhcPluginInfo].deps
+            if CcInfo in dep
+        ]).linking_context.libraries_to_link.to_list(),
+        setup_libraries = cc_common.merge_cc_infos(cc_infos = [
+            dep[CcInfo]
+            for dep in getattr(ctx.attr, "setup_deps", [])
             if CcInfo in dep
         ]).linking_context.libraries_to_link.to_list(),
     )
