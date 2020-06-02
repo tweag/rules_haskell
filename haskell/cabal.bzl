@@ -551,6 +551,7 @@ def _haskell_cabal_binary_impl(ctx):
     )
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
+    exe_name = ctx.attr.exe_name if ctx.attr.exe_name else hs.label.name
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
@@ -560,7 +561,7 @@ def _haskell_cabal_binary_impl(ctx):
     )
     binary = hs.actions.declare_file(
         "_install/bin/{name}{ext}".format(
-            name = hs.label.name,
+            name = exe_name,
             ext = ".exe" if hs.toolchain.is_windows else "",
         ),
         sibling = cabal,
@@ -577,7 +578,7 @@ def _haskell_cabal_binary_impl(ctx):
         dep_info,
         cc_info,
         direct_cc_info,
-        component = "exe:{}".format(hs.label.name),
+        component = "exe:{}".format(exe_name),
         package_id = hs.label.name,
         tool_inputs = tool_inputs,
         tool_input_manifests = tool_input_manifests,
@@ -636,6 +637,9 @@ haskell_cabal_binary = rule(
     _haskell_cabal_binary_impl,
     executable = True,
     attrs = {
+        "exe_name": attr.string(
+            doc = "Cabal executable component name. Defaults to the value of the name attribute.",
+        ),
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
