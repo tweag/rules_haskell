@@ -94,6 +94,8 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
+        "cabal-doctest",
+        "polysemy",
         "network",
         "language-c",
         "streaming",
@@ -107,6 +109,7 @@ stack_snapshot(
         "proto-lens-runtime",
         "lens-family",
     ],
+    setup_deps = {"polysemy": ["cabal-doctest"]},
     snapshot = test_stack_snapshot,
     tools = [
         "@alex",

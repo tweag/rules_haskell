@@ -28,6 +28,7 @@ load(
     "HaddockInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
+    "all_dependencies_package_ids",
 )
 load(
     ":private/cc_libraries.bzl",
@@ -128,6 +129,8 @@ def _prepare_cabal_inputs(
         tool_input_manifests,
         cabal,
         setup,
+        setup_deps,
+        setup_dep_info,
         srcs,
         compiler_flags,
         flags,
@@ -170,6 +173,9 @@ def _prepare_cabal_inputs(
         dynamic = True,
     )
 
+    # Setup dependencies are loaded by runghc.
+    setup_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.setup_libraries)
+
     # The regular Haskell rules have separate actions for linking and
     # compilation to which we pass different sets of libraries as inputs. The
     # Cabal rules, in contrast, only have a single action for compilation and
@@ -195,6 +201,15 @@ def _prepare_cabal_inputs(
     ])
     direct_lib_dirs = [file.dirname for file in direct_libs]
     args.add_all([component, package_id, generate_haddock, setup, cabal.dirname, package_database.dirname])
+    args.add_joined([
+        arg
+        for package_id in setup_deps
+        for arg in ["-package-id", package_id]
+    ] + [
+        arg
+        for package_db in setup_dep_info.package_databases.to_list()
+        for arg in ["-package-db", "./" + _dirname(package_db)]
+    ], join_with = " ", format_each = "--ghc-arg=%s", omit_if_empty = False)
     args.add("--flags=" + " ".join(flags))
     args.add_all(compiler_flags, format_each = "--ghc-option=%s")
     if dynamic_binary:
@@ -226,10 +241,15 @@ def _prepare_cabal_inputs(
             depset(srcs),
             depset(cc.files),
             package_databases,
+            setup_dep_info.package_databases,
             transitive_headers,
+            depset(setup_libs),
             depset(transitive_compile_libs),
             depset(transitive_link_libs),
             depset(transitive_haddocks),
+            setup_dep_info.interface_dirs,
+            setup_dep_info.static_libraries,
+            setup_dep_info.dynamic_libraries,
             dep_info.interface_dirs,
             dep_info.static_libraries,
             dep_info.dynamic_libraries,
@@ -260,6 +280,8 @@ def _gather_transitive_haddocks(deps):
 def _haskell_cabal_library_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
+    setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
     cc = cc_interop_info(ctx)
 
     # All C and Haskell library dependencies.
@@ -344,6 +366,8 @@ def _haskell_cabal_library_impl(ctx):
         tool_input_manifests = tool_input_manifests,
         cabal = cabal,
         setup = setup,
+        setup_deps = setup_deps,
+        setup_dep_info = setup_dep_info,
         srcs = ctx.files.srcs,
         compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
@@ -467,6 +491,10 @@ haskell_cabal_library = rule(
         "deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
         ),
+        "setup_deps": attr.label_list(
+            aspects = [haskell_cc_libraries_aspect],
+            doc = "Dependencies for custom setup Setup.hs.",
+        ),
         "compiler_flags": attr.string_list(
             doc = """Flags to pass to Haskell compiler, in addition to those defined
             the cabal file. Subject to Make variable substitution.""",
@@ -534,6 +562,8 @@ build times, and does not require drafting a `.cabal` file.
 def _haskell_cabal_binary_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
+    setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
     cc = cc_interop_info(ctx)
 
     # All C and Haskell library dependencies.
@@ -584,6 +614,8 @@ def _haskell_cabal_binary_impl(ctx):
         tool_input_manifests = tool_input_manifests,
         cabal = cabal,
         setup = setup,
+        setup_deps = setup_deps,
+        setup_dep_info = setup_dep_info,
         srcs = ctx.files.srcs,
         compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
@@ -643,6 +675,10 @@ haskell_cabal_binary = rule(
         "srcs": attr.label_list(allow_files = True),
         "deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
+        ),
+        "setup_deps": attr.label_list(
+            aspects = [haskell_cc_libraries_aspect],
+            doc = "Dependencies for custom setup Setup.hs.",
         ),
         "compiler_flags": attr.string_list(
             doc = """Flags to pass to Haskell compiler, in addition to those defined
@@ -1034,6 +1070,7 @@ haskell_cabal_library(
     flags = {flags},
     srcs = glob(["{dir}/**"]),
     deps = {deps},
+    setup_deps = {setup_deps},
     tools = {tools},
     visibility = {visibility},
     compiler_flags = ["-w", "-optF=-w"],
@@ -1048,6 +1085,10 @@ haskell_cabal_library(
                     deps = package.deps + [
                         _label_to_string(label)
                         for label in extra_deps.get(package.name, [])
+                    ],
+                    setup_deps = [
+                        _label_to_string(Label("@{}//:{}".format(repository_ctx.name, package.name)).relative(label))
+                        for label in repository_ctx.attr.setup_deps.get(package.name, [])
                     ],
                     tools = tools,
                     visibility = visibility,
@@ -1078,6 +1119,7 @@ _stack_snapshot = repository_rule(
             doc = "Whether to generate haddock documentation",
         ),
         "extra_deps": attr.label_keyed_string_dict(),
+        "setup_deps": attr.string_list_dict(),
         "tools": attr.label_list(),
         "stack": attr.label(),
         "stack_update": attr.label(),
@@ -1191,6 +1233,8 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
     system libraries or other external libraries, use the `extra_deps`
     attribute to list them. This attribute works like the
     `--extra-{include,lib}-dirs` flags for Stack and cabal-install do.
+    If a package has a custom setup with setup dependencies, use the
+    `setup_deps` attribute to list them.
 
     Packages that are in the snapshot need not have their versions
     specified. But any additional packages or version overrides will have
@@ -1276,6 +1320,8 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
         ```
         means `@postgresql//:include` is passed to the stackage package `postgresql-libpq`
         while `@zlib.dev//:zlib` is passed to the stackage package `zlib`.
+      setup_deps: Setup dependencies of packages, e.g. `cabal-doctest`.
+        Dict of stackage package names to a list of targets in the same format as for `extra_deps`.
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
