@@ -140,6 +140,7 @@ with tmpdir() as distdir:
     # absolute ones before doing so (using $execroot).
     old_cwd = os.getcwd()
     os.chdir(srcdir)
+    os.putenv("RULES_HASKELL_EXEC_ROOT", old_cwd)
     os.putenv("HOME", "/var/empty")
     os.putenv("TMPDIR", os.path.join(distdir, "tmp"))
     os.putenv("TMP", os.path.join(distdir, "tmp"))
