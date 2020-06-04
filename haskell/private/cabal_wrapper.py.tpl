@@ -121,10 +121,16 @@ def tmpdir():
     # Executables are placed into `<distdir>/build/<package-name>/<binary>`.
     # Libraries are placed into `<distdir>/build/<library>`. I.e. there is an
     # extra subdirectory for libraries.
-    if component.startswith("exe:"):
-        distdir = tempfile.mkdtemp(dir=os.path.dirname(os.path.dirname(pkgroot)))
+    #
+    # On Windows we don't do dynamic linking and prefer shorter paths to avoid
+    # exceeding `MAX_PATH`.
+    if "%{is_windows}" == "True":
+        distdir = tempfile.mkdtemp()
     else:
-        distdir = tempfile.mkdtemp(dir=os.path.dirname(pkgroot))
+        if component.startswith("exe:"):
+            distdir = tempfile.mkdtemp(dir=os.path.dirname(os.path.dirname(pkgroot)))
+        else:
+            distdir = tempfile.mkdtemp(dir=os.path.dirname(pkgroot))
     try:
         yield distdir
     finally:
@@ -140,6 +146,7 @@ with tmpdir() as distdir:
     # absolute ones before doing so (using $execroot).
     old_cwd = os.getcwd()
     os.chdir(srcdir)
+    os.putenv("RULES_HASKELL_EXEC_ROOT", old_cwd)
     os.putenv("HOME", "/var/empty")
     os.putenv("TMPDIR", os.path.join(distdir, "tmp"))
     os.putenv("TMP", os.path.join(distdir, "tmp"))
@@ -165,7 +172,7 @@ with tmpdir() as distdir:
         # absolute paths refer the temporary directory that GHC uses for
         # intermediate template Haskell outputs. `cc_wrapper` should improved
         # in that regard.
-        "--builddir=" + os.path.relpath(distdir), \
+        "--builddir=" + (os.path.relpath(distdir) if "%{is_windows}" != "True" else distdir), \
         "--prefix=" + pkgroot, \
         "--libdir=" + libdir, \
         "--dynlibdir=" + dynlibdir, \

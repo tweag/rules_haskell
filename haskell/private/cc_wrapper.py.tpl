@@ -711,17 +711,17 @@ def find_solib_rpath(rpaths, output):
     """
     for rpath in rpaths:
         components = rpath.replace("\\", "/").split("/")
-        solib_rpath = []
+        solib_rpath = ""
         for comp in components:
-            solib_rpath.append(comp)
-            if comp.startswith("_solib_"):
-                return "/".join(solib_rpath)
+            solib_rpath = os.path.join(solib_rpath, comp)
+            if comp.startswith("_solib_") and os.path.isdir(resolve_rpath(solib_rpath, output)[1]):
+                return solib_rpath
 
     if is_temporary_output(output):
         # GHC generates temporary libraries outside the execroot. In that case
         # the Bazel generated RPATHs are not forwarded, and the solib directory
         # is not visible on the command-line.
-        for (root, dirnames, _) in breadth_first_walk("."):
+        for (root, dirnames, _) in breadth_first_walk(os.environ.get("RULES_HASKELL_EXEC_ROOT", ".")):
             if "_solib_{:cpu:}" in dirnames:
                 return os.path.join(root, "_solib_{:cpu:}")
 
