@@ -7,6 +7,7 @@ import Data.Foldable (for_)
 import Data.List (isInfixOf, sort)
 import System.Exit (ExitCode(..))
 import System.Info (os)
+import System.IO.Temp (withSystemTempDirectory)
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
@@ -84,6 +85,14 @@ main = hspec $ do
   it "repl name shadowing" $ do
     let p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
     outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-ignore-dot-ghci", "-e", "stdin"])
+
+  it "Repl works with remote_download_toplevel" $ do
+    let p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
+    withSystemTempDirectory "bazel_disk_cache" $ \tmp_disk_cache -> do
+      assertSuccess $ bazel ["run", "//tests/multi_repl:c_only_repl", "--disk_cache=" <> tmp_disk_cache]
+      assertSuccess $ bazel ["clean"]
+      outputSatisfy p
+        (bazel ["run", "//tests/multi_repl:c_only_repl", "--disk_cache=" <> tmp_disk_cache, "--remote_download_toplevel"])
 
   it "bazel test examples" $ do
     assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "./examples" }

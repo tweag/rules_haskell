@@ -81,6 +81,7 @@ stack_snapshot(
         "proto-lens-protoc",
         "proto-lens-runtime",
         "lens-family",
+        "temporary",
     ],
     setup_deps = {"polysemy": ["cabal-doctest"]},
     snapshot = test_stack_snapshot,
