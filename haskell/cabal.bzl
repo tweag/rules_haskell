@@ -494,9 +494,13 @@ haskell_cabal_library = rule(
             default = True,
             doc = "Whether to generate haddock documentation.",
         ),
-        "srcs": attr.label_list(allow_files = True),
+        "srcs": attr.label_list(
+            allow_files = True,
+            doc = "All files required to build the package, including the Cabal file.",
+        ),
         "deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
+            doc = "Package build dependencies. Note, setup dependencies need to be declared separately using `setup_deps`.",
         ),
         "setup_deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
@@ -687,9 +691,13 @@ haskell_cabal_binary = rule(
         "exe_name": attr.string(
             doc = "Cabal executable component name. Defaults to the value of the name attribute.",
         ),
-        "srcs": attr.label_list(allow_files = True),
+        "srcs": attr.label_list(
+            allow_files = True,
+            doc = "All files required to build the package, including the Cabal file.",
+        ),
         "deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
+            doc = "Package build dependencies. Note, setup dependencies need to be declared separately using `setup_deps`.",
         ),
         "setup_deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
@@ -1130,19 +1138,13 @@ _stack_snapshot = repository_rule(
         "packages": attr.string_list(),
         "vendored_packages": attr.label_keyed_string_dict(),
         "flags": attr.string_list_dict(),
-        "haddock": attr.bool(
-            default = True,
-            doc = "Whether to generate haddock documentation",
-        ),
+        "haddock": attr.bool(default = True),
         "extra_deps": attr.label_keyed_string_dict(),
         "setup_deps": attr.string_list_dict(),
         "tools": attr.label_list(),
         "stack": attr.label(),
         "stack_update": attr.label(),
-        "verbose": attr.bool(
-            default = False,
-            doc = "Whether to show the output of the build",
-        ),
+        "verbose": attr.bool(default = False),
     },
 )
 
@@ -1240,7 +1242,20 @@ _fetch_stack = repository_rule(
 )
 """Find a suitably recent local Stack or download it."""
 
-def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwargs):
+def stack_snapshot(
+        stack = None,
+        extra_deps = {},
+        vendored_packages = {},
+        snapshot = "",
+        local_snapshot = None,
+        packages = [],
+        flags = {},
+        haddock = True,
+        setup_deps = {},
+        tools = [],
+        stack_update = None,
+        verbose = False,
+        **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
     This rule will use Stack to compute the transitive closure of the
@@ -1341,6 +1356,10 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
       tools: Tool dependencies. They are built using the host configuration, since
         the tools are executed as part of the build.
       stack: The stack binary to use to enumerate package dependencies.
+      haddock: Whether to generate haddock documentation.
+      verbose: Whether to show the output of the build.
+      stack_update: A meta repository that is used to avoid multiple concurrent invocations of
+        `stack update` which could fail due to a race on the hackage security lock.
     """
     typecheck_stackage_extradeps(extra_deps)
     if not stack:
@@ -1366,6 +1385,14 @@ def stack_snapshot(stack = None, extra_deps = {}, vendored_packages = {}, **kwar
         # TODO Remove _invert once following issue is resolved:
         # https://github.com/bazelbuild/bazel/issues/7989.
         vendored_packages = _invert(vendored_packages),
+        snapshot = snapshot,
+        local_snapshot = local_snapshot,
+        packages = packages,
+        flags = flags,
+        haddock = haddock,
+        setup_deps = setup_deps,
+        tools = tools,
+        verbose = verbose,
         **kwargs
     )
 
