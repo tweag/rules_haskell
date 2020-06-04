@@ -1102,6 +1102,8 @@ def _stack_snapshot_impl(repository_ctx):
             package.name: struct(
                 name = package.name,
                 version = package.version,
+                library = package.components.lib,
+                executables = package.components.exe,
                 deps = [Label("@{}//:{}".format(repository_ctx.name, dep)) for dep in package.deps],
                 flags = package.flags,
             )
@@ -1202,17 +1204,18 @@ haskell_cabal_library(
                 build_file_builder.append(
                     """
 haskell_cabal_binary(
-    name = "{name}_exe_{exe}",
+    name = "_{name}_exe_{exe}",
     exe_name = "{exe}",
     flags = {flags},
     srcs = glob(["{dir}/**"]),
     deps = {deps},
     tools = {tools},
-    visibility = {visibility},
+    visibility = ["@{workspace}-exe//{name}:__pkg__"],
     compiler_flags = ["-w", "-optF=-w"],
     verbose = {verbose},
 )
 """.format(
+                        workspace = repository_ctx.name,
                         name = package.name,
                         exe = exe,
                         flags = package.flags,
@@ -1243,6 +1246,35 @@ _stack_snapshot = repository_rule(
         "stack": attr.label(),
         "stack_update": attr.label(),
         "verbose": attr.bool(default = False),
+    },
+)
+
+def _stack_executables_impl(repository_ctx):
+    workspace = repository_ctx.name[:-len("-exe")]
+    packages = [
+        _chop_version(package) if _has_version(package) else package
+        for package in repository_ctx.attr.packages
+    ]
+    for package in packages:
+        repository_ctx.file(package + "/BUILD.bazel", executable = False, content = """\
+load("@{workspace}//:packages.bzl", "packages")
+[
+    alias(
+        name = exe,
+        actual = "@{workspace}//:_{package}_exe_" + exe,
+        visibility = ["//visibility:public"],
+    )
+    for exe in packages["{package}"].executables
+]
+""".format(
+            workspace = workspace,
+            package = package,
+        ))
+
+_stack_executables = repository_rule(
+    _stack_executables_impl,
+    attrs = {
+        "packages": attr.string_list(),
     },
 )
 
@@ -1341,6 +1373,7 @@ _fetch_stack = repository_rule(
 """Find a suitably recent local Stack or download it."""
 
 def stack_snapshot(
+        name,
         stack = None,
         extra_deps = {},
         vendored_packages = {},
@@ -1372,6 +1405,14 @@ def stack_snapshot(
     `<package>-<version>` in the `packages` attribute. Note that you cannot
     override the version of any [packages built into GHC][ghc-builtins].
 
+    By default `stack_snapshot` defines a library target for each package. If a
+    package does not contain a library component or contains executable
+    components, then you need to declare so yourself using the `components`
+    attribute. Library targets are exposed as `@stackage//:<package-name>` and
+    executables are exposed as
+    `@stackage-exe//<package-name>:<executable-name>`, assuming that you
+    invoked `stack_snapshot` with `name = "stackage"`.
+
     In the external repository defined by the rule, all given packages are
     available as top-level targets named after each package. Additionally, the
     dependency graph is made available within `packages.bzl` as the `dict`
@@ -1379,6 +1420,8 @@ def stack_snapshot(
 
       - name: The unversioned package name.
       - version: The package version.
+      - library: Whether the package has a declared library component.
+      - executables: List of declared executable components.
       - deps: The list of package dependencies according to stack.
       - flags: The list of Cabal flags.
 
@@ -1397,24 +1440,27 @@ def stack_snapshot(
       ```bzl
       stack_snapshot(
           name = "stackage",
-          packages = ["conduit", "lens", "zlib-0.6.2"],
+          packages = ["conduit", "doctest", "lens", "zlib-0.6.2"],
           vendored_packages = {"split": "//split:split"},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
+          components = {"doctest": ["lib", "exe"]},
           snapshot = "lts-13.15",
           extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       )
       ```
-      defines `@stackage//:conduit`, `@stackage//:lens`,
-      `@stackage//:zlib` library targets.
+      defines `@stackage//:conduit`, `@stackage//:doctest`, `@stackage//:lens`,
+      `@stackage//:zlib` library targets and a `@stackage-exe//doctest`
+      executable target.
 
       Alternatively
 
       ```bzl
       stack_snapshot(
           name = "stackage",
-          packages = ["conduit", "lens", "zlib"],
+          packages = ["conduit", "doctest", "lens", "zlib"],
           flags = {"zlib": ["-non-blocking-ffi"]},
           tools = ["@happy//:happy", "@c2hs//:c2hs"],
+          components = {"doctest": ["lib", "exe"]},
           local_snapshot = "//:snapshot.yaml",
           extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       ```
@@ -1430,6 +1476,7 @@ def stack_snapshot(
       ```
 
     Args:
+      name: The name of the Bazel workspace.
       snapshot: The name of a Stackage snapshot. Incompatible with local_snapshot.
       local_snapshot: A custom Stack snapshot file, as per the Stack documentation.
         Incompatible with snapshot.
@@ -1458,8 +1505,10 @@ def stack_snapshot(
         A dict from package name to list of components. Use `lib` for the
         library component and `exe:<exe-name>` for an executable component,
         `exe` is a short-cut for `exe:<package-name>`. The library component
-        will have the label `//:<package>` and an executable component will
-        have the label `//:<package>_exe_<exe-name>`.
+        will have the label `@<workspace>//:<package>` and an executable
+        component will have the label `@<workspace>-exe//<package>:<exe-name>`,
+        where `<workspace>` is the name given to the `stack_snapshot`
+        invocation.
       stack: The stack binary to use to enumerate package dependencies.
       haddock: Whether to generate haddock documentation.
       verbose: Whether to show the output of the build.
@@ -1481,6 +1530,7 @@ def stack_snapshot(
         stack = stack,
     )
     _stack_snapshot(
+        name = name,
         stack = stack,
         # Dependency for ordered execution, stack update before stack unpack.
         stack_update = "@rules_haskell_stack_update//:stack_update",
@@ -1500,6 +1550,10 @@ def stack_snapshot(
         components = components,
         verbose = verbose,
         **kwargs
+    )
+    _stack_executables(
+        name = name + "-exe",
+        packages = packages,
     )
 
 def _expand_make_variables(name, ctx, strings):
