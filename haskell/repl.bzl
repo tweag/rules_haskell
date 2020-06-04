@@ -55,6 +55,7 @@ HaskellReplDepInfo = provider(
     fields = {
         "package_ids": "Set of workspace unique package identifiers.",
         "package_databases": "Set of package cache files.",
+        "interface_dirs": "Set of interface dirs for all the dependencies",
         "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of the package itself (includes its transitive dependencies).",
     },
@@ -112,18 +113,21 @@ def _merge_HaskellReplLoadInfo(load_infos):
 def _merge_HaskellReplDepInfo(dep_infos):
     package_ids = []
     package_databases = depset()
+    interface_dirs = depset()
     cc_libraries_infos = []
     cc_infos = []
 
     for dep_info in dep_infos:
         package_ids += dep_info.package_ids
         package_databases = depset(transitive = [package_databases, dep_info.package_databases])
+        interface_dirs = depset(transitive = [interface_dirs, dep_info.interface_dirs])
         cc_libraries_infos.append(dep_info.cc_libraries_info)
         cc_infos.append(dep_info.cc_info)
 
     return HaskellReplDepInfo(
         package_ids = package_ids,
         package_databases = package_databases,
+        interface_dirs = interface_dirs,
         cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = cc_libraries_infos),
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
     )
@@ -157,6 +161,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
         dep_infos[target.label] = HaskellReplDepInfo(
             package_ids = all_package_ids(lib_info),
             package_databases = hs_info.package_databases,
+            interface_dirs = hs_info.interface_dirs,
             cc_libraries_info = target[HaskellCcLibrariesInfo],
             cc_info = target[CcInfo],
         )
@@ -290,6 +295,7 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         repl_info.dep_info.package_databases,
         depset(all_library_files),
         depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
+        repl_info.dep_info.interface_dirs,
     ])
 
     return (args, inputs)
