@@ -494,9 +494,13 @@ haskell_cabal_library = rule(
             default = True,
             doc = "Whether to generate haddock documentation.",
         ),
-        "srcs": attr.label_list(allow_files = True),
+        "srcs": attr.label_list(
+            allow_files = True,
+            doc = "All files required to build the package, including the Cabal file.",
+        ),
         "deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
+            doc = "Package build dependencies. Note, setup dependencies need to be declared separately using `setup_deps`.",
         ),
         "setup_deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
@@ -687,9 +691,13 @@ haskell_cabal_binary = rule(
         "exe_name": attr.string(
             doc = "Cabal executable component name. Defaults to the value of the name attribute.",
         ),
-        "srcs": attr.label_list(allow_files = True),
+        "srcs": attr.label_list(
+            allow_files = True,
+            doc = "All files required to build the package, including the Cabal file.",
+        ),
         "deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
+            doc = "Package build dependencies. Note, setup dependencies need to be declared separately using `setup_deps`.",
         ),
         "setup_deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
