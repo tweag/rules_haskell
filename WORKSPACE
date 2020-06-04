@@ -120,9 +120,87 @@ stack_snapshot(
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
     name = "stackage-zlib",
-    extra_deps = {"zlib": ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"]},
+    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
     packages = ["zlib"],
     snapshot = test_stack_snapshot,
+)
+
+stack_snapshot(
+    name = "stackage_ghcide",
+    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
+    haddock = False,
+    local_snapshot = "//:ghcide-stack-snapshot.yaml",
+    packages = [
+        "aeson",
+        "base",
+        "base16-bytestring",
+        "binary",
+        "bytestring",
+        "containers",
+        "cryptohash-sha1",
+        "data-default",
+        "deepseq",
+        "directory",
+        "extra",
+        "filepath",
+        "ghc",
+        "ghc-check",
+        "ghc-paths",
+        "ghcide",
+        "gitrev",
+        "hashable",
+        "haskell-lsp",
+        "haskell-lsp-types",
+        "hie-bios",
+        "hslogger",
+        "optparse-applicative",
+        "shake",
+        "text",
+        "unordered-containers",
+    ],
+)
+
+http_archive(
+    name = "ghcide",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+haskell_cabal_binary(
+    name = "ghcide",
+    srcs = glob(["**"]),
+    deps = [
+        "@stackage_ghcide//:hslogger",
+        "@stackage_ghcide//:aeson",
+        "@stackage_ghcide//:base",
+        "@stackage_ghcide//:binary",
+        "@stackage_ghcide//:base16-bytestring",
+        "@stackage_ghcide//:bytestring",
+        "@stackage_ghcide//:containers",
+        "@stackage_ghcide//:cryptohash-sha1",
+        "@stackage_ghcide//:data-default",
+        "@stackage_ghcide//:deepseq",
+        "@stackage_ghcide//:directory",
+        "@stackage_ghcide//:extra",
+        "@stackage_ghcide//:filepath",
+        "@stackage_ghcide//:ghc-check",
+        "@stackage_ghcide//:ghc-paths",
+        "@stackage_ghcide//:ghc",
+        "@stackage_ghcide//:gitrev",
+        "@stackage_ghcide//:hashable",
+        "@stackage_ghcide//:haskell-lsp",
+        "@stackage_ghcide//:haskell-lsp-types",
+        "@stackage_ghcide//:hie-bios",
+        "@stackage_ghcide//:ghcide",
+        "@stackage_ghcide//:optparse-applicative",
+        "@stackage_ghcide//:shake",
+        "@stackage_ghcide//:text",
+        "@stackage_ghcide//:unordered-containers",
+    ],
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "fa1f0cfb0357e7bfa6c86076493f038e0ea5fcd75c470473f2ede7e32566cd9a",
+    strip_prefix = "ghcide-0c9a0961abbeef851b4117e6408f15a6d46eb1f1",
+    urls = ["https://github.com/digital-asset/ghcide/archive/0c9a0961abbeef851b4117e6408f15a6d46eb1f1.tar.gz"],
 )
 
 load(
@@ -308,8 +386,9 @@ filegroup(
 )
 
 http_archive(
-    name = "zlib.win",
+    name = "zlib.hs",
     build_file_content = """
+load("@os_info//:os_info.bzl", "is_darwin")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "zlib",
@@ -318,9 +397,18 @@ cc_library(
     srcs = [":z"],
     hdrs = glob(["*.h"]),
     includes = ["."],
+    linkstatic = 1,
     visibility = ["//visibility:public"],
 )
-cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+cc_library(
+    name = "z",
+    srcs = glob(["*.c"]),
+    hdrs = glob(["*.h"]),
+    # Cabal packages depending on dynamic C libraries fail on MacOS
+    # due to `-rpath` flags being forwarded indiscriminately.
+    # See https://github.com/tweag/rules_haskell/issues/1317
+    linkstatic = is_darwin,
+)
 """,
     sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
     strip_prefix = "zlib-1.2.11",

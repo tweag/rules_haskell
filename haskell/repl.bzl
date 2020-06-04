@@ -25,6 +25,7 @@ load(
     "deps_HaskellCcLibrariesInfo",
     "get_cc_libraries",
     "get_ghci_library_files",
+    "get_library_files",
     "haskell_cc_libraries_aspect",
     "link_libraries",
     "merge_HaskellCcLibrariesInfo",
@@ -222,7 +223,10 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
         dep_info = dep_info,
     )
 
-def _compiler_flags_and_inputs(hs, repl_info, path_prefix = ""):
+def _concat(lists):
+    return [item for l in lists for item in l]
+
+def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
     """Collect compiler flags and inputs.
 
     Compiler flags:
@@ -238,7 +242,9 @@ def _compiler_flags_and_inputs(hs, repl_info, path_prefix = ""):
 
     Args:
       hs: Haskell context.
-      args: list of string, output, the arguments to extend.
+      repl_info: HaskellReplInfo.
+      static: bool, Whether we're collecting libraries for static RTS.
+        Contrary to GHCi, ghcide is built as a static executable using the static RTS.
       path_prefix: string, optional, Prefix for package db paths.
 
     Returns:
@@ -265,27 +271,24 @@ def _compiler_flags_and_inputs(hs, repl_info, path_prefix = ""):
     ])
     all_libraries = cc_info.linking_context.libraries_to_link.to_list()
     cc_libraries = get_cc_libraries(cc_libraries_info, all_libraries)
-    link_libraries(
-        get_ghci_library_files(hs, cc_libraries_info, cc_libraries),
-        args,
-    )
-
-    # The `-pgmP` argument needs to be quoted.
-    args.extend([
-        '"{}"'.format(arg)
-        for arg in ghc_cc_program_args(
-            paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path),
-        )
-    ])
+    if static:
+        cc_library_files = _concat(get_library_files(hs, cc_libraries_info, cc_libraries))
+    else:
+        cc_library_files = get_ghci_library_files(hs, cc_libraries_info, cc_libraries)
+    link_libraries(cc_library_files, args)
 
     # Add import directories
     for import_dir in repl_info.load_info.import_dirs.to_list():
         args.append("-i" + (import_dir if import_dir else "."))
 
+    if static:
+        all_library_files = _concat(get_library_files(hs, cc_libraries_info, all_libraries))
+    else:
+        all_library_files = get_ghci_library_files(hs, cc_libraries_info, all_libraries)
     inputs = depset(transitive = [
         repl_info.load_info.source_files,
         repl_info.dep_info.package_databases,
-        depset(get_ghci_library_files(hs, cc_libraries_info, all_libraries)),
+        depset(all_library_files),
         depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
     ])
 
@@ -312,6 +315,13 @@ def _create_repl(hs, posix, ctx, repl_info, output):
 
     compiler_flags, inputs = _compiler_flags_and_inputs(hs, repl_info, path_prefix = "$RULES_HASKELL_EXEC_ROOT")
     args.extend(compiler_flags)
+    args.extend([
+        '"{}"'.format(arg)
+        for arg in ghc_cc_program_args(paths.join(
+            "$RULES_HASKELL_EXEC_ROOT",
+            hs.toolchain.cc_wrapper.executable.path,
+        ))
+    ])
 
     # Load source files
     # Force loading by source with `:add *...`.
@@ -398,7 +408,8 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
       List of providers:
         OutputGroupInfo provider for the hie-bios argument file.
     """
-    args, inputs = _compiler_flags_and_inputs(hs, repl_info)
+    args, inputs = _compiler_flags_and_inputs(hs, repl_info, static = True)
+    args.extend(ghc_cc_program_args(hs.toolchain.cc_wrapper.executable.path))
     args.extend(hs.toolchain.compiler_flags)
     args.extend(repl_info.load_info.compiler_flags)
 

@@ -10,6 +10,7 @@ load(
     "haskell_binary",
     "haskell_doc",
     "haskell_library",
+    "haskell_repl",
 )
 load(
     "//haskell:doctest.bzl",
@@ -385,4 +386,26 @@ haskell_doc(
     name = "toto",
     tags = ["requires_lz4"],
     deps = [":utils"],
+)
+
+haskell_repl(
+    name = "hie-bios",
+    collect_data = False,
+    deps = [
+        "//tests:run-tests",
+    ],
+)
+
+sh_test(
+    name = "ghcide-smoke-test",
+    srcs = ["@ghcide"],
+    args = ["--version"],
+    tags = [
+        # Building ghcide fails in profiling mode with:
+        #
+        #   exe/Rules.hs:106:28: fatal:
+        #       cannot find object file ‘/run/user/1000/tmp7b54rlve/build/ghcide/ghcide-tmp/Util.dyn_o’
+        #       while linking an interpreted expression
+        "requires_dynamic",
+    ],
 )
