@@ -49,7 +49,7 @@ def get_cc_libraries(cc_libraries_info, libraries_to_link):
         if not cc_libraries_info.libraries[cc_library_key(lib_to_link)].is_haskell
     ]
 
-def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link):
+def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, follow_symlinks = False):
     """Get libraries appropriate for loading with GHCi.
 
     See get_library_files for further information.
@@ -60,10 +60,11 @@ def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link):
         libraries_to_link,
         dynamic = not hs.toolchain.is_static,
         pic = True,
+        follow_symlinks = follow_symlinks,
     )
     return static_libs + dynamic_libs
 
-def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None):
+def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None, follow_symlinks = False):
     """Get libraries appropriate for linking with GHC.
 
     Takes a list of LibraryToLink and returns a list of the appropriate
@@ -79,6 +80,7 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
       libraries_to_link: list of LibraryToLink.
       dynamic: Whether dynamic libraries are preferred.
       pic: Whether position independent code is required.
+      follow_symlinks: Whether to return the actual path of the libraries or their symbolic link in the _solib_k8 directory
 
     Returns:
       (static_libraries, dynamic_libraries):
@@ -114,6 +116,14 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
             static_libs.append(static_lib)
         elif dynamic_lib:
             dynamic_libs.append(dynamic_lib)
+            extra_lib_files = \
+                [
+                    lib
+                    for lib in [lib_to_link.resolved_symlink_dynamic_library, lib_to_link.resolved_symlink_interface_library]
+                    if lib != None
+                ]
+            if follow_symlinks:
+                dynamic_libs.extend(extra_lib_files)
         else:
             # Fall back if no PIC static library is available. This typically
             # happens during profiling builds.
