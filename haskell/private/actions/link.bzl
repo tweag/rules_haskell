@@ -170,8 +170,7 @@ def link_binary(
         inputs = depset(transitive = [
             depset(extra_srcs),
             dep_info.package_databases,
-            dep_info.dynamic_libraries,
-            dep_info.static_libraries,
+            dep_info.hs_libraries,
             depset([cache_file, objects_dir]),
             pkg_info_inputs,
             depset(static_libs + dynamic_libs),
@@ -311,7 +310,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, my_pk
         inputs = depset([cache_file, objects_dir], transitive = [
             extra_srcs,
             dep_info.package_databases,
-            dep_info.dynamic_libraries,
+            dep_info.hs_libraries,
             pkg_info_inputs,
             depset(static_libs + dynamic_libs),
         ]),

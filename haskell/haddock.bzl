@@ -162,7 +162,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             target[HaskellInfo].interface_dirs,
             target[HaskellInfo].source_files,
             target[HaskellInfo].extra_source_files,
-            target[HaskellInfo].dynamic_libraries,
+            target[HaskellInfo].hs_libraries,
             depset(cc_libraries),
             depset(transitive = [depset(i) for i in transitive_haddocks.values()]),
             target[CcInfo].compilation_context.headers,
