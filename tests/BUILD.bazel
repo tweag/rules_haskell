@@ -49,7 +49,7 @@ haskell_doctest_toolchain(
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
     testonly = 0,
-    plugin = "@proto-lens-protoc",
+    plugin = "@stackage-exe//proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     tags = [
         "requires_proto",
@@ -398,7 +398,7 @@ haskell_repl(
 
 sh_test(
     name = "ghcide-smoke-test",
-    srcs = ["@ghcide"],
+    srcs = ["@ghcide-exe//ghcide"],
     args = ["--version"],
     tags = [
         # Building ghcide fails in profiling mode with:

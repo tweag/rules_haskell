@@ -46,30 +46,6 @@ haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visib
     urls = ["http://hackage.haskell.org/package/happy-1.19.12/happy-1.19.12.tar.gz"],
 )
 
-http_archive(
-    name = "proto-lens-protoc",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-haskell_cabal_binary(
-    name = "proto-lens-protoc",
-    srcs = glob(["**"]),
-    deps = [
-      "@stackage//:base",
-      "@stackage//:bytestring",
-      "@stackage//:containers",
-      "@stackage//:lens-family",
-      "@stackage//:proto-lens",
-      "@stackage//:proto-lens-protoc",
-      "@stackage//:text",
-    ],
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "b946740b94c8d300cd8e278ded9045905ef1985824cef6b81af0d79b119927be",
-    strip_prefix = "proto-lens-protoc-0.6.0.0",
-    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.6.0.0/proto-lens-protoc-0.6.0.0.tar.gz"],
-)
-
 load(
     "@rules_haskell//:constants.bzl",
     "test_ghc_version",
@@ -79,6 +55,12 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
+    components = {
+        "proto-lens-protoc": [
+            "lib",
+            "exe",
+        ],
+    },
     packages = [
         # Core libraries
         "array",
@@ -126,81 +108,15 @@ stack_snapshot(
 )
 
 stack_snapshot(
-    name = "stackage_ghcide",
+    name = "ghcide",
+    components = {"ghcide": [
+        "lib",
+        "exe",
+    ]},
     extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
     haddock = False,
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
-    packages = [
-        "aeson",
-        "base",
-        "base16-bytestring",
-        "binary",
-        "bytestring",
-        "containers",
-        "cryptohash-sha1",
-        "data-default",
-        "deepseq",
-        "directory",
-        "extra",
-        "filepath",
-        "ghc",
-        "ghc-check",
-        "ghc-paths",
-        "ghcide",
-        "gitrev",
-        "hashable",
-        "haskell-lsp",
-        "haskell-lsp-types",
-        "hie-bios",
-        "hslogger",
-        "optparse-applicative",
-        "shake",
-        "text",
-        "unordered-containers",
-    ],
-)
-
-http_archive(
-    name = "ghcide",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-haskell_cabal_binary(
-    name = "ghcide",
-    srcs = glob(["**"]),
-    deps = [
-        "@stackage_ghcide//:hslogger",
-        "@stackage_ghcide//:aeson",
-        "@stackage_ghcide//:base",
-        "@stackage_ghcide//:binary",
-        "@stackage_ghcide//:base16-bytestring",
-        "@stackage_ghcide//:bytestring",
-        "@stackage_ghcide//:containers",
-        "@stackage_ghcide//:cryptohash-sha1",
-        "@stackage_ghcide//:data-default",
-        "@stackage_ghcide//:deepseq",
-        "@stackage_ghcide//:directory",
-        "@stackage_ghcide//:extra",
-        "@stackage_ghcide//:filepath",
-        "@stackage_ghcide//:ghc-check",
-        "@stackage_ghcide//:ghc-paths",
-        "@stackage_ghcide//:ghc",
-        "@stackage_ghcide//:gitrev",
-        "@stackage_ghcide//:hashable",
-        "@stackage_ghcide//:haskell-lsp",
-        "@stackage_ghcide//:haskell-lsp-types",
-        "@stackage_ghcide//:hie-bios",
-        "@stackage_ghcide//:ghcide",
-        "@stackage_ghcide//:optparse-applicative",
-        "@stackage_ghcide//:shake",
-        "@stackage_ghcide//:text",
-        "@stackage_ghcide//:unordered-containers",
-    ],
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "fa1f0cfb0357e7bfa6c86076493f038e0ea5fcd75c470473f2ede7e32566cd9a",
-    strip_prefix = "ghcide-0c9a0961abbeef851b4117e6408f15a6d46eb1f1",
-    urls = ["https://github.com/digital-asset/ghcide/archive/0c9a0961abbeef851b4117e6408f15a6d46eb1f1.tar.gz"],
+    packages = ["ghcide"],
 )
 
 load(

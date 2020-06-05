@@ -257,106 +257,33 @@ ghcide requires based on `ghcide's stack.yaml`_ file. Let's call it
       sha256: "47cca96a6e5031b3872233d5b9ca14d45f9089da3d45a068e1b587989fec4364"
 
 Then define a dedicated ``stack_snapshot`` for ghcide in your ``WORKSPACE``
-file. In the ``packages`` attribute we expose all dependencies of the ghcide
-executable::
+file. The ``ghcide`` package has a library and an executable component which we
+need to declare using the ``components`` attribute::
 
   stack_snapshot(
-      name = "stackage_ghcide",
+      name = "ghcide",
       # The rules_haskell example project shows how to import libz.
       # https://github.com/tweag/rules_haskell/blob/123e3817156f9135dfa44dcb5a796c424df1f436/examples/WORKSPACE#L42-L63
       extra_deps = {"zlib": ["@zlib.hs"]},
       haddock = False,
       local_snapshot = "//:ghcide-stack-snapshot.yaml",
-      packages = [
-          "hslogger",
-          "aeson",
-          "base",
-          "binary",
-          "base16-bytestring",
-          "bytestring",
-          "containers",
-          "cryptohash-sha1",
-          "data-default",
-          "deepseq",
-          "directory",
-          "extra",
-          "filepath",
-          "ghc-check",
-          "ghc-paths",
-          "ghc",
-          "gitrev",
-          "hashable",
-          "haskell-lsp",
-          "haskell-lsp-types",
-          "hie-bios",
-          "ghcide",
-          "optparse-applicative",
-          "shake",
-          "text",
-          "unordered-containers",
-      ],
+      packages = ["ghcide"],
+      components = {"ghcide": ["lib", "exe"]},
   )
 
-Finally, define a ``haskell_cabal_binary`` target for the ghcide executable
-itself. (Unfortunately, ``stack_snapshot`` does not support building
-executables)::
+This will make the ``ghcide`` executable available under the Bazel label
+``@ghcide-exe//ghcide``. You can test if this worked by building and executing
+ghcide as follows::
 
-  http_archive(
-      name = "ghcide",
-      build_file_content = """
-  load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-  haskell_cabal_binary(
-      name = "ghcide",
-      srcs = glob(["**"]),
-      deps = [
-          # From build-depends field of executable section in ghcide.cabal
-          "@stackage_ghcide//:hslogger",
-          "@stackage_ghcide//:aeson",
-          "@stackage_ghcide//:base",
-          "@stackage_ghcide//:binary",
-          "@stackage_ghcide//:base16-bytestring",
-          "@stackage_ghcide//:bytestring",
-          "@stackage_ghcide//:containers",
-          "@stackage_ghcide//:cryptohash-sha1",
-          "@stackage_ghcide//:data-default",
-          "@stackage_ghcide//:deepseq",
-          "@stackage_ghcide//:directory",
-          "@stackage_ghcide//:extra",
-          "@stackage_ghcide//:filepath",
-          "@stackage_ghcide//:ghc-check",
-          "@stackage_ghcide//:ghc-paths",
-          "@stackage_ghcide//:ghc",
-          "@stackage_ghcide//:gitrev",
-          "@stackage_ghcide//:hashable",
-          "@stackage_ghcide//:haskell-lsp",
-          "@stackage_ghcide//:haskell-lsp-types",
-          "@stackage_ghcide//:hie-bios",
-          "@stackage_ghcide//:ghcide",
-          "@stackage_ghcide//:optparse-applicative",
-          "@stackage_ghcide//:shake",
-          "@stackage_ghcide//:text",
-          "@stackage_ghcide//:unordered-containers",
-      ],
-      visibility = ["//visibility:public"],
-  )
-      """,
-      # Keep these in sync with ghcide-stack-snapshot.yaml
-      sha256 = "47cca96a6e5031b3872233d5b9ca14d45f9089da3d45a068e1b587989fec4364",
-      strip_prefix = "ghcide-39605333c34039241768a1809024c739df3fb2bd",
-      urls = ["https://github.com/digital-asset/ghcide/archive/39605333c34039241768a1809024c739df3fb2bd.tar.gz"],
-  )
-
-You can test if this worked by building and executing ghcide as follows::
-
-  bazel build @ghcide//:ghcide
-  bazel-bin/external/ghcide/_install/bin/ghcide
+  bazel build @ghcide-exe//ghcide
+  bazel-bin/external/ghcide/ghcide-0.1.0/_install/bin/ghcide
 
 Write a small shell script to make it easy to invoke ghcide from your editor::
 
   #!/usr/bin/env bash
   set -euo pipefail
-  bazel build @ghcide//:ghcide
-  bazel-bin/external/ghcide/_install/bin/ghcide "$@"
+  bazel build @ghcide-exe//ghcide
+  bazel-bin/external/ghcide/ghcide-0.1.0/_install/bin/ghcide "$@"
 
 And, the last step, configure your editor to use ghcide. The upstream
 documentation provides `ghcide setup instructions`_ for a few popular editors.
