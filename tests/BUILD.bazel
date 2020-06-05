@@ -398,7 +398,7 @@ haskell_repl(
 
 sh_test(
     name = "ghcide-smoke-test",
-    srcs = ["@ghcide"],
+    srcs = ["@ghcide-exe//ghcide"],
     args = ["--version"],
     tags = [
         # Building ghcide fails in profiling mode with:
