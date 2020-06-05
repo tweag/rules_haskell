@@ -1450,15 +1450,19 @@ def stack_snapshot(
           name = "stackage",
           packages = ["conduit", "doctest", "lens", "zlib-0.6.2"],
           vendored_packages = {"split": "//split:split"},
-          tools = ["@happy//:happy", "@c2hs//:c2hs"],
-          components = {"doctest": ["lib", "exe"]},
+          tools = ["@happy//:happy"],  # Use externally provided `happy`
+          components = {
+              "doctest": ["lib", "exe"],  # Optional since doctest is known to have an exe component.
+              "happy": [],  # Override happy's default exe component.
+          },
           snapshot = "lts-13.15",
           extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       )
       ```
       defines `@stackage//:conduit`, `@stackage//:doctest`, `@stackage//:lens`,
       `@stackage//:zlib` library targets and a `@stackage-exe//doctest`
-      executable target.
+      executable target. It also uses an externally provided `happy` rather
+      than the one provided by the snapshot.
 
       Alternatively
 
@@ -1467,8 +1471,11 @@ def stack_snapshot(
           name = "stackage",
           packages = ["conduit", "doctest", "lens", "zlib"],
           flags = {"zlib": ["-non-blocking-ffi"]},
-          tools = ["@happy//:happy", "@c2hs//:c2hs"],
-          components = {"doctest": ["lib", "exe"]},
+          tools = ["@happy//:happy"],  # Use externally provided `happy`
+          components = {
+              "doctest": ["lib", "exe"],  # Optional since doctest is known to have an exe component.
+              "happy": [],  # Override happy's default exe component.
+          },
           local_snapshot = "//:snapshot.yaml",
           extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       ```
