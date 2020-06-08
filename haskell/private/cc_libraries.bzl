@@ -116,12 +116,11 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
             static_libs.append(static_lib)
         elif dynamic_lib:
             dynamic_libs.append(dynamic_lib)
-            extra_lib_files = \
-                [
-                    lib
-                    for lib in [lib_to_link.resolved_symlink_dynamic_library, lib_to_link.resolved_symlink_interface_library]
-                    if lib != None
-                ]
+            extra_lib_files = [
+                lib
+                for lib in [lib_to_link.resolved_symlink_dynamic_library, lib_to_link.resolved_symlink_interface_library]
+                if lib != None
+            ]
             if follow_symlinks:
                 dynamic_libs.extend(extra_lib_files)
         else:
