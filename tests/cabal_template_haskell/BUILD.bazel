@@ -1,0 +1,30 @@
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+
+haskell_cabal_library(
+    name = "pkg-a",
+    srcs = [
+        "pkg-a/LibA.hs",
+        "pkg-a/pkg-a.cabal",
+    ],
+    haddock = False,
+    version = "0.1.0.0",
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+    ],
+)
+
+haskell_cabal_library(
+    name = "pkg-b",
+    srcs = [
+        "pkg-b/LibB.hs",
+        "pkg-b/pkg-b.cabal",
+    ],
+    haddock = False,
+    version = "0.1.0.0",
+    deps = [
+        ":pkg-a",
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+    ],
+)

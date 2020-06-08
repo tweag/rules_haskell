@@ -38,6 +38,9 @@ jobs:
       export PATH="$(sed 's, \+\(:\|$\),\1,g' <<<"$PATH")"
       echo "PATH='$PATH'"
 
+      # GHC static RTS tests
+      /c/bazel/bazel.exe build "//tests/cabal_template_haskell/..." -c dbg
+
       # Tests that build but don't run
       /c/bazel/bazel.exe build "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build "//tests/binary-with-data/..."

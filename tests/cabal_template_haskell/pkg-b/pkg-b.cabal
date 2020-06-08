@@ -1,0 +1,9 @@
+cabal-version: >=1.10
+name: pkg-b
+version: 0.1.0.0
+build-type: Simple
+
+library
+  build-depends: base, template-haskell, pkg-a
+  default-language: Haskell2010
+  exposed-modules: LibB
