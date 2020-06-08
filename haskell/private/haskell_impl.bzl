@@ -234,8 +234,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        static_libraries = dep_info.static_libraries,
-        dynamic_libraries = dep_info.dynamic_libraries,
+        hs_libraries = dep_info.hs_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = c.compile_flags,
     )
@@ -410,19 +409,8 @@ def haskell_library_impl(ctx):
             my_pkg_id,
             with_profiling = with_profiling,
         )
-
-        # NOTE We have to use lists for static libraries because the order is
-        # important for linker. Linker searches for unresolved symbols to the
-        # left, i.e. you first feed a library which has unresolved symbols and
-        # then you feed the library which resolves the symbols.
-        static_libraries = depset(
-            direct = [static_library],
-            transitive = [dep_info.static_libraries],
-            order = "topological",
-        )
     else:
         static_library = None
-        static_libraries = dep_info.static_libraries
 
     if with_shared and srcs_files:
         dynamic_library = link_library_dynamic(
@@ -435,10 +423,8 @@ def haskell_library_impl(ctx):
             my_pkg_id,
             user_compile_flags,
         )
-        dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries])
     else:
         dynamic_library = None
-        dynamic_libraries = dep_info.dynamic_libraries
 
     conf_file, cache_file = package(
         hs,
@@ -473,8 +459,10 @@ def haskell_library_impl(ctx):
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = set.mutable_union(c.import_dirs, export_infos.import_dirs),
-        static_libraries = depset(transitive = [static_libraries, export_infos.static_libraries]),
-        dynamic_libraries = depset(transitive = [dynamic_libraries, export_infos.dynamic_libraries]),
+        hs_libraries = depset(
+            direct = [lib for lib in [static_library, dynamic_library] if lib],
+            transitive = [dep_info.hs_libraries, export_infos.hs_libraries],
+        ),
         interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
         compile_flags = c.compile_flags,
     )
@@ -820,8 +808,7 @@ def haskell_import_impl(ctx):
         source_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
-        static_libraries = depset(),
-        dynamic_libraries = depset(),
+        hs_libraries = depset(),
         interface_dirs = depset(),
         compile_flags = [],
     )

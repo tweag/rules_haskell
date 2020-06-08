@@ -21,13 +21,8 @@ def gather_dep_info(ctx, deps):
         for dep in deps
         if HaskellInfo in dep
     ])
-    static_libraries = depset(transitive = [
-        dep[HaskellInfo].static_libraries
-        for dep in deps
-        if HaskellInfo in dep
-    ])
-    dynamic_libraries = depset(transitive = [
-        dep[HaskellInfo].dynamic_libraries
+    hs_libraries = depset(transitive = [
+        dep[HaskellInfo].hs_libraries
         for dep in deps
         if HaskellInfo in dep
     ])
@@ -62,8 +57,7 @@ def gather_dep_info(ctx, deps):
     acc = HaskellInfo(
         package_databases = package_databases,
         version_macros = set.empty(),
-        static_libraries = static_libraries,
-        dynamic_libraries = dynamic_libraries,
+        hs_libraries = hs_libraries,
         interface_dirs = interface_dirs,
         source_files = source_files,
         import_dirs = import_dirs,
@@ -79,8 +73,7 @@ def gather_dep_info(ctx, deps):
             acc = HaskellInfo(
                 package_databases = acc.package_databases,
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
-                static_libraries = depset(transitive = [acc.static_libraries, binfo.static_libraries]),
-                dynamic_libraries = acc.dynamic_libraries,
+                hs_libraries = depset(transitive = [acc.hs_libraries, binfo.hs_libraries]),
                 interface_dirs = acc.interface_dirs,
                 import_dirs = import_dirs,
                 compile_flags = compile_flags,
@@ -97,8 +90,7 @@ def gather_dep_info(ctx, deps):
                 import_dirs = acc.import_dirs,
                 source_files = acc.source_files,
                 compile_flags = acc.compile_flags,
-                static_libraries = acc.static_libraries,
-                dynamic_libraries = acc.dynamic_libraries,
+                hs_libraries = acc.hs_libraries,
                 extra_source_files = acc.extra_source_files,
                 interface_dirs = acc.interface_dirs,
             )

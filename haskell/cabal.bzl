@@ -249,11 +249,9 @@ def _prepare_cabal_inputs(
             depset(transitive_link_libs),
             depset(transitive_haddocks),
             setup_dep_info.interface_dirs,
-            setup_dep_info.static_libraries,
-            setup_dep_info.dynamic_libraries,
+            setup_dep_info.hs_libraries,
             dep_info.interface_dirs,
-            dep_info.static_libraries,
-            dep_info.dynamic_libraries,
+            dep_info.hs_libraries,
             tool_inputs,
         ],
     )
@@ -338,13 +336,19 @@ def _haskell_cabal_library_impl(ctx):
     else:
         haddock_file = None
         haddock_html_dir = None
-    static_library_filename = "_install/lib/libHS{}.a".format(package_id)
-    if with_profiling:
-        static_library_filename = "_install/lib/libHS{}_p.a".format(package_id)
-    static_library = hs.actions.declare_file(
-        static_library_filename,
+    vanilla_library = hs.actions.declare_file(
+        "_install/lib/libHS{}.a".format(package_id),
         sibling = cabal,
     )
+    if with_profiling:
+        profiling_library = hs.actions.declare_file(
+            "_install/lib/libHS{}_p.a".format(package_id),
+            sibling = cabal,
+        )
+        static_library = profiling_library
+    else:
+        profiling_library = None
+        static_library = vanilla_library
     if hs.toolchain.is_static:
         dynamic_library = None
     else:
@@ -387,13 +391,15 @@ def _haskell_cabal_library_impl(ctx):
     outputs = [
         package_database,
         interfaces_dir,
-        static_library,
+        vanilla_library,
         data_dir,
     ]
     if ctx.attr.haddock:
         outputs.extend([haddock_file, haddock_html_dir])
     if dynamic_library != None:
         outputs.append(dynamic_library)
+    if with_profiling:
+        outputs.append(profiling_library)
     ctx.actions.run(
         executable = c.cabal_wrapper,
         arguments = [c.args],
@@ -419,14 +425,10 @@ def _haskell_cabal_library_impl(ctx):
         source_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
-        static_libraries = depset(
-            direct = [static_library],
-            transitive = [dep_info.static_libraries],
+        hs_libraries = depset(
+            direct = [lib for lib in [vanilla_library, dynamic_library, profiling_library] if lib],
+            transitive = [dep_info.hs_libraries],
             order = "topological",
-        ),
-        dynamic_libraries = depset(
-            direct = [dynamic_library] if dynamic_library != None else [],
-            transitive = [dep_info.dynamic_libraries],
         ),
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
@@ -668,8 +670,7 @@ def _haskell_cabal_binary_impl(ctx):
         source_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
-        static_libraries = dep_info.static_libraries,
-        dynamic_libraries = dep_info.dynamic_libraries,
+        hs_libraries = dep_info.hs_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = [],
     )
