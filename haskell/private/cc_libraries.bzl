@@ -7,6 +7,10 @@ providers.
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
+    ":private/mode.bzl",
+    "is_profiling_enabled",
+)
+load(
     ":private/packages.bzl",
     "ghc_pkg_recache",
     "write_package_conf",
@@ -58,7 +62,7 @@ def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link):
         hs,
         cc_libraries_info,
         libraries_to_link,
-        dynamic = not hs.toolchain.is_static,
+        dynamic = not hs.toolchain.is_static and not is_profiling_enabled(hs),
         pic = True,
     )
     return static_libs + dynamic_libs
