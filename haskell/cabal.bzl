@@ -255,7 +255,7 @@ def _prepare_cabal_inputs(
             tool_inputs,
         ],
     )
-    input_manifests = tool_input_manifests
+    input_manifests = tool_input_manifests + hs.toolchain.cc_wrapper.manifests
 
     return struct(
         cabal_wrapper = cabal_wrapper,
