@@ -55,6 +55,9 @@ main = hspec $ do
     it "repl flags" $ do
       assertSuccess (bazel ["run", "//tests/repl-flags:repl_flags@repl", "--", "-ignore-dot-ghci", "-e", "foo"])
 
+    it "fails on multiple definitions" $ do
+      assertSuccess (bazel ["run", "//tests/repl-multiple-definition:repl", "--", "-ignore-dot-ghci", "-e", "final"])
+
   describe "multi_repl" $ do
     it "loads transitive library dependencies" $ do
       let p' (stdout, _stderr) = lines stdout == ["tests/multi_repl/bc/src/BC/C.hs"]
@@ -65,8 +68,8 @@ main = hspec $ do
     it "loads core library dependencies" $ do
       let p' (stdout, _stderr) = sort (lines stdout) == ["tests/multi_repl/core_package_dep/Lib.hs"]
       outputSatisfy p' (bazel ["run", "//tests/multi_repl:core_package_dep", "--", "-ignore-dot-ghci", "-e", ":show targets"])
-    it "allows to manually load modules" $ do
-      assertSuccess (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":load BC.C", "-e", "c"])
+    it "doesn't allow to manually load modules" $ do
+      assertFailure (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":load BC.C", "-e", "c"])
 
   describe "ghcide" $ do
     it "loads RunTests.hs" $
