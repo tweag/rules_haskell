@@ -74,6 +74,8 @@ main = hspec $ do
   describe "ghcide" $ do
     it "loads RunTests.hs" $
       assertSuccess (Process.proc "./.ghcide" ["tests/RunTests.hs"])
+    it "loads module with module dependency" $
+      assertSuccess (Process.proc "./.ghcide" ["tests/binary-with-lib/Main.hs"])
 
   describe "failures" $ do
     -- Make sure not to include haskell_repl (@repl) or alias (-repl) targets
