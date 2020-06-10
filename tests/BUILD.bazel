@@ -355,6 +355,7 @@ haskell_binary(
         "//tests/hackage:process",
         "@stackage//:hspec",
         "@stackage//:hspec-core",
+        "@stackage//:temporary",
     ],
 )
 
