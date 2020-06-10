@@ -91,7 +91,6 @@ main = defaultMain
     return setup
 
 _CABAL_TOOLS = ["alex", "c2hs", "cpphs", "doctest", "happy"]
-_CABAL_TOOL_LIBRARIES = ["cpphs", "doctest"]
 
 # Some old packages are empty compatibility shims. Empty packages
 # cause Cabal to not produce the outputs it normally produces. Instead
@@ -891,7 +890,8 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         version: The version of the package.
         versioned_name: <name>-<version>.
         flags: Cabal flags for this package.
-        deps: The list of dependencies.
+        deps: The list of library dependencies.
+        tools: The list of build tools.
         vendored: Label of vendored package, None if not vendored.
         user_components: Mapping from package names to Cabal components.
         is_core_package: Whether the package is a core package.
@@ -907,6 +907,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
             versioned_name = None,
             flags = repository_ctx.attr.flags.get(core_package, []),
             deps = [],
+            tools = [],
             vendored = None,
             is_core_package = True,
             sdist = None,
@@ -958,9 +959,6 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     remaining_components = dicts.add(_default_components, user_components)
     for package in exec_result.stdout.splitlines():
         name = _chop_version(package)
-        if name in _CABAL_TOOLS and not name in _CABAL_TOOL_LIBRARIES:
-            continue
-
         version = _version(package)
         vendored = vendored_packages.get(name, None)
         is_core_package = name in _CORE_PACKAGES
@@ -974,6 +972,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
             versioned_name = package,
             flags = repository_ctx.attr.flags.get(name, []),
             deps = [],
+            tools = [],
             vendored = vendored,
             is_core_package = is_core_package,
             sdist = None if is_core_package or vendored != None else package,
@@ -1017,7 +1016,13 @@ Specify a fully qualified package name of the form <package>-<version>.
         if len(tokens) == 3 and tokens[1] == "->":
             [src, _, dest] = tokens
             if src in all_packages and dest in all_packages:
-                all_packages[src].deps.append(dest)
+                if all_packages[dest].components.lib:
+                    all_packages[src].deps.append(dest)
+                if all_packages[dest].components.exe:
+                    all_packages[src].tools.extend([
+                        (dest, exe)
+                        for exe in all_packages[dest].components.exe
+                    ])
     return all_packages
 
 def _invert(d):
@@ -1106,6 +1111,7 @@ def _stack_snapshot_impl(repository_ctx):
                 library = package.components.lib,
                 executables = package.components.exe,
                 deps = [Label("@{}//:{}".format(repository_ctx.name, dep)) for dep in package.deps],
+                tools = [Label("@{}-exe//{}:{}".format(repository_ctx.name, dep, exe)) for (dep, exe) in package.tools],
                 flags = package.flags,
             )
             for package in all_packages.values()
@@ -1151,14 +1157,14 @@ haskell_library(
                 ),
             )
         else:
-            library_deps = [
-                dep
-                for dep in package.deps
-                if all_packages[dep].components.lib
-            ] + [
+            library_deps = package.deps + [
                 _label_to_string(label)
                 for label in extra_deps.get(package.name, [])
             ]
+            library_tools = [
+                "_%s_exe_%s" % (dep, exe)
+                for (dep, exe) in package.tools
+            ] + tools
             setup_deps = [
                 _label_to_string(Label("@{}//:{}".format(repository_ctx.name, package.name)).relative(label))
                 for label in repository_ctx.attr.setup_deps.get(package.name, [])
@@ -1188,7 +1194,7 @@ haskell_cabal_library(
                         dir = package.sdist,
                         deps = library_deps,
                         setup_deps = setup_deps,
-                        tools = tools,
+                        tools = library_tools,
                         visibility = visibility,
                         verbose = repr(repository_ctx.attr.verbose),
                     ),
@@ -1223,7 +1229,7 @@ haskell_cabal_binary(
                         dir = package.sdist,
                         deps = library_deps + ([package.name] if package.components.lib else []),
                         setup_deps = setup_deps,
-                        tools = tools,
+                        tools = library_tools,
                         visibility = visibility,
                         verbose = repr(repository_ctx.attr.verbose),
                     ),
@@ -1423,7 +1429,8 @@ def stack_snapshot(
       - version: The package version.
       - library: Whether the package has a declared library component.
       - executables: List of declared executable components.
-      - deps: The list of package dependencies according to stack.
+      - deps: The list of library dependencies according to stack.
+      - tools: The list of tool dependencies according to stack.
       - flags: The list of Cabal flags.
 
     **NOTE:** Make sure your GHC version matches the version expected by the
@@ -1443,15 +1450,19 @@ def stack_snapshot(
           name = "stackage",
           packages = ["conduit", "doctest", "lens", "zlib-0.6.2"],
           vendored_packages = {"split": "//split:split"},
-          tools = ["@happy//:happy", "@c2hs//:c2hs"],
-          components = {"doctest": ["lib", "exe"]},
+          tools = ["@happy//:happy"],  # Use externally provided `happy`
+          components = {
+              "doctest": ["lib", "exe"],  # Optional since doctest is known to have an exe component.
+              "happy": [],  # Override happy's default exe component.
+          },
           snapshot = "lts-13.15",
           extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       )
       ```
       defines `@stackage//:conduit`, `@stackage//:doctest`, `@stackage//:lens`,
       `@stackage//:zlib` library targets and a `@stackage-exe//doctest`
-      executable target.
+      executable target. It also uses an externally provided `happy` rather
+      than the one provided by the snapshot.
 
       Alternatively
 
@@ -1460,8 +1471,11 @@ def stack_snapshot(
           name = "stackage",
           packages = ["conduit", "doctest", "lens", "zlib"],
           flags = {"zlib": ["-non-blocking-ffi"]},
-          tools = ["@happy//:happy", "@c2hs//:c2hs"],
-          components = {"doctest": ["lib", "exe"]},
+          tools = ["@happy//:happy"],  # Use externally provided `happy`
+          components = {
+              "doctest": ["lib", "exe"],  # Optional since doctest is known to have an exe component.
+              "happy": [],  # Override happy's default exe component.
+          },
           local_snapshot = "//:snapshot.yaml",
           extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       ```

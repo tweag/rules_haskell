@@ -143,7 +143,6 @@ haskell_register_ghc_nixpkgs(
 EOF
 )
 
-declare -r ALEX_BUILD_FILE="alex.BUILD.bazel"
 declare -r ZLIB_BUILD_FILE="zlib.BUILD.bazel"
 
 echo "Creating $ZLIB_BUILD_FILE" >&2
@@ -263,17 +262,6 @@ load(
     "rules_haskell_toolchains",
 )
 
-# Download alex and make it accessible as @alex.
-# Delete this block, alex.BUILD.bazel, and the reference in
-# stack_snapshot's tools if you don't use alex.
-http_archive(
-    name = "alex",
-    build_file = "//:$ALEX_BUILD_FILE",
-    sha256 = "d58e4d708b14ff332a8a8edad4fa8989cb6a9f518a7c6834e96281ac5f8ff232",
-    strip_prefix = "alex-3.2.4",
-    urls = ["http://hackage.haskell.org/package/alex-3.2.4/alex-3.2.4.tar.gz"],
-)
-
 load(
     "@rules_haskell//haskell:cabal.bzl",
     "stack_snapshot"
@@ -283,7 +271,6 @@ stack_snapshot(
     name = "stackage",
     extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
     packages = ["zlib"],
-    tools = [ "@alex" ],
     snapshot = "lts-14.27", # Last snapshot published for ghc-8.6.5
     # the default version picked up by rules_haskell
 )
@@ -291,18 +278,6 @@ stack_snapshot(
 $(get_toolchain)
 
 $(get_zlib)
-EOF
-
-echo "Creating $ALEX_BUILD_FILE" >&2
-cat > "$ALEX_BUILD_FILE" <<EOF
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-
-haskell_cabal_binary(
-    name = "alex",
-    srcs = glob(["**"]),
-    verbose = False,
-    visibility = ["//visibility:public"],
-)
 EOF
 
 echo "Creating .bazelrc" >&2
