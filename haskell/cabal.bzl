@@ -954,7 +954,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
-        stack + ["ls", "dependencies", "json", "--global-hints"],
+        stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
     transitive_unpacked_sdists = []
     indirect_unpacked_sdists = []
