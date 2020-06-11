@@ -11,15 +11,21 @@ exports_files(
     visibility = ["//tests/shellcheck:__pkg__"],
 )
 
+buildifier_exclude_patterns = [
+    "./vendor/**",
+]
+
 # Run this to check for errors in BUILD files.
 buildifier(
     name = "buildifier",
+    exclude_patterns = buildifier_exclude_patterns,
     mode = "check",
 )
 
 # Run this to fix the errors in BUILD files.
 buildifier(
     name = "buildifier-fix",
+    exclude_patterns = buildifier_exclude_patterns,
     mode = "fix",
     verbose = True,
 )
