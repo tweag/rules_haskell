@@ -124,6 +124,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
 
     interface_dir_raw = "_iface"
     object_dir_raw = "_obj"
+    stubs_dir_raw = "_stubs"
 
     # Declare file directories.
     #
@@ -147,6 +148,9 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         )
     objects_dir = hs.actions.declare_directory(
         paths.join(object_dir_raw, hs.name),
+    )
+    stubs_dir = hs.actions.declare_directory(
+        paths.join(stubs_dir_raw, hs.name),
     )
 
     # Default compiler flags.
@@ -271,6 +275,8 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         objects_dir.path,
         "-hidir",
         interfaces_dir.path,
+        "-stubdir",
+        stubs_dir.path,
     ])
 
     # Interface files with profiling have to have the extension "p_hi":
@@ -342,7 +348,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         input_manifests = preprocessors.input_manifests + plugin_tool_input_manifests,
         objects_dir = objects_dir,
         interfaces_dir = interfaces_dir,
-        outputs = [objects_dir, interfaces_dir],
+        outputs = [objects_dir, interfaces_dir, stubs_dir],
         source_files = source_files,
         extra_source_files = extra_source_files,
         import_dirs = import_dirs,
