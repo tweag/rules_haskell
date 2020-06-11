@@ -75,6 +75,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
             depset(hsc_inputs),
         ]),
         outputs = [hs_out],
+        input_manifests = hs.toolchain.cc_wrapper.manifests,
         mnemonic = "HaskellHsc2hs",
         executable = hs.tools.hsc2hs,
         arguments = [args],
