@@ -7,6 +7,7 @@ steps:
       EOF
       nix-shell --arg docTools false --pure --run '
       set -e
+      sandboxfs --version
       # Ensure that the Nixpkgs bazel version matches the one specified in
       # `.bazelversion` and fetched in
       # `.buildkite/bindists-pipeline` for the bindists version.
