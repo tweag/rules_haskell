@@ -394,6 +394,7 @@ haskell_repl(
     collect_data = False,
     deps = [
         "//tests:run-tests",
+        "//tests/binary-with-lib",
     ],
 )
 
