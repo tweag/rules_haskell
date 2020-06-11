@@ -956,10 +956,11 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
         repository_ctx,
         stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
+    package_specs = json_parse(exec_result.stdout)
     transitive_unpacked_sdists = []
     indirect_unpacked_sdists = []
     remaining_components = dicts.add(_default_components, user_components)
-    for package_spec in json_parse(exec_result.stdout):
+    for package_spec in package_specs:
         name = package_spec["name"]
         version = package_spec["version"]
         package = "%s-%s" % (name, version)
@@ -1007,11 +1008,7 @@ Specify a fully qualified package name of the form <package>-<version>.
     repository_ctx.file("stack.yaml", stack_yaml_content, executable = False)
 
     # Compute dependency graph.
-    exec_result = _execute_or_fail_loudly(
-        repository_ctx,
-        stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
-    )
-    for package_spec in json_parse(exec_result.stdout):
+    for package_spec in package_specs:
         package = package_spec["name"]
         if package not in all_packages:
             continue
