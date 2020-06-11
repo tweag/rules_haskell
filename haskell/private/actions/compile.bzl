@@ -460,6 +460,16 @@ def compile_library(
     c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, preprocessors = preprocessors)
     if with_shared:
         c.args.add("-dynamic-too")
+        if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
+            # On some more recent Linux distributions (e.g. Ubuntu 18.04) `gcc`
+            # defaults to linking with `-pie`. At the same time GHC passes `-r`
+            # to the linker when joining object files. In order to avoid errors
+            # of the form
+            #
+            #     /usr/bin/ld: -r and -pie may not be used together
+            #
+            # we need to pass `-no-pie` to the linker.
+            c.args.add("-optl-no-pie")
 
     coverage_data = []
     if hs.coverage_enabled:

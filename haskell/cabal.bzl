@@ -212,6 +212,15 @@ def _prepare_cabal_inputs(
         for arg in ["-package-db", "./" + _dirname(package_db)]
     ], join_with = " ", format_each = "--ghc-arg=%s", omit_if_empty = False)
     args.add("--flags=" + " ".join(flags))
+    if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
+        # On some more recent Linux distributions (e.g. Ubuntu 18.04) `gcc`
+        # defaults to linking with `-pie`. At the same time Cabal passes `-r`
+        # to the linker. In order to avoid errors of the form
+        #
+        #     /usr/bin/ld: -r and -pie may not be used together
+        #
+        # we need to pass `-no-pie` to the linker.
+        args.add("--ghc-option=-optl-no-pie")
     args.add_all(compiler_flags, format_each = "--ghc-option=%s")
     if dynamic_binary:
         args.add_all(

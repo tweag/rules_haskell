@@ -108,6 +108,16 @@ def link_binary(
             print("WARNING: dynamic linking and profiling don't mix. Omitting -dynamic.\nSee https://ghc.haskell.org/trac/ghc/ticket/15394")
         else:
             args.add_all(["-pie", "-dynamic"])
+    elif not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
+        # GHC compiles the `main` function during linking with non-position
+        # independent code. On some more recent Linux distributions (e.g.
+        # Ubuntu 18.04) `gcc` defaults to linking with `-pie`, so we need
+        # to pass `-no-pie` to the linker explicitly to avoid linking
+        # errors of the form:
+        #
+        #   /usr/bin/ld.gold: error: /tmp/ghc3_0/ghc_2.o: requires dynamic R_X86_64_32 reloc against 'ZCMain_main_closure' which may overflow at runtime; recompile with -fPIC
+        #   /usr/bin/ld.gold: error: ../../../../../external/rules_haskell_ghc_linux_amd64/lib/base-4.13.0.0/libHSbase-4.13.0.0.a(Base.o): requires unsupported dynamic reloc 11; recompile with -fPIC
+        args.add("-optl-no-pie")
 
     # When compiling with `-threaded`, GHC needs to link against
     # the pthread library when linking against static archives (.a).
