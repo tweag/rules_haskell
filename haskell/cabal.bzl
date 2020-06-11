@@ -954,14 +954,15 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
-        stack + ["ls", "dependencies", "--global-hints", "--separator=-"],
+        stack + ["ls", "dependencies", "json", "--global-hints"],
     )
     transitive_unpacked_sdists = []
     indirect_unpacked_sdists = []
     remaining_components = dicts.add(_default_components, user_components)
-    for package in exec_result.stdout.splitlines():
-        name = _chop_version(package)
-        version = _version(package)
+    for package_spec in json_parse(exec_result.stdout):
+        name = package_spec["name"]
+        version = package_spec["version"]
+        package = "%s-%s" % (name, version)
         vendored = vendored_packages.get(name, None)
         is_core_package = name in _CORE_PACKAGES
         all_packages[name] = struct(
