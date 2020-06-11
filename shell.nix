@@ -31,6 +31,9 @@ mkShell {
     # check the start script for problems
     shellcheck
     file
+
+    # Needed to build stuff in sandboxed mode
+    sandboxfs
   ] ++ lib.optionals docTools [graphviz python37Packages.sphinx zip unzip];
 
   shellHook = ''

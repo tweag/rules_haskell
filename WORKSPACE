@@ -146,6 +146,7 @@ rules_proto_toolchains()
 nixpkgs_local_repository(
     name = "nixpkgs_default",
     nix_file = "//nixpkgs:default.nix",
+    nix_file_deps = ["//nixpkgs:add_sandboxfs.nix", "//nixpkgs:add_cargo_lock.patch"],
 )
 
 test_compiler_flags = [
@@ -202,7 +203,7 @@ register_toolchains(
 
 nixpkgs_cc_configure(
     nix_file = "//nixpkgs:cc-toolchain.nix",
-    nix_file_deps = ["//nixpkgs:default.nix"],
+    nix_file_deps = ["//nixpkgs:default.nix", "//nixpkgs:add_sandboxfs.nix", "//nixpkgs:add_cargo_lock.patch"],
     repository = "@nixpkgs_default",
 )
 
