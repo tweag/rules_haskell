@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":cc.bzl", "cc_interop_info")
 load(":private/actions/info.bzl", "library_info_output_groups")
@@ -1007,23 +1008,23 @@ Specify a fully qualified package name of the form <package>-<version>.
     # Compute dependency graph.
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
-        stack + ["dot", "--global-hints", "--external"],
+        stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
-    for line in exec_result.stdout.splitlines():
-        tokens = [w.strip('";') for w in line.split(" ")]
-
-        # All lines of the form `"foo" -> "bar";` declare edges of the
-        # dependency graph in the Graphviz format.
-        if len(tokens) == 3 and tokens[1] == "->":
-            [src, _, dest] = tokens
-            if src in all_packages and dest in all_packages:
-                if all_packages[dest].components.lib:
-                    all_packages[src].deps.append(dest)
-                if all_packages[dest].components.exe:
-                    all_packages[src].tools.extend([
-                        (dest, exe)
-                        for exe in all_packages[dest].components.exe
-                    ])
+    for package_spec in json_parse(exec_result.stdout):
+        package = package_spec["name"]
+        if package not in all_packages:
+            continue
+        all_packages[package].deps.extend([
+            dep
+            for dep in package_spec["dependencies"]
+            if dep in all_packages and all_packages[dep].components.lib
+        ])
+        all_packages[package].tools.extend([
+            (dep, exe)
+            for dep in package_spec["dependencies"]
+            if dep in all_packages
+            for exe in all_packages[dep].components.exe
+        ])
     return all_packages
 
 def _invert(d):
