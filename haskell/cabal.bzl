@@ -827,7 +827,8 @@ def _stack_version_check(repository_ctx, stack_cmd):
     exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--numeric-version"])
 
     stack_major_version = int(exec_result.stdout.split(".")[0])
-    return stack_major_version >= 2
+    stack_minor_version = int(exec_result.stdout.split(".")[1])
+    return stack_major_version >= 2 and stack_minor_version >= 3
 
 def _parse_components(package, components):
     """Parse and validate a list of Cabal components.
@@ -920,7 +921,7 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     # and unpack anything in the transitive closure as well.
     stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
     if not _stack_version_check(repository_ctx, stack_cmd):
-        fail("Stack version not recent enough. Need version 2.1 or newer.")
+        fail("Stack version not recent enough. Need version 2.3 or newer.")
     stack = [stack_cmd]
 
     if versioned_packages:
