@@ -876,12 +876,21 @@ def _parse_components(package, components):
     return struct(lib = lib, exe = exe)
 
 _default_components = {
-    "alex": ["exe"],
-    "c2hs": ["exe"],
-    "cpphs": ["lib", "exe"],
-    "doctest": ["lib", "exe"],
-    "happy": ["exe"],
+    "alex": struct(lib = False, exe = ["alex"]),
+    "c2hs": struct(lib = False, exe = ["c2hs"]),
+    "cpphs": struct(lib = True, exe = ["cpphs"]),
+    "doctest": struct(lib = True, exe = ["doctest"]),
+    "happy": struct(lib = False, exe = ["happy"]),
 }
+
+def _get_components(components, package):
+    """Look-up the components of a package.
+
+    If the package is not listed in the user-defined components then it
+    will be taken from the `_default_components`. If it is not listed
+    there then it will default to a library and no executable components.
+    """
+    return components.get(package, _default_components.get(package, struct(lib = True, exe = [])))
 
 def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages, vendored_packages, user_components):
     """Given a list of root packages, compute a dependency graph.
@@ -974,7 +983,8 @@ library
     )
     package_specs = json_parse(exec_result.stdout)
 
-    remaining_components = dicts.add(_default_components, user_components)
+    # Collect package metadata
+    remaining_components = dict(**user_components)
     for package_spec in package_specs:
         name = package_spec["name"]
         if name == resolve_package:
@@ -985,19 +995,25 @@ library
         is_core_package = name in _CORE_PACKAGES
         all_packages[name] = struct(
             name = name,
-            components = _parse_components(
-                name,
-                remaining_components.pop(name, ["lib"]),
-            ),
+            components = _get_components(remaining_components, name),
             version = version,
             versioned_name = package,
             flags = repository_ctx.attr.flags.get(name, []),
-            deps = [],
-            tools = [],
+            deps = [
+                dep
+                for dep in package_spec["dependencies"]
+                if _get_components(remaining_components, dep).lib
+            ],
+            tools = [
+                (dep, exe)
+                for dep in package_spec["dependencies"]
+                for exe in _get_components(remaining_components, dep).exe
+            ],
             vendored = vendored,
             is_core_package = is_core_package,
             sdist = None if is_core_package or vendored != None else package,
         )
+        remaining_components.pop(name, None)
 
         if is_core_package or vendored != None:
             continue
@@ -1011,23 +1027,6 @@ Specify a fully qualified package name of the form <package>-<version>.
     for package in remaining_components.keys():
         if not package in _default_components:
             fail("Unknown package: %s" % package, "components")
-
-    # Compute dependency graph.
-    for package_spec in package_specs:
-        package = package_spec["name"]
-        if package not in all_packages:
-            continue
-        all_packages[package].deps.extend([
-            dep
-            for dep in package_spec["dependencies"]
-            if dep in all_packages and all_packages[dep].components.lib
-        ])
-        all_packages[package].tools.extend([
-            (dep, exe)
-            for dep in package_spec["dependencies"]
-            if dep in all_packages
-            for exe in all_packages[dep].components.exe
-        ])
 
     # Unpack all remote packages.
     remote_packages = [
@@ -1103,6 +1102,10 @@ def _stack_snapshot_impl(repository_ctx):
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)
+    user_components = {
+        name: _parse_components(name, components)
+        for (name, components) in repository_ctx.attr.components.items()
+    }
     all_packages = _compute_dependency_graph(
         repository_ctx,
         snapshot,
@@ -1110,7 +1113,7 @@ def _stack_snapshot_impl(repository_ctx):
         versioned_packages,
         unversioned_packages,
         vendored_packages,
-        repository_ctx.attr.components,
+        user_components,
     )
 
     extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.extra_deps)
