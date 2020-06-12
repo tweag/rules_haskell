@@ -918,50 +918,67 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     if not versioned_packages and not unversioned_packages and not vendored_packages:
         return all_packages
 
-    # Unpack all given packages, then compute the transitive closure
-    # and unpack anything in the transitive closure as well.
+    # Create a dummy package depending on all requested packages.
+    resolve_package = "rules-haskell-stack-resolve"
+    repository_ctx.file(
+        "{name}/{name}.cabal".format(name = resolve_package),
+        executable = False,
+        content = """\
+name: {name}
+cabal-version: >= 1.2
+version: 1.0
+library
+  build-depends:
+    {packages}
+""".format(
+            name = resolve_package,
+            packages = ",\n    ".join(core_packages + unversioned_packages + vendored_packages.keys() + [
+                _chop_version(pkg)
+                for pkg in versioned_packages
+            ]),
+        ),
+    )
+
+    # Create a stack.yaml capturing user overrides to the snapshot.
+    stack_yaml_content = struct(**{
+        "resolver": str(snapshot),
+        "packages": [resolve_package] + [
+            # Determines path to vendored package's root directory relative to
+            # stack.yaml. Note, this requires that the Cabal file exists in the
+            # package root and is called `<name>.cabal`.
+            truly_relativize(
+                str(repository_ctx.path(label.relative(name + ".cabal")).dirname),
+                relative_to = str(repository_ctx.path("stack.yaml").dirname),
+            )
+            for (name, label) in vendored_packages.items()
+        ],
+        "extra-deps": versioned_packages,
+        "flags": {
+            pkg: {
+                flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
+                for flag in flags
+            }
+            for (pkg, flags) in repository_ctx.attr.flags.items()
+        },
+    }).to_json()
+    repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
+
+    # Invoke stack to calculate the transitive dependencies.
     stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
     if not _stack_version_check(repository_ctx, stack_cmd):
         fail("Stack version not recent enough. Need version 2.3 or newer.")
     stack = [stack_cmd]
-
-    if versioned_packages:
-        _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
-    stack = [stack_cmd, "--resolver", snapshot]
-    if unversioned_packages:
-        _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + unversioned_packages)
-    exec_result = _execute_or_fail_loudly(repository_ctx, ["ls"])
-    unpacked_sdists = exec_result.stdout.splitlines()
-
-    # Determines path to vendored package's root directory relative to stack.yaml.
-    # Note, this requires that the Cabal file exists in the package root and is
-    # called `<name>.cabal`.
-    vendored_sdists = [
-        truly_relativize(
-            str(repository_ctx.path(label.relative(name + ".cabal")).dirname),
-            relative_to = str(repository_ctx.path("stack.yaml").dirname),
-        )
-        for (name, label) in vendored_packages.items()
-    ]
-    package_flags = {
-        pkg_name: {
-            flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
-            for flag in flags
-        }
-        for (pkg_name, flags) in repository_ctx.attr.flags.items()
-    }
-    stack_yaml_content = struct(resolver = "none", packages = unpacked_sdists + vendored_sdists, flags = package_flags).to_json()
-    repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
         stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
     package_specs = json_parse(exec_result.stdout)
-    transitive_unpacked_sdists = []
-    indirect_unpacked_sdists = []
+
     remaining_components = dicts.add(_default_components, user_components)
     for package_spec in package_specs:
         name = package_spec["name"]
+        if name == resolve_package:
+            continue
         version = package_spec["version"]
         package = "%s-%s" % (name, version)
         vendored = vendored_packages.get(name, None)
@@ -991,21 +1008,9 @@ Could not resolve version of {}. It is not in the snapshot.
 Specify a fully qualified package name of the form <package>-<version>.
             """.format(package))
 
-        transitive_unpacked_sdists.append(package)
-        if package not in unpacked_sdists:
-            indirect_unpacked_sdists.append(name)
-
     for package in remaining_components.keys():
         if not package in _default_components:
             fail("Unknown package: %s" % package, "components")
-
-    # We removed the version numbers prior to calling `unpack`. This
-    # way, stack will fetch the package sources from the snapshot
-    # rather than from Hackage. See #1027.
-    if indirect_unpacked_sdists:
-        _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + indirect_unpacked_sdists)
-    stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists + vendored_sdists, flags = package_flags).to_json()
-    repository_ctx.file("stack.yaml", stack_yaml_content, executable = False)
 
     # Compute dependency graph.
     for package_spec in package_specs:
@@ -1023,6 +1028,16 @@ Specify a fully qualified package name of the form <package>-<version>.
             if dep in all_packages
             for exe in all_packages[dep].components.exe
         ])
+
+    # Unpack all remote packages.
+    remote_packages = [
+        package.name
+        for package in all_packages.values()
+        if package.sdist != None
+    ]
+    if remote_packages:
+        _execute_or_fail_loudly(repository_ctx, stack + ["--resolver", snapshot, "unpack"] + remote_packages)
+
     return all_packages
 
 def _invert(d):
