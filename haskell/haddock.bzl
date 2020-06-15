@@ -257,16 +257,26 @@ def _haskell_doc_rule_impl(ctx):
         html_dict_copied[package_id] = output_dir
 
         ctx.actions.run_shell(
-            inputs = [html_dir],
+            inputs = [html_dir] + ctx.files.extra_files,
             outputs = [output_dir],
             command = """
       mkdir -p "{doc_dir}"
       # Copy Haddocks of a dependency.
       cp -R -L "{html_dir}/." "{target_dir}"
+      {extra}
       """.format(
                 doc_dir = doc_root_path,
                 html_dir = html_dir.path,
                 target_dir = output_dir.path,
+                extra = "\n".join(["""
+      cp "{src}" "{target_dir}"/"{target}"
+      """.format(
+                         src = x.path,
+                         target_dir = output_dir.path,
+                         target = paths.basename(x.path)
+                    )
+                    for x in ctx.files.extra_files
+                ])
             ),
         )
 
@@ -336,6 +346,10 @@ haskell_doc = rule(
                 haskell_doc_aspect,
             ],
             doc = "List of Haskell libraries to generate documentation for.",
+        ),
+        "extra_files": attr.label_list(
+            allow_files = True,
+            doc = "Extra files required to build the documentation, such as images.",
         ),
         "index_transitive_deps": attr.bool(
             default = False,
