@@ -158,9 +158,13 @@ def _expand_make_variables(name, ctx, strings):
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
+
+    # Note [Plugin order]
+    plugin_decl = reversed(ctx.attr.plugins)
+
     plugin_dep_info = gather_dep_info(
         ctx,
-        [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
+        [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
     )
     package_ids = all_dependencies_package_ids(ctx.attr.deps)
 
@@ -183,7 +187,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         # Also, static GHC doesn't support dynamic code
         dynamic = False
 
-    plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
+    plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     c = hs.toolchain.actions.compile_binary(
