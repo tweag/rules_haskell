@@ -404,7 +404,7 @@ def compile_binary(
         c.args.add_all(_hpc_compiler_args(hs))
         for src_file in srcs:
             module = module_name(hs, src_file)
-            mix_file = hs.actions.declare_file("{name}_.hpc/{module}.mix".format(name=hs.name, module = module))
+            mix_file = hs.actions.declare_file("{name}_.hpc/{module}.mix".format(name = hs.name, module = module))
             coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
 
     hs.toolchain.actions.run_ghc(
