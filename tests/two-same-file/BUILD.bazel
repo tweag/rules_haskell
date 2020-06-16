@@ -4,11 +4,6 @@ load(
     "haskell_test",
 )
 
-package(
-    default_testonly = 1,
-    default_visibility = ["//visibility:public"],
-)
-
 haskell_test(
     name = "one",
     srcs = ["Main.hs"],
