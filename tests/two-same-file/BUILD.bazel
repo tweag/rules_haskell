@@ -1,6 +1,5 @@
 load(
     "@rules_haskell//haskell:defs.bzl",
-    "haskell_library",
     "haskell_test",
 )
 
