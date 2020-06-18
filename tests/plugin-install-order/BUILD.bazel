@@ -46,6 +46,7 @@ haskell_library(
         ":process",
     ],
 )
+
 haskell_library(
     name = "plugin-lib2",
     srcs = ["Plugin2.hs"],
@@ -58,17 +59,17 @@ haskell_library(
 
 ghc_plugin(
     name = "plugin1",
-    args = ["$(location //tests/binary-simple)"], # TODO?
+    args = ["$(location //tests/binary-simple)"],  # TODO?
     module = "Plugin1",
-    tools = ["//tests/binary-simple"], # TODO?
+    tools = ["//tests/binary-simple"],  # TODO?
     deps = [":plugin-lib1"],
 )
 
 ghc_plugin(
     name = "plugin2",
-    args = ["$(location //tests/binary-simple)"], # TODO?
+    args = ["$(location //tests/binary-simple)"],  # TODO?
     module = "Plugin2",
-    tools = ["//tests/binary-simple"], # TODO?
+    tools = ["//tests/binary-simple"],  # TODO?
     deps = [":plugin-lib2"],
 )
 
@@ -79,7 +80,10 @@ haskell_test(
         # XXX If profiling is enabled, ignore the plugin because of
         # https://gitlab.haskell.org/ghc/ghc/issues/14335.
         ":debug_build": [],
-        "//conditions:default": [":plugin1", ":plugin2"],
+        "//conditions:default": [
+            ":plugin1",
+            ":plugin2",
+        ],
     }),
     visibility = ["//visibility:public"],
     deps = [":base"],
