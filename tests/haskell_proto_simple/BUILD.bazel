@@ -2,18 +2,17 @@
 Minimal reproduction of https://github.com/tweag/rules_haskell/issues/1111
 """
 
-
 load("//haskell:defs.bzl", "haskell_doc", "haskell_library")
-load("//haskell:protobuf.bzl",
-     "haskell_proto_library",
-     "haskell_proto_toolchain",
+load(
+    "//haskell:protobuf.bzl",
+    "haskell_proto_library",
+    "haskell_proto_toolchain",
 )
 
-
 proto_library(
-     name = "foo",
-     srcs = ["foo.proto"],
-     deps = [ "@com_google_protobuf//:descriptor_proto" ],
+    name = "foo",
+    srcs = ["foo.proto"],
+    deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 
 haskell_proto_library(
@@ -32,7 +31,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":foo_haskell",
-        "@stackage//:proto-lens",
         "//tests/hackage:base",
+        "@stackage//:proto-lens",
     ],
 )
