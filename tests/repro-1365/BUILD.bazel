@@ -11,6 +11,6 @@ haskell_test(
     expected_covered_expressions_percentage = 100,
     tags = ["coverage-compatible"],
     visibility = ["//visibility:public"],
-    deps = ["@stackage//:zlib"],
+    deps = ["@stackage//:base", "@stackage-zlib//:zlib"],
 )
 

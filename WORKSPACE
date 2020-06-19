@@ -82,6 +82,7 @@ stack_snapshot(
         "proto-lens-runtime",
         "lens-family",
         "temporary",
+        "zlib",
     ],
     setup_deps = {"polysemy": ["cabal-doctest"]},
     snapshot = test_stack_snapshot,
@@ -500,3 +501,4 @@ bind(
 load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 
 rules_haskell_worker_dependencies()
+
