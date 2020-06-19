@@ -500,4 +500,3 @@ bind(
 load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 
 rules_haskell_worker_dependencies()
-
