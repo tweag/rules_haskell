@@ -1,4 +1,9 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Codec.Compression.Zlib (compress)
+
 main :: IO ()
-main = pure ()
+main = do
+  case compress "" of
+    _ -> pure ()
