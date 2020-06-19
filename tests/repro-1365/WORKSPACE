@@ -1,16 +1,17 @@
+"""
+To reproduce issue 1365:
+- Enter the env from the Dockerfile in this dir
+- Moving to this dir
+- bazel build //...
+"""
+
 workspace(name="TestProject")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 local_repository(
     name = "rules_haskell",
-    path = "..",
+    path = "../..",
 )
-# git_repository(
-#     name="rules_haskell",
-#     remote="https://github.com/tweag/rules_haskell.git",
-#     # commit="ea3f13165dae68d5c0291ef258fb1cd51ea0372d",  # 0.12 works
-#     commit="77ece39f6fc3fa8199961b229b1be3ef957af993",  # latest master doesn't
-# )
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 rules_haskell_dependencies()
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
