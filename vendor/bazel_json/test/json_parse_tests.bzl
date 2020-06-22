@@ -1,4 +1,4 @@
-load("@bazel_skylib//:lib.bzl", "asserts", "unittest")
+load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load(":json_parse_test_data.bzl", "get_pkg_jsons")
 
@@ -51,7 +51,7 @@ def _valid_json_parse_test(ctx):
 {"escaped" : "\"quotes\""}
 '''))
 
-    unittest.end(env)
+    return unittest.end(env)
 
 
 def _scalar_types_test(ctx):
@@ -65,7 +65,7 @@ def _scalar_types_test(ctx):
     asserts.equals(env, json_parse('[100]')[0], 100)
     asserts.equals(env, json_parse('[-100]')[0], -100)
 
-    unittest.end(env)
+    return unittest.end(env)
 
 
 def _number_parse_test(ctx):
@@ -84,7 +84,7 @@ def _number_parse_test(ctx):
     asserts.equals(env, 0, json_parse('[0.12345]')[0])
     asserts.equals(env, -120, json_parse('[-120.12345]')[0])
 
-    unittest.end(env)
+    return unittest.end(env)
 
 
 def _max_depth_json_parse_test(ctx):
@@ -102,7 +102,7 @@ def _max_depth_json_parse_test(ctx):
         None
     )
 
-    unittest.end(env)
+    return unittest.end(env)
 
 
 def _package_json_parse_test(ctx):
@@ -121,7 +121,7 @@ def _package_json_parse_test(ctx):
         parsed_pkg_json = json_parse(pkg_jsons_for_testing[project])
         asserts.equals(env, "dict", type(parsed_pkg_json))
 
-    unittest.end(env)
+    return unittest.end(env)
 
 
 valid_json_parse_test = unittest.make(_valid_json_parse_test)
