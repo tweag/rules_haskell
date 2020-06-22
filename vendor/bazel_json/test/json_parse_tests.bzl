@@ -1,5 +1,5 @@
 load("@bazel_skylib//:lib.bzl", "asserts", "unittest")
-load("//lib:json_parser.bzl", "json_parse")
+load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load(":json_parse_test_data.bzl", "get_pkg_jsons")
 
 

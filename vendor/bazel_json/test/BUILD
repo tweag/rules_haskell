@@ -1,4 +1,4 @@
-load("//lib:json_rules.bzl",
+load("//vendor/bazel_json/lib:json_rules.bzl",
      "json_type_null",
      "json_type_boolean",
      "json_type_string",
@@ -11,7 +11,7 @@ load("//lib:json_rules.bzl",
 
 load(":json_parse_tests.bzl", "json_parse_test_suite")
 
-load("//lib:json_parser.bzl", "json_parse")
+load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 
 json_parse_test_suite()
 
