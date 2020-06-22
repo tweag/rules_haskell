@@ -8,7 +8,7 @@ plugin :: Plugin
 plugin = defaultPlugin { installCoreToDos = install }
 
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
-install [arg] todo = do
+install _args todo = do
   if not $ ok todo
     then error "Plugin1 not applied before Plugin2 - see /tests/plugin-install-order"
     else pure todo

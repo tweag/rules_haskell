@@ -8,5 +8,5 @@ plugin :: Plugin
 plugin = defaultPlugin { installCoreToDos = install }
 
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
-install [arg] todo = do
+install _args todo = do
   pure $ todo ++ [CoreDoPluginPass "192839898888299" pure]

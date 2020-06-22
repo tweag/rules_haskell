@@ -59,17 +59,13 @@ haskell_library(
 
 ghc_plugin(
     name = "plugin1",
-    args = ["$(location //tests/binary-simple)"],  # TODO?
     module = "Plugin1",
-    tools = ["//tests/binary-simple"],  # TODO?
     deps = [":plugin-lib1"],
 )
 
 ghc_plugin(
     name = "plugin2",
-    args = ["$(location //tests/binary-simple)"],  # TODO?
     module = "Plugin2",
-    tools = ["//tests/binary-simple"],  # TODO?
     deps = [":plugin-lib2"],
 )
 
