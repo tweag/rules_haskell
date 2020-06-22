@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":cc.bzl", "cc_interop_info")
 load(":private/actions/info.bzl", "library_info_output_groups")
@@ -827,7 +828,8 @@ def _stack_version_check(repository_ctx, stack_cmd):
     exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--numeric-version"])
 
     stack_major_version = int(exec_result.stdout.split(".")[0])
-    return stack_major_version >= 2
+    stack_minor_version = int(exec_result.stdout.split(".")[1])
+    return stack_major_version >= 2 and stack_minor_version >= 3
 
 def _parse_components(package, components):
     """Parse and validate a list of Cabal components.
@@ -874,12 +876,39 @@ def _parse_components(package, components):
     return struct(lib = lib, exe = exe)
 
 _default_components = {
-    "alex": ["exe"],
-    "c2hs": ["exe"],
-    "cpphs": ["lib", "exe"],
-    "doctest": ["lib", "exe"],
-    "happy": ["exe"],
+    "alex": struct(lib = False, exe = ["alex"]),
+    "c2hs": struct(lib = False, exe = ["c2hs"]),
+    "cpphs": struct(lib = True, exe = ["cpphs"]),
+    "doctest": struct(lib = True, exe = ["doctest"]),
+    "happy": struct(lib = False, exe = ["happy"]),
 }
+
+def _get_components(components, package):
+    """Look-up the components of a package.
+
+    If the package is not listed in the user-defined components then it
+    will be taken from the `_default_components`. If it is not listed
+    there then it will default to a library and no executable components.
+    """
+    return components.get(package, _default_components.get(package, struct(lib = True, exe = [])))
+
+def _validate_package_specs(package_specs):
+    found_ty = type(package_specs)
+    if found_ty != "list":
+        fail("Unexpected output format for `stack ls dependencies json`. Expected 'list', but got '%s'." % found_ty)
+
+def _validate_package_spec(package_spec):
+    fields = [
+        ("name", "string"),
+        ("version", "string"),
+        ("dependencies", "list"),
+    ]
+    for (field, ty) in fields:
+        if not field in package_spec:
+            fail("Unexpected output format for `stack ls dependencies json`. Missing field '%s'." % field)
+        found_ty = type(package_spec[field])
+        if found_ty != ty:
+            fail("Unexpected output format for `stack ls dependencies json`. Expected field '%s' of type '%s', but got type '%s'." % (field, ty, found_ty))
 
 def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages, vendored_packages, user_components):
     """Given a list of root packages, compute a dependency graph.
@@ -916,67 +945,95 @@ def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned
     if not versioned_packages and not unversioned_packages and not vendored_packages:
         return all_packages
 
-    # Unpack all given packages, then compute the transitive closure
-    # and unpack anything in the transitive closure as well.
+    # Create a dummy package depending on all requested packages.
+    resolve_package = "rules-haskell-stack-resolve"
+    repository_ctx.file(
+        "{name}/{name}.cabal".format(name = resolve_package),
+        executable = False,
+        content = """\
+name: {name}
+cabal-version: >= 1.2
+version: 1.0
+library
+  build-depends:
+    {packages}
+""".format(
+            name = resolve_package,
+            packages = ",\n    ".join(core_packages + unversioned_packages + vendored_packages.keys() + [
+                _chop_version(pkg)
+                for pkg in versioned_packages
+            ]),
+        ),
+    )
+
+    # Create a stack.yaml capturing user overrides to the snapshot.
+    stack_yaml_content = struct(**{
+        "resolver": str(snapshot),
+        "packages": [resolve_package] + [
+            # Determines path to vendored package's root directory relative to
+            # stack.yaml. Note, this requires that the Cabal file exists in the
+            # package root and is called `<name>.cabal`.
+            truly_relativize(
+                str(repository_ctx.path(label.relative(name + ".cabal")).dirname),
+                relative_to = str(repository_ctx.path("stack.yaml").dirname),
+            )
+            for (name, label) in vendored_packages.items()
+        ],
+        "extra-deps": versioned_packages,
+        "flags": {
+            pkg: {
+                flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
+                for flag in flags
+            }
+            for (pkg, flags) in repository_ctx.attr.flags.items()
+        },
+    }).to_json()
+    repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
+
+    # Invoke stack to calculate the transitive dependencies.
     stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
     if not _stack_version_check(repository_ctx, stack_cmd):
-        fail("Stack version not recent enough. Need version 2.1 or newer.")
+        fail("Stack version not recent enough. Need version 2.3 or newer.")
     stack = [stack_cmd]
-
-    if versioned_packages:
-        _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + versioned_packages)
-    stack = [stack_cmd, "--resolver", snapshot]
-    if unversioned_packages:
-        _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + unversioned_packages)
-    exec_result = _execute_or_fail_loudly(repository_ctx, ["ls"])
-    unpacked_sdists = exec_result.stdout.splitlines()
-
-    # Determines path to vendored package's root directory relative to stack.yaml.
-    # Note, this requires that the Cabal file exists in the package root and is
-    # called `<name>.cabal`.
-    vendored_sdists = [
-        truly_relativize(
-            str(repository_ctx.path(label.relative(name + ".cabal")).dirname),
-            relative_to = str(repository_ctx.path("stack.yaml").dirname),
-        )
-        for (name, label) in vendored_packages.items()
-    ]
-    package_flags = {
-        pkg_name: {
-            flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
-            for flag in flags
-        }
-        for (pkg_name, flags) in repository_ctx.attr.flags.items()
-    }
-    stack_yaml_content = struct(resolver = "none", packages = unpacked_sdists + vendored_sdists, flags = package_flags).to_json()
-    repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
-        stack + ["ls", "dependencies", "--global-hints", "--separator=-"],
+        stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
-    transitive_unpacked_sdists = []
-    indirect_unpacked_sdists = []
-    remaining_components = dicts.add(_default_components, user_components)
-    for package in exec_result.stdout.splitlines():
-        name = _chop_version(package)
-        version = _version(package)
+    package_specs = json_parse(exec_result.stdout)
+    _validate_package_specs(package_specs)
+
+    # Collect package metadata
+    remaining_components = dict(**user_components)
+    for package_spec in package_specs:
+        _validate_package_spec(package_spec)
+        name = package_spec["name"]
+        if name == resolve_package:
+            continue
+        version = package_spec["version"]
+        package = "%s-%s" % (name, version)
         vendored = vendored_packages.get(name, None)
         is_core_package = name in _CORE_PACKAGES
         all_packages[name] = struct(
             name = name,
-            components = _parse_components(
-                name,
-                remaining_components.pop(name, ["lib"]),
-            ),
+            components = _get_components(remaining_components, name),
             version = version,
             versioned_name = package,
             flags = repository_ctx.attr.flags.get(name, []),
-            deps = [],
-            tools = [],
+            deps = [
+                dep
+                for dep in package_spec["dependencies"]
+                if _get_components(remaining_components, dep).lib
+            ],
+            tools = [
+                (dep, exe)
+                for dep in package_spec["dependencies"]
+                for exe in _get_components(remaining_components, dep).exe
+            ],
             vendored = vendored,
             is_core_package = is_core_package,
             sdist = None if is_core_package or vendored != None else package,
         )
+        remaining_components.pop(name, None)
 
         if is_core_package or vendored != None:
             continue
@@ -987,42 +1044,19 @@ Could not resolve version of {}. It is not in the snapshot.
 Specify a fully qualified package name of the form <package>-<version>.
             """.format(package))
 
-        transitive_unpacked_sdists.append(package)
-        if package not in unpacked_sdists:
-            indirect_unpacked_sdists.append(name)
-
     for package in remaining_components.keys():
         if not package in _default_components:
             fail("Unknown package: %s" % package, "components")
 
-    # We removed the version numbers prior to calling `unpack`. This
-    # way, stack will fetch the package sources from the snapshot
-    # rather than from Hackage. See #1027.
-    if indirect_unpacked_sdists:
-        _execute_or_fail_loudly(repository_ctx, stack + ["unpack"] + indirect_unpacked_sdists)
-    stack_yaml_content = struct(resolver = "none", packages = transitive_unpacked_sdists + vendored_sdists, flags = package_flags).to_json()
-    repository_ctx.file("stack.yaml", stack_yaml_content, executable = False)
+    # Unpack all remote packages.
+    remote_packages = [
+        package.name
+        for package in all_packages.values()
+        if package.sdist != None
+    ]
+    if remote_packages:
+        _execute_or_fail_loudly(repository_ctx, stack + ["--resolver", snapshot, "unpack"] + remote_packages)
 
-    # Compute dependency graph.
-    exec_result = _execute_or_fail_loudly(
-        repository_ctx,
-        stack + ["dot", "--global-hints", "--external"],
-    )
-    for line in exec_result.stdout.splitlines():
-        tokens = [w.strip('";') for w in line.split(" ")]
-
-        # All lines of the form `"foo" -> "bar";` declare edges of the
-        # dependency graph in the Graphviz format.
-        if len(tokens) == 3 and tokens[1] == "->":
-            [src, _, dest] = tokens
-            if src in all_packages and dest in all_packages:
-                if all_packages[dest].components.lib:
-                    all_packages[src].deps.append(dest)
-                if all_packages[dest].components.exe:
-                    all_packages[src].tools.extend([
-                        (dest, exe)
-                        for exe in all_packages[dest].components.exe
-                    ])
     return all_packages
 
 def _invert(d):
@@ -1088,6 +1122,10 @@ def _stack_snapshot_impl(repository_ctx):
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)
+    user_components = {
+        name: _parse_components(name, components)
+        for (name, components) in repository_ctx.attr.components.items()
+    }
     all_packages = _compute_dependency_graph(
         repository_ctx,
         snapshot,
@@ -1095,7 +1133,7 @@ def _stack_snapshot_impl(repository_ctx):
         versioned_packages,
         unversioned_packages,
         vendored_packages,
-        repository_ctx.attr.components,
+        user_components,
     )
 
     extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.extra_deps)
