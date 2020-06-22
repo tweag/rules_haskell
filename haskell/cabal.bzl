@@ -892,6 +892,24 @@ def _get_components(components, package):
     """
     return components.get(package, _default_components.get(package, struct(lib = True, exe = [])))
 
+def _validate_package_specs(package_specs):
+    found_ty = type(package_specs)
+    if found_ty != "list":
+        fail("Unexpected output format for `stack ls dependencies json`. Expected 'list', but got '%s'." % found_ty)
+
+def _validate_package_spec(package_spec):
+    fields = [
+        ("name", "string"),
+        ("version", "string"),
+        ("dependencies", "list"),
+    ]
+    for (field, ty) in fields:
+        if not field in package_spec:
+            fail("Unexpected output format for `stack ls dependencies json`. Missing field '%s'." % field)
+        found_ty = type(package_spec[field])
+        if found_ty != ty:
+            fail("Unexpected output format for `stack ls dependencies json`. Expected field '%s' of type '%s', but got type '%s'." % (field, ty, found_ty))
+
 def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages, vendored_packages, user_components):
     """Given a list of root packages, compute a dependency graph.
 
@@ -982,10 +1000,12 @@ library
         stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
     package_specs = json_parse(exec_result.stdout)
+    _validate_package_specs(package_specs)
 
     # Collect package metadata
     remaining_components = dict(**user_components)
     for package_spec in package_specs:
+        _validate_package_spec(package_spec)
         name = package_spec["name"]
         if name == resolve_package:
             continue
