@@ -211,7 +211,8 @@ def _prepare_cabal_inputs(
         for arg in ["-package-db", "./" + _dirname(package_db)]
     ], join_with = " ", format_each = "--ghc-arg=%s", omit_if_empty = False)
     args.add("--flags=" + " ".join(flags))
-    args.add_all(compiler_flags, format_each = "--ghc-option=%s")
+    args.add_all(cc.compiler_flags, format_each = "--ghc-option=-optc=%s")
+    args.add_all(hs.toolchain.compiler_flags + compiler_flags, format_each = "--ghc-option=%s")
     if dynamic_binary:
         args.add_all(
             [
