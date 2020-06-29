@@ -892,23 +892,71 @@ def _get_components(components, package):
     """
     return components.get(package, _default_components.get(package, struct(lib = True, exe = [])))
 
-def _validate_package_specs(package_specs):
-    found_ty = type(package_specs)
-    if found_ty != "list":
-        fail("Unexpected output format for `stack ls dependencies json`. Expected 'list', but got '%s'." % found_ty)
+def _parse_json_field(json, field, ty, fmt):
+    """Read and type-check a field from a JSON object.
 
-def _validate_package_spec(package_spec):
-    fields = [
-        ("name", "string"),
-        ("version", "string"),
-        ("dependencies", "list"),
-    ]
-    for (field, ty) in fields:
-        if not field in package_spec:
-            fail("Unexpected output format for `stack ls dependencies json`. Missing field '%s'." % field)
-        found_ty = type(package_spec[field])
-        if found_ty != ty:
-            fail("Unexpected output format for `stack ls dependencies json`. Expected field '%s' of type '%s', but got type '%s'." % (field, ty, found_ty))
+    Invokes `fail` on error.
+
+    Attrs:
+      json: dict, The parsed JSON object.
+      field: string, The name of the field.
+      ty: string, The expected type of the field.
+      fmt: string, Error message format string. E.g. `Error: %s`.
+
+    Returns:
+      The value of the field.
+    """
+    if not field in json:
+        fail(fmt % "Missing field '{field}'.".format(field = field))
+    actual_ty = type(json[field])
+    if actual_ty != ty:
+        fail(fmt % "Expected field '{field}' of type '{expected}', but got '{got}'.".format(
+            field = field,
+            expected = ty,
+            got = actual_ty,
+        ))
+    return json[field]
+
+def _parse_package_spec(package_spec):
+    errmsg = "Unexpected output format for `stack ls dependencies json` in {context}: %s"
+
+    # Parse simple fields.
+    parsed = {
+        field: _parse_json_field(package_spec, field, ty, errmsg.format(context = "package description"))
+        for (field, ty) in [("name", "string"), ("version", "string"), ("dependencies", "list")]
+    }
+
+    # Parse location field.
+    location = {}
+    if parsed["name"] in _CORE_PACKAGES or not "location" in package_spec:
+        location["type"] = "core"
+    else:
+        location_type = _parse_json_field(package_spec["location"], "type", "string", errmsg.format(context = "location description"))
+        if location_type == "project package":
+            location["type"] = "vendored"
+        elif location_type == "hackage":
+            location["type"] = location_type
+            url_prefix = _parse_json_field(package_spec["location"], "url", "string", errmsg.format(context = location_type + " location description"))
+            location["url"] = url_prefix + "/{name}-{version}.tar.gz".format(**parsed)
+            # stack does not expose sha-256, see https://github.com/commercialhaskell/stack/issues/5274
+
+        elif location_type == "archive":
+            location["type"] = location_type
+            location["url"] = _parse_json_field(package_spec["location"], "url", "string", errmsg.format(context = location_type + " location description"))
+            # stack does not yet expose sha-256, see https://github.com/commercialhaskell/stack/pull/5280
+
+        elif location_type in ["git", "hg"]:
+            location["type"] = location_type
+            location["url"] = _parse_json_field(package_spec["location"], "url", "string", errmsg.format(context = location_type + " location description"))
+            location["commit"] = _parse_json_field(package_spec["location"], "commit", "string", errmsg.format(context = location_type + " location description"))
+            location["subdir"] = _parse_json_field(package_spec["location"], "subdir", "string", errmsg.format(context = location_type + " location description"))
+        else:
+            error = "Unexpected location type '%s'." % location_type
+            fail(errmsg.format(context = "location description") % error)
+
+    parsed["location"] = location
+
+    return parsed
 
 def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages, vendored_packages, user_components):
     """Given a list of root packages, compute a dependency graph.
@@ -1000,16 +1048,15 @@ library
         stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
     package_specs = json_parse(exec_result.stdout)
-    _validate_package_specs(package_specs)
 
     # Collect package metadata
     remaining_components = dict(**user_components)
     for package_spec in package_specs:
-        _validate_package_spec(package_spec)
-        name = package_spec["name"]
+        parsed_spec = _parse_package_spec(package_spec)
+        name = parsed_spec["name"]
         if name == resolve_package:
             continue
-        version = package_spec["version"]
+        version = parsed_spec["version"]
         package = "%s-%s" % (name, version)
         vendored = vendored_packages.get(name, None)
         is_core_package = name in _CORE_PACKAGES
@@ -1021,12 +1068,12 @@ library
             flags = repository_ctx.attr.flags.get(name, []),
             deps = [
                 dep
-                for dep in package_spec["dependencies"]
+                for dep in parsed_spec["dependencies"]
                 if _get_components(remaining_components, dep).lib
             ],
             tools = [
                 (dep, exe)
-                for dep in package_spec["dependencies"]
+                for dep in parsed_spec["dependencies"]
                 for exe in _get_components(remaining_components, dep).exe
             ],
             vendored = vendored,
