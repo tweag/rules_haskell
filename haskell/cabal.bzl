@@ -1138,15 +1138,23 @@ def _to_string_keyed_label_list_dict(d):
 def _label_to_string(label):
     return "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
 
-def _stack_snapshot_impl(repository_ctx):
-    if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
+def _parse_stack_snapshot(repository_ctx, snapshot, local_snapshot):
+    if snapshot and local_snapshot:
         fail("Please specify either snapshot or local_snapshot, but not both.")
-    elif repository_ctx.attr.snapshot:
-        snapshot = repository_ctx.attr.snapshot
-    elif repository_ctx.attr.local_snapshot:
-        snapshot = repository_ctx.path(repository_ctx.attr.local_snapshot)
+    elif snapshot:
+        snapshot = snapshot
+    elif local_snapshot:
+        snapshot = repository_ctx.path(local_snapshot)
     else:
         fail("Please specify one of snapshot or local_snapshot")
+    return snapshot
+
+def _stack_snapshot_impl(repository_ctx):
+    snapshot = _parse_stack_snapshot(
+        repository_ctx,
+        repository_ctx.attr.snapshot,
+        repository_ctx.attr.local_snapshot,
+    )
 
     # Enforce dependency on stack_update
     repository_ctx.read(repository_ctx.attr.stack_update)
