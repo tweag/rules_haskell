@@ -1149,6 +1149,50 @@ def _parse_stack_snapshot(repository_ctx, snapshot, local_snapshot):
         fail("Please specify one of snapshot or local_snapshot")
     return snapshot
 
+def _parse_packages_list(packages, vendored_packages):
+    """Parse the `packages` attribute to `stack_snapshot`.
+
+    Validates that there are no duplicates between `packages` and
+    `vendored_packages`.
+
+    Args:
+      packages: The list of requested packages versioned or unversioned.
+      vendored_packages: The dict of provided vendored packages.
+
+    Returns:
+      struct(all, core, versioned, unversioned):
+        all: The unversioned names of all requested packages.
+        core: The unversioned names of requested core packages.
+        versioned: The versioned names of requested versioned packages.
+        unversioned: The unversioned names of requested unversioned packages.
+    """
+    all_packages = []
+    core_packages = []
+    versioned_packages = []
+    unversioned_packages = []
+
+    for package in packages:
+        has_version = _has_version(package)
+        unversioned = _chop_version(package) if has_version else package
+        if unversioned in vendored_packages:
+            fail("Duplicate package '{}'. Packages may not be listed in both 'packages' and 'vendored_packages'.".format(package))
+        all_packages.append(unversioned)
+        if unversioned in _CORE_PACKAGES:
+            if has_version:
+                fail("{} is a core package, built into GHC. Its version is determined entirely by the version of GHC you are using. You cannot pin it to {}.".format(unversioned, _version(package)))
+            core_packages.append(unversioned)
+        elif has_version:
+            versioned_packages.append(package)
+        else:
+            unversioned_packages.append(package)
+
+    return struct(
+        all = all_packages,
+        core = core_packages,
+        versioned = versioned_packages,
+        unversioned = unversioned_packages,
+    )
+
 def _stack_snapshot_impl(repository_ctx):
     snapshot = _parse_stack_snapshot(
         repository_ctx,
@@ -1160,23 +1204,10 @@ def _stack_snapshot_impl(repository_ctx):
     repository_ctx.read(repository_ctx.attr.stack_update)
 
     vendored_packages = _invert(repository_ctx.attr.vendored_packages)
-    packages = repository_ctx.attr.packages
-    core_packages = []
-    versioned_packages = []
-    unversioned_packages = []
-    for package in packages:
-        has_version = _has_version(package)
-        unversioned = _chop_version(package) if has_version else package
-        if unversioned in vendored_packages:
-            fail("Duplicate package '{}'. Packages may not be listed in both 'packages' and 'vendored_packages'.".format(package))
-        if unversioned in _CORE_PACKAGES:
-            if has_version:
-                fail("{} is a core package, built into GHC. Its version is determined entirely by the version of GHC you are using. You cannot pin it to {}.".format(unversioned, _version(package)))
-            core_packages.append(unversioned)
-        elif has_version:
-            versioned_packages.append(package)
-        else:
-            unversioned_packages.append(package)
+    packages = _parse_packages_list(
+        repository_ctx.attr.packages,
+        vendored_packages,
+    )
     user_components = {
         name: _parse_components(name, components)
         for (name, components) in repository_ctx.attr.components.items()
@@ -1184,9 +1215,9 @@ def _stack_snapshot_impl(repository_ctx):
     all_packages = _compute_dependency_graph(
         repository_ctx,
         snapshot,
-        core_packages,
-        versioned_packages,
-        unversioned_packages,
+        packages.core,
+        packages.versioned,
+        packages.unversioned,
         vendored_packages,
         user_components,
     )
@@ -1219,7 +1250,7 @@ load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary", "haskell_cabal
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_library")
 """)
     for package in all_packages.values():
-        if package.name in packages or package.versioned_name in packages or package.vendored != None:
+        if package.name in packages.all or package.vendored != None:
             visibility = ["//visibility:public"]
         else:
             visibility = ["//visibility:private"]
