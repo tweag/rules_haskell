@@ -958,40 +958,30 @@ def _parse_package_spec(package_spec):
 
     return parsed
 
-def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages, vendored_packages, user_components):
-    """Given a list of root packages, compute a dependency graph.
+def _resolve_packages(
+        repository_ctx,
+        snapshot,
+        core_packages,
+        versioned_packages,
+        unversioned_packages,
+        vendored_packages):
+    """Invoke stack to determine package versions and dependencies.
+
+    Attrs:
+      snapshot: The Stackage snapshot, name or path to custom snapshot.
+      core_packages: Core packages requested by the user.
+      versioned_packages: Versioned packages requested by the user.
+      unversioned_packages: Unversioned packages requested by the user.
+      vendored_packages: Vendored packages provided by the user.
 
     Returns:
-      dict(name: struct(name, version, versioned_name, deps, is_core_package, sdist)):
-        name: The unversioned package name.
-        version: The version of the package.
-        versioned_name: <name>-<version>.
-        flags: Cabal flags for this package.
-        deps: The list of library dependencies.
-        tools: The list of build tools.
-        vendored: Label of vendored package, None if not vendored.
-        user_components: Mapping from package names to Cabal components.
-        is_core_package: Whether the package is a core package.
-        sdist: directory name of the unpackaged source distribution or None if core package or vendored.
-
+      dict(name: dict(name, version, dependencies, location)):
+        name: string, The unversioned package name.
+        version: string, The version of the package.
+        dependencies: list, Package dependencies.
+        location: dict(type, url?, sha256?, commit?, subdir?):
+          type: One of "core", "vendored", "hackage", "archive", "git", "hg".
     """
-    all_packages = {}
-    for core_package in core_packages:
-        all_packages[core_package] = struct(
-            name = core_package,
-            components = struct(lib = True, exe = []),
-            version = None,
-            versioned_name = None,
-            flags = repository_ctx.attr.flags.get(core_package, []),
-            deps = [],
-            tools = [],
-            vendored = None,
-            is_core_package = True,
-            sdist = None,
-        )
-
-    if not versioned_packages and not unversioned_packages and not vendored_packages:
-        return all_packages
 
     # Create a dummy package depending on all requested packages.
     resolve_package = "rules-haskell-stack-resolve"
@@ -1049,62 +1039,26 @@ library
     )
     package_specs = json_parse(exec_result.stdout)
 
-    # Collect package metadata
-    remaining_components = dict(**user_components)
+    resolved = {}
     for package_spec in package_specs:
         parsed_spec = _parse_package_spec(package_spec)
-        name = parsed_spec["name"]
-        if name == resolve_package:
+        if parsed_spec["name"] == resolve_package:
             continue
-        version = parsed_spec["version"]
-        package = "%s-%s" % (name, version)
-        vendored = vendored_packages.get(name, None)
-        is_core_package = name in _CORE_PACKAGES
-        all_packages[name] = struct(
-            name = name,
-            components = _get_components(remaining_components, name),
-            version = version,
-            versioned_name = package,
-            flags = repository_ctx.attr.flags.get(name, []),
-            deps = [
-                dep
-                for dep in parsed_spec["dependencies"]
-                if _get_components(remaining_components, dep).lib
-            ],
-            tools = [
-                (dep, exe)
-                for dep in parsed_spec["dependencies"]
-                for exe in _get_components(remaining_components, dep).exe
-            ],
-            vendored = vendored,
-            is_core_package = is_core_package,
-            sdist = None if is_core_package or vendored != None else package,
-        )
-        remaining_components.pop(name, None)
+        resolved[parsed_spec["name"]] = parsed_spec
 
-        if is_core_package or vendored != None:
-            continue
+    # Sort the items to make sure that generated outputs are deterministic.
+    return {name: resolved[name] for name in sorted(resolved.keys())}
 
-        if version == "<unknown>":
-            fail("""\
-Could not resolve version of {}. It is not in the snapshot.
-Specify a fully qualified package name of the form <package>-<version>.
-            """.format(package))
-
-    for package in remaining_components.keys():
-        if not package in _default_components:
-            fail("Unknown package: %s" % package, "components")
-
-    # Unpack all remote packages.
+def _download_packages(repository_ctx, snapshot, resolved):
+    """Download remote packages using `stack unpack`."""
     remote_packages = [
-        package.name
-        for package in all_packages.values()
-        if package.sdist != None
+        package["name"]
+        for package in resolved.values()
+        if package["location"]["type"] not in ["core", "vendored"]
     ]
+    stack = [repository_ctx.path(repository_ctx.attr.stack)]
     if remote_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["--resolver", snapshot, "unpack"] + remote_packages)
-
-    return all_packages
 
 def _invert(d):
     """Invert a dictionary."""
@@ -1208,19 +1162,27 @@ def _stack_snapshot_impl(repository_ctx):
         repository_ctx.attr.packages,
         vendored_packages,
     )
-    user_components = {
-        name: _parse_components(name, components)
-        for (name, components) in repository_ctx.attr.components.items()
-    }
-    all_packages = _compute_dependency_graph(
+    resolved = _resolve_packages(
         repository_ctx,
         snapshot,
         packages.core,
         packages.versioned,
         packages.unversioned,
         vendored_packages,
-        user_components,
     )
+    _download_packages(repository_ctx, snapshot, resolved)
+
+    user_components = {
+        name: _parse_components(name, components)
+        for (name, components) in repository_ctx.attr.components.items()
+    }
+    all_components = {}
+    for (name, spec) in resolved.items():
+        all_components[name] = _get_components(user_components, name)
+        user_components.pop(name, None)
+    for package in user_components.keys():
+        if not package in _default_components:
+            fail("Unknown package: %s" % package, "components")
 
     extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.extra_deps)
     tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
@@ -1229,16 +1191,24 @@ def _stack_snapshot_impl(repository_ctx):
     repository_ctx.file(
         "packages.bzl",
         "packages = " + repr({
-            package.name: struct(
-                name = package.name,
-                version = package.version,
-                library = package.components.lib,
-                executables = package.components.exe,
-                deps = [Label("@{}//:{}".format(repository_ctx.name, dep)) for dep in package.deps],
-                tools = [Label("@{}-exe//{}:{}".format(repository_ctx.name, dep, exe)) for (dep, exe) in package.tools],
-                flags = package.flags,
+            name: struct(
+                name = name,
+                version = spec["version"],
+                library = all_components[name].lib,
+                executables = all_components[name].exe,
+                deps = [
+                    Label("@{}//:{}".format(repository_ctx.name, dep))
+                    for dep in spec["dependencies"]
+                    if all_components[dep].lib
+                ],
+                tools = [
+                    Label("@{}-exe//{}:{}".format(repository_ctx.name, dep, exe))
+                    for dep in spec["dependencies"]
+                    for exe in all_components[dep].exe
+                ],
+                flags = repository_ctx.attr.flags.get(name, []),
             )
-            for package in all_packages.values()
+            for (name, spec) in resolved.items()
         }),
         executable = False,
     )
@@ -1249,24 +1219,26 @@ def _stack_snapshot_impl(repository_ctx):
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary", "haskell_cabal_library")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_library")
 """)
-    for package in all_packages.values():
-        if package.name in packages.all or package.vendored != None:
+    for (name, spec) in resolved.items():
+        version = spec["version"]
+        package = "%s-%s" % (name, version)
+        if name in packages.all or name in vendored_packages:
             visibility = ["//visibility:public"]
         else:
             visibility = ["//visibility:private"]
-        if package.vendored != None:
+        if name in vendored_packages:
             build_file_builder.append(
                 """
 alias(name = "{name}", actual = "{actual}", visibility = {visibility})
-""".format(name = package.name, actual = package.vendored, visibility = visibility),
+""".format(name = name, actual = vendored_packages[name], visibility = visibility),
             )
-        elif package.is_core_package:
+        elif name in _CORE_PACKAGES:
             build_file_builder.append(
                 """
 haskell_toolchain_library(name = "{name}", visibility = {visibility})
-""".format(name = package.name, visibility = visibility),
+""".format(name = name, visibility = visibility),
             )
-        elif package.name in _EMPTY_PACKAGES_BLACKLIST:
+        elif name in _EMPTY_PACKAGES_BLACKLIST:
             build_file_builder.append(
                 """
 haskell_library(
@@ -1275,25 +1247,30 @@ haskell_library(
     visibility = {visibility},
 )
 """.format(
-                    name = package.name,
-                    version = package.version,
+                    name = name,
+                    version = version,
                     visibility = visibility,
                 ),
             )
         else:
-            library_deps = package.deps + [
+            library_deps = [
+                dep
+                for dep in spec["dependencies"]
+                if all_components[dep].lib
+            ] + [
                 _label_to_string(label)
-                for label in extra_deps.get(package.name, [])
+                for label in extra_deps.get(name, [])
             ]
             library_tools = [
                 "_%s_exe_%s" % (dep, exe)
-                for (dep, exe) in package.tools
+                for dep in spec["dependencies"]
+                for exe in all_components[dep].exe
             ] + tools
             setup_deps = [
-                _label_to_string(Label("@{}//:{}".format(repository_ctx.name, package.name)).relative(label))
-                for label in repository_ctx.attr.setup_deps.get(package.name, [])
+                _label_to_string(Label("@{}//:{}".format(repository_ctx.name, name)).relative(label))
+                for label in repository_ctx.attr.setup_deps.get(name, [])
             ]
-            if package.components.lib:
+            if all_components[name].lib:
                 build_file_builder.append(
                     """
 haskell_cabal_library(
@@ -1311,11 +1288,11 @@ haskell_cabal_library(
     unique_name = True,
 )
 """.format(
-                        name = package.name,
-                        version = package.version,
+                        name = name,
+                        version = version,
                         haddock = repr(repository_ctx.attr.haddock),
-                        flags = package.flags,
-                        dir = package.sdist,
+                        flags = repository_ctx.attr.flags.get(name, []),
+                        dir = package,
                         deps = library_deps,
                         setup_deps = setup_deps,
                         tools = library_tools,
@@ -1323,15 +1300,14 @@ haskell_cabal_library(
                         verbose = repr(repository_ctx.attr.verbose),
                     ),
                 )
-                if package.versioned_name != None:
-                    build_file_builder.append(
-                        """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
-                            name = package.versioned_name,
-                            actual = package.name,
-                            visibility = visibility,
-                        ),
-                    )
-            for exe in package.components.exe:
+                build_file_builder.append(
+                    """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
+                        name = package,
+                        actual = name,
+                        visibility = visibility,
+                    ),
+                )
+            for exe in all_components[name].exe:
                 build_file_builder.append(
                     """
 haskell_cabal_binary(
@@ -1347,11 +1323,11 @@ haskell_cabal_binary(
 )
 """.format(
                         workspace = repository_ctx.name,
-                        name = package.name,
+                        name = name,
                         exe = exe,
-                        flags = package.flags,
-                        dir = package.sdist,
-                        deps = library_deps + ([package.name] if package.components.lib else []),
+                        flags = repository_ctx.attr.flags.get(name, []),
+                        dir = package,
+                        deps = library_deps + ([name] if all_components[name].lib else []),
                         setup_deps = setup_deps,
                         tools = library_tools,
                         visibility = visibility,
