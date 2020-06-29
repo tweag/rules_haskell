@@ -1190,8 +1190,12 @@ def _stack_snapshot_impl(repository_ctx):
     # Write out dependency graph as importable Starlark value.
     repository_ctx.file(
         "packages.bzl",
-        "packages = " + repr({
-            name: struct(
+        """\
+packages = {
+    %s
+}
+""" % ",\n    ".join([
+            '"%s": ' % name + repr(struct(
                 name = name,
                 version = spec["version"],
                 library = all_components[name].lib,
@@ -1207,9 +1211,9 @@ def _stack_snapshot_impl(repository_ctx):
                     for exe in all_components[dep].exe
                 ],
                 flags = repository_ctx.attr.flags.get(name, []),
-            )
+            ))
             for (name, spec) in resolved.items()
-        }),
+        ]),
         executable = False,
     )
 
