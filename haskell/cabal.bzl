@@ -901,24 +901,24 @@ def _parse_json_field(json, field, ty, fmt):
       json: dict, The parsed JSON object.
       field: string, The name of the field.
       ty: string, The expected type of the field.
-      fmt: string, Error message format string. E.g. `Error: %s`.
+      fmt: string, Error message format string. E.g. `Error: {error}`.
 
     Returns:
       The value of the field.
     """
     if not field in json:
-        fail(fmt % "Missing field '{field}'.".format(field = field))
+        fail(fmt.format(error = "Missing field '{field}'.".format(field = field)))
     actual_ty = type(json[field])
     if actual_ty != ty:
-        fail(fmt % "Expected field '{field}' of type '{expected}', but got '{got}'.".format(
+        fail(fmt.format(error = "Expected field '{field}' of type '{expected}', but got '{got}'.".format(
             field = field,
             expected = ty,
             got = actual_ty,
-        ))
+        )))
     return json[field]
 
 def _parse_package_spec(package_spec):
-    errmsg = "Unexpected output format for `stack ls dependencies json` in {context}: %s"
+    errmsg = "Unexpected output format for `stack ls dependencies json` in {context}: {{error}}"
 
     # Parse simple fields.
     parsed = {
@@ -951,8 +951,8 @@ def _parse_package_spec(package_spec):
             location["commit"] = _parse_json_field(package_spec["location"], "commit", "string", errmsg.format(context = location_type + " location description"))
             location["subdir"] = _parse_json_field(package_spec["location"], "subdir", "string", errmsg.format(context = location_type + " location description"))
         else:
-            error = "Unexpected location type '%s'." % location_type
-            fail(errmsg.format(context = "location description") % error)
+            error = "Unexpected location type '{}'.".format(location_type)
+            fail(errmsg.format(context = "location description").format(error = error))
 
     parsed["location"] = location
 
