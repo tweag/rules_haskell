@@ -918,6 +918,11 @@ def _parse_json_field(json, field, ty, fmt):
     return json[field]
 
 def _parse_package_spec(package_spec):
+    """Parse a package description from `stack ls dependencies json`.
+
+    The definition of the JSON format can be found in the `stack` sources:
+    https://github.com/commercialhaskell/stack/blob/v2.3.1/src/Stack/Dot.hs#L173-L198
+    """
     errmsg = "Unexpected output format for `stack ls dependencies json` in {context}: {{error}}"
 
     # Parse simple fields.
