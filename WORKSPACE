@@ -85,6 +85,7 @@ stack_snapshot(
     ],
     setup_deps = {"polysemy": ["cabal-doctest"]},
     snapshot = test_stack_snapshot,
+    stack_snapshot_json = "//:stackage_snapshot.json",
     tools = [
         # This is not required, as `stack_snapshot` would build alex
         # automatically, however it is used as a test for user provided
@@ -100,6 +101,7 @@ stack_snapshot(
     extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
     packages = ["zlib"],
     snapshot = test_stack_snapshot,
+    stack_snapshot_json = "//:stackage-zlib-snapshot.json",
 )
 
 stack_snapshot(
@@ -112,6 +114,7 @@ stack_snapshot(
     haddock = False,
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
     packages = ["ghcide"],
+    stack_snapshot_json = "//:ghcide-snapshot.json",
 )
 
 load(
