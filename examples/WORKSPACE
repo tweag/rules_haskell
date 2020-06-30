@@ -107,5 +107,8 @@ stack_snapshot(
         "text-show",
     ],
     snapshot = "lts-14.0",
+    # Pin Stackage dependencies with `bazel run @stackage-unpinned//:pin`.
+    # And uncomment the following line.
+    # stack_snapshot_json = "//:stackage_snapshot.json",
     vendored_packages = {"split": "@split//:split"},
 )
