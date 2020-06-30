@@ -927,7 +927,12 @@ def _parse_package_spec(package_spec):
 
     # Parse simple fields.
     parsed = {
-        field: _parse_json_field(package_spec, field, ty, errmsg.format(context = "package description"))
+        field: _parse_json_field(
+            package_spec,
+            field,
+            ty,
+            errmsg.format(context = "package description"),
+        )
         for (field, ty) in [("name", "string"), ("version", "string"), ("dependencies", "list")]
     }
 
@@ -936,25 +941,55 @@ def _parse_package_spec(package_spec):
     if parsed["name"] in _CORE_PACKAGES or not "location" in package_spec:
         location["type"] = "core"
     else:
-        location_type = _parse_json_field(package_spec["location"], "type", "string", errmsg.format(context = "location description"))
+        location_type = _parse_json_field(
+            package_spec["location"],
+            "type",
+            "string",
+            errmsg.format(context = "location description"),
+        )
         if location_type == "project package":
             location["type"] = "vendored"
         elif location_type == "hackage":
             location["type"] = location_type
-            url_prefix = _parse_json_field(package_spec["location"], "url", "string", errmsg.format(context = location_type + " location description"))
+            url_prefix = _parse_json_field(
+                package_spec["location"],
+                "url",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
             location["url"] = url_prefix + "/{name}-{version}.tar.gz".format(**parsed)
             # stack does not expose sha-256, see https://github.com/commercialhaskell/stack/issues/5274
 
         elif location_type == "archive":
             location["type"] = location_type
-            location["url"] = _parse_json_field(package_spec["location"], "url", "string", errmsg.format(context = location_type + " location description"))
+            location["url"] = _parse_json_field(
+                package_spec["location"],
+                "url",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
             # stack does not yet expose sha-256, see https://github.com/commercialhaskell/stack/pull/5280
 
         elif location_type in ["git", "hg"]:
             location["type"] = location_type
-            location["url"] = _parse_json_field(package_spec["location"], "url", "string", errmsg.format(context = location_type + " location description"))
-            location["commit"] = _parse_json_field(package_spec["location"], "commit", "string", errmsg.format(context = location_type + " location description"))
-            location["subdir"] = _parse_json_field(package_spec["location"], "subdir", "string", errmsg.format(context = location_type + " location description"))
+            location["url"] = _parse_json_field(
+                package_spec["location"],
+                "url",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
+            location["commit"] = _parse_json_field(
+                package_spec["location"],
+                "commit",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
+            location["subdir"] = _parse_json_field(
+                package_spec["location"],
+                "subdir",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
         else:
             error = "Unexpected location type '{}'.".format(location_type)
             fail(errmsg.format(context = "location description").format(error = error))
