@@ -153,8 +153,8 @@ def _create_HaskellReplCollectInfo(target, ctx):
                 for dep in getattr(ctx.rule.attr, "deps", [])
                 if CcInfo in dep and not HaskellInfo in dep
             ]),
-            compiler_flags = getattr(ctx.rule.attr, "compiler_flags", []),
-            repl_ghci_args = getattr(ctx.rule.attr, "repl_ghci_args", []),
+            compiler_flags = hs_info.user_compile_flags,
+            repl_ghci_args = hs_info.user_repl_flags,
         )
     if HaskellLibraryInfo in target:
         lib_info = target[HaskellLibraryInfo]

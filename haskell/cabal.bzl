@@ -432,6 +432,8 @@ def _haskell_cabal_library_impl(ctx):
         ),
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
+        user_compile_flags = [],
+        user_repl_flags = [],
     )
     lib_info = HaskellLibraryInfo(package_id = package_id, version = None, exports = [])
     if ctx.attr.haddock:
@@ -673,6 +675,8 @@ def _haskell_cabal_binary_impl(ctx):
         hs_libraries = dep_info.hs_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = [],
+        user_compile_flags = [],
+        user_repl_flags = [],
     )
     default_info = DefaultInfo(
         files = depset([binary]),

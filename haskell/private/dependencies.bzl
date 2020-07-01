@@ -63,6 +63,8 @@ def gather_dep_info(ctx, deps):
         import_dirs = import_dirs,
         extra_source_files = extra_source_files,
         compile_flags = compile_flags,
+        user_compile_flags = [],
+        user_repl_flags = [],
     )
 
     for dep in deps:
@@ -79,6 +81,8 @@ def gather_dep_info(ctx, deps):
                 compile_flags = compile_flags,
                 extra_source_files = extra_source_files,
                 source_files = source_files,
+                user_compile_flags = [],
+                user_repl_flags = [],
             )
         elif CcInfo in dep and HaskellInfo not in dep:
             # The final link of a binary must include all static libraries we
@@ -93,6 +97,8 @@ def gather_dep_info(ctx, deps):
                 hs_libraries = acc.hs_libraries,
                 extra_source_files = acc.extra_source_files,
                 interface_dirs = acc.interface_dirs,
+                user_compile_flags = [],
+                user_repl_flags = [],
             )
 
     return acc
