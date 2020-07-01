@@ -892,58 +892,136 @@ def _get_components(components, package):
     """
     return components.get(package, _default_components.get(package, struct(lib = True, exe = [])))
 
-def _validate_package_specs(package_specs):
-    found_ty = type(package_specs)
-    if found_ty != "list":
-        fail("Unexpected output format for `stack ls dependencies json`. Expected 'list', but got '%s'." % found_ty)
+def _parse_json_field(json, field, ty, fmt):
+    """Read and type-check a field from a JSON object.
 
-def _validate_package_spec(package_spec):
-    fields = [
-        ("name", "string"),
-        ("version", "string"),
-        ("dependencies", "list"),
-    ]
-    for (field, ty) in fields:
-        if not field in package_spec:
-            fail("Unexpected output format for `stack ls dependencies json`. Missing field '%s'." % field)
-        found_ty = type(package_spec[field])
-        if found_ty != ty:
-            fail("Unexpected output format for `stack ls dependencies json`. Expected field '%s' of type '%s', but got type '%s'." % (field, ty, found_ty))
+    Invokes `fail` on error.
 
-def _compute_dependency_graph(repository_ctx, snapshot, core_packages, versioned_packages, unversioned_packages, vendored_packages, user_components):
-    """Given a list of root packages, compute a dependency graph.
+    Attrs:
+      json: dict, The parsed JSON object.
+      field: string, The name of the field.
+      ty: string, The expected type of the field.
+      fmt: string, Error message format string. E.g. `Error: {error}`.
 
     Returns:
-      dict(name: struct(name, version, versioned_name, deps, is_core_package, sdist)):
-        name: The unversioned package name.
-        version: The version of the package.
-        versioned_name: <name>-<version>.
-        flags: Cabal flags for this package.
-        deps: The list of library dependencies.
-        tools: The list of build tools.
-        vendored: Label of vendored package, None if not vendored.
-        user_components: Mapping from package names to Cabal components.
-        is_core_package: Whether the package is a core package.
-        sdist: directory name of the unpackaged source distribution or None if core package or vendored.
-
+      The value of the field.
     """
-    all_packages = {}
-    for core_package in core_packages:
-        all_packages[core_package] = struct(
-            name = core_package,
-            components = struct(lib = True, exe = []),
-            version = None,
-            versioned_name = None,
-            flags = repository_ctx.attr.flags.get(core_package, []),
-            deps = [],
-            tools = [],
-            vendored = None,
-            is_core_package = True,
-            sdist = None,
-        )
+    if not field in json:
+        fail(fmt.format(error = "Missing field '{field}'.".format(field = field)))
+    actual_ty = type(json[field])
+    if actual_ty != ty:
+        fail(fmt.format(error = "Expected field '{field}' of type '{expected}', but got '{got}'.".format(
+            field = field,
+            expected = ty,
+            got = actual_ty,
+        )))
+    return json[field]
 
-    if not versioned_packages and not unversioned_packages and not vendored_packages:
-        return all_packages
+def _parse_package_spec(package_spec):
+    """Parse a package description from `stack ls dependencies json`.
+
+    The definition of the JSON format can be found in the `stack` sources:
+    https://github.com/commercialhaskell/stack/blob/v2.3.1/src/Stack/Dot.hs#L173-L198
+    """
+    errmsg = "Unexpected output format for `stack ls dependencies json` in {context}: {{error}}"
+
+    # Parse simple fields.
+    parsed = {
+        field: _parse_json_field(
+            package_spec,
+            field,
+            ty,
+            errmsg.format(context = "package description"),
+        )
+        for (field, ty) in [("name", "string"), ("version", "string"), ("dependencies", "list")]
+    }
+
+    # Parse location field.
+    location = {}
+    if parsed["name"] in _CORE_PACKAGES or not "location" in package_spec:
+        location["type"] = "core"
+    else:
+        location_type = _parse_json_field(
+            package_spec["location"],
+            "type",
+            "string",
+            errmsg.format(context = "location description"),
+        )
+        if location_type == "project package":
+            location["type"] = "vendored"
+        elif location_type == "hackage":
+            location["type"] = location_type
+            url_prefix = _parse_json_field(
+                package_spec["location"],
+                "url",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
+            location["url"] = url_prefix + "/{name}-{version}.tar.gz".format(**parsed)
+            # stack does not expose sha-256, see https://github.com/commercialhaskell/stack/issues/5274
+
+        elif location_type == "archive":
+            location["type"] = location_type
+            location["url"] = _parse_json_field(
+                package_spec["location"],
+                "url",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
+            # stack does not yet expose sha-256, see https://github.com/commercialhaskell/stack/pull/5280
+
+        elif location_type in ["git", "hg"]:
+            location["type"] = location_type
+            location["url"] = _parse_json_field(
+                package_spec["location"],
+                "url",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
+            location["commit"] = _parse_json_field(
+                package_spec["location"],
+                "commit",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
+            location["subdir"] = _parse_json_field(
+                package_spec["location"],
+                "subdir",
+                "string",
+                errmsg.format(context = location_type + " location description"),
+            )
+        else:
+            error = "Unexpected location type '{}'.".format(location_type)
+            fail(errmsg.format(context = "location description").format(error = error))
+
+    parsed["location"] = location
+
+    return parsed
+
+def _resolve_packages(
+        repository_ctx,
+        snapshot,
+        core_packages,
+        versioned_packages,
+        unversioned_packages,
+        vendored_packages):
+    """Invoke stack to determine package versions and dependencies.
+
+    Attrs:
+      snapshot: The Stackage snapshot, name or path to custom snapshot.
+      core_packages: Core packages requested by the user.
+      versioned_packages: Versioned packages requested by the user.
+      unversioned_packages: Unversioned packages requested by the user.
+      vendored_packages: Vendored packages provided by the user.
+
+    Returns:
+      dict(name: dict(name, version, dependencies, location)):
+        name: string, The unversioned package name.
+        version: string, The version of the package.
+        dependencies: list, Package dependencies.
+        location: dict(type, url?, sha256?, commit?, subdir?):
+          type: One of "core", "vendored", "hackage", "archive", "git", "hg".
+    """
 
     # Create a dummy package depending on all requested packages.
     resolve_package = "rules-haskell-stack-resolve"
@@ -1000,64 +1078,27 @@ library
         stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
     package_specs = json_parse(exec_result.stdout)
-    _validate_package_specs(package_specs)
 
-    # Collect package metadata
-    remaining_components = dict(**user_components)
+    resolved = {}
     for package_spec in package_specs:
-        _validate_package_spec(package_spec)
-        name = package_spec["name"]
-        if name == resolve_package:
+        parsed_spec = _parse_package_spec(package_spec)
+        if parsed_spec["name"] == resolve_package:
             continue
-        version = package_spec["version"]
-        package = "%s-%s" % (name, version)
-        vendored = vendored_packages.get(name, None)
-        is_core_package = name in _CORE_PACKAGES
-        all_packages[name] = struct(
-            name = name,
-            components = _get_components(remaining_components, name),
-            version = version,
-            versioned_name = package,
-            flags = repository_ctx.attr.flags.get(name, []),
-            deps = [
-                dep
-                for dep in package_spec["dependencies"]
-                if _get_components(remaining_components, dep).lib
-            ],
-            tools = [
-                (dep, exe)
-                for dep in package_spec["dependencies"]
-                for exe in _get_components(remaining_components, dep).exe
-            ],
-            vendored = vendored,
-            is_core_package = is_core_package,
-            sdist = None if is_core_package or vendored != None else package,
-        )
-        remaining_components.pop(name, None)
+        resolved[parsed_spec["name"]] = parsed_spec
 
-        if is_core_package or vendored != None:
-            continue
+    # Sort the items to make sure that generated outputs are deterministic.
+    return {name: resolved[name] for name in sorted(resolved.keys())}
 
-        if version == "<unknown>":
-            fail("""\
-Could not resolve version of {}. It is not in the snapshot.
-Specify a fully qualified package name of the form <package>-<version>.
-            """.format(package))
-
-    for package in remaining_components.keys():
-        if not package in _default_components:
-            fail("Unknown package: %s" % package, "components")
-
-    # Unpack all remote packages.
+def _download_packages(repository_ctx, snapshot, resolved):
+    """Download remote packages using `stack unpack`."""
     remote_packages = [
-        package.name
-        for package in all_packages.values()
-        if package.sdist != None
+        package["name"]
+        for package in resolved.values()
+        if package["location"]["type"] not in ["core", "vendored"]
     ]
+    stack = [repository_ctx.path(repository_ctx.attr.stack)]
     if remote_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["--resolver", snapshot, "unpack"] + remote_packages)
-
-    return all_packages
 
 def _invert(d):
     """Invert a dictionary."""
@@ -1091,29 +1132,45 @@ def _to_string_keyed_label_list_dict(d):
 def _label_to_string(label):
     return "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
 
-def _stack_snapshot_impl(repository_ctx):
-    if repository_ctx.attr.snapshot and repository_ctx.attr.local_snapshot:
+def _parse_stack_snapshot(repository_ctx, snapshot, local_snapshot):
+    if snapshot and local_snapshot:
         fail("Please specify either snapshot or local_snapshot, but not both.")
-    elif repository_ctx.attr.snapshot:
-        snapshot = repository_ctx.attr.snapshot
-    elif repository_ctx.attr.local_snapshot:
-        snapshot = repository_ctx.path(repository_ctx.attr.local_snapshot)
+    elif snapshot:
+        snapshot = snapshot
+    elif local_snapshot:
+        snapshot = repository_ctx.path(local_snapshot)
     else:
         fail("Please specify one of snapshot or local_snapshot")
+    return snapshot
 
-    # Enforce dependency on stack_update
-    repository_ctx.read(repository_ctx.attr.stack_update)
+def _parse_packages_list(packages, vendored_packages):
+    """Parse the `packages` attribute to `stack_snapshot`.
 
-    vendored_packages = _invert(repository_ctx.attr.vendored_packages)
-    packages = repository_ctx.attr.packages
+    Validates that there are no duplicates between `packages` and
+    `vendored_packages`.
+
+    Args:
+      packages: The list of requested packages versioned or unversioned.
+      vendored_packages: The dict of provided vendored packages.
+
+    Returns:
+      struct(all, core, versioned, unversioned):
+        all: The unversioned names of all requested packages.
+        core: The unversioned names of requested core packages.
+        versioned: The versioned names of requested versioned packages.
+        unversioned: The unversioned names of requested unversioned packages.
+    """
+    all_packages = []
     core_packages = []
     versioned_packages = []
     unversioned_packages = []
+
     for package in packages:
         has_version = _has_version(package)
         unversioned = _chop_version(package) if has_version else package
         if unversioned in vendored_packages:
             fail("Duplicate package '{}'. Packages may not be listed in both 'packages' and 'vendored_packages'.".format(package))
+        all_packages.append(unversioned)
         if unversioned in _CORE_PACKAGES:
             if has_version:
                 fail("{} is a core package, built into GHC. Its version is determined entirely by the version of GHC you are using. You cannot pin it to {}.".format(unversioned, _version(package)))
@@ -1122,19 +1179,50 @@ def _stack_snapshot_impl(repository_ctx):
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)
+
+    return struct(
+        all = all_packages,
+        core = core_packages,
+        versioned = versioned_packages,
+        unversioned = unversioned_packages,
+    )
+
+def _stack_snapshot_impl(repository_ctx):
+    snapshot = _parse_stack_snapshot(
+        repository_ctx,
+        repository_ctx.attr.snapshot,
+        repository_ctx.attr.local_snapshot,
+    )
+
+    # Enforce dependency on stack_update
+    repository_ctx.read(repository_ctx.attr.stack_update)
+
+    vendored_packages = _invert(repository_ctx.attr.vendored_packages)
+    packages = _parse_packages_list(
+        repository_ctx.attr.packages,
+        vendored_packages,
+    )
+    resolved = _resolve_packages(
+        repository_ctx,
+        snapshot,
+        packages.core,
+        packages.versioned,
+        packages.unversioned,
+        vendored_packages,
+    )
+    _download_packages(repository_ctx, snapshot, resolved)
+
     user_components = {
         name: _parse_components(name, components)
         for (name, components) in repository_ctx.attr.components.items()
     }
-    all_packages = _compute_dependency_graph(
-        repository_ctx,
-        snapshot,
-        core_packages,
-        versioned_packages,
-        unversioned_packages,
-        vendored_packages,
-        user_components,
-    )
+    all_components = {}
+    for (name, spec) in resolved.items():
+        all_components[name] = _get_components(user_components, name)
+        user_components.pop(name, None)
+    for package in user_components.keys():
+        if not package in _default_components:
+            fail("Unknown package: %s" % package, "components")
 
     extra_deps = _to_string_keyed_label_list_dict(repository_ctx.attr.extra_deps)
     tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
@@ -1142,18 +1230,30 @@ def _stack_snapshot_impl(repository_ctx):
     # Write out dependency graph as importable Starlark value.
     repository_ctx.file(
         "packages.bzl",
-        "packages = " + repr({
-            package.name: struct(
-                name = package.name,
-                version = package.version,
-                library = package.components.lib,
-                executables = package.components.exe,
-                deps = [Label("@{}//:{}".format(repository_ctx.name, dep)) for dep in package.deps],
-                tools = [Label("@{}-exe//{}:{}".format(repository_ctx.name, dep, exe)) for (dep, exe) in package.tools],
-                flags = package.flags,
-            )
-            for package in all_packages.values()
-        }),
+        """\
+packages = {
+    %s
+}
+""" % ",\n    ".join([
+            '"%s": ' % name + repr(struct(
+                name = name,
+                version = spec["version"],
+                library = all_components[name].lib,
+                executables = all_components[name].exe,
+                deps = [
+                    Label("@{}//:{}".format(repository_ctx.name, dep))
+                    for dep in spec["dependencies"]
+                    if all_components[dep].lib
+                ],
+                tools = [
+                    Label("@{}-exe//{}:{}".format(repository_ctx.name, dep, exe))
+                    for dep in spec["dependencies"]
+                    for exe in all_components[dep].exe
+                ],
+                flags = repository_ctx.attr.flags.get(name, []),
+            ))
+            for (name, spec) in resolved.items()
+        ]),
         executable = False,
     )
 
@@ -1163,24 +1263,26 @@ def _stack_snapshot_impl(repository_ctx):
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary", "haskell_cabal_library")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_library")
 """)
-    for package in all_packages.values():
-        if package.name in packages or package.versioned_name in packages or package.vendored != None:
+    for (name, spec) in resolved.items():
+        version = spec["version"]
+        package = "%s-%s" % (name, version)
+        if name in packages.all or name in vendored_packages:
             visibility = ["//visibility:public"]
         else:
             visibility = ["//visibility:private"]
-        if package.vendored != None:
+        if name in vendored_packages:
             build_file_builder.append(
                 """
 alias(name = "{name}", actual = "{actual}", visibility = {visibility})
-""".format(name = package.name, actual = package.vendored, visibility = visibility),
+""".format(name = name, actual = vendored_packages[name], visibility = visibility),
             )
-        elif package.is_core_package:
+        elif name in _CORE_PACKAGES:
             build_file_builder.append(
                 """
 haskell_toolchain_library(name = "{name}", visibility = {visibility})
-""".format(name = package.name, visibility = visibility),
+""".format(name = name, visibility = visibility),
             )
-        elif package.name in _EMPTY_PACKAGES_BLACKLIST:
+        elif name in _EMPTY_PACKAGES_BLACKLIST:
             build_file_builder.append(
                 """
 haskell_library(
@@ -1189,25 +1291,30 @@ haskell_library(
     visibility = {visibility},
 )
 """.format(
-                    name = package.name,
-                    version = package.version,
+                    name = name,
+                    version = version,
                     visibility = visibility,
                 ),
             )
         else:
-            library_deps = package.deps + [
+            library_deps = [
+                dep
+                for dep in spec["dependencies"]
+                if all_components[dep].lib
+            ] + [
                 _label_to_string(label)
-                for label in extra_deps.get(package.name, [])
+                for label in extra_deps.get(name, [])
             ]
             library_tools = [
                 "_%s_exe_%s" % (dep, exe)
-                for (dep, exe) in package.tools
+                for dep in spec["dependencies"]
+                for exe in all_components[dep].exe
             ] + tools
             setup_deps = [
-                _label_to_string(Label("@{}//:{}".format(repository_ctx.name, package.name)).relative(label))
-                for label in repository_ctx.attr.setup_deps.get(package.name, [])
+                _label_to_string(Label("@{}//:{}".format(repository_ctx.name, name)).relative(label))
+                for label in repository_ctx.attr.setup_deps.get(name, [])
             ]
-            if package.components.lib:
+            if all_components[name].lib:
                 build_file_builder.append(
                     """
 haskell_cabal_library(
@@ -1225,11 +1332,11 @@ haskell_cabal_library(
     unique_name = True,
 )
 """.format(
-                        name = package.name,
-                        version = package.version,
+                        name = name,
+                        version = version,
                         haddock = repr(repository_ctx.attr.haddock),
-                        flags = package.flags,
-                        dir = package.sdist,
+                        flags = repository_ctx.attr.flags.get(name, []),
+                        dir = package,
                         deps = library_deps,
                         setup_deps = setup_deps,
                         tools = library_tools,
@@ -1237,15 +1344,14 @@ haskell_cabal_library(
                         verbose = repr(repository_ctx.attr.verbose),
                     ),
                 )
-                if package.versioned_name != None:
-                    build_file_builder.append(
-                        """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
-                            name = package.versioned_name,
-                            actual = package.name,
-                            visibility = visibility,
-                        ),
-                    )
-            for exe in package.components.exe:
+                build_file_builder.append(
+                    """alias(name = "{name}", actual = ":{actual}", visibility = {visibility})""".format(
+                        name = package,
+                        actual = name,
+                        visibility = visibility,
+                    ),
+                )
+            for exe in all_components[name].exe:
                 build_file_builder.append(
                     """
 haskell_cabal_binary(
@@ -1261,11 +1367,11 @@ haskell_cabal_binary(
 )
 """.format(
                         workspace = repository_ctx.name,
-                        name = package.name,
+                        name = name,
                         exe = exe,
-                        flags = package.flags,
-                        dir = package.sdist,
-                        deps = library_deps + ([package.name] if package.components.lib else []),
+                        flags = repository_ctx.attr.flags.get(name, []),
+                        dir = package,
+                        deps = library_deps + ([name] if all_components[name].lib else []),
                         setup_deps = setup_deps,
                         tools = library_tools,
                         visibility = visibility,
