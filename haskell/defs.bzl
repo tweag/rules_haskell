@@ -301,20 +301,20 @@ def haskell_binary(
         for attr in ["testonly", "tags"]
         if attr in kwargs
     }
-    native.alias(
-        # XXX Temporary backwards compatibility hack. Remove eventually.
-        # See https://github.com/tweag/rules_haskell/pull/460.
-        name = "%s-repl" % name,
-        actual = "%s@repl" % name,
-        **repl_kwargs
-    )
-    haskell_repl(
-        name = "%s@repl" % name,
-        deps = [name],
-        experimental_from_source = [":%s" % name],
-        repl_ghci_args = repl_ghci_args,
-        **repl_kwargs
-    )
+    # native.alias(
+    #     # XXX Temporary backwards compatibility hack. Remove eventually.
+    #     # See https://github.com/tweag/rules_haskell/pull/460.
+    #     name = "%s-repl" % name,
+    #     actual = "%s@repl" % name,
+    #     **repl_kwargs
+    # )
+    # haskell_repl(
+    #     name = "%s@repl" % name,
+    #     deps = [name],
+    #     experimental_from_source = [":%s" % name],
+    #     repl_ghci_args = repl_ghci_args,
+    #     **repl_kwargs
+    # )
 
 def haskell_test(
         name,

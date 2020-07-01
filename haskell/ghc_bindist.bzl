@@ -260,6 +260,7 @@ def _ghc_bindist_impl(ctx):
         execute_or_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
 
     # On Windows the bindist already contains the built executables
+    # TODO run this entire step in a proper build action
     if os != "windows":
         # IMPORTANT: all these scripts have to be compatible with BSD
         # tools! This means that sed -i always takes an argument.
