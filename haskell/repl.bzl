@@ -97,6 +97,22 @@ def _merge_runfiles(runfiles_list):
             result = result.merge(runfiles)
     return result
 
+def _data_runfiles(ctx, rule, attr):
+    """Generate runfiles for a data attribute.
+
+    Attrs:
+      ctx: The rule context.
+      rule: The rule object, `ctx` for a rule, `ctx.rule` for an aspect.
+      attr: The attribute name of the data attribute.
+
+    Returns:
+      A runfiles object capturing data files and data runfiles.
+    """
+    return _merge_runfiles(
+        [ctx.runfiles(files = getattr(rule.files, attr, []))] +
+        [data[DefaultInfo].default_runfiles for data in getattr(rule.attr, attr, [])],
+    )
+
 def _merge_HaskellReplLoadInfo(load_infos):
     source_files = depset()
     import_dirs = depset()
@@ -173,10 +189,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
             ]),
             compiler_flags = hs_info.user_compile_flags,
             repl_ghci_args = hs_info.user_repl_flags,
-            data_runfiles = _merge_runfiles(
-                [ctx.runfiles(files = getattr(ctx.rule.files, "data", []))] +
-                [data[DefaultInfo].default_runfiles for data in getattr(ctx.rule.attr, "data", [])],
-            ),
+            data_runfiles = _data_runfiles(ctx, ctx.rule, "data"),
         )
     if HaskellLibraryInfo in target:
         lib_info = target[HaskellLibraryInfo]
@@ -425,6 +438,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
     if ctx.attr.collect_data:
         runfiles.append(repl_info.load_info.data_runfiles)
         runfiles.append(repl_info.dep_info.runfiles)
+        runfiles.append(_data_runfiles(ctx, ctx, "data"))
 
     return [DefaultInfo(
         executable = output,
