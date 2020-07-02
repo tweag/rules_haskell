@@ -391,18 +391,47 @@ any given target (or indeed all targets), like in the following:
 Linting your code
 -----------------
 
-The `haskell_lint`_ rule does not build code but runs the GHC
-typechecker on all listed dependencies. Warnings are treated as
-errors.
+There is currently no dedicated rule for linting Haskell code. You can
+apply warning flags using the ``compiler_flags`` attribute, for example ::
 
-Alternatively, you can directly check a target using
+  haskell_library(
+      ...
+      compiler_flags = [
+          "-Werror",
+          "-Wall",
+          "-Wcompat",
+          "-Wincomplete-record-updates",
+          "-Wincomplete-uni-patterns",
+          "-Wredundant-constraints",
+          "-Wnoncanonical-monad-instances",
+      ],
+      ghci_repl_flags = ["-Wwarn"],
+  )
 
-.. code-block:: console
+For larger projects it can make sense to define a custom macro that
+applies such common flags by default. ::
 
-  $ bazel build //my/haskell:target \
-      --aspects @rules_haskell//haskell:defs.bzl%haskell_lint_aspect
+  common_compiler_flags = [ ... ]
 
-.. _haskell_lint: http://api.haskell.build/haskell/lint.html#haskell_lint
+  def my_haskell_library(name, compiler_flags = [], ...):
+      haskell_library(
+          name = name,
+          compiler_flags = common_compiler_flags + compiler_flags,
+          ...
+      )
+
+There is currently no builtin support for invoking ``hlint``. However, you
+can invoke ``hlint`` in a CI step outside of Bazel. Refer to the `hlint
+documentation`_ for further details.
+
+.. _hlint documentation: https://github.com/ndmitchell/hlint#readme
+
+Refer to the `rules_haskell issue tracker`__ for a discussion around
+adding an ``hlint`` rule.
+
+.. _hlint issue: https://github.com/tweag/rules_haskell/issues/1140
+
+__ `hlint issue`_
 
 Using conditional compilation
 -----------------------------
