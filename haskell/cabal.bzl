@@ -1385,7 +1385,7 @@ def _snapshot_json_checksum(all_cabal_hashes, resolved):
     }))
 
 def _write_snapshot_json(repository_ctx, all_cabal_hashes, resolved):
-    """Write a snapshot.json file.
+    """Write a snapshot.json file into the remote repository root.
 
     Includes a checksum of the stored data used for validation on loading.
     """
