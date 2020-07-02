@@ -11,6 +11,7 @@ module Bazel.Runfiles
     , env
     ) where
 
+import Bazel.Arg0 (getArg0)
 import Control.Monad (guard)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Control.Monad.IO.Class (liftIO)
@@ -20,9 +21,9 @@ import Data.List (find, isPrefixOf, isSuffixOf)
 import Data.Maybe (fromMaybe)
 import GHC.Stack
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
-import System.Environment (getExecutablePath, lookupEnv)
+import System.Environment (lookupEnv)
 import qualified System.FilePath
-import System.FilePath (FilePath, (</>), (<.>), addTrailingPathSeparator, takeFileName)
+import System.FilePath ((</>), (<.>), addTrailingPathSeparator, takeFileName)
 import System.Info (os)
 
 -- | Reference to Bazel runfiles, runfiles root or manifest file.
@@ -101,7 +102,7 @@ manifestOnlyEnv = "RUNFILES_MANIFEST_ONLY"
 -- https://docs.google.com/document/d/e/2PACX-1vSDIrFnFvEYhKsCMdGdD40wZRBX3m3aZ5HhVj4CtHPmiXKDCxioTUbYsDydjKtFDAzER5eg7OjJWs3V/pub
 create :: HasCallStack => IO Runfiles
 create = do
-    exePath <- getExecutablePath
+    exePath <- getArg0
 
     mbRunfiles <- runMaybeT $ asum
       [ do
@@ -150,6 +151,8 @@ create = do
 
     case mbRunfiles of
         Just runfiles -> pure runfiles
+        -- TODO: According to the specification this should not fail, but
+        -- > 3. assume the binary has no runfiles.
         Nothing -> error "Unable to locate runfiles directory or manifest"
 
 -- | Check if the given directory contains at least one data file.
