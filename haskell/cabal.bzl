@@ -2014,10 +2014,20 @@ def stack_snapshot(
     based on the specified snapshot. You can generate a `stack_snapshot.json`
     file to avoid invoking `stack` on every fetch and instead pin the outcome
     in a file that can be checked into revision control. Execute the following
-    command and then specify the `stack_snapshot_json` attribute:
+    command:
 
     ```
     bazel run @stackage-unpinned//:pin
+    ```
+
+    Then specify the `stack_snapshot_json` attribute to point to the generated
+    file:
+
+    ```
+    stack_snapshot(
+        ...
+        stack_snapshot_json = "//:stackage_snapshot.json",
+    )
     ```
 
     By default `stack_snapshot` defines a library target for each package. If a
