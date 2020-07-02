@@ -51,6 +51,15 @@ main = hspec $ do
     it "compiler flags" $ do
       assertSuccess (bazel ["run", "//tests/repl-flags:compiler_flags@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
+    -- Test make variable expansion in `compiler_flags` and `repl_ghci_args`.
+    describe "make variables" $ do
+      it "compiler flags" $ do
+        assertSuccess (bazel ["run", "//tests/repl-make-variables:test-compiler-flags@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
+      it "indirect repl flags" $ do
+        assertSuccess (bazel ["run", "//tests/repl-make-variables:repl-indirect-flags", "--", "-ignore-dot-ghci", "-e", ":main"])
+      it "direct repl flags" $ do
+        assertSuccess (bazel ["run", "//tests/repl-make-variables:repl-direct-flags", "--", "-ignore-dot-ghci", "-e", ":main"])
+
     -- Test `repl_ghci_args` from toolchain and rule for REPL
     it "repl flags" $ do
       assertSuccess (bazel ["run", "//tests/repl-flags:repl_flags@repl", "--", "-ignore-dot-ghci", "-e", "foo"])

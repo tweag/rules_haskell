@@ -312,7 +312,7 @@ def haskell_binary(
         name = "%s@repl" % name,
         deps = [name],
         experimental_from_source = [":%s" % name],
-        repl_ghci_args = repl_ghci_args,
+        repl_ghci_args = [],
         **repl_kwargs
     )
 
@@ -419,7 +419,7 @@ def haskell_test(
         name = "%s@repl" % name,
         deps = [name],
         experimental_from_source = [":%s" % name],
-        repl_ghci_args = repl_ghci_args,
+        repl_ghci_args = [],
         testonly = kwargs.get("testonly", True),
         **repl_kwargs
     )
@@ -529,7 +529,7 @@ def haskell_library(
         name = "%s@repl" % name,
         deps = [name],
         experimental_from_source = [":%s" % name],
-        repl_ghci_args = repl_ghci_args,
+        repl_ghci_args = [],
         **repl_kwargs
     )
 

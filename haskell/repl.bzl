@@ -5,6 +5,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load(":cc.bzl", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
+load(":private/expansions.bzl", "expand_make_variables")
 load(
     ":private/path_utils.bzl",
     "ln",
@@ -153,8 +154,8 @@ def _create_HaskellReplCollectInfo(target, ctx):
                 for dep in getattr(ctx.rule.attr, "deps", [])
                 if CcInfo in dep and not HaskellInfo in dep
             ]),
-            compiler_flags = getattr(ctx.rule.attr, "compiler_flags", []),
-            repl_ghci_args = getattr(ctx.rule.attr, "repl_ghci_args", []),
+            compiler_flags = hs_info.user_compile_flags,
+            repl_ghci_args = hs_info.user_repl_flags,
         )
     if HaskellLibraryInfo in target:
         lib_info = target[HaskellLibraryInfo]
@@ -359,12 +360,18 @@ def _create_repl(hs, posix, ctx, repl_info, output):
     # negative flag in `repl_ghci_args` can disable a positive flag set
     # in `compiler_flags`, such as `-XNoOverloadedStrings` will disable
     # `-XOverloadedStrings`.
+    repl_ghci_args = expand_make_variables(
+        "repl_ghci_args",
+        ctx,
+        ctx.attr.repl_ghci_args,
+        [ctx.attr.data],
+    )
     quote_args = (
         hs.toolchain.compiler_flags +
         repl_info.load_info.compiler_flags +
         hs.toolchain.repl_ghci_args +
         repl_info.load_info.repl_ghci_args +
-        ctx.attr.repl_ghci_args
+        repl_ghci_args
     )
 
     hs.actions.expand_template(
@@ -493,6 +500,10 @@ haskell_repl = rule(
             ],
             doc = "List of Haskell targets to load into the REPL",
         ),
+        "data": attr.label_list(
+            allow_files = True,
+            doc = "See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data). Only available when `collect_data = True`.",
+        ),
         "experimental_from_source": attr.string_list(
             doc = """White-list of targets to load by source.
 
@@ -518,7 +529,7 @@ haskell_repl = rule(
             default = [],
         ),
         "repl_ghci_args": attr.string_list(
-            doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
+            doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
             default = [],
         ),
         "repl_ghci_commands": attr.string_list(
