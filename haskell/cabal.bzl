@@ -896,7 +896,7 @@ def _get_components(components, package):
     """
     return components.get(package, _default_components.get(package, struct(lib = True, exe = [])))
 
-def _parse_json_field(json, field, ty, fmt):
+def _parse_json_field(json, field, ty, errmsg):
     """Read and type-check a field from a JSON object.
 
     Invokes `fail` on error.
@@ -905,16 +905,16 @@ def _parse_json_field(json, field, ty, fmt):
       json: dict, The parsed JSON object.
       field: string, The name of the field.
       ty: string, The expected type of the field.
-      fmt: string, Error message format string. E.g. `Error: {error}`.
+      errmsg: string, Error message format string. E.g. `Error: {error}`.
 
     Returns:
       The value of the field.
     """
     if not field in json:
-        fail(fmt.format(error = "Missing field '{field}'.".format(field = field)))
+        fail(errmsg.format(error = "Missing field '{field}'.".format(field = field)))
     actual_ty = type(json[field])
     if actual_ty != ty:
-        fail(fmt.format(error = "Expected field '{field}' of type '{expected}', but got '{got}'.".format(
+        fail(errmsg.format(error = "Expected field '{field}' of type '{expected}', but got '{got}'.".format(
             field = field,
             expected = ty,
             got = actual_ty,
@@ -946,20 +946,20 @@ def _parse_package_spec(package_spec):
         location["type"] = "core"
     else:
         location_type = _parse_json_field(
-            package_spec["location"],
-            "type",
-            "string",
-            errmsg.format(context = "location description"),
+            json = package_spec["location"],
+            field = "type",
+            ty = "string",
+            errmsg = errmsg.format(context = "location description"),
         )
         if location_type == "project package":
             location["type"] = "vendored"
         elif location_type == "hackage":
             location["type"] = location_type
             url_prefix = _parse_json_field(
-                package_spec["location"],
-                "url",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "url",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
             location["url"] = url_prefix + "/{name}-{version}.tar.gz".format(**parsed)
             # stack does not expose sha-256, see https://github.com/commercialhaskell/stack/issues/5274
@@ -967,32 +967,32 @@ def _parse_package_spec(package_spec):
         elif location_type == "archive":
             location["type"] = location_type
             location["url"] = _parse_json_field(
-                package_spec["location"],
-                "url",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "url",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
             # stack does not yet expose sha-256, see https://github.com/commercialhaskell/stack/pull/5280
 
         elif location_type in ["git", "hg"]:
             location["type"] = location_type
             location["url"] = _parse_json_field(
-                package_spec["location"],
-                "url",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "url",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
             location["commit"] = _parse_json_field(
-                package_spec["location"],
-                "commit",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "commit",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
             location["subdir"] = _parse_json_field(
-                package_spec["location"],
-                "subdir",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "subdir",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
         else:
             error = "Unexpected location type '{}'.".format(location_type)
@@ -1109,7 +1109,7 @@ def _pin_packages(repository_ctx, resolved):
         all-cabal-hashes: URL to the current revision of all-cabal-hashes.
         resolved: the `resolved` argument, extended with reproducibility information.
     """
-    errmsg = "Unexpected format in all-cabal-hashes: %s"
+    errmsg = "Unexpected format in {context}: {{error}}"
 
     # Determine current git revision of all-cabal-hashes.
     repository_ctx.download(
@@ -1118,8 +1118,18 @@ def _pin_packages(repository_ctx, resolved):
         executable = False,
     )
     hashes_json = json_parse(repository_ctx.read("all-cabal-hashes-hackage.json"))
-    hashes_object = _parse_json_field(hashes_json, "object", "dict", "all-cabal-hashes hackage branch")
-    hashes_commit = _parse_json_field(hashes_object, "sha", "string", "all-cabal-hashes hackage branch")
+    hashes_object = _parse_json_field(
+        json = hashes_json,
+        field = "object",
+        ty = "dict",
+        errmsg = errmsg.format(context = "all-cabal-hashes hackage branch"),
+    )
+    hashes_commit = _parse_json_field(
+        json = hashes_object,
+        field = "sha",
+        ty = "string",
+        errmsg = errmsg.format(context = "all-cabal-hashes hackage branch"),
+    )
     hashes_url = "https://raw.githubusercontent.com/commercialhaskell/all-cabal-hashes/" + hashes_commit
 
     resolved = dict(**resolved)
@@ -1135,14 +1145,29 @@ def _pin_packages(repository_ctx, resolved):
                 executable = False,
             )
             json = json_parse(repository_ctx.read("{name}-{version}.json".format(**spec)))
-            hashes = _parse_json_field(json, "package-hashes", "dict", errmsg)
+            hashes = _parse_json_field(
+                json = json,
+                field = "package-hashes",
+                ty = "dict",
+                errmsg = errmsg.format(context = "all-cabal-hashes package description"),
+            )
 
             # Cabal file downloads are not reproducible due to Hackage revisions.
             # We pin the git revision of all-cabal-hashes and sha256 of the Cabal file.
             cabal_url = "{url}/{name}/{version}/{name}.cabal".format(url = hashes_url, **spec)
             spec["pinned"] = {
-                "url": _parse_json_field(json, "package-locations", "list", errmsg),
-                "sha256": _parse_json_field(hashes, "SHA256", "string", errmsg),
+                "url": _parse_json_field(
+                    json = json,
+                    field = "package-locations",
+                    ty = "list",
+                    errmsg = errmsg.format(context = "all-cabal-hashes package description"),
+                ),
+                "sha256": _parse_json_field(
+                    hashes,
+                    "SHA256",
+                    "string",
+                    errmsg = errmsg.format(context = "all-cabal-hashes package hashes"),
+                ),
                 "cabal-sha256": repository_ctx.download(
                     cabal_url,
                     output = "{name}-{version}.cabal".format(**spec),
@@ -1406,9 +1431,24 @@ Try to regenerate it by running the following command:
         fail(errmsg.format(error = "Failed to parse JSON."))
 
     # Read snapshot.json data and validate required fields.
-    expected_checksum = _parse_json_field(pinned, "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY", "int", errmsg)
-    all_cabal_hashes = _parse_json_field(pinned, "all-cabal-hashes", "string", errmsg)
-    raw_resolved = _parse_json_field(pinned, "resolved", "dict", errmsg)
+    expected_checksum = _parse_json_field(
+        json = pinned,
+        field = "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY",
+        ty = "int",
+        errmsg = errmsg,
+    )
+    all_cabal_hashes = _parse_json_field(
+        json = pinned,
+        field = "all-cabal-hashes",
+        ty = "string",
+        errmsg = errmsg,
+    )
+    raw_resolved = _parse_json_field(
+        json = pinned,
+        field = "resolved",
+        ty = "dict",
+        errmsg = errmsg,
+    )
     resolved = {}
     for name in sorted(raw_resolved.keys()):
         raw_spec = raw_resolved[name]
@@ -1417,36 +1457,86 @@ Try to regenerate it by running the following command:
             for (field, ty) in [("name", "string"), ("version", "string"), ("dependencies", "list")]
         }
 
-        raw_location = _parse_json_field(raw_spec, "location", "dict", errmsg)
-        location_type = _parse_json_field(raw_location, "type", "string", errmsg)
+        raw_location = _parse_json_field(
+            json = raw_spec,
+            field = "location",
+            ty = "dict",
+            errmsg = errmsg,
+        )
+        location_type = _parse_json_field(
+            json = raw_location,
+            field = "type",
+            ty = "string",
+            errmsg = errmsg,
+        )
         if location_type in ["core", "vendored"]:
             spec["location"] = {"type": location_type}
         elif location_type in ["hackage", "archive"]:
             spec["location"] = {
                 "type": location_type,
-                "url": _parse_json_field(raw_location, "url", "string", errmsg),
+                "url": _parse_json_field(
+                    json = raw_location,
+                    field = "url",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
             }
         elif location_type in ["git", "hg"]:
             spec["location"] = {
                 "type": location_type,
-                "url": _parse_json_field(raw_location, "url", "string", errmsg),
-                "commit": _parse_json_field(raw_location, "commit", "string", errmsg),
-                "subdir": _parse_json_field(raw_location, "subdir", "string", errmsg),
+                "url": _parse_json_field(
+                    json = raw_location,
+                    field = "url",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
+                "commit": _parse_json_field(
+                    json = raw_location,
+                    field = "commit",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
+                "subdir": _parse_json_field(
+                    json = raw_location,
+                    field = "subdir",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
             }
         else:
             fail(errmsg.format(error = "Unknown location type '{}'.".format(location_type)))
 
         if location_type == "hackage":
-            raw_pinned = _parse_json_field(raw_spec, "pinned", "dict", errmsg)
+            raw_pinned = _parse_json_field(
+                json = raw_spec,
+                field = "pinned",
+                ty = "dict",
+                errmsg = errmsg,
+            )
             spec["pinned"] = {
                 field: _parse_json_field(raw_pinned, field, ty, errmsg)
                 for (field, ty) in [("url", "list"), ("sha256", "string"), ("cabal-sha256", "string")]
             }
         elif location_type == "archive":
-            raw_pinned = _parse_json_field(raw_spec, "pinned", "dict", errmsg)
+            raw_pinned = _parse_json_field(
+                json = raw_spec,
+                field = "pinned",
+                ty = "dict",
+                errmsg = errmsg,
+            )
             spec["pinned"] = {
-                "sha256": _parse_json_field(raw_pinned, "sha256", "string", errmsg),
-                "strip-prefix": _parse_json_field(raw_pinned, "strip-prefix", "string", errmsg),
+                "sha256": _parse_json_field(
+                    json = raw_pinned,
+                    field = "sha256",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
+                "strip-prefix": _parse_json_field(
+                    json = raw_pinned,
+                    field = "strip-prefix",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
             }
 
         resolved[name] = spec
