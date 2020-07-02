@@ -896,7 +896,7 @@ def _get_components(components, package):
     """
     return components.get(package, _default_components.get(package, struct(lib = True, exe = [])))
 
-def _parse_json_field(json, field, ty, fmt):
+def _parse_json_field(json, field, ty, errmsg):
     """Read and type-check a field from a JSON object.
 
     Invokes `fail` on error.
@@ -905,16 +905,16 @@ def _parse_json_field(json, field, ty, fmt):
       json: dict, The parsed JSON object.
       field: string, The name of the field.
       ty: string, The expected type of the field.
-      fmt: string, Error message format string. E.g. `Error: {error}`.
+      errmsg: string, Error message format string. E.g. `Error: {error}`.
 
     Returns:
       The value of the field.
     """
     if not field in json:
-        fail(fmt.format(error = "Missing field '{field}'.".format(field = field)))
+        fail(errmsg.format(error = "Missing field '{field}'.".format(field = field)))
     actual_ty = type(json[field])
     if actual_ty != ty:
-        fail(fmt.format(error = "Expected field '{field}' of type '{expected}', but got '{got}'.".format(
+        fail(errmsg.format(error = "Expected field '{field}' of type '{expected}', but got '{got}'.".format(
             field = field,
             expected = ty,
             got = actual_ty,
@@ -946,20 +946,20 @@ def _parse_package_spec(package_spec):
         location["type"] = "core"
     else:
         location_type = _parse_json_field(
-            package_spec["location"],
-            "type",
-            "string",
-            errmsg.format(context = "location description"),
+            json = package_spec["location"],
+            field = "type",
+            ty = "string",
+            errmsg = errmsg.format(context = "location description"),
         )
         if location_type == "project package":
             location["type"] = "vendored"
         elif location_type == "hackage":
             location["type"] = location_type
             url_prefix = _parse_json_field(
-                package_spec["location"],
-                "url",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "url",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
             location["url"] = url_prefix + "/{name}-{version}.tar.gz".format(**parsed)
             # stack does not expose sha-256, see https://github.com/commercialhaskell/stack/issues/5274
@@ -967,32 +967,32 @@ def _parse_package_spec(package_spec):
         elif location_type == "archive":
             location["type"] = location_type
             location["url"] = _parse_json_field(
-                package_spec["location"],
-                "url",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "url",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
             # stack does not yet expose sha-256, see https://github.com/commercialhaskell/stack/pull/5280
 
         elif location_type in ["git", "hg"]:
             location["type"] = location_type
             location["url"] = _parse_json_field(
-                package_spec["location"],
-                "url",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "url",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
             location["commit"] = _parse_json_field(
-                package_spec["location"],
-                "commit",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "commit",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
             location["subdir"] = _parse_json_field(
-                package_spec["location"],
-                "subdir",
-                "string",
-                errmsg.format(context = location_type + " location description"),
+                json = package_spec["location"],
+                field = "subdir",
+                ty = "string",
+                errmsg = errmsg.format(context = location_type + " location description"),
             )
         else:
             error = "Unexpected location type '{}'.".format(location_type)
@@ -1093,7 +1093,180 @@ library
     # Sort the items to make sure that generated outputs are deterministic.
     return {name: resolved[name] for name in sorted(resolved.keys())}
 
-def _download_packages(repository_ctx, snapshot, resolved):
+def _pin_packages(repository_ctx, resolved):
+    """Pin resolved packages.
+
+    Extends the package specs with reproducibility information. In case of
+    archive dependencies the SHA-256 of the fetched archive. In case of Hackage
+    dependencies, the SHA-256 of the archive as well as the SHA-256 of the
+    Cabal file of the latest Hackage revision.
+
+    Cabal file downloads are not reproducible due to Hackage revisions. Here we
+    pin the git revision of all-cabal-hashes that contains the used Cabal files.
+
+    Returns:
+      (all-cabal-hashes, resolved)
+        all-cabal-hashes: URL to the current revision of all-cabal-hashes.
+        resolved: the `resolved` argument, extended with reproducibility information.
+    """
+    errmsg = "Unexpected format in {context}: {{error}}"
+
+    # Determine current git revision of all-cabal-hashes.
+    repository_ctx.download(
+        "https://api.github.com/repos/commercialhaskell/all-cabal-hashes/git/ref/heads/hackage",
+        output = "all-cabal-hashes-hackage.json",
+        executable = False,
+    )
+    hashes_json = json_parse(repository_ctx.read("all-cabal-hashes-hackage.json"))
+    hashes_object = _parse_json_field(
+        json = hashes_json,
+        field = "object",
+        ty = "dict",
+        errmsg = errmsg.format(context = "all-cabal-hashes hackage branch"),
+    )
+    hashes_commit = _parse_json_field(
+        json = hashes_object,
+        field = "sha",
+        ty = "string",
+        errmsg = errmsg.format(context = "all-cabal-hashes hackage branch"),
+    )
+    hashes_url = "https://raw.githubusercontent.com/commercialhaskell/all-cabal-hashes/" + hashes_commit
+
+    resolved = dict(**resolved)
+    for (name, spec) in resolved.items():
+        # Determine package sha256
+        if spec["location"]["type"] == "hackage":
+            # stack does not expose sha256, see https://github.com/commercialhaskell/stack/issues/5274
+            # instead we fetch the sha256 from the all-cabal-hashes repository.
+            json_url = "{url}/{name}/{version}/{name}.json".format(url = hashes_url, **spec)
+            repository_ctx.download(
+                json_url,
+                output = "{name}-{version}.json".format(**spec),
+                executable = False,
+            )
+            json = json_parse(repository_ctx.read("{name}-{version}.json".format(**spec)))
+            hashes = _parse_json_field(
+                json = json,
+                field = "package-hashes",
+                ty = "dict",
+                errmsg = errmsg.format(context = "all-cabal-hashes package description"),
+            )
+
+            # Cabal file downloads are not reproducible due to Hackage revisions.
+            # We pin the git revision of all-cabal-hashes and sha256 of the Cabal file.
+            cabal_url = "{url}/{name}/{version}/{name}.cabal".format(url = hashes_url, **spec)
+            spec["pinned"] = {
+                "url": _parse_json_field(
+                    json = json,
+                    field = "package-locations",
+                    ty = "list",
+                    errmsg = errmsg.format(context = "all-cabal-hashes package description"),
+                ),
+                "sha256": _parse_json_field(
+                    hashes,
+                    "SHA256",
+                    "string",
+                    errmsg = errmsg.format(context = "all-cabal-hashes package hashes"),
+                ),
+                "cabal-sha256": repository_ctx.download(
+                    cabal_url,
+                    output = "{name}-{version}.cabal".format(**spec),
+                    executable = False,
+                ).sha256,
+            }
+        elif spec["location"]["type"] == "archive":
+            # stack does not yet expose sha-256, see https://github.com/commercialhaskell/stack/pull/5280
+            # instead we fetch the archive and let Bazel calculate the sha256.
+            sha256 = repository_ctx.download_and_extract(
+                spec["location"]["url"],
+                output = "{name}-{version}".format(**spec),
+            ).sha256
+
+            # stack also doesn't expose any subdirectories that need to be
+            # stripped. Here we assume the project root to be the root
+            # directory or underneath a top-level directory.
+            root = repository_ctx.path("{name}-{version}".format(**spec))
+            cabal_file = "{name}.cabal".format(**spec)
+            if root.get_child(cabal_file).exists:
+                stripPrefix = ""
+            else:
+                subdirs = [
+                    subdir
+                    for subdir in root.readdir()
+                    if subdir.get_child(cabal_file).exists
+                ]
+                if len(subdirs) != 1:
+                    fail("Unsupported archive format at {url}: Expected {cabal} in the root or underneath a top-level directory".format(
+                        url = spec["location"]["url"],
+                        cabal = cabal_file,
+                    ))
+                stripPrefix = subdirs[0].basename
+
+            spec["pinned"] = {
+                "sha256": sha256,
+                "strip-prefix": stripPrefix,
+            }
+        elif spec["location"]["type"] in ["git", "hg"]:
+            # Bazel cannot cache git (or hg) repositories in the repository
+            # cache as of now. Therefore, we fall back to fetching them using
+            # stack rather than Bazel.
+            # See https://github.com/bazelbuild/bazel/issues/5086
+            pass
+
+    return (hashes_url, resolved)
+
+def _download_packages(repository_ctx, snapshot, pinned):
+    """Downlad all remote packages.
+
+    Downloads hackage and archive packages using Bazel, eligible to repository
+    cache. Downloads git and hg packages using `stack unpack`, not eligible to
+    repository cache.
+    """
+    stack_unpack = {}
+    hashes_url = pinned["all-cabal-hashes"]
+
+    # Unpack hackage and archive packages.
+    for package in pinned["resolved"].values():
+        if package["location"]["type"] == "hackage":
+            repository_ctx.download_and_extract(
+                package["pinned"]["url"],
+                output = "{name}-{version}".format(**package),
+                sha256 = package["pinned"]["sha256"],
+                stripPrefix = "{name}-{version}".format(**package),
+            )
+
+            # Overwrite the Cabal file with the pinned revision.
+            repository_ctx.download(
+                "{url}/{name}/{version}/{name}.cabal".format(url = hashes_url, **package),
+                output = "{name}-{version}/{name}.cabal".format(**package),
+                sha256 = package["pinned"]["cabal-sha256"],
+                executable = False,
+            )
+        elif package["location"]["type"] == "archive":
+            repository_ctx.download_and_extract(
+                package["location"]["url"],
+                output = "{name}-{version}".format(**package),
+                sha256 = package["pinned"]["sha256"],
+                stripPrefix = package["pinned"]["strip-prefix"],
+            )
+        elif package["location"]["type"] in ["git", "hg"]:
+            # Unpack remote packages.
+            #
+            # Bazel cannot cache git (or hg) repositories in the repository
+            # cache as of now. Therefore, we fall back to fetching them using
+            # stack rather than Bazel.
+            # See https://github.com/bazelbuild/bazel/issues/5086
+            #
+            # TODO: Implement this using Bazel to avoid `stack update`.
+            stack_unpack[package["name"]] = package
+
+    if stack_unpack:
+        # Enforce dependency on stack_update.
+        # Hard-coded label since `stack_update` is `None` in this case.
+        repository_ctx.read(Label("@rules_haskell_stack_update//:stack_update"))
+        _download_packages_unpinned(repository_ctx, snapshot, stack_unpack)
+
+def _download_packages_unpinned(repository_ctx, snapshot, resolved):
     """Download remote packages using `stack unpack`."""
     remote_packages = [
         package["name"]
@@ -1191,21 +1364,214 @@ def _parse_packages_list(packages, vendored_packages):
         unversioned = unversioned_packages,
     )
 
-def _stack_snapshot_impl(repository_ctx):
+def _pretty_print_kvs(level, kvs):
+    """Write a dict in a human and diff friendly format."""
+    return "{{\n{lines}\n{indent}}}".format(
+        indent = level * 2 * " ",
+        lines = ",\n".join([
+            '{indent}"{key}": {value}'.format(
+                indent = (level + 1) * 2 * " ",
+                key = k,
+                value = v,
+            )
+            for (k, v) in kvs.items()
+        ]),
+    )
+
+def _snapshot_json_checksum(all_cabal_hashes, resolved):
+    return hash(repr({
+        "all-cabal-hashes": all_cabal_hashes,
+        "resolved": resolved,
+    }))
+
+def _write_snapshot_json(repository_ctx, all_cabal_hashes, resolved):
+    """Write a snapshot.json file into the remote repository root.
+
+    Includes a checksum of the stored data used for validation on loading.
+    """
+    checksum = _snapshot_json_checksum(all_cabal_hashes, resolved)
+    repository_ctx.file(
+        "snapshot.json",
+        executable = False,
+        # Write one package per line sorted by name to be reproducible and diff
+        # friendly. The order is ensured when constructing the dictionary and
+        # preserved by the `items` iterator.
+        content = _pretty_print_kvs(0, {
+            "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY": checksum,
+            "all-cabal-hashes": repr(all_cabal_hashes),
+            "resolved": _pretty_print_kvs(1, {
+                name: struct(**spec).to_json()
+                for (name, spec) in resolved.items()
+            }),
+        }),
+    )
+
+def _read_snapshot_json(repository_ctx, filename):
+    """Load a snapshot.json file.
+
+    Validates the required fields and checks the stored checksum to detect file
+    corruption or manual modification.
+    """
+    errmsg = """\
+Failed to read {filename}: {{error}}
+
+The file is generated and should not be modified manually, it may be corrupted.
+Try to regenerate it by running the following command:
+
+  bazel run @{workspace}-unpinned//:pin
+
+""".format(filename = filename, workspace = repository_ctx.name)
+
+    # Parse JSON
+    pinned = json_parse(
+        repository_ctx.read(repository_ctx.attr.stack_snapshot_json),
+        fail_on_invalid = False,
+    )
+    if pinned == None:
+        fail(errmsg.format(error = "Failed to parse JSON."))
+
+    # Read snapshot.json data and validate required fields.
+    expected_checksum = _parse_json_field(
+        json = pinned,
+        field = "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY",
+        ty = "int",
+        errmsg = errmsg,
+    )
+    all_cabal_hashes = _parse_json_field(
+        json = pinned,
+        field = "all-cabal-hashes",
+        ty = "string",
+        errmsg = errmsg,
+    )
+    raw_resolved = _parse_json_field(
+        json = pinned,
+        field = "resolved",
+        ty = "dict",
+        errmsg = errmsg,
+    )
+    resolved = {}
+    for name in sorted(raw_resolved.keys()):
+        raw_spec = raw_resolved[name]
+        spec = {
+            field: _parse_json_field(raw_spec, field, ty, errmsg)
+            for (field, ty) in [("name", "string"), ("version", "string"), ("dependencies", "list")]
+        }
+
+        raw_location = _parse_json_field(
+            json = raw_spec,
+            field = "location",
+            ty = "dict",
+            errmsg = errmsg,
+        )
+        location_type = _parse_json_field(
+            json = raw_location,
+            field = "type",
+            ty = "string",
+            errmsg = errmsg,
+        )
+        if location_type in ["core", "vendored"]:
+            spec["location"] = {"type": location_type}
+        elif location_type in ["hackage", "archive"]:
+            spec["location"] = {
+                "type": location_type,
+                "url": _parse_json_field(
+                    json = raw_location,
+                    field = "url",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
+            }
+        elif location_type in ["git", "hg"]:
+            spec["location"] = {
+                "type": location_type,
+                "url": _parse_json_field(
+                    json = raw_location,
+                    field = "url",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
+                "commit": _parse_json_field(
+                    json = raw_location,
+                    field = "commit",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
+                "subdir": _parse_json_field(
+                    json = raw_location,
+                    field = "subdir",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
+            }
+        else:
+            fail(errmsg.format(error = "Unknown location type '{}'.".format(location_type)))
+
+        if location_type == "hackage":
+            raw_pinned = _parse_json_field(
+                json = raw_spec,
+                field = "pinned",
+                ty = "dict",
+                errmsg = errmsg,
+            )
+            spec["pinned"] = {
+                field: _parse_json_field(raw_pinned, field, ty, errmsg)
+                for (field, ty) in [("url", "list"), ("sha256", "string"), ("cabal-sha256", "string")]
+            }
+        elif location_type == "archive":
+            raw_pinned = _parse_json_field(
+                json = raw_spec,
+                field = "pinned",
+                ty = "dict",
+                errmsg = errmsg,
+            )
+            spec["pinned"] = {
+                "sha256": _parse_json_field(
+                    json = raw_pinned,
+                    field = "sha256",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
+                "strip-prefix": _parse_json_field(
+                    json = raw_pinned,
+                    field = "strip-prefix",
+                    ty = "string",
+                    errmsg = errmsg,
+                ),
+            }
+
+        resolved[name] = spec
+
+    # Check the stored checksum.
+    actual_checksum = _snapshot_json_checksum(
+        all_cabal_hashes,
+        resolved,
+    )
+    if actual_checksum != expected_checksum:
+        fail(errmsg.format(
+            error = "Mismatching checksum, expected {expected}, got {actual}.".format(
+                expected = expected_checksum,
+                actual = actual_checksum,
+            ),
+        ))
+
+    return pinned
+
+def _stack_snapshot_unpinned_impl(repository_ctx):
     snapshot = _parse_stack_snapshot(
         repository_ctx,
         repository_ctx.attr.snapshot,
         repository_ctx.attr.local_snapshot,
     )
 
-    # Enforce dependency on stack_update
-    repository_ctx.read(repository_ctx.attr.stack_update)
-
     vendored_packages = _invert(repository_ctx.attr.vendored_packages)
     packages = _parse_packages_list(
         repository_ctx.attr.packages,
         vendored_packages,
     )
+
+    # Enforce dependency on stack_update
+    repository_ctx.read(repository_ctx.attr.stack_update)
+
     resolved = _resolve_packages(
         repository_ctx,
         snapshot,
@@ -1214,7 +1580,75 @@ def _stack_snapshot_impl(repository_ctx):
         packages.unversioned,
         vendored_packages,
     )
-    _download_packages(repository_ctx, snapshot, resolved)
+    (all_cabal_hashes, resolved) = _pin_packages(repository_ctx, resolved)
+
+    _write_snapshot_json(repository_ctx, all_cabal_hashes, resolved)
+
+    repository_name = repository_ctx.name[:-len("-unpinned")]
+
+    if repository_ctx.attr.stack_snapshot_json:
+        stack_snapshot_location = paths.join(
+            repository_ctx.attr.stack_snapshot_json.package,
+            repository_ctx.attr.stack_snapshot_json.name,
+        )
+    else:
+        stack_snapshot_location = "%s_snapshot.json" % repository_name
+
+    repository_ctx.template(
+        "pin.sh",
+        repository_ctx.path(Label("@rules_haskell//haskell:private/stack_snapshot_pin.sh.tpl")),
+        executable = True,
+        substitutions = {
+            "{repository_name}": repository_name,
+            "{stack_snapshot_source}": "snapshot.json",
+            "{stack_snapshot_location}": stack_snapshot_location,
+            "{predefined_stack_snapshot}": str(repository_ctx.attr.stack_snapshot_json != None),
+        },
+    )
+
+    repository_ctx.file(
+        "BUILD.bazel",
+        executable = False,
+        content = """\
+sh_binary(
+    name = "pin",
+    data = ["snapshot.json"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+    srcs = ["pin.sh"],
+)
+""",
+    )
+
+def _stack_snapshot_impl(repository_ctx):
+    snapshot = _parse_stack_snapshot(
+        repository_ctx,
+        repository_ctx.attr.snapshot,
+        repository_ctx.attr.local_snapshot,
+    )
+
+    vendored_packages = _invert(repository_ctx.attr.vendored_packages)
+    packages = _parse_packages_list(
+        repository_ctx.attr.packages,
+        vendored_packages,
+    )
+
+    # Resolve and fetch packages
+    if repository_ctx.attr.stack_snapshot_json == None:
+        # Enforce dependency on stack_update
+        repository_ctx.read(repository_ctx.attr.stack_update)
+        resolved = _resolve_packages(
+            repository_ctx,
+            snapshot,
+            packages.core,
+            packages.versioned,
+            packages.unversioned,
+            vendored_packages,
+        )
+        _download_packages_unpinned(repository_ctx, snapshot, resolved)
+    else:
+        pinned = _read_snapshot_json(repository_ctx, repository_ctx.attr.stack_snapshot_json)
+        _download_packages(repository_ctx, snapshot, pinned)
+        resolved = pinned["resolved"]
 
     user_components = {
         name: _parse_components(name, components)
@@ -1385,9 +1819,24 @@ haskell_cabal_binary(
     build_file_content = "\n".join(build_file_builder)
     repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
 
+_stack_snapshot_unpinned = repository_rule(
+    _stack_snapshot_unpinned_impl,
+    attrs = {
+        "stack_snapshot_json": attr.label(allow_single_file = True),
+        "snapshot": attr.string(),
+        "local_snapshot": attr.label(allow_single_file = True),
+        "packages": attr.string_list(),
+        "vendored_packages": attr.label_keyed_string_dict(),
+        "flags": attr.string_list_dict(),
+        "stack": attr.label(),
+        "stack_update": attr.label(),
+    },
+)
+
 _stack_snapshot = repository_rule(
     _stack_snapshot_impl,
     attrs = {
+        "stack_snapshot_json": attr.label(allow_single_file = True),
         "snapshot": attr.string(),
         "local_snapshot": attr.label(allow_single_file = True),
         "packages": attr.string_list(),
@@ -1534,6 +1983,7 @@ def stack_snapshot(
         vendored_packages = {},
         snapshot = "",
         local_snapshot = None,
+        stack_snapshot_json = None,
         packages = [],
         flags = {},
         haddock = True,
@@ -1559,6 +2009,26 @@ def stack_snapshot(
     to be specified with a package identifier of the form
     `<package>-<version>` in the `packages` attribute. Note that you cannot
     override the version of any [packages built into GHC][ghc-builtins].
+
+    This rule invokes the `stack` tool for version and dependency resolution
+    based on the specified snapshot. You can generate a `stack_snapshot.json`
+    file to avoid invoking `stack` on every fetch and instead pin the outcome
+    in a file that can be checked into revision control. Execute the following
+    command:
+
+    ```
+    bazel run @stackage-unpinned//:pin
+    ```
+
+    Then specify the `stack_snapshot_json` attribute to point to the generated
+    file:
+
+    ```
+    stack_snapshot(
+        ...
+        stack_snapshot_json = "//:stackage_snapshot.json",
+    )
+    ```
 
     By default `stack_snapshot` defines a library target for each package. If a
     package does not contain a library component or contains executable
@@ -1643,6 +2113,8 @@ def stack_snapshot(
       snapshot: The name of a Stackage snapshot. Incompatible with local_snapshot.
       local_snapshot: A custom Stack snapshot file, as per the Stack documentation.
         Incompatible with snapshot.
+      stack_snapshot_json: A label to a `stack_snapshot.json` file, e.g. `//:stack_snapshot.json`.
+        Specify this to use pinned artifacts for generating build targets.
       packages: A set of package identifiers. For packages in the snapshot,
         version numbers can be omitted.
       vendored_packages: Add or override a package to the snapshot with a custom
@@ -1692,11 +2164,23 @@ def stack_snapshot(
         name = "rules_haskell_stack_update",
         stack = stack,
     )
+    _stack_snapshot_unpinned(
+        name = name + "-unpinned",
+        stack = stack,
+        # Dependency for ordered execution, stack update before stack unpack.
+        stack_update = "@rules_haskell_stack_update//:stack_update",
+        vendored_packages = _invert(vendored_packages),
+        snapshot = snapshot,
+        local_snapshot = local_snapshot,
+        stack_snapshot_json = stack_snapshot_json,
+        packages = packages,
+        flags = flags,
+    )
     _stack_snapshot(
         name = name,
         stack = stack,
         # Dependency for ordered execution, stack update before stack unpack.
-        stack_update = "@rules_haskell_stack_update//:stack_update",
+        stack_update = None if stack_snapshot_json else "@rules_haskell_stack_update//:stack_update",
         # TODO Remove _from_string_keyed_label_list_dict once following issue
         # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
         extra_deps = _from_string_keyed_label_list_dict(extra_deps),
@@ -1705,6 +2189,7 @@ def stack_snapshot(
         vendored_packages = _invert(vendored_packages),
         snapshot = snapshot,
         local_snapshot = local_snapshot,
+        stack_snapshot_json = stack_snapshot_json,
         packages = packages,
         flags = flags,
         haddock = haddock,
