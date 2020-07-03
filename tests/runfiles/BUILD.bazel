@@ -1,4 +1,7 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+
+package(default_testonly = 1)
 
 # Bazel runfiles libraries are expected to follow the following specification:
 # https://docs.google.com/document/d/e/2PACX-1vSDIrFnFvEYhKsCMdGdD40wZRBX3m3aZ5HhVj4CtHPmiXKDCxioTUbYsDydjKtFDAzER5eg7OjJWs3V/pub
