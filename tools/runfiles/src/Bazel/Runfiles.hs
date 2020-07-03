@@ -118,6 +118,12 @@ create = do
             guard exists
             pure dir
           , do
+            guard (os == "mingw32")
+            let dir = exePath <.> "exe" <.> "runfiles"
+            exists <- liftIO $ doesDirectoryExist dir
+            guard exists
+            pure dir
+          , do
             dir <- MaybeT $ lookupEnv runfilesDirEnv
             exists <- liftIO $ doesDirectoryExist dir
             guard exists
@@ -135,6 +141,12 @@ create = do
         manifestPath <- asum
           [ do
             let file = exePath <.> "runfiles_manifest"
+            exists <- liftIO $ doesFileExist file
+            guard exists
+            pure file
+          , do
+            guard (os == "mingw32")
+            let file = exePath <.> "exe" <.> "runfiles_manifest"
             exists <- liftIO $ doesFileExist file
             guard exists
             pure file
