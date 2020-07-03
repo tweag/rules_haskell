@@ -88,7 +88,9 @@ class Args:
       args: The collected and transformed arguments.
 
       linking: Gcc is called for linking (default).
-      compiling: Gcc is called for compiling (-c).
+      compiling: Gcc is called for compiling (-c/-S/-x).
+        Note, this does not distinguis pre-processing
+        (-x assembly-with-cpp).
       printing_file_name: Gcc is called with --print-file-name.
 
       output: The output binary or library when linking.
@@ -122,8 +124,8 @@ class Args:
         self.library_paths = []
         self.rpaths = []
         self.output = None
-        # gcc action, print-file-name (--print-file-name), compile (-c), or
-        # link (default)
+        # gcc action, print-file-name (--print-file-name), compile
+        # (-c/-S/-x), or link (default)
         self._action = Args.LINK
         # The currently active linker option that expects an argument. E.g. if
         # `-Xlinker -rpath` was encountered, then `-rpath`.
@@ -191,6 +193,10 @@ class Args:
             elif self._handle_print_file_name(arg, args, out):
                 pass
             elif self._handle_compile(arg, args, out):
+                pass
+            elif self._handle_assembly(arg, args, out):
+                pass
+            elif self._handle_language(arg, args, out):
                 pass
             else:
                 yield arg
@@ -345,6 +351,24 @@ class Args:
             return False
 
         return True
+
+    def _handle_assembly(self, arg, args, out):
+        if arg == "-S":
+            self._action = Args.COMPILE
+            out.append(arg)
+        else:
+            return False
+
+        return True
+
+    def _handle_language(self, arg, args, out):
+        consumed, language = argument(arg, args, short = "-x")
+
+        if consumed:
+            self._action = Args.COMPILE
+            out.extend(["-x", language])
+
+        return consumed
 
 
 def argument(arg, args, short = None, long = None):
