@@ -7,6 +7,7 @@
 module Bazel.Runfiles
     ( Runfiles
     , create
+    , createFromProgramPath
     , rlocation
     , env
     ) where
@@ -100,10 +101,29 @@ manifestOnlyEnv = "RUNFILES_MANIFEST_ONLY"
 --
 -- This behaves according to the specification in:
 -- https://docs.google.com/document/d/e/2PACX-1vSDIrFnFvEYhKsCMdGdD40wZRBX3m3aZ5HhVj4CtHPmiXKDCxioTUbYsDydjKtFDAzER5eg7OjJWs3V/pub
+--
+-- This uses `argv[0]` to determine the path to the current program in
+-- accordance to the above specification. If `argv[0]` is a relative path and
+-- you changed the working directory before invoking 'create' then this mode of
+-- runfiles detection will fail.
+--
+-- Note, that 'System.Environment.withProgName' and
+-- 'System.Environment.withArgs' permanently modify `argv[0]` and break this
+-- mode of runfiles path detection, see
+-- https://gitlab.haskell.org/ghc/ghc/-/issues/18418.
+--
+-- To avoid these issues you can set the runfiles environment variables using
+-- 'env' before calling @withProgName@ or @withArgs@, or you can use
+-- 'createFromProgramPath' to specify the program path directly.
 create :: HasCallStack => IO Runfiles
-create = do
-    exePath <- getArg0
+create = createFromProgramPath =<< getArg0
 
+-- | Locate the runfiles directory or manifest for the current binary.
+--
+-- Identical to 'create' except that it accepts the path to the current program
+-- as an argument rather than reading it from `argv[0]`.
+createFromProgramPath :: HasCallStack => FilePath -> IO Runfiles
+createFromProgramPath exePath = do
     mbRunfiles <- runMaybeT $ asum
       [ do
         -- Bazel sets RUNFILES_MANIFEST_ONLY=1 if the manifest file should be
