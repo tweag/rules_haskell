@@ -111,23 +111,18 @@ create = do
         manifestOnly <- liftIO $ lookupEnv manifestOnlyEnv
         guard (manifestOnly /= Just "1")
         -- Locate runfiles directory relative to executable or by environment.
+        let tryRunfiles dir = do
+              exists <- liftIO $ doesDirectoryExist dir
+              guard exists
+              pure dir
         runfilesRoot <- asum
-          [ do
-            let dir = exePath <.> "runfiles"
-            exists <- liftIO $ doesDirectoryExist dir
-            guard exists
-            pure dir
+          [ tryRunfiles $ exePath <.> "runfiles"
           , do
             guard (os == "mingw32")
-            let dir = exePath <.> "exe" <.> "runfiles"
-            exists <- liftIO $ doesDirectoryExist dir
-            guard exists
-            pure dir
+            tryRunfiles $ exePath <.> "exe" <.> "runfiles"
           , do
             dir <- MaybeT $ lookupEnv runfilesDirEnv
-            exists <- liftIO $ doesDirectoryExist dir
-            guard exists
-            pure dir
+            tryRunfiles dir
           ]
         -- Existence alone is not sufficient, on Windows Bazel creates a
         -- runfiles directory containing only MANIFEST. We need to check that
@@ -138,23 +133,18 @@ create = do
         pure $! RunfilesRoot runfilesRoot
       , do
         -- Locate manifest file relative to executable or by environment.
+        let tryManifest file = do
+              exists <- liftIO $ doesFileExist file
+              guard exists
+              pure file
         manifestPath <- asum
-          [ do
-            let file = exePath <.> "runfiles_manifest"
-            exists <- liftIO $ doesFileExist file
-            guard exists
-            pure file
+          [ tryManifest $ exePath <.> "runfiles_manifest"
           , do
             guard (os == "mingw32")
-            let file = exePath <.> "exe" <.> "runfiles_manifest"
-            exists <- liftIO $ doesFileExist file
-            guard exists
-            pure file
+            tryManifest $ exePath <.> "exe" <.> "runfiles_manifest"
           , do
             file <- MaybeT $ lookupEnv manifestFileEnv
-            exists <- liftIO $ doesFileExist file
-            guard exists
-            pure file
+            tryManifest file
           ]
         content <- liftIO $ readFile manifestPath
         let mapping = parseManifest content
