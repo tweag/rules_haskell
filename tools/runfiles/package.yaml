@@ -26,8 +26,11 @@ library:
   dependencies:
   - directory
   - filepath
+  - transformers
   exposed-modules:
   - Bazel.Runfiles
+  other-modules:
+  - Bazel.Arg0
 
 executables:
   bazel-runfiles-exe:

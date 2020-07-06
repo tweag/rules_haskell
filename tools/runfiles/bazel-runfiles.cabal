@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bd1c2ce5b0ffa0157650e1c2409d31b818889736ef09aaf51de71e54d9a7d3fc
+-- hash: 2d03e51b7185a37fee957310080775c2716d5f4b770c0593fb28788316469f0a
 
 name:           bazel-runfiles
 version:        0.12
@@ -17,10 +19,9 @@ copyright:      2018 Tweag I/O Limited
 license:        Apache-2.0
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 extra-source-files:
-    LICENSE
     README.md
+    LICENSE
 
 source-repository head
   type: git
@@ -30,7 +31,7 @@ library
   exposed-modules:
       Bazel.Runfiles
   other-modules:
-      Paths_bazel_runfiles
+      Bazel.Arg0
   hs-source-dirs:
       src
   build-depends:
