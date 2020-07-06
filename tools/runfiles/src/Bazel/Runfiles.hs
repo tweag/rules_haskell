@@ -20,7 +20,7 @@ import Data.Foldable (asum)
 import Data.List (find, isPrefixOf, isSuffixOf)
 import Data.Maybe (fromMaybe)
 import GHC.Stack
-import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
+import System.Directory (doesDirectoryExist, doesFileExist, listDirectory, makeAbsolute)
 import System.Environment (lookupEnv)
 import qualified System.FilePath
 import System.FilePath ((</>), (<.>), addTrailingPathSeparator, takeFileName)
@@ -114,7 +114,7 @@ create = do
         let tryRunfiles dir = do
               exists <- liftIO $ doesDirectoryExist dir
               guard exists
-              pure dir
+              liftIO $ makeAbsolute dir
         runfilesRoot <- asum
           [ tryRunfiles $ exePath <.> "runfiles"
           , do
@@ -136,7 +136,7 @@ create = do
         let tryManifest file = do
               exists <- liftIO $ doesFileExist file
               guard exists
-              pure file
+              liftIO $ makeAbsolute file
         manifestPath <- asum
           [ tryManifest $ exePath <.> "runfiles_manifest"
           , do
