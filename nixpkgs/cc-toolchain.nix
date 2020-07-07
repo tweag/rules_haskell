@@ -26,7 +26,8 @@ let cc = runCommand "cc-wrapper-bazel" {
                    -F${Security}/Library/Frameworks \
                    -F${Foundation}/Library/Frameworks \
                    -L${libcxx}/lib \
-                   -L${darwin.libobjc}/lib"
+                   -L${darwin.libobjc}/lib \
+                   -Wno-error=unused-command-line-argument"
   '';
   stdenv = if pkgs.stdenv.isDarwin then overrideCC pkgs.stdenv cc else pkgs.stdenv;
 in

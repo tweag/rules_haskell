@@ -7,10 +7,12 @@
 module Bazel.Runfiles
     ( Runfiles
     , create
+    , createFromProgramPath
     , rlocation
     , env
     ) where
 
+import Bazel.Arg0 (getArg0)
 import Control.Monad (guard)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Control.Monad.IO.Class (liftIO)
@@ -19,10 +21,10 @@ import Data.Foldable (asum)
 import Data.List (find, isPrefixOf, isSuffixOf)
 import Data.Maybe (fromMaybe)
 import GHC.Stack
-import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
-import System.Environment (getExecutablePath, lookupEnv)
+import System.Directory (doesDirectoryExist, doesFileExist, listDirectory, makeAbsolute)
+import System.Environment (lookupEnv)
 import qualified System.FilePath
-import System.FilePath (FilePath, (</>), (<.>), addTrailingPathSeparator, takeFileName)
+import System.FilePath ((</>), (<.>), addTrailingPathSeparator, takeFileName)
 import System.Info (os)
 
 -- | Reference to Bazel runfiles, runfiles root or manifest file.
@@ -99,10 +101,29 @@ manifestOnlyEnv = "RUNFILES_MANIFEST_ONLY"
 --
 -- This behaves according to the specification in:
 -- https://docs.google.com/document/d/e/2PACX-1vSDIrFnFvEYhKsCMdGdD40wZRBX3m3aZ5HhVj4CtHPmiXKDCxioTUbYsDydjKtFDAzER5eg7OjJWs3V/pub
+--
+-- This uses `argv[0]` to determine the path to the current program in
+-- accordance to the above specification. If `argv[0]` is a relative path and
+-- you changed the working directory before invoking 'create' then this mode of
+-- runfiles detection will fail.
+--
+-- Note, that 'System.Environment.withProgName' and
+-- 'System.Environment.withArgs' permanently modify `argv[0]` and break this
+-- mode of runfiles path detection, see
+-- https://gitlab.haskell.org/ghc/ghc/-/issues/18418.
+--
+-- To avoid these issues you can set the runfiles environment variables using
+-- 'env' before calling @withProgName@ or @withArgs@, or you can use
+-- 'createFromProgramPath' to specify the program path directly.
 create :: HasCallStack => IO Runfiles
-create = do
-    exePath <- getExecutablePath
+create = createFromProgramPath =<< getArg0
 
+-- | Locate the runfiles directory or manifest for the current binary.
+--
+-- Identical to 'create' except that it accepts the path to the current program
+-- as an argument rather than reading it from `argv[0]`.
+createFromProgramPath :: HasCallStack => FilePath -> IO Runfiles
+createFromProgramPath exePath = do
     mbRunfiles <- runMaybeT $ asum
       [ do
         -- Bazel sets RUNFILES_MANIFEST_ONLY=1 if the manifest file should be
@@ -110,17 +131,18 @@ create = do
         manifestOnly <- liftIO $ lookupEnv manifestOnlyEnv
         guard (manifestOnly /= Just "1")
         -- Locate runfiles directory relative to executable or by environment.
+        let tryRunfiles dir = do
+              exists <- liftIO $ doesDirectoryExist dir
+              guard exists
+              liftIO $ makeAbsolute dir
         runfilesRoot <- asum
-          [ do
-            let dir = exePath <.> "runfiles"
-            exists <- liftIO $ doesDirectoryExist dir
-            guard exists
-            pure dir
+          [ tryRunfiles $ exePath <.> "runfiles"
+          , do
+            guard (os == "mingw32")
+            tryRunfiles $ exePath <.> "exe" <.> "runfiles"
           , do
             dir <- MaybeT $ lookupEnv runfilesDirEnv
-            exists <- liftIO $ doesDirectoryExist dir
-            guard exists
-            pure dir
+            tryRunfiles dir
           ]
         -- Existence alone is not sufficient, on Windows Bazel creates a
         -- runfiles directory containing only MANIFEST. We need to check that
@@ -131,17 +153,18 @@ create = do
         pure $! RunfilesRoot runfilesRoot
       , do
         -- Locate manifest file relative to executable or by environment.
+        let tryManifest file = do
+              exists <- liftIO $ doesFileExist file
+              guard exists
+              liftIO $ makeAbsolute file
         manifestPath <- asum
-          [ do
-            let file = exePath <.> "runfiles_manifest"
-            exists <- liftIO $ doesFileExist file
-            guard exists
-            pure file
+          [ tryManifest $ exePath <.> "runfiles_manifest"
+          , do
+            guard (os == "mingw32")
+            tryManifest $ exePath <.> "exe" <.> "runfiles_manifest"
           , do
             file <- MaybeT $ lookupEnv manifestFileEnv
-            exists <- liftIO $ doesFileExist file
-            guard exists
-            pure file
+            tryManifest file
           ]
         content <- liftIO $ readFile manifestPath
         let mapping = parseManifest content
@@ -150,6 +173,8 @@ create = do
 
     case mbRunfiles of
         Just runfiles -> pure runfiles
+        -- TODO: According to the specification this should not fail, but
+        -- > 3. assume the binary has no runfiles.
         Nothing -> error "Unable to locate runfiles directory or manifest"
 
 -- | Check if the given directory contains at least one data file.

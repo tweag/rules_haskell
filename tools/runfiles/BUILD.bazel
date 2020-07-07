@@ -17,7 +17,18 @@ haskell_toolchain_library(name = "transformers")
 
 haskell_library(
     name = "runfiles",
-    srcs = ["src/Bazel/Runfiles.hs"],
+    srcs = [
+        "src/Bazel/Arg0.hs",
+        "src/Bazel/Runfiles.hs",
+    ],
+    compiler_flags = [
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+    ],
+    hidden_modules = [
+        "Bazel.Arg0",
+    ],
     src_strip_prefix = "src",
     visibility = ["//visibility:public"],
     deps = [
