@@ -34,6 +34,22 @@ load(
 )
 load(":private/set.bzl", "set")
 
+HaskellReplPatternsInfo = provider(fields = ["pattern_strings"])
+
+def _pattern_flag_impl(ctx):
+    return HaskellReplPatternsInfo(
+        pattern_strings = [
+            s
+            for s in ctx.build_setting_value.split(",")
+            if s
+        ],
+    )
+
+pattern_flag = rule(
+    implementation = _pattern_flag_impl,
+    build_setting = config.string(flag = True),
+)
+
 HaskellReplLoadInfo = provider(
     doc = """Haskell REPL target information.
 
@@ -498,13 +514,21 @@ def _haskell_repl_aspect_impl(target, ctx):
         deps_infos = []
     collect_info = _merge_HaskellReplCollectInfo([target_info] + deps_infos)
 
+    from_source = [
+        parse_pattern(ctx, pat)
+        for pat in ctx.attr._from_source[HaskellReplPatternsInfo].pattern_strings
+    ]
+    from_binary = [
+        parse_pattern(ctx, pat)
+        for pat in ctx.attr._from_binary[HaskellReplPatternsInfo].pattern_strings
+    ]
     hie_bios = _create_hie_bios(
         hs = haskell_context(ctx, name = target.label.name),
         posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"],
         ctx = ctx,
         repl_info = _create_HaskellReplInfo(
-            from_source = [parse_pattern(ctx, pat) for pat in ["//..."]],
-            from_binary = [parse_pattern(ctx, pat) for pat in []],
+            from_source = from_source,
+            from_binary = from_binary,
             collect_info = collect_info,
         ),
     )
@@ -520,6 +544,10 @@ def _haskell_repl_aspect_impl(target, ctx):
 haskell_repl_aspect = aspect(
     implementation = _haskell_repl_aspect_impl,
     attr_aspects = ["deps"],
+    attrs = {
+        "_from_source": attr.label(default = "//haskell:repl_from_source"),
+        "_from_binary": attr.label(default = "//haskell:repl_from_binary"),
+    },
     required_aspect_providers = [HaskellCcLibrariesInfo],
     toolchains = [
         "@rules_haskell//haskell:toolchain",
