@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
+relative_path() {
+  realpath --relative-to="$(bazel info workspace)" "$1"
+}
+query_target() {
+  local src_label="$(bazel query "$1")"
+  bazel cquery '
+    kind("haskell_binary|haskell_library|haskell_test", attr("srcs", '"$src_label"', '"${src_label//:*/}:*"'))
+    ' \
+    | awk '{ print $1; exit }'
+}
 hie_bios_flags() {
-  bazel build //tests:hie-bios \
+  # Beware of workspace prefix issues on build settings and aspects:
+  # https://github.com/bazelbuild/bazel/issues/9177
+  # https://github.com/bazelbuild/bazel/issues/11734
+  bazel build "$1" \
+    --//haskell:repl_from_binary=//tools/... \
+    --aspects=//haskell:repl.bzl%haskell_repl_aspect \
     --output_groups=hie_bios \
     --experimental_show_artifacts \
     2>&1 \
@@ -19,8 +34,14 @@ hie_bios_flags() {
   # Make warnings non-fatal
   echo -Wwarn
 }
+SRC="$(relative_path "$1")"
+TARGET="$(query_target "$SRC")"
+if [[ -z "$TARGET" ]]; then
+  echo "No Bazel Haskell target found for '$SRC'." >&2
+  exit 1
+fi
 if [[ -z "${HIE_BIOS_OUTPUT-}" ]]; then
-  hie_bios_flags
+  hie_bios_flags "$TARGET"
 else
-  hie_bios_flags >"$HIE_BIOS_OUTPUT"
+  hie_bios_flags "$TARGET" >"$HIE_BIOS_OUTPUT"
 fi
