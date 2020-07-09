@@ -13,6 +13,10 @@ load(
     "cabal_wrapper",
 )
 load(
+    "@rules_haskell//haskell:repl.bzl",
+    "pattern_flag",
+)
+load(
     "@rules_haskell//haskell:toolchain_info.bzl",
     "haskell_toolchain_info",
 )
@@ -143,6 +147,18 @@ config_setting(
     define_values = {
         "use_worker": "True",
     },
+)
+
+pattern_flag(
+    name = "repl_from_source",
+    build_setting_default = "//...",
+    visibility = ["//visibility:public"],
+)
+
+pattern_flag(
+    name = "repl_from_binary",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
 )
 
 haskell_toolchain_info(
