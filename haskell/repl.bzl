@@ -197,7 +197,10 @@ def _create_HaskellReplCollectInfo(target, ctx):
             package_ids = all_package_ids(lib_info),
             package_databases = hs_info.package_databases,
             interface_dirs = hs_info.interface_dirs,
-            cc_libraries_info = target[HaskellCcLibrariesInfo],
+            cc_libraries_info =
+                # Work around missing aspects when invoked via --aspects.
+                # See https://github.com/bazelbuild/bazel/issues/11736
+                target[HaskellCcLibrariesInfo] if HaskellCcLibrariesInfo in target else merge_HaskellCcLibrariesInfo(infos = []),
             cc_info = target[CcInfo],
             runfiles = target[DefaultInfo].default_runfiles,
         )
@@ -491,16 +494,33 @@ def _haskell_repl_aspect_impl(target, ctx):
         deps_infos = []
     collect_info = _merge_HaskellReplCollectInfo([target_info] + deps_infos)
 
-    # This aspect currently does not generate an executable REPL script by
-    # itself. This could be extended in future. Note, to that end it's
-    # necessary to construct a Haskell context without `ctx.attr.name`.
+    hie_bios = _create_hie_bios(
+        hs = haskell_context(ctx, name = target.label.name),
+        posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"],
+        ctx = ctx,
+        repl_info = _create_HaskellReplInfo(
+            from_source = [parse_pattern(ctx, pat) for pat in ["//..."]],
+            from_binary = [parse_pattern(ctx, pat) for pat in []],
+            collect_info = collect_info,
+        ),
+    )
 
-    return [collect_info]
+    # This aspect currently does not generate an executable REPL script by
+    # itself. This could be extended in future. Note, aspects cannot return
+    # `DefaultInfo` as it would conflict with the `DefaultInfo` of the rule the
+    # aspect is applied to. This means that we cannot setup runfiles correctly
+    # and would need to use `ln(..., extra_inputs = ...)` instead.
+
+    return [collect_info] + hie_bios
 
 haskell_repl_aspect = aspect(
     implementation = _haskell_repl_aspect_impl,
     attr_aspects = ["deps"],
     required_aspect_providers = [HaskellCcLibrariesInfo],
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
     doc = """\
 Haskell REPL aspect.
 
