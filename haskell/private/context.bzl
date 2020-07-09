@@ -5,11 +5,14 @@ load("//haskell:providers.bzl", "HaskellLibraryInfo", "all_dependencies_package_
 
 HaskellContext = provider()
 
-def haskell_context(ctx, attr = None):
+def haskell_context(ctx, attr = None, name = None):
     toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
 
     if not attr:
         attr = ctx.attr
+
+    if not name:
+        name = attr.name
 
     deps = (attr.deps if hasattr(attr, "deps") else []) + (attr.exports if hasattr(attr, "exports") else [])
     package_ids = all_dependencies_package_ids(deps)
@@ -44,7 +47,7 @@ def haskell_context(ctx, attr = None):
 
     return HaskellContext(
         # Fields
-        name = attr.name,
+        name = name,
         label = ctx.label,
         toolchain = toolchain,
         tools = toolchain.tools,
