@@ -461,14 +461,7 @@ def compile_library(
     if with_shared:
         c.args.add("-dynamic-too")
         if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
-            # On some more recent Linux distributions (e.g. Ubuntu 18.04) `gcc`
-            # defaults to linking with `-pie`. At the same time GHC passes `-r`
-            # to the linker when joining object files. In order to avoid errors
-            # of the form
-            #
-            #     /usr/bin/ld: -r and -pie may not be used together
-            #
-            # we need to pass `-no-pie` to the linker.
+            # See Note [No PIE when linking] in haskell/private/actions/link.bzl
             c.args.add("-optl-no-pie")
 
     coverage_data = []

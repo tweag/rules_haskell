@@ -109,14 +109,7 @@ def link_binary(
         else:
             args.add_all(["-pie", "-dynamic"])
     elif not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
-        # GHC compiles the `main` function during linking with non-position
-        # independent code. On some more recent Linux distributions (e.g.
-        # Ubuntu 18.04) `gcc` defaults to linking with `-pie`, so we need
-        # to pass `-no-pie` to the linker explicitly to avoid linking
-        # errors of the form:
-        #
-        #   /usr/bin/ld.gold: error: /tmp/ghc3_0/ghc_2.o: requires dynamic R_X86_64_32 reloc against 'ZCMain_main_closure' which may overflow at runtime; recompile with -fPIC
-        #   /usr/bin/ld.gold: error: ../../../../../external/rules_haskell_ghc_linux_amd64/lib/base-4.13.0.0/libHSbase-4.13.0.0.a(Base.o): requires unsupported dynamic reloc 11; recompile with -fPIC
+        # See Note [No PIE when linking]
         args.add("-optl-no-pie")
 
     # When compiling with `-threaded`, GHC needs to link against
@@ -192,6 +185,46 @@ def link_binary(
     )
 
     return (executable, dynamic_libs)
+
+# Note [No PIE while linking]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# GHC links object files with the `ld` flag `-r` and compiles the `main`
+# function with non-position independent code when generating an executable.
+# On some more recent Linux distributions (e.g. Ubuntu 18.04) `gcc` defaults
+# to linking with `-pie` which is incompatible with both behaviors described
+# above.
+#
+# Combining `-pie` and `ld -r` causes errors of the form:
+#
+#     /usr/bin/ld: -r and -pie may not be used together
+#
+# Compiling executables with `-pie` leads to errors of the form:
+#
+#   /usr/bin/ld.gold: error: /tmp/ghc3_0/ghc_2.o: requires dynamic R_X86_64_32 reloc against 'ZCMain_main_closure' which may overflow at runtime; recompile with -fPIC
+#   /usr/bin/ld.gold: error: ../../../../../external/rules_haskell_ghc_linux_amd64/lib/base-4.13.0.0/libHSbase-4.13.0.0.a(Base.o): requires unsupported dynamic reloc 11; recompile with -fPIC
+#
+# GHC determines whether the C compiler supports the `-no-pie` flag during
+# `./configure` and stores this information in its `settings` file. Depending
+# on this setting GHC would then automatically set `-no-pie`. However,
+# rules_haskell uses GHC's `-pgmc` flag to point GHC to the CC toolchain's C
+# compiler. This disables the flags configured in the `setting` file. Instead,
+# we have to pass `-no-pie` explicitly.
+#
+# Ideally, we would determine whether the CC toolchain's C compiler supports
+# `-no-pie` before setting it. Unfortunately, this is complicated by the fact
+# that Bazel does not support dynamic dependencies in build actions and that
+# repository rules don't have access to toolchains, yet.
+#
+# If necessary this flag could be made user configurable at the level of the
+# GHC toolchain or a wrapper around the GHC compiler could determine if
+# the C compiler supports `-no-pie`.
+#
+# Further information:
+#
+# - GHC Note [No PIE while linking] https://gitlab.haskell.org/ghc/ghc/-/blob/d0bab2e3419e49cdbb1201d4650572b57f33420c/compiler/main/DynFlags.hs#L5551-5557
+# - https://gitlab.haskell.org/ghc/ghc/-/issues/12759
+# - https://gitlab.haskell.org/ghc/ghc/-/issues/15319
 
 def _so_extension(hs):
     """Returns the extension for shared libraries.
