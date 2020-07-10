@@ -5,7 +5,7 @@ These rules are deprecated.
 
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
-    "CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME",
+    "CPP_LINK_EXECUTABLE_ACTION_NAME",
     "C_COMPILE_ACTION_NAME",
 )
 load(
@@ -101,7 +101,8 @@ def cc_interop_info(ctx):
     )
     linker_flags = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
-        action_name = CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME,
+        # See https://github.com/bazelbuild/bazel/issues/6876
+        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
         variables = link_variables,
     )
 
@@ -111,9 +112,6 @@ def cc_interop_info(ctx):
     cc = cc_wrapper.executable.path
     cc_files = ctx.files._cc_toolchain + cc_wrapper.inputs.to_list()
     cc_manifests = cc_wrapper.manifests
-
-    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6876.
-    linker_flags = [flag for flag in linker_flags if flag not in ["-shared"]]
 
     tools = {
         "ar": cc_toolchain.ar_executable,

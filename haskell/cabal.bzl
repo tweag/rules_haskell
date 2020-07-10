@@ -212,6 +212,9 @@ def _prepare_cabal_inputs(
         for arg in ["-package-db", "./" + _dirname(package_db)]
     ], join_with = " ", format_each = "--ghc-arg=%s", omit_if_empty = False)
     args.add("--flags=" + " ".join(flags))
+    if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
+        # See Note [No PIE when linking] in haskell/private/actions/link.bzl
+        args.add("--ghc-option=-optl-no-pie")
     args.add_all(compiler_flags, format_each = "--ghc-option=%s")
     if dynamic_binary:
         args.add_all(
