@@ -4,10 +4,9 @@ relative_path() {
   realpath --relative-to="$(bazel info workspace)" "$1"
 }
 query_target() {
+  local src_label="$(bazel query "$1")"
   bazel cquery '
-    let src = '"$1"' in
-    let targets = kind("haskell_binary|haskell_library|haskell_test", rdeps(//..., $src, 1)) in
-    $targets
+    kind("haskell_binary|haskell_library|haskell_test", attr("srcs", '"$src_label"', '"${src_label//:*/}:*"'))
     ' \
     | awk '{ print $1; exit }'
 }
