@@ -134,7 +134,6 @@ def _prepare_cabal_inputs(
         setup_dep_info,
         srcs,
         cabalopts,
-        compiler_flags,
         flags,
         generate_haddock,
         cabal_wrapper,
@@ -217,7 +216,6 @@ def _prepare_cabal_inputs(
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         args.add("--ghc-option=-optl-no-pie")
     args.add_all(cabalopts)
-    args.add_all(compiler_flags, format_each = "--ghc-option=%s")
     if dynamic_binary:
         args.add_all(
             [
@@ -315,7 +313,12 @@ def _haskell_cabal_library_impl(ctx):
     with_profiling = is_profiling_enabled(hs)
 
     user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    if ctx.attr.compiler_flags:
+        print("WARNING: compiler_flags attribute is deprecated. Use cabalopts instead.")
+        user_cabalopts.extend([
+            "--ghc-option=" + opt
+            for opt in _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+        ])
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
@@ -386,7 +389,6 @@ def _haskell_cabal_library_impl(ctx):
         setup_dep_info = setup_dep_info,
         srcs = ctx.files.srcs,
         cabalopts = user_cabalopts,
-        compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
         generate_haddock = ctx.attr.haddock,
         cabal_wrapper = ctx.executable._cabal_wrapper,
@@ -519,11 +521,16 @@ haskell_cabal_library = rule(
             doc = "Dependencies for custom setup Setup.hs.",
         ),
         "cabalopts": attr.string_list(
-            doc = """Additional flags to pass to `Setup.hs configure`. Subject to make variable expansion.""",
+            doc = """Additional flags to pass to `Setup.hs configure`. Subject to make variable expansion.
+
+            Use `--ghc-option=OPT` to configure additional compiler flags.
+            Use `--haddock-option=--optghc=OPT` if these flags are required for haddock generation as well.
+            """,
         ),
         "compiler_flags": attr.string_list(
-            doc = """Flags to pass to Haskell compiler, in addition to those defined
-            the cabal file. Subject to Make variable substitution.""",
+            doc = """DEPRECATED. Use `cabalopts` with `--ghc-option` instead.
+
+            Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
         "tools": attr.label_list(
             cfg = "host",
@@ -617,7 +624,12 @@ def _haskell_cabal_binary_impl(ctx):
 
     exe_name = ctx.attr.exe_name if ctx.attr.exe_name else hs.label.name
     user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    if ctx.attr.compiler_flags:
+        print("WARNING: compiler_flags attribute is deprecated. Use cabalopts instead.")
+        user_cabalopts.extend([
+            "--ghc-option=" + opt
+            for opt in _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+        ])
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
@@ -653,7 +665,6 @@ def _haskell_cabal_binary_impl(ctx):
         setup_dep_info = setup_dep_info,
         srcs = ctx.files.srcs,
         cabalopts = user_cabalopts,
-        compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
         generate_haddock = False,
         cabal_wrapper = ctx.executable._cabal_wrapper,
@@ -722,11 +733,16 @@ haskell_cabal_binary = rule(
             doc = "Dependencies for custom setup Setup.hs.",
         ),
         "cabalopts": attr.string_list(
-            doc = """Additional flags to pass to `Setup.hs configure`. Subject to make variable expansion.""",
+            doc = """Additional flags to pass to `Setup.hs configure`. Subject to make variable expansion.
+
+            Use `--ghc-option=OPT` to configure additional compiler flags.
+            Use `--haddock-option=--optghc=OPT` if these flags are required for haddock generation as well.
+            """,
         ),
         "compiler_flags": attr.string_list(
-            doc = """Flags to pass to Haskell compiler, in addition to those defined
-            the cabal file. Subject to Make variable substitution.""",
+            doc = """DEPRECATED. Use `cabalopts` with `--ghc-option` instead.
+
+            Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
         "tools": attr.label_list(
             cfg = "host",
@@ -1780,7 +1796,7 @@ haskell_cabal_library(
     setup_deps = {setup_deps},
     tools = {tools},
     visibility = {visibility},
-    compiler_flags = ["-w", "-optF=-w"],
+    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w"],
     verbose = {verbose},
     unique_name = True,
 )
@@ -1815,7 +1831,7 @@ haskell_cabal_binary(
     deps = {deps},
     tools = {tools},
     visibility = ["@{workspace}-exe//{name}:__pkg__"],
-    compiler_flags = ["-w", "-optF=-w"],
+    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w"],
     verbose = {verbose},
 )
 """.format(
