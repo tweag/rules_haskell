@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
 module Lib where
@@ -5,4 +6,4 @@ module Lib where
 foreign import ccall "add" add :: Int -> Int -> Int
 
 x :: Int
-x = add 1 1
+x = add ONE ONE

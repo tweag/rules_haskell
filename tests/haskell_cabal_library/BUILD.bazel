@@ -21,6 +21,10 @@ haskell_cabal_library(
         "Lib.hs",
         "lib.cabal",
     ],
+    cabalopts = [
+        "--ghc-option=-DONE=1",
+        "--haddock-option=--optghc=-DONE=1",
+    ],
     flags = [
         "use-base",
         "expose-lib",
