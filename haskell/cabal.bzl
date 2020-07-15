@@ -133,6 +133,7 @@ def _prepare_cabal_inputs(
         setup_deps,
         setup_dep_info,
         srcs,
+        cabalopts,
         compiler_flags,
         flags,
         generate_haddock,
@@ -215,6 +216,7 @@ def _prepare_cabal_inputs(
     if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         args.add("--ghc-option=-optl-no-pie")
+    args.add_all(cabalopts)
     args.add_all(compiler_flags, format_each = "--ghc-option=%s")
     if dynamic_binary:
         args.add_all(
@@ -312,6 +314,7 @@ def _haskell_cabal_library_impl(ctx):
     )
     with_profiling = is_profiling_enabled(hs)
 
+    user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
@@ -382,6 +385,7 @@ def _haskell_cabal_library_impl(ctx):
         setup_deps = setup_deps,
         setup_dep_info = setup_dep_info,
         srcs = ctx.files.srcs,
+        cabalopts = user_cabalopts,
         compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
         generate_haddock = ctx.attr.haddock,
@@ -514,6 +518,9 @@ haskell_cabal_library = rule(
             aspects = [haskell_cc_libraries_aspect],
             doc = "Dependencies for custom setup Setup.hs.",
         ),
+        "cabalopts": attr.string_list(
+            doc = """Additional flags to pass to `Setup.hs configure`. Subject to make variable expansion.""",
+        ),
         "compiler_flags": attr.string_list(
             doc = """Flags to pass to Haskell compiler, in addition to those defined
             the cabal file. Subject to Make variable substitution.""",
@@ -609,6 +616,7 @@ def _haskell_cabal_binary_impl(ctx):
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     exe_name = ctx.attr.exe_name if ctx.attr.exe_name else hs.label.name
+    user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
@@ -644,6 +652,7 @@ def _haskell_cabal_binary_impl(ctx):
         setup_deps = setup_deps,
         setup_dep_info = setup_dep_info,
         srcs = ctx.files.srcs,
+        cabalopts = user_cabalopts,
         compiler_flags = user_compile_flags,
         flags = ctx.attr.flags,
         generate_haddock = False,
@@ -711,6 +720,9 @@ haskell_cabal_binary = rule(
         "setup_deps": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
             doc = "Dependencies for custom setup Setup.hs.",
+        ),
+        "cabalopts": attr.string_list(
+            doc = """Additional flags to pass to `Setup.hs configure`. Subject to make variable expansion.""",
         ),
         "compiler_flags": attr.string_list(
             doc = """Flags to pass to Haskell compiler, in addition to those defined
