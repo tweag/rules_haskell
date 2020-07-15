@@ -215,6 +215,7 @@ def _prepare_cabal_inputs(
     if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         args.add("--ghc-option=-optl-no-pie")
+    args.add_all(hs.toolchain.cabalopts)
     args.add_all(cabalopts)
     if dynamic_binary:
         args.add_all(
