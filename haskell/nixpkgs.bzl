@@ -79,6 +79,7 @@ haskell_toolchain(
     is_static = {is_static},
     compiler_flags = {compiler_flags} + {compiler_flags_select},
     haddock_flags = {haddock_flags},
+    cabalopts = {cabalopts},
     repl_ghci_args = {repl_ghci_args},
     # On Darwin we don't need a locale archive. It's a Linux-specific
     # hack in Nixpkgs.
@@ -94,6 +95,7 @@ haskell_toolchain(
             compiler_flags_select = compiler_flags_select,
             haddock_flags = repository_ctx.attr.haddock_flags,
             repl_ghci_args = repository_ctx.attr.repl_ghci_args,
+            cabalopts = repository_ctx.attr.cabalopts,
             locale_archive_arg = "locale_archive = {},".format(repr(locale_archive)) if locale_archive else "",
             locale = repr(repository_ctx.attr.locale),
         ),
@@ -109,6 +111,7 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         "compiler_flags": attr.string_list(),
         "compiler_flags_select": attr.string_list_dict(),
         "haddock_flags": attr.string_list(),
+        "cabalopts": attr.string_list(),
         "repl_ghci_args": attr.string_list(),
         "locale_archive": attr.string(),
         # Unfortunately, repositories cannot depend on each other
@@ -166,6 +169,7 @@ def haskell_register_ghc_nixpkgs(
         compiler_flags_select = None,
         haddock_flags = None,
         repl_ghci_args = None,
+        cabalopts = None,
         locale_archive = None,
         attribute_path = "haskellPackages.ghc",
         sh_posix_attributes = None,
@@ -237,6 +241,7 @@ def haskell_register_ghc_nixpkgs(
         compiler_flags = compiler_flags,
         compiler_flags_select = compiler_flags_select,
         haddock_flags = haddock_flags,
+        cabalopts = cabalopts,
         repl_ghci_args = repl_ghci_args,
         locale_archive = locale_archive,
         locale = locale,

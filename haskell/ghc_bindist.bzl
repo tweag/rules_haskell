@@ -308,6 +308,7 @@ haskell_toolchain(
     compiler_flags = {compiler_flags},
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
+    cabalopts = {cabalopts},
     visibility = ["//visibility:public"],
     locale = "{locale}",
 )
@@ -318,6 +319,7 @@ haskell_toolchain(
         compiler_flags = ctx.attr.compiler_flags,
         haddock_flags = ctx.attr.haddock_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
+        cabalopts = ctx.attr.cabalopts,
         locale = locale,
     )
 
@@ -351,6 +353,7 @@ _ghc_bindist = repository_rule(
         "compiler_flags": attr.string_list(),
         "haddock_flags": attr.string_list(),
         "repl_ghci_args": attr.string_list(),
+        "cabalopts": attr.string_list(),
         "patches": attr.label_list(
             default = [],
             doc =
@@ -418,6 +421,7 @@ def ghc_bindist(
         compiler_flags = None,
         haddock_flags = None,
         repl_ghci_args = None,
+        cabalopts = None,
         locale = None):
     """Create a new repository from binary distributions of GHC.
 
@@ -474,6 +478,7 @@ def ghc_bindist(
         compiler_flags = compiler_flags,
         haddock_flags = haddock_flags,
         repl_ghci_args = repl_ghci_args,
+        cabalopts = cabalopts,
         target = target,
         locale = locale,
         **extra_attrs
@@ -490,6 +495,7 @@ def haskell_register_ghc_bindists(
         compiler_flags = None,
         haddock_flags = None,
         repl_ghci_args = None,
+        cabalopts = None,
         locale = None):
     """Register GHC binary distributions for all platforms as toolchains.
 
@@ -513,6 +519,7 @@ def haskell_register_ghc_bindists(
             compiler_flags = compiler_flags,
             haddock_flags = haddock_flags,
             repl_ghci_args = repl_ghci_args,
+            cabalopts = cabalopts,
             locale = locale,
         )
     local_sh_posix_repo_name = "rules_haskell_sh_posix_local"
