@@ -469,6 +469,9 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
     for import_dir in repl_info.load_info.import_dirs.to_list():
         args.append("-i" + (import_dir if import_dir else "."))
 
+    # List modules (Targets) covered by this cradle.
+    args.extend([f.path for f in repl_info.load_info.source_files.to_list()])
+
     args_file = ctx.actions.declare_file(".%s.hie-bios" % ctx.label.name)
     args_link = ctx.actions.declare_file("%s@hie-bios" % ctx.label.name)
     ctx.actions.write(args_file, "\n".join(args))
