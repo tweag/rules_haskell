@@ -29,7 +29,22 @@ results_file = sys.argv[6]
 with io.open(global_pkg_db_dump, "r", encoding='utf8') as f:
     names = [line.split()[1] for line in f if line.startswith("name:")]
     f.seek(0)
-    ids = [line.split()[1] for line in f if line.startswith("id:")]
+    # Indicated if value of sought key (here, id) was reflowed to the next
+    # line. Probably happens for long values.
+    reflowed = False
+    ids = []
+    for line in f:
+        if reflowed:
+            ids.append(line.strip())
+            reflowed = False
+            continue
+        if not line.startswith("id:"):
+            continue
+        parts = line.split()
+        if len(parts) == 1:
+            reflowed = True
+        else:
+            ids.append(parts[1])
 
     # A few sanity checks.
     assert len(names) == len(ids)
