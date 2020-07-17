@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 if [ "$BUILD_WORKSPACE_DIRECTORY" = "" ]; then
     cat <<EOF >&2
