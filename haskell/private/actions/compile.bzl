@@ -56,6 +56,21 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     args.add_all(["--cflag=" + f for f in cc.compiler_flags])
     args.add_all(["--cflag=" + f for f in cc.include_args])
     args.add_all(["--lflag=" + f for f in cc.linker_flags])
+
+    # If are building fully-statically-linked binaries, we need to ensure that
+    # we pass arguments to `hsc2hs` such that objects it builds are statically
+    # linked, otherwise we'll get dynamic linking errors when trying to execute
+    # those objects to generate code as part of the build.  Since the static
+    # configuration should ensure that all the objects involved are themselves
+    # statically built, this is just a case of passing `-static` to the linker
+    # used by `hsc2hs` (which will be our own wrapper script which eventually
+    # calls `gcc`, etc.).
+    #
+    # Note that we also do this in our Cabal wrapper, where `hsc2hs` might be
+    # called by Cabal as part of the build process.
+    if hs.toolchain.fully_static_link:
+        args.add("--lflag=-static")
+
     args.add_all(hsc_flags)
 
     # Add an empty PATH variable if not already specified in hs.env.
@@ -258,7 +273,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         # to debug issues in non-sandboxed builds.
         "-Wmissing-home-modules",
     ])
-    if hs.toolchain.is_static and not hs.toolchain.is_windows:
+    if hs.toolchain.static_runtime and not hs.toolchain.is_windows:
         # A static GHC RTS requires -fPIC. However, on Unix we also require
         # -fexternal-dynamic-refs, otherwise GHC still generates R_X86_64_PC32
         # relocations which prevents loading these static libraries as PIC.

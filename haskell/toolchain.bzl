@@ -168,7 +168,8 @@ def _haskell_toolchain_impl(ctx):
             libraries = libraries,
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
-            is_static = ctx.attr.is_static,
+            static_runtime = ctx.attr.static_runtime,
+            fully_static_link = ctx.attr.fully_static_link,
             version = ctx.attr.version,
             global_pkg_db = pkgdb_file,
             protoc = ctx.executable._protoc,
@@ -217,8 +218,11 @@ _haskell_toolchain = rule(
             doc = "Whether compile on and for Windows.",
             mandatory = True,
         ),
-        "is_static": attr.bool(
-            doc = "Whether GHC was linked statically.",
+        "static_runtime": attr.bool(
+            doc = "Whether GHC was linked with a static runtime.",
+        ),
+        "fully_static_link": attr.bool(
+            doc = "Whether GHC should build fully-statically-linked binaries.",
         ),
         "locale": attr.string(
             default = "C.UTF-8",
@@ -250,7 +254,8 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
 def haskell_toolchain(
         name,
         version,
-        is_static,
+        static_runtime,
+        fully_static_link,
         tools,
         libraries,
         compiler_flags = [],
@@ -274,7 +279,8 @@ def haskell_toolchain(
       haskell_toolchain(
           name = "ghc",
           version = "1.2.3",
-          is_static = is_static,
+          static_runtime = static_runtime,
+          fully_static_link = fully_static_link,
           tools = ["@sys_ghc//:bin"],
           compiler_flags = ["-Wall"],
       )
@@ -296,7 +302,8 @@ def haskell_toolchain(
     _haskell_toolchain(
         name = name,
         version = version,
-        is_static = is_static,
+        static_runtime = static_runtime,
+        fully_static_link = fully_static_link,
         tools = tools,
         libraries = libraries,
         compiler_flags = compiler_flags,

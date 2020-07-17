@@ -58,7 +58,7 @@ def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, include_rea
         hs,
         cc_libraries_info,
         libraries_to_link,
-        dynamic = not hs.toolchain.is_static,
+        dynamic = not hs.toolchain.static_runtime,
         pic = True,
         include_real_paths = include_real_paths,
     )
@@ -95,7 +95,7 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
         pic = dynamic
 
     # PIC is irrelevant on static GHC.
-    pic_required = pic and not hs.toolchain.is_static
+    pic_required = pic and not hs.toolchain.static_runtime
     for lib_to_link in libraries_to_link:
         cc_library_info = cc_libraries_info.libraries[cc_library_key(lib_to_link)]
         dynamic_lib = None
@@ -131,7 +131,7 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
 
     return (static_libs, dynamic_libs)
 
-def link_libraries(libs, args, prefix_optl = False):
+def link_libraries(libs, args, path_prefix = "", prefix_optl = False):
     """Add linker flags to link against the given libraries.
 
     This function is intended for linking C library dependencies. Haskell
@@ -141,15 +141,18 @@ def link_libraries(libs, args, prefix_optl = False):
     Args:
       libs: Sequence of File, libraries to link.
       args: Args or List, append arguments to this object.
+      path_prefix: String, a prefix to apply to search directory arguments. If
+        this is a directory, trailing slashes should be included explicitly (this
+        function will not add them automatically).
       prefix_optl: Bool, whether to prefix linker flags by -optl
 
     """
     if prefix_optl:
         libfmt = "-optl-l%s"
-        dirfmt = "-optl-L%s"
+        dirfmt = "-optl-L" + path_prefix + "%s"
     else:
         libfmt = "-l%s"
-        dirfmt = "-L%s"
+        dirfmt = "-L" + path_prefix + "%s"
 
     if hasattr(args, "add_all"):
         args.add_all(libs, map_each = get_lib_name, format_each = libfmt)

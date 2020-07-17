@@ -76,7 +76,8 @@ haskell_toolchain(
     tools = {tools},
     libraries = toolchain_libraries,
     version = "{version}",
-    is_static = {is_static},
+    static_runtime = {static_runtime},
+    fully_static_link = {fully_static_link},
     compiler_flags = {compiler_flags} + {compiler_flags_select},
     haddock_flags = {haddock_flags},
     cabalopts = {cabalopts},
@@ -90,7 +91,8 @@ haskell_toolchain(
             toolchain_libraries = toolchain_libraries,
             tools = ["@rules_haskell_ghc_nixpkgs//:bin"],
             version = repository_ctx.attr.version,
-            is_static = repository_ctx.attr.is_static,
+            static_runtime = repository_ctx.attr.static_runtime,
+            fully_static_link = repository_ctx.attr.fully_static_link,
             compiler_flags = repository_ctx.attr.compiler_flags,
             compiler_flags_select = compiler_flags_select,
             haddock_flags = repository_ctx.attr.haddock_flags,
@@ -107,7 +109,8 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         # These attributes just forward to haskell_toolchain.
         # They are documented there.
         "version": attr.string(),
-        "is_static": attr.bool(),
+        "static_runtime": attr.bool(),
+        "fully_static_link": attr.bool(),
         "compiler_flags": attr.string_list(),
         "compiler_flags_select": attr.string_list_dict(),
         "haddock_flags": attr.string_list(),
@@ -162,7 +165,9 @@ _ghc_nixpkgs_toolchain = repository_rule(_ghc_nixpkgs_toolchain_impl)
 
 def haskell_register_ghc_nixpkgs(
         version,
-        is_static = False,
+        is_static = None,  # DEPRECATED. See _check_static_attributes_compatibility.
+        static_runtime = None,
+        fully_static_link = None,
         build_file = None,
         build_file_content = None,
         compiler_flags = None,
@@ -209,6 +214,17 @@ def haskell_register_ghc_nixpkgs(
       ```
 
     Args:
+      is_static: Deprecated. The functionality it previously gated
+        (supporting GHC versions with static runtime systems) now sits under
+        static_runtime, a name chosen to avoid confusion with the new flag
+        fully_static_link, which controls support for fully-statically-linked
+        binaries. During the deprecation period, we rewrite is_static to
+        static_runtime in this macro as long as the new attributes aren't also
+        used. This argument and supporting code should be removed in a future release.
+      static_runtime: True if and only if a static GHC runtime is to be used. This is
+        required in order to use statically-linked Haskell libraries with GHCi
+        and Template Haskell.
+      fully_static_link: True if and only if fully-statically-linked binaries are to be built.
       compiler_flags_select: temporary workaround to pass conditional arguments.
         See https://github.com/bazelbuild/bazel/issues/9199 for details.
       sh_posix_attributes: List of attribute paths to extract standard Unix shell tools from.
@@ -218,6 +234,12 @@ def haskell_register_ghc_nixpkgs(
     nixpkgs_sh_posix_repo_name = "rules_haskell_sh_posix_nixpkgs"
     haskell_toolchain_repo_name = "rules_haskell_ghc_nixpkgs_haskell_toolchain"
     toolchain_repo_name = "rules_haskell_ghc_nixpkgs_toolchain"
+
+    static_runtime, fully_static_link = _check_static_attributes_compatibility(
+        is_static = is_static,
+        static_runtime = static_runtime,
+        fully_static_link = fully_static_link,
+    )
 
     # The package from the system.
     nixpkgs_package(
@@ -237,7 +259,8 @@ def haskell_register_ghc_nixpkgs(
     _ghc_nixpkgs_haskell_toolchain(
         name = haskell_toolchain_repo_name,
         version = version,
-        is_static = is_static,
+        static_runtime = static_runtime,
+        fully_static_link = fully_static_link,
         compiler_flags = compiler_flags,
         compiler_flags_select = compiler_flags_select,
         haddock_flags = haddock_flags,
@@ -264,6 +287,49 @@ def haskell_register_ghc_nixpkgs(
         name = nixpkgs_sh_posix_repo_name,
         **sh_posix_nixpkgs_kwargs
     )
+
+def _check_static_attributes_compatibility(is_static, static_runtime, fully_static_link):
+    """Asserts that attributes passed to `haskell_register_ghc_nixpkgs` for
+    controlling use of GHC's static runtime and whether or not to build
+    fully-statically-linked binaries are compatible.
+
+    Args:
+      is_static: Deprecated. The functionality it previously gated
+        (supporting GHC versions with static runtime systems) now sits under
+        static_runtime, a name chosen to avoid confusion with the new flag
+        fully_static_link, which controls support for fully-statically-linked
+        binaries. During the deprecation period, we rewrite is_static to
+        static_runtime in this macro as long as the new attributes aren't also
+        used. This argument and supporting code should be removed in a future release.
+      static_runtime: True if and only if a static GHC runtime is to be used. This is
+        required in order to use statically-linked Haskell libraries with GHCi
+        and Template Haskell.
+      fully_static_link: True if and only if fully-statically-linked binaries are to be built.
+
+    Returns:
+      A tuple of static_runtime, fully_static_link attributes, which are guaranteed
+      not to be None, taking into account the deprecated is_static argument.
+    """
+
+    # Check for use of the deprecated `is_static` attribute.
+    if is_static != None:
+        if static_runtime != None or fully_static_link != None:
+            fail("is_static is deprecated. Please use the static_runtime attribute instead.")
+
+        print("WARNING: is_static is deprecated. Please use the static_runtime attribute instead.")
+        static_runtime = is_static
+
+    # Currently we do not support the combination of a dynamic runtime system
+    # and fully-statically-linked binaries, so fail if this has been selected.
+    if not static_runtime and fully_static_link:
+        fail(
+            """\
+Fully-statically-linked binaries with a dynamic runtime are not currently supported.
+Please pass static_runtime = True if you wish to build fully-statically-linked binaries.
+""",
+        )
+
+    return bool(static_runtime), bool(fully_static_link)
 
 def _find_children(repository_ctx, target_dir):
     find_args = [
