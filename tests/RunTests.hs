@@ -19,7 +19,7 @@ main = hspec $ do
     assertSuccess (bazel ["run", "//:buildifier"])
 
   it "bazel test" $ do
-    assertSuccess (bazel ["test", "//...", "--build_tests_only"])
+    assertSuccess (bazel ["test", "//tests/..."])
 
   it "bazel test prof" $ do
     -- In .circleci/config.yml we specify --test_tag_filters
@@ -28,7 +28,7 @@ main = hspec $ do
     -- we have to duplicate that filter here.
     let tagFilter | os == "darwin" = "-dont_test_on_darwin,-requires_dynamic"
                   | otherwise      = "-requires_dynamic"
-    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only", "--test_tag_filters", tagFilter])
+    assertSuccess (bazel ["test", "-c", "dbg", "//tests/...", "--test_tag_filters", tagFilter])
 
   it "bazel build worker" $ do
     assertSuccess (bazel ["build", "//tools/worker:bin"])
