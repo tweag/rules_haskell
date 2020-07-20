@@ -9,7 +9,7 @@
 Bazel automates building and testing software. It scales to very large
 multi-language projects. This project extends Bazel with build rules
 for Haskell. Get started building your own project using these rules
-wih the [setup script below](#setup).
+with the [setup script below](#setup).
 
 [bazel]: https://bazel.build/
 [bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
