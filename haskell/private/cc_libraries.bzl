@@ -332,19 +332,21 @@ def extend_HaskellCcLibrariesInfo(
 
     return HaskellCcLibrariesInfo(libraries = libraries)
 
-def _haskell_cc_libraries_aspect_impl(target, ctx):
-    if HaskellProtobufInfo in target:
-        # haskell_cc_libraries_aspect depends on the CcInfo and optionally
-        # HaskellInfo providers of a target. In the case of proto_library
-        # targets these providers are returned by the _haskell_proto_aspect.
-        # That aspect in turn requires HaskellCcLibrariesInfo in all its
-        # dependencies. Bazel does not allow this kind of cyclic dependency and
-        # one aspect will not be able to observe the other.
-        #
-        # To work around this we instead generate HaskellCcLibrariesInfo within
-        # _haskell_proto_aspect and bundle it in HaskellProtobufInfo.
-        return target[HaskellProtobufInfo].cc_libraries_info
+def extract_HaskellCcLibrariesInfo(target, ctx):
+    """Obtain HaskellCcLibrariesInfo for a target and its dependencies.
 
+    Lookup and merge HaskellCcLibrariesInfo in all dependencies of target. If
+    target provides CcInfo then extend HaskellCcLibrariesInfo based on the
+    target's CcInfo.
+
+    Args:
+      target: The target to inspect.
+        Requires haskell_cc_libraries_aspect on target's dependencies.
+      ctx: Aspect or rule context.
+
+    Returns:
+      HaskellCcLibrariesInfo
+    """
     hs = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
@@ -363,7 +365,22 @@ def _haskell_cc_libraries_aspect_impl(target, ctx):
             is_haskell = HaskellInfo in target,
         )
 
-    return [cc_libraries_info]
+    return cc_libraries_info
+
+def _haskell_cc_libraries_aspect_impl(target, ctx):
+    if HaskellProtobufInfo in target:
+        # haskell_cc_libraries_aspect depends on the CcInfo and optionally
+        # HaskellInfo providers of a target. In the case of proto_library
+        # targets these providers are returned by the _haskell_proto_aspect.
+        # That aspect in turn requires HaskellCcLibrariesInfo in all its
+        # dependencies. Bazel does not allow this kind of cyclic dependency and
+        # one aspect will not be able to observe the other.
+        #
+        # To work around this we instead generate HaskellCcLibrariesInfo within
+        # _haskell_proto_aspect and bundle it in HaskellProtobufInfo.
+        return target[HaskellProtobufInfo].cc_libraries_info
+
+    return extract_HaskellCcLibrariesInfo(target, ctx)
 
 haskell_cc_libraries_aspect = aspect(
     implementation = _haskell_cc_libraries_aspect_impl,

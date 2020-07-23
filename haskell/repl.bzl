@@ -24,6 +24,7 @@ load(
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
+    "extract_HaskellCcLibrariesInfo",
     "get_cc_libraries",
     "get_ghci_library_files",
     "get_library_files",
@@ -200,7 +201,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
             cc_libraries_info =
                 # Work around missing aspects when invoked via --aspects.
                 # See https://github.com/bazelbuild/bazel/issues/11736
-                target[HaskellCcLibrariesInfo] if HaskellCcLibrariesInfo in target else merge_HaskellCcLibrariesInfo(infos = []),
+                target[HaskellCcLibrariesInfo] if HaskellCcLibrariesInfo in target else extract_HaskellCcLibrariesInfo(target, ctx),
             cc_info = target[CcInfo],
             runfiles = target[DefaultInfo].default_runfiles,
         )
