@@ -388,15 +388,6 @@ haskell_doc(
     deps = [":utils"],
 )
 
-haskell_repl(
-    name = "hie-bios",
-    collect_data = False,
-    deps = [
-        "//tests:run-tests",
-        "//tests/binary-with-lib",
-    ],
-)
-
 sh_test(
     name = "ghcide-smoke-test",
     srcs = ["@ghcide-exe//ghcide"],
