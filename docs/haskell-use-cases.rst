@@ -148,9 +148,7 @@ Configuring IDE integration with ghcide
 
 rules_haskell has preliminary support for IDE integration using `ghcide`_. The
 ghcide project provides IDE features for Haskell projects through the Language
-Server Protocol. To set this up you can define a `haskell_repl`_ target that
-will collect the required compiler flags for your Haskell targets and pass them
-to `hie-bios`_ which will then forward them to ghcide.
+Server Protocol.
 
 Let's set this up for the following example project::
 
@@ -180,41 +178,29 @@ Let's set this up for the following example project::
       ],
   )
 
-We want to configure ghcide to provide IDE integration for all these three
-targets. Start by defining a ``haskell_repl`` target as follows::
+You can query the required GHCi arguments using the ``hie-bios`` script
+provided by rules_haskell::
 
-  haskell_repl(
-    name = "hie-bios",
-    collect_data = False,
-    deps = [
-      ":binary",
-      # ":library-a",
-      # ":library-b",
-    ],
-  )
+  bazel run @rules_haskell//haskell:hie-bios Main.hs
 
-Note, that ``library-a`` and ``library-b`` do not have to be listed explicitly.
-By default haskell_repl will include all transitive dependencies that are not
-external dependencies. Refer to the API documentation of `haskell_repl`_ for
-details.
+By default this will return the flags to load all transitive dependencies of
+``Main.hs`` that are defined in the local workspace from source. You can define
+a list of comma-separated patterns of targets that should instead be compiled
+and loaded as binary dependencies as follows::
 
-We also disable building runtime dependencies using ``collect_data = False`` as
-they are not required for an IDE session.
+  bazel run @rules_haskell//haskell:hie-bios -- --from_binary=//:library-b Main.hs
 
-You can test if this provides the expected compiler flags by running the
-following Bazel command and taking a look at the generated file::
+Note the ``--`` to separate Bazel flags from flags to the ``hie-bios`` script.
 
-  bazel build //:hie-bios --output_groups=hie_bios
+You can also instruct the ``hie-bios`` script to produce additional GHC flags::
+
+  bazel run @rules_haskell//haskell:hie-bios -- --extra=-Wwarn Main.hs
 
 Next, we need to hook this up to `hie-bios`_ using the `bios cradle`_. To that
 end, define a small shell script named ``.hie-bios`` that looks as follows::
 
   #!/usr/bin/env bash
-  set -euo pipefail
-  bazel build //:hie-bios --output_groups=hie_bios
-  cat bazel-bin/hie-bios@hie-bios >"$HIE_BIOS_OUTPUT"
-  # Make warnings non-fatal
-  echo -Wwarn >>"$HIE_BIOS_OUTPUT"
+  bazel run @rules_haskell//haskell:hie-bios -- --extra=-Wwarn "$@"
 
 Then configure `hie-bios`_ to use this script in the bios cradle with the
 following ``hie.yaml`` file::
@@ -234,27 +220,19 @@ ghcide requires based on `ghcide's stack.yaml`_ file. Let's call it
 ``extra-deps`` field into a ``packages`` field. Then add another entry to
 ``packages`` for the ghcide library itself::
 
-  # Taken from ghcide's stack.yaml
-  resolver: nightly-2019-09-21
+  # Taken from ghcide's stack88.yaml
+  resolver: nightly-2020-02-13
   packages:
     # Taken from the extra-deps field.
-    - haskell-lsp-0.21.0.0
-    - haskell-lsp-types-0.21.0.0
-    - lsp-test-0.10.2.0
-    - hie-bios-0.4.0
-    - fuzzy-0.1.0.0
-    - regex-pcre-builtin-0.95.1.1.8.43
-    - regex-base-0.94.0.0
-    - regex-tdfa-1.3.1.0
-    - shake-0.18.5
-    - parser-combinators-1.2.1
-    - haddock-library-1.8.0
-    - tasty-rerun-1.1.17
-    - ghc-check-0.1.0.3
+    - haskell-lsp-0.22.0.0
+    - haskell-lsp-types-0.22.0.0
+    - lsp-test-0.11.0.1
+    - ghc-check-0.3.0.1
+    - hie-bios-0.5.0
     # Point to the ghcide revision that you would like to use.
     - github: digital-asset/ghcide
-      commit: "39605333c34039241768a1809024c739df3fb2bd"
-      sha256: "47cca96a6e5031b3872233d5b9ca14d45f9089da3d45a068e1b587989fec4364"
+      commit: "4149ab539d736328e29957c7eee752e0413fdd40"
+      sha256: "e32cba41d392d17743354b7a54c4b367939cc59fa6d7f060a8ad0d5b6e3e8af3"
 
 Then define a dedicated ``stack_snapshot`` for ghcide in your ``WORKSPACE``
 file. The ``ghcide`` package has a library and an executable component which we
