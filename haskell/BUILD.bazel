@@ -122,6 +122,13 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
+# hie-bios bios cradle script.
+sh_binary(
+    name = "hie-bios",
+    srcs = ["hie-bios.sh"],
+    visibility = ["//visibility:public"],
+)
+
 # toolchains must have a valid toolchain_type from bazel 0.21
 toolchain_type(
     name = "toolchain",
