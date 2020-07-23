@@ -304,7 +304,8 @@ haskell_toolchain(
     tools = [":bin"],
     libraries = toolchain_libraries,
     version = "{version}",
-    is_static = {is_static},
+    static_runtime = {static_runtime},
+    fully_static_link = {fully_static_link},
     compiler_flags = {compiler_flags},
     haddock_flags = {haddock_flags},
     repl_ghci_args = {repl_ghci_args},
@@ -315,7 +316,11 @@ haskell_toolchain(
     """.format(
         toolchain_libraries = toolchain_libraries,
         version = ctx.attr.version,
-        is_static = os == "windows",
+        static_runtime = os == "windows",
+
+        # At present we don't support fully-statically-linked binaries with GHC
+        # bindists.
+        fully_static_link = False,
         compiler_flags = ctx.attr.compiler_flags,
         haddock_flags = ctx.attr.haddock_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,

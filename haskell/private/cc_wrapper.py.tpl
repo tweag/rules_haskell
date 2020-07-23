@@ -46,6 +46,14 @@ used to avoid command line length limitations.
 
     See https://gitlab.haskell.org/ghc/ghc/issues/17185.
 
+- Fixes invocations that handle temporary and intermediate binaries
+
+    GHC with Template Haskell or tools like hsc2hs build temporary Haskell
+    binaries (that e.g. generate other Haskell code) as part of the build
+    process. This wrapper ensures that linking behaviour for these binaries
+    matches the characteristics of the wider build (e.g. runpath configuration,
+    etc.)
+
 """
 
 from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles

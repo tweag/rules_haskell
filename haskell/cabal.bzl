@@ -165,7 +165,7 @@ def _prepare_cabal_inputs(
         dynamic = True,
     )
 
-    # Executables build by Cabal will link Haskell libraries statically, so we
+    # Executables built by Cabal will link Haskell libraries statically, so we
     # only need to include dynamic C libraries in the runfiles tree.
     (_, runfiles_libs) = get_library_files(
         hs,
@@ -230,6 +230,34 @@ def _prepare_cabal_inputs(
             ],
             uniquify = True,
         )
+
+    # When building in a static context, we need to make sure that Cabal passes
+    # a couple of options that ensure any static code it builds can be linked
+    # correctly.
+    #
+    # * If we are using a static runtime, we need to ensure GHC generates
+    #   position-independent code (PIC). On Unix we need to pass GHC both
+    #   `-fPIC` and `-fexternal-dynamic-refs`: with `-fPIC` alone, GHC will
+    #   generate `R_X86_64_PC32` relocations on Unix, which prevent loading its
+    #   static libraries as PIC.
+    #
+    # * If we are building fully-statically-linked binaries, we need to ensure that
+    #   we pass arguments to `hsc2hs` such that objects it builds are statically
+    #   linked, otherwise we'll get dynamic linking errors when trying to
+    #   execute those objects to generate code as part of the build.  Since the
+    #   static configuration should ensure that all the objects involved are
+    #   themselves statically built, this is just a case of passing `-static` to
+    #   the linker used by `hsc2hs` (which will be our own wrapper script which
+    #   eventually calls `gcc`, etc.).
+    if hs.toolchain.static_runtime:
+        args.add("--ghc-option=-fPIC")
+
+        if not hs.toolchain.is_windows:
+            args.add("--ghc-option=-fexternal-dynamic-refs")
+
+    if hs.toolchain.fully_static_link:
+        args.add("--hsc2hs-option=--lflag=-static")
+
     args.add("--")
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(direct_include_dirs, format_each = "--extra-include-dirs=%s")
@@ -359,7 +387,7 @@ def _haskell_cabal_library_impl(ctx):
     else:
         profiling_library = None
         static_library = vanilla_library
-    if hs.toolchain.is_static:
+    if hs.toolchain.static_runtime:
         dynamic_library = None
     else:
         dynamic_library = hs.actions.declare_file(

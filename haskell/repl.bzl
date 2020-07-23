@@ -316,12 +316,26 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         cc_library_files = _concat(get_library_files(hs, cc_libraries_info, cc_libraries))
     else:
         cc_library_files = get_ghci_library_files(hs, cc_libraries_info, cc_libraries)
-    link_libraries(cc_library_files, args)
+
+    # REPL scripts `cd` into the workspace root. Depending on their provenance,
+    # some C libraries' files may be in subdirectories which are _only_ relative
+    # to the execroot. External static C library dependencies are an example of
+    # this -- unchanged we may end up with paths like
+    # `external/some_dependency/lib` and/or
+    # `bazel-out/k8-fastbuild/bin/_solib_k8/...`; the former containing the
+    # archive (`.a`) file we want, but only being relative to the execroot, and
+    # the latter being relative to both the workspace root and the execroot but
+    # only containing dynamic libraries.
+    #
+    # We fix this by prefixing paths with the execroot when generating linker
+    # flags so that all required libraries are visible.
+    link_libraries(cc_library_files, args, path_prefix = path_prefix + "/")
 
     if static:
         all_library_files = _concat(get_library_files(hs, cc_libraries_info, all_libraries, include_real_paths = True))
     else:
         all_library_files = get_ghci_library_files(hs, cc_libraries_info, all_libraries, include_real_paths = True)
+
     inputs = depset(transitive = [
         repl_info.load_info.source_files,
         repl_info.dep_info.package_databases,
