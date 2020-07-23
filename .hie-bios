@@ -1,19 +1,9 @@
 #!/usr/bin/env bash
-set -euo pipefail
-build_hie_bios() {
-  bazel build @rules_haskell//haskell:hie-bios \
-    --experimental_show_artifacts \
-    2>&1 \
-    | awk '
-      /^>>>/ { print substr($1, 4); next }
-      { print $0 > "/dev/stderr" }
-    '
-}
-hie_bios="$(build_hie_bios)"
 # Beware of workspace prefix issues on build settings and aspects:
 # https://github.com/bazelbuild/bazel/issues/9177
 # https://github.com/bazelbuild/bazel/issues/11734
-RULES_HASKELL_INTERNAL=1 "$hie_bios" \
+RULES_HASKELL_INTERNAL=1 \
+  bazel run @rules_haskell//haskell:hie-bios -- \
   --from_binary=//tools/... \
   --extra=-Wwarn \
   "$@"
