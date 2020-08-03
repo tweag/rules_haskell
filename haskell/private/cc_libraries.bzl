@@ -141,25 +141,25 @@ def link_libraries(libs, args, path_prefix = "", prefix_optl = False):
     Args:
       libs: Sequence of File, libraries to link.
       args: Args or List, append arguments to this object.
-      path_prefix: String, a prefix to apply to search directory arguments. If
-        this is a directory, trailing slashes should be included explicitly (this
-        function will not add them automatically).
+      path_prefix: String, a prefix to apply to search directory arguments. A
+        trailing slash will automatically be added to this argument if provided
+        (you do not need to provide one).
       prefix_optl: Bool, whether to prefix linker flags by -optl
 
     """
     if prefix_optl:
         libfmt = "-optl-l%s"
-        dirfmt = "-optl-L" + path_prefix + "%s"
+        dirfmt = "-optl-L" + paths.join(path_prefix, "%s")
     else:
         libfmt = "-l%s"
-        dirfmt = "-L" + path_prefix + "%s"
+        dirfmt = "-L" + paths.join(path_prefix, "%s")
 
     if hasattr(args, "add_all"):
-        args.add_all(libs, map_each = get_lib_name, format_each = libfmt)
         args.add_all(libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
+        args.add_all(libs, map_each = get_lib_name, format_each = libfmt)
     else:
-        args.extend([libfmt % get_lib_name(lib) for lib in libs])
         args.extend([dirfmt % lib.dirname for lib in libs])
+        args.extend([libfmt % get_lib_name(lib) for lib in libs])
 
 def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.
