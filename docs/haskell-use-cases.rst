@@ -771,10 +771,11 @@ Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nix
   nixpkgs_package(
       name = "raw-haskell-base-image",
       repository = "//nixpkgs:default.nix",
-      nix_file = "//nixpkgs:haskellBaseImageDocker.nix", # See below for how to define this
+      # See below for how to define this
+      nix_file = "//nixpkgs:haskellBaseImageDocker.nix",
       build_file_content = """
-  package(default_visibility = [ "//visibility:public" ]),
-  exports_file(["image"])
+  package(default_visibility = [ "//visibility:public" ])
+  exports_files(["image"])
       """,
   )
 
