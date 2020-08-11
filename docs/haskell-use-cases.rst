@@ -712,8 +712,8 @@ expression that supplies appropriate ``cc`` and ``binutils`` derivations::
   )
 
 With the toolchain taken care of, you can then create fully-statically-linked
-binaries by passing the ``-optl-static`` and ``-optl-pthread`` flags as
-``compiler_flags`` to GHC, e.g. in ``haskell_binary``::
+binaries by passing the ``-optl-static`` flag as ``compiler_flags`` to GHC,
+e.g. in ``haskell_binary``::
 
   haskell_binary(
       name = ...,
@@ -723,7 +723,6 @@ binaries by passing the ``-optl-static`` and ``-optl-pthread`` flags as
       ...,
       compiler_flags = [
           "-optl-static",
-          "-optl-pthread",
       ],
   )
 
