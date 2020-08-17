@@ -258,6 +258,9 @@ def _prepare_cabal_inputs(
     if hs.toolchain.fully_static_link:
         args.add("--hsc2hs-option=--lflag=-static")
 
+    if hs.features.fully_static_link:
+        args.add("--ghc-option=-optl-static")
+
     args.add("--")
     args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
     args.add_all(direct_include_dirs, format_each = "--extra-include-dirs=%s")

@@ -118,6 +118,10 @@ def link_binary(
     # so we just default to passing it.
     args.add("-optl-pthread")
 
+    if hs.features.fully_static_link:
+        # Create a fully statically linked binary.
+        args.add("-optl-static")
+
     args.add_all(["-o", executable.path])
 
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(

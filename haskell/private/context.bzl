@@ -59,6 +59,9 @@ def haskell_context(ctx, attr = None):
         bin_dir = ctx.bin_dir,
         genfiles_dir = ctx.genfiles_dir,
         coverage_enabled = coverage_enabled,
+        features = struct(
+            fully_static_link = "fully_static_link" in ctx.features,
+        ),
     )
 
 def render_env(env):

@@ -712,8 +712,7 @@ expression that supplies appropriate ``cc`` and ``binutils`` derivations::
   )
 
 With the toolchain taken care of, you can then create fully-statically-linked
-binaries by passing the ``-optl-static`` flag as ``compiler_flags`` to GHC,
-e.g. in ``haskell_binary``::
+binaries by enabling the ``fully_static_link`` feature flag, e.g. in ``haskell_binary``::
 
   haskell_binary(
       name = ...,
@@ -721,12 +720,18 @@ e.g. in ``haskell_binary``::
           ...,
       ],
       ...,
-      compiler_flags = [
-          "-optl-static",
+      features = [
+          "fully_static_link",
       ],
   )
 
+Note, feature flags can be configured `per target`_, `per package`_, or
+globally on the `command line`_.
+
 .. _static-haskell-nix: https://github.com/nh2/static-haskell-nix
+.. _per target: https://docs.bazel.build/versions/master/be/common-definitions.html#common.features
+.. _per package: https://docs.bazel.build/versions/master/be/functions.html#package.features
+.. _command line: https://docs.bazel.build/versions/master/command-line-reference.html#flag--features
 
 Containerization with rules_docker
 ----------------------------------
