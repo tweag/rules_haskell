@@ -775,6 +775,7 @@ haskell_cabal_binary = rule(
         ),
         "tools": attr.label_list(
             cfg = "host",
+            allow_files = True,
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
         ),

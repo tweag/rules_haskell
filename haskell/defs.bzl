@@ -56,6 +56,7 @@ _haskell_common_attrs = {
     ),
     "tools": attr.label_list(
         cfg = "host",
+        allow_files = True,
     ),
     "_ghci_script": attr.label(
         allow_single_file = True,
