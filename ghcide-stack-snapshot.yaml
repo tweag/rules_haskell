@@ -1,13 +1,10 @@
-# Taken from ghcide's stack88.yaml
-resolver: nightly-2020-02-13
+resolver: nightly-2020-06-19
 packages:
-  # Taken from the extra-deps field.
-  - haskell-lsp-0.22.0.0
-  - haskell-lsp-types-0.22.0.0
-  - lsp-test-0.11.0.1
-  - ghc-check-0.3.0.1
-  - hie-bios-0.5.0
-  # Point to the ghcide revision that you would like to use.
-  - github: digital-asset/ghcide
-    commit: "4149ab539d736328e29957c7eee752e0413fdd40"
-    sha256: "e32cba41d392d17743354b7a54c4b367939cc59fa6d7f060a8ad0d5b6e3e8af3"
+- haskell-lsp-0.22.0.0
+- haskell-lsp-types-0.22.0.0
+- lsp-test-0.11.0.2
+- ghc-check-0.5.0.1
+- hie-bios-0.7.1
+- github: haskell/ghcide
+  commit: 6128c74ba2ef7a6d032eed6c9b954c2b5acd0f17
+  sha256: bf403621a3959e1b016e32c55dae9b3699563e973e0d94f67a9440253a701b71
