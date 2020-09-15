@@ -140,7 +140,8 @@ def _prepare_cabal_inputs(
         package_database,
         verbose,
         transitive_haddocks,
-        dynamic_binary = None):
+        is_library = False,
+        dynamic_file = None):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -212,16 +213,16 @@ def _prepare_cabal_inputs(
         for arg in ["-package-db", "./" + _dirname(package_db)]
     ], join_with = " ", format_each = "--ghc-arg=%s", omit_if_empty = False)
     args.add("--flags=" + " ".join(flags))
-    if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
+    if dynamic_file and not (is_library or hs.toolchain.is_darwin or hs.toolchain.is_windows):
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         args.add("--ghc-option=-optl-no-pie")
     args.add_all(hs.toolchain.cabalopts)
     args.add_all(cabalopts)
-    if dynamic_binary:
+    if dynamic_file:
         args.add_all(
             [
                 "--ghc-option=-optl-Wl,-rpath," + create_rpath_entry(
-                    binary = dynamic_binary,
+                    binary = dynamic_file,
                     dependency = lib,
                     keep_filename = False,
                     prefix = relative_rpath_prefix(hs.toolchain.is_darwin),
@@ -426,7 +427,8 @@ def _haskell_cabal_library_impl(ctx):
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
         verbose = ctx.attr.verbose,
-        dynamic_binary = dynamic_library,
+        is_library = True,
+        dynamic_file = dynamic_library,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
     )
     outputs = [
@@ -702,7 +704,7 @@ def _haskell_cabal_binary_impl(ctx):
         cabal_wrapper = ctx.executable._cabal_wrapper,
         package_database = package_database,
         verbose = ctx.attr.verbose,
-        dynamic_binary = binary,
+        dynamic_file = binary,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
     )
     ctx.actions.run(
