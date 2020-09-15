@@ -5,6 +5,11 @@ labels: 'type: bug'
 
 ---
 
+<!-- NOTE: If you are trying to use GHC 8.10,
+     there is a known linking issue.
+     Please see https://github.com/tweag/rules_haskell/issues/1418
+    -->
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
