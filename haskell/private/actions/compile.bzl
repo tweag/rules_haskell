@@ -476,6 +476,12 @@ def compile_library(
     if with_shared:
         c.args.add("-dynamic-too")
 
+        # See Note [No PIE when linking] in haskell/private/actions/link.bzl
+        if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
+            version = [int(x) for x in hs.toolchain.version.split(".")]
+            if version < [8, 10]:
+                c.args.add("-optl-no-pie")
+
     coverage_data = []
     if hs.coverage_enabled:
         c.args.add_all(_hpc_compiler_args(hs))

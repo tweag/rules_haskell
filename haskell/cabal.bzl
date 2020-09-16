@@ -213,9 +213,12 @@ def _prepare_cabal_inputs(
         for arg in ["-package-db", "./" + _dirname(package_db)]
     ], join_with = " ", format_each = "--ghc-arg=%s", omit_if_empty = False)
     args.add("--flags=" + " ".join(flags))
-    if dynamic_file and not (is_library or hs.toolchain.is_darwin or hs.toolchain.is_windows):
+    if dynamic_file:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
-        args.add("--ghc-option=-optl-no-pie")
+        if not (hs.toolchain.is_darwin or hs.toolchain.is_windows):
+            version = [int(x) for x in hs.toolchain.version.split(".")]
+            if version < [8, 10] or not is_library:
+                args.add("--ghc-option=-optl-no-pie")
     args.add_all(hs.toolchain.cabalopts)
     args.add_all(cabalopts)
     if dynamic_file:

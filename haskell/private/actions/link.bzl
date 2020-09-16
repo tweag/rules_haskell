@@ -215,6 +215,9 @@ def link_binary(
 # compiler. This disables the flags configured in the `setting` file. Instead,
 # we have to pass `-no-pie` explicitly when linking binaries.
 #
+# In GHC < 8.10, we must always pass -no-pie. In newer compilers, we
+# must take care to only pass -no-pie when compiling libraries.
+#
 # Ideally, we would determine whether the CC toolchain's C compiler supports
 # `-no-pie` before setting it. Unfortunately, this is complicated by the fact
 # that Bazel does not support dynamic dependencies in build actions and that
