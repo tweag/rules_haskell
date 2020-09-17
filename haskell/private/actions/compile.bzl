@@ -475,9 +475,12 @@ def compile_library(
     c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, preprocessors = preprocessors)
     if with_shared:
         c.args.add("-dynamic-too")
+
+        # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
-            # See Note [No PIE when linking] in haskell/private/actions/link.bzl
-            c.args.add("-optl-no-pie")
+            version = [int(x) for x in hs.toolchain.version.split(".")]
+            if version < [8, 10]:
+                c.args.add("-optl-no-pie")
 
     coverage_data = []
     if hs.coverage_enabled:

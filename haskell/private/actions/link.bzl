@@ -213,7 +213,10 @@ def link_binary(
 # on this setting GHC would then automatically set `-no-pie`. However,
 # rules_haskell uses GHC's `-pgmc` flag to point GHC to the CC toolchain's C
 # compiler. This disables the flags configured in the `setting` file. Instead,
-# we have to pass `-no-pie` explicitly.
+# we have to pass `-no-pie` explicitly when linking binaries.
+#
+# In GHC < 8.10, we must always pass -no-pie. In newer compilers, we
+# must take care to only pass -no-pie when compiling libraries.
 #
 # Ideally, we would determine whether the CC toolchain's C compiler supports
 # `-no-pie` before setting it. Unfortunately, this is complicated by the fact
