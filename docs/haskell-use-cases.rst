@@ -49,7 +49,7 @@ binary distributions for all platforms (Bazel will select one during
 toolchain resolution based on the target platform)::
 
   load(
-      "@rules_haskell//haskell:defs.bzl",
+      "@rules_haskell//haskell:ghc_bindist.bzl",
       "haskell_register_ghc_bindists",
   )
 
