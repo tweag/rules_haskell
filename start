@@ -48,12 +48,22 @@ parse_args () {
     esac
 }
 
-check_files_dont_exist () {
-    if [ -e WORKSPACE ] || [ -e BUILD ] || [ -e BazelExample.hs ]
+check_clash () {
+    if [ -f "$1" ] # directories don't clash, we're only writing files
     then
-        echo "Current directory already has WORKSPACE and/or BUILD and/or BazelExample.hs files." >&2
+        echo "ERROR: The current directory already has a $1 file we don't want to overwrite." >&2
         exit 1
     fi
+}
+
+check_files_dont_exist () {
+    # Writing BUILD.bazel does not overwrite a BUILD file but include it anyway.
+    # If we're uncomfortable with the slightly off clash message then write
+    # a separate test and message for that case.
+    for clash in .bazelrc WORKSPACE BUILD BUILD.bazel BazelExample.hs
+    do
+        check_clash $clash
+    done
 }
 
 check_bazel_version () {
