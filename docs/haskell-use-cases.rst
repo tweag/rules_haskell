@@ -15,6 +15,24 @@ is known to be compatible with rules_haskell and creates a new Bazel
 workspace in the current working directory with a few dummy build
 targets. See the following sections about customizing the workspace.
 
+Making rules_haskell available
+------------------------------
+
+First of all, the ``WORKSPACE`` file must specify how to obtain
+rules_haskell. To use a released version, do the following::
+
+  load(
+      "@bazel_tools//tools/build_defs/repo:http.bzl",
+      "http_archive"
+  )
+
+  http_archive(
+      name = "rules_haskell",
+      strip_prefix = "rules_haskell-0.13",
+      urls = ["https://github.com/tweag/rules_haskell/archive/v0.13.tar.gz"],
+      sha256 = "b4e2c00da9bc6668fa0404275fecfdb31beb700abdba0e029e74cacc388d94d6",
+  )
+
 Picking a compiler
 ------------------
 
@@ -31,11 +49,11 @@ binary distributions for all platforms (Bazel will select one during
 toolchain resolution based on the target platform)::
 
   load(
-      "@rules_haskell//haskell:defs.bzl",
-      "haskell_register_ghc_bindists",
+      "@rules_haskell//haskell:toolchain.bzl",
+      "rules_haskell_toolchains",
   )
 
-  haskell_register_ghc_bindists(
+  rules_haskell_toolchains(
       version = "X.Y.Z", # Any GHC version
   )
 
@@ -75,11 +93,10 @@ usable by Bazel's Haskell rules.
 You can register as many toolchains as you like. Nixpkgs toolchains do
 not conflict with binary distributions. For Bazel to select the
 Nixpkgs toolchain during `toolchain resolution`_, set the platform
-appropriately: ``linux_x86_64_nixpkgs``, ``darwin_x86_64_nixpkgs``
-etc. For example, you can have the following in your ``.bazelrc``
-file at the root of your project::
+accordingly. For example, you can have the following in your
+``.bazelrc`` file at the root of your project::
 
-  build --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs
+  build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
 
 .. _Bazel+Nix blog post: https://www.tweag.io/posts/2018-03-15-bazel-nix.html
 .. _Nix package manager: https://nixos.org/nix
@@ -125,6 +142,161 @@ the REPL like this (requires Bazel 0.15 or later)::
 This works for any ``haskell_binary`` or ``haskell_library`` target.
 Modules of all libraries will be loaded in interpreted mode and can be
 reloaded using the ``:r`` GHCi command when source files change.
+
+Configuring IDE integration with ghcide
+---------------------------------------
+
+rules_haskell has preliminary support for IDE integration using `ghcide`_. The
+ghcide project provides IDE features for Haskell projects through the Language
+Server Protocol. To set this up you can define a `haskell_repl`_ target that
+will collect the required compiler flags for your Haskell targets and pass them
+to `hie-bios`_ which will then forward them to ghcide.
+
+Let's set this up for the following example project::
+
+  haskell_toolchain_library(
+      name = "base",
+  )
+
+  haskell_library(
+      name = "library-a",
+      srcs = ["Lib/A.hs"],
+      deps = [":base"],
+  )
+
+  haskell_library(
+      name = "library-b",
+      srcs = ["Lib/B.hs"],
+      deps = [":base"],
+  )
+
+  haskell_binary(
+      name = "binary",
+      srcs = ["Main.hs"],
+      deps = [
+          ":base",
+          ":library-a",
+          ":library-b",
+      ],
+  )
+
+We want to configure ghcide to provide IDE integration for all these three
+targets. Start by defining a ``haskell_repl`` target as follows::
+
+  haskell_repl(
+    name = "hie-bios",
+    collect_data = False,
+    deps = [
+      ":binary",
+      # ":library-a",
+      # ":library-b",
+    ],
+  )
+
+Note, that ``library-a`` and ``library-b`` do not have to be listed explicitly.
+By default haskell_repl will include all transitive dependencies that are not
+external dependencies. Refer to the API documentation of `haskell_repl`_ for
+details.
+
+We also disable building runtime dependencies using ``collect_data = False`` as
+they are not required for an IDE session.
+
+You can test if this provides the expected compiler flags by running the
+following Bazel command and taking a look at the generated file::
+
+  bazel build //:hie-bios --output_groups=hie_bios
+
+Next, we need to hook this up to `hie-bios`_ using the `bios cradle`_. To that
+end, define a small shell script named ``.hie-bios`` that looks as follows::
+
+  #!/usr/bin/env bash
+  set -euo pipefail
+  bazel build //:hie-bios --output_groups=hie_bios
+  cat bazel-bin/hie-bios@hie-bios >"$HIE_BIOS_OUTPUT"
+  # Make warnings non-fatal
+  echo -Wwarn >>"$HIE_BIOS_OUTPUT"
+
+Then configure `hie-bios`_ to use this script in the bios cradle with the
+following ``hie.yaml`` file::
+
+  cradle:
+    bios:
+      program: ".hie-bios"
+
+Now the hie-bios cradle is ready to use. The last step is to install ghcide.
+Unfortunately, ghcide has to be compiled with the exact same GHC that you're
+using to build your project. The easiest way to do this is in this context is
+to build it with Bazel as part of your rules_haskell project.
+
+First, define a custom stack snapshot that provides the package versions that
+ghcide requires based on `ghcide's stack.yaml`_ file. Let's call it
+``ghcide-stack-snapshot.yaml``. Copy the ``resolver`` field and turn the
+``extra-deps`` field into a ``packages`` field. Then add another entry to
+``packages`` for the ghcide library itself::
+
+  # Taken from ghcide's stack.yaml
+  resolver: nightly-2019-09-21
+  packages:
+    # Taken from the extra-deps field.
+    - haskell-lsp-0.21.0.0
+    - haskell-lsp-types-0.21.0.0
+    - lsp-test-0.10.2.0
+    - hie-bios-0.4.0
+    - fuzzy-0.1.0.0
+    - regex-pcre-builtin-0.95.1.1.8.43
+    - regex-base-0.94.0.0
+    - regex-tdfa-1.3.1.0
+    - shake-0.18.5
+    - parser-combinators-1.2.1
+    - haddock-library-1.8.0
+    - tasty-rerun-1.1.17
+    - ghc-check-0.1.0.3
+    # Point to the ghcide revision that you would like to use.
+    - github: digital-asset/ghcide
+      commit: "39605333c34039241768a1809024c739df3fb2bd"
+      sha256: "47cca96a6e5031b3872233d5b9ca14d45f9089da3d45a068e1b587989fec4364"
+
+Then define a dedicated ``stack_snapshot`` for ghcide in your ``WORKSPACE``
+file. The ``ghcide`` package has a library and an executable component which we
+need to declare using the ``components`` attribute::
+
+  stack_snapshot(
+      name = "ghcide",
+      # The rules_haskell example project shows how to import libz.
+      # https://github.com/tweag/rules_haskell/blob/123e3817156f9135dfa44dcb5a796c424df1f436/examples/WORKSPACE#L42-L63
+      extra_deps = {"zlib": ["@zlib.hs"]},
+      haddock = False,
+      local_snapshot = "//:ghcide-stack-snapshot.yaml",
+      packages = ["ghcide"],
+      components = {"ghcide": ["lib", "exe"]},
+  )
+
+This will make the ``ghcide`` executable available under the Bazel label
+``@ghcide-exe//ghcide``. You can test if this worked by building and executing
+ghcide as follows::
+
+  bazel build @ghcide-exe//ghcide
+  bazel-bin/external/ghcide/ghcide-0.1.0/_install/bin/ghcide
+
+Write a small shell script to make it easy to invoke ghcide from your editor::
+
+  #!/usr/bin/env bash
+  set -euo pipefail
+  bazel build @ghcide-exe//ghcide
+  bazel-bin/external/ghcide/ghcide-0.1.0/_install/bin/ghcide "$@"
+
+And, the last step, configure your editor to use ghcide. The upstream
+documentation provides `ghcide setup instructions`_ for a few popular editors.
+Be sure to configure your editor to invoke the above wrapper script instead of
+another instance of `ghcide`. Also note, that if you are using Nix, then you
+may need to invoke ghcide within a ``nix-shell``.
+
+.. _ghcide: https://github.com/digital-asset/ghcide
+.. _haskell_repl: https://api.haskell.build/haskell/defs.html#haskell_repl
+.. _hie-bios: https://github.com/mpickering/hie-bios
+.. _bios cradle: https://github.com/mpickering/hie-bios#bios
+.. _ghcide's stack.yaml: https://github.com/digital-asset/ghcide/blob/39605333c34039241768a1809024c739df3fb2bd/stack.yaml
+.. _ghcide setup instructions: https://github.com/digital-asset/ghcide#using-with-vs-code
 
 Building Cabal packages
 -----------------------
@@ -219,18 +391,47 @@ any given target (or indeed all targets), like in the following:
 Linting your code
 -----------------
 
-The `haskell_lint`_ rule does not build code but runs the GHC
-typechecker on all listed dependencies. Warnings are treated as
-errors.
+There is currently no dedicated rule for linting Haskell code. You can
+apply warning flags using the ``compiler_flags`` attribute, for example ::
 
-Alternatively, you can directly check a target using
+  haskell_library(
+      ...
+      compiler_flags = [
+          "-Werror",
+          "-Wall",
+          "-Wcompat",
+          "-Wincomplete-record-updates",
+          "-Wincomplete-uni-patterns",
+          "-Wredundant-constraints",
+          "-Wnoncanonical-monad-instances",
+      ],
+      ghci_repl_flags = ["-Wwarn"],
+  )
 
-.. code-block:: console
+For larger projects it can make sense to define a custom macro that
+applies such common flags by default. ::
 
-  $ bazel build //my/haskell:target \
-      --aspects @rules_haskell//haskell:defs.bzl%haskell_lint_aspect
+  common_compiler_flags = [ ... ]
 
-.. _haskell_lint: http://api.haskell.build/haskell/lint.html#haskell_lint
+  def my_haskell_library(name, compiler_flags = [], ...):
+      haskell_library(
+          name = name,
+          compiler_flags = common_compiler_flags + compiler_flags,
+          ...
+      )
+
+There is currently no builtin support for invoking ``hlint``. However, you
+can invoke ``hlint`` in a CI step outside of Bazel. Refer to the `hlint
+documentation`_ for further details.
+
+.. _hlint documentation: https://github.com/ndmitchell/hlint#readme
+
+Refer to the `rules_haskell issue tracker`__ for a discussion around
+adding an ``hlint`` rule.
+
+.. _hlint issue: https://github.com/tweag/rules_haskell/issues/1140
+
+__ `hlint issue`_
 
 Using conditional compilation
 -----------------------------
@@ -259,15 +460,15 @@ in rule inputs (e.g. different source files for different platforms).
 Checking code coverage
 ----------------------
 
-"Code coverage" is the name given to metrics that describe how much source 
-code is covered by a given test suite.  A specific code coverage metric 
-implemented here is expression coverage, or the number of expressions in 
+"Code coverage" is the name given to metrics that describe how much source
+code is covered by a given test suite.  A specific code coverage metric
+implemented here is expression coverage, or the number of expressions in
 the source code that are explored when the tests are run.
 
-Haskell's ``ghc`` compiler has built-in support for code coverage analysis, 
-through the hpc_ tool. The Haskell rules allow the use of this tool to analyse 
-``haskell_library`` coverage by ``haskell_test`` rules. To do so, you have a 
-few options. You can add 
+Haskell's ``ghc`` compiler has built-in support for code coverage analysis,
+through the hpc_ tool. The Haskell rules allow the use of this tool to analyse
+``haskell_library`` coverage by ``haskell_test`` rules. To do so, you have a
+few options. You can add
 ``expected_covered_expressions_percentage=<some integer between 0 and 100>`` to
 the attributes of a ``haskell_test``, and if the expression coverage percentage
 is lower than this amount, the test will fail. Alternatively, you can add
@@ -276,7 +477,7 @@ the attributes of a ``haskell_test``, and instead the test will fail if the
 number of uncovered expressions is greater than this amount. Finally, you could
 do both at once, and have both of these checks analyzed by the coverage runner.
 To see the coverage details of the test suite regardless of if the test passes
-or fails, add ``--test_output=all`` as a flag when invoking the test, and there 
+or fails, add ``--test_output=all`` as a flag when invoking the test, and there
 will be a report in the test output. You will only see the report if you
 required a certain level of expression coverage in the rule attributes.
 
@@ -301,7 +502,7 @@ For example, your BUILD file might look like this: ::
     expected_uncovered_expression_count = 10,
   )
 
-And if you ran ``bazel coverage //somepackage:test --test_output=all``, you 
+And if you ran ``bazel coverage //somepackage:test --test_output=all``, you
 might see a result like this: ::
 
   INFO: From Testing //somepackage:test:
@@ -360,3 +561,301 @@ Then, the user will add ``--define use_worker=True`` in the command line when ca
 It is worth noting that Bazel's worker strategy is not sandboxed by default. This may
 confuse our worker relatively easily. Therefore, it is recommended to supply
 ``--worker_sandboxing`` to ``bazel build`` -- possibly, via your ``.bazelrc.local`` file.
+
+Building fully-statically-linked binaries
+-----------------------------------------
+
+Fully-statically linked binaries have no runtime linkage dependencies and are
+thus typically more portable and easier to package (e.g. in containers) than
+their dynamically-linked counterparts. The trade-off is that
+fully-statically-linked binaries can be larger than dynamically-linked binaries,
+due to the fact that all symbols must be bundled into a single output.
+``rules_haskell`` has support for building fully-statically-linked binaries
+using Nix-provisioned GHC toolchains and the ``static_runtime`` and
+``fully_static_link`` attributes of the ``haskell_register_ghc_nixpkgs`` macro::
+
+  load(
+      "@rules_haskell//haskell:nixpkgs.bzl",
+      "haskell_register_ghc_nixpkgs",
+  )
+
+  haskell_register_ghc_nixpkgs(
+      version = "X.Y.Z",
+      attribute_path = "staticHaskell.ghc",
+      repositories = {"nixpkgs": "@nixpkgs"},
+      static_runtime = True,
+      fully_static_link = True,
+  )
+
+Note that the ``attribute_path`` must refer to a GHC derivation capable of
+building fully-statically-linked binaries. Often this will require you to
+customise a GHC derivation in your Nix package set. If you are unfamiliar with
+Nix, one way to add such a custom package to an existing set is with an
+*overlay*.  Detailed documentation on overlays is available at
+https://nixos.wiki/wiki/Overlays, but for the purposes of this documentation,
+it's enough to know that overlays are essentially functions which accept package
+sets (conventionally called ``super``) and produce new package sets. We can
+write an overlay that modifies the ``ghc`` derivation in its argument to add
+flags that allow it to produce fully-statically-linked binaries as follows::
+
+  let
+    # Pick a version of Nixpkgs that we will base our package set on (apply an
+    # overlay to).
+    baseCommit = "..."; # Pick a Nixpkgs version to pin to.
+    baseSha = "..."; # The SHA of the above version.
+
+    baseNixpkgs = builtins.fetchTarball {
+      name = "nixos-nixpkgs";
+      url = "https://github.com/NixOS/nixpkgs/archive/${baseCommit}.tar.gz";
+      sha256 = baseSha;
+    };
+
+    # Our overlay. We add a `staticHaskell.ghc` path matching that specified in
+    # the haskell_register_ghc_nixpkgs rule above which overrides the `ghc`
+    # derivation provided in the base set (`super.ghc`) with some necessary
+    # arguments.
+    overlay = self: super: {
+      staticHaskell = {
+        ghc = (super.ghc.override {
+          enableRelocatedStaticLibs = true;
+          enableShared = false;
+        }).overrideAttrs (oldAttrs: {
+          preConfigure = ''
+            ${oldAttrs.preConfigure or ""}
+            echo "GhcLibHcOpts += -fPIC -fexternal-dynamic-refs" >> mk/build.mk
+            echo "GhcRtsHcOpts += -fPIC -fexternal-dynamic-refs" >> mk/build.mk
+          '';
+        });
+      };
+    };
+
+  in
+    args@{ overlays ? [], ... }:
+      import baseNixpkgs (args // {
+        overlays = [overlay] ++ overlays;
+      })
+
+In this example we use the ``override`` and ``overrideAttrs`` functions to
+produce a GHC derivation suitable for our needs. Ideally,
+``enableRelocatedStaticLibs`` and ``enableShared`` should be enough, but
+upstream Nixpkgs does not at present reliably pass ``-fexternal-dynamic-refs``
+when ``-fPIC`` is passed, which is required to generate fully-statically-linked
+executables.
+
+You may wish to base your GHC derivation on one which uses Musl, a C library
+designed for static linking (unlike glibc, which can cause issues when linked
+statically). `static-haskell-nix`_ is an example of a project which provides
+such a GHC derivation and can be used like so::
+
+  let
+    baseCommit = "..."; # Pick a Nixpkgs version to pin to.
+    baseSha = "..."; # The SHA of the above version.
+
+    staticHaskellNixCommit = "..."; Pick a static-haskell-nix version to pin to.
+
+    baseNixpkgs = builtins.fetchTarball {
+      name = "nixos-nixpkgs";
+      url = "https://github.com/NixOS/nixpkgs/archive/${baseCommit}.tar.gz";
+      sha256 = baseSha;
+    };
+
+    staticHaskellNixpkgs = builtins.fetchTarball
+      "https://github.com/nh2/static-haskell-nix/archive/${staticHaskellNixCommit}.tar.gz";
+
+    # The `static-haskell-nix` repository contains several entry points for e.g.
+    # setting up a project in which Nix is used solely as the build/package
+    # management tool. We are only interested in the set of packages that underpin
+    # these entry points, which are exposed in the `survey` directory's
+    # `approachPkgs` property.
+    staticHaskellPkgs = (
+      import (staticHaskellNixpkgs + "/survey/default.nix") {}
+    ).approachPkgs;
+
+    overlay = self: super: {
+      staticHaskell = staticHaskellPkgs.extend (selfSH: superSH: {
+        ghc = (superSH.ghc.override {
+          enableRelocatedStaticLibs = true;
+          enableShared = false;
+        }).overrideAttrs (oldAttrs: {
+          preConfigure = ''
+            ${oldAttrs.preConfigure or ""}
+            echo "GhcLibHcOpts += -fPIC -fexternal-dynamic-refs" >> mk/build.mk
+            echo "GhcRtsHcOpts += -fPIC -fexternal-dynamic-refs" >> mk/build.mk
+          '';
+        });
+      });
+    };
+
+  in
+    args@{ overlays ? [], ... }:
+      import baseNixpkgs (args // {
+        overlays = [overlay] ++ overlays;
+      })
+
+If you adopt a Musl-based GHC you should also take care to ensure that the C
+toolchain used by ``rules_haskell`` also uses Musl; you can do this using the
+``nixpkgs_cc_configure`` rule from ``rules_nixpkgs`` and providing a Nix
+expression that supplies appropriate ``cc`` and ``binutils`` derivations::
+
+  nixpkgs_cc_configure(
+      repository = "@nixpkgs",
+
+      # The `staticHaskell` attribute in the previous example exposes the
+      # Musl-backed `cc` and `binutils` derivations already, so it's just a
+      # matter of exposing them to nixpkgs_cc_configure.
+      nix_file_content = """
+        with import <nixpkgs> { config = {}; overlays = []; }; buildEnv {
+          name = "bazel-cc-toolchain";
+          paths = [ staticHaskell.stdenv.cc staticHaskell.binutils ];
+        }
+      """,
+  )
+
+With the toolchain taken care of, you can then create fully-statically-linked
+binaries by enabling the ``fully_static_link`` feature flag, e.g. in ``haskell_binary``::
+
+  haskell_binary(
+      name = ...,
+      srcs = [
+          ...,
+      ],
+      ...,
+      features = [
+          "fully_static_link",
+      ],
+  )
+
+Note, feature flags can be configured `per target`_, `per package`_, or
+globally on the `command line`_.
+
+.. _static-haskell-nix: https://github.com/nh2/static-haskell-nix
+.. _per target: https://docs.bazel.build/versions/master/be/common-definitions.html#common.features
+.. _per package: https://docs.bazel.build/versions/master/be/functions.html#package.features
+.. _command line: https://docs.bazel.build/versions/master/command-line-reference.html#flag--features
+
+Containerization with rules_docker
+----------------------------------
+
+Making use of both ``rules_docker`` and ``rules_nixpkgs``, it's possible to containerize
+``rules_haskell`` ``haskell_binary`` build targets for deployment. In a nutshell, first we must use
+``rules_nixpkgs`` to build a ``dockerTools.buildLayeredImage`` target with the basic library dependencies
+required to run a typical haskell binary. Thereafter, we can use ``rules_docker`` to use this as
+a base image upon which we can layer a bazel built haskell binary.
+
+Step one is to ensure you have all the necessary ``rules_docker`` paraphernalia loaded in your ``WORKSPACE``
+file: ::
+
+  http_archive(
+      name = "io_bazel_rules_docker",
+      sha256 = "df13123c44b4a4ff2c2f337b906763879d94871d16411bf82dcfeba892b58607",
+      strip_prefix = "rules_docker-0.13.0",
+      urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.13.0/rules_docker-v0.13.0.tar.gz"],
+  )
+
+  load("@io_bazel_rules_docker//toolchains/docker:toolchain.bzl", docker_toolchain_configure="toolchain_configure")
+
+To make full use of post-build ``rules_docker`` functionality, we'll want to make sure this is set
+to the docker binary's location ::
+
+  docker_toolchain_configure(
+      name = "docker_config",
+      docker_path = "/usr/bin/docker"
+  )
+
+  load("@io_bazel_rules_docker//container:container.bzl", "container_load")
+
+  load("@io_bazel_rules_docker//repositories:repositories.bzl", container_repositories = "repositories")
+  container_repositories()
+
+  load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
+  container_deps()
+
+Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nixpkgs_package`` rule for ``rules_docker`` to layer its products on top of ::
+
+  nixpkgs_package(
+      name = "raw-haskell-base-image",
+      repository = "//nixpkgs:default.nix",
+      # See below for how to define this
+      nix_file = "//nixpkgs:haskellBaseImageDocker.nix",
+      build_file_content = """
+  package(default_visibility = [ "//visibility:public" ])
+  exports_files(["image"])
+      """,
+  )
+
+And finally use the ``rules_docker`` ``container_load`` functionality to grab the docker image built by the previous ``raw-haskell-base-image`` target ::
+
+  container_load(
+      name = "haskell-base-image",
+      file = "@raw-haskell-base-image//:image",
+  )
+
+Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as follows ::
+
+  # nixpkgs is provisioned by rules_nixpkgs for us which we set to be ./default.nix
+  with import <nixpkgs> { system = "x86_64-linux"; };
+
+  # Build the base image.
+  # The output of this derivation will be a docker archive in the same format as
+  # the output of `docker save` that we can feed to
+  # [container_load](https://github.com/bazelbuild/rules_docker#container_load)
+  let
+    haskellBase = dockerTools.buildLayeredImage {
+      name = "haskell-base-image-unwrapped";
+      created = "now";
+      contents = [ glibc libffi gmp zlib iana-etc cacert ]; # Here we can specify nix-provisioned libraries our haskell_binary products may need at runtime
+    };
+    # rules_nixpkgs require the nix output to be a directory,
+    # so we create one in which we put the image we've just created
+  in runCommand "haskell-base-image" { } ''
+    mkdir -p $out
+    gunzip -c ${haskellBase} > $out/image
+  ''
+
+Step three pulls all this together in a build file to actually assemble our final docker image. In a BUILD.bazel file, we'll need the following ::
+
+  load("@io_bazel_rules_docker//cc:image.bzl", "cc_image")
+  load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+
+  haskell_binary(
+      name = "my_binary,
+      srcs = ["Main.hs"],
+      compiler_flags = [
+          "-O2",
+          "-threaded",
+          "-rtsopts",
+          "-with-rtsopts=-N",
+      ],
+      deps = [
+          ":my_haskell_library_dep", # for example...
+          # ...
+      ],
+  )
+
+  cc_image(
+      name = "my_binary_image",
+      base = "@haskell-base-image//image",
+      binary = ":my_binary",
+      ports = [ "8000/tcp" ],
+      creation_time = "{BUILD_TIMESTAMP}",
+      stamp = True,
+  )
+
+And you may want to use ``rules_docker`` to push your docker image as follows ::
+
+  container_push(
+      name = "my_binary_push",
+      image = ":my_binary_image",
+      format = "Docker",
+      registry = "gcr.io", # For example using a GCP GCR repository
+      repository = "$project-name-here/$my_binary_image_label",
+      tag = "{BUILD_USER}",
+ )
+
+*n.b* Due to the `current inability`_ of nix to be used on macOS (darwin) for building docker images, it's currently
+not possible to build docker images for haskell binaries as above using rules_docker and nixpkgs on macOS.
+
+.. _current inability: https://github.com/NixOS/nixpkgs/issues/16696
+
+Following these steps you should end up with a fairly lightweight docker image, bringing the flexibility of nix
+as a docker base image manager and the power of ``rules_haskell`` for your haskell build together.

@@ -10,6 +10,7 @@ load(
     "haskell_binary",
     "haskell_doc",
     "haskell_library",
+    "haskell_repl",
 )
 load(
     "//haskell:doctest.bzl",
@@ -48,7 +49,7 @@ haskell_doctest_toolchain(
 haskell_proto_toolchain(
     name = "protobuf-toolchain",
     testonly = 0,
-    plugin = "@proto-lens-protoc",
+    plugin = "@stackage-exe//proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
     tags = [
         "requires_proto",
@@ -63,6 +64,7 @@ haskell_proto_toolchain(
         "@stackage//:lens-family-core",
         "@stackage//:mtl",
         "@stackage//:proto-lens",
+        "@stackage//:proto-lens-runtime",
         "@stackage//:text",
         "@stackage//:vector",
     ],
@@ -184,20 +186,21 @@ rule_test(
 rule_test(
     name = "test-haddock",
     size = "small",
-    generates = [
-        "haddock/array-0.5.3.0",
-        "haddock/base-4.12.0.0",
-        "haddock/deepseq-1.4.4.0",
-        "haddock/ghc-boot-th-8.6.5",
-        "haddock/ghc-prim-0.5.3",
-        "haddock/index",
-        "haddock/integer-gmp-1.0.2.0",
-        "haddock/pretty-1.1.3.6",
-        "haddock/template-haskell-2.14.0.0",
-        "haddock/testsZShaddockZShaddock-lib-a",
-        "haddock/testsZShaddockZShaddock-lib-b",
-        "haddock/testsZShaddockZShaddock-lib-deep",
-    ],
+    generates =
+        [
+            "haddock/array-0.5.4.0",
+            "haddock/base-4.13.0.0",
+            "haddock/deepseq-1.4.4.0",
+            "haddock/ghc-boot-th-8.8.3",
+            "haddock/ghc-prim-0.5.3",
+            "haddock/index",
+            "haddock/integer-gmp-1.0.2.0",
+            "haddock/pretty-1.1.3.6",
+            "haddock/template-haskell-2.15.0.0",
+            "haddock/testsZShaddockZShaddock-lib-a",
+            "haddock/testsZShaddockZShaddock-lib-b",
+            "haddock/testsZShaddockZShaddock-lib-deep",
+        ],
     rule = "//tests/haddock",
 )
 
@@ -352,6 +355,7 @@ haskell_binary(
         "//tests/hackage:process",
         "@stackage//:hspec",
         "@stackage//:hspec-core",
+        "@stackage//:temporary",
     ],
 )
 
@@ -360,7 +364,6 @@ haskell_library(
     srcs = [
         "LZ4.hs",
     ],
-    src_strip_prefix = "src",
     tags = ["requires_lz4"],
     deps = [
         "//tests/hackage:base",
@@ -383,4 +386,27 @@ haskell_doc(
     name = "toto",
     tags = ["requires_lz4"],
     deps = [":utils"],
+)
+
+haskell_repl(
+    name = "hie-bios",
+    collect_data = False,
+    deps = [
+        "//tests:run-tests",
+        "//tests/binary-with-lib",
+    ],
+)
+
+sh_test(
+    name = "ghcide-smoke-test",
+    srcs = ["@ghcide-exe//ghcide"],
+    args = ["--version"],
+    tags = [
+        # Building ghcide fails in profiling mode with:
+        #
+        #   exe/Rules.hs:106:28: fatal:
+        #       cannot find object file ‘/run/user/1000/tmp7b54rlve/build/ghcide/ghcide-tmp/Util.dyn_o’
+        #       while linking an interpreted expression
+        "requires_dynamic",
+    ],
 )

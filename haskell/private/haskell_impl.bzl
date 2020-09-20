@@ -158,9 +158,13 @@ def _expand_make_variables(name, ctx, strings):
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
+
+    # Note [Plugin order]
+    plugin_decl = reversed(ctx.attr.plugins)
+
     plugin_dep_info = gather_dep_info(
         ctx,
-        [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
+        [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
     )
     package_ids = all_dependencies_package_ids(ctx.attr.deps)
 
@@ -176,14 +180,14 @@ def _haskell_binary_common_impl(ctx, is_test):
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
     dynamic = not ctx.attr.linkstatic
-    if with_profiling or hs.toolchain.is_static:
+    if with_profiling or hs.toolchain.static_runtime:
         # NOTE We can't have profiling and dynamic code at the
         # same time, see:
         # https://ghc.haskell.org/trac/ghc/ticket/15394
         # Also, static GHC doesn't support dynamic code
         dynamic = False
 
-    plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
+    plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     c = hs.toolchain.actions.compile_binary(
@@ -234,10 +238,11 @@ def _haskell_binary_common_impl(ctx, is_test):
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        static_libraries = dep_info.static_libraries,
-        dynamic_libraries = dep_info.dynamic_libraries,
+        hs_libraries = dep_info.hs_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = c.compile_flags,
+        user_compile_flags = user_compile_flags,
+        user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
     )
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
@@ -357,7 +362,7 @@ def haskell_library_impl(ctx):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
 
     with_shared = not ctx.attr.linkstatic
-    if with_profiling or hs.toolchain.is_static:
+    if with_profiling or hs.toolchain.static_runtime:
         # NOTE We can't have profiling and dynamic code at the
         # same time, see:
         # https://ghc.haskell.org/trac/ghc/ticket/15394
@@ -410,19 +415,8 @@ def haskell_library_impl(ctx):
             my_pkg_id,
             with_profiling = with_profiling,
         )
-
-        # NOTE We have to use lists for static libraries because the order is
-        # important for linker. Linker searches for unresolved symbols to the
-        # left, i.e. you first feed a library which has unresolved symbols and
-        # then you feed the library which resolves the symbols.
-        static_libraries = depset(
-            direct = [static_library],
-            transitive = [dep_info.static_libraries],
-            order = "topological",
-        )
     else:
         static_library = None
-        static_libraries = dep_info.static_libraries
 
     if with_shared and srcs_files:
         dynamic_library = link_library_dynamic(
@@ -435,10 +429,8 @@ def haskell_library_impl(ctx):
             my_pkg_id,
             user_compile_flags,
         )
-        dynamic_libraries = depset([dynamic_library], transitive = [dep_info.dynamic_libraries])
     else:
         dynamic_library = None
-        dynamic_libraries = dep_info.dynamic_libraries
 
     conf_file, cache_file = package(
         hs,
@@ -473,10 +465,14 @@ def haskell_library_impl(ctx):
         source_files = c.source_files,
         extra_source_files = c.extra_source_files,
         import_dirs = set.mutable_union(c.import_dirs, export_infos.import_dirs),
-        static_libraries = depset(transitive = [static_libraries, export_infos.static_libraries]),
-        dynamic_libraries = depset(transitive = [dynamic_libraries, export_infos.dynamic_libraries]),
+        hs_libraries = depset(
+            direct = [lib for lib in [static_library, dynamic_library] if lib],
+            transitive = [dep_info.hs_libraries, export_infos.hs_libraries],
+        ),
         interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
         compile_flags = c.compile_flags,
+        user_compile_flags = user_compile_flags,
+        user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
     )
 
     exports = [
@@ -553,6 +549,7 @@ def haskell_library_impl(ctx):
                 actions = ctx.actions,
                 feature_configuration = feature_configuration,
                 dynamic_library = dynamic_library,
+                dynamic_library_symlink_path = dynamic_library.basename if dynamic_library else "",
                 static_library = static_library,
                 cc_toolchain = cc_toolchain,
             ),
@@ -643,6 +640,11 @@ The following toolchain libraries are available:
         )),
     ]
 
+def _toolchain_library_symlink(dynamic_library):
+    prefix = dynamic_library.owner.workspace_root.replace("_", "_U").replace("/", "_S")
+    basename = dynamic_library.basename
+    return paths.join(prefix, basename)
+
 def haskell_toolchain_libraries_impl(ctx):
     hs = haskell_context(ctx)
     with_profiling = is_profiling_enabled(hs)
@@ -730,6 +732,8 @@ def haskell_toolchain_libraries_impl(ctx):
                 actions = ctx.actions,
                 feature_configuration = feature_configuration,
                 dynamic_library = lib.get("dynamic", None),
+                dynamic_library_symlink_path =
+                    _toolchain_library_symlink(lib["dynamic"]) if lib.get("dynamic") else "",
                 static_library = lib.get("static", None),
                 cc_toolchain = cc_toolchain,
             )
@@ -812,10 +816,11 @@ def haskell_import_impl(ctx):
         source_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
-        static_libraries = depset(),
-        dynamic_libraries = depset(),
+        hs_libraries = depset(),
         interface_dirs = depset(),
         compile_flags = [],
+        user_compile_flags = [],
+        user_repl_flags = [],
     )
     import_info = HaskellImportHack(
         # Make sure we're using the same order for dynamic_libraries,

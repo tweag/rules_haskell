@@ -42,6 +42,13 @@ exports_files(
     visibility = ["//tests/shellcheck:__pkg__"],
 )
 
+bzl_library(
+    name = "bazel_json",
+    srcs = [
+        "//vendor/bazel_json/lib:json_parser.bzl",
+    ],
+)
+
 # @bazel_tools//tools does not define a bzl_library itself, instead we are
 # supposed to define our own using the @bazel_tools//tools:bzl_srcs filegroup.
 # See https://github.com/bazelbuild/skydoc/issues/166
@@ -57,11 +64,13 @@ bzl_library(
     srcs = glob(["**/*.bzl"]),
     visibility = ["//visibility:public"],
     deps = [
+        ":bazel_json",
         ":bazel_tools",
         "@bazel_skylib//lib:collections",
         "@bazel_skylib//lib:dicts",
         "@bazel_skylib//lib:paths",
         "@bazel_skylib//lib:shell",
+        "@bazel_skylib//lib:versions",
         "@io_tweag_rules_nixpkgs//nixpkgs",
         "@rules_sh//sh:posix",
     ],

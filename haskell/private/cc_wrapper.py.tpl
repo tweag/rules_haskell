@@ -35,6 +35,25 @@ used to avoid command line length limitations.
     gcc's --print-file-name feature to work around this mismatch in file
     extension.
 
+- Corrects instances of `-Xpreprocessor @rsp`.
+
+    Starting from version 8.8 GHC forwards `-optP` flags to `cc` prefixed by
+    `-Xpreprocessor`, including response file arguments. `gcc` will then inline
+    the contents of the response file into its own command-line without
+    prefixing each argument with `-Xpreprocessor` which will wrongly pass
+    preprocessor arguments to cpp itself. This wrapper corrects this by loading
+    the response file and prefixing each argument with `-Xpreprocessor`.
+
+    See https://gitlab.haskell.org/ghc/ghc/issues/17185.
+
+- Fixes invocations that handle temporary and intermediate binaries
+
+    GHC with Template Haskell or tools like hsc2hs build temporary Haskell
+    binaries (that e.g. generate other Haskell code) as part of the build
+    process. This wrapper ensures that linking behaviour for these binaries
+    matches the characteristics of the wider build (e.g. runpath configuration,
+    etc.)
+
 """
 
 from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
@@ -77,7 +96,9 @@ class Args:
       args: The collected and transformed arguments.
 
       linking: Gcc is called for linking (default).
-      compiling: Gcc is called for compiling (-c).
+      compiling: Gcc is called for compiling (-c/-S/-x).
+        Note, this does not distinguis pre-processing
+        (-x assembly-with-cpp).
       printing_file_name: Gcc is called with --print-file-name.
 
       output: The output binary or library when linking.
@@ -111,8 +132,8 @@ class Args:
         self.library_paths = []
         self.rpaths = []
         self.output = None
-        # gcc action, print-file-name (--print-file-name), compile (-c), or
-        # link (default)
+        # gcc action, print-file-name (--print-file-name), compile
+        # (-c/-S/-x), or link (default)
         self._action = Args.LINK
         # The currently active linker option that expects an argument. E.g. if
         # `-Xlinker -rpath` was encountered, then `-rpath`.
@@ -121,7 +142,7 @@ class Args:
         self.args = list(self._handle_args(args))
 
         if self.linking:
-            if os.path.isabs(self.output):
+            if is_temporary_output(self.output):
                 # GHC with Template Haskell or tools like hsc2hs builds
                 # temporary Haskell binaries linked against libraries, but does
                 # not speficy the required runpaths on the command-line in the
@@ -165,7 +186,9 @@ class Args:
             # reference to the list of arguments to forward. The handler must
             # return True if it consumes the argument, and return False if
             # another handler should consume the argument.
-            if self._handle_output(arg, args, out):
+            if self._handle_xpreprocessor(arg, args, out):
+                pass
+            elif self._handle_output(arg, args, out):
                 pass
             elif self._handle_include_path(arg, args, out):
                 pass
@@ -179,11 +202,23 @@ class Args:
                 pass
             elif self._handle_compile(arg, args, out):
                 pass
+            elif self._handle_assembly(arg, args, out):
+                pass
+            elif self._handle_language(arg, args, out):
+                pass
             else:
                 yield arg
 
             for out_arg in out:
                 yield out_arg
+
+    def _handle_xpreprocessor(self, arg, args, out):
+        consumed, cpp_arg = argument(arg, args, long = "-Xpreprocessor")
+
+        if consumed:
+            out.extend(["-Xpreprocessor", cpp_arg])
+
+        return consumed
 
     def _handle_output(self, arg, args, out):
         consumed, output = argument(arg, args, short = "-o")
@@ -325,6 +360,24 @@ class Args:
 
         return True
 
+    def _handle_assembly(self, arg, args, out):
+        if arg == "-S":
+            self._action = Args.COMPILE
+            out.append(arg)
+        else:
+            return False
+
+        return True
+
+    def _handle_language(self, arg, args, out):
+        consumed, language = argument(arg, args, short = "-x")
+
+        if consumed:
+            self._action = Args.COMPILE
+            out.extend(["-x", language])
+
+        return consumed
+
 
 def argument(arg, args, short = None, long = None):
     """Parse an argument that takes a parameter.
@@ -362,29 +415,52 @@ def argument(arg, args, short = None, long = None):
     return False, None
 
 
-def load_response_files(args):
+def load_response_files(args, max_depth=100):
     """Generator that loads arguments from response files.
 
     Passes through any regular arguments.
 
+    Recursively loads arguments from response files. I.e. if a response file
+    points to another response file that will be followed recursively up to
+    `max_depth`.
+
     Args:
       args: Iterable of arguments.
+      max_depth: Maximum response file nesting depth.
 
     Yields:
       All arguments, with response files replaced by their contained arguments.
 
     """
+    def response_file_iter(filename):
+        if max_depth == 0:
+            raise RuntimeError("Exceeded maximum response file nesting depth.")
+        with open(filename, "r") as rsp:
+            rsp_args = (
+                arg
+                for line in rsp
+                for arg in parse_response_line(line)
+            )
+            for arg in load_response_files(rsp_args, max_depth - 1):
+                yield arg
     args = iter(args)
     for arg in args:
         if arg == "-install_name":
             # macOS only: The install_name may start with an '@' character.
             yield arg
             yield next(args)
+        elif arg == "-Xpreprocessor":
+            cpp_arg = next(args)
+            if cpp_arg.startswith("@"):
+                for rsp_arg in response_file_iter(cpp_arg[1:]):
+                    yield "-Xpreprocessor"
+                    yield rsp_arg
+            else:
+                yield arg
+                yield cpp_arg
         elif arg.startswith("@"):
-            with open(arg[1:], "r") as rsp:
-                for line in rsp:
-                    for rsp_arg in parse_response_line(line):
-                        yield rsp_arg
+            for rsp_arg in response_file_iter(arg[1:]):
+                yield rsp_arg
         else:
             yield arg
 
@@ -667,17 +743,17 @@ def find_solib_rpath(rpaths, output):
     """
     for rpath in rpaths:
         components = rpath.replace("\\", "/").split("/")
-        solib_rpath = []
+        solib_rpath = ""
         for comp in components:
-            solib_rpath.append(comp)
-            if comp.startswith("_solib_"):
-                return "/".join(solib_rpath)
+            solib_rpath = os.path.join(solib_rpath, comp)
+            if comp.startswith("_solib_") and os.path.isdir(resolve_rpath(solib_rpath, output)[1]):
+                return solib_rpath
 
     if is_temporary_output(output):
         # GHC generates temporary libraries outside the execroot. In that case
         # the Bazel generated RPATHs are not forwarded, and the solib directory
         # is not visible on the command-line.
-        for (root, dirnames, _) in breadth_first_walk("."):
+        for (root, dirnames, _) in breadth_first_walk(os.environ.get("RULES_HASKELL_EXEC_ROOT", ".")):
             if "_solib_{:cpu:}" in dirnames:
                 return os.path.join(root, "_solib_{:cpu:}")
 
@@ -1041,7 +1117,7 @@ def is_temporary_output(output):
     # into cache keys. If this turns out to be wrong we could instead look for
     # path components matching Bazel's output directory hierarchy.
     # See https://docs.bazel.build/versions/master/output_directories.html
-    return os.path.isabs(output)
+    return os.path.isabs(output) or output.endswith("hsc_make")
 
 
 # --------------------------------------------------------------------

@@ -5,7 +5,7 @@ These rules are deprecated.
 
 load(
     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
-    "CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME",
+    "CPP_LINK_EXECUTABLE_ACTION_NAME",
     "C_COMPILE_ACTION_NAME",
 )
 load(
@@ -13,7 +13,7 @@ load(
     "GhcPluginInfo",
     "HaskellInfo",
 )
-load(":private/cc_libraries.bzl", "deps_HaskellCcLibrariesInfo")
+load(":private/cc_libraries.bzl", "deps_HaskellCcLibrariesInfo", "get_cc_libraries")
 
 CcInteropInfo = provider(
     doc = "Information needed for interop with cc rules.",
@@ -32,6 +32,7 @@ CcInteropInfo = provider(
         "cc_libraries": "depset, C libraries from direct linking dependencies.",
         "transitive_libraries": "depset, C and Haskell libraries from transitive linking dependencies.",
         "plugin_libraries": "depset, C and Haskell libraries from transitive plugin dependencies.",
+        "setup_libraries": "depset, C and Haskell libraries from Cabal setup dependencies.",
     },
 )
 
@@ -100,7 +101,8 @@ def cc_interop_info(ctx):
     )
     linker_flags = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
-        action_name = CPP_LINK_DYNAMIC_LIBRARY_ACTION_NAME,
+        # See https://github.com/bazelbuild/bazel/issues/6876
+        action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
         variables = link_variables,
     )
 
@@ -110,9 +112,6 @@ def cc_interop_info(ctx):
     cc = cc_wrapper.executable.path
     cc_files = ctx.files._cc_toolchain + cc_wrapper.inputs.to_list()
     cc_manifests = cc_wrapper.manifests
-
-    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6876.
-    linker_flags = [flag for flag in linker_flags if flag not in ["-shared"]]
 
     tools = {
         "ar": cc_toolchain.ar_executable,
@@ -131,6 +130,9 @@ def cc_interop_info(ctx):
     if tools["ar"].find("libtool") >= 0:
         tools["ar"] = "/usr/bin/ar"
 
+    cc_libraries_info = deps_HaskellCcLibrariesInfo(
+        ctx.attr.deps + getattr(ctx.attr, "plugins", []) + getattr(ctx.attr, "setup_deps", []),
+    )
     return CcInteropInfo(
         tools = struct(**tools),
         files = cc_files,
@@ -143,10 +145,8 @@ def cc_interop_info(ctx):
         # but this will anyways all be replaced (once implemented) by
         # https://github.com/bazelbuild/bazel/issues/4571.
         linker_flags = linker_flags,
-        cc_libraries_info = deps_HaskellCcLibrariesInfo(
-            ctx.attr.deps + getattr(ctx.attr, "plugins", []),
-        ),
-        cc_libraries = cc_common.merge_cc_infos(cc_infos = ccs).linking_context.libraries_to_link.to_list(),
+        cc_libraries_info = cc_libraries_info,
+        cc_libraries = get_cc_libraries(cc_libraries_info, cc_common.merge_cc_infos(cc_infos = ccs).linking_context.libraries_to_link.to_list()),
         transitive_libraries = cc_common.merge_cc_infos(cc_infos = [
             dep[CcInfo]
             for dep in ctx.attr.deps
@@ -156,6 +156,11 @@ def cc_interop_info(ctx):
             dep[CcInfo]
             for plugin in getattr(ctx.attr, "plugins", [])
             for dep in plugin[GhcPluginInfo].deps
+            if CcInfo in dep
+        ]).linking_context.libraries_to_link.to_list(),
+        setup_libraries = cc_common.merge_cc_infos(cc_infos = [
+            dep[CcInfo]
+            for dep in getattr(ctx.attr, "setup_deps", [])
             if CcInfo in dep
         ]).linking_context.libraries_to_link.to_list(),
     )
@@ -169,7 +174,7 @@ def ghc_cc_program_args(cc):
     Returns:
       list of string, GHC arguments.
     """
-    return [
+    args = [
         # GHC uses C compiler for assemly, linking and preprocessing as well.
         "-pgma",
         cc,
@@ -177,14 +182,19 @@ def ghc_cc_program_args(cc):
         cc,
         "-pgml",
         cc,
-        "-pgmP",
-        cc,
         # Setting -pgm* flags explicitly has the unfortunate side effect
         # of resetting any program flags in the GHC settings file. So we
         # restore them here. See
         # https://ghc.haskell.org/trac/ghc/ticket/7929.
+        #
+        # Since GHC 8.8 the semantics of `-optP` have changed and these flags
+        # are now also forwarded to `cc` via `-Xpreprocessor`, which breaks the
+        # default flags `-E -undef -traditional`. GHC happens to word split the
+        # argument to `-pgmP` which allows to pass these flags to `gcc` itself
+        # as the preprocessor. See
+        # https://gitlab.haskell.org/ghc/ghc/issues/17185#note_261599.
+        "-pgmP",
+        cc + " -E -undef -traditional",
         "-optc-fno-stack-protector",
-        "-optP-E",
-        "-optP-undef",
-        "-optP-traditional",
     ]
+    return args

@@ -56,6 +56,7 @@ _haskell_common_attrs = {
     ),
     "tools": attr.label_list(
         cfg = "host",
+        allow_files = True,
     ),
     "_ghci_script": attr.label(
         allow_single_file = True,
@@ -312,7 +313,7 @@ def haskell_binary(
         name = "%s@repl" % name,
         deps = [name],
         experimental_from_source = [":%s" % name],
-        repl_ghci_args = repl_ghci_args,
+        repl_ghci_args = [],
         **repl_kwargs
     )
 
@@ -419,7 +420,7 @@ def haskell_test(
         name = "%s@repl" % name,
         deps = [name],
         experimental_from_source = [":%s" % name],
-        repl_ghci_args = repl_ghci_args,
+        repl_ghci_args = [],
         testonly = kwargs.get("testonly", True),
         **repl_kwargs
     )
@@ -529,7 +530,7 @@ def haskell_library(
         name = "%s@repl" % name,
         deps = [name],
         experimental_from_source = [":%s" % name],
-        repl_ghci_args = repl_ghci_args,
+        repl_ghci_args = [],
         **repl_kwargs
     )
 

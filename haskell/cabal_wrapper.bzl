@@ -1,5 +1,5 @@
 load(":private/context.bzl", "haskell_context", "render_env")
-load(":cc.bzl", "cc_interop_info")
+load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@rules_python//python:defs.bzl", "py_binary")
 
@@ -19,6 +19,7 @@ def _cabal_wrapper_impl(ctx):
 
     cabal_wrapper_tpl = ctx.file._cabal_wrapper_tpl
     cabal_wrapper = hs.actions.declare_file("cabal_wrapper.py")
+    cc = hs_toolchain.cc_wrapper.executable.path
     hs.actions.expand_template(
         template = cabal_wrapper_tpl,
         output = cabal_wrapper,
@@ -28,10 +29,11 @@ def _cabal_wrapper_impl(ctx):
             "%{ghc_pkg}": hs.tools.ghc_pkg.path,
             "%{runghc}": hs.tools.runghc.path,
             "%{ar}": ar,
-            "%{cc}": hs_toolchain.cc_wrapper.executable.path,
+            "%{cc}": cc,
             "%{strip}": cc_toolchain.strip_executable,
             "%{is_windows}": str(hs.toolchain.is_windows),
             "%{workspace}": ctx.workspace_name,
+            "%{ghc_cc_args}": repr(ghc_cc_program_args("$CC")),
         },
     )
     return [DefaultInfo(

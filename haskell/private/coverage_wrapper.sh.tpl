@@ -58,8 +58,8 @@ for m in "${mix_file_paths[@]}"
 do
   absolute_mix_file_path=$(rlocation $m)
   hpc_parent_dir=$(dirname "$absolute_mix_file_path")
-  trimmed_hpc_parent_dir="${hpc_parent_dir%%.hpc*}"
-  hpc_dir_args+=("--hpcdir=$trimmed_hpc_parent_dir.hpc")
+  trimmed_hpc_parent_dir="${hpc_parent_dir%%_.hpc*}"
+  hpc_dir_args+=("--hpcdir=${trimmed_hpc_parent_dir}_.hpc")
 done
 
 # gather the modules to exclude from the coverage analysis

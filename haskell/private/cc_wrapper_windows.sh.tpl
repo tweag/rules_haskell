@@ -19,6 +19,17 @@
 #     references (..). This can exceed the maximum path length, which
 #     will cause compiler failures. This wrapper shortens include paths
 #     to avoid that issue.
+#
+# - Corrects instances of `-Xpreprocessor @rsp`.
+#
+#     Starting from version 8.8 GHC forwards `-optP` flags to `cc` prefixed by
+#     `-Xpreprocessor`, including response file arguments. `gcc` will then inline
+#     the contents of the response file into its own command-line without
+#     prefixing each argument with `-Xpreprocessor` which will wrongly pass
+#     preprocessor arguments to cpp itself. This wrapper corrects this by loading
+#     the response file and prefixing each argument with `-Xpreprocessor`.
+#
+#     See https://gitlab.haskell.org/ghc/ghc/issues/17185
 
 # The runfiles.bash initialization triggers "Can't follow non-constant source".
 # Disabling the warning locally is insufficient, so we disable it globally.
@@ -102,16 +113,23 @@ unquote_arg() {
 }
 
 add_arg() {
+    if [[ -n $XPREPROCESSOR_COMING ]]; then
+        quote_arg "-Xpreprocessor" >> "$RESPONSE_FILE"
+        if [[ $XPREPROCESSOR_COMING -eq $IN_RESPONSE_FILE ]]; then
+            XPREPROCESSOR_COMING=
+        fi
+    fi
     quote_arg "$1" >> "$RESPONSE_FILE"
 }
 
 # ----------------------------------------------------------
 # Parse arguments
 
-IN_RESPONSE_FILE=
+IN_RESPONSE_FILE=0
 INCLUDE_DIR_COMING=
 INCLUDE_FLAG=
 LIB_DIR_COMING=
+XPREPROCESSOR_COMING=
 
 shorten_path() {
     local -n shortest="$1"
@@ -153,7 +171,7 @@ handle_lib_dir() {
 
 handle_arg() {
     local arg="$1"
-    if [[ $IN_RESPONSE_FILE = 1 ]]; then
+    if [[ $IN_RESPONSE_FILE -gt 0 ]]; then
         unquote_arg arg "$arg"
     fi
     if [[ $INCLUDE_DIR_COMING = 1 ]]; then
@@ -164,11 +182,11 @@ handle_arg() {
         LIB_DIR_COMING=
         handle_lib_dir "$arg"
     elif [[ "$arg" =~ ^@(.*)$ ]]; then
-        IN_RESPONSE_FILE=1
+        (( ++IN_RESPONSE_FILE ))
         while read -r line; do
             handle_arg "$line"
         done < "${BASH_REMATCH[1]}"
-        IN_RESPONSE_FILE=
+        (( --IN_RESPONSE_FILE )) || true
     elif [[ "$arg" =~ ^(-I|-iquote|-isystem|-idirafter)(.*)$ ]]; then
         handle_include_dir "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
     elif [[ "$arg" = -I || "$arg" = -iquote || "$arg" = -isystem || "$arg" = -idirafter ]]; then
@@ -178,6 +196,8 @@ handle_arg() {
         handle_lib_dir "${BASH_REMATCH[1]}"
     elif [[ "$arg" = -L || "$arg" = --library-path ]]; then
         LIB_DIR_COMING=1
+    elif [[ "$arg" = -Xpreprocessor ]]; then
+        XPREPROCESSOR_COMING=$IN_RESPONSE_FILE
     else
         add_arg "$arg"
     fi

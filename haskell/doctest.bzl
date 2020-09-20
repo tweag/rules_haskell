@@ -118,6 +118,7 @@ def _haskell_doctest_single(target, ctx):
 
     if ctx.attr.modules:
         inputs = ctx.attr.modules
+        args.add_all(set.to_list(hs_info.import_dirs), format_each = "-i%s")
     else:
         inputs = [source.path for source in hs_info.source_files.to_list()]
 
@@ -127,7 +128,7 @@ def _haskell_doctest_single(target, ctx):
             hs_info.package_databases,
             hs_info.interface_dirs,
             hs_info.extra_source_files,
-            hs_info.dynamic_libraries,
+            hs_info.hs_libraries,
             cc_info.compilation_context.headers,
             depset(get_ghci_library_files(hs, cc_libraries_info, cc.transitive_libraries)),
             depset(

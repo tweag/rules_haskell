@@ -49,7 +49,7 @@ def get_cc_libraries(cc_libraries_info, libraries_to_link):
         if not cc_libraries_info.libraries[cc_library_key(lib_to_link)].is_haskell
     ]
 
-def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link):
+def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, include_real_paths = False):
     """Get libraries appropriate for loading with GHCi.
 
     See get_library_files for further information.
@@ -58,12 +58,13 @@ def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link):
         hs,
         cc_libraries_info,
         libraries_to_link,
-        dynamic = not hs.toolchain.is_static,
+        dynamic = not hs.toolchain.static_runtime,
         pic = True,
+        include_real_paths = include_real_paths,
     )
     return static_libs + dynamic_libs
 
-def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None):
+def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None, include_real_paths = False):
     """Get libraries appropriate for linking with GHC.
 
     Takes a list of LibraryToLink and returns a list of the appropriate
@@ -79,6 +80,8 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
       libraries_to_link: list of LibraryToLink.
       dynamic: Whether dynamic libraries are preferred.
       pic: Whether position independent code is required.
+      include_real_paths: Whether to also return the actual path of the
+        libraries instead of just their symbolic link in the _solib_k8 directory
 
     Returns:
       (static_libraries, dynamic_libraries):
@@ -92,7 +95,7 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
         pic = dynamic
 
     # PIC is irrelevant on static GHC.
-    pic_required = pic and not hs.toolchain.is_static
+    pic_required = pic and not hs.toolchain.static_runtime
     for lib_to_link in libraries_to_link:
         cc_library_info = cc_libraries_info.libraries[cc_library_key(lib_to_link)]
         dynamic_lib = None
@@ -114,6 +117,13 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
             static_libs.append(static_lib)
         elif dynamic_lib:
             dynamic_libs.append(dynamic_lib)
+            extra_lib_files = [
+                lib
+                for lib in [lib_to_link.resolved_symlink_dynamic_library, lib_to_link.resolved_symlink_interface_library]
+                if lib != None
+            ]
+            if include_real_paths:
+                dynamic_libs.extend(extra_lib_files)
         else:
             # Fall back if no PIC static library is available. This typically
             # happens during profiling builds.
@@ -121,7 +131,7 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
 
     return (static_libs, dynamic_libs)
 
-def link_libraries(libs, args, prefix_optl = False):
+def link_libraries(libs, args, path_prefix = "", prefix_optl = False):
     """Add linker flags to link against the given libraries.
 
     This function is intended for linking C library dependencies. Haskell
@@ -131,22 +141,25 @@ def link_libraries(libs, args, prefix_optl = False):
     Args:
       libs: Sequence of File, libraries to link.
       args: Args or List, append arguments to this object.
+      path_prefix: String, a prefix to apply to search directory arguments. A
+        trailing slash will automatically be added to this argument if provided
+        (you do not need to provide one).
       prefix_optl: Bool, whether to prefix linker flags by -optl
 
     """
     if prefix_optl:
         libfmt = "-optl-l%s"
-        dirfmt = "-optl-L%s"
+        dirfmt = "-optl-L" + paths.join(path_prefix, "%s")
     else:
         libfmt = "-l%s"
-        dirfmt = "-L%s"
+        dirfmt = "-L" + paths.join(path_prefix, "%s")
 
     if hasattr(args, "add_all"):
-        args.add_all(libs, map_each = get_lib_name, format_each = libfmt)
         args.add_all(libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
+        args.add_all(libs, map_each = get_lib_name, format_each = libfmt)
     else:
-        args.extend([libfmt % get_lib_name(lib) for lib in libs])
         args.extend([dirfmt % lib.dirname for lib in libs])
+        args.extend([libfmt % get_lib_name(lib) for lib in libs])
 
 def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None):
     """Configure linker flags and inputs.

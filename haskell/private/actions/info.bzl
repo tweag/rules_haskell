@@ -133,7 +133,7 @@ def library_info_output_groups(
             transitive = [
                 hs_info.package_databases,
                 hs_info.interface_dirs,
-                hs_info.dynamic_libraries,
+                hs_info.hs_libraries,
             ],
         ),
         "haskell_library_info": depset([proto_file]),

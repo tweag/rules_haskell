@@ -146,6 +146,7 @@ def _haskell_toolchain_impl(ctx):
             compiler_flags = ctx.attr.compiler_flags,
             repl_ghci_args = ctx.attr.repl_ghci_args,
             haddock_flags = ctx.attr.haddock_flags,
+            cabalopts = ctx.attr.cabalopts,
             locale = ctx.attr.locale,
             locale_archive = locale_archive,
             cc_wrapper = struct(
@@ -167,7 +168,8 @@ def _haskell_toolchain_impl(ctx):
             libraries = libraries,
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
-            is_static = ctx.attr.is_static,
+            static_runtime = ctx.attr.static_runtime,
+            fully_static_link = ctx.attr.fully_static_link,
             version = ctx.attr.version,
             global_pkg_db = pkgdb_file,
             protoc = ctx.executable._protoc,
@@ -195,6 +197,15 @@ _haskell_toolchain = rule(
         "haddock_flags": attr.string_list(
             doc = "A collection of flags that will be passed to haddock.",
         ),
+        "cabalopts": attr.string_list(
+            doc = """Additional flags to pass to `Setup.hs configure` for all Cabal rules.
+
+            Note, Cabal rules do not read the toolchain attributes `compiler_flags` or `haddock_flags`.
+            Use `--ghc-option=OPT` to configure additional compiler flags.
+            Use `--haddock-option=OPT` to configure additional haddock flags.
+            Use `--haddock-option=--optghc=OPT` if haddock generation requires additional compiler flags.
+            """,
+        ),
         "version": attr.string(
             doc = "Version of your GHC compiler. It has to match the version reported by the GHC used by bazel.",
             mandatory = True,
@@ -207,8 +218,11 @@ _haskell_toolchain = rule(
             doc = "Whether compile on and for Windows.",
             mandatory = True,
         ),
-        "is_static": attr.bool(
-            doc = "Whether GHC was linked statically.",
+        "static_runtime": attr.bool(
+            doc = "Whether GHC was linked with a static runtime.",
+        ),
+        "fully_static_link": attr.bool(
+            doc = "Whether GHC should build fully-statically-linked binaries.",
         ),
         "locale": attr.string(
             default = "C.UTF-8",
@@ -240,12 +254,14 @@ Label pointing to the locale archive file to use. Mostly useful on NixOS.
 def haskell_toolchain(
         name,
         version,
-        is_static,
+        static_runtime,
+        fully_static_link,
         tools,
         libraries,
         compiler_flags = [],
         repl_ghci_args = [],
         haddock_flags = [],
+        cabalopts = [],
         locale_archive = None,
         **kwargs):
     """Declare a compiler toolchain.
@@ -263,7 +279,8 @@ def haskell_toolchain(
       haskell_toolchain(
           name = "ghc",
           version = "1.2.3",
-          is_static = is_static,
+          static_runtime = static_runtime,
+          fully_static_link = fully_static_link,
           tools = ["@sys_ghc//:bin"],
           compiler_flags = ["-Wall"],
       )
@@ -285,12 +302,14 @@ def haskell_toolchain(
     _haskell_toolchain(
         name = name,
         version = version,
-        is_static = is_static,
+        static_runtime = static_runtime,
+        fully_static_link = fully_static_link,
         tools = tools,
         libraries = libraries,
         compiler_flags = compiler_flags,
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
+        cabalopts = cabalopts,
         is_darwin = select({
             "@rules_haskell//haskell/platforms:darwin": True,
             "//conditions:default": False,

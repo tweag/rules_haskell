@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# cabal_wrapper.py <COMPONENT> <PKG_NAME> <HADDOCK> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> [EXTRA_ARGS...] -- [PATH_ARGS...]
+# cabal_wrapper.py <COMPONENT> <PKG_NAME> <HADDOCK> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> <RUNGHC_ARGS> [EXTRA_ARGS...] -- [PATH_ARGS...]
 #
 # This wrapper calls Cabal's configure/build/install steps one big
 # action so that we don't have to track all inputs explicitly between
@@ -86,6 +86,7 @@ datadir = os.path.join(pkgroot, "{}_data".format(name))
 package_database = os.path.join(pkgroot, "{}.conf.d".format(name))
 haddockdir = os.path.join(pkgroot, "{}_haddock".format(name))
 htmldir = os.path.join(pkgroot, "{}_haddock_html".format(name))
+runghc_args = sys.argv.pop(1).split()
 
 runghc = find_exe(r"%{runghc}")
 ghc = find_exe(r"%{ghc}")
@@ -114,7 +115,22 @@ def tmpdir():
     """This is a reimplementation of `tempfile.TemporaryDirectory` because
     the latter isn't available in python2
     """
-    distdir = tempfile.mkdtemp()
+    # Build into a sibling path of the final binary output location.
+    # This is to ensure that relative `RUNPATH`s are valid in the intermediate
+    # output in the `--builddir` as well as in the final output in `--bindir`.
+    # Executables are placed into `<distdir>/build/<package-name>/<binary>`.
+    # Libraries are placed into `<distdir>/build/<library>`. I.e. there is an
+    # extra subdirectory for libraries.
+    #
+    # On Windows we don't do dynamic linking and prefer shorter paths to avoid
+    # exceeding `MAX_PATH`.
+    if "%{is_windows}" == "True":
+        distdir = tempfile.mkdtemp()
+    else:
+        if component.startswith("exe:"):
+            distdir = tempfile.mkdtemp(dir=os.path.dirname(os.path.dirname(pkgroot)))
+        else:
+            distdir = tempfile.mkdtemp(dir=os.path.dirname(pkgroot))
     try:
         yield distdir
     finally:
@@ -130,12 +146,14 @@ with tmpdir() as distdir:
     # absolute ones before doing so (using $execroot).
     old_cwd = os.getcwd()
     os.chdir(srcdir)
+    os.putenv("RULES_HASKELL_EXEC_ROOT", old_cwd)
     os.putenv("HOME", "/var/empty")
     os.putenv("TMPDIR", os.path.join(distdir, "tmp"))
     os.putenv("TMP", os.path.join(distdir, "tmp"))
     os.putenv("TEMP", os.path.join(distdir, "tmp"))
     os.makedirs(os.path.join(distdir, "tmp"))
-    run([runghc, setup, "configure", \
+    runghc_args = [arg.replace("./", execroot + "/") for arg in runghc_args]
+    run([runghc] + runghc_args + [setup, "configure", \
         component, \
         "--verbose=0", \
         "--user", \
@@ -146,9 +164,15 @@ with tmpdir() as distdir:
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
+        [ "--ghc-option=" + flag.replace("$CC", cc) for flag in %{ghc_cc_args} ] +
         enable_relocatable_flags + \
         [ \
-        "--builddir=" + distdir, \
+        # Make `--builddir` a relative path. Using an absolute path would
+        # confuse the `RUNPATH` patching logic in `cc_wrapper`. It assumes that
+        # absolute paths refer the temporary directory that GHC uses for
+        # intermediate template Haskell outputs. `cc_wrapper` should improved
+        # in that regard.
+        "--builddir=" + (os.path.relpath(distdir) if "%{is_windows}" != "True" else distdir), \
         "--prefix=" + pkgroot, \
         "--libdir=" + libdir, \
         "--dynlibdir=" + dynlibdir, \
@@ -167,16 +191,16 @@ with tmpdir() as distdir:
         [ arg.replace("=", "=" + execroot + "/") for arg in path_args ] + \
         [ "--package-db=" + package_database ], # This arg must come last.
         )
-    run([runghc, setup, "build", "--verbose=0", "--builddir=" + distdir])
+    run([runghc] + runghc_args + [setup, "build", "--verbose=0", "--builddir=" + distdir])
     if haddock:
-        run([runghc, setup, "haddock", "--verbose=0", "--builddir=" + distdir])
-    run([runghc, setup, "install", "--verbose=0", "--builddir=" + distdir])
+        run([runghc] + runghc_args + [setup, "haddock", "--verbose=0", "--builddir=" + distdir])
+    run([runghc] + runghc_args + [setup, "install", "--verbose=0", "--builddir=" + distdir])
     # Bazel builds are not sandboxed on Windows and can be non-sandboxed on
     # other OSs. Operations like executing `configure` scripts can modify the
     # source tree. If the `srcs` attribute uses a glob like `glob(["**"])`,
     # then these modified files will enter `srcs` on the next execution and
     # invalidate the cache. To avoid this we remove generated files.
-    run([runghc, setup, "clean", "--verbose=0", "--builddir=" + distdir])
+    run([runghc] + runghc_args + [setup, "clean", "--verbose=0", "--builddir=" + distdir])
     os.chdir(old_cwd)
 
 # XXX Cabal has a bizarre layout that we can't control directly. It

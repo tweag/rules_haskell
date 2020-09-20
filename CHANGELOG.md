@@ -4,9 +4,46 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## Upcoming release
+## [0.13.0] 2020-09-20
 
-nothing yet
+### Added
+
+* Support for GHC 8.10.
+* Support for building fully-static binaries. These binaries have
+  fewer dependencies and are more portable across systems.
+* Support Cabal setup script dependencies.
+  See [#1347](https://github.com/tweag/rules_haskell/pull/1347).
+* Support [ghcide](https://github.com/haskell/ghcide).
+* Support building Stackage binaries in `stack_snapshot`, not just
+  libraries.
+  See [#1304](https://github.com/tweag/rules_haskell/pull/1304).
+* Better compatibility with
+  [--remote_download_minimal](https://blog.bazel.build/2019/05/07/builds-without-bytes.html).
+* Support Stack snapshot pinning. In the common case, users don't even
+  need to run Stack to resolve a snapshot to a set of package
+  tarballs. The tarballs can be cached in the Bazel repository cache.
+  See [#1376](https://github.com/tweag/rules_haskell/pull/1376).
+
+### Changed
+
+* The platform name for Nix users has changed. The platforms in
+  `@//haskell/platforms/...` are still supported, but are deprecated.
+  Use `@io_tweag_rules_nixpkgs//nixpkgs/platforms:host` instead.
+* Avoid unnecessary recompilation on Windows.
+  See [#1280](https://github.com/tweag/rules_haskell/pull/1280).
+* Use Stack >= 2.3.1 in the implementation of `stack_snapshot`. This
+  enables better sdist caching, better performance, and makes `bazel
+  fetch` more effective.
+* More aggressive shortening of library names to avoid exceeding
+  MACH-O header size limits on macOS.
+* Make variables are now expanded in compiler and REPL flags.
+  See [#1381](https://github.com/tweag/rules_haskell/pull/1381).
+
+### Fixed
+
+* Linking shared libraries and binaries on Linux distributions that
+  have PIE enabled by default, like Ubuntu from at least 18.04
+  onwards. See [#1388](https://github.com/tweag/rules_haskell/pull/1388).
 
 ### [0.12.0] - 2020-03-16
 

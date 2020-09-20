@@ -8,10 +8,11 @@ HaskellInfo = provider(
         "import_dirs": "Import hierarchy roots.",
         "source_files": "Depset of files that contain Haskell modules.",
         "extra_source_files": "Depset of non-Haskell source files.",
-        "static_libraries": "Ordered collection of compiled library archives.",
-        "dynamic_libraries": "Depset of dynamic libraries.",
+        "hs_libraries": "Depset of compiled Haskell libraries in all available GHC ways.",
         "interface_dirs": "Depset of interface dirs belonging to the packages.",
         "compile_flags": "Arguments that were used to compile the code.",
+        "user_compile_flags": "Compiler flags specified by the user, after location expansion.",
+        "user_repl_flags": "REPL flags specified by the user, after location expansion.",
     },
 )
 

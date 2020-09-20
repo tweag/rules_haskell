@@ -27,6 +27,7 @@ load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
 haskell_cabal_binary(
     name = "alex",
     srcs = glob(["**"]),
+    verbose = False,
     visibility = ["//visibility:public"],
 )
     """,
@@ -35,45 +36,22 @@ haskell_cabal_binary(
     urls = ["http://hackage.haskell.org/package/alex-3.2.4/alex-3.2.4.tar.gz"],
 )
 
-http_archive(
-    name = "happy",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-haskell_cabal_binary(name = "happy", srcs = glob(["**"]), visibility = ["//visibility:public"])
-    """,
-    sha256 = "22eb606c97105b396e1c7dc27e120ca02025a87f3e44d2ea52be6a653a52caed",
-    strip_prefix = "happy-1.19.10",
-    urls = ["http://hackage.haskell.org/package/happy-1.19.10/happy-1.19.10.tar.gz"],
+load(
+    "@rules_haskell//:constants.bzl",
+    "test_ghc_version",
+    "test_stack_snapshot",
 )
-
-http_archive(
-    name = "proto-lens-protoc",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-haskell_cabal_binary(
-    name = "proto-lens-protoc",
-    srcs = glob(["**"]),
-    deps = [
-      "@stackage//:base",
-      "@stackage//:bytestring",
-      "@stackage//:containers",
-      "@stackage//:lens-family",
-      "@stackage//:proto-lens",
-      "@stackage//:proto-lens-protoc",
-      "@stackage//:text",
-    ],
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "161dcee2aed780f62c01522c86afce61721cf89c0143f157efefb1bd1fa1d164",
-    strip_prefix = "proto-lens-protoc-0.5.0.0",
-    urls = ["http://hackage.haskell.org/package/proto-lens-protoc-0.5.0.0/proto-lens-protoc-0.5.0.0.tar.gz"],
-)
-
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
+    components = {
+        "alex": [],
+        "proto-lens-protoc": [
+            "lib",
+            "exe",
+        ],
+    },
     packages = [
         # Core libraries
         "array",
@@ -89,6 +67,8 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
+        "cabal-doctest",
+        "polysemy",
         "network",
         "language-c",
         "streaming",
@@ -99,21 +79,42 @@ stack_snapshot(
         "data-default-class",
         "proto-lens",
         "proto-lens-protoc",
+        "proto-lens-runtime",
         "lens-family",
+        "temporary",
     ],
-    snapshot = "lts-14.4",
+    setup_deps = {"polysemy": ["cabal-doctest"]},
+    snapshot = test_stack_snapshot,
+    stack_snapshot_json = "//:stackage_snapshot.json",
     tools = [
+        # This is not required, as `stack_snapshot` would build alex
+        # automatically, however it is used as a test for user provided
+        # `tools`. We also override alex's components to avoid building it
+        # twice.
         "@alex",
-        "@happy",
     ],
 )
 
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
     name = "stackage-zlib",
-    extra_deps = {"zlib": ["@zlib.win//:zlib" if is_windows else "@zlib.dev//:zlib"]},
+    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
     packages = ["zlib"],
-    snapshot = "lts-13.15",
+    snapshot = test_stack_snapshot,
+    stack_snapshot_json = "//:stackage-zlib-snapshot.json",
+)
+
+stack_snapshot(
+    name = "ghcide",
+    components = {"ghcide": [
+        "lib",
+        "exe",
+    ]},
+    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
+    haddock = False,
+    local_snapshot = "//:ghcide-stack-snapshot.yaml",
+    packages = ["ghcide"],
+    stack_snapshot_json = "//:ghcide-snapshot.json",
 )
 
 load(
@@ -122,11 +123,6 @@ load(
     "nixpkgs_local_repository",
     "nixpkgs_package",
     "nixpkgs_python_configure",
-)
-
-nixpkgs_package(
-    name = "ghc",
-    repository = "@nixpkgs_default",
 )
 
 http_archive(
@@ -170,20 +166,24 @@ test_repl_ghci_args = [
     "-XOverloadedStrings",
 ]
 
-load(
-    "@rules_haskell//:constants.bzl",
-    "test_ghc_version",
-)
+test_cabalopts = [
+    # Used by `tests/cabal-toolchain-flags`
+    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
+    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
+]
+
 load(
     "@rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "ghc",
+    attribute_path = "",
+    cabalopts = test_cabalopts,
     compiler_flags = test_compiler_flags,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc883.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
@@ -195,6 +195,7 @@ load(
 )
 
 haskell_register_ghc_bindists(
+    cabalopts = test_cabalopts,
     compiler_flags = test_compiler_flags,
     version = test_ghc_version,
 )
@@ -237,13 +238,13 @@ cc_library(
 
 nixpkgs_package(
     name = "c2hs",
-    attribute_path = "haskellPackages.c2hs",
+    attribute_path = "haskell.packages.ghc883.c2hs",
     repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "doctest",
-    attribute_path = "haskellPackages.doctest",
+    attribute_path = "haskell.packages.ghc883.doctest",
     repository = "@nixpkgs_default",
 )
 
@@ -307,8 +308,9 @@ filegroup(
 )
 
 http_archive(
-    name = "zlib.win",
+    name = "zlib.hs",
     build_file_content = """
+load("@os_info//:os_info.bzl", "is_darwin")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "zlib",
@@ -317,9 +319,18 @@ cc_library(
     srcs = [":z"],
     hdrs = glob(["*.h"]),
     includes = ["."],
+    linkstatic = 1,
     visibility = ["//visibility:public"],
 )
-cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+cc_library(
+    name = "z",
+    srcs = glob(["*.c"]),
+    hdrs = glob(["*.h"]),
+    # Cabal packages depending on dynamic C libraries fail on MacOS
+    # due to `-rpath` flags being forwarded indiscriminately.
+    # See https://github.com/tweag/rules_haskell/issues/1317
+    linkstatic = is_darwin,
+)
 """,
     sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
     strip_prefix = "zlib-1.2.11",

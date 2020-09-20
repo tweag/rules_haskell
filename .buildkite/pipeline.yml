@@ -1,8 +1,10 @@
 steps:
   - label: "Run tests (Nixpkgs)"
     command: |
-      echo "build:ci --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs" > .bazelrc.local
-      echo "build:ci --config=ci_linux" >> .bazelrc.local
+      cat >.bazelrc.local <<EOF
+      common --config=ci
+      build --config=linux-nixpkgs --config=ci-linux-nixpkgs
+      EOF
       nix-shell --arg docTools false --pure --run '
       set -e
       # Ensure that the Nixpkgs bazel version matches the one specified in
@@ -10,14 +12,17 @@ steps:
       # `.buildkite/bindists-pipeline` for the bindists version.
       .ci/check-bazel-version
       ./tests/run-start-script.sh --use-nix
-      bazel build --config ci //tests:run-tests
+      bazel build //tests:run-tests
       ./bazel-ci-bin/tests/run-tests
-      bazel coverage //tests/... --config ci --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
+      bazel coverage //tests/... --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
       '
     timeout: 100
 
   - label: "Run tests (bindists)"
     command: |
+      # The directories should exist before we call docker run because
+      # otherwise they will be created but with root as owner which causes
+      # troubles later.
       mkdir -p "$HOME/bindists/repo_cache"
       mkdir -p "$HOME/bindists/.cache/bazel"
       mkdir -p "$HOME/bindists/.stack"
@@ -25,6 +30,9 @@ steps:
       echo "RUN useradd -ms /bin/bash --uid $(id -u $USER) $USER" >> Dockerfile
       docker build . -t tweag/rules_haskell:latest
       popd
+      # --network host is necessary because the computation inside the
+      # container should have access to host's network. Otherwise features
+      # like google default credentials do not work.
       docker run -it --network host \
         -v $(pwd):$HOME/rules_haskell:rw \
         -v $HOME/bindists/repo_cache:$HOME/repo_cache:rw \

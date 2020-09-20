@@ -13,6 +13,7 @@ rules_haskell_dependencies()
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
+    attribute_path = "haskell.compiler.ghc865",
     repository = "@rules_haskell//nixpkgs:default.nix",
     version = "8.6.5",
 )
@@ -106,5 +107,10 @@ stack_snapshot(
         "text-show",
     ],
     snapshot = "lts-14.0",
+    # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
+    # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
+    # uncomment the following line.
+    # And uncomment the following line.
+    # stack_snapshot_json = "//:stackage_snapshot.json",
     vendored_packages = {"split": "@split//:split"},
 )

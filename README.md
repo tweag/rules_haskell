@@ -9,7 +9,7 @@
 Bazel automates building and testing software. It scales to very large
 multi-language projects. This project extends Bazel with build rules
 for Haskell. Get started building your own project using these rules
-wih the [setup script below](#setup).
+with the [setup script below](#setup).
 
 [bazel]: https://bazel.build/
 [bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
@@ -23,7 +23,7 @@ The full reference documentation for rules is at https://haskell.build.
 
 ## Setup
 
-You'll need [Bazel >= 0.29][bazel-getting-started] installed.
+You'll need [Bazel >= 2.1][bazel-getting-started] installed.
 
 If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
 
@@ -251,6 +251,31 @@ You can override the `cc_toolchain` chosen with the following flag:
 This chooses the `cc_toolchain` bundled with GHC.
 
 ## For `rules_haskell` developers
+
+### Configuring your platform
+
+`rules_haskell` can be built and tested on Linux, MacOS, and Windows. Depending
+on the platform GHC can be provisioned using nixpkgs or by downloading a binary
+distribution. In case of nixpkgs other toolchains (C compiler, Python, shell
+tools) will also be provided by nixpkgs, in case of bindist they will be taken
+from the environment (`$PATH`). The following `--config` options select the
+corresponding combination of operating system and GHC distribution:
+
+|                     |      Linux      |      MacOS      |      Windows      |
+| ------------------- | --------------- | --------------- | ----------------- |
+| nixpkgs             | `linux-nixpkgs` | `macos-nixpkgs` |                   |
+| binary distribution | `linux-bindist` | `macos-bindist` | `windows-bindist` |
+
+Hint: You can use Bazel's `--announce_rc` flag to see what options are being
+used for a command in a specific configuration. E.g.
+```
+$ bazel build //tests:run-tests --config linux-nixpkgs --nobuild --announce_rc
+```
+
+Hint: To avoid repetition you can add your configuration to `.bazelrc.local`.
+```
+echo "build --config=linux-nixpkgs" >>.bazelrc.local
+```
 
 ### Saving common command-line flags to a file
 

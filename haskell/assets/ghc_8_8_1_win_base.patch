@@ -1,0 +1,11 @@
+--- lib/package.conf.d/base-4.13.0.0.conf     2020-05-15 18:12:39.720103041 +0200
++++ lib/package.conf.d/base-4.13.0.0.conf     2020-05-15 18:12:33.996061352 +0200
+@@ -83,7 +83,7 @@
+ dynamic-library-dirs: $topdir\base-4.13.0.0
+ data-dir:             $topdir\x86_64-windows-ghc-8.8.1\base-4.13.0.0
+ hs-libraries:         HSbase-4.13.0.0
+-extra-libraries:      wsock32 user32 shell32 msvcrt mingw32 mingwex
++extra-libraries:      wsock32 user32 shell32 msvcrt mingw32 mingwex shlwapi
+ include-dirs:         $topdir\base-4.13.0.0\include
+ includes:             HsBase.h
+ depends:              ghc-prim-0.5.3 integer-gmp-1.0.2.0 rts

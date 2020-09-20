@@ -1,4 +1,4 @@
-FROM ubuntu:xenial-20200114
+FROM ubuntu:bionic-20200403
 
 WORKDIR /home/
 

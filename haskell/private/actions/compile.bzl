@@ -56,6 +56,21 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     args.add_all(["--cflag=" + f for f in cc.compiler_flags])
     args.add_all(["--cflag=" + f for f in cc.include_args])
     args.add_all(["--lflag=" + f for f in cc.linker_flags])
+
+    # If are building fully-statically-linked binaries, we need to ensure that
+    # we pass arguments to `hsc2hs` such that objects it builds are statically
+    # linked, otherwise we'll get dynamic linking errors when trying to execute
+    # those objects to generate code as part of the build.  Since the static
+    # configuration should ensure that all the objects involved are themselves
+    # statically built, this is just a case of passing `-static` to the linker
+    # used by `hsc2hs` (which will be our own wrapper script which eventually
+    # calls `gcc`, etc.).
+    #
+    # Note that we also do this in our Cabal wrapper, where `hsc2hs` might be
+    # called by Cabal as part of the build process.
+    if hs.toolchain.fully_static_link:
+        args.add("--lflag=-static")
+
     args.add_all(hsc_flags)
 
     # Add an empty PATH variable if not already specified in hs.env.
@@ -214,8 +229,6 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             idir = import_dir_map[s]
             set.mutable_insert(import_dirs, idir)
 
-    compile_flags += ["-i{0}".format(d) for d in set.to_list(import_dirs)]
-
     # Write the -optP flags to a parameter file because they can be very long on Windows
     # e.g. 27Kb for grpc-haskell
     # Equivalent to: compile_flags += ["-optP" + f for f in cc.cpp_flags]
@@ -260,7 +273,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         # to debug issues in non-sandboxed builds.
         "-Wmissing-home-modules",
     ])
-    if hs.toolchain.is_static and not hs.toolchain.is_windows:
+    if hs.toolchain.static_runtime and not hs.toolchain.is_windows:
         # A static GHC RTS requires -fPIC. However, on Unix we also require
         # -fexternal-dynamic-refs, otherwise GHC still generates R_X86_64_PC32
         # relocations which prevents loading these static libraries as PIC.
@@ -331,12 +344,10 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             depset(cc.hdrs),
             dep_info.package_databases,
             dep_info.interface_dirs,
-            dep_info.static_libraries,
-            dep_info.dynamic_libraries,
+            dep_info.hs_libraries,
             plugin_dep_info.package_databases,
             plugin_dep_info.interface_dirs,
-            plugin_dep_info.static_libraries,
-            plugin_dep_info.dynamic_libraries,
+            plugin_dep_info.hs_libraries,
             depset(get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries + cc.plugin_libraries)),
             java.inputs,
             preprocessors.inputs,
@@ -356,7 +367,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     )
 
 def _hpc_compiler_args(hs):
-    hpcdir = "{}/{}/.hpc".format(hs.bin_dir.path, hs.package_root)
+    hpcdir = "{}/{}/{}_.hpc".format(hs.bin_dir.path, hs.package_root, hs.name)
     return ["-fhpc", "-hpcdir", hpcdir]
 
 def _coverage_datum(mix_file, src_file, target_label):
@@ -408,7 +419,7 @@ def compile_binary(
         c.args.add_all(_hpc_compiler_args(hs))
         for src_file in srcs:
             module = module_name(hs, src_file)
-            mix_file = hs.actions.declare_file(".hpc/{module}.mix".format(module = module))
+            mix_file = hs.actions.declare_file("{name}_.hpc/{module}.mix".format(name = hs.name, module = module))
             coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
 
     hs.toolchain.actions.run_ghc(
@@ -465,13 +476,19 @@ def compile_library(
     if with_shared:
         c.args.add("-dynamic-too")
 
+        # See Note [No PIE when linking] in haskell/private/actions/link.bzl
+        if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
+            version = [int(x) for x in hs.toolchain.version.split(".")]
+            if version < [8, 10]:
+                c.args.add("-optl-no-pie")
+
     coverage_data = []
     if hs.coverage_enabled:
         c.args.add_all(_hpc_compiler_args(hs))
         for src_file in srcs:
             pkg_id_string = pkg_id.to_string(my_pkg_id)
             module = module_name(hs, src_file)
-            mix_file = hs.actions.declare_file(".hpc/{pkg}/{module}.mix".format(pkg = pkg_id_string, module = module))
+            mix_file = hs.actions.declare_file("{name}_.hpc/{pkg}/{module}.mix".format(name = hs.name, pkg = pkg_id_string, module = module))
             coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
 
     if srcs:

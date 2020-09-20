@@ -32,7 +32,7 @@ On a Unix system you will need the following tools installed.
 * ``libgmp``
 * ``libtinfo5``
 * ``make``
-* ``python3`` (``python`` also needs to be available in ``$PATH``. Depending on your distro, this might require installing the ``python`` meta-package, which might use Python 2 or 3, ``rules_haskell`` works with both.)
+* ``python3`` (``python`` also needs to be available in ``$PATH``. Depending on your distribution, this might require installing the ``python`` meta-package, which might use Python 2 or 3, ``rules_haskell`` works with both.)
 
 On Ubuntu you can obtain them by installing the following packages. ::
 
@@ -67,7 +67,7 @@ The first thing to do is to::
 
 If you use the ``NixOS`` distribution, also run the following command::
 
-  $ echo 'test --host_platform=@rules_haskell//haskell/platforms:linux_x86_64_nixpkgs' >> .bazelrc.local
+  $ echo 'test --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host' >> .bazelrc.local
 
 Build with Bazel
 ----------------
@@ -89,13 +89,26 @@ special:
   contains a ``BUILD.bazel`` file is a *package*. You will learn about
   packages later in this tutorial.)
 
-To designate a directory as a Bazel workspace, create an empty file
+To designate a directory as a Bazel workspace, create a file
 named ``WORKSPACE`` in that directory.
+This file defines `external dependencies`_.
 
 When Bazel builds the project, all inputs and dependencies must be in
 the same workspace. Files residing in different workspaces are
 independent of one another unless linked, which is beyond the scope of
 this tutorial.
+
+Understand the WORKSPACE file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The file ``tutorial/WORKSPACE`` defines how to obtain ``rules_haskell``.
+This file only works within the ``rules_haskell``
+repository: for your own project, run the start_ script
+to create a ``WORKSPACE`` file that makes ``rules_haskell`` available
+by `downloading it`_.
+
+The ``WORKSPACE`` file also defines how to obtain the compiler toolchain,
+as detailed in section `picking a compiler`_.
 
 Understand the BUILD file
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -379,6 +392,9 @@ Happy building!
 .. _haskell_toolchain_library: http://api.haskell.build/haskell/haskell.html#haskell_toolchain_library
 .. _haskell_library: http://api.haskell.build/haskell/haskell.html#haskell_library
 .. _graphviz: https://www.graphviz.org/
+.. _start: https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#starting-a-new-project
+.. _downloading it: https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#making-rules-haskell-available
+.. _picking a compiler: https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#picking-a-compiler
 .. _external dependencies: https://docs.bazel.build/versions/master/external.html
 .. _build encyclopedia: https://docs.bazel.build/versions/master/be/overview.html
 .. _C++ build tutorial: https://docs.bazel.build/versions/master/tutorial/cpp.html
