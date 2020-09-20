@@ -248,7 +248,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
     )
 
-    target_files = depset([binary])
+    target_files = depset([binary] + solibs)
 
     user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
     extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)

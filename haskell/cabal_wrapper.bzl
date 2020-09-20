@@ -28,6 +28,7 @@ def _cabal_wrapper_impl(ctx):
             "%{ghc}": hs.tools.ghc.path,
             "%{ghc_pkg}": hs.tools.ghc_pkg.path,
             "%{runghc}": hs.tools.runghc.path,
+            "%{haddock}": hs.tools.haddock.path,
             "%{ar}": ar,
             "%{cc}": cc,
             "%{strip}": cc_toolchain.strip_executable,

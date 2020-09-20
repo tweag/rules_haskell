@@ -140,6 +140,7 @@ def _haskell_doctest_single(target, ctx):
         outputs = [doctest_log],
         mnemonic = "HaskellDoctest",
         progress_message = "HaskellDoctest {}".format(ctx.label),
+        input_manifests = hs.toolchain.cc_wrapper.manifests,
         command = """
         {env}
         {doctest} "$@" {inputs} > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)

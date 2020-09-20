@@ -94,13 +94,15 @@ def _haskell_toolchain_impl(ctx):
     ghc_binaries = {}
     for tool in _GHC_BINARIES:
         for file in ctx.files.tools:
-            if tool in ghc_binaries:
-                continue
 
             basename_no_ext = paths.split_extension(file.basename)[0]
-            if tool == basename_no_ext:
+            # It's important here to give priority to the executable with the
+            # explicit version suffix as the one without is generally just a
+            # symlink to something that might not be captured as a bazel input
+            # so won't be included in the sandbox
+            if "%s-%s" % (tool, ctx.attr.version) == file.basename:
                 ghc_binaries[tool] = file
-            elif "%s-%s" % (tool, ctx.attr.version) == basename_no_ext:
+            elif tool == basename_no_ext and tool not in ghc_binaries:
                 ghc_binaries[tool] = file
         if not tool in ghc_binaries:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))

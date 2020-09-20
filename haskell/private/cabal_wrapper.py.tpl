@@ -73,7 +73,7 @@ os.environ["PATH"] = canonicalize_path(os.getenv("PATH", ""))
 
 component = sys.argv.pop(1)
 name = sys.argv.pop(1)
-haddock = sys.argv.pop(1) == "true"
+doHaddock = sys.argv.pop(1) == "true"
 execroot = os.getcwd()
 setup = os.path.join(execroot, sys.argv.pop(1))
 srcdir = os.path.join(execroot, sys.argv.pop(1))
@@ -91,6 +91,7 @@ runghc_args = sys.argv.pop(1).split()
 runghc = find_exe(r"%{runghc}")
 ghc = find_exe(r"%{ghc}")
 ghc_pkg = find_exe(r"%{ghc_pkg}")
+haddock = find_exe(r"%{haddock}")
 
 extra_args = []
 current_arg = sys.argv.pop(1)
@@ -159,6 +160,7 @@ with tmpdir() as distdir:
         "--user", \
         "--with-compiler=" + ghc,
         "--with-hc-pkg=" + ghc_pkg,
+        "--with-haddock=" + haddock,
         "--with-ar=" + ar,
         "--with-gcc=" + cc,
         "--with-strip=" + strip,
@@ -192,7 +194,7 @@ with tmpdir() as distdir:
         [ "--package-db=" + package_database ], # This arg must come last.
         )
     run([runghc] + runghc_args + [setup, "build", "--verbose=0", "--builddir=" + distdir])
-    if haddock:
+    if doHaddock:
         run([runghc] + runghc_args + [setup, "haddock", "--verbose=0", "--builddir=" + distdir])
     run([runghc] + runghc_args + [setup, "install", "--verbose=0", "--builddir=" + distdir])
     # Bazel builds are not sandboxed on Windows and can be non-sandboxed on

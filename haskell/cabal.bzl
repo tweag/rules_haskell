@@ -276,7 +276,7 @@ def _prepare_cabal_inputs(
     args.add_all(tool_inputs, map_each = _cabal_tool_flag)
 
     inputs = depset(
-        [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
+        [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc, hs.tools.haddock, hs.tools.hsc2hs],
         transitive = [
             depset(srcs),
             depset(cc.files),
