@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## Upcoming release
+## [0.13.0] 2020-09-20
 
 ### Added
 
