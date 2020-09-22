@@ -48,19 +48,41 @@ parse_args () {
     esac
 }
 
-check_clash () {
-    if [ -f "$1" ] # directories don't clash, we're only writing files
+check_dir () {
+    if [ -d "$1" ] # we can't write a file when a directory of that name exists
     then
-        echo "ERROR: The current directory already has a $1 file we don't want to overwrite." >&2
+        echo "STOP: There's a directory named $1 but we want to write a file with the same name. Please delete or rename the $1 directory." >&2
+        exit 1
+    fi
+}
+
+check_alt () {
+    check_dir $2
+    if [ -f "$1" ]
+    then
+        echo "STOP: There's a $1 file but we intend to write a $2 file. When both exist, bazel will pick the one with the .bazel extension, ignoring the other one. Please delete the $1 file." >&2
+        exit 1
+    fi
+}
+
+check_clash () {
+    check_dir $1
+    if [ -f "$1" ]
+    then
+        echo "STOP: The current directory already has a $1 file and we don't want to overwrite it." >&2
         exit 1
     fi
 }
 
 check_files_dont_exist () {
-    # Writing BUILD.bazel does not overwrite a BUILD file but include it anyway.
-    # If we're uncomfortable with the slightly off clash message then write
-    # a separate test and message for that case.
-    for clash in .bazelrc WORKSPACE BUILD BUILD.bazel Example.hs
+    # A BUILD.bazel file takes precedence over a BUILD file and likewise
+    # a WORKSPACE.bazel file takes precedence over a WORKSPACE file. We write
+    # BUILD.bazel and WORKSPACE files. Seems an odd mix.
+    check_alt WORKSPACE.bazel WORKSPACE
+    check_alt BUILD BUILD.bazel
+    check_alt zlib.BUILD zlib.BUILD.bazel
+
+    for clash in .bazelrc WORKSPACE BUILD.bazel zlib.BUILD.bazel Example.hs
     do
         check_clash $clash
     done
