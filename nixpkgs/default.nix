@@ -6,25 +6,25 @@ let
   overlay = self: super: let inherit (self) writeTextFile; in {
     haskell = super.haskell // {
       packages = super.haskell.packages // {
-        ghc8101 = super.haskell.packages.ghc8101.override {
+        ghc883 = super.haskell.packages.ghc883.override {
           overrides = self: super: {
-            ghc = super.ghc.overrideAttrs (attrs: {
+            ghcPatched = super.ghc.overrideAttrs (attrs: {
               patches = attrs.patches or [] ++ [
                 (writeTextFile {
                   name = "pgmc-supports-no-pie.patch";
                   text = ''
                     diff --git a/compiler/main/DynFlags.hs b/compiler/main/DynFlags.hs
-                    index 97a4c58ceb..32a87ce4da 100644
+                    index a7ec70f876..1e8f89918a 100644
                     --- a/compiler/main/DynFlags.hs
                     +++ b/compiler/main/DynFlags.hs
-                    @@ -3067,6 +3067,8 @@ dynamic_flags_deps = [
-                                -- (see #15319)
-                                toolSettings_ccSupportsNoPie = False
-                              }
+                    @@ -3004,6 +3004,8 @@ dynamic_flags_deps = [
+                                                                   -- Don't pass -no-pie with -pgmc
+                                                                   -- (see Trac #15319)
+                                                                   sGccSupportsNoPie = False})))
                     +  , make_ord_flag defFlag "pgmc-supports-no-pie"
-                    +      $ noArg $ alterToolSettings $ \s -> s { toolSettings_ccSupportsNoPie = True }
+                    +      $ noArg $ alterSettings $ \s -> s { sGccSupportsNoPie = True }
                        , make_ord_flag defFlag "pgms"
-                           (HasArg (\_ -> addWarn "Object splitting was removed in GHC 8.8"))
+                           (hasArg (\f -> alterSettings (\s -> s { sPgm_s   = (f,[])})))
                        , make_ord_flag defFlag "pgma"
                   '';
                 })
