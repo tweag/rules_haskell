@@ -196,5 +196,6 @@ def ghc_cc_program_args(cc):
         "-pgmP",
         cc + " -E -undef -traditional",
         "-optc-fno-stack-protector",
+        "-pgmc-supports-no-pie",
     ]
     return args
