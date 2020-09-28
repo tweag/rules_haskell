@@ -2,6 +2,7 @@ load("@rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
+    "haskell_binary",
 )
 
 package(default_testonly = 1)
@@ -33,4 +34,15 @@ haskell_library(
     ],
     tags = ["requires_c2hs"],
     deps = ["//tests/hackage:base"],
+)
+
+haskell_binary(
+    name = "c2hs-bin",
+    srcs = [
+        "bin/Main.hs",
+    ],
+    deps = [
+        ":c2hs",
+        "//tests/hackage:base",
+    ],
 )
