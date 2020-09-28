@@ -117,6 +117,19 @@ stack_snapshot(
     stack_snapshot_json = "//:ghcide-snapshot.json",
 )
 
+stack_snapshot(
+    name = "hls",
+    components = {"haskell-language-server": [
+        "lib",
+        "exe",
+    ]},
+    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
+    haddock = False,
+    local_snapshot = "//:hls-stack-snapshot.yaml",
+    packages = ["ghcide"],
+    stack_snapshot_json = "//:hls-snapshot.json",
+)
+
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_cc_configure",
