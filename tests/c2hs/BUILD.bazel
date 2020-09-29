@@ -25,12 +25,28 @@ c2hs_library(
     deps = [":foo"],
 )
 
+cc_library(
+    name = "code-c",
+    srcs = ["c/src/code.c"],
+    hdrs = ["c/include/code.h"],
+    strip_include_prefix = "c/include",
+)
+
+c2hs_library(
+    name = "code",
+    srcs = ["Code.chs"],
+    tags = ["requires_c2hs"],
+    deps = [":code-c"],
+)
+
+
 haskell_library(
     name = "c2hs",
     srcs = [
         ":bar",
         ":foo",
         "@c2hs_repo//:baz",
+        ":code",
     ],
     tags = ["requires_c2hs"],
     deps = ["//tests/hackage:base"],
