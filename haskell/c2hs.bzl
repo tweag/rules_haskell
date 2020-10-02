@@ -5,6 +5,7 @@ load(
     ":providers.bzl",
     "C2hsLibraryInfo",
 )
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":cc.bzl", "cc_interop_info")
 load(
     ":private/cc_libraries.bzl",
@@ -36,6 +37,8 @@ def _c2hs_library_impl(ctx):
     chs_dir_raw = target_unique_name(hs, "chs")
     hs_file = declare_compiled(hs, chs_file, ".hs", directory = chs_dir_raw)
     chi_file = declare_compiled(hs, chs_file, ".chi", directory = chs_dir_raw)
+    h_file = declare_compiled(hs, chs_file, ".chs.h", directory = chs_dir_raw)
+    c_file = declare_compiled(hs, chs_file, ".chs.c", directory = chs_dir_raw)
     args.add_all([chs_file.path, "-o", hs_file.path])
 
     args.add("-C-E")
@@ -78,7 +81,7 @@ def _c2hs_library_impl(ctx):
         ]),
         input_manifests = input_manifests,
         tools = [hs.tools.ghc, c2hs_exe],
-        outputs = [hs_file, chi_file],
+        outputs = [hs_file, chi_file, c_file, h_file],
         command =
             # cpp (called via c2hs) gets very unhappy if the mingw bin dir is
             # not in PATH so we add it to PATH explicitely.
@@ -90,10 +93,14 @@ def _c2hs_library_impl(ctx):
             """
         # Include libdir in include path just like hsc2hs does.
         libdir=$({ghc} --print-libdir)
+        # Create an empty .c file as a default for when c2hs doesn't create one
+        # (which is only necessary with C wrappers)
+        touch {cfilepath}
         {c2hs} -C-I$libdir/include "$@"
         """.format(
                 ghc = hs.tools.ghc.path,
                 c2hs = c2hs_exe.path,
+                cfilepath = c_file.path,
             ),
         mnemonic = "HaskellC2Hs",
         arguments = [args],
@@ -106,12 +113,41 @@ def _c2hs_library_impl(ctx):
         hs.label.package,
         chs_dir_raw,
     )
+    cc_toolchain = find_cpp_toolchain(ctx)
+    feature_configuration = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+
+    (compilation_context, compilation_outputs) = cc_common.compile(
+        name = target_unique_name(hs, "clib-comp"),
+        actions = ctx.actions,
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        srcs = [ c_file ],
+        public_hdrs = [ h_file ],
+        # TODO: Include C deps
+    )
+
+    (linking_context, linking_output) = cc_common.create_linking_context_from_compilation_outputs(
+        name = target_unique_name(hs, "clib-link"),
+        actions = ctx.actions,
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        compilation_outputs = compilation_outputs,
+    )
 
     return [
         DefaultInfo(files = depset([hs_file])),
         C2hsLibraryInfo(
             chi_file = chi_file,
             import_dir = idir,
+        ),
+        CcInfo(
+            compilation_context = compilation_context,
+            linking_context = linking_context,
         ),
     ]
 
