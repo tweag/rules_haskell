@@ -48,6 +48,7 @@ mkShell {
     # check the start script for problems
     shellcheck
     file
+    hpc2lcov
   ] ++ lib.optionals docTools [graphviz python37Packages.sphinx zip unzip];
 
   shellHook = ''

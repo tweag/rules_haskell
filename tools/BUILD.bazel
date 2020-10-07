@@ -1,0 +1,24 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+haskell_binary(
+    name = "hpc_lcov",
+    srcs = [
+        "HPCLcov.hs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@stackage//:base",
+        "@stackage//:containers",
+        "@stackage//:hpc",
+        "@stackage//:optparse-applicative",
+        "@stackage//:path",
+        "@stackage//:path-io",
+        "@stackage//:text",
+        "@stackage//:hpc-lcov",
+    ],
+)
