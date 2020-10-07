@@ -1,32 +1,23 @@
 {...}:
 let
-  # 2020-07-09
-  sha256 = "1vi3wbvlvpd4200swd3594vps1fsnd7775mgzm3nnfs1imzkg00i";
-  rev = "1d8018068278a717771e9ec4054dff1ebd3252b0";
-  overlay = self: super: let inherit (self) writeTextFile; in {
+  # 2020-10-07
+  sha256 = "sha256:0fcqpsy6y7dgn0y0wgpa56gsg0b0p8avlpjrd79fp4mp9bl18nda";
+  rev = "502845c3e31ef3de0e424f3fcb09217df2ce6df6";
+  overlay = self: super: let inherit (self) fetchgit fetchpatch; in {
     haskell = super.haskell // {
       packages = super.haskell.packages // {
-        ghc883 = super.haskell.packages.ghc883.override {
+        ghcHEAD = super.haskell.packages.ghcHEAD.override {
           overrides = self: super: {
-            ghcPatched = super.ghc.overrideAttrs (attrs: {
+            ghcPatched = (super.ghc.override { version = "8.10.2"; }).overrideAttrs (attrs: {
+              src = fetchgit {
+                url = "https://gitlab.haskell.org/ghc/ghc.git/";
+                rev = "ghc-8.10.2-release";
+                sha256 = "sha256:0vhp8a4d4n0c5n85z0jr8s95z8s8frh9mv0n3d03gmi76c39pvid";
+              };
               patches = attrs.patches or [] ++ [
-                (writeTextFile {
-                  name = "pgmc-supports-no-pie.patch";
-                  text = ''
-                    diff --git a/compiler/main/DynFlags.hs b/compiler/main/DynFlags.hs
-                    index a7ec70f876..1e8f89918a 100644
-                    --- a/compiler/main/DynFlags.hs
-                    +++ b/compiler/main/DynFlags.hs
-                    @@ -3004,6 +3004,8 @@ dynamic_flags_deps = [
-                                                                   -- Don't pass -no-pie with -pgmc
-                                                                   -- (see Trac #15319)
-                                                                   sGccSupportsNoPie = False})))
-                    +  , make_ord_flag defFlag "pgmc-supports-no-pie"
-                    +      $ noArg $ alterSettings $ \s -> s { sGccSupportsNoPie = True }
-                       , make_ord_flag defFlag "pgms"
-                           (hasArg (\f -> alterSettings (\s -> s { sPgm_s   = (f,[])})))
-                       , make_ord_flag defFlag "pgma"
-                  '';
+                (fetchpatch {
+                  url = "https://gitlab.haskell.org/ghc/ghc/-/commit/fac083e7ac8a37b61a4082bbbca2848e52fd1bb2.patch";
+                  sha256 = "sha256:0d2l9x9pxpagjnb4l6f9irqvpd7542wk230dyjnabgrv5k1b1fn5";
                 })
               ];
             });

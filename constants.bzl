@@ -13,5 +13,5 @@ load("@os_info//:os_info.bzl", "is_linux", "is_nix_shell", "is_windows")
 #
 # This seems to be an instance of https://gitlab.haskell.org/ghc/ghc/issues/17926.
 # Until a fix is released we fall back to an older GHC release on Windows.
-test_ghc_version = "8.8.3" if not is_windows else "8.6.5"
+test_ghc_version = "8.10.2" if not is_windows else "8.6.5"
 test_stack_snapshot = "lts-15.4" if not is_windows else "lts-14.4"
