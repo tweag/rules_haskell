@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+all_mixs=()
+for m in $(find . -name "*_.hpc")
+do
+  all_mixs+=("--mix=$(pwd)/$m")
+done
+
+hpc2lcov \
+    --output "$COVERAGE_OUTPUT_FILE" \
+    --root "$(pwd)" \
+    "${all_mixs[@]}" \
+    $(find . -name "*.tix")

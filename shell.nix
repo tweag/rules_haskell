@@ -1,6 +1,22 @@
 { pkgs ? import ./nixpkgs {}, docTools ? true }:
 
 with pkgs;
+let
+  hpc2lcov = runCommand "hpc2lcov" {
+    buildInputs = [
+      (haskellPackages.ghcWithPackages(p: with p; [
+        optparse-applicative
+        hpc-lcov
+        path
+        path-io
+      ]))];
+  }
+    ''
+      mkdir -p $out/bin
+      ghc ${./tools/HPCLcov.hs} -o $out/bin/hpc2lcov
+      cp ${./tools/hpc2lcov-wrapper} $out/bin/hpc2lcov-wrapper
+    '';
+in
 mkShell {
   # XXX: hack for macosX, this flags disable bazel usage of xcode
   # Note: this is set even for linux so any regression introduced by this flag
@@ -12,6 +28,7 @@ mkShell {
   LANG="C.UTF-8";
 
   buildInputs = [
+    openjdk11
     go
     nix
     which
@@ -49,5 +66,7 @@ mkShell {
 
     # source bazel bash completion
     source ${pkgs.bazel}/share/bash-completion/completions/bazel
+
+    export LCOV_MERGER=${hpc2lcov}/bin/hpc2lcov-wrapper
   '';
 }

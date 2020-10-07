@@ -73,3 +73,7 @@ build:ci --incompatible_load_python_rules_from_bzl
 # User Configuration
 # ------------------
 try-import %workspace%/.bazelrc.local
+
+
+# Coverage
+coverage --test_env=LCOV_MERGER --combined_report=lcov --javabase=@local_jdk//:jdk --host_javabase=@local_jdk//:jdk
