@@ -136,12 +136,18 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     # platform. But they are important to state because Bazel
     # toolchain resolution prefers other toolchains with more specific
     # constraints otherwise.
-    target_constraints = ["@platforms//cpu:x86_64"]
-    if repository_ctx.os.name == "linux":
-        target_constraints.append("@platforms//os:linux")
-    elif repository_ctx.os.name == "mac os x":
-        target_constraints.append("@platforms//os:osx")
-    exec_constraints = list(target_constraints)
+    if repository_ctx.attr.target_constraints == None:
+        target_constraints = ["@platforms//cpu:x86_64"]
+        if repository_ctx.os.name == "linux":
+            target_constraints.append("@platforms//os:linux")
+        elif repository_ctx.os.name == "mac os x":
+            target_constraints.append("@platforms//os:osx")
+    else:
+      target_constraints = repository_ctx.attr.target_constraints
+    if repository_ctx.attr.exec_constraints == None:
+      exec_constraints = list(target_constraints)
+    else:
+      exec_constraints = list(repository_ctx.attr.exec_constraints)
     exec_constraints.append("@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix")
 
     repository_ctx.file(
@@ -161,7 +167,12 @@ toolchain(
         ),
     )
 
-_ghc_nixpkgs_toolchain = repository_rule(_ghc_nixpkgs_toolchain_impl)
+_ghc_nixpkgs_toolchain = repository_rule(
+    implementation = _ghc_nixpkgs_toolchain_impl,
+    attrs = {
+      "exec_constraints": attr.string_list(),
+      "target_constraints": attr.string_list(),
+      })
 
 def haskell_register_ghc_nixpkgs(
         version,
@@ -184,7 +195,9 @@ def haskell_register_ghc_nixpkgs(
         locale = None,
         repositories = {},
         repository = None,
-        nix_file_content = None):
+        nix_file_content = None,
+        exec_constraints = None,
+        target_constraints = None):
     """Register a package from Nixpkgs as a toolchain.
 
     Toolchains can be used to compile Haskell code. To have this
@@ -271,7 +284,10 @@ def haskell_register_ghc_nixpkgs(
     )
 
     # toolchain definition.
-    _ghc_nixpkgs_toolchain(name = toolchain_repo_name)
+    _ghc_nixpkgs_toolchain(
+        name = toolchain_repo_name,
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints)
     native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
 
     # Unix tools toolchain required for Cabal packages
