@@ -146,23 +146,23 @@ def cc_interop_info(ctx):
         # https://github.com/bazelbuild/bazel/issues/4571.
         linker_flags = linker_flags,
         cc_libraries_info = cc_libraries_info,
-        cc_libraries = get_cc_libraries(cc_libraries_info, cc_common.merge_cc_infos(cc_infos = ccs).linking_context.libraries_to_link.to_list()),
-        transitive_libraries = cc_common.merge_cc_infos(cc_infos = [
+        cc_libraries = get_cc_libraries(cc_libraries_info, [lib for li in cc_common.merge_cc_infos(cc_infos = ccs).linking_context.linker_inputs.to_list() for lib in li.libraries]),
+        transitive_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = [
             dep[CcInfo]
             for dep in ctx.attr.deps
             if CcInfo in dep
-        ]).linking_context.libraries_to_link.to_list(),
-        plugin_libraries = cc_common.merge_cc_infos(cc_infos = [
+        ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
+        plugin_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = [
             dep[CcInfo]
             for plugin in getattr(ctx.attr, "plugins", [])
             for dep in plugin[GhcPluginInfo].deps
             if CcInfo in dep
-        ]).linking_context.libraries_to_link.to_list(),
-        setup_libraries = cc_common.merge_cc_infos(cc_infos = [
+        ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
+        setup_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = [
             dep[CcInfo]
             for dep in getattr(ctx.attr, "setup_deps", [])
             if CcInfo in dep
-        ]).linking_context.libraries_to_link.to_list(),
+        ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
     )
 
 def ghc_cc_program_args(cc):

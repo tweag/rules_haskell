@@ -544,21 +544,26 @@ def haskell_library_impl(ctx):
         unsupported_features = ctx.disabled_features,
     )
     if dynamic_library or static_library:
-        libraries_to_link = [
-            cc_common.create_library_to_link(
-                actions = ctx.actions,
-                feature_configuration = feature_configuration,
-                dynamic_library = dynamic_library,
-                dynamic_library_symlink_path = dynamic_library.basename if dynamic_library else "",
-                static_library = static_library,
-                cc_toolchain = cc_toolchain,
+        linker_inputs = [
+            cc_common.create_linker_input(
+                owner = ctx.label,
+                libraries = depset(direct = [
+                    cc_common.create_library_to_link(
+                        actions = ctx.actions,
+                        feature_configuration = feature_configuration,
+                        dynamic_library = dynamic_library,
+                        dynamic_library_symlink_path = dynamic_library.basename if dynamic_library else "",
+                        static_library = static_library,
+                        cc_toolchain = cc_toolchain,
+                    ),
+                ]),
             ),
         ]
     else:
-        libraries_to_link = []
+        linker_inputs = []
     compilation_context = cc_common.create_compilation_context()
     linking_context = cc_common.create_linking_context(
-        libraries_to_link = libraries_to_link,
+        linker_inputs = depset(direct = linker_inputs),
     )
     out_cc_info = cc_common.merge_cc_infos(
         cc_infos = [
@@ -727,25 +732,30 @@ def haskell_toolchain_libraries_impl(ctx):
                 if with_threaded:
                     libs["ffi"]["static"] = libs["Cffi_thr"]["static"]
                 libs.pop("Cffi_thr")
-        libraries_to_link = [
-            cc_common.create_library_to_link(
-                actions = ctx.actions,
-                feature_configuration = feature_configuration,
-                dynamic_library = lib.get("dynamic", None),
-                dynamic_library_symlink_path =
-                    _toolchain_library_symlink(lib["dynamic"]) if lib.get("dynamic") else "",
-                static_library = lib.get("static", None),
-                cc_toolchain = cc_toolchain,
-            )
-            for lib in libs.values()
+        linker_inputs = [
+            cc_common.create_linker_input(
+                owner = ctx.label,
+                libraries = depset(direct = [
+                    cc_common.create_library_to_link(
+                        actions = ctx.actions,
+                        feature_configuration = feature_configuration,
+                        dynamic_library = lib.get("dynamic", None),
+                        dynamic_library_symlink_path =
+                            _toolchain_library_symlink(lib["dynamic"]) if lib.get("dynamic") else "",
+                        static_library = lib.get("static", None),
+                        cc_toolchain = cc_toolchain,
+                    )
+                    for lib in libs.values()
+                ]),
+                user_link_flags = depset(direct = target[HaskellImportHack].linkopts),
+            ),
         ]
         compilation_context = cc_common.create_compilation_context(
             headers = target[HaskellImportHack].headers,
             includes = target[HaskellImportHack].includes,
         )
         linking_context = cc_common.create_linking_context(
-            libraries_to_link = libraries_to_link,
-            user_link_flags = target[HaskellImportHack].linkopts,
+            linker_inputs = depset(direct = linker_inputs),
         )
         cc_info = CcInfo(
             compilation_context = compilation_context,

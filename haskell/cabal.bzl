@@ -498,18 +498,23 @@ def _haskell_cabal_library_impl(ctx):
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
     )
-    library_to_link = cc_common.create_library_to_link(
-        actions = ctx.actions,
-        feature_configuration = feature_configuration,
-        dynamic_library = dynamic_library,
-        dynamic_library_symlink_path =
-            _shorten_library_symlink(dynamic_library) if dynamic_library and ctx.attr.unique_name else "",
-        static_library = static_library,
-        cc_toolchain = cc_toolchain,
+    linker_input = cc_common.create_linker_input(
+        owner = ctx.label,
+        libraries = depset(direct = [
+            cc_common.create_library_to_link(
+                actions = ctx.actions,
+                feature_configuration = feature_configuration,
+                dynamic_library = dynamic_library,
+                dynamic_library_symlink_path =
+                    _shorten_library_symlink(dynamic_library) if dynamic_library and ctx.attr.unique_name else "",
+                static_library = static_library,
+                cc_toolchain = cc_toolchain,
+            ),
+        ]),
     )
     compilation_context = cc_common.create_compilation_context()
     linking_context = cc_common.create_linking_context(
-        libraries_to_link = [library_to_link],
+        linker_inputs = depset(direct = [linker_input]),
     )
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [
