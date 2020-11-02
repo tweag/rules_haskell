@@ -20,7 +20,7 @@ version: 2
 jobs:
   build-darwin:
     macos:
-      xcode: "9.0"
+      xcode: "10.0"
     steps:
       - checkout
       - run:
@@ -117,7 +117,7 @@ jobs:
 
   build-darwin-bindist:
     macos:
-      xcode: "9.0"
+      xcode: "10.0"
     steps:
       - checkout
       - run:
