@@ -310,7 +310,7 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         repl_info.load_info.cc_info,
         repl_info.dep_info.cc_info,
     ])
-    all_libraries = cc_info.linking_context.libraries_to_link.to_list()
+    all_libraries = [lib for li in cc_info.linking_context.linker_inputs.to_list() for lib in li.libraries]
     cc_libraries = get_cc_libraries(cc_libraries_info, all_libraries)
     if static:
         cc_library_files = _concat(get_library_files(hs, cc_libraries_info, cc_libraries))

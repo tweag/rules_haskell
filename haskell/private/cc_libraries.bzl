@@ -304,34 +304,35 @@ def extend_HaskellCcLibrariesInfo(
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
     libraries = dict(cc_libraries_info.libraries)
 
-    for lib_to_link in cc_info.linking_context.libraries_to_link.to_list():
-        key = cc_library_key(lib_to_link)
-        if key in libraries:
-            continue
-        if is_haskell:
-            libraries[key] = HaskellCcLibraryInfo(
-                static_library_link = None,
-                pic_static_library_link = None,
-                is_haskell = True,
-            )
-        else:
-            libraries[key] = HaskellCcLibraryInfo(
-                static_library_link = mangle_static_library(
-                    ctx,
-                    posix,
-                    lib_to_link.dynamic_library,
-                    lib_to_link.static_library,
-                    outdir = "_ghc_a",
-                ),
-                pic_static_library_link = mangle_static_library(
-                    ctx,
-                    posix,
-                    lib_to_link.dynamic_library,
-                    lib_to_link.pic_static_library,
-                    outdir = "_ghc_pic_a",
-                ),
-                is_haskell = False,
-            )
+    for li in cc_info.linking_context.linker_inputs.to_list():
+        for lib_to_link in li.libraries:
+            key = cc_library_key(lib_to_link)
+            if key in libraries:
+                continue
+            if is_haskell:
+                libraries[key] = HaskellCcLibraryInfo(
+                    static_library_link = None,
+                    pic_static_library_link = None,
+                    is_haskell = True,
+                )
+            else:
+                libraries[key] = HaskellCcLibraryInfo(
+                    static_library_link = mangle_static_library(
+                        ctx,
+                        posix,
+                        lib_to_link.dynamic_library,
+                        lib_to_link.static_library,
+                        outdir = "_ghc_a",
+                    ),
+                    pic_static_library_link = mangle_static_library(
+                        ctx,
+                        posix,
+                        lib_to_link.dynamic_library,
+                        lib_to_link.pic_static_library,
+                        outdir = "_ghc_pic_a",
+                    ),
+                    is_haskell = False,
+                )
 
     return HaskellCcLibrariesInfo(libraries = libraries)
 
