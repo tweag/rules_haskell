@@ -1,7 +1,0 @@
-resolver: lts-15.4
-packages:
-  - github: haskell-numerics/hmatrix
-    commit: "cb09d0e99ae4f10cd2b3f3ac667df83946a9744d"
-    sha256: "7f00a6c8b137969862a5e64cd58f2ecd33f7c36b5a9786f397b8426460dd5b0a"
-    subdirs:
-      - packages/base

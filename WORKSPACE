@@ -117,12 +117,6 @@ stack_snapshot(
     stack_snapshot_json = "//:ghcide-snapshot.json",
 )
 
-stack_snapshot(
-    name = "hmatrix",
-    local_snapshot = "//:hmatrix-stack-snapshot.yaml",
-    packages = ["hmatrix"],
-)
-
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_cc_configure",
