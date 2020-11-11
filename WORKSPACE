@@ -399,7 +399,7 @@ http_archive(
     ],
 )
 
-load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories")
+load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
 
 node_repositories(
     vendored_node = "@nixpkgs_nodejs",
