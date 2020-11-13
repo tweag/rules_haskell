@@ -77,7 +77,9 @@ check_clash () {
 check_files_dont_exist () {
     # A BUILD.bazel file takes precedence over a BUILD file and likewise
     # a WORKSPACE.bazel file takes precedence over a WORKSPACE file. We write
-    # BUILD.bazel and WORKSPACE files. Seems an odd mix.
+    # BUILD.bazel and WORKSPACE files.
+    # Some Bazel tooling may fail on WORKSPACE.bazel files,
+    # e.g. https://github.com/bazelbuild/bazel-gazelle/issues/678
     check_alt WORKSPACE.bazel WORKSPACE
     check_alt BUILD BUILD.bazel
 
