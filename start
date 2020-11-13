@@ -67,7 +67,7 @@ check_alt () {
 
 check_clash () {
     check_dir $1
-    if [ -f "$1" ]
+    if [ -e "$1" ]
     then
         echo "STOP: The current directory already has a $1 file and we don't want to overwrite it." >&2
         exit 1
