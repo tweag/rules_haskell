@@ -80,7 +80,6 @@ check_files_dont_exist () {
     # BUILD.bazel and WORKSPACE files. Seems an odd mix.
     check_alt WORKSPACE.bazel WORKSPACE
     check_alt BUILD BUILD.bazel
-    check_alt zlib.BUILD zlib.BUILD.bazel
 
     for clash in .bazelrc WORKSPACE BUILD.bazel zlib.BUILD.bazel Example.hs
     do
