@@ -6,6 +6,28 @@ load(
     "nixpkgs_sh_posix_configure",
 )
 
+def check_ghc_version(repository_ctx):
+    ghc_name = "ghc-{}".format(repository_ctx.attr.version)
+    result = repository_ctx.execute(["ls", "lib"])
+    bad_version = True
+    if result.return_code == 0:
+        for dir in result.stdout.splitlines():
+            if dir.endswith(ghc_name):
+                bad_version = False
+                break
+    else:
+        result = repository_ctx.execute(["pwd"])
+        fail("There is no lib folder in {}".format(result.stdout))
+    if bad_version:
+        fail(
+            """\
+GHC version does not match expected version.
+You specified {wanted}.
+Available versions:
+{actual}
+""".format(wanted = ghc_name, actual = result.stdout),
+        )
+
 def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
     compiler_flags_select = "select({})".format(
         repository_ctx.attr.compiler_flags_select or {
@@ -24,17 +46,9 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
 
     # Generate BUILD file entries describing each prebuilt package.
     pkgdb_to_bzl = repository_ctx.path(Label("@rules_haskell//haskell:private/pkgdb_to_bzl.py"))
+    check_ghc_version(repository_ctx)
+
     ghc_name = "ghc-{}".format(repository_ctx.attr.version)
-    result = repository_ctx.execute(["ls", "lib"])
-    if result.return_code or not ghc_name in result.stdout.splitlines():
-        fail(
-            """\
-GHC version does not match expected version.
-You specified {wanted}.
-Available versions:
-{actual}
-""".format(wanted = ghc_name, actual = result.stdout),
-        )
     result = repository_ctx.execute([
         pkgdb_to_bzl,
         repository_ctx.attr.name,

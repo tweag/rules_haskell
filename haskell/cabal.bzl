@@ -433,7 +433,8 @@ def _haskell_cabal_library_impl(ctx):
         verbose = ctx.attr.verbose,
         is_library = True,
         dynamic_file = dynamic_library,
-        transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
+        transitive_haddocks =
+		  _gather_transitive_haddocks(ctx.attr.deps) if ctx.attr.haddock else depset([]),
     )
     outputs = [
         package_database,

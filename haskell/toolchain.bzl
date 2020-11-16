@@ -103,7 +103,7 @@ def _haskell_toolchain_impl(ctx):
             elif "%s-%s" % (tool, ctx.attr.version) == basename_no_ext:
                 ghc_binaries[tool] = file
         if not tool in ghc_binaries:
-            fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
+            fail("Cannot find {} in {}".format(tool, ctx.attr.tools))
 
     # Get the versions of every prebuilt package.
     ghc_pkg = ghc_binaries["ghc-pkg"]
