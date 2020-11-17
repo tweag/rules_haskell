@@ -65,7 +65,7 @@ sh_inline_test(
     set -eo pipefail
     binary="$1"
     # Symbols are prefixed with underscore on macOS but not on Linux.
-    if nm -u "$binary" | grep -q "\<_\?value"; then
+    if nm -u "$binary" | grep -q "\\<_\\?value"; then
         echo "C library dependency not linked statically: ${binary}"
         exit 1
     fi
@@ -98,7 +98,7 @@ sh_inline_test(
         exit 0
     fi
     # Symbols are prefixed with underscore on macOS but not on Linux.
-    if ! nm -u "$binary" | grep -q "\<_\?value"; then
+    if ! nm -u "$binary" | grep -q "\\<_\\?value"; then
         echo "C library dependency not linked dynamically"
         exit 1
     fi
