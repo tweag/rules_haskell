@@ -194,7 +194,14 @@ cc_library(
     includes = ["."],
     visibility = ["//visibility:public"],
 )
-cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+cc_library(
+    name = "z",
+    srcs = glob(["*.c"]),
+    hdrs = glob(["*.h"]),
+    # The zlib sources trigger this warning which can cause build failures when
+    # the CC toolchain enables -Werror.
+    copts = ["-Wno-implicit-function-declaration"],
+)
 EOF
     ;;
 

@@ -326,6 +326,9 @@ cc_library(
     name = "z",
     srcs = glob(["*.c"]),
     hdrs = glob(["*.h"]),
+    # The zlib sources trigger this warning which can cause build failures when
+    # the CC toolchain enables -Werror.
+    copts = ["-Wno-implicit-function-declaration"],
     # Cabal packages depending on dynamic C libraries fail on MacOS
     # due to `-rpath` flags being forwarded indiscriminately.
     # See https://github.com/tweag/rules_haskell/issues/1317
