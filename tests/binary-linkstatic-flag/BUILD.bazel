@@ -4,6 +4,10 @@ load(
     "haskell_library",
     "haskell_test",
 )
+load(
+    "//tests:analysis_tests.bzl",
+    "dynamic_libraries_in_runfiles_test",
+)
 load("//tests:inline_tests.bzl", "sh_inline_test")
 
 # test whether `linkstatic` works as expected
@@ -42,6 +46,16 @@ haskell_test(
         ":c-lib",
         "//tests/hackage:base",
     ],
+)
+
+dynamic_libraries_in_runfiles_test(
+    name = "dynamic-runfiles-test",
+    libs = [
+        ":HsLib",
+        ":c-lib",
+        "//tests/hackage:base",
+    ],
+    target_under_test = ":binary-dynamic",
 )
 
 config_setting(
