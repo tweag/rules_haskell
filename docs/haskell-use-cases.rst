@@ -457,6 +457,29 @@ in rule inputs (e.g. different source files for different platforms).
 .. _version attribute: https://api.haskell.build/haskell/defs.html#haskell_library.version
 .. _select construct: https://docs.bazel.build/versions/master/configurable-attributes.html
 
+Using source code pre-processors
+--------------------------------
+
+GHC allows any number of pre-processors to run before parsing a file.
+These pre-processors can be specfied in compiler flags on the
+command-line or in pragmas in the source files. For example,
+`hspec-discover`_ is a pre-processor. To use it, it must be
+a `tools` dependency. You can then use a CPP macro to avoid hardcoding
+the location of the tool in source code pragmas. Example: ::
+
+  haskell_test(
+      name = "tests",
+      srcs = ["Main.hs", "Spec.hs"],
+      compiler_flags = ["-DHSPEC_DISCOVER=$(location @stackage-exe//hspec-discover)"],
+      tools = ["@stackage-exe//hspec-discover"],
+      deps = ["@stackage//:base"],
+  )
+
+Where ``Spec.hs`` reads: ::
+
+  {-# LANGUAGE CPP #-}
+  {-# OPTIONS_GHC -F -pgmF HSPEC_DISCOVER #-}
+
 Checking code coverage
 ----------------------
 
