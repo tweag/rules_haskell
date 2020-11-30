@@ -480,6 +480,8 @@ Where ``Spec.hs`` reads: ::
   {-# LANGUAGE CPP #-}
   {-# OPTIONS_GHC -F -pgmF HSPEC_DISCOVER #-}
 
+.. _hspec-discover: https://hackage.haskell.org/package/hspec-discover
+
 Checking code coverage
 ----------------------
 
