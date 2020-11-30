@@ -12,6 +12,7 @@ def _dynamic_libraries_in_runfiles_test_impl(ctx):
         for target in ctx.attr.libs
         for input in target[CcInfo].linking_context.linker_inputs.to_list()
         for lib_to_link in input.libraries
+        if lib_to_link.dynamic_library != None
     ]
     for lib in dynamic_libs:
         asserts.true(
