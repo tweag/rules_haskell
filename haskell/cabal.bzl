@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
+load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":cc.bzl", "cc_interop_info")
 load(":private/actions/info.bzl", "library_info_output_groups")
@@ -1257,28 +1258,32 @@ def _pin_packages(repository_ctx, resolved):
             ).sha256
 
             # stack also doesn't expose any subdirectories that need to be
-            # stripped. Here we assume the project root to be the root
-            # directory or underneath a top-level directory.
-            root = repository_ctx.path("{name}-{version}".format(**spec))
+            # stripped. Here we assume the project root to be the directory
+            # that contains the cabal file.
+            root = "{name}-{version}".format(**spec)
             cabal_file = "{name}.cabal".format(**spec)
-            if root.get_child(cabal_file).exists:
-                stripPrefix = ""
-            else:
-                subdirs = [
-                    subdir
-                    for subdir in root.readdir()
-                    if subdir.get_child(cabal_file).exists
-                ]
-                if len(subdirs) != 1:
-                    fail("Unsupported archive format at {url}: Expected {cabal} in the root or underneath a top-level directory".format(
-                        url = spec["location"]["url"],
-                        cabal = cabal_file,
-                    ))
-                stripPrefix = subdirs[0].basename
+            find_cmd = ["find", root, "-name", cabal_file]
+            if get_cpu_value(repository_ctx) == "x64_windows":
+                find_cmd = ["dir", "/s", "/b", root + "\\" + cabal_file]
+            subdirs = [
+                paths.relativize(line.strip(), root)
+                for line in _execute_or_fail_loudly(repository_ctx, [
+                    "find",
+                    root,
+                    "-name",
+                    cabal_file,
+                ]).stdout.splitlines()
+                if line.strip() != ""
+            ]
+            if len(subdirs) != 1:
+                fail("Unsupported archive format at {url}: Could not find {cabal} in the archive.".format(
+                    url = spec["location"]["url"],
+                    cabal = cabal_file,
+                ))
 
             spec["pinned"] = {
                 "sha256": sha256,
-                "strip-prefix": stripPrefix,
+                "strip-prefix": subdirs[0],
             }
         elif spec["location"]["type"] in ["git", "hg"]:
             # Bazel cannot cache git (or hg) repositories in the repository
