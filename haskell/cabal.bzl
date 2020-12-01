@@ -1262,20 +1262,21 @@ def _pin_packages(repository_ctx, resolved):
             # that contains the cabal file.
             root = "{name}-{version}".format(**spec)
             cabal_file = "{name}.cabal".format(**spec)
-            find_cmd = ["find", root, "-name", cabal_file]
             if get_cpu_value(repository_ctx) == "x64_windows":
-                find_cmd = ["dir", "/s", "/b", root + "\\" + cabal_file]
-            subdirs = [
-                paths.relativize(line.strip(), root)
-                for line in _execute_or_fail_loudly(repository_ctx, [
-                    "find",
-                    root,
-                    "-name",
-                    cabal_file,
-                ]).stdout.splitlines()
-                if line.strip() != ""
-            ]
-            if len(subdirs) != 1:
+                find_cmd = ["cmd", "/c", "dir", "/s", "/b", paths.join(root, cabal_file).replace("/", "\\")]
+                found_cabal_files = [
+                    paths.relativize(line.strip().replace("\\", "/"), str(repository_ctx.path(root)))
+                    for line in _execute_or_fail_loudly(repository_ctx, find_cmd).stdout.splitlines()
+                    if line.strip() != ""
+                ]
+            else:
+                find_cmd = ["find", root, "-name", cabal_file]
+                found_cabal_files = [
+                    paths.relativize(line.strip(), root)
+                    for line in _execute_or_fail_loudly(repository_ctx, find_cmd).stdout.splitlines()
+                    if line.strip() != ""
+                ]
+            if len(found_cabal_files) != 1:
                 fail("Unsupported archive format at {url}: Could not find {cabal} in the archive.".format(
                     url = spec["location"]["url"],
                     cabal = cabal_file,
@@ -1283,7 +1284,7 @@ def _pin_packages(repository_ctx, resolved):
 
             spec["pinned"] = {
                 "sha256": sha256,
-                "strip-prefix": subdirs[0],
+                "strip-prefix": paths.dirname(found_cabal_files[0]),
             }
         elif spec["location"]["type"] in ["git", "hg"]:
             # Bazel cannot cache git (or hg) repositories in the repository
