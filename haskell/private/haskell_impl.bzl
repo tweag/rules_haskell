@@ -317,7 +317,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             ctx.file._bash_runfiles,
             hs.toolchain.tools.hpc,
             binary,
-        ] + mix_runfiles + srcs_runfiles + solibs
+        ] + mix_runfiles + srcs_runfiles
 
     return [
         hs_info,
@@ -326,7 +326,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             executable = executable,
             files = target_files,
             runfiles = ctx.runfiles(
-                files = extra_runfiles,
+                files = extra_runfiles + solibs,
                 collect_data = True,
             ),
         ),
