@@ -38,6 +38,10 @@ jobs:
       export PATH="$(sed 's, \+\(:\|$\),\1,g' <<<"$PATH")"
       echo "PATH='$PATH'"
 
+      # Tests pinning
+      /c/bazel/bazel.exe run "@hmatrix-unpinned//:pin"
+      cat hmatrix_snapshot.json
+
       # Tests that build but don't run
       /c/bazel/bazel.exe build "//tests/c-compiles-still/..."
       /c/bazel/bazel.exe build "//tests/binary-with-data/..."
