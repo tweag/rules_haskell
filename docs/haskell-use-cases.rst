@@ -101,10 +101,10 @@ accordingly. For example, you can have the following in your
 .. _Bazel+Nix blog post: https://www.tweag.io/posts/2018-03-15-bazel-nix.html
 .. _Nix package manager: https://nixos.org/nix
 .. _Nixpkgs: https://nixos.org/nixpkgs/manual/
-.. _ghc_bindist: http://api.haskell.build/haskell/ghc_bindist.html#ghc_bindist
+.. _ghc_bindist: https://api.haskell.build/haskell/ghc_bindist.html#ghc_bindist
 .. _haskell.org: https://haskell.org
-.. _haskell_binary: http://api.haskell.build/haskell/haskell.html#haskell_binary
-.. _haskell_library: http://api.haskell.build/haskell/haskell.html#haskell_library
+.. _haskell_binary: https://api.haskell.build/haskell/haskell.html#haskell_binary
+.. _haskell_library: https://api.haskell.build/haskell/haskell.html#haskell_library
 .. _rules_nixpkgs: https://github.com/tweag/rules_nixpkgs
 .. _toolchain resolution: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
 
@@ -366,7 +366,7 @@ construct a compiler with all the packages you depend on in scope::
 Each package mentioned in ``ghc.nix`` can then be imported using
 `haskell_toolchain_library`_ in ``BUILD`` files.
 
-.. _haskell_toolchain_library: http://api.haskell.build/haskell/haskell.html#haskell_toolchain_library
+.. _haskell_toolchain_library: https://api.haskell.build/haskell/haskell.html#haskell_toolchain_library
 
 Generating API documentation
 ----------------------------
@@ -386,7 +386,7 @@ any given target (or indeed all targets), like in the following:
   $ bazel build //my/pkg:mylib \
       --aspects @rules_haskell//haskell:defs.bzl%haskell_doc_aspect
 
-.. _haskell_doc: http://api.haskell.build/haskell/haddock.html#haskell_doc
+.. _haskell_doc: https://api.haskell.build/haskell/haddock.html#haskell_doc
 
 Linting your code
 -----------------
