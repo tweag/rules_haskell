@@ -108,9 +108,9 @@ def link_binary(
             print("WARNING: dynamic linking and profiling don't mix. Omitting -dynamic.\nSee https://ghc.haskell.org/trac/ghc/ticket/15394")
         else:
             args.add_all(["-pie", "-dynamic"])
-    elif not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
+#    elif not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
         # See Note [No PIE when linking]
-        args.add("-optl-no-pie")
+#        args.add("-optl-no-pie")
 
     # When compiling with `-threaded`, GHC needs to link against
     # the pthread library when linking against static archives (.a).
