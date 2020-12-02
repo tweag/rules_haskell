@@ -388,9 +388,9 @@ Happy building!
 
 .. _cat_hs: https://github.com/tweag/rules_haskell/tree/master/examples/cat_hs
 .. _install Bazel: https://docs.bazel.build/versions/master/install.html
-.. _haskell_binary: https://api.haskell.build/haskell/haskell.html#haskell_binary
-.. _haskell_toolchain_library: https://api.haskell.build/haskell/haskell.html#haskell_toolchain_library
-.. _haskell_library: https://api.haskell.build/haskell/haskell.html#haskell_library
+.. _haskell_binary: https://api.haskell.build/haskell/defs.html#haskell_binary
+.. _haskell_toolchain_library: https://api.haskell.build/haskell/defs.html#haskell_toolchain_library
+.. _haskell_library: https://api.haskell.build/haskell/defs.html#haskell_library
 .. _graphviz: https://www.graphviz.org/
 .. _start: https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#starting-a-new-project
 .. _downloading it: https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#making-rules-haskell-available
