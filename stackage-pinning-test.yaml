@@ -1,0 +1,11 @@
+resolver: "lts-15.4"
+packages:
+  - github: hspec/hspec
+    # NOTE Keep in sync with resolver version
+    commit: "bb88ed6ffc7101c21d3b08b6b0c78df0231a9b83"
+    sha256: "8e69db89048e47d42157333e7524e59fd3eb4d7a3c61e05a4c593a8d22cd5093"
+    subdirs:
+      - .
+      - hspec-contrib
+      - hspec-core
+      - hspec-discover
