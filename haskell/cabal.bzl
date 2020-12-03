@@ -1348,7 +1348,7 @@ def _download_packages(repository_ctx, snapshot, pinned):
 def _download_packages_unpinned(repository_ctx, snapshot, resolved):
     """Download remote packages using `stack unpack`."""
     remote_packages = [
-        package["name"]
+        "{}-{}".format(package["name"], package["version"])
         for package in resolved.values()
         if package["location"]["type"] not in ["core", "vendored"]
     ]
