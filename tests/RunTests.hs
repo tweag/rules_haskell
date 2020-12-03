@@ -3,9 +3,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 
+import Control.Exception.Safe (bracket_)
 import Data.Foldable (for_)
 import Data.List (isInfixOf, sort)
+import System.Directory (copyFile)
 import System.Exit (ExitCode(..))
+import System.FilePath ((</>))
 import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
 
@@ -32,6 +35,20 @@ main = hspec $ do
 
   it "bazel build worker" $ do
     assertSuccess (bazel ["build", "//tools/worker:bin"])
+
+  describe "stack_snapshot pinning" $
+    it "handles packages in subdirectories correctly" $ do
+      let withBackup filename k =
+            withSystemTempDirectory "bazel_backup" $ \tmp_dir -> do
+              bracket_
+                (copyFile filename (tmp_dir </> "backup"))
+                (copyFile (tmp_dir </> "backup") filename)
+                k
+      -- Test that pinning works and produces buildable targets.
+      -- Backup the lock file to avoid unintended changes when run locally.
+      withBackup "stackage-pinning-test_snapshot.json" $ do
+        assertSuccess (bazel ["run", "@stackage-pinning-test-unpinned//:pin"])
+        assertSuccess (bazel ["build", "@stackage-pinning-test//:hspec"])
 
   describe "repl" $ do
     it "for libraries" $ do
