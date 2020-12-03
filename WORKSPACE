@@ -107,8 +107,8 @@ stack_snapshot(
 
 stack_snapshot(
     name = "stackage-pinning-test",
-    packages = ["hspec"],
     local_snapshot = "//:stackage-pinning-test.yaml",
+    packages = ["hspec"],
     stack_snapshot_json = "//:stackage-pinning-test_snapshot.json",
 )
 
