@@ -38,6 +38,10 @@ main = hspec $ do
 
   describe "stack_snapshot pinning" $
     it "handles packages in subdirectories correctly" $ do
+      -- NOTE Keep in sync with
+      --   azure-pipelines.yml
+      --   .buildkite/bindists-pipeline
+      --   .circleci/config.yml
       let withBackup filename k =
             withSystemTempDirectory "bazel_backup" $ \tmp_dir -> do
               bracket_
