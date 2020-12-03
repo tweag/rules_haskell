@@ -173,11 +173,6 @@ assertFailure cmd = do
     ExitFailure _ -> pure ()
     ExitSuccess -> expectationFailure ("Unexpected success of a failure test with output:\n" ++ formatOutput exitCode stdout stderr)
 
--- | Execute in a sub shell the list of command
--- This will fail if any of the command in the list fail
-safeShell :: [String] -> Process.CreateProcess
-safeShell l = Process.shell (unlines ("set -e":l))
-
 -- * Formatting helpers
 
 formatOutput :: ExitCode -> String -> String -> String
