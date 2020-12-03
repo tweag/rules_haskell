@@ -11,6 +11,7 @@ haskell_library(
     deps = [
         "@stackage//:base",
         "@stackage//:optparse-applicative",
+        "@stackage//:optparse-helper",
     ],
 )
 
