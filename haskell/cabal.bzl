@@ -1347,11 +1347,17 @@ def _download_packages(repository_ctx, snapshot, pinned):
 
 def _download_packages_unpinned(repository_ctx, snapshot, resolved):
     """Download remote packages using `stack unpack`."""
-    remote_packages = [
+    versioned_packages = [
         "{}-{}".format(package["name"], package["version"])
         for package in resolved.values()
-        if package["location"]["type"] not in ["core", "vendored"]
+        if package["location"]["type"] == "hackage"
     ]
+    unversioned_packages = [
+        package["name"]
+        for package in resolved.values()
+        if package["location"]["type"] not in ["core", "hackage", "vendored"]
+    ]
+    remote_packages = versioned_packages + unversioned_packages
     stack = [repository_ctx.path(repository_ctx.attr.stack)]
     if remote_packages:
         _execute_or_fail_loudly(repository_ctx, stack + ["--resolver", snapshot, "unpack"] + remote_packages)
