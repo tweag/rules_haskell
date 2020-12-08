@@ -81,6 +81,7 @@ stack_snapshot(
         "proto-lens-protoc",
         "proto-lens-runtime",
         "lens-family",
+        "safe-exceptions",
         "temporary",
     ],
     setup_deps = {"polysemy": ["cabal-doctest"]},
@@ -102,6 +103,13 @@ stack_snapshot(
     packages = ["zlib"],
     snapshot = test_stack_snapshot,
     stack_snapshot_json = "//:stackage-zlib-snapshot.json",
+)
+
+stack_snapshot(
+    name = "stackage-pinning-test",
+    local_snapshot = "//:stackage-pinning-test.yaml",
+    packages = ["hspec"],
+    stack_snapshot_json = "//:stackage-pinning-test_snapshot.json",
 )
 
 stack_snapshot(

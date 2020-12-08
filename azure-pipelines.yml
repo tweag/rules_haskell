@@ -84,4 +84,9 @@ jobs:
       /c/bazel/bazel.exe test "//tests/c-compiles/..."
       /c/bazel/bazel.exe test "//tests/stack-snapshot-deps/..."
 
+      # Test stack_snapshot pinning
+      # NOTE keep in sync with tests/RunTests.hs
+      /c/bazel/bazel.exe run "@stackage-pinning-test-unpinned//:pin"
+      /c/bazel/bazel.exe build "@stackage-pinning-test//:hspec"
+
     displayName: 'Run Bazel'

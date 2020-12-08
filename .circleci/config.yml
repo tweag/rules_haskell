@@ -177,6 +177,11 @@ jobs:
             # ./tests/run-start-script.sh --use-bindists
             bazel test //tests/...
 
+            # Test stack_snapshot pinning
+            # NOTE keep in sync with tests/RunTests.hs
+            bazel run @stackage-pinning-test-unpinned//:pin
+            bazel build @stackage-pinning-test//:hspec
+
         # see note about 'Disk cache'
       - save_cache:
           key: v1-rules_haskell-bindist-cache-{{ .Branch }}-{{ .BuildNum }}
