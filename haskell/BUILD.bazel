@@ -103,6 +103,7 @@ py_binary(
     name = "ls_modules",
     srcs = ["private/ls_modules.py"],
     visibility = ["//visibility:public"],
+    deps = [":package_configuration"],
 )
 
 sh_binary(

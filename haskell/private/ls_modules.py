@@ -16,6 +16,8 @@ import re
 import sys
 import io
 
+import package_configuration
+
 if len(sys.argv) != 7:
     sys.exit("Usage: %s <WITH_PROFILING> <DIRECTORY> <GLOBAL_PKG_DB> <HIDDEN_MODS_FILE> <REEXPORTED_MODS_FILE> <RESULT_FILE>" % sys.argv[0])
 
@@ -27,23 +29,22 @@ reexported_modules_file = sys.argv[5]
 results_file = sys.argv[6]
 
 with io.open(global_pkg_db_dump, "r", encoding='utf8') as f:
-    names = [line.split()[1] for line in f if line.startswith("name:")]
-    f.seek(0)
-    ids = [line.split()[1] for line in f if line.startswith("id:")]
+    name_id_pairs = [
+        (pkg.name, pkg.id)
+        for pkg in package_configuration.parse_package_database_dump(f)
+    ]
 
-    # A few sanity checks.
-    assert len(names) == len(ids)
+# compute duplicate, i.e. package name associated with multiples ids
+names = [name for (name, _) in name_id_pairs]
+duplicates = set()
+if len(names) != len(set(names)):
+    duplicates = set([
+        name for name, count in collections.Counter(names).items()
+        if count > 1
+    ])
 
-    # compute duplicate, i.e. package name associated with multiples ids
-    duplicates = set()
-    if len(names) != len(set(names)):
-        duplicates = set([
-            name for name, count in collections.Counter(names).items()
-            if count > 1
-        ])
-
-    # This associate pkg name to pkg id
-    pkg_ids_map = dict(zip(names, ids))
+# This associate pkg name to pkg id
+pkg_ids_map = dict(name_id_pairs)
 
 with io.open(hidden_modules_file, "r", encoding='utf8') as f:
     hidden_modules = [mod.strip() for mod in f.read().split(",")]
