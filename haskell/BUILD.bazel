@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 load(
     "@rules_haskell//haskell:private/haskell_impl.bzl",
     "haskell_toolchain_libraries",
@@ -90,6 +90,13 @@ py_binary(
     name = "pkgdb_to_bzl",
     srcs = ["private/pkgdb_to_bzl.py"],
     visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "package_configuration",
+    srcs = ["private/package_configuration.py"],
+    imports = ["private"],
+    visibility = ["//tests/package_configuration:__subpackages__"],
 )
 
 py_binary(
