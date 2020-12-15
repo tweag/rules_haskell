@@ -211,6 +211,20 @@ GHC_BINDIST = \
                 "e22586762af0911c06e8140f1792e3ca381a3a482a20d67b9054883038b3a422",
             ),
         },
+        "8.8.4": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-apple-darwin.tar.xz",
+                "e80a789e9d8cfb41dd87f3284b75432427c4461c1731d220d04ead8733ccdb5e",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-deb8-linux.tar.xz",
+                "51a36892f1264744195274187298d13ac62bce2da86d4ddf76d8054ab90f2feb",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/8.8.4/ghc-8.8.4-x86_64-unknown-mingw32.tar.xz",
+                "d185055d2c8dc3bfe5b88afd59d6877eb1e722b672d1c9649f18296e148ed71f",
+            ),
+        },
         "8.10.1": {
             "darwin_amd64": (
                 "https://downloads.haskell.org/~ghc/8.10.1/ghc-8.10.1-x86_64-apple-darwin.tar.xz",
