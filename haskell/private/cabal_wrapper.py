@@ -226,7 +226,18 @@ with tmpdir() as distdir:
     run([runghc] + runghc_args + [setup, "build", "--verbose=0", "--builddir=" + distdir])
     if haddock:
         run([runghc] + runghc_args + [setup, "haddock", "--verbose=0", "--builddir=" + distdir])
-    run([runghc] + runghc_args + [setup, "install", "--verbose=0", "--builddir=" + distdir])
+    if component.startswith("test:"):
+        component_name = component[len("test:"):]
+        component_output = component_name if "%{is_windows}" != "True" else "{}.exe".format(component_name)
+        component_output_path = os.path.join(distdir, "build", component_name, component_output)
+        target_path = os.path.join(bindir, component_name)
+        if debug:
+            print("Copying {} to {}".format(component_output_path, target_path))
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+        shutil.copyfile(component_output_path, target_path)
+        os.chmod(target_path, 0o555)
+    else:
+        run([runghc] + runghc_args + [setup, "install", "--verbose=0", "--builddir=" + distdir])
     # Bazel builds are not sandboxed on Windows and can be non-sandboxed on
     # other OSs. Operations like executing `configure` scripts can modify the
     # source tree. If the `srcs` attribute uses a glob like `glob(["**"])`,
