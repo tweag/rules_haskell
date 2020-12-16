@@ -643,8 +643,7 @@ build times, and does not require drafting a `.cabal` file.
 """,
 )
 
-def _haskell_cabal_binary_impl(ctx):
-    hs = haskell_context(ctx)
+def _haskell_cabal_binary_or_test_impl(ctx, hs, is_test, name):
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
     setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
     setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
@@ -665,7 +664,6 @@ def _haskell_cabal_binary_impl(ctx):
     )
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
-    exe_name = ctx.attr.exe_name if ctx.attr.exe_name else hs.label.name
     user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
     if ctx.attr.compiler_flags:
         print("WARNING: compiler_flags attribute is deprecated. Use cabalopts instead.")
@@ -681,7 +679,7 @@ def _haskell_cabal_binary_impl(ctx):
     )
     binary = hs.actions.declare_file(
         "_install/bin/{name}{ext}".format(
-            name = exe_name,
+            name = name,
             ext = ".exe" if hs.toolchain.is_windows else "",
         ),
         sibling = cabal,
@@ -691,6 +689,7 @@ def _haskell_cabal_binary_impl(ctx):
         sibling = cabal,
     )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
+    component_type = "test" if is_test else "exe"
     c = _prepare_cabal_inputs(
         hs,
         cc,
@@ -698,7 +697,7 @@ def _haskell_cabal_binary_impl(ctx):
         dep_info,
         cc_info,
         direct_cc_info,
-        component = "exe:{}".format(exe_name),
+        component = "{}:{}".format(component_type, name),
         package_id = hs.label.name,
         tool_inputs = tool_inputs,
         tool_input_manifests = tool_input_manifests,
@@ -716,6 +715,7 @@ def _haskell_cabal_binary_impl(ctx):
         dynamic_file = binary,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
     )
+    mnemonic = "HaskellCabalTest" if is_test else "HaskellCabalBinary"
     ctx.actions.run(
         executable = c.cabal_wrapper,
         arguments = [c.args],
@@ -728,8 +728,8 @@ def _haskell_cabal_binary_impl(ctx):
         ],
         tools = [c.cabal_wrapper],
         env = c.env,
-        mnemonic = "HaskellCabalBinary",
-        progress_message = "HaskellCabalBinary {}".format(hs.label),
+        mnemonic = mnemonic,
+        progress_message = "{} {}".format(mnemonic, hs.label),
     )
 
     hs_info = HaskellInfo(
@@ -755,6 +755,16 @@ def _haskell_cabal_binary_impl(ctx):
     )
 
     return [hs_info, cc_info, default_info]
+
+def _haskell_cabal_binary_impl(ctx):
+    hs = haskell_context(ctx)
+    exe_name = ctx.attr.exe_name if ctx.attr.exe_name else hs.label.name
+    return _haskell_cabal_binary_or_test_impl(ctx, hs, False, exe_name)
+
+def _haskell_cabal_test_impl(ctx):
+    hs = haskell_context(ctx)
+    test_name = ctx.attr.test_name if ctx.attr.test_name else hs.label.name
+    return _haskell_cabal_binary_or_test_impl(ctx, hs, True, test_name)
 
 haskell_cabal_binary = rule(
     _haskell_cabal_binary_impl,
@@ -829,6 +839,88 @@ Use Cabal to build a binary.
 
 This rule assumes that the .cabal file defines a single executable
 with the same name as the package.
+
+This rule does not use `cabal-install`. It calls the package's
+`Setup.hs` script directly if one exists, or the default one if not.
+All sources files that would have been part of a Cabal sdist need to
+be listed in `srcs` (crucially, including the `.cabal` file).
+
+""",
+)
+
+haskell_cabal_test = rule(
+    _haskell_cabal_test_impl,
+    test = True,
+    attrs = {
+        "test_name": attr.string(
+            doc = "Cabal test component name. Defaults to the value of the name attribute.",
+        ),
+        "srcs": attr.label_list(
+            allow_files = True,
+            doc = "All files required to build the package, including the Cabal file.",
+        ),
+        "deps": attr.label_list(
+            aspects = [haskell_cc_libraries_aspect],
+            doc = "Package build dependencies. Note, setup dependencies need to be declared separately using `setup_deps`.",
+        ),
+        "setup_deps": attr.label_list(
+            aspects = [haskell_cc_libraries_aspect],
+            doc = "Dependencies for custom setup Setup.hs.",
+        ),
+        "cabalopts": attr.string_list(
+            doc = """Additional flags to pass to `Setup.hs configure`. Subject to make variable expansion.
+
+            Use `--ghc-option=OPT` to configure additional compiler flags.
+            Use `--haddock-option=--optghc=OPT` if these flags are required for haddock generation as well.
+            """,
+        ),
+        "compiler_flags": attr.string_list(
+            doc = """DEPRECATED. Use `cabalopts` with `--ghc-option` instead.
+
+            Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
+        ),
+        "tools": attr.label_list(
+            cfg = "host",
+            allow_files = True,
+            doc = """Tool dependencies. They are built using the host configuration, since
+            the tools are executed as part of the build.""",
+        ),
+        "flags": attr.string_list(
+            doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
+        ),
+        "_cabal_wrapper": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@rules_haskell//haskell:cabal_wrapper"),
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        ),
+        "verbose": attr.bool(
+            default = True,
+            doc = "Whether to show the output of the build",
+        ),
+    },
+    toolchains = [
+        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_haskell//haskell:toolchain",
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
+    fragments = ["cpp"],
+    doc = """\
+Use Cabal to build a test.
+
+### Examples
+
+  ```bzl
+  haskell_cabal_test(
+      name = "happy",
+      srcs = glob(["**"]),
+  )
+  ```
+
+This rule assumes that the .cabal file defines a test suite component
+with the same name as the target.
 
 This rule does not use `cabal-install`. It calls the package's
 `Setup.hs` script directly if one exists, or the default one if not.
