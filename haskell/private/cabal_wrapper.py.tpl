@@ -195,6 +195,9 @@ with tmpdir() as distdir:
     if haddock:
         run([runghc] + runghc_args + [setup, "haddock", "--verbose=0", "--builddir=" + distdir])
     if component.startswith("test:"):
+        # This effectively emulates the `Setup.hs install` command because Cabal does nothing
+        # for test suites and benchmarks.
+        # See: https://github.com/haskell/cabal/blob/e81f0e90eb726317e6b434666dbf6bd710e8f31a/Cabal/src/Distribution/Simple/Install.hs#L221-L222
         component_name = component[len("test:"):]
         component_output = component_name if "%{is_windows}" != "True" else "{}.exe".format(component_name)
         component_output_path = os.path.join(distdir, "build", component_name, component_output)
