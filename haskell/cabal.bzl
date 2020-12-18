@@ -105,6 +105,7 @@ _EMPTY_PACKAGES_BLACKLIST = [
     "fail",
     "mtl-compat",
     "nats",
+    "ghc-byteorder",
 ]
 
 def _cabal_tool_flag(tool):
