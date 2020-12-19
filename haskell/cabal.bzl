@@ -763,23 +763,25 @@ def _haskell_cabal_binary_or_test_impl(ctx, hs, is_test, name):
         ])
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
+    component_type = "test" if is_test else "exe"
+    install_prefix = "_install-{}".format(component_type)
     package_database = hs.actions.declare_file(
-        "_install/{}.conf.d/package.cache".format(hs.label.name),
+        "{}/{}.conf.d/package.cache".format(install_prefix, hs.label.name),
         sibling = cabal,
     )
     binary = hs.actions.declare_file(
-        "_install/bin/{name}{ext}".format(
+        "{prefix}/bin/{name}{ext}".format(
+            prefix = install_prefix,
             name = name,
             ext = ".exe" if hs.toolchain.is_windows else "",
         ),
         sibling = cabal,
     )
     data_dir = hs.actions.declare_directory(
-        "_install/{}_data".format(hs.label.name),
+        "{}/{}_data".format(install_prefix, hs.label.name),
         sibling = cabal,
     )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
-    component_type = "test" if is_test else "exe"
     c = _prepare_cabal_inputs(
         hs,
         cc,
