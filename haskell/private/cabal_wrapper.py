@@ -143,7 +143,7 @@ def tmpdir():
     if is_windows:
         distdir = tempfile.mkdtemp()
     else:
-        if component.startswith("exe:"):
+        if component.startswith("exe:") or component.startswith("test:"):
             distdir = tempfile.mkdtemp(dir=os.path.dirname(os.path.dirname(pkgroot)))
         else:
             distdir = tempfile.mkdtemp(dir=os.path.dirname(pkgroot))
