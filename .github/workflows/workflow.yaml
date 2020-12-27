@@ -14,7 +14,9 @@ jobs:
         run: |
           cat >.bazelrc.local <<EOF
           common --config=ci
-          build --config=macos-nixpkgs
+          # The configuration `ci-macos-nixpkgs` is currently undefined.
+          # Replace `ci-macos` by `ci-macos-nixpkgs` when needed.
+          build --config=macos-nixpkgs --config=ci-macos
           EOF
       - name: Check Bazel version
         run: |
@@ -47,7 +49,7 @@ jobs:
         run: |
           cat >.bazelrc.local <<EOF
           common --config=ci
-          build --config=macos-bindist --config=ci-macos-bindist
+          build --config=macos-bindist --config=ci-macos-bindist --config=ci-macos
           EOF
       - name: Build & test
         run: |
