@@ -1,6 +1,6 @@
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 
-def execute_or_fail_loudly(repository_ctx, arguments):
+def execute_or_fail_loudly(repository_ctx, arguments, environment = {}):
     """Execute the given command
 
     Fails if the command does not exit with exit-code 0.
@@ -12,7 +12,7 @@ def execute_or_fail_loudly(repository_ctx, arguments):
       exec_result: The output of the command.
 
     """
-    exec_result = repository_ctx.execute(arguments, quiet = True)
+    exec_result = repository_ctx.execute(arguments, environment = environment, quiet = True)
     if exec_result.return_code != 0:
         arguments = [_as_string(x) for x in arguments]
         fail("\n".join(["Command failed: " + " ".join(arguments), exec_result.stderr]))
