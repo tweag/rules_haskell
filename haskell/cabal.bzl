@@ -218,8 +218,7 @@ def _prepare_cabal_inputs(
     if dynamic_file:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         if not (hs.toolchain.is_darwin or hs.toolchain.is_windows):
-            version = [int(x) for x in hs.toolchain.version.split(".")]
-            if version < [8, 10] or not is_library:
+            if hs.toolchain.numeric_version < [8, 10] or not is_library:
                 args.add("--ghc-option=-optl-no-pie")
     args.add_all(hs.toolchain.cabalopts)
     args.add_all(cabalopts)
