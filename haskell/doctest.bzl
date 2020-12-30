@@ -95,7 +95,7 @@ def _haskell_doctest_single(target, ctx):
     args.add("--no-magic")
 
     cc = cc_interop_info(ctx)
-    args.add_all(ghc_cc_program_args(cc.tools.cc))
+    args.add_all(ghc_cc_program_args(hs, cc.tools.cc))
 
     doctest_log = ctx.actions.declare_file(
         "doctest-log-" + ctx.label.name + "-" + target.label.name,

@@ -39,7 +39,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
 
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
     # C libraries with Haskell targets.
-    args.add_all(ghc_cc_program_args(cc.tools.cc))
+    args.add_all(ghc_cc_program_args(hs, cc.tools.cc))
 
     compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
