@@ -1,5 +1,5 @@
 # Taken from ghcide's stack88.yaml
-resolver: nightly-2020-02-13
+resolver: nightly-2020-12-14
 packages:
   # Taken from the extra-deps field.
   - haskell-lsp-0.22.0.0

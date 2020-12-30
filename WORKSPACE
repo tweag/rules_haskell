@@ -68,7 +68,7 @@ stack_snapshot(
         "vector",
         # For tests
         "cabal-doctest",
-        "polysemy",
+        "polysemy-1.4.0.0",
         "network",
         "language-c",
         "streaming",
@@ -191,7 +191,7 @@ haskell_register_ghc_nixpkgs(
     compiler_flags = test_compiler_flags,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc883.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8103.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
@@ -246,13 +246,13 @@ cc_library(
 
 nixpkgs_package(
     name = "c2hs",
-    attribute_path = "haskell.packages.ghc883.c2hs",
+    attribute_path = "haskell.packages.ghc8103.c2hs",
     repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "doctest",
-    attribute_path = "haskell.packages.ghc883.doctest",
+    attribute_path = "haskell.packages.ghc8103.doctest",
     repository = "@nixpkgs_default",
 )
 
