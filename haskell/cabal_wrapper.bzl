@@ -33,7 +33,7 @@ def _cabal_wrapper_impl(ctx):
             "%{strip}": cc_toolchain.strip_executable,
             "%{is_windows}": str(hs.toolchain.is_windows),
             "%{workspace}": ctx.workspace_name,
-            "%{ghc_cc_args}": repr(ghc_cc_program_args("$CC")),
+            "%{ghc_cc_args}": repr(ghc_cc_program_args(hs, "$CC")),
         },
     )
     return [DefaultInfo(
