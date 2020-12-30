@@ -260,7 +260,7 @@ GHC_BINDIST = \
             ),
             "linux_amd64": (
                 "https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-deb9-linux.tar.xz",
-                "f0addd2a16b705f58ff9e8702c3ddf3e2d6bd0d3555707b5b5095e51bafee7b1",
+                "95e4aadea30701fe5ab84d15f757926d843ded7115e11c4cd827809ca830718d",
             ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-unknown-mingw32.tar.xz",
