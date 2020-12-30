@@ -88,6 +88,10 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     return args
 
 def _haskell_toolchain_impl(ctx):
+    numeric_version = [int(x) for x in ctx.attr.version.split(".")]
+    if numeric_version == [8, 10, 1] or numeric_version == [8, 10, 2]:
+        fail("GHC 8.10.1 and 8.10.2 not supported. Upgrade to 8.10.3 or later.")
+
     # Store the binaries of interest in ghc_binaries.
     ghc_binaries = {}
     for tool in _GHC_BINARIES:
@@ -207,6 +211,7 @@ def _haskell_toolchain_impl(ctx):
             static_runtime = ctx.attr.static_runtime,
             fully_static_link = ctx.attr.fully_static_link,
             version = ctx.attr.version,
+            numeric_version = numeric_version,
             global_pkg_db = pkgdb_file,
             protoc = ctx.executable._protoc,
             rule_info_proto = ctx.attr._rule_info_proto,
