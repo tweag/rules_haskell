@@ -90,3 +90,4 @@ jobs:
       /c/bazel/bazel.exe build "@stackage-pinning-test//:hspec"
 
     displayName: 'Run Bazel'
+    timeoutInMinutes: 120
