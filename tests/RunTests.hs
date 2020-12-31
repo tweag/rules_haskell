@@ -25,7 +25,7 @@ main = hspec $ do
     assertSuccess (bazel ["test", "//...", "--build_tests_only"])
 
   it "bazel test prof" $ do
-    -- In .circleci/config.yml we specify --test_tag_filters
+    -- In .github/workflows/workflow.yaml we specify --test_tag_filters
     -- -dont_test_on_darwin. However, specifiying --test_tag_filters
     -- -requires_dynamic here alone would override that filter. So,
     -- we have to duplicate that filter here.
@@ -40,8 +40,7 @@ main = hspec $ do
     it "handles packages in subdirectories correctly" $ do
       -- NOTE Keep in sync with
       --   azure-pipelines.yml
-      --   .buildkite/bindists-pipeline
-      --   .circleci/config.yml
+      --   .github/workflows/workflow.yaml
       let withBackup filename k =
             withSystemTempDirectory "bazel_backup" $ \tmp_dir -> do
               bracket_

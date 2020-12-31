@@ -12,8 +12,7 @@ test --test_env=LANG=C.UTF-8 --test_env=LOCALE_ARCHIVE
 
 # Platform / Toolchain Selection
 # ------------------------------
-build:linux-nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
-build:macos-nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+build:nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
 # Use this configuration when targeting Windows. Eventually this will
 # no longer be required:
 # https://bazel.build/roadmaps/platforms.html#replace---cpu-and---host_cpu-flags.
@@ -44,26 +43,23 @@ build:ci --symlink_prefix=bazel-ci-
 build:ci --repository_cache=~/repo-cache/
 build:ci --experimental_repository_cache_hardlinks
 
+# Use a remote cache during CI
+build:ci --bes_results_url=https://app.buildbuddy.io/invocation/
+build:ci --bes_backend=grpcs://cloud.buildbuddy.io
+build:ci --remote_cache=grpcs://cloud.buildbuddy.io
+build:ci --remote_timeout=3600
+
 test:ci --test_output=errors
 
-build:ci-linux-bindist --remote_http_cache=https://storage.googleapis.com/tweag-bazel-cache-buildkite --remote_upload_local_results=true --google_default_credentials
-build:ci-linux-nixpkgs --remote_http_cache=https://storage.googleapis.com/tweag-bazel-cache-buildkite --remote_upload_local_results=true --google_default_credentials
-
-build:ci-linux-bindist --repository_cache ~/repo_cache
 # XXX: @com_google_protobuf sets `use_default_shell_env = True`, so we enable
 #   strict action env to avoid changes in `PATH` invalidating the cache.
-build:ci-linux-bindist --experimental_strict_action_env
-
-build:ci-macos --bes_results_url=https://app.buildbuddy.io/invocation/
-build:ci-macos --bes_backend=grpcs://cloud.buildbuddy.io
-build:ci-macos --remote_cache=grpcs://cloud.buildbuddy.io
-build:ci-macos --remote_timeout=3600
-
-build:ci-windows-bindist --subcommands --sandbox_debug
+build:linux-bindist --experimental_strict_action_env
+build:macos-bindist --experimental_strict_action_env
+build:windows-bindist --experimental_strict_action_env
 
 # Note [backward compatible options]
-build:ci-linux-bindist --incompatible_enable_cc_toolchain_resolution
-build:ci-macos-bindist --incompatible_enable_cc_toolchain_resolution
+build:linux-bindist --incompatible_enable_cc_toolchain_resolution
+build:macos-bindist --incompatible_enable_cc_toolchain_resolution
 # rules_nixpkgs is not yet compatible with cc toolchain resolution, see
 # https://github.com/tweag/rules_nixpkgs/issues/88
 #build:ci-linux-nixpkgs --incompatible_enable_cc_toolchain_resolution
@@ -75,6 +71,8 @@ build:ci-macos-bindist --incompatible_enable_cc_toolchain_resolution
 # Blocked by https://github.com/bazelbuild/buildtools/issues/757
 #build:ci --incompatible_load_proto_rules_from_bzl
 build:ci --incompatible_load_python_rules_from_bzl
+
+coverage --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
 
 # User Configuration
 # ------------------

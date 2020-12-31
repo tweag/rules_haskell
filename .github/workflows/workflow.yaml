@@ -5,9 +5,13 @@ env:
   cache-version: 0
 
 jobs:
-  test-macos-nixpkgs:
-    name: Build & Test - macOS (Nixpkgs)
-    runs-on: macos-latest
+  test-nixpkgs:
+    name: Build & Test - Nixpkgs
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos]
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v2
       - name: Mount Bazel cache
@@ -20,33 +24,33 @@ jobs:
           nix_path: nixpkgs=./nixpkgs/default.nix
       - name: Configure
         run: |
+          [[ ${{ matrix.os }} == macos ]] && EXTRA_CONFIG=--config=macos-nixpkgs
           cat >.bazelrc.local <<EOF
           common --config=ci
-          # The configuration `ci-macos-nixpkgs` is currently undefined.
-          # Replace `ci-macos` by `ci-macos-nixpkgs` when needed.
-          build --config=macos-nixpkgs --config=ci-macos
+          build --config=nixpkgs $EXTRA_CONFIG
           EOF
       - name: Check Bazel version
         run: |
           nix-shell --arg docTools false --pure --run .ci/check-bazel-version
       - name: Build & test
         run: |
-          # Retry if needed due to network flakiness.
-          nix-shell --arg docTools false --pure --run \
-          'cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd'
           # XXX 2019-01-22 Disable start script checking on Darwin
           # due to a clash between binutils and clang.
-          # nix-shell --arg docTools false --pure --run \
-          #   './tests/run-start-script.sh --use-nix'
+          [[ ${{ matrix.os }} != macos ]] &&
+            nix-shell --arg docTools false --pure --run \
+              './tests/run-start-script.sh --use-nix'
           nix-shell --arg docTools false --pure --run '
-          set -euo pipefail
-          bazel build //tests:run-tests
-          ./bazel-ci-bin/tests/run-tests
-          bazel coverage //tests/... --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
-          '
-  test-macos-bindist:
-    name: Build & Test - macOS (bindist)
-    runs-on: macos-latest
+            bazel build //tests:run-tests &&
+            ./bazel-ci-bin/tests/run-tests &&
+            bazel coverage //tests/...
+            '
+  test-bindist:
+    name: Build & Test - bindist
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos]
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v2
       - name: Mount Bazel cache
@@ -60,19 +64,22 @@ jobs:
           mv $BAZEL_DIR $HOME/bazel
       - name: Configure
         run: |
+          case ${{ matrix.os }} in
+            macos) BUILD_CONFIG=macos-bindist;;
+            ubuntu) BUILD_CONFIG=linux-bindist;;
+          esac
           cat >.bazelrc.local <<EOF
           common --config=ci
-          build --config=macos-bindist --config=ci-macos-bindist --config=ci-macos
+          build --config=$BUILD_CONFIG
           EOF
       - name: Build & test
         run: |
-          export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           export PATH=$HOME/bazel:$PATH
-          # Retry if needed due to network flakiness.
-          cmd="bazel fetch @stackage//..."; $cmd || $cmd || $cmd
+          [[ ${{ matrix.os }} == macos ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           # XXX 2019-01-22 Disable start script checking on Darwin
           # due to a clash between binutils and clang.
-          # ./tests/run-start-script.sh --use-bindists
+          [[ ${{ matrix.os }} != macos ]] && \
+            ./tests/run-start-script.sh --use-bindists
           bazel test //tests/...
           # Test stack_snapshot pinning
           # NOTE keep in sync with tests/RunTests.hs

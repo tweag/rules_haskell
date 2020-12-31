@@ -25,7 +25,7 @@ jobs:
   - bash: |
       cat >.bazelrc.local <<EOF
       common --config=ci
-      build --config=windows-bindist --config=ci-windows-bindist
+      build --config=windows-bindist
       EOF
     displayName: "Configure Bazel"
 
