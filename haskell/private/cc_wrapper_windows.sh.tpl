@@ -183,7 +183,7 @@ handle_arg() {
         handle_lib_dir "$arg"
     elif [[ "$arg" =~ ^@(.*)$ ]]; then
         (( ++IN_RESPONSE_FILE ))
-        while read -r line; do
+        while IFS=$' \t\r\n' read -r line; do
             handle_arg "$line"
         done < "${BASH_REMATCH[1]}"
         (( --IN_RESPONSE_FILE )) || true
