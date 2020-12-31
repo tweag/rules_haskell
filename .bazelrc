@@ -51,6 +51,7 @@ build:ci-linux-bindist --repository_cache ~/repo_cache
 # XXX: @com_google_protobuf sets `use_default_shell_env = True`, so we enable
 #   strict action env to avoid changes in `PATH` invalidating the cache.
 build:ci-linux-bindist --experimental_strict_action_env
+build:ci-windows-bindist --experimental_strict_action_env
 
 build:ci-macos-bindist --disk_cache=~/.cache/bazel/
 build:ci-macos-nixpkgs --disk_cache=~/.cache/bazel/
