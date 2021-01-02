@@ -141,6 +141,9 @@ c2hs_library = rule(
         "@rules_haskell//haskell/c2hs:toolchain",
     ],
     fragments = ["cpp"],
+    doc = """\
+Process c2hs source into a Haskell module.
+""",
 )
 
 def _c2hs_toolchain_impl(ctx):
