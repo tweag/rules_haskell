@@ -465,20 +465,20 @@ register_toolchains(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "b9aa86ec08a292b97ec4591cf578e020b35f98e12173bbd4a921f84f583aebd9",
+    sha256 = "d1ffd055969c8f8d431e2d439813e42326961d0942bdf734d2c95dc30c369566",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.24.5/rules_go-v0.24.5.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.24.5/rules_go-v0.24.5.tar.gz",
     ],
 )
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "f3ef44916e6be705ae862c0520bac6834dd2ff1d4ac7e5abc61fe9f12ce7a865",
-    strip_prefix = "buildtools-0.29.0",
+    sha256 = "a02ba93b96a8151b5d8d3466580f6c1f7e77212c4eb181cba53eb2cae7752a23",
+    strip_prefix = "buildtools-3.5.0",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/buildtools/archive/0.29.0.tar.gz",
-        "https://github.com/bazelbuild/buildtools/archive/0.29.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/buildtools/archive/3.5.0.tar.gz",
+        "https://github.com/bazelbuild/buildtools/archive/3.5.0.tar.gz",
     ],
 )
 
