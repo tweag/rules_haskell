@@ -23,20 +23,3 @@ def _as_string(v):
         return v
     else:
         return repr(v)
-
-def _find_ghc(repository_ctx):
-    """Find the GHC executable in the current workspace.
-
-    Returns:
-      path, The path to the GHC executable.
-
-    """
-    if get_cpu_value(repository_ctx) == "x64_windows":
-        ghc = repository_ctx.path("bin/ghc.exe")
-    else:
-        ghc = repository_ctx.path("bin/ghc")
-
-    if not ghc.exists:
-        fail("Cannot find GHC executable in {}.".format(ghc))
-
-    return ghc
