@@ -3,10 +3,20 @@
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
-load(":private/workspace_utils.bzl", "execute_or_fail_loudly")
+load(
+    ":private/pkgdb_to_bzl.bzl",
+    "pkgdb_to_bzl",
+)
+load(
+    ":private/workspace_utils.bzl",
+    "define_rule",
+    "execute_or_fail_loudly",
+    "find_python",
+    "resolve_labels",
+)
 
-# If you change this, change stackage's version
-# in the start script (see stackage.org)
+# If you change this, change stackage's version in the start script
+# (see stackage.org).
 _GHC_DEFAULT_VERSION = "8.6.5"
 
 # Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist`
@@ -271,14 +281,13 @@ GHC_BINDIST = \
     }
 
 def _ghc_bindist_impl(ctx):
-    # Avoid rule restart by resolving these labels early. See
-    # https://github.com/bazelbuild/bazel/blob/master/tools/cpp/lib_cc_configure.bzl#L17.
-    ghc_build = ctx.path(Label("@rules_haskell//haskell:ghc.BUILD.tpl"))
-
+    paths = resolve_labels(ctx, [
+        "@rules_haskell//haskell:ghc.BUILD.tpl",
+        "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
+    ])
     version = ctx.attr.version
     target = ctx.attr.target
     os, _, arch = target.partition("_")
-    python_bin = _find_python(ctx)
 
     if GHC_BINDIST[version].get(target) == None:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
@@ -294,6 +303,13 @@ def _ghc_bindist_impl(ctx):
         type = "tar.xz",
         stripPrefix = "ghc-" + version,
     )
+
+    if os == "windows":
+        # These libraries cause linking errors on Windows when linking
+        # pthreads, due to libwinpthread-1.dll not being loaded.
+        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
 
     # We apply some patches, if needed.
     patch(ctx)
@@ -332,73 +348,31 @@ DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(
         ))
         execute_or_fail_loudly(ctx, ["./patch_bins"])
 
-    # The default locale is OS specific.
-    if ctx.attr.locale:
-        locale = ctx.attr.locale
-    else:
-        locale = "en_US.UTF-8" if os == "darwin" else "C.UTF-8"
-
-    # Generate BUILD file entries describing each prebuilt package.
-    # Cannot use //haskell:pkgdb_to_bzl because that's a generated
-    # target. ctx.path() only works on source files.
-    pkgdb_to_bzl = ctx.path(Label("@rules_haskell//haskell:private/pkgdb_to_bzl.py"))
-    result = ctx.execute([
-        python_bin,
-        pkgdb_to_bzl,
-        ctx.attr.name,
-        "lib",
-    ])
-    if result.return_code:
-        fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
-    toolchain_libraries = result.stdout
-    toolchain = """
-{toolchain_libraries}
-
-haskell_toolchain(
-    name = "toolchain-impl",
-    tools = [":bin"],
-    libraries = toolchain_libraries,
-    version = "{version}",
-    static_runtime = {static_runtime},
-    fully_static_link = {fully_static_link},
-    compiler_flags = {compiler_flags},
-    haddock_flags = {haddock_flags},
-    repl_ghci_args = {repl_ghci_args},
-    cabalopts = {cabalopts},
-    visibility = ["//visibility:public"],
-    locale = "{locale}",
-)
-    """.format(
-        toolchain_libraries = toolchain_libraries,
-        version = ctx.attr.version,
+    toolchain_libraries = pkgdb_to_bzl(ctx, paths, "lib")
+    locale = ctx.attr.locale or "en_US.UTF-8" if os == "darwin" else "C.UTF-8"
+    toolchain = define_rule(
+        "haskell_toolchain",
+        name = "toolchain-impl",
+        tools = [":bin"],
+        libraries = "toolchain_libraries",
+        version = repr(ctx.attr.version),
         static_runtime = os == "windows",
-
-        # At present we don't support fully-statically-linked binaries with GHC
-        # bindists.
-        fully_static_link = False,
+        fully_static_link = False,  # XXX not yet supported for bindists.
         compiler_flags = ctx.attr.compiler_flags,
         haddock_flags = ctx.attr.haddock_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         cabalopts = ctx.attr.cabalopts,
-        locale = locale,
+        locale = repr(locale),
     )
-
-    if os == "windows":
-        # These libraries cause linking errors on Windows when linking
-        # pthreads, due to libwinpthread-1.dll not being loaded.
-        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"])
-        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
-        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
-
     ctx.template(
         "BUILD",
-        ghc_build,
+        paths["@rules_haskell//haskell:ghc.BUILD.tpl"],
         substitutions = {
+            "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
         },
         executable = False,
     )
-    ctx.file("WORKSPACE")
 
 _ghc_bindist = repository_rule(
     _ghc_bindist_impl,
@@ -590,18 +564,9 @@ def haskell_register_ghc_bindists(
     if local_python_repo_name not in native.existing_rules():
         _configure_python3_toolchain(name = local_python_repo_name)
 
-def _find_python(repository_ctx):
-    python = repository_ctx.which("python3")
-    if not python:
-        python = repository_ctx.which("python")
-        result = repository_ctx.execute([python, "--version"])
-        if not result.stdout.startswith("Python 3"):
-            fail("rules_haskell requires Python >= 3.3.")
-    return python
-
 def _configure_python3_toolchain_impl(repository_ctx):
     cpu = get_cpu_value(repository_ctx)
-    python3_path = _find_python(repository_ctx)
+    python3_path = find_python(repository_ctx)
     repository_ctx.file("BUILD.bazel", executable = False, content = """
 load(
     "@bazel_tools//tools/python:toolchain.bzl",
