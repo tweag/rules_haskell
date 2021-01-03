@@ -357,8 +357,8 @@ DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(
         "BUILD",
         paths["@rules_haskell//haskell:ghc.BUILD.tpl"],
         substitutions = {
-            "%{toolchain_libraries}": toolchain_libraries,
-            "%{toolchain}": toolchain,
+            "%{haskell_toolchain_libraries}": toolchain_libraries,
+            "%{haskell_toolchain}": toolchain,
         },
         executable = False,
     )

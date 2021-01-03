@@ -81,12 +81,12 @@ filegroup(
     srcs = glob(["bin/*"]),
 )
 
-{toolchain_libraries}
+{haskell_toolchain_libraries}
 
-{toolchain}
+{haskell_toolchain}
         """.format(
-            toolchain_libraries = toolchain_libraries,
-            toolchain = toolchain,
+            haskell_toolchain_libraries = haskell_toolchain_libraries,
+            haskell_toolchain = haskell_toolchain,
         ),
     )
 

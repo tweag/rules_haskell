@@ -15,9 +15,9 @@ load(
 
 package(default_visibility = ["//visibility:public"])
 
-%{toolchain_libraries}
+%{haskell_toolchain_libraries}
 
-%{toolchain}
+%{haskell_toolchain}
 
 filegroup(
     name = "bin",
