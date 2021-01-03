@@ -161,7 +161,7 @@ nixpkgs_git_repository(
 )
 
 load(
-    "@rules_haskell//haskell:nixpkgs.bzl",
+    "@rules_haskell//haskell/toolchains:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
 

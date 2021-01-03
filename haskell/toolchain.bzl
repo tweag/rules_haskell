@@ -1,7 +1,7 @@
 """Rules for defining toolchains"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
+load("//haskell/toolchains:ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load(":private/context.bzl", "GHC_BINARIES")
 load(
     ":private/actions/compile.bzl",
