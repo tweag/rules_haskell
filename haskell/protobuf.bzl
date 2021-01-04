@@ -13,6 +13,7 @@ load(
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
 )
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(":private/pkg_id.bzl", "pkg_id")
 load(
     ":private/cc_libraries.bzl",

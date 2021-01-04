@@ -1,3 +1,5 @@
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+
 _test_script_template = """#!/usr/bin/env bash
 library_path={library_path}
 is_windows={is_windows}
@@ -19,9 +21,7 @@ def _solib_test_impl(ctx):
         output = dynamic_library,
     )
 
-    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
-    # Should be find_cpp_toolchain() instead.
-    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
         cc_toolchain = cc_toolchain,
@@ -60,6 +60,7 @@ solib_test = rule(
     },
     executable = True,
     fragments = ["cpp"],
+    toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
     test = True,
 )
 """Test that Bazel's solib directory matches our expectations.

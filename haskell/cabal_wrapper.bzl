@@ -6,7 +6,7 @@ load("@rules_python//python:defs.bzl", "py_binary")
 def _cabal_wrapper_impl(ctx):
     hs = haskell_context(ctx)
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
-    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    cc_toolchain = find_cpp_toolchain(ctx)
 
     # If running on darwin but XCode is not installed (i.e., only the Command
     # Line Tools are available), then Bazel will make ar_executable point to
