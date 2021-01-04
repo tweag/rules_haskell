@@ -50,6 +50,7 @@ load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -532,13 +533,12 @@ def haskell_library_impl(ctx):
     # Create a CcInfo provider so that CC rules can work with
     # a haskell library as if it was a regular CC one.
 
-    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
-    # Should be find_cpp_toolchain() instead.
-    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    # XXX: protobuf is passing a "patched ctx"
+    # which includes the real ctx as "real_ctx"
+    real_ctx = getattr(ctx, "real_ctx", ctx)
+    cc_toolchain = find_cpp_toolchain(real_ctx)
     feature_configuration = cc_common.configure_features(
-        # XXX: protobuf is passing a "patched ctx"
-        # which includes the real ctx as "real_ctx"
-        ctx = getattr(ctx, "real_ctx", ctx),
+        ctx = real_ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
@@ -655,9 +655,7 @@ def haskell_toolchain_libraries_impl(ctx):
     with_profiling = is_profiling_enabled(hs)
     with_threaded = "-threaded" in hs.toolchain.compiler_flags
 
-    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
-    # Should be find_cpp_toolchain() instead.
-    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
         cc_toolchain = cc_toolchain,
