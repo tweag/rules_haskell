@@ -215,6 +215,7 @@ register_toolchains(
 )
 
 nixpkgs_cc_configure(
+    name = "nixpkgs_cc_configure",
     nix_file = "//nixpkgs:cc-toolchain.nix",
     nix_file_deps = ["//nixpkgs:default.nix"],
     repository = "@nixpkgs_default",

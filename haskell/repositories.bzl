@@ -52,9 +52,9 @@ def rules_haskell_dependencies():
     if "io_tweag_rules_nixpkgs" not in excludes:
         http_archive(
             name = "io_tweag_rules_nixpkgs",
-            sha256 = "5c80f5ed7b399a857dd04aa81e66efcb012906b268ce607aaf491d8d71f456c8",
-            strip_prefix = "rules_nixpkgs-0.7.0",
-            urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.7.0.tar.gz"],
+            sha256 = "52c5ab0b68841b96463e1bd44760ef2bbbffa0804873496b6e0f982f5b3176f6",
+            strip_prefix = "rules_nixpkgs-acb9e36f403ec6f38bac81290781cb896f22a85e",
+            urls = ["https://github.com/tweag/rules_nixpkgs/archive/acb9e36f403ec6f38bac81290781cb896f22a85e.tar.gz"],
         )
 
     if "com_google_protobuf" not in excludes:
