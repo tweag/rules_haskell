@@ -3,6 +3,8 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//haskell:providers.bzl", "HaskellLibraryInfo", "all_dependencies_package_ids")
 
+GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
+
 HaskellContext = provider()
 
 def haskell_context(ctx, attr = None):

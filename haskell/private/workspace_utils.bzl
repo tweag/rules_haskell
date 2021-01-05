@@ -23,3 +23,54 @@ def _as_string(v):
         return v
     else:
         return repr(v)
+
+def find_python(repository_ctx):
+    python = repository_ctx.which("python3")
+    if not python:
+        python = repository_ctx.which("python")
+        result = repository_ctx.execute([python, "--version"])
+        if not result.stdout.startswith("Python 3"):
+            fail("rules_haskell requires Python >= 3.3.")
+    return python
+
+def resolve_labels(repository_ctx, labels):
+    """
+    Avoid rule restart by resolving these labels early. See
+    https://github.com/bazelbuild/bazel/blob/master/tools/cpp/lib_cc_configure.bzl#L17.
+
+    Args:
+      repository_ctx: The context with which to resolve the labels.
+      labels: Labels to be resolved expressed as a list of strings.
+
+    Returns:
+      A dictionary with the labels as keys and their paths as values.
+    """
+    return dict([(label, repository_ctx.path(Label(label))) for label in labels])
+
+def define_rule(rule_type, name, **kwargs):
+    """Generate a string representing a rule definition.
+
+    Take care to escape string values using repr().
+
+    ### Examples
+
+      ```bzl
+      define_rule("myrule",
+          name = "foo",
+          myattr1 = repr("bar"),
+          myattr2 = ["baz"],
+      )
+      ```
+    """
+    attrs = ["{} = {},".format(k, v) for k, v in kwargs.items() if v != None]
+    skeleton = """\
+{rule_type}(
+    name = {name},
+    {attrs}
+)
+"""
+    return skeleton.format(
+        rule_type = rule_type,
+        name = repr(name),
+        attrs = "\n    ".join(attrs),
+    )

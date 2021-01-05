@@ -75,7 +75,7 @@ of the compiler and all its dependencies is precisely defined in the
   )
 
   load(
-      "@rules_haskell//haskell:nixpkgs.bzl",
+      "@rules_haskell//haskell/toolchains:nixpkgs.bzl",
       "haskell_register_ghc_nixpkgs",
   )
 
@@ -600,7 +600,7 @@ using Nix-provisioned GHC toolchains and the ``static_runtime`` and
 ``fully_static_link`` attributes of the ``haskell_register_ghc_nixpkgs`` macro::
 
   load(
-      "@rules_haskell//haskell:nixpkgs.bzl",
+      "@rules_haskell//haskell/toolchains:nixpkgs.bzl",
       "haskell_register_ghc_nixpkgs",
   )
 
