@@ -374,11 +374,11 @@ haskell_toolchain(
     if os == "windows":
         # These libraries cause linking errors on Windows when linking
         # pthreads, due to libwinpthread-1.dll not being loaded. It's
-        # hard to guesss the paths of these libraries, and we can't
-        # assume `find` is available, so we delete the files on
-        # a best-effort basis (no error if we can't find them).
-        ctx.execute(["rm", "mingw/lib/gcc/x86_64-w64-mingw32/9.2.0/libstdc++.dll.a"])
-        ctx.execute(["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"])
+        # hard to guesss the paths of these libraries, so we have to
+        # use dir to recursively find them.
+        result = ctx.execute(["cmd", "/c" "dir", "/s", "/b", "libstdc++.dll.a"])
+        for path in result.stdout.splitlines():
+            ctx.execute(["cmd", "/c", "del", path.strip()])
         ctx.execute(["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
         ctx.execute(["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
 
