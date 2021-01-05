@@ -1,0 +1,137 @@
+# Give your project a name. :)
+workspace(name = "YOUR_PROJECT_NAME_HERE")
+
+# Load the repository rule to download an http archive.
+load(
+    "@bazel_tools//tools/build_defs/repo:http.bzl",
+    "http_archive"
+)
+
+# Download rules_haskell and make it accessible as "@rules_haskell".
+#http_archive(
+#    name = "rules_haskell",
+#    strip_prefix = "rules_haskell-0.13",
+#    urls = ["https://github.com/tweag/rules_haskell/archive/v0.13.tar.gz"],
+#    sha256 = "b4e2c00da9bc6668fa0404275fecfdb31beb700abdba0e029e74cacc388d94d6",
+#)
+
+local_repository(
+    name = "rules_haskell",
+	path = "../..",
+)
+
+load(
+    "@rules_haskell//haskell:repositories.bzl",
+    "rules_haskell_dependencies",
+    "haskell_repositories",
+)
+
+#local_repository(
+#    name = "rules_sh",
+#    path = "/home/centos/rules_sh",
+#)
+#load("@rules_sh//sh:repositories.bzl", "rules_sh_dependencies")
+#rules_sh_dependencies()
+
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    strip_prefix = "rules_nixpkgs-8d60ec8d1aefd6f7d3566958098ec29475651886",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/8d60ec8d1aefd6f7d3566958098ec29475651886.tar.gz"],
+    sha256 = "f030fd3cf133fd779724170ae36ec9238c3381ad65b809ab3b86e92be554f147",
+)
+
+#local_repository(
+#    name = "io_tweag_rules_nixpkgs",
+#	path = "/home/centos/rules_nixpkgs",
+#)
+
+rules_haskell_dependencies()
+# haskell_repositories()
+
+load(
+    "@rules_haskell//haskell:toolchain.bzl",
+    "rules_haskell_toolchains",
+)
+
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "stack_snapshot"
+)
+
+stack_snapshot(
+    name = "stackage",
+    extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
+    packages = ["zlib"],
+    # Last snapshot published for ghc-8.6.5 the default version picked up by
+    # rules_haskell
+    snapshot = "lts-14.27",
+    # This uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
+    # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
+    # uncomment the following line.
+    # stack_snapshot_json = "//:stackage_snapshot.json",
+	haddock = False,
+)
+
+# Load nixpkgs_git_repository from rules_nixpkgs,
+# which was already initialized by rules_haskell_dependencies above.
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_git_repository",
+    "nixpkgs_package",
+    "nixpkgs_python_configure",
+    "nixpkgs_cc_configure",
+)
+
+nixpkgs_cc_configure(
+    name = "nixpkgs_config_cc",
+    repository = "@nixpkgs",
+    attribute_path = "cc-aarch64",
+	nix_file = "//:bazel.nix",
+	nix_file_deps = ["//:nixpkgs.nix"],
+	exec_constraints = ["@platforms//cpu:x86_64", "@platforms//os:linux"],
+	target_constraints = ["@platforms//cpu:aarch64", "@platforms//os:linux"],
+)
+
+nixpkgs_python_configure(
+    repository = "@nixpkgs",
+)
+
+# Fetch a version of nixpkgs from GitHub.
+# For more information see the documentation of rules_nixpkgs at
+# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
+nixpkgs_git_repository(
+    name = "nixpkgs",
+    revision = "331f0ec32598e8a0984d9d5200f85535d28d7cbb",
+    # sha256 = …
+)
+
+load(
+    "@rules_haskell//haskell:nixpkgs.bzl",
+    "haskell_register_ghc_nixpkgs",
+)
+
+# Fetch a GHC binary distribution from nixpkgs and register it as a toolchain.
+# For more information:
+# https://api.haskell.build/haskell/nixpkgs.html#haskell_register_ghc_nixpkgs
+haskell_register_ghc_nixpkgs(
+    repository = "@nixpkgs",
+    attribute_path = "ghc-aarch64",
+    version = "8.10.2",
+	nix_file = "//:bazel.nix",
+	nix_file_deps = ["//:nixpkgs.nix"],
+	exec_constraints = ["@platforms//cpu:x86_64", "@platforms//os:linux"],
+	target_constraints = ["@platforms//cpu:aarch64", "@platforms//os:linux"],
+)
+
+# For zlib.BUILD.bazel
+nixpkgs_package(
+    name = "nixpkgs_zlib",
+    attribute_path = "zlib",
+    repository = "@nixpkgs",
+)
+
+nixpkgs_package(
+    name = "zlib.dev",
+    build_file = "//:zlib.BUILD.bazel",
+    repository = "@nixpkgs",
+)
