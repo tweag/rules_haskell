@@ -8,6 +8,7 @@ load(
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
     "C_COMPILE_ACTION_NAME",
 )
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(
     "//haskell:providers.bzl",
     "GhcPluginInfo",
@@ -73,13 +74,12 @@ def cc_interop_info(ctx):
 
     hdrs = depset(transitive = hdrs)
 
-    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
-    # Should be find_cpp_toolchain() instead.
-    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    # XXX: protobuf is passing a "patched ctx"
+    # which includes the real ctx as "real_ctx"
+    real_ctx = getattr(ctx, "real_ctx", ctx)
+    cc_toolchain = find_cpp_toolchain(real_ctx)
     feature_configuration = cc_common.configure_features(
-        # XXX: protobuf is passing a "patched ctx"
-        # which includes the real ctx as "real_ctx"
-        ctx = getattr(ctx, "real_ctx", ctx),
+        ctx = real_ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
@@ -110,7 +110,7 @@ def cc_interop_info(ctx):
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     cc_wrapper = hs_toolchain.cc_wrapper
     cc = cc_wrapper.executable.path
-    cc_files = ctx.files._cc_toolchain + cc_wrapper.inputs.to_list()
+    cc_files = depset(transitive = [cc_toolchain.all_files, cc_wrapper.inputs])
     cc_manifests = cc_wrapper.manifests
 
     tools = {
@@ -135,7 +135,7 @@ def cc_interop_info(ctx):
     )
     return CcInteropInfo(
         tools = struct(**tools),
-        files = cc_files,
+        files = cc_files.to_list(),
         manifests = cc_manifests,
         hdrs = hdrs.to_list(),
         cpp_flags = cpp_flags,
