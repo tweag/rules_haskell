@@ -15,6 +15,8 @@ import sys
 import textwrap
 import types
 
+import package_configuration
+
 if len(sys.argv) == 3:
     repo_dir = "external/" + sys.argv[1]
     topdir = sys.argv[2]
@@ -93,51 +95,12 @@ output = []
 pkg_id_map = []
 for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     with open(conf, 'r') as f:
-        content = f.read()
-    fields = unfold_fields(content)
-    pkg = types.SimpleNamespace(
-        include_dirs = [],
-        library_dirs = [],
-        dynamic_library_dirs = [],
-        depends = [],
-        hs_libraries = [],
-        ld_options = [],
-        extra_libraries = [],
-        haddock_interfaces = [],
-        haddock_html = None,
-    )
-    for field in fields:
-        key, value = field.split(":", 1)
-        value = value.strip()
-        if key == "name":
-            pkg.name = value
-        elif key == "version":
-            pkg.version = value
-        elif key == "id":
-            pkg.id = value
-        elif key == "include-dirs":
-            pkg.include_dirs += value.split()
-        elif key == "library-dirs":
-            pkg.library_dirs += value.split()
-        elif key == "dynamic-library-dirs":
-            pkg.dynamic_library_dirs += value.split()
-        elif key == "hs-libraries":
-            pkg.hs_libraries += value.split()
-        elif key == "depends":
-            pkg.depends += value.split()
-        elif key == "ld-options":
-            pkg.ld_options += [opt.strip('"') for opt in value.split()]
-        elif key == "extra-libraries":
-            pkg.extra_libraries += value.split()
-        elif key == "haddock-interfaces":
-            pkg.haddock_interfaces += value.split()
-        elif key == "haddock-html":
-            pkg.haddock_html = value
+        pkg = package_configuration.parse_package_configuration(f)
 
     # pkgroot is not part of .conf files. It's a computed value. It is
     # defined to be the directory enclosing the package database
     # directory.
-    pkg.pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
+    pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
 
     pkg_id_map.append((pkg.name, pkg.id))
 
@@ -157,7 +120,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     # generate the database entry even if no haddock was generated.
     haddock_html = None
     if pkg.haddock_html:
-        haddock_html = path_to_label(pkg.haddock_html, pkg.pkgroot)
+        haddock_html = path_to_label(pkg.haddock_html, pkgroot)
         if not haddock_html:
             haddock_html = os.path.join("haddock", "html", pkg.name)
             output.append("#SYMLINK: {} {}".format(pkg.haddock_html, haddock_html))
@@ -166,7 +129,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     interface_id = 0
     haddock_interfaces = []
     for interface_path in pkg.haddock_interfaces:
-        interface = path_to_label(interface_path, pkg.pkgroot)
+        interface = path_to_label(interface_path, pkgroot)
         if not interface:
             interface = os.path.join(
                 "haddock",
@@ -202,35 +165,35 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                 id = pkg.id,
                 version = pkg.version,
                 hdrs = "glob({}, allow_empty = True)".format([
-                    path_to_label("{}/**/*.h".format(include_dir), pkg.pkgroot)
+                    path_to_label("{}/**/*.h".format(include_dir), pkgroot)
                     for include_dir in pkg.include_dirs
-                    if path_to_label(include_dir, pkg.pkgroot)
+                    if path_to_label(include_dir, pkgroot)
                 ]),
                 includes = [
-                    "/".join([repo_dir, path_to_label(include_dir, pkg.pkgroot)])
+                    "/".join([repo_dir, path_to_label(include_dir, pkgroot)])
                     for include_dir in pkg.include_dirs
-                    if path_to_label(include_dir, pkg.pkgroot)
+                    if path_to_label(include_dir, pkgroot)
                 ],
                 static_libraries = "glob({}, allow_empty = True)".format([
-                    path_to_label("{}/{}".format(library_dir, pattern), pkg.pkgroot)
+                    path_to_label("{}/{}".format(library_dir, pattern), pkgroot)
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "static", profiling = False)
                     for library_dir in pkg.library_dirs
-                    if path_to_label(library_dir, pkg.pkgroot)
+                    if path_to_label(library_dir, pkgroot)
                 ]),
                 static_profiling_libraries = "glob({}, allow_empty = True)".format([
-                    path_to_label("{}/{}".format(library_dir, pattern), pkg.pkgroot)
+                    path_to_label("{}/{}".format(library_dir, pattern), pkgroot)
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "static", profiling = True)
                     for library_dir in pkg.library_dirs
-                    if path_to_label(library_dir, pkg.pkgroot)
+                    if path_to_label(library_dir, pkgroot)
                 ]),
                 shared_libraries = "glob({}, allow_empty = True)".format([
-                    path_to_label("{}/{}".format(dynamic_library_dir, pattern), pkg.pkgroot)
+                    path_to_label("{}/{}".format(dynamic_library_dir, pattern), pkgroot)
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "dynamic", profiling = False)
                     for dynamic_library_dir in pkg.dynamic_library_dirs + pkg.library_dirs
-                    if path_to_label(dynamic_library_dir, pkg.pkgroot)
+                    if path_to_label(dynamic_library_dir, pkgroot)
                 ]),
                 haddock_html = repr(haddock_html),
                 haddock_interfaces = repr(haddock_interfaces),
@@ -238,7 +201,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                 linkopts = pkg.ld_options + [
                     "-L{}".format(library_dir)
                     for library_dir in pkg.dynamic_library_dirs + pkg.library_dirs
-                    if not path_to_label(library_dir, pkg.pkgroot)
+                    if not path_to_label(library_dir, pkgroot)
                 ] + [
                     "-l{}".format(extra_library)
                     for extra_library in pkg.extra_libraries
