@@ -308,7 +308,18 @@ def _ghc_bindist_impl(ctx):
         # tools! This means that sed -i always takes an argument.
         execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"])
         execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
-        execute_or_fail_loudly(ctx, ["make", "install"])
+        execute_or_fail_loudly(
+            ctx,
+            ["make", "install"],
+            # Necessary for deterministic builds on macOS. See
+            # https://blog.conan.io/2019/09/02/Deterministic-builds-with-C-C++.html.
+            # The proper fix is for the GHC bindist to always use ar
+            # and never use libtool, which has a -D flag for
+            # deterministic builds that works better than
+            # ZERO_AR_DATE. See
+            # https://source.chromium.org/chromium/chromium/src/+/62848c8d298690e086e49a9832278ff56b6976b5.
+            environment = {"ZERO_AR_DATE": "1"},
+        )
         ctx.file("patch_bins", executable = True, content = r"""#!/usr/bin/env bash
 find bin -type f -print0 | xargs -0 \
 grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
