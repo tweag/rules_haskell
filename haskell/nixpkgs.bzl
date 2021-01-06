@@ -16,6 +16,20 @@ load(
     "resolve_labels",
 )
 
+def check_ghc_version(repository_ctx):
+    ghc_name = "ghc-{}".format(repository_ctx.attr.version)
+    result = repository_ctx.execute(["ls", "lib"])
+    bad_version = True
+    if result.return_code or not ghc_name in result.stdout.splitlines():
+        fail(
+            """\
+GHC version does not match expected version.
+You specified {wanted}.
+Available versions:
+{actual}
+""".format(wanted = ghc_name, actual = result.stdout),
+        )
+
 def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
     paths = resolve_labels(repository_ctx, [
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
@@ -35,16 +49,8 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         repository_ctx.symlink(target, basename)
 
     ghc_name = "ghc-{}".format(repository_ctx.attr.version)
-    result = repository_ctx.execute(["ls", "lib"])
-    if result.return_code or not ghc_name in result.stdout.splitlines():
-        fail(
-            """\
-GHC version does not match expected version.
-You specified {wanted}.
-Available versions:
-{actual}
-""".format(wanted = ghc_name, actual = result.stdout),
-        )
+    check_ghc_version(repository_ctx)
+
     toolchain_libraries = pkgdb_to_bzl(repository_ctx, paths, "lib/{}".format(ghc_name))
     locale_archive = repository_ctx.attr.locale_archive
     libdir_path = execute_or_fail_loudly(repository_ctx, ["bin/ghc", "--print-libdir"]).stdout.strip()
