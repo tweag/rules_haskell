@@ -21,18 +21,22 @@ def check_ghc_version(repository_ctx):
     result = repository_ctx.execute(["ls", "lib"])
     bad_version = True
     if result.return_code == 0:
-        if not ghc_name in result.stdout.splitlines():
-            fail(
-                """\
+        for dir in result.stdout.splitlines():
+            if dir.endswith(ghc_name):
+                bad_version = False
+                break
+    else:
+        result = repository_ctx.execute(["pwd"])
+        fail("There is no lib folder in {}".format(result.stdout))
+    if bad_version:
+        fail(
+            """\
 GHC version does not match expected version.
 You specified {wanted}.
 Available versions:
 {actual}
 """.format(wanted = ghc_name, actual = result.stdout),
-            )
-    else:
-        result = repository_ctx.execute(["pwd"])
-        fail("There is no lib folder in {}".format(result.stdout))
+        )
 
 def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
     paths = resolve_labels(repository_ctx, [
