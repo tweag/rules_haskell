@@ -41,6 +41,8 @@ build:ci --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
 # can be changed by user.
 build:ci --symlink_prefix=bazel-ci-
+build:ci --repository_cache=~/repo-cache/
+build:ci --experimental_repository_cache_hardlinks
 
 test:ci --test_output=errors
 
