@@ -41,6 +41,8 @@ build:ci --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
 # can be changed by user.
 build:ci --symlink_prefix=bazel-ci-
+build:ci --repository_cache=~/repo-cache/
+build:ci --experimental_repository_cache_hardlinks
 
 test:ci --test_output=errors
 
@@ -52,8 +54,10 @@ build:ci-linux-bindist --repository_cache ~/repo_cache
 #   strict action env to avoid changes in `PATH` invalidating the cache.
 build:ci-linux-bindist --experimental_strict_action_env
 
-build:ci-macos-bindist --disk_cache=~/.cache/bazel/
-build:ci-macos-nixpkgs --disk_cache=~/.cache/bazel/
+build:ci-macos --bes_results_url=https://app.buildbuddy.io/invocation/
+build:ci-macos --bes_backend=grpcs://cloud.buildbuddy.io
+build:ci-macos --remote_cache=grpcs://cloud.buildbuddy.io
+build:ci-macos --remote_timeout=3600
 
 build:ci-windows-bindist --subcommands --sandbox_debug
 
