@@ -2,7 +2,6 @@
 
 # Haskell rules for [Bazel][bazel]
 
-[![Build status](https://badge.buildkite.com/e2c5c0df5e33572bab10dbf230b6f2204f1fcce51c42fdc760.svg?branch=master)](https://buildkite.com/tweag-1/rules-haskell)
 ![Continuous integration](https://github.com/tweag/rules_haskell/workflows/Continuous%20integration/badge.svg)
 [![Build Status](https://dev.azure.com/tweag/rules_haskell/_apis/build/status/tweag.rules_haskell?branchName=master)](https://dev.azure.com/tweag/rules_haskell/_build/latest?definitionId=1?branchName=master)
 
