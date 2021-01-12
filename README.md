@@ -373,14 +373,13 @@ You copy that hash to `url` in
 change the `sha256` or it will use the old version. Please update the
 date comment to the date of the `nixpkgs` commit you are pinning to.
 
-### CircleCI
+### GitHub Actions Cache
 
-Pull Requests are checked by CircleCI.
-
-If a check fails and you cannot reproduce it locally (e.g. it failed on Darwin
-and you only run Linux), you can [ssh into CircleCI to aid debugging][ci-ssh].
-
-[ci-ssh]: https://circleci.com/docs/2.0/ssh-access-jobs/
+The GitHub actions CI pipeline uses
+[`actions/cache`](https://github.com/actions/cache) to store the Bazel
+repository cache. The `cache-version` must be updated manually in the `env`
+section in the [workflow](./.github/workflows/workflow.yaml) to invalidate the
+cache if any cacheable external dependencies are changed.
 
 #### “unable to start any build”
 
