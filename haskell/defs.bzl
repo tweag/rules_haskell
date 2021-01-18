@@ -554,6 +554,15 @@ haskell_import = rule(
             default = Label("@rules_haskell//haskell:version_macros"),
         ),
     },
+    doc = """\
+Internal rule. Do not use.
+
+The attributes of this rule loosely correspond to the fields of the
+GHC package database. Refer to the [GHC User's Guide][ghc-doc-pkginfo]
+for documentation.
+
+[ghc-doc-pkginfo]: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/packages.html#installedpackageinfo-a-package-specification
+""",
 )
 
 haskell_toolchain_library = rule(
@@ -570,7 +579,10 @@ haskell_toolchain_library = rule(
         "@rules_haskell//haskell:toolchain",
     ],
     doc = """\
-Import packages that are prebuilt outside of Bazel.
+Import prebuilt libraries supplied by the toolchain.
+
+Use this rule to make dependencies that are prebuilt (supplied as part
+of the compiler toolchain) available as targets.
 
 ### Examples
 
@@ -589,9 +601,6 @@ Import packages that are prebuilt outside of Bazel.
       ],
   )
   ```
-
-Use this rule to make dependencies that are prebuilt (supplied as part
-of the compiler toolchain) available as targets.
 """,
 )
 
