@@ -1123,6 +1123,7 @@ library
             ]),
         ),
     )
+    print("WROTE CABAL FILE", "{name}/{name}.cabal".format(name = resolve_package), "\n" + repository_ctx.read("{name}/{name}.cabal".format(name = resolve_package)))
 
     # Create a stack.yaml capturing user overrides to the snapshot.
     stack_yaml_content = struct(**{
@@ -1147,6 +1148,7 @@ library
         },
     }).to_json()
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
+    print("WROTE STACK FILE", "stack.yaml", "\n" + repository_ctx.read("stack.yaml"))
 
     # Invoke stack to calculate the transitive dependencies.
     stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
@@ -1157,7 +1159,10 @@ library
         repository_ctx,
         stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
+    print("STACK LS DEPS STDOUT", "\n" + exec_result.stdout)
+    print("STACK LS DEPS STDERR", "\n" + exec_result.stderr)
     package_specs = json_parse(exec_result.stdout)
+    print("PACKAGE SPECS", "\n" + str(package_specs))
 
     resolved = {}
     for package_spec in package_specs:
@@ -1165,6 +1170,7 @@ library
         if parsed_spec["name"] == resolve_package:
             continue
         resolved[parsed_spec["name"]] = parsed_spec
+    print("RESOLVED", "\n" + str(resolved))
 
     # Sort the items to make sure that generated outputs are deterministic.
     return {name: resolved[name] for name in sorted(resolved.keys())}
@@ -1781,6 +1787,7 @@ packages = {
         ]),
         executable = False,
     )
+    print("WROTE PACKAGES FILE", "packages.bzl", "\n" + repository_ctx.read("packages.bzl"))
 
     # Write out the dependency graph as a BUILD file.
     build_file_builder = []
@@ -1905,6 +1912,7 @@ haskell_cabal_binary(
                 )
     build_file_content = "\n".join(build_file_builder)
     repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
+    print("WROTE BUILD FILE", "BUILD.bazel", "\n" + repository_ctx.read("BUILD.bazel"))
 
 _stack_snapshot_unpinned = repository_rule(
     _stack_snapshot_unpinned_impl,
