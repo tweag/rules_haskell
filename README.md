@@ -2,7 +2,7 @@
 
 # Haskell rules for [Bazel][bazel]
 
-![Continuous integration](https://github.com/tweag/rules_haskell/workflows/Continuous%20integration/badge.svg)
+[![Continuous integration](https://github.com/tweag/rules_haskell/workflows/Continuous%20integration/badge.svg)](https://github.com/tweag/rules_haskell/actions?query=branch%3Amaster)
 [![Build Status](https://dev.azure.com/tweag/rules_haskell/_apis/build/status/tweag.rules_haskell?branchName=master)](https://dev.azure.com/tweag/rules_haskell/_build/latest?definitionId=1?branchName=master)
 
 Bazel automates building and testing software. It scales to very large
