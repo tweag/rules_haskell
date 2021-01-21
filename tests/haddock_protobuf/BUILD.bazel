@@ -9,6 +9,7 @@ load("//haskell:protobuf.bzl", "haskell_proto_library")
 proto_library(
     name = "hello_world_proto",
     srcs = ["hello_world.proto"],
+    tags = ["requires_proto"],
 )
 
 haskell_proto_library(
@@ -16,6 +17,7 @@ haskell_proto_library(
     deps = [
         ":hello_world_proto",
     ],
+    tags = ["requires_proto"],
 )
 
 haskell_library(
@@ -25,6 +27,7 @@ haskell_library(
         ":hello_world_haskell_proto",
         "@stackage//:base",
     ],
+    tags = ["requires_proto"],
 )
 
 # Haddocks version A: depend on just the haskell_library
@@ -33,6 +36,7 @@ haskell_doc(
     deps = [
         ":hello_world_haskell",
     ],
+    tags = ["requires_proto"],
 )
 
 # Haddocks version B: depend on both haskell_library and haskell_proto_library
@@ -42,4 +46,5 @@ haskell_doc(
         ":hello_world_haskell",
         ":hello_world_haskell_proto",
     ],
+    tags = ["requires_proto"],
 )

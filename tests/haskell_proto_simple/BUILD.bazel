@@ -13,6 +13,7 @@ proto_library(
     name = "foo",
     srcs = ["foo.proto"],
     deps = ["@com_google_protobuf//:descriptor_proto"],
+    tags = ["requires_proto"],
 )
 
 haskell_proto_library(
@@ -20,18 +21,17 @@ haskell_proto_library(
     deps = [
         ":foo",
     ],
+    tags = ["requires_proto"],
 )
 
 haskell_library(
     name = "hs-lib",
     srcs = ["Bar.hs"],
-    tags = [
-        "requires_proto",
-    ],
-    visibility = ["//visibility:public"],
     deps = [
         ":foo_haskell",
         "//tests/hackage:base",
         "@stackage//:proto-lens",
     ],
+    tags = ["requires_proto"],
+    visibility = ["//visibility:public"],
 )
