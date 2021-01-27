@@ -14,37 +14,37 @@ proto_library(
 
 haskell_proto_library(
     name = "hello_world_haskell_proto",
+    tags = ["requires_proto"],
     deps = [
         ":hello_world_proto",
     ],
-    tags = ["requires_proto"],
 )
 
 haskell_library(
     name = "hello_world_haskell",
     srcs = ["HelloWorld.hs"],  # Just imports the proto and does something trivial
+    tags = ["requires_proto"],
     deps = [
         ":hello_world_haskell_proto",
         "@stackage//:base",
     ],
-    tags = ["requires_proto"],
 )
 
 # Haddocks version A: depend on just the haskell_library
 haskell_doc(
     name = "haddocks_a",
+    tags = ["requires_proto"],
     deps = [
         ":hello_world_haskell",
     ],
-    tags = ["requires_proto"],
 )
 
 # Haddocks version B: depend on both haskell_library and haskell_proto_library
 haskell_doc(
     name = "haddocks_b",
+    tags = ["requires_proto"],
     deps = [
         ":hello_world_haskell",
         ":hello_world_haskell_proto",
     ],
-    tags = ["requires_proto"],
 )
