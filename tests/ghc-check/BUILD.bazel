@@ -1,0 +1,14 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+)
+
+haskell_test(
+    name = "ghc-check",
+    srcs = ["Main.hs"],
+    deps = [
+        "@stackage//:base",
+        "@stackage//:ghc-check",
+        "@stackage//:ghc-paths",
+    ],
+)

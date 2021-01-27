@@ -73,6 +73,8 @@ stack_snapshot(
         "language-c",
         "streaming",
         "void",
+        "ghc-paths",
+        "ghc-check-0.5.0.3",
         "hspec",
         "hspec-core",
         "lens-family-core",
