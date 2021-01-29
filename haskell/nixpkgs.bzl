@@ -50,6 +50,8 @@ Available versions:
         "haskell_toolchain",
         name = "toolchain-impl",
         libraries = "toolchain_libraries",
+        # See Note [GHC toolchain files] in haskell/ghc_bindist.bzl
+        files = ["@rules_haskell_ghc_nixpkgs//:lib/{}/settings".format(ghc_name)],
         tools = ["@rules_haskell_ghc_nixpkgs//:bin"],
         version = repr(repository_ctx.attr.version),
         static_runtime = repository_ctx.attr.static_runtime,
@@ -79,6 +81,11 @@ package(default_visibility = ["//visibility:public"])
 filegroup(
     name = "bin",
     srcs = glob(["bin/*"]),
+)
+
+filegroup(
+    name = "lib",
+    srcs = glob(["lib/*"]),
 )
 
 {toolchain_libraries}

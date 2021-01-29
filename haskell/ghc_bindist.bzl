@@ -355,6 +355,8 @@ DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(
         name = "toolchain-impl",
         tools = [":bin"],
         libraries = "toolchain_libraries",
+        # See Note [GHC toolchain files]
+        files = [":lib/settings"],
         version = repr(ctx.attr.version),
         static_runtime = os == "windows",
         fully_static_link = False,  # XXX not yet supported for bindists.
@@ -648,3 +650,26 @@ def _configure_python3_toolchain(name):
     """
     _config_python3_toolchain(name = name)
     native.register_toolchains("@{}//:toolchain".format(name))
+
+# Note [GHC toolchain files]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# The GHC distribution includes various files that may be required during
+# compilation, or may be referenced by template Haskell code. These files
+# need to be tracked by Bazel and declared as inputs to the relevant actions
+# to ensure that they are present in the build sandbox.
+#
+# Surprisingly, builds succeed with little to none of such files declared as
+# inputs. In case of the nixpkgs toolchain this is not surprising, as the
+# files will all be present in the Nix store. However, files of the bindist
+# toolchain are fully tracked by Bazel and one would expect errors due to
+# missing files if they are not declared.
+#
+# The first instance of such an error occurred with the GHC bindist on
+# BazelCI [1] and shortly after on the GitHub actions CI pipeline. However,
+# only the `lib/settings` file was reported missing.
+#
+# Do extend the `files` toolchain attributes with further files if such
+# errors occurr in the future.
+#
+# [1]: https://github.com/tweag/rules_haskell/issues/1470
