@@ -1074,6 +1074,7 @@ def _parse_package_spec(package_spec):
 def _resolve_packages(
         repository_ctx,
         snapshot,
+        allow_newer,
         core_packages,
         versioned_packages,
         unversioned_packages,
@@ -1131,6 +1132,7 @@ library
             for (name, label) in vendored_packages.items()
         ],
         "extra-deps": versioned_packages,
+        "allow_newer": str(allow_newer),
         "flags": {
             pkg: {
                 flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
@@ -1644,6 +1646,7 @@ def _stack_snapshot_unpinned_impl(repository_ctx):
     resolved = _resolve_packages(
         repository_ctx,
         snapshot,
+        repository_ctx.attr.allow_newer,
         packages.core,
         packages.versioned,
         packages.unversioned,
@@ -1708,6 +1711,7 @@ def _stack_snapshot_impl(repository_ctx):
         resolved = _resolve_packages(
             repository_ctx,
             snapshot,
+            repository_ctx.attr.allow_newer,
             packages.core,
             packages.versioned,
             packages.unversioned,
@@ -1834,7 +1838,7 @@ haskell_cabal_library(
     setup_deps = {setup_deps},
     tools = {tools},
     visibility = {visibility},
-    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w"],
+    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w", "--allow-newer={allow_newer}"],
     verbose = {verbose},
     unique_name = True,
 )
@@ -1849,6 +1853,7 @@ haskell_cabal_library(
                         tools = library_tools,
                         visibility = visibility,
                         verbose = repr(repository_ctx.attr.verbose),
+                        allow_newer = "all" if repository_ctx.attr.allow_newer else "none",
                     ),
                 )
                 build_file_builder.append(
@@ -1869,7 +1874,7 @@ haskell_cabal_binary(
     deps = {deps},
     tools = {tools},
     visibility = ["@{workspace}-exe//{name}:__pkg__"],
-    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w"],
+    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w", "--allow-newer={allow_newer}"],
     verbose = {verbose},
 )
 """.format(
@@ -1883,6 +1888,7 @@ haskell_cabal_binary(
                         tools = library_tools,
                         visibility = visibility,
                         verbose = repr(repository_ctx.attr.verbose),
+                        allow_newer = "all" if repository_ctx.attr.allow_newer else "none",
                     ),
                 )
     build_file_content = "\n".join(build_file_builder)
@@ -1893,6 +1899,7 @@ _stack_snapshot_unpinned = repository_rule(
     attrs = {
         "stack_snapshot_json": attr.label(allow_single_file = True),
         "snapshot": attr.string(),
+        "allow_newer": attr.bool(),
         "local_snapshot": attr.label(allow_single_file = True),
         "packages": attr.string_list(),
         "vendored_packages": attr.label_keyed_string_dict(),
@@ -1907,6 +1914,7 @@ _stack_snapshot = repository_rule(
     attrs = {
         "stack_snapshot_json": attr.label(allow_single_file = True),
         "snapshot": attr.string(),
+        "allow_newer": attr.bool(),
         "local_snapshot": attr.label(allow_single_file = True),
         "packages": attr.string_list(),
         "vendored_packages": attr.label_keyed_string_dict(),
@@ -2061,6 +2069,7 @@ def stack_snapshot(
         components = {},
         stack_update = None,
         verbose = False,
+        allow_newer = False,
         **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
@@ -2180,6 +2189,7 @@ def stack_snapshot(
     Args:
       name: The name of the Bazel workspace.
       snapshot: The name of a Stackage snapshot. Incompatible with local_snapshot.
+      allow_newer: Sets the allow-newer flag for stack
       local_snapshot: A custom Stack snapshot file, as per the Stack documentation.
         Incompatible with snapshot.
       stack_snapshot_json: A label to a `stack_snapshot.json` file, e.g. `//:stack_snapshot.json`.
@@ -2240,6 +2250,7 @@ def stack_snapshot(
         stack_update = "@rules_haskell_stack_update//:stack_update",
         vendored_packages = _invert(vendored_packages),
         snapshot = snapshot,
+        allow_newer = allow_newer,
         local_snapshot = local_snapshot,
         stack_snapshot_json = stack_snapshot_json,
         packages = packages,
@@ -2257,6 +2268,7 @@ def stack_snapshot(
         # https://github.com/bazelbuild/bazel/issues/7989.
         vendored_packages = _invert(vendored_packages),
         snapshot = snapshot,
+        allow_newer = allow_newer,
         local_snapshot = local_snapshot,
         stack_snapshot_json = stack_snapshot_json,
         packages = packages,
