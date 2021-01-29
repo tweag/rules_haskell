@@ -848,6 +848,7 @@ _CORE_PACKAGES = [
     "directory",
     "filepath",
     "ghc",
+    "ghc-bignum",
     "ghc-boot",
     "ghc-boot-th",
     "ghc-compact",
