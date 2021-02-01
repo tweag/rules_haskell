@@ -24,10 +24,13 @@ jobs:
           nix_path: nixpkgs=./nixpkgs/default.nix
       - name: Configure
         run: |
-          [[ ${{ matrix.os }} == macos ]] && EXTRA_CONFIG=--config=macos-nixpkgs
+          case ${{ matrix.os }} in
+            macos) BUILD_CONFIG=macos-nixpkgs;;
+            ubuntu) BUILD_CONFIG=linux-nixpkgs;;
+          esac
           cat >.bazelrc.local <<EOF
           common --config=ci
-          build --config=nixpkgs $EXTRA_CONFIG
+          build --config=$BUILD_CONFIG
           EOF
       - name: Check Bazel version
         run: |

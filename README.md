@@ -2,7 +2,7 @@
 
 # Haskell rules for [Bazel][bazel]
 
-![Continuous integration](https://github.com/tweag/rules_haskell/workflows/Continuous%20integration/badge.svg)
+[![Continuous integration](https://github.com/tweag/rules_haskell/workflows/Continuous%20integration/badge.svg)](https://github.com/tweag/rules_haskell/actions?query=branch%3Amaster)
 [![Build Status](https://dev.azure.com/tweag/rules_haskell/_apis/build/status/tweag.rules_haskell?branchName=master)](https://dev.azure.com/tweag/rules_haskell/_build/latest?definitionId=1?branchName=master)
 
 Bazel automates building and testing software. It scales to very large
@@ -254,7 +254,7 @@ This chooses the `cc_toolchain` bundled with GHC.
 ### Configuring your platform
 
 `rules_haskell` can be built and tested on Linux, MacOS, and Windows. Depending
-on the platform GHC can be provisioned using Nixpkgs or by downloading a binary
+on the platform GHC can be provisioned using nixpkgs or by downloading a binary
 distribution. In case of nixpkgs other toolchains (C compiler, Python, shell
 tools) will also be provided by nixpkgs, in case of bindist they will be taken
 from the environment (`$PATH`). The following `--config` options select the
@@ -262,18 +262,18 @@ corresponding combination of operating system and GHC distribution:
 
 |                     |      Linux      |      MacOS      |      Windows      |
 | ------------------- | --------------- | --------------- | ----------------- |
-| Nixpkgs             | (unneeded)      | `macos-nixpkgs` | (unsupported)     |
-| Binary distribution | `linux-bindist` | `macos-bindist` | `windows-bindist` |
+| nixpkgs             | `linux-nixpkgs` | `macos-nixpkgs` |                   |
+| binary distribution | `linux-bindist` | `macos-bindist` | `windows-bindist` |
 
 Hint: You can use Bazel's `--announce_rc` flag to see what options are being
 used for a command in a specific configuration. E.g.
 ```
-$ bazel build //tests:run-tests --config linux-bindist --nobuild --announce_rc
+$ bazel build //tests:run-tests --config linux-nixpkgs --nobuild --announce_rc
 ```
 
 Hint: To avoid repetition you can add your configuration to `.bazelrc.local`.
 ```
-echo "build --config=linux-bindist" >>.bazelrc.local
+echo "build --config=linux-nixpkgs" >>.bazelrc.local
 ```
 
 ### Saving common command-line flags to a file
