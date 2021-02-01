@@ -282,6 +282,7 @@ def _prepare_cabal_inputs(
         transitive = [
             depset(srcs),
             depset(cc.files),
+            depset(hs.toolchain.files),
             package_databases,
             setup_dep_info.package_databases,
             transitive_headers,

@@ -15,6 +15,8 @@ load(
 
 package(default_visibility = ["//visibility:public"])
 
+%{toolchain_libraries}
+
 %{toolchain}
 
 filegroup(

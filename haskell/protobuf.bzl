@@ -81,6 +81,7 @@ def _proto_path(proto, proto_source_roots):
     )
 
 def _haskell_proto_aspect_impl(target, ctx):
+    hs = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     pb = ctx.toolchains["@rules_haskell//protobuf:toolchain"].tools
 
     args = ctx.actions.args()
@@ -94,6 +95,8 @@ def _haskell_proto_aspect_impl(target, ctx):
 
     hs_files = []
     inputs = []
+
+    inputs.extend(hs.files)
 
     direct_proto_paths = [target[ProtoInfo].proto_source_root]
     transitive_proto_paths = target[ProtoInfo].transitive_proto_path

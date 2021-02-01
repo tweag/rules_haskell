@@ -54,7 +54,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     extra_inputs += [
         compile_flags_file,
         extra_args_file,
-    ] + cc.files
+    ] + cc.files + hs.toolchain.files
 
     if hs.toolchain.locale_archive != None:
         extra_inputs.append(hs.toolchain.locale_archive)
@@ -166,6 +166,7 @@ def _haskell_toolchain_impl(ctx):
                 run_ghc = _run_ghc,
             ),
             libraries = libraries,
+            files = ctx.files.files,
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
             static_runtime = ctx.attr.static_runtime,
@@ -187,6 +188,10 @@ _haskell_toolchain = rule(
         "libraries": attr.label_list(
             doc = "The set of libraries that come with GHC.",
             mandatory = True,
+        ),
+        "files": attr.label_list(
+            allow_files = True,
+            doc = "Files that GHC requires to function. Should not include `libraries`.",
         ),
         "compiler_flags": attr.string_list(
             doc = "A collection of flags that will be passed to GHC on every invocation.",
