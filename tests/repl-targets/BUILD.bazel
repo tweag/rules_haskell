@@ -22,7 +22,6 @@ genrule(
 c2hs_library(
     name = "chs",
     srcs = ["Chs.chs"],
-    tags = ["requires_c2hs"],
 )
 
 haskell_library(

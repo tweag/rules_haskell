@@ -11,7 +11,6 @@ c2hs_library(
     srcs = ["src/Foo/Foo.chs"],
     src_strip_prefix = "src",
     tags = [
-        "requires_c2hs",
         "requires_zlib",
     ],
     deps = ["@zlib.dev//:zlib"],
@@ -20,7 +19,6 @@ c2hs_library(
 c2hs_library(
     name = "bar",
     srcs = ["Bar.chs"],
-    tags = ["requires_c2hs"],
     deps = [":foo"],
 )
 
@@ -31,6 +29,5 @@ haskell_library(
         ":foo",
         "@c2hs_repo//:baz",
     ],
-    tags = ["requires_c2hs"],
     deps = ["//tests/hackage:base"],
 )

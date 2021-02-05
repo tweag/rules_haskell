@@ -67,6 +67,7 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
+        "c2hs",
         "cabal-doctest",
         "polysemy",
         "network",
@@ -243,12 +244,6 @@ cc_library(
   includes = ["include"],
 )
     """,
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "c2hs",
-    attribute_path = "haskell.packages.ghc883.c2hs",
     repository = "@nixpkgs_default",
 )
 
