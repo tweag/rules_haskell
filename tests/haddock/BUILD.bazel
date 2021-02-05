@@ -39,14 +39,11 @@ haskell_library(
     extra_srcs = [
         "unicode.txt",
     ],
-    tags = [
-        "requires_zlib",
-    ],
     deps = [
         ":haddock-lib-a",
+        "//tests:zlib",
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
-        "@zlib",
     ],
 )
 

@@ -35,6 +35,24 @@ exports_files(
 
 package(default_testonly = 1)
 
+config_setting(
+    name = "nix",
+    constraint_values = [
+        "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
+    ],
+)
+
+alias(
+    name = "zlib",
+    # This is a dependency to @stackage-zlib.
+    testonly = 0,
+    actual = select({
+        ":nix": "@zlib.dev//:zlib",
+        "//conditions:default": "@zlib.hs//:zlib",
+    }),
+    visibility = ["//visibility:public"],
+)
+
 haskell_doctest_toolchain(
     name = "doctest-toolchain",
     doctest = "@doctest//:bin",
@@ -115,7 +133,6 @@ rule_test(
     size = "small",
     generates = ["binary-with-sysdeps"],
     rule = "//tests/binary-with-sysdeps",
-    tags = ["requires_zlib"],
 )
 
 sh_test(

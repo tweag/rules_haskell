@@ -102,7 +102,7 @@ stack_snapshot(
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
     name = "stackage-zlib",
-    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
+    extra_deps = {"zlib": ["//tests:zlib"]},
     packages = ["zlib"],
     snapshot = test_stack_snapshot,
     stack_snapshot_json = "//:stackage-zlib-snapshot.json",
@@ -121,7 +121,7 @@ stack_snapshot(
         "lib",
         "exe",
     ]},
-    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
+    extra_deps = {"zlib": ["//tests:zlib"]},
     haddock = False,
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
     packages = ["ghcide"],

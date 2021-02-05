@@ -32,15 +32,12 @@ haskell_library(
         ":chs",
         ":codegen",
     ],
-    tags = [
-        "requires_zlib",
-    ],
     visibility = ["//visibility:public"],
     deps = [
+        "//tests:zlib",
         "//tests/data:ourclibrary",
         "//tests/hackage:array",
         "//tests/hackage:base",
-        "@zlib",
     ],
 )
 
@@ -51,14 +48,13 @@ haskell_library(
     ],
     tags = [
         "manual",
-        "requires_zlib",
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//tests:zlib",
         "//tests/data:ourclibrary",
         "//tests/hackage:base",
         "@stackage//:array",
-        "@zlib",
     ],
 )
 
@@ -69,14 +65,13 @@ haskell_test(
     ],
     tags = [
         "manual",
-        "requires_zlib",
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//tests:zlib",
         "//tests/data:ourclibrary",
         "//tests/hackage:base",
         "@stackage//:array",
-        "@zlib",
     ],
 )
 

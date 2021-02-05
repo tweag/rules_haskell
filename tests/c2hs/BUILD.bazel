@@ -10,10 +10,7 @@ c2hs_library(
     name = "foo",
     srcs = ["src/Foo/Foo.chs"],
     src_strip_prefix = "src",
-    tags = [
-        "requires_zlib",
-    ],
-    deps = ["@zlib.dev//:zlib"],
+    deps = ["//tests:zlib"],
 )
 
 c2hs_library(
