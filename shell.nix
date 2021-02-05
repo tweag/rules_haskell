@@ -48,6 +48,6 @@ mkShell {
     fi
 
     # source bazel bash completion
-    source ${pkgs.bazel}/share/bash-completion/completions/bazel
+    source ${pkgs.bazel}/share/bash-completion/completions/bazel.bash
   '';
 }
