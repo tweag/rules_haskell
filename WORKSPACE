@@ -69,6 +69,7 @@ stack_snapshot(
         # For tests
         "c2hs",
         "cabal-doctest",
+        "doctest",
         "polysemy",
         "network",
         "language-c",
@@ -244,12 +245,6 @@ cc_library(
   includes = ["include"],
 )
     """,
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "doctest",
-    attribute_path = "haskell.packages.ghc883.doctest",
     repository = "@nixpkgs_default",
 )
 

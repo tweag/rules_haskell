@@ -36,7 +36,6 @@ haskell_doctest(
 haskell_doctest(
     name = "doctest-lib-all-success",
     doctest_flags = ["-DMAGIC_DOCTEST_THING"],
-    tags = ["requires_doctest"],
     visibility = ["//visibility:public"],
     deps = [":lib-b"],
 )
@@ -44,7 +43,6 @@ haskell_doctest(
 haskell_doctest(
     name = "doctest-lib",
     modules = ["Bar"],  # exclude Baz and succeed
-    tags = ["requires_doctest"],
     visibility = ["//visibility:public"],
     deps = [":lib-b"],
 )
@@ -60,7 +58,6 @@ haskell_test(
 
 haskell_doctest(
     name = "doctest-bin",
-    tags = ["requires_doctest"],
     visibility = ["//visibility:public"],
     deps = [":bin"],
 )

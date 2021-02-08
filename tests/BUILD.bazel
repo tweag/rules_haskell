@@ -55,8 +55,7 @@ alias(
 
 haskell_doctest_toolchain(
     name = "doctest-toolchain",
-    doctest = "@doctest//:bin",
-    tags = ["requires_doctest"],
+    doctest = "@stackage-exe//doctest",
 )
 
 # This toolchain is morally testonly. However, that would break our
@@ -227,7 +226,6 @@ rule_test(
         "doctest-log-doctest-lib-lib-b",
     ],
     rule = "//tests/haskell_doctest:doctest-lib",
-    tags = ["requires_doctest"],
 )
 
 rule_test(
