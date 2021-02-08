@@ -39,34 +39,22 @@ proto_library(
 
 haskell_proto_library(
     name = "address_haskell_proto",
-    tags = [
-        "requires_proto",
-    ],
     deps = [":address_proto"],
 )
 
 haskell_proto_library(
     name = "stripped_address_haskell_proto",
-    tags = [
-        "requires_proto",
-    ],
     deps = [":stripped_address_proto"],
 )
 
 haskell_proto_library(
     name = "person_haskell_proto",
-    tags = [
-        "requires_proto",
-    ],
     deps = [":person_proto"],
 )
 
 haskell_library(
     name = "hs-lib",
     srcs = ["Bar.hs"],
-    tags = [
-        "requires_proto",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":address_haskell_proto",
@@ -78,8 +66,5 @@ haskell_library(
 
 haskell_doc(
     name = "docs",
-    tags = [
-        "requires_proto",
-    ],
     deps = [":hs-lib"],
 )

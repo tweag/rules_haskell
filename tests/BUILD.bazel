@@ -68,9 +68,6 @@ haskell_proto_toolchain(
     testonly = 0,
     plugin = "@stackage-exe//proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
-    tags = [
-        "requires_proto",
-    ],
     deps = [
         "@stackage//:base",
         "@stackage//:bytestring",

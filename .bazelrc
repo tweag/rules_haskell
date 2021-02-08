@@ -24,14 +24,14 @@ build:windows-bindist --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_tool
 # ----------------------
 # Note tag filters do not compose. If you wish to augment these filters on the
 # command-line you have to repeat the full list.
-build:linux-bindist --build_tag_filters -requires_nix,-requires_lz4,-requires_proto,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
-build:linux-bindist --test_tag_filters  -requires_nix,-requires_lz4,-requires_proto,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:linux-bindist --build_tag_filters -requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:linux-bindist --test_tag_filters  -requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
 
 build:macos-nixpkgs --build_tag_filters -dont_test_on_darwin
 build:macos-nixpkgs --test_tag_filters  -dont_test_on_darwin
 
-build:macos-bindist --build_tag_filters -requires_nix,-dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_proto,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
-build:macos-bindist --test_tag_filters  -requires_nix,-dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_proto,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:macos-bindist --build_tag_filters -requires_nix,-dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:macos-bindist --test_tag_filters  -requires_nix,-dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
 
 # CI Configuration
 # ----------------
