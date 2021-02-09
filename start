@@ -142,13 +142,10 @@ nix_toolchain=$(cat <<EOF
 # which was already initialized by rules_haskell_dependencies above.
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_cc_configure",
     "nixpkgs_git_repository",
     "nixpkgs_package",
     "nixpkgs_python_configure",
-)
-
-nixpkgs_python_configure(
-    repository = "@nixpkgs",
 )
 
 # Fetch a version of nixpkgs from GitHub.
@@ -158,6 +155,14 @@ nixpkgs_git_repository(
     name = "nixpkgs",
     revision = "19.03",
     # sha256 = …
+)
+
+nixpkgs_cc_configure(
+    repository = "@nixpkgs",
+)
+
+nixpkgs_python_configure(
+    repository = "@nixpkgs",
 )
 
 load(
