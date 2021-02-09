@@ -22,6 +22,10 @@ genrule(
 c2hs_library(
     name = "chs",
     srcs = ["Chs.chs"],
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
+    ],
 )
 
 haskell_library(
@@ -31,6 +35,10 @@ haskell_library(
         "Hsc.hsc",
         ":chs",
         ":codegen",
+    ],
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
     ],
     visibility = ["//visibility:public"],
     deps = [
