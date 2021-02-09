@@ -5,6 +5,10 @@ package(default_testonly = 1)
 c2hs_library(
     name = "baz",
     srcs = ["Baz.chs"],
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
+    ],
     visibility = ["//visibility:public"],
-    deps = ["@zlib.dev//:zlib"],
+    deps = ["@rules_haskell//tests:zlib"],
 )

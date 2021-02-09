@@ -73,6 +73,7 @@ def _c2hs_library_impl(ctx):
             depset([chs_file]),
             depset(dep_chi_files),
             depset(cc.files),
+            depset(hs.toolchain.files),
             set.to_depset(version_macro_headers),
             inputs,
         ]),

@@ -13,20 +13,21 @@ dynamic_libraries(
     srcs = ["@zlib.dev//:zlib"],
     filter = "libz",
     solib_names = "libz_soname",
-    tags = ["requires_zlib"],
+    # Only the Nix provided zlib is dynamically linked.
+    tags = ["requires_nix"],
 )
 
 dynamic_libraries(
     name = "libHSzlib",
     srcs = ["@stackage-zlib//:zlib"],
     filter = "libHSz",
-    tags = ["requires_zlib"],
+    tags = ["requires_nix"],
 )
 
 haskell_cabal_binary(
     name = "cabal-binary",
     srcs = glob(["cabal-binary/**"]),
-    tags = ["requires_zlib"],
+    tags = ["requires_nix"],
     deps = [
         "//tests/hackage:base",
         # Depend transitively on libz.
@@ -177,5 +178,5 @@ def test_binary(binary, sodir):
 if not all(test_binary(binary, sodir) for binary in [libHSzlib, cabal_binary]):
     sys.exit(1)
 """,
-    tags = ["requires_zlib"],
+    tags = ["requires_nix"],
 )

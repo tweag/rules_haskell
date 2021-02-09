@@ -67,7 +67,9 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
+        "c2hs",
         "cabal-doctest",
+        "doctest",
         "polysemy",
         "network",
         "language-c",
@@ -101,7 +103,7 @@ stack_snapshot(
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
     name = "stackage-zlib",
-    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
+    extra_deps = {"zlib": ["//tests:zlib"]},
     packages = ["zlib"],
     snapshot = test_stack_snapshot,
     stack_snapshot_json = "//:stackage-zlib-snapshot.json",
@@ -120,7 +122,7 @@ stack_snapshot(
         "lib",
         "exe",
     ]},
-    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
+    extra_deps = {"zlib": ["//tests:zlib"]},
     haddock = False,
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
     packages = ["ghcide"],
@@ -247,18 +249,6 @@ cc_library(
 )
 
 nixpkgs_package(
-    name = "c2hs",
-    attribute_path = "haskell.packages.ghc883.c2hs",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "doctest",
-    attribute_path = "haskell.packages.ghc883.doctest",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
     name = "python3",
     repository = "@nixpkgs_default",
 )
@@ -298,6 +288,13 @@ cc_library(
     hdrs = [":include"],
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
+    # This rule only bundles headers and a library and doesn't compile or link by itself.
+    # We set linkstatic = 1 to quiet to quiet the following warning:
+    #
+    #   in linkstatic attribute of cc_library rule @zlib.dev//:zlib:
+    #   setting 'linkstatic=1' is recommended if there are no object files.
+    #
+    linkstatic = 1,
 )
 """,
     repository = "@nixpkgs_default",
