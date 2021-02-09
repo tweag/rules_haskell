@@ -29,8 +29,8 @@ load(
 )
 
 nixpkgs_cc_configure(
-    nix_file = "@rules_haskell//nixpkgs:cc-toolchain.nix",
-    nix_file_deps = ["@rules_haskell//nixpkgs:default.nix"],
+    # Don't override the default cc toolchain needed for bindist mode.
+    name = "nixpkgs_config_cc",
     repository = "@rules_haskell//nixpkgs:default.nix",
 )
 
