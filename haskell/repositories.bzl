@@ -12,33 +12,36 @@ def rules_haskell_dependencies():
     if "platforms" not in excludes:
         http_archive(
             name = "platforms",
-            sha256 = "23566db029006fe23d8140d14514ada8c742d82b51973b4d331ee423c75a0bfa",
-            strip_prefix = "platforms-46993efdd33b73649796c5fc5c9efb193ae19d51",
-            urls = ["https://github.com/bazelbuild/platforms/archive/46993efdd33b73649796c5fc5c9efb193ae19d51.tar.gz"],
+            urls = [
+                "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.3/platforms-0.0.3.tar.gz",
+                "https://github.com/bazelbuild/platforms/releases/download/0.0.3/platforms-0.0.3.tar.gz",
+            ],
+            sha256 = "460caee0fa583b908c622913334ec3c1b842572b9c23cf0d3da0c2543a1a157d",
         )
 
     if "bazel_skylib" not in excludes:
         http_archive(
             name = "bazel_skylib",
-            sha256 = "e5d90f0ec952883d56747b7604e2a15ee36e288bb556c3d0ed33e818a4d971f2",
-            strip_prefix = "bazel-skylib-1.0.2",
-            urls = ["https://github.com/bazelbuild/bazel-skylib/archive/1.0.2.tar.gz"],
+            urls = [
+                "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
+            ],
+            sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
         )
 
     if "rules_cc" not in excludes:
         http_archive(
             name = "rules_cc",
-            sha256 = "dafda2ff2a913028ce1718253b6b2f353b2d2163470f3069ca810a0d8d55a5a9",
-            strip_prefix = "rules_cc-cd7e8a690caf526e0634e3ca55b10308ee23182d",
-            urls = ["https://github.com/bazelbuild/rules_cc/archive/cd7e8a690caf526e0634e3ca55b10308ee23182d.tar.gz"],
+            sha256 = "cb8ce8a25464b2a8536450971ad1b45ee309491c1f5e052a611b9e249cfdd35d",
+            strip_prefix = "rules_cc-40548a2974f1aea06215272d9c2b47a14a24e556",
+            urls = ["https://github.com/bazelbuild/rules_cc/archive/40548a2974f1aea06215272d9c2b47a14a24e556.tar.gz"],
         )
 
     if "rules_python" not in excludes:
         http_archive(
             name = "rules_python",
-            sha256 = "fa53cc0afe276d8f6675df1a424592e00e4f37b2a497e48399123233902e2e76",
-            strip_prefix = "rules_python-0.0.1",
-            urls = ["https://github.com/bazelbuild/rules_python/archive/0.0.1.tar.gz"],
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.1.0/rules_python-0.1.0.tar.gz",
+            sha256 = "b6d46438523a3ec0f3cead544190ee13223a52f6a6765a29eae7b7cc24cc83a0",
         )
 
     if "rules_sh" not in excludes:
@@ -60,10 +63,10 @@ def rules_haskell_dependencies():
     if "com_google_protobuf" not in excludes:
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "e8c7601439dbd4489fe5069c33d374804990a56c2f710e00227ee5d8fd650e67",
-            strip_prefix = "protobuf-3.11.2",
+            sha256 = "d0f5f605d0d656007ce6c8b5a82df3037e1d8fe8b121ed42e536f569dec16113",
+            strip_prefix = "protobuf-3.14.0",
             urls = [
-                "https://github.com/google/protobuf/archive/v3.11.2.tar.gz",
+                "https://github.com/google/protobuf/archive/v3.14.0.tar.gz",
             ],
         )
 
