@@ -18,6 +18,7 @@ mkShell {
     perl
     python3
     bazel
+    jdk11
     # For stack_install.
     stack
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
