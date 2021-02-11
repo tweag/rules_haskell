@@ -4,22 +4,25 @@
 #
 # This wrapper calls Cabal's configure/build/install steps one big
 # action so that we don't have to track all inputs explicitly between
-# steps.
+# steps. It receives the path to a json file with the following schema:
 #
-# COMPONENT: Cabal component to build.
-# PKG_NAME: Package ID of the resulting package.
-# HADDOCK: Whether to generate haddock documentation.
-# SETUP_PATH: Path to Setup.hs
-# PKG_DIR: Directory containing the Cabal file
-# PACKAGE_DB_PATH: Output package DB path.
-# EXTRA_ARGS: Additional args to Setup.hs configure.
-# PATH_ARGS: Additional args to Setup.hs configure where paths need to be prefixed with execroot.
+# { "component": Cabal component to build.
+# , "pkg_name": Package ID of the resulting package.
+# , "generate_haddock": Whether to generate haddock documentation.
+# , "setup_path": Path to Setup.hs
+# , "pkg_dir": Directory containing the Cabal file
+# , "package_db_path": Output package DB path.
+# , "runghc_args": Arguments for runghc
+# , "extra_args": Additional args to Setup.hs configure.
+# , "path_args": Additional args to Setup.hs configure where paths need to be prefixed with execroot.
+# }
 
 from __future__ import print_function
 
 from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
 from contextlib import contextmanager
 from glob import glob
+import json
 import os
 import os.path
 import re
@@ -30,6 +33,8 @@ import tempfile
 
 debug = False
 verbose = os.environ.get("CABAL_VERBOSE", "") == "True"
+with open(sys.argv.pop(1)) as json_file:
+    json_args = json.load(json_file)
 
 def run(cmd, *args, **kwargs):
     if debug:
@@ -71,14 +76,14 @@ os.environ["LD_LIBRARY_PATH"] = canonicalize_path(os.getenv("LD_LIBRARY_PATH", "
 os.environ["LIBRARY_PATH"] = canonicalize_path(os.getenv("LIBRARY_PATH", ""))
 os.environ["PATH"] = canonicalize_path(os.getenv("PATH", ""))
 
-component = sys.argv.pop(1)
-name = sys.argv.pop(1)
-haddock = sys.argv.pop(1) == "true"
+component = json_args["component"]
+name = json_args["pkg_name"]
+haddock = json_args["generate_haddock"]
 execroot = os.getcwd()
-setup = os.path.join(execroot, sys.argv.pop(1))
-srcdir = os.path.join(execroot, sys.argv.pop(1))
+setup = os.path.join(execroot, json_args["setup_path"])
+srcdir = os.path.join(execroot, json_args["pkg_dir"])
 # By definition (see ghc-pkg source code).
-pkgroot = os.path.realpath(os.path.join(execroot, os.path.dirname(sys.argv.pop(1))))
+pkgroot = os.path.realpath(os.path.join(execroot, os.path.dirname(json_args["package_db_path"])))
 libdir = os.path.join(pkgroot, "{}_iface".format(name))
 dynlibdir = os.path.join(pkgroot, "lib")
 bindir = os.path.join(pkgroot, "bin")
@@ -86,20 +91,15 @@ datadir = os.path.join(pkgroot, "{}_data".format(name))
 package_database = os.path.join(pkgroot, "{}.conf.d".format(name))
 haddockdir = os.path.join(pkgroot, "{}_haddock".format(name))
 htmldir = os.path.join(pkgroot, "{}_haddock_html".format(name))
-runghc_args = sys.argv.pop(1).split()
+runghc_args = json_args["runghc_args"]
 
 runghc = find_exe(r"%{runghc}")
 ghc = find_exe(r"%{ghc}")
 ghc_pkg = find_exe(r"%{ghc_pkg}")
 
-extra_args = []
-current_arg = sys.argv.pop(1)
-while current_arg != "--":
-    extra_args.append(current_arg)
-    current_arg = sys.argv.pop(1)
-del current_arg
+extra_args = json_args["extra_args"]
 
-path_args = sys.argv[1:]
+path_args = json_args["path_args"]
 
 ar = find_exe("%{ar}")
 cc = find_exe("%{cc}")
