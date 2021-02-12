@@ -119,6 +119,9 @@ def _binary_paths(binaries):
 def _concat(sequences):
     return [item for sequence in sequences for item in sequence]
 
+def _uniquify(xs):
+    return depset(xs).to_list()
+
 def _prepare_cabal_inputs(
         hs,
         cc,
@@ -195,7 +198,6 @@ def _prepare_cabal_inputs(
     if verbose:
         env["CABAL_VERBOSE"] = "True"
 
-    args = hs.actions.args()
     package_databases = dep_info.package_databases
     transitive_headers = cc_info.compilation_context.headers
     direct_include_dirs = depset(transitive = [
@@ -204,27 +206,25 @@ def _prepare_cabal_inputs(
         direct_cc_info.compilation_context.system_includes,
     ])
     direct_lib_dirs = [file.dirname for file in direct_libs]
-    args.add_all([component, package_id, generate_haddock, setup, cabal.dirname, package_database.dirname])
-    args.add_joined([
-        arg
+    runghc_args = [
+        "--ghc-arg=" + arg
         for package_id in setup_deps
         for arg in ["-package-id", package_id]
     ] + [
-        arg
+        "--ghc-arg=" + arg
         for package_db in setup_dep_info.package_databases.to_list()
         for arg in ["-package-db", "./" + _dirname(package_db)]
-    ], join_with = " ", format_each = "--ghc-arg=%s", omit_if_empty = False)
-    args.add("--flags=" + " ".join(flags))
+    ]
+    extra_args = ["--flags=" + " ".join(flags)]
     if dynamic_file:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         if not (hs.toolchain.is_darwin or hs.toolchain.is_windows):
             version = [int(x) for x in hs.toolchain.version.split(".")]
             if version < [8, 10] or not is_library:
-                args.add("--ghc-option=-optl-no-pie")
-    args.add_all(hs.toolchain.cabalopts)
-    args.add_all(cabalopts)
+                extra_args.append("--ghc-option=-optl-no-pie")
+    extra_args.extend(hs.toolchain.cabalopts + cabalopts)
     if dynamic_file:
-        args.add_all(
+        extra_args.extend(_uniquify(
             [
                 "--ghc-option=-optl-Wl,-rpath," + create_rpath_entry(
                     binary = dynamic_file,
@@ -234,8 +234,7 @@ def _prepare_cabal_inputs(
                 )
                 for lib in dynamic_libs
             ],
-            uniquify = True,
-        )
+        ))
 
     # When building in a static context, we need to make sure that Cabal passes
     # a couple of options that ensure any static code it builds can be linked
@@ -256,26 +255,40 @@ def _prepare_cabal_inputs(
     #   the linker used by `hsc2hs` (which will be our own wrapper script which
     #   eventually calls `gcc`, etc.).
     if hs.toolchain.static_runtime:
-        args.add("--ghc-option=-fPIC")
+        extra_args.append("--ghc-option=-fPIC")
 
         if not hs.toolchain.is_windows:
-            args.add("--ghc-option=-fexternal-dynamic-refs")
+            extra_args.append("--ghc-option=-fexternal-dynamic-refs")
 
     if hs.toolchain.fully_static_link:
-        args.add("--hsc2hs-option=--lflag=-static")
+        extra_args.append("--hsc2hs-option=--lflag=-static")
 
     if hs.features.fully_static_link:
-        args.add("--ghc-option=-optl-static")
+        extra_args.append("--ghc-option=-optl-static")
 
-    args.add("--")
-    args.add_all(package_databases, map_each = _dirname, format_each = "--package-db=%s")
-    args.add_all(direct_include_dirs, format_each = "--extra-include-dirs=%s")
-    args.add_all(direct_lib_dirs, format_each = "--extra-lib-dirs=%s", uniquify = True)
+    path_args = [
+        "--package-db=" + _dirname(db)
+        for db in package_databases.to_list()
+    ] + [
+        "--extra-include-dirs=" + d
+        for d in direct_include_dirs.to_list()
+    ] + _uniquify(["--extra-lib-dirs=" + d for d in direct_lib_dirs])
     if with_profiling:
-        args.add("--enable-profiling")
+        extra_args.append("--enable-profiling")
 
     # Redundant with _binary_paths() above, but better be explicit when we can.
-    args.add_all(tool_inputs, map_each = _cabal_tool_flag)
+    path_args.extend([_cabal_tool_flag(tool_flag) for tool_flag in tool_inputs.to_list() if _cabal_tool_flag(tool_flag)])
+    args = struct(
+        component = component,
+        pkg_name = package_id,
+        generate_haddock = generate_haddock,
+        setup_path = setup.path,
+        pkg_dir = cabal.dirname,
+        package_db_path = package_database.dirname,
+        runghc_args = runghc_args,
+        extra_args = extra_args,
+        path_args = path_args,
+    )
 
     inputs = depset(
         [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
@@ -449,10 +462,13 @@ def _haskell_cabal_library_impl(ctx):
         outputs.append(dynamic_library)
     if with_profiling:
         outputs.append(profiling_library)
+
+    json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))
+    ctx.actions.write(json_args, c.args.to_json())
     ctx.actions.run(
         executable = c.cabal_wrapper,
-        arguments = [c.args],
-        inputs = c.inputs,
+        arguments = [json_args.path],
+        inputs = depset([json_args], transitive = [c.inputs]),
         input_manifests = c.input_manifests,
         tools = [c.cabal_wrapper],
         outputs = outputs,
@@ -718,10 +734,12 @@ def _haskell_cabal_binary_impl(ctx):
         dynamic_file = binary,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
     )
+    json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))
+    ctx.actions.write(json_args, c.args.to_json())
     ctx.actions.run(
         executable = c.cabal_wrapper,
-        arguments = [c.args],
-        inputs = c.inputs,
+        arguments = [json_args.path],
+        inputs = depset([json_args], transitive = [c.inputs]),
         input_manifests = c.input_manifests,
         outputs = [
             package_database,
