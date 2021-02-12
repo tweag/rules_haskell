@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 
-# cabal_wrapper.py <COMPONENT> <PKG_NAME> <HADDOCK> <SETUP_PATH> <PKG_DIR> <PACKAGE_DB_PATH> <RUNGHC_ARGS> [EXTRA_ARGS...] -- [PATH_ARGS...]
+# cabal_wrapper.py <FILE.JSON>
 #
 # This wrapper calls Cabal's configure/build/install steps one big
 # action so that we don't have to track all inputs explicitly between
 # steps. It receives the path to a json file with the following schema:
 #
-# { "component": Cabal component to build.
-# , "pkg_name": Package ID of the resulting package.
-# , "generate_haddock": Whether to generate haddock documentation.
-# , "setup_path": Path to Setup.hs
-# , "pkg_dir": Directory containing the Cabal file
-# , "package_db_path": Output package DB path.
-# , "runghc_args": Arguments for runghc
-# , "extra_args": Additional args to Setup.hs configure.
-# , "path_args": Additional args to Setup.hs configure where paths need to be prefixed with execroot.
+# { "component": string           # Cabal component to build.
+# , "pkg_name": string            # Package ID of the resulting package.
+# , "generate_haddock": boolean   # Whether to generate haddock documentation.
+# , "setup_path": string          # Path to Setup.hs
+# , "pkg_dir": string             # Directory containing the Cabal file
+# , "package_db_path": string     # Output package DB path.
+# , "runghc_args": list of string # Arguments for runghc
+# , "extra_args": list of string  # Additional args to Setup.hs configure.
+# , "path_args": list of string   # Additional args to Setup.hs configure where paths need to be prefixed with execroot.
 # }
 
 from __future__ import print_function
