@@ -274,7 +274,7 @@ def _prepare_cabal_inputs(
         for d in direct_include_dirs.to_list()
     ] + _uniquify(["--extra-lib-dirs=" + d for d in direct_lib_dirs])
     if with_profiling:
-        path_args.append("--enable-profiling")
+        extra_args.append("--enable-profiling")
 
     # Redundant with _binary_paths() above, but better be explicit when we can.
     path_args.extend([_cabal_tool_flag(tool_flag) for tool_flag in tool_inputs.to_list() if _cabal_tool_flag(tool_flag)])
