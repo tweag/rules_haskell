@@ -122,30 +122,27 @@ def _concat(sequences):
 def _uniquify(xs):
     return depset(xs).to_list()
 
-def _cabal_toolchain_info(ctx, hs):
+def _cabal_toolchain_info(hs, cc, workspace_name):
     """Yields a struct containing the toolchain information needed by the cabal wrapper"""
-    hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
-    cc_toolchain = find_cpp_toolchain(ctx)
 
     # If running on darwin but XCode is not installed (i.e., only the Command
     # Line Tools are available), then Bazel will make ar_executable point to
     # "/usr/bin/libtool". Since we call ar directly, override it.
     # TODO: remove this if Bazel fixes its behavior.
     # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
-    ar = cc_toolchain.ar_executable
+    ar = cc.tools.ar
     if ar.find("libtool") >= 0:
         ar = "/usr/bin/ar"
 
-    cc = hs_toolchain.cc_wrapper.executable.path
     return struct(
         ghc = hs.tools.ghc.path,
         ghc_pkg = hs.tools.ghc_pkg.path,
         runghc = hs.tools.runghc.path,
         ar = ar,
-        cc = cc,
-        strip = cc_toolchain.strip_executable,
+        cc = cc.tools.cc,
+        strip = cc.tools.strip,
         is_windows = hs.toolchain.is_windows,
-        workspace = ctx.workspace_name,
+        workspace = workspace_name,
         ghc_cc_args = ghc_cc_program_args("$CC"),
     )
 
@@ -153,7 +150,7 @@ def _prepare_cabal_inputs(
         hs,
         cc,
         posix,
-        toolchain_info,
+        workspace_name,
         dep_info,
         cc_info,
         direct_cc_info,
@@ -317,7 +314,7 @@ def _prepare_cabal_inputs(
         runghc_args = runghc_args,
         extra_args = extra_args,
         path_args = path_args,
-        toolchain_info = toolchain_info,
+        toolchain_info = _cabal_toolchain_info(hs, cc, workspace_name),
     )
 
     inputs = depset(
@@ -452,12 +449,11 @@ def _haskell_cabal_library_impl(ctx):
             sibling = cabal,
         )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
-    toolchain_info = _cabal_toolchain_info(ctx, hs)
     c = _prepare_cabal_inputs(
         hs,
         cc,
         posix,
-        toolchain_info,
+        ctx.workspace_name,
         dep_info,
         cc_info,
         direct_cc_info,
@@ -741,12 +737,11 @@ def _haskell_cabal_binary_impl(ctx):
         sibling = cabal,
     )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
-    toolchain_info = _cabal_toolchain_info(ctx, hs)
     c = _prepare_cabal_inputs(
         hs,
         cc,
         posix,
-        toolchain_info,
+        ctx.workspace_name,
         dep_info,
         cc_info,
         direct_cc_info,
