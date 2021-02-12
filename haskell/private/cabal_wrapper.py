@@ -30,7 +30,6 @@
 
 from __future__ import print_function
 
-from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
 from contextlib import contextmanager
 from glob import glob
 import json
@@ -70,10 +69,9 @@ def find_exe(exe):
     elif is_windows and os.path.isfile(exe + ".exe"):
         path = os.path.abspath(exe + ".exe")
     else:
-        r = bazel_runfiles.Create()
-        path = r.Rlocation(toolchain_info["workspace"] + "/" + exe)
+        path = toolchain_info["workspace"] + "/" + exe
         if not os.path.isfile(path) and is_windows:
-            path = r.Rlocation(toolchain_info["workspace"] + "/" + exe + ".exe")
+            path = toolchain_info["workspace"] + "/" + exe + ".exe"
     return path
 
 path_list_sep = ";" if is_windows else ":"
