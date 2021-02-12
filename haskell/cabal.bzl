@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe", "read_netrc", "use_netrc")
 load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
@@ -41,6 +41,29 @@ load(
     "get_library_files",
     "haskell_cc_libraries_aspect",
 )
+
+def _get_auth(ctx, urls):
+    """Find the .netrc file and obtain the auth dict for the required URLs."""
+    auth_patterns = {"api.github.com": "Bearer <password>"}
+
+    # Taken from @bazel_tools//tools/build_defs/repo:http.bzl
+    if ctx.attr.netrc:
+        netrc = read_netrc(ctx, ctx.attr.netrc)
+        return use_netrc(netrc, urls, auth_patterns)
+
+    if "HOME" in ctx.os.environ and not ctx.os.name.startswith("windows"):
+        netrcfile = "%s/.netrc" % (ctx.os.environ["HOME"])
+        if ctx.execute(["test", "-f", netrcfile]).return_code == 0:
+            netrc = read_netrc(ctx, netrcfile)
+            return use_netrc(netrc, urls, auth_patterns)
+
+    if "USERPROFILE" in ctx.os.environ and ctx.os.name.startswith("windows"):
+        netrcfile = "%s/.netrc" % (ctx.os.environ["USERPROFILE"])
+        if ctx.path(netrcfile).exists:
+            netrc = read_netrc(ctx, netrcfile)
+            return use_netrc(netrc, urls, auth_patterns)
+
+    return {}
 
 def _so_extension(hs):
     return "dylib" if hs.toolchain.is_darwin else "so"
@@ -1208,10 +1231,13 @@ def _pin_packages(repository_ctx, resolved):
     errmsg = "Unexpected format in {context}: {{error}}"
 
     # Determine current git revision of all-cabal-hashes.
+    hashes_url = "https://api.github.com/repos/commercialhaskell/all-cabal-hashes/git/ref/heads/hackage"
+    auth = _get_auth(repository_ctx, [hashes_url])
     repository_ctx.download(
-        "https://api.github.com/repos/commercialhaskell/all-cabal-hashes/git/ref/heads/hackage",
+        hashes_url,
         output = "all-cabal-hashes-hackage.json",
         executable = False,
+        auth = auth,
     )
     hashes_json = json_parse(repository_ctx.read("all-cabal-hashes-hackage.json"))
     hashes_object = _parse_json_field(
@@ -1937,6 +1963,7 @@ _stack_snapshot_unpinned = repository_rule(
         "flags": attr.string_list_dict(),
         "stack": attr.label(),
         "stack_update": attr.label(),
+        "netrc": attr.string(),
     },
 )
 
@@ -2099,6 +2126,7 @@ def stack_snapshot(
         components = {},
         stack_update = None,
         verbose = False,
+        netrc = "",
         **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
@@ -2256,6 +2284,8 @@ def stack_snapshot(
       verbose: Whether to show the output of the build.
       stack_update: A meta repository that is used to avoid multiple concurrent invocations of
         `stack update` which could fail due to a race on the hackage security lock.
+      netrc: Location of the .netrc file to use for authentication.
+        Defaults to `~/.netrc` if present.
     """
     typecheck_stackage_extradeps(extra_deps)
     if not stack:
@@ -2282,6 +2312,7 @@ def stack_snapshot(
         stack_snapshot_json = stack_snapshot_json,
         packages = packages,
         flags = flags,
+        netrc = netrc,
     )
     _stack_snapshot(
         name = name,
