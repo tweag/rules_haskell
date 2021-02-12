@@ -32,6 +32,10 @@ jobs:
           common --config=ci
           build --config=$BUILD_CONFIG
           EOF
+          cat >~/.netrc <<EOF
+          machine api.github.com
+                  password ${{ secrets.GITHUB_TOKEN }}
+          EOF
       - name: Check Bazel version
         run: |
           nix-shell --arg docTools false --pure --run .ci/check-bazel-version
@@ -74,6 +78,10 @@ jobs:
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=$BUILD_CONFIG
+          EOF
+          cat >~/.netrc <<EOF
+          machine api.github.com
+                  password ${{ secrets.GITHUB_TOKEN }}
           EOF
       - name: Build & test
         run: |
