@@ -306,6 +306,7 @@ def _prepare_cabal_inputs(
 
     # Redundant with _binary_paths() above, but better be explicit when we can.
     path_args.extend([_cabal_tool_flag(tool_flag) for tool_flag in tool_inputs.to_list() if _cabal_tool_flag(tool_flag)])
+
     args = struct(
         component = component,
         pkg_name = package_id,

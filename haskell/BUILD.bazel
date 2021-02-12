@@ -21,7 +21,7 @@ exports_files(
     glob(["*.bzl"]) + [
         "assets/ghci_script",
         "private/cabal_wrapper.sh.tpl",
-        "private/cabal_wrapper.py.tpl",
+        "private/cabal_wrapper.py",
         "private/coverage_wrapper.sh.tpl",
         "private/ghci_repl_wrapper.sh",
         "private/haddock_wrapper.sh.tpl",
