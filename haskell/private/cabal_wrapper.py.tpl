@@ -15,6 +15,17 @@
 # , "runghc_args": list of string # Arguments for runghc
 # , "extra_args": list of string  # Additional args to Setup.hs configure.
 # , "path_args": list of string   # Additional args to Setup.hs configure where paths need to be prefixed with execroot.
+# , "toolchain_info" :
+#     { "ghc": string                  # path to ghc
+#     , "ghc_pkg": string              # path to ghc_pkg
+#     , "runghc": string               # path to runghc
+#     , "ar": string                   # path to ar
+#     , "cc": string                   # path to cc
+#     , "strip": string                # path to strip
+#     , "is_windows": boolean          # this is a windows build
+#     , "workspace": string            # workspace name
+#     , "ghc_cc_args":  list of string # cc flags for ghc
+#     }
 # }
 
 from __future__ import print_function
@@ -36,6 +47,9 @@ verbose = os.environ.get("CABAL_VERBOSE", "") == "True"
 with open(sys.argv.pop(1)) as json_file:
     json_args = json.load(json_file)
 
+toolchain_info = json_args["toolchain_info"]
+is_windows = toolchain_info["is_windows"]
+
 def run(cmd, *args, **kwargs):
     if debug:
         print("+ " + " ".join(["'{}'".format(arg) for arg in cmd]), file=sys.stderr)
@@ -53,16 +67,16 @@ def run(cmd, *args, **kwargs):
 def find_exe(exe):
     if os.path.isfile(exe):
         path = os.path.abspath(exe)
-    elif "%{is_windows}" == "True" and os.path.isfile(exe + ".exe"):
+    elif is_windows and os.path.isfile(exe + ".exe"):
         path = os.path.abspath(exe + ".exe")
     else:
         r = bazel_runfiles.Create()
-        path = r.Rlocation("%{workspace}/" + exe)
-        if not os.path.isfile(path) and "%{is_windows}" == "True":
-            path = r.Rlocation("%{workspace}/" + exe + ".exe")
+        path = r.Rlocation(toolchain_info["workspace"] + "/" + exe)
+        if not os.path.isfile(path) and is_windows:
+            path = r.Rlocation(toolchain_info["workspace"] + "/" + exe + ".exe")
     return path
 
-path_list_sep = ";" if "%{is_windows}" == "True" else ":"
+path_list_sep = ";" if is_windows else ":"
 
 def canonicalize_path(path):
     return path_list_sep.join([
@@ -93,17 +107,17 @@ haddockdir = os.path.join(pkgroot, "{}_haddock".format(name))
 htmldir = os.path.join(pkgroot, "{}_haddock_html".format(name))
 runghc_args = json_args["runghc_args"]
 
-runghc = find_exe(r"%{runghc}")
-ghc = find_exe(r"%{ghc}")
-ghc_pkg = find_exe(r"%{ghc_pkg}")
+runghc = find_exe(toolchain_info["runghc"])
+ghc = find_exe(toolchain_info["ghc"])
+ghc_pkg = find_exe(toolchain_info["ghc_pkg"])
 
 extra_args = json_args["extra_args"]
 
 path_args = json_args["path_args"]
 
-ar = find_exe("%{ar}")
-cc = find_exe("%{cc}")
-strip = find_exe("%{strip}")
+ar = find_exe(toolchain_info["ar"])
+cc = find_exe(toolchain_info["cc"])
+strip = find_exe(toolchain_info["strip"])
 
 def recache_db():
     run([ghc_pkg, "recache", "--package-db=" + package_database])
@@ -124,7 +138,7 @@ def tmpdir():
     #
     # On Windows we don't do dynamic linking and prefer shorter paths to avoid
     # exceeding `MAX_PATH`.
-    if "%{is_windows}" == "True":
+    if is_windows:
         distdir = tempfile.mkdtemp()
     else:
         if component.startswith("exe:"):
@@ -138,7 +152,7 @@ def tmpdir():
 
 with tmpdir() as distdir:
     enable_relocatable_flags = ["--enable-relocatable"] \
-            if "%{is_windows}" != "True" else []
+            if not is_windows else []
 
     # Cabal really wants the current working directory to be directory
     # where the .cabal file is located. So we have no choice but to chance
@@ -164,7 +178,7 @@ with tmpdir() as distdir:
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
-        [ "--ghc-option=" + flag.replace("$CC", cc) for flag in %{ghc_cc_args} ] +
+        [ "--ghc-option=" + flag.replace("$CC", cc) for flag in toolchain_info["ghc_cc_args"] ] +
         enable_relocatable_flags + \
         [ \
         # Make `--builddir` a relative path. Using an absolute path would
@@ -172,7 +186,7 @@ with tmpdir() as distdir:
         # absolute paths refer the temporary directory that GHC uses for
         # intermediate template Haskell outputs. `cc_wrapper` should improved
         # in that regard.
-        "--builddir=" + (os.path.relpath(distdir) if "%{is_windows}" != "True" else distdir), \
+        "--builddir=" + (os.path.relpath(distdir) if not is_windows else distdir), \
         "--prefix=" + pkgroot, \
         "--libdir=" + libdir, \
         "--dynlibdir=" + dynlibdir, \

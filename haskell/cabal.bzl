@@ -6,7 +6,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load(":cc.bzl", "cc_interop_info")
+load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/actions/info.bzl", "library_info_output_groups")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/dependencies.bzl", "gather_dep_info")
@@ -122,10 +122,38 @@ def _concat(sequences):
 def _uniquify(xs):
     return depset(xs).to_list()
 
+def _cabal_toolchain_info(ctx, hs):
+    """Yields a struct containing the toolchain information needed by the cabal wrapper"""
+    hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
+    cc_toolchain = find_cpp_toolchain(ctx)
+
+    # If running on darwin but XCode is not installed (i.e., only the Command
+    # Line Tools are available), then Bazel will make ar_executable point to
+    # "/usr/bin/libtool". Since we call ar directly, override it.
+    # TODO: remove this if Bazel fixes its behavior.
+    # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
+    ar = cc_toolchain.ar_executable
+    if ar.find("libtool") >= 0:
+        ar = "/usr/bin/ar"
+
+    cc = hs_toolchain.cc_wrapper.executable.path
+    return struct(
+        ghc = hs.tools.ghc.path,
+        ghc_pkg = hs.tools.ghc_pkg.path,
+        runghc = hs.tools.runghc.path,
+        ar = ar,
+        cc = cc,
+        strip = cc_toolchain.strip_executable,
+        is_windows = hs.toolchain.is_windows,
+        workspace = ctx.workspace_name,
+        ghc_cc_args = ghc_cc_program_args("$CC"),
+    )
+
 def _prepare_cabal_inputs(
         hs,
         cc,
         posix,
+        toolchain_info,
         dep_info,
         cc_info,
         direct_cc_info,
@@ -288,6 +316,7 @@ def _prepare_cabal_inputs(
         runghc_args = runghc_args,
         extra_args = extra_args,
         path_args = path_args,
+        toolchain_info = toolchain_info,
     )
 
     inputs = depset(
@@ -422,10 +451,12 @@ def _haskell_cabal_library_impl(ctx):
             sibling = cabal,
         )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
+    toolchain_info = _cabal_toolchain_info(ctx, hs)
     c = _prepare_cabal_inputs(
         hs,
         cc,
         posix,
+        toolchain_info,
         dep_info,
         cc_info,
         direct_cc_info,
@@ -709,10 +740,12 @@ def _haskell_cabal_binary_impl(ctx):
         sibling = cabal,
     )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
+    toolchain_info = _cabal_toolchain_info(ctx, hs)
     c = _prepare_cabal_inputs(
         hs,
         cc,
         posix,
+        toolchain_info,
         dep_info,
         cc_info,
         direct_cc_info,
