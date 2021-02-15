@@ -164,6 +164,22 @@ with tmpdir() as distdir:
     os.putenv("TMP", os.path.join(distdir, "tmp"))
     os.putenv("TEMP", os.path.join(distdir, "tmp"))
     os.makedirs(os.path.join(distdir, "tmp"))
+    # XXX: Bazel hack
+    # When cabal_wrapper calls other tools with runfiles, the runfiles are
+    # searched in the runfile tree of cabal_wrapper unless we clear
+    # RUNFILES env vars. After clearing the env vars, each tool looks for
+    # runfiles in its own runfiles tree.
+    #
+    # Clearing RUNFILES_DIR is necessary in macos where a wrapper script
+    # cc-wrapper.sh is used from the cc toolchain.
+    #
+    # Clearing RUNFILES_MANIFEST_FILE is necessary in windows where we
+    # use a wrapper script cc-wrapper-bash.exe which has a different
+    # manifest file than cabal_wrapper.py.
+    if "RUNFILES_DIR" in os.environ:
+        del os.environ["RUNFILES_DIR"]
+    if "RUNFILES_MANIFEST_FILE" in os.environ:
+        del os.environ["RUNFILES_MANIFEST_FILE"]
     runghc_args = [arg.replace("./", execroot + "/") for arg in runghc_args]
     run([runghc] + runghc_args + [setup, "configure", \
         component, \
