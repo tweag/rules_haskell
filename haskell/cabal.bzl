@@ -43,7 +43,15 @@ load(
 )
 
 def _get_auth(ctx, urls):
-    """Find the .netrc file and obtain the auth dict for the required URLs."""
+    """Find the .netrc file and obtain the auth dict for the required URLs.
+
+    Refer to the [authentication in downloads proposal][auth-proposal] and the
+    [`http_archive` API documentation][http-archive] for a definition of the
+    auth dict.
+
+    [auth-proposal]: https://github.com/bazelbuild/proposals/blob/master/designs/2019-05-27-auth.md
+    [http-archive]: https://docs.bazel.build/versions/master/repo/http.html#http_archive-auth_patterns
+    """
     auth_patterns = {"api.github.com": "Bearer <password>"}
 
     # Taken from @bazel_tools//tools/build_defs/repo:http.bzl
