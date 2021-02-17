@@ -20,7 +20,7 @@ genrule(
 cc_library(
     name = "zlib",
     hdrs = ["@zlib.dev//:include"],
-    strip_include_prefix = "/external/zlib.dev/include",
+    strip_include_prefix = "/include",
     tags = ["requires_nix"],
     deps = ["@zlib"],
 )
