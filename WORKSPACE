@@ -216,8 +216,8 @@ register_toolchains(
 )
 
 nixpkgs_cc_configure(
-    nix_file = "//nixpkgs:cc-toolchain.nix",
-    nix_file_deps = ["//nixpkgs:default.nix"],
+    # Don't override the default cc toolchain needed for bindist mode.
+    name = "nixpkgs_config_cc",
     repository = "@nixpkgs_default",
 )
 
