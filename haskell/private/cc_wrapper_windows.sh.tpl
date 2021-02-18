@@ -65,6 +65,10 @@ find_exe() {
       { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
     # --- end runfiles.bash initialization v2 ---
 
+    # The RUNFILES_MANIFEST_FILE needs to be set explicitly
+    # when cc_wrapper is invoked from the cabal_wrapper
+    RUNFILES_MANIFEST_FILE="${RUNFILES_MANIFEST_FILE:-"$0.exe.runfiles_manifest"}"
+
     location="$(rlocation "{:workspace:}/$exe")"
     if [[ -f "$location" ]]; then
         return
