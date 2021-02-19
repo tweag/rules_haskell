@@ -17,7 +17,7 @@ mkShell {
     which
     perl
     python3
-    bazel
+    bazel_4
     jdk11
     # For stack_install.
     stack
@@ -49,6 +49,6 @@ mkShell {
     fi
 
     # source bazel bash completion
-    source ${pkgs.bazel}/share/bash-completion/completions/bazel.bash
+    source ${bazel_4}/share/bash-completion/completions/bazel.bash
   '';
 }
