@@ -1,5 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+load("@os_info//:os_info.bzl", "is_windows")
 
 package(default_testonly = 1)
 
@@ -22,8 +23,10 @@ cc_binary(
     deps = ["@bazel_tools//tools/cpp/runfiles"],
 )
 
+exe = ".exe" if is_windows else ""
+
 sh_test(
-    name = "cc-foo",
+    name = "cc-foo{}".format(exe),
     srcs = ["cc-runner"],
     args = [
         "foo",
@@ -33,7 +36,7 @@ sh_test(
 )
 
 sh_test(
-    name = "cc-bar",
+    name = "cc-bar{}".format(exe),
     srcs = ["cc-runner"],
     args = [
         "bar",
@@ -55,7 +58,7 @@ haskell_binary(
 )
 
 sh_test(
-    name = "hs-foo",
+    name = "hs-foo{}".format(exe),
     srcs = ["hs-runner"],
     args = [
         "foo",
@@ -65,7 +68,7 @@ sh_test(
 )
 
 sh_test(
-    name = "hs-bar",
+    name = "hs-bar{}".format(exe),
     srcs = ["hs-runner"],
     args = [
         "bar",
@@ -78,10 +81,14 @@ sh_test(
 # binary name. This test-case constructs a fresh runfiles tree next to the
 # `hs-runner` and tests that this runfiles tree is found.
 sh_test(
-    name = "runfiles-tree",
+    name = "runfiles-tree{}".format(exe),
     srcs = ["runfiles-tree.sh"],
     args = ["$(rootpath hs-runner)"],
     data = ["hs-runner"],
+    tags = [
+        # TODO extend to use RUNFILES_MANIFEST_FILE on Windows.
+        "dont_test_on_windows",
+    ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 

@@ -41,6 +41,9 @@ build:macos-nixpkgs --test_tag_filters  -dont_test_on_darwin
 build:macos-bindist --build_tag_filters -requires_nix,-dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
 build:macos-bindist --test_tag_filters  -requires_nix,-dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
 
+build:windows-bindist --build_tag_filters -requires_nix,-dont_test_on_windows,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:windows-bindist --test_tag_filters -requires_nix,-dont_test_on_windows,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+
 # CI Configuration
 # ----------------
 common:ci --color=no

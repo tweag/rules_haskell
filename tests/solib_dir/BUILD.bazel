@@ -7,4 +7,7 @@ solib_test(
         "@rules_haskell//haskell/platforms:mingw32": True,
         "//conditions:default": False,
     }),
+    # Shell scripts as `DefaultInfo.executable` no longer work on Windows.
+    # Convert this test case to an analysis test.
+    tags = ["dont_test_on_windows"],
 )

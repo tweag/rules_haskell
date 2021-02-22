@@ -13,6 +13,7 @@ c2hs_library(
     tags = [
         # See https://github.com/tweag/rules_haskell/issues/1486
         "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
     ],
     deps = ["//tests:zlib"],
 )
@@ -23,6 +24,7 @@ c2hs_library(
     tags = [
         # See https://github.com/tweag/rules_haskell/issues/1486
         "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
     ],
     deps = [":foo"],
 )
@@ -37,6 +39,7 @@ haskell_library(
     tags = [
         # See https://github.com/tweag/rules_haskell/issues/1486
         "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
     ],
     deps = ["//tests/hackage:base"],
 )

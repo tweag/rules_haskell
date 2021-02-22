@@ -56,7 +56,10 @@ haskell_library(
 haskell_doc(
     name = "haddock",
     index_transitive_deps = False,
-    tags = ["dont_test_on_darwin_with_bindist"],
+    tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+    ],
     deps = [":haddock-lib-b"],
 )
 
@@ -67,6 +70,7 @@ sh_test(
     data = [":haddock"],
     tags = [
         "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
         # Fails in profiling mode due to missing haddocks for Deep.
         "requires_dynamic",
     ],
@@ -76,7 +80,10 @@ sh_test(
 haskell_doc(
     name = "haddock-transitive",
     index_transitive_deps = True,
-    tags = ["dont_test_on_darwin_with_bindist"],
+    tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+    ],
     deps = [":haddock-lib-b"],
 )
 
@@ -87,6 +94,7 @@ sh_test(
     data = [":haddock-transitive"],
     tags = [
         "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
         # Fails in profiling mode due to missing haddocks for Deep.
         "requires_dynamic",
     ],

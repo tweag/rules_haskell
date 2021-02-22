@@ -142,6 +142,9 @@ def _haskell_doc_aspect_impl(target, ctx):
 
     # TODO(mboes): we should be able to instantiate this template only
     # once per toolchain instance, rather than here.
+    # TODO(aherrmann): Convert to a standalone sh_binary.
+    # Executable shell script files don't work on Windows.
+    # This fails with `%1 is not a valid Win32 application.`.
     haddock_wrapper = ctx.actions.declare_file("haddock_wrapper-{}".format(hs.name))
     ctx.actions.expand_template(
         template = ctx.file._haddock_wrapper_tpl,

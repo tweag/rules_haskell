@@ -330,6 +330,7 @@ build:ci --jobs=2
 build:ci --verbose_failures
 common:ci --color=no
 test:ci --test_output=errors
+build:ci-windows --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain
 
 $(insert_if_equal $mode "nix" '
 # This project uses a GHC provisioned via nix.
