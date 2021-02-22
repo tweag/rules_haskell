@@ -5,10 +5,10 @@ tasks:
       # haskell base uses the environment locale to decode sockets
       LANG: "C.UTF-8"
     build_flags:
-      - "--build_tag_filters=-requires_zlib,-requires_lz4,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-requires_shellcheck,-dont_test_with_bindist,-dont_test_on_bazelci"
+      - "--build_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci"
     build_targets:
       - "//tests/..."
     test_flags:
-      - "--test_tag_filters=-requires_zlib,-requires_lz4,-requires_doctest,-requires_c2hs,-requires_threaded_rts,-requires_shellcheck,-dont_test_with_bindist,-dont_test_on_bazelci"
+      - "--test_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci"
     test_targets:
       - "//tests/..."
