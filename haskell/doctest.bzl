@@ -152,7 +152,7 @@ def _haskell_doctest_single(target, ctx):
             env = render_env(hs.env),
         ),
         arguments = [args],
-        env = hs.env,
+        env = dicts.add(hs.env, cc.env),
         execution_requirements = {
             # Prevents a race condition among concurrent doctest tests on Linux.
             #

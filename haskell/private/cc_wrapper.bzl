@@ -41,6 +41,22 @@ _cc_wrapper = rule(
             allow_single_file = True,
         ),
         "platform": attr.string(),
+        # Bazel considers the cc toolchain a build dependency of the cc_wrapper,
+        # but we only need the cc toolchain at runtime. Without relying on
+        # environment variables, this is practically the only way we have to get
+        # our hands on the path to the C compiler other than using environment
+        # variables.
+        #
+        # Using environment variables wouldn't work when using hie-bios.
+        #
+        # Specifying the dependency like this, however, interferes with
+        # cross-compilation, since the provided toolchain will target
+        # the execution platform. In this case, we use environment variables
+        # in the cc_wrapper scripts to indicate the path to the cc compiler.
+        # We are not trying to cross-compile when using hie-bios.
+        #
+        # TODO: Consider using execution groups to transition the toolchain
+        # to the target platform.
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),

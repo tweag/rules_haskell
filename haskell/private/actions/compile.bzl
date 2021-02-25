@@ -363,6 +363,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         env = dicts.add(
             java.env,
             hs.env,
+            cc.env,
         ),
     )
 

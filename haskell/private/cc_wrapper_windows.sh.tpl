@@ -37,6 +37,8 @@
 
 set -euo pipefail
 
+CC_WRAPPER_CC_PATH=${CC_WRAPPER_CC_PATH:-"{:cc:}"}
+
 # ----------------------------------------------------------
 # Find compiler
 
@@ -81,7 +83,7 @@ find_exe() {
 }
 
 declare CC
-find_exe CC "{:cc:}"
+find_exe CC "${CC_WRAPPER_CC_PATH}"
 
 # ----------------------------------------------------------
 # Handle response file

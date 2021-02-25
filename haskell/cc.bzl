@@ -20,6 +20,7 @@ CcInteropInfo = provider(
     doc = "Information needed for interop with cc rules.",
     fields = {
         "tools": "Tools from the CC toolchain",
+        "env": "Dictionary with environment variables to call the CC toolchain",
         # See the following for why this is needed:
         # https://stackoverflow.com/questions/52769846/custom-c-rule-with-the-cc-common-api
         "files": "Files for all tools (input to any action that uses tools)",
@@ -105,6 +106,10 @@ def cc_interop_info(ctx):
         action_name = CPP_LINK_EXECUTABLE_ACTION_NAME,
         variables = link_variables,
     )
+    real_cc_path = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = C_COMPILE_ACTION_NAME,
+    )
 
     # Generate cc wrapper script on Darwin that adjusts load commands.
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
@@ -130,11 +135,23 @@ def cc_interop_info(ctx):
     if tools["ar"].find("libtool") >= 0:
         tools["ar"] = "/usr/bin/ar"
 
+    env = {}
+    if hs_toolchain.is_darwin:
+        env["CC_WRAPPER_PLATFORM"] = "darwin"
+    elif hs_toolchain.is_windows:
+        env["CC_WRAPPER_PLATFORM"] = "windows"
+    else:
+        env["CC_WRAPPER_PLATFORM"] = "linux"
+
+    env["CC_WRAPPER_CC_PATH"] = real_cc_path
+    env["CC_WRAPPER_CPU"] = cc_toolchain.cpu
+
     cc_libraries_info = deps_HaskellCcLibrariesInfo(
         ctx.attr.deps + getattr(ctx.attr, "plugins", []) + getattr(ctx.attr, "setup_deps", []),
     )
     return CcInteropInfo(
         tools = struct(**tools),
+        env = env,
         files = cc_files.to_list(),
         manifests = cc_manifests,
         hdrs = hdrs.to_list(),
