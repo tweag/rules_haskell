@@ -80,8 +80,9 @@ import sys
 import tempfile
 
 WORKSPACE = "{:workspace:}"
-CC = "{:cc:}"
-PLATFORM = "{:platform:}"
+CC = os.environ.get("CC_WRAPPER_CC_PATH", "{:cc:}")
+PLATFORM = os.environ.get("CC_WRAPPER_PLATFORM", "{:platform:}")
+CPU = os.environ.get("CC_WRAPPER_CPU", "{:cpu:}")
 INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
 OTOOL = "/usr/bin/otool"
 
@@ -787,8 +788,8 @@ def find_solib_rpath(rpaths, output):
         # the Bazel generated RPATHs are not forwarded, and the solib directory
         # is not visible on the command-line.
         for (root, dirnames, _) in breadth_first_walk(os.environ.get("RULES_HASKELL_EXEC_ROOT", ".")):
-            if "_solib_{:cpu:}" in dirnames:
-                return os.path.join(root, "_solib_{:cpu:}")
+            if "_solib_" + CPU in dirnames:
+                return os.path.join(root, "_solib_" + CPU)
 
     return None
 
