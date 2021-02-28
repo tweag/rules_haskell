@@ -5,7 +5,7 @@ pull_request_rules:
       - 'status-success~=Build & Test - Nixpkgs \(macos\).*'
       - 'status-success~=Build & Test - bindist \(ubuntu\).*'
       - 'status-success~=Build & Test - bindist \(macos\).*'
-      - "status-success=tweag.rules_haskell"
+      - 'status-success~=Build & Test - bindist \(windows\).*'
       - "status-success=deploy/netlify"
       - "#approved-reviews-by>=1"
       - "label=merge-queue"

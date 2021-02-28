@@ -23,5 +23,9 @@ haskell_binary(
 should_fail(
     name = "isystem-issue",
     exitcode = 1,
+    tags = [
+        # On Windows this needs to use rlocation to determine the runtime location of the binary.
+        "dont_test_on_windows",
+    ],
     target = ":bin",
 )

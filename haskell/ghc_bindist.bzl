@@ -339,6 +339,19 @@ def _ghc_bindist_impl(ctx):
         execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
         execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
 
+        # Similarly causes loading issues with template Haskell. E.g.
+        #
+        #   ghc.exe: panic! (the 'impossible' happened)
+        #     (GHC version 8.6.5 for x86_64-unknown-mingw32):
+        #      loadArchive "C:\\Users\\runneradmin\\_bazel_runneradmin\\minshlu6\\external\\rules_haskell_ghc_windows_amd64\\mingw\\lib\\libz.dll.a": failed
+        #
+        #   Please report this as a GHC bug:  http://www.haskell.org/ghc/reportabug
+        #
+        #   ghc.exe: Could not load `zlib1.dll'. Reason: addDLL: zlib1.dll or dependencies not loaded. (Win32 error 126)
+        #
+        # on //tests/haddock:haddock-lib-b.
+        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/libz.dll.a"])
+
     # We apply some patches, if needed.
     patch(ctx)
 

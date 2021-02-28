@@ -55,6 +55,7 @@ dynamic_libraries_in_runfiles_test(
         ":c-lib",
         "//tests/hackage:base",
     ],
+    tags = ["dont_test_on_windows"],
     target_under_test = ":binary-dynamic",
 )
 
@@ -88,6 +89,7 @@ sh_inline_test(
         exit 1
     fi
     """,
+    tags = ["dont_test_on_windows"],
 )
 
 # Ensure that linkstatic=False only links to dynamic library targets.
@@ -121,10 +123,12 @@ sh_inline_test(
         exit 1
     fi
     """,
+    tags = ["dont_test_on_windows"],
 )
 
 test_suite(
     name = "binary-linkstatic-flag",
+    tags = ["dont_test_on_windows"],
     tests = [
         ":test-binary-dynamic-symbols",
         ":test-binary-static-symbols",

@@ -25,8 +25,17 @@ cd $workdir
 # changes, then we need to adapt to those changes in the branch.
 # Which in turn means the start script should pull in those changes too.
 
+case "$OSTYPE" in
+  cygwin|msys)
+    OSCONFIG=("--config=ci-windows")
+    ;;
+  *)
+    OSCONFIG=()
+    ;;
+esac
+
 NIX_PATH=nixpkgs="$pwd/nixpkgs/default.nix" \
   bazel run \
-  --config=ci \
+  --config=ci "${OSCONFIG[@]}" \
   --override_repository=rules_haskell="$pwd" \
   //:example

@@ -2,7 +2,7 @@
 Minimal reproduction of https://github.com/tweag/rules_haskell/issues/1111
 """
 
-load("//haskell:defs.bzl", "haskell_doc", "haskell_library")
+load("//haskell:defs.bzl", "haskell_library")
 load(
     "//haskell:protobuf.bzl",
     "haskell_proto_library",
@@ -17,6 +17,10 @@ proto_library(
 
 haskell_proto_library(
     name = "foo_haskell",
+    tags = [
+        # Requires proto-lens >=0.6.0.0. On Windows we're stuck on 0.5.1.0 until we can update GHC.
+        "dont_test_on_windows",
+    ],
     deps = [
         ":foo",
     ],
@@ -25,6 +29,9 @@ haskell_proto_library(
 haskell_library(
     name = "hs-lib",
     srcs = ["Bar.hs"],
+    tags = [
+        "dont_test_on_windows",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":foo_haskell",

@@ -59,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos]
+        os: [ubuntu, macos, windows]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v2
@@ -69,16 +69,19 @@ jobs:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
       - name: Install Bazel
+        shell: bash
         run: |
           BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
           mv $BAZEL_DIR $HOME/bazel
       - name: Configure
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+        shell: bash
         run: |
           case ${{ matrix.os }} in
             macos) BUILD_CONFIG=macos-bindist;;
             ubuntu) BUILD_CONFIG=linux-bindist;;
+            windows) BUILD_CONFIG=windows-bindist;;
           esac
           cat >.bazelrc.local <<EOF
           common --config=ci
@@ -90,6 +93,7 @@ jobs:
                   password ${{ secrets.GITHUB_TOKEN }}
           EOF
       - name: Build & test
+        shell: bash
         run: |
           export PATH=$HOME/bazel:$PATH
           [[ ${{ matrix.os }} == macos ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1

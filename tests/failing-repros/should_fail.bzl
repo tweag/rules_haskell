@@ -1,6 +1,6 @@
 load("@rules_haskell//tests:inline_tests.bzl", "sh_inline_test")
 
-def should_fail(name, exitcode, target):
+def should_fail(name, exitcode, target, **kwargs):
     """Wrap a test target that is expected to fail.
     This is particularly helpful for repros which reproduce an existing bug.
     If the bug is fixed by a code change (deliberately or not), `should_fail`
@@ -26,4 +26,5 @@ exit 0
         """.format(
             exitcode = exitcode,
         ),
+        **kwargs
     )

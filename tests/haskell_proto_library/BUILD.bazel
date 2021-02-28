@@ -66,5 +66,6 @@ haskell_library(
 
 haskell_doc(
     name = "docs",
+    tags = ["dont_test_on_windows"],
     deps = [":hs-lib"],
 )

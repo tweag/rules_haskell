@@ -39,7 +39,6 @@ main = hspec $ do
   describe "stack_snapshot pinning" $
     it "handles packages in subdirectories correctly" $ do
       -- NOTE Keep in sync with
-      --   azure-pipelines.yml
       --   .github/workflows/workflow.yaml
       let withBackup filename k =
             withSystemTempDirectory "bazel_backup" $ \tmp_dir -> do

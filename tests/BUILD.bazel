@@ -1,5 +1,6 @@
 load(":inline_tests.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
+load("@os_info//:os_info.bzl", "is_windows")
 load("//tests:rule_test_exe.bzl", "rule_test_exe")
 load(
     "//haskell:c2hs.bzl",
@@ -103,28 +104,28 @@ rule_test_exe(
     rule = "//tests/binary-custom-main",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-with-lib",
     size = "small",
     generates = ["binary-with-lib"],
     rule = "//tests/binary-with-lib",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-with-prebuilt",
     size = "small",
     generates = ["binary-with-prebuilt"],
     rule = "//tests/binary-with-prebuilt",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-with-main",
     size = "small",
     generates = ["binary-with-main"],
     rule = "//tests/binary-with-main",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-with-sysdeps",
     size = "small",
     generates = ["binary-with-sysdeps"],
@@ -132,7 +133,7 @@ rule_test(
 )
 
 sh_test(
-    name = "test-binary-with-data",
+    name = "test-binary-with-data{}".format(".exe" if is_windows else ""),
     size = "small",
     srcs = ["//tests/binary-with-data"],
     args = ["$(location //tests/binary-with-data:bin1)"],
@@ -177,7 +178,6 @@ rule_test(
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
         ],
         ":fastbuild_windows": [
-            "libHStestsZSlibrary-depsZSlibrary-deps-ghc{}.dll".format(test_ghc_version),
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
         ],
         "//conditions:default": [
@@ -188,7 +188,7 @@ rule_test(
     rule = "//tests/library-deps",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-hsc",
     size = "small",
     generates = ["hsc"],
@@ -198,8 +198,23 @@ rule_test(
 rule_test(
     name = "test-haddock",
     size = "small",
-    generates =
-        [
+    generates = select({
+        # Windows uses an older Stackage snapshot until we can update GHC.
+        ":fastbuild_windows": [
+            "haddock/array-0.5.3.0",
+            "haddock/base-4.12.0.0",
+            "haddock/deepseq-1.4.4.0",
+            "haddock/ghc-boot-th-8.6.5",
+            "haddock/ghc-prim-0.5.3",
+            "haddock/index",
+            "haddock/integer-gmp-1.0.2.0",
+            "haddock/pretty-1.1.3.6",
+            "haddock/template-haskell-2.14.0.0",
+            "haddock/testsZShaddockZShaddock-lib-a",
+            "haddock/testsZShaddockZShaddock-lib-b",
+            "haddock/testsZShaddockZShaddock-lib-deep",
+        ],
+        "//conditions:default": [
             "haddock/array-0.5.4.0",
             "haddock/base-4.13.0.0",
             "haddock/deepseq-1.4.4.0",
@@ -213,6 +228,7 @@ rule_test(
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
         ],
+    }),
     rule = "//tests/haddock",
 )
 
@@ -225,21 +241,21 @@ rule_test(
     rule = "//tests/haskell_doctest:doctest-lib",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-haskell_test",
     size = "small",
     generates = ["haskell_test"],
     rule = "//tests/haskell_test:haskell_test",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-java_classpath",
     size = "small",
     generates = ["java_classpath"],
     rule = "//tests/java_classpath",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-cc_haskell_import-cc-link",
     size = "small",
     generates = ["cc-bin"],
@@ -273,30 +289,34 @@ set -e
 # Fails if executable was linked without -threaded flag.
 $1 +RTS -N
 """,
+    tags = [
+        # On Windows this needs to use rlocation to determine the runtime location of the binary.
+        "dont_test_on_windows",
+    ],
 )
 
-rule_test(
+rule_test_exe(
     name = "test-lhs",
     size = "small",
     generates = ["lhs-bin"],
     rule = "//tests/lhs:lhs-bin",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-hs-boot",
     size = "small",
     generates = ["hs-boot"],
     rule = "//tests/hs-boot:hs-boot",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-textual-hdrs",
     size = "small",
     generates = ["textual-hdrs"],
     rule = "//tests/textual-hdrs:textual-hdrs",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-two-libs",
     size = "small",
     generates = ["two-libs"],
@@ -398,7 +418,10 @@ haskell_library(
 
 haskell_doc(
     name = "toto",
-    tags = ["requires_lz4"],
+    tags = [
+        "dont_test_on_windows",
+        "requires_lz4",
+    ],
     deps = [":utils"],
 )
 
@@ -412,7 +435,7 @@ haskell_repl(
 )
 
 sh_test(
-    name = "ghcide-smoke-test",
+    name = "ghcide-smoke-test{}".format(".exe" if is_windows else ""),
     srcs = ["@ghcide-exe//ghcide"],
     args = ["--version"],
     tags = [
