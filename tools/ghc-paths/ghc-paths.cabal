@@ -1,0 +1,8 @@
+-- Dummy Cabal file. It is not used to build ghc-paths, but required for
+-- dependency resolution in stack_snapshot.
+name: ghc-paths
+version: 0.1.0.11
+cabal-version: >= 1.6
+library
+  build-depends: base
+  exposed-modules: GHC.Paths
