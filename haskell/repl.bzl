@@ -427,12 +427,23 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         repl_ghci_args
     )
 
+    env = dict(hs.env)
+
+    # These env-vars refer to the build-time GHC distribution. However, if the
+    # REPL uses ghc-paths then it should refer to the runtime GHC distribution,
+    # i.e. the one included in the runfiles. Therefore we remove these env-vars
+    # to force ghc-paths to look them up in the runfiles.
+    env.pop("RULES_HASKELL_GHC_PATH")
+    env.pop("RULES_HASKELL_GHC_PKG_PATH")
+    env.pop("RULES_HASKELL_LIBDIR_PATH")
+    env.pop("RULES_HASKELL_DOCDIR_PATH")
+
     hs.actions.expand_template(
         template = ctx.file._ghci_repl_wrapper,
         output = output,
         is_executable = True,
         substitutions = {
-            "%{ENV}": render_env(hs.env),
+            "%{ENV}": render_env(env),
             "%{TOOL}": hs.tools.ghci.path,
             "%{ARGS}": "(" + " ".join(
                 args + [
