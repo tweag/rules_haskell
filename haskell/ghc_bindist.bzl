@@ -1,5 +1,6 @@
 """Workspace rules (GHC binary distributions)"""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
@@ -309,7 +310,7 @@ GHC_BINDIST = \
     }
 
 def _ghc_bindist_impl(ctx):
-    paths = resolve_labels(ctx, [
+    filepaths = resolve_labels(ctx, [
         "@rules_haskell//haskell:ghc.BUILD.tpl",
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
     ])
@@ -324,9 +325,17 @@ def _ghc_bindist_impl(ctx):
 
     bindist_dir = ctx.path(".")  # repo path
 
+    # The Windows bindist is ready to use after unpacking, so we can unpack it
+    # straight into the repository root. However, the Linux bindist requires a
+    # `./configure && make install` which will install the final bindist into
+    # the destination directory. We unpack the distribution into a
+    # sub-directory in order to cleanly separate the usable installation from
+    # the raw distribution.
+    unpack_dir = "bindist_unpacked" if os != "windows" else ""
+
     ctx.download_and_extract(
         url = url,
-        output = ".",
+        output = unpack_dir,
         sha256 = sha256,
         type = "tar.xz",
         stripPrefix = "ghc-" + version,
@@ -335,9 +344,9 @@ def _ghc_bindist_impl(ctx):
     if os == "windows":
         # These libraries cause linking errors on Windows when linking
         # pthreads, due to libwinpthread-1.dll not being loaded.
-        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"])
-        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"])
-        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/gcc/x86_64-w64-mingw32/7.2.0/libstdc++.dll.a"], working_directory = unpack_dir)
+        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"], working_directory = unpack_dir)
+        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"], working_directory = unpack_dir)
 
         # Similarly causes loading issues with template Haskell. E.g.
         #
@@ -350,21 +359,24 @@ def _ghc_bindist_impl(ctx):
         #   ghc.exe: Could not load `zlib1.dll'. Reason: addDLL: zlib1.dll or dependencies not loaded. (Win32 error 126)
         #
         # on //tests/haddock:haddock-lib-b.
-        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/libz.dll.a"])
+        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/libz.dll.a"], working_directory = unpack_dir)
 
     # We apply some patches, if needed.
-    patch(ctx)
+    patch_args = list(ctx.attr.patch_args)
+    if unpack_dir:
+        patch_args.extend(["-d", unpack_dir])
+    patch(ctx, patch_args = patch_args)
 
     # As the patches may touch the package DB we regenerate the cache.
     if len(ctx.attr.patches) > 0:
-        execute_or_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
+        execute_or_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"], working_directory = unpack_dir)
 
     # On Windows the bindist already contains the built executables
     if os != "windows":
         # IMPORTANT: all these scripts have to be compatible with BSD
         # tools! This means that sed -i always takes an argument.
-        execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"])
-        execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath])
+        execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
+        execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath], working_directory = unpack_dir)
         execute_or_fail_loudly(
             ctx,
             ["make", "install"],
@@ -376,8 +388,9 @@ def _ghc_bindist_impl(ctx):
             # ZERO_AR_DATE. See
             # https://source.chromium.org/chromium/chromium/src/+/62848c8d298690e086e49a9832278ff56b6976b5.
             environment = {"ZERO_AR_DATE": "1"},
+            working_directory = unpack_dir,
         )
-        ctx.file("patch_bins", executable = True, content = r"""#!/usr/bin/env bash
+        ctx.file(paths.join(unpack_dir, "patch_bins"), executable = True, content = r"""#!/usr/bin/env bash
 find bin -type f -print0 | xargs -0 \
 grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
     sed -i.bak \
@@ -387,9 +400,9 @@ DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(
 """.format(
             bindist_dir = bindist_dir.realpath,
         ))
-        execute_or_fail_loudly(ctx, ["./patch_bins"])
+        execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
 
-    toolchain_libraries = pkgdb_to_bzl(ctx, paths, "lib")
+    toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, "lib")
     locale = ctx.attr.locale or "en_US.UTF-8" if os == "darwin" else "C.UTF-8"
     toolchain = define_rule(
         "haskell_toolchain",
@@ -413,7 +426,7 @@ DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(
     )
     ctx.template(
         "BUILD",
-        paths["@rules_haskell//haskell:ghc.BUILD.tpl"],
+        filepaths["@rules_haskell//haskell:ghc.BUILD.tpl"],
         substitutions = {
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
