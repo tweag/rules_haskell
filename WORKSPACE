@@ -75,7 +75,6 @@ stack_snapshot(
         "language-c",
         "streaming",
         "void",
-        "ghc-paths",
         "ghc-check-0.5.0.3",
         "hspec",
         "hspec-core",
@@ -98,6 +97,9 @@ stack_snapshot(
         # twice.
         "@alex",
     ],
+    vendored_packages = {
+        "ghc-paths": "@rules_haskell//tools/ghc-paths",
+    },
 )
 
 # In a separate repo because not all platforms support zlib.
@@ -127,6 +129,9 @@ stack_snapshot(
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
     packages = ["ghcide"],
     stack_snapshot_json = "//:ghcide-snapshot.json" if not is_windows else None,
+    vendored_packages = {
+        "ghc-paths": "@rules_haskell//tools/ghc-paths",
+    },
 )
 
 load(
