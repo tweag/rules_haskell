@@ -24,6 +24,16 @@ filegroup(
     srcs = glob(["bin/*"]),
 )
 
+filegroup(
+    name = "lib",
+    srcs = glob(["lib/**"]),
+)
+
+filegroup(
+    name = "doc",
+    srcs = glob(["doc/**"]),
+)
+
 # Expose embedded MinGW toolchain when on Windows.
 
 filegroup(
