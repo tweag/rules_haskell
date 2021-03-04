@@ -96,7 +96,8 @@ def _haskell_proto_aspect_impl(target, ctx):
     hs_files = []
     inputs = []
 
-    inputs.extend(hs.files)
+    inputs.extend(hs.bindir)
+    inputs.extend(hs.libdir)
 
     direct_proto_paths = [target[ProtoInfo].proto_source_root]
     transitive_proto_paths = target[ProtoInfo].transitive_proto_path

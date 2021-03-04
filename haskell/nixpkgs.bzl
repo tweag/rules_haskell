@@ -12,6 +12,7 @@ load(
 load(
     ":private/workspace_utils.bzl",
     "define_rule",
+    "execute_or_fail_loudly",
     "resolve_labels",
 )
 
@@ -46,12 +47,15 @@ Available versions:
         )
     toolchain_libraries = pkgdb_to_bzl(repository_ctx, paths, "lib/{}".format(ghc_name))
     locale_archive = repository_ctx.attr.locale_archive
+    libdir_path = execute_or_fail_loudly(repository_ctx, ["bin/ghc", "--print-libdir"]).stdout.strip()
+    docdir_path = execute_or_fail_loudly(repository_ctx, ["bin/ghc-pkg", "field", "base", "haddock-html", "--simple-output"]).stdout.strip()
     toolchain = define_rule(
         "haskell_toolchain",
         name = "toolchain-impl",
         libraries = "toolchain_libraries",
         # See Note [GHC toolchain files] in haskell/ghc_bindist.bzl
-        files = [],
+        libdir_path = repr(libdir_path),
+        docdir_path = repr(docdir_path),
         tools = ["@{}//:bin".format(repository_ctx.attr.nixpkgs_ghc_repo_name)],
         version = repr(repository_ctx.attr.version),
         static_runtime = repository_ctx.attr.static_runtime,

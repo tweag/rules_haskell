@@ -349,12 +349,16 @@ def _prepare_cabal_inputs(
         toolchain_info = _cabal_toolchain_info(hs, cc, workspace_name, runghc),
     )
 
+    ghc_files = hs.toolchain.bindir + hs.toolchain.libdir
+    if generate_haddock:
+        ghc_files.extend(hs.toolchain.docdir)
+
     inputs = depset(
         [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.hsc2hs],
         transitive = [
             depset(srcs),
             depset(cc.files),
-            depset(hs.toolchain.files),
+            depset(ghc_files),
             package_databases,
             setup_dep_info.package_databases,
             transitive_headers,

@@ -410,11 +410,8 @@ DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(
         tools = [":bin"],
         libraries = "toolchain_libraries",
         # See Note [GHC toolchain files]
-        files = [
-            ":lib/settings",
-            ":lib/include/ghcplatform.h",
-            ":lib/include/ghcversion.h",
-        ],
+        libdir = [":lib"],
+        docdir = [":doc"],
         version = repr(ctx.attr.version),
         static_runtime = os == "windows",
         fully_static_link = False,  # XXX not yet supported for bindists.

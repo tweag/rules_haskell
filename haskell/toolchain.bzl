@@ -54,7 +54,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
     extra_inputs += [
         compile_flags_file,
         extra_args_file,
-    ] + cc.files + hs.toolchain.files
+    ] + cc.files + hs.toolchain.bindir + hs.toolchain.libdir
 
     if hs.toolchain.locale_archive != None:
         extra_inputs.append(hs.toolchain.locale_archive)
@@ -105,6 +105,39 @@ def _haskell_toolchain_impl(ctx):
         if not tool in ghc_binaries:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools.label))
 
+    # Get the libdir and docdir paths
+    libdir = ctx.files.libdir
+    if ctx.attr.libdir_path:
+        libdir_path = ctx.attr.libdir_path
+    elif libdir:
+        # Find the `lib/settings` file and infer `libdir` from its path.
+        for f in libdir:
+            if f.path.endswith("lib/settings"):
+                libdir_path = paths.dirname(f.path)
+                break
+        if libdir_path == None:
+            fail("Could not infer `libdir_path` from provided `libdir` attribute. Missing `lib/settings` file.", "libdir")
+    else:
+        fail("One of `libdir` and `libdir_path` is required.")
+
+    docdir = ctx.files.docdir
+    if ctx.attr.docdir_path:
+        docdir_path = ctx.attr.docdir_path
+    elif docdir:
+        # Find a file matching `html/libraries/base-*.*.*.*/*` and infer `docdir` from its path.
+        # `GHC.Paths.docdir` reports paths such as `.../doc/html/libraries/base-4.13.0.0`.
+        for f in docdir:
+            html_start = f.path.find("html/libraries/base-")
+            if html_start != -1:
+                base_end = f.path.find("/", html_start + len("html/libraries/base-"))
+                if base_end != -1:
+                    docdir_path = f.path[:base_end]
+                    break
+        if docdir_path == None:
+            fail("Could not infer `docdir_path` from provided `docdir` attribute. Missing `lib/settings` file.", "docdir")
+    else:
+        fail("One of `docdir` and `docdir_path` is required.")
+
     # Get the versions of every prebuilt package.
     ghc_pkg = ghc_binaries["ghc-pkg"]
     pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
@@ -143,6 +176,11 @@ def _haskell_toolchain_impl(ctx):
         platform_common.ToolchainInfo(
             name = ctx.label.name,
             tools = struct(**tools_struct_args),
+            bindir = ctx.files.tools,
+            libdir = libdir,
+            libdir_path = libdir_path,
+            docdir = docdir,
+            docdir_path = docdir_path,
             compiler_flags = ctx.attr.compiler_flags,
             repl_ghci_args = ctx.attr.repl_ghci_args,
             haddock_flags = ctx.attr.haddock_flags,
@@ -166,7 +204,6 @@ def _haskell_toolchain_impl(ctx):
                 run_ghc = _run_ghc,
             ),
             libraries = libraries,
-            files = ctx.files.files,
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
             static_runtime = ctx.attr.static_runtime,
@@ -189,9 +226,17 @@ _haskell_toolchain = rule(
             doc = "The set of libraries that come with GHC. Requires haskell_import targets.",
             mandatory = True,
         ),
-        "files": attr.label_list(
-            allow_files = True,
-            doc = "Files that GHC requires to function. Should not include `libraries`.",
+        "libdir": attr.label_list(
+            doc = "The files contained in GHC's libdir that Bazel should track. C.f. `ghc --print-libdir`. Do not specify this for a globally installed GHC distribution, e.g. a Nix provided one. One of `libdir` or `libdir_path` is required.",
+        ),
+        "libdir_path": attr.string(
+            doc = "The absolute path to GHC's libdir. C.f. `ghc --print-libdir`. Specify this if `libdir` is left empty. One of `libdir` or `libdir_path` is required.",
+        ),
+        "docdir": attr.label_list(
+            doc = "The files contained in GHC's docdir that Bazel should track. C.f. `GHC.Paths.docdir` from `ghc-paths`. Do not specify this for a globally installed GHC distribution, e.g. a Nix provided one. One of `docdir` or `docdir_path` is required.",
+        ),
+        "docdir_path": attr.string(
+            doc = "The absolute path to GHC's docdir. C.f. `GHC.Paths.docdir` from `ghc-paths`. Specify this if `docdir` is left empty. One of `docdir` or `docdir_path` is required.",
         ),
         "compiler_flags": attr.string_list(
             doc = "A collection of flags that will be passed to GHC on every invocation.",
