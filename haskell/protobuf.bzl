@@ -154,6 +154,12 @@ def _haskell_proto_aspect_impl(target, ctx):
         mnemonic = "HaskellProtoc",
         executable = pb.protoc,
         arguments = [args],
+        env = {
+            "RULES_HASKELL_GHC_PATH": hs.tools.ghc.path,
+            "RULES_HASKELL_GHC_PKG_PATH": hs.tools.ghc_pkg.path,
+            "RULES_HASKELL_LIBDIR_PATH": hs.libdir_path,
+            "RULES_HASKELL_DOCDIR_PATH": hs.docdir_path,
+        },
     )
 
     patched_attrs = {
