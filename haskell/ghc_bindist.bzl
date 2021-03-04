@@ -367,10 +367,6 @@ def _ghc_bindist_impl(ctx):
         patch_args.extend(["-d", unpack_dir])
     patch(ctx, patch_args = patch_args)
 
-    # As the patches may touch the package DB we regenerate the cache.
-    if len(ctx.attr.patches) > 0:
-        execute_or_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"], working_directory = unpack_dir)
-
     # On Windows the bindist already contains the built executables
     if os != "windows":
         # IMPORTANT: all these scripts have to be compatible with BSD
@@ -401,6 +397,10 @@ DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(
             bindist_dir = bindist_dir.realpath,
         ))
         execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
+
+    # As the patches may touch the package DB we regenerate the cache.
+    if len(ctx.attr.patches) > 0:
+        execute_or_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
 
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, "lib")
     locale = ctx.attr.locale or "en_US.UTF-8" if os == "darwin" else "C.UTF-8"
