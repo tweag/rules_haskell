@@ -182,7 +182,7 @@ _haskell_toolchain = rule(
     _haskell_toolchain_impl,
     attrs = {
         "tools": attr.label_list(
-            doc = "GHC and executables that come with it. First item take precedance.",
+            doc = "GHC and executables that come with it. First item take precedence.",
             mandatory = True,
         ),
         "libraries": attr.label_list(
