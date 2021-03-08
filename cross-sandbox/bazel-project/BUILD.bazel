@@ -4,9 +4,9 @@ package(default_visibility = ["//visibility:public"])
 # Load rules_haskell rules.
 load(
     "@rules_haskell//haskell:defs.bzl",
-    "haskell_toolchain_library",
-    "haskell_library",
     "haskell_binary",
+    "haskell_library",
+    "haskell_toolchain_library",
 )
 
 # haskell_toolchain_library can access builtin GHC packages
@@ -29,15 +29,16 @@ haskell_toolchain_library(name = "base")
 haskell_binary(
     name = "example",
     srcs = [":Example.hs"],
-    deps = [":base", "@stackage//:zlib"],
+    deps = [
+        ":base",
+        "@stackage//:zlib",
+    ],
 )
 
 platform(
     name = "myplatform",
     constraint_values = [
-       "@platforms//os:linux",
-       "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
     ],
 )
-
-
