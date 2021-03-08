@@ -186,7 +186,7 @@ _haskell_toolchain = rule(
             mandatory = True,
         ),
         "libraries": attr.label_list(
-            doc = "The set of libraries that come with GHC.",
+            doc = "The set of libraries that come with GHC. Requires haskell_import targets.",
             mandatory = True,
         ),
         "files": attr.label_list(
