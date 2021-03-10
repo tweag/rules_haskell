@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 build_ghcide() {
-  bazel build @ghcide-exe//ghcide \
+  bazel build //tests/ghcide \
     --experimental_show_artifacts \
     2>&1 \
     | awk '
