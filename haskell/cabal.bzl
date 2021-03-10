@@ -153,7 +153,7 @@ def _concat(sequences):
 def _uniquify(xs):
     return depset(xs).to_list()
 
-def _cabal_toolchain_info(hs, cc, workspace_name):
+def _cabal_toolchain_info(hs, cc, workspace_name, runghc):
     """Yields a struct containing the toolchain information needed by the cabal wrapper"""
 
     # If running on darwin but XCode is not installed (i.e., only the Command
@@ -168,7 +168,7 @@ def _cabal_toolchain_info(hs, cc, workspace_name):
     return struct(
         ghc = hs.tools.ghc.path,
         ghc_pkg = hs.tools.ghc_pkg.path,
-        runghc = hs.tools.runghc.path,
+        runghc = runghc.path,
         ar = ar,
         cc = cc.tools.cc,
         strip = cc.tools.strip,
@@ -198,6 +198,7 @@ def _prepare_cabal_inputs(
         flags,
         generate_haddock,
         cabal_wrapper,
+        runghc,
         package_database,
         verbose,
         transitive_haddocks,
@@ -345,11 +346,11 @@ def _prepare_cabal_inputs(
         runghc_args = runghc_args,
         extra_args = extra_args,
         path_args = path_args,
-        toolchain_info = _cabal_toolchain_info(hs, cc, workspace_name),
+        toolchain_info = _cabal_toolchain_info(hs, cc, workspace_name, runghc),
     )
 
     inputs = depset(
-        [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.runghc],
+        [setup, hs.tools.ghc, hs.tools.ghc_pkg, runghc],
         transitive = [
             depset(srcs),
             depset(cc.files),
@@ -503,6 +504,7 @@ def _haskell_cabal_library_impl(ctx):
         flags = ctx.attr.flags,
         generate_haddock = ctx.attr.haddock,
         cabal_wrapper = ctx.executable._cabal_wrapper,
+        runghc = ctx.executable._runghc,
         package_database = package_database,
         verbose = ctx.attr.verbose,
         is_library = True,
@@ -667,6 +669,11 @@ haskell_cabal_library = rule(
             cfg = "host",
             default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
+        "_runghc": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@rules_haskell//haskell:runghc"),
+        ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
@@ -790,6 +797,7 @@ def _haskell_cabal_binary_impl(ctx):
         flags = ctx.attr.flags,
         generate_haddock = False,
         cabal_wrapper = ctx.executable._cabal_wrapper,
+        runghc = ctx.executable._runghc,
         package_database = package_database,
         verbose = ctx.attr.verbose,
         dynamic_file = binary,
@@ -881,6 +889,11 @@ haskell_cabal_binary = rule(
             executable = True,
             cfg = "host",
             default = Label("@rules_haskell//haskell:cabal_wrapper"),
+        ),
+        "_runghc": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@rules_haskell//haskell:runghc"),
         ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
