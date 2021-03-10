@@ -722,9 +722,23 @@ def _configure_python3_toolchain(name):
 #
 # The first instance of such an error occurred with the GHC bindist on
 # BazelCI [1] and shortly after on the GitHub actions CI pipeline. However,
-# only the `lib/settings` file was reported missing.
+# only the `lib/settings` file was reported missing. In that instance it was
+# sufficient to track `lib/settings` as an explicit build input to avoid this
+# error.
 #
-# Do extend the `files` toolchain attributes with further files if such
-# errors occurr in the future.
+# However, the issue re-appeared on the Bazel@HEAD CI pipeline [2]. It turns
+# out that the failing builds were referencing the `lib/settings` file in a
+# different sandbox working directory. I.e. build actions were leaking absolute
+# paths to the sandbox working directory in build artifacts. In this case the
+# `ghc-paths` package was the root of the issue. It uses a custom Cabal setup
+# that hard codes the path to the GHC installation. In the GHC bindist case
+# this path lies within the sandbox working directory and may no longer be
+# valid in later build actions or at runtime.
+#
+# To avoid this type of issue we provide a Bazel compatible replacement of the
+# `ghc-paths` package in `//tools/ghc-paths`. Refer to
+# `//tools/ghc-paths:README.md` and [3] for further information.
 #
 # [1]: https://github.com/tweag/rules_haskell/issues/1470
+# [2]: https://github.com/tweag/rules_haskell/issues/1495
+# [3]: https://github.com/tweag/rules_haskell/pull/1508
