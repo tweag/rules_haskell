@@ -11,7 +11,7 @@ def _add_data_impl(ctx):
         is_executable = True,
     )
 
-    runfiles = ctx.runfiles(files = [ctx.executable.executable] + ctx.files.data)
+    runfiles = ctx.runfiles(files = [executable, ctx.executable.executable] + ctx.files.data)
     runfiles = runfiles.merge(ctx.attr.executable[DefaultInfo].default_runfiles)
     for data_dep in ctx.attr.data:
         runfiles = runfiles.merge(data_dep[DefaultInfo].default_runfiles)
