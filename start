@@ -153,7 +153,7 @@ load(
 # https://github.com/tweag/rules_nixpkgs/blob/master/README.md
 nixpkgs_git_repository(
     name = "nixpkgs",
-    revision = "19.03",
+    revision = "20.09",
     # sha256 = …
 )
 
@@ -176,7 +176,7 @@ load(
 haskell_register_ghc_nixpkgs(
     repository = "@nixpkgs",
     attribute_path = "ghc",
-    version = "8.6.4",
+    version = "8.8.4",
 )
 EOF
 )
