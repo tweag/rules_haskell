@@ -199,7 +199,12 @@ cc_library(
     includes = ["."],
     visibility = ["//visibility:public"],
 )
-cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+cc_library(
+    name = "z",
+    srcs = glob(["*.c"]),
+    hdrs = glob(["*.h"]),
+    copts = ["-Wno-implicit-function-declaration"],
+)
 EOF
     ;;
 
