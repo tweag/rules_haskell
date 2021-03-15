@@ -154,7 +154,8 @@ haskell_register_ghc_nixpkgs(
 # For zlib.BUILD.bazel
 nixpkgs_package(
     name = "nixpkgs_zlib",
-    attribute_path = "zlib",
+#    attribute_path = "zlib",
+    attribute_path = "pkgsCross.aarch64-multiplatform.zlib",
     repository = "@nixpkgs",
 )
 
