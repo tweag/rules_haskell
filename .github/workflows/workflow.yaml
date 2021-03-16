@@ -44,14 +44,11 @@ jobs:
           nix-shell --arg docTools false --pure --run .ci/check-bazel-version
       - name: Build & test
         run: |
-          # XXX 2019-01-22 Disable start script checking on Darwin
-          # due to a clash between binutils and clang.
-          [[ ${{ matrix.os }} != macos ]] &&
-            nix-shell --arg docTools false --pure --run \
-              './tests/run-start-script.sh --use-nix'
           nix-shell --arg docTools false --pure --run '
-            bazel build //tests:run-tests &&
-            ./bazel-ci-bin/tests/run-tests &&
+            set -euo pipefail
+            ./tests/run-start-script.sh --use-nix
+            bazel build //tests:run-tests
+            ./bazel-ci-bin/tests/run-tests
             bazel coverage //tests/...
             '
   test-bindist:
@@ -97,10 +94,7 @@ jobs:
         run: |
           export PATH=$HOME/bazel:$PATH
           [[ ${{ matrix.os }} == macos ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
-          # XXX 2019-01-22 Disable start script checking on Darwin
-          # due to a clash between binutils and clang.
-          [[ ${{ matrix.os }} != macos ]] && \
-            ./tests/run-start-script.sh --use-bindists
+          ./tests/run-start-script.sh --use-bindists
           bazel test //tests/...
           # Test stack_snapshot pinning
           # NOTE keep in sync with tests/RunTests.hs
