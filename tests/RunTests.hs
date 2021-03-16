@@ -100,6 +100,8 @@ main = hspec $ do
       outputSatisfy p' (bazel ["run", "//tests/multi_repl:core_package_dep", "--", "-ignore-dot-ghci", "-e", ":show targets"])
     it "doesn't allow to manually load modules" $ do
       assertFailure (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":load BC.C", "-e", "c"])
+    it "fails on version macro name collisions" $ do
+      assertFailure (bazel ["run", "//tests/multi_repl:name_collision", "--", "-ignore-dot-ghci", "-e", "foo"])
 
   describe "ghcide" $ do
     it "loads RunTests.hs" $

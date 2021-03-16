@@ -1,0 +1,30 @@
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_toolchain_library",
+)
+
+haskell_library(
+    name = "base",
+    srcs = [
+        "Base.hs",
+    ],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+
+haskell_library(
+    name = "name_collision",
+    srcs = [
+        "Lib.hs",
+    ],
+    deps = [
+        ":base",
+        "//tests/hackage:base",
+    ],
+)
+
