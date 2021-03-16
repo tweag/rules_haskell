@@ -386,7 +386,7 @@ any given target (or indeed all targets), like in the following:
   $ bazel build //my/pkg:mylib \
       --aspects @rules_haskell//haskell:defs.bzl%haskell_doc_aspect
 
-.. _haskell_doc: https://api.haskell.build/haskell/haddock.html#haskell_doc
+.. _haskell_doc: https://api.haskell.build/haskell/defs.html#haskell_doc
 
 Linting your code
 -----------------
