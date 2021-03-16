@@ -16,7 +16,7 @@ def _runghc_impl(ctx):
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     (_, extension) = paths.split_extension(hs_toolchain.tools.runghc.path)
 
-    runghc_file = ctx.actions.declare_file(ctx.label.name + "2" + extension)
+    runghc_file = ctx.actions.declare_file(ctx.label.name + extension)
     ctx.actions.symlink(
         output = runghc_file,
         target_file = hs_toolchain.tools.runghc,
