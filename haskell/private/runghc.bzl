@@ -26,7 +26,7 @@ def _runghc_impl(ctx):
     return [DefaultInfo(
         executable = runghc_file,
         runfiles = hs_toolchain.cc_wrapper.runfiles.merge(
-            ctx.runfiles(files = [hs_toolchain.tools.runghc]),
+            ctx.runfiles(files = [runghc_file, hs_toolchain.tools.runghc]),
         ),
     )]
 
