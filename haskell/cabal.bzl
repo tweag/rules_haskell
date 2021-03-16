@@ -816,7 +816,7 @@ def _haskell_cabal_binary_impl(ctx):
             binary,
             data_dir,
         ],
-        tools = [c.cabal_wrapper],
+        tools = [c.cabal_wrapper, ctx.executable._runghc],
         env = c.env,
         mnemonic = "HaskellCabalBinary",
         progress_message = "HaskellCabalBinary {}".format(hs.label),

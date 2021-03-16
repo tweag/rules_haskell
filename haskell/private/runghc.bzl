@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 # Note [Running Setup.hs when cross-compiling]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7,32 +8,57 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 # platform. In order to achieve this, we provide a runghc of a
 # toolchain targeting the execution platform.
 #
-# Producing runghc with a custom rule, as defined here, allows to use
-# it in rules which are using a Haskell toolchain for the target
-# platform.
+# Producing a runghc wrapper with a custom rule, as defined here,
+# allows to use it in rules which are using a Haskell toolchain for
+# the target platform.
 #
 
-def _runghc_impl(ctx):
+def _runghc_wrapper_impl(ctx):
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
-    (_, extension) = paths.split_extension(hs_toolchain.tools.runghc.path)
 
-    runghc_file = ctx.actions.declare_file(ctx.label.name + extension)
-    ctx.actions.symlink(
-        output = runghc_file,
-        target_file = hs_toolchain.tools.runghc,
+    f = hs_toolchain.tools.runghc
+    runghc_runfile_path = paths.join(f.owner.workspace_name, f.owner.package, f.owner.name)
+    runghc_wrapper_file = ctx.actions.declare_file(ctx.label.name)
+    ctx.actions.write(
+        output = runghc_wrapper_file,
+        content = """\
+#!/usr/bin/env python3
+
+import subprocess
+import sys
+from rules_python.python.runfiles import runfiles
+
+r = runfiles.Create()
+
+subprocess.run([r.Rlocation("{runghc}")] + sys.argv[1:], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+""".format(runghc = runghc_runfile_path),
         is_executable = True,
     )
 
     return [DefaultInfo(
-        executable = runghc_file,
+        executable = runghc_wrapper_file,
         runfiles = hs_toolchain.cc_wrapper.runfiles.merge(
-            ctx.runfiles(files = [runghc_file, hs_toolchain.tools.runghc]),
+            ctx.runfiles(files = [runghc_wrapper_file, hs_toolchain.tools.runghc]),
         ),
     )]
 
-runghc = rule(
+_runghc_wrapper = rule(
     executable = True,
-    implementation = _runghc_impl,
+    implementation = _runghc_wrapper_impl,
     toolchains = ["@rules_haskell//haskell:toolchain"],
-    doc = """Produces the runghc program.""",
+    doc = """Produces the runghc wrapper script.""",
 )
+
+def runghc(name, **kwargs):
+    _runghc_wrapper(name = name + ".py")
+    py_binary(
+        name = name,
+        srcs = [name + ".py"],
+        data = [name + ".py"],
+        srcs_version = "PY3",
+        python_version = "PY3",
+        deps = [
+            "@rules_python//python/runfiles",
+        ],
+        **kwargs
+    )
