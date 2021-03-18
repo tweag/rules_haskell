@@ -30,7 +30,7 @@ from rules_python.python.runfiles import runfiles
 
 r = runfiles.Create()
 
-subprocess.run([r.Rlocation("{runghc}")] + sys.argv[1:], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+subprocess.run([r.Rlocation("{runghc}")] + sys.argv[1:], check=True)
 """.format(runghc = runghc_runfile_path),
         is_executable = True,
     )
