@@ -13,6 +13,10 @@ load(
     "cabal_wrapper",
 )
 load(
+    "@rules_haskell//haskell:private/runghc.bzl",
+    "runghc",
+)
+load(
     "@rules_haskell//haskell:toolchain_info.bzl",
     "haskell_toolchain_info",
 )
@@ -97,6 +101,11 @@ py_library(
     srcs = ["private/package_configuration.py"],
     imports = ["private"],
     visibility = ["//tests/package_configuration:__subpackages__"],
+)
+
+runghc(
+    name = "runghc",
+    visibility = ["//visibility:public"],
 )
 
 py_binary(
