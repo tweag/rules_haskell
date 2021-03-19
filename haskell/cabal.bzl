@@ -350,7 +350,7 @@ def _prepare_cabal_inputs(
     )
 
     inputs = depset(
-        [setup, hs.tools.ghc, hs.tools.ghc_pkg, runghc],
+        [setup, hs.tools.ghc, hs.tools.ghc_pkg],
         transitive = [
             depset(srcs),
             depset(cc.files),
