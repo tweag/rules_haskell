@@ -24,7 +24,7 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
             "//conditions:default": [],
         },
     )
-    nixpkgs_ghc_path = repository_ctx.path(repository_ctx.attr._nixpkgs_ghc).dirname.dirname
+    nixpkgs_ghc_path = repository_ctx.path(repository_ctx.attr.nixpkgs_ghc).dirname.dirname
 
     # Symlink content of ghc external repo. In effect, this repo has
     # the same content, but with a BUILD file that includes generated
@@ -52,7 +52,7 @@ Available versions:
         libraries = "toolchain_libraries",
         # See Note [GHC toolchain files] in haskell/ghc_bindist.bzl
         files = [],
-        tools = ["@rules_haskell_ghc_nixpkgs//:bin"],
+        tools = ["@{}//:bin".format(repository_ctx.attr.nixpkgs_ghc_repo_name)],
         version = repr(repository_ctx.attr.version),
         static_runtime = repository_ctx.attr.static_runtime,
         fully_static_link = repository_ctx.attr.fully_static_link,
@@ -106,13 +106,14 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         "cabalopts": attr.string_list(),
         "repl_ghci_args": attr.string_list(),
         "locale_archive": attr.string(),
+        "nixpkgs_ghc_repo_name": attr.string(),
         # Unfortunately, repositories cannot depend on each other
         # directly. They can only depend on files inside each
         # repository. We need to be careful to depend on files that
         # change anytime any content in a repository changes, like
         # bin/ghc, which embeds the output path, which itself changes
         # if any input to the derivation changed.
-        "_nixpkgs_ghc": attr.label(default = "@rules_haskell_ghc_nixpkgs//:bin/ghc"),
+        "nixpkgs_ghc": attr.label(),
         "locale": attr.string(
             default = "C.UTF-8",
         ),
@@ -140,20 +141,27 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
 toolchain(
     name = "toolchain",
     toolchain_type = "@rules_haskell//haskell:toolchain",
-    toolchain = "@rules_haskell_ghc_nixpkgs_haskell_toolchain//:toolchain-impl",
+    toolchain = "@{haskell_toolchain}//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
         """.format(
             exec_constraints = exec_constraints,
             target_constraints = target_constraints,
+            haskell_toolchain = repository_ctx.attr.haskell_toolchain_repo_name,
         ),
     )
 
-_ghc_nixpkgs_toolchain = repository_rule(_ghc_nixpkgs_toolchain_impl)
+_ghc_nixpkgs_toolchain = repository_rule(
+    implementation = _ghc_nixpkgs_toolchain_impl,
+    attrs = {
+        "haskell_toolchain_repo_name": attr.string(),
+    },
+)
 
 def haskell_register_ghc_nixpkgs(
         version,
+        name = "rules_haskell",
         is_static = None,  # DEPRECATED. See _check_static_attributes_compatibility.
         static_runtime = None,
         fully_static_link = None,
@@ -219,10 +227,10 @@ def haskell_register_ghc_nixpkgs(
       sh_posix_attributes: List of attribute paths to extract standard Unix shell tools from.
         Passed to nixpkgs_sh_posix_configure.
     """
-    nixpkgs_ghc_repo_name = "rules_haskell_ghc_nixpkgs"
-    nixpkgs_sh_posix_repo_name = "rules_haskell_sh_posix_nixpkgs"
-    haskell_toolchain_repo_name = "rules_haskell_ghc_nixpkgs_haskell_toolchain"
-    toolchain_repo_name = "rules_haskell_ghc_nixpkgs_toolchain"
+    nixpkgs_ghc_repo_name = "{}_ghc_nixpkgs".format(name)
+    nixpkgs_sh_posix_repo_name = "{}_sh_posix_nixpkgs".format(name)
+    haskell_toolchain_repo_name = "{}_ghc_nixpkgs_haskell_toolchain".format(name)
+    toolchain_repo_name = "{}_ghc_nixpkgs_toolchain".format(name)
 
     static_runtime, fully_static_link = _check_static_attributes_compatibility(
         is_static = is_static,
@@ -257,10 +265,15 @@ def haskell_register_ghc_nixpkgs(
         repl_ghci_args = repl_ghci_args,
         locale_archive = locale_archive,
         locale = locale,
+        nixpkgs_ghc_repo_name = nixpkgs_ghc_repo_name,
+        nixpkgs_ghc = "@{}//:bin/ghc".format(nixpkgs_ghc_repo_name),
     )
 
     # toolchain definition.
-    _ghc_nixpkgs_toolchain(name = toolchain_repo_name)
+    _ghc_nixpkgs_toolchain(
+        name = toolchain_repo_name,
+        haskell_toolchain_repo_name = haskell_toolchain_repo_name,
+    )
     native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
 
     # Unix tools toolchain required for Cabal packages
