@@ -27,6 +27,10 @@ def haskell_context(ctx, attr = None):
 
     env = {
         "LANG": toolchain.locale,
+        "RULES_HASKELL_GHC_PATH": toolchain.tools.ghc.path,
+        "RULES_HASKELL_GHC_PKG_PATH": toolchain.tools.ghc_pkg.path,
+        "RULES_HASKELL_LIBDIR_PATH": toolchain.libdir_path,
+        "RULES_HASKELL_DOCDIR_PATH": toolchain.docdir_path,
     }
 
     if toolchain.locale_archive != None:

@@ -248,6 +248,18 @@ You can override the `cc_toolchain` chosen with the following flag:
 ```
 This chooses the `cc_toolchain` bundled with GHC.
 
+### GHC settings file does not exist
+
+If you use the GHC bindist toolchain, i.e. `haskell_register_ghc_bindists`, then you may encounter the following type of error with packages that use the GHC API, e.g. `doctest`, `ghcide`, or `proto-lens-protoc`:
+
+```
+.../lib/settings: openFile: does not exist (No such file or directory)
+```
+
+This could be caused by a dependency on the `ghc-paths` package which bakes the path to the GHC installation at build time into the binary. In the GHC bindist use case this path points into Bazel's sandbox working directory which can change between build actions and between build-time and runtime.
+
+You can use `@rules_haskell//tools/ghc-paths` as a drop-in replacement to work around this issue. See `tools/ghc-paths/README.md` for further details.
+
 ## For `rules_haskell` developers
 
 ### Configuring your platform
