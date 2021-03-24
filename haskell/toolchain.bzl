@@ -1,6 +1,5 @@
 """Rules for defining toolchains"""
 
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load(
@@ -20,10 +19,7 @@ load(":cc.bzl", "ghc_cc_program_args")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
-def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, env = None, progress_message = None, input_manifests = None):
-    if not env:
-        env = hs.env
-
+def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = None, progress_message = None, input_manifests = None):
     args = hs.actions.args()
     extra_inputs = []
 
@@ -83,7 +79,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, params_file = None, e
         executable = hs.ghc_wrapper,
         mnemonic = mnemonic,
         progress_message = progress_message,
-        env = dicts.add(env, cc.env),
+        env = env,
         arguments = [compile_flags_file.path, flagsfile_prefix + flagsfile.path],
         execution_requirements = execution_requirements,
     )

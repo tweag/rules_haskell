@@ -1,5 +1,6 @@
 """Actions for linking object code produced by compilation"""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/cc_libraries.bzl", "create_link_config")
@@ -186,6 +187,7 @@ def link_binary(
         mnemonic = "HaskellLinkBinary",
         arguments = args,
         params_file = objects_dir_manifest,
+        env = dicts.add(hs.env, cc.env),
     )
 
     return (executable, dynamic_libs)
@@ -368,6 +370,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, my_pk
         mnemonic = "HaskellLinkDynamicLibrary",
         arguments = args,
         params_file = objects_dir_manifest,
+        env = dicts.add(hs.env, cc.env),
     )
 
     return dynamic_library
