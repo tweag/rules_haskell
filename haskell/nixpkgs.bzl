@@ -297,6 +297,8 @@ def haskell_register_ghc_nixpkgs(
     )
 
     # toolchain definition.
+    if (exec_constraints == None) != (target_constraints == None):
+        fail("Both exec_constraints and target_constraints need to be provided or none of them.")
     _ghc_nixpkgs_toolchain(
         name = toolchain_repo_name,
         exec_constraints = exec_constraints,
