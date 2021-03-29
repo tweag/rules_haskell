@@ -93,7 +93,6 @@ jobs:
         shell: bash
         run: |
           export PATH=$HOME/bazel:$PATH
-          [[ ${{ matrix.os }} == macos ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           ./tests/run-start-script.sh --use-bindists
           bazel test //tests/...
           # Test stack_snapshot pinning
