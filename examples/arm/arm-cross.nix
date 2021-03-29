@@ -10,11 +10,20 @@ let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
       set -euo pipefail
       # Unset configure flags as configure should have run already
       unset configureFlags
-      PORT=$((5000 + $RANDOM % 5000))
-      (>&2 echo "---> Starting remote-iserv on port $PORT")
-      ${qemu}/bin/qemu-aarch64 ${remote-iserv}/bin/remote-iserv tmp $PORT &
+      # We try starting the remote-iserv process a few times,
+      # in case the chosen port is taken.
+      for((i=0;i<4;i++))
+      do
+          PORT=$((5000 + $RANDOM % 5000))
+          (>&2 echo "---> Starting remote-iserv on port $PORT")
+          rm -rf iserv-pipe
+          mkfifo iserv-pipe
+          exec 3<> iserv-pipe
+          ${qemu}/bin/qemu-aarch64 ${remote-iserv}/bin/remote-iserv tmp $PORT -v &> iserv-pipe &
+          RISERV_PID="$!"
+          head -1 iserv-pipe | grep -q "Opening socket" && break
+      done
       (>&2 echo "---| remote-iserv should have started on $PORT")
-      RISERV_PID="$!"
       ${iserv-proxy}/bin/iserv-proxy $@ 127.0.0.1 "$PORT"
       (>&2 echo "---> killing remote-iserve...")
       kill $RISERV_PID
