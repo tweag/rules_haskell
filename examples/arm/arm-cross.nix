@@ -3,7 +3,6 @@ let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
     pkgs = import haskellNix.sources.nixpkgs haskellNix.nixpkgsArgs;
     iserv-proxy = pkgs.buildPackages.ghc-extra-packages.ghc8102.iserv-proxy.components.exes.iserv-proxy;
     remote-iserv = crossPkgs.ghc-extra-packages.ghc8102.remote-iserv.components.exes.remote-iserv;
-    llvm = pkgs.llvm_9;
     crossNumactl = crossPkgs.numactl;
     qemu = pkgs.buildPackages.qemu;
     qemuIservWrapper = pkgs.writeScriptBin "iserv-wrapper" ''
@@ -24,7 +23,7 @@ let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
     crossGHCLLVMWrapper = pkgs.writeScriptBin "ghc-llvm-wrapper" ''
       #!${pkgs.stdenv.shell}
       set -euo pipefail
-      PATH="${llvm}/bin:''${PATH:-}" ${crossGHC}/bin/aarch64-unknown-linux-gnu-ghc -pgmi ${qemuIservWrapper}/bin/iserv-wrapper -fexternal-interpreter -optl-L${crossNumactl}/lib "$@"
+      PATH="${pkgs.llvm_9}/bin:''${PATH:-}" ${crossGHC}/bin/aarch64-unknown-linux-gnu-ghc -pgmi ${qemuIservWrapper}/bin/iserv-wrapper -fexternal-interpreter -optl-L${crossNumactl}/lib "$@"
       '';
  
     crossGHC = crossPkgs.buildPackages.haskell-nix.compiler.ghc8102;
