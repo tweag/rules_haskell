@@ -13,12 +13,13 @@ filegroup(
     srcs = glob(["include/*.h"]),
     visibility = ["//visibility:public"],
 )
+
 cc_library(
     name = "zlib",
-	srcs = select({
+    srcs = select({
         "//:is_linux_aarch64": ["@nixpkgs_zlib_arm//:lib"],
         "//conditions:default": ["@nixpkgs_zlib_x86//:lib"],
-	}),
+    }),
     hdrs = [":include"],
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
