@@ -3,7 +3,7 @@ with `rules_haskell`.
 
 Build with
 ```
-nix-shell --pure --run "cd examples/arm; bazel build //... --platforms=//:linux_aarch64"
+nix-shell --pure --run "cd examples/arm; bazel build //... --platforms=//:linux_aarch64 --config linux-nixpkgs"
 ```
 
 ## Configuration remarks
