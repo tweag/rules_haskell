@@ -137,7 +137,7 @@ nixpkgs_package(
 
 nixpkgs_package(
     name = "zlib.dev",
-    build_file = "//:zlib.BUILD.bazel",
+    build_file = "//:BUILD.zlib.bazel",
     repository = "@nixpkgs",
 )
 
