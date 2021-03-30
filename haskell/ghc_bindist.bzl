@@ -604,6 +604,14 @@ def haskell_register_ghc_bindists(
 
     [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
 
+    Args:
+      version: [see ghc_bindist](#ghc_bindist-name)
+      compiler_flags: [see ghc_bindist](#ghc_bindist-compiler_flags)
+      haddock_flags: [see ghc_bindist](#ghc_bindist-haddock_flags)
+      repl_ghci_args: [see ghc_bindist](#ghc_bindist-repl_ghci_args)
+      cabalopts: [see ghc_bindist](#ghc_bindist-cabalopts)
+      locale: [see ghc_bindist](#ghc_bindist-local)
+
     """
     version = version or _GHC_DEFAULT_VERSION
     if not GHC_BINDIST.get(version):

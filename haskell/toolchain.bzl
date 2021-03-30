@@ -322,6 +322,7 @@ def haskell_toolchain(
       ```
 
     Args:
+      name: A unique name for this toolchain.
       version: Version of your GHC compiler. It has to match the version reported by the GHC used by bazel.
       static_runtime: Whether GHC was linked with a static runtime.
       fully_static_link: Whether GHC should build fully-statically-linked binaries.
@@ -338,6 +339,7 @@ def haskell_toolchain(
         Use `--haddock-option=--optghc=OPT` if haddock generation requires additional compiler flags.
       locale_archive: Label pointing to the locale archive file to use.\\
         Linux-specific and mostly useful on NixOS.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
 
     """
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]

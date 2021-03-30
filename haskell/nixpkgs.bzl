@@ -251,8 +251,17 @@ def haskell_register_ghc_nixpkgs(
       fully_static_link: True if and only if fully-statically-linked binaries are to be built.
       compiler_flags_select: temporary workaround to pass conditional arguments.
         See https://github.com/bazelbuild/bazel/issues/9199 for details.
+      attribute_path: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-attribute_path)
+      build_file: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-build_file)
+      build_file_content: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-build_file_content)
+      nix_file: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-nix_file)
+      nix_file_deps: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-nix_file_deps)
+      nix_file_content: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-nix_file_content)
+      nixopts: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-nixopts)
+      repositories: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-repositories)
+      repository: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-repository)
       sh_posix_attributes: List of attribute paths to extract standard Unix shell tools from.
-        Passed to nixpkgs_sh_posix_configure.
+        Passed to [nixpkgs_sh_posix_configure](https://github.com/tweag/rules_nixpkgs#nixpkgs_sh_posix_configure).
     """
     nixpkgs_ghc_repo_name = "{}_ghc_nixpkgs".format(name)
     nixpkgs_sh_posix_repo_name = "{}_sh_posix_nixpkgs".format(name)

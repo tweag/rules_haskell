@@ -205,7 +205,9 @@ def c2hs_toolchain(name, c2hs, **kwargs):
       ```
 
     Args:
+      name: A unique name for the toolchain.
       c2hs: The c2hs executable.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
 
     """
     impl_name = name + "-impl"

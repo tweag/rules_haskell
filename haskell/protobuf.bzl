@@ -446,6 +446,7 @@ def haskell_proto_toolchain(
       ```
 
     Args:
+      name: A unique name for this toolchain.
       protoc: Protoc compiler.
       plugin: Proto-lens-protoc plugin for protoc.
       deps: List of other Haskell libraries to be linked to protobuf libraries.
