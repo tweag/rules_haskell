@@ -165,7 +165,6 @@ _c2hs_toolchain = rule(
     _c2hs_toolchain_impl,
     attrs = {
         "c2hs": attr.label(
-            doc = "The c2hs executable.",
             mandatory = True,
             allow_single_file = True,
             executable = True,
@@ -204,6 +203,10 @@ def c2hs_toolchain(name, c2hs, **kwargs):
 
       register_toolchains("//:c2hs")
       ```
+
+    Args:
+      c2hs: The c2hs executable.
+
     """
     impl_name = name + "-impl"
     _c2hs_toolchain(

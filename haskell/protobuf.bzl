@@ -373,17 +373,14 @@ _protobuf_toolchain = rule(
             cfg = "host",
             allow_single_file = True,
             mandatory = True,
-            doc = "protoc compiler",
         ),
         "plugin": attr.label(
             executable = True,
             cfg = "host",
             allow_single_file = True,
             mandatory = True,
-            doc = "proto-lens-protoc plugin for protoc",
         ),
         "deps": attr.label_list(
-            doc = "List of other Haskell libraries to be linked to protobuf libraries.",
             aspects = [haskell_cc_libraries_aspect],
         ),
     },
@@ -447,6 +444,11 @@ def haskell_proto_toolchain(
         "//tests:protobuf-toolchain",
       )
       ```
+
+    Args:
+      protoc: Protoc compiler.
+      plugin: Proto-lens-protoc plugin for protoc.
+      deps: List of other Haskell libraries to be linked to protobuf libraries.
 
     """
     impl_name = name + "-impl"

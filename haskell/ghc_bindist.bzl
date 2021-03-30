@@ -464,7 +464,6 @@ _ghc_bindist = repository_rule(
             doc = "Sequence of commands to be applied after patches are applied.",
         ),
         "locale": attr.string(
-            doc = "Locale that will be set during compiler invocations. Default: C.UTF-8 (en_US.UTF-8 on MacOS)",
             mandatory = False,
         ),
     },
@@ -538,6 +537,12 @@ def ghc_bindist(
          version = "8.2.2",
        )
        ```
+
+    Args:
+      version: The desired GHC version
+      locale: Locale that will be set during compiler
+        invocations. Default: C.UTF-8 (en_US.UTF-8 on MacOS)
+
     """
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
