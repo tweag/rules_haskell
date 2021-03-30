@@ -101,4 +101,5 @@ in
       [ prefixStrippedGCC
       ];
   };
+  inherit pkgs;
 }

@@ -7,6 +7,13 @@ cd examples/arm
 nix-shell --pure --run "bazel build //... --platforms=//:linux_aarch64 --config linux-nixpkgs
 ```
 
+Run with
+```
+cd examples/arm
+nix-shell --pure qemu-shell.nix --run "qemu-aarch64 bazel-bin/example"
+nix-shell --pure qemu-shell.nix --run "qemu-aarch64 bazel-bin/example2"
+```
+
 ## Configuration remarks
 
 Cross compilation of TH is accomplished by running the external
