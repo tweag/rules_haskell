@@ -216,11 +216,9 @@ _haskell_toolchain = rule(
     _haskell_toolchain_impl,
     attrs = {
         "tools": attr.label_list(
-            doc = "GHC and executables that come with it. First item take precedence.",
             mandatory = True,
         ),
         "libraries": attr.label_list(
-            doc = "The set of libraries that come with GHC. Requires haskell_import targets.",
             mandatory = True,
         ),
         "libdir": attr.label_list(
@@ -235,26 +233,11 @@ _haskell_toolchain = rule(
         "docdir_path": attr.string(
             doc = "The absolute path to GHC's docdir. C.f. `GHC.Paths.docdir` from `ghc-paths`. Specify this if `docdir` is left empty. One of `docdir` or `docdir_path` is required.",
         ),
-        "compiler_flags": attr.string_list(
-            doc = "A collection of flags that will be passed to GHC on every invocation.",
-        ),
-        "repl_ghci_args": attr.string_list(
-            doc = "A collection of flags that will be passed to GHCI on repl invocation. It extends the `compiler_flags` collection. Flags set here have precedance over `compiler_flags`.",
-        ),
-        "haddock_flags": attr.string_list(
-            doc = "A collection of flags that will be passed to haddock.",
-        ),
-        "cabalopts": attr.string_list(
-            doc = """Additional flags to pass to `Setup.hs configure` for all Cabal rules.
-
-            Note, Cabal rules do not read the toolchain attributes `compiler_flags` or `haddock_flags`.
-            Use `--ghc-option=OPT` to configure additional compiler flags.
-            Use `--haddock-option=OPT` to configure additional haddock flags.
-            Use `--haddock-option=--optghc=OPT` if haddock generation requires additional compiler flags.
-            """,
-        ),
+        "compiler_flags": attr.string_list(),
+        "repl_ghci_args": attr.string_list(),
+        "haddock_flags": attr.string_list(),
+        "cabalopts": attr.string_list(),
         "version": attr.string(
-            doc = "Version of your GHC compiler. It has to match the version reported by the GHC used by bazel.",
             mandatory = True,
         ),
         "is_darwin": attr.bool(
@@ -265,21 +248,14 @@ _haskell_toolchain = rule(
             doc = "Whether compile on and for Windows.",
             mandatory = True,
         ),
-        "static_runtime": attr.bool(
-            doc = "Whether GHC was linked with a static runtime.",
-        ),
-        "fully_static_link": attr.bool(
-            doc = "Whether GHC should build fully-statically-linked binaries.",
-        ),
+        "static_runtime": attr.bool(),
+        "fully_static_link": attr.bool(),
         "locale": attr.string(
             default = "C.UTF-8",
             doc = "Locale that will be set during compiler invocations.",
         ),
         "locale_archive": attr.label(
             allow_single_file = True,
-            doc = """
-Label pointing to the locale archive file to use. Mostly useful on NixOS.
-""",
         ),
         "_cc_wrapper": attr.label(
             cfg = "host",
@@ -344,6 +320,27 @@ def haskell_toolchain(
 
       register_toolchains("//:ghc")
       ```
+
+    Args:
+      name: A unique name for this toolchain.
+      version: Version of your GHC compiler. It has to match the version reported by the GHC used by bazel.
+      static_runtime: Whether GHC was linked with a static runtime.
+      fully_static_link: Whether GHC should build fully-statically-linked binaries.
+      tools: GHC and executables that come with it. First item takes precedence.
+      libraries: The set of libraries that come with GHC. Requires haskell_import targets.
+      compiler_flags: A collection of flags that will be passed to GHC on every invocation.
+      repl_ghci_args: A collection of flags that will be passed to GHCI on repl invocation. It extends the `compiler_flags` collection.\\
+        Flags set here have precedance over `compiler_flags`.
+      haddock_flags: A collection of flags that will be passed to haddock.
+      cabalopts: Additional flags to pass to `Setup.hs configure` for all Cabal rules.\\
+        Note, Cabal rules do not read the toolchain attributes `compiler_flags` or `haddock_flags`.\\
+        Use `--ghc-option=OPT` to configure additional compiler flags.\\
+        Use `--haddock-option=OPT` to configure additional haddock flags.\\
+        Use `--haddock-option=--optghc=OPT` if haddock generation requires additional compiler flags.
+      locale_archive: Label pointing to the locale archive file to use.\\
+        Linux-specific and mostly useful on NixOS.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
+
     """
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
     _haskell_toolchain(
@@ -375,6 +372,34 @@ def haskell_toolchain(
         **kwargs
     )
 
-def rules_haskell_toolchains(**kwargs):
-    """Register GHC binary distributions for all platforms as toolchains."""
-    haskell_register_ghc_bindists(**kwargs)
+def rules_haskell_toolchains(
+        version = None,
+        compiler_flags = None,
+        haddock_flags = None,
+        repl_ghci_args = None,
+        cabalopts = None,
+        locale = None):
+    """Register GHC binary distributions for all platforms as toolchains.
+
+    Toolchains can be used to compile Haskell code. This function
+    registers one toolchain for each known binary distribution on all
+    platforms of the given GHC version. During the build, one
+    toolchain will be selected based on the host and target platforms
+    (See [toolchain resolution][toolchain-resolution]).
+
+    [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
+
+    Args:
+      version: The desired GHC version
+      locale: Locale that will be set during compiler
+        invocations. Default: C.UTF-8 (en_US.UTF-8 on MacOS)
+
+    """
+    haskell_register_ghc_bindists(
+        version = version,
+        compiler_flags = compiler_flags,
+        haddock_flags = haddock_flags,
+        repl_ghci_args = repl_ghci_args,
+        cabalopts = cabalopts,
+        locale = locale,
+    )

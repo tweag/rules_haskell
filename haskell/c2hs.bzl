@@ -165,7 +165,6 @@ _c2hs_toolchain = rule(
     _c2hs_toolchain_impl,
     attrs = {
         "c2hs": attr.label(
-            doc = "The c2hs executable.",
             mandatory = True,
             allow_single_file = True,
             executable = True,
@@ -204,6 +203,12 @@ def c2hs_toolchain(name, c2hs, **kwargs):
 
       register_toolchains("//:c2hs")
       ```
+
+    Args:
+      name: A unique name for the toolchain.
+      c2hs: The c2hs executable.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
+
     """
     impl_name = name + "-impl"
     _c2hs_toolchain(
