@@ -539,9 +539,13 @@ def ghc_bindist(
        ```
 
     Args:
-      version: The desired GHC version
-      locale: Locale that will be set during compiler
-        invocations. Default: C.UTF-8 (en_US.UTF-8 on MacOS)
+      name: A unique name for the repository.
+      version: The desired GHC version.
+      compiler_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-compiler_flags)
+      haddock_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-haddock_flags)
+      repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
+      cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
+      locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
 
     """
     bindist_name = name
@@ -594,24 +598,17 @@ def haskell_register_ghc_bindists(
         repl_ghci_args = None,
         cabalopts = None,
         locale = None):
-    """Register GHC binary distributions for all platforms as toolchains.
+    """ Register GHC binary distributions for all platforms as toolchains.
 
-    Toolchains can be used to compile Haskell code. This function
-    registers one toolchain for each known binary distribution on all
-    platforms of the given GHC version. During the build, one
-    toolchain will be selected based on the host and target platforms
-    (See [toolchain resolution][toolchain-resolution]).
-
-    [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
+    See [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains).
 
     Args:
-      version: [see ghc_bindist](#ghc_bindist-name)
-      compiler_flags: [see ghc_bindist](#ghc_bindist-compiler_flags)
-      haddock_flags: [see ghc_bindist](#ghc_bindist-haddock_flags)
-      repl_ghci_args: [see ghc_bindist](#ghc_bindist-repl_ghci_args)
-      cabalopts: [see ghc_bindist](#ghc_bindist-cabalopts)
-      locale: [see ghc_bindist](#ghc_bindist-local)
-
+      version: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-version)
+      compiler_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-compiler_flags)
+      haddock_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-haddock_flags)
+      repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
+      cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
+      locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
     """
     version = version or _GHC_DEFAULT_VERSION
     if not GHC_BINDIST.get(version):

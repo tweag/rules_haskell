@@ -3,6 +3,7 @@ load("@rules_python//python:defs.bzl", "py_binary")
 
 libraries = [
     "defs",
+    "toolchain",
     "cabal",
     "repositories",
     "ghc_bindist",

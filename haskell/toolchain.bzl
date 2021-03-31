@@ -372,6 +372,34 @@ def haskell_toolchain(
         **kwargs
     )
 
-def rules_haskell_toolchains(**kwargs):
-    """Register GHC binary distributions for all platforms as toolchains."""
-    haskell_register_ghc_bindists(**kwargs)
+def rules_haskell_toolchains(
+        version = None,
+        compiler_flags = None,
+        haddock_flags = None,
+        repl_ghci_args = None,
+        cabalopts = None,
+        locale = None):
+    """Register GHC binary distributions for all platforms as toolchains.
+
+    Toolchains can be used to compile Haskell code. This function
+    registers one toolchain for each known binary distribution on all
+    platforms of the given GHC version. During the build, one
+    toolchain will be selected based on the host and target platforms
+    (See [toolchain resolution][toolchain-resolution]).
+
+    [toolchain-resolution]: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
+
+    Args:
+      version: The desired GHC version
+      locale: Locale that will be set during compiler
+        invocations. Default: C.UTF-8 (en_US.UTF-8 on MacOS)
+
+    """
+    haskell_register_ghc_bindists(
+        version = version,
+        compiler_flags = compiler_flags,
+        haddock_flags = haddock_flags,
+        repl_ghci_args = repl_ghci_args,
+        cabalopts = cabalopts,
+        locale = locale)
+
