@@ -401,5 +401,5 @@ def rules_haskell_toolchains(
         haddock_flags = haddock_flags,
         repl_ghci_args = repl_ghci_args,
         cabalopts = cabalopts,
-        locale = locale)
-
+        locale = locale,
+    )
