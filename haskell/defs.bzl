@@ -608,7 +608,13 @@ haskell_doc = _haskell_doc
 
 haskell_doc_aspect = _haskell_doc_aspect
 
-haskell_register_toolchains = _haskell_register_toolchains
+def haskell_register_toolchains(**kwargs):
+    """Register GHC binary distributions for all platforms as toolchains.
+
+    Depreciated in favor of [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains).
+
+    """
+    _haskell_register_toolchains(**kwargs)
 
 haskell_repl = _haskell_repl
 
