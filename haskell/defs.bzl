@@ -31,6 +31,18 @@ load(
     _ghc_plugin = "ghc_plugin",
 )
 
+def _name_change_deprecation(old_attr, new_attr, kwargs):
+    """ pre: the attributes must have a falsy default value. """
+    if kwargs[old_attr]:
+        message = "{} is deprecated. Use its new name {} instead.".format(old_attr, new_attr)
+        if kwargs[new_attr]:
+            fail(message)
+
+        print("WARNING: {}".format(message))
+        kwargs[new_attr] = kwargs[old_attr]
+    kwargs.pop(old_attr)
+    return kwargs
+
 # NOTE: Documentation needs to be added to the wrapper macros below.
 #   Currently it is not possible to automatically inherit rule documentation in
 #   wrapping macros. See https://github.com/bazelbuild/stardoc/issues/27
@@ -48,7 +60,7 @@ _haskell_common_attrs = {
     "data": attr.label_list(
         allow_files = True,
     ),
-    "compiler_flags": attr.string_list(),
+    "ghcopts": attr.string_list(),
     "repl_ghci_args": attr.string_list(),
     "runcompile_flags": attr.string_list(),
     "plugins": attr.label_list(
@@ -204,6 +216,7 @@ _haskell_library = rule(
 )
 
 def _haskell_worker_wrapper(rule_type, **kwargs):
+    kwargs = _name_change_deprecation("compiler_flags", "ghcopts", kwargs)
     defaults = dict(
         worker = select({
             "@rules_haskell//haskell:use_worker": Label("@rules_haskell//tools/worker:bin"),
@@ -227,6 +240,7 @@ def haskell_binary(
         deps = [],
         data = [],
         compiler_flags = [],
+        ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
         plugins = [],
@@ -266,9 +280,10 @@ def haskell_binary(
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
-      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
-      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
-      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      compiler_flags: DEPRECATED. Use new name ghcopts.
+      ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
       plugins: Compiler plugins to use during compilation.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
@@ -286,6 +301,7 @@ def haskell_binary(
         deps = deps,
         data = data,
         compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
         plugins = plugins,
@@ -325,6 +341,7 @@ def haskell_test(
         deps = [],
         data = [],
         compiler_flags = [],
+        ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
         plugins = [],
@@ -354,9 +371,10 @@ def haskell_test(
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
-      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
-      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
-      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      compiler_flags: DEPRECATED. Use new name ghcopts.
+      ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
       plugins: Compiler plugins to use during compilation.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
@@ -387,6 +405,7 @@ def haskell_test(
         deps = deps,
         data = data,
         compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
         plugins = plugins,
@@ -433,6 +452,7 @@ def haskell_library(
         deps = [],
         data = [],
         compiler_flags = [],
+        ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
         plugins = [],
@@ -474,9 +494,10 @@ def haskell_library(
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
-      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
-      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
-      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      compiler_flags: DEPRECATED. Use new name ghcopts.
+      ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
       plugins: Compiler plugins to use during compilation.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
@@ -500,6 +521,7 @@ def haskell_library(
         deps = deps,
         data = data,
         compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
         plugins = plugins,

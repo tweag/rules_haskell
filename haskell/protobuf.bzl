@@ -163,7 +163,7 @@ def _haskell_proto_aspect_impl(target, ctx):
     )
 
     patched_attrs = {
-        "compiler_flags": [],
+        "ghcopts": [],
         "src_strip_prefix": "",
         "repl_interpreted": True,
         "repl_ghci_args": [],
