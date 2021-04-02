@@ -16,6 +16,10 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":cc.bzl", "ghc_cc_program_args")
+load(
+    ":private/workspace_utils.bzl",
+    "check_deprecated_attribute_usage",
+)
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
@@ -178,7 +182,7 @@ def _haskell_toolchain_impl(ctx):
             libdir_path = libdir_path,
             docdir = docdir,
             docdir_path = docdir_path,
-            compiler_flags = ctx.attr.compiler_flags,
+            ghcopts = ctx.attr.ghcopts,
             repl_ghci_args = ctx.attr.repl_ghci_args,
             haddock_flags = ctx.attr.haddock_flags,
             cabalopts = ctx.attr.cabalopts,
@@ -233,7 +237,7 @@ _haskell_toolchain = rule(
         "docdir_path": attr.string(
             doc = "The absolute path to GHC's docdir. C.f. `GHC.Paths.docdir` from `ghc-paths`. Specify this if `docdir` is left empty. One of `docdir` or `docdir_path` is required.",
         ),
-        "compiler_flags": attr.string_list(),
+        "ghcopts": attr.string_list(),
         "repl_ghci_args": attr.string_list(),
         "haddock_flags": attr.string_list(),
         "cabalopts": attr.string_list(),
@@ -282,6 +286,7 @@ def haskell_toolchain(
         tools,
         libraries,
         compiler_flags = [],
+        ghcopts = [],
         repl_ghci_args = [],
         haddock_flags = [],
         cabalopts = [],
@@ -305,7 +310,7 @@ def haskell_toolchain(
           static_runtime = static_runtime,
           fully_static_link = fully_static_link,
           tools = ["@sys_ghc//:bin"],
-          compiler_flags = ["-Wall"],
+          ghcopts = ["-Wall"],
       )
       ```
 
@@ -328,12 +333,13 @@ def haskell_toolchain(
       fully_static_link: Whether GHC should build fully-statically-linked binaries.
       tools: GHC and executables that come with it. First item takes precedence.
       libraries: The set of libraries that come with GHC. Requires haskell_import targets.
-      compiler_flags: A collection of flags that will be passed to GHC on every invocation.
-      repl_ghci_args: A collection of flags that will be passed to GHCI on repl invocation. It extends the `compiler_flags` collection.\\
-        Flags set here have precedance over `compiler_flags`.
+      ghcopts: A collection of flags that will be passed to GHC on every invocation.
+      compiler_flags: DEPRECATED. Use new name ghcopts.
+      repl_ghci_args: A collection of flags that will be passed to GHCI on repl invocation. It extends the `ghcopts` collection.\\
+        Flags set here have precedance over `ghcopts`.
       haddock_flags: A collection of flags that will be passed to haddock.
       cabalopts: Additional flags to pass to `Setup.hs configure` for all Cabal rules.\\
-        Note, Cabal rules do not read the toolchain attributes `compiler_flags` or `haddock_flags`.\\
+        Note, Cabal rules do not read the toolchain attributes `ghcopts`, `compiler_flags` or `haddock_flags`.\\
         Use `--ghc-option=OPT` to configure additional compiler flags.\\
         Use `--haddock-option=OPT` to configure additional haddock flags.\\
         Use `--haddock-option=--optghc=OPT` if haddock generation requires additional compiler flags.
@@ -343,6 +349,12 @@ def haskell_toolchain(
 
     """
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
+    ghcopts = check_deprecated_attribute_usage(
+        old_attr_value = compiler_flags,
+        new_attr_value = ghcopts,
+        message = "compiler_flags attribute is deprecated, use its new name ghcopts instead",
+    )
+
     _haskell_toolchain(
         name = name,
         version = version,
@@ -350,7 +362,7 @@ def haskell_toolchain(
         fully_static_link = fully_static_link,
         tools = tools,
         libraries = libraries,
-        compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
         cabalopts = cabalopts,

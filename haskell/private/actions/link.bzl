@@ -94,7 +94,7 @@ def link_binary(
     args.add_all(["-optl" + f for f in cc.linker_flags])
     if with_profiling:
         args.add("-prof")
-    args.add_all(hs.toolchain.compiler_flags)
+    args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
 
     # By default, GHC will produce mostly-static binaries, i.e. in which all
@@ -320,7 +320,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, my_pk
     args = hs.actions.args()
     args.add_all(["-optl" + f for f in cc.linker_flags])
     args.add_all(["-shared", "-dynamic"])
-    args.add_all(hs.toolchain.compiler_flags)
+    args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
 
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(

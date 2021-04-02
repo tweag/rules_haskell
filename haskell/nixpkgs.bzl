@@ -11,6 +11,7 @@ load(
 )
 load(
     ":private/workspace_utils.bzl",
+    "check_deprecated_attribute_usage",
     "define_rule",
     "execute_or_fail_loudly",
     "resolve_labels",
@@ -74,8 +75,8 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         version = repr(repository_ctx.attr.version),
         static_runtime = repository_ctx.attr.static_runtime,
         fully_static_link = repository_ctx.attr.fully_static_link,
-        compiler_flags = "{} + {}".format(
-            repository_ctx.attr.compiler_flags,
+        ghcopts = "{} + {}".format(
+            repository_ctx.attr.ghcopts,
             compiler_flags_select,
         ),
         haddock_flags = repository_ctx.attr.haddock_flags,
@@ -118,7 +119,7 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
         "version": attr.string(),
         "static_runtime": attr.bool(),
         "fully_static_link": attr.bool(),
-        "compiler_flags": attr.string_list(),
+        "ghcopts": attr.string_list(),
         "compiler_flags_select": attr.string_list_dict(),
         "haddock_flags": attr.string_list(),
         "cabalopts": attr.string_list(),
@@ -193,6 +194,7 @@ def haskell_register_ghc_nixpkgs(
         build_file = None,
         build_file_content = None,
         compiler_flags = None,
+        ghcopts = None,
         compiler_flags_select = None,
         haddock_flags = None,
         repl_ghci_args = None,
@@ -249,6 +251,8 @@ def haskell_register_ghc_nixpkgs(
         required in order to use statically-linked Haskell libraries with GHCi
         and Template Haskell.
       fully_static_link: True if and only if fully-statically-linked binaries are to be built.
+      compiler_flags: DEPRECADED. Use new name ghcopts.
+      ghcopts: A collection of flags that will be passed to GHC
       compiler_flags_select: temporary workaround to pass conditional arguments.
         See https://github.com/bazelbuild/bazel/issues/9199 for details.
       attribute_path: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-attribute_path)
@@ -289,12 +293,18 @@ def haskell_register_ghc_nixpkgs(
     )
 
     # haskell_toolchain + haskell_import definitions.
+    ghcopts = check_deprecated_attribute_usage(
+        old_attr_value = compiler_flags,
+        new_attr_value = ghcopts,
+        message = "compiler_flags attribute is deprecated, use its new name ghcopts instead",
+    )
+
     _ghc_nixpkgs_haskell_toolchain(
         name = haskell_toolchain_repo_name,
         version = version,
         static_runtime = static_runtime,
         fully_static_link = fully_static_link,
-        compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         compiler_flags_select = compiler_flags_select,
         haddock_flags = haddock_flags,
         cabalopts = cabalopts,

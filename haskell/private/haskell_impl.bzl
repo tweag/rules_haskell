@@ -653,7 +653,7 @@ def _toolchain_library_symlink(dynamic_library):
 def haskell_toolchain_libraries_impl(ctx):
     hs = haskell_context(ctx)
     with_profiling = is_profiling_enabled(hs)
-    with_threaded = "-threaded" in hs.toolchain.compiler_flags
+    with_threaded = "-threaded" in hs.toolchain.ghcopts
 
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
