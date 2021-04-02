@@ -30,18 +30,10 @@ load(
     ":plugins.bzl",
     _ghc_plugin = "ghc_plugin",
 )
-
-def _name_change_deprecation(old_attr, new_attr, kwargs):
-    """ pre: the attributes must have a falsy default value. """
-    if kwargs[old_attr]:
-        message = "{} is deprecated. Use its new name {} instead.".format(old_attr, new_attr)
-        if kwargs[new_attr]:
-            fail(message)
-
-        print("WARNING: {}".format(message))
-        kwargs[new_attr] = kwargs[old_attr]
-    kwargs.pop(old_attr)
-    return kwargs
+load(
+    ":private/workspace_utils.bzl",
+    "name_change_deprecation",
+)
 
 # NOTE: Documentation needs to be added to the wrapper macros below.
 #   Currently it is not possible to automatically inherit rule documentation in
@@ -216,7 +208,7 @@ _haskell_library = rule(
 )
 
 def _haskell_worker_wrapper(rule_type, **kwargs):
-    kwargs = _name_change_deprecation("compiler_flags", "ghcopts", kwargs)
+    kwargs = name_change_deprecation("compiler_flags", "ghcopts", kwargs)
     defaults = dict(
         worker = select({
             "@rules_haskell//haskell:use_worker": Label("@rules_haskell//tools/worker:bin"),
