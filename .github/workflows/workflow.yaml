@@ -72,11 +72,14 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
             extra-substituters = https://hydra.iohk.io
       - name: Configure
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
           cat >.bazelrc.local <<EOF
           # Enabling --config=ci causes cross-compilation to crawl
-          # common --config=ci
+          common --config=ci-common
           build --config=linux-nixpkgs
+          build --remote_header=x-buildbuddy-api-key="$BUILDBUDDY_API_KEY"
           EOF
           ln -sr .bazelrc.local examples/arm/.bazelrc.local
           cat >~/.netrc <<EOF
@@ -89,9 +92,9 @@ jobs:
       - name: Build & test
         run: |
           cd examples/arm
-          nix-shell --arg docTools false --pure --run "bazel build //... --local_cpu_resources=1 --platforms=//:linux_aarch64"
-          nix-shell --arg docTools false --pure qemu-shell.nix --run "qemu-aarch64 bazel-bin/example"
-          nix-shell --arg docTools false --pure qemu-shell.nix --run "qemu-aarch64 bazel-bin/example2"
+          nix-shell --arg docTools false --pure --run "bazel build //... --platforms=//:linux_aarch64"
+          nix-shell --arg docTools false --pure qemu-shell.nix --run "qemu-aarch64 bazel-ci-bin/example"
+          nix-shell --arg docTools false --pure qemu-shell.nix --run "qemu-aarch64 bazel-ci-bin/example2"
 
   test-bindist:
     name: Build & Test - bindist
