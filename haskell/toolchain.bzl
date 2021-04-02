@@ -387,6 +387,7 @@ def haskell_toolchain(
 def rules_haskell_toolchains(
         version = None,
         compiler_flags = None,
+        ghcopts = None,
         haddock_flags = None,
         repl_ghci_args = None,
         cabalopts = None,
@@ -405,11 +406,14 @@ def rules_haskell_toolchains(
       version: The desired GHC version
       locale: Locale that will be set during compiler
         invocations. Default: C.UTF-8 (en_US.UTF-8 on MacOS)
+      compiler_flags: DEPRECATED. Use new name ghcopts.
+      ghcopts: A collection of flags that will be passed to GHC on every invocation.
 
     """
     haskell_register_ghc_bindists(
         version = version,
         compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         haddock_flags = haddock_flags,
         repl_ghci_args = repl_ghci_args,
         cabalopts = cabalopts,
