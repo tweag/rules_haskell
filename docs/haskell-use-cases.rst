@@ -888,7 +888,7 @@ as a docker base image manager and the power of ``rules_haskell`` for your haske
 Cross-compilation
 -----------------
 
-Currently, ``rules_haskell`` only supports cross-compiling to ``arm`` on linux.
+Currently, ``rules_haskell`` only supports cross-compiling to ``arm`` on Linux.
 Cross-compiling requires providing a cross-compiler, telling ``rules_haskell``
 about it, and then requesting Bazel to build for the target platform.
 
@@ -929,8 +929,8 @@ in the `WORKSPACE<arm workspace file>`_. ::
       repository = "@nixpkgs",
   )
 
-This instantiation indicates the Nix file and the Nix attribute path
-to reach the cross-compiler. It indicates to link a static
+This rule indicates the Nix file and the Nix attribute path
+to reach the cross-compiler. It says to link a static
 runtime because the cross-compiler doesn't provide dynamic variants
 of the core libraries. And finally, it specifies the execution and
 target platform constraints. More information on platform constraints
