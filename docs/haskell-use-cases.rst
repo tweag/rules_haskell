@@ -396,7 +396,7 @@ apply warning flags using the ``compiler_flags`` attribute, for example ::
 
   haskell_library(
       ...
-      compiler_flags = [
+      ghcopts = [
           "-Werror",
           "-Wall",
           "-Wcompat",
@@ -411,12 +411,12 @@ apply warning flags using the ``compiler_flags`` attribute, for example ::
 For larger projects it can make sense to define a custom macro that
 applies such common flags by default. ::
 
-  common_compiler_flags = [ ... ]
+  common_ghcopts = [ ... ]
 
-  def my_haskell_library(name, compiler_flags = [], ...):
+  def my_haskell_library(name, ghcopts = [], ...):
       haskell_library(
           name = name,
-          compiler_flags = common_compiler_flags + compiler_flags,
+          ghcopts = common_ghcopts + ghcopts,
           ...
       )
 
@@ -470,7 +470,7 @@ the location of the tool in source code pragmas. Example: ::
   haskell_test(
       name = "tests",
       srcs = ["Main.hs", "Spec.hs"],
-      compiler_flags = ["-DHSPEC_DISCOVER=$(location @stackage-exe//hspec-discover)"],
+      ghcopts = ["-DHSPEC_DISCOVER=$(location @stackage-exe//hspec-discover)"],
       tools = ["@stackage-exe//hspec-discover"],
       deps = ["@stackage//:base"],
   )
@@ -845,7 +845,7 @@ Step three pulls all this together in a build file to actually assemble our fina
   haskell_binary(
       name = "my_binary,
       srcs = ["Main.hs"],
-      compiler_flags = [
+      ghcopts = [
           "-O2",
           "-threaded",
           "-rtsopts",
