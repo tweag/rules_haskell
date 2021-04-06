@@ -21,7 +21,7 @@ haskell_library(
         "src/Bazel/Arg0.hs",
         "src/Bazel/Runfiles.hs",
     ],
-    compiler_flags = [
+    ghcopts = [
         "-Wall",
         "-Wextra",
         "-Werror",

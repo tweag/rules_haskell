@@ -160,7 +160,7 @@ nixpkgs_local_repository(
     nix_file = "//nixpkgs:default.nix",
 )
 
-test_compiler_flags = [
+test_ghcopts = [
     "-XStandaloneDeriving",  # Flag used at compile time
     "-threaded",  # Flag used at link time
 
@@ -194,7 +194,7 @@ load(
 haskell_register_ghc_nixpkgs(
     attribute_path = "",
     cabalopts = test_cabalopts,
-    compiler_flags = test_compiler_flags,
+    ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
     nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc883.ghc""",
@@ -210,7 +210,7 @@ load(
 
 haskell_register_ghc_bindists(
     cabalopts = test_cabalopts,
-    compiler_flags = test_compiler_flags,
+    ghcopts = test_ghcopts,
     version = test_ghc_version,
 )
 
