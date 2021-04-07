@@ -64,7 +64,7 @@ shellcheck(
     name = "start-script",
     args = ["$(location //:start)"],
     data = ["//:start"],
-    sh_flavor = "bash",
+    sh_flavor = "sh",
 )
 
 shellcheck(
