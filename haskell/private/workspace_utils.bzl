@@ -37,6 +37,8 @@ def find_python(repository_ctx):
     python = repository_ctx.which("python3")
     if not python:
         python = repository_ctx.which("python")
+        if not python:
+            fail("There is no Python in PATH. Please install Python >= 3.3.")
         result = repository_ctx.execute([python, "--version"])
         if not result.stdout.startswith("Python 3"):
             fail("rules_haskell requires Python >= 3.3.")
