@@ -181,7 +181,7 @@ haskell_register_ghc_nixpkgs(
 EOF
 )
 
-declare -r ZLIB_BUILD_FILE="zlib.BUILD.bazel"
+readonly ZLIB_BUILD_FILE="zlib.BUILD.bazel"
 
 echo "Creating $ZLIB_BUILD_FILE" >&2
 case "$mode" in
