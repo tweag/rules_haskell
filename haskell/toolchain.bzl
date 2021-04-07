@@ -350,9 +350,10 @@ def haskell_toolchain(
     """
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
     ghcopts = check_deprecated_attribute_usage(
+        old_attr_name = "compiler_flags",
         old_attr_value = compiler_flags,
+        new_attr_name = "ghcopts",
         new_attr_value = ghcopts,
-        message = "compiler_flags attribute is deprecated, use its new name ghcopts instead",
     )
 
     _haskell_toolchain(

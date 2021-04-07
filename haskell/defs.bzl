@@ -32,7 +32,7 @@ load(
 )
 load(
     ":private/workspace_utils.bzl",
-    "name_change_deprecation",
+    "check_deprecated_attribute_usage",
 )
 
 # NOTE: Documentation needs to be added to the wrapper macros below.
@@ -208,7 +208,14 @@ _haskell_library = rule(
 )
 
 def _haskell_worker_wrapper(rule_type, **kwargs):
-    kwargs = name_change_deprecation("compiler_flags", "ghcopts", kwargs)
+    kwargs["ghcopts"] = check_deprecated_attribute_usage(
+        old_attr_name = "compiler_flags",
+        old_attr_value = kwargs["compiler_flags"],
+        new_attr_name = "ghcopts",
+        new_attr_value = kwargs["ghcopts"],
+    )
+    kwargs.pop("compiler_flags")
+
     defaults = dict(
         worker = select({
             "@rules_haskell//haskell:use_worker": Label("@rules_haskell//tools/worker:bin"),
