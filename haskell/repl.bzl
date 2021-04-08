@@ -321,7 +321,6 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         cc_library_files = _concat(get_library_files(hs, cc_libraries_info, cc_libraries))
     else:
         cc_library_files = get_ghci_library_files(hs, cc_libraries_info, cc_libraries)
-
     link_libraries(cc_library_files, args, path_prefix = path_prefix)
 
     if static:
@@ -336,7 +335,6 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
         repl_info.dep_info.interface_dirs,
     ])
-
     return (args, inputs)
 
 def _create_repl(hs, posix, ctx, repl_info, output):
@@ -479,7 +477,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         runfiles = _merge_runfiles(runfiles),
     )]
 
-def _create_hie_bios(hs, posix, ctx, repl_info):
+def _create_hie_bios(hs, posix, ctx, repl_info, path_prefix):
     """Build a hie-bios argument file.
 
     Args:
@@ -492,8 +490,9 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
       List of providers:
         OutputGroupInfo provider for the hie-bios argument file.
     """
-    args, inputs = _compiler_flags_and_inputs(hs, repl_info, static = True)
-    args.extend(ghc_cc_program_args(hs.toolchain.cc_wrapper.executable.path))
+    path_prefix = paths.join("", *path_prefix)
+    args, inputs = _compiler_flags_and_inputs(hs, repl_info, path_prefix = path_prefix, static = True)
+    args.extend(ghc_cc_program_args(paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path)))
     args.extend(hs.toolchain.ghcopts)
     args.extend(repl_info.load_info.compiler_flags)
 
@@ -501,10 +500,10 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
     # Note, src_strip_prefix is deprecated. However, for now ghcide depends on
     # `-i` flags to find source files to modules.
     for import_dir in repl_info.load_info.import_dirs.to_list():
-        args.append("-i" + (import_dir if import_dir else "."))
+        args.append("-i" + (paths.join(path_prefix, import_dir) or "."))
 
     # List modules (Targets) covered by this cradle.
-    args.extend([f.path for f in repl_info.load_info.source_files.to_list()])
+    args.extend([paths.join(path_prefix, f.path) for f in repl_info.load_info.source_files.to_list()])
 
     # List boot files
     args.extend([f.path for f in repl_info.load_info.boot_files.to_list()])
@@ -513,7 +512,6 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
     args_link = ctx.actions.declare_file("%s@hie-bios" % ctx.label.name)
     ctx.actions.write(args_file, "\n".join(args))
     ln(hs, posix, args_file, args_link, extra_inputs = inputs)
-
     return [OutputGroupInfo(hie_bios = [args_link])]
 
 def _haskell_repl_aspect_impl(target, ctx):
@@ -561,7 +559,7 @@ def _haskell_repl_impl(ctx):
     hs = haskell_context(ctx)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
     return _create_repl(hs, posix, ctx, repl_info, ctx.outputs.repl) + \
-           _create_hie_bios(hs, posix, ctx, repl_info)
+           _create_hie_bios(hs, posix, ctx, repl_info, ctx.attr.hie_bios_path_prefix)
 
 haskell_repl = rule(
     implementation = _haskell_repl_impl,
@@ -620,6 +618,11 @@ haskell_repl = rule(
         "collect_data": attr.bool(
             doc = "Whether to collect the data runfiles from the dependencies in srcs, data and deps attributes.",
             default = True,
+        ),
+        "hie_bios_path_prefix": attr.string_list(
+            doc = """Path prefix for hie-bios paths. The elements of the list are joined together to build the path.
+                   See [IDE support](#ide-support-experimental).""",
+            default = [],
         ),
     },
     executable = True,
