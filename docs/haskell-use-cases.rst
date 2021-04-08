@@ -908,7 +908,7 @@ configuration can be avoided by telling Nix to fetch it from the
 .. _haskell_nix_cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started/#setting-up-the-binary-cache
 
 To tell ``rules_haskell`` about the cross-compiler, we can register it
-in the `WORKSPACE<arm workspace file>`_. ::
+in the `WORKSPACE file<arm workspace file>`_. ::
 
   load(
       "@rules_haskell//haskell:nixpkgs.bzl",
