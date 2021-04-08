@@ -900,9 +900,12 @@ compilation of Template Haskell splices via an external interpreter,
 and a compatible C cross-toolchain needs to be given as well for
 linking. All of this is configured via Nix in the
 `arm example<arm_cross_nix>`_, and the configuration can be copied as
-is to other projects.
+is to other projects. Building the cross-compiler from this particular
+configuration can be avoided by telling Nix to fetch it from the
+`haskell.nix binary cache<haskell_nix_cache>`_.
 
 .. _arm_cross_nix: https://github.com/tweag/rules_haskell/blob/master/examples/arm/arm-cross.nix
+.. _haskell_nix_cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started/#setting-up-the-binary-cache
 
 To tell ``rules_haskell`` about the cross-compiler, we can register it
 in the `WORKSPACE<arm workspace file>`_. ::
