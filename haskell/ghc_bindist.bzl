@@ -374,6 +374,9 @@ def _ghc_bindist_impl(ctx):
         # tools! This means that sed -i always takes an argument.
         execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
         execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath], working_directory = unpack_dir)
+        make_loc = ctx.which("make")
+        if not make_loc:
+            fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
         execute_or_fail_loudly(
             ctx,
             ["make", "install"],
