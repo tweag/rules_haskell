@@ -51,4 +51,5 @@ sh_test(
         ":hie-bios-file",
         ":hie-bios-file-no-prefix",
     ],
+    tags = ["dont_test_on_windows"],
 )
