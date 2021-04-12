@@ -884,3 +884,130 @@ not possible to build docker images for haskell binaries as above using rules_do
 
 Following these steps you should end up with a fairly lightweight docker image, bringing the flexibility of nix
 as a docker base image manager and the power of ``rules_haskell`` for your haskell build together.
+
+Cross-compilation
+-----------------
+
+Currently, ``rules_haskell`` only supports cross-compiling to ``arm`` on Linux.
+Cross-compiling requires providing a cross-compiler, telling ``rules_haskell``
+about it, and then requesting Bazel to build for the target platform.
+
+Ideally, providing a cross-compiler would only require the advice in
+`Picking a compiler`_. However, the case of ``arm`` requires to configure
+a few aspects at this time. One has to make available the llvm tools
+to the compiler, emulation support needs to be set to enable
+compilation of Template Haskell splices via an external interpreter,
+and a compatible C cross-toolchain needs to be given as well for
+linking. All of this is configured via Nix in the
+`arm example<arm_cross_nix>`_, and the configuration can be copied as
+is to other projects. Building the cross-compiler from this particular
+configuration can be avoided by telling Nix to fetch it from the
+`haskell.nix binary cache<haskell_nix_cache>`_.
+
+.. _arm_cross_nix: https://github.com/tweag/rules_haskell/blob/master/examples/arm/arm-cross.nix
+.. _haskell_nix_cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started/#setting-up-the-binary-cache
+
+To tell ``rules_haskell`` about the cross-compiler, we can register it
+in the `WORKSPACE file<arm workspace file>`_. ::
+
+  load(
+      "@rules_haskell//haskell:nixpkgs.bzl",
+      "haskell_register_ghc_nixpkgs",
+  )
+
+  haskell_register_ghc_nixpkgs(
+      name = "aarch64",
+      version = "8.10.2",
+      nix_file = "//:arm-cross.nix",
+      attribute_path = "ghc-aarch64",
+      static_runtime = True,
+      exec_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      target_constraints = [
+          "@platforms//cpu:aarch64",
+          "@platforms//os:linux",
+      ],
+      repository = "@nixpkgs",
+  )
+
+This rule indicates the Nix file and the Nix attribute path
+to reach the cross-compiler. It says to link a static
+runtime because the cross-compiler doesn't provide dynamic variants
+of the core libraries. And finally, it specifies the execution and
+target platform constraints. More information on platform constraints
+and cross-compilation with Bazel can be found `here<bazel platforms>`_.
+
+.. _arm workspace file: https://github.com/tweag/rules_haskell/blob/master/examples/arm/WORKSPACE
+.. _bazel platforms: https://docs.bazel.build/versions/master/platforms-intro.html
+
+When using rules that depend on ``Cabal``, ``rules_haskell`` also
+needs a compiler targeting the execution platform, so the ``Setup.hs``
+scripts can be executed. ::
+
+  haskell_register_ghc_nixpkgs(
+      name = "x86",
+      version = "8.10.2",
+      attribute_path = "haskell.compiler.ghc8102",
+      exec_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      target_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      repository = "@nixpkgs",
+  )
+
+Similarly, we need to register the native and cross-toolchains for C. ::
+
+  nixpkgs_cc_configure(
+      name = "nixpkgs_config_cc_x86",
+      exec_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      repository = "@nixpkgs",
+      target_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+  )
+
+  nixpkgs_cc_configure(
+      name = "nixpkgs_config_cc_arm",
+      attribute_path = "cc-aarch64",
+      exec_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      nix_file = "//:arm-cross.nix",
+      repository = "@nixpkgs",
+      target_constraints = [
+          "@platforms//cpu:aarch64",
+          "@platforms//os:linux",
+      ],
+  )
+
+Having the toolchains registered, the last remaining bit is telling
+Bazel for which platform to build. Building for ``arm`` requires
+declaring the platform in the `BUILD<arm build file>`_ file. ::
+
+  platform(
+      name = "linux_aarch64",
+      constraint_values = [
+          "@platforms//os:linux",
+          "@platforms//cpu:aarch64",
+      ],
+  )
+
+.. _arm build file: https://github.com/tweag/rules_haskell/blob/master/examples/arm/BUILD.bazel
+
+Then we can invoke ::
+
+  bazel build --platforms=//:linux_aarch64 --incompatible_enable_cc_toolchain_resolution
+
+to create the ``arm`` artifact. The flag ``--incompatible_enable_cc_toolchain_resolution``
+is necessary to have Bazel use the platforms mechanism to select the C toolchains.
