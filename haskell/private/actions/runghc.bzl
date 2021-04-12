@@ -77,7 +77,7 @@ def build_haskell_runghc(
     # negative flag in `extra_args` can disable a positive flag set
     # in `user_compile_flags`, such as `-XNoOverloadedStrings` will disable
     # `-XOverloadedStrings`.
-    args += hs.toolchain.compiler_flags + user_compile_flags + hs.toolchain.repl_ghci_args
+    args += hs.toolchain.ghcopts + user_compile_flags + hs.toolchain.repl_ghci_args
 
     # ghc args need to be wrapped up in "--ghc-arg=" when passing to runghc
     runcompile_flags = ["--ghc-arg=%s" % a for a in args]

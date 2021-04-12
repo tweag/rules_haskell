@@ -190,7 +190,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_binary(
         hs,
         cc,
@@ -219,7 +219,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             coverage_data += dep[HaskellCoverageInfo].coverage_data
             coverage_data = list.dedup_on(_get_mix_filepath, coverage_data)
 
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     (binary, solibs) = link_binary(
         hs,
         cc,
@@ -251,7 +251,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     target_files = depset([binary])
 
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
     build_haskell_runghc(
         hs,
@@ -376,7 +376,7 @@ def haskell_library_impl(ctx):
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -503,7 +503,7 @@ def haskell_library_impl(ctx):
 
     if hasattr(ctx, "outputs"):
         extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
-        user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+        user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
         build_haskell_runghc(
             hs,
             cc,
@@ -653,7 +653,7 @@ def _toolchain_library_symlink(dynamic_library):
 def haskell_toolchain_libraries_impl(ctx):
     hs = haskell_context(ctx)
     with_profiling = is_profiling_enabled(hs)
-    with_threaded = "-threaded" in hs.toolchain.compiler_flags
+    with_threaded = "-threaded" in hs.toolchain.ghcopts
 
     cc_toolchain = find_cpp_toolchain(ctx)
     feature_configuration = cc_common.configure_features(

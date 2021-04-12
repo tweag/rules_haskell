@@ -420,7 +420,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         [ctx.attr.data],
     )
     quote_args = (
-        hs.toolchain.compiler_flags +
+        hs.toolchain.ghcopts +
         repl_info.load_info.compiler_flags +
         hs.toolchain.repl_ghci_args +
         repl_info.load_info.repl_ghci_args +
@@ -489,7 +489,7 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
     """
     args, inputs = _compiler_flags_and_inputs(hs, repl_info, static = True)
     args.extend(ghc_cc_program_args(hs.toolchain.cc_wrapper.executable.path))
-    args.extend(hs.toolchain.compiler_flags)
+    args.extend(hs.toolchain.ghcopts)
     args.extend(repl_info.load_info.compiler_flags)
 
     # Add import directories.
@@ -602,7 +602,7 @@ haskell_repl = rule(
             default = [],
         ),
         "repl_ghci_args": attr.string_list(
-            doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
+            doc = "Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` (previously `compiler_flags`) and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
             default = [],
         ),
         "repl_ghci_commands": attr.string_list(

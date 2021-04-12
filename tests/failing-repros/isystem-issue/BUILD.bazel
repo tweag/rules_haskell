@@ -13,7 +13,7 @@ cc_library(
 haskell_binary(
     name = "bin",
     srcs = ["Main.hs"],
-    compiler_flags = ["-Itests/isystem-issue/include"],
+    ghcopts = ["-Itests/isystem-issue/include"],
     deps = [
         ":cbits",
         "//tests/hackage:base",

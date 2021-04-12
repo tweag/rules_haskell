@@ -164,7 +164,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     )
 
     # Default compiler flags.
-    compile_flags += hs.toolchain.compiler_flags
+    compile_flags += hs.toolchain.ghcopts
     compile_flags += user_compile_flags
 
     package_ids = []

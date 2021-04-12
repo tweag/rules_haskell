@@ -15,6 +15,7 @@ load(
     "find_python",
     "resolve_labels",
 )
+load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 
 # If you change this, change stackage's version in the start script
 # (see stackage.org).
@@ -415,7 +416,7 @@ DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(
         version = repr(ctx.attr.version),
         static_runtime = os == "windows",
         fully_static_link = False,  # XXX not yet supported for bindists.
-        compiler_flags = ctx.attr.compiler_flags,
+        ghcopts = ctx.attr.ghcopts,
         haddock_flags = ctx.attr.haddock_flags,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         cabalopts = ctx.attr.cabalopts,
@@ -441,7 +442,7 @@ _ghc_bindist = repository_rule(
             doc = "The desired GHC version",
         ),
         "target": attr.string(),
-        "compiler_flags": attr.string_list(),
+        "ghcopts": attr.string_list(),
         "haddock_flags": attr.string_list(),
         "repl_ghci_args": attr.string_list(),
         "cabalopts": attr.string_list(),
@@ -509,6 +510,7 @@ def ghc_bindist(
         version,
         target,
         compiler_flags = None,
+        ghcopts = None,
         haddock_flags = None,
         repl_ghci_args = None,
         cabalopts = None,
@@ -542,12 +544,20 @@ def ghc_bindist(
       name: A unique name for the repository.
       version: The desired GHC version.
       compiler_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-compiler_flags)
+      ghcopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-ghcopts)
       haddock_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-haddock_flags)
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
 
     """
+    ghcopts = check_deprecated_attribute_usage(
+        old_attr_name = "compiler_flags",
+        old_attr_value = compiler_flags,
+        new_attr_name = "ghcopts",
+        new_attr_value = ghcopts,
+    )
+
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
 
@@ -576,7 +586,7 @@ def ghc_bindist(
     _ghc_bindist(
         name = bindist_name,
         version = version,
-        compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         haddock_flags = haddock_flags,
         repl_ghci_args = repl_ghci_args,
         cabalopts = cabalopts,
@@ -594,6 +604,7 @@ def ghc_bindist(
 def haskell_register_ghc_bindists(
         version = None,
         compiler_flags = None,
+        ghcopts = None,
         haddock_flags = None,
         repl_ghci_args = None,
         cabalopts = None,
@@ -605,6 +616,7 @@ def haskell_register_ghc_bindists(
     Args:
       version: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-version)
       compiler_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-compiler_flags)
+      ghcopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-ghcopts)
       haddock_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-haddock_flags)
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
@@ -619,6 +631,7 @@ def haskell_register_ghc_bindists(
             target = target,
             version = version,
             compiler_flags = compiler_flags,
+            ghcopts = ghcopts,
             haddock_flags = haddock_flags,
             repl_ghci_args = repl_ghci_args,
             cabalopts = cabalopts,

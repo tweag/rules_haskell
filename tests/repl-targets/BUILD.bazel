@@ -104,7 +104,7 @@ haskell_test(
 haskell_library(
     name = "rebindable-syntax",
     srcs = ["RebindableSyntax.hs"],
-    compiler_flags = [
+    ghcopts = [
         "-XRebindableSyntax",
         "-Wname-shadowing",
     ],
