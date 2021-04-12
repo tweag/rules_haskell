@@ -10,12 +10,12 @@ load(
 )
 load(
     ":private/workspace_utils.bzl",
-    "check_deprecated_attribute_usage",
     "define_rule",
     "execute_or_fail_loudly",
     "find_python",
     "resolve_labels",
 )
+load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 
 # If you change this, change stackage's version in the start script
 # (see stackage.org).

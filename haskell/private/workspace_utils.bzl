@@ -85,16 +85,3 @@ def define_rule(rule_type, name, **kwargs):
         name = repr(name),
         attrs = "\n    ".join(attrs),
     )
-
-def check_deprecated_attribute_usage(
-        old_attr_name,
-        old_attr_value,
-        new_attr_name,
-        new_attr_value):
-    """ pre: the attributes must have a falsy default value. """
-    if old_attr_value:
-        if new_attr_value:
-            fail("{} is the new name of deprecated attribute {}. They cannot be used at the same time.", new_attr_name, old_attr_name)
-        return old_attr_value
-    else:
-        return new_attr_value

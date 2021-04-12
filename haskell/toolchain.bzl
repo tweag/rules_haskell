@@ -16,10 +16,7 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":cc.bzl", "ghc_cc_program_args")
-load(
-    ":private/workspace_utils.bzl",
-    "check_deprecated_attribute_usage",
-)
+load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 

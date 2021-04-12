@@ -20,7 +20,7 @@ load(
     "truly_relativize",
 )
 load(":private/set.bzl", "set")
-load(":private/typing.bzl", "typecheck_stackage_extradeps")
+load(":private/validate_attrs.bzl", "typecheck_stackage_extradeps")
 load(":haddock.bzl", "generate_unified_haddock_info")
 load(
     ":private/workspace_utils.bzl",

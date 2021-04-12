@@ -31,7 +31,7 @@ load(
     _ghc_plugin = "ghc_plugin",
 )
 load(
-    ":private/workspace_utils.bzl",
+    ":private/validate_attrs.bzl",
     "check_deprecated_attribute_usage",
 )
 
