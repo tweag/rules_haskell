@@ -7,6 +7,5 @@ pkgs.mkShell {
   LD_LIBRARY_PATH = "${crossPkgs.buildPackages.gcc-unwrapped.out.lib}/aarch64-unknown-linux-gnu/lib";
   buildInputs = [
     pkgs.qemu
-    pkgs.strace
   ];
 }
