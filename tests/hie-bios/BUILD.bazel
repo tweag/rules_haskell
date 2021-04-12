@@ -44,8 +44,8 @@ sh_test(
     size = "small",
     srcs = ["test_hie_bios.sh"],
     args = [
-        "$(location :hie-bios-file)",
-        "$(location :hie-bios-file-no-prefix)",
+        "$(rootpath :hie-bios-file)",
+        "$(rootpath :hie-bios-file-no-prefix)",
     ],
     data = [
         ":hie-bios-file",

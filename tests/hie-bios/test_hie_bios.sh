@@ -5,8 +5,7 @@
 # and that if we remove them, we get back file $2
 
 if grep -q '$magic_string' "$1"; then
-    sed -i 's#$magic_string/##' "$1"
-    cmp "$1" "$2"
+    sed 's#$magic_string/##' "$1" | cmp "$2"
 else
     echo "\$magic_string should be in file: $1"
     exit 1
