@@ -233,10 +233,16 @@ def _haskell_binary_common_impl(ctx, is_test):
         version = ctx.attr.version,
     )
 
+    boot_files = depset([
+        s
+        for s in c.extra_source_files.to_list() if s.extension in ["hs-boot", "lhs-boot"]
+        ])
+
     hs_info = HaskellInfo(
         package_databases = dep_info.package_databases,
         version_macros = set.empty(),
         source_files = c.source_files,
+        boot_files = boot_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         hs_libraries = dep_info.hs_libraries,
@@ -459,11 +465,17 @@ def haskell_library_impl(ctx):
             generate_version_macros(ctx, package_name, version),
         )
 
+    boot_files = depset([
+        s
+        for s in c.extra_source_files.to_list() if s.extension in ["hs-boot", "lhs-boot"]
+        ])
+
     export_infos = gather_dep_info(ctx, ctx.attr.exports)
     hs_info = HaskellInfo(
         package_databases = depset([cache_file], transitive = [dep_info.package_databases, export_infos.package_databases]),
         version_macros = version_macros,
         source_files = c.source_files,
+        boot_files = boot_files,
         extra_source_files = c.extra_source_files,
         import_dirs = set.mutable_union(c.import_dirs, export_infos.import_dirs),
         hs_libraries = depset(
@@ -822,6 +834,7 @@ def haskell_import_impl(ctx):
         package_databases = depset(),
         version_macros = version_macros,
         source_files = depset(),
+        boot_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
         hs_libraries = depset(),

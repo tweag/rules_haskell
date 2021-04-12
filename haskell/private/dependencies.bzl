@@ -38,6 +38,12 @@ def gather_dep_info(ctx, deps):
         if HaskellInfo in dep
     ])
 
+    boot_files = depset(transitive = [
+        dep[HaskellInfo].boot_files
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+
     import_dirs = set.empty()
     for dep in deps:
         if HaskellInfo in dep:
@@ -60,6 +66,7 @@ def gather_dep_info(ctx, deps):
         hs_libraries = hs_libraries,
         interface_dirs = interface_dirs,
         source_files = source_files,
+        boot_files = boot_files,
         import_dirs = import_dirs,
         extra_source_files = extra_source_files,
         compile_flags = compile_flags,
@@ -81,6 +88,7 @@ def gather_dep_info(ctx, deps):
                 compile_flags = compile_flags,
                 extra_source_files = extra_source_files,
                 source_files = source_files,
+                boot_files = boot_files,
                 user_compile_flags = [],
                 user_repl_flags = [],
             )
@@ -93,6 +101,7 @@ def gather_dep_info(ctx, deps):
                 version_macros = acc.version_macros,
                 import_dirs = acc.import_dirs,
                 source_files = acc.source_files,
+                boot_files = acc.boot_files,
                 compile_flags = acc.compile_flags,
                 hs_libraries = acc.hs_libraries,
                 extra_source_files = acc.extra_source_files,
