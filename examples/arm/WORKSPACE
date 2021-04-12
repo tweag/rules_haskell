@@ -4,11 +4,6 @@ workspace(name = "arm_cross_example")
 # rules_haskell preamble
 ##########################
 
-load(
-    "@bazel_tools//tools/build_defs/repo:http.bzl",
-    "http_archive",
-)
-
 local_repository(
     name = "rules_haskell",
     path = "../..",
@@ -21,10 +16,6 @@ load(
 
 rules_haskell_dependencies()
 
-load(
-    "@rules_haskell//haskell:toolchain.bzl",
-    "rules_haskell_toolchains",
-)
 load(
     "@rules_haskell//haskell:cabal.bzl",
     "stack_snapshot",

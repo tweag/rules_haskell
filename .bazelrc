@@ -46,24 +46,27 @@ build:windows-bindist --test_tag_filters -requires_nix,-dont_test_on_windows,-re
 
 # CI Configuration
 # ----------------
-common:ci --color=no
+common:ci --config=ci-common
+build:ci --config=remote-cache
 
-build:ci --loading_phase_threads=1
-build:ci --verbose_failures
+common:ci-common --color=no
+
+build:ci-common --loading_phase_threads=1
+build:ci-common --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
 # can be changed by user.
-build:ci --symlink_prefix=bazel-ci-
-build:ci --repository_cache=~/repo-cache/
-build:ci --experimental_repository_cache_hardlinks
+build:ci-common --symlink_prefix=bazel-ci-
+build:ci-common --repository_cache=~/repo-cache/
+build:ci-common --experimental_repository_cache_hardlinks
 
 # Use a remote cache during CI
-build:ci --bes_results_url=https://app.buildbuddy.io/invocation/
-build:ci --bes_backend=grpcs://cloud.buildbuddy.io
-build:ci --remote_cache=grpcs://cloud.buildbuddy.io
-build:ci --remote_timeout=3600
+build:ci-common --bes_results_url=https://app.buildbuddy.io/invocation/
+build:ci-common --bes_backend=grpcs://cloud.buildbuddy.io
+build:remote-cache --remote_cache=grpcs://cloud.buildbuddy.io
+build:ci-common --remote_timeout=3600
 # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
 # See https://github.com/tweag/rules_haskell/issues/1498.
-build:ci --keep_backend_build_event_connections_alive=false
+build:ci-common --keep_backend_build_event_connections_alive=false
 
 test:ci --test_output=errors
 

@@ -1,5 +1,5 @@
 let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
-    haskellNix = import (builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/b406bb1d5bed581f651ae18a5d3ed07f47ace2b9.tar.gz) {};
+    haskellNix = import (builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/0d781c04c4ab9045a165bacf428b043995a167f6.tar.gz) {};
     pkgs = import haskellNix.sources.nixpkgs haskellNix.nixpkgsArgs;
     iserv-proxy = pkgs.buildPackages.ghc-extra-packages.ghc8102.iserv-proxy.components.exes.iserv-proxy;
     remote-iserv = crossPkgs.ghc-extra-packages.ghc8102.remote-iserv.components.exes.remote-iserv;
