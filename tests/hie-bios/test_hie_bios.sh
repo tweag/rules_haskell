@@ -11,7 +11,7 @@ if grep -q '$magic_string' "$1"; then
     od -c "$1"
     echo "$1 (sed output) ="
     sed 's#$magic_string/##' "$1" | od -c
-    sed 's#$magic_string/##' "$1" | diff -B "$2" -
+    sed 's#$magic_string/##' "$1" | diff "$2" -
 else
     echo "\$magic_string should be in file: $1"
     exit 1

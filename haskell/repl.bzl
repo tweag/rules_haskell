@@ -510,7 +510,7 @@ def _create_hie_bios(hs, posix, ctx, repl_info, path_prefix):
 
     args_file = ctx.actions.declare_file(".%s.hie-bios" % ctx.label.name)
     args_link = ctx.actions.declare_file("%s@hie-bios" % ctx.label.name)
-    ctx.actions.write(args_file, "\n".join(args))
+    ctx.actions.write(args_file, "\n".join(args) + "\n")
     ln(hs, posix, args_file, args_link, extra_inputs = inputs)
     return [OutputGroupInfo(hie_bios = [args_link])]
 
