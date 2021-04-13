@@ -899,16 +899,16 @@ to the compiler, emulation support needs to be set to enable
 compilation of Template Haskell splices via an external interpreter,
 and a compatible C cross-toolchain needs to be given as well for
 linking. All of this is configured via Nix in the
-`arm example<arm_cross_nix>`_, and the configuration can be copied as
+`arm example`_, and the configuration can be copied as
 is to other projects. Building the cross-compiler from this particular
 configuration can be avoided by telling Nix to fetch it from the
-`haskell.nix binary cache<haskell_nix_cache>`_.
+`haskell.nix binary cache`_.
 
-.. _arm_cross_nix: https://github.com/tweag/rules_haskell/blob/master/examples/arm/arm-cross.nix
-.. _haskell_nix_cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started/#setting-up-the-binary-cache
+.. _arm example: https://github.com/tweag/rules_haskell/blob/master/examples/arm/arm-cross.nix
+.. _haskell.nix binary cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started/#setting-up-the-binary-cache
 
 To tell ``rules_haskell`` about the cross-compiler, we can register it
-in the `WORKSPACE file<arm workspace file>`_. ::
+in the `WORKSPACE file`_. ::
 
   load(
       "@rules_haskell//haskell:nixpkgs.bzl",
@@ -937,10 +937,10 @@ to reach the cross-compiler. It says to link a static
 runtime because the cross-compiler doesn't provide dynamic variants
 of the core libraries. And finally, it specifies the execution and
 target platform constraints. More information on platform constraints
-and cross-compilation with Bazel can be found `here<bazel platforms>`_.
+and cross-compilation with Bazel can be found `here`_.
 
-.. _arm workspace file: https://github.com/tweag/rules_haskell/blob/master/examples/arm/WORKSPACE
-.. _bazel platforms: https://docs.bazel.build/versions/master/platforms-intro.html
+.. _WORKSPACE file: https://github.com/tweag/rules_haskell/blob/master/examples/arm/WORKSPACE
+.. _here: https://docs.bazel.build/versions/master/platforms-intro.html
 
 When using rules that depend on ``Cabal``, ``rules_haskell`` also
 needs a compiler targeting the execution platform, so the ``Setup.hs``
@@ -993,7 +993,7 @@ Similarly, we need to register the native and cross-toolchains for C. ::
 
 Having the toolchains registered, the last remaining bit is telling
 Bazel for which platform to build. Building for ``arm`` requires
-declaring the platform in the `BUILD<arm build file>`_ file. ::
+declaring the platform in the `BUILD`_ file. ::
 
   platform(
       name = "linux_aarch64",
@@ -1003,7 +1003,7 @@ declaring the platform in the `BUILD<arm build file>`_ file. ::
       ],
   )
 
-.. _arm build file: https://github.com/tweag/rules_haskell/blob/master/examples/arm/BUILD.bazel
+.. _BUILD: https://github.com/tweag/rules_haskell/blob/master/examples/arm/BUILD.bazel
 
 Then we can invoke ::
 
