@@ -164,6 +164,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             target[HaskellInfo].package_databases,
             target[HaskellInfo].interface_dirs,
             target[HaskellInfo].source_files,
+            target[HaskellInfo].boot_files,
             target[HaskellInfo].extra_source_files,
             target[HaskellInfo].hs_libraries,
             depset(cc_libraries),

@@ -125,6 +125,7 @@ def _haskell_doctest_single(target, ctx):
     ctx.actions.run_shell(
         inputs = depset(transitive = [
             hs_info.source_files,
+            hs_info.boot_files,
             hs_info.package_databases,
             hs_info.interface_dirs,
             hs_info.extra_source_files,
