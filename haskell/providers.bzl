@@ -7,6 +7,7 @@ HaskellInfo = provider(
         "version_macros": "Depset of version macro files.",
         "import_dirs": "Import hierarchy roots.",
         "source_files": "Depset of files that contain Haskell modules.",
+        "boot_files": "Depset of Haskell boot files",
         "extra_source_files": "Depset of non-Haskell source files.",
         "hs_libraries": "Depset of compiled Haskell libraries in all available GHC ways.",
         "interface_dirs": "Depset of interface dirs belonging to the packages.",

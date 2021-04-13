@@ -40,6 +40,7 @@ HaskellReplLoadInfo = provider(
     """,
     fields = {
         "source_files": "Set of files that contain Haskell modules.",
+        "boot_files": "Set of Haskell boot files.",
         "import_dirs": "Set of Haskell import directories.",
         "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of transitive C dependencies.",
@@ -115,6 +116,7 @@ def _data_runfiles(ctx, rule, attr):
 
 def _merge_HaskellReplLoadInfo(load_infos):
     source_files = depset()
+    boot_files = depset()
     import_dirs = depset()
     cc_libraries_infos = []
     cc_infos = []
@@ -124,6 +126,7 @@ def _merge_HaskellReplLoadInfo(load_infos):
 
     for load_info in load_infos:
         source_files = depset(transitive = [source_files, load_info.source_files])
+        boot_files = depset(transitive = [boot_files, load_info.boot_files])
         import_dirs = depset(transitive = [import_dirs, load_info.import_dirs])
         cc_libraries_infos.append(load_info.cc_libraries_info)
         cc_infos.append(load_info.cc_info)
@@ -133,6 +136,7 @@ def _merge_HaskellReplLoadInfo(load_infos):
 
     return HaskellReplLoadInfo(
         source_files = source_files,
+        boot_files = boot_files,
         import_dirs = import_dirs,
         cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = cc_libraries_infos),
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
@@ -175,6 +179,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
     if not HaskellToolchainLibraryInfo in target:
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = hs_info.source_files,
+            boot_files = hs_info.boot_files,
             import_dirs = set.to_depset(hs_info.import_dirs),
             cc_libraries_info = deps_HaskellCcLibrariesInfo([
                 dep
@@ -500,6 +505,9 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
 
     # List modules (Targets) covered by this cradle.
     args.extend([f.path for f in repl_info.load_info.source_files.to_list()])
+
+    # List boot files
+    args.extend([f.path for f in repl_info.load_info.boot_files.to_list()])
 
     args_file = ctx.actions.declare_file(".%s.hie-bios" % ctx.label.name)
     args_link = ctx.actions.declare_file("%s@hie-bios" % ctx.label.name)

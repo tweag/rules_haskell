@@ -117,6 +117,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         objects_dir: object files directory
         interfaces_dir: interface files directory
         source_files: set of files that contain Haskell modules
+        boot_files: set of Haskell boot files
         extra_source_files: depset of non-Haskell source files
         import_dirs: c2hs Import hierarchy roots
         env: default environment variables
@@ -323,7 +324,6 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         transitive = [
             extra_srcs,
             header_files,
-            boot_files,
             pkg_info_inputs,
             depset([optp_args_file]),
         ],
@@ -340,6 +340,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         compile_flags = compile_flags,
         inputs = depset(transitive = [
             source_files,
+            boot_files,
             extra_source_files,
             depset(cc.hdrs),
             dep_info.package_databases,
@@ -358,6 +359,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         interfaces_dir = interfaces_dir,
         outputs = [objects_dir, interfaces_dir],
         source_files = source_files,
+        boot_files = boot_files,
         extra_source_files = extra_source_files,
         import_dirs = import_dirs,
         env = dicts.add(
@@ -405,6 +407,7 @@ def compile_binary(
         object_dyn_files: list of dynamic object files
         modules: set of module names
         source_files: set of Haskell source files
+        boot_files: set of Haskell boot files
     """
     c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins, preprocessors = preprocessors)
     c.args.add_all(["-main-is", main_function])
@@ -438,6 +441,7 @@ def compile_binary(
     return struct(
         objects_dir = c.objects_dir,
         source_files = c.source_files,
+        boot_files = c.boot_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         compile_flags = c.compile_flags,
@@ -471,6 +475,7 @@ def compile_library(
         compile_flags: list of string arguments suitable for Haddock
         modules: set of module names
         source_files: set of Haskell module files
+        boot_files: set of Haskell boot files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
     c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, preprocessors = preprocessors)
@@ -516,6 +521,7 @@ def compile_library(
         objects_dir = c.objects_dir,
         compile_flags = c.compile_flags,
         source_files = c.source_files,
+        boot_files = c.boot_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         coverage_data = coverage_data,
