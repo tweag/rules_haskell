@@ -505,6 +505,7 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
 
     # List modules (Targets) covered by this cradle.
     args.extend([f.path for f in repl_info.load_info.source_files.to_list()])
+
     # List boot files
     args.extend([f.path for f in repl_info.load_info.boot_files.to_list()])
 

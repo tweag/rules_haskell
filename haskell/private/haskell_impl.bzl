@@ -235,8 +235,9 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     boot_files = depset([
         s
-        for s in c.extra_source_files.to_list() if s.extension in ["hs-boot", "lhs-boot"]
-        ])
+        for s in c.extra_source_files.to_list()
+        if s.extension in ["hs-boot", "lhs-boot"]
+    ])
 
     hs_info = HaskellInfo(
         package_databases = dep_info.package_databases,
@@ -467,8 +468,9 @@ def haskell_library_impl(ctx):
 
     boot_files = depset([
         s
-        for s in c.extra_source_files.to_list() if s.extension in ["hs-boot", "lhs-boot"]
-        ])
+        for s in c.extra_source_files.to_list()
+        if s.extension in ["hs-boot", "lhs-boot"]
+    ])
 
     export_infos = gather_dep_info(ctx, ctx.attr.exports)
     hs_info = HaskellInfo(
