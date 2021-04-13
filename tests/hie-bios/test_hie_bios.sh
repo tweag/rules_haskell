@@ -6,12 +6,12 @@
 
 if grep -q '$magic_string' "$1"; then
     echo "$2 ="
-    od "$2"
+    od -c "$2"
     echo "$1 ="
-    od "$1"
+    od -c "$1"
     echo "$1 (sed output) ="
-    sed 's#$magic_string/##' "$1" | od
-    sed 's#$magic_string/##' "$1" | cmp "$2"
+    sed 's#$magic_string/##' "$1" | od -c
+    sed 's#$magic_string/##' "$1" | diff -B "$2" -
 else
     echo "\$magic_string should be in file: $1"
     exit 1
