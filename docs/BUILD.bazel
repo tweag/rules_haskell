@@ -1,5 +1,27 @@
 load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
 load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_haskell//docs/pandoc:pandoc.bzl", "set_site_end_location")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+bool_flag(
+    name = "render_dev_website",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "dev_website_config",
+    flag_values = {
+        "render_dev_website": "True",
+    },
+)
+
+set_site_end_location(
+    name = "set_site_end_location",
+    site_end_location = select({
+        ":dev_website_config": "/api",
+        "//conditions:default": "",
+    }),
+)
 
 libraries = [
     "defs",
@@ -49,6 +71,7 @@ libraries = [
             outs = ["haskell/%s.html" % lib],
             cmd = """\
 $(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
   -f markdown \
   -t html \
   -s \
@@ -57,8 +80,9 @@ $(execpath //docs/pandoc) \
   --toc \
   --toc-depth=2 \
   -o $(OUTS) \
-  $(execpath :%s_md)
-""" % lib,
+  $(execpath :{}_md)
+""".format(lib),
+            toolchains = [":set_site_end_location"],
             tools = ["//docs/pandoc"],
         ),
     )
@@ -90,6 +114,7 @@ genrule(
     outs = ["nav.html"],
     cmd = """\
 $(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
   -f markdown \
   -t html \
   -s \
@@ -99,6 +124,7 @@ $(execpath //docs/pandoc) \
   --metadata-file=$(execpath :metadata) \
   <<<""
 """,
+    toolchains = [":set_site_end_location"],
     tools = ["//docs/pandoc"],
 )
 
@@ -115,6 +141,7 @@ genrule(
     cmd = """\
 # Render overview page body.
 $(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
   -f markdown \
   -t html \
   -s \
@@ -125,6 +152,7 @@ $(execpath //docs/pandoc) \
   <<<""
 # Render full overview page including navigation sidebar.
 $(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
   -f html \
   -t html \
   -s \
@@ -137,6 +165,7 @@ $(execpath //docs/pandoc) \
   --metadata-file=$(execpath :metadata) \
   index_body.html
 """,
+    toolchains = [":set_site_end_location"],
     tools = ["//docs/pandoc"],
 )
 

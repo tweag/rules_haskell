@@ -15,7 +15,7 @@ $--
 $-- Translation of Skydoc Jinja templates to pandoc
 $-- https://github.com/bazelbuild/skydoc/blob/b8a32e0/skydoc/templates
 $for(module)$
-<h2><a href="/haskell/$module.name$.html" id="$module.name$">$module.summary$</a></h2>
+<h2><a href="$path_prefix$/haskell/$module.name$.html" id="$module.name$">$module.summary$</a></h2>
 <table class="overview-table">
   <colgroup>
     <col class="col-name" />
@@ -25,7 +25,7 @@ $for(module)$
 $for(module.symbol)$
     <tr>
       <td>
-        <a href="/haskell/$module.name$.html#$module.symbol.name$">
+        <a href="$path_prefix$/haskell/$module.name$.html#$module.symbol.name$">
           <code>$module.symbol.name$</code>
         </a>
       </td>
