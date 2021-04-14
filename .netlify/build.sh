@@ -26,9 +26,10 @@ sed -i 's/vendored_node = "@nixpkgs_nodejs"/vendored_node = None/' WORKSPACE
 if [ "$RENDER_GUIDE" = true ]; then
     bazel build //docs:api_html --//docs:render_dev_website
     mkdir -p public/api
-    unzip -d public bazel-bin/docs/api_html-stardoc.zip
+    unzip -d public/api bazel-bin/docs/api_html-stardoc.zip
     cp start public/api
 
+    bazel build //docs:guide_html
     mkdir -p public/guide
     unzip -d public/guide bazel-bin/docs/guide_html.zip
 else
