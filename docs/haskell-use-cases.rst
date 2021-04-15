@@ -990,7 +990,7 @@ Similarly, we need to register the native and cross-toolchains for C. ::
 
 Having the toolchains registered, the last remaining bit is telling
 Bazel for which platform to build. Building for ``arm`` requires
-declaring the platform in the `BUILD <https://github.com/tweag/rules_haskell/blob/master/examples/arm/BUILD.bazel>`_ file. ::
+declaring the platform in the `BUILD<https://github.com/tweag/rules_haskell/blob/master/examples/arm/BUILD.bazel>`_ file. ::
 
   platform(
       name = "linux_aarch64",

@@ -53,6 +53,8 @@ jobs:
             bazel build //tests:run-tests
             ./bazel-ci-bin/tests/run-tests
             bazel coverage //tests/...
+            bazel build //docs:api_html
+            bazel build //docs:guide_html
             '
 
   test-nixpkgs-cross:
