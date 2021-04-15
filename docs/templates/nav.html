@@ -18,14 +18,14 @@ $-- https://github.com/bazelbuild/skydoc/blob/b8a32e0/skydoc/templates
         <span class="mdl-layout-title">Bazel</span>
         <nav class="drawer-nav">
           <ul class="drawer-nav">
-            <li><a href="/index.html">Overview</a></li>
+            <li><a href="$path_prefix$/index.html">Overview</a></li>
 $for(module)$
             <li>
-              <a href="/haskell/$module.name$.html">$module.summary$</a>
+              <a href="$path_prefix$/haskell/$module.name$.html">$module.summary$</a>
               <ul>
 $for(module.symbol)$
                 <li>
-                  <a href="/haskell/$module.name$.html#$module.symbol.name$" $if(module.symbol.summary)$title="$module.symbol.summary$"$endif$>
+                  <a href="$path_prefix$/haskell/$module.name$.html#$module.symbol.name$" $if(module.symbol.summary)$title="$module.symbol.summary$"$endif$>
                     $module.symbol.name$
                   </a>
                 </li>
