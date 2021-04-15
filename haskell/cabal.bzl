@@ -995,6 +995,11 @@ haskell_cabal_test = rule(
             cfg = "host",
             default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
+        "_runghc": attr.label(
+            executable = True,
+            cfg = "host",
+            default = Label("@rules_haskell//haskell:runghc"),
+        ),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
