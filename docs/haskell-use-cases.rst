@@ -384,7 +384,7 @@ the ``packages`` attribute. ::
   )
 
 Non-Haskell dependencies
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some Hackage packages depend on C libraries. Bazel builds should be hermetic,
 therefore, such library dependencies should be managed by Bazel and declared
