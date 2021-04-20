@@ -346,9 +346,16 @@ Pinning
 ^^^^^^^
 
 The ``stack_snapshot`` rule invokes ``stack`` for version and dependency
-resolution. By default this will happen on every fetch of the repository. You
-can enable pinning to avoid repeated fetching and to ensure that dependencies
-don't change, e.g. due to new Cabal revisions.
+resolution.  By default this will happen on every fetch of the `external
+repository`_. This may require arbitrary network access, which can slow down
+the build. It may also lead to reproducibility issues, for example if a new
+revision of a Hackage dependency is published. Finally, ``stack`` downloading
+packages is opaque to Bazel and therefore not eligible for `repository caching`_.
+
+You can enable pinning to avoid these issues. In this case ``stack`` will be
+called only once to perform dependency resolution and the results will be
+written to a lock file. Future fetches will only read from that lock file and
+download packages in a way that is eligible for Bazel repository caching.
 
 1. Generate a lock file by running ``bazel run @stackage-unpinned//:pin``.
 2. Set the ``stack_snapshot_json`` attribute. ::
@@ -497,6 +504,8 @@ a Hackage packages, for example one with patched Cabal version bounds. ::
 .. _haskell_cabal_binary: https://api.haskell.build/haskell/cabal.html#haskell_cabal_binary
 .. _stack_snapshot: https://api.haskell.build/haskell/cabal.html#stack_snapshot
 .. _custom Stack snapshot: https://docs.haskellstack.org/en/stable/pantry/#snapshots
+.. _external repository: https://docs.bazel.build/versions/master/external.html
+.. _repository caching: https://docs.bazel.build/versions/master/guide.html#the-repository-cache
 
 Building Cabal packages (using Nix)
 -----------------------------------
