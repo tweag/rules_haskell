@@ -376,7 +376,7 @@ the ``packages`` attribute. ::
       ],
   )
 
-C-library dependencies
+Non-Haskell dependencies
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Some Hackage packages depend on C libraries. Bazel builds should be hermetic,
