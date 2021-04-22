@@ -241,13 +241,17 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
 
     return (cache_file, static_libs, dynamic_libs)
 
+def _path_or_none(f):
+    if f != None:
+        return f.path
+
 def cc_library_key(library_to_link):
     """Convert a LibraryToLink into a hashable dictionary key."""
     return struct(
-        dynamic_library = library_to_link.dynamic_library,
-        interface_library = library_to_link.interface_library,
-        static_library = library_to_link.static_library,
-        pic_static_library = library_to_link.pic_static_library,
+        dynamic_library = _path_or_none(library_to_link.dynamic_library),
+        interface_library = _path_or_none(library_to_link.interface_library),
+        static_library = _path_or_none(library_to_link.static_library),
+        pic_static_library = _path_or_none(library_to_link.pic_static_library),
     )
 
 def deps_HaskellCcLibrariesInfo(deps):
