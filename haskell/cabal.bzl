@@ -2234,7 +2234,7 @@ def _get_platform(repository_ctx):
     return (os, arch)
 
 def _fetch_stack_impl(repository_ctx):
-    repository_ctx.file("BUILD.bazel")
+    repository_ctx.file("BUILD.bazel", content = "exports_files([\"stack\"])")
     stack_cmd = repository_ctx.which("stack")
     if stack_cmd:
         if _stack_version_check(repository_ctx, stack_cmd):
