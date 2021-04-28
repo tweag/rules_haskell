@@ -1,7 +1,13 @@
 load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+load(":test.bzl", "default_info_test")
 
 haskell_module(
     name = "single",
     src = "Single.hs",
     deps = ["//tests/hackage:base"],
+)
+
+default_info_test(
+    name = "default_info_test",
+    target_under_test = ":single",
 )
