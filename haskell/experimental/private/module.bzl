@@ -16,6 +16,10 @@ load(
     "expose_packages",
     "pkg_info_to_compile_flags",
 )
+load(
+    "//haskell/experimental:providers.bzl",
+    "HaskellModuleInfo",
+)
 
 def haskell_module_impl(ctx):
     hs = haskell_context(ctx)
@@ -74,6 +78,14 @@ def haskell_module_impl(ctx):
 
     args.add_all(cc.include_args)
 
+    args.add_all([
+        # TODO[AH] Factor this out
+        # TODO[AH] Include object search paths for template Haskell dependencies.
+        dep[HaskellModuleInfo].interface_dir
+        for dep in ctx.attr.deps
+        if HaskellModuleInfo in dep
+    ], format_each = "-i%s")
+
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
@@ -102,7 +114,13 @@ def haskell_module_impl(ctx):
         cc,
         inputs = depset(
             direct = [src] + extra_srcs + [optp_args_file],
-            transitive = [pkg_info_inputs],
+            transitive = [pkg_info_inputs] + [
+                # TODO[AH] Factor this out
+                # TODO[AH] Include object files for template Haskell dependencies.
+                depset(direct = [dep[HaskellModuleInfo].interface_file])
+                for dep in ctx.attr.deps
+                if HaskellModuleInfo in dep
+            ],
         ),
         input_manifests = [],
         outputs = [obj, interface],
@@ -116,5 +134,11 @@ def haskell_module_impl(ctx):
     default_info = DefaultInfo(
         files = depset(direct = [obj, interface]),
     )
+    module_info = HaskellModuleInfo(
+        object_file = obj,
+        # TODO[AH] Support module hierarchy.
+        interface_dir = interface.dirname,
+        interface_file = interface,
+    )
 
-    return [default_info]
+    return [default_info, module_info]
