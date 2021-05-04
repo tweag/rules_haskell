@@ -78,8 +78,7 @@ jobs:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
           cat >.bazelrc.local <<EOF
-          # Enabling --config=ci causes cross-compilation to crawl
-          common --config=ci-common
+          common --config=ci
           build --config=linux-nixpkgs
           build --remote_header=x-buildbuddy-api-key="$BUILDBUDDY_API_KEY"
           EOF
