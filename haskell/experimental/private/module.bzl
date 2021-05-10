@@ -131,13 +131,20 @@ def haskell_module_impl(ctx):
         arguments = args,
     )
 
+    workspace_root = paths.join(ctx.bin_dir.path, ctx.label.workspace_root)
+    package_root = paths.join(workspace_root, ctx.label.package)
+    src_strip_prefix = ctx.attr.src_strip_prefix
+    if src_strip_prefix.startswith("/"):
+        interface_dir = paths.join(workspace_root, src_strip_prefix[1:])
+    else:
+        interface_dir = paths.join(package_root, src_strip_prefix)
+
     default_info = DefaultInfo(
         files = depset(direct = [obj, interface]),
     )
     module_info = HaskellModuleInfo(
         object_file = obj,
-        # TODO[AH] Support module hierarchy.
-        interface_dir = interface.dirname,
+        interface_dir = interface_dir,
         interface_file = interface,
     )
 

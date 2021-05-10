@@ -20,6 +20,7 @@ _haskell_module = rule(
             allow_single_file = [".hs", ".lhs"],  #, ".hs-boot", ".lhs-boot", ".hsc", ".h"],
             mandatory = True,
         ),
+        "src_strip_prefix": attr.string(),
         "extra_srcs": attr.label_list(
             allow_files = True,
         ),
