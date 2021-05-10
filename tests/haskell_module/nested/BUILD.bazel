@@ -1,0 +1,21 @@
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+haskell_module(
+    name = "Branch.Right.Module",
+    src = "src/Branch/Right/Module.hs",
+    src_strip_prefix = "src",
+    deps = [
+        "//tests/hackage:base",
+        "//tests/haskell_module/nested/Root:Module",
+    ],
+)
+
+haskell_module(
+    name = "LeafModule",
+    src = "LeafModule.hs",
+    deps = [
+        ":Branch.Right.Module",
+        "//tests/hackage:base",
+        "//tests/haskell_module/nested/Branch/Left:Module",
+    ],
+)
