@@ -14,7 +14,7 @@ import System.IO.Temp (withSystemTempDirectory)
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
-import Test.Hspec (hspec, it, describe, runIO, shouldSatisfy, expectationFailure)
+import Test.Hspec (context, hspec, it, describe, runIO, shouldSatisfy, expectationFailure)
 
 main :: IO ()
 main = hspec $ do
@@ -115,6 +115,11 @@ main = hspec $ do
     for_ all_failure_tests $ \test -> do
       it test $ do
         assertFailure (bazel ["build", test])
+
+    context "known issues" $
+      it "haskell_doc fails with plugins #1549" $
+        -- https://github.com/tweag/rules_haskell/issues/1549
+        assertFailure (bazel ["build", "//tests/haddock-with-plugin"])
 
   -- Test that the repl still works if we shadow some Prelude functions
   it "repl name shadowing" $ do

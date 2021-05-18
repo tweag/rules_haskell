@@ -31,5 +31,6 @@ haskell_library(
 
 haskell_doc(
     name = "haddock-with-plugin",
+    tags = ["manual"],
     deps = [":library"],
 )
