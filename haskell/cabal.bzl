@@ -421,9 +421,10 @@ def _haskell_cabal_library_impl(ctx):
     )
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
     package_name = ctx.attr.package_name if ctx.attr.package_name else hs.label.name
-    package_id = "{}-{}".format(
+    package_id = "{}-{}{}".format(
         package_name,
         ctx.attr.version,
+        "-{}".format(ctx.attr.sublibrary_name) if ctx.attr.sublibrary_name else "",
     )
     with_profiling = is_profiling_enabled(hs)
 
@@ -493,9 +494,7 @@ def _haskell_cabal_library_impl(ctx):
         dep_info,
         cc_info,
         direct_cc_info,
-        component = "lib:{}".format(
-            ctx.attr.package_name if ctx.attr.package_name else hs.label.name,
-        ),
+        component = "lib:{}".format(ctx.attr.sublibrary_name or ctx.attr.package_name or hs.label.name),
         package_id = package_id,
         tool_inputs = tool_inputs,
         tool_input_manifests = tool_input_manifests,
@@ -632,6 +631,9 @@ haskell_cabal_library = rule(
         "version": attr.string(
             doc = "Version of the Cabal package.",
             mandatory = True,
+        ),
+        "sublibrary_name": attr.string(
+            doc = "sublibrary of the Cabal package to build",
         ),
         "haddock": attr.bool(
             default = True,
