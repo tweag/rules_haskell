@@ -1,3 +1,5 @@
+"""Test compilation of a multiple interdependent Haskell modules in a nested module hierarchy across multiple Bazel packages with only core-package dependencies."""
+
 load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 
 haskell_module(
