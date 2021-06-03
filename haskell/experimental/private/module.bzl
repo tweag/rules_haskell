@@ -22,19 +22,21 @@ load(
 )
 
 def haskell_module_impl(ctx):
+    # Obtain toolchains
     hs = haskell_context(ctx)
     cc = cc_interop_info(ctx)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
+    # Collect dependencies
     src = ctx.file.src
     extra_srcs = ctx.files.extra_srcs
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
-    # ctx.attr.deps
     # TODO[AH] Support plugins
     # ctx.attr.plugins
     # TODO[AH] Support preprocessors
     # ctx.attr.tools
 
+    # Determine outputs
     obj = ctx.actions.declare_file(
         paths.replace_extension(src.basename, ".o"),
         sibling = src,
@@ -44,6 +46,8 @@ def haskell_module_impl(ctx):
         sibling = src,
     )
     # TODO[AH] Support additional outputs such as `.hie`.
+
+    # Construct compiler arguments
 
     args = ctx.actions.args()
     args.add_all(["-c", "-o", obj, "-ohi", interface, src])
@@ -78,14 +82,17 @@ def haskell_module_impl(ctx):
 
     args.add_all(cc.include_args)
 
+    # Collect module dependency arguments
     args.add_all([
         # TODO[AH] Factor this out
         # TODO[AH] Include object search paths for template Haskell dependencies.
+        #   See https://github.com/tweag/rules_haskell/issues/1382
         dep[HaskellModuleInfo].interface_dir
         for dep in ctx.attr.deps
         if HaskellModuleInfo in dep
     ], format_each = "-i%s")
 
+    # Collect library dependency arguments
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
@@ -109,6 +116,7 @@ def haskell_module_impl(ctx):
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(ctx.attr.ghcopts)
 
+    # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
@@ -131,6 +139,7 @@ def haskell_module_impl(ctx):
         arguments = args,
     )
 
+    # Construct the import search paths for this module
     workspace_root = paths.join(ctx.bin_dir.path, ctx.label.workspace_root)
     package_root = paths.join(workspace_root, ctx.label.package)
     src_strip_prefix = ctx.attr.src_strip_prefix
@@ -138,6 +147,8 @@ def haskell_module_impl(ctx):
         interface_dir = paths.join(workspace_root, src_strip_prefix[1:])
     else:
         interface_dir = paths.join(package_root, src_strip_prefix)
+
+    # Construct and return providers
 
     default_info = DefaultInfo(
         files = depset(direct = [obj, interface]),
