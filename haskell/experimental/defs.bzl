@@ -44,6 +44,7 @@ _haskell_module = rule(
             cfg = "host",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
+        # TODO[AH] Support package name and version for modules that are part of a package.
         # TODO[AH] Suppport worker
     },
     toolchains = [
@@ -65,9 +66,39 @@ def haskell_module(
         tools = [],
         worker = None,
         **kwargs):
-    """Build a module from Haskell source.
+    """Compile a module from Haskell source.
 
-    TODO[AH] Write API docs
+    Note: This rule is experimental and not ready for production, yet.
+
+    ### Examples
+
+      ```bzl
+      haskell_module(
+          name = "Example.Module",
+          src = "src/Example/Module.hs",
+          src_strip_prefix = "src",
+          deps = [
+              "//:Another.Module",
+              "//:some-library",
+          ],
+      )
+      ```
+
+    Args:
+      name: A unique name for this rule.
+      src_strip_prefix: Prefix before the path matches the module name.
+        This is used as an import search for the Haskell compiler.
+        Values starting with `/` are relative to the workspace root,
+        other paths are relative to the package.
+      src: The Haskell source file.
+      extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
+      deps: List of other Haskell modules or libraries needed to compile this module.
+      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
+      ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation. (Not implemented, yet)
+      tools: Extra tools needed at compile-time, like preprocessors. (Not implemented, yet)
+      worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental). (Not implemented, yet)
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
     _haskell_module(
         name = name,

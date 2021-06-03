@@ -1,8 +1,8 @@
 HaskellModuleInfo = provider(
-    doc = "Module-specific information.",
+    doc = "Information about a single compiled Haskell module.",
     fields = {
-        "object_file": "",
-        "interface_dir": "",
-        "interface_file": "",
+        "object_file": "The compiled `.o` file.",
+        "interface_dir": "The import search directory for the interface file.",
+        "interface_file": "The compiled `.hi` file.",
     },
 )
