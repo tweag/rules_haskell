@@ -373,6 +373,7 @@ def _ghc_bindist_impl(ctx):
         # IMPORTANT: all these scripts have to be compatible with BSD
         # tools! This means that sed -i always takes an argument.
         execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
+        execute_or_fail_loudly(ctx, ["rm", "-f", "config.mk.in.bak"], working_directory = unpack_dir)
         execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath], working_directory = unpack_dir)
         make_loc = ctx.which("make")
         if not make_loc:
@@ -397,6 +398,9 @@ grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
         -e '2i\
 DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(readlink "$(basename "$resolved")")"; do resolved="$tmp"; cd "$(dirname "$resolved")"; done; echo "$PWD/$(basename "$resolved")")" )/.."' \
         -e 's:{bindist_dir}:$DISTDIR:'
+find bin -type f -print0 | xargs -0 \
+grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
+rm -f
 """.format(
             bindist_dir = bindist_dir.realpath,
         ))
