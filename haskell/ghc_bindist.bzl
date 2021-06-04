@@ -373,7 +373,7 @@ def _ghc_bindist_impl(ctx):
         # IMPORTANT: all these scripts have to be compatible with BSD
         # tools! This means that sed -i always takes an argument.
         execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
-        execute_or_fail_loudly(ctx, ["rm", "-f", "config.mk.in.bak"], working_directory = unpack_dir)
+        execute_or_fail_loudly(ctx, ["rm", "-f", "mk/config.mk.in.bak"], working_directory = unpack_dir)
         execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath], working_directory = unpack_dir)
         make_loc = ctx.which("make")
         if not make_loc:
