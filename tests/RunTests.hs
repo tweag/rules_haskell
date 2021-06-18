@@ -29,8 +29,8 @@ main = hspec $ do
     -- -dont_test_on_darwin. However, specifiying --test_tag_filters
     -- -requires_dynamic here alone would override that filter. So,
     -- we have to duplicate that filter here.
-    let tagFilter | os == "darwin" = "-dont_test_on_darwin,-requires_dynamic"
-                  | otherwise      = "-requires_dynamic"
+    let tagFilter | os == "darwin" = "-dont_test_on_darwin,-requires_dynamic,-skip_profiling"
+                  | otherwise      = "-requires_dynamic,-skip_profiling"
     assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only", "--test_tag_filters", tagFilter])
 
   it "bazel build worker" $ do

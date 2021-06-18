@@ -1,0 +1,14 @@
+load("@bazel_skylib//rules:common_settings.bzl", "string_setting")
+
+string_setting(
+    name = "package_name_setting",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
+)
+
+# for bzl_library() in //haskell:BUILD.bazel
+exports_files([
+    "providers.bzl",
+    "defs.bzl",
+    "transitions.bzl",
+])

@@ -20,6 +20,10 @@ load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
+load(
+    "@bazel_skylib//rules:common_settings.bzl",
+    "BuildSettingInfo",
+)
 
 def haskell_module_impl(ctx):
     # Obtain toolchains
@@ -59,7 +63,16 @@ def haskell_module_impl(ctx):
         # to debug issues in non-sandboxed builds.
         "-Wmissing-home-modules",
     ])
-    if hs.toolchain.static_runtime and not hs.toolchain.is_windows:
+    package_name = getattr(ctx.attr, "package_name", None)
+    if not package_name:
+        package_name = ctx.attr._package_name_setting[BuildSettingInfo].value
+    if package_name != "":
+        args.add_all([
+            "-this-unit-id",
+            package_name,
+            "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(ctx.attr.package_name),
+        ])
+    if not hs.toolchain.is_windows:
         # A static GHC RTS requires -fPIC. However, on Unix we also require
         # -fexternal-dynamic-refs, otherwise GHC still generates R_X86_64_PC32
         # relocations which prevents loading these static libraries as PIC.

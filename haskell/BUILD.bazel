@@ -70,6 +70,9 @@ bzl_library(
     deps = [
         ":bazel_json",
         ":bazel_tools",
+        "//haskell/experimental:defs.bzl",
+        "//haskell/experimental:providers.bzl",
+        "//haskell/experimental:transitions.bzl",
         "@bazel_skylib//lib:collections",
         "@bazel_skylib//lib:dicts",
         "@bazel_skylib//lib:paths",
