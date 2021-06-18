@@ -34,6 +34,14 @@ load(
     ":private/validate_attrs.bzl",
     "check_deprecated_attribute_usage",
 )
+load(
+    "//haskell/experimental:providers.bzl",
+    "HaskellModuleInfo",
+)
+load(
+    "//haskell/experimental:transitions.bzl",
+    "package_name_out_transition",
+)
 
 # NOTE: Documentation needs to be added to the wrapper macros below.
 #   Currently it is not possible to automatically inherit rule documentation in
@@ -49,6 +57,12 @@ _haskell_common_attrs = {
     "deps": attr.label_list(
         aspects = [haskell_cc_libraries_aspect],
     ),
+    "modules": attr.label_list(
+        providers = [HaskellModuleInfo],
+        cfg = package_name_out_transition,
+    ),
+    # a proxy for ctx.label so that the transition can access it
+    "label_string": attr.string(),
     "data": attr.label_list(
         allow_files = True,
     ),
@@ -92,6 +106,10 @@ _haskell_common_attrs = {
         default = None,
         executable = True,
         cfg = "host",
+    ),
+    # needed for transitions (e.g. modules)
+    "_allowlist_function_transition": attr.label(
+        default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
     ),
 }
 
@@ -449,6 +467,7 @@ def haskell_library(
         srcs = [],
         extra_srcs = [],
         deps = [],
+        modules = [],
         data = [],
         compiler_flags = [],
         ghcopts = [],
@@ -492,6 +511,7 @@ def haskell_library(
       srcs: Haskell source files.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      modules: List of extra haskell_module() dependencies to be linked into this library.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -514,10 +534,12 @@ def haskell_library(
     _haskell_worker_wrapper(
         "library",
         name = name,
+        label_string = native.repository_name() + "//" + native.package_name() + ":" + name,
         src_strip_prefix = src_strip_prefix,
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        modules = modules,
         data = data,
         compiler_flags = compiler_flags,
         ghcopts = ghcopts,

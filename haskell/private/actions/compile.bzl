@@ -26,6 +26,7 @@ load(
     "link_libraries",
 )
 load(":private/set.bzl", "set")
+load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 
 def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     """Process a single hsc file.
@@ -530,6 +531,7 @@ def compile_library(
 def list_exposed_modules(
         hs,
         ls_modules,
+        modules,
         other_modules,
         exposed_modules_reexports,
         interfaces_dir,
@@ -539,6 +541,7 @@ def list_exposed_modules(
     Args:
       hs: The Haskell context.
       ls_modules: The ls_modules.py executable.
+      modules: List of haskell_module()s. This feature is experimental.
       other_modules: List of hidden modules.
       exposed_modules_reexports: List of re-exported modules.
       interfaces_dir: The directory containing the interface files.
@@ -570,12 +573,20 @@ def list_exposed_modules(
             hs.toolchain.global_pkg_db,
             hidden_modules_file,
             reexported_modules_file,
+        ] + [
+            m[HaskellModuleInfo].interface_file
+            for m in modules
         ],
         outputs = [exposed_modules_file],
         executable = ls_modules,
         arguments = [
             str(with_profiling),
-            interfaces_dir.path,
+            ":".join(
+                [interfaces_dir.path] + [
+                    m[HaskellModuleInfo].import_dir
+                    for m in modules
+                ],
+            ),
             hs.toolchain.global_pkg_db.path,
             hidden_modules_file.path,
             reexported_modules_file.path,

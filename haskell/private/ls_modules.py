@@ -19,10 +19,10 @@ import io
 import package_configuration
 
 if len(sys.argv) != 7:
-    sys.exit("Usage: %s <WITH_PROFILING> <DIRECTORY> <GLOBAL_PKG_DB> <HIDDEN_MODS_FILE> <REEXPORTED_MODS_FILE> <RESULT_FILE>" % sys.argv[0])
+    sys.exit("Usage: %s <WITH_PROFILING> <DIRECTORIES> <GLOBAL_PKG_DB> <HIDDEN_MODS_FILE> <REEXPORTED_MODS_FILE> <RESULT_FILE>" % sys.argv[0])
 
 with_profiling = sys.argv[1] == 'True'
-root = sys.argv[2]
+roots = sys.argv[2]
 global_pkg_db_dump = sys.argv[3]
 hidden_modules_file = sys.argv[4]
 reexported_modules_file = sys.argv[5]
@@ -86,19 +86,16 @@ On Windows you may need to enable long file path support:
     """.strip().format(e), file=sys.stderr)
     exit(1)
 
-interface_files = (
-    os.path.join(path, f)
-    for path, dirs, files in os.walk(root, onerror=handle_walk_error)
-    for f in fnmatch.filter(files, '*.p_hi' if with_profiling else '*.hi')
-)
-
 modules = (
     # replace directory separators by . to generate module names
     # / and \ are respectively the separators for unix (linux / darwin) and windows systems
-    os.path.splitext(os.path.relpath(f, start=root))[0]
+    os.path.splitext(os.path.relpath(g, start=root))[0]
         .replace("/",".")
         .replace("\\",".")
-    for f in interface_files
+    for root in roots.split(":")
+    for path, dirs, files in os.walk(root, onerror=handle_walk_error)
+    for f in fnmatch.filter(files, '*.p_hi' if with_profiling else '*.hi')
+    for g in [os.path.join(path, f)]
 )
 
 exposed_modules = (

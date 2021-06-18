@@ -2,9 +2,10 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
-load(":private/path_utils.bzl", "get_lib_name", "target_unique_name")
+load(":private/path_utils.bzl", "get_lib_name", "rel_to_pkgroot", "target_unique_name")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/cc_libraries.bzl", "get_library_files")
+load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 
 def _get_extra_libraries(hs, cc, with_shared, dynamic = False):
     """Get directories and library names for extra library dependencies.
@@ -48,6 +49,7 @@ def package(
         posix,
         dep_info,
         with_shared,
+        modules,
         exposed_modules_file,
         other_modules,
         my_pkg_id,
@@ -60,6 +62,7 @@ def package(
       dep_info: Combined HaskellInfo of dependencies.
       libraries_to_link: list of LibraryToLink.
       with_shared: Whether to link dynamic libraries.
+      modules: List of haskell_module()s. This feature is experimental.
       exposed_modules_file: File holding list of exposed modules.
       other_modules: List of hidden modules.
       my_pkg_id: Package id object for this package.
@@ -94,7 +97,13 @@ def package(
         "key": pkg_id.to_string(my_pkg_id),
         "exposed": "True",
         "hidden-modules": other_modules,
-        "import-dirs": [import_dir],
+        "import-dirs": [import_dir] + [
+            rel_to_pkgroot(
+                m[HaskellModuleInfo].import_dir,
+                conf_file.dirname,
+            )
+            for m in modules
+        ],
         "library-dirs": ["${pkgroot}"] + extra_lib_dirs,
         "dynamic-library-dirs": ["${pkgroot}"] + extra_dynamic_lib_dirs,
         "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)] if has_hs_library else [],

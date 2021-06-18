@@ -35,7 +35,7 @@ def merge_parameter_files(hs, file1, file2):
     )
     return params_file
 
-def _create_objects_dir_manifest(hs, posix, objects_dir, dynamic, with_profiling):
+def _create_objects_dir_manifest(hs, posix, objects_dir, extra_objects, dynamic, with_profiling):
     suffix = ".dynamic.manifest" if dynamic else ".static.manifest"
     objects_dir_manifest = hs.actions.declare_file(
         objects_dir.basename + suffix,
@@ -58,12 +58,14 @@ def _create_objects_dir_manifest(hs, posix, objects_dir, dynamic, with_profiling
         # for efficient caching. See
         # https://github.com/tweag/rules_haskell/issues/1126.
         command = """
-        "{find}" {dir} -name '*.{ext}' | "{sort}" > {out}
+        "{cat}" <("{find}" {dir} -name '*.{ext}') <(echo -n "{extra}") | "{sort}" > {out}
         """.format(
             find = posix.commands["find"],
             sort = posix.commands["sort"],
+            cat = posix.commands["cat"],
             dir = objects_dir.path,
             ext = ext,
+            extra = "\n".join([e.path for e in extra_objects]),
             out = objects_dir_manifest.path,
         ),
     )
@@ -158,6 +160,7 @@ def link_binary(
         hs,
         posix,
         objects_dir,
+        [],
         dynamic = dynamic,
         with_profiling = with_profiling,
     )
@@ -246,7 +249,7 @@ def _so_extension(hs):
     """
     return "dylib" if hs.toolchain.is_darwin else "so"
 
-def link_library_static(hs, cc, posix, dep_info, objects_dir, my_pkg_id, with_profiling):
+def link_library_static(hs, cc, posix, dep_info, objects_dir, extra_objects, my_pkg_id, with_profiling):
     """Link a static library for the package using given object files.
 
     Returns:
@@ -259,11 +262,12 @@ def link_library_static(hs, cc, posix, dep_info, objects_dir, my_pkg_id, with_pr
         hs,
         posix,
         objects_dir,
+        extra_objects,
         dynamic = False,
         with_profiling = with_profiling,
     )
     args = hs.actions.args()
-    inputs = [objects_dir, objects_dir_manifest] + cc.files
+    inputs = [objects_dir, objects_dir_manifest] + extra_objects + cc.files
 
     if hs.toolchain.is_darwin:
         # On Darwin, ar doesn't support params files.
@@ -302,7 +306,7 @@ def link_library_static(hs, cc, posix, dep_info, objects_dir, my_pkg_id, with_pr
 
     return static_library
 
-def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, my_pkg_id, compiler_flags):
+def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, extra_objects, my_pkg_id, compiler_flags):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -352,6 +356,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, my_pk
         hs,
         posix,
         objects_dir,
+        extra_objects,
         dynamic = True,
         with_profiling = False,
     )
@@ -359,7 +364,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, objects_dir, my_pk
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
-        inputs = depset([cache_file, objects_dir], transitive = [
+        inputs = depset([cache_file, objects_dir] + extra_objects, transitive = [
             extra_srcs,
             dep_info.package_databases,
             dep_info.hs_libraries,
