@@ -28,7 +28,6 @@ _haskell_module = rule(
             aspects = [haskell_cc_libraries_aspect],
         ),
         "ghcopts": attr.string_list(),
-        #"repl_ghci_args": attr.string_list(),
         "plugins": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
         ),
@@ -61,7 +60,6 @@ def haskell_module(
         extra_srcs = [],
         deps = [],
         ghcopts = [],
-        #repl_ghci_args = [],
         plugins = [],
         tools = [],
         worker = None,
@@ -106,22 +104,8 @@ def haskell_module(
         extra_srcs = extra_srcs,
         deps = deps,
         ghcopts = ghcopts,
-        #repl_ghci_args = repl_ghci_args,
         plugins = plugins,
         tools = tools,
         #worker = worker,
         **kwargs
     )
-
-    #repl_kwargs = {
-    #    attr: kwargs[attr]
-    #    for attr in ["testonly", "tags"]
-    #    if attr in kwargs
-    #}
-    #haskell_repl(
-    #    name = "%s@repl" % name,
-    #    deps = [name],
-    #    experimental_from_source = [":%s" % name],
-    #    repl_ghci_args = [],
-    #    **repl_kwargs
-    #)
