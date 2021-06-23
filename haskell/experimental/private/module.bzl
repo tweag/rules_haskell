@@ -87,7 +87,7 @@ def haskell_module_impl(ctx):
         # TODO[AH] Factor this out
         # TODO[AH] Include object search paths for template Haskell dependencies.
         #   See https://github.com/tweag/rules_haskell/issues/1382
-        dep[HaskellModuleInfo].interface_dir
+        dep[HaskellModuleInfo].import_dir
         for dep in ctx.attr.deps
         if HaskellModuleInfo in dep
     ], format_each = "-i%s")
@@ -144,9 +144,9 @@ def haskell_module_impl(ctx):
     package_root = paths.join(workspace_root, ctx.label.package)
     src_strip_prefix = ctx.attr.src_strip_prefix
     if src_strip_prefix.startswith("/"):
-        interface_dir = paths.join(workspace_root, src_strip_prefix[1:])
+        import_dir = paths.join(workspace_root, src_strip_prefix[1:])
     else:
-        interface_dir = paths.join(package_root, src_strip_prefix)
+        import_dir = paths.join(package_root, src_strip_prefix)
 
     # Construct and return providers
 
@@ -155,7 +155,7 @@ def haskell_module_impl(ctx):
     )
     module_info = HaskellModuleInfo(
         object_file = obj,
-        interface_dir = interface_dir,
+        import_dir = import_dir,
         interface_file = interface,
     )
 
