@@ -1,3 +1,34 @@
+## Changes in version 0.7.0.0
+
+  * Remove `Addr` data type, lifted code should use `Ptr a` now
+
+  * Define `MonadFail` instances for `Array` and `SmallArray`.
+
+  * Define `unsafeInterleave`.
+
+  * Add a `Prim` instance for `StablePtr`
+
+  * Remove `UnliftedArray` and related type classes
+
+  * Add a lot more tests for `PrimArray`.
+
+  * Added PrimMonad instance for CPS Writer and RWS monads from Transformers
+
+  * Remove useless accidental laziness in `atomicModifyMutVar`, making it match
+    `atomicModifyIORef`. The semantics should be the same.
+
+  * lots of little documentation twiddles.
+
+## Changes in version 0.6.4.1
+
+ * Add instances for the following newtypes from `base`:
+   `Const`, `Identity`, `Down`, `Dual`, `Sum`, `Product`,
+   `First`, `Last`, `Min`, `Max`
+
+ * Add `base-orphans` dependency to test suite to accomodate
+   older versions of GHC not having instances of `Show` and `Eq`
+   for some of the above newtypes.
+
 ## Changes in version 0.6.4.0
 
  * Introduce `Data.Primitive.PrimArray`, which offers types and function
@@ -37,7 +68,7 @@
 
  * Fix the implementation of `mconcat` in the `Monoid` instance for
    `SmallArray`.
- 
+
  * Implement `Data.Primitive.Ptr`, implementations of `Ptr` functions
    that require a `Prim` constraint instead of a `Storable` constraint.
 
@@ -58,6 +89,11 @@
 
  * Add `defaultSetByteArray#` and `defaultSetOffAddr#` to
    `Data.Primitive.Types`.
+
+ * Add `Data.Primitive.MVar`, a replacement for `Control.Concurrent.MVar`
+   that can run in any `PrimMonad` instead of just `IO`. It is not a full
+   replacement. Notably, it's missing masking functions and support for
+   adding finalizers.
 
 ## Changes in version 0.6.3.0
 
