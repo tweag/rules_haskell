@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] 2020-09-20
+
+### Added
+
+* Support for Bazel 4.1.0
+
+[Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.13...master
+
 ## [0.13.0] 2020-09-20
 
 ### Added
