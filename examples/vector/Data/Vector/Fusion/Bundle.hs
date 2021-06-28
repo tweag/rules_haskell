@@ -55,7 +55,7 @@ module Data.Vector.Fusion.Bundle (
   and, or,
 
   -- * Unfolding
-  unfoldr, unfoldrN, iterateN,
+  unfoldr, unfoldrN, unfoldrExactN, iterateN,
 
   -- * Scans
   prescanl, prescanl',
@@ -71,7 +71,7 @@ module Data.Vector.Fusion.Bundle (
   fromVector, reVector, fromVectors, concatVectors,
 
   -- * Monadic combinators
-  mapM, mapM_, zipWithM, zipWithM_, filterM, foldM, fold1M, foldM', fold1M',
+  mapM, mapM_, zipWithM, zipWithM_, filterM, mapMaybeM, foldM, fold1M, foldM', fold1M',
 
   eq, cmp, eqBy, cmpBy
 ) where
@@ -80,7 +80,7 @@ import Data.Vector.Generic.Base ( Vector )
 import Data.Vector.Fusion.Bundle.Size
 import Data.Vector.Fusion.Util
 import Data.Vector.Fusion.Stream.Monadic ( Stream(..), Step(..) )
-import Data.Vector.Fusion.Bundle.Monadic ( Chunk(..) )
+import Data.Vector.Fusion.Bundle.Monadic ( Chunk(..), lift )
 import qualified Data.Vector.Fusion.Bundle.Monadic as M
 import qualified Data.Vector.Fusion.Stream.Monadic as S
 
@@ -127,14 +127,6 @@ inplace f g b = b `seq` M.fromStream (f (M.elements b)) (g (M.size b))
          g1 g2 s.
   inplace f1 g1 (inplace f2 g2 s) = inplace (f1 . f2) (g1 . g2) s   #-}
 
-
-
--- | Convert a pure stream to a monadic stream
-lift :: Monad m => Bundle v a -> M.Bundle m v a
-{-# INLINE_FUSED lift #-}
-lift (M.Bundle (Stream step s) (Stream vstep t) v sz)
-    = M.Bundle (Stream (return . unId . step) s)
-               (Stream (return . unId . vstep) t) v sz
 
 -- | 'Size' hint of a 'Bundle'
 size :: Bundle v a -> Size
@@ -437,7 +429,15 @@ unfoldrN :: Int -> (s -> Maybe (a, s)) -> s -> Bundle v a
 {-# INLINE unfoldrN #-}
 unfoldrN = M.unfoldrN
 
--- | Apply function n-1 times to value. Zeroth element is original value.
+-- | Unfold exactly @n@ elements
+--
+-- @since 0.12.2.0
+unfoldrExactN :: Int -> (s -> (a, s)) -> s -> Bundle v a
+{-# INLINE unfoldrExactN #-}
+unfoldrExactN = M.unfoldrExactN
+
+-- | /O(n)/ Apply function \(\max(n - 1, 0)\) times to an initial value, producing a pure
+-- bundle of exact length \(\max(n, 0)\). Zeroth element will contain the initial value.
 iterateN :: Int -> (a -> a) -> a -> Bundle v a
 {-# INLINE iterateN #-}
 iterateN = M.iterateN
@@ -551,6 +551,14 @@ zipWithM_ f as bs = M.zipWithM_ f (lift as) (lift bs)
 filterM :: Monad m => (a -> m Bool) -> Bundle v a -> M.Bundle m v a
 {-# INLINE filterM #-}
 filterM f = M.filterM f . lift
+
+-- | /O(n)/ Apply monadic function to each element of a bundle and
+-- discard elements returning Nothing.
+--
+-- @since 0.12.2.0
+mapMaybeM :: Monad m => (a -> m (Maybe b)) -> Bundle v a -> M.Bundle m v b
+{-# INLINE mapMaybeM #-}
+mapMaybeM f = M.mapMaybeM f . lift
 
 -- | Monadic fold
 foldM :: Monad m => (a -> b -> m a) -> a -> Bundle v b -> m a

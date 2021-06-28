@@ -49,6 +49,8 @@ class MVector v a where
   --
   -- Vectors that are necessarily initialized as part of creation may implement
   -- this as a no-op.
+  --
+  -- @since 0.11.0.0
   basicInitialize :: PrimMonad m => v (PrimState m) a -> m ()
 
   -- | Create a mutable vector of the given length and fill it with an
@@ -85,10 +87,12 @@ class MVector v a where
                                   -> v (PrimState m) a   -- ^ source
                                   -> m ()
 
-  -- | Grow a vector by the given number of elements. This method should not be
-  -- called directly, use 'unsafeGrow' instead.
-  basicUnsafeGrow  :: PrimMonad m => v (PrimState m) a -> Int
-                                                       -> m (v (PrimState m) a)
+  -- | Grow a vector by the given number of elements. Allocates a new vector and
+  -- copies all of the elements over starting at 0 index. This method should not
+  -- be called directly, use 'grow'\/'unsafeGrow' instead.
+  basicUnsafeGrow  :: PrimMonad m => v (PrimState m) a
+                                  -> Int
+                                  -> m (v (PrimState m) a)
 
   {-# INLINE basicUnsafeReplicate #-}
   basicUnsafeReplicate n x
@@ -143,3 +147,6 @@ class MVector v a where
     where
       n = basicLength v
 
+  {-# MINIMAL basicLength, basicUnsafeSlice, basicOverlaps,
+              basicUnsafeNew, basicInitialize, basicUnsafeRead,
+              basicUnsafeWrite #-}
