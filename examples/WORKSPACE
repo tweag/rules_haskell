@@ -105,8 +105,6 @@ stack_snapshot(
         "optparse-applicative",
         "text",
         "text-show",
-        # Demonstrates a Hackage dependency that is not included in the Snapshot.
-        "optparse-helper-0.2.1.1",
     ],
     snapshot = "lts-14.0",
     # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
