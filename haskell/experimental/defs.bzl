@@ -15,10 +15,9 @@ _haskell_module = rule(
         # TODO[AH] Merge with _haskell_common_attrs in //haskell:defs.bzl
         "package_name": attr.string(),
         "src": attr.label(
-            # TODO[AH] How to handle boot files?
             # TODO[AH] How to handle .hsc files?
             # TODO[AH] Do we need .h files in here?
-            allow_single_file = [".hs", ".lhs"],  #, ".hs-boot", ".lhs-boot", ".hsc", ".h"],
+            allow_single_file = [".hs", ".lhs", ".hs-boot"],  #, ".hs-boot", ".lhs-boot", ".hsc", ".h"],
             mandatory = True,
         ),
         "src_strip_prefix": attr.string(),
