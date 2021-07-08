@@ -303,9 +303,10 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
 
     # Plugins
     for plugin in plugins:
-        args.add("-fplugin={}".format(plugin.module))
-        for opt in plugin.args:
-            args.add_all(["-fplugin-opt", "{}:{}".format(plugin.module, opt)])
+        if plugin.module != "":
+            args.add("-fplugin={}".format(plugin.module))
+            for opt in plugin.args:
+                args.add_all(["-fplugin-opt", "{}:{}".format(plugin.module, opt)])
 
     plugin_tool_inputs = depset(transitive = [plugin.tool_inputs for plugin in plugins])
     plugin_tool_input_manifests = [

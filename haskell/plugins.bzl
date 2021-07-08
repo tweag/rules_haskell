@@ -19,7 +19,7 @@ ghc_plugin = rule(
     ghc_plugin_impl,
     attrs = {
         "module": attr.string(
-            doc = "Plugin entrypoint.",
+            doc = "Plugin entrypoint. Omit it to prevent -fplugin= from being set by default.",
         ),
         "deps": attr.label_list(
             doc = "Plugin dependencies. These are compile-time dependencies only.",
