@@ -1,0 +1,12 @@
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+haskell_module(
+    name = "Module",
+    src = "Module.hs",
+    src_strip_prefix = "/tests/haskell_module/nested",
+    visibility = ["//tests/haskell_module/nested:__subpackages__"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/haskell_module/nested/Root:Module",
+    ],
+)
