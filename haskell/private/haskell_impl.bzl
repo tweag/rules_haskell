@@ -51,6 +51,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -353,6 +354,12 @@ def haskell_library_impl(ctx):
     )
     package_ids = all_dependencies_package_ids(deps)
 
+    modules = ctx.attr.modules
+    extra_objects = [
+        m[HaskellModuleInfo].object_file
+        for m in modules
+    ]
+
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
     java = java_interop_info(ctx)
@@ -362,6 +369,8 @@ def haskell_library_impl(ctx):
 
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+
+    non_empty = srcs_files or modules
 
     with_shared = not ctx.attr.linkstatic
     if with_profiling or hs.toolchain.static_runtime:
@@ -401,26 +410,28 @@ def haskell_library_impl(ctx):
     exposed_modules_file = list_exposed_modules(
         hs,
         ls_modules = ctx.executable._ls_modules,
+        modules = modules,
         other_modules = other_modules,
         exposed_modules_reexports = exposed_modules_reexports,
         interfaces_dir = c.interfaces_dir,
         with_profiling = with_profiling,
     )
 
-    if srcs_files:
+    if non_empty:
         static_library = link_library_static(
             hs,
             cc,
             posix,
             dep_info,
             c.objects_dir,
+            extra_objects,
             my_pkg_id,
             with_profiling = with_profiling,
         )
     else:
         static_library = None
 
-    if with_shared and srcs_files:
+    if with_shared and non_empty:
         dynamic_library = link_library_dynamic(
             hs,
             cc,
@@ -428,6 +439,7 @@ def haskell_library_impl(ctx):
             dep_info,
             depset(ctx.files.extra_srcs),
             c.objects_dir,
+            extra_objects,
             my_pkg_id,
             user_compile_flags,
         )
@@ -440,14 +452,15 @@ def haskell_library_impl(ctx):
         posix,
         dep_info,
         with_shared,
+        modules,
         exposed_modules_file,
         other_modules,
         my_pkg_id,
-        srcs_files != [],
+        non_empty,
     )
 
     interface_dirs = depset(
-        direct = [c.interfaces_dir],
+        direct = [c.interfaces_dir] + [m[HaskellModuleInfo].interface_file for m in modules],
         transitive = [dep_info.interface_dirs],
     )
 
