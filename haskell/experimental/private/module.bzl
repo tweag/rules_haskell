@@ -46,7 +46,7 @@ def haskell_module_impl(ctx):
 
     # Determine outputs
     with_profiling = is_profiling_enabled(hs)
-    hs_boot = paths.split_extension(src.path)[1] == ".hs-boot"
+    hs_boot = paths.split_extension(src.path)[1] in [".hs-boot", ".lhs-boot"]
     extension_template = "%s"
     if hs_boot:
         extension_template = extension_template + "-boot"
