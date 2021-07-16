@@ -46,6 +46,7 @@ libraries = [
             input = "//haskell:%s.bzl" % lib,
             provider_template = ":templates/metadata/provider.vm",
             rule_template = ":templates/metadata/rule.vm",
+            tags = ["dont_test_on_windows"],
             deps = ["//haskell"],
         ),
         # Generate markdown API documentation.
@@ -58,6 +59,7 @@ libraries = [
             input = "//haskell:%s.bzl" % lib,
             provider_template = ":templates/markdown/provider.vm",
             rule_template = ":templates/markdown/rule.vm",
+            tags = ["dont_test_on_windows"],
             deps = ["//haskell"],
         ),
         # Convert markdown to html.
@@ -82,6 +84,7 @@ $(execpath //docs/pandoc) \
   -o $(OUTS) \
   $(execpath :{}_md)
 """.format(lib),
+            tags = ["dont_test_on_windows"],
             toolchains = [":set_site_end_location"],
             tools = ["//docs/pandoc"],
         ),
@@ -102,6 +105,7 @@ for file in $(SRCS); do
   cat $$file >>$(OUTS)
 done
 """,
+    tags = ["dont_test_on_windows"],
 )
 
 # Generate top-level API documentation navigation sidebar.
@@ -124,6 +128,7 @@ $(execpath //docs/pandoc) \
   --metadata-file=$(execpath :metadata) \
   <<<""
 """,
+    tags = ["dont_test_on_windows"],
     toolchains = [":set_site_end_location"],
     tools = ["//docs/pandoc"],
 )
@@ -165,6 +170,7 @@ $(execpath //docs/pandoc) \
   --metadata-file=$(execpath :metadata) \
   index_body.html
 """,
+    tags = ["dont_test_on_windows"],
     toolchains = [":set_site_end_location"],
     tools = ["//docs/pandoc"],
 )
@@ -190,6 +196,7 @@ $(location @bazel_tools//tools/zip:zipper) c $@ %s
             ":index_html",
         ] + [":%s_html" % lib for lib in libraries]
     ]),
+    tags = ["dont_test_on_windows"],
     tools = ["@bazel_tools//tools/zip:zipper"],
 )
 
@@ -199,6 +206,7 @@ py_binary(
     srcs = ["serve.py"],
     args = ["$(rootpath :api_html)"],
     data = [":api_html"],
+    tags = ["dont_test_on_windows"],
 )
 
 genrule(
@@ -220,7 +228,10 @@ genrule(
     (cd $$builddir/html && zip -q -r $$CWD/$@ .)
     rm -rf $$builddir
     """,
-    tags = ["requires_nix"],
+    tags = [
+        "dont_test_on_windows",
+        "requires_nix",
+    ],
     tools = [
         "@graphviz//:bin",
         "@sphinx//:bin",
