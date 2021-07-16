@@ -220,6 +220,7 @@ genrule(
     (cd $$builddir/html && zip -q -r $$CWD/$@ .)
     rm -rf $$builddir
     """,
+    tags = ["requires_nix"],
     tools = [
         "@graphviz//:bin",
         "@sphinx//:bin",
