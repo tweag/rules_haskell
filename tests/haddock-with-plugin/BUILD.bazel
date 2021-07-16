@@ -26,6 +26,7 @@ haskell_library(
     name = "library",
     srcs = ["Lib.hs"],
     plugins = [":plugin"],
+    tags = ["skip_profiling"],
     deps = ["//tests/hackage:base"],
 )
 

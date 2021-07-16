@@ -9,6 +9,7 @@ package(default_testonly = 1)
 haskell_library(
     name = "library-deps",
     srcs = ["TestLib.hs"],
+    tags = ["requires_dynamic"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
@@ -20,6 +21,7 @@ haskell_test(
     name = "bin-deps",
     size = "small",
     srcs = ["Bin.hs"],
+    tags = ["requires_dynamic"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",

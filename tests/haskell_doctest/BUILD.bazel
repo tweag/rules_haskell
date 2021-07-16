@@ -36,6 +36,7 @@ haskell_doctest(
 haskell_doctest(
     name = "doctest-lib-all-success",
     doctest_flags = ["-DMAGIC_DOCTEST_THING"],
+    tags = ["requires_dynamic"],
     visibility = ["//visibility:public"],
     deps = [":lib-b"],
 )
@@ -58,6 +59,7 @@ haskell_test(
 
 haskell_doctest(
     name = "doctest-bin",
+    tags = ["requires_dynamic"],
     visibility = ["//visibility:public"],
     deps = [":bin"],
 )
