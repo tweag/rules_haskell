@@ -22,7 +22,7 @@ main = hspec $ do
     assertSuccess (bazel ["run", "//:buildifier"])
 
   it "bazel test" $ do
-    assertSuccess (bazel ["test", "//...", "--build_tests_only"])
+    assertSuccess (bazel ["test", "//..."])
 
   it "bazel test prof" $ do
     -- In .github/workflows/workflow.yaml we specify --test_tag_filters
@@ -31,7 +31,7 @@ main = hspec $ do
     -- we have to duplicate that filter here.
     let tagFilter | os == "darwin" = "-dont_test_on_darwin,-requires_dynamic,-skip_profiling"
                   | otherwise      = "-requires_dynamic,-skip_profiling"
-    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only", "--test_tag_filters", tagFilter])
+    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tag_filters", tagFilter, "--test_tag_filters", tagFilter])
 
   it "bazel build worker" $ do
     assertSuccess (bazel ["build", "//tools/worker:bin"])

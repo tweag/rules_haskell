@@ -52,7 +52,7 @@ jobs:
             ./tests/run-start-script.sh --use-nix
             bazel build //tests:run-tests
             ./bazel-ci-bin/tests/run-tests
-            bazel coverage //tests/...
+            bazel coverage //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
             '
@@ -141,7 +141,12 @@ jobs:
           export PATH=$HOME/bazel:$PATH
           [[ ${{ matrix.os }} == macos ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           ./tests/run-start-script.sh --use-bindists
-          bazel test //tests/...
+          if [[ ${{ matrix.os }} == windows ]]; then
+            # On Windows `//...` expands to `/...`.
+            bazel test ///...
+          else
+            bazel test //...
+          fi
           # Test stack_snapshot pinning
           # NOTE keep in sync with tests/RunTests.hs
           bazel run @stackage-pinning-test-unpinned//:pin

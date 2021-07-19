@@ -20,6 +20,7 @@ haskell_proto_library(
     tags = [
         # Requires proto-lens >=0.6.0.0. On Windows we're stuck on 0.5.1.0 until we can update GHC.
         "dont_test_on_windows",
+        "requires_dynamic",
     ],
     deps = [
         ":foo",
@@ -31,6 +32,7 @@ haskell_library(
     srcs = ["Bar.hs"],
     tags = [
         "dont_test_on_windows",
+        "requires_dynamic",
     ],
     visibility = ["//visibility:public"],
     deps = [
