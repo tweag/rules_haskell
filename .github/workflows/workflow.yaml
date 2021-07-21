@@ -30,8 +30,8 @@ jobs:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
           case ${{ matrix.os }} in
-            macos) BUILD_CONFIG=macos-nixpkgs;;
-            ubuntu) BUILD_CONFIG=linux-nixpkgs;;
+            macos) BUILD_CONFIG=ci-macos-nixpkgs;;
+            ubuntu) BUILD_CONFIG=ci-linux-nixpkgs;;
           esac
           cat >.bazelrc.local <<EOF
           common --config=ci
@@ -122,9 +122,9 @@ jobs:
         shell: bash
         run: |
           case ${{ matrix.os }} in
-            macos) BUILD_CONFIG=macos-bindist;;
-            ubuntu) BUILD_CONFIG=linux-bindist;;
-            windows) BUILD_CONFIG=windows-bindist;;
+            macos) BUILD_CONFIG=ci-macos-bindist;;
+            ubuntu) BUILD_CONFIG=ci-linux-bindist;;
+            windows) BUILD_CONFIG=ci-windows-bindist;;
           esac
           cat >.bazelrc.local <<EOF
           common --config=ci
