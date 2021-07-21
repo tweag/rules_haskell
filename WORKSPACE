@@ -250,7 +250,14 @@ test_cabalopts = [
     # Used by `tests/cabal-toolchain-flags`
     "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
     "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
-]
+] + ([
+    # To avoid ghcide linking errors with heapsize on Windows of the form
+    #
+    #   unknown symbol `heap_view_closurePtrs'
+    #
+    # See https://github.com/haskell/ghcide/pull/954
+    "--disable-library-for-ghci",
+] if is_windows else [])
 
 load(
     "@rules_haskell//haskell:nixpkgs.bzl",
