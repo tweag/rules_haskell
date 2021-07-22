@@ -44,6 +44,7 @@ haskell_doctest(
 haskell_doctest(
     name = "doctest-lib",
     modules = ["Bar"],  # exclude Baz and succeed
+    tags = ["requires_dynamic"],
     visibility = ["//visibility:public"],
     deps = [":lib-b"],
 )
