@@ -9,5 +9,8 @@ def cabal_wrapper(name, **kwargs):
         deps = [
             "@bazel_tools//tools/python/runfiles",
         ],
+        data = [
+            "@rules_haskell//haskell:private/generate_cabal_paths_module.py",
+        ],
         **kwargs
     )

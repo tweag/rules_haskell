@@ -26,6 +26,10 @@
 #     , "workspace": string            # workspace name
 #     , "ghc_cc_args":  list of string # cc flags for ghc
 #     }
+# , "generate_paths_module": boolean # whether to generate a paths_module
+# , "ghc_version": List of int       # version of ghc
+# , "cabal_basename": basename of cabal binary
+# , "cabal_dirname": dirname of cabal binary
 # }
 
 from __future__ import print_function
@@ -40,6 +44,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from generate_cabal_paths_module import generate_cabal_paths_module
 
 debug = False
 verbose = os.environ.get("CABAL_VERBOSE", "") == "True"
@@ -168,6 +173,35 @@ with tmpdir() as distdir:
     os.putenv("TMP", os.path.join(distdir, "tmp"))
     os.putenv("TEMP", os.path.join(distdir, "tmp"))
     os.makedirs(os.path.join(distdir, "tmp"))
+
+
+    # Create a Paths module that will be used instead of the cabal generated one.
+    # https://cabal.readthedocs.io/en/3.4/cabal-package.html#accessing-data-files-from-package-code
+    generated_paths_file = None
+    if json_args["generate_paths_module"]:
+        component_name = component.split(':')[1]
+        mangled_component_name = component_name.replace("-", "_")
+        cabal_paths_file_content = generate_cabal_paths_module(
+            component_name = component_name,
+            mangled_component_name = mangled_component_name,
+            ghc_version = json_args["ghc_version"],
+            is_windows = is_windows,
+            cabal_basename = json_args["cabal_basename"],
+            cabal_dirname = json_args["cabal_dirname"],
+            ghc = ghc,
+            libdir = os.path.basename(libdir),
+            dynlibdir = os.path.basename(dynlibdir),
+            bindir = os.path.basename(bindir),
+            datadir = os.path.basename(datadir),
+            pkgroot = pkgroot,
+            workspace = toolchain_info["workspace"],
+        )
+        paths_file = f"Paths_{mangled_component_name}.hs"
+        if not os.path.exists(paths_file):
+            with open(paths_file, 'w') as f:
+                f.write(cabal_paths_file_content)
+            generated_paths_file = paths_file
+
     # XXX: Bazel hack
     # When cabal_wrapper calls other tools with runfiles, the runfiles are
     # searched in the runfile tree of cabal_wrapper unless we clear
@@ -233,6 +267,7 @@ with tmpdir() as distdir:
     # then these modified files will enter `srcs` on the next execution and
     # invalidate the cache. To avoid this we remove generated files.
     run([runghc] + runghc_args + [setup, "clean", "--verbose=0", "--builddir=" + distdir])
+    if generated_paths_file: os.remove(generated_paths_file)
     os.chdir(old_cwd)
 
 # XXX Cabal has a bizarre layout that we can't control directly. It

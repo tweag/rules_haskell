@@ -202,6 +202,7 @@ def _prepare_cabal_inputs(
         package_database,
         verbose,
         transitive_haddocks,
+        generate_paths_module,
         is_library = False,
         dynamic_file = None):
     """Compute Cabal wrapper, arguments, inputs."""
@@ -273,10 +274,11 @@ def _prepare_cabal_inputs(
         for arg in ["-package-db", "./" + _dirname(package_db)]
     ]
     extra_args = ["--flags=" + " ".join(flags)]
+
+    version = [int(x) for x in hs.toolchain.version.split(".")]
     if dynamic_file:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         if not (hs.toolchain.is_darwin or hs.toolchain.is_windows):
-            version = [int(x) for x in hs.toolchain.version.split(".")]
             if version < [8, 10] or not is_library:
                 extra_args.append("--ghc-option=-optl-no-pie")
     extra_args.extend(hs.toolchain.cabalopts + cabalopts)
@@ -347,6 +349,10 @@ def _prepare_cabal_inputs(
         extra_args = extra_args,
         path_args = path_args,
         toolchain_info = _cabal_toolchain_info(hs, cc, workspace_name, runghc),
+        generate_paths_module = generate_paths_module,
+        ghc_version = version,
+        cabal_basename = cabal.basename,
+        cabal_dirname = cabal.dirname,
     )
 
     ghc_files = hs.toolchain.bindir + hs.toolchain.libdir
@@ -511,6 +517,7 @@ def _haskell_cabal_library_impl(ctx):
         package_database = package_database,
         verbose = ctx.attr.verbose,
         is_library = True,
+        generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = dynamic_library,
         transitive_haddocks =
             _gather_transitive_haddocks(ctx.attr.deps) if ctx.attr.haddock else depset([]),
@@ -669,6 +676,12 @@ haskell_cabal_library = rule(
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
         ),
+        "generate_paths_module": attr.bool(
+            doc = """ If true the rule will generate a Paths_pkgname based on the haskell_runfiles library.
+            https://cabal.readthedocs.io/en/3.4/cabal-package.html#accessing-data-files-from-package-code
+            """,
+            default = False,
+        ),
         "flags": attr.string_list(
             doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
         ),
@@ -808,6 +821,7 @@ def _haskell_cabal_binary_impl(ctx):
         runghc = ctx.executable._runghc,
         package_database = package_database,
         verbose = ctx.attr.verbose,
+        generate_paths_module = False,
         dynamic_file = binary,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
     )
