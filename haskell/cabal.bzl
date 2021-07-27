@@ -208,6 +208,13 @@ def _prepare_cabal_inputs(
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
+    # Fail if generate_paths_module and profiling are active at the
+    # same time. For now, the build fails in profiling mode if a
+    # haskell_cabal_library depends on a normal haskell_library.
+    # Which is the case with the generate_paths_module
+    if with_profiling and generate_paths_module:
+        fail("The generate_paths_module option of haskell_cabal_library is not compatible with the profiling mode yet.")
+
     # Haskell library dependencies or indirect C library dependencies are
     # already covered by their corresponding package-db entries. We only need
     # to add libraries and headers for direct C library dependencies to the
@@ -678,6 +685,7 @@ haskell_cabal_library = rule(
         ),
         "generate_paths_module": attr.bool(
             doc = """ If true the rule will generate a Paths_pkgname based on the haskell_runfiles library.
+            WARNING: not supported yet in profiling mode.
             https://cabal.readthedocs.io/en/3.4/cabal-package.html#accessing-data-files-from-package-code
             """,
             default = False,

@@ -30,5 +30,6 @@ sh_test(
         "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/with_generate_paths_module:write_values",
         "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/without_generate_paths_module:write_values",
     ],
+    tags = ["skip_profiling"],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )

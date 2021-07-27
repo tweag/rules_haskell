@@ -28,6 +28,7 @@ haskell_binary(
 haskell_test(
     name = "binary_other_pkg",
     srcs = ["Main.hs"],
+    tags = ["skip_profiling"],
     deps = [
         ":base",
         "//tests/haskell_cabal_datafiles/haskell_cabal_library_with_datafiles:lib",

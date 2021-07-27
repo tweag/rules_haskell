@@ -34,6 +34,7 @@ haskell_cabal_library(
 haskell_test(
     name = "test_paths_module",
     srcs = ["Main.hs"],
+    tags = ["skip_profiling"],
     deps = [
         ":base",
         ":lib",
@@ -57,4 +58,5 @@ haskell_cabal_binary(
 sh_test(
     name = "direct_test_inside{}".format(".exe" if is_windows else ""),
     srcs = [":inside"],
+    tags = ["skip_profiling"],
 )
