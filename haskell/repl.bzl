@@ -1,5 +1,6 @@
 """Multi target Haskell REPL."""
 
+load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
@@ -31,6 +32,7 @@ load(
     "link_libraries",
     "merge_HaskellCcLibrariesInfo",
 )
+load(":private/java.bzl", "JavaInteropInfo")
 load(":private/set.bzl", "set")
 
 HaskellReplLoadInfo = provider(
@@ -74,6 +76,7 @@ HaskellReplCollectInfo = provider(
     fields = {
         "load_infos": "Dictionary from labels to HaskellReplLoadInfo.",
         "dep_infos": "Dictionary from labels to HaskellReplDepInfo.",
+        "java_deps": "depset of Files to jars needed for building.",
     },
 )
 
@@ -86,6 +89,7 @@ HaskellReplInfo = provider(
     fields = {
         "load_info": "Combined HaskellReplLoadInfo.",
         "dep_info": "Combined HaskellReplDepInfo.",
+        "java_deps": "depset of Files to jars needed for building.",
     },
 )
 
@@ -173,6 +177,7 @@ def _merge_HaskellReplDepInfo(dep_infos):
 def _create_HaskellReplCollectInfo(target, ctx):
     load_infos = {}
     dep_infos = {}
+    java_deps = depset()
 
     hs_info = target[HaskellInfo]
 
@@ -206,22 +211,28 @@ def _create_HaskellReplCollectInfo(target, ctx):
             cc_info = target[CcInfo],
             runfiles = target[DefaultInfo].default_runfiles,
         )
+    if JavaInteropInfo in target:
+        java_deps = target[JavaInteropInfo].inputs
 
     return HaskellReplCollectInfo(
         load_infos = load_infos,
         dep_infos = dep_infos,
+        java_deps = java_deps,
     )
 
 def _merge_HaskellReplCollectInfo(args):
     load_infos = {}
     dep_infos = {}
+    java_deps = []
     for arg in args:
         load_infos.update(arg.load_infos)
         dep_infos.update(arg.dep_infos)
+        java_deps.append(arg.java_deps)
 
     return HaskellReplCollectInfo(
         load_infos = load_infos,
         dep_infos = dep_infos,
+        java_deps = depset(transitive = java_deps),
     )
 
 def _load_as_source(from_source, from_binary, lbl):
@@ -267,6 +278,7 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
     return HaskellReplInfo(
         load_info = load_info,
         dep_info = dep_info,
+        java_deps = collect_info.java_deps,
     )
 
 def _concat(lists):
@@ -432,6 +444,13 @@ def _create_repl(hs, posix, ctx, repl_info, output):
 
     env = dict(hs.env)
 
+    classpath_inputs = collections.uniq([
+        paths.join("$RULES_HASKELL_EXEC_ROOT", f.path)
+        for f in repl_info.java_deps.to_list()
+    ])
+    if len(classpath_inputs) > 0:
+        env["CLASSPATH"] = ":".join(classpath_inputs)
+
     # These env-vars refer to the build-time GHC distribution. However, if the
     # REPL uses ghc-paths then it should refer to the runtime GHC distribution,
     # i.e. the one included in the runfiles. Therefore we remove these env-vars
@@ -463,7 +482,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
                 hs.tools.ghci,
                 ghci_repl_script,
             ],
-            transitive_files = inputs,
+            transitive_files = depset(transitive = [inputs, repl_info.java_deps]),
         ),
         hs.toolchain.cc_wrapper.runfiles,
     ]

@@ -320,11 +320,12 @@ def _haskell_binary_common_impl(ctx, is_test):
             ctx.file._bash_runfiles,
             hs.toolchain.tools.hpc,
             binary,
-        ] + mix_runfiles + srcs_runfiles
+        ] + mix_runfiles + srcs_runfiles + java.inputs.to_list()
 
     return [
         hs_info,
         cc_info,
+        java,
         DefaultInfo(
             executable = executable,
             files = target_files,
@@ -538,7 +539,7 @@ def haskell_library_impl(ctx):
     if hasattr(ctx, "runfiles"):
         default_info = DefaultInfo(
             files = target_files,
-            runfiles = ctx.runfiles(collect_data = True),
+            runfiles = ctx.runfiles(files = java.inputs.to_list(), collect_data = True),
         )
     else:
         default_info = DefaultInfo(
@@ -593,6 +594,7 @@ def haskell_library_impl(ctx):
         hs_info,
         out_cc_info,
         coverage_info,
+        java,
         default_info,
         lib_info,
         OutputGroupInfo(**dicts.add(
