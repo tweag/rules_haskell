@@ -68,6 +68,9 @@ main = hspec $ do
       let p' (stdout, _stderr) = lines stdout == ["True"]
       outputSatisfy p' (bazel ["run", "//tests/repl-targets:rebindable-syntax@repl", "--", "-ignore-dot-ghci", "-e", "check"])
 
+    it "sets classpath" $ do
+      assertSuccess (bazel ["run", "//tests/java_classpath:java_classpath@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
+
     -- Test `compiler_flags` from toolchain and rule for REPL
     it "compiler flags" $ do
       assertSuccess (bazel ["run", "//tests/repl-flags:compiler_flags@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
