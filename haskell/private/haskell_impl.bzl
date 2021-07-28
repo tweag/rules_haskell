@@ -538,7 +538,7 @@ def haskell_library_impl(ctx):
     if hasattr(ctx, "runfiles"):
         default_info = DefaultInfo(
             files = target_files,
-            runfiles = ctx.runfiles(files = java.inputs.to_list(), collect_data = True),
+            runfiles = ctx.runfiles(transitive_files = java.inputs, collect_data = True),
         )
     else:
         default_info = DefaultInfo(
