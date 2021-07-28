@@ -1,6 +1,5 @@
 """Multi target Haskell REPL."""
 
-load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
@@ -445,10 +444,10 @@ def _create_repl(hs, posix, ctx, repl_info, output):
 
     env = dict(hs.env)
 
-    classpath_inputs = collections.uniq([
+    classpath_inputs = [
         paths.join("$RULES_HASKELL_EXEC_ROOT", f.path)
         for f in repl_info.java_deps.to_list()
-    ])
+    ]
     if len(classpath_inputs) > 0:
         env["CLASSPATH"] = ":".join(classpath_inputs)
 
