@@ -31,7 +31,7 @@ ghc_plugin = rule(
         ),
         "tools": attr.label_list(
             cfg = "host",
-            doc = "Tools needed by the plugin when it used.",
+            doc = "Tools needed by the plugin when enabled.",
         ),
     },
     doc = """\
