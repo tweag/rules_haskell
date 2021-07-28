@@ -684,9 +684,9 @@ haskell_cabal_library = rule(
             the tools are executed as part of the build.""",
         ),
         "generate_paths_module": attr.bool(
-            doc = """ If true the rule will generate a Paths_pkgname based on the haskell_runfiles library.
-            WARNING: not supported yet in profiling mode.
-            https://cabal.readthedocs.io/en/3.4/cabal-package.html#accessing-data-files-from-package-code
+            doc = """ If True the rule will generate a [Paths_{pkgname}](https://cabal.readthedocs.io/en/3.4/cabal-package.html#accessing-data-files-from-package-code) module based on the haskell_runfiles library.
+            In that case, the `@rules_haskell//tools/runfiles` target should also be added to the deps attribute.  
+            WARNING: this is not supported in profiling mode yet.
             """,
             default = False,
         ),
