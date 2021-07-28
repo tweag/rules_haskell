@@ -10,11 +10,11 @@ JavaInteropInfo = provider(
     },
 )
 
-def java_interop_info(ctx):
+def java_interop_info(deps):
     """Gather information from any Java dependencies.
 
     Args:
-      ctx: Rule context.
+      deps: Dependencies of a target that might include Java artifacts.
 
     Returns:
       JavaInteropInfo: Information needed for Java interop.
@@ -28,7 +28,7 @@ def java_interop_info(ctx):
             # mode. See
             # https://github.com/tweag/rules_haskell/issues/96.
             dep[JavaInfo].compile_jars
-            for dep in ctx.attr.deps
+            for dep in deps
             if JavaInfo in dep
         ],
     )

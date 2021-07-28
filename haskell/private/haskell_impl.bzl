@@ -172,7 +172,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
-    java = java_interop_info(ctx)
+    java = java_interop_info(ctx.attr.deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
@@ -320,7 +320,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             ctx.file._bash_runfiles,
             hs.toolchain.tools.hpc,
             binary,
-        ] + mix_runfiles + srcs_runfiles
+        ] + mix_runfiles + srcs_runfiles + java.inputs.to_list()
 
     return [
         hs_info,
@@ -362,7 +362,7 @@ def haskell_library_impl(ctx):
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
-    java = java_interop_info(ctx)
+    java = java_interop_info(ctx.attr.deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
@@ -538,7 +538,7 @@ def haskell_library_impl(ctx):
     if hasattr(ctx, "runfiles"):
         default_info = DefaultInfo(
             files = target_files,
-            runfiles = ctx.runfiles(collect_data = True),
+            runfiles = ctx.runfiles(transitive_files = java.inputs, collect_data = True),
         )
     else:
         default_info = DefaultInfo(
