@@ -172,7 +172,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
-    java = java_interop_info(ctx)
+    java = java_interop_info(ctx.attr.deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
@@ -325,7 +325,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     return [
         hs_info,
         cc_info,
-        java,
         DefaultInfo(
             executable = executable,
             files = target_files,
@@ -363,7 +362,7 @@ def haskell_library_impl(ctx):
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
-    java = java_interop_info(ctx)
+    java = java_interop_info(ctx.attr.deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
@@ -594,7 +593,6 @@ def haskell_library_impl(ctx):
         hs_info,
         out_cc_info,
         coverage_info,
-        java,
         default_info,
         lib_info,
         OutputGroupInfo(**dicts.add(

@@ -32,7 +32,7 @@ load(
     "link_libraries",
     "merge_HaskellCcLibrariesInfo",
 )
-load(":private/java.bzl", "JavaInteropInfo")
+load(":private/java.bzl", "java_interop_info")
 load(":private/set.bzl", "set")
 
 HaskellReplLoadInfo = provider(
@@ -177,7 +177,6 @@ def _merge_HaskellReplDepInfo(dep_infos):
 def _create_HaskellReplCollectInfo(target, ctx):
     load_infos = {}
     dep_infos = {}
-    java_deps = depset()
 
     hs_info = target[HaskellInfo]
 
@@ -211,8 +210,10 @@ def _create_HaskellReplCollectInfo(target, ctx):
             cc_info = target[CcInfo],
             runfiles = target[DefaultInfo].default_runfiles,
         )
-    if JavaInteropInfo in target:
-        java_deps = target[JavaInteropInfo].inputs
+    if hasattr(ctx.rule.attr, "deps"):
+        java_deps = java_interop_info(ctx.rule.attr.deps).inputs
+    else:
+        java_deps = depset()
 
     return HaskellReplCollectInfo(
         load_infos = load_infos,
