@@ -482,7 +482,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
                 hs.tools.ghci,
                 ghci_repl_script,
             ],
-            transitive_files = depset(transitive = [inputs, repl_info.java_deps]),
+            transitive_files = inputs,
         ),
         hs.toolchain.cc_wrapper.runfiles,
     ]
