@@ -19,6 +19,7 @@ ghc_plugin = rule(
     ghc_plugin_impl,
     attrs = {
         "module": attr.string(
+            mandatory = True,
             doc = "Plugin entrypoint.",
         ),
         "deps": attr.label_list(
