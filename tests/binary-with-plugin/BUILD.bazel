@@ -61,6 +61,7 @@ haskell_test(
     }),
     visibility = ["//visibility:public"],
     deps = [":base"],
+    tags = ["skip_profiling"],
 )
 
 haskell_test(
@@ -73,6 +74,7 @@ haskell_test(
     }),
     visibility = ["//visibility:public"],
     deps = [":base"],
+    tags = ["skip_profiling"],
 )
 
 haskell_test(
@@ -84,4 +86,5 @@ haskell_test(
     }),
     visibility = ["//visibility:public"],
     deps = [":base"],
+    tags = ["skip_profiling"],
 )
