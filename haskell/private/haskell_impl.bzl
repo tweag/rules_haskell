@@ -316,6 +316,13 @@ def _haskell_binary_common_impl(ctx, is_test):
             binary,
         ] + mix_runfiles + srcs_runfiles + java.inputs.to_list()
 
+        # This provider will trigger the coverage generation for .lcov files
+        instrumented_files_info = [coverage_common.instrumented_files_info(
+            ctx,
+        )]
+    else:
+        instrumented_files_info = []
+
     return [
         hs_info,
         cc_info,
@@ -336,7 +343,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             posix = posix,
             runfiles = ctx.runfiles(collect_data = True).files,
         )),
-    ]
+    ] + instrumented_files_info
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
