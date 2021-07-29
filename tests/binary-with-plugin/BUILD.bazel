@@ -36,7 +36,10 @@ haskell_library(
 
 ghc_plugin(
     name = "plugin1",
-    args = ["$(location //tests/binary-simple)", "plugin1"],
+    args = [
+        "$(location //tests/binary-simple)",
+        "plugin1",
+    ],
     module = "Plugin",
     tools = ["//tests/binary-simple"],
     deps = [":plugin-lib"],
@@ -44,7 +47,10 @@ ghc_plugin(
 
 ghc_plugin(
     name = "plugin2",
-    args = ["$(location //tests/binary-simple)", "plugin2"],
+    args = [
+        "$(location //tests/binary-simple)",
+        "plugin2",
+    ],
     module = "Plugin",
     tools = ["//tests/binary-simple"],
     deps = [":plugin-lib"],
@@ -59,9 +65,9 @@ haskell_test(
         ":debug_build": [],
         "//conditions:default": [":plugin1"],
     }),
+    tags = ["skip_profiling"],
     visibility = ["//visibility:public"],
     deps = [":base"],
-    tags = ["skip_profiling"],
 )
 
 haskell_test(
@@ -72,9 +78,9 @@ haskell_test(
         ":debug_build": [],
         "//conditions:default": [":plugin2"],
     }),
+    tags = ["skip_profiling"],
     visibility = ["//visibility:public"],
     deps = [":base"],
-    tags = ["skip_profiling"],
 )
 
 haskell_test(
@@ -84,7 +90,7 @@ haskell_test(
         ":debug_build": [],
         "//conditions:default": [":plugin2"],
     }),
+    tags = ["skip_profiling"],
     visibility = ["//visibility:public"],
     deps = [":base"],
-    tags = ["skip_profiling"],
 )
