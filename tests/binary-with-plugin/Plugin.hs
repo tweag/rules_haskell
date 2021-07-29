@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 module Plugin (plugin) where
 
@@ -6,6 +7,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as Char8
 import GhcPlugins
 import System.Process (readProcess)
+
 
 plugin :: Plugin
 plugin = defaultPlugin { installCoreToDos = install }
@@ -41,5 +43,9 @@ replaceInExpr bs = go
          in (Case (go e0) b t alts')
       Cast e c -> Cast (go e) c
       Tick t e -> Tick t (go e)
-      Lit (LitString _) -> Lit (LitString bs)
+#if __GLASGOW_HASKELL__ >= 808
+      Lit LitString{} -> Lit (LitString bs)
+#else
+      Lit MachStr{} -> Lit (MachStr bs)
+#endif
       e -> e

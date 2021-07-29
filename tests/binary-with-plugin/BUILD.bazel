@@ -19,6 +19,7 @@ haskell_toolchain_library(name = "process")
 haskell_library(
     name = "plugin-lib",
     srcs = ["Plugin.hs"],
+    version = "0",
     deps = [
         ":base",
         ":bytestring",
