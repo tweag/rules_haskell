@@ -19,6 +19,7 @@ ghc_plugin = rule(
     ghc_plugin_impl,
     attrs = {
         "module": attr.string(
+            mandatory = True,
             doc = "Plugin entrypoint.",
         ),
         "deps": attr.label_list(
@@ -30,7 +31,7 @@ ghc_plugin = rule(
         ),
         "tools": attr.label_list(
             cfg = "host",
-            doc = "Tools needed by the plugin when it used.",
+            doc = "Tools needed by the plugin when enabled.",
         ),
     },
     doc = """\

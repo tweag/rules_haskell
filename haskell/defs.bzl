@@ -72,6 +72,9 @@ _haskell_common_attrs = {
     "plugins": attr.label_list(
         aspects = [haskell_cc_libraries_aspect],
     ),
+    "non_default_plugins": attr.label_list(
+        aspects = [haskell_cc_libraries_aspect],
+    ),
     "tools": attr.label_list(
         cfg = "host",
         allow_files = True,
@@ -261,6 +264,7 @@ def haskell_binary(
         repl_ghci_args = [],
         runcompile_flags = [],
         plugins = [],
+        non_default_plugins = [],
         tools = [],
         worker = None,
         linkstatic = True,
@@ -301,7 +305,8 @@ def haskell_binary(
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
       repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
       runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
-      plugins: Compiler plugins to use during compilation.
+      plugins: Compiler plugins to use during compilation. Every module is compiled with `-fplugin=...`.
+      non_default_plugins: Like `plugins` but doesn't pass `-fplugin=...` to modules by default.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
       linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
@@ -322,6 +327,7 @@ def haskell_binary(
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         tools = tools,
         worker = worker,
         linkstatic = linkstatic,
@@ -362,6 +368,7 @@ def haskell_test(
         repl_ghci_args = [],
         runcompile_flags = [],
         plugins = [],
+        non_default_plugins = [],
         tools = [],
         worker = None,
         linkstatic = True,
@@ -392,7 +399,8 @@ def haskell_test(
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
       repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
       runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
-      plugins: Compiler plugins to use during compilation.
+      plugins: Compiler plugins to use during compilation. Every module is compiled with `-fplugin=...`.
+      non_default_plugins: Like `plugins` but doesn't pass `-fplugin=...` to modules by default.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
       linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
@@ -426,6 +434,7 @@ def haskell_test(
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         tools = tools,
         worker = worker,
         linkstatic = linkstatic,
@@ -474,6 +483,7 @@ def haskell_library(
         repl_ghci_args = [],
         runcompile_flags = [],
         plugins = [],
+        non_default_plugins = [],
         tools = [],
         worker = None,
         hidden_modules = [],
@@ -517,7 +527,8 @@ def haskell_library(
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
       repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
       runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
-      plugins: Compiler plugins to use during compilation.
+      plugins: Compiler plugins to use during compilation. Every module is compiled with `-fplugin=...`.
+      non_default_plugins: Like `plugins` but doesn't pass `-fplugin=...` to modules by default.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
       hidden_modules: Modules that should be unavailable for import by dependencies.
@@ -546,6 +557,7 @@ def haskell_library(
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         tools = tools,
         worker = worker,
         hidden_modules = hidden_modules,
