@@ -4,6 +4,13 @@ We modify the getDataFileName and getDataDir functions to use bazel's runfile li
 And we try to keep the same behavior as before for the others functions
 (getBinDir getLibDir getDynLibDir getLibexecDir getSysconfDir).
 
+These functions are defined by cabal through the following files:
+https://github.com/haskell/cabal/blob/master/Cabal/src/Distribution/Simple/Build/PathsModule.hs
+https://github.com/haskell/cabal/blob/master/templates/Paths_pkg.template.hs
+
+For windows we need to implement the "absolute" case of the template.
+Otherwise we want the "relocatable" case since we called configure with "--enable-relocatable".
+
 """
 import re
 import os
@@ -38,6 +45,7 @@ def generate_cabal_paths_module(component_name, mangled_component_name, ghc_vers
                                 ghc, libdir, dynlibdir, bindir, datadir, pkgroot, workspace):
 
     # cabal calls ghc --info to recover the target arch and os, and uses these in path names.
+    # https://github.com/haskell/cabal/blob/496d6fcc26779e754523a6cc7576aea49ef8056e/Cabal/src/Distribution/Simple/GHC/Internal.hs#L87
     # So we do the same.
     p = Popen(f"{ghc} --info", shell=True, stdout=PIPE)
     ghc_info_string = p.stdout.read().decode("utf-8")
