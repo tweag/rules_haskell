@@ -282,11 +282,11 @@ def _prepare_cabal_inputs(
     ]
     extra_args = ["--flags=" + " ".join(flags)]
 
-    version = [int(x) for x in hs.toolchain.version.split(".")]
+    ghc_version = [int(x) for x in hs.toolchain.version.split(".")]
     if dynamic_file:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         if not (hs.toolchain.is_darwin or hs.toolchain.is_windows):
-            if version < [8, 10] or not is_library:
+            if ghc_version < [8, 10] or not is_library:
                 extra_args.append("--ghc-option=-optl-no-pie")
     extra_args.extend(hs.toolchain.cabalopts + cabalopts)
     if dynamic_file:
@@ -357,7 +357,7 @@ def _prepare_cabal_inputs(
         path_args = path_args,
         toolchain_info = _cabal_toolchain_info(hs, cc, workspace_name, runghc),
         generate_paths_module = generate_paths_module,
-        ghc_version = version,
+        ghc_version = ghc_version,
         cabal_basename = cabal.basename,
         cabal_dirname = cabal.dirname,
     )
