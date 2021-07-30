@@ -65,10 +65,12 @@ def generate_cabal_paths_module(component_name, ghc_version, is_windows, cabal_b
     package_version = None
     cabal_package_name = None
     for line in cabal_file_content:
-        if m := re.match("version:\s*([\d.]+)", line, re.IGNORECASE):
+        m = re.match("version:\s*([\d.]+)", line, re.IGNORECASE)
+        if m :
             package_version = m.group(1)
             continue
-        if m := re.match("name:\s*([a-zA-Z0-9\-]+)", line, re.IGNORECASE):
+        m = re.match("name:\s*([a-zA-Z0-9\-]+)", line, re.IGNORECASE)
+        if m :
             cabal_package_name = m.group(1)
 
     if not package_version:
