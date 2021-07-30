@@ -829,7 +829,7 @@ def _haskell_cabal_binary_impl(ctx):
         runghc = ctx.executable._runghc,
         package_database = package_database,
         verbose = ctx.attr.verbose,
-        generate_paths_module = False,
+        generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = binary,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
     )
@@ -913,6 +913,13 @@ haskell_cabal_binary = rule(
             allow_files = True,
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
+        ),
+        "generate_paths_module": attr.bool(
+            doc = """ If True the rule will generate a [Paths_{pkgname}](https://cabal.readthedocs.io/en/3.4/cabal-package.html#accessing-data-files-from-package-code) module based on the haskell_runfiles library.
+            In that case, the `@rules_haskell//tools/runfiles` target should also be added to the deps attribute.  
+            WARNING: this is not supported in profiling mode yet.
+            """,
+            default = False,
         ),
         "flags": attr.string_list(
             doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
