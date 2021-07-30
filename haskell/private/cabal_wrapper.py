@@ -180,10 +180,8 @@ with tmpdir() as distdir:
     generated_paths_file = None
     if json_args["generate_paths_module"]:
         component_name = component.split(':')[1]
-        mangled_component_name = component_name.replace("-", "_")
-        cabal_paths_file_content = generate_cabal_paths_module(
+        (paths_file, cabal_paths_file_content) = generate_cabal_paths_module(
             component_name = component_name,
-            mangled_component_name = mangled_component_name,
             ghc_version = json_args["ghc_version"],
             is_windows = is_windows,
             cabal_basename = json_args["cabal_basename"],
@@ -196,7 +194,6 @@ with tmpdir() as distdir:
             pkgroot = pkgroot,
             workspace = toolchain_info["workspace"],
         )
-        paths_file = f"Paths_{mangled_component_name}.hs"
         if not os.path.exists(paths_file):
             with open(paths_file, 'w') as f:
                 f.write(cabal_paths_file_content)

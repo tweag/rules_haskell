@@ -41,7 +41,7 @@ def normalise_arch(arch):
     if arch == "arm64": return "aarch64"
     return arch
  
-def generate_cabal_paths_module(component_name, mangled_component_name, ghc_version, is_windows, cabal_basename, cabal_dirname,
+def generate_cabal_paths_module(component_name, ghc_version, is_windows, cabal_basename, cabal_dirname,
                                 ghc, libdir, dynlibdir, bindir, datadir, pkgroot, workspace):
 
     # cabal calls ghc --info to recover the target arch and os, and uses these in path names.
@@ -59,17 +59,27 @@ def generate_cabal_paths_module(component_name, mangled_component_name, ghc_vers
                 ghc_version_string = ".".join((str(n) for n in ghc_version))
                 config = f"{target_arch}-{target_os}-ghc-{ghc_version_string}"
 
-    # Recover the package version from the cabal file
+    # Recover the package version and name from the cabal file
     with open(cabal_basename) as cabal_file:
         cabal_file_content = cabal_file.readlines()
     package_version = None
+    cabal_package_name = None
     for line in cabal_file_content:
-        m = re.match("version:\s*([\d.]+)", line, re.IGNORECASE)
-        if m:
+        if m := re.match("version:\s*([\d.]+)", line, re.IGNORECASE):
             package_version = m.group(1)
+            continue
+        if m := re.match("name:\s*([a-zA-Z0-9\-]+)", line, re.IGNORECASE):
+            cabal_package_name = m.group(1)
+
     if not package_version:
-        print("could not find a package version inside cabal file")
+        print("could not find a package version inside cabal file", file=sys.stderr)
         exit(1)
+
+    if not cabal_package_name:
+        print("could not find a package name inside cabal file", file=sys.stderr)
+        exit(1)
+
+    mangled_cabal_package_name =  cabal_package_name.replace("-", "_")
 
     supports_cpp = ghc_version >= [6,6,1]
     supports_rebindable_syntax = ghc_version >= [7,0,1]
@@ -146,7 +156,7 @@ catchIO :: IO a -> (Exception.IOException -> IO a) -> IO a
 {{-# OPTIONS_GHC -fno-warn-missing-import-lists #-}}
 {{-# OPTIONS_GHC -w #-}}
 
-module Paths_{mangled_component_name} (
+module Paths_{mangled_cabal_package_name} (
     version,
     getBinDir, getLibDir, getDynLibDir, getDataDir, getLibexecDir,
     getDataFileName, getSysconfDir
@@ -232,7 +242,7 @@ isPathSeparator :: Char -> Bool
     """.format(
         cpp_pragma = cpp_pragma,
         component_name = component_name,
-        mangled_component_name = mangled_component_name,
+        mangled_cabal_package_name = mangled_cabal_package_name,
         catch_io_type = catch_io_type,
         version_definition = version_definition,
         path_separator = path_separator,
@@ -248,4 +258,5 @@ isPathSeparator :: Char -> Bool
         workspace = workspace,
         other_functions = other_functions,
     )
-    return cabal_paths_file_content
+    cabal_paths_file_name = f"Paths_{mangled_cabal_package_name}.hs"
+    return (cabal_paths_file_name, cabal_paths_file_content)
