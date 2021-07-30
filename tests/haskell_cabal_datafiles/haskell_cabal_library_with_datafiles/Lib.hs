@@ -1,5 +1,5 @@
 module Lib where
-import Paths_lib
+import Paths_lib_pkg
 import Control.Exception
 import System.Exit
 import Data.List

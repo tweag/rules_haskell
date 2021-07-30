@@ -19,13 +19,14 @@ haskell_toolchain_library(name = "base")
 
 haskell_cabal_library(
     name = "lib",
-    package_name = "lib",
+    package_name = "lib-pkg",
     srcs = [
         "Lib.hs",
         "datafile",
         "lib.cabal",
     ],
     generate_paths_module = True,
+    sublibrary_name = "sublib",
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = ["//tools/runfiles"],
