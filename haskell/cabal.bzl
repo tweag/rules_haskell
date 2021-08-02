@@ -202,10 +202,18 @@ def _prepare_cabal_inputs(
         package_database,
         verbose,
         transitive_haddocks,
+        generate_paths_module,
         is_library = False,
         dynamic_file = None):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
+
+    # Fail if generate_paths_module and profiling are active at the
+    # same time. For now, the build fails in profiling mode if a
+    # haskell_cabal_library depends on a normal haskell_library.
+    # Which is the case with the generate_paths_module
+    if with_profiling and generate_paths_module:
+        fail("The generate_paths_module options of haskell_cabal_library/haskell_cabal_binary are not compatible with the profiling mode yet.")
 
     # Haskell library dependencies or indirect C library dependencies are
     # already covered by their corresponding package-db entries. We only need
@@ -273,11 +281,12 @@ def _prepare_cabal_inputs(
         for arg in ["-package-db", "./" + _dirname(package_db)]
     ]
     extra_args = ["--flags=" + " ".join(flags)]
+
+    ghc_version = [int(x) for x in hs.toolchain.version.split(".")]
     if dynamic_file:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         if not (hs.toolchain.is_darwin or hs.toolchain.is_windows):
-            version = [int(x) for x in hs.toolchain.version.split(".")]
-            if version < [8, 10] or not is_library:
+            if ghc_version < [8, 10] or not is_library:
                 extra_args.append("--ghc-option=-optl-no-pie")
     extra_args.extend(hs.toolchain.cabalopts + cabalopts)
     if dynamic_file:
@@ -347,6 +356,10 @@ def _prepare_cabal_inputs(
         extra_args = extra_args,
         path_args = path_args,
         toolchain_info = _cabal_toolchain_info(hs, cc, workspace_name, runghc),
+        generate_paths_module = generate_paths_module,
+        ghc_version = ghc_version,
+        cabal_basename = cabal.basename,
+        cabal_dirname = cabal.dirname,
     )
 
     ghc_files = hs.toolchain.bindir + hs.toolchain.libdir
@@ -511,6 +524,7 @@ def _haskell_cabal_library_impl(ctx):
         package_database = package_database,
         verbose = ctx.attr.verbose,
         is_library = True,
+        generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = dynamic_library,
         transitive_haddocks =
             _gather_transitive_haddocks(ctx.attr.deps) if ctx.attr.haddock else depset([]),
@@ -669,6 +683,13 @@ haskell_cabal_library = rule(
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
         ),
+        "generate_paths_module": attr.bool(
+            doc = """ If True the rule will generate a [Paths_{pkgname}](https://cabal.readthedocs.io/en/3.4/cabal-package.html#accessing-data-files-from-package-code) module based on the haskell_runfiles library.
+            In that case, the `@rules_haskell//tools/runfiles` target should also be added to the deps attribute.  
+            WARNING: this is not supported in profiling mode yet.
+            """,
+            default = False,
+        ),
         "flags": attr.string_list(
             doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
         ),
@@ -808,6 +829,7 @@ def _haskell_cabal_binary_impl(ctx):
         runghc = ctx.executable._runghc,
         package_database = package_database,
         verbose = ctx.attr.verbose,
+        generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = binary,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
     )
@@ -891,6 +913,13 @@ haskell_cabal_binary = rule(
             allow_files = True,
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
+        ),
+        "generate_paths_module": attr.bool(
+            doc = """ If True the rule will generate a [Paths_{pkgname}](https://cabal.readthedocs.io/en/3.4/cabal-package.html#accessing-data-files-from-package-code) module based on the haskell_runfiles library.
+            In that case, the `@rules_haskell//tools/runfiles` target should also be added to the deps attribute.  
+            WARNING: this is not supported in profiling mode yet.
+            """,
+            default = False,
         ),
         "flags": attr.string_list(
             doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
