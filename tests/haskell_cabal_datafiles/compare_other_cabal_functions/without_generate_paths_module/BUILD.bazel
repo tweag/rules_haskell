@@ -8,6 +8,8 @@ load(
     "haskell_toolchain_library",
 )
 
+package(default_testonly = 1)
+
 haskell_toolchain_library(name = "base")
 
 haskell_cabal_library(
@@ -18,6 +20,7 @@ haskell_cabal_library(
         "lib.cabal",
     ],
     generate_paths_module = False,
+    tags = ["skip_profiling"],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = ["//tools/runfiles"],
@@ -26,6 +29,7 @@ haskell_cabal_library(
 haskell_binary(
     name = "write_values",
     srcs = ["Write.hs"],
+    tags = ["skip_profiling"],
     visibility = ["//tests/haskell_cabal_datafiles/compare_other_cabal_functions:__pkg__"],
     deps = [
         ":base",

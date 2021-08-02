@@ -15,6 +15,8 @@ load(
 )
 load("@os_info//:os_info.bzl", "is_windows")
 
+package(default_testonly = 1)
+
 haskell_toolchain_library(name = "base")
 
 haskell_cabal_binary(
@@ -25,6 +27,7 @@ haskell_cabal_binary(
         "generate-paths-module-binary.cabal",
     ],
     generate_paths_module = True,
+    tags = ["skip_profiling"],
     visibility = ["//tests/haskell_cabal_datafiles/other_script/src:__pkg__"],
     deps = [
         ":base",

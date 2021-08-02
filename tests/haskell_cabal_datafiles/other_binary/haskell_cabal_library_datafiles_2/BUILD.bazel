@@ -14,11 +14,14 @@ load(
     "haskell_toolchain_library",
 )
 
+package(default_testonly = 1)
+
 haskell_toolchain_library(name = "base")
 
 haskell_binary(
     name = "bin",
     srcs = ["Main.hs"],
+    tags = ["skip_profiling"],
     deps = [
         ":base",
         "//tests/haskell_cabal_datafiles/haskell_cabal_library_with_datafiles:lib",

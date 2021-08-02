@@ -15,6 +15,8 @@ load(
 )
 load("@os_info//:os_info.bzl", "is_windows")
 
+package(default_testonly = 1)
+
 haskell_toolchain_library(name = "base")
 
 haskell_cabal_library(
@@ -27,6 +29,7 @@ haskell_cabal_library(
     ],
     generate_paths_module = True,
     sublibrary_name = "sublib",
+    tags = ["skip_profiling"],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = ["//tools/runfiles"],
@@ -53,6 +56,7 @@ haskell_cabal_binary(
         "use-base",
         "expose-lib",
     ],
+    tags = ["skip_profiling"],
     deps = [":lib"],
 )
 
