@@ -213,7 +213,7 @@ def _prepare_cabal_inputs(
     # haskell_cabal_library depends on a normal haskell_library.
     # Which is the case with the generate_paths_module
     if with_profiling and generate_paths_module:
-        fail("The generate_paths_module option of haskell_cabal_library is not compatible with the profiling mode yet.")
+        fail("The generate_paths_module options of haskell_cabal_library/haskell_cabal_binary are not compatible with the profiling mode yet.")
 
     # Haskell library dependencies or indirect C library dependencies are
     # already covered by their corresponding package-db entries. We only need
