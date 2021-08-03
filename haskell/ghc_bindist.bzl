@@ -344,18 +344,8 @@ def _ghc_bindist_impl(ctx):
 
     if os == "windows":
         # These libraries cause linking errors on Windows when linking
-        # pthreads, due to libwinpthread-1.dll not being loaded. It's
-        # hard to guesss the paths of these libraries, so we have to
-        # use dir to recursively find them.
-        result = ctx.execute(["cmd", "/c", "dir", "/s", "/b", "libstdc++.dll.a"])
-        for path in result.stdout.splitlines():
-            ctx.execute(["cmd", "/c", "del", path.strip()])
-
-        # These libraries cause linking errors on Windows when linking
         # pthreads, due to libwinpthread-1.dll not being loaded.
-        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libpthread.dll.a"], working_directory = unpack_dir)
-        execute_or_fail_loudly(ctx, ["rm", "mingw/x86_64-w64-mingw32/lib/libwinpthread.dll.a"], working_directory = unpack_dir)
-
+        dll_a_libs = ["libstdc++.dll.a", "libpthread.dll.a", "libwinpthread.dll.a"]
         # Similarly causes loading issues with template Haskell. E.g.
         #
         #   ghc.exe: panic! (the 'impossible' happened)
@@ -367,7 +357,13 @@ def _ghc_bindist_impl(ctx):
         #   ghc.exe: Could not load `zlib1.dll'. Reason: addDLL: zlib1.dll or dependencies not loaded. (Win32 error 126)
         #
         # on //tests/haddock:haddock-lib-b.
-        execute_or_fail_loudly(ctx, ["rm", "mingw/lib/libz.dll.a"], working_directory = unpack_dir)
+        dll_a_libs.append("libz.dll.a")
+        # It's hard to guesss the paths of these libraries, so we have to use
+        # dir to recursively find them.
+        for lib in dll_a_libs:
+            result = ctx.execute(["cmd", "/c", "dir", "/s", "/b", lib])
+            for path in result.stdout.splitlines():
+                ctx.execute(["cmd", "/c", "del", path.strip()], working_directory = unpack_dir)
 
     # We apply some patches, if needed.
     patch_args = list(ctx.attr.patch_args)
