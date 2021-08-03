@@ -1102,7 +1102,7 @@ in the `WORKSPACE file <https://github.com/tweag/rules_haskell/blob/master/examp
 
   haskell_register_ghc_nixpkgs(
       name = "aarch64",
-      version = "8.10.2",
+      version = "8.10.4",
       nix_file = "//:arm-cross.nix",
       attribute_path = "ghc-aarch64",
       static_runtime = True,
@@ -1130,7 +1130,7 @@ scripts can be executed. ::
 
   haskell_register_ghc_nixpkgs(
       name = "x86",
-      version = "8.10.2",
+      version = "8.10.4",
       attribute_path = "haskell.compiler.ghc8102",
       exec_constraints = [
           "@platforms//cpu:x86_64",
