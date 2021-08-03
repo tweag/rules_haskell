@@ -425,10 +425,37 @@ def compile_binary(
     coverage_data = []
     if inspect_coverage:
         c.args.add_all(_hpc_compiler_args(hs))
+
+        # Generate the list of instrumentation files (.mix) for coverage
+        # This list is sensible to file naming, which must match the internal
+        # module name because ghc will generate a ".mix" file named based on
+        # the module name.
+
+        # This is an haskell binary, so we *need* to find a "Main" module
+        main_found = False
+
         for src_file in srcs:
             module = module_name(hs, src_file)
+
+            # We introduces a few heuristics so users may not name their "Main" module "Main.hs".
+            # We have two heuristics:
+            #  - either there is only one source file. We are in an `haskell_binary` rule, so this only file is our "Main" module.
+            #  - either there is a file which name is not starting by a upper case letter. This cannot be an Haskell module by definition.
+            if module == "Main" or len(srcs) == 1 or "a" <= module[0] and module[0] <= "z":
+                main_found = True
+                module = "Main"
+
             mix_file = hs.actions.declare_file("{name}_.hpc/{module}.mix".format(name = hs.name, module = module))
             coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
+
+        if not main_found:
+            print(
+                "No main module found in haskell_binary",
+                hs.name,
+                ". The input files are ",
+                srcs,
+                ". Please ensure that either a file in named `Main.hs`, or that it starts by a non upper letter.",
+            )
 
     hs.toolchain.actions.run_ghc(
         hs,
