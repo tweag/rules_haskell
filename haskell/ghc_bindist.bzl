@@ -346,6 +346,7 @@ def _ghc_bindist_impl(ctx):
         # These libraries cause linking errors on Windows when linking
         # pthreads, due to libwinpthread-1.dll not being loaded.
         dll_a_libs = ["libstdc++.dll.a", "libpthread.dll.a", "libwinpthread.dll.a"]
+
         # Similarly causes loading issues with template Haskell. E.g.
         #
         #   ghc.exe: panic! (the 'impossible' happened)
@@ -358,6 +359,7 @@ def _ghc_bindist_impl(ctx):
         #
         # on //tests/haddock:haddock-lib-b.
         dll_a_libs.append("libz.dll.a")
+
         # It's hard to guesss the paths of these libraries, so we have to use
         # dir to recursively find them.
         for lib in dll_a_libs:
