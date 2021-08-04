@@ -6,7 +6,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UnboxedTuples #-}
 
-{-# OPTIONS_GHC -Wall #-}
 
 -- |
 -- Module      : Data.Primitive.PrimArray
@@ -94,10 +93,8 @@ module Data.Primitive.PrimArray
   , mapMaybePrimArrayP
   ) where
 
-import GHC.Prim
+import GHC.Exts
 import GHC.Base ( Int(..) )
-import GHC.Exts (build)
-import GHC.Ptr
 import Data.Primitive.Internal.Compat (isTrue#)
 import Data.Primitive.Types
 import Data.Primitive.ByteArray (ByteArray(..))
@@ -159,9 +156,10 @@ instance (Eq a, Prim a) => Eq (PrimArray a) where
     loop !i
       | i < 0 = True
       | otherwise = indexPrimArray a1 i == indexPrimArray a2 i && loop (i-1)
+  {-# INLINE (==) #-}
 
 -- | Lexicographic ordering. Subject to change between major versions.
--- 
+--
 --   @since 0.6.4.0
 instance (Ord a, Prim a) => Ord (PrimArray a) where
   compare a1@(PrimArray ba1#) a2@(PrimArray ba2#)
@@ -174,6 +172,7 @@ instance (Ord a, Prim a) => Ord (PrimArray a) where
     loop !i
       | i < sz = compare (indexPrimArray a1 i) (indexPrimArray a2 i) <> loop (i+1)
       | otherwise = compare sz1 sz2
+  {-# INLINE compare #-}
 
 #if MIN_VERSION_base(4,7,0)
 -- | @since 0.6.4.0
@@ -252,7 +251,7 @@ emptyPrimArray = runST $ primitive $ \s0# -> case newByteArray# 0# s0# of
 newPrimArray :: forall m a. (PrimMonad m, Prim a) => Int -> m (MutablePrimArray (PrimState m) a)
 {-# INLINE newPrimArray #-}
 newPrimArray (I# n#)
-  = primitive (\s# -> 
+  = primitive (\s# ->
       case newByteArray# (n# *# sizeOf# (undefined :: a)) s# of
         (# s'#, arr# #) -> (# s'#, MutablePrimArray arr# #)
     )
@@ -328,7 +327,7 @@ copyMutablePrimArray :: forall m a.
 {-# INLINE copyMutablePrimArray #-}
 copyMutablePrimArray (MutablePrimArray dst#) (I# doff#) (MutablePrimArray src#) (I# soff#) (I# n#)
   = primitive_ (copyMutableByteArray#
-      src# 
+      src#
       (soff# *# (sizeOf# (undefined :: a)))
       dst#
       (doff# *# (sizeOf# (undefined :: a)))
@@ -347,7 +346,7 @@ copyPrimArray :: forall m a.
 {-# INLINE copyPrimArray #-}
 copyPrimArray (MutablePrimArray dst#) (I# doff#) (PrimArray src#) (I# soff#) (I# n#)
   = primitive_ (copyByteArray#
-      src# 
+      src#
       (soff# *# (sizeOf# (undefined :: a)))
       dst#
       (doff# *# (sizeOf# (undefined :: a)))
@@ -412,7 +411,7 @@ getSizeofMutablePrimArray :: forall m a. (PrimMonad m, Prim a)
 {-# INLINE getSizeofMutablePrimArray #-}
 #if __GLASGOW_HASKELL__ >= 801
 getSizeofMutablePrimArray (MutablePrimArray arr#)
-  = primitive (\s# -> 
+  = primitive (\s# ->
       case getSizeofMutableByteArray# arr# s# of
         (# s'#, sz# #) -> (# s'#, I# (quotInt# sz# (sizeOf# (undefined :: a))) #)
     )
@@ -539,7 +538,7 @@ foldlPrimArrayM' f z0 arr = go 0 z0
 -- > incrPositiveB xs = runST $ runMaybeT $ traversePrimArrayP
 -- >   (\x -> bool (MaybeT (return Nothing)) (MaybeT (return (Just (x + 1)))) (x > 0))
 -- >   xs
--- 
+--
 -- Benchmarks demonstrate that the second implementation runs 150 times
 -- faster than the first. It also results in fewer allocations.
 {-# INLINE traversePrimArrayP #-}
@@ -785,7 +784,7 @@ mapMaybePrimArray p arr = runST $ do
 -- *** Exception: Prelude.undefined
 --
 -- The function 'traversePrimArrayP' always outperforms this function, but it
--- requires a 'PrimAffineMonad' constraint, and it forces the values as
+-- requires a 'PrimMonad' constraint, and it forces the values as
 -- it performs the effects.
 traversePrimArray ::
      (Applicative f, Prim a, Prim b)

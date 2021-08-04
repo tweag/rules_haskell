@@ -75,14 +75,15 @@ stack_snapshot(
         "language-c",
         "streaming",
         "void",
-        "ghc-check-0.5.0.3",
+        "ghc-check",
         "hspec",
         "hspec-core",
         "lens-family-core",
         "data-default-class",
-        "proto-lens",
-        "proto-lens-protoc",
-        "proto-lens-runtime",
+        "profunctors-5.5.2",
+        "proto-lens-0.7.0.0",
+        "proto-lens-protoc-0.7.0.0",
+        "proto-lens-runtime-0.7.0.0",
         "lens-family",
         "safe-exceptions",
         "temporary",
@@ -118,6 +119,62 @@ stack_snapshot(
     stack_snapshot_json = "//:stackage-pinning-test_snapshot.json" if not is_windows else None,
 )
 
+# Vendor data-default-instances-containers and data-default-instances-old-local
+# to work around build failures due to file paths exceeding `MAX_PATH` on
+# Windows.
+#
+#   ghc.exe: loadObj: C:\Users\runneradmin\_bazel_runneradmin\minshlu6\execroot\rules_haskell\bazel-out\x64_windows-fastbuild\bin\external\ghcide\data-default-instances-containers-0.0.1\_install\data-default-instances-containers-0.0.1_iface\HSdata-default-instances-containers-0.0.1.o: file doesn't exist
+#
+# Recent versions of GHC fix many `MAX_PATH` issues on Windows. However, GHC's
+# loader still exposes such an issue. A fix has been merged in GHC HEAD, but is
+# not included in GHC 8.10.4 or 9.0.1.
+# See https://gitlab.haskell.org/ghc/ghc/-/issues/19541
+http_archive(
+    name = "data-default-ic",
+    build_file_content = """
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
+load("@ghcide//:packages.bzl", "packages")
+package_name = "data-default-instances-containers"
+haskell_library(
+    name = "lib",
+    package_name = package_name,
+    version = packages[package_name].version,
+    srcs = glob(["**/*.hs"]),
+    deps = packages[package_name].deps,
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "a55e07af005c9815d82f3fc95e125db82994377c9f4a769428878701d4ec081a",
+    strip_prefix = "data-default-instances-containers-0.0.1",
+    urls = [
+        "https://hackage.haskell.org/package/data-default-instances-containers-0.0.1/data-default-instances-containers-0.0.1.tar.gz",
+        "https://s3.amazonaws.com/hackage.fpcomplete.com/package/data-default-instances-containers-0.0.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "data-default-ol",
+    build_file_content = """
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
+load("@ghcide//:packages.bzl", "packages")
+package_name = "data-default-instances-old-locale"
+haskell_library(
+    name = "lib",
+    package_name = package_name,
+    version = packages[package_name].version,
+    srcs = glob(["**/*.hs"]),
+    deps = packages[package_name].deps,
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "60d3b02922958c4908d7bf2b24ddf61511665745f784227d206745784b0c0802",
+    strip_prefix = "data-default-instances-old-locale-0.0.1",
+    urls = [
+        "https://hackage.haskell.org/package/data-default-instances-old-locale-0.0.1/data-default-instances-old-locale-0.0.1.tar.gz",
+        "https://s3.amazonaws.com/hackage.fpcomplete.com/package/data-default-instances-old-locale-0.0.1.tar.gz",
+    ],
+)
+
 stack_snapshot(
     name = "ghcide",
     components = {"ghcide": [
@@ -127,9 +184,18 @@ stack_snapshot(
     extra_deps = {"zlib": ["//tests:zlib"]},
     haddock = False,
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
-    packages = ["ghcide"],
+    packages = [
+        "ghcide",
+        # Needed by data-default-instances-containers and data-default-instances-old-locale
+        "base",
+        "containers",
+        "data-default-class",
+        "old-locale",
+    ],
     stack_snapshot_json = "//:ghcide-snapshot.json" if not is_windows else None,
     vendored_packages = {
+        "data-default-instances-containers": "@data-default-ic//:lib",
+        "data-default-instances-old-locale": "@data-default-ol//:lib",
         "ghc-paths": "@rules_haskell//tools/ghc-paths",
     },
 )
@@ -184,7 +250,14 @@ test_cabalopts = [
     # Used by `tests/cabal-toolchain-flags`
     "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
     "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
-]
+] + ([
+    # To avoid ghcide linking errors with heapsize on Windows of the form
+    #
+    #   unknown symbol `heap_view_closurePtrs'
+    #
+    # See https://github.com/haskell/ghcide/pull/954
+    "--disable-library-for-ghci",
+] if is_windows else [])
 
 load(
     "@rules_haskell//haskell:nixpkgs.bzl",
@@ -197,7 +270,7 @@ haskell_register_ghc_nixpkgs(
     ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc883.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8104.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,

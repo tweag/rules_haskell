@@ -19,11 +19,12 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
                 "ghc-paths",
                 "microlens",
                 "process",
-                "proto-lens",
-                "proto-lens-runtime",
+                "profunctors-5.5.2",
+                "proto-lens-0.7.0.0",
+                "proto-lens-runtime-0.7.0.0",
                 "text",
                 "vector",
             ],
-            snapshot = "lts-15.4",
+            snapshot = "lts-18.0",
             **stack_kwargs
         )

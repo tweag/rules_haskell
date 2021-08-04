@@ -74,6 +74,7 @@ import qualified GHC.Exts
 
 import Control.Applicative
 import Control.Monad
+import qualified Control.Monad.Fail as Fail
 import Control.Monad.Fix
 import Control.Monad.Primitive
 import Control.Monad.ST
@@ -808,6 +809,11 @@ instance Monad SmallArray where
      copySmallArray smb off sb 0 (length sb)
        *> fill (off + length sb) sbs smb
 
+#if !(MIN_VERSION_base(4,13,0))
+  fail = Fail.fail
+#endif
+
+instance Fail.MonadFail SmallArray where
   fail _ = emptySmallArray
 
 instance MonadPlus SmallArray where

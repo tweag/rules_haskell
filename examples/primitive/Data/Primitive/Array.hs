@@ -30,7 +30,10 @@ module Data.Primitive.Array (
 import Control.Monad.Primitive
 
 import GHC.Base  ( Int(..) )
-import GHC.Prim
+import GHC.Exts
+#if (MIN_VERSION_base(4,7,0))
+  hiding (toList)
+#endif
 import qualified GHC.Exts as Exts
 #if (MIN_VERSION_base(4,7,0))
 import GHC.Exts (fromListN, fromList)
@@ -45,6 +48,7 @@ import Control.Monad.ST(ST,runST)
 
 import Control.Applicative
 import Control.Monad (MonadPlus(..), when)
+import qualified Control.Monad.Fail as Fail
 import Control.Monad.Fix
 #if MIN_VERSION_base(4,4,0)
 import Control.Monad.Zip
@@ -68,11 +72,15 @@ import GHC.Exts (runRW#)
 import GHC.Base (runRW#)
 #endif
 
+import Text.Read (Read (..), parens, prec)
+import Text.ParserCombinators.ReadPrec (ReadPrec)
+import qualified Text.ParserCombinators.ReadPrec as RdPrc
 import Text.ParserCombinators.ReadP
 
 #if MIN_VERSION_base(4,9,0) || MIN_VERSION_transformers(0,4,0)
 import Data.Functor.Classes (Eq1(..),Ord1(..),Show1(..),Read1(..))
 #endif
+import Control.Monad (liftM2)
 
 -- | Boxed arrays
 data Array a = Array
@@ -231,8 +239,12 @@ copyArray !dst !doff !src !soff !len = go 0
          | otherwise = return ()
 #endif
 
--- | Copy a slice of a mutable array to another array. The two arrays may
--- not be the same.
+-- | Copy a slice of a mutable array to another array. The two arrays must
+-- not be the same when using this library with GHC versions 7.6 and older.
+-- In GHC 7.8 and newer, overlapping arrays will behave correctly.
+--
+-- Note: The order of arguments is different from that of 'copyMutableArray#'. The primop
+-- has the source first while this wrapper has the destination first.
 copyMutableArray :: PrimMonad m
           => MutableArray (PrimState m) a    -- ^ destination array
           -> Int                             -- ^ offset into destination array
@@ -241,7 +253,7 @@ copyMutableArray :: PrimMonad m
           -> Int                             -- ^ number of elements to copy
           -> m ()
 {-# INLINE copyMutableArray #-}
-#if __GLASGOW_HASKELL__ >= 706
+#if __GLASGOW_HASKELL__ > 706
 -- NOTE: copyArray# and copyMutableArray# are slightly broken in GHC 7.6.* and earlier
 copyMutableArray (MutableArray dst#) (I# doff#)
                  (MutableArray src#) (I# soff#) (I# len#)
@@ -691,6 +703,11 @@ instance Monad Array where
      = copyArray smb off sb 0 (lsb)
          *> fill (off + lsb) sbs smb
 
+#if !(MIN_VERSION_base(4,13,0))
+  fail = Fail.fail
+#endif
+
+instance Fail.MonadFail Array where
   fail _ = empty
 
 instance MonadPlus Array where
@@ -779,26 +796,61 @@ instance Show1 Array where
 #endif
 #endif
 
-arrayLiftReadsPrec :: (Int -> ReadS a) -> ReadS [a] -> Int -> ReadS (Array a)
-arrayLiftReadsPrec _ listReadsPrec p = readParen (p > 10) . readP_to_S $ do
-  () <$ string "fromListN"
-  skipSpaces
-  n <- readS_to_P reads
-  skipSpaces
-  l <- readS_to_P listReadsPrec
-  return $ arrayFromListN n l
-
 instance Read a => Read (Array a) where
-  readsPrec = arrayLiftReadsPrec readsPrec readList
+  readPrec = arrayLiftReadPrec readPrec readListPrec
 
 #if MIN_VERSION_base(4,9,0) || MIN_VERSION_transformers(0,4,0)
 -- | @since 0.6.4.0
 instance Read1 Array where
-#if MIN_VERSION_base(4,9,0) || MIN_VERSION_transformers(0,5,0)
+#if MIN_VERSION_base(4,10,0)
+  liftReadPrec = arrayLiftReadPrec
+#elif MIN_VERSION_base(4,9,0) || MIN_VERSION_transformers(0,5,0)
   liftReadsPrec = arrayLiftReadsPrec
 #else
   readsPrec1 = arrayLiftReadsPrec readsPrec readList
 #endif
+#endif
+
+-- We're really forgiving here. We accept
+-- "[1,2,3]", "fromList [1,2,3]", and "fromListN 3 [1,2,3]".
+-- We consider fromListN with an invalid length to be an
+-- error, rather than a parse failure, because doing otherwise
+-- seems weird and likely to make debugging difficult.
+arrayLiftReadPrec :: ReadPrec a -> ReadPrec [a] -> ReadPrec (Array a)
+arrayLiftReadPrec _ read_list = parens $ prec app_prec $ RdPrc.lift skipSpaces >>
+    ((fromList <$> read_list) RdPrc.+++
+      do
+        tag <- RdPrc.lift lexTag
+        case tag of
+          FromListTag -> fromList <$> read_list
+          FromListNTag -> liftM2 fromListN readPrec read_list)
+   where
+     app_prec = 10
+
+data Tag = FromListTag | FromListNTag
+
+-- Why don't we just use lexP? The general problem with lexP is that
+-- it doesn't always fail as fast as we might like. It will
+-- happily read to the end of an absurdly long lexeme (e.g., a 200MB string
+-- literal) before returning, at which point we'll immediately discard
+-- the result because it's not an identifier. Doing the job ourselves, we
+-- can see very quickly when we've run into a problem. We should also get
+-- a slight efficiency boost by going through the string just once.
+lexTag :: ReadP Tag
+lexTag = do
+  _ <- string "fromList"
+  s <- look
+  case s of
+    'N':c:_
+      | '0' <= c && c <= '9'
+      -> fail "" -- We have fromListN3 or similar
+      | otherwise -> FromListNTag <$ get -- Skip the 'N'
+    _ -> return FromListTag
+
+#if !MIN_VERSION_base(4,10,0)
+arrayLiftReadsPrec :: (Int -> ReadS a) -> ReadS [a] -> Int -> ReadS (Array a)
+arrayLiftReadsPrec reads_prec list_reads_prec = RdPrc.readPrec_to_S $
+  arrayLiftReadPrec (RdPrc.readS_to_Prec reads_prec) (RdPrc.readS_to_Prec (const list_reads_prec))
 #endif
 
 

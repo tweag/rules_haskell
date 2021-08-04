@@ -174,7 +174,7 @@ def _cabal_toolchain_info(hs, cc, workspace_name, runghc):
         strip = cc.tools.strip,
         is_windows = hs.toolchain.is_windows,
         workspace = workspace_name,
-        ghc_cc_args = ghc_cc_program_args("$CC"),
+        ghc_cc_args = ghc_cc_program_args(hs, "$CC"),
     )
 
 def _prepare_cabal_inputs(
@@ -286,7 +286,7 @@ def _prepare_cabal_inputs(
     if dynamic_file:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         if not (hs.toolchain.is_darwin or hs.toolchain.is_windows):
-            if ghc_version < [8, 10] or not is_library:
+            if ghc_version < [8, 10]:
                 extra_args.append("--ghc-option=-optl-no-pie")
     extra_args.extend(hs.toolchain.cabalopts + cabalopts)
     if dynamic_file:

@@ -11,7 +11,6 @@ module Args
   ) where
 
 import Options.Applicative
-import Options.Applicative.Helper (fpDesc, infoHelper)
 
 
 -- | A file argument.
@@ -40,8 +39,9 @@ parse = execParser parser
 -- | Command-line parser.
 parser :: ParserInfo Args
 parser =
-  infoHelper argsParser
-    ( fpDesc "Concatenate files to standard output."
+  info (argsParser <**> helper)
+    ( fullDesc
+    <> progDesc "Concatenate files to standard output."
     <> header "cat_hs - A Haskell implementation of cat." )
 
 

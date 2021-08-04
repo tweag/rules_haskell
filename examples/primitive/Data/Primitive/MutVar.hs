@@ -1,4 +1,4 @@
-{-# LANGUAGE MagicHash, UnboxedTuples, DeriveDataTypeable #-}
+{-# LANGUAGE MagicHash, UnboxedTuples, DeriveDataTypeable, CPP #-}
 
 -- |
 -- Module      : Data.Primitive.MutVar
@@ -25,7 +25,7 @@ module Data.Primitive.MutVar (
 ) where
 
 import Control.Monad.Primitive ( PrimMonad(..), primitive_ )
-import GHC.Prim ( MutVar#, sameMutVar#, newMutVar#,
+import GHC.Exts ( MutVar#, sameMutVar#, newMutVar#,
                   readMutVar#, writeMutVar#, atomicModifyMutVar# )
 import Data.Primitive.Internal.Compat ( isTrue# )
 import Data.Typeable ( Typeable )
@@ -68,7 +68,8 @@ atomicModifyMutVar' mv f = do
   b <- atomicModifyMutVar mv force
   b `seq` return b
   where
-    force x = let (a, b) = f x in (a, a `seq` b)
+    force x = case f x of
+                v@(x',_) -> x' `seq` v
 
 -- | Mutate the contents of a 'MutVar'
 modifyMutVar :: PrimMonad m => MutVar (PrimState m) a -> (a -> a) -> m ()
@@ -83,4 +84,3 @@ modifyMutVar' :: PrimMonad m => MutVar (PrimState m) a -> (a -> a) -> m ()
 modifyMutVar' (MutVar mv#) g = primitive_ $ \s# ->
   case readMutVar# mv# s# of
     (# s'#, a #) -> let a' = g a in a' `seq` writeMutVar# mv# a' s'#
-
