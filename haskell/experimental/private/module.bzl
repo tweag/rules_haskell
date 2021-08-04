@@ -46,12 +46,20 @@ def haskell_module_impl(ctx):
 
     # Determine outputs
     with_profiling = is_profiling_enabled(hs)
+    hs_boot = paths.split_extension(src.path)[1] in [".hs-boot", ".lhs-boot"]
+    extension_template = "%s"
+    if hs_boot:
+        extension_template = extension_template + "-boot"
+    if with_profiling:
+        extension_template = "p_" + extension_template
+    extension_template = "." + extension_template
+
     obj = ctx.actions.declare_file(
-        paths.replace_extension(src.basename, ".o" if not with_profiling else ".p_o"),
+        paths.replace_extension(src.basename, extension_template % "o"),
         sibling = src,
     )
     interface = ctx.actions.declare_file(
-        paths.replace_extension(src.basename, ".hi" if not with_profiling else ".p_hi"),
+        paths.replace_extension(src.basename, extension_template % "hi"),
         sibling = src,
     )
 
