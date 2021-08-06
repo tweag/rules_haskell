@@ -1,4 +1,4 @@
-load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
 
 exports_files(["start"])
 
@@ -28,4 +28,112 @@ buildifier(
     exclude_patterns = buildifier_exclude_patterns,
     mode = "fix",
     verbose = True,
+)
+
+load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
+
+# a local gazelle which adds test_filegroups to
+# make :all_files available for haskell_bazel_test
+
+# gazelle:exclude {.bazelci,.ci,.github,.netlify,bazel-*,logo,vendor}
+# gazelle:exclude .gitignore
+# FIXME: this globbing isn't working properly
+# gazelle:exclude *.md
+# gazelle:exclude */**/*.md
+gazelle(
+    name = "gazelle_all_files",
+    command = "update",
+    extra_args = [
+        "-name",
+        "all_files",
+        "-exclude",
+        "{devtools,docs,examples,tutorial,tests}",
+    ],
+    gazelle = ":gazelle_filegroup",
+)
+
+gazelle(
+    name = "gazelle_starlark_files",
+    command = "update",
+    extra_args = [
+        "-name",
+        "starlark_files",
+        "-files",
+        "starlark",
+    ],
+    gazelle = ":gazelle_filegroup",
+)
+
+gazelle_binary(
+    name = "gazelle_filegroup",
+    languages = [
+        "//devtools/language/test_filegroup",
+    ],
+)
+
+buildifier_test(
+    name = "buildifier-test",
+    srcs = [
+        "//:starlark_files",
+    ],
+    mode = "check",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        ".bazelignore",
+        ".bazelrc",
+        ".bazelrc.local",
+        ".ghcide",
+        ".gitattributes",
+        ".hie-bios",
+        ".mergify.yml",
+        "AUTHORS",
+        "BUILD.bazel",
+        "CONTRIBUTORS",
+        "LICENSE",
+        "WORKSPACE",
+        "addfilegroup.sh",
+        "constants.bzl",
+        "ghcide-snapshot.json",
+        "ghcide-stack-snapshot.yaml",
+        "hie.yaml",
+        "netlify.toml",
+        "serve-docs.sh",
+        "shell.nix",
+        "stackage-pinning-test.yaml",
+        "stackage-pinning-test_snapshot.json",
+        "stackage-zlib-snapshot.json",
+        "stackage_snapshot.json",
+        "start",
+        "//debug/linking_utils:all_files",
+        "//haskell:all_files",
+        "//nixpkgs:all_files",
+        "//protobuf:all_files",
+        "//rule_info:all_files",
+        "//tools:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "WORKSPACE",
+        "constants.bzl",
+        "//debug/linking_utils:starlark_files",
+        "//devtools/language/test_filegroup:starlark_files",
+        "//docs:starlark_files",
+        "//haskell:starlark_files",
+        "//nixpkgs:starlark_files",
+        "//protobuf:starlark_files",
+        "//rule_info:starlark_files",
+        "//tests:starlark_files",
+        "//tools:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
 )
