@@ -182,7 +182,7 @@ def cc_interop_info(ctx):
         ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
     )
 
-def ghc_cc_program_args(cc):
+def ghc_cc_program_args(hs, cc):
     """Returns the -pgm* flags required to override cc.
 
     Args:
@@ -214,4 +214,6 @@ def ghc_cc_program_args(cc):
         cc + " -E -undef -traditional",
         "-optc-fno-stack-protector",
     ]
+    if hs.toolchain.numeric_version >= [8, 10, 3]:
+        args.append("-pgmc-supports-no-pie")
     return args

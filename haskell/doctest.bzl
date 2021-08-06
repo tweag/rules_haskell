@@ -95,7 +95,7 @@ def _haskell_doctest_single(target, ctx):
     args.add("--no-magic")
 
     cc = cc_interop_info(ctx)
-    args.add_all(ghc_cc_program_args(cc.tools.cc))
+    args.add_all(ghc_cc_program_args(hs, cc.tools.cc))
 
     doctest_log = ctx.actions.declare_file(
         "doctest-log-" + ctx.label.name + "-" + target.label.name,
@@ -143,6 +143,8 @@ def _haskell_doctest_single(target, ctx):
         progress_message = "HaskellDoctest {}".format(ctx.label),
         command = """
         {env}
+        # doctest needs PATH to call GHC and the C compiler and linker.
+        export PATH
         {doctest} "$@" {inputs} > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
         """.format(
             doctest = toolchain.doctest[0].path,
@@ -150,10 +152,9 @@ def _haskell_doctest_single(target, ctx):
             inputs = " ".join(inputs),
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
-            env = render_env(hs.env),
+            env = render_env(dicts.add(hs.env, cc.env)),
         ),
         arguments = [args],
-        env = dicts.add(hs.env, cc.env),
         execution_requirements = {
             # Prevents a race condition among concurrent doctest tests on Linux.
             #

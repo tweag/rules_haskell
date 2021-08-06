@@ -49,7 +49,10 @@ haskell_library(
         "Lib.hs",
         "TH.hs",
     ],
-    tags = ["requires_nix"],
+    tags = [
+        "requires_dynamic",
+        "requires_nix",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":intermediate-library",

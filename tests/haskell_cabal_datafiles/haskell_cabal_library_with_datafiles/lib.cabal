@@ -1,0 +1,23 @@
+cabal-version: >=1.10
+name: lib-pkg
+version: 0.1.0.0
+build-type: Simple
+
+data-files:
+  datafile
+
+library
+  build-depends: base, runfiles
+  default-language: Haskell2010
+
+executable inside
+  build-depends: base, sublib
+  default-language: Haskell2010
+  main-is: Main.hs
+
+library sublib
+  visibility: public
+  build-depends: base, runfiles
+  default-language: Haskell2010
+  exposed-modules: Lib
+  other-modules: Paths_lib_pkg

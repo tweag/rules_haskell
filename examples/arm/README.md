@@ -4,7 +4,7 @@ with `rules_haskell`.
 Build with
 ```
 cd examples/arm
-nix-shell --pure --run "bazel build //... --platforms=//:linux_aarch64 --config linux-nixpkgs
+nix-shell --pure --run "bazel build //... --platforms=//:linux_aarch64 --config linux-nixpkgs"
 ```
 
 Run with

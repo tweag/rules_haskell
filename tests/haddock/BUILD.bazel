@@ -23,6 +23,7 @@ haskell_library(
         "header.h",
     ],
     compiler_flags = ["-I."],
+    tags = ["requires_dynamic"],
     deps = [
         ":haddock-lib-deep",
         "//tests/hackage:base",
@@ -44,6 +45,7 @@ haskell_library(
         # This is missing on darwin with bindist due to
         # https://github.com/tweag/rules_haskell/issues/1317.
         "dont_test_on_darwin_with_bindist",
+        "requires_dynamic",
     ],
     deps = [
         ":haddock-lib-a",
@@ -59,6 +61,7 @@ haskell_doc(
     tags = [
         "dont_test_on_darwin_with_bindist",
         "dont_test_on_windows",
+        "requires_dynamic",
     ],
     deps = [":haddock-lib-b"],
 )
@@ -83,6 +86,7 @@ haskell_doc(
     tags = [
         "dont_test_on_darwin_with_bindist",
         "dont_test_on_windows",
+        "requires_dynamic",
     ],
     deps = [":haddock-lib-b"],
 )

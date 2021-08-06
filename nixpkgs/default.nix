@@ -1,9 +1,10 @@
+{ ... }@args:
 let
-  # 2021-02-19
-  sha256 = "1fwl898f6wznkjpwq11brgadz6iff5w5f4lwj2l7ax2rz7r03mnn";
-  rev = "ad4db3f4d8ae54482c63c31c14921cb73953548d";
+  # 2021-06-24
+  sha256 = "15w3yr8nash6ya67q9mcak3z7ba8vn39jq6ynpfxgagmxj7j0jyb";
+  rev = "65db0350fe3962c41b8604046ec9166976f80793";
 in
 import (fetchTarball {
   inherit sha256;
   url = "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz";
-})
+}) args

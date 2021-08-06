@@ -28,7 +28,6 @@ haskell_test(
     name = "bin-deps",
     size = "small",
     srcs = ["Bin.hs"],
-    tags = ["skip_profiling"],
     visibility = ["//visibility:public"],
     deps = [
         ":TestLib",

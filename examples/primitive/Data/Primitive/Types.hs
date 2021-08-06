@@ -3,6 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE TypeInType #-}
+{-# LANGUAGE DeriveGeneric #-}
 #endif
 
 #include "HsBaseConfig.h"
@@ -19,11 +20,10 @@
 --
 
 module Data.Primitive.Types (
-  Prim(..),
-  sizeOf, alignment, defaultSetByteArray#, defaultSetOffAddr#,
-
-  Addr(..),
-  PrimStorable(..)
+  Prim(..)
+  ,sizeOf, alignment, defaultSetByteArray#, defaultSetOffAddr#
+  ,PrimStorable(..)
+  ,Ptr(..)
 ) where
 
 import Control.Monad.Primitive
@@ -48,44 +48,40 @@ import GHC.Int (
 import GHC.Ptr (
     Ptr(..), FunPtr(..)
   )
+import GHC.Stable (
+    StablePtr(..)
+  )
 
-import GHC.Prim
+import GHC.Exts
 #if __GLASGOW_HASKELL__ >= 706
     hiding (setByteArray#)
 #endif
 
-import Data.Typeable ( Typeable )
-import Data.Data ( Data(..) )
-import Data.Primitive.Internal.Compat ( isTrue#, mkNoRepType )
+
+import Data.Primitive.Internal.Compat ( isTrue# )
 import Foreign.Storable (Storable)
-import Numeric
+
 
 import qualified Foreign.Storable as FS
 
--- | A machine address
-data Addr = Addr Addr# deriving ( Typeable )
+import Control.Applicative (Const(..))
+#if MIN_VERSION_base(4,8,0)
+import Data.Functor.Identity (Identity(..))
+import qualified Data.Monoid as Monoid
+#endif
+#if MIN_VERSION_base(4,6,0)
+import Data.Ord (Down(..))
+#else
+import GHC.Exts (Down(..))
+#endif
+#if MIN_VERSION_base(4,9,0)
+import qualified Data.Semigroup as Semigroup
+#endif
 
-instance Show Addr where
-  showsPrec _ (Addr a) =
-    showString "0x" . showHex (fromIntegral (I# (addr2Int# a)) :: Word)
-
-instance Eq Addr where
-  Addr a# == Addr b# = isTrue# (eqAddr# a# b#)
-  Addr a# /= Addr b# = isTrue# (neAddr# a# b#)
-
-instance Ord Addr where
-  Addr a# > Addr b# = isTrue# (gtAddr# a# b#)
-  Addr a# >= Addr b# = isTrue# (geAddr# a# b#)
-  Addr a# < Addr b# = isTrue# (ltAddr# a# b#)
-  Addr a# <= Addr b# = isTrue# (leAddr# a# b#)
-
-instance Data Addr where
-  toConstr _ = error "toConstr"
-  gunfold _ _ = error "gunfold"
-  dataTypeOf _ = mkNoRepType "Data.Primitive.Types.Addr"
-
-
--- | Class of types supporting primitive array operations
+-- | Class of types supporting primitive array operations. This includes
+-- interfacing with GC-managed memory (functions suffixed with @ByteArray#@)
+-- and interfacing with unmanaged memory (functions suffixed with @Addr#@).
+-- Endianness is platform-dependent.
 class Prim a where
 
   -- | Size of values of type @a@. The argument is not used.
@@ -288,12 +284,12 @@ derivePrim(Double, D#, sIZEOF_DOUBLE, aLIGNMENT_DOUBLE,
 derivePrim(Char, C#, sIZEOF_CHAR, aLIGNMENT_CHAR,
            indexWideCharArray#, readWideCharArray#, writeWideCharArray#, setWideCharArray#,
            indexWideCharOffAddr#, readWideCharOffAddr#, writeWideCharOffAddr#, setWideCharOffAddr#)
-derivePrim(Addr, Addr, sIZEOF_PTR, aLIGNMENT_PTR,
-           indexAddrArray#, readAddrArray#, writeAddrArray#, setAddrArray#,
-           indexAddrOffAddr#, readAddrOffAddr#, writeAddrOffAddr#, setAddrOffAddr#)
 derivePrim(Ptr a, Ptr, sIZEOF_PTR, aLIGNMENT_PTR,
            indexAddrArray#, readAddrArray#, writeAddrArray#, setAddrArray#,
            indexAddrOffAddr#, readAddrOffAddr#, writeAddrOffAddr#, setAddrOffAddr#)
+derivePrim(StablePtr a, StablePtr, sIZEOF_PTR, aLIGNMENT_PTR,
+           indexStablePtrArray#, readStablePtrArray#, writeStablePtrArray#, setStablePtrArray#,
+           indexStablePtrOffAddr#, readStablePtrOffAddr#, writeStablePtrOffAddr#, setStablePtrOffAddr#)
 derivePrim(FunPtr a, FunPtr, sIZEOF_PTR, aLIGNMENT_PTR,
            indexAddrArray#, readAddrArray#, writeAddrArray#, setAddrArray#,
            indexAddrOffAddr#, readAddrOffAddr#, writeAddrOffAddr#, setAddrOffAddr#)
@@ -393,3 +389,28 @@ deriving instance Prim CKey
 deriving instance Prim CTimer
 #endif
 deriving instance Prim Fd
+
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Const a b)
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Down a)
+#if MIN_VERSION_base(4,8,0)
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Identity a)
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Monoid.Dual a)
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Monoid.Sum a)
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Monoid.Product a)
+#endif
+#if MIN_VERSION_base(4,9,0)
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Semigroup.First a)
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Semigroup.Last a)
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Semigroup.Min a)
+-- | @since 0.6.5.0
+deriving instance Prim a => Prim (Semigroup.Max a)
+#endif

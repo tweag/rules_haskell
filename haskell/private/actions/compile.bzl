@@ -105,7 +105,7 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins, preprocessors):
+def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id, version, plugins, non_default_plugins, preprocessors):
     """Compute variables common to all compilation targets (binary and library).
 
     Returns:
@@ -170,7 +170,8 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     compile_flags += user_compile_flags
 
     package_ids = []
-    for plugin in plugins:
+    all_plugins = plugins + non_default_plugins
+    for plugin in all_plugins:
         package_ids.extend(all_dependencies_package_ids(plugin.deps))
 
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
@@ -305,13 +306,14 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     # Plugins
     for plugin in plugins:
         args.add("-fplugin={}".format(plugin.module))
+    for plugin in all_plugins:
         for opt in plugin.args:
             args.add_all(["-fplugin-opt", "{}:{}".format(plugin.module, opt)])
 
-    plugin_tool_inputs = depset(transitive = [plugin.tool_inputs for plugin in plugins])
+    plugin_tool_inputs = depset(transitive = [plugin.tool_inputs for plugin in all_plugins])
     plugin_tool_input_manifests = [
         manifest
-        for plugin in plugins
+        for plugin in all_plugins
         for manifest in plugin.tool_input_manifests
     ]
 
@@ -399,6 +401,7 @@ def compile_binary(
         version,
         inspect_coverage = False,
         plugins = [],
+        non_default_plugins = [],
         preprocessors = []):
     """Compile a Haskell target into object files suitable for linking.
 
@@ -410,7 +413,7 @@ def compile_binary(
         source_files: set of Haskell source files
         boot_files: set of Haskell boot files
     """
-    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = None, version = version, plugins = plugins, non_default_plugins = non_default_plugins, preprocessors = preprocessors)
     c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
@@ -464,6 +467,7 @@ def compile_library(
         with_profiling,
         my_pkg_id,
         plugins = [],
+        non_default_plugins = [],
         preprocessors = []):
     """Build arguments for Haskell package build.
 
@@ -479,14 +483,13 @@ def compile_library(
         boot_files: set of Haskell boot files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, import_dir_map, extra_srcs, user_compile_flags, with_profiling, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, non_default_plugins = non_default_plugins, preprocessors = preprocessors)
     if with_shared:
         c.args.add("-dynamic-too")
 
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
         if not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
-            version = [int(x) for x in hs.toolchain.version.split(".")]
-            if version < [8, 10]:
+            if hs.toolchain.numeric_version < [8, 10]:
                 c.args.add("-optl-no-pie")
 
     coverage_data = []

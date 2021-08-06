@@ -163,16 +163,18 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins)
+    non_default_plugin_decl = reversed(ctx.attr.non_default_plugins)
+    all_plugin_decls = plugin_decl + non_default_plugin_decl
 
     plugin_dep_info = gather_dep_info(
         ctx,
-        [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
+        [dep for plugin in all_plugin_decls for dep in plugin[GhcPluginInfo].deps],
     )
     package_ids = all_dependencies_package_ids(ctx.attr.deps)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
-    java = java_interop_info(ctx)
+    java = java_interop_info(ctx.attr.deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
@@ -190,6 +192,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         dynamic = False
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
+    non_default_plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in non_default_plugin_decl]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
     user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_binary(
@@ -210,6 +213,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         preprocessors = preprocessors,
     )
 
@@ -320,7 +324,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             ctx.file._bash_runfiles,
             hs.toolchain.tools.hpc,
             binary,
-        ] + mix_runfiles + srcs_runfiles
+        ] + mix_runfiles + srcs_runfiles + java.inputs.to_list()
 
     return [
         hs_info,
@@ -348,9 +352,10 @@ def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
     deps = ctx.attr.deps + ctx.attr.exports
     dep_info = gather_dep_info(ctx, deps)
+    all_plugins = ctx.attr.plugins + ctx.attr.non_default_plugins
     plugin_dep_info = gather_dep_info(
         ctx,
-        [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
+        [dep for plugin in all_plugins for dep in plugin[GhcPluginInfo].deps],
     )
     package_ids = all_dependencies_package_ids(deps)
 
@@ -362,7 +367,7 @@ def haskell_library_impl(ctx):
 
     # Add any interop info for other languages.
     cc = cc_interop_info(ctx)
-    java = java_interop_info(ctx)
+    java = java_interop_info(ctx.attr.deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
@@ -385,6 +390,7 @@ def haskell_library_impl(ctx):
     my_pkg_id = pkg_id.new(ctx.label, package_name, version)
 
     plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
+    non_default_plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
     user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_library(
@@ -402,6 +408,7 @@ def haskell_library_impl(ctx):
         with_profiling = with_profiling,
         my_pkg_id = my_pkg_id,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         preprocessors = preprocessors,
     )
 
@@ -538,7 +545,7 @@ def haskell_library_impl(ctx):
     if hasattr(ctx, "runfiles"):
         default_info = DefaultInfo(
             files = target_files,
-            runfiles = ctx.runfiles(collect_data = True),
+            runfiles = ctx.runfiles(transitive_files = java.inputs, collect_data = True),
         )
     else:
         default_info = DefaultInfo(

@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 
 def _default_info_test_impl(ctx):
@@ -6,24 +7,18 @@ def _default_info_test_impl(ctx):
     target_under_test = analysistest.target_under_test(env)
 
     default_info = target_under_test[DefaultInfo]
+    actual_files = [x.basename for x in default_info.files.to_list()]
 
-    obj_files = [
-        f
-        for f in default_info.files.to_list()
-        if paths.split_extension(f.path)[1] == ".o"
-    ]
-    asserts.true(env, len(obj_files) == 1, "Expected exactly one object file")
-    [obj_file] = obj_files
-    asserts.equals(env, "Single.o", obj_file.basename)
+    # can't use is_profiling_enabled(haskell_context(ctx)) here, because we
+    # don't have access to the haskell toolchain
+    with_profiling = ctx.var["COMPILATION_MODE"] == "dbg"
 
-    hi_files = [
-        f
-        for f in default_info.files.to_list()
-        if paths.split_extension(f.path)[1] == ".hi"
-    ]
-    asserts.true(env, len(hi_files) == 1, "Expected exactly one interface file")
-    [hi_file] = hi_files
-    asserts.equals(env, "Single.hi", hi_file.basename)
+    if with_profiling:
+        expected_files = ["Single.p_o", "Single.p_hi"]
+    else:
+        expected_files = ["Single.o", "Single.hi"]
+
+    asserts.set_equals(env, sets.make(expected_files), sets.make(actual_files))
 
     return analysistest.end(env)
 

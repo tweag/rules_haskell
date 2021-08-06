@@ -12,6 +12,10 @@ load(
     "gather_dep_info",
 )
 load(
+    "//haskell:private/mode.bzl",
+    "is_profiling_enabled",
+)
+load(
     "//haskell:private/packages.bzl",
     "expose_packages",
     "pkg_info_to_compile_flags",
@@ -41,14 +45,24 @@ def haskell_module_impl(ctx):
     # ctx.attr.tools
 
     # Determine outputs
+    with_profiling = is_profiling_enabled(hs)
+    hs_boot = paths.split_extension(src.path)[1] in [".hs-boot", ".lhs-boot"]
+    extension_template = "%s"
+    if hs_boot:
+        extension_template = extension_template + "-boot"
+    if with_profiling:
+        extension_template = "p_" + extension_template
+    extension_template = "." + extension_template
+
     obj = ctx.actions.declare_file(
-        paths.replace_extension(src.basename, ".o"),
+        paths.replace_extension(src.basename, extension_template % "o"),
         sibling = src,
     )
     interface = ctx.actions.declare_file(
-        paths.replace_extension(src.basename, ".hi"),
+        paths.replace_extension(src.basename, extension_template % "hi"),
         sibling = src,
     )
+
     # TODO[AH] Support additional outputs such as `.hie`.
 
     # Construct compiler arguments
@@ -63,6 +77,15 @@ def haskell_module_impl(ctx):
         # to debug issues in non-sandboxed builds.
         "-Wmissing-home-modules",
     ])
+    if with_profiling:
+        args.add_all([
+            "-prof",
+            "-fexternal-interpreter",
+            "-hisuf",
+            "p_hi",
+            "-osuf",
+            "p_o",
+        ])
     package_name = getattr(ctx.attr, "package_name", None)
     if not package_name:
         package_name = ctx.attr._package_name_setting[BuildSettingInfo].value
@@ -145,8 +168,7 @@ def haskell_module_impl(ctx):
         ),
         input_manifests = [],
         outputs = [obj, interface],
-        # TODO[AH] Support profiling
-        mnemonic = "HaskellBuildObject",  # + ("Prof" if with_profiling else ""),
+        mnemonic = "HaskellBuildObject" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildObject {}".format(hs.label),
         env = hs.env,
         arguments = args,

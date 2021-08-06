@@ -14,7 +14,7 @@ module Data.Primitive.MachDeps where
 
 #include "MachDeps.h"
 
-import GHC.Prim
+import GHC.Exts
 
 sIZEOF_CHAR,
  aLIGNMENT_CHAR,

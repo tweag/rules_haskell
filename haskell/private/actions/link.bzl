@@ -113,7 +113,8 @@ def link_binary(
             args.add_all(["-pie", "-dynamic"])
     elif not hs.toolchain.is_darwin and not hs.toolchain.is_windows:
         # See Note [No PIE when linking]
-        args.add("-optl-no-pie")
+        if hs.toolchain.numeric_version < [8, 10]:
+            args.add("-optl-no-pie")
 
     # When compiling with `-threaded`, GHC needs to link against
     # the pthread library when linking against static archives (.a).
@@ -221,7 +222,7 @@ def link_binary(
 # we have to pass `-no-pie` explicitly when linking binaries.
 #
 # In GHC < 8.10, we must always pass -no-pie. In newer compilers, we
-# must take care to only pass -no-pie when compiling libraries.
+# must never pass -no-pie, at any rate not when linking binaries.
 #
 # Ideally, we would determine whether the CC toolchain's C compiler supports
 # `-no-pie` before setting it. Unfortunately, this is complicated by the fact

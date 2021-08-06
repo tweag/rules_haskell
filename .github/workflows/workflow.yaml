@@ -30,8 +30,8 @@ jobs:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
           case ${{ matrix.os }} in
-            macos) BUILD_CONFIG=macos-nixpkgs;;
-            ubuntu) BUILD_CONFIG=linux-nixpkgs;;
+            macos) BUILD_CONFIG=ci-macos-nixpkgs;;
+            ubuntu) BUILD_CONFIG=ci-linux-nixpkgs;;
           esac
           cat >.bazelrc.local <<EOF
           common --config=ci
@@ -52,7 +52,7 @@ jobs:
             ./tests/run-start-script.sh --use-nix
             bazel build //tests:run-tests
             ./bazel-ci-bin/tests/run-tests
-            bazel coverage //tests/...
+            bazel coverage //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
             '
@@ -122,9 +122,9 @@ jobs:
         shell: bash
         run: |
           case ${{ matrix.os }} in
-            macos) BUILD_CONFIG=macos-bindist;;
-            ubuntu) BUILD_CONFIG=linux-bindist;;
-            windows) BUILD_CONFIG=windows-bindist;;
+            macos) BUILD_CONFIG=ci-macos-bindist;;
+            ubuntu) BUILD_CONFIG=ci-linux-bindist;;
+            windows) BUILD_CONFIG=ci-windows-bindist;;
           esac
           cat >.bazelrc.local <<EOF
           common --config=ci
@@ -141,7 +141,12 @@ jobs:
           export PATH=$HOME/bazel:$PATH
           [[ ${{ matrix.os }} == macos ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           ./tests/run-start-script.sh --use-bindists
-          bazel test //tests/...
+          if [[ ${{ matrix.os }} == windows ]]; then
+            # On Windows `//...` expands to `/...`.
+            bazel test ///...
+          else
+            bazel test //...
+          fi
           # Test stack_snapshot pinning
           # NOTE keep in sync with tests/RunTests.hs
           bazel run @stackage-pinning-test-unpinned//:pin

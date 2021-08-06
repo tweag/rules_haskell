@@ -5,28 +5,52 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
-import Control.Applicative
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+#if __GLASGOW_HASKELL__ >= 805
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE TypeInType #-}
+#endif
+
 import Control.Monad
-import Control.Monad.Fix (fix)
-import Control.Monad.Primitive
 import Control.Monad.ST
-import Data.Monoid
 import Data.Primitive
-import Data.Primitive.Array
-import Data.Primitive.ByteArray
-import Data.Primitive.Types
-import Data.Primitive.SmallArray
-import Data.Primitive.PrimArray
 import Data.Word
 import Data.Proxy (Proxy(..))
 import GHC.Int
 import GHC.IO
-import GHC.Prim
+import GHC.Exts
 import Data.Function (on)
+import Control.Applicative (Const(..))
+import PrimLawsWIP (primLaws)
+
+#if !(MIN_VERSION_base(4,8,0))
+import Data.Monoid (Monoid(..))
+#endif
+#if MIN_VERSION_base(4,8,0)
+import Data.Functor.Identity (Identity(..))
+import qualified Data.Monoid as Monoid
+#endif
+#if MIN_VERSION_base(4,6,0)
+import Data.Ord (Down(..))
+#else
+import GHC.Exts (Down(..))
+#endif
 #if MIN_VERSION_base(4,9,0)
 import Data.Semigroup (stimes)
+import qualified Data.Semigroup as Semigroup
 #endif
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Monoid ((<>))
+#endif
+#if __GLASGOW_HASKELL__ >= 805
+import Foreign.Storable (Storable)
+#endif
+import Data.Orphans ()
 
 import Test.Tasty (defaultMain,testGroup,TestTree)
 import Test.QuickCheck (Arbitrary,Arbitrary1,Gen,(===),CoArbitrary,Function)
@@ -89,6 +113,7 @@ main = do
       , lawsToTest (QCC.showReadLaws (Proxy :: Proxy (Array Int)))
 #if MIN_VERSION_base(4,7,0)
       , lawsToTest (QCC.isListLaws (Proxy :: Proxy ByteArray))
+      , TQC.testProperty "foldrByteArray" (QCCL.foldrProp word8 foldrByteArray)
 #endif
       ]
     , testGroup "PrimArray"
@@ -122,26 +147,59 @@ main = do
       , TQC.testProperty "mapMaybePrimArrayP" (QCCL.mapMaybeMProp int16 int32 mapMaybePrimArrayP)
 #endif
       ]
-    , testGroup "UnliftedArray"
-      [ lawsToTest (QCC.eqLaws (Proxy :: Proxy (UnliftedArray (PrimArray Int16))))
-      , lawsToTest (QCC.ordLaws (Proxy :: Proxy (UnliftedArray (PrimArray Int16))))
-      , lawsToTest (QCC.monoidLaws (Proxy :: Proxy (UnliftedArray (PrimArray Int16))))
-#if MIN_VERSION_base(4,7,0)
-      , lawsToTest (QCC.isListLaws (Proxy :: Proxy (UnliftedArray (PrimArray Int16))))
-      , TQC.testProperty "mapUnliftedArray" (QCCL.mapProp arrInt16 arrInt32 mapUnliftedArray)
-      , TQC.testProperty "foldrUnliftedArray" (QCCL.foldrProp arrInt16 foldrUnliftedArray)
-      , TQC.testProperty "foldrUnliftedArray'" (QCCL.foldrProp arrInt16 foldrUnliftedArray')
-      , TQC.testProperty "foldlUnliftedArray" (QCCL.foldlProp arrInt16 foldlUnliftedArray)
-      , TQC.testProperty "foldlUnliftedArray'" (QCCL.foldlProp arrInt16 foldlUnliftedArray')
+
+
+
+     ,testGroup "DefaultSetMethod"
+      [ lawsToTest (primLaws (Proxy :: Proxy DefaultSetMethod))
+      ]
+#if __GLASGOW_HASKELL__ >= 805
+    ,testGroup "PrimStorable"
+      [ lawsToTest (QCC.storableLaws (Proxy :: Proxy Derived))
+      ]
 #endif
+     ,testGroup "Prim"
+      [ renameLawsToTest "Word" (primLaws (Proxy :: Proxy Word))
+      , renameLawsToTest "Word8" (primLaws (Proxy :: Proxy Word8))
+      , renameLawsToTest "Word16" (primLaws (Proxy :: Proxy Word16))
+      , renameLawsToTest "Word32" (primLaws (Proxy :: Proxy Word32))
+      , renameLawsToTest "Word64" (primLaws (Proxy :: Proxy Word64))
+      , renameLawsToTest "Int" (primLaws (Proxy :: Proxy Int))
+      , renameLawsToTest "Int8" (primLaws (Proxy :: Proxy Int8))
+      , renameLawsToTest "Int16" (primLaws (Proxy :: Proxy Int16))
+      , renameLawsToTest "Int32" (primLaws (Proxy :: Proxy Int32))
+      , renameLawsToTest "Int64" (primLaws (Proxy :: Proxy Int64))
+      , renameLawsToTest "Const" (primLaws (Proxy :: Proxy (Const Int16 Int16)))
+      , renameLawsToTest "Down" (primLaws (Proxy :: Proxy (Down Int16)))
+#if MIN_VERSION_base(4,8,0)
+      , renameLawsToTest "Identity" (primLaws (Proxy :: Proxy (Identity Int16)))
+      , renameLawsToTest "Dual" (primLaws (Proxy :: Proxy (Monoid.Dual Int16)))
+      , renameLawsToTest "Sum" (primLaws (Proxy :: Proxy (Monoid.Sum Int16)))
+      , renameLawsToTest "Product" (primLaws (Proxy :: Proxy (Monoid.Product Int16)))
+#endif
+#if MIN_VERSION_base(4,9,0)
+      , renameLawsToTest "First" (primLaws (Proxy :: Proxy (Semigroup.First Int16)))
+      , renameLawsToTest "Last" (primLaws (Proxy :: Proxy (Semigroup.Last Int16)))
+      , renameLawsToTest "Min" (primLaws (Proxy :: Proxy (Semigroup.Min Int16)))
+      , renameLawsToTest "Max" (primLaws (Proxy :: Proxy (Semigroup.Max Int16)))
+#endif
+
       ]
-    , testGroup "DefaultSetMethod"
-      [ lawsToTest (QCC.primLaws (Proxy :: Proxy DefaultSetMethod))
-      ]
-    -- , testGroup "PrimStorable"
-    --   [ lawsToTest (QCC.storableLaws (Proxy :: Proxy Derived))
-    --   ]
+
     ]
+
+deriving instance Arbitrary a => Arbitrary (Down a)
+-- Const, Dual, Sum, Product: all have Arbitrary instances defined
+-- in QuickCheck itself
+#if MIN_VERSION_base(4,9,0)
+deriving instance Arbitrary a => Arbitrary (Semigroup.First a)
+deriving instance Arbitrary a => Arbitrary (Semigroup.Last a)
+deriving instance Arbitrary a => Arbitrary (Semigroup.Min a)
+deriving instance Arbitrary a => Arbitrary (Semigroup.Max a)
+#endif
+
+word8 :: Proxy Word8
+word8 = Proxy
 
 int16 :: Proxy Int16
 int16 = Proxy
@@ -149,11 +207,6 @@ int16 = Proxy
 int32 :: Proxy Int32
 int32 = Proxy
 
-arrInt16 :: Proxy (PrimArray Int16)
-arrInt16 = Proxy
-
-arrInt32 :: Proxy (PrimArray Int16)
-arrInt32 = Proxy
 
 -- Tests that using resizeByteArray to shrink a byte array produces
 -- the same results as calling Data.List.take on the list that the
@@ -197,6 +250,32 @@ byteArrayGrowProp = QC.property $ \(QC.NonNegative (n :: Int)) (QC.NonNegative (
         unsafeFreezeByteArray mzs1
    in expected === actual
 
+-- Tests that writing stable ptrs to a PrimArray, reading them back
+-- out, and then dereferencing them gives correct results.
+--stablePtrPrimProp :: QC.Property
+--stablePtrPrimProp = QC.property $ \(xs :: [Integer]) -> unsafePerformIO $ do
+--  ptrs <- mapM newStablePtr xs
+--  let ptrs' = primArrayToList (primArrayFromList ptrs)
+--  ys <- mapM deRefStablePtr ptrs'
+--  mapM_ freeStablePtr ptrs'
+--  return (xs === ys)
+
+--stablePtrPrimBlockProp :: QC.Property
+--stablePtrPrimBlockProp = QC.property $ \(x :: Word) (QC.NonNegative (len :: Int)) -> unsafePerformIO $ do
+--  ptr <- newStablePtr x
+--  let ptrs' = replicatePrimArray len ptr
+--  let go ix = if ix < len
+--        then do
+--          n <- deRefStablePtr (indexPrimArray ptrs' ix)
+--          ns <- go (ix + 1)
+--          return (n : ns)
+--        else return []
+--  ys <- go 0
+--  freeStablePtr ptr
+--  return (L.replicate len x === ys)
+
+
+
 -- Provide the non-negative integers up to the bound. For example:
 --
 -- >>> intsLessThan 5
@@ -205,7 +284,7 @@ intsLessThan :: Int -> [Int]
 intsLessThan i = if i < 1
   then []
   else (i - 1) : intsLessThan (i - 1)
-  
+
 byteArrayCompareProp :: QC.Property
 byteArrayCompareProp = QC.property $ \(xs :: [Word8]) (ys :: [Word8]) ->
   compareLengthFirst xs ys === compare (byteArrayFromList xs) (byteArrayFromList ys)
@@ -222,6 +301,9 @@ data Proxy1 (f :: * -> *) = Proxy1
 
 lawsToTest :: QCC.Laws -> TestTree
 lawsToTest (QCC.Laws name pairs) = testGroup name (map (uncurry TQC.testProperty) pairs)
+
+renameLawsToTest :: String -> QCC.Laws -> TestTree
+renameLawsToTest name (QCC.Laws _ pairs) = testGroup name (map (uncurry TQC.testProperty) pairs)
 
 testArray :: IO ()
 testArray = do
@@ -265,7 +347,7 @@ testByteArray = do
 mkByteArray :: Prim a => [a] -> ByteArray
 mkByteArray xs = runST $ do
     marr <- newByteArray (length xs * sizeOf (head xs))
-    sequence $ zipWith (writeByteArray marr) [0..] xs
+    sequence_ $ zipWith (writeByteArray marr) [0..] xs
     unsafeFreezeByteArray marr
 
 instance Arbitrary1 Array where
@@ -298,10 +380,7 @@ instance (Arbitrary a, Prim a) => Arbitrary (PrimArray a) where
         writePrimArray a ix x
       unsafeFreezePrimArray a
 
-instance (Arbitrary a, PrimUnlifted a) => Arbitrary (UnliftedArray a) where
-  arbitrary = do
-    xs <- QC.vector =<< QC.choose (0,3)
-    return (unliftedArrayFromList xs)
+
 
 instance (Prim a, CoArbitrary a) => CoArbitrary (PrimArray a) where
   coarbitrary x = QC.coarbitrary (primArrayToList x)
@@ -331,12 +410,9 @@ instance Prim DefaultSetMethod where
   writeOffAddr# addr off (DefaultSetMethod n) s0 = writeOffAddr# addr off n s0
   setOffAddr# = defaultSetOffAddr#
 
--- TODO: Uncomment this out when GHC 8.6 is release. Also, uncomment
--- the corresponding PrimStorable test group above.
---
--- newtype Derived = Derived Int16
---   deriving newtype (Prim)
---   deriving Storable via (PrimStorable Derived)
-
-
-
+#if __GLASGOW_HASKELL__ >= 805
+newtype Derived = Derived Int16
+  deriving stock (Eq, Show)
+  deriving newtype (Arbitrary, Prim)
+  deriving Storable via (PrimStorable Derived)
+#endif
