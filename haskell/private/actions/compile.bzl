@@ -570,6 +570,16 @@ def list_exposed_modules(
     exposed_modules_file = hs.actions.declare_file(
         target_unique_name(hs, "exposed-modules"),
     )
+    extra_modules = ",".join([
+        paths.split_extension(
+            paths.relativize(
+                m[HaskellModuleInfo].interface_file.path,
+                m[HaskellModuleInfo].import_dir,
+            ),
+        )[0].replace("/", ".")
+            .replace("\\", ".")
+        for m in modules
+    ])
     hs.actions.run(
         inputs = [
             interfaces_dir,
@@ -584,12 +594,8 @@ def list_exposed_modules(
         executable = ls_modules,
         arguments = [
             str(with_profiling),
-            ":".join(
-                [interfaces_dir.path] + [
-                    m[HaskellModuleInfo].import_dir
-                    for m in modules
-                ],
-            ),
+            interfaces_dir.path,
+            extra_modules,
             hs.toolchain.global_pkg_db.path,
             hidden_modules_file.path,
             reexported_modules_file.path,

@@ -118,9 +118,11 @@ def package(
         inputs = [metadata_file, exposed_modules_file],
         outputs = [conf_file],
         command = """
-            "$1" $2 > $4
-            echo "exposed-modules: `"$1" $3`" >> $4
-""",
+            (
+              "$1" $2
+              echo "exposed-modules: `"$1" $3`"
+            ) > $4
+        """,
         arguments = [
             posix.commands["cat"],
             metadata_file.path,
