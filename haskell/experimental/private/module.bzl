@@ -21,6 +21,15 @@ load(
     "pkg_info_to_compile_flags",
 )
 load(
+    "//haskell:private/plugins.bzl",
+    "resolve_plugin_tools",
+)
+load(
+    "//haskell:providers.bzl",
+    "GhcPluginInfo",
+    "all_dependencies_package_ids",
+)
+load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
@@ -39,8 +48,14 @@ def haskell_module_impl(ctx):
     src = ctx.file.src
     extra_srcs = ctx.files.extra_srcs
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
-    # TODO[AH] Support plugins
-    # ctx.attr.plugins
+
+    # Note [Plugin order]
+    plugin_decl = reversed(ctx.attr.plugins)
+    plugin_dep_info = gather_dep_info(
+        ctx,
+        [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
+    )
+    plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     # TODO[AH] Support preprocessors
     # ctx.attr.tools
 
@@ -137,15 +152,30 @@ def haskell_module_impl(ctx):
             # TODO[AH] Support version macros
             version = None,
         ),
-        # TODO[AH] Support plugins
         plugin_pkg_info = expose_packages(
-            package_ids = [],
-            package_databases = depset(),
+            package_ids = [
+                pkg_id
+                for plugin in plugins
+                for pkg_id in all_dependencies_package_ids(plugin.deps)
+            ],
+            package_databases = plugin_dep_info.package_databases,
             version = None,
         ),
         prefix = "compile-",
     )
     args.add_all(pkg_info_args)
+
+    for plugin in plugins:
+        args.add("-fplugin={}".format(plugin.module))
+        for opt in plugin.args:
+            args.add_all(["-fplugin-opt", "{}:{}".format(plugin.module, opt)])
+
+    plugin_tool_inputs = depset(transitive = [plugin.tool_inputs for plugin in plugins])
+    plugin_tool_input_manifests = [
+        manifest
+        for plugin in plugins
+        for manifest in plugin.tool_input_manifests
+    ]
 
     # TODO[AH] Support package id - see `-this-unit-id` flag.
 
@@ -158,7 +188,13 @@ def haskell_module_impl(ctx):
         cc,
         inputs = depset(
             direct = [src] + extra_srcs + [optp_args_file],
-            transitive = [pkg_info_inputs] + [
+            transitive = [
+                pkg_info_inputs,
+                plugin_dep_info.package_databases,
+                plugin_dep_info.interface_dirs,
+                plugin_dep_info.hs_libraries,
+                plugin_tool_inputs,
+            ] + [
                 # TODO[AH] Factor this out
                 # TODO[AH] Include object files for template Haskell dependencies.
                 depset(direct = [dep[HaskellModuleInfo].interface_file])
@@ -166,7 +202,7 @@ def haskell_module_impl(ctx):
                 if HaskellModuleInfo in dep
             ],
         ),
-        input_manifests = [],
+        input_manifests = plugin_tool_input_manifests,
         outputs = [obj, interface],
         mnemonic = "HaskellBuildObject" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildObject {}".format(hs.label),

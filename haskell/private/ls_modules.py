@@ -18,15 +18,16 @@ import io
 
 import package_configuration
 
-if len(sys.argv) != 7:
-    sys.exit("Usage: %s <WITH_PROFILING> <DIRECTORIES> <GLOBAL_PKG_DB> <HIDDEN_MODS_FILE> <REEXPORTED_MODS_FILE> <RESULT_FILE>" % sys.argv[0])
+if len(sys.argv) != 8:
+    sys.exit("Usage: %s <WITH_PROFILING> <DIRECTORY> <EXTRA_MODULES> <GLOBAL_PKG_DB> <HIDDEN_MODS_FILE> <REEXPORTED_MODS_FILE> <RESULT_FILE>" % sys.argv[0])
 
 with_profiling = sys.argv[1] == 'True'
-roots = sys.argv[2]
-global_pkg_db_dump = sys.argv[3]
-hidden_modules_file = sys.argv[4]
-reexported_modules_file = sys.argv[5]
-results_file = sys.argv[6]
+root = sys.argv[2]
+extra_modules_str = sys.argv[3]
+global_pkg_db_dump = sys.argv[4]
+hidden_modules_file = sys.argv[5]
+reexported_modules_file = sys.argv[6]
+results_file = sys.argv[7]
 
 with io.open(global_pkg_db_dump, "r", encoding='utf8') as f:
     name_id_pairs = [
@@ -92,7 +93,6 @@ modules = (
     os.path.splitext(os.path.relpath(g, start=root))[0]
         .replace("/",".")
         .replace("\\",".")
-    for root in roots.split(":")
     for path, dirs, files in os.walk(root, onerror=handle_walk_error)
     for f in fnmatch.filter(files, '*.p_hi' if with_profiling else '*.hi')
     for g in [os.path.join(path, f)]
@@ -104,5 +104,11 @@ exposed_modules = (
     if m not in hidden_modules
 )
 
+extra_modules = [x for x in extra_modules_str.split(",") if x != ""]
+
 with io.open(results_file, "w", encoding='utf8') as f:
-    f.write(", ".join(itertools.chain(exposed_modules, reexported_modules)))
+    f.write(", ".join(itertools.chain(
+        exposed_modules,
+        reexported_modules,
+        extra_modules,
+    )))
