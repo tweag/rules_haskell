@@ -49,7 +49,7 @@ def get_cc_libraries(cc_libraries_info, libraries_to_link):
         if not cc_libraries_info.libraries[cc_library_key(lib_to_link)].is_haskell
     ]
 
-def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, *, include_real_paths = False, for_th_only=False):
+def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, *, include_real_paths = False, for_th_only = False):
     """Get libraries appropriate for loading with GHCi.
 
     See get_library_files for further information.

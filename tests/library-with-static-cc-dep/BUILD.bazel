@@ -10,8 +10,8 @@ cc_library(
 haskell_library(
     name = "mypkg",
     srcs = ["src/MyModule.hs"],
-    src_strip_prefix = "src",
     ghcopts = ["-XTemplateHaskell"],
+    src_strip_prefix = "src",
     deps = [
         ":cbits-static",
         "//tests/hackage:base",
