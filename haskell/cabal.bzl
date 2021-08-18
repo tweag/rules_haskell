@@ -2287,9 +2287,13 @@ def stack_snapshot(
     `@stackage-exe//<package-name>:<executable-name>`, assuming that you
     invoked `stack_snapshot` with `name = "stackage"`.
 
-    In the external repository defined by the rule, all given packages are
-    available as top-level targets named after each package. Additionally, the
-    dependency graph is made available within `packages.bzl` as the `dict`
+    In the external repository defined by the rule, all items of the `packages`
+    attribute and all items of the `vendored_packages` attribute are made
+    available as top-level targets named after each package with public
+    visibility. Other packages that are dependencies of vendored packages are
+    made available with visibility restricted to these vendored packages.
+
+    The dependency graph is made available within `packages.bzl` as the `dict`
     `packages` mapping unversioned package names to structs holding the fields
 
       - name: The unversioned package name.
@@ -2299,6 +2303,7 @@ def stack_snapshot(
       - deps: The list of library dependencies according to stack.
       - tools: The list of tool dependencies according to stack.
       - flags: The list of Cabal flags.
+      - visibility: The visibility of the given package.
 
     **NOTE:** Make sure your GHC version matches the version expected by the
     snapshot. E.g. if you pass `snapshot = "lts-13.15"`, make sure you use
