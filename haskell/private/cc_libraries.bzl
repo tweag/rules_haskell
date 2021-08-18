@@ -49,7 +49,7 @@ def get_cc_libraries(cc_libraries_info, libraries_to_link):
         if not cc_libraries_info.libraries[cc_library_key(lib_to_link)].is_haskell
     ]
 
-def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, include_real_paths = False):
+def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, *, include_real_paths = False, for_th_only = False):
     """Get libraries appropriate for loading with GHCi.
 
     See get_library_files for further information.
@@ -62,6 +62,9 @@ def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, include_rea
         pic = True,
         include_real_paths = include_real_paths,
     )
+    ghci_can_load_static_libs = hs.toolchain.static_runtime
+    if for_th_only and not ghci_can_load_static_libs:
+        return dynamic_libs
     return static_libs + dynamic_libs
 
 def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None, include_real_paths = False):
