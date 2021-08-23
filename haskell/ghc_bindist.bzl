@@ -416,7 +416,7 @@ rm -f
         execute_or_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
 
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, "lib")
-    locale = ctx.attr.locale or "en_US.UTF-8" if os == "darwin" else "C.UTF-8"
+    locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
     toolchain = define_rule(
         "haskell_toolchain",
         name = "toolchain-impl",
