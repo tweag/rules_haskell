@@ -1884,12 +1884,14 @@ def _stack_snapshot_impl(repository_ctx):
         if name in packages.all or name in vendored_packages:
             visibility = ["//visibility:public"]
         else:
-            visibility = sorted({
-                # use dictionary keys to de-duplicate
-                str(vendored_packages[rdep].relative(":__pkg__")): None
-                for rdep in reverse_deps[name]
-                if rdep in vendored_packages
-            }.keys())
+            visibility = sorted(
+                # use set to de-duplicate
+                set.to_list(set.from_list([
+                    str(vendored_packages[rdep].relative(":__pkg__"))
+                    for rdep in reverse_deps[name]
+                    if rdep in vendored_packages
+                ])),
+            )
             if not visibility:
                 visibility = ["//visibility:private"]
         visibilities[name] = visibility
