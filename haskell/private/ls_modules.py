@@ -107,8 +107,8 @@ exposed_modules = (
 extra_modules = [x for x in extra_modules_str.split(",") if x != ""]
 
 with io.open(results_file, "w", encoding='utf8') as f:
-    f.write(", ".join(itertools.chain(
+    f.write(", ".join(sorted(itertools.chain(
         exposed_modules,
         reexported_modules,
         extra_modules,
-    )))
+    ))))
