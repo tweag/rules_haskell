@@ -1873,6 +1873,29 @@ def _stack_snapshot_impl(repository_ctx):
         _download_packages(repository_ctx, snapshot, pinned)
         resolved = pinned["resolved"]
 
+    reverse_deps = {}
+    for (name, spec) in resolved.items():
+        for dep in spec["dependencies"]:
+            rdeps = reverse_deps.setdefault(dep, [])
+            rdeps.append(name)
+
+    visibilities = {}
+    for (name, spec) in resolved.items():
+        if name in packages.all or name in vendored_packages:
+            visibility = ["//visibility:public"]
+        else:
+            visibility = sorted(
+                # use set to de-duplicate
+                set.to_list(set.from_list([
+                    str(vendored_packages[rdep].relative(":__pkg__"))
+                    for rdep in reverse_deps[name]
+                    if rdep in vendored_packages
+                ])),
+            )
+            if not visibility:
+                visibility = ["//visibility:private"]
+        visibilities[name] = visibility
+
     user_components = {
         name: _parse_components(name, components)
         for (name, components) in repository_ctx.attr.components.items()
@@ -1912,9 +1935,17 @@ packages = {
                     for exe in all_components[dep].exe
                 ],
                 flags = repository_ctx.attr.flags.get(name, []),
+                visibility = visibilities[name],
             ))
             for (name, spec) in resolved.items()
         ]),
+        executable = False,
+    )
+
+    # Write out package components for *-exe workspace.
+    repository_ctx.file(
+        "components.json",
+        json.encode_indent(all_components),
         executable = False,
     )
 
@@ -1927,10 +1958,7 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_l
     for (name, spec) in resolved.items():
         version = spec["version"]
         package = "%s-%s" % (name, version)
-        if name in packages.all or name in vendored_packages:
-            visibility = ["//visibility:public"]
-        else:
-            visibility = ["//visibility:private"]
+        visibility = visibilities[name]
         if name in vendored_packages:
             build_file_builder.append(
                 """
@@ -2035,7 +2063,6 @@ haskell_cabal_binary(
                         deps = library_deps + ([name] if all_components[name].lib else []),
                         setup_deps = setup_deps,
                         tools = library_tools,
-                        visibility = visibility,
                         verbose = repr(repository_ctx.attr.verbose),
                     ),
                 )
@@ -2079,18 +2106,17 @@ _stack_snapshot = repository_rule(
 
 def _stack_executables_impl(repository_ctx):
     workspace = repository_ctx.name[:-len("-exe")]
-    packages = [
-        _chop_version(package) if _has_version(package) else package
-        for package in repository_ctx.attr.packages
-    ]
-    for package in packages:
+    all_components = json.decode(repository_ctx.read(repository_ctx.attr.components_json))
+    for (package, components) in all_components.items():
+        if not components["exe"]:
+            continue
         repository_ctx.file(package + "/BUILD.bazel", executable = False, content = """\
 load("@{workspace}//:packages.bzl", "packages")
 [
     alias(
         name = exe,
         actual = "@{workspace}//:_{package}_exe_" + exe,
-        visibility = ["//visibility:public"],
+        visibility = packages["{package}"].visibility,
     )
     for exe in packages["{package}"].executables
 ]
@@ -2102,7 +2128,7 @@ load("@{workspace}//:packages.bzl", "packages")
 _stack_executables = repository_rule(
     _stack_executables_impl,
     attrs = {
-        "packages": attr.string_list(),
+        "components_json": attr.label(),
     },
 )
 
@@ -2263,9 +2289,13 @@ def stack_snapshot(
     `@stackage-exe//<package-name>:<executable-name>`, assuming that you
     invoked `stack_snapshot` with `name = "stackage"`.
 
-    In the external repository defined by the rule, all given packages are
-    available as top-level targets named after each package. Additionally, the
-    dependency graph is made available within `packages.bzl` as the `dict`
+    In the external repository defined by the rule, all items of the `packages`
+    attribute and all items of the `vendored_packages` attribute are made
+    available as top-level targets named after each package with public
+    visibility. Other packages that are dependencies of vendored packages are
+    made available with visibility restricted to these vendored packages.
+
+    The dependency graph is made available within `packages.bzl` as the `dict`
     `packages` mapping unversioned package names to structs holding the fields
 
       - name: The unversioned package name.
@@ -2275,6 +2305,7 @@ def stack_snapshot(
       - deps: The list of library dependencies according to stack.
       - tools: The list of tool dependencies according to stack.
       - flags: The list of Cabal flags.
+      - visibility: The visibility of the given package.
 
     **NOTE:** Make sure your GHC version matches the version expected by the
     snapshot. E.g. if you pass `snapshot = "lts-13.15"`, make sure you use
@@ -2429,7 +2460,7 @@ def stack_snapshot(
     )
     _stack_executables(
         name = name + "-exe",
-        packages = packages,
+        components_json = "@{}//:components.json".format(name),
     )
 
 def _expand_make_variables(name, ctx, strings):

@@ -186,11 +186,6 @@ stack_snapshot(
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
     packages = [
         "ghcide",
-        # Needed by data-default-instances-containers and data-default-instances-old-locale
-        "base",
-        "containers",
-        "data-default-class",
-        "old-locale",
     ],
     stack_snapshot_json = "//:ghcide-snapshot.json" if not is_windows else None,
     vendored_packages = {
