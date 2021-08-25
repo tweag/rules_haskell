@@ -64,3 +64,10 @@ haskell_doctest(
     visibility = ["//visibility:public"],
     deps = [":bin"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

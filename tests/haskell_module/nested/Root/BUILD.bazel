@@ -7,3 +7,10 @@ haskell_module(
     visibility = ["//tests/haskell_module/nested:__subpackages__"],
     deps = ["//tests/hackage:base"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

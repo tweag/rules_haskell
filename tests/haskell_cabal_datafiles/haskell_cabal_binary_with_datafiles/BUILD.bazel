@@ -40,3 +40,10 @@ sh_test(
     srcs = [":inside"],
     tags = ["skip_profiling"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

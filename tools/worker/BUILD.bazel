@@ -20,3 +20,10 @@ haskell_cabal_binary(
         "@rules_haskell_worker_dependencies//:vector",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

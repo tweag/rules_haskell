@@ -238,3 +238,13 @@ genrule(
         "@zip//:bin",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//docs/pandoc:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

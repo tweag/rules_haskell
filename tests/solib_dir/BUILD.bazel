@@ -11,3 +11,13 @@ solib_test(
     # Convert this test case to an analysis test.
     tags = ["dont_test_on_windows"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "solib_test.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

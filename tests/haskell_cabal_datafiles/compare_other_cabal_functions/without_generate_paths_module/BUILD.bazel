@@ -36,3 +36,10 @@ haskell_binary(
         ":lib",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

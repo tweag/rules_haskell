@@ -121,3 +121,13 @@ for f in "$@"; do
 done
 """,
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "get_library_files.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

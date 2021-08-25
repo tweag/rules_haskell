@@ -10,3 +10,10 @@ haskell_module(
         "//tests/haskell_module/nested/Root:Module",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

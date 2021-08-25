@@ -37,3 +37,10 @@ haskell_test(
         "//tests/haskell_cabal_datafiles/haskell_cabal_library_with_datafiles:lib",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

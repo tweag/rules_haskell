@@ -1,0 +1,26 @@
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
+
+buildifier_test(
+    name = "buildifier-test",
+    srcs = [
+        "//:starlark_files",
+    ],
+    mode = "check",
+)
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "WORKSPACE",
+        "//examples/bazel-bin:starlark_files",
+        "//examples/bazel-testlogs:starlark_files",
+        "//examples/cat_hs:starlark_files",
+        "//examples/primitive:starlark_files",
+        "//examples/rts:starlark_files",
+        "//examples/transformers:starlark_files",
+        "//examples/vector:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

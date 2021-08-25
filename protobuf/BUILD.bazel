@@ -2,3 +2,10 @@ toolchain_type(
     name = "toolchain",
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

@@ -21,3 +21,10 @@ haskell_test(
         "@stackage//:polysemy",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

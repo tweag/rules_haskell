@@ -73,3 +73,13 @@ shellcheck(
     data = ["//tests:scripts/exec.sh"],
     sh_flavor = "bash",
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "shellcheck.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

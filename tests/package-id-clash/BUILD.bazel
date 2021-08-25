@@ -22,3 +22,13 @@ haskell_library(
         "//tests/package-id-clash/sublib",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//tests/package-id-clash/sublib:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -15,3 +15,10 @@ cc_library(
     linkstatic = True,
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

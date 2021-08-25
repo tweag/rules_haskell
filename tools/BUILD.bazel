@@ -1,0 +1,13 @@
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "os_info.bzl",
+        "repositories.bzl",
+        "//tools/ghc-paths:starlark_files",
+        "//tools/runfiles:starlark_files",
+        "//tools/worker:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

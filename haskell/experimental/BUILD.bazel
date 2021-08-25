@@ -12,3 +12,16 @@ exports_files([
     "defs.bzl",
     "transitions.bzl",
 ])
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "defs.bzl",
+        "providers.bzl",
+        "transitions.bzl",
+        "//haskell/experimental/private:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

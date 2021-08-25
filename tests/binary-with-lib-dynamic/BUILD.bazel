@@ -36,3 +36,10 @@ dynamic_libraries_in_runfiles_test(
     ],
     target_under_test = ":binary-with-lib-dynamic",
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

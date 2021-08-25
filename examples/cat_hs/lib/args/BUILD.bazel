@@ -24,3 +24,10 @@ haskell_test(
         "@stackage//:optparse-applicative",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

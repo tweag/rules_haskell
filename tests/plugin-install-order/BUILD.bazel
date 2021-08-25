@@ -84,3 +84,10 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [":base"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)
