@@ -249,7 +249,7 @@ def __check_dots(target, path):
             target.short_path,
         ))
 
-# skylark doesn’t allow nested defs, which is a mystery.
+# starlark doesn’t allow nested defs, which is a mystery.
 def _get_target_parent_dir(target):
     """get the parent dir and handle leading short_path dots,
     which signify that the target is in an external repository.

@@ -114,7 +114,7 @@ def _haskell_proto_aspect_impl(target, ctx):
 
         # As with the native rules, require the .proto file to be in the same
         # Bazel package as the proto_library rule. This allows us to put the
-        # output .hs file next to the input .proto file. Unfortunately Skylark
+        # output .hs file next to the input .proto file. Unfortunately Starlark
         # doesn't let us check the package of the file directly, so instead we
         # just look at its short_path and rely on the proto_library rule itself
         # to check for consistency. We use the file's path rather than its

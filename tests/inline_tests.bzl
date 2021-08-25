@@ -10,7 +10,7 @@ def quote_make_variables(s):
     return s.replace("$", "$$")
 
 def target_from_string(name, string):
-    """Write a skylark string to a target."""
+    """Write a starlark string to a target."""
     native.genrule(
         name = name + "-file",
         outs = [name],

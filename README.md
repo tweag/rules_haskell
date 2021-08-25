@@ -343,7 +343,7 @@ To build and run tests locally, execute:
 $ bazel test //...
 ```
 
-Skylark code in this project is formatted according to the output of
+Starlark code in this project is formatted according to the output of
 [buildifier]. You can check that the formatting is correct using:
 
 ```
