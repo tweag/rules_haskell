@@ -174,7 +174,6 @@ filegroup(
     testonly = True,
     srcs = [
         "BUILD.bazel",
-        "bazel_testing/def.bzl",
         "c2hs.bzl",
         "cabal.bzl",
         "cabal_wrapper.bzl",
