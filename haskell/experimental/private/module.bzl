@@ -12,6 +12,10 @@ load(
     "gather_dep_info",
 )
 load(
+    "//haskell:private/expansions.bzl",
+    "expand_make_variables",
+)
+load(
     "//haskell:private/mode.bzl",
     "is_profiling_enabled",
 )
@@ -38,6 +42,16 @@ load(
     "BuildSettingInfo",
 )
 
+def _expand_make_variables(name, ctx, strings):
+    # All labels in all attributes should be location-expandable.
+    extra_label_attrs = [
+        [ctx.attr.src],
+        ctx.attr.extra_srcs,
+        ctx.attr.plugins,
+        ctx.attr.tools,
+    ]
+    return expand_make_variables(name, ctx, strings, extra_label_attrs)
+
 def haskell_module_impl(ctx):
     # Obtain toolchains
     hs = haskell_context(ctx)
@@ -56,8 +70,7 @@ def haskell_module_impl(ctx):
         [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
     )
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
-    # TODO[AH] Support preprocessors
-    # ctx.attr.tools
+    (preprocessors_inputs, preprocessors_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
 
     # Determine outputs
     with_profiling = is_profiling_enabled(hs)
@@ -180,7 +193,8 @@ def haskell_module_impl(ctx):
     # TODO[AH] Support package id - see `-this-unit-id` flag.
 
     args.add_all(hs.toolchain.ghcopts)
-    args.add_all(ctx.attr.ghcopts)
+
+    args.add_all(_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts))
 
     # Compile the module
     hs.toolchain.actions.run_ghc(
@@ -194,6 +208,7 @@ def haskell_module_impl(ctx):
                 plugin_dep_info.interface_dirs,
                 plugin_dep_info.hs_libraries,
                 plugin_tool_inputs,
+                preprocessors_inputs,
             ] + [
                 # TODO[AH] Factor this out
                 # TODO[AH] Include object files for template Haskell dependencies.
@@ -202,7 +217,7 @@ def haskell_module_impl(ctx):
                 if HaskellModuleInfo in dep
             ],
         ),
-        input_manifests = plugin_tool_input_manifests,
+        input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
         outputs = [obj, interface],
         mnemonic = "HaskellBuildObject" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildObject {}".format(hs.label),

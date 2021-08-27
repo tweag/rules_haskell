@@ -3,6 +3,7 @@ load(
     "haskell_binary",
     "haskell_test",
 )
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 
 package(default_testonly = 1)
 
@@ -12,9 +13,9 @@ haskell_binary(
     deps = ["//tests/hackage:base"],
 )
 
-haskell_test(
-    name = "binary-with-tool",
-    srcs = ["Main.hs"],
+haskell_module(
+    name = "module-with-tool",
+    src = "Main.hs",
     ghcopts = ["-DCAT=$(location :cat)"],
     tools = [":cat"],
     visibility = ["//visibility:public"],
