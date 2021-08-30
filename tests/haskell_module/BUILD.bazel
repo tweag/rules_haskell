@@ -1,0 +1,13 @@
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//tests/haskell_module/hs-boot:starlark_files",
+        "//tests/haskell_module/library:starlark_files",
+        "//tests/haskell_module/multiple:starlark_files",
+        "//tests/haskell_module/nested:starlark_files",
+        "//tests/haskell_module/single:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

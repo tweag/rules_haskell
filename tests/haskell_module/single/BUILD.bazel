@@ -14,3 +14,13 @@ default_info_test(
     name = "default_info_test",
     target_under_test = ":single",
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "test.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

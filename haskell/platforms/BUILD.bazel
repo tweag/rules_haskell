@@ -29,3 +29,13 @@ alias(
     deprecation = "Use @io_tweag_rules_nixpkgs//nixpkgs/platforms:host instead.",
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "list.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

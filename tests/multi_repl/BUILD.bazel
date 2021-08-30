@@ -19,3 +19,15 @@ haskell_repl(
     name = "core_package_dep",
     deps = ["//tests/multi_repl/core_package_dep"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//tests/multi_repl/a:starlark_files",
+        "//tests/multi_repl/bc:starlark_files",
+        "//tests/multi_repl/core_package_dep:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

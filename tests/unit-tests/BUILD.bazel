@@ -123,3 +123,13 @@ create_rpath_entry_test(
 dedup_on_test(
     name = "dedup_on_test",
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "tests.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

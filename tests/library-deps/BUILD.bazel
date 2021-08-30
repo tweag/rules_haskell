@@ -28,3 +28,13 @@ haskell_test(
         "//tests/library-deps/sublib",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//tests/library-deps/sublib:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "test_filegroup",
+    srcs = [
+        "config.go",
+        "lang.go",
+    ],
+    importpath = "github.com/tweag/rules_haskell/devtools/language/test_filegroup",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_gazelle//config",
+        "@bazel_gazelle//label",
+        "@bazel_gazelle//language",
+        "@bazel_gazelle//repo",
+        "@bazel_gazelle//resolve",
+        "@bazel_gazelle//rule",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":test_filegroup",
+    visibility = ["//:__subpackages__"],
+)
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

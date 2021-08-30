@@ -66,3 +66,10 @@ haskell_test(
         ":the_sublibrary",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD"],
+    visibility = ["//visibility:public"],
+)

@@ -42,3 +42,10 @@ sh_test(
     data = ["@rules_haskell//tools/ghc-paths:libdir"],
     tags = ["requires_dynamic"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

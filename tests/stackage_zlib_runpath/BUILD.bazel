@@ -180,3 +180,13 @@ if not all(test_binary(binary, sodir) for binary in [libHSzlib, cabal_binary]):
 """,
     tags = ["requires_nix"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "dynamic_libraries.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

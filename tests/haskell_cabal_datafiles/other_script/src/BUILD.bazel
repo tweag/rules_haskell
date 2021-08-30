@@ -16,3 +16,10 @@ sh_test(
     tags = ["skip_profiling"],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

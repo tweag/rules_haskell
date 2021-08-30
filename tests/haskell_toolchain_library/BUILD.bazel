@@ -24,3 +24,10 @@ haskell_test(
         "//tests/hackage:text",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

@@ -34,3 +34,9 @@ load(
         "text",
     ]
 ]
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+)

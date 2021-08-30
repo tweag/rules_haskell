@@ -33,3 +33,10 @@ haskell_binary(
         "//tests/library-with-cbits:library-with-cbits-static",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

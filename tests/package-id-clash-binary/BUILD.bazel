@@ -12,3 +12,14 @@ haskell_test(
         "//tests/package-id-clash-binary/b:foo",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//tests/package-id-clash-binary/a:starlark_files",
+        "//tests/package-id-clash-binary/b:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

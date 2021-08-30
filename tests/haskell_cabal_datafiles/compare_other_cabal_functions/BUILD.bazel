@@ -33,3 +33,14 @@ sh_test(
     tags = ["skip_profiling"],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/with_generate_paths_module:starlark_files",
+        "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/without_generate_paths_module:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

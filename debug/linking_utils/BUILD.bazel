@@ -50,3 +50,13 @@ if res != {}:
         "requires_nix",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "ldd_test.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

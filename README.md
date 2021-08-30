@@ -347,7 +347,23 @@ Starlark code in this project is formatted according to the output of
 [buildifier]. You can check that the formatting is correct using:
 
 ```
-$ bazel run //:buildifier
+$ bazel test //:buildifier-test
+```
+
+And run the same command in the nested workspaces:
+
+```
+examples$ bazel test //:buildifier-test
+examples/arm$ bazel test //:buildifier-test
+tutorial$ bazel test //:buildifier-test
+tests/c2hs/repo$ bazel test //:buildifier-test
+```
+
+If you have added new Starlark files, you can make them visible to
+`buildifier-test` with:
+
+```
+$ bazel run //:gazelle_starlark_files
 ```
 
 If tests fail then run the following to fix the formatting:

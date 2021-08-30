@@ -21,3 +21,10 @@ sh_test(
     args = ["--version"],
     tags = ["requires_dynamic"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

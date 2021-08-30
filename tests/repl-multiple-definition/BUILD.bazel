@@ -65,3 +65,10 @@ haskell_repl(
     experimental_from_source = [":final"],
     deps = [":final"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

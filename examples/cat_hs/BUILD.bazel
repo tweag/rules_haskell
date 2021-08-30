@@ -10,3 +10,15 @@ haskell_doc(
         "//cat_hs/lib/cat",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//examples/cat_hs/exec/cat_hs:starlark_files",
+        "//examples/cat_hs/lib/args:starlark_files",
+        "//examples/cat_hs/lib/cat:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

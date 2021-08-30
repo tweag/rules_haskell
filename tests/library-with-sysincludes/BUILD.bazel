@@ -88,3 +88,10 @@ haskell_library(
         "//tests/hackage:template-haskell",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

@@ -21,3 +21,14 @@ haskell_module(
         "//tests/haskell_module/nested/Branch/Left:Module",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//tests/haskell_module/nested/Branch/Left:starlark_files",
+        "//tests/haskell_module/nested/Root:starlark_files",
+    ],
+    visibility = ["//visibility:public"],
+)

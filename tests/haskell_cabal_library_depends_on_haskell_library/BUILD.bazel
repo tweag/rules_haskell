@@ -28,3 +28,10 @@ haskell_library(
     srcs = ["Otherlib.hs"],
     deps = [":base"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

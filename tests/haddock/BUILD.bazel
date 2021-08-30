@@ -104,3 +104,9 @@ sh_test(
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+)

@@ -7,6 +7,13 @@ local_repository(
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
+# Some helpers for platform-dependent configuration
+load("@rules_haskell//tools:os_info.bzl", "os_info")
+
+os_info(name = "os_info")
+
+load("@os_info//:os_info.bzl", "is_linux", "is_nix_shell", "is_windows")
+
 
 rules_haskell_dependencies()
 
@@ -114,3 +121,49 @@ stack_snapshot(
     # stack_snapshot_json = "//:stackage_snapshot.json",
     vendored_packages = {"split": "@split//:split"},
 )
+
+# For buildifier
+
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "69de5c704a05ff37862f7e0f5534d4f479418afc21806c887db544a316f3cb6b",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_github_bazelbuild_buildtools",
+    sha256 = "c28eef4d30ba1a195c6837acf6c75a4034981f5b4002dda3c5aa6e48ce023cf1",
+    strip_prefix = "buildtools-4.0.1",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/4.0.1.tar.gz"],
+)
+
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+
+go_rules_dependencies()
+
+# If in nix-shell, use the Go SDK provided by Nix.
+# Otherwise, ask Bazel to download a Go SDK.
+go_register_toolchains(version = "host") if is_nix_shell else go_register_toolchains(version = "1.16.2")
+
+load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
+
+buildifier_dependencies()
+
+http_archive(
+    name = "bazel_gazelle",
+    sha256 = "b85f48fa105c4403326e9525ad2b2cc437babaa6e15a3fc0b1dbab0ab064bc7c",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.22.2/bazel-gazelle-v0.22.2.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.22.2/bazel-gazelle-v0.22.2.tar.gz",
+    ],
+)
+
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+
+# If you use WORKSPACE.bazel, use the following line instead of the bare gazelle_dependencies():
+# gazelle_dependencies(go_repository_default_config = "@//:WORKSPACE.bazel")
+gazelle_dependencies()
+

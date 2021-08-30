@@ -41,3 +41,10 @@ haskell_library(
         "@stackage//:proto-lens",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

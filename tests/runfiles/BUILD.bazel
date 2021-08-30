@@ -94,3 +94,10 @@ sh_test(
 
 # Bundles all test-cases above for `bazel test //tests/runfiles`.
 test_suite(name = "runfiles")
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

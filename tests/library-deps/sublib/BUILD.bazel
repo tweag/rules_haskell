@@ -20,3 +20,10 @@ cc_library(
     name = "sublib-c",
     srcs = ["sublib-c.c"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

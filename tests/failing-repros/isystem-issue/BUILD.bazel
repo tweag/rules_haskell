@@ -29,3 +29,10 @@ should_fail(
     ],
     target = ":bin",
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

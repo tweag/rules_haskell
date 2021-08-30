@@ -72,3 +72,14 @@ haskell_test(
         ":ghc-paths",
     ],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "defs.bzl",
+        "ghc_paths.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -11,3 +11,10 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = ["//tests/hackage:base"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

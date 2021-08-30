@@ -1,0 +1,9 @@
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "module.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)

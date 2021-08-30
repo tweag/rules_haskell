@@ -4,3 +4,10 @@ haskell_cabal_binary(
     name = "cabal-toolchain-flags",
     srcs = glob(["**"]),
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

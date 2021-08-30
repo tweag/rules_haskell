@@ -35,3 +35,10 @@ haskell_doc(
     tags = ["manual"],
     deps = [":library"],
 )
+
+filegroup(
+    name = "starlark_files",
+    testonly = True,
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)
