@@ -24,7 +24,17 @@ def module_name(hs, f, rel_path = None):
     rpath = rel_path
 
     if not rpath:
-        rpath = _rel_path_to_module(hs, f)
+        # .hs files generated from .chs files are generated in an "unique" subdirectory based on the name of the .chs file.
+        # For example, the .chs file: A/B/C.chs will generate the A/B/C.chs/A/B/C.hs.
+        # In #1592 we see that it breaks module name detection.
+
+        c2hs_components = f.path.split(".chs/")
+
+        # if there is a `.chs/`
+        if len(c2hs_components) == 2:
+            rpath = c2hs_components[1]
+        else:
+            rpath = _rel_path_to_module(hs, f)
 
     (hsmod, _) = paths.split_extension(rpath.replace("/", "."))
     return hsmod
@@ -382,6 +392,7 @@ def _rel_path_to_module(hs, f):
 
     # If it's a generated file, strip off the bin or genfiles prefix.
     path = f.path
+
     if path.startswith(hs.bin_dir.path):
         path = paths.relativize(path, hs.bin_dir.path)
     elif path.startswith(hs.genfiles_dir.path):
