@@ -1,5 +1,6 @@
 load(":inline_tests.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier_test")
 load("@os_info//:os_info.bzl", "is_windows")
 load("//tests:rule_test_exe.bzl", "rule_test_exe")
 load(
@@ -514,4 +515,9 @@ filegroup(
         "//tests/version-macros:all_files",
     ],
     visibility = ["//visibility:public"],
+)
+
+buildifier_test(
+    name = "buildifier_test",
+    srcs = ["//:all_files"],
 )
