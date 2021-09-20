@@ -21,3 +21,13 @@ haskell_module(
         "//tests/haskell_module/nested/Branch/Left:Module",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/haskell_module/nested/Branch/Left:all_files",
+        "//tests/haskell_module/nested/Root:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

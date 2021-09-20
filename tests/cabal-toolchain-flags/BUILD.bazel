@@ -4,3 +4,10 @@ haskell_cabal_binary(
     name = "cabal-toolchain-flags",
     srcs = glob(["**"]),
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -19,3 +19,14 @@ haskell_repl(
     name = "core_package_dep",
     deps = ["//tests/multi_repl/core_package_dep"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/multi_repl/a:all_files",
+        "//tests/multi_repl/bc:all_files",
+        "//tests/multi_repl/core_package_dep:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

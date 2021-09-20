@@ -20,3 +20,10 @@ cc_library(
     name = "sublib-c",
     srcs = ["sublib-c.c"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -51,3 +51,10 @@ test_suite(
         ":indirect-link-static",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

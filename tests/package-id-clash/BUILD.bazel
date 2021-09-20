@@ -22,3 +22,12 @@ haskell_library(
         "//tests/package-id-clash/sublib",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/package-id-clash/sublib:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -28,3 +28,12 @@ haskell_test(
         "//tests/library-deps/sublib",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/library-deps/sublib:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

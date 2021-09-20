@@ -15,6 +15,25 @@ buildifier_exclude_patterns = [
     "./vendor/**",
 ]
 
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "WORKSPACE",
+        "constants.bzl",
+        "//debug/linking_utils:all_files",
+        "//docs:all_files",
+        "//haskell:all_files",
+        "//nixpkgs:all_files",
+        "//protobuf:all_files",
+        "//rule_info:all_files",
+        "//tests:all_files",
+        "//tools:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # Run this to check for errors in BUILD files.
 buildifier(
     name = "buildifier",

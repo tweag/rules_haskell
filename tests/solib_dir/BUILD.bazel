@@ -11,3 +11,10 @@ solib_test(
     # Convert this test case to an analysis test.
     tags = ["dont_test_on_windows"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

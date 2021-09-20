@@ -57,3 +57,10 @@ haskell_repl(
     repl_ghci_args = ['-DDATA="$(rootpath data.txt)"'],
     deps = [":test-no-flags"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

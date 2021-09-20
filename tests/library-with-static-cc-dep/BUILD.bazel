@@ -47,3 +47,10 @@ test_suite(
         ":library-with-static-cc-dep-static",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

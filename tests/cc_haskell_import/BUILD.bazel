@@ -74,3 +74,10 @@ py_binary(
     visibility = ["//tests:__subpackages__"],
     deps = ["@bazel_tools//tools/python/runfiles"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
