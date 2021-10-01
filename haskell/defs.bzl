@@ -336,11 +336,7 @@ def haskell_binary(
         **kwargs
     )
 
-    repl_kwargs = {
-        attr: kwargs[attr]
-        for attr in ["testonly", "tags"]
-        if attr in kwargs
-    }
+    repl_kwargs = make_repl_kwargs(["testonly", "tags"], kwargs)
     native.alias(
         # XXX Temporary backwards compatibility hack. Remove eventually.
         # See https://github.com/tweag/rules_haskell/pull/460.
@@ -355,6 +351,20 @@ def haskell_binary(
         repl_ghci_args = [],
         **repl_kwargs
     )
+
+def make_repl_kwargs(args_list, kwargs):
+    repl_kwargs = {
+        attr: kwargs[attr]
+        for attr in args_list
+        if attr in kwargs
+    }
+
+    if "tags" in repl_kwargs:
+        repl_kwargs["tags"] = repl_kwargs["tags"] + ["manual"]
+    else:
+        repl_kwargs["tags"] = ["manual"]
+
+    return repl_kwargs
 
 def haskell_test(
         name,
@@ -448,11 +458,7 @@ def haskell_test(
         **kwargs
     )
 
-    repl_kwargs = {
-        attr: kwargs[attr]
-        for attr in ["tags"]
-        if attr in kwargs
-    }
+    repl_kwargs = make_repl_kwargs(["tags"], kwargs)
     native.alias(
         # XXX Temporary backwards compatibility hack. Remove eventually.
         # See https://github.com/tweag/rules_haskell/pull/460.
@@ -569,11 +575,7 @@ def haskell_library(
         **kwargs
     )
 
-    repl_kwargs = {
-        attr: kwargs[attr]
-        for attr in ["testonly", "tags"]
-        if attr in kwargs
-    }
+    repl_kwargs = make_repl_kwargs(["testonly", "tags"], kwargs)
     native.alias(
         # XXX Temporary backwards compatibility hack. Remove eventually.
         # See https://github.com/tweag/rules_haskell/pull/460.
