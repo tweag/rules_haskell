@@ -16,7 +16,7 @@ buildifier_exclude_patterns = [
 ]
 
 filegroup(
-    name = "all_files",
+    name = "distribution",
     testonly = True,
     srcs = [
         "BUILD.bazel",
@@ -28,8 +28,8 @@ filegroup(
         "//nixpkgs:all_files",
         "//protobuf:all_files",
         "//rule_info:all_files",
-        "//tests:all_files",
         "//tools:all_files",
+        "//vendor/bazel_json/lib:all_files",
     ],
     visibility = ["//visibility:public"],
 )
