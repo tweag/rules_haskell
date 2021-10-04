@@ -24,3 +24,10 @@ haskell_test(
         "@stackage//:optparse-applicative",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

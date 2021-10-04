@@ -1,4 +1,4 @@
-load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
 
 exports_files(["start"])
 
@@ -47,4 +47,23 @@ buildifier(
     exclude_patterns = buildifier_exclude_patterns,
     mode = "fix",
     verbose = True,
+)
+
+buildifier_test(
+    name = "buildifier_test",
+    srcs = [
+        "BUILD.bazel",
+        "WORKSPACE",
+        "constants.bzl",
+        "//debug/linking_utils:all_files",
+        "//docs:all_files",
+        "//haskell:all_files",
+        "//nixpkgs:all_files",
+        "//rule_info:all_files",
+        "//tests:all_files",
+        "//tools:all_files",
+        "@examples-arm//:all_files",
+        "@examples//:all_files",
+        "@tutorial//:all_files",
+    ],
 )
