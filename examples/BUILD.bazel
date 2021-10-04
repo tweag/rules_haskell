@@ -1,0 +1,14 @@
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "WORKSPACE",
+        "//cat_hs:all_files",
+        "//primitive:all_files",
+        "//rts:all_files",
+        "//transformers:all_files",
+        "//vector:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

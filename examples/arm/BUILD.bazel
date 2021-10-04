@@ -47,3 +47,20 @@ platform(
         "@platforms//cpu:aarch64",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "BUILD.zlib.bazel",
+        "Example.hs",
+        "Example2.hs",
+        "LibExample.hs",
+        "WORKSPACE",
+        "arm-cross.nix",
+        "qemu-shell.nix",
+        "shell.nix",
+    ],
+    visibility = ["//visibility:public"],
+)

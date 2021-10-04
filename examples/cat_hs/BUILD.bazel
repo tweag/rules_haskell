@@ -10,3 +10,14 @@ haskell_doc(
         "//cat_hs/lib/cat",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//cat_hs/exec/cat_hs:all_files",
+        "//cat_hs/lib/args:all_files",
+        "//cat_hs/lib/cat:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,10 @@
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//lib:all_files",
+        "//main:all_files",
+        "//tools/build_rules:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)
