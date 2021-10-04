@@ -66,4 +66,5 @@ buildifier_test(
         "@examples//:all_files",
         "@tutorial//:all_files",
     ],
+    tags = ["dont_test_on_windows"],
 )
