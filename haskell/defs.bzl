@@ -353,6 +353,13 @@ def haskell_binary(
     )
 
 def make_repl_kwargs(args_list, kwargs):
+    """Create extra attributes for the auto-generated haskell_repl target.
+    
+    Copies the extra attributes specified in `args_list` from the extra
+    `haskell_library|binary|test` attributes listed in `kwargs`.
+    
+    Adds a `manual` tag so that the REPL is not built by default.
+    """
     repl_kwargs = {
         attr: kwargs[attr]
         for attr in args_list
