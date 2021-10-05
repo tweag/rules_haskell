@@ -73,3 +73,10 @@ shellcheck(
     data = ["//tests:scripts/exec.sh"],
     sh_flavor = "bash",
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

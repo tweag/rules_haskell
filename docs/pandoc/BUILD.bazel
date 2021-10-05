@@ -41,3 +41,10 @@ toolchain(
     toolchain = "@macos_pandoc//:pandoc_toolchain",
     toolchain_type = ":toolchain_type",
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

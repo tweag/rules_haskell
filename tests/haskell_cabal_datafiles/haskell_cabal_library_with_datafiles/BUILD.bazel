@@ -65,3 +65,10 @@ sh_test(
     srcs = [":inside"],
     tags = ["skip_profiling"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

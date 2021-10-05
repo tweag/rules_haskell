@@ -238,3 +238,12 @@ genrule(
         "@zip//:bin",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//docs/pandoc:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

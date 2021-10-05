@@ -14,3 +14,10 @@ haskell_proto_library(
     visibility = ["//visibility:public"],
     deps = [":rule_info_proto"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

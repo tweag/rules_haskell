@@ -35,6 +35,13 @@ haskell_cabal_binary(
     ],
 )
 
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + glob(["cabal_binary/**"]),
+    visibility = ["//visibility:public"],
+)
+
 # Tests that haskell_cabal_library|binary will generate a relative RUNPATH
 # entry for the dependency on the nixpkgs provided libz. Relative meaning an
 # entry that starts with $ORIGIN (Linux) or @loader_path (MacOS). The

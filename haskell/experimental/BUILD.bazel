@@ -12,3 +12,12 @@ exports_files([
     "defs.bzl",
     "transitions.bzl",
 ])
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//haskell/experimental/private:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -66,3 +66,10 @@ haskell_test(
         ":the_sublibrary",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

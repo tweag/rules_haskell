@@ -33,3 +33,13 @@ sh_test(
     tags = ["skip_profiling"],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/with_generate_paths_module:all_files",
+        "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/without_generate_paths_module:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

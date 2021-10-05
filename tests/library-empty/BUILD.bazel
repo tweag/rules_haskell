@@ -19,3 +19,10 @@ haskell_test(
         "//tests/hackage:base",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

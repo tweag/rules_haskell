@@ -53,3 +53,10 @@ haskell_doc(
         ":hello_world_haskell_proto",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

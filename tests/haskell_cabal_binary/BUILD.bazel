@@ -4,3 +4,10 @@ haskell_cabal_binary(
     name = "haskell_cabal_binary",
     srcs = glob(["**"]),
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
