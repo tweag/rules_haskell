@@ -24,6 +24,15 @@ haskell_module(
     deps = ["//tests/hackage:base"],
 )
 
+haskell_module(
+    name = "TestLibModule2",
+    src = "TestLib2.hs",
+    deps = [
+        ":TestLib",
+        "//tests/hackage:base",
+    ],
+)
+
 haskell_test(
     name = "bin-deps",
     size = "small",
