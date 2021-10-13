@@ -134,11 +134,12 @@ def _haskell_doc_aspect_impl(target, ctx):
     )
 
     # C library dependencies for runtime.
-    cc_libraries = get_ghci_library_files(
-        hs,
-        target[HaskellCcLibrariesInfo],
-        [lib for li in target[CcInfo].linking_context.linker_inputs.to_list() for lib in li.libraries],
-    )
+    cc_libraries = depset()
+    #cc_libraries = get_ghci_library_files(
+    #    hs,
+    #    target[HaskellCcLibrariesInfo],
+    #    [lib for li in target[CcInfo].linking_context.linker_inputs.to_list() for lib in li.libraries],
+    #)
 
     # TODO(mboes): we should be able to instantiate this template only
     # once per toolchain instance, rather than here.
