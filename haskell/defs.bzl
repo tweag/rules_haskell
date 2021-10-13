@@ -300,6 +300,7 @@ def haskell_binary(
       srcs: Haskell source files.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      modules: List of extra haskell_module() dependencies to be linked into this binary.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -411,6 +412,7 @@ def haskell_test(
       srcs: Haskell source files.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      modules: List of extra haskell_module() dependencies to be linked into this test.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.

@@ -430,17 +430,27 @@ def compile_binary(
             mix_file = hs.actions.declare_file("{name}_.hpc/{module}.mix".format(name = hs.name, module = module))
             coverage_data.append(_coverage_datum(mix_file, src_file, hs.label))
 
-    hs.toolchain.actions.run_ghc(
-        hs,
-        cc,
-        inputs = c.inputs,
-        input_manifests = c.input_manifests,
-        outputs = c.outputs + [datum.mix_file for datum in coverage_data],
-        mnemonic = "HaskellBuildBinary" + ("Prof" if with_profiling else ""),
-        progress_message = "HaskellBuildBinary {}".format(hs.label),
-        env = c.env,
-        arguments = c.args,
-    )
+    if srcs:
+        hs.toolchain.actions.run_ghc(
+            hs,
+            cc,
+            inputs = c.inputs,
+            input_manifests = c.input_manifests,
+            outputs = c.outputs + [datum.mix_file for datum in coverage_data],
+            mnemonic = "HaskellBuildBinary" + ("Prof" if with_profiling else ""),
+            progress_message = "HaskellBuildBinary {}".format(hs.label),
+            env = c.env,
+            arguments = c.args,
+        )
+    else:
+        # The list of sources might be empty if the binary is only
+        # built from modules produced with haskell_module
+        hs.actions.run_shell(
+            outputs = c.outputs,
+            command = """
+            mkdir -p {objects_dir}
+            """.format(objects_dir = c.objects_dir.path),
+        )
 
     return struct(
         objects_dir = c.objects_dir,
