@@ -10,8 +10,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos]
-    runs-on: ${{ matrix.os }}-latest
+        os: [ubuntu-latest, macos-10.15]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Mount Bazel cache
@@ -29,9 +29,9 @@ jobs:
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
-          case ${{ matrix.os }} in
-            macos) BUILD_CONFIG=ci-macos-nixpkgs;;
-            ubuntu) BUILD_CONFIG=ci-linux-nixpkgs;;
+          case ${{ runner.os }} in
+            macOS) BUILD_CONFIG=ci-macos-nixpkgs;;
+            Linux) BUILD_CONFIG=ci-linux-nixpkgs;;
           esac
           cat >.bazelrc.local <<EOF
           common --config=ci
@@ -102,8 +102,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos, windows]
-    runs-on: ${{ matrix.os }}-latest
+        os: [ubuntu-latest, macos-10.15, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Mount Bazel cache
@@ -121,10 +121,10 @@ jobs:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         shell: bash
         run: |
-          case ${{ matrix.os }} in
-            macos) BUILD_CONFIG=ci-macos-bindist;;
-            ubuntu) BUILD_CONFIG=ci-linux-bindist;;
-            windows) BUILD_CONFIG=ci-windows-bindist;;
+          case ${{ runner.os }} in
+            macOS) BUILD_CONFIG=ci-macos-bindist;;
+            Linux) BUILD_CONFIG=ci-linux-bindist;;
+            Windows) BUILD_CONFIG=ci-windows-bindist;;
           esac
           cat >.bazelrc.local <<EOF
           common --config=ci
@@ -139,9 +139,9 @@ jobs:
         shell: bash
         run: |
           export PATH=$HOME/bazel:$PATH
-          [[ ${{ matrix.os }} == macos ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+          [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           ./tests/run-start-script.sh --use-bindists
-          if [[ ${{ matrix.os }} == windows ]]; then
+          if [[ ${{ runner.os }} == Windows ]]; then
             # On Windows `//...` expands to `/...`.
             bazel test ///...
           else
