@@ -378,7 +378,7 @@ def _prepare_cabal_inputs(
             depset(setup_libs),
             depset(transitive_compile_libs),
             depset(transitive_link_libs),
-            depset(transitive_haddocks),
+            transitive_haddocks,
             setup_dep_info.interface_dirs,
             setup_dep_info.hs_libraries,
             dep_info.interface_dirs,
