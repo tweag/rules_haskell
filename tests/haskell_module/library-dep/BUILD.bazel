@@ -25,6 +25,23 @@ haskell_module(
     ],
 )
 
+haskell_library(
+    name = "ModuleLib",
+    modules = [":TestModule"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "library-dep",
+    srcs = ["Test.hs"],
+    deps = [
+        ":ModuleLib",
+        "//tests/hackage:base",
+    ],
+)
+
 filegroup(
     name = "all_files",
     testonly = True,
