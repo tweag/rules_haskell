@@ -151,6 +151,12 @@ def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
 
+    modules = ctx.attr.modules
+    extra_objects = [
+        m[HaskellModuleInfo].object_file
+        for m in modules
+    ]
+
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins)
     non_default_plugin_decl = reversed(ctx.attr.non_default_plugins)
@@ -223,6 +229,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx.files.extra_srcs,
         user_compile_flags,
         c.objects_dir,
+        extra_objects,
         dynamic = dynamic,
         with_profiling = with_profiling,
         version = ctx.attr.version,

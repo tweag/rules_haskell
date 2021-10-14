@@ -80,6 +80,7 @@ def link_binary(
         extra_srcs,
         compiler_flags,
         objects_dir,
+        extra_objects,
         dynamic,
         with_profiling,
         version):
@@ -161,7 +162,7 @@ def link_binary(
         hs,
         posix,
         objects_dir,
-        [],
+        extra_objects,
         dynamic = dynamic,
         with_profiling = with_profiling,
     )
@@ -183,7 +184,7 @@ def link_binary(
             depset(extra_srcs),
             dep_info.package_databases,
             dep_info.hs_libraries,
-            depset([cache_file, objects_dir]),
+            depset([cache_file, objects_dir] + extra_objects),
             pkg_info_inputs,
             depset(static_libs + dynamic_libs),
         ]),

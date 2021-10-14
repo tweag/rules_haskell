@@ -6,9 +6,14 @@ def _package_name_out_transition_impl(settings, attr):
 
     # we don't have direct access to ctx.label here, so we've recreated it in
     # "attr.label". See //haskell:defs.bzl
-    label = Label(attr.label_string)
-    my_pkg_id = pkg_id.new(label, package_name, version)
-    return {"//haskell/experimental:package_name_setting": pkg_id.to_string(my_pkg_id)}
+    if attr.label_string == "":
+        # The label isn't set when the module is used in a haskell_binary or
+        # haskell_test rule.
+        return {"//haskell/experimental:package_name_setting": ""}
+    else:
+        label = Label(attr.label_string)
+        my_pkg_id = pkg_id.new(label, package_name, version)
+        return {"//haskell/experimental:package_name_setting": pkg_id.to_string(my_pkg_id)}
 
 package_name_out_transition = transition(
     implementation = _package_name_out_transition_impl,
