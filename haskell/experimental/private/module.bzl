@@ -203,6 +203,8 @@ def haskell_module_impl(ctx):
         inputs = depset(
             direct = [src] + extra_srcs + [optp_args_file],
             transitive = [
+                dep_info.package_databases,
+                dep_info.interface_dirs,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
                 plugin_dep_info.interface_dirs,
