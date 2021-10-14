@@ -121,7 +121,7 @@ def haskell_module_impl(ctx):
         args.add_all([
             "-this-unit-id",
             package_name,
-            "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(ctx.attr.package_name),
+            "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(package_name),
         ])
     if not hs.toolchain.is_windows:
         # A static GHC RTS requires -fPIC. However, on Unix we also require
