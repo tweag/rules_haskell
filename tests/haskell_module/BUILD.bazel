@@ -4,6 +4,7 @@ filegroup(
     srcs = glob(["**"]) + [
         "//tests/haskell_module/hs-boot:all_files",
         "//tests/haskell_module/library:all_files",
+        "//tests/haskell_module/library-dep:all_files",
         "//tests/haskell_module/multiple:all_files",
         "//tests/haskell_module/nested:all_files",
         "//tests/haskell_module/plugin:all_files",
