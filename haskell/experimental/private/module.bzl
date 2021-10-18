@@ -121,7 +121,7 @@ def haskell_module_impl(ctx):
         args.add_all([
             "-this-unit-id",
             package_name,
-            "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(ctx.attr.package_name),
+            "-optP-DCURRENT_PACKAGE_KEY=\"{}\"".format(package_name),
         ])
     if not hs.toolchain.is_windows:
         # A static GHC RTS requires -fPIC. However, on Unix we also require
@@ -203,6 +203,8 @@ def haskell_module_impl(ctx):
         inputs = depset(
             direct = [src] + extra_srcs + [optp_args_file],
             transitive = [
+                dep_info.package_databases,
+                dep_info.interface_dirs,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
                 plugin_dep_info.interface_dirs,
