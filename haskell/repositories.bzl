@@ -1,5 +1,6 @@
 """Workspace rules (repositories)"""
 
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(":private/versions.bzl", "check_version")
@@ -45,11 +46,11 @@ def rules_haskell_dependencies():
     )
 
     maybe(
-        http_archive,
+        git_repository,
         name = "rules_sh",
-        sha256 = "83a065ba6469135a35786eb741e17d50f360ca92ab2897857475ab17c0d29931",
-        strip_prefix = "rules_sh-0.2.0",
-        urls = ["https://github.com/tweag/rules_sh/archive/v0.2.0.tar.gz"],
+        commit = "47b4d823128f484ec1b06aa20349c4898216f486",
+        remote = "https://github.com/tweag/rules_sh.git",
+        shallow_since = "1634121484 +0000",
     )
 
     maybe(
