@@ -471,7 +471,15 @@ nixpkgs_package(
     repository = "@nixpkgs_default",
 )
 
-http_archive(
+# If bazel_version < 4, asterius is not supported and
+# rules_haskell_dependencies does not declare @build_bazel_rules_nodejs.
+# This is fine for users of rules haskell who do not use asterius.
+# But for the rules_haskell repository, we install an older version
+# of rules_nodejs for stardoc.
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+
+maybe(
+    http_archive,
     name = "build_bazel_rules_nodejs",
     sha256 = "0fa2d443571c9e02fcb7363a74ae591bdcce2dd76af8677a95965edf329d778a",
     urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/3.6.0/rules_nodejs-3.6.0.tar.gz"],
