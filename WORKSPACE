@@ -446,31 +446,6 @@ haskell_package_repository_dummy(
     name = "haskell_package_repository_dummy",
 )
 
-# For Stardoc
-
-nixpkgs_package(
-    name = "nixpkgs_nodejs",
-    build_file_content = 'exports_files(glob(["nixpkgs_nodejs/**"]))',
-    # XXX Indirection derivation to make all of NodeJS rooted in
-    # a single directory. We shouldn't need this, but it's
-    # a workaround for
-    # https://github.com/bazelbuild/bazel/issues/2927.
-    nix_file_content = """
-    with import <nixpkgs> { config = {}; overlays = []; };
-    runCommand "nodejs-rules_haskell" { buildInputs = [ nodejs ]; } ''
-      mkdir -p $out/nixpkgs_nodejs
-      cd $out/nixpkgs_nodejs
-      for i in ${nodejs}/*; do ln -s $i; done
-      ''
-    """,
-    nixopts = [
-        "--option",
-        "sandbox",
-        "false",
-    ],
-    repository = "@nixpkgs_default",
-)
-
 # If bazel_version < 4, asterius is not supported and
 # rules_haskell_dependencies does not declare @build_bazel_rules_nodejs.
 # This is fine for users of rules haskell who do not use asterius.
@@ -485,11 +460,16 @@ maybe(
     urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/3.6.0/rules_nodejs-3.6.0.tar.gz"],
 )
 
-load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
-
-node_repositories(
-    vendored_node = "@nixpkgs_nodejs",
+load(
+    "//haskell/asterius:asterius_repositories.bzl",
+    "asterius_dependencies_bindist",
+    "asterius_dependencies_nix",
 )
+
+(asterius_dependencies_nix(
+    nix_repository = "@nixpkgs_default",
+    nixpkgs_package_rule = nixpkgs_package,
+) if is_nix_shell else asterius_dependencies_bindist())
 
 http_archive(
     name = "io_bazel_rules_sass",
