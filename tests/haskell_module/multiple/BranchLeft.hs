@@ -1,4 +1,4 @@
-module BranchLeft where
+module BranchLeft(branch_left, root) where
 
 import Root
 
