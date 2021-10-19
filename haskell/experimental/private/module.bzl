@@ -198,7 +198,7 @@ def haskell_module_impl(ctx):
 
     transitive_interface_files = depset(
         direct = [dep[HaskellModuleInfo].interface_file for dep in ctx.attr.deps if HaskellModuleInfo in dep],
-        transitive = [dep[HaskellModuleInfo].transitive_interface_files for dep in ctx.attr.deps if HaskellModuleInfo in dep]
+        transitive = [dep[HaskellModuleInfo].transitive_interface_files for dep in ctx.attr.deps if HaskellModuleInfo in dep],
     )
 
     # Compile the module
