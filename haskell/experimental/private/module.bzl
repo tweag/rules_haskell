@@ -216,9 +216,8 @@ def haskell_module_impl(ctx):
                 plugin_dep_info.hs_libraries,
                 plugin_tool_inputs,
                 preprocessors_inputs,
-            ] + [
                 # TODO[AH] Include object files for template Haskell dependencies.
-                transitive_interface_files
+                transitive_interface_files,
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
