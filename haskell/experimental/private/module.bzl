@@ -196,6 +196,11 @@ def haskell_module_impl(ctx):
 
     args.add_all(_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts))
 
+    transitive_interface_files = depset(
+        direct = [dep[HaskellModuleInfo].interface_file for dep in ctx.attr.deps if HaskellModuleInfo in dep],
+        transitive = [dep[HaskellModuleInfo].transitive_interface_files for dep in ctx.attr.deps if HaskellModuleInfo in dep]
+    )
+
     # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
@@ -212,11 +217,8 @@ def haskell_module_impl(ctx):
                 plugin_tool_inputs,
                 preprocessors_inputs,
             ] + [
-                # TODO[AH] Factor this out
                 # TODO[AH] Include object files for template Haskell dependencies.
-                depset(direct = [dep[HaskellModuleInfo].interface_file])
-                for dep in ctx.attr.deps
-                if HaskellModuleInfo in dep
+                transitive_interface_files
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
@@ -245,6 +247,7 @@ def haskell_module_impl(ctx):
         object_file = obj,
         import_dir = import_dir,
         interface_file = interface,
+        transitive_interface_files = transitive_interface_files,
     )
 
     return [default_info, module_info]
