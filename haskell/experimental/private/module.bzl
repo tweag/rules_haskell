@@ -8,6 +8,11 @@ load(
     "haskell_context",
 )
 load(
+    "//haskell:private/cc_libraries.bzl",
+    "get_ghci_library_files",
+    "link_libraries",
+)
+load(
     "//haskell:private/dependencies.bzl",
     "gather_dep_info",
 )
@@ -196,9 +201,20 @@ def haskell_module_impl(ctx):
 
     args.add_all(_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts))
 
+    # Transitive library dependencies for runtime.
+    link_libraries(
+        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries, for_th_only = True),
+        args,
+    )
+
     transitive_interface_files = depset(
         direct = [dep[HaskellModuleInfo].interface_file for dep in ctx.attr.deps if HaskellModuleInfo in dep],
         transitive = [dep[HaskellModuleInfo].transitive_interface_files for dep in ctx.attr.deps if HaskellModuleInfo in dep],
+    )
+
+    transitive_object_files = depset(
+        direct = [dep[HaskellModuleInfo].object_file for dep in ctx.attr.deps if HaskellModuleInfo in dep],
+        transitive = [dep[HaskellModuleInfo].transitive_object_files for dep in ctx.attr.deps if HaskellModuleInfo in dep],
     )
 
     # Compile the module
@@ -216,8 +232,10 @@ def haskell_module_impl(ctx):
                 plugin_dep_info.hs_libraries,
                 plugin_tool_inputs,
                 preprocessors_inputs,
-                # TODO[AH] Include object files for template Haskell dependencies.
                 transitive_interface_files,
+                transitive_object_files,
+                dep_info.hs_libraries,
+                depset(get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries + cc.plugin_libraries)),
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
@@ -246,6 +264,7 @@ def haskell_module_impl(ctx):
         object_file = obj,
         import_dir = import_dir,
         interface_file = interface,
+        transitive_object_files = transitive_object_files,
         transitive_interface_files = transitive_interface_files,
         transitive_import_dirs = transitive_import_dirs,
     )
