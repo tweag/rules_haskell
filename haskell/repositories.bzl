@@ -1,8 +1,13 @@
 """Workspace rules (repositories)"""
 
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load(":private/versions.bzl", "check_version")
+load(
+    ":private/versions.bzl",
+    "check_version",
+    "supports_rules_nodejs_ge_4",
+)
 
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
@@ -45,11 +50,11 @@ def rules_haskell_dependencies():
     )
 
     maybe(
-        http_archive,
+        git_repository,
         name = "rules_sh",
-        sha256 = "83a065ba6469135a35786eb741e17d50f360ca92ab2897857475ab17c0d29931",
-        strip_prefix = "rules_sh-0.2.0",
-        urls = ["https://github.com/tweag/rules_sh/archive/v0.2.0.tar.gz"],
+        commit = "47b4d823128f484ec1b06aa20349c4898216f486",
+        remote = "https://github.com/tweag/rules_sh.git",
+        shallow_since = "1634121484 +0000",
     )
 
     maybe(
@@ -89,6 +94,20 @@ def rules_haskell_dependencies():
         strip_prefix = "zlib-1.2.11",
         urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
     )
+
+    # We need a recent node binary in order to test outputs from asterius.
+    # (one that supports "--experimental-wasi-unstable-preview1")
+    # However, rules_nodejs versions that are recent enough only support Bazel >= 4.0.0
+    # As mentioned [here](https://github.com/bazelbuild/rules_nodejs/releases/tag/4.0.0)
+    # an alternative would be to patch out the version check of rules_nodejs.
+
+    if "bazel_version" in dir(native) and supports_rules_nodejs_ge_4(native.bazel_version):
+        maybe(
+            http_archive,
+            name = "build_bazel_rules_nodejs",
+            sha256 = "3635797a96c7bfcd0d265dacd722a07335e64d6ded9834af8d3f1b7ba5a25bba",
+            urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/4.3.0/rules_nodejs-4.3.0.tar.gz"],
+        )
 
 def haskell_repositories():
     """Alias for rules_haskell_dependencies
