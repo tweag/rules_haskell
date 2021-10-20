@@ -4,7 +4,8 @@ load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 
 haskell_module(
     name = "root",
-    src = "Root.hs",
+    src = "src1/Root.hs",
+    src_strip_prefix = "src1",
     deps = ["//tests/hackage:base"],
 )
 
