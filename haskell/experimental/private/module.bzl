@@ -146,15 +146,15 @@ def haskell_module_impl(ctx):
 
     args.add_all(cc.include_args)
 
+    transitive_import_dirs = depset(
+        direct = [dep[HaskellModuleInfo].import_dir for dep in ctx.attr.deps if HaskellModuleInfo in dep],
+        transitive = [dep[HaskellModuleInfo].transitive_import_dirs for dep in ctx.attr.deps if HaskellModuleInfo in dep],
+    )
+
     # Collect module dependency arguments
-    args.add_all([
-        # TODO[AH] Factor this out
-        # TODO[AH] Include object search paths for template Haskell dependencies.
-        #   See https://github.com/tweag/rules_haskell/issues/1382
-        dep[HaskellModuleInfo].import_dir
-        for dep in ctx.attr.deps
-        if HaskellModuleInfo in dep
-    ], format_each = "-i%s")
+    # TODO[AH] Include object search paths for template Haskell dependencies.
+    #   See https://github.com/tweag/rules_haskell/issues/1382
+    args.add_all(transitive_import_dirs, format_each = "-i%s")
 
     # Collect library dependency arguments
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
@@ -247,6 +247,7 @@ def haskell_module_impl(ctx):
         import_dir = import_dir,
         interface_file = interface,
         transitive_interface_files = transitive_interface_files,
+        transitive_import_dirs = transitive_import_dirs,
     )
 
     return [default_info, module_info]
