@@ -55,7 +55,7 @@ def _expand_make_variables(name, ctx, strings):
 def haskell_module_impl(ctx):
     # Obtain toolchains
     hs = haskell_context(ctx)
-    cc = cc_interop_info(ctx)
+    cc = cc_interop_info(ctx, hs)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     # Collect dependencies
