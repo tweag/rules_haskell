@@ -1,0 +1,54 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary", "haskell_library", "haskell_test")
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+haskell_library(
+    name = "lib-root",
+    srcs = ["Module/Root.hs"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_module(
+    name = "Module.A",
+    src = "Module/A.hs",
+    deps = [
+        ":lib-root",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "Module.B",
+    src = "Module/B.hs",
+    deps = [
+        ":lib-root",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "lib-a",
+    modules = [":Module.A"],
+    deps = [
+        ":lib-root",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "lib-b",
+    modules = [":Module.B"],
+    deps = [
+        ":lib-root",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "test",
+    srcs = ["Test.hs"],
+    deps = [
+        ":lib-a",
+        ":lib-b",
+        "//tests/hackage:base",
+    ],
+)
