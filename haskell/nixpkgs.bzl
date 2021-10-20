@@ -11,6 +11,7 @@ load(
 )
 load(
     ":private/workspace_utils.bzl",
+    "default_constraints",
     "define_rule",
     "execute_or_fail_loudly",
     "resolve_labels",
@@ -140,18 +141,8 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
 )
 
 def _ghc_nixpkgs_toolchain_impl(repository_ctx):
-    # These constraints might look tautological, because they always
-    # match the host platform if it is the same as the target
-    # platform. But they are important to state because Bazel
-    # toolchain resolution prefers other toolchains with more specific
-    # constraints otherwise.
     if repository_ctx.attr.target_constraints == None and repository_ctx.attr.exec_constraints == None:
-        target_constraints = ["@platforms//cpu:x86_64"]
-        if repository_ctx.os.name == "linux":
-            target_constraints.append("@platforms//os:linux")
-        elif repository_ctx.os.name == "mac os x":
-            target_constraints.append("@platforms//os:osx")
-        exec_constraints = list(target_constraints)
+        target_constraints, exec_constraints = default_constraints(repository_ctx)
     else:
         target_constraints = repository_ctx.attr.target_constraints
         exec_constraints = list(repository_ctx.attr.exec_constraints)

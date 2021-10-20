@@ -85,3 +85,17 @@ def define_rule(rule_type, name, **kwargs):
         name = repr(name),
         attrs = "\n    ".join(attrs),
     )
+
+def default_constraints(repository_ctx):
+    # These constraints might look tautological, because they always
+    # match the host platform if it is the same as the target
+    # platform. But they are important to state because Bazel
+    # toolchain resolution prefers other toolchains with more specific
+    # constraints otherwise.
+    target_constraints = ["@platforms//cpu:x86_64"]
+    if repository_ctx.os.name == "linux":
+        target_constraints.append("@platforms//os:linux")
+    elif repository_ctx.os.name == "mac os x":
+        target_constraints.append("@platforms//os:osx")
+    exec_constraints = list(target_constraints)
+    return (target_constraints, exec_constraints)
