@@ -4,6 +4,24 @@ bzl_library(
     name = "asterius_bzl",
     srcs = [
         "asterius_config.bzl",
+        "asterius_workspace_rules.bzl",
     ],
     visibility = ["//haskell:__pkg__"],
+    deps = [
+        "//haskell/platforms",
+    ],
+)
+
+platform(
+    name = "asterius_platform",
+    constraint_values = [
+        "@platforms//cpu:wasm32",
+    ],
+)
+
+# Toolchain type for asterius specific tools such as ahc-dist,
+# which are not part of the regular haskell toolchain.
+toolchain_type(
+    name = "asterius-toolchain",
+    visibility = ["//visibility:public"],
 )

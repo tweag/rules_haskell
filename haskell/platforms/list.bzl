@@ -1,3 +1,5 @@
+load("//haskell:private/dict.bzl", "find")
+
 OS = {
     "aix": None,
     "darwin": "@platforms//os:osx",
@@ -42,3 +44,30 @@ def declare_config_settings():
                 name = arch,
                 constraint_values = [constraint_value],
             )
+
+def os_of_constraints(constraints):
+    """ Returns the os corresponding to the first os constraint.
+    If there are none, returns None.
+    """
+    for c in constraints:
+        if c.package == "os":
+            return find(OS, str(c))
+
+def arch_of_constraints(constraints):
+    """ Returns the architecture corresponding to the first arch constraint.
+    If there are none, returns None.
+    """
+    for c in constraints:
+        if c.package == "cpu":
+            return find(ARCH, str(c))
+
+def platform_of_constraints(constraints):
+    os = os_of_constraints(constraints)
+    if os == None:
+        fail("Could not find os in constraints {}".format(constraints))
+
+    arch = arch_of_constraints(constraints)
+    if arch == None:
+        fail("Could not find arch in constraints {}".format(constraints))
+
+    return ("{}_{}".format(os, arch))
