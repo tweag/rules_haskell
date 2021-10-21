@@ -464,7 +464,11 @@ def haskell_library_impl(ctx):
     )
 
     interface_dirs = depset(
-        direct = [c.interfaces_dir] + [m[HaskellModuleInfo].interface_file for m in modules],
+        direct = [c.interfaces_dir] + [
+            m[HaskellModuleInfo].interface_file for m in modules
+        ] + [
+            m[HaskellModuleInfo].dyn_interface_file for m in modules
+        ],
         transitive = [dep_info.interface_dirs],
     )
 
