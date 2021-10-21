@@ -261,6 +261,7 @@ load(
 )
 
 haskell_register_ghc_nixpkgs(
+    asterius_version = test_asterius_version if is_linux else None,
     attribute_path = "",
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,

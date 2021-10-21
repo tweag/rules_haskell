@@ -17,6 +17,12 @@ load(
     "resolve_labels",
 )
 load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
+load(
+    "//haskell/asterius:asterius_workspace_rules.bzl",
+    "ahc",
+    "asterius_bundle",
+    "labels_from_bundle_name",
+)
 
 def check_ghc_version(repository_ctx):
     ghc_name = "ghc-{}".format(repository_ctx.attr.version)
@@ -201,7 +207,8 @@ def haskell_register_ghc_nixpkgs(
         repository = None,
         nix_file_content = None,
         exec_constraints = None,
-        target_constraints = None):
+        target_constraints = None,
+        asterius_version = None):
     """Register a package from Nixpkgs as a toolchain.
 
     Toolchains can be used to compile Haskell code. To have this
@@ -316,9 +323,42 @@ def haskell_register_ghc_nixpkgs(
         target_constraints = target_constraints,
         haskell_toolchain_repo_name = haskell_toolchain_repo_name,
     )
+
+    if asterius_version != None:
+        asterius_repo_name = "{}_asterius".format(name)
+        bundle_repo_name = "asterius_bundle_{}".format(haskell_toolchain_repo_name)
+
+        # Download the asterius bundle.
+        asterius_bundle(
+            name = bundle_repo_name,
+            version = asterius_version,  # TODO: pass as argument. Which ghc version this correspond to ?
+            exec_constraints = exec_constraints,
+        )
+
+        # Create and register the asterius toolchains
+        (asterius_lib_setting_file, ahc_pkg, asterius_binaries, full_bundle, wasm_cc_toolchain) = labels_from_bundle_name(bundle_repo_name, asterius_version)
+        ahc(
+            asterius_repo_name,
+            asterius_version,
+            exec_constraints,
+            nixpkgs_ghc_repo_name,
+            asterius_lib_setting_file,
+            ahc_pkg,
+            asterius_binaries,
+            full_bundle,
+            wasm_cc_toolchain,
+            compiler_flags,
+            ghcopts,
+            haddock_flags,
+            repl_ghci_args,
+            cabalopts,
+            locale,
+            nix = True,
+        )
+
     native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
 
-    # Unix tools toolchain required for Cabal packages
+    # Unix tools toolchain required for Cabal packages and asterius
     sh_posix_nixpkgs_kwargs = dict(
         nix_file_deps = nix_file_deps,
         nixopts = nixopts,
