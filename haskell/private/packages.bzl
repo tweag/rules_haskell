@@ -179,6 +179,7 @@ def ghc_pkg_recache(hs, posix, conf_file):
         #
         # TODO Go back to using `ghc-pkg register`. Blocked by
         # https://ghc.haskell.org/trac/ghc/ticket/15478
+        tools = hs.tools_config.tools_for_ghc_pkg,
         arguments = [
             "recache",
             "--package-db={0}".format(conf_file.dirname),

@@ -5,6 +5,13 @@ load("//haskell:providers.bzl", "HaskellLibraryInfo", "all_dependencies_package_
 
 HaskellContext = provider()
 
+def append_to_path(env, path):
+    if path:
+        if "PATH" in env and env["PATH"]:
+            env["PATH"] = ":".join([env["PATH"], path])
+        else:
+            env["PATH"] = path
+
 def haskell_context(ctx, attr = None):
     toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
 
@@ -66,6 +73,7 @@ def haskell_context(ctx, attr = None):
         features = struct(
             fully_static_link = "fully_static_link" in ctx.features,
         ),
+        tools_config = toolchain.tools_config,
     )
 
 def render_env(env):
