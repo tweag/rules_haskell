@@ -1,4 +1,10 @@
+load("@npm_rules_haskell//webpack-cli:index.bzl", webpack = "webpack_cli")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+webpack(
+    name = "webpack",
+    visibility = ["//visibility:public"],
+)
 
 bzl_library(
     name = "asterius_bzl",
@@ -11,6 +17,8 @@ bzl_library(
         "//haskell/platforms",
     ],
 )
+
+exports_files(["asterius_webpack_config.js.tpl"])
 
 platform(
     name = "asterius_platform",
