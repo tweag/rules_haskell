@@ -50,6 +50,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     hs.actions.write(extra_args_file, arguments)
 
     extra_inputs += [
+        hs.ghc_wrapper,
         compile_flags_file,
         extra_args_file,
     ] + cc.files + hs.toolchain.bindir + hs.toolchain.libdir
@@ -72,17 +73,18 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     else:
         input_manifests = cc.manifests
 
-    hs.actions.run(
+    hs.actions.run_shell(
         inputs = inputs,
         tools = tools,
         input_manifests = input_manifests,
         outputs = outputs,
-        executable = hs.ghc_wrapper,
+        command = "%s $@" % hs.ghc_wrapper.path,
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
         arguments = [compile_flags_file.path, flagsfile_prefix + flagsfile.path],
         execution_requirements = execution_requirements,
+        use_default_shell_env=True,
     )
 
     return args

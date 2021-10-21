@@ -599,6 +599,9 @@ def list_exposed_modules(
         ] + [
             m[HaskellModuleInfo].interface_file
             for m in modules
+        ] + [
+            m[HaskellModuleInfo].dyn_interface_file
+            for m in modules
         ],
         outputs = [exposed_modules_file],
         executable = ls_modules,
