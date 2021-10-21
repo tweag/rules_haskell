@@ -87,6 +87,9 @@ def haskell_module_impl(ctx):
         extension_template = "p_" + extension_template
     extension_template = "." + extension_template
 
+    src_copy = ctx.actions.declare_file(src.basename, sibling = src)
+    hs.actions.symlink(output = src_copy, target_file = src)
+
     obj = ctx.actions.declare_file(
         paths.replace_extension(src.basename, extension_template % "o"),
         sibling = src,
@@ -95,13 +98,23 @@ def haskell_module_impl(ctx):
         paths.replace_extension(src.basename, extension_template % "hi"),
         sibling = src,
     )
+    dyn_obj = ctx.actions.declare_file(
+        paths.replace_extension(src.basename, extension_template % "dyn_o"),
+        sibling = src,
+    )
+    dyn_interface = ctx.actions.declare_file(
+        paths.replace_extension(src.basename, extension_template % "dyn_hi"),
+        sibling = src,
+    )
 
     # TODO[AH] Support additional outputs such as `.hie`.
 
     # Construct compiler arguments
 
     args = ctx.actions.args()
-    args.add_all(["-c", "-o", obj, "-ohi", interface, src])
+    # If we compile src_copy instead of src, we don't need to use -hidir, -o, -ohi to
+    # specify where outputs should go.
+    args.add_all(["-c", src_copy])
     args.add_all([
         "-v0",
         "-fPIC",
@@ -110,6 +123,8 @@ def haskell_module_impl(ctx):
         # to debug issues in non-sandboxed builds.
         "-Wmissing-home-modules",
     ])
+    # Needed for TH
+    args.add("-dynamic-too")
     if with_profiling:
         args.add_all([
             "-prof",
@@ -208,12 +223,20 @@ def haskell_module_impl(ctx):
     )
 
     transitive_interface_files = depset(
-        direct = [dep[HaskellModuleInfo].interface_file for dep in ctx.attr.deps if HaskellModuleInfo in dep],
+        direct = [
+            dep[HaskellModuleInfo].interface_file for dep in ctx.attr.deps if HaskellModuleInfo in dep
+        ] + [
+            dep[HaskellModuleInfo].dyn_interface_file for dep in ctx.attr.deps if HaskellModuleInfo in dep
+        ],
         transitive = [dep[HaskellModuleInfo].transitive_interface_files for dep in ctx.attr.deps if HaskellModuleInfo in dep],
     )
 
     transitive_object_files = depset(
-        direct = [dep[HaskellModuleInfo].object_file for dep in ctx.attr.deps if HaskellModuleInfo in dep],
+        direct = [
+            dep[HaskellModuleInfo].dyn_object_file for dep in ctx.attr.deps if HaskellModuleInfo in dep
+        ] + [
+            dep[HaskellModuleInfo].object_file for dep in ctx.attr.deps if HaskellModuleInfo in dep
+        ],
         transitive = [dep[HaskellModuleInfo].transitive_object_files for dep in ctx.attr.deps if HaskellModuleInfo in dep],
     )
 
@@ -222,7 +245,7 @@ def haskell_module_impl(ctx):
         hs,
         cc,
         inputs = depset(
-            direct = [src] + extra_srcs + [optp_args_file],
+            direct = [src_copy] + extra_srcs + [optp_args_file],
             transitive = [
                 dep_info.package_databases,
                 dep_info.interface_dirs,
@@ -239,7 +262,7 @@ def haskell_module_impl(ctx):
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
-        outputs = [obj, interface],
+        outputs = [obj, dyn_obj, interface, dyn_interface],
         mnemonic = "HaskellBuildObject" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildObject {}".format(hs.label),
         env = hs.env,
@@ -258,12 +281,14 @@ def haskell_module_impl(ctx):
     # Construct and return providers
 
     default_info = DefaultInfo(
-        files = depset(direct = [obj, interface]),
+        files = depset(direct = [obj, dyn_obj, interface, dyn_interface]),
     )
     module_info = HaskellModuleInfo(
         object_file = obj,
+        dyn_object_file = dyn_obj,
         import_dir = import_dir,
         interface_file = interface,
+        dyn_interface_file = dyn_interface,
         transitive_object_files = transitive_object_files,
         transitive_interface_files = transitive_interface_files,
         transitive_import_dirs = transitive_import_dirs,
