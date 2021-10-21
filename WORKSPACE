@@ -38,6 +38,7 @@ haskell_cabal_binary(
 
 load(
     "@rules_haskell//:constants.bzl",
+    "test_asterius_version",
     "test_ghc_version",
     "test_stack_snapshot",
 )
@@ -277,6 +278,7 @@ load(
 )
 
 haskell_register_ghc_bindists(
+    asterius_version = test_asterius_version if is_linux else None,
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
     version = test_ghc_version,
