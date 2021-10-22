@@ -1,0 +1,3 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+# asterius_test_macro("//tests/binary-with-data")
+# ASTERIUS_TAG INCOMPATIBLE_LIB: depends on the PROCESS library with does not exist for webassembly

@@ -1,0 +1,3 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+# asterius_test_macro("//tests/haskell")
+# ASTERIUS_TAG : there is not binary target in this folder. But we can either make one here, or figure out a way to convert libraries to wasm.

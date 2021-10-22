@@ -18,6 +18,7 @@ haskell_library(
 haskell_test(
     name = "binary-with-indirect-sysdeps",
     srcs = ["Main.hs"],
+    visibility = ["//tests/asterius/binary-with-indirect-sysdeps:__pkg__"],
     deps = [
         ":hs-lib",
         "//tests/hackage:base",

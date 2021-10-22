@@ -6,6 +6,7 @@ load(
 haskell_test(
     name = "bin",
     srcs = ["Main.hs"],
+    visibility = ["//tests/asterius/package-id-clash-binary:__pkg__"],
     deps = [
         "//tests/hackage:base",
         "//tests/package-id-clash-binary/a:foo",

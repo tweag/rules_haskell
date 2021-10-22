@@ -1,0 +1,3 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+# asterius_test_macro("//tests/haskell_cabal_package:exe")
+# ASTERIUS_TAG: TO_CHECK: this fails with i.exports.main even with ahc-cabal. So it is not clear what to do.

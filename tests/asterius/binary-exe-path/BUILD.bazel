@@ -1,0 +1,3 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+# asterius_test_macro("//tests/binary-exe-path")
+# ASTERIUS_TAG: this test fails. It seems normal as it calls a function from System.environment

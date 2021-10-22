@@ -52,6 +52,7 @@ haskell_doctest(
 haskell_test(
     name = "bin",
     srcs = ["Main.hs"],
+    visibility = ["//tests/asterius/haskell_doctest:__pkg__"],
     deps = [
         ":lib-a",
         "//tests/hackage:base",

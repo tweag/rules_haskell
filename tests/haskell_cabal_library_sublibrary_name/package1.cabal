@@ -7,8 +7,7 @@ executable package1_executable
     hs-source-dirs:   app
     default-language: Haskell2010
     build-depends:
-        Cabal
-        , base
+        base
         , package1
 
 library
@@ -17,8 +16,7 @@ library
     hs-source-dirs:
         lib
     build-depends:
-        Cabal
-        , base
+        base
         , sublib
 
 library sublib
@@ -27,5 +25,4 @@ library sublib
     hs-source-dirs:
         sublib
     build-depends:
-        Cabal
-        , base
+        base

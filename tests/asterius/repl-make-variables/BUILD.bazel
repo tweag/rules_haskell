@@ -1,0 +1,6 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+
+asterius_test_macro("//tests/repl-make-variables:test-compiler-flags")
+# asterius_test_macro("//tests/repl-make-variables:test-repl-flags")
+# asterius_test_macro("//tests/repl-make-variables:test-no-flags")
+# ASTERIUS_TAG: TODO: remove the name conflict to also add the other tests

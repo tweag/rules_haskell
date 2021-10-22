@@ -65,6 +65,7 @@ haskell_test(
     tags = [
         "dont_test_on_windows",
     ],
+    visibility = ["//tests/asterius/haskell_cabal_library:__pkg__"],
     deps = [
         ":base",
         ":first-lib",

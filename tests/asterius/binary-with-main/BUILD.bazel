@@ -1,0 +1,6 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+# asterius_test_macro("//tests/binary-with-main")
+# ASTERIUS_TAG: CANCELED
+# It seems that alternative main functions need to be explicitely exported to js inside the hs files.
+# As such:
+# foreign export javascript "putchar" js_putchar :: Char -> IO ()

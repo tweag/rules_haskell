@@ -28,6 +28,7 @@ haskell_test(
         ],
         "//conditions:default": [],
     }),
+    visibility = ["//tests/asterius/cpp_macro_conflict:__pkg__"],
     deps = [
         ":bytestring",
         "//tests/hackage:base",

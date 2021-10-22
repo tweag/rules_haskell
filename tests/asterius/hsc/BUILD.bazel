@@ -1,0 +1,7 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+# asterius_test_macro("//tests/hsc")
+# ASTERIUS_TAG: TO_CHECK
+#
+#   I am not sure there really is C there, but there is C preprocessing at least.
+#   It may error because the system (or host toolchain) ld is called with the options of the wasi-sdk toolchain (sysroot in particular).
+#   Maybe figuring that out is enough to make this test work ?

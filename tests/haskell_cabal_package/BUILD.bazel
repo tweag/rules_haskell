@@ -21,6 +21,7 @@ haskell_cabal_binary(
     name = "exe",
     srcs = glob(["**"]),
     exe_name = "haskell_cabal_package",
+    visibility = ["//tests/asterius/haskell_cabal_package:__pkg__"],
     deps = [
         ":base",
         ":lib",

@@ -1,0 +1,8 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+# asterius_test_macro("//tests/lhs:lhs-bin")
+# ASTERIUS_TAG: TO_CHECK
+# this fail because ahc is looking for the `unlit` binary in its folder.
+# But it it not there.
+# It is however next to ghc.
+# This binary is not mentionned explicitely in the haskell toolchain.
+# maybe it should be and passed explicitely to the compiler through the -pgmL option.
