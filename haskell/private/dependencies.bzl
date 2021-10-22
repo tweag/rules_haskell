@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "//haskell:providers.bzl",
     "HaskellInfo",
@@ -111,3 +112,38 @@ def gather_dep_info(ctx, deps):
             )
 
     return acc
+
+def declare_interface_output(hs, import_dir, interface_file, target_dir):
+    return hs.actions.declare_file(paths.join(target_dir, paths.relativize(interface_file.path, import_dir)))
+
+def module_files_for_build(hs, imports, target_dir):
+    """Collects all interface and object files into a single folder.
+
+    Args:
+      hs: Haskell context.
+      imports: sequence of pairs (string, File): The string is the import directory path and the File is the
+               interface or object file.
+      target_dir: string: Path where to put the files.
+
+    Returns:
+      sequence of File: collected files.
+    """
+    interface_files = [interface_file for (_, interface_file) in imports]
+    outputs = [declare_interface_output(hs, import_dir, interface_file, target_dir) for (import_dir, interface_file) in imports]
+
+    if outputs:
+        hs.actions.run_shell(
+            inputs = interface_files,
+            outputs = outputs,
+            arguments = [" ".join([p.path for p in interface_files]), " ".join([p.path for p in outputs])],
+            command = """
+               inputs=($1)
+               outputs=($2)
+               for((i=0;i<${#inputs[@]};i++))
+               do
+                   mkdir -p "${outputs[$i]%/*}"
+                   ln "${inputs[$i]}" "${outputs[$i]}"
+               done
+            """,
+        )
+    return outputs
