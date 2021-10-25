@@ -4,7 +4,7 @@ ASTERIUS_BINARIES = {
     "ghc-pkg": "ahc-pkg",
 }
 
-def asterius_tools_config(exec_cc_toolchain, posix_toolchain, node_toolchain, toolchain_bindir):
+def asterius_tools_config(exec_cc_toolchain, posix_toolchain, node_toolchain, tools_for_ghc_pkg):
     """ Tools, PATH directories and config specific to asterius. """
     return struct(
         # Asterius needs node in the path to evaluate template
@@ -15,7 +15,7 @@ def asterius_tools_config(exec_cc_toolchain, posix_toolchain, node_toolchain, to
             [f.dirname for f in node_toolchain.nodeinfo.tool_files],
         ),
         tools_for_run_ghc = node_toolchain.nodeinfo.tool_files,
-        tools_for_ghc_pkg = toolchain_bindir,
+        tools_for_ghc_pkg = tools_for_ghc_pkg,
 
         # Asterius does not behave as other ghc cross compilers yet
         # and relies on the cc toolchain targeting the exec platform.

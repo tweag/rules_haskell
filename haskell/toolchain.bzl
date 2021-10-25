@@ -208,10 +208,10 @@ def _haskell_toolchain_impl(ctx):
 
     if ctx.attr.asterius_binaries:
         tools_config = asterius_tools_config(
-            ctx.toolchains["@bazel_tools//tools/cpp:toolchain_type"],
-            ctx.toolchains["@rules_sh//sh/posix:toolchain_type"],
-            ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"],
-            ctx.files.tools,
+            exec_cc_toolchain = ctx.toolchains["@bazel_tools//tools/cpp:toolchain_type"],
+            posix_toolchain = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"],
+            node_toolchain = ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"],
+            tools_for_ghc_pkg = ctx.files.tools,
         )
     else:
         tools_config = default_tools_config
