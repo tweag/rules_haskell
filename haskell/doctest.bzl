@@ -94,7 +94,10 @@ def _haskell_doctest_single(target, ctx):
     args = ctx.actions.args()
     args.add("--no-magic")
 
-    cc = cc_interop_info(ctx, hs)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
     args.add_all(ghc_cc_program_args(hs, cc.tools.cc))
 
     doctest_log = ctx.actions.declare_file(

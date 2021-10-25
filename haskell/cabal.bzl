@@ -417,7 +417,10 @@ def _haskell_cabal_library_impl(ctx):
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
     setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
     setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
-    cc = cc_interop_info(ctx, hs)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
 
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(
@@ -762,7 +765,10 @@ def _haskell_cabal_binary_impl(ctx):
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
     setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
     setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
-    cc = cc_interop_info(ctx, hs)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
 
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(

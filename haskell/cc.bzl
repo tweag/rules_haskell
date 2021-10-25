@@ -38,7 +38,7 @@ CcInteropInfo = provider(
     },
 )
 
-def cc_interop_info(ctx, hs):
+def cc_interop_info(ctx, override_cc_toolchain = None):
     """Gather information from any CC dependencies.
 
     *Internal function - do not use.*
@@ -81,7 +81,7 @@ def cc_interop_info(ctx, hs):
 
     # Asterius does not behave as other ghc cross compilers yet and
     # relies on a cc toolchain targeting the exec platform .
-    cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain or find_cpp_toolchain(real_ctx)
+    cc_toolchain = override_cc_toolchain or find_cpp_toolchain(real_ctx)
 
     feature_configuration = cc_common.configure_features(
         ctx = real_ctx,

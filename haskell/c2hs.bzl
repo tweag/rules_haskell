@@ -23,7 +23,10 @@ load(":private/version_macros.bzl", "version_macro_includes")
 def _c2hs_library_impl(ctx):
     hs = haskell_context(ctx)
 
-    cc = cc_interop_info(ctx, hs)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
     args = hs.actions.args()
     c2hs = ctx.toolchains["@rules_haskell//haskell/c2hs:toolchain"].c2hs
     c2hs_exe = ctx.toolchains["@rules_haskell//haskell/c2hs:toolchain"].c2hs_exe
