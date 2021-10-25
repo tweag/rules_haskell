@@ -102,8 +102,8 @@ default_tools_config = struct(
     tools_for_ghc_pkg = [],
 
     # for cross compiling we will pass ghc a cross compiling cc_toolchain,
-    # and not one targeting the host.
-    maybe_exec_target_cc_toolchain = None,
+    # and not one targeting the exec platform.
+    maybe_exec_cc_toolchain = None,
     supports_haddock = True,
 )
 

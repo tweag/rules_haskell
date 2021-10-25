@@ -79,8 +79,9 @@ def cc_interop_info(ctx, hs):
     # which includes the real ctx as "real_ctx"
     real_ctx = getattr(ctx, "real_ctx", ctx)
 
-    # Asterius does not behave as other ghc cross compilers yet and relies on the host cc toolchain.
-    cc_toolchain = hs.tools_config.maybe_exec_target_cc_toolchain or find_cpp_toolchain(real_ctx)
+    # Asterius does not behave as other ghc cross compilers yet and
+    # relies on a cc toolchain targeting the exec platform .
+    cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain or find_cpp_toolchain(real_ctx)
 
     feature_configuration = cc_common.configure_features(
         ctx = real_ctx,
