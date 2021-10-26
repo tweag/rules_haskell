@@ -70,6 +70,7 @@ bzl_library(
     deps = [
         ":bazel_json",
         ":bazel_tools",
+        "//haskell/asterius:asterius_bzl",
         "//haskell/experimental:defs.bzl",
         "//haskell/experimental:providers.bzl",
         "//haskell/experimental:transitions.bzl",

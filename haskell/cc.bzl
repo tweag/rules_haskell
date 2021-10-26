@@ -38,7 +38,7 @@ CcInteropInfo = provider(
     },
 )
 
-def cc_interop_info(ctx):
+def cc_interop_info(ctx, override_cc_toolchain = None):
     """Gather information from any CC dependencies.
 
     *Internal function - do not use.*
@@ -78,7 +78,11 @@ def cc_interop_info(ctx):
     # XXX: protobuf is passing a "patched ctx"
     # which includes the real ctx as "real_ctx"
     real_ctx = getattr(ctx, "real_ctx", ctx)
-    cc_toolchain = find_cpp_toolchain(real_ctx)
+
+    # Asterius does not behave as other ghc cross compilers yet and
+    # relies on a cc toolchain targeting the exec platform .
+    cc_toolchain = override_cc_toolchain or find_cpp_toolchain(real_ctx)
+
     feature_configuration = cc_common.configure_features(
         ctx = real_ctx,
         cc_toolchain = cc_toolchain,

@@ -417,7 +417,10 @@ def _haskell_cabal_library_impl(ctx):
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
     setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
     setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
-    cc = cc_interop_info(ctx)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
 
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(
@@ -462,7 +465,8 @@ def _haskell_cabal_library_impl(ctx):
         "_install/{}_data".format(package_id),
         sibling = cabal,
     )
-    if ctx.attr.haddock:
+    with_haddock = ctx.attr.haddock and hs.tools_config.supports_haddock
+    if with_haddock:
         haddock_file = hs.actions.declare_file(
             "_install/{}_haddock/{}.haddock".format(package_id, package_name),
             sibling = cabal,
@@ -518,7 +522,7 @@ def _haskell_cabal_library_impl(ctx):
         srcs = ctx.files.srcs,
         cabalopts = user_cabalopts,
         flags = ctx.attr.flags,
-        generate_haddock = ctx.attr.haddock,
+        generate_haddock = with_haddock,
         cabal_wrapper = ctx.executable._cabal_wrapper,
         runghc = ctx.executable._runghc,
         package_database = package_database,
@@ -526,8 +530,7 @@ def _haskell_cabal_library_impl(ctx):
         is_library = True,
         generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = dynamic_library,
-        transitive_haddocks =
-            _gather_transitive_haddocks(ctx.attr.deps) if ctx.attr.haddock else depset([]),
+        transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps) if with_haddock else depset([]),
     )
     outputs = [
         package_database,
@@ -535,7 +538,7 @@ def _haskell_cabal_library_impl(ctx):
         vanilla_library,
         data_dir,
     ]
-    if ctx.attr.haddock:
+    if with_haddock:
         outputs.extend([haddock_file, haddock_html_dir])
     if dynamic_library != None:
         outputs.append(dynamic_library)
@@ -582,7 +585,7 @@ def _haskell_cabal_library_impl(ctx):
         user_repl_flags = [],
     )
     lib_info = HaskellLibraryInfo(package_id = package_id, version = None, exports = [])
-    if ctx.attr.haddock:
+    if with_haddock:
         doc_info = generate_unified_haddock_info(
             this_package_id = package_id,
             this_package_html = haddock_html_dir,
@@ -632,7 +635,7 @@ def _haskell_cabal_library_impl(ctx):
         lib_info = lib_info,
     ))
     result = [default_info, hs_info, cc_info, lib_info, output_group_info]
-    if ctx.attr.haddock:
+    if with_haddock:
         result.append(doc_info)
     return result
 
@@ -762,7 +765,10 @@ def _haskell_cabal_binary_impl(ctx):
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
     setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
     setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
-    cc = cc_interop_info(ctx)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
 
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(
@@ -831,7 +837,7 @@ def _haskell_cabal_binary_impl(ctx):
         verbose = ctx.attr.verbose,
         generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = binary,
-        transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps),
+        transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps) if hs.tools_config.supports_haddock else depset([]),
     )
     (_, runghc_manifest) = ctx.resolve_tools(tools = [ctx.attr._runghc])
     json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))

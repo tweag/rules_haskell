@@ -17,6 +17,12 @@ load(
 load(":private/actions/package.bzl", "package")
 load(":cc.bzl", "ghc_cc_program_args")
 load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
+load(":private/context.bzl", "append_to_path")
+load(
+    "//haskell/asterius:asterius_config.bzl",
+    "ASTERIUS_BINARIES",
+    "asterius_tools_config",
+)
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
@@ -72,6 +78,9 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     else:
         input_manifests = cc.manifests
 
+    tools.extend(hs.tools_config.tools_for_run_ghc)
+    append_to_path(env, hs.tools_config.path_for_run_ghc)
+
     hs.actions.run(
         inputs = inputs,
         tools = tools,
@@ -87,6 +96,17 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
 
     return args
 
+default_tools_config = struct(
+    path_for_run_ghc = "",
+    tools_for_run_ghc = [],
+    tools_for_ghc_pkg = [],
+
+    # for cross compiling we will pass ghc a cross compiling cc_toolchain,
+    # and not one targeting the exec platform.
+    maybe_exec_cc_toolchain = None,
+    supports_haddock = True,
+)
+
 def _haskell_toolchain_impl(ctx):
     numeric_version = [int(x) for x in ctx.attr.version.split(".")]
     if numeric_version == [8, 10, 1] or numeric_version == [8, 10, 2]:
@@ -94,16 +114,27 @@ def _haskell_toolchain_impl(ctx):
 
     # Store the binaries of interest in ghc_binaries.
     ghc_binaries = {}
-    for tool in _GHC_BINARIES:
-        for file in ctx.files.tools:
-            if tool in ghc_binaries:
-                continue
 
+    for tool in _GHC_BINARIES:
+        if ctx.attr.asterius_binaries:
+            # We first look for binaries provided by asterius,
+            # then we complete the toolchain with the regular ghc.
+            if tool in ASTERIUS_BINARIES:
+                for file in ctx.files.asterius_binaries:
+                    basename_no_ext = paths.split_extension(file.basename)[0]
+                    if ASTERIUS_BINARIES[tool] == basename_no_ext:
+                        ghc_binaries[tool] = file
+                        break
+                if tool in ghc_binaries:
+                    continue
+        for file in ctx.files.tools:
             basename_no_ext = paths.split_extension(file.basename)[0]
             if tool == basename_no_ext:
                 ghc_binaries[tool] = file
+                break
             elif "%s-%s" % (tool, ctx.attr.version) == basename_no_ext:
                 ghc_binaries[tool] = file
+                break
         if not tool in ghc_binaries:
             fail("Cannot find {} in {}".format(tool, ctx.attr.tools))
 
@@ -146,6 +177,7 @@ def _haskell_toolchain_impl(ctx):
     ctx.actions.run_shell(
         inputs = [ghc_pkg],
         outputs = [pkgdb_file],
+        tools = ctx.files.tools if ctx.attr.asterius_binaries else [],
         mnemonic = "HaskellPackageDatabaseDump",
         command = "{ghc_pkg} dump --global > {output}".format(
             ghc_pkg = ghc_pkg.path,
@@ -173,6 +205,16 @@ def _haskell_toolchain_impl(ctx):
     cc_wrapper_runfiles = cc_wrapper_info.default_runfiles.merge(
         cc_wrapper_info.data_runfiles,
     )
+
+    if ctx.attr.asterius_binaries:
+        tools_config = asterius_tools_config(
+            exec_cc_toolchain = ctx.toolchains["@bazel_tools//tools/cpp:toolchain_type"],
+            posix_toolchain = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"],
+            node_toolchain = ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"],
+            tools_for_ghc_pkg = ctx.files.tools,
+        )
+    else:
+        tools_config = default_tools_config
 
     return [
         platform_common.ToolchainInfo(
@@ -215,69 +257,87 @@ def _haskell_toolchain_impl(ctx):
             global_pkg_db = pkgdb_file,
             protoc = ctx.executable._protoc,
             rule_info_proto = ctx.attr._rule_info_proto,
+            tools_config = tools_config,
         ),
     ]
 
+common_attrs = {
+    "tools": attr.label_list(
+        mandatory = True,
+    ),
+    "libraries": attr.label_list(
+        mandatory = True,
+    ),
+    "libdir": attr.label_list(
+        doc = "The files contained in GHC's libdir that Bazel should track. C.f. `ghc --print-libdir`. Do not specify this for a globally installed GHC distribution, e.g. a Nix provided one. One of `libdir` or `libdir_path` is required.",
+    ),
+    "libdir_path": attr.string(
+        doc = "The absolute path to GHC's libdir. C.f. `ghc --print-libdir`. Specify this if `libdir` is left empty. One of `libdir` or `libdir_path` is required.",
+    ),
+    "docdir": attr.label_list(
+        doc = "The files contained in GHC's docdir that Bazel should track. C.f. `GHC.Paths.docdir` from `ghc-paths`. Do not specify this for a globally installed GHC distribution, e.g. a Nix provided one. One of `docdir` or `docdir_path` is required.",
+    ),
+    "docdir_path": attr.string(
+        doc = "The absolute path to GHC's docdir. C.f. `GHC.Paths.docdir` from `ghc-paths`. Specify this if `docdir` is left empty. One of `docdir` or `docdir_path` is required.",
+    ),
+    "ghcopts": attr.string_list(),
+    "repl_ghci_args": attr.string_list(),
+    "haddock_flags": attr.string_list(),
+    "cabalopts": attr.string_list(),
+    "version": attr.string(
+        mandatory = True,
+    ),
+    "is_darwin": attr.bool(
+        doc = "Whether compile on and for Darwin (macOS).",
+        mandatory = True,
+    ),
+    "is_windows": attr.bool(
+        doc = "Whether compile on and for Windows.",
+        mandatory = True,
+    ),
+    "static_runtime": attr.bool(),
+    "fully_static_link": attr.bool(),
+    "locale": attr.string(
+        default = "C.UTF-8",
+        doc = "Locale that will be set during compiler invocations.",
+    ),
+    "locale_archive": attr.label(
+        allow_single_file = True,
+    ),
+    "asterius_binaries": attr.label(),
+    "_cc_wrapper": attr.label(
+        cfg = "host",
+        default = Label("@rules_haskell//haskell:cc_wrapper"),
+        executable = True,
+    ),
+    "_protoc": attr.label(
+        executable = True,
+        cfg = "host",
+        default = Label("@com_google_protobuf//:protoc"),
+    ),
+    "_rule_info_proto": attr.label(
+        allow_single_file = True,
+        default = Label("@rules_haskell//rule_info:rule_info_proto"),
+    ),
+}
+
+_ahc_haskell_toolchain = rule(
+    _haskell_toolchain_impl,
+    toolchains = [
+        "@rules_sh//sh/posix:toolchain_type",
+        "@build_bazel_rules_nodejs//toolchains/node:toolchain_type",
+        "@bazel_tools//tools/cpp:toolchain_type",
+    ],
+    attrs = dict(
+        common_attrs,
+    ),
+)
+
 _haskell_toolchain = rule(
     _haskell_toolchain_impl,
-    attrs = {
-        "tools": attr.label_list(
-            mandatory = True,
-        ),
-        "libraries": attr.label_list(
-            mandatory = True,
-        ),
-        "libdir": attr.label_list(
-            doc = "The files contained in GHC's libdir that Bazel should track. C.f. `ghc --print-libdir`. Do not specify this for a globally installed GHC distribution, e.g. a Nix provided one. One of `libdir` or `libdir_path` is required.",
-        ),
-        "libdir_path": attr.string(
-            doc = "The absolute path to GHC's libdir. C.f. `ghc --print-libdir`. Specify this if `libdir` is left empty. One of `libdir` or `libdir_path` is required.",
-        ),
-        "docdir": attr.label_list(
-            doc = "The files contained in GHC's docdir that Bazel should track. C.f. `GHC.Paths.docdir` from `ghc-paths`. Do not specify this for a globally installed GHC distribution, e.g. a Nix provided one. One of `docdir` or `docdir_path` is required.",
-        ),
-        "docdir_path": attr.string(
-            doc = "The absolute path to GHC's docdir. C.f. `GHC.Paths.docdir` from `ghc-paths`. Specify this if `docdir` is left empty. One of `docdir` or `docdir_path` is required.",
-        ),
-        "ghcopts": attr.string_list(),
-        "repl_ghci_args": attr.string_list(),
-        "haddock_flags": attr.string_list(),
-        "cabalopts": attr.string_list(),
-        "version": attr.string(
-            mandatory = True,
-        ),
-        "is_darwin": attr.bool(
-            doc = "Whether compile on and for Darwin (macOS).",
-            mandatory = True,
-        ),
-        "is_windows": attr.bool(
-            doc = "Whether compile on and for Windows.",
-            mandatory = True,
-        ),
-        "static_runtime": attr.bool(),
-        "fully_static_link": attr.bool(),
-        "locale": attr.string(
-            default = "C.UTF-8",
-            doc = "Locale that will be set during compiler invocations.",
-        ),
-        "locale_archive": attr.label(
-            allow_single_file = True,
-        ),
-        "_cc_wrapper": attr.label(
-            cfg = "host",
-            default = Label("@rules_haskell//haskell:cc_wrapper"),
-            executable = True,
-        ),
-        "_protoc": attr.label(
-            executable = True,
-            cfg = "host",
-            default = Label("@com_google_protobuf//:protoc"),
-        ),
-        "_rule_info_proto": attr.label(
-            allow_single_file = True,
-            default = Label("@rules_haskell//rule_info:rule_info_proto"),
-        ),
-    },
+    attrs = dict(
+        common_attrs,
+    ),
 )
 
 def haskell_toolchain(
@@ -287,6 +347,7 @@ def haskell_toolchain(
         fully_static_link,
         tools,
         libraries,
+        asterius_binaries = None,
         compiler_flags = [],
         ghcopts = [],
         repl_ghci_args = [],
@@ -335,6 +396,8 @@ def haskell_toolchain(
       fully_static_link: Whether GHC should build fully-statically-linked binaries.
       tools: GHC and executables that come with it. First item takes precedence.
       libraries: The set of libraries that come with GHC. Requires haskell_import targets.
+      asterius_binaries: An optional filegroup containing asterius binaries.
+        If present the toolchain will target WebAssembly and only use binaries from `tools` if needed to complete the toolchain.
       ghcopts: A collection of flags that will be passed to GHC on every invocation.
       compiler_flags: DEPRECATED. Use new name ghcopts.
       repl_ghci_args: A collection of flags that will be passed to GHCI on repl invocation. It extends the `ghcopts` collection.\\
@@ -358,7 +421,8 @@ def haskell_toolchain(
         new_attr_value = ghcopts,
     )
 
-    _haskell_toolchain(
+    toolchain_rule = _ahc_haskell_toolchain if asterius_binaries else _haskell_toolchain
+    toolchain_rule(
         name = name,
         version = version,
         static_runtime = static_runtime,
@@ -384,6 +448,7 @@ def haskell_toolchain(
             "@rules_haskell//haskell/platforms:linux": locale_archive,
             "//conditions:default": None,
         }),
+        asterius_binaries = asterius_binaries,
         **kwargs
     )
 

@@ -169,7 +169,10 @@ def _haskell_binary_common_impl(ctx, is_test):
     package_ids = all_dependencies_package_ids(ctx.attr.deps)
 
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
     java = java_interop_info(ctx.attr.deps)
 
     # Make shell tools available.
@@ -363,7 +366,10 @@ def haskell_library_impl(ctx):
     ]
 
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
     java = java_interop_info(ctx.attr.deps)
 
     # Make shell tools available.

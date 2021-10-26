@@ -158,6 +158,7 @@ def ghc_pkg_recache(hs, posix, conf_file):
         mnemonic = "HaskellRegisterPackage",
         progress_message = "HaskellRegisterPackage {}".format(conf_file.short_path),
         executable = hs.tools.ghc_pkg,
+        tools = hs.tools_config.tools_for_ghc_pkg,
         # Registration of a new package consists in,
         #
         # 1. copying the registration file into the package db,
