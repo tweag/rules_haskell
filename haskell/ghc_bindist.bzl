@@ -440,6 +440,7 @@ rm -f
         substitutions = {
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
+            "%{asterius_toolchain}": "",
         },
         executable = False,
     )
