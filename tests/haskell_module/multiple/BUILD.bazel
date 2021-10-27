@@ -15,6 +15,7 @@ haskell_module(
     deps = [
         ":root",
         "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
     ],
 )
 
