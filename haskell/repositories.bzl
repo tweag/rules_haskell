@@ -108,6 +108,11 @@ def rules_haskell_dependencies():
             sha256 = "3635797a96c7bfcd0d265dacd722a07335e64d6ded9834af8d3f1b7ba5a25bba",
             urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/4.3.0/rules_nodejs-4.3.0.tar.gz"],
         )
+        
+        # native.local_repository(
+        #     name = "build_bazel_rules_nodejs",
+        #     path = "/home/stan/src/rules_nodejs",
+        # )
 
 def haskell_repositories():
     """Alias for rules_haskell_dependencies

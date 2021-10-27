@@ -341,7 +341,7 @@ def haskell_register_ghc_nixpkgs(
             asterius_repo_name,
             asterius_version,
             exec_constraints,
-            nixpkgs_ghc_repo_name,
+            # nixpkgs_ghc_repo_name,
             asterius_lib_setting_file,
             ahc_pkg,
             asterius_binaries,

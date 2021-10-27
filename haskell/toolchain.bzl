@@ -107,6 +107,54 @@ default_tools_config = struct(
     supports_haddock = True,
 )
 
+# def _ahc_haskell_toolchain_impl(ctx):
+#     exec_haskell_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
+#     return [
+#         platform_common.ToolchainInfo(
+#             name = ctx.label.name,
+#             tools = struct(**tools_struct_args),
+#             bindir = ctx.files.tools,
+#             libdir = libdir,
+#             libdir_path = libdir_path,
+#             docdir = docdir,
+#             docdir_path = docdir_path,
+#             ghcopts = ctx.attr.ghcopts,
+#             repl_ghci_args = ctx.attr.repl_ghci_args,
+#             haddock_flags = ctx.attr.haddock_flags,
+#             cabalopts = ctx.attr.cabalopts,
+#             locale = ctx.attr.locale,
+#             locale_archive = locale_archive,
+#             cc_wrapper = struct(
+#                 executable = ctx.executable._cc_wrapper,
+#                 inputs = cc_wrapper_inputs,
+#                 manifests = cc_wrapper_manifest,
+#                 runfiles = cc_wrapper_runfiles,
+#             ),
+#             mode = ctx.var["COMPILATION_MODE"],
+#             actions = struct(
+#                 compile_binary = compile_binary,
+#                 compile_library = compile_library,
+#                 link_binary = link_binary,
+#                 link_library_dynamic = link_library_dynamic,
+#                 link_library_static = link_library_static,
+#                 package = package,
+#                 run_ghc = _run_ghc,
+#             ),
+#             libraries = libraries,
+#             is_darwin = ctx.attr.is_darwin,
+#             is_windows = ctx.attr.is_windows,
+#             static_runtime = ctx.attr.static_runtime,
+#             fully_static_link = ctx.attr.fully_static_link,
+#             version = ctx.attr.version,
+#             numeric_version = numeric_version,
+#             global_pkg_db = pkgdb_file,
+#             protoc = ctx.executable._protoc,
+#             rule_info_proto = ctx.attr._rule_info_proto,
+#             tools_config = tools_config,
+#         ),
+#     ]
+
+
 def _haskell_toolchain_impl(ctx):
     numeric_version = [int(x) for x in ctx.attr.version.split(".")]
     if numeric_version == [8, 10, 1] or numeric_version == [8, 10, 2]:
@@ -114,6 +162,11 @@ def _haskell_toolchain_impl(ctx):
 
     # Store the binaries of interest in ghc_binaries.
     ghc_binaries = {}
+
+    if ctx.attr.asterius_binaries:
+        tools = ctx.toolchains["@rules_haskell//haskell:toolchain"].bindir
+    else:
+        tools = ctx.files.tools
 
     for tool in _GHC_BINARIES:
         if ctx.attr.asterius_binaries:
@@ -127,7 +180,8 @@ def _haskell_toolchain_impl(ctx):
                         break
                 if tool in ghc_binaries:
                     continue
-        for file in ctx.files.tools:
+
+        for file in tools:
             basename_no_ext = paths.split_extension(file.basename)[0]
             if tool == basename_no_ext:
                 ghc_binaries[tool] = file
@@ -136,7 +190,7 @@ def _haskell_toolchain_impl(ctx):
                 ghc_binaries[tool] = file
                 break
         if not tool in ghc_binaries:
-            fail("Cannot find {} in {}".format(tool, ctx.attr.tools))
+            fail("Cannot find {} in {}".format(tool, tools))
 
     # Get the libdir and docdir paths
     libdir = ctx.files.libdir
@@ -207,6 +261,8 @@ def _haskell_toolchain_impl(ctx):
     )
 
     if ctx.attr.asterius_binaries:
+        exec_haskell_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
+        print("exec_haskell_toolchain=", exec_haskell_toolchain)
         tools_config = asterius_tools_config(
             exec_cc_toolchain = ctx.toolchains["@bazel_tools//tools/cpp:toolchain_type"],
             posix_toolchain = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"],
@@ -327,6 +383,7 @@ _ahc_haskell_toolchain = rule(
         "@rules_sh//sh/posix:toolchain_type",
         "@build_bazel_rules_nodejs//toolchains/node:toolchain_type",
         "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_haskell//haskell:toolchain",
     ],
     attrs = dict(
         common_attrs,

@@ -25,7 +25,7 @@ load("//haskell/asterius:asterius_config.bzl", "asterius_cabalopts")
 AHC_BINDIST = \
     {
         "0.0.1": {
-            "linux_x86_64": (
+            "linux_amd64": (
                 "https://github.com/ylecornec/test_bundle/releases/download/test/asterius_bundle.tar.gz",
                 "0c50415278e14003541697c99818e96d52ba67b1a140ac0eaf89bfb6b751548f",
             ),
@@ -55,8 +55,9 @@ def _asterius_bundle_impl(repository_ctx):
     # As in the _ghc_nixpkgs_toolchain rule.
     # we use the default constraints if none are provided.
     # We only need exec_contraints as we know we target wasm32
-    exec_constraints = repository_ctx.attr.exec_constraints or default_exec_constraints(repository_ctx)
-    exec_platform = platform_of_constraints(exec_constraints)
+    # exec_constraints = repository_ctx.attr.exec_constraints or default_exec_constraints(repository_ctx)
+    # exec_platform = platform_of_constraints(exec_constraints)
+    exec_platform = repository_ctx.attr.exec_platform
 
     version = repository_ctx.attr.version
     if version not in AHC_BINDIST or AHC_BINDIST[version].get(exec_platform) == None:
@@ -75,15 +76,16 @@ asterius_bundle = repository_rule(
     local = False,
     attrs = {
         "version": attr.string(),
-        "exec_constraints": attr.label_list(),
+        "exec_platform": attr.string(),
+        # "exec_constraints": attr.label_list(),
     },
     doc = "Downloads and extracts an asterius bundle.",
 )
 
 def _ahc_toolchain_impl(ctx):
-    exec_constraints = ctx.attr.exec_constraints or default_exec_constraints(ctx)
-    if ctx.attr.nix:
-        exec_constraints.append(Label("@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix"))
+    exec_constraints = list(ctx.attr.exec_constraints) or default_exec_constraints(ctx)
+    # if ctx.attr.nix:
+    #     exec_constraints.append(Label("@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix"))
     exec_platform = platform_of_constraints(exec_constraints)
 
     exec_constraints_str = [str(c) for c in exec_constraints]
@@ -159,16 +161,16 @@ def _ahc_impl(ctx):
     exec_os = os_of_constraints(exec_constraints)
     locale = ctx.attr.locale or ("en_US.UTF-8" if exec_os == "darwin" else "C.UTF-8")
 
-    non_asterius_binaries = "@{}//:bin".format(ctx.attr.ghc_repo_name)
+    # non_asterius_binaries = "@{}//:bin".format(ctx.attr.ghc_repo_name)
     toolchain = define_rule(
         "haskell_toolchain",
         name = "toolchain-impl",
         asterius_binaries = repr(str(ctx.attr.asterius_binaries)),
         tools =
             [
-                str(ctx.attr.asterius_binaries),
+                # str(ctx.attr.asterius_binaries),
                 str(ctx.attr.full_bundle),
-                non_asterius_binaries,
+                # non_asterius_binaries,
             ],
         libraries = "toolchain_libraries",
         libdir_path = repr(paths.basename(lib_path)),
@@ -177,7 +179,7 @@ def _ahc_impl(ctx):
         static_runtime = True,
         fully_static_link = True,
         ghcopts = ctx.attr.ghcopts,
-        haddock_flags = ctx.attr.haddock_flags,
+        # haddock_flags = None,
         repl_ghci_args = ctx.attr.repl_ghci_args,
         cabalopts = asterius_cabalopts + ctx.attr.cabalopts,
         locale = repr(locale),
@@ -211,10 +213,9 @@ _ahc = repository_rule(
             doc = "The desired Asterius version",
         ),
         "exec_constraints": attr.label_list(),
-        "ghc_repo_name": attr.string(),
-        "ghcopts": attr.string_list(),
-        "haddock_flags": attr.string_list(),
+        # "ghc_repo_name": attr.string(),
         "repl_ghci_args": attr.string_list(),
+        "ghcopts": attr.string_list(),
         "cabalopts": attr.string_list(),
         "locale": attr.string(
             mandatory = False,
@@ -235,15 +236,14 @@ def ahc(
         name,
         version,
         exec_constraints,
-        ghc_repo_name,
+        # ghc_repo_name,
         asterius_lib_setting_file,
         ahc_pkg,
         asterius_binaries,
         full_bundle,
         wasm_cc_toolchain,
-        compiler_flags = None,
+        # compiler_flags = None,
         ghcopts = None,
-        haddock_flags = None,
         repl_ghci_args = None,
         cabalopts = None,
         locale = None,
@@ -253,12 +253,12 @@ def ahc(
     if not supports_rules_nodejs_ge_4(native.bazel_version):
         fail("Asterius is only supported starting from bazel 4 (because it depends on rules_nodejs >= 4)")
 
-    ghcopts = check_deprecated_attribute_usage(
-        old_attr_name = "compiler_flags",
-        old_attr_value = compiler_flags,
-        new_attr_name = "ghcopts",
-        new_attr_value = ghcopts,
-    )
+    # ghcopts = check_deprecated_attribute_usage(
+    #     old_attr_name = "compiler_flags",
+    #     old_attr_value = compiler_flags,
+    #     new_attr_name = "ghcopts",
+    #     new_attr_value = ghcopts,
+    # )
 
     # bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
@@ -267,9 +267,9 @@ def ahc(
         name = name,
         version = version,
         exec_constraints = exec_constraints,
-        ghc_repo_name = ghc_repo_name,
+        # ghc_repo_name = ghc_repo_name,
         ghcopts = ghcopts,
-        haddock_flags = haddock_flags,
+        haddock_flags = None , # 
         repl_ghci_args = repl_ghci_args,
         cabalopts = cabalopts,
         locale = locale,
@@ -321,3 +321,59 @@ asterius_toolchain = rule(
     },
     doc = "Toolchain for asterius tools that are not part of the regular haskell toolchain",
 )
+
+
+def rules_haskell_asterius_toolchains(
+        name,
+        version = AHC_DEFAULT_VERSION,
+        ghcopts = [],
+        cabalopts = [],
+        repl_ghci_args = [],
+        locale = None,
+):
+    if not AHC_BINDIST.get(version):
+        fail("Binary distribution of Asterius {} not available.".format(version))
+    # for target in GHC_BINDIST[version]:
+    for platform in AHC_BINDIST[version]:
+        asterius_repo_name = "{}_asterius".format(platform)
+        bundle_repo_name = "asterius_bundle_{}".format(platform)
+
+        os, _, arch = platform.partition("_")
+        print("os=", os)
+        print("arch=", arch)
+        os_constraint = {
+            "darwin": "@platforms//os:osx",
+            "linux": "@platforms//os:linux",
+            "windows": "@platforms//os:windows",
+        }.get(os)
+        arch_constraint = {
+            "amd64": "@platforms//cpu:x86_64",
+        }.get(arch)
+        exec_constraints = [os_constraint, arch_constraint]
+
+        # Download the asterius bundle.
+        asterius_bundle(
+            name = bundle_repo_name,
+            version = version,
+            # exec_constraints = exec_constraints,
+            exec_platform = platform,
+        )
+
+        # Create and register the asterius toolchains
+        (asterius_lib_setting_file, ahc_pkg, asterius_binaries, full_bundle, wasm_cc_toolchain) = labels_from_bundle_name(bundle_repo_name, version)
+        ahc(
+            asterius_repo_name,
+            version,
+            exec_constraints,
+            # nixpkgs_ghc_repo_name,
+            asterius_lib_setting_file,
+            ahc_pkg,
+            asterius_binaries,
+            full_bundle,
+            wasm_cc_toolchain,
+            ghcopts = ghcopts,
+            # repl_ghci_args,
+            cabalopts = cabalopts,
+            locale = locale,
+            nix = True,
+        )

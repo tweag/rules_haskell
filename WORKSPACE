@@ -256,12 +256,27 @@ test_cabalopts = [
 ] if is_windows else [])
 
 load(
+    "//haskell/asterius:asterius_workspace_rules.bzl",
+    "rules_haskell_asterius_toolchains",
+)
+
+rules_haskell_asterius_toolchains(
+    name = "rules_haskell_toolchain",
+    ghcopts = test_ghcopts,
+    # haddock_flags = test_haddock_flags,
+    # locale_archive = "@glibc_locales//:locale-archive",
+    # nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8104.ghc""",
+    repl_ghci_args = test_repl_ghci_args,
+    cabalopts = test_cabalopts,
+)
+
+load(
     "@rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
 
 haskell_register_ghc_nixpkgs(
-    asterius_version = test_asterius_version if is_linux else None,
+    # asterius_version = test_asterius_version if is_linux else None,
     attribute_path = "",
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
@@ -279,7 +294,7 @@ load(
 )
 
 haskell_register_ghc_bindists(
-    asterius_version = test_asterius_version if is_linux else None,
+    # asterius_version = test_asterius_version if is_linux else None,
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
     version = test_ghc_version,
@@ -473,6 +488,7 @@ load(
     nix_repository = "@nixpkgs_default",
     nixpkgs_package_rule = nixpkgs_package,
 ) if is_nix_shell else asterius_dependencies_bindist())
+
 
 http_archive(
     name = "io_bazel_rules_sass",

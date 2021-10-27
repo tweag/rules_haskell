@@ -42,6 +42,13 @@ load(
     "//haskell/experimental:transitions.bzl",
     "package_name_out_transition",
 )
+# load(
+#     "//haskell/asterius:asterius.bzl",
+#     _ahc_dist = "ahc_dist",
+#     _asterius_binary = "asterius_binary",
+#     _asterius_tests = "asterius_test",
+#     _asterius_webpack = "asterius_webpack",
+# )
 
 # NOTE: Documentation needs to be added to the wrapper macros below.
 #   Currently it is not possible to automatically inherit rule documentation in
@@ -690,3 +697,8 @@ haskell_repl_aspect = _haskell_repl_aspect
 haskell_toolchain = _haskell_toolchain
 
 ghc_plugin = _ghc_plugin
+
+# ahc_dist = _ahc_dist
+# asterius_binary = _asterius_binary
+# asterius_tests = _asterius_tests
+# asterius_webpack = _asterius_webpack
