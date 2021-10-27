@@ -107,36 +107,43 @@ default_tools_config = struct(
     supports_haddock = True,
 )
 
+def _lookup_binaries(names, files, version = ""):
+    binaries = {}
+    for tool in list(names):
+        for file in files:
+            basename_no_ext = paths.split_extension(file.basename)[0]
+            if tool == basename_no_ext:
+                binaries[tool] = file
+                break
+            if version and "%s-%s" % (tool, version) == basename_no_ext:
+                binaries[tool] = file
+                break
+        if not tool in binaries:
+            fail("Cannot find {} in {}".format(tool, files))
+    return binaries
+
 def _haskell_toolchain_impl(ctx):
     numeric_version = [int(x) for x in ctx.attr.version.split(".")]
     if numeric_version == [8, 10, 1] or numeric_version == [8, 10, 2]:
         fail("GHC 8.10.1 and 8.10.2 not supported. Upgrade to 8.10.3 or later.")
 
-    # Store the binaries of interest in ghc_binaries.
-    ghc_binaries = {}
-
-    for tool in _GHC_BINARIES:
-        if ctx.attr.asterius_binaries:
-            # We first look for binaries provided by asterius,
-            # then we complete the toolchain with the regular ghc.
-            if tool in ASTERIUS_BINARIES:
-                for file in ctx.files.asterius_binaries:
-                    basename_no_ext = paths.split_extension(file.basename)[0]
-                    if ASTERIUS_BINARIES[tool] == basename_no_ext:
-                        ghc_binaries[tool] = file
-                        break
-                if tool in ghc_binaries:
-                    continue
-        for file in ctx.files.tools:
-            basename_no_ext = paths.split_extension(file.basename)[0]
-            if tool == basename_no_ext:
-                ghc_binaries[tool] = file
-                break
-            elif "%s-%s" % (tool, ctx.attr.version) == basename_no_ext:
-                ghc_binaries[tool] = file
-                break
-        if not tool in ghc_binaries:
-            fail("Cannot find {} in {}".format(tool, ctx.attr.tools))
+    if ctx.attr.asterius_binaries:
+        # we recover binaries that are not provided by asterius via the regular toolchain.
+        exec_tools_struct = ctx.toolchains["@rules_haskell//haskell:toolchain"].tools
+        tools_struct_args = {
+            k: getattr(exec_tools_struct, k)
+            for name in _GHC_BINARIES
+            for k in [name.replace("-", "_")]
+        }
+        ahc_binaries = _lookup_binaries(ASTERIUS_BINARIES.keys(), ctx.files.asterius_binaries)
+        for tool, asterius_binary in ahc_binaries.items():
+            tools_struct_args[ASTERIUS_BINARIES[tool]] = asterius_binary
+    else:
+        ghc_binaries = _lookup_binaries(_GHC_BINARIES, ctx.files.tools, ctx.attr.version)
+        tools_struct_args = {
+            name.replace("-", "_"): file
+            for name, file in ghc_binaries.items()
+        }
 
     # Get the libdir and docdir paths
     libdir = ctx.files.libdir
@@ -172,7 +179,7 @@ def _haskell_toolchain_impl(ctx):
         fail("One of `docdir` and `docdir_path` is required.")
 
     # Get the versions of every prebuilt package.
-    ghc_pkg = ghc_binaries["ghc-pkg"]
+    ghc_pkg = tools_struct_args["ghc_pkg"]
     pkgdb_file = ctx.actions.declare_file("ghc-global-pkgdb")
     ctx.actions.run_shell(
         inputs = [ghc_pkg],
@@ -184,11 +191,6 @@ def _haskell_toolchain_impl(ctx):
             output = pkgdb_file.path,
         ),
     )
-
-    tools_struct_args = {
-        name.replace("-", "_"): file
-        for name, file in ghc_binaries.items()
-    }
 
     locale_archive = None
 
@@ -327,6 +329,7 @@ _ahc_haskell_toolchain = rule(
         "@rules_sh//sh/posix:toolchain_type",
         "@build_bazel_rules_nodejs//toolchains/node:toolchain_type",
         "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_haskell//haskell:toolchain",
     ],
     attrs = dict(
         common_attrs,

@@ -1,7 +1,7 @@
 # asterius equivalents of tools from the haskell toolchain.
 ASTERIUS_BINARIES = {
-    "ghc": "ahc",
-    "ghc-pkg": "ahc-pkg",
+    "ahc": "ghc",
+    "ahc-pkg": "ghc_pkg",
 }
 
 def asterius_tools_config(exec_cc_toolchain, posix_toolchain, node_toolchain, tools_for_ghc_pkg):
