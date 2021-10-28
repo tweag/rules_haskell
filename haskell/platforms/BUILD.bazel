@@ -6,6 +6,7 @@
 # These can be used in select expressions to choose platform-specifc
 # sources and dependencies.
 
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load(":list.bzl", "declare_config_settings")
 
 declare_config_settings()
@@ -28,6 +29,15 @@ alias(
     actual = "@io_tweag_rules_nixpkgs//nixpkgs/platforms:host",
     deprecation = "Use @io_tweag_rules_nixpkgs//nixpkgs/platforms:host instead.",
     visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "platforms",
+    srcs = ["list.bzl"],
+    visibility = [
+        "//haskell:__pkg__",
+        "//haskell/asterius:__pkg__",
+    ],
 )
 
 filegroup(

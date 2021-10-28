@@ -1,7 +1,25 @@
+# From the asterius/cabal/config file of asterius and ahc-cabal.hs
+asterius_cabalopts = [
+    "--enable-library-vanilla",
+    "--disable-executable-dynamic",
+    "--disable-profiling",
+    "-O 2",
+    "--disable-debug-info",
+    "--disable-library-for-ghci",
+    "--disable-split-sections",
+    "--disable-split-objs",
+    "--disable-executable-stripping",
+    "--disable-library-stripping",
+    "--disable-tests",
+    "--disable-coverage",
+    "--disable-benchmarks",
+    "--hsc2hs-options=--cross-compile",
+]
+
 # asterius equivalents of tools from the haskell toolchain.
 ASTERIUS_BINARIES = {
-    "ghc": "ahc",
-    "ghc-pkg": "ahc-pkg",
+    "ahc": "ghc",
+    "ahc-pkg": "ghc_pkg",
 }
 
 def asterius_tools_config(exec_cc_toolchain, posix_toolchain, node_toolchain, tools_for_ghc_pkg):

@@ -38,6 +38,7 @@ haskell_cabal_binary(
 
 load(
     "@rules_haskell//:constants.bzl",
+    "test_asterius_version",
     "test_ghc_version",
     "test_stack_snapshot",
 )
@@ -272,6 +273,25 @@ haskell_register_ghc_nixpkgs(
 )
 
 load(
+    "//haskell/asterius:repositories.bzl",
+    "asterius_dependencies_bindist",
+    "asterius_dependencies_nix",
+    "rules_haskell_asterius_toolchains",
+)
+
+(asterius_dependencies_nix(
+    nix_repository = "@nixpkgs_default",
+    nixpkgs_package_rule = nixpkgs_package,
+) if is_nix_shell else asterius_dependencies_bindist())
+
+rules_haskell_asterius_toolchains(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    repl_ghci_args = test_repl_ghci_args,
+    version = test_asterius_version,
+)
+
+load(
     "@rules_haskell//haskell:ghc_bindist.bzl",
     "haskell_register_ghc_bindists",
 )
@@ -459,17 +479,6 @@ maybe(
     sha256 = "0fa2d443571c9e02fcb7363a74ae591bdcce2dd76af8677a95965edf329d778a",
     urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/3.6.0/rules_nodejs-3.6.0.tar.gz"],
 )
-
-load(
-    "//haskell/asterius:asterius_repositories.bzl",
-    "asterius_dependencies_bindist",
-    "asterius_dependencies_nix",
-)
-
-(asterius_dependencies_nix(
-    nix_repository = "@nixpkgs_default",
-    nixpkgs_package_rule = nixpkgs_package,
-) if is_nix_shell else asterius_dependencies_bindist())
 
 http_archive(
     name = "io_bazel_rules_sass",

@@ -145,7 +145,7 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     # platform. But they are important to state because Bazel
     # toolchain resolution prefers other toolchains with more specific
     # constraints otherwise.
-    if repository_ctx.attr.target_constraints == None and repository_ctx.attr.exec_constraints == None:
+    if repository_ctx.attr.target_constraints == [] and repository_ctx.attr.exec_constraints == []:
         target_constraints = ["@platforms//cpu:x86_64"]
         if repository_ctx.os.name == "linux":
             target_constraints.append("@platforms//os:linux")
