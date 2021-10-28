@@ -12,8 +12,6 @@ _haskell_module = rule(
     #   Currently it is not possible to automatically inherit rule documentation
     #   in wrapping macros. See https://github.com/bazelbuild/stardoc/issues/27
     attrs = {
-        # TODO[AH] Merge with _haskell_common_attrs in //haskell:defs.bzl
-        "package_name": attr.string(),
         "src": attr.label(
             # TODO[AH] How to handle .hsc files?
             # TODO[AH] Do we need .h files in here?
@@ -43,10 +41,6 @@ _haskell_module = rule(
             cfg = "host",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
-        "_package_name_setting": attr.label(
-            default = Label("@rules_haskell//haskell/experimental:package_name_setting"),
-        ),
-        # TODO[AH] Support package name and version for modules that are part of a package.
         # TODO[AH] Suppport worker
     },
     toolchains = [
@@ -59,7 +53,6 @@ _haskell_module = rule(
 
 def haskell_module(
         name,
-        package_name = None,
         src = None,
         extra_srcs = [],
         deps = [],
@@ -88,7 +81,6 @@ def haskell_module(
 
     Args:
       name: A unique name for this rule.
-      package_name: Override the package name this module will be a part of.
       src_strip_prefix: Prefix before the path matches the module name.
         This is used as an import search for the Haskell compiler.
         Values starting with `/` are relative to the workspace root,
@@ -105,7 +97,6 @@ def haskell_module(
     """
     _haskell_module(
         name = name,
-        package_name = package_name,
         src = src,
         extra_srcs = extra_srcs,
         deps = deps,

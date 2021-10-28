@@ -51,6 +51,7 @@ load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
+load("//haskell/experimental/private:module.bzl", "build_haskell_modules")
 
 def _prepare_srcs(srcs):
     srcs_files = []
