@@ -38,10 +38,6 @@ load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
-load(
-    "//haskell/experimental:transitions.bzl",
-    "package_name_out_transition",
-)
 
 # NOTE: Documentation needs to be added to the wrapper macros below.
 #   Currently it is not possible to automatically inherit rule documentation in
@@ -59,7 +55,6 @@ _haskell_common_attrs = {
     ),
     "modules": attr.label_list(
         providers = [HaskellModuleInfo],
-        cfg = package_name_out_transition,
     ),
     # a proxy for ctx.label so that the transition can access it
     "label_string": attr.string(),
@@ -104,10 +99,6 @@ _haskell_common_attrs = {
         default = None,
         executable = True,
         cfg = "host",
-    ),
-    # needed for transitions (e.g. modules)
-    "_allowlist_function_transition": attr.label(
-        default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
     ),
 }
 

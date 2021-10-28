@@ -51,6 +51,7 @@ load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
+load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -145,17 +146,14 @@ def _expand_make_variables(name, ctx, strings):
     ]
     return expand_make_variables(name, ctx, strings, extra_label_attrs)
 
-def haskell_module_from_info(info):
+def haskell_module_from_target(m):
     """ Produces the module name from a HaskellModuleInfo """
-    return paths.relativize(
-        paths.replace_extension(info.interface_file.path, ""),
-        info.import_dir,
-    ).replace("/", ".")
+    return paths.split_extension(get_module_path_from_target(m))[0].replace("/", ".")
 
 def is_main_as_haskell_module(modules, main_function):
     main_module = infer_main_module(main_function).replace(".", "/")
     for m in modules:
-        if haskell_module_from_info(m[HaskellModuleInfo]) == main_module:
+        if haskell_module_from_target(m) == main_module:
             return True
     return False
 
@@ -164,10 +162,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
 
     modules = ctx.attr.modules
-    extra_objects = [
-        m[HaskellModuleInfo].object_file
-        for m in modules
-    ]
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins)
@@ -189,6 +183,13 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+
+    # Determine file directories.
+    interfaces_dir = paths.join("_iface", hs.name)
+    objects_dir = paths.join("_obj", hs.name)
+
+    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, "", interfaces_dir, objects_dir)
+    extra_objects = module_objects.to_list()
 
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
@@ -222,6 +223,8 @@ def _haskell_binary_common_impl(ctx, is_test):
         user_compile_flags = user_compile_flags,
         dynamic = dynamic,
         with_profiling = with_profiling,
+        interfaces_dir = interfaces_dir,
+        objects_dir = objects_dir,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
@@ -374,10 +377,6 @@ def haskell_library_impl(ctx):
     package_ids = all_dependencies_package_ids(deps)
 
     modules = ctx.attr.modules
-    extra_objects = [
-        m[HaskellModuleInfo].object_file
-        for m in modules
-    ]
 
     # Add any interop info for other languages.
     cc = cc_interop_info(
@@ -393,6 +392,22 @@ def haskell_library_impl(ctx):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     module_map = determine_module_names(srcs_files)
 
+    package_name = getattr(ctx.attr, "package_name", None)
+    version = getattr(ctx.attr, "version", None)
+    my_pkg_id = pkg_id.new(ctx.label, package_name, version)
+
+    # Determine file directories.
+    if my_pkg_id:
+        # If we're compiling a package, put the interfaces inside the
+        # package directory.
+        interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), "_iface")
+    else:
+        interfaces_dir = paths.join("_iface", hs.name)
+    objects_dir = paths.join("_obj", hs.name)
+
+    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), interfaces_dir, objects_dir)
+    extra_objects = module_objects.to_list()
+
     non_empty = srcs_files or modules
 
     with_shared = not ctx.attr.linkstatic
@@ -402,10 +417,6 @@ def haskell_library_impl(ctx):
         # https://ghc.haskell.org/trac/ghc/ticket/15394
         # Also, static GHC doesn't support dynamic code
         with_shared = False
-
-    package_name = getattr(ctx.attr, "package_name", None)
-    version = getattr(ctx.attr, "version", None)
-    my_pkg_id = pkg_id.new(ctx.label, package_name, version)
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
@@ -425,6 +436,8 @@ def haskell_library_impl(ctx):
         user_compile_flags = user_compile_flags,
         with_shared = with_shared,
         with_profiling = with_profiling,
+        interfaces_dir = interfaces_dir,
+        objects_dir = objects_dir,
         my_pkg_id = my_pkg_id,
         plugins = plugins,
         non_default_plugins = non_default_plugins,
@@ -433,7 +446,7 @@ def haskell_library_impl(ctx):
 
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.reexported_modules)
-    haskell_module_names = [haskell_module_from_info(m[HaskellModuleInfo]) for m in modules]
+    haskell_module_names = [haskell_module_from_target(m) for m in modules]
     exposed_modules = set.from_list(module_map.keys() + exposed_modules_reexports + haskell_module_names)
     set.mutable_difference(exposed_modules, set.from_list(other_modules))
     exposed_modules = set.to_list(exposed_modules)
@@ -471,7 +484,6 @@ def haskell_library_impl(ctx):
         posix,
         dep_info,
         with_shared,
-        modules,
         exposed_modules,
         other_modules,
         my_pkg_id,
@@ -479,8 +491,8 @@ def haskell_library_impl(ctx):
     )
 
     interface_dirs = depset(
-        direct = c.interface_files + [m[HaskellModuleInfo].interface_file for m in modules],
-        transitive = [dep_info.interface_dirs],
+        direct = [f for f in c.interface_files],
+        transitive = [dep_info.interface_dirs, module_interfaces],
     )
 
     version_macros = set.empty()

@@ -9,7 +9,6 @@ filegroup(
         "//tests/haskell_module/multiple:all_files",
         "//tests/haskell_module/nested:all_files",
         "//tests/haskell_module/plugin:all_files",
-        "//tests/haskell_module/single:all_files",
         "//tests/haskell_module/tools:all_files",
     ],
     visibility = ["//visibility:public"],

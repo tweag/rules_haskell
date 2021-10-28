@@ -73,7 +73,7 @@ bzl_library(
         "//haskell/asterius:asterius_bzl",
         "//haskell/experimental:defs.bzl",
         "//haskell/experimental:providers.bzl",
-        "//haskell/experimental:transitions.bzl",
+        "//haskell/experimental/private:module.bzl",
         "@bazel_skylib//lib:collections",
         "@bazel_skylib//lib:dicts",
         "@bazel_skylib//lib:paths",
