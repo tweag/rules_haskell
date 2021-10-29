@@ -23,6 +23,7 @@ haskell_library(
 haskell_test(
     name = "bin0-a_A@a",
     srcs = ["Main.hs"],
+    visibility = ["//tests/asterius/target-name:__pkg__"],
     deps = [
         ":lib0-a_Aa",
         "//tests/hackage:base",
