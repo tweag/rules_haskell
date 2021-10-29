@@ -61,6 +61,7 @@ haskell_test(
         "dont_test_on_windows",
     ],
     version = "4.5.6.7",
+    visibility = ["//tests/asterius/version-macros:__pkg__"],
     deps = [
         ":versioned-lib",
         "//tests/hackage:base",

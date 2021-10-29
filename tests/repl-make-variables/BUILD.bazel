@@ -11,6 +11,7 @@ haskell_test(
     srcs = ["Main.hs"],
     compiler_flags = ['-DDATA="$(rootpath data.txt)"'],
     data = ["data.txt"],
+    visibility = ["//tests/asterius/repl-make-variables:__pkg__"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:filepath",

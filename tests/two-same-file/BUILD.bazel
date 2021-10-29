@@ -10,6 +10,7 @@ haskell_test(
     expected_covered_expressions_percentage = 55,
     expected_uncovered_expression_count = 4,
     tags = ["coverage-compatible"],
+    visibility = ["//tests/asterius/two-same-file:__pkg__"],
     deps = [
         "//tests/hackage:base",
     ],
@@ -22,6 +23,7 @@ haskell_test(
     expected_covered_expressions_percentage = 55,
     expected_uncovered_expression_count = 4,
     tags = ["coverage-compatible"],
+    visibility = ["//tests/asterius/two-same-file:__pkg__"],
     deps = [
         "//tests/hackage:base",
     ],
