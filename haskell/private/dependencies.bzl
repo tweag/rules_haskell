@@ -5,11 +5,11 @@ load(
 )
 load(":private/set.bzl", "set")
 
-def gather_dep_info(ctx, deps):
+def gather_dep_info(name, deps):
     """Collapse dependencies into a single `HaskellInfo`.
 
     Args:
-      ctx: Rule context.
+      name: Rule name
       deps: deps attribute.
 
     Returns:
@@ -78,7 +78,7 @@ def gather_dep_info(ctx, deps):
         if HaskellInfo in dep:
             binfo = dep[HaskellInfo]
             if HaskellLibraryInfo not in dep:
-                fail("Target {0} cannot depend on binary".format(ctx.attr.name))
+                fail("Target {0} cannot depend on binary".format(name))
             acc = HaskellInfo(
                 package_databases = acc.package_databases,
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),

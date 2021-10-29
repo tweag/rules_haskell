@@ -414,8 +414,8 @@ def _shorten_library_symlink(dynamic_library):
 
 def _haskell_cabal_library_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
-    setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
+    dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
+    setup_dep_info = gather_dep_info(ctx.attr.name, ctx.attr.setup_deps)
     setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
     cc = cc_interop_info(
         ctx,
@@ -762,8 +762,8 @@ build times, and does not require drafting a `.cabal` file.
 
 def _haskell_cabal_binary_impl(ctx):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
-    setup_dep_info = gather_dep_info(ctx, ctx.attr.setup_deps)
+    dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
+    setup_dep_info = gather_dep_info(ctx.attr.name, ctx.attr.setup_deps)
     setup_deps = all_dependencies_package_ids(ctx.attr.setup_deps)
     cc = cc_interop_info(
         ctx,

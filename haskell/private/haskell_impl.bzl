@@ -161,7 +161,7 @@ def is_main_as_haskell_module(modules, main_function):
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
 
     modules = ctx.attr.modules
     extra_objects = [
@@ -175,7 +175,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     all_plugin_decls = plugin_decl + non_default_plugin_decl
 
     plugin_dep_info = gather_dep_info(
-        ctx,
+        ctx.attr.name,
         [dep for plugin in all_plugin_decls for dep in plugin[GhcPluginInfo].deps],
     )
     package_ids = all_dependencies_package_ids(ctx.attr.deps)
@@ -365,10 +365,10 @@ def _haskell_binary_common_impl(ctx, is_test):
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
     deps = ctx.attr.deps + ctx.attr.exports
-    dep_info = gather_dep_info(ctx, deps)
+    dep_info = gather_dep_info(ctx.attr.name, deps)
     all_plugins = ctx.attr.plugins + ctx.attr.non_default_plugins
     plugin_dep_info = gather_dep_info(
-        ctx,
+        ctx.attr.name,
         [dep for plugin in all_plugins for dep in plugin[GhcPluginInfo].deps],
     )
     package_ids = all_dependencies_package_ids(deps)
@@ -492,7 +492,7 @@ def haskell_library_impl(ctx):
             generate_version_macros(ctx, package_name, version),
         )
 
-    export_infos = gather_dep_info(ctx, ctx.attr.exports)
+    export_infos = gather_dep_info(ctx.attr.name, ctx.attr.exports)
     hs_info = HaskellInfo(
         package_databases = depset([cache_file], transitive = [dep_info.package_databases, export_infos.package_databases]),
         version_macros = version_macros,
