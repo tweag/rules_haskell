@@ -50,7 +50,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load("//haskell/experimental/private:module.bzl", "build_haskell_modules")
 
 def _prepare_srcs(srcs):
@@ -165,10 +164,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
 
     modules = ctx.attr.modules
-    extra_objects = [
-        m[HaskellModuleInfo].object_file
-        for m in modules
-    ]
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins)
@@ -375,10 +370,6 @@ def haskell_library_impl(ctx):
     package_ids = all_dependencies_package_ids(deps)
 
     modules = ctx.attr.modules
-    extra_objects = [
-        m[HaskellModuleInfo].object_file
-        for m in modules
-    ]
 
     # Add any interop info for other languages.
     cc = cc_interop_info(
@@ -393,6 +384,9 @@ def haskell_library_impl(ctx):
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     module_map = determine_module_names(srcs_files)
+
+    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, odir, hidir)
+    extra_objects = module_objects.to_list()
 
     non_empty = srcs_files or modules
 
@@ -480,8 +474,8 @@ def haskell_library_impl(ctx):
     )
 
     interface_dirs = depset(
-        direct = c.interface_files + [m[HaskellModuleInfo].interface_file for m in modules],
-        transitive = [dep_info.interface_dirs],
+        direct = [c.interface_files],
+        transitive = [dep_info.interface_dirs, module_interfaces],
     )
 
     version_macros = set.empty()
