@@ -64,12 +64,12 @@ def haskell_module_impl(ctx):
     # Collect dependencies
     src = ctx.file.src
     extra_srcs = ctx.files.extra_srcs
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins)
     plugin_dep_info = gather_dep_info(
-        ctx,
+        ctx.attr.name,
         [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
     )
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
