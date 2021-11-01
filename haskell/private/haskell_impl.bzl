@@ -346,6 +346,13 @@ def _haskell_binary_common_impl(ctx, is_test):
         )),
     ]
 
+def haskell_module_from_info(info):
+    """ Produces the module name from a HaskellModuleInfo """
+    return paths.relativize(
+        paths.replace_extension(info.interface_file.path, ""),
+        info.import_dir,
+    ).replace("/", ".")
+
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
     deps = ctx.attr.deps + ctx.attr.exports
@@ -417,8 +424,8 @@ def haskell_library_impl(ctx):
 
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.reexported_modules)
-    # TODO[AH] Add haskell_module modules.
-    exposed_modules = set.from_list(module_map.keys() + exposed_modules_reexports)
+    haskell_module_names = [haskell_module_from_info(m[HaskellModuleInfo]) for m in modules]
+    exposed_modules = set.from_list(module_map.keys() + exposed_modules_reexports + haskell_module_names)
     set.mutable_difference(exposed_modules, set.from_list(other_modules))
     exposed_modules = set.to_list(exposed_modules)
 
