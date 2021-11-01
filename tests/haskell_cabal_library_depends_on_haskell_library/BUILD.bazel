@@ -25,7 +25,7 @@ haskell_cabal_library(
 
 haskell_library(
     name = "other_lib",
-    srcs = ["Otherlib.hs"],
+    srcs = ["OtherLib.hs"],
     deps = [":base"],
 )
 
