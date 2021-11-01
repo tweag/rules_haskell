@@ -459,15 +459,6 @@ def compile_binary(
             env = c.env,
             arguments = c.args,
         )
-    else:
-        # The list of sources might be empty if the binary is only
-        # built from modules produced with haskell_module
-        hs.actions.run_shell(
-            outputs = c.outputs,
-            command = """
-            mkdir -p {objects_dir}
-            """.format(objects_dir = c.objects_dir.path),
-        )
 
     return struct(
         object_files = c.object_files,
