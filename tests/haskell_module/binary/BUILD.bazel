@@ -31,7 +31,9 @@ haskell_test(
 
 haskell_module(
     name = "TestBinModule",
-    src = "TestBin.hs",
+    # TODO: Test naming the Main module as something different
+    # after adding some attribute to make the module name explicit
+    src = "Main.hs",
     deps = ["//tests/hackage:base"],
 )
 

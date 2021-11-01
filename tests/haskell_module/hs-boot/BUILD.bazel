@@ -38,6 +38,8 @@ haskell_module(
 
 haskell_library(
     name = "hs-boot-lib",
+    # TODO: remove when haskell_module supports dynamic builds
+    linkstatic = True,
     modules = [
         ":lib-B",
         ":lib-A",
