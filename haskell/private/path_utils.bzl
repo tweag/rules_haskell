@@ -74,7 +74,7 @@ def _module_map_insert(module_map, module_name, module_file, is_boot = False):
             src = module_file,
         )
 
-def determine_module_names(src_files, is_binary = False, main_function = "", main_file = None):
+def determine_module_names(src_files, search_for_main = False, main_function = "", main_file = None):
     """Determine a mapping from module names to source files.
 
     The module name is inferred from the source file name. See
@@ -94,7 +94,7 @@ def determine_module_names(src_files, is_binary = False, main_function = "", mai
 
     Args:
       src_files: sequence of File, source files.
-      is_binary: bool, whether target requires a main module.
+      search_for_main: bool, whether we need to ensure there's a main module.
       main_function: string, optional, the `main_function` attribute to a Haskell binary rule.
       main_file: File, optional, the `main_file` attribute to a Haskell binary rule.
 
@@ -117,7 +117,7 @@ def determine_module_names(src_files, is_binary = False, main_function = "", mai
         else:
             _module_map_insert(module_map, module_name, src, is_boot = src.short_path.endswith("-boot"))
 
-    if is_binary:
+    if search_for_main:
         main_module = infer_main_module(main_function)
         if main_file:
             _module_map_insert(module_map, main_module, main_file)

@@ -36,6 +36,7 @@ load(
     "get_dynamic_hs_lib_name",
     "get_lib_extension",
     "get_static_hs_lib_name",
+    "infer_main_module",
     "ln",
     "match_label",
     "parse_pattern",
@@ -144,6 +145,20 @@ def _expand_make_variables(name, ctx, strings):
     ]
     return expand_make_variables(name, ctx, strings, extra_label_attrs)
 
+def haskell_module_from_info(info):
+    """ Produces the module name from a HaskellModuleInfo """
+    return paths.relativize(
+        paths.replace_extension(info.interface_file.path, ""),
+        info.import_dir,
+    ).replace("/", ".")
+
+def is_main_as_haskell_module(modules, main_function):
+    main_module = infer_main_module(main_function).replace(".", "/")
+    for m in modules:
+        if haskell_module_from_info(m[HaskellModuleInfo]) == main_module:
+            return True
+    return False
+
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx, ctx.attr.deps)
@@ -177,7 +192,8 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
-    module_map = determine_module_names(srcs_files, True, ctx.attr.main_function, ctx.file.main_file)
+    main_as_haskell_module = is_main_as_haskell_module(modules, ctx.attr.main_function)
+    module_map = determine_module_names(srcs_files, not main_as_haskell_module, ctx.attr.main_function, ctx.file.main_file)
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
     dynamic = not ctx.attr.linkstatic
@@ -345,13 +361,6 @@ def _haskell_binary_common_impl(ctx, is_test):
             runfiles = ctx.runfiles(collect_data = True).files,
         )),
     ]
-
-def haskell_module_from_info(info):
-    """ Produces the module name from a HaskellModuleInfo """
-    return paths.relativize(
-        paths.replace_extension(info.interface_file.path, ""),
-        info.import_dir,
-    ).replace("/", ".")
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
