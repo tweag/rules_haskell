@@ -7,4 +7,5 @@ module.exports = {
     path: path.resolve(__dirname, "."),
   },
   mode : 'production',
+  stats: 'errors-only',
 };
