@@ -89,6 +89,20 @@ def _mutable_union(s0, s1):
     s0._set_items.update(s1._set_items)
     return s0
 
+def _mutable_difference(s0, s1):
+    """Modify set `s0` removing elements from `s1` from it.
+
+    Args:
+      s0: One set.
+      s1: Another set.
+
+    Result:
+      set, difference of the two sets.
+    """
+    for item in s1._set_items.keys():
+        s0._set_items.pop(item)
+    return s0
+
 def _map(s, f):
     """Map elements of given set using a function.
 
@@ -143,6 +157,7 @@ set = struct(
     mutable_insert = _mutable_insert,
     union = _union,
     mutable_union = _mutable_union,
+    mutable_difference = _mutable_difference,
     map = _map,
     from_list = _from_list,
     to_list = _to_list,

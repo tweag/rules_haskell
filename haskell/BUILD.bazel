@@ -112,13 +112,6 @@ runghc(
     visibility = ["//visibility:public"],
 )
 
-py_binary(
-    name = "ls_modules",
-    srcs = ["private/ls_modules.py"],
-    visibility = ["//visibility:public"],
-    deps = [":package_configuration"],
-)
-
 sh_binary(
     name = "ghc_wrapper",
     srcs = ["private/ghc_wrapper.sh"],

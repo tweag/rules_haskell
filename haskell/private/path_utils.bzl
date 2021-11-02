@@ -3,31 +3,152 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/set.bzl", "set")
 
-def module_name(hs, f, rel_path = None):
-    """Given Haskell source file path, turn it into a dot-separated module name.
+def is_haskell_extension(extension):
+    """Whether the given extension defines a Haskell source file."""
+    return extension in ["hs", "hs-boot", "hsc", "lhs", "lhs-boot"]
 
-    module_name(
-      hs,
-      "some-workspace/some-package/src/Foo/Bar/Baz.hs",
-    ) => "Foo.Bar.Baz"
+def is_valid_module_component(component):
+    """Whether the given string is a valid Haskell module name component.
+
+    Based on the logic in `Cabal.Distribution.ModuleName.validModuleComponent`.
+    """
+    if len(component) == 0:
+        # Must not be empty
+        return False
+    if not (component[0].isalpha() and component[0].isupper()):
+        # Must start with an upper case alphabetic character
+        return False
+    for char in component.elems():
+        # Must consist of alphanumeric characters or _ or '
+        if not (char.isalnum() or char == "_" or char == "'"):
+            return False
+    return True
+
+def longest_valid_module_name(path):
+    """Determine the expected module name from a source file path.
+
+    Takes the longest suffix of valid module name components. E.g.
+
+      src/Hierarchical/Module.hs --> Hierarchical.Module
+      src/Prefix/invalid/Valid/Module.hs --> Valid.Module
+
+    Returns the empty string if no valid module name component was found.
+    """
+    components = paths.split_extension(path)[0].split("/")
+    cutoff = 0
+    for i in range(len(components), 0, -1):
+        if not is_valid_module_component(components[i - 1]):
+            cutoff = i
+            break
+    return ".".join(components[cutoff:len(components)])
+
+def infer_main_module(main_function):
+    """Infer the name of the module containing the main function.
+
+    This defaults to `Main` unless `main_function` specifies a different
+    module name.
+    """
+    components = main_function.split(".")
+    for i in range(len(components)):
+        if not is_valid_module_component(components[i]):
+            break
+    if i == 0:
+        return "Main"
+    else:
+        return ".".join(components[0:i])
+
+def _module_map_insert(module_map, module_name, module_file, is_boot = False):
+    entry = module_map.get(module_name, struct(src = None, boot = None))
+    if is_boot:
+        if entry.boot:
+            fail("Found two boot files for module %s: %s and %s" % (module_name, entry.boot, module_file))
+        module_map[module_name] = struct(
+            boot = module_file,
+            src = entry.src,
+        )
+    else:
+        if entry.src:
+            fail("Found two source files for module %s: %s and %s" % (module_name, entry.src, module_file))
+        module_map[module_name] = struct(
+            boot = entry.boot,
+            src = module_file,
+        )
+
+def determine_module_names(src_files, search_for_main = False, main_function = "", main_file = None):
+    """Determine a mapping from module names to source files.
+
+    The module name is inferred from the source file name. See
+    `longest_valid_module_name` for details.
+
+    If the target is a binary then a main module is required. The main module's
+    name is `Main` unless `main_function` specifies another module name. If
+    `main_file` is specified then it must use that main module name. If
+    `main_file` is not specified then we use the following heuristics to
+    determine the main module:
+    * A source file's `longest_valid_module_name` is the main module name.
+      E.g. `Main.hs`.
+    * One source file's path does not yield a valid module name.
+      E.g. `exe.hs`.
+    * The target has only a single Haskell source file.
+      E.g. `App.hs`.
 
     Args:
-      hs:  Haskell context.
-      f:   Haskell source file.
-      rel_path: Explicit relative path from import root to the module, or None
-        if it should be deduced.
+      src_files: sequence of File, source files.
+      search_for_main: bool, whether we need to ensure there's a main module.
+      main_function: string, optional, the `main_function` attribute to a Haskell binary rule.
+      main_file: File, optional, the `main_file` attribute to a Haskell binary rule.
 
     Returns:
-      string: Haskell module name.
+      dict(module_name: module_info):
+        module_name: string, the Haskell module name.
+        module_info: struct(src, boot):
+          src: File, the module source file.
+          boot: File, optional, the boot file for cyclic module dependencies.
     """
+    module_map = {}
+    undetermined = []
 
-    rpath = rel_path
+    for src in src_files:
+        if not is_haskell_extension(src.extension) or src == main_file:
+            continue
+        module_name = longest_valid_module_name(src.short_path)
+        if not module_name:
+            undetermined.append(src)
+        else:
+            _module_map_insert(module_map, module_name, src, is_boot = src.short_path.endswith("-boot"))
 
-    if not rpath:
-        rpath = _rel_path_to_module(hs, f)
+    if search_for_main:
+        main_module = infer_main_module(main_function)
+        if main_file:
+            _module_map_insert(module_map, main_module, main_file)
+        elif not main_module in module_map:
+            if len(undetermined) == 1:
+                _module_map_insert(module_map, main_module, undetermined.pop())
+            elif len(module_map) == 1:
+                (_, entry) = module_map.popitem()
+                module_map[main_module] = entry
+            else:
+                fail("""\
+No source file defining the main module '{main_module}'.
+You may need to set the 'main_file' attribute.
+""".format(main_module = main_module))
 
-    (hsmod, _) = paths.split_extension(rpath.replace("/", "."))
-    return hsmod
+    if undetermined:
+        fail("""\
+Could not determine module names for:
+{undetermined}
+The file name must match the module name.
+E.g. `src/My/Module.hs` for `My.Module`.
+""".format(undetermined = "\n".join(["  %s" % src for src in undetermined])))
+
+    boot_only = [entry.boot for entry in module_map.values() if not entry.src]
+    if boot_only:
+        fail("""\
+Found boot file without matching source file:
+{boot_files}
+""".format(boot_files = "\n".join(["  %s" % boot for boot in boot_only])))
+
+    return module_map
 
 def target_unique_name(hs, name_prefix):
     """Make a target-unique name.
@@ -51,32 +172,6 @@ def target_unique_name(hs, name_prefix):
       string: Target-unique name_prefix.
     """
     return "{0}-{1}".format(name_prefix, hs.name)
-
-def module_unique_name(hs, source_file, name_prefix):
-    """Make a target- and module- unique name.
-
-    module_unique_name(
-      hs,
-      "some-workspace/some-package/src/Foo/Bar/Baz.hs",
-      "libdir"
-    ) => "libdir-foo-Foo.Bar.Baz"
-
-    This is quite similar to `target_unique_name` but also uses a path built
-    from `source_file` to prevent clashes with other names produced using the
-    same `name_prefix`.
-
-    Args:
-      hs:          Haskell context.
-      source_file: Source file name.
-      name_prefix: Template for the name.
-
-    Returns:
-      string: Target- and source-unique name.
-    """
-    return "{0}-{1}".format(
-        target_unique_name(hs, name_prefix),
-        module_name(hs, source_file),
-    )
 
 def declare_compiled(hs, src, ext, directory = None, rel_path = None):
     """Given a Haskell-ish source file, declare its output.
