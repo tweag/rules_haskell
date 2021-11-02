@@ -56,7 +56,7 @@ def _expand_make_variables(name, ctx, moduleAttr, strings):
     ]
     return expand_make_variables(name, ctx, strings, extra_label_attrs)
 
-def _build_haskell_module(ctx, moduleAttr, hs, cc, posix, package_name, odir, hidir, module_interface_files, module_object_files):
+def _build_haskell_module(ctx, moduleAttr, hs, cc, posix, package_name, hidir, odir, module_interface_files, module_object_files):
     """Build a module
 
     Args:
@@ -65,8 +65,8 @@ def _build_haskell_module(ctx, moduleAttr, hs, cc, posix, package_name, odir, hi
       hs: Haskell context
       cc: cc context
       posix: posix context
-      odir: The directory in which to output object files
       hidir: The directory in which to output interface files
+      odir: The directory in which to output object files
       module_interface_files: The list of interface files produced by all the haskell_module dependencies
       module_object_files: The list of object files produced by all the haskell_module dependencies
 
@@ -96,7 +96,7 @@ def _build_haskell_module(ctx, moduleAttr, hs, cc, posix, package_name, odir, hi
         import_dir = paths.join(workspace_root, src_strip_prefix[1:])
     else:
         import_dir = paths.join(package_root, src_strip_prefix)
-    module_path = paths.relativize(src, import_dir)
+    module_path = paths.relativize(src.path, import_dir)
 
     with_profiling = is_profiling_enabled(hs)
     hs_boot = paths.split_extension(src.path)[1] in [".hs-boot", ".lhs-boot"]
@@ -233,43 +233,72 @@ def _build_haskell_module(ctx, moduleAttr, hs, cc, posix, package_name, odir, hi
     # Return produced files
     return [interface], [obj]
 
-def _build_haskell_modules(ctx, hs, cc, posix, package_name, odir, hidir, module_outputs, module_dep):
-    if m.label in module_outputs:
-        return module_outputs[m.label]
+def _build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir, module_outputs, module_dep):
+    # This is an encoding of a recursive function, since bazel doesn't
+    # allow recursion.
 
-    transitive_interfaces = []
-    transitive_objs = []
-    for m in ctx.attr.modules:
-        interface_set, obj_set = _build_haskell_modules(ctx, hs, cc, posix, package_name, odir, hidir, module_outputs, m)
-        transitive_interfaces.append(interface_set)
-        transitive_objs.append(obj_set)
+    # The stack holds the module target being processed and the list of
+    # results collected from its dependencies so far.
+    module_stack = [(module_dep, [])]
+    # The loop breaks when the stack is empty
+    for i in range(0, 0x7fffffff):
+        dep, children_results = module_stack[len(module_stack) - 1]
+        if len(children_results) == 0 and (dep.label in module_outputs or not HaskellModuleInfo in dep):
+            # Don't recurse if the result has been already computed
+            # or dependency is not from a haskell_module rule
 
-    if m.label in module_outputs:
-        fail("{label} appears in a dependency cycle".format(label = m.label))
+            if HaskellModuleInfo in dep:
+                outputs = module_outputs[dep.label]
+            else:
+                outputs = (depset(), depset())
 
-    interfaces, objs = _build_haskell_module(
-        ctx,
-        m[HaskellModuleInfo].attr,
-        hs,
-        cc,
-        posix,
-        package_name,
-        odir,
-        hidir,
-        depset(transitive = transitive_interfaces),
-        depset(transitive = transitive_objs),
-    )
+            module_stack.pop()
+            if len(module_stack) == 0:
+                return outputs
 
-    outputs = (
-        depset(direct = interfaces, transitive = transitive_interfaces),
-        depset(direct = objs, transitive = transitive_objs),
-    )
+            # Add the result to the result list of the parent
+            _, children_results = module_stack[len(module_stack) - 1]
+            children_results.append(outputs)
 
-    module_outputs[m.label] = outputs
+        elif len(children_results) < len(dep[HaskellModuleInfo].attr.deps):
+            # Create the action for the next child dependency
+            module_stack.append((dep[HaskellModuleInfo].attr.deps[len(children_results)], []))
 
-    return outputs
+        else:
+            # All actions for all the children have been created
+            # Now create the action for the current target. 
+            transitive_interfaces = [interface_set for (interface_set, _) in children_results]
+            transitive_objs = [obj_set for (_, obj_set) in children_results]
 
-def build_haskell_modules(ctx, hs, cc, posix, package_name, odir, hidir):
+            interfaces, objs = _build_haskell_module(
+                ctx,
+                dep[HaskellModuleInfo].attr,
+                hs,
+                cc,
+                posix,
+                package_name,
+                hidir,
+                odir,
+                depset(transitive = transitive_interfaces),
+                depset(transitive = transitive_objs),
+            )
+
+            outputs = (
+                depset(direct = interfaces, transitive = transitive_interfaces),
+                depset(direct = objs, transitive = transitive_objs),
+            )
+            module_outputs[dep.label] = outputs
+
+            module_stack.pop()
+            if len(module_stack) == 0:
+                return outputs
+
+            # Add the result to the result list of the parent
+            _, children_results = module_stack[len(module_stack) - 1]
+            children_results.append(outputs)
+
+
+def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
         and in their dependencies
 
@@ -278,8 +307,8 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, odir, hidir):
       hs: Haskell context
       cc: cc context
       posix: posix context
-      odir: The directory in which to output object files
       hidir: The directory in which to output interface files
+      odir: The directory in which to output object files
 
     Returns:
       (depset(File), depset(File)): a pair containing a depset of the interface
@@ -291,7 +320,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, odir, hidir):
     transitive_interfaces = []
     transitive_objs = []
     for m in ctx.attr.modules:
-        interface_set, obj_set = _build_haskell_modules(ctx, hs, cc, posix, package_name, odir, hidir, module_outputs, m)
+        interface_set, obj_set = _build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir, module_outputs, m)
         transitive_interfaces.append(interface_set)
         transitive_objs.append(obj_set)
 

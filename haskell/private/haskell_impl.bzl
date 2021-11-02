@@ -50,6 +50,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load("//haskell/experimental/private:module.bzl", "build_haskell_modules")
 
 def _prepare_srcs(srcs):
@@ -148,8 +149,8 @@ def _expand_make_variables(name, ctx, strings):
 def haskell_module_from_info(info):
     """ Produces the module name from a HaskellModuleInfo """
     return paths.relativize(
-        paths.replace_extension(info.interface_file.path, ""),
-        info.import_dir,
+        paths.split_extension(info.attr.src.files.to_list()[0])[0],
+        info.attr.src_strip_prefix,
     ).replace("/", ".")
 
 def is_main_as_haskell_module(modules, main_function):
@@ -186,6 +187,13 @@ def _haskell_binary_common_impl(ctx, is_test):
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
+    # Determine file directories.
+    interfaces_dir = paths.join("_iface", hs.name)
+    objects_dir = paths.join("_obj", hs.name)
+
+    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, "", interfaces_dir, objects_dir)
+    extra_objects = module_objects.to_list()
+
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     main_as_haskell_module = is_main_as_haskell_module(modules, ctx.attr.main_function)
@@ -218,6 +226,8 @@ def _haskell_binary_common_impl(ctx, is_test):
         user_compile_flags = user_compile_flags,
         dynamic = dynamic,
         with_profiling = with_profiling,
+        interfaces_dir = interfaces_dir,
+        objects_dir = objects_dir,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
@@ -385,7 +395,15 @@ def haskell_library_impl(ctx):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     module_map = determine_module_names(srcs_files)
 
-    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, odir, hidir)
+    package_name = getattr(ctx.attr, "package_name", None)
+    version = getattr(ctx.attr, "version", None)
+    my_pkg_id = pkg_id.new(ctx.label, package_name, version)
+
+    # Determine file directories.
+    interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), "_iface")
+    objects_dir = paths.join("_obj", hs.name)
+
+    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id),interfaces_dir, objects_dir)
     extra_objects = module_objects.to_list()
 
     non_empty = srcs_files or modules
@@ -397,10 +415,6 @@ def haskell_library_impl(ctx):
         # https://ghc.haskell.org/trac/ghc/ticket/15394
         # Also, static GHC doesn't support dynamic code
         with_shared = False
-
-    package_name = getattr(ctx.attr, "package_name", None)
-    version = getattr(ctx.attr, "version", None)
-    my_pkg_id = pkg_id.new(ctx.label, package_name, version)
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
@@ -420,6 +434,8 @@ def haskell_library_impl(ctx):
         user_compile_flags = user_compile_flags,
         with_shared = with_shared,
         with_profiling = with_profiling,
+        interfaces_dir = interfaces_dir,
+        objects_dir = objects_dir,
         my_pkg_id = my_pkg_id,
         plugins = plugins,
         non_default_plugins = non_default_plugins,

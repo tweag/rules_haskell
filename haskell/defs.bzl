@@ -100,10 +100,6 @@ _haskell_common_attrs = {
         executable = True,
         cfg = "host",
     ),
-    # needed for transitions (e.g. modules)
-    "_allowlist_function_transition": attr.label(
-        default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-    ),
 }
 
 def _mk_binary_rule(**kwargs):
