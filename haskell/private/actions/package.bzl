@@ -49,7 +49,6 @@ def package(
         posix,
         dep_info,
         with_shared,
-        modules,
         exposed_modules,
         other_modules,
         my_pkg_id,
@@ -62,7 +61,6 @@ def package(
       dep_info: Combined HaskellInfo of dependencies.
       libraries_to_link: list of LibraryToLink.
       with_shared: Whether to link dynamic libraries.
-      modules: List of haskell_module()s. This feature is experimental.
       exposed_modules: List of exposed modules.
       other_modules: List of hidden modules.
       my_pkg_id: Package id object for this package.
@@ -96,13 +94,7 @@ def package(
         "key": pkg_id.to_string(my_pkg_id),
         "exposed": "True",
         "hidden-modules": other_modules,
-        "import-dirs": [import_dir] + [
-            rel_to_pkgroot(
-                m[HaskellModuleInfo].import_dir,
-                conf_file.dirname,
-            )
-            for m in modules
-        ],
+        "import-dirs": [import_dir],
         "library-dirs": ["${pkgroot}"] + extra_lib_dirs,
         "dynamic-library-dirs": ["${pkgroot}"] + extra_dynamic_lib_dirs,
         "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)] if has_hs_library else [],

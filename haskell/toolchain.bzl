@@ -26,7 +26,7 @@ load(
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
-def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = None, progress_message = None, input_manifests = None):
+def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = None, progress_message = None, input_manifests = None, extra_name = ""):
     args = hs.actions.args()
     extra_inputs = []
 
@@ -47,8 +47,8 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     # C libraries with Haskell targets.
     args.add_all(ghc_cc_program_args(hs, cc.tools.cc))
 
-    compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s" % (hs.name, mnemonic))
-    extra_args_file = hs.actions.declare_file("extra_args_%s_%s" % (hs.name, mnemonic))
+    compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s_%s" % (hs.name, extra_name, mnemonic))
+    extra_args_file = hs.actions.declare_file("extra_args_%s_%s_%s" % (hs.name, extra_name, mnemonic))
 
     args.set_param_file_format("multiline")
     arguments.set_param_file_format("multiline")

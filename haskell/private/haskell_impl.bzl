@@ -51,7 +51,7 @@ load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
-load("//haskell/experimental/private:module.bzl", "build_haskell_modules")
+load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -146,17 +146,14 @@ def _expand_make_variables(name, ctx, strings):
     ]
     return expand_make_variables(name, ctx, strings, extra_label_attrs)
 
-def haskell_module_from_info(info):
+def haskell_module_from_target(m):
     """ Produces the module name from a HaskellModuleInfo """
-    return paths.relativize(
-        paths.split_extension(info.attr.src.files.to_list()[0])[0],
-        info.attr.src_strip_prefix,
-    ).replace("/", ".")
+    return paths.split_extension(get_module_path_from_target(m))[0].replace("/", ".")
 
 def is_main_as_haskell_module(modules, main_function):
     main_module = infer_main_module(main_function).replace(".", "/")
     for m in modules:
-        if haskell_module_from_info(m[HaskellModuleInfo]) == main_module:
+        if haskell_module_from_target(m) == main_module:
             return True
     return False
 
@@ -400,10 +397,15 @@ def haskell_library_impl(ctx):
     my_pkg_id = pkg_id.new(ctx.label, package_name, version)
 
     # Determine file directories.
-    interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), "_iface")
+    if my_pkg_id:
+        # If we're compiling a package, put the interfaces inside the
+        # package directory.
+        interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), "_iface")
+    else:
+        interfaces_dir = paths.join("_iface", hs.name)
     objects_dir = paths.join("_obj", hs.name)
 
-    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id),interfaces_dir, objects_dir)
+    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), interfaces_dir, objects_dir)
     extra_objects = module_objects.to_list()
 
     non_empty = srcs_files or modules
@@ -444,7 +446,7 @@ def haskell_library_impl(ctx):
 
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.reexported_modules)
-    haskell_module_names = [haskell_module_from_info(m[HaskellModuleInfo]) for m in modules]
+    haskell_module_names = [haskell_module_from_target(m) for m in modules]
     exposed_modules = set.from_list(module_map.keys() + exposed_modules_reexports + haskell_module_names)
     set.mutable_difference(exposed_modules, set.from_list(other_modules))
     exposed_modules = set.to_list(exposed_modules)
@@ -482,7 +484,6 @@ def haskell_library_impl(ctx):
         posix,
         dep_info,
         with_shared,
-        modules,
         exposed_modules,
         other_modules,
         my_pkg_id,
@@ -490,7 +491,7 @@ def haskell_library_impl(ctx):
     )
 
     interface_dirs = depset(
-        direct = [c.interface_files],
+        direct = [f for f in c.interface_files],
         transitive = [dep_info.interface_dirs, module_interfaces],
     )
 
