@@ -89,7 +89,6 @@ def haskell_module(
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
                   This is merged with the extra_srcs attribute of rules that depend directly on this haskell_module rule.
       deps: List of other Haskell modules or libraries needed to compile this module.
-      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
                This is merged with the ghcopts attribute of rules that depend directly on this haskell_module rule.
       plugins: Compiler plugins to use during compilation. (Not implemented, yet)
