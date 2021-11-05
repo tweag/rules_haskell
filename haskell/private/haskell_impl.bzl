@@ -396,13 +396,9 @@ def haskell_library_impl(ctx):
     version = getattr(ctx.attr, "version", None)
     my_pkg_id = pkg_id.new(ctx.label, package_name, version)
 
-    # Determine file directories.
-    if my_pkg_id:
-        # If we're compiling a package, put the interfaces inside the
-        # package directory.
-        interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), "_iface")
-    else:
-        interfaces_dir = paths.join("_iface", hs.name)
+    # If we're compiling a package, put the interfaces inside the
+    # package directory.
+    interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), "_iface")
     objects_dir = paths.join("_obj", hs.name)
 
     module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), interfaces_dir, objects_dir)
