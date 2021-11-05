@@ -44,7 +44,7 @@ def _expand_make_variables(name, ctx, moduleAttr, strings):
     ]
     return expand_make_variables(name, ctx, strings, extra_label_attrs)
 
-def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_outputs, interface_inputs, object_inputs, dep):
+def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_outputs, interface_inputs, object_inputs, module):
     """Build a module
 
     Args:
@@ -58,10 +58,10 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
                       and object files produced for a haskell_module with the given label.
       interface_inputs: A depset containing the interface files needed as input
       object_inputs: A depset containing the object files needed as input
-      dep: The Target of the haskell_module rule
+      module: The Target of the haskell_module rule
     """
 
-    moduleAttr = dep[HaskellModuleInfo].attr
+    moduleAttr = module[HaskellModuleInfo].attr
 
     # Collect dependencies
     src = moduleAttr.src.files.to_list()[0]
@@ -79,7 +79,7 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
 
     # Determine outputs
     with_profiling = is_profiling_enabled(hs)
-    interfaces, objs = module_outputs[dep.label]
+    interfaces, objs = module_outputs[module.label]
 
     # TODO[AH] Support additional outputs such as `.hie`.
 
@@ -204,25 +204,25 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
         outputs = objs + interfaces,
         mnemonic = "HaskellBuildObject" + ("Prof" if with_profiling else ""),
-        progress_message = "HaskellBuildObject {} {}".format(hs.label, dep.label),
+        progress_message = "HaskellBuildObject {} {}".format(hs.label, module.label),
         env = hs.env,
         arguments = args,
-        extra_name = dep.label.package.replace("/", "_") + "_" + dep.label.name,
+        extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
     )
 
-def get_module_path_from_target(dep):
-    src = dep[HaskellModuleInfo].attr.src.files.to_list()[0].path
-    src_strip_prefix = dep[HaskellModuleInfo].attr.src_strip_prefix
+def get_module_path_from_target(module):
+    src = module[HaskellModuleInfo].attr.src.files.to_list()[0].path
+    src_strip_prefix = module[HaskellModuleInfo].attr.src_strip_prefix
 
     if src_strip_prefix.startswith("/"):
         prefix_path = paths.join(src_strip_prefix[1:])
     else:
-        prefix_path = paths.join(dep.label.package, src_strip_prefix)
+        prefix_path = paths.join(module.label.package, src_strip_prefix)
 
     return paths.relativize(src, prefix_path)
 
-def _declare_module_outputs(hs, hidir, odir, dep):
-    module_path = get_module_path_from_target(dep)
+def _declare_module_outputs(hs, hidir, odir, module):
+    module_path = get_module_path_from_target(module)
 
     hs_boot = paths.split_extension(module_path)[1] in [".hs-boot", ".lhs-boot"]
     with_profiling = is_profiling_enabled(hs)
