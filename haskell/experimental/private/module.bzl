@@ -33,7 +33,6 @@ load(
 def _expand_make_variables(name, ctx, moduleAttr, strings):
     # All labels in all attributes should be location-expandable.
     extra_label_attrs = [
-        [moduleAttr.src],
         ctx.attr.extra_srcs,
         ctx.attr.plugins,
         ctx.attr.tools,
