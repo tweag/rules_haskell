@@ -50,8 +50,8 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
     Args:
       ctx: The context of the binary, library, or test rule using the module
       hs: Haskell context
-      cc: cc context
-      posix: posix context
+      cc: CcInteropInfo, information about C dependencies.
+      posix: posix toolchain
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
       module_outputs: A map of labels to pairs ([File], [File]). Each component pair corresponds to interfaces
@@ -244,8 +244,8 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
     Args:
       ctx: The context of the rule with module dependencies
       hs: Haskell context
-      cc: cc context
-      posix: posix context
+      cc: CcInteropInfo, information about C dependencies
+      posix: posix toolchain
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
 
