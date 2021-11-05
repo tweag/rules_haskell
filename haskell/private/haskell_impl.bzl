@@ -27,7 +27,7 @@ load(":private/plugins.bzl", "resolve_plugin_tools")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
-load(":private/expansions.bzl", "expand_make_variables")
+load(":private/expansions.bzl", "expand_make_variables", "haskell_library_extra_label_attrs")
 load(":private/java.bzl", "java_interop_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
@@ -137,14 +137,7 @@ def _resolve_preprocessors(ctx, preprocessors):
 
 def _expand_make_variables(name, ctx, strings):
     # All labels in all attributes should be location-expandable.
-    extra_label_attrs = [
-        ctx.attr.srcs,
-        ctx.attr.extra_srcs,
-        ctx.attr.data,
-        ctx.attr.plugins,
-        ctx.attr.tools,
-    ]
-    return expand_make_variables(name, ctx, strings, extra_label_attrs)
+    return expand_make_variables(name, ctx, strings, haskell_library_extra_label_attrs(ctx.attr))
 
 def haskell_module_from_target(m):
     """ Produces the module name from a HaskellModuleInfo """

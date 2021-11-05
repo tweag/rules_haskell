@@ -6,6 +6,7 @@ load(
 load(
     "//haskell:private/expansions.bzl",
     "expand_make_variables",
+    "haskell_library_extra_label_attrs",
 )
 load(
     "//haskell:private/mode.bzl",
@@ -29,19 +30,6 @@ load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
-
-def _expand_make_variables(name, ctx, moduleAttr, strings):
-    # All labels in all attributes should be location-expandable.
-    extra_label_attrs = [
-        ctx.attr.extra_srcs,
-        ctx.attr.plugins,
-        ctx.attr.tools,
-        [moduleAttr.src],
-        moduleAttr.extra_srcs,
-        moduleAttr.plugins,
-        moduleAttr.tools,
-    ]
-    return expand_make_variables(name, ctx, strings, extra_label_attrs)
 
 def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_outputs, interface_inputs, object_inputs, module):
     """Build a module
@@ -178,7 +166,14 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
 
     args.add_all(hs.toolchain.ghcopts)
 
-    args.add_all(_expand_make_variables("ghcopts", ctx, moduleAttr, ctx.attr.ghcopts + moduleAttr.ghcopts))
+    args.add_all(expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts, haskell_library_extra_label_attrs(ctx.attr)))
+    module_extra_attrs = [
+        [moduleAttr.src],
+        moduleAttr.extra_srcs,
+        moduleAttr.plugins,
+        moduleAttr.tools,
+    ]
+    args.add_all(expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs))
 
     # Compile the module
     hs.toolchain.actions.run_ghc(
