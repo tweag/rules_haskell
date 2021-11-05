@@ -87,11 +87,15 @@ def haskell_module(
         other paths are relative to the package.
       src: The Haskell source file.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
+                  This is merged with the extra_srcs attribute of rules that depend directly on this haskell_module rule.
       deps: List of other Haskell modules or libraries needed to compile this module.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+               This is merged with the ghcopts attribute of rules that depend directly on this haskell_module rule.
       plugins: Compiler plugins to use during compilation. (Not implemented, yet)
+               This is merged with the plugins attribute of rules that depend directly on this haskell_module rule.
       tools: Extra tools needed at compile-time, like preprocessors. (Not implemented, yet)
+             This is merged with the tools attribute of rules that depend directly on this haskell_module rule.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental). (Not implemented, yet)
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
