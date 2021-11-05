@@ -207,11 +207,12 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
 def get_module_path_from_target(module):
     src = module[HaskellModuleInfo].attr.src.files.to_list()[0].path
     src_strip_prefix = module[HaskellModuleInfo].attr.src_strip_prefix
+    workspace_root = module.label.workspace_root
 
     if src_strip_prefix.startswith("/"):
-        prefix_path = paths.join(src_strip_prefix[1:])
+        prefix_path = paths.join(workspace_root, src_strip_prefix[1:])
     else:
-        prefix_path = paths.join(module.label.package, src_strip_prefix)
+        prefix_path = paths.join(workspace_root, module.label.package, src_strip_prefix)
 
     return paths.relativize(src, prefix_path)
 
