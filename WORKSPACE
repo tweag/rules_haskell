@@ -456,6 +456,12 @@ local_repository(
     path = "tests/c2hs/repo",
 )
 
+# haskell_library rule in its own repository
+local_repository(
+    name = "library_repo",
+    path = "tests/library-external-workspace/repo",
+)
+
 load(
     "@rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
     "haskell_package_repository_dummy",
