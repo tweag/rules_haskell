@@ -2,6 +2,7 @@ filegroup(
     name = "all_files",
     testonly = True,
     srcs = glob(["**"]) + [
+        "//tests/haskell_module/attr_merging:all_files",
         "//tests/haskell_module/hs-boot:all_files",
         "//tests/haskell_module/binary:all_files",
         "//tests/haskell_module/library:all_files",
