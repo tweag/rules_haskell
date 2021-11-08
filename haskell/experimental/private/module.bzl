@@ -56,7 +56,7 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
     dep_info = gather_dep_info(moduleAttr.name, moduleAttr.deps)
 
     # Note [Plugin order]
-    plugin_decl = reversed(moduleAttr.plugins)
+    plugin_decl = reversed(ctx.attr.plugins + moduleAttr.plugins)
     plugin_dep_info = gather_dep_info(
         moduleAttr.name,
         [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
