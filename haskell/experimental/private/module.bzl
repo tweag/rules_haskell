@@ -52,7 +52,7 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
 
     # Collect dependencies
     src = moduleAttr.src.files.to_list()[0]
-    extra_srcs = [f for t in moduleAttr.extra_srcs + ctx.attr.extra_srcs for f in t.files]
+    extra_srcs = [f for t in moduleAttr.extra_srcs + ctx.attr.extra_srcs for f in t.files.to_list()]
     dep_info = gather_dep_info(moduleAttr.name, moduleAttr.deps)
 
     # Note [Plugin order]
