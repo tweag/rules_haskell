@@ -1,5 +1,6 @@
 """Test compilation of a multiple interdependent Haskell modules in a nested module hierarchy across multiple Bazel packages with only core-package dependencies."""
 
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
 load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 
 haskell_module(
@@ -19,6 +20,18 @@ haskell_module(
         ":Branch.Right.Module",
         "//tests/hackage:base",
         "//tests/haskell_module/nested/Branch/Left:Module",
+    ],
+)
+
+haskell_library(
+    name = "lib",
+    # TODO: Remove when haskell_module supports dynamic builds
+    linkstatic = True,
+    modules = [
+        ":LeafModule",
+        ":Branch.Right.Module",
+        "//tests/haskell_module/nested/Branch/Left:Module",
+        "//tests/haskell_module/nested/Root:Module",
     ],
 )
 
