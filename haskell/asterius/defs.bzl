@@ -6,6 +6,7 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary", "nodejs_test")
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 
 def _asterius_toolchain_impl(ctx):
     ahc_dist = None
@@ -42,14 +43,33 @@ asterius_toolchain = rule(
 # The ahc_dist rule generates an archive containing javascript files
 # from a haskell binary build with the asterius toolchain.  We ensure
 # that this toolchain is selected using the following transition to
-# select the asterius platform
-def _asterius_transition(settings, attr):
-    return {"//command_line_option:platforms": "@rules_haskell//haskell/asterius:asterius_platform"}
+# select the asterius platform.
+# We also set the asterius_targets_browser back to it's default value
+# as it in not needed anymore.
+def _asterius_transition_impl(settings, attr):
+    return {
+        "//command_line_option:platforms": "@rules_haskell//haskell/asterius:asterius_platform",
+        "@rules_haskell_asterius_build_setting//:asterius_targets_browser": False,
+    }
 
-asterius_transition = transition(
-    implementation = _asterius_transition,
+_asterius_transition = transition(
+    implementation = _asterius_transition_impl,
     inputs = [],
-    outputs = ["//command_line_option:platforms"],
+    outputs = [
+        "//command_line_option:platforms",
+        "@rules_haskell_asterius_build_setting//:asterius_targets_browser",
+    ],
+)
+
+# ahc_dist targets used by asterius_webpack rules must be configured for the browser.
+# We use the following transition for this purpose.
+def _set_ahc_dist_browser_target_impl(settings, attr):
+    return {"@rules_haskell_asterius_build_setting//:asterius_targets_browser": True}
+
+_set_ahc_dist_browser_target = transition(
+    implementation = _set_ahc_dist_browser_target_impl,
+    inputs = [],
+    outputs = ["@rules_haskell_asterius_build_setting//:asterius_targets_browser"],
 )
 
 AhcDistInfo = provider(
@@ -330,11 +350,15 @@ asterius_webpack = rule(
             doc = """
 The ahc_dist target (built with target="browser") from which we will create a bundle.
                   """,
+            cfg = _set_ahc_dist_browser_target,
         ),
         "_webpack": attr.label(
             default = "@rules_haskell//haskell/asterius:webpack",
             executable = True,
             cfg = "exec",
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     },
     toolchains = [

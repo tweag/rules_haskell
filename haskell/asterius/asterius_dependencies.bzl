@@ -60,6 +60,7 @@ def asterius_dependencies_bindist(
     """
     node_repositories(preserve_symlinks = False)
     _yarn(YARN_INSTALL_NAME, package_json, yarn_lock)
+    _ahc_target_build_setting(name = "rules_haskell_asterius_build_setting")
 
 def asterius_dependencies_nix(
         nix_repository,
@@ -83,3 +84,30 @@ def asterius_dependencies_nix(
         preserve_symlinks = False,
     )
     _yarn(YARN_INSTALL_NAME, package_json, yarn_lock)
+
+    _ahc_target_build_setting(name = "rules_haskell_asterius_build_setting")
+
+def _ahc_target_build_setting_impl(repository_ctx):
+    repository_ctx.file(
+        "BUILD",
+        content = """
+# This build settings controls whether the ahc_dist rule targets node
+# or the browser.
+# It is defined outside of the rules_haskell repository as a
+# work-around for the following issue:
+# https://github.com/bazelbuild/bazel/issues/12951
+
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+bool_flag(
+    name = "asterius_targets_browser",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+        """,
+        executable = False,
+    )
+
+_ahc_target_build_setting = repository_rule(
+    implementation = _ahc_target_build_setting_impl,
+    doc = "This repository rule declares the `asterius_targets_browser` build setting.",
+)
