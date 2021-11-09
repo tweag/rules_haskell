@@ -250,7 +250,16 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
       the object files
     """
 
-    transitive_module_deps = depset(direct = ctx.attr.modules, transitive = [m[HaskellModuleInfo].transitive_module_deps for m in ctx.attr.modules]).to_list()
+    transitive_module_dep_labels = depset(
+        direct = [m.label for m in ctx.attr.modules],
+        transitive = [m[HaskellModuleInfo].transitive_module_dep_labels for m in ctx.attr.modules],
+    ).to_list()
+    module_map = {m.label: m for m in ctx.attr.modules}
+    if len(module_map) != len(transitive_module_dep_labels):
+        diff = [x for x in transitive_module_dep_labels if not x in module_map]
+        fail("There are modules missing in the modules attribute of {0}: {1}".format(ctx.label, diff))
+
+    transitive_module_deps = [module_map[lbl] for lbl in transitive_module_dep_labels]
     module_outputs = {dep.label: _declare_module_outputs(hs, hidir, odir, dep) for dep in transitive_module_deps}
 
     module_interfaces = {}
@@ -292,9 +301,9 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
 
 def haskell_module_impl(ctx):
     module_deps = [dep for dep in ctx.attr.deps if HaskellModuleInfo in dep]
-    transitive_module_deps = depset(
-        direct = module_deps,
-        transitive = [dep[HaskellModuleInfo].transitive_module_deps for dep in module_deps],
+    transitive_module_dep_labels = depset(
+        direct = [dep.label for dep in module_deps],
+        transitive = [dep[HaskellModuleInfo].transitive_module_dep_labels for dep in module_deps],
         order = "postorder",
     )
     return [
@@ -302,6 +311,6 @@ def haskell_module_impl(ctx):
         HaskellModuleInfo(
             attr = ctx.attr,
             direct_module_deps = module_deps,
-            transitive_module_deps = transitive_module_deps,
+            transitive_module_dep_labels = transitive_module_dep_labels,
         ),
     ]
