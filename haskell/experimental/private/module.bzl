@@ -232,6 +232,24 @@ def _declare_module_outputs(hs, hidir, odir, module):
     obj = hs.actions.declare_file(paths.join(odir, paths.replace_extension(module_path, extension_template % "o")))
     return [interface], [obj]
 
+def _reorder_module_deps_to_postorder(label, modules):
+    """ Reorders modules to a postorder traversal of the dependency dag.
+
+    Args:
+      label: The label of the rule with the modules attribute
+      modules: The modules comming from a modules attribute. This list must
+               be the transitive closure of all the module dependencies.
+    """
+    transitive_module_dep_labels = depset(
+        direct = [m.label for m in modules],
+        transitive = [m[HaskellModuleInfo].transitive_module_dep_labels for m in modules],
+    ).to_list()
+    module_map = {m.label: m for m in modules}
+    if len(module_map) != len(transitive_module_dep_labels):
+        diff = [x for x in transitive_module_dep_labels if not x in module_map]
+        fail("There are modules missing in the modules attribute of {0}: {1}".format(label, diff))
+    return [module_map[lbl] for lbl in transitive_module_dep_labels]
+
 def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
         and in their dependencies
@@ -250,16 +268,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
       the object files
     """
 
-    transitive_module_dep_labels = depset(
-        direct = [m.label for m in ctx.attr.modules],
-        transitive = [m[HaskellModuleInfo].transitive_module_dep_labels for m in ctx.attr.modules],
-    ).to_list()
-    module_map = {m.label: m for m in ctx.attr.modules}
-    if len(module_map) != len(transitive_module_dep_labels):
-        diff = [x for x in transitive_module_dep_labels if not x in module_map]
-        fail("There are modules missing in the modules attribute of {0}: {1}".format(ctx.label, diff))
-
-    transitive_module_deps = [module_map[lbl] for lbl in transitive_module_dep_labels]
+    transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules)
     module_outputs = {dep.label: _declare_module_outputs(hs, hidir, odir, dep) for dep in transitive_module_deps}
 
     module_interfaces = {}
