@@ -1,3 +1,0 @@
-load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
-
-asterius_test_macro("//tests/haskell_cabal_library_sublibrary_name")
