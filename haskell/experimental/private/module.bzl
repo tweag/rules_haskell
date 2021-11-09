@@ -132,7 +132,7 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
-            package_ids = hs.package_ids,
+            package_ids = all_dependencies_package_ids(moduleAttr.deps),
             package_databases = dep_info.package_databases,
             # TODO[AH] Support version macros
             version = None,
@@ -146,7 +146,7 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
             package_databases = plugin_dep_info.package_databases,
             version = None,
         ),
-        prefix = "compile-",
+        prefix = "compile-{}-".format(module.label.name),
     )
     args.add_all(pkg_info_args)
 
