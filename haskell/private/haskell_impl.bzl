@@ -241,7 +241,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         dep_info,
         ctx.files.extra_srcs,
         user_compile_flags,
-        c.object_files,
+        c.object_files + c.dyn_object_files,
         extra_objects,
         dynamic = dynamic,
         with_profiling = with_profiling,
@@ -460,7 +460,7 @@ def haskell_library_impl(ctx):
             posix,
             dep_info,
             depset(ctx.files.extra_srcs),
-            c.object_files + extra_objects,
+            c.dyn_object_files,
             my_pkg_id,
             user_compile_flags,
         )

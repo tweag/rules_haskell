@@ -115,6 +115,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         input_manifests: input manifests
         outputs: default outputs
         object_files: object files
+        dyn_object_files: dynamic object files (*.dyn_o)
         interface_files: interface files
         source_files: set of files that contain Haskell modules
         boot_files: set of Haskell boot files
@@ -141,15 +142,18 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     objects_dir_flag = paths.join(hs.bin_dir.path, hs.package_root, objects_dir)
 
     # Determine file extensions.
+    dyn_object_exts = []
     if with_profiling:
         interface_exts = [".p_hi"]
         object_exts = [".p_o"]
     elif output_mode == "dynamic-too":
         interface_exts = [".hi", ".dyn_hi"]
-        object_exts = [".o", ".dyn_o"]
+        object_exts = [".o"]
+        dyn_object_exts = [".dyn_o"]
     elif output_mode == "dynamic":
         interface_exts = [".hi"]
-        object_exts = [".dyn_o"]
+        object_exts = []
+        dyn_object_exts = [".dyn_o"]
     else:
         interface_exts = [".hi"]
         object_exts = [".o"]
@@ -167,6 +171,12 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         hs.actions.declare_file(paths.join(objects_dir, filename))
         for module_name in module_map.keys()
         for object_ext in object_exts
+        for filename in [module_name.replace(".", "/") + object_ext]
+    ]
+    dyn_object_files = [
+        hs.actions.declare_file(paths.join(objects_dir, filename))
+        for module_name in module_map.keys()
+        for object_ext in dyn_object_exts
         for filename in [module_name.replace(".", "/") + object_ext]
     ]
 
@@ -364,8 +374,9 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
         ]),
         input_manifests = preprocessors.input_manifests + plugin_tool_input_manifests,
         object_files = object_files,
+        dyn_object_files = dyn_object_files,
         interface_files = interface_files,
-        outputs = object_files + interface_files,
+        outputs = object_files + dyn_object_files + interface_files,
         source_files = source_files,
         boot_files = boot_files,
         extra_source_files = extra_source_files,
@@ -415,7 +426,7 @@ def compile_binary(
     Returns:
       struct with the following fields:
         object_files: list of static object files
-        object_dyn_files: list of dynamic object files
+        dyn_object_files: list of dynamic object files
         modules: set of module names
         source_files: set of Haskell source files
         boot_files: set of Haskell boot files
@@ -451,6 +462,7 @@ def compile_binary(
 
     return struct(
         object_files = c.object_files,
+        dyn_object_files = c.dyn_object_files,
         source_files = c.source_files,
         boot_files = c.boot_files,
         extra_source_files = c.extra_source_files,
@@ -486,7 +498,7 @@ def compile_library(
         interfaces_dir: directory containing interface files
         interface_files: list of interface files
         object_files: list of static object files
-        object_dyn_files: list of dynamic object files
+        dyn_object_files: list of dynamic object files
         compile_flags: list of string arguments suitable for Haddock
         modules: set of module names
         source_files: set of Haskell module files
@@ -526,6 +538,7 @@ def compile_library(
     return struct(
         interface_files = c.interface_files,
         object_files = c.object_files,
+        dyn_object_files = c.dyn_object_files,
         compile_flags = c.compile_flags,
         source_files = c.source_files,
         boot_files = c.boot_files,

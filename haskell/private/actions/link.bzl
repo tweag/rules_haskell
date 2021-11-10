@@ -213,7 +213,6 @@ def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_p
     Returns:
       File: Produced static library.
     """
-    object_files = [obj for obj in object_files if obj.extension != "dyn_o"]
     static_library = hs.actions.declare_file(
         "lib{0}.a".format(pkg_id.library_name(hs, my_pkg_id, prof_suffix = with_profiling)),
     )
@@ -254,7 +253,6 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     Returns:
       File: Produced dynamic library.
     """
-    object_files = [obj for obj in object_files if obj.extension == "dyn_o"]
 
     dynamic_library = hs.actions.declare_file(
         "lib{0}-ghc{1}.{2}".format(
