@@ -56,11 +56,13 @@ def asterius_dependencies_bindist(
     Args:
       package_json: The package.json file that will be passed to [yarn_install](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#yarn_install)
       yarn_lock: The yarn.lock file that will be passed to [yarn_install](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#yarn_install)
-
     """
     node_repositories(preserve_symlinks = False)
     _yarn(YARN_INSTALL_NAME, package_json, yarn_lock)
     _ahc_target_build_setting(name = "rules_haskell_asterius_build_setting")
+    _declare_webpack(
+        name = "rules_haskell_asterius_webpack",
+    )
 
 def asterius_dependencies_nix(
         nix_repository,
@@ -68,8 +70,7 @@ def asterius_dependencies_nix(
         package_json = DEFAULT_PACKAGE_JSON,
         yarn_lock = DEFAULT_YARN_LOCK,
         nixpkgs_nodejs = DEFAULT_NIXPKGS_NODEJS):
-    """
-    Install asterius dependencies based on nix.
+    """Install asterius dependencies based on nix.
 
     Args:
       nix_repository: The nix repository from which we try to install node.
@@ -86,6 +87,64 @@ def asterius_dependencies_nix(
     _yarn(YARN_INSTALL_NAME, package_json, yarn_lock)
 
     _ahc_target_build_setting(name = "rules_haskell_asterius_build_setting")
+    _declare_webpack(
+        name = "rules_haskell_asterius_webpack",
+    )
+
+def asterius_dependencies_custom(webpack_rule):
+    """Setup asterius to use an existing nodejs environment.
+
+    Args:
+      webpack_rule: The label of a webpack rule declared with rules_nodejs.
+        For instance as such:
+        ```
+        load("@npm//webpack-cli:index.bzl", webpack = "webpack_cli")
+        webpack(
+            name = "webpack",
+            visibility = ["//visibility:public"],
+        )
+        ```
+    """
+    _ahc_target_build_setting(name = "rules_haskell_asterius_build_setting")
+    _declare_webpack(
+        name = "rules_haskell_asterius_webpack",
+        webpack_rule = webpack_rule,
+    )
+
+def _declare_webpack_impl(repository_ctx):
+    if repository_ctx.attr.webpack_rule:
+        build_content = """
+alias(
+    name="webpack",
+    actual="{}",
+    visibility = ["//visibility:public"],
+)
+        """.format(repository_ctx.attr.webpack_rule)
+    else:
+        build_content = """
+load("@{}//webpack-cli:index.bzl", webpack = "webpack_cli")
+webpack(
+    name = "webpack",
+    visibility = ["//visibility:public"],
+)
+        """.format(YARN_INSTALL_NAME)
+
+    repository_ctx.file(
+        "BUILD",
+        content = build_content,
+        executable = False,
+    )
+
+_declare_webpack = repository_rule(
+    implementation = _declare_webpack_impl,
+    attrs = {
+        "webpack_rule": attr.label(
+            default = None,
+            doc = "An optional webpack_rule to override the default one",
+        ),
+    },
+    doc = "This repository rule declares the `webpack` rule used by asterius.",
+)
 
 def _ahc_target_build_setting_impl(repository_ctx):
     repository_ctx.file(
