@@ -10,8 +10,6 @@ package(default_testonly = 1)
 haskell_library(
     name = "TestLib",
     extra_srcs = ["extra_src2.md"],
-    # TODO: Remove when haskell_module supports dynamic builds
-    linkstatic = True,
     modules = [
         ":TestLibModule",
     ],

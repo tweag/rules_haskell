@@ -48,8 +48,6 @@ haskell_library(
         "-fplugin-opt=Plugin:$(location //tests/binary-simple)",
         "-fplugin-opt=Plugin:active",
     ],
-    # TODO: remove when haskell_module supports dynamic builds
-    linkstatic = True,
     modules = [
         ":module-with-plugin",
     ],

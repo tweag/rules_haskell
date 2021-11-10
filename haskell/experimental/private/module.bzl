@@ -31,7 +31,7 @@ load(
     "HaskellModuleInfo",
 )
 
-def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odir, module_outputs, interface_inputs, object_inputs, module):
+def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, with_shared, hidir, odir, module_outputs, interface_inputs, object_inputs, module):
     """Build a module
 
     Args:
@@ -39,6 +39,7 @@ def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odi
       hs: Haskell context
       cc: CcInteropInfo, information about C dependencies.
       posix: posix toolchain
+      with_shared: Whether to build dynamic object files
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
       module_outputs: A struct containing the interfaces and object files produced for a haskell_module.
@@ -79,6 +80,8 @@ def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odi
         "-i" + paths.join(hs.bin_dir.path, hs.package_root, hidir),
         src,
     ])
+    if with_shared:
+        args.add("-dynamic-too")
     args.add_all([
         "-v0",
         "-fPIC",
@@ -172,6 +175,14 @@ def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odi
     ]
     args.add_all(expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs))
 
+    outputs = [module_outputs.hi]
+    if module_outputs.o:
+        outputs += [module_outputs.o]
+    if with_shared:
+        outputs += [module_outputs.dyn_hi]
+        if module_outputs.dyn_o:
+            outputs += [module_outputs.dyn_o]
+
     # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
@@ -193,7 +204,7 @@ def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odi
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
-        outputs = [module_outputs.hi, module_outputs.o],
+        outputs = outputs,
         mnemonic = "HaskellBuildObject" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildObject {} {}".format(hs.label, module.label),
         env = hs.env,
@@ -213,7 +224,7 @@ def get_module_path_from_target(module):
 
     return paths.relativize(src, prefix_path)
 
-def _declare_module_outputs(hs, hidir, odir, module):
+def _declare_module_outputs(hs, with_shared, hidir, odir, module):
     module_path = get_module_path_from_target(module)
 
     hs_boot = paths.split_extension(module_path)[1] in [".hs-boot", ".lhs-boot"]
@@ -225,20 +236,42 @@ def _declare_module_outputs(hs, hidir, odir, module):
         extension_template = "p_" + extension_template
     extension_template = "." + extension_template
 
-    interface = hs.actions.declare_file(paths.join(hidir, paths.replace_extension(module_path, extension_template % "hi")))
-    obj = hs.actions.declare_file(paths.join(odir, paths.replace_extension(module_path, extension_template % "o")))
-    return struct(hi = interface, o = obj)
+    hi = hs.actions.declare_file(paths.join(hidir, paths.replace_extension(module_path, extension_template % "hi")))
+    o = None if hs_boot else hs.actions.declare_file(paths.join(odir, paths.replace_extension(module_path, extension_template % "o")))
+    if with_shared:
+        dyn_o = None if hs_boot else hs.actions.declare_file(paths.join(odir, paths.replace_extension(module_path, extension_template % "dyn_o")))
+        dyn_hi = hs.actions.declare_file(paths.join(hidir, paths.replace_extension(module_path, extension_template % "dyn_hi")))
+    else:
+        dyn_hi = None
+        dyn_o = None
+    return struct(hi = hi, dyn_hi = dyn_hi, o = o, dyn_o = dyn_o)
 
-def _collect_module_outputs_of_direct_deps(module_outputs, dep):
+def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
     his = [
         module_outputs[m.label].hi
         for m in dep[HaskellModuleInfo].direct_module_deps
     ]
     os = [
-        module_outputs[m.label].o
+        o
         for m in dep[HaskellModuleInfo].direct_module_deps
+        for o in [module_outputs[m.label].o]
+        if o  # boot module files produce no useful object files
     ]
-    return his, os
+    if with_shared:
+        dyn_his = [
+            module_outputs[m.label].dyn_hi
+            for m in dep[HaskellModuleInfo].direct_module_deps
+        ]
+        dyn_os = [
+            dyn_o
+            for m in dep[HaskellModuleInfo].direct_module_deps
+            for dyn_o in [module_outputs[m.label].dyn_o]
+            if dyn_o  # boot module files produce no useful object files
+        ]
+    else:
+        dyn_his = []
+        dyn_os = []
+    return his + dyn_his, os, dyn_os
 
 def _collect_module_inputs(module_input_map, directs, dep):
     """ Put together inputs coming from direct and transitive dependencies.
@@ -279,7 +312,7 @@ def _reorder_module_deps_to_postorder(label, modules):
         fail("There are modules missing in the modules attribute of {0}: {1}".format(label, diff))
     return [module_map[lbl] for lbl in transitive_module_dep_labels]
 
-def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
+def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
         and in their dependencies
 
@@ -288,32 +321,46 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
       hs: Haskell context
       cc: CcInteropInfo, information about C dependencies
       posix: posix toolchain
+      with_shared: Whether to build dynamic object files
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
 
     Returns:
-      (depset(File), depset(File)): a pair containing a depset of the interface
-      files of all transitive module dependencies and similarly a depset of all
-      the object files
+      struct(his, dyn_his, os, dyn_os): each component containts the interface, dynamic interface, object,
+      and dynamic object files of all transitive module dependencies.
     """
 
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules)
-    module_outputs = {dep.label: _declare_module_outputs(hs, hidir, odir, dep) for dep in transitive_module_deps}
+    module_outputs = {dep.label: _declare_module_outputs(hs, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
 
     module_interfaces = {}
+    module_dyn_interfaces = {}
     module_objects = {}
+    module_dyn_objects = {}
     for dep in transitive_module_deps:
-        his, os = _collect_module_outputs_of_direct_deps(module_outputs, dep)
+        his, os, dyn_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
         object_inputs = _collect_module_inputs(module_objects, os, dep)
+        dyn_object_inputs = _collect_module_inputs(module_dyn_objects, dyn_os, dep)
 
-        _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odir, module_outputs[dep.label], interface_inputs, object_inputs, dep)
+        _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, with_shared, hidir, odir, module_outputs[dep.label], interface_inputs, object_inputs, dep)
 
     module_outputs_list = module_outputs.values()
-    return (
-        depset([outputs.hi for outputs in module_outputs_list]),
-        depset([outputs.o for outputs in module_outputs_list]),
+    hi_set = depset([outputs.hi for outputs in module_outputs_list])
+    o_set = depset([outputs.o for outputs in module_outputs_list if outputs.o])
+    if with_shared:
+        dyn_hi_set = depset([outputs.dyn_hi for outputs in module_outputs_list])
+        dyn_o_set = depset([outputs.dyn_o for outputs in module_outputs_list if outputs.dyn_o])
+    else:
+        dyn_hi_set = depset()
+        dyn_o_set = depset()
+
+    return struct(
+        his = hi_set,
+        dyn_his = dyn_hi_set,
+        os = o_set,
+        dyn_os = dyn_o_set,
     )
 
 def haskell_module_impl(ctx):
