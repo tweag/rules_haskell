@@ -246,7 +246,7 @@ def _reorder_module_deps_to_postorder(label, modules):
     ).to_list()
     module_map = {m.label: m for m in modules}
     if len(module_map) != len(transitive_module_dep_labels):
-        diff = [x for x in transitive_module_dep_labels if not x in module_map]
+        diff = ", ".join([str(x) for x in transitive_module_dep_labels if not x in module_map])
         fail("There are modules missing in the modules attribute of {0}: {1}".format(label, diff))
     return [module_map[lbl] for lbl in transitive_module_dep_labels]
 
