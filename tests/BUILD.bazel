@@ -480,6 +480,7 @@ filegroup(
         "//tests/library-deps:all_files",
         "//tests/library-empty:all_files",
         "//tests/library-exports:all_files",
+        "//tests/library-external-workspace:all_files",
         "//tests/library-linkstatic-flag:all_files",
         "//tests/library-with-cbits:all_files",
         "//tests/library-with-includes:all_files",

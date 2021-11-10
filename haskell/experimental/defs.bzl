@@ -12,8 +12,6 @@ _haskell_module = rule(
     #   Currently it is not possible to automatically inherit rule documentation
     #   in wrapping macros. See https://github.com/bazelbuild/stardoc/issues/27
     attrs = {
-        # TODO[AH] Merge with _haskell_common_attrs in //haskell:defs.bzl
-        "package_name": attr.string(),
         "src": attr.label(
             # TODO[AH] How to handle .hsc files?
             # TODO[AH] Do we need .h files in here?
@@ -43,10 +41,6 @@ _haskell_module = rule(
             cfg = "host",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
-        "_package_name_setting": attr.label(
-            default = Label("@rules_haskell//haskell/experimental:package_name_setting"),
-        ),
-        # TODO[AH] Support package name and version for modules that are part of a package.
         # TODO[AH] Suppport worker
     },
     toolchains = [
@@ -59,7 +53,6 @@ _haskell_module = rule(
 
 def haskell_module(
         name,
-        package_name = None,
         src = None,
         extra_srcs = [],
         deps = [],
@@ -88,24 +81,25 @@ def haskell_module(
 
     Args:
       name: A unique name for this rule.
-      package_name: Override the package name this module will be a part of.
       src_strip_prefix: Prefix before the path matches the module name.
         This is used as an import search for the Haskell compiler.
         Values starting with `/` are relative to the workspace root,
         other paths are relative to the package.
       src: The Haskell source file.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
+                  This is merged with the extra_srcs attribute of rules that depend directly on this haskell_module rule.
       deps: List of other Haskell modules or libraries needed to compile this module.
-      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+               This is merged with the ghcopts attribute of rules that depend directly on this haskell_module rule.
       plugins: Compiler plugins to use during compilation. (Not implemented, yet)
+               This is merged with the plugins attribute of rules that depend directly on this haskell_module rule.
       tools: Extra tools needed at compile-time, like preprocessors. (Not implemented, yet)
+             This is merged with the tools attribute of rules that depend directly on this haskell_module rule.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental). (Not implemented, yet)
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
     _haskell_module(
         name = name,
-        package_name = package_name,
         src = src,
         extra_srcs = extra_srcs,
         deps = deps,

@@ -1,5 +1,6 @@
 """Test compilation of a multiple interdependent Haskell modules with only core-package dependencies."""
 
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
 load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 
 haskell_module(
@@ -34,6 +35,19 @@ haskell_module(
         ":branch_right",
         "//tests/hackage:base",
     ],
+)
+
+haskell_library(
+    name = "lib",
+    # TODO: Remove when haskell_module supports dynamic builds
+    linkstatic = True,
+    modules = [
+        ":root",
+        ":branch_left",
+        ":branch_right",
+        ":leaf",
+    ],
+    deps = ["//tests/hackage:base"],
 )
 
 filegroup(

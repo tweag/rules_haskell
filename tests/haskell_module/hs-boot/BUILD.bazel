@@ -43,6 +43,7 @@ haskell_library(
     modules = [
         ":lib-B",
         ":lib-A",
+        ":lib-A-boot",
     ],
     deps = ["//tests/hackage:base"],
 )

@@ -18,6 +18,18 @@ haskell_module(
     name = "TestModule",
     src = "TestModule.hs",
     deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "lib",
+    # TODO: Remove when haskell_module supports dynamic builds
+    linkstatic = True,
+    modules = [
+        ":TestModule",
+    ],
+    deps = [
         ":TestLib",
         "//tests/hackage:base",
     ],
