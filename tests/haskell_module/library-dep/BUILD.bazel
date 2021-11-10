@@ -18,7 +18,6 @@ haskell_module(
     name = "TestModule",
     src = "TestModule.hs",
     deps = [
-        ":TestLib",
         "//tests/hackage:base",
     ],
 )
@@ -29,6 +28,10 @@ haskell_library(
     linkstatic = True,
     modules = [
         ":TestModule",
+    ],
+    deps = [
+        ":TestLib",
+        "//tests/hackage:base",
     ],
 )
 

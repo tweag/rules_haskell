@@ -47,6 +47,7 @@ haskell_library(
         ":branch_right",
         ":leaf",
     ],
+    deps = ["//tests/hackage:base"],
 )
 
 filegroup(

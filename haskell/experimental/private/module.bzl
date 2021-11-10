@@ -31,7 +31,7 @@ load(
     "HaskellModuleInfo",
 )
 
-def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_outputs, interface_inputs, object_inputs, module):
+def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odir, module_outputs, interface_inputs, object_inputs, module):
     """Build a module
 
     Args:
@@ -53,7 +53,6 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
     # Collect dependencies
     src = moduleAttr.src.files.to_list()[0]
     extra_srcs = [f for t in moduleAttr.extra_srcs + ctx.attr.extra_srcs for f in t.files.to_list()]
-    dep_info = gather_dep_info(moduleAttr.name, moduleAttr.deps)
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins + moduleAttr.plugins)
@@ -132,7 +131,7 @@ def _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
-            package_ids = all_dependencies_package_ids(moduleAttr.deps),
+            package_ids = hs.package_ids,
             package_databases = dep_info.package_databases,
             # TODO[AH] Support version macros
             version = None,
@@ -268,6 +267,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
       the object files
     """
 
+    dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules)
     module_outputs = {dep.label: _declare_module_outputs(hs, hidir, odir, dep) for dep in transitive_module_deps}
 
@@ -300,7 +300,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
         )
         module_objects[dep.label] = object_inputs
 
-        _build_haskell_module(ctx, hs, cc, posix, package_name, hidir, odir, module_outputs, interface_inputs, object_inputs, dep)
+        _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odir, module_outputs, interface_inputs, object_inputs, dep)
 
     module_outputs_list = module_outputs.values()
     return (
