@@ -182,7 +182,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     objects_dir = paths.join("_obj", hs.name)
 
     module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, "", interfaces_dir, objects_dir)
-    extra_objects = module_objects.to_list()
 
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
@@ -242,7 +241,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx.files.extra_srcs,
         user_compile_flags,
         c.object_files + c.dyn_object_files,
-        extra_objects,
+        module_objects,
         dynamic = dynamic,
         with_profiling = with_profiling,
         version = ctx.attr.version,
@@ -395,7 +394,6 @@ def haskell_library_impl(ctx):
     objects_dir = paths.join("_obj", hs.name)
 
     module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), interfaces_dir, objects_dir)
-    extra_objects = module_objects.to_list()
 
     non_empty = srcs_files or modules
 
@@ -446,7 +444,7 @@ def haskell_library_impl(ctx):
             cc,
             posix,
             dep_info,
-            c.object_files + extra_objects,
+            depset(c.object_files, transitive = [module_objects]),
             my_pkg_id,
             with_profiling = with_profiling,
         )
@@ -460,7 +458,7 @@ def haskell_library_impl(ctx):
             posix,
             dep_info,
             depset(ctx.files.extra_srcs),
-            c.dyn_object_files,
+            depset(c.dyn_object_files),
             my_pkg_id,
             user_compile_flags,
         )
