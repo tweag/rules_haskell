@@ -21,6 +21,7 @@ load("//haskell/asterius:asterius_config.bzl", "asterius_cabalopts")
 load(
     "//haskell/asterius:asterius_dependencies.bzl",
     _asterius_dependencies_bindist = "asterius_dependencies_bindist",
+    _asterius_dependencies_custom = "asterius_dependencies_custom",
     _asterius_dependencies_nix = "asterius_dependencies_nix",
 )
 
@@ -333,8 +334,7 @@ def asterius_dependencies_bindist(**kwargs):
     _asterius_dependencies_bindist(**kwargs)
 
 def asterius_dependencies_nix(**kwargs):
-    """
-    Install asterius dependencies based on nix.
+    """ Install asterius dependencies based on nix.
 
     Args:
       nix_repository: The nix repository from which we try to install node.
@@ -344,3 +344,19 @@ def asterius_dependencies_nix(**kwargs):
       nixpkgs_nodejs: The name for the nodejs that will be installed with `nixpkgs_package`.
     """
     _asterius_dependencies_nix(**kwargs)
+
+def asterius_dependencies_custom(**kwargs):
+    """ Setup asterius dependencies using an existing [rules_nodejs](https://github.com/bazelbuild/rules_nodejs) installation with webpack.
+
+    Args:
+      webpack_rule: The label of a webpack rule declared with rules_nodejs.
+        For instance as such:
+        ```
+        load("@npm//webpack-cli:index.bzl", webpack = "webpack_cli")
+        webpack(
+            name = "webpack",
+            visibility = ["//visibility:public"],
+        )
+        ```
+    """
+    _asterius_dependencies_custom(**kwargs)

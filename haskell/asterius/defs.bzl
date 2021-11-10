@@ -353,7 +353,7 @@ The ahc_dist target (built with target="browser") from which we will create a bu
             cfg = _set_ahc_dist_browser_target,
         ),
         "_webpack": attr.label(
-            default = "@rules_haskell//haskell/asterius:webpack",
+            default = "@rules_haskell_asterius_webpack//:webpack",
             executable = True,
             cfg = "exec",
         ),
