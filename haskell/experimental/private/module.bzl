@@ -41,8 +41,7 @@ def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odi
       posix: posix toolchain
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
-      module_outputs: A map of labels to pairs ([File], [File]). Each component pair corresponds to interfaces
-                      and object files produced for a haskell_module with the given label.
+      module_outputs: A struct containing the interfaces and object files produced for a haskell_module.
       interface_inputs: A depset containing the interface files needed as input
       object_inputs: A depset containing the object files needed as input
       module: The Target of the haskell_module rule
@@ -65,7 +64,6 @@ def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odi
 
     # Determine outputs
     with_profiling = is_profiling_enabled(hs)
-    interfaces, objs = module_outputs[module.label]
 
     # TODO[AH] Support additional outputs such as `.hie`.
 
@@ -195,7 +193,7 @@ def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odi
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
-        outputs = objs + interfaces,
+        outputs = [module_outputs.hi, module_outputs.o],
         mnemonic = "HaskellBuildObject" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildObject {} {}".format(hs.label, module.label),
         env = hs.env,
@@ -229,7 +227,39 @@ def _declare_module_outputs(hs, hidir, odir, module):
 
     interface = hs.actions.declare_file(paths.join(hidir, paths.replace_extension(module_path, extension_template % "hi")))
     obj = hs.actions.declare_file(paths.join(odir, paths.replace_extension(module_path, extension_template % "o")))
-    return [interface], [obj]
+    return struct(hi = interface, o = obj)
+
+def _collect_module_outputs_of_direct_deps(module_outputs, dep):
+    his = [
+        module_outputs[m.label].hi
+        for m in dep[HaskellModuleInfo].direct_module_deps
+    ]
+    os = [
+        module_outputs[m.label].o
+        for m in dep[HaskellModuleInfo].direct_module_deps
+    ]
+    return his, os
+
+def _collect_module_inputs(module_input_map, directs, dep):
+    """ Put together inputs coming from direct and transitive dependencies.
+
+    Args:
+      module_input_map: maps labels of dependencies to all the inputs they require
+      directs: inputs of direct depedencies
+      dep: the target for which to collect inputs
+
+    Returns:
+      A depset with all of the inputs for the given target
+    """
+    all_inputs = depset(
+        direct = directs,
+        transitive = [
+            module_input_map[m.label]  # Will be set by a previous iteration, since all deps were visited before.
+            for m in dep[HaskellModuleInfo].direct_module_deps
+        ],
+    )
+    module_input_map[dep.label] = all_inputs
+    return all_inputs
 
 def _reorder_module_deps_to_postorder(label, modules):
     """ Reorders modules to a postorder traversal of the dependency dag.
@@ -274,38 +304,16 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, hidir, odir):
     module_interfaces = {}
     module_objects = {}
     for dep in transitive_module_deps:
-        interface_inputs = depset(
-            direct = [
-                iface
-                for m in dep[HaskellModuleInfo].direct_module_deps
-                for iface in module_outputs[m.label][0]
-            ],
-            transitive = [
-                module_interfaces[m.label]  # Will be set by a previous iteration, since all deps were visited before.
-                for m in dep[HaskellModuleInfo].direct_module_deps
-            ],
-        )
-        module_interfaces[dep.label] = interface_inputs
+        his, os = _collect_module_outputs_of_direct_deps(module_outputs, dep)
+        interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
+        object_inputs = _collect_module_inputs(module_objects, os, dep)
 
-        object_inputs = depset(
-            direct = [
-                obj
-                for m in dep[HaskellModuleInfo].direct_module_deps
-                for obj in module_outputs[m.label][1]
-            ],
-            transitive = [
-                module_objects[m.label]  # Will be set by a previous iteration, since all deps were visited before.
-                for m in dep[HaskellModuleInfo].direct_module_deps
-            ],
-        )
-        module_objects[dep.label] = object_inputs
-
-        _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odir, module_outputs, interface_inputs, object_inputs, dep)
+        _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, hidir, odir, module_outputs[dep.label], interface_inputs, object_inputs, dep)
 
     module_outputs_list = module_outputs.values()
     return (
-        depset([iface for interfaces, _ in module_outputs_list for iface in interfaces]),
-        depset([obj for _, objs in module_outputs_list for obj in objs]),
+        depset([outputs.hi for outputs in module_outputs_list]),
+        depset([outputs.o for outputs in module_outputs_list]),
     )
 
 def haskell_module_impl(ctx):
