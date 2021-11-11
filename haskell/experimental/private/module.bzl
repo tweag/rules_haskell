@@ -31,7 +31,20 @@ load(
     "HaskellModuleInfo",
 )
 
-def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, with_shared, hidir, odir, module_outputs, interface_inputs, object_inputs, module):
+def _build_haskell_module(
+        ctx,
+        hs,
+        cc,
+        posix,
+        dep_info,
+        package_name,
+        with_shared,
+        hidir,
+        odir,
+        module_outputs,
+        interface_inputs,
+        object_inputs,
+        module):
     """Build a module
 
     Args:
@@ -337,7 +350,21 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
         object_inputs = _collect_module_inputs(module_objects, os, dep)
 
-        _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, with_shared, hidir, odir, module_outputs[dep.label], interface_inputs, object_inputs, dep)
+        _build_haskell_module(
+            ctx,
+            hs,
+            cc,
+            posix,
+            dep_info,
+            package_name,
+            with_shared,
+            hidir,
+            odir,
+            module_outputs[dep.label],
+            interface_inputs,
+            object_inputs,
+            dep,
+        )
 
     module_outputs_list = module_outputs.values()
     hi_set = depset([outputs.hi for outputs in module_outputs_list])
