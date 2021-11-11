@@ -24,8 +24,6 @@ haskell_module(
 
 haskell_library(
     name = "lib",
-    # TODO: Remove when haskell_module supports dynamic builds
-    linkstatic = True,
     modules = [
         ":TestModule",
     ],

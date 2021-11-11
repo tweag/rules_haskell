@@ -141,7 +141,7 @@ def link_binary(
             depset(extra_srcs),
             dep_info.package_databases,
             dep_info.hs_libraries,
-            depset([cache_file] + object_files + extra_objects),
+            depset([cache_file] + object_files, transitive = [extra_objects]),
             pkg_info_inputs,
             depset(static_libs + dynamic_libs),
         ]),
@@ -213,12 +213,11 @@ def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_p
     Returns:
       File: Produced static library.
     """
-    object_files = [obj for obj in object_files if obj.extension != "dyn_o"]
     static_library = hs.actions.declare_file(
         "lib{0}.a".format(pkg_id.library_name(hs, my_pkg_id, prof_suffix = with_profiling)),
     )
+    inputs = depset(cc.files, transitive = [object_files])
     args = hs.actions.args()
-    inputs = object_files + cc.files
     args.add_all(["qc", static_library])
     args.add_all(object_files)
 
@@ -254,7 +253,6 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     Returns:
       File: Produced dynamic library.
     """
-    object_files = [obj for obj in object_files if obj.extension == "dyn_o"]
 
     dynamic_library = hs.actions.declare_file(
         "lib{0}-ghc{1}.{2}".format(
@@ -299,7 +297,8 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
-        inputs = depset([cache_file] + object_files, transitive = [
+        inputs = depset([cache_file], transitive = [
+            object_files,
             extra_srcs,
             dep_info.package_databases,
             dep_info.hs_libraries,

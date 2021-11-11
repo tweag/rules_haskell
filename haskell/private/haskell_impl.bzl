@@ -181,9 +181,6 @@ def _haskell_binary_common_impl(ctx, is_test):
     interfaces_dir = paths.join("_iface", hs.name)
     objects_dir = paths.join("_obj", hs.name)
 
-    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, "", interfaces_dir, objects_dir)
-    extra_objects = module_objects.to_list()
-
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     main_as_haskell_module = is_main_as_haskell_module(modules, ctx.attr.main_function)
@@ -197,6 +194,8 @@ def _haskell_binary_common_impl(ctx, is_test):
         # https://ghc.haskell.org/trac/ghc/ticket/15394
         # Also, static GHC doesn't support dynamic code
         dynamic = False
+
+    module_outputs = build_haskell_modules(ctx, hs, cc, posix, "", dynamic, interfaces_dir, objects_dir)
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in non_default_plugin_decl]
@@ -241,8 +240,8 @@ def _haskell_binary_common_impl(ctx, is_test):
         dep_info,
         ctx.files.extra_srcs,
         user_compile_flags,
-        c.object_files,
-        extra_objects,
+        c.object_files + c.dyn_object_files,
+        module_outputs.os,
         dynamic = dynamic,
         with_profiling = with_profiling,
         version = ctx.attr.version,
@@ -394,9 +393,6 @@ def haskell_library_impl(ctx):
     interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), "_iface")
     objects_dir = paths.join("_obj", hs.name)
 
-    module_interfaces, module_objects = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), interfaces_dir, objects_dir)
-    extra_objects = module_objects.to_list()
-
     non_empty = srcs_files or modules
 
     with_shared = not ctx.attr.linkstatic
@@ -406,6 +402,8 @@ def haskell_library_impl(ctx):
         # https://ghc.haskell.org/trac/ghc/ticket/15394
         # Also, static GHC doesn't support dynamic code
         with_shared = False
+
+    module_outputs = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), with_shared, interfaces_dir, objects_dir)
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
@@ -446,7 +444,7 @@ def haskell_library_impl(ctx):
             cc,
             posix,
             dep_info,
-            c.object_files + extra_objects,
+            depset(c.object_files, transitive = [module_outputs.os]),
             my_pkg_id,
             with_profiling = with_profiling,
         )
@@ -460,7 +458,7 @@ def haskell_library_impl(ctx):
             posix,
             dep_info,
             depset(ctx.files.extra_srcs),
-            c.object_files + extra_objects,
+            depset(c.dyn_object_files, transitive = [module_outputs.dyn_os]),
             my_pkg_id,
             user_compile_flags,
         )
@@ -481,7 +479,7 @@ def haskell_library_impl(ctx):
 
     interface_dirs = depset(
         direct = c.interface_files,
-        transitive = [dep_info.interface_dirs, module_interfaces],
+        transitive = [dep_info.interface_dirs, module_outputs.his, module_outputs.dyn_his],
     )
 
     version_macros = set.empty()
