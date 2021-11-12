@@ -31,7 +31,20 @@ load(
     "HaskellModuleInfo",
 )
 
-def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, with_shared, hidir, odir, module_outputs, interface_inputs, object_inputs, module):
+def _build_haskell_module(
+        ctx,
+        hs,
+        cc,
+        posix,
+        dep_info,
+        package_name,
+        with_shared,
+        hidir,
+        odir,
+        module_outputs,
+        interface_inputs,
+        object_inputs,
+        module):
     """Build a module
 
     Args:
@@ -198,9 +211,8 @@ def _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, with_share
                 plugin_dep_info.hs_libraries,
                 plugin_tool_inputs,
                 preprocessors_inputs,
-                # TODO[AH] Factor this out
-                # TODO[AH] Include object files for template Haskell dependencies.
                 interface_inputs,
+                object_inputs,
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
@@ -258,20 +270,17 @@ def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
         if o  # boot module files produce no useful object files
     ]
     if with_shared:
-        dyn_his = [
+        his += [
             module_outputs[m.label].dyn_hi
             for m in dep[HaskellModuleInfo].direct_module_deps
         ]
-        dyn_os = [
+        os += [
             dyn_o
             for m in dep[HaskellModuleInfo].direct_module_deps
             for dyn_o in [module_outputs[m.label].dyn_o]
             if dyn_o  # boot module files produce no useful object files
         ]
-    else:
-        dyn_his = []
-        dyn_os = []
-    return his + dyn_his, os, dyn_os
+    return his, os
 
 def _collect_module_inputs(module_input_map, directs, dep):
     """ Put together inputs coming from direct and transitive dependencies.
@@ -335,16 +344,27 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
     module_outputs = {dep.label: _declare_module_outputs(hs, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
 
     module_interfaces = {}
-    module_dyn_interfaces = {}
     module_objects = {}
-    module_dyn_objects = {}
     for dep in transitive_module_deps:
-        his, os, dyn_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
+        his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
         object_inputs = _collect_module_inputs(module_objects, os, dep)
-        dyn_object_inputs = _collect_module_inputs(module_dyn_objects, dyn_os, dep)
 
-        _build_haskell_module(ctx, hs, cc, posix, dep_info, package_name, with_shared, hidir, odir, module_outputs[dep.label], interface_inputs, object_inputs, dep)
+        _build_haskell_module(
+            ctx,
+            hs,
+            cc,
+            posix,
+            dep_info,
+            package_name,
+            with_shared,
+            hidir,
+            odir,
+            module_outputs[dep.label],
+            interface_inputs,
+            object_inputs,
+            dep,
+        )
 
     module_outputs_list = module_outputs.values()
     hi_set = depset([outputs.hi for outputs in module_outputs_list])
