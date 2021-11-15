@@ -11,7 +11,6 @@ haskell_library(
     name = "TestLib",
     extra_srcs = ["extra_src2.md"],
     modules = [
-        ":TestLibModule",
         ":TestLibModule2",
     ],
     visibility = ["//visibility:public"],
@@ -39,6 +38,9 @@ haskell_test(
     name = "bin-deps",
     size = "small",
     srcs = ["Bin.hs"],
+    modules = [
+        ":TestLibModule",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":TestLib",

@@ -119,7 +119,9 @@ def _compilation_defaults(
         output_mode,
         with_profiling,
         interfaces_dir,
+        input_interfaces,
         objects_dir,
+        input_objects,
         my_pkg_id,
         version,
         plugins,
@@ -134,9 +136,9 @@ def _compilation_defaults(
         inputs: default inputs
         input_manifests: input manifests
         outputs: default outputs
-        object_files: object files
+        input_objects: object files to be exposed to TH
         dyn_object_files: dynamic object files (*.dyn_o)
-        interface_files: interface files
+        input_interfaces: interface files to be exposed to the build actions
         source_files: set of files that contain Haskell modules
         boot_files: set of Haskell boot files
         extra_source_files: depset of non-Haskell source files
@@ -293,6 +295,12 @@ def _compilation_defaults(
 
     args = hs.actions.args()
 
+    # We use batchmode only if there are modules to feed to the compile action
+    # GHC can't take interface files in make mode.
+    if input_interfaces != depset():
+        args.add("-c")
+        args.add("-i" + interfaces_dir_flag)
+
     # Compilation mode.  Allow rule-supplied compiler flags to override it.
     if hs.mode == "opt":
         args.add("-O2")
@@ -391,6 +399,8 @@ def _compilation_defaults(
             java.inputs,
             preprocessors.inputs,
             plugin_tool_inputs,
+            input_interfaces,
+            input_objects,
         ]),
         input_manifests = preprocessors.input_manifests + plugin_tool_input_manifests,
         object_files = object_files,
@@ -434,7 +444,9 @@ def compile_binary(
         dynamic,
         with_profiling,
         interfaces_dir,
+        input_interfaces,
         objects_dir,
+        input_objects,
         main_function,
         version,
         inspect_coverage = False,
@@ -466,7 +478,9 @@ def compile_binary(
         "dynamic" if dynamic else "static",
         with_profiling,
         interfaces_dir,
+        input_interfaces,
         objects_dir,
+        input_objects,
         my_pkg_id = None,
         version = version,
         plugins = plugins,
@@ -527,7 +541,9 @@ def compile_library(
         with_shared,
         with_profiling,
         interfaces_dir,
+        input_interfaces,
         objects_dir,
+        input_objects,
         my_pkg_id,
         plugins = [],
         non_default_plugins = [],
@@ -536,9 +552,10 @@ def compile_library(
 
     Returns:
       struct with the following fields:
-        interfaces_dir: directory containing interface files
+        input_interfaces: interface files to be exposed to the build actions
         interface_files: list of interface files
         object_files: list of static object files
+        input_objects: object files to be exposed to TH
         dyn_object_files: list of dynamic object files
         compile_flags: list of string arguments suitable for Haddock
         modules: set of module names
@@ -561,7 +578,9 @@ def compile_library(
         "dynamic-too" if with_shared else "static",
         with_profiling,
         interfaces_dir,
+        input_interfaces,
         objects_dir,
+        input_objects,
         my_pkg_id = my_pkg_id,
         version = my_pkg_id.version,
         plugins = plugins,

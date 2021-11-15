@@ -310,6 +310,7 @@ def haskell_binary(
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
       modules: List of extra haskell_module() dependencies to be linked into this binary.
+               Specifying both modules and srcs requires srcs to be sorted in topological order.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -443,6 +444,7 @@ def haskell_test(
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
       modules: List of extra haskell_module() dependencies to be linked into this test.
+               Specifying both modules and srcs requires srcs to be sorted in topological order.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -578,6 +580,7 @@ def haskell_library(
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
       modules: List of extra haskell_module() dependencies to be linked into this library.
+               Specifying both modules and srcs requires srcs to be sorted in topological order.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
