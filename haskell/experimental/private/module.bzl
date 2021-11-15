@@ -227,7 +227,7 @@ def _build_haskell_module(
 def get_module_path_from_target(module):
     module_name = module[HaskellModuleInfo].attr.module_name
     if module_name:
-        return module_name
+        return module_name.replace(".", "/")
 
     src = module[HaskellModuleInfo].attr.src.files.to_list()[0].path
     src_strip_prefix = module[HaskellModuleInfo].attr.src_strip_prefix
@@ -238,25 +238,26 @@ def get_module_path_from_target(module):
     else:
         prefix_path = paths.join(workspace_root, module.label.package, src_strip_prefix)
 
-    return paths.relativize(src, prefix_path)
+    return paths.split_extension(paths.relativize(src, prefix_path))[0]
 
 def _declare_module_outputs(hs, with_shared, hidir, odir, module):
     module_path = get_module_path_from_target(module)
 
-    hs_boot = paths.split_extension(module_path)[1] in [".hs-boot", ".lhs-boot"]
+    src = module[HaskellModuleInfo].attr.src.files.to_list()[0].path
+    hs_boot = paths.split_extension(src)[1] in [".hs-boot", ".lhs-boot"]
     with_profiling = is_profiling_enabled(hs)
     extension_template = "%s"
     if hs_boot:
         extension_template = extension_template + "-boot"
     if with_profiling:
         extension_template = "p_" + extension_template
-    extension_template = "." + extension_template
+    extension_template = module_path + "." + extension_template
 
-    hi = hs.actions.declare_file(paths.join(hidir, paths.replace_extension(module_path, extension_template % "hi")))
-    o = None if hs_boot else hs.actions.declare_file(paths.join(odir, paths.replace_extension(module_path, extension_template % "o")))
+    hi = hs.actions.declare_file(paths.join(hidir, extension_template % "hi"))
+    o = None if hs_boot else hs.actions.declare_file(paths.join(odir, extension_template % "o"))
     if with_shared:
-        dyn_o = None if hs_boot else hs.actions.declare_file(paths.join(odir, paths.replace_extension(module_path, extension_template % "dyn_o")))
-        dyn_hi = hs.actions.declare_file(paths.join(hidir, paths.replace_extension(module_path, extension_template % "dyn_hi")))
+        dyn_o = None if hs_boot else hs.actions.declare_file(paths.join(odir, extension_template % "dyn_o"))
+        dyn_hi = hs.actions.declare_file(paths.join(hidir, extension_template % "dyn_hi"))
     else:
         dyn_hi = None
         dyn_o = None
