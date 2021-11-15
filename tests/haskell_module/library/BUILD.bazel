@@ -12,6 +12,7 @@ haskell_library(
     extra_srcs = ["extra_src2.md"],
     modules = [
         ":TestLibModule",
+        ":TestLibModule2",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -23,6 +24,14 @@ haskell_module(
     name = "TestLibModule",
     src = "TestLib.hs",
     extra_srcs = ["extra_src.md"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_module(
+    name = "TestLibModule2",
+    src = "TestLib2.hs",
+    extra_srcs = ["extra_src.md"],
+    module_name = "Test.Lib",
     deps = ["//tests/hackage:base"],
 )
 
