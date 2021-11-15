@@ -225,6 +225,10 @@ def _build_haskell_module(
     )
 
 def get_module_path_from_target(module):
+    module_name = module[HaskellModuleInfo].attr.module_name
+    if module_name:
+        return module_name
+
     src = module[HaskellModuleInfo].attr.src.files.to_list()[0].path
     src_strip_prefix = module[HaskellModuleInfo].attr.src_strip_prefix
     workspace_root = module.label.workspace_root

@@ -10,7 +10,7 @@ package(default_testonly = 1)
 haskell_binary(
     name = "TestBin",
     modules = [
-        ":TestBinModule",
+        ":Main",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -31,8 +31,13 @@ haskell_test(
 
 haskell_module(
     name = "TestBinModule",
-    # TODO: Test naming the Main module as something different
-    # after adding some attribute to make the module name explicit
+    src = "TestBin.hs",
+    module_name = "Main",
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_module(
+    name = "Main",
     src = "Main.hs",
     deps = ["//tests/hackage:base"],
 )
