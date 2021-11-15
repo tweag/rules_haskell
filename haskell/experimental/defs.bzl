@@ -19,6 +19,7 @@ _haskell_module = rule(
             mandatory = True,
         ),
         "src_strip_prefix": attr.string(),
+        "module_name": attr.string(),
         "extra_srcs": attr.label_list(
             allow_files = True,
         ),
@@ -55,6 +56,7 @@ def haskell_module(
         name,
         src = None,
         extra_srcs = [],
+        module_name = "",
         deps = [],
         ghcopts = [],
         plugins = [],
@@ -88,6 +90,8 @@ def haskell_module(
       src: The Haskell source file.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
                   This is merged with the extra_srcs attribute of rules that depend directly on this haskell_module rule.
+      module_name: Use the given module name instead of trying to infer it from src and src_strip_prefix. This is
+                   necessary when the src file is not named the same as the Haskell module.
       deps: List of other Haskell modules or libraries needed to compile this module.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
                This is merged with the ghcopts attribute of rules that depend directly on this haskell_module rule.
@@ -102,6 +106,7 @@ def haskell_module(
         name = name,
         src = src,
         extra_srcs = extra_srcs,
+        module_name = module_name,
         deps = deps,
         ghcopts = ghcopts,
         plugins = plugins,
