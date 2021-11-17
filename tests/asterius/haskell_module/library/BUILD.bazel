@@ -1,7 +1,0 @@
-load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
-
-asterius_test_macro(
-    "//tests/haskell_module/library:bin-deps",
-    test_entry_point = "test_entry_point.mjs",
-    test_subfolder_name = "test_subfolder_name",
-)
