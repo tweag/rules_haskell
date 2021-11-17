@@ -18,6 +18,7 @@ haskell_library(
 haskell_test(
     name = "binary",
     srcs = ["Bin.hs"],
+    visibility = ["//tests/asterius/haskell_toolchain_binary:__pkg__"],
     deps = [
         ":Lib",
         "//tests/hackage:base",

@@ -21,6 +21,7 @@ haskell_test(
     size = "small",
     srcs = ["Main.hs"],
     version = "0.0.0",  # This flags triggers the `MIN_VERSION` macro generation
+    visibility = ["//tests/asterius/package-name:__pkg__"],
     deps = [
         ":lib-a_Z",
         "//tests/hackage:base",

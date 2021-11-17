@@ -46,6 +46,7 @@ haskell_test(
         # ld on darwin does not support response files.
         "dont_test_on_darwin_with_bindist",
     ],
+    visibility = ["//tests/asterius/extra-source-files:__pkg__"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",

@@ -1,0 +1,6 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+
+asterius_test_macro(
+    "//tests/package-name:bin",
+    test_subfolder_name = "test_subfolder_name",
+)

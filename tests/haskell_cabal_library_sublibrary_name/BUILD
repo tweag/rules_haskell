@@ -61,6 +61,7 @@ haskell_cabal_binary(
 haskell_test(
     name = "haskell_cabal_library_sublibrary_name",
     srcs = ["Main.hs"],
+    visibility = ["//tests/asterius/haskell_cabal_library_sublibrary_name:__pkg__"],
     deps = [
         ":base",
         ":the_sublibrary",

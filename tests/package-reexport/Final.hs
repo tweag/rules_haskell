@@ -5,4 +5,4 @@ import qualified Dep
 import           Control.Exception (assert)
 
 main :: IO ()
-main = pure $ assert (TransitiveDep.whoAmI == Dep.whoIsMyDep) ()
+main = assert (TransitiveDep.whoAmI == Dep.whoIsMyDep) (pure ())

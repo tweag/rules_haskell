@@ -12,6 +12,8 @@ bzl_library(
     ],
 )
 
+exports_files(["asterius_webpack_config.js.tpl"])
+
 platform(
     name = "asterius_platform",
     constraint_values = [
