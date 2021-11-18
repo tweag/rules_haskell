@@ -155,6 +155,8 @@ def _haskell_binary_common_impl(ctx, is_test):
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
 
     modules = ctx.attr.modules
+    if modules and ctx.files.srcs:
+        fail("""Only one of "srcs" or "modules" attributes must be specified in {}""".format(ctx.label))
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins)
@@ -369,6 +371,8 @@ def haskell_library_impl(ctx):
     package_ids = all_dependencies_package_ids(deps)
 
     modules = ctx.attr.modules
+    if modules and ctx.files.srcs:
+        fail("""Only one of "srcs" or "modules" attributes must be specified in {}""".format(ctx.label))
 
     # Add any interop info for other languages.
     cc = cc_interop_info(
