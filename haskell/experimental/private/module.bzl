@@ -205,6 +205,7 @@ def _build_haskell_module(
             transitive = [
                 dep_info.package_databases,
                 dep_info.interface_dirs,
+                dep_info.hs_libraries,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
                 plugin_dep_info.interface_dirs,
