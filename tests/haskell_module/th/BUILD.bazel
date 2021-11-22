@@ -48,6 +48,7 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
+        "@stackage//:vector",
     ],
 )
 
