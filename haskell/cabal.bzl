@@ -2056,6 +2056,7 @@ haskell_cabal_binary(
     flags = {flags},
     srcs = glob(["{dir}/**"]),
     deps = {deps},
+    setup_deps = {setup_deps},
     tools = {tools},
     visibility = ["@{workspace}-exe//{name}:__pkg__"],
     cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w"],
