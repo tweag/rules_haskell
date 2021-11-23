@@ -120,7 +120,13 @@ def determine_module_names(src_files, search_for_main = False, main_function = "
     if search_for_main:
         main_module = infer_main_module(main_function)
         if main_file:
-            _module_map_insert(module_map, main_module, main_file)
+            if main_file in src_files:
+                _module_map_insert(module_map, main_module, main_file)
+            else:
+                fail("""\
+main_file = "{}" is not listed in the "srcs" attribute.
+""".format(main_file.path))
+
         elif not main_module in module_map:
             if len(undetermined) == 1:
                 _module_map_insert(module_map, main_module, undetermined.pop())
