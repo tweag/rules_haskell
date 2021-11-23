@@ -294,6 +294,20 @@ GHC_BINDIST = \
                 "e9175a276504c3390a5e0084954e6997d56078737dbe7158049518892cf6bfb2",
             ),
         },
+        "8.10.7": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-apple-darwin.tar.xz",
+                "287db0f9c338c9f53123bfa8731b0996803ee50f6ee847fe388092e5e5132047",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-deb9-linux.tar.xz",
+                "ced9870ea351af64fb48274b81a664cdb6a9266775f1598a79cbb6fdd5770a23",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-unknown-mingw32.tar.xz",
+                "b6515b0ea3f7a6e34d92e7fcd0c1fef50d6030fe8f46883000185289a4b8ea9a",
+            ),
+        },
         "9.0.1": {
             "darwin_amd64": (
                 "https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-apple-darwin.tar.xz",
@@ -306,6 +320,20 @@ GHC_BINDIST = \
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/9.0.1/ghc-9.0.1-x86_64-unknown-mingw32.tar.xz",
                 "4f4ab118df01cbc7e7c510096deca0cb25025339a97730de0466416296202493",
+            ),
+        },
+        "9.2.1": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-apple-darwin.tar.xz",
+                "c527700a210306098ce85d2c956089deea539aefe1d1816701d5c14cf9c113b7",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-deb9-linux.tar.xz",
+                "f09133ed735e9f3b221b5ed54787e5651f039ed0f7dab0ab834a27c8ca68fc9b",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-unknown-mingw32.tar.xz",
+                "649e04abd4fa35796070b35de1c353721507a49842b18663aa1c7adc6b4115d8",
             ),
         },
     }
