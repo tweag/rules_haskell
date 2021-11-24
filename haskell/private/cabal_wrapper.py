@@ -17,6 +17,7 @@
 # , "path_args": list of string   # Additional args to Setup.hs configure where paths need to be prefixed with execroot.
 # , "toolchain_info" :
 #     { "ghc": string                  # path to ghc
+#     , "hsc2hs": string               # path to hsc2hs
 #     , "ghc_pkg": string              # path to ghc_pkg
 #     , "runghc": string               # path to runghc
 #     , "ar": string                   # path to ar
@@ -116,6 +117,7 @@ runghc_args = json_args["runghc_args"]
 
 runghc = find_exe(toolchain_info["runghc"])
 ghc = find_exe(toolchain_info["ghc"])
+hsc2hs = find_exe(toolchain_info["hsc2hs"])
 ghc_pkg = find_exe(toolchain_info["ghc_pkg"])
 
 extra_args = json_args["extra_args"]
@@ -222,6 +224,7 @@ with tmpdir() as distdir:
         "--user", \
         "--with-compiler=" + ghc,
         "--with-hc-pkg=" + ghc_pkg,
+        "--with-hsc2hs=" + hsc2hs,
         "--with-ar=" + ar,
         "--with-gcc=" + cc,
         "--with-strip=" + strip,

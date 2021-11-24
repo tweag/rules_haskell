@@ -28,6 +28,7 @@ haskell_cabal_binary(
     name = "cabal-binary",
     srcs = glob(["cabal-binary/**"]),
     tags = ["requires_nix"],
+    visibility = ["//tests/asterius/stackage_zlib_runpath:__pkg__"],
     deps = [
         "//tests/hackage:base",
         # Depend transitively on libz.

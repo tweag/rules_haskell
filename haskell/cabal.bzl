@@ -168,6 +168,7 @@ def _cabal_toolchain_info(hs, cc, workspace_name, runghc):
     return struct(
         ghc = hs.tools.ghc.path,
         ghc_pkg = hs.tools.ghc_pkg.path,
+        hsc2hs = hs.tools.hsc2hs.path,
         runghc = runghc.path,
         ar = ar,
         cc = cc.tools.cc,
