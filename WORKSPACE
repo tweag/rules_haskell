@@ -115,8 +115,20 @@ stack_snapshot(
 
 stack_snapshot(
     name = "stackage-pinning-test",
+    components = {
+        "package1": [
+            "lib:package1",
+            "lib:sublib",
+        ],
+    },
+    components_dependencies = {
+        "package1": """{"lib:package1": ["lib:sublib"]}""",
+    },
     local_snapshot = "//:stackage-pinning-test.yaml",
-    packages = ["hspec"],
+    packages = [
+        "hspec",
+        "package1",
+    ],
     stack_snapshot_json = "//:stackage-pinning-test_snapshot.json" if not is_windows else None,
 )
 

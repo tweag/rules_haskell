@@ -9,3 +9,6 @@ packages:
       - hspec-contrib
       - hspec-core
       - hspec-discover
+
+  - archive: https://github.com/tweag/rules_haskell/raw/4f17633f3b35d16265470db1bb8b622c29739f55/tests/haskell_cabal_library_sublibrary_name/package1.tar
+    sha256: "302d8ddda8330c825da61fe0a2315c899ab083e641c7716ebdacb5c951682445"
