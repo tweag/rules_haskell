@@ -204,13 +204,13 @@ def declare_compiled(hs, src, ext, directory = None, rel_path = None):
 
     return hs.actions.declare_file(fp_with_dir)
 
-def join_path_list(hs, paths):
+def join_path_list(is_windows, paths):
     """Join the given paths suitable for env vars like PATH.
 
     Joins the list of given paths into a single string separated by ':' on Unix
     or ';' on Windows.
     """
-    sep = ";" if hs.toolchain.is_windows else ":"
+    sep = ";" if is_windows else ":"
     return sep.join(paths)
 
 def mangle_static_library(hs, posix, dynamic_lib, static_lib, outdir):

@@ -2,15 +2,16 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//haskell:providers.bzl", "HaskellLibraryInfo", "all_dependencies_package_ids")
+load(":private/path_utils.bzl", "join_path_list")
 
 HaskellContext = provider()
 
-def append_to_path(env, path):
-    if path:
+def append_to_path(env, is_windows, path_list):
+    if path_list:
         if "PATH" in env and env["PATH"]:
-            env["PATH"] = ":".join([env["PATH"], path])
+            env["PATH"] = join_path_list(is_windows, [env["PATH"]] + path_list)
         else:
-            env["PATH"] = path
+            env["PATH"] = join_path_list(is_windows, path_list)
 
 def haskell_context(ctx, attr = None):
     toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]

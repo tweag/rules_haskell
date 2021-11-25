@@ -78,8 +78,8 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     else:
         input_manifests = cc.manifests
 
-    tools.extend(hs.tools_config.tools_for_run_ghc)
-    append_to_path(env, hs.tools_config.path_for_run_ghc)
+    tools.extend(hs.tools_config.tools_for_ghc)
+    append_to_path(env, hs.toolchain.is_windows, hs.tools_config.path_for_run_ghc)
 
     hs.actions.run(
         inputs = inputs,
@@ -97,8 +97,9 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     return args
 
 default_tools_config = struct(
-    path_for_run_ghc = "",
-    tools_for_run_ghc = [],
+    path_for_run_ghc = [],
+    tools_for_ghc = [],
+    path_for_cabal = [],
     tools_for_ghc_pkg = [],
 
     # for cross compiling we will pass ghc a cross compiling cc_toolchain,
