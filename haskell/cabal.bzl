@@ -2526,13 +2526,14 @@ def stack_snapshot(
         main library component, `exe:<exe-name>` for an executable component,
         and `lib:<sublib-name>` for a sublibrary.
         `exe` is a short-cut for `exe:<package-name>`. The main library component
-        will have the label `@<workspace>//:<package>`, an executable
+        will have the label `@<workspace>//:<package>` as well as the alias `@<workspace>//<package>`, an executable
         component will have the label `@<workspace>-exe//<package>:<exe-name>`,
         and a sublibrary component will have the label `@<workspace>//<package>:<sublib-name>`
         where `<workspace>` is the name given to the `stack_snapshot`
         invocation.
       components_dependencies: Internal dependencies between package components.
         For each package, these dependencies are described as a string representing a JSON dictionary of lists.
+        (WARNING: this will likely change in the future).
         The most common case is the following, where the main library of a package depends on sublibraries:
 
         ```
