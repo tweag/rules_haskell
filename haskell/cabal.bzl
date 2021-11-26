@@ -257,7 +257,10 @@ def _prepare_cabal_inputs(
     transitive_compile_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries)
     transitive_link_libs = _concat(get_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries))
     env = dicts.add(hs.env, cc.env)
-    env["PATH"] = join_path_list(hs, _binary_paths(tool_inputs) + posix.paths)
+    env["PATH"] = join_path_list(
+        hs.toolchain.is_windows,
+        _binary_paths(tool_inputs) + posix.paths + hs.tools_config.path_for_cabal,
+    )
     if hs.toolchain.is_darwin:
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
 
@@ -554,7 +557,7 @@ def _haskell_cabal_library_impl(ctx):
         arguments = [json_args.path],
         inputs = depset([json_args], transitive = [c.inputs]),
         input_manifests = c.input_manifests + runghc_manifest,
-        tools = [c.cabal_wrapper, ctx.executable._runghc],
+        tools = [c.cabal_wrapper, ctx.executable._runghc] + hs.tools_config.tools_for_ghc,
         outputs = outputs,
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
@@ -853,7 +856,7 @@ def _haskell_cabal_binary_impl(ctx):
             binary,
             data_dir,
         ],
-        tools = [c.cabal_wrapper, ctx.executable._runghc],
+        tools = [c.cabal_wrapper, ctx.executable._runghc] + hs.tools_config.tools_for_ghc,
         env = c.env,
         mnemonic = "HaskellCabalBinary",
         progress_message = "HaskellCabalBinary {}".format(hs.label),
