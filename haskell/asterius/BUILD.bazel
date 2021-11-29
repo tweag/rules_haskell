@@ -27,3 +27,10 @@ toolchain_type(
     name = "toolchain_type",
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
