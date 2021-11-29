@@ -23,7 +23,6 @@ haskell_library(
 haskell_module(
     name = "TestLibModule",
     src = "TestLib2.hs",
-    deps = ["//tests/hackage:base"],
 )
 
 haskell_test(

@@ -391,12 +391,6 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
 
 def haskell_module_impl(ctx):
     module_deps = [dep for dep in ctx.attr.deps if HaskellModuleInfo in dep]
-    if len(module_deps) < len(ctx.attr.deps):
-        fail("""
-{rule_name} contains non-haskell_module labels in the deps attribute: {unexpected_labels}
-Maybe put them in the deps attributes of the corresponding library, binary, or test rule.
-""".format(rule_name = ctx.label, unexpected_labels = ", ".join([str(dep.label) for dep in ctx.attr.deps if not HaskellModuleInfo in dep])))
-
     transitive_module_dep_labels = depset(
         direct = [dep.label for dep in module_deps],
         transitive = [dep[HaskellModuleInfo].transitive_module_dep_labels for dep in module_deps],

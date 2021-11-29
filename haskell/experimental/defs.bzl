@@ -1,5 +1,6 @@
 """Experimental Haskell rules"""
 
+load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load(
     "//haskell/experimental/private:module.bzl",
     _haskell_module_impl = "haskell_module_impl",
@@ -23,7 +24,7 @@ _haskell_module = rule(
         "extra_srcs": attr.label_list(
             allow_files = True,
         ),
-        "deps": attr.label_list(),
+        "deps": attr.label_list(providers = [HaskellModuleInfo]),
         "ghcopts": attr.string_list(),
         "plugins": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
