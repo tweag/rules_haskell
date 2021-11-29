@@ -61,7 +61,7 @@ def haskell_module(
         tools = [],
         worker = None,
         **kwargs):
-    """Declare a dependency between modules.
+    """Declare a module and its dependencies on other modules.
 
     This allows library, binary, and test rules to do incremental builds when only a
     few modules are affected by a change.
