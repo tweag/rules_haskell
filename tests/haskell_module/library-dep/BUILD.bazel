@@ -17,9 +17,6 @@ haskell_library(
 haskell_module(
     name = "TestModule",
     src = "TestModule.hs",
-    deps = [
-        "//tests/hackage:base",
-    ],
 )
 
 haskell_library(

@@ -6,34 +6,30 @@ load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 haskell_module(
     name = "root",
     src = "Root.hs",
-    deps = ["//tests/hackage:base"],
 )
 
 haskell_module(
     name = "branch_left",
     src = "BranchLeft.hs",
-    deps = [
+    modules = [
         ":root",
-        "//tests/hackage:base",
     ],
 )
 
 haskell_module(
     name = "branch_right",
     src = "BranchRight.hs",
-    deps = [
+    modules = [
         ":root",
-        "//tests/hackage:base",
     ],
 )
 
 haskell_module(
     name = "leaf",
     src = "Leaf.hs",
-    deps = [
+    modules = [
         ":branch_left",
         ":branch_right",
-        "//tests/hackage:base",
     ],
 )
 

@@ -33,13 +33,11 @@ haskell_module(
     name = "TestBinModule",
     src = "TestBin.hs",
     module_name = "Main",
-    deps = ["//tests/hackage:base"],
 )
 
 haskell_module(
     name = "Main",
     src = "Main.hs",
-    deps = ["//tests/hackage:base"],
 )
 
 filegroup(

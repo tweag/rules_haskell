@@ -45,14 +45,12 @@ haskell_module(
     src = "ModuleWith.hs",
     plugins = [":plugin"],
     tags = ["skip_profiling"],
-    deps = [":base"],
 )
 
 haskell_module(
     name = "module-without-plugin",
     src = "ModuleWithout.hs",
     tags = ["skip_profiling"],
-    deps = [":base"],
 )
 
 haskell_library(

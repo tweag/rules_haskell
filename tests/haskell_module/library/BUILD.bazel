@@ -24,7 +24,6 @@ haskell_module(
     name = "TestLibModule",
     src = "TestLib.hs",
     extra_srcs = ["extra_src.md"],
-    deps = ["//tests/hackage:base"],
 )
 
 haskell_module(
@@ -32,7 +31,6 @@ haskell_module(
     src = "TestLib2.hs",
     extra_srcs = ["extra_src.md"],
     module_name = "Test.Lib",
-    deps = ["//tests/hackage:base"],
 )
 
 haskell_test(
