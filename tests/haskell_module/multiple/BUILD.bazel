@@ -11,7 +11,7 @@ haskell_module(
 haskell_module(
     name = "branch_left",
     src = "BranchLeft.hs",
-    modules = [
+    deps = [
         ":root",
     ],
 )
@@ -19,7 +19,7 @@ haskell_module(
 haskell_module(
     name = "branch_right",
     src = "BranchRight.hs",
-    modules = [
+    deps = [
         ":root",
     ],
 )
@@ -27,7 +27,7 @@ haskell_module(
 haskell_module(
     name = "leaf",
     src = "Leaf.hs",
-    modules = [
+    deps = [
         ":branch_left",
         ":branch_right",
     ],

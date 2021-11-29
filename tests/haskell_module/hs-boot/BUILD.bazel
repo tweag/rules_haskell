@@ -16,19 +16,19 @@ haskell_module(
 haskell_module(
     name = "lib-B",
     src = "src/B.hs",
-    modules = [
+    src_strip_prefix = "src",
+    deps = [
         ":lib-A-boot",
     ],
-    src_strip_prefix = "src",
 )
 
 haskell_module(
     name = "lib-A",
     src = "src/A.hs",
-    modules = [
+    src_strip_prefix = "src",
+    deps = [
         ":lib-B",
     ],
-    src_strip_prefix = "src",
 )
 
 haskell_library(

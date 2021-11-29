@@ -23,7 +23,7 @@ _haskell_module = rule(
         "extra_srcs": attr.label_list(
             allow_files = True,
         ),
-        "modules": attr.label_list(),
+        "deps": attr.label_list(),
         "ghcopts": attr.string_list(),
         "plugins": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
@@ -55,7 +55,7 @@ def haskell_module(
         src = None,
         extra_srcs = [],
         module_name = "",
-        modules = [],
+        deps = [],
         ghcopts = [],
         plugins = [],
         tools = [],
@@ -75,7 +75,7 @@ def haskell_module(
           name = "Example.Module",
           src = "src/Example/Module.hs",
           src_strip_prefix = "src",
-          modules = [
+          deps = [
               "//:Another.Module",
           ],
       )
@@ -114,7 +114,7 @@ def haskell_module(
                   This is merged with the extra_srcs attribute of rules that depend directly on this haskell_module rule.
       module_name: Use the given module name instead of trying to infer it from src and src_strip_prefix. This is
                    necessary when the src file is not named the same as the Haskell module.
-      modules: List of other Haskell modules needed to compile this module. They need to be included in the `modules`
+      deps: List of other Haskell modules needed to compile this module. They need to be included in the `modules`
                attribute of any library, binary, or test that depends on this module.
                If the module depends on any libraries, they should be listed in the deps attribute of the library,
                binary, or test that depends on this module.
@@ -132,7 +132,7 @@ def haskell_module(
         src = src,
         extra_srcs = extra_srcs,
         module_name = module_name,
-        modules = modules,
+        deps = deps,
         ghcopts = ghcopts,
         plugins = plugins,
         tools = tools,
