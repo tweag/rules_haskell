@@ -1,5 +1,6 @@
 """Experimental Haskell rules"""
 
+load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load(
     "//haskell/experimental/private:module.bzl",
     _haskell_module_impl = "haskell_module_impl",
@@ -23,9 +24,7 @@ _haskell_module = rule(
         "extra_srcs": attr.label_list(
             allow_files = True,
         ),
-        "deps": attr.label_list(
-            aspects = [haskell_cc_libraries_aspect],
-        ),
+        "deps": attr.label_list(providers = [HaskellModuleInfo]),
         "ghcopts": attr.string_list(),
         "plugins": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
@@ -63,7 +62,10 @@ def haskell_module(
         tools = [],
         worker = None,
         **kwargs):
-    """Compile a module from Haskell source.
+    """Declare a module and its dependencies on other modules.
+
+    This allows library, binary, and test rules to do incremental builds when only a
+    few modules are affected by a change.
 
     Note: This rule is experimental and not ready for production, yet.
 
@@ -76,7 +78,28 @@ def haskell_module(
           src_strip_prefix = "src",
           deps = [
               "//:Another.Module",
-              "//:some-library",
+          ],
+      )
+
+      haskell_module(
+          name = "Another.Module",
+          src = "src/Another/Module.hs",
+          src_strip_prefix = "src",
+      )
+
+      haskell_binary(
+          name = "haskellbin",
+          # Must choose either one of srcs or modules
+          # srcs = ...,
+          modules = [
+              # All modules to link into the binary need to be listed here
+              "//:Example.Module",
+              "//:Another.Module",
+          ],
+          # Any library dependencies of modules need to be listed here
+          deps = [
+              "//:base",
+              "//:template-haskell",
           ],
       )
       ```
@@ -92,7 +115,10 @@ def haskell_module(
                   This is merged with the extra_srcs attribute of rules that depend directly on this haskell_module rule.
       module_name: Use the given module name instead of trying to infer it from src and src_strip_prefix. This is
                    necessary when the src file is not named the same as the Haskell module.
-      deps: List of other Haskell modules or libraries needed to compile this module.
+      deps: List of other Haskell modules needed to compile this module. They need to be included in the `modules`
+               attribute of any library, binary, or test that depends on this module.
+               If the module depends on any libraries, they should be listed in the deps attribute of the library,
+               binary, or test that depends on this module.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
                This is merged with the ghcopts attribute of rules that depend directly on this haskell_module rule.
       plugins: Compiler plugins to use during compilation. (Not implemented, yet)

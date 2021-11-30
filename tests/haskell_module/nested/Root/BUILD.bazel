@@ -5,7 +5,6 @@ haskell_module(
     src = "Module.hs",
     src_strip_prefix = "/tests/haskell_module/nested",
     visibility = ["//tests/haskell_module/nested:__subpackages__"],
-    deps = ["//tests/hackage:base"],
 )
 
 filegroup(
