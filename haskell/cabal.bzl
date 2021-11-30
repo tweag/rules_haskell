@@ -992,50 +992,6 @@ be listed in `srcs` (crucially, including the `.cabal` file).
 """,
 )
 
-# Temporary hardcoded list of core libraries. This will no longer be
-# necessary once Stack 2.0 is released.
-#
-# TODO remove this list and replace it with Stack's --global-hints
-# mechanism.
-_CORE_PACKAGES = [
-    "Cabal",
-    "array",
-    "base",
-    "binary",
-    "bytestring",
-    "containers",
-    "deepseq",
-    "directory",
-    "filepath",
-    "ghc",
-    "ghc-bignum",
-    "ghc-boot",
-    "ghc-boot-th",
-    "ghc-compact",
-    "ghc-heap",
-    "ghc-prim",
-    "ghci",
-    "haskeline",
-    "hpc",
-    "integer-gmp",
-    "integer-simple",
-    "libiserv",
-    "mtl",
-    "parsec",
-    "pretty",
-    "process",
-    "rts",
-    "stm",
-    "template-haskell",
-    "terminfo",
-    "text",
-    "time",
-    "transformers",
-    "unix",
-    "Win32",
-    "xhtml",
-]
-
 _STACK_DEFAULT_VERSION = "2.3.1"
 
 # Only ever need one version, but use same structure as for GHC bindists.
@@ -1078,7 +1034,7 @@ def _resolve_component_target_name(package, component):
     # If the string is not a valid component, it may already be a label so we return it as such.
     return component
 
-def _parse_components(package, components):
+def _parse_components(package, components, spec):
     """Parse and validate a list of Cabal components.
 
     Components take the following shape:
@@ -1118,7 +1074,7 @@ def _parse_components(package, components):
         else:
             fail("Invalid Cabal component: %s in %s" % (component, package), "components")
 
-    if package in _CORE_PACKAGES:
+    if spec["location"]["type"] == "core":
         if not lib or exe != []:
             fail("Invalid core package components: %s" % package, "components")
 
@@ -1166,7 +1122,7 @@ def _parse_json_field(json, field, ty, errmsg):
         )))
     return json[field]
 
-def _parse_package_spec(package_spec):
+def _parse_package_spec(package_spec, enable_custom_toolchain_libraries, custom_toolchain_libraries):
     """Parse a package description from `stack ls dependencies json`.
 
     The definition of the JSON format can be found in the `stack` sources:
@@ -1187,8 +1143,14 @@ def _parse_package_spec(package_spec):
 
     # Parse location field.
     location = {}
-    if parsed["name"] in _CORE_PACKAGES or not "location" in package_spec:
-        location["type"] = "core"
+    if not "location" in package_spec:
+        if enable_custom_toolchain_libraries and parsed["name"] not in custom_toolchain_libraries:
+            fail("""\
+stack considers {name} a toolchain library, but it is not present in the toolchain_libraries attribute of the stack_snapshot rule: {}.
+The {name} library may need to be added explicitely to a custom stack snapshot.
+            """.format(custom_toolchain_libraries, name = parsed["name"]))
+        else:
+            location["type"] = "core"
     else:
         location_type = _parse_json_field(
             json = package_spec["location"],
@@ -1250,7 +1212,6 @@ def _parse_package_spec(package_spec):
 def _resolve_packages(
         repository_ctx,
         snapshot,
-        core_packages,
         versioned_packages,
         unversioned_packages,
         vendored_packages):
@@ -1258,7 +1219,6 @@ def _resolve_packages(
 
     Attrs:
       snapshot: The Stackage snapshot, name or path to custom snapshot.
-      core_packages: Core packages requested by the user.
       versioned_packages: Versioned packages requested by the user.
       unversioned_packages: Unversioned packages requested by the user.
       vendored_packages: Vendored packages provided by the user.
@@ -1274,6 +1234,7 @@ def _resolve_packages(
 
     # Create a dummy package depending on all requested packages.
     resolve_package = "rules-haskell-stack-resolve"
+    core_packages = (repository_ctx.attr.custom_toolchain_libraries if repository_ctx.attr.enable_custom_toolchain_libraries else [])
     repository_ctx.file(
         "{name}/{name}.cabal".format(name = resolve_package),
         executable = False,
@@ -1286,7 +1247,7 @@ library
     {packages}
 """.format(
             name = resolve_package,
-            packages = ",\n    ".join(core_packages + unversioned_packages + vendored_packages.keys() + [
+            packages = ",\n    ".join(unversioned_packages + vendored_packages.keys() + [
                 _chop_version(pkg)
                 for pkg in versioned_packages
             ]),
@@ -1296,7 +1257,7 @@ library
     # Create a stack.yaml capturing user overrides to the snapshot.
     stack_yaml_content = struct(**{
         "resolver": str(snapshot),
-        "packages": [resolve_package] + [
+        "packages": [resolve_package] + core_packages + [
             # Determines path to vendored package's root directory relative to
             # stack.yaml. Note, this requires that the Cabal file exists in the
             # package root and is called `<name>.cabal`.
@@ -1317,6 +1278,19 @@ library
     }).to_json()
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
 
+    # We declared core packages as local packages in stack.yaml for two reasons.
+    # 1 - This way, stack does not complain about them missing from the snapshot.
+    # 2 - If they are in the snapshot, stack will ignore them (not return a "location" field).
+    # However, for this to work we need to generate dummy cabal files for these core packages.
+    for core_package in core_packages:
+        repository_ctx.file(
+            "{name}/{name}.cabal".format(name = core_package),
+            content = """\
+name: {name}
+version: 0.0.0.0
+""".format(name = core_package),
+        )
+
     # Invoke stack to calculate the transitive dependencies.
     stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
     if not _stack_version_check(repository_ctx, stack_cmd):
@@ -1329,10 +1303,18 @@ library
     package_specs = json_parse(exec_result.stdout)
 
     resolved = {}
+    versioned_packages_names = {_chop_version(p): _version(p) for p in versioned_packages}
     for package_spec in package_specs:
-        parsed_spec = _parse_package_spec(package_spec)
+        parsed_spec = _parse_package_spec(
+            package_spec,
+            repository_ctx.attr.enable_custom_toolchain_libraries,
+            repository_ctx.attr.custom_toolchain_libraries,
+        )
         if parsed_spec["name"] == resolve_package:
             continue
+        if parsed_spec["location"]["type"] == "core":
+            if parsed_spec["name"] in versioned_packages_names:
+                fail("{} is a core package, built into GHC. Its version is determined entirely by the version of GHC you are using. You cannot pin it to {}.".format(parsed_spec["name"], versioned_packages_names[parsed_spec["name"]]))
         resolved[parsed_spec["name"]] = parsed_spec
 
     # Sort the items to make sure that generated outputs are deterministic.
@@ -1469,7 +1451,7 @@ def _pin_packages(repository_ctx, resolved):
     return (hashes_url, resolved)
 
 def _download_packages(repository_ctx, snapshot, pinned):
-    """Downlad all remote packages.
+    """Download all remote packages.
 
     Downloads hackage and archive packages using Bazel, eligible to repository
     cache. Downloads git and hg packages using `stack unpack`, not eligible to
@@ -1592,12 +1574,10 @@ def _parse_packages_list(packages, vendored_packages):
     Returns:
       struct(all, core, versioned, unversioned):
         all: The unversioned names of all requested packages.
-        core: The unversioned names of requested core packages.
         versioned: The versioned names of requested versioned packages.
         unversioned: The unversioned names of requested unversioned packages.
     """
     all_packages = []
-    core_packages = []
     versioned_packages = []
     unversioned_packages = []
 
@@ -1607,18 +1587,13 @@ def _parse_packages_list(packages, vendored_packages):
         if unversioned in vendored_packages:
             fail("Duplicate package '{}'. Packages may not be listed in both 'packages' and 'vendored_packages'.".format(package))
         all_packages.append(unversioned)
-        if unversioned in _CORE_PACKAGES:
-            if has_version:
-                fail("{} is a core package, built into GHC. Its version is determined entirely by the version of GHC you are using. You cannot pin it to {}.".format(unversioned, _version(package)))
-            core_packages.append(unversioned)
-        elif has_version:
+        if has_version:
             versioned_packages.append(package)
         else:
             unversioned_packages.append(package)
 
     return struct(
         all = all_packages,
-        core = core_packages,
         versioned = versioned_packages,
         unversioned = unversioned_packages,
     )
@@ -1834,7 +1809,6 @@ def _stack_snapshot_unpinned_impl(repository_ctx):
     resolved = _resolve_packages(
         repository_ctx,
         snapshot,
-        packages.core,
         packages.versioned,
         packages.unversioned,
         vendored_packages,
@@ -1898,7 +1872,6 @@ def _stack_snapshot_impl(repository_ctx):
         resolved = _resolve_packages(
             repository_ctx,
             snapshot,
-            packages.core,
             packages.versioned,
             packages.unversioned,
             vendored_packages,
@@ -1933,7 +1906,7 @@ def _stack_snapshot_impl(repository_ctx):
         visibilities[name] = visibility
 
     user_components = {
-        name: _parse_components(name, components)
+        name: _parse_components(name, components, resolved[name])
         for (name, components) in repository_ctx.attr.components.items()
     }
     all_components = {}
@@ -2008,7 +1981,8 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_l
 alias(name = "{name}", actual = "{actual}", visibility = {visibility})
 """.format(name = name, actual = vendored_packages[name], visibility = visibility),
             )
-        elif name in _CORE_PACKAGES:
+
+        elif spec["location"]["type"] == "core":
             build_file_builder.append(
                 """
 haskell_toolchain_library(name = "{name}", visibility = {visibility})
@@ -2177,6 +2151,8 @@ _stack_snapshot_unpinned = repository_rule(
         "stack": attr.label(),
         "stack_update": attr.label(),
         "netrc": attr.string(),
+        "custom_toolchain_libraries": attr.string_list(default = []),
+        "enable_custom_toolchain_libraries": attr.bool(default = False),
     },
 )
 
@@ -2198,6 +2174,8 @@ _stack_snapshot = repository_rule(
         "stack": attr.label(),
         "stack_update": attr.label(),
         "verbose": attr.bool(default = False),
+        "custom_toolchain_libraries": attr.string_list(default = []),
+        "enable_custom_toolchain_libraries": attr.bool(default = False),
     },
 )
 
@@ -2386,6 +2364,7 @@ def stack_snapshot(
         stack_update = None,
         verbose = False,
         netrc = "",
+        toolchain_libraries = None,
         **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
@@ -2563,6 +2542,19 @@ def stack_snapshot(
         `stack update` which could fail due to a race on the hackage security lock.
       netrc: Location of the .netrc file to use for authentication.
         Defaults to `~/.netrc` if present.
+      toolchain_libraries: If this snapshot is to be used with a compiler providing a non standard set of toolchain libraries, these must be declared here.
+        In the case of asterius, this list can be loaded from the `toolchain_libraries.bzl` of the toolchain repositories (a stack_snapshot repository is not tied to a particular toolchain, but the toolchain libraries must correspond):
+
+        ```
+        rules_haskell_asterius_toolchains(version = "0.0.1")
+        load("@linux_amd64_asterius//:toolchain_libraries.bzl", "toolchain_libraries")
+        stack_snapshot(
+            ...,
+            toolchain_libraries = toolchain_libraries,
+            ...,
+        )
+        ```
+
     """
     typecheck_stackage_extradeps(extra_deps)
     if not stack:
@@ -2590,6 +2582,8 @@ def stack_snapshot(
         packages = packages,
         flags = flags,
         netrc = netrc,
+        custom_toolchain_libraries = toolchain_libraries,
+        enable_custom_toolchain_libraries = toolchain_libraries != None,
     )
     _stack_snapshot(
         name = name,
@@ -2613,6 +2607,8 @@ def stack_snapshot(
         components = components,
         components_dependencies = components_dependencies,
         verbose = verbose,
+        custom_toolchain_libraries = toolchain_libraries,
+        enable_custom_toolchain_libraries = toolchain_libraries != None,
         **kwargs
     )
     _stack_executables(
