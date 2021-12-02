@@ -31,9 +31,9 @@ haskell_cabal_binary(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "d58e4d708b14ff332a8a8edad4fa8989cb6a9f518a7c6834e96281ac5f8ff232",
-    strip_prefix = "alex-3.2.4",
-    urls = ["http://hackage.haskell.org/package/alex-3.2.4/alex-3.2.4.tar.gz"],
+    sha256 = "91aa08c1d3312125fbf4284815189299bbb0be34421ab963b1f2ae06eccc5410",
+    strip_prefix = "alex-3.2.6",
+    urls = ["http://hackage.haskell.org/package/alex-3.2.6/alex-3.2.6.tar.gz"],
 )
 
 load(
@@ -278,7 +278,7 @@ haskell_register_ghc_nixpkgs(
     ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8104.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8107.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
@@ -357,7 +357,7 @@ nixpkgs_package(
 
 nixpkgs_package(
     name = "sphinx",
-    attribute_path = "python37Packages.sphinx",
+    attribute_path = "python39Packages.sphinx",
     repository = "@nixpkgs_default",
 )
 
