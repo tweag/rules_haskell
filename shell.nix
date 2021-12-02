@@ -22,7 +22,7 @@ mkShell {
     # For stack_install.
     stack
     # Needed for ghcide which expects ghc in PATH.
-    haskell.packages.ghc8104.ghc
+    haskell.packages.ghc8107.ghc
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
     # Needed to get correct locale for tests with encoding
@@ -34,7 +34,7 @@ mkShell {
     # check the start script for problems
     shellcheck
     file
-  ] ++ lib.optionals docTools [graphviz python37Packages.sphinx zip unzip];
+  ] ++ lib.optionals docTools [graphviz python39Packages.sphinx zip unzip];
 
   shellHook = ''
     # Add nix config flags to .bazelrc.local.

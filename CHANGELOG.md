@@ -8,7 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+* Support for Bazel 4.2.1
 * Support for Bazel 4.1.0
+
+### Removed
+
+* Support for Bazel < 4.0.0
 
 [Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.13...master
 

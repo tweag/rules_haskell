@@ -718,9 +718,8 @@ haskell_doc_aspect = _haskell_doc_aspect
 def haskell_register_toolchains(**kwargs):
     """Register GHC binary distributions for all platforms as toolchains.
 
-      Deprecated:
+    Deprecated:
         Use [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains) instead.
-
     """
     _haskell_register_toolchains(**kwargs)
 

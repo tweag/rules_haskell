@@ -31,9 +31,9 @@ haskell_cabal_binary(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "d58e4d708b14ff332a8a8edad4fa8989cb6a9f518a7c6834e96281ac5f8ff232",
-    strip_prefix = "alex-3.2.4",
-    urls = ["http://hackage.haskell.org/package/alex-3.2.4/alex-3.2.4.tar.gz"],
+    sha256 = "91aa08c1d3312125fbf4284815189299bbb0be34421ab963b1f2ae06eccc5410",
+    strip_prefix = "alex-3.2.6",
+    urls = ["http://hackage.haskell.org/package/alex-3.2.6/alex-3.2.6.tar.gz"],
 )
 
 load(
@@ -218,9 +218,9 @@ load(
 
 http_archive(
     name = "rules_proto",
-    sha256 = "e0cab008a9cdc2400a1d6572167bf9c5afc72e19ee2b862d18581051efab42c9",
-    strip_prefix = "rules_proto-c0b62f2f46c85c16cb3b5e9e921f0d00e3101934",
-    urls = ["https://github.com/bazelbuild/rules_proto/archive/c0b62f2f46c85c16cb3b5e9e921f0d00e3101934.tar.gz"],
+    sha256 = "36476f17a78a4c495b9a9e70bd92d182e6e78db476d90c74bac1f5f19f0d6d04",
+    strip_prefix = "rules_proto-fcad4680fee127dbd8344e6a961a28eef5820ef4",
+    urls = ["https://github.com/bazelbuild/rules_proto/archive/fcad4680fee127dbd8344e6a961a28eef5820ef4.tar.gz"],
 )
 
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
@@ -278,7 +278,7 @@ haskell_register_ghc_nixpkgs(
     ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8104.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8107.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
@@ -357,7 +357,7 @@ nixpkgs_package(
 
 nixpkgs_package(
     name = "sphinx",
-    attribute_path = "python37Packages.sphinx",
+    attribute_path = "python39Packages.sphinx",
     repository = "@nixpkgs_default",
 )
 
@@ -484,25 +484,11 @@ haskell_package_repository_dummy(
     name = "haskell_package_repository_dummy",
 )
 
-# If bazel_version < 4, asterius is not supported and
-# rules_haskell_dependencies does not declare @build_bazel_rules_nodejs.
-# This is fine for users of rules haskell who do not use asterius.
-# But for the rules_haskell repository, we install an older version
-# of rules_nodejs for stardoc.
-load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-
-maybe(
-    http_archive,
-    name = "build_bazel_rules_nodejs",
-    sha256 = "0fa2d443571c9e02fcb7363a74ae591bdcce2dd76af8677a95965edf329d778a",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/3.6.0/rules_nodejs-3.6.0.tar.gz"],
-)
-
 http_archive(
     name = "io_bazel_rules_sass",
-    sha256 = "86f734253cb2480acab150f37eb6c5952f33ed463182f77eedf2e41ba2fe2e8f",
-    strip_prefix = "rules_sass-1.35.1",
-    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.35.1.tar.gz"],
+    sha256 = "53b42e9dc1c12d18716518a3810780a0131cd513a6d5c828e1eb3fbd30cc0ba6",
+    strip_prefix = "rules_sass-1.44.0",
+    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.44.0.tar.gz"],
 )
 
 load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
@@ -515,11 +501,10 @@ sass_repositories()
 
 http_archive(
     name = "io_bazel_stardoc",
-    sha256 = "6d07d18c15abb0f6d393adbd6075cd661a2219faab56a9517741f0fc755f6f3c",
-    strip_prefix = "stardoc-0.4.0",
+    sha256 = "c9794dcc8026a30ff67cf7cf91ebe245ca294b20b071845d12c192afe243ad72",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/archive/0.4.0.tar.gz",
-        "https://github.com/bazelbuild/stardoc/archive/0.4.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/releases/download/0.5.0/stardoc-0.5.0.tar.gz",
+        "https://github.com/bazelbuild/stardoc/releases/download/0.5.0/stardoc-0.5.0.tar.gz",
     ],
 )
 
@@ -545,20 +530,21 @@ register_toolchains(
 
 # For buildifier
 
+# starting from 0.29, rules_go requires bazel >= 4.2.0
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "69de5c704a05ff37862f7e0f5534d4f479418afc21806c887db544a316f3cb6b",
+    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
     ],
 )
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "c28eef4d30ba1a195c6837acf6c75a4034981f5b4002dda3c5aa6e48ce023cf1",
-    strip_prefix = "buildtools-4.0.1",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/4.0.1.tar.gz"],
+    sha256 = "614c84128ddb86aab4e1f25ba2e027d32fd5c6da302ae30685b9d7973b13da1b",
+    strip_prefix = "buildtools-4.2.3",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/4.2.3.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
