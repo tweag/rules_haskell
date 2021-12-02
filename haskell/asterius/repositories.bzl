@@ -16,7 +16,6 @@ load(
     "os_of_constraints",
     "platform_of_constraints",
 )
-load("//haskell:private/versions.bzl", "supports_rules_nodejs_ge_4")
 load("//haskell/asterius:asterius_config.bzl", "asterius_cabalopts")
 load(
     "//haskell/asterius:asterius_dependencies.bzl",
@@ -237,9 +236,6 @@ def rules_haskell_asterius_toolchain(
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
     """
-
-    if not supports_rules_nodejs_ge_4(native.bazel_version):
-        fail("Asterius is only supported starting from bazel 4 (because it depends on rules_nodejs >= 4)")
 
     _ahc(
         name = name,
