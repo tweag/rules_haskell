@@ -3,11 +3,11 @@
 # Checks the version of Bazel found in the PATH, and then initializes
 # a new Bazel workspace with dummy Haskell build targets.
 
-MIN_BAZEL_MAJOR=2
-MIN_BAZEL_MINOR=1
+MIN_BAZEL_MAJOR=4
+MIN_BAZEL_MINOR=0
 
 MAX_BAZEL_MAJOR=4
-MAX_BAZEL_MINOR=1
+MAX_BAZEL_MINOR=2
 
 set -e
 
