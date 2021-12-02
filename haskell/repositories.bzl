@@ -6,7 +6,6 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(
     ":private/versions.bzl",
     "check_version",
-    "supports_rules_nodejs_ge_4",
 )
 
 def rules_haskell_dependencies():
@@ -28,50 +27,49 @@ def rules_haskell_dependencies():
         http_archive,
         name = "bazel_skylib",
         urls = [
-            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
-            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
+            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
         ],
-        sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
+        sha256 = "c6966ec828da198c5d9adbaa94c05e3a1c7f21bd012a0b29ba8ddbccb2c93b0d",
     )
 
     maybe(
         http_archive,
         name = "rules_cc",
-        sha256 = "34b2ebd4f4289ebbc27c7a0d854dcd510160109bb0194c0ba331c9656ffcb556",
-        strip_prefix = "rules_cc-daf6ace7cfeacd6a83e9ff2ed659f416537b6c74",
-        urls = ["https://github.com/bazelbuild/rules_cc/archive/daf6ace7cfeacd6a83e9ff2ed659f416537b6c74.tar.gz"],
+        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.1/rules_cc-0.0.1.tar.gz"],
+        sha256 = "4dccbfd22c0def164c8f47458bd50e0c7148f3d92002cdb459c2a96a68498241",
     )
 
     maybe(
         http_archive,
         name = "rules_python",
-        url = "https://github.com/bazelbuild/rules_python/releases/download/0.3.0/rules_python-0.3.0.tar.gz",
-        sha256 = "934c9ceb552e84577b0faf1e5a2f0450314985b4d8712b2b70717dc679fdc01b",
+        url = "https://github.com/bazelbuild/rules_python/releases/download/0.5.0/rules_python-0.5.0.tar.gz",
+        sha256 = "cd6730ed53a002c56ce4e2f396ba3b3be262fd7cb68339f0377a45e8227fe332",
     )
 
     maybe(
         git_repository,
         name = "rules_sh",
-        commit = "47b4d823128f484ec1b06aa20349c4898216f486",
+        commit = "670efdc93c97fde478a91abb7d2b8308cb835a40",
         remote = "https://github.com/tweag/rules_sh.git",
-        shallow_since = "1634121484 +0000",
+        shallow_since = "1637931407 +0100",
     )
 
     maybe(
         http_archive,
         name = "io_tweag_rules_nixpkgs",
-        sha256 = "6bedf80d6cb82d3f1876e27f2ff9a2cc814d65f924deba14b49698bb1fb2a7f7",
-        strip_prefix = "rules_nixpkgs-a388ab60dea07c3fc182453e89ff1a67c9d3eba6",
-        urls = ["https://github.com/tweag/rules_nixpkgs/archive/a388ab60dea07c3fc182453e89ff1a67c9d3eba6.tar.gz"],
+        sha256 = "9b97f6cce67bd2a005089ca108358e9bbc24531794a9d1f8ca537470ee8ca2d1",
+        strip_prefix = "rules_nixpkgs-075794009270b12986d3d840e4fc065a3aceba00",
+        urls = ["https://github.com/tweag/rules_nixpkgs/archive/075794009270b12986d3d840e4fc065a3aceba00.tar.gz"],
     )
 
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "f18a40816260a9a3190a94efb0fc26270b244a2436681602f0a944739095d632",
-        strip_prefix = "protobuf-3.15.1",
+        sha256 = "87407cd28e7a9c95d9f61a098a53cf031109d451a7763e7dd1253abf8b4df422",
+        strip_prefix = "protobuf-3.19.1",
         urls = [
-            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.15.1.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.19.1.tar.gz",
         ],
     )
 
@@ -95,19 +93,12 @@ def rules_haskell_dependencies():
         urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
     )
 
-    # We need a recent node binary in order to test outputs from asterius.
-    # (one that supports "--experimental-wasi-unstable-preview1")
-    # However, rules_nodejs versions that are recent enough only support Bazel >= 4.0.0
-    # As mentioned [here](https://github.com/bazelbuild/rules_nodejs/releases/tag/4.0.0)
-    # an alternative would be to patch out the version check of rules_nodejs.
-
-    if "bazel_version" in dir(native) and supports_rules_nodejs_ge_4(native.bazel_version):
-        maybe(
-            http_archive,
-            name = "build_bazel_rules_nodejs",
-            sha256 = "3635797a96c7bfcd0d265dacd722a07335e64d6ded9834af8d3f1b7ba5a25bba",
-            urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/4.3.0/rules_nodejs-4.3.0.tar.gz"],
-        )
+    maybe(
+        http_archive,
+        name = "build_bazel_rules_nodejs",
+        sha256 = "cfc289523cf1594598215901154a6c2515e8bf3671fd708264a6f6aefe02bf39",
+        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/4.4.6/rules_nodejs-4.4.6.tar.gz"],
+    )
 
 def haskell_repositories():
     """Alias for rules_haskell_dependencies
