@@ -33,10 +33,11 @@ On a Unix system you will need the following tools installed.
 * ``libtinfo5``
 * ``make``
 * ``python3`` (``python`` also needs to be available in ``$PATH``. Depending on your distribution, this might require installing the ``python`` meta-package, which might use Python 2 or 3, ``rules_haskell`` works with both.)
+* JDK (e.g., OpenJDK 8 or 11)
 
 On Ubuntu you can obtain them by installing the following packages. ::
 
-  build-essential libffi-dev libgmp-dev libtinfo5 libtinfo-dev python python3
+  build-essential libffi-dev libgmp-dev libtinfo5 libtinfo-dev python python3 openjdk-11-jdk
 
 On Windows you will need.
 
