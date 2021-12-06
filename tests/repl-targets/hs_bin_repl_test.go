@@ -79,6 +79,9 @@ haskell_test(
         ":base",
     ],
 )
+
+-- .bazelrc --
+build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
 -- Quux.hs --
 module Main (main) where
 
