@@ -293,7 +293,7 @@ def _collect_module_inputs(module_input_map, directs, dep):
 
     Args:
       module_input_map: maps labels of dependencies to all the inputs they require
-      directs: inputs of direct depedencies
+      directs: inputs of direct dependencies
       dep: the target for which to collect inputs
 
     Returns:
@@ -314,7 +314,7 @@ def _reorder_module_deps_to_postorder(label, modules):
 
     Args:
       label: The label of the rule with the modules attribute
-      modules: The modules comming from a modules attribute. This list must
+      modules: The modules coming from a modules attribute. This list must
                be the transitive closure of all the module dependencies.
     """
     transitive_module_dep_labels = depset(
