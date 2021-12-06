@@ -331,6 +331,12 @@ def _reorder_module_deps_to_postorder(label, modules):
         fail("There are modules missing in the modules attribute of {0}: {1}".format(label, diff))
     return [module_map[lbl] for lbl in transitive_module_dep_labels]
 
+def interfaces_as_list(with_shared, o):
+    if with_shared:
+        return [o.hi, o.dyn_hi]
+    else:
+        return [o.hi]
+
 def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
         and in their dependencies
@@ -345,8 +351,14 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
       odir: The directory in which to output object files
 
     Returns:
-      struct(his, dyn_his, os, dyn_os): each component containts the interface, dynamic interface, object,
-      and dynamic object files of all transitive module dependencies.
+      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces):
+        his: interface files of all modules in ctx.attr.modules
+        dyn_his: dynamic interface files of all modules in ctx.attr.modules
+        os: object files of all modules in ctx.attr.modules
+        dyn_os: dynamic object files of all modules in ctx.attr.modules
+        per_module_transitive_interfaces: dict of module labels to their
+            interfaces and the interfaces of their transitive module
+            dependencies
     """
 
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
@@ -386,11 +398,21 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         dyn_hi_set = depset()
         dyn_o_set = depset()
 
+    # put outputs and inputs together for each module
+    per_module_transitive_interfaces = {
+        dep.label: depset(
+            interfaces_as_list(with_shared, module_outputs[dep.label]),
+            transitive = [module_interfaces[dep.label]],
+        )
+        for dep in transitive_module_deps
+    }
+
     return struct(
         his = hi_set,
         dyn_his = dyn_hi_set,
         os = o_set,
         dyn_os = dyn_o_set,
+        per_module_transitive_interfaces = per_module_transitive_interfaces,
     )
 
 def haskell_module_impl(ctx):
