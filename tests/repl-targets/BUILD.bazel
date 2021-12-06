@@ -115,9 +115,9 @@ haskell_library(
 
 go_bazel_test(
     name = "hs_bin_repl_test",
+    size = "medium",
     srcs = ["hs_bin_repl_test.go"],
     rule_files = ["//:distribution"],
-    size = "medium",
 )
 
 filegroup(
