@@ -179,6 +179,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         "extra_srcs": [],
         "deps": ctx.rule.attr.deps +
                 ctx.toolchains["@rules_haskell//protobuf:toolchain"].deps,
+        "narrowed_deps": [],
         "plugins": [],
         "non_default_plugins": [],
         "data": [],

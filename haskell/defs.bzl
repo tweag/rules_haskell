@@ -35,6 +35,10 @@ load(
     "check_deprecated_attribute_usage",
 )
 load(
+    "//haskell:providers.bzl",
+    "HaskellLibraryInfo",
+)
+load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
@@ -53,6 +57,7 @@ _haskell_common_attrs = {
     "deps": attr.label_list(
         aspects = [haskell_cc_libraries_aspect],
     ),
+    "narrowed_deps": attr.label_list(providers = [HaskellLibraryInfo]),
     "modules": attr.label_list(
         providers = [HaskellModuleInfo],
     ),
@@ -248,6 +253,7 @@ def haskell_binary(
         srcs = [],
         extra_srcs = [],
         deps = [],
+        narrowed_deps = [],
         data = [],
         compiler_flags = [],
         ghcopts = [],
@@ -309,6 +315,10 @@ def haskell_binary(
       srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      narrowed_deps: Like deps, but only for dependencies using the modules
+          attribute. These dependencies are only used if this library uses
+          the modules attribute and the haskell_module rules depend on modules
+          provided by these dependencies.
       modules: List of extra haskell_module() dependencies to be linked into this binary.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
@@ -332,6 +342,7 @@ def haskell_binary(
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        narrowed_deps = narrowed_deps,
         data = data,
         compiler_flags = compiler_flags,
         ghcopts = ghcopts,
@@ -391,6 +402,7 @@ def haskell_test(
         srcs = [],
         extra_srcs = [],
         deps = [],
+        narrowed_deps = [],
         data = [],
         compiler_flags = [],
         ghcopts = [],
@@ -442,6 +454,10 @@ def haskell_test(
       srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      narrowed_deps: Like deps, but only for dependencies using the modules
+          attribute. These dependencies are only used if this library uses
+          the modules attribute and the haskell_module rules depend on modules
+          provided by these dependencies.
       modules: List of extra haskell_module() dependencies to be linked into this test.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
@@ -478,6 +494,7 @@ def haskell_test(
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        narrowed_deps = narrowed_deps,
         data = data,
         compiler_flags = compiler_flags,
         ghcopts = ghcopts,
@@ -523,6 +540,7 @@ def haskell_library(
         srcs = [],
         extra_srcs = [],
         deps = [],
+        narrowed_deps = [],
         modules = [],
         data = [],
         compiler_flags = [],
@@ -577,6 +595,10 @@ def haskell_library(
       srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      narrowed_deps: Like deps, but only for dependencies using the modules
+          attribute. These dependencies are only used if this library uses
+          the modules attribute and the haskell_module rules depend on modules
+          provided by these dependencies.
       modules: List of extra haskell_module() dependencies to be linked into this library.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
@@ -606,6 +628,7 @@ def haskell_library(
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        narrowed_deps = narrowed_deps,
         modules = modules,
         data = data,
         compiler_flags = compiler_flags,
