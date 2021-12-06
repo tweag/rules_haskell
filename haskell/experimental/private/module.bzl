@@ -316,6 +316,9 @@ def _reorder_module_deps_to_postorder(label, modules):
       label: The label of the rule with the modules attribute
       modules: The modules coming from a modules attribute. This list must
                be the transitive closure of all the module dependencies.
+
+    Returns:
+      A list with the targets in modules in postorder
     """
     transitive_module_dep_labels = depset(
         direct = [m.label for m in modules],
