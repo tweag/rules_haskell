@@ -320,6 +320,7 @@ def _reorder_module_deps_to_postorder(label, modules):
     transitive_module_dep_labels = depset(
         direct = [m.label for m in modules],
         transitive = [m[HaskellModuleInfo].transitive_module_dep_labels for m in modules],
+        order = "postorder",
     ).to_list()
     module_map = {m.label: m for m in modules}
     if len(module_map) != len(transitive_module_dep_labels):
