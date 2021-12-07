@@ -4,6 +4,8 @@
 
 [![Continuous integration](https://github.com/tweag/rules_haskell/workflows/Continuous%20integration/badge.svg)](https://github.com/tweag/rules_haskell/actions?query=branch%3Amaster)
 
+Bazel CI: [![Build status](https://badge.buildkite.com/921dc61e2d3a350ec40efb291914360c0bfa9b6196fa357420.svg?branch=master)](https://buildkite.com/bazel/rules-haskell-haskell)
+
 Bazel automates building and testing software. It scales to very large
 multi-language projects. This project extends Bazel with build rules
 for Haskell. Get started building your own project using these rules
