@@ -333,7 +333,7 @@ if [[ "${MODE}" = "nix" ]]; then
 	# This project uses a GHC provisioned via nix.
 	# We need to use the rules_haskell nix toolchain accordingly:
 	build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
-	run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host'
+	run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
 	
 	EOF
 fi
