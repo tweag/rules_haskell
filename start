@@ -199,9 +199,9 @@ load(
 # Download rules_haskell and make it accessible as "@rules_haskell".
 http_archive(
     name = "rules_haskell",
-    strip_prefix = "rules_haskell-0.13",
-    urls = ["https://github.com/tweag/rules_haskell/archive/v0.13.tar.gz"],
-    sha256 = "b4e2c00da9bc6668fa0404275fecfdb31beb700abdba0e029e74cacc388d94d6",
+    strip_prefix = "rules_haskell-0.14",
+    urls = ["https://github.com/tweag/rules_haskell/archive/v0.14.tar.gz"],
+    # sha256 = "...",
 )
 
 load(
@@ -226,9 +226,11 @@ stack_snapshot(
     name = "stackage",
     extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
     packages = ["zlib"],
-    # Last snapshot published for ghc-8.6.5 the default version picked up by
-    # rules_haskell
-    snapshot = "lts-14.27",
+
+    # Snapshot published for ghc-8.10.7
+    # Use "lts-14.27" for ghc-8.6.5, the default version picked up by rules_haskell
+    snapshot = "lts-18.18",
+
     # This uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run \`bazel run @stackage-unpinned//:pin\` and
     # uncomment the following line.
@@ -241,7 +243,9 @@ EOF
 case "${MODE}" in
     "bindist") cat <<-EOF
 		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
-		rules_haskell_toolchains()
+		rules_haskell_toolchains(
+		    version = "8.10.7",
+		)
 		
 		http_archive(
 		    name = "zlib.dev",
@@ -272,8 +276,8 @@ case "${MODE}" in
 		# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
 		nixpkgs_git_repository(
 		    name = "nixpkgs",
-		    revision = "20.09",
-		    # sha256 = …
+		    revision = "21.11",
+		    sha256 = "c77bb41cf5dd82f4718fa789d49363f512bb6fa6bc25f8d60902fe2d698ed7cc",
 		)
 		
 		nixpkgs_cc_configure(
@@ -295,7 +299,7 @@ case "${MODE}" in
 		haskell_register_ghc_nixpkgs(
 		    repository = "@nixpkgs",
 		    attribute_path = "ghc",
-		    version = "8.8.4",
+		    version = "8.10.7",
 		)
 		
 		# For ${ZLIB_BUILD_FILE}
