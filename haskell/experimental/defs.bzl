@@ -116,7 +116,9 @@ def haskell_module(
       module_name: Use the given module name instead of trying to infer it from src and src_strip_prefix. This is
                    necessary when the src file is not named the same as the Haskell module.
       deps: List of other Haskell modules needed to compile this module. They need to be included in the `modules`
-               attribute of any library, binary, or test that depends on this module.
+               attribute of the enclosing library, binary, or test; or they need to be included
+               in the `modules` attribute of any library in the `narrowed_deps` attribute of the enclosing
+               library, binary, or test.
                If the module depends on any libraries, they should be listed in the deps attribute of the library,
                binary, or test that depends on this module.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.

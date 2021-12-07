@@ -30,6 +30,7 @@ load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
+load("//haskell:providers.bzl", "HaskellInfo")
 
 def _build_haskell_module(
         ctx,
@@ -37,6 +38,8 @@ def _build_haskell_module(
         cc,
         posix,
         dep_info,
+        narrowed_deps_info,
+        package_ids,
         package_name,
         with_shared,
         hidir,
@@ -52,6 +55,10 @@ def _build_haskell_module(
       hs: Haskell context
       cc: CcInteropInfo, information about C dependencies.
       posix: posix toolchain
+      dep_info: info on dependencies in deps
+      narrowed_deps_info: info on dependencies in narrowed_deps
+      package_ids: list of package ids to expose when building the module
+      package_name: name of this package, or empty if building a binary
       with_shared: Whether to build dynamic object files
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
@@ -145,8 +152,8 @@ def _build_haskell_module(
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
-            package_ids = hs.package_ids,
-            package_databases = dep_info.package_databases,
+            package_ids = package_ids,
+            package_databases = depset(transitive = [dep_info.package_databases, narrowed_deps_info.package_databases]),
             # TODO[AH] Support version macros
             version = None,
         ),
@@ -206,6 +213,7 @@ def _build_haskell_module(
                 dep_info.package_databases,
                 dep_info.interface_dirs,
                 dep_info.hs_libraries,
+                narrowed_deps_info.package_databases,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
                 plugin_dep_info.interface_dirs,
@@ -268,10 +276,12 @@ def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
     his = [
         module_outputs[m.label].hi
         for m in dep[HaskellModuleInfo].direct_module_deps
+        if m.label in module_outputs
     ]
     os = [
         o
         for m in dep[HaskellModuleInfo].direct_module_deps
+        if m.label in module_outputs
         for o in [module_outputs[m.label].o]
         if o  # boot module files produce no useful object files
     ]
@@ -279,10 +289,12 @@ def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
         his += [
             module_outputs[m.label].dyn_hi
             for m in dep[HaskellModuleInfo].direct_module_deps
+            if m.label in module_outputs
         ]
         os += [
             dyn_o
             for m in dep[HaskellModuleInfo].direct_module_deps
+            if m.label in module_outputs
             for dyn_o in [module_outputs[m.label].dyn_o]
             if dyn_o  # boot module files produce no useful object files
         ]
@@ -304,18 +316,31 @@ def _collect_module_inputs(module_input_map, directs, dep):
         transitive = [
             module_input_map[m.label]  # Will be set by a previous iteration, since all deps were visited before.
             for m in dep[HaskellModuleInfo].direct_module_deps
+            if m.label in module_input_map
         ],
     )
     module_input_map[dep.label] = all_inputs
     return all_inputs
 
-def _reorder_module_deps_to_postorder(label, modules):
+def _collect_narrowed_deps_module_files(per_module_transitive_files, dep):
+    return depset(
+        transitive = [
+            per_module_transitive_files[m.label]
+            for m in dep[HaskellModuleInfo].direct_module_deps
+            if m.label in per_module_transitive_files
+        ],
+    )
+
+def _reorder_module_deps_to_postorder(label, modules, per_module_transitive_interfaces):
     """ Reorders modules to a postorder traversal of the dependency dag.
 
     Args:
       label: The label of the rule with the modules attribute
       modules: The modules coming from a modules attribute. This list must
-               be the transitive closure of all the module dependencies.
+               be the transitive closure of all the module dependencies, excluding
+               modules that come from libraries in narrowed_deps.
+      per_module_transitive_interfaces: Dict of module labels to their interface files
+          and the interface files of their transitive module dependencies.
 
     Returns:
       A list with the targets in modules in postorder
@@ -327,9 +352,41 @@ def _reorder_module_deps_to_postorder(label, modules):
     ).to_list()
     module_map = {m.label: m for m in modules}
     if len(module_map) != len(transitive_module_dep_labels):
-        diff = ", ".join([str(x) for x in transitive_module_dep_labels if not x in module_map])
-        fail("There are modules missing in the modules attribute of {0}: {1}".format(label, diff))
-    return [module_map[lbl] for lbl in transitive_module_dep_labels]
+        for k in transitive_module_dep_labels:
+            if not k in module_map and not k in per_module_transitive_interfaces:
+                diff = ", ".join([str(x) for x in transitive_module_dep_labels if not x in module_map])
+                fail("There are modules missing in the modules attribute or libraries missing in the narrowed_deps attribute of {0}: {1}".format(label, diff))
+    return [module_map[lbl] for lbl in transitive_module_dep_labels if lbl in module_map]
+
+def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
+    """Merge the module files corresponding to library dependencies that can be narrowed
+
+    Args:
+      rule_label: The label of the rule with the modules attribute
+      narrowed_deps: The contents of the narrowed_deps attribute
+
+    Returns:
+      struct(per_module_transitive_interfaces):
+        per_module_transitive_interfaces: dict of module labels to their
+            interfaces and the interfaces of their transitive module
+            dependencies
+    """
+    per_module_transitive_interfaces = {}
+    for dep in narrowed_deps:
+        lib_info = dep[HaskellInfo]
+        if not lib_info.per_module_transitive_interfaces:
+            fail("{}: haskell_library {} doesn't use the modules attribute but it is used in narrowed_deps".format(
+                rule_label,
+                dep.label,
+            ))
+
+        for k, s in lib_info.per_module_transitive_interfaces.items():
+            s1 = per_module_transitive_interfaces.get(k)
+            if s1:
+                per_module_transitive_interfaces[k] = depset(transitive = [s1, s])
+            else:
+                per_module_transitive_interfaces[k] = s
+    return struct(per_module_transitive_interfaces = per_module_transitive_interfaces)
 
 def interfaces_as_list(with_shared, o):
     if with_shared:
@@ -361,9 +418,13 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             dependencies
     """
 
+    per_module_transitive_interfaces = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps).per_module_transitive_interfaces
+
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
-    transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules)
+    narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
+    transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules, per_module_transitive_interfaces)
     module_outputs = {dep.label: _declare_module_outputs(hs, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
+    package_ids = hs.package_ids + all_dependencies_package_ids(ctx.attr.narrowed_deps)
 
     module_interfaces = {}
     module_objects = {}
@@ -371,6 +432,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
         object_inputs = _collect_module_inputs(module_objects, os, dep)
+        narrowed_interfaces = _collect_narrowed_deps_module_files(per_module_transitive_interfaces, dep)
 
         _build_haskell_module(
             ctx,
@@ -378,12 +440,14 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             cc,
             posix,
             dep_info,
+            narrowed_deps_info,
+            package_ids,
             package_name,
             with_shared,
             hidir,
             odir,
             module_outputs[dep.label],
-            interface_inputs,
+            depset(transitive = [interface_inputs, narrowed_interfaces]),
             object_inputs,
             dep,
         )
