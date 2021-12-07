@@ -88,7 +88,7 @@ _haskell_common_attrs = {
         default = Label("@rules_haskell//haskell:version_macros"),
     ),
     "_cc_toolchain": attr.label(
-        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        default = Label("@rules_cc//cc:current_cc_toolchain"),
     ),
     "_ghc_wrapper": attr.label(
         executable = True,
@@ -176,7 +176,7 @@ def _mk_binary_rule(**kwargs):
             "runghc": "%{name}@runghc",
         },
         toolchains = [
-            "@bazel_tools//tools/cpp:toolchain_type",
+            "@rules_cc//cc:toolchain_type",
             "@rules_haskell//haskell:toolchain",
             "@rules_sh//sh/posix:toolchain_type",
         ],
@@ -211,7 +211,7 @@ _haskell_library = rule(
         "runghc": "%{name}@runghc",
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],

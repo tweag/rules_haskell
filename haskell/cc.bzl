@@ -8,7 +8,7 @@ load(
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
     "C_COMPILE_ACTION_NAME",
 )
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(
     "//haskell:providers.bzl",
     "GhcPluginInfo",
@@ -81,7 +81,7 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
 
     # Asterius does not behave as other ghc cross compilers yet and
     # relies on a cc toolchain targeting the exec platform .
-    cc_toolchain = override_cc_toolchain or find_cpp_toolchain(real_ctx)
+    cc_toolchain = override_cc_toolchain or find_cc_toolchain(real_ctx)
 
     feature_configuration = cc_common.configure_features(
         ctx = real_ctx,

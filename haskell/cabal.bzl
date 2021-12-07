@@ -5,7 +5,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe", "read_netrc", "use_netrc")
 load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/actions/info.bzl", "library_info_output_groups")
 load(":private/context.bzl", "haskell_context", "render_env")
@@ -598,7 +598,7 @@ def _haskell_cabal_library_impl(ctx):
         )
     else:
         doc_info = None
-    cc_toolchain = find_cpp_toolchain(ctx)
+    cc_toolchain = find_cc_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
         cc_toolchain = cc_toolchain,
@@ -711,7 +711,7 @@ haskell_cabal_library = rule(
             default = Label("@rules_haskell//haskell:runghc"),
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "verbose": attr.bool(
             default = True,
@@ -727,7 +727,7 @@ haskell_cabal_library = rule(
         ),
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -945,7 +945,7 @@ haskell_cabal_binary = rule(
             default = Label("@rules_haskell//haskell:runghc"),
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "verbose": attr.bool(
             default = True,
@@ -953,7 +953,7 @@ haskell_cabal_binary = rule(
         ),
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],

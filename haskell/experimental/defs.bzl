@@ -34,7 +34,7 @@ _haskell_module = rule(
             allow_files = True,
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "_ghc_wrapper": attr.label(
             executable = True,
@@ -44,7 +44,7 @@ _haskell_module = rule(
         # TODO[AH] Suppport worker
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],

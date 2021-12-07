@@ -199,12 +199,12 @@ omitted, all exposed modules provided by `deps` will be tested.
 """,
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
     fragments = ["cpp"],
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell:doctest-toolchain",
         "@rules_sh//sh/posix:toolchain_type",
