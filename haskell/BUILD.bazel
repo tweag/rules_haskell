@@ -63,6 +63,15 @@ bzl_library(
     ],
 )
 
+# @rules_cc//cc does not define a bzl_library itself, instead we  define our
+# own using the @rules_cc//cc:srcs filegroup.
+bzl_library(
+    name = "rules_cc",
+    srcs = [
+        "@rules_cc//cc:srcs",
+    ],
+)
+
 bzl_library(
     name = "haskell",
     srcs = glob(["**/*.bzl"]),
@@ -70,6 +79,7 @@ bzl_library(
     deps = [
         ":bazel_json",
         ":bazel_tools",
+        ":rules_cc",
         "//haskell/asterius:asterius_bzl",
         "//haskell/experimental:defs.bzl",
         "//haskell/experimental:providers.bzl",
