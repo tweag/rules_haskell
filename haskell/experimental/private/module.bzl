@@ -329,31 +329,34 @@ def _collect_narrowed_deps_module_files(per_module_transitive_files, dep):
         ],
     )
 
-def _reorder_module_deps_to_postorder(label, modules, per_module_transitive_interfaces):
-    """ Reorders modules to a postorder traversal of the dependency dag.
+def _filter_and_reorder_module_deps_to_postorder(label, modules, per_module_transitive_interfaces):
+    """ Reorders modules to a postorder traversal of the dependency dag, and drops
+        modules in per_module_transitive_interfaces.
 
     Args:
       label: The label of the rule with the modules attribute
       modules: The modules coming from a modules attribute. This list must
-               be the transitive closure of all the module dependencies, excluding
-               modules that come from libraries in narrowed_deps.
+               contain the transitive closure of all the module dependencies
+               in the enclosing library/binary/test.
       per_module_transitive_interfaces: Dict of module labels to their interface files
           and the interface files of their transitive module dependencies.
 
     Returns:
-      A list with the targets in modules in postorder
+      A list with the targets in modules in postorder. Only modules not in per_module_transitive_interfaces
+      are returned.
     """
+    library_modules = [m for m in modules if not m.label in per_module_transitive_interfaces]
     transitive_module_dep_labels = depset(
-        direct = [m.label for m in modules],
-        transitive = [m[HaskellModuleInfo].transitive_module_dep_labels for m in modules],
+        direct = [m.label for m in library_modules],
+        transitive = [m[HaskellModuleInfo].transitive_module_dep_labels for m in library_modules],
         order = "postorder",
     ).to_list()
-    module_map = {m.label: m for m in modules}
+    module_map = {m.label: m for m in library_modules}
     if len(module_map) != len(transitive_module_dep_labels):
-        for k in transitive_module_dep_labels:
-            if not k in module_map and not k in per_module_transitive_interfaces:
-                diff = ", ".join([str(x) for x in transitive_module_dep_labels if not x in module_map])
-                fail("There are modules missing in the modules attribute or libraries missing in the narrowed_deps attribute of {0}: {1}".format(label, diff))
+        missing = [x for x in transitive_module_dep_labels if not x in module_map and not x in per_module_transitive_interfaces]
+        if missing:
+            diff = ", ".join([str(x) for x in missing])
+            fail("There are modules missing in the modules attribute or libraries missing in the narrowed_deps attribute of {0}: {1}".format(label, diff))
     return [module_map[lbl] for lbl in transitive_module_dep_labels if lbl in module_map]
 
 def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
@@ -420,7 +423,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
 
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
-    transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules, per_module_transitive_interfaces)
+    transitive_module_deps = _filter_and_reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules, per_module_transitive_interfaces)
     module_outputs = {dep.label: _declare_module_outputs(hs, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
 
     module_interfaces = {}
