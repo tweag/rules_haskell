@@ -39,7 +39,6 @@ def _build_haskell_module(
         posix,
         dep_info,
         narrowed_deps_info,
-        package_ids,
         package_name,
         with_shared,
         hidir,
@@ -57,7 +56,6 @@ def _build_haskell_module(
       posix: posix toolchain
       dep_info: info on dependencies in deps
       narrowed_deps_info: info on dependencies in narrowed_deps
-      package_ids: list of package ids to expose when building the module
       package_name: name of this package, or empty if building a binary
       with_shared: Whether to build dynamic object files
       hidir: The directory in which to output interface files
@@ -152,7 +150,7 @@ def _build_haskell_module(
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
-            package_ids = package_ids,
+            package_ids = hs.package_ids,
             package_databases = depset(transitive = [dep_info.package_databases, narrowed_deps_info.package_databases]),
             # TODO[AH] Support version macros
             version = None,
@@ -424,7 +422,6 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
     transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules, per_module_transitive_interfaces)
     module_outputs = {dep.label: _declare_module_outputs(hs, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
-    package_ids = hs.package_ids + all_dependencies_package_ids(ctx.attr.narrowed_deps)
 
     module_interfaces = {}
     module_objects = {}
@@ -441,7 +438,6 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             posix,
             dep_info,
             narrowed_deps_info,
-            package_ids,
             package_name,
             with_shared,
             hidir,

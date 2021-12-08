@@ -1,6 +1,7 @@
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
+    "haskell_test",
 )
 load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 
@@ -54,6 +55,23 @@ haskell_library(
         ":TestLib",
         "//tests/hackage:base",
     ],
+)
+
+haskell_module(
+    name = "TestBinModule",
+    src = "TestBinModule.hs",
+    module_name = "Main",
+    deps = [":TestModule"],
+)
+
+haskell_test(
+    name = "Test",
+    modules = [":TestBinModule"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+    narrowed_deps = [":lib"],
 )
 
 filegroup(
