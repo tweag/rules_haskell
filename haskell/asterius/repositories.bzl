@@ -103,7 +103,7 @@ toolchain(
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
     toolchain = "{wasm_cc_toolchain}",
-    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+    toolchain_type = "@rules_cc//cc:toolchain_type",
 )
         """.format(
             bindist_name = ctx.attr.bindist_name,

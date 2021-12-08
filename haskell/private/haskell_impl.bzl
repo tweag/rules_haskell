@@ -49,7 +49,7 @@ load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 
@@ -573,7 +573,7 @@ def haskell_library_impl(ctx):
     # XXX: protobuf is passing a "patched ctx"
     # which includes the real ctx as "real_ctx"
     real_ctx = getattr(ctx, "real_ctx", ctx)
-    cc_toolchain = find_cpp_toolchain(real_ctx)
+    cc_toolchain = find_cc_toolchain(real_ctx)
     feature_configuration = cc_common.configure_features(
         ctx = real_ctx,
         cc_toolchain = cc_toolchain,
@@ -692,7 +692,7 @@ def haskell_toolchain_libraries_impl(ctx):
     with_profiling = is_profiling_enabled(hs)
     with_threaded = "-threaded" in hs.toolchain.ghcopts
 
-    cc_toolchain = find_cpp_toolchain(ctx)
+    cc_toolchain = find_cc_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
         cc_toolchain = cc_toolchain,
@@ -813,11 +813,11 @@ haskell_toolchain_libraries = rule(
     haskell_toolchain_libraries_impl,
     attrs = {
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
     ],
     fragments = ["cpp"],

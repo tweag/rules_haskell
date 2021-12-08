@@ -1,5 +1,6 @@
 """Rules for defining toolchains"""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load(
@@ -211,7 +212,7 @@ def _haskell_toolchain_impl(ctx):
 
     if ctx.attr.asterius_binaries:
         tools_config = asterius_tools_config(
-            exec_cc_toolchain = ctx.toolchains["@bazel_tools//tools/cpp:toolchain_type"],
+            exec_cc_toolchain = find_cc_toolchain(ctx),
             posix_toolchain = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"],
             node_toolchain = ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"],
             tools_for_ghc_pkg = ctx.files.tools,
@@ -329,11 +330,14 @@ _ahc_haskell_toolchain = rule(
     toolchains = [
         "@rules_sh//sh/posix:toolchain_type",
         "@build_bazel_rules_nodejs//toolchains/node:toolchain_type",
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
     ],
     attrs = dict(
         common_attrs,
+        _cc_toolchain = attr.label(
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
+        ),
     ),
 )
 
