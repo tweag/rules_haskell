@@ -359,6 +359,15 @@ def _filter_and_reorder_module_deps_to_postorder(label, modules, per_module_tran
             fail("There are modules missing in the modules attribute or libraries missing in the narrowed_deps attribute of {0}: {1}".format(label, diff))
     return [module_map[lbl] for lbl in transitive_module_dep_labels if lbl in module_map]
 
+def _merge_depset_dicts(d0, d1):
+    """Merges into dict d0 the depsets in dict d1"""
+    for k, s in d1.items():
+        s1 = d0.get(k)
+        if s1:
+            d0[k] = depset(transitive = [s1, s])
+        else:
+            d0[k] = s
+
 def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
     """Merge the module files corresponding to library dependencies that can be narrowed
 
@@ -380,13 +389,7 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
                 rule_label,
                 dep.label,
             ))
-
-        for k, s in lib_info.per_module_transitive_interfaces.items():
-            s1 = per_module_transitive_interfaces.get(k)
-            if s1:
-                per_module_transitive_interfaces[k] = depset(transitive = [s1, s])
-            else:
-                per_module_transitive_interfaces[k] = s
+        _merge_depset_dicts(per_module_transitive_interfaces, lib_info.per_module_transitive_interfaces)
     return struct(per_module_transitive_interfaces = per_module_transitive_interfaces)
 
 def interfaces_as_list(with_shared, o):
@@ -462,20 +465,21 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         dyn_o_set = depset()
 
     # put outputs and inputs together for each module
-    per_module_transitive_interfaces = {
+    per_module_transitive_interfaces0 = {
         dep.label: depset(
             interfaces_as_list(with_shared, module_outputs[dep.label]),
             transitive = [module_interfaces[dep.label]],
         )
         for dep in transitive_module_deps
     }
+    _merge_depset_dicts(per_module_transitive_interfaces0, per_module_transitive_interfaces)
 
     return struct(
         his = hi_set,
         dyn_his = dyn_hi_set,
         os = o_set,
         dyn_os = dyn_o_set,
-        per_module_transitive_interfaces = per_module_transitive_interfaces,
+        per_module_transitive_interfaces = per_module_transitive_interfaces0,
     )
 
 def haskell_module_impl(ctx):
