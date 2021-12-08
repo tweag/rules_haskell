@@ -4,7 +4,7 @@ These rules are deprecated.
 """
 
 load(
-    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "@rules_cc//cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
     "C_COMPILE_ACTION_NAME",
 )

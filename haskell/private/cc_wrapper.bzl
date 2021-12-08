@@ -1,5 +1,5 @@
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_python//python:defs.bzl", "py_binary")
 
 # Note [On configuring the cc_wrapper]
