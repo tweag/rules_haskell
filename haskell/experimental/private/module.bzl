@@ -320,43 +320,44 @@ def _collect_module_inputs(module_input_map, directs, dep):
     module_input_map[dep.label] = all_inputs
     return all_inputs
 
-def _collect_narrowed_deps_module_files(per_module_transitive_files, dep):
-    return depset(
-        transitive = [
-            per_module_transitive_files[m.label]
-            for m in dep[HaskellModuleInfo].direct_module_deps
-            if m.label in per_module_transitive_files
-        ],
-    )
+def _collect_narrowed_deps_module_files(ctx_label, per_module_transitive_files, dep):
+    direct_cross_library_deps = dep[HaskellModuleInfo].direct_cross_library_deps
+    transitives = [
+        per_module_transitive_files[m.label]
+        for m in direct_cross_library_deps
+        if m.label in per_module_transitive_files
+    ]
+    if len(transitives) < len(direct_cross_library_deps):
+        missing = [str(m.label) for m in direct_cross_library_deps if not m.label in per_module_transitive_files]
+        fail("The following dependencies of {} can't be found in 'narrowed_deps' of {}: {}".format(
+            dep.label,
+            ctx_label,
+            ", ".join(missing),
+        ))
 
-def _filter_and_reorder_module_deps_to_postorder(label, modules, per_module_transitive_interfaces):
-    """ Reorders modules to a postorder traversal of the dependency dag, and drops
-        modules in per_module_transitive_interfaces.
+    return depset(transitive = transitives)
+
+def _reorder_module_deps_to_postorder(label, modules):
+    """ Reorders modules to a postorder traversal of the dependency dag.
 
     Args:
       label: The label of the rule with the modules attribute
       modules: The modules coming from a modules attribute. This list must
                contain the transitive closure of all the module dependencies
                in the enclosing library/binary/test.
-      per_module_transitive_interfaces: Dict of module labels to their interface files
-          and the interface files of their transitive module dependencies.
 
     Returns:
-      A list with the targets in modules in postorder. Only modules not in per_module_transitive_interfaces
-      are returned.
+      A list with the targets in modules in postorder
     """
-    library_modules = [m for m in modules if not m.label in per_module_transitive_interfaces]
     transitive_module_dep_labels = depset(
-        direct = [m.label for m in library_modules],
-        transitive = [m[HaskellModuleInfo].transitive_module_dep_labels for m in library_modules],
+        direct = [m.label for m in modules],
+        transitive = [m[HaskellModuleInfo].transitive_module_dep_labels for m in modules],
         order = "postorder",
     ).to_list()
-    module_map = {m.label: m for m in library_modules}
+    module_map = {m.label: m for m in modules}
     if len(module_map) != len(transitive_module_dep_labels):
-        missing = [x for x in transitive_module_dep_labels if not x in module_map and not x in per_module_transitive_interfaces]
-        if missing:
-            diff = ", ".join([str(x) for x in missing])
-            fail("There are modules missing in the modules attribute or libraries missing in the narrowed_deps attribute of {0}: {1}".format(label, diff))
+        missing = [str(x) for x in transitive_module_dep_labels if not x in module_map]
+        fail("There are modules missing in the modules attribute of {0}: {1}".format(label, ", ".join(missing)))
     return [module_map[lbl] for lbl in transitive_module_dep_labels if lbl in module_map]
 
 def _merge_depset_dicts(d0, d1):
@@ -426,7 +427,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
 
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
-    transitive_module_deps = _filter_and_reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules, per_module_transitive_interfaces)
+    transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules)
     module_outputs = {dep.label: _declare_module_outputs(hs, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
 
     module_interfaces = {}
@@ -435,7 +436,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
         object_inputs = _collect_module_inputs(module_objects, os, dep)
-        narrowed_interfaces = _collect_narrowed_deps_module_files(per_module_transitive_interfaces, dep)
+        narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_interfaces, dep)
 
         _build_haskell_module(
             ctx,
@@ -483,17 +484,22 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
     )
 
 def haskell_module_impl(ctx):
-    module_deps = [dep for dep in ctx.attr.deps if HaskellModuleInfo in dep]
+    deps = ctx.attr.deps + ctx.attr.cross_library_deps
+    nonmodules = [str(dep.label) for dep in deps if not HaskellModuleInfo in dep]
+    if nonmodules:
+        fail("The following dependencies of {} aren't defined with haskell_module: {}".format(ctx.label, ", ".join(nonmodules)))
+
     transitive_module_dep_labels = depset(
-        direct = [dep.label for dep in module_deps],
-        transitive = [dep[HaskellModuleInfo].transitive_module_dep_labels for dep in module_deps],
+        direct = [dep.label for dep in ctx.attr.deps],
+        transitive = [dep[HaskellModuleInfo].transitive_module_dep_labels for dep in ctx.attr.deps],
         order = "postorder",
     )
     return [
         DefaultInfo(),
         HaskellModuleInfo(
             attr = ctx.attr,
-            direct_module_deps = module_deps,
+            direct_module_deps = ctx.attr.deps,
+            direct_cross_library_deps = ctx.attr.cross_library_deps,
             transitive_module_dep_labels = transitive_module_dep_labels,
         ),
     ]

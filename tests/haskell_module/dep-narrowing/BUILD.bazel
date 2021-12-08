@@ -40,7 +40,7 @@ haskell_module(
 haskell_module(
     name = "TestModule",
     src = "TestModule.hs",
-    deps = [":TestLibModule2"],
+    cross_library_deps = [":TestLibModule2"],
 )
 
 haskell_library(
@@ -60,18 +60,18 @@ haskell_library(
 haskell_module(
     name = "TestBinModule",
     src = "TestBinModule.hs",
+    cross_library_deps = [":TestModule"],
     module_name = "Main",
-    deps = [":TestModule"],
 )
 
 haskell_test(
     name = "Test",
     modules = [":TestBinModule"],
+    narrowed_deps = [":lib"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
     ],
-    narrowed_deps = [":lib"],
 )
 
 filegroup(

@@ -24,7 +24,8 @@ _haskell_module = rule(
         "extra_srcs": attr.label_list(
             allow_files = True,
         ),
-        "deps": attr.label_list(providers = [HaskellModuleInfo]),
+        "deps": attr.label_list(),
+        "cross_library_deps": attr.label_list(),
         "ghcopts": attr.string_list(),
         "plugins": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
@@ -57,6 +58,7 @@ def haskell_module(
         extra_srcs = [],
         module_name = "",
         deps = [],
+        cross_library_deps = [],
         ghcopts = [],
         plugins = [],
         tools = [],
@@ -116,11 +118,12 @@ def haskell_module(
       module_name: Use the given module name instead of trying to infer it from src and src_strip_prefix. This is
                    necessary when the src file is not named the same as the Haskell module.
       deps: List of other Haskell modules needed to compile this module. They need to be included in the `modules`
-               attribute of the enclosing library, binary, or test; or they need to be included
-               in the `modules` attribute of any library in the `narrowed_deps` attribute of the enclosing
-               library, binary, or test.
+               attribute of the enclosing library, binary, or test.
                If the module depends on any libraries, they should be listed in the deps attribute of the library,
                binary, or test that depends on this module.
+      cross_library_deps: List of other Haskell modules needed to compile this module that come from other libraries.
+               They need to be included in the `modules` attribute of any library in the `narrowed_deps` attribute
+               of the enclosing library, binary, or test
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
                This is merged with the ghcopts attribute of rules that depend directly on this haskell_module rule.
       plugins: Compiler plugins to use during compilation. (Not implemented, yet)
@@ -136,6 +139,7 @@ def haskell_module(
         extra_srcs = extra_srcs,
         module_name = module_name,
         deps = deps,
+        cross_library_deps = cross_library_deps,
         ghcopts = ghcopts,
         plugins = plugins,
         tools = tools,
