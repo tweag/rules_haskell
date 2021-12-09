@@ -57,7 +57,7 @@ _haskell_common_attrs = {
     "deps": attr.label_list(
         aspects = [haskell_cc_libraries_aspect],
     ),
-    "narrowed_deps": attr.label_list(providers = [HaskellLibraryInfo]),
+    "narrowed_deps": attr.label_list(),
     "modules": attr.label_list(
         providers = [HaskellModuleInfo],
     ),

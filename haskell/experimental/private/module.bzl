@@ -30,7 +30,7 @@ load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
-load("//haskell:providers.bzl", "HaskellInfo")
+load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 
 def _build_haskell_module(
         ctx,
@@ -384,11 +384,16 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
     """
     per_module_transitive_interfaces = {}
     for dep in narrowed_deps:
+        if not HaskellInfo in dep or not HaskellLibraryInfo in dep:
+            fail("{}: depedency {} is not a haskell_library as required when used in narrowed_deps".format(
+                str(rule_label),
+                str(dep.label),
+            ))
         lib_info = dep[HaskellInfo]
-        if not lib_info.per_module_transitive_interfaces:
-            fail("{}: haskell_library {} doesn't use the modules attribute but it is used in narrowed_deps".format(
-                rule_label,
-                dep.label,
+        if not hasattr(lib_info, "per_module_transitive_interfaces") or not lib_info.per_module_transitive_interfaces:
+            fail("""{}: haskell_library {} doesn't use the "modules" attribute as required when used in narrowed_deps""".format(
+                str(rule_label),
+                str(dep.label),
             ))
         _merge_depset_dicts(per_module_transitive_interfaces, lib_info.per_module_transitive_interfaces)
     return struct(per_module_transitive_interfaces = per_module_transitive_interfaces)
