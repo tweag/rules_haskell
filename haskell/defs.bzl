@@ -319,7 +319,9 @@ def haskell_binary(
           attribute. These dependencies are only used if this library uses
           the modules attribute and the haskell_module rules depend on modules
           provided by these dependencies.
+          Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this binary.
+          Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
