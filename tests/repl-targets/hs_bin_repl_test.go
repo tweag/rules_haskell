@@ -1,13 +1,18 @@
 package hs_bin_repl_test
 
 import (
+        "bytes"
+        "fmt"
+        "os"
+        "os/exec"
         "testing"
         "github.com/bazelbuild/rules_go/go/tools/bazel_testing"
 )
 
-func TestMain(m *testing.M) {
-        bazel_testing.TestMain(m, bazel_testing.Args{
-                Main: `
+
+
+func Workspace() string {
+        return `
 -- WORKSPACE --
 local_repository(
         name = "rules_haskell",
@@ -80,8 +85,6 @@ haskell_test(
     ],
 )
 
--- .bazelrc --
-build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
 -- Quux.hs --
 module Main (main) where
 
@@ -94,7 +97,12 @@ module QuuxLib (message) where
 
 message :: String
 message = "Hello GHCi!"
-`,
+`
+}
+
+func TestMain(m *testing.M) {
+        bazel_testing.TestMain(m, bazel_testing.Args{
+                Main: Workspace() + GenerateBazelrc(UseNixpkgs()),
         })
 }
 
@@ -104,8 +112,49 @@ func AssertOutput(t *testing.T, output []byte, expected string) {
         }
 }
 
+func UseNixpkgs() bool {
+        for _, arg := range os.Args {
+                if arg == "nixpkgs=true" {
+                        return true
+                }
+        }
+        return false
+}
+
+func GenerateBazelrc(use_nixpkgs bool) string {
+        if use_nixpkgs {
+                return `
+-- .bazelrc --
+build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+`
+        } else {
+                return ""
+        }
+}
+
+func BazelOutput(args ...string) ([]byte, error) {
+        cmd := bazel_testing.BazelCmd(args...)
+        // It's important value of $HOME to be invariant between different integration test runs
+        // and to be writable directory for bazel test. Probably TEST_TMPDIR is a valid choice
+        // but documentation is not clear about it's default value
+        // cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s", os.Getenv("TEST_TMPDIR")))
+        cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s", os.TempDir()))
+        stdout := &bytes.Buffer{}
+        stderr := &bytes.Buffer{}
+        cmd.Stdout = stdout
+        cmd.Stderr = stderr
+        err := cmd.Run()
+        if eErr, ok := err.(*exec.ExitError); ok {
+                eErr.Stderr = stderr.Bytes()
+                err = &bazel_testing.StderrExitError{Err: eErr}
+        }
+        fmt.Fprintf(os.Stderr, string(stdout.Bytes()))
+        fmt.Fprintf(os.Stderr, string(stderr.Bytes()))
+        return stdout.Bytes(), err
+}
+
 func TestHsBinRepl(t *testing.T) {
-        out, err := bazel_testing.BazelOutput("run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
+        out, err := BazelOutput("run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
         if err != nil {
                 t.Fatal(err)
         }
