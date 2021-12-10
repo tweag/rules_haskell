@@ -377,10 +377,8 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
       narrowed_deps: The contents of the narrowed_deps attribute
 
     Returns:
-      struct(per_module_transitive_interfaces):
-        per_module_transitive_interfaces: dict of module labels to their
-            interfaces and the interfaces of their transitive module
-            dependencies
+      dict of module labels to their interfaces and the interfaces of their transitive
+      module dependencies
     """
     per_module_transitive_interfaces = {}
     for dep in narrowed_deps:
@@ -396,7 +394,7 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
                 str(dep.label),
             ))
         _merge_depset_dicts(per_module_transitive_interfaces, lib_info.per_module_transitive_interfaces)
-    return struct(per_module_transitive_interfaces = per_module_transitive_interfaces)
+    return per_module_transitive_interfaces
 
 def interfaces_as_list(with_shared, o):
     if with_shared:
@@ -428,7 +426,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             dependencies
     """
 
-    per_module_transitive_interfaces = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps).per_module_transitive_interfaces
+    per_module_transitive_interfaces = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
 
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
