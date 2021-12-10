@@ -19,7 +19,7 @@ def haskell_context(ctx, attr = None):
     if not attr:
         attr = ctx.attr
 
-    deps = (attr.deps if hasattr(attr, "deps") else []) + (attr.exports if hasattr(attr, "exports") else [])
+    deps = (attr.deps if hasattr(attr, "deps") else []) + (attr.exports if hasattr(attr, "exports") else []) + (attr.narrowed_deps if hasattr(attr, "narrowed_deps") else [])
     package_ids = all_dependencies_package_ids(deps)
 
     if hasattr(attr, "src_strip_prefix"):
