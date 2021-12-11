@@ -338,6 +338,14 @@ GHC_BINDIST = \
         },
     }
 
+GHC_BINDIST_STRIP_PREFIX = \
+    {
+        "9.2.1": {
+            "darwin_amd64": "ghc-9.2.1-x86_64-apple-darwin",
+            "windows_amd64": "ghc-9.2.1-x86_64-unknown-mingw32",
+        },
+    }
+
 def _ghc_bindist_impl(ctx):
     filepaths = resolve_labels(ctx, [
         "@rules_haskell//haskell:ghc.BUILD.tpl",
@@ -362,12 +370,16 @@ def _ghc_bindist_impl(ctx):
     # the raw distribution.
     unpack_dir = "bindist_unpacked" if os != "windows" else ""
 
+    stripPrefix = "ghc-" + version
+    if GHC_BINDIST_STRIP_PREFIX.get(version) != None and GHC_BINDIST_STRIP_PREFIX[version].get(target) != None:
+        stripPrefix = GHC_BINDIST_STRIP_PREFIX[version][target]
+
     ctx.download_and_extract(
         url = url,
         output = unpack_dir,
         sha256 = sha256,
         type = "tar.xz",
-        stripPrefix = "ghc-" + version,
+        stripPrefix = stripPrefix,
     )
 
     if os == "windows":
