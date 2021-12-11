@@ -167,6 +167,8 @@ def _haskell_toolchain_impl(ctx):
     if ctx.attr.docdir_path:
         docdir_path = ctx.attr.docdir_path
     elif docdir:
+        docdir_path = None
+
         # Find a file matching `html/libraries/base-*.*.*.*/*` and infer `docdir` from its path.
         # `GHC.Paths.docdir` reports paths such as `.../doc/html/libraries/base-4.13.0.0`.
         for f in docdir:
