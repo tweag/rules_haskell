@@ -172,9 +172,9 @@ def _haskell_toolchain_impl(ctx):
         # Find a file matching `html/libraries/base-*.*.*.*/*` and infer `docdir` from its path.
         # `GHC.Paths.docdir` reports paths such as `.../doc/html/libraries/base-4.13.0.0`.
         for f in docdir:
-            html_start = f.path.find("html/libraries/base-")
+            html_start = f.path.find("html/libraries/base")
             if html_start != -1:
-                base_end = f.path.find("/", html_start + len("html/libraries/base-"))
+                base_end = f.path.find("/", html_start + len("html/libraries/base"))
                 if base_end != -1:
                     docdir_path = f.path[:base_end]
                     break
