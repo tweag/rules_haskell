@@ -14,7 +14,8 @@ HaskellInfo = provider(
         "compile_flags": "Arguments that were used to compile the code.",
         "user_compile_flags": "Compiler flags specified by the user, after location expansion.",
         "user_repl_flags": "REPL flags specified by the user, after location expansion.",
-        "per_module_transitive_interfaces": "Dict of module labels to interfaces of transitive module dependencies",
+        "per_module_transitive_interfaces": "Dict of module labels to depsets of interface files of transitive module dependencies",
+        "per_module_transitive_objects": "Dict of module labels to depsets of object files of transitive module dependencies",
     },
 )
 
