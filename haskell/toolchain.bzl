@@ -131,7 +131,8 @@ def _haskell_toolchain_impl(ctx):
 
     if ctx.attr.asterius_binaries:
         # we recover binaries that are not provided by asterius via the regular toolchain.
-        exec_tools_struct = ctx.toolchains["@rules_haskell//haskell:toolchain"].tools
+        exec_tools_struct = ctx.attr._exec_haskell_toolchain[platform_common.ToolchainInfo].tools
+
         tools_struct_args = {
             k: getattr(exec_tools_struct, k)
             for name in _GHC_BINARIES
@@ -212,9 +213,9 @@ def _haskell_toolchain_impl(ctx):
 
     if ctx.attr.asterius_binaries:
         tools_config = asterius_tools_config(
-            exec_cc_toolchain = find_cc_toolchain(ctx),
-            posix_toolchain = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"],
-            node_toolchain = ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"],
+            exec_cc_toolchain = ctx.attr._exec_cc_toolchain[cc_common.CcToolchainInfo],
+            posix_toolchain = ctx.attr._exec_posix_toolchain[platform_common.ToolchainInfo],
+            node_toolchain = ctx.attr._exec_nodejs_toolchain[platform_common.ToolchainInfo],
             tools_for_ghc_pkg = ctx.files.tools,
         )
     else:
@@ -327,16 +328,23 @@ common_attrs = {
 
 _ahc_haskell_toolchain = rule(
     _haskell_toolchain_impl,
-    toolchains = [
-        "@rules_sh//sh/posix:toolchain_type",
-        "@build_bazel_rules_nodejs//toolchains/node:toolchain_type",
-        "@rules_cc//cc:toolchain_type",
-        "@rules_haskell//haskell:toolchain",
-    ],
     attrs = dict(
         common_attrs,
-        _cc_toolchain = attr.label(
-            default = Label("@rules_cc//cc:current_cc_toolchain"),
+        _exec_nodejs_toolchain = attr.label(
+            default = Label("@rules_haskell//haskell:current_nodejs_toolchain"),
+            cfg = "exec",
+        ),
+        _exec_haskell_toolchain = attr.label(
+            default = Label("@rules_haskell//haskell:current_haskell_toolchain"),
+            cfg = "exec",
+        ),
+        _exec_cc_toolchain = attr.label(
+            default = Label("@rules_haskell//haskell:current_cc_toolchain"),
+            cfg = "exec",
+        ),
+        _exec_posix_toolchain = attr.label(
+            default = Label("@rules_haskell//haskell:current_posix_toolchain"),
+            cfg = "exec",
         ),
     ),
 )
@@ -495,3 +503,54 @@ def rules_haskell_toolchains(
         cabalopts = cabalopts,
         locale = locale,
     )
+
+# Utility rules forwarding various toolchain providers.
+# These rules are used in order to depend on toolchains through the attrs attribute,
+# and control their configurations using the `cfg` field.
+
+def get_nodejs_toolchain_impl(ctx):
+    return ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"]
+
+get_nodejs_toolchain = rule(
+    get_nodejs_toolchain_impl,
+    toolchains = [
+        "@build_bazel_rules_nodejs//toolchains/node:toolchain_type",
+    ],
+)
+
+def get_posix_toolchain_impl(ctx):
+    return ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+
+get_posix_toolchain = rule(
+    get_posix_toolchain_impl,
+    toolchains = [
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
+)
+
+def get_haskell_toolchain_impl(ctx):
+    return ctx.toolchains["@rules_haskell//haskell:toolchain"]
+
+get_haskell_toolchain = rule(
+    get_haskell_toolchain_impl,
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+    ],
+)
+
+def get_cc_toolchain_impl(ctx):
+    return find_cc_toolchain(ctx)
+
+get_cc_toolchain = rule(
+    get_cc_toolchain_impl,
+    toolchains = [
+        "@rules_cc//cc:toolchain_type",
+    ],
+    attrs = {
+        "_cc_toolchain": attr.label(
+            default = Label(
+                "@rules_cc//cc:current_cc_toolchain",
+            ),
+        ),
+    },
+)
