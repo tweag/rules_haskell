@@ -347,7 +347,7 @@ def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = 
         depset(all_library_files),
         depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
         cc.all_files,
-        hs.toolchain.cc_wrapper.inputs,
+        hs.toolchain.cc_wrapper.runfiles.files,
         repl_info.dep_info.interface_dirs,
     ])
     return (args, inputs)
