@@ -46,6 +46,7 @@ def _build_haskell_module(
         module_outputs,
         interface_inputs,
         object_inputs,
+        narrowed_objects,
         module):
     """Build a module
 
@@ -63,6 +64,7 @@ def _build_haskell_module(
       module_outputs: A struct containing the interfaces and object files produced for a haskell_module.
       interface_inputs: A depset containing the interface files needed as input
       object_inputs: A depset containing the object files needed as input
+      narrowed_objects: A depset containing the narrowed object files needed as arguments to ghc.
       module: The Target of the haskell_module rule
     """
 
@@ -192,6 +194,7 @@ def _build_haskell_module(
         moduleAttr.tools,
     ]
     args.add_all(expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs))
+    args.add_all(narrowed_objects)
 
     outputs = [module_outputs.hi]
     if module_outputs.o:
@@ -220,6 +223,7 @@ def _build_haskell_module(
                 preprocessors_inputs,
                 interface_inputs,
                 object_inputs,
+                narrowed_objects,
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
@@ -465,6 +469,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             module_outputs[dep.label],
             depset(transitive = [interface_inputs, narrowed_interfaces, narrowed_objects]),
             object_inputs,
+            narrowed_objects,
             dep,
         )
 
