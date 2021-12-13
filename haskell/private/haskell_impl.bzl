@@ -53,6 +53,20 @@ load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 
+# Note [Empty Libraries]
+#
+# GHC 8.10.x wants to load the shared libraries corresponding to packages needed
+# for running TemplateHaskell splices. It wants to do this even when all the
+# necessary object files are passed in the command line.
+#
+# In order to satisfy GHC, and yet avoid passing the linked library as input, we
+# create a ficticious package which points to an empty shared library. The
+# ficticious and the real package share the same interface files.
+#
+# Avoiding to pass the real shared library as input is necessary when building
+# individual modules with haskell_module, otherwise building the module would
+# need to wait until all of the modules of library dependencies have been built.
+
 def _prepare_srcs(srcs):
     srcs_files = []
     import_dir_map = {}
@@ -361,10 +375,45 @@ def _haskell_binary_common_impl(ctx, is_test):
         )),
     ]
 
+def _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling, empty_libs_dir):
+    """See Note [Empty Libraries]"""
+    dep_info = gather_dep_info("haskell_module-empty_lib", [])
+    empty_c = hs.actions.declare_file("empty.c")
+    hs.actions.write(empty_c, "")
+
+    static_library = link_library_static(
+        hs,
+        cc,
+        posix,
+        dep_info,
+        depset([empty_c]),
+        my_pkg_id,
+        with_profiling = with_profiling,
+        libdir = empty_libs_dir,
+    )
+    libs = [static_library]
+
+    if with_shared:
+        dynamic_library = link_library_dynamic(
+            hs,
+            cc,
+            posix,
+            dep_info,
+            depset(),
+            depset([empty_c]),
+            my_pkg_id,
+            [],
+            empty_libs_dir,
+        )
+        libs = [dynamic_library, static_library]
+
+    return libs
+
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
     deps = ctx.attr.deps + ctx.attr.exports + ctx.attr.narrowed_deps
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps + ctx.attr.exports)
+    narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
     all_deps_info = gather_dep_info(ctx.attr.name, deps)
     all_plugins = ctx.attr.plugins + ctx.attr.non_default_plugins
     plugin_dep_info = gather_dep_info(
@@ -487,6 +536,20 @@ def haskell_library_impl(ctx):
         non_empty,
     )
 
+    empty_libs_dir = "empty_libs"
+    conf_file_empty, cache_file_empty = package(
+        hs,
+        cc,
+        posix,
+        all_deps_info,
+        with_shared,
+        exposed_modules,
+        other_modules,
+        my_pkg_id,
+        non_empty,
+        empty_libs_dir,
+    )
+
     interface_dirs = depset(
         direct = c.interface_files,
         transitive = [all_deps_info.interface_dirs, module_outputs.his, module_outputs.dyn_his],
@@ -501,9 +564,19 @@ def haskell_library_impl(ctx):
             generate_version_macros(ctx, package_name, version),
         )
 
+    empty_libs = _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling, empty_libs_dir)
+
     export_infos = gather_dep_info(ctx.attr.name, ctx.attr.exports)
     hs_info = HaskellInfo(
         package_databases = depset([cache_file], transitive = [all_deps_info.package_databases, export_infos.package_databases]),
+        empty_lib_package_databases = depset(
+            direct = [cache_file_empty],
+            transitive = [
+                dep_info.package_databases,
+                narrowed_deps_info.empty_lib_package_databases,
+                export_infos.empty_lib_package_databases,
+            ],
+        ),
         version_macros = version_macros,
         source_files = c.source_files,
         boot_files = c.boot_files,
@@ -512,6 +585,10 @@ def haskell_library_impl(ctx):
         hs_libraries = depset(
             direct = [lib for lib in [static_library, dynamic_library] if lib],
             transitive = [all_deps_info.hs_libraries, export_infos.hs_libraries],
+        ),
+        empty_hs_libraries = depset(
+            direct = empty_libs,
+            transitive = [all_deps_info.empty_hs_libraries, export_infos.empty_hs_libraries],
         ),
         interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
         compile_flags = c.compile_flags,
@@ -865,12 +942,14 @@ def haskell_import_impl(ctx):
     hs_info = HaskellInfo(
         # XXX Empty set of conf and cache files only works for global db.
         package_databases = depset(),
+        empty_lib_package_databases = depset(),
         version_macros = version_macros,
         source_files = depset(),
         boot_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
         hs_libraries = depset(),
+        empty_hs_libraries = depset(),
         interface_dirs = depset(),
         compile_flags = [],
         user_compile_flags = [],
