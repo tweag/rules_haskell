@@ -377,10 +377,15 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
       narrowed_deps: The contents of the narrowed_deps attribute
 
     Returns:
-      dict of module labels to their interfaces and the interfaces of their transitive
-      module dependencies
+      pair of per_module_transitive_interfaces, per_module_transitive_objects:
+        per_module_transitive_interfaces: dict of module labels to their
+		   interfaces and the interfaces of their transitive module dependencies
+        per_module_transitive_objects: dict of module labels to their
+		   object files and the object file of their transitive module
+		   dependencies
     """
     per_module_transitive_interfaces = {}
+    per_module_transitive_objects = {}
     for dep in narrowed_deps:
         if not HaskellInfo in dep or not HaskellLibraryInfo in dep:
             fail("{}: depedency {} is not a haskell_library as required when used in narrowed_deps".format(
@@ -394,7 +399,8 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
                 str(dep.label),
             ))
         _merge_depset_dicts(per_module_transitive_interfaces, lib_info.per_module_transitive_interfaces)
-    return per_module_transitive_interfaces
+        _merge_depset_dicts(per_module_transitive_objects, lib_info.per_module_transitive_objects)
+    return per_module_transitive_interfaces, per_module_transitive_objects
 
 def interfaces_as_list(with_shared, o):
     if with_shared:
@@ -416,7 +422,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
       odir: The directory in which to output object files
 
     Returns:
-      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces):
+      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces, per_module_transitive_objects):
         his: interface files of all modules in ctx.attr.modules
         dyn_his: dynamic interface files of all modules in ctx.attr.modules
         os: object files of all modules in ctx.attr.modules
@@ -424,9 +430,12 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         per_module_transitive_interfaces: dict of module labels to their
             interfaces and the interfaces of their transitive module
             dependencies
+        per_module_transitive_objects: dict of module labels to their
+            object files and the object files of their transitive module
+            dependencies
     """
 
-    per_module_transitive_interfaces = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
+    per_module_transitive_interfaces, per_module_transitive_objects = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
 
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
@@ -440,6 +449,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
         object_inputs = _collect_module_inputs(module_objects, os, dep)
         narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_interfaces, dep)
+        narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep)
 
         _build_haskell_module(
             ctx,
@@ -453,7 +463,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             hidir,
             odir,
             module_outputs[dep.label],
-            depset(transitive = [interface_inputs, narrowed_interfaces]),
+            depset(transitive = [interface_inputs, narrowed_interfaces, narrowed_objects]),
             object_inputs,
             dep,
         )
@@ -477,6 +487,14 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         for dep in transitive_module_deps
     }
     _merge_depset_dicts(per_module_transitive_interfaces0, per_module_transitive_interfaces)
+    per_module_transitive_objects0 = {
+        dep.label: depset(
+            [module_outputs[dep.label].o],
+            transitive = [module_objects[dep.label]],
+        )
+        for dep in transitive_module_deps
+    }
+    _merge_depset_dicts(per_module_transitive_objects0, per_module_transitive_objects)
 
     return struct(
         his = hi_set,
@@ -484,6 +502,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         os = o_set,
         dyn_os = dyn_o_set,
         per_module_transitive_interfaces = per_module_transitive_interfaces0,
+        per_module_transitive_objects = per_module_transitive_objects0,
     )
 
 def haskell_module_impl(ctx):

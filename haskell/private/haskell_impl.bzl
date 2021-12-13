@@ -518,6 +518,7 @@ def haskell_library_impl(ctx):
         user_compile_flags = user_compile_flags,
         user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
         per_module_transitive_interfaces = module_outputs.per_module_transitive_interfaces,
+        per_module_transitive_objects = module_outputs.per_module_transitive_objects,
     )
 
     exports = [
