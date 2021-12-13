@@ -5,6 +5,7 @@ import (
         "fmt"
         "os"
         "os/exec"
+        "runtime"
         "testing"
         "github.com/bazelbuild/rules_go/go/tools/bazel_testing"
 )
@@ -139,6 +140,9 @@ func BazelOutput(args ...string) ([]byte, error) {
         // but documentation is not clear about it's default value
         // cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s", os.Getenv("TEST_TMPDIR")))
         cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s", os.TempDir()))
+        if runtime.GOOS == "darwin" {
+                cmd.Env = append(cmd.Env, "BAZEL_USE_CPP_ONLY_TOOLCHAIN=1")
+        }
         stdout := &bytes.Buffer{}
         stderr := &bytes.Buffer{}
         cmd.Stdout = stdout
