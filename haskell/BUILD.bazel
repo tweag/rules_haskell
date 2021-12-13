@@ -20,6 +20,13 @@ load(
     "@rules_haskell//haskell:toolchain_info.bzl",
     "haskell_toolchain_info",
 )
+load(
+    "@rules_haskell//haskell:toolchain.bzl",
+    "get_cc_toolchain",
+    "get_haskell_toolchain",
+    "get_nodejs_toolchain",
+    "get_posix_toolchain",
+)
 
 exports_files(
     glob(["*.bzl"]) + [
@@ -171,6 +178,26 @@ config_setting(
 
 haskell_toolchain_info(
     name = "toolchain_info",
+)
+
+get_nodejs_toolchain(
+    name = "current_nodejs_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_posix_toolchain(
+    name = "current_posix_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_haskell_toolchain(
+    name = "current_haskell_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_cc_toolchain(
+    name = "current_cc_toolchain",
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
