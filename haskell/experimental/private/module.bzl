@@ -441,6 +441,10 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
 
     per_module_transitive_interfaces, per_module_transitive_objects = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
 
+    # We produce separate infos for narrowed_deps and deps because the interface
+    # files in dep_info are given as inputs to the build action, but the
+    # interface files from narrowed_deps_info are only given when haskell_module
+    # declares to depend on them.
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
     transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules)
