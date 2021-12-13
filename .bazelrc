@@ -23,7 +23,6 @@ test --test_env=LANG=C.UTF-8 --test_env=LOCALE_ARCHIVE
 build:linux-nixpkgs --config=nixpkgs
 build:macos-nixpkgs --config=nixpkgs
 build:nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
-test:nixpkgs --define=nixpkgs=true
 # Use this configuration when targeting Windows. Eventually this will
 # no longer be required:
 # https://bazel.build/roadmaps/platforms.html#replace---cpu-and---host_cpu-flags.
