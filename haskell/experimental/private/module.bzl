@@ -12,6 +12,7 @@ load(
     "//haskell:private/mode.bzl",
     "is_profiling_enabled",
 )
+load("//haskell:private/pkg_id.bzl", "pkg_id")
 load(
     "//haskell:private/packages.bzl",
     "expose_packages",
@@ -153,7 +154,12 @@ def _build_haskell_module(
         hs,
         pkg_info = expose_packages(
             package_ids = hs.package_ids,
-            package_databases = depset(transitive = [dep_info.package_databases, narrowed_deps_info.package_databases]),
+            package_databases = depset(
+                transitive = [
+                    dep_info.package_databases,
+                    narrowed_deps_info.empty_lib_package_databases,
+                ],
+            ),
             # TODO[AH] Support version macros
             version = None,
         ),
@@ -214,7 +220,8 @@ def _build_haskell_module(
                 dep_info.package_databases,
                 dep_info.interface_dirs,
                 dep_info.hs_libraries,
-                narrowed_deps_info.package_databases,
+                narrowed_deps_info.empty_hs_libraries,
+                narrowed_deps_info.empty_lib_package_databases,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
                 plugin_dep_info.interface_dirs,
@@ -421,6 +428,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
       hs: Haskell context
       cc: CcInteropInfo, information about C dependencies
       posix: posix toolchain
+      package_name: package name if building a library or empty if building a binary
       with_shared: Whether to build dynamic object files
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
@@ -438,12 +446,11 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             object files and the object files of their transitive module
             dependencies
     """
-
     per_module_transitive_interfaces, per_module_transitive_objects = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
 
-    # We produce separate infos for narrowed_deps and deps because the interface
+    # We produce separate infos for narrowed_deps and deps because the module
     # files in dep_info are given as inputs to the build action, but the
-    # interface files from narrowed_deps_info are only given when haskell_module
+    # modules files from narrowed_deps_info are only given when haskell_module
     # declares to depend on them.
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)

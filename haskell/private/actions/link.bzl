@@ -1,6 +1,7 @@
 """Actions for linking object code produced by compilation"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/cc_libraries.bzl", "create_link_config")
@@ -207,14 +208,17 @@ def _so_extension(hs):
     """
     return "dylib" if hs.toolchain.is_darwin else "so"
 
-def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_profiling):
+def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_profiling, libdir = ""):
     """Link a static library for the package using given object files.
 
     Returns:
       File: Produced static library.
     """
     static_library = hs.actions.declare_file(
-        "lib{0}.a".format(pkg_id.library_name(hs, my_pkg_id, prof_suffix = with_profiling)),
+        paths.join(
+            libdir,
+            "lib{0}.a".format(pkg_id.library_name(hs, my_pkg_id, prof_suffix = with_profiling)),
+        ),
     )
     inputs = depset(cc.files, transitive = [object_files])
     args = hs.actions.args()
@@ -247,7 +251,7 @@ def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_p
 
     return static_library
 
-def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_pkg_id, compiler_flags):
+def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_pkg_id, compiler_flags, empty_lib_prefix = ""):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -255,10 +259,13 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     """
 
     dynamic_library = hs.actions.declare_file(
-        "lib{0}-ghc{1}.{2}".format(
-            pkg_id.library_name(hs, my_pkg_id),
-            hs.toolchain.version,
-            _so_extension(hs),
+        paths.join(
+            empty_lib_prefix,
+            "lib{0}-ghc{1}.{2}".format(
+                pkg_id.library_name(hs, my_pkg_id),
+                hs.toolchain.version,
+                _so_extension(hs),
+            ),
         ),
     )
 
@@ -267,15 +274,16 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     args.add_all(["-shared", "-dynamic"])
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
+    extra_prefix = empty_lib_prefix
 
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
-            package_ids = hs.package_ids,
+            package_ids = [] if empty_lib_prefix else hs.package_ids,
             package_databases = dep_info.package_databases,
             version = my_pkg_id.version if my_pkg_id else None,
         ),
-        prefix = "link-",
+        prefix = "link-" + extra_prefix + "-",
     )
     args.add_all(pkg_info_args)
 
@@ -288,6 +296,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
         pic = True,
         binary = dynamic_library,
         args = args,
+        dirprefix = empty_lib_prefix,
     )
 
     args.add_all(["-o", dynamic_library.path])
@@ -309,6 +318,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
         mnemonic = "HaskellLinkDynamicLibrary",
         arguments = args,
         env = dicts.add(hs.env, cc.env),
+        extra_name = "__" + extra_prefix,
     )
 
     return dynamic_library
