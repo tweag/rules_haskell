@@ -103,7 +103,7 @@ message = "Hello GHCi!"
 
 func TestMain(m *testing.M) {
         bazel_testing.TestMain(m, bazel_testing.Args{
-                Main: Workspace() + GenerateBazelrc(UseNixpkgs()),
+                Main: Workspace() + GenerateBazelrc(),
         })
 }
 
@@ -122,19 +122,19 @@ func UseNixpkgs() bool {
         return false
 }
 
-func GenerateBazelrc(use_nixpkgs bool) string {
-        if use_nixpkgs {
-                return `
--- .bazelrc --
-build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
-`
-        } else {
-                return ""
+func GenerateBazelrc() string {
+        bazelrc := "-- .bazelrc --\n"
+        if UseNixpkgs() {
+                bazelrc += "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host\n"
+        } else if runtime.GOOS == "windows" {
+                bazelrc += "build --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain\n"
         }
+        return bazelrc
 }
 
 func BazelOutput(args ...string) ([]byte, error) {
         cmd := bazel_testing.BazelCmd(args...)
+
         // It's important value of $HOME to be invariant between different integration test runs
         // and to be writable directory for bazel test. Probably TEST_TMPDIR is a valid choice
         // but documentation is not clear about it's default value
@@ -152,8 +152,6 @@ func BazelOutput(args ...string) ([]byte, error) {
                 eErr.Stderr = stderr.Bytes()
                 err = &bazel_testing.StderrExitError{Err: eErr}
         }
-        fmt.Fprintf(os.Stderr, string(stdout.Bytes()))
-        fmt.Fprintf(os.Stderr, string(stderr.Bytes()))
         return stdout.Bytes(), err
 }
 
