@@ -27,7 +27,7 @@ load(
 )
 load(
     "@io_bazel_rules_go//go:def.bzl",
-    "go_library"
+    "go_library",
 )
 
 exports_files(
@@ -424,9 +424,9 @@ haskell_repl(
 go_library(
     name = "integration_testing",
     srcs = ["integration_testing.go"],
-    deps = ["@io_bazel_rules_go//go/tools/bazel_testing"],
     importpath = "github.com/tweag/rules_haskell/tests/integration_testing",
     visibility = ["//visibility:public"],
+    deps = ["@io_bazel_rules_go//go/tools/bazel_testing"],
 )
 
 filegroup(
