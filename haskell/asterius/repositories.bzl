@@ -103,7 +103,7 @@ toolchain(
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
     toolchain = "{wasm_cc_toolchain}",
-    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+    toolchain_type = "@rules_cc//cc:toolchain_type",
 )
         """.format(
             bindist_name = ctx.attr.bindist_name,
@@ -130,7 +130,7 @@ _ahc_toolchain = repository_rule(
 
 def _ahc_impl(ctx):
     filepaths = resolve_labels(ctx, [
-        "@rules_haskell//haskell:ghc.BUILD.tpl",
+        "@rules_haskell//haskell:ahc.BUILD.tpl",
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
     ])
     lib_path = str(ctx.path(ctx.attr.asterius_lib_setting_file).dirname)
@@ -169,7 +169,7 @@ def _ahc_impl(ctx):
 
     ctx.template(
         "BUILD",
-        filepaths["@rules_haskell//haskell:ghc.BUILD.tpl"],
+        filepaths["@rules_haskell//haskell:ahc.BUILD.tpl"],
         substitutions = {
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,

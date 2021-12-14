@@ -137,11 +137,11 @@ c2hs_library = rule(
             doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell/c2hs:toolchain",
     ],

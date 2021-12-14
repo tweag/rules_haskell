@@ -13,7 +13,7 @@ load(
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
 )
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(":private/pkg_id.bzl", "pkg_id")
 load(
     ":private/cc_libraries.bzl",
@@ -179,6 +179,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         "extra_srcs": [],
         "deps": ctx.rule.attr.deps +
                 ctx.toolchains["@rules_haskell//protobuf:toolchain"].deps,
+        "narrowed_deps": [],
         "plugins": [],
         "non_default_plugins": [],
         "data": [],
@@ -280,7 +281,7 @@ _haskell_proto_aspect = aspect(
             default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "_ghc_wrapper": attr.label(
             executable = True,
@@ -290,7 +291,7 @@ _haskell_proto_aspect = aspect(
     },
     provides = [HaskellProtobufInfo],
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//protobuf:toolchain",
         "@rules_sh//sh/posix:toolchain_type",

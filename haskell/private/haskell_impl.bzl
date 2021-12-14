@@ -49,7 +49,7 @@ load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 
@@ -152,7 +152,9 @@ def is_main_as_haskell_module(modules, main_function):
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
+    deps = ctx.attr.deps + ctx.attr.narrowed_deps
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
+    all_deps_info = gather_dep_info(ctx.attr.name, deps)
 
     modules = ctx.attr.modules
     if modules and ctx.files.srcs:
@@ -167,14 +169,14 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx.attr.name,
         [dep for plugin in all_plugin_decls for dep in plugin[GhcPluginInfo].deps],
     )
-    package_ids = all_dependencies_package_ids(ctx.attr.deps)
+    package_ids = all_dependencies_package_ids(deps)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(
         ctx,
         override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
     )
-    java = java_interop_info(ctx.attr.deps)
+    java = java_interop_info(deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
@@ -229,7 +231,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     # gather intermediary code coverage instrumentation data
     coverage_data = c.coverage_data
-    for dep in ctx.attr.deps:
+    for dep in deps:
         if HaskellCoverageInfo in dep:
             coverage_data += dep[HaskellCoverageInfo].coverage_data
             coverage_data = list.dedup_on(_get_mix_filepath, coverage_data)
@@ -239,7 +241,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         hs,
         cc,
         posix,
-        dep_info,
+        all_deps_info,
         ctx.files.extra_srcs,
         user_compile_flags,
         c.object_files + c.dyn_object_files,
@@ -250,20 +252,20 @@ def _haskell_binary_common_impl(ctx, is_test):
     )
 
     hs_info = HaskellInfo(
-        package_databases = dep_info.package_databases,
+        package_databases = all_deps_info.package_databases,
         version_macros = set.empty(),
         source_files = c.source_files,
         boot_files = c.boot_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        hs_libraries = dep_info.hs_libraries,
-        interface_dirs = dep_info.interface_dirs,
+        hs_libraries = all_deps_info.hs_libraries,
+        interface_dirs = all_deps_info.interface_dirs,
         compile_flags = c.compile_flags,
         user_compile_flags = user_compile_flags,
         user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
     )
     cc_info = cc_common.merge_cc_infos(
-        cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+        cc_infos = [dep[CcInfo] for dep in deps if CcInfo in dep],
     )
 
     target_files = depset([binary])
@@ -278,7 +280,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         extra_args = extra_args,
         user_compile_flags = user_compile_flags,
         output = ctx.outputs.runghc,
-        package_databases = dep_info.package_databases,
+        package_databases = all_deps_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
     )
@@ -361,8 +363,9 @@ def _haskell_binary_common_impl(ctx, is_test):
 
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
-    deps = ctx.attr.deps + ctx.attr.exports
-    dep_info = gather_dep_info(ctx.attr.name, deps)
+    deps = ctx.attr.deps + ctx.attr.exports + ctx.attr.narrowed_deps
+    dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps + ctx.attr.exports)
+    all_deps_info = gather_dep_info(ctx.attr.name, deps)
     all_plugins = ctx.attr.plugins + ctx.attr.non_default_plugins
     plugin_dep_info = gather_dep_info(
         ctx.attr.name,
@@ -374,12 +377,15 @@ def haskell_library_impl(ctx):
     if modules and ctx.files.srcs:
         fail("""Only one of "srcs" or "modules" attributes must be specified in {}""".format(ctx.label))
 
+    if not modules and ctx.attr.narrowed_deps:
+        fail("""The attribute "narrowed_deps" is enabled only if "modules" is specified in {}""".format(ctx.label))
+
     # Add any interop info for other languages.
     cc = cc_interop_info(
         ctx,
         override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
     )
-    java = java_interop_info(ctx.attr.deps)
+    java = java_interop_info(ctx.attr.deps + ctx.attr.narrowed_deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
@@ -447,7 +453,7 @@ def haskell_library_impl(ctx):
             hs,
             cc,
             posix,
-            dep_info,
+            all_deps_info,
             depset(c.object_files, transitive = [module_outputs.os]),
             my_pkg_id,
             with_profiling = with_profiling,
@@ -460,7 +466,7 @@ def haskell_library_impl(ctx):
             hs,
             cc,
             posix,
-            dep_info,
+            all_deps_info,
             depset(ctx.files.extra_srcs),
             depset(c.dyn_object_files, transitive = [module_outputs.dyn_os]),
             my_pkg_id,
@@ -473,7 +479,7 @@ def haskell_library_impl(ctx):
         hs,
         cc,
         posix,
-        dep_info,
+        all_deps_info,
         with_shared,
         exposed_modules,
         other_modules,
@@ -483,7 +489,7 @@ def haskell_library_impl(ctx):
 
     interface_dirs = depset(
         direct = c.interface_files,
-        transitive = [dep_info.interface_dirs, module_outputs.his, module_outputs.dyn_his],
+        transitive = [all_deps_info.interface_dirs, module_outputs.his, module_outputs.dyn_his],
     )
 
     version_macros = set.empty()
@@ -497,7 +503,7 @@ def haskell_library_impl(ctx):
 
     export_infos = gather_dep_info(ctx.attr.name, ctx.attr.exports)
     hs_info = HaskellInfo(
-        package_databases = depset([cache_file], transitive = [dep_info.package_databases, export_infos.package_databases]),
+        package_databases = depset([cache_file], transitive = [all_deps_info.package_databases, export_infos.package_databases]),
         version_macros = version_macros,
         source_files = c.source_files,
         boot_files = c.boot_files,
@@ -505,12 +511,13 @@ def haskell_library_impl(ctx):
         import_dirs = set.mutable_union(c.import_dirs, export_infos.import_dirs),
         hs_libraries = depset(
             direct = [lib for lib in [static_library, dynamic_library] if lib],
-            transitive = [dep_info.hs_libraries, export_infos.hs_libraries],
+            transitive = [all_deps_info.hs_libraries, export_infos.hs_libraries],
         ),
         interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
         compile_flags = c.compile_flags,
         user_compile_flags = user_compile_flags,
         user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
+        per_module_transitive_interfaces = module_outputs.per_module_transitive_interfaces,
     )
 
     exports = [
@@ -549,7 +556,7 @@ def haskell_library_impl(ctx):
             extra_args = extra_args,
             user_compile_flags = user_compile_flags,
             output = ctx.outputs.runghc,
-            package_databases = dep_info.package_databases,
+            package_databases = all_deps_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
             lib_info = lib_info,
@@ -573,7 +580,7 @@ def haskell_library_impl(ctx):
     # XXX: protobuf is passing a "patched ctx"
     # which includes the real ctx as "real_ctx"
     real_ctx = getattr(ctx, "real_ctx", ctx)
-    cc_toolchain = find_cpp_toolchain(real_ctx)
+    cc_toolchain = find_cc_toolchain(real_ctx)
     feature_configuration = cc_common.configure_features(
         ctx = real_ctx,
         cc_toolchain = cc_toolchain,
@@ -692,7 +699,7 @@ def haskell_toolchain_libraries_impl(ctx):
     with_profiling = is_profiling_enabled(hs)
     with_threaded = "-threaded" in hs.toolchain.ghcopts
 
-    cc_toolchain = find_cpp_toolchain(ctx)
+    cc_toolchain = find_cc_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
         cc_toolchain = cc_toolchain,
@@ -813,11 +820,11 @@ haskell_toolchain_libraries = rule(
     haskell_toolchain_libraries_impl,
     attrs = {
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
     ],
     fragments = ["cpp"],
