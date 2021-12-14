@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(":cc.bzl", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -282,7 +283,7 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
 def _concat(lists):
     return [item for l in lists for item in l]
 
-def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
+def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = ""):
     """Collect compiler flags and inputs.
 
     Compiler flags:
@@ -295,9 +296,11 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
       - Package databases.
       - C library dependencies.
       - Locale archive if required.
+      - Required CC toolchain inputs.
 
     Args:
       hs: Haskell context.
+      cc: CcToolchainInfo.
       repl_info: HaskellReplInfo.
       static: bool, Whether we're collecting libraries for static RTS.
         Contrary to GHCi, ghcide is built as a static executable using the static RTS.
@@ -343,15 +346,19 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         repl_info.dep_info.package_databases,
         depset(all_library_files),
         depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
+        cc.all_files,
+        hs.toolchain.cc_wrapper.runfiles.files,
         repl_info.dep_info.interface_dirs,
     ])
     return (args, inputs)
 
-def _create_repl(hs, posix, ctx, repl_info, output):
+def _create_repl(hs, cc, posix, ctx, repl_info, output):
     """Build a multi target REPL.
 
     Args:
       hs: Haskell context.
+      cc: CcToolchainInfo.
+      posix: POSIX toolchain.
       ctx: Rule context.
       repl_info: HaskellReplInfo provider.
       output: The output for the executable REPL script.
@@ -380,6 +387,7 @@ def _create_repl(hs, posix, ctx, repl_info, output):
     # flags so that all required libraries are visible.
     compiler_flags, inputs = _compiler_flags_and_inputs(
         hs,
+        cc,
         repl_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
@@ -492,11 +500,13 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         runfiles = _merge_runfiles(runfiles),
     )]
 
-def _create_hie_bios(hs, posix, ctx, repl_info, path_prefix):
+def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
     """Build a hie-bios argument file.
 
     Args:
       hs: Haskell context.
+      cc: CcToolchainInfo.
+      posix: POSIX toolchain.
       ctx: Rule context.
       repl_info: HaskellReplInfo provider.
       output: The output for the executable REPL script.
@@ -506,7 +516,7 @@ def _create_hie_bios(hs, posix, ctx, repl_info, path_prefix):
         OutputGroupInfo provider for the hie-bios argument file.
     """
     path_prefix = paths.join("", *path_prefix)
-    args, inputs = _compiler_flags_and_inputs(hs, repl_info, path_prefix = path_prefix, static = True)
+    args, inputs = _compiler_flags_and_inputs(hs, cc, repl_info, path_prefix = path_prefix, static = True)
     cc_path = paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path)
     args.extend(ghc_cc_program_args(hs, cc_path))
     args.extend(hs.toolchain.ghcopts)
@@ -573,9 +583,10 @@ def _haskell_repl_impl(ctx):
     from_binary = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_from_binary]
     repl_info = _create_HaskellReplInfo(from_source, from_binary, collect_info)
     hs = haskell_context(ctx)
+    cc = find_cc_toolchain(ctx)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
-    return _create_repl(hs, posix, ctx, repl_info, ctx.outputs.repl) + \
-           _create_hie_bios(hs, posix, ctx, repl_info, ctx.attr.hie_bios_path_prefix)
+    return _create_repl(hs, cc, posix, ctx, repl_info, ctx.outputs.repl) + \
+           _create_hie_bios(hs, cc, posix, ctx, repl_info, ctx.attr.hie_bios_path_prefix)
 
 haskell_repl = rule(
     implementation = _haskell_repl_impl,
@@ -587,6 +598,9 @@ haskell_repl = rule(
         "_ghci_repl_wrapper": attr.label(
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "deps": attr.label_list(
             aspects = [
@@ -647,8 +661,10 @@ haskell_repl = rule(
     },
     toolchains = [
         "@rules_haskell//haskell:toolchain",
+        "@rules_cc//cc:toolchain_type",
         "@rules_sh//sh/posix:toolchain_type",
     ],
+    fragments = ["cpp"],
     doc = """\
 Build a REPL for multiple targets.
 
