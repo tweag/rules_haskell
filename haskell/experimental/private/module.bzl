@@ -42,7 +42,7 @@ load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 # enclosing haskell_library.
 #
 # build_haskell_modules from module.bzl produces dictionaries that say
-# for every module label, which interface and object files it produces
+# for every module label which interface and object files it produces
 # and which interface and object files it depends upon transitively.
 # These dictionaries end up in the HaskellInfo provider.
 #
@@ -53,7 +53,7 @@ load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 #
 # When compilation doesn't involve Template Haskell, a module only needs
 # the interface files of its module dependencies. At the moment we have
-# no way to anticipate if a module will need template haskell though, so
+# no way to anticipate if a module will need Template Haskell though, so
 # we also pass the potentially needed object files in the inputs of the
 # build action of haskell_module.
 #
