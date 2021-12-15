@@ -26,6 +26,7 @@ _haskell_module = rule(
         ),
         "deps": attr.label_list(),
         "cross_library_deps": attr.label_list(),
+        "dont_narrow_deps": attr.bool(),
         "ghcopts": attr.string_list(),
         "plugins": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
@@ -59,6 +60,7 @@ def haskell_module(
         module_name = "",
         deps = [],
         cross_library_deps = [],
+        dont_narrow_deps = False,
         ghcopts = [],
         plugins = [],
         tools = [],
@@ -124,6 +126,8 @@ def haskell_module(
       cross_library_deps: List of other Haskell modules needed to compile this module that come from other libraries.
                They need to be included in the `modules` attribute of any library in the `narrowed_deps` attribute
                of the enclosing library, binary, or test
+      dont_narrow_deps: Don't narrow dependencies for this module. Currently, this is necessary in configurations
+               that require the external interpreter.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
                This is merged with the ghcopts attribute of rules that depend directly on this haskell_module rule.
       plugins: Compiler plugins to use during compilation. (Not implemented, yet)
@@ -140,6 +144,7 @@ def haskell_module(
         module_name = module_name,
         deps = deps,
         cross_library_deps = cross_library_deps,
+        dont_narrow_deps = dont_narrow_deps,
         ghcopts = ghcopts,
         plugins = plugins,
         tools = tools,

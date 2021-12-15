@@ -64,6 +64,13 @@ load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 # ghc about individual object files by listing their filepaths on the
 # command line. See Note [Empty Libraries] in haskell_impl.bzl for an
 # extra nuance though.
+#
+# Unfortunately, passing object files in the command line doesn't cause
+# ghc to load them in the external interpreter, so narrowing doesn't
+# work in any configuration needing the external interpreter.
+# This is why we have an attribute dont_narrow_deps in haskell_module
+# to allow the user to disable narrowing per-module in these
+# configurations.
 
 def _build_haskell_module(
         ctx,
@@ -486,25 +493,40 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
     # declares to depend on them.
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
+    all_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.deps + ctx.attr.narrowed_deps)
+    empty_deps_info = gather_dep_info(ctx.attr.name, [])
     transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules)
     module_outputs = {dep.label: _declare_module_outputs(hs, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
 
     module_interfaces = {}
     module_objects = {}
     for dep in transitive_module_deps:
+        narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_interfaces, dep)
+        narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep)
+        if dep[HaskellModuleInfo].attr.dont_narrow_deps:
+            per_module_transitive_interfaces_i = []
+            per_module_transitive_objects_i = []
+            dep_info_i = all_deps_info
+            narrowed_deps_info_i = empty_deps_info
+            narrowed_interfaces = depset()
+            narrowed_objects = depset()
+        else:
+            per_module_transitive_interfaces_i = per_module_transitive_interfaces
+            per_module_transitive_objects_i = per_module_transitive_objects
+            dep_info_i = dep_info
+            narrowed_deps_info_i = narrowed_deps_info
+
         his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
         object_inputs = _collect_module_inputs(module_objects, os, dep)
-        narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_interfaces, dep)
-        narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep)
 
         _build_haskell_module(
             ctx,
             hs,
             cc,
             posix,
-            dep_info,
-            narrowed_deps_info,
+            dep_info_i,
+            narrowed_deps_info_i,
             package_name,
             with_shared,
             hidir,
