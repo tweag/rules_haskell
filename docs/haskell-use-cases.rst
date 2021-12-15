@@ -749,6 +749,18 @@ There a couple of notes regarding the coverage analysis functionality:
 
 .. _hpc: https://hackage.haskell.org/package/hpc
 
+Profiling
+---------
+
+Exclusive profiling mode is activated by setting the `compilation mode`_
+to ``dbg``. In which case, only the profiling libraries and binaries are
+compiled (instead of both profiling and non-profiling). In profiling
+mode, the toolchain libraries only carry their static archives, as no
+shared libraries are provided. (Tests that strictly require shared
+objects are disabled in profiling mode.)
+
+.. _compilation mode: https://docs.bazel.build/versions/main/user-manual.html#flag--compilation_mode
+
 Persistent Worker Mode (experimental)
 -------------------------------------
 
