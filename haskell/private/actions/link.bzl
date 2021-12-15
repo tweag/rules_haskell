@@ -251,7 +251,7 @@ def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_p
 
     return static_library
 
-def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_pkg_id, compiler_flags, empty_lib_prefix = ""):
+def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_pkg_id, compiler_flags, empty_lib_prefix = "", with_profiling = False):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -261,7 +261,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     dynamic_library = hs.actions.declare_file(
         paths.join(
             empty_lib_prefix,
-            "lib{0}-ghc{1}.{2}".format(
+            ("lib{0}.{2}" if with_profiling else "lib{0}-ghc{1}.{2}").format(
                 pkg_id.library_name(hs, my_pkg_id),
                 hs.toolchain.version,
                 _so_extension(hs),

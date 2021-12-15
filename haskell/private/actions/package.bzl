@@ -53,7 +53,8 @@ def package(
         other_modules,
         my_pkg_id,
         has_hs_library,
-        empty_libs_dir = ""):
+        empty_libs_dir = "",
+        prof_suffix = False):
     """Create GHC package using ghc-pkg.
 
     Args:

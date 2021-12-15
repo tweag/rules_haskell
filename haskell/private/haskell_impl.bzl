@@ -388,24 +388,24 @@ def _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling,
         dep_info,
         depset([empty_c]),
         my_pkg_id,
-        with_profiling = with_profiling,
+        with_profiling = False,
         libdir = empty_libs_dir,
     )
     libs = [static_library]
 
-    if with_shared:
-        dynamic_library = link_library_dynamic(
-            hs,
-            cc,
-            posix,
-            dep_info,
-            depset(),
-            depset([empty_c]),
-            my_pkg_id,
-            [],
-            empty_libs_dir,
-        )
-        libs = [dynamic_library, static_library]
+    dynamic_library = link_library_dynamic(
+        hs,
+        cc,
+        posix,
+        dep_info,
+        depset(),
+        depset([empty_c]),
+        my_pkg_id,
+        [],
+        empty_libs_dir,
+        with_profiling,
+    )
+    libs = [dynamic_library, static_library]
 
     return libs
 
@@ -548,6 +548,7 @@ def haskell_library_impl(ctx):
         my_pkg_id,
         non_empty,
         empty_libs_dir,
+        prof_suffix = with_profiling,
     )
 
     interface_dirs = depset(

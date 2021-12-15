@@ -272,14 +272,25 @@ def _declare_module_outputs(hs, with_shared, hidir, odir, module):
     extension_template = module_path + "." + extension_template
 
     hi = hs.actions.declare_file(paths.join(hidir, extension_template % "hi"))
-    o = None if hs_boot else hs.actions.declare_file(paths.join(odir, extension_template % "o"))
+    o_file_path = paths.join(odir, extension_template % "o")
+    o = None if hs_boot else hs.actions.declare_file(o_file_path)
+
+    
+    if hs_boot:
+        o_as_dot_o = None
+    elif with_profiling:
+        o_as_dot_o = hs.actions.declare_file(paths.replace_extension(o_file_path, ".o"))
+        hs.actions.symlink(output = o_as_dot_o, target_file = o)
+    else:
+        o_as_dot_o = o
+
     if with_shared:
         dyn_o = None if hs_boot else hs.actions.declare_file(paths.join(odir, extension_template % "dyn_o"))
         dyn_hi = hs.actions.declare_file(paths.join(hidir, extension_template % "dyn_hi"))
     else:
         dyn_hi = None
         dyn_o = None
-    return struct(hi = hi, dyn_hi = dyn_hi, o = o, dyn_o = dyn_o)
+    return struct(hi = hi, dyn_hi = dyn_hi, o = o, dyn_o = dyn_o, o_as_dot_o = o_as_dot_o)
 
 def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
     his = [
@@ -294,6 +305,13 @@ def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
         for o in [module_outputs[m.label].o]
         if o  # boot module files produce no useful object files
     ]
+    os_as_dot_os = [
+        o_as_dot_o
+        for m in dep[HaskellModuleInfo].direct_module_deps
+        if m.label in module_outputs
+        for o_as_dot_o in [module_outputs[m.label].o_as_dot_o]
+        if o_as_dot_o  # boot module files produce no useful object files
+    ]
     if with_shared:
         his += [
             module_outputs[m.label].dyn_hi
@@ -307,7 +325,7 @@ def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
             for dyn_o in [module_outputs[m.label].dyn_o]
             if dyn_o  # boot module files produce no useful object files
         ]
-    return his, os
+    return his, os, os_as_dot_os
 
 def _collect_module_inputs(module_input_map, directs, dep):
     """ Put together inputs coming from direct and transitive dependencies.
@@ -459,10 +477,12 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
 
     module_interfaces = {}
     module_objects = {}
+    module_objects_as_dot_os = {}
     for dep in transitive_module_deps:
-        his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
+        his, os, os_as_dot_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
         object_inputs = _collect_module_inputs(module_objects, os, dep)
+        _collect_module_inputs(module_objects_as_dot_os, os_as_dot_os, dep)
         narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_interfaces, dep)
         narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep)
 
@@ -505,8 +525,8 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
     _merge_depset_dicts(per_module_transitive_interfaces0, per_module_transitive_interfaces)
     per_module_transitive_objects0 = {
         dep.label: depset(
-            [module_outputs[dep.label].o],
-            transitive = [module_objects[dep.label]],
+            [module_outputs[dep.label].o_as_dot_o],
+            transitive = [module_objects_as_dot_os[dep.label]],
         )
         for dep in transitive_module_deps
     }
