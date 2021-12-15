@@ -66,6 +66,9 @@ load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_
 # Avoiding to pass the real shared library as input is necessary when building
 # individual modules with haskell_module, otherwise building the module would
 # need to wait until all of the modules of library dependencies have been built.
+#
+# See Note [Narrowed Dependencies] for an overview of what this feature is
+# needed for.
 
 def _prepare_srcs(srcs):
     srcs_files = []

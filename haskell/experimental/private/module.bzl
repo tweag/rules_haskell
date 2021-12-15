@@ -33,6 +33,38 @@ load(
 )
 load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 
+# Note [Narrowed Dependencies]
+#
+# Usually, when a module M depends on a library L, it doesn't depend on
+# all the modules of the library. The user expresses which modules are
+# needed with the cross_library_deps attribute and rules_haskell looks
+# for the modules in the libraries of the narrowed_deps attribute in the
+# enclosing haskell_library.
+#
+# build_haskell_modules from module.bzl produces dictionaries that say
+# for every module label, which interface and object files it produces
+# and which interface and object files it depends upon transitively.
+# These dictionaries end up in the HaskellInfo provider.
+#
+# It is not strictly necessary to depend on all interface and object
+# files transitively, but we have no easy way to discern which files
+# from the transitive dependencies are actually needed, so we
+# over-approximate by depending on all of them.
+#
+# When compilation doesn't involve Template Haskell, a module only needs
+# the interface files of its module dependencies. At the moment we have
+# no way to anticipate if a module will need template haskell though, so
+# we also pass the potentially needed object files in the inputs of the
+# build action of haskell_module.
+#
+# Telling ghc which interface files are available is easy by specifying
+# package databases and package-ids on the command line. Passing object
+# files is harder because ghc only expects the object files of libraries
+# to be linked together in installed packages. It is possible to tell to
+# ghc about individual object files by listing their filepaths on the
+# command line. See Note [Empty Libraries] in haskell_impl.bzl for an
+# extra nuance though.
+
 def _build_haskell_module(
         ctx,
         hs,
@@ -441,10 +473,10 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         dyn_os: dynamic object files of all modules in ctx.attr.modules
         per_module_transitive_interfaces: dict of module labels to their
             interfaces and the interfaces of their transitive module
-            dependencies
+            dependencies. See Note [Narrowed Dependencies].
         per_module_transitive_objects: dict of module labels to their
             object files and the object files of their transitive module
-            dependencies
+            dependencies. See Note [Narrowed Dependencies].
     """
     per_module_transitive_interfaces, per_module_transitive_objects = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
 

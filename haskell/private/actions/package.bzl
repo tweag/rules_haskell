@@ -68,7 +68,7 @@ def package(
       has_hs_library: Whether hs-libraries should be non-null.
 	  empty_libs_dir: Directory name where the empty library should be.
           If empty, this is assumed to be a package description
-		  for a real library. See Note [Empty Libraries].
+		  for a real library. See Note [Empty Libraries] in haskell_impl.bzl.
 
     Returns:
       (File, File): GHC package conf file, GHC package cache file
