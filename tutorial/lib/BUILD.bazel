@@ -8,3 +8,10 @@ haskell_library(
     srcs = ["Bool.hs"],
     visibility = ["//main:__pkg__"],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

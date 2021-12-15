@@ -583,3 +583,18 @@ bind(
 load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 
 rules_haskell_worker_dependencies()
+
+local_repository(
+    name = "tutorial",
+    path = "tutorial",
+)
+
+local_repository(
+    name = "examples",
+    path = "examples",
+)
+
+local_repository(
+    name = "examples-arm",
+    path = "examples/arm",
+)

@@ -12,3 +12,10 @@ haskell_binary(
         "@stackage//:base",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
