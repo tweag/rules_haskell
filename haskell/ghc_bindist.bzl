@@ -353,6 +353,13 @@ GHC_BINDIST_LIBDIR = \
         },
     }
 
+GHC_BINDIST_DOCDIR = \
+    {
+        "9.2.1": {
+            "windows_amd64": "docs",
+        }
+    }
+
 def _ghc_bindist_impl(ctx):
     filepaths = resolve_labels(ctx, [
         "@rules_haskell//haskell:ghc.BUILD.tpl",
@@ -473,6 +480,10 @@ rm -f
     if GHC_BINDIST_LIBDIR.get(version) != None and GHC_BINDIST_LIBDIR[version].get(target) != None:
         libdir = GHC_BINDIST_LIBDIR[version][target]
 
+    docdir = "doc"
+    if GHC_BINDIST_DOCDIR.get(version) != None and GHC_BINDIST_DOCDIR[version].get(target) != None:
+        docdir = GHC_BINDIST_DOCDIR[version][target]
+
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)
     locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
     toolchain = define_rule(
@@ -482,7 +493,7 @@ rm -f
         libraries = "toolchain_libraries",
         # See Note [GHC toolchain files]
         libdir = [":lib"],
-        docdir = [":doc"],
+        docdir = [":{}".format(docdir)],
         version = repr(ctx.attr.version),
         static_runtime = os == "windows",
         fully_static_link = False,  # XXX not yet supported for bindists.
@@ -498,6 +509,7 @@ rm -f
         substitutions = {
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
+            "%{docdir}": docdir,
         },
         executable = False,
     )
