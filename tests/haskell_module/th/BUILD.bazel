@@ -27,6 +27,7 @@ haskell_module(
 haskell_module(
     name = "leaf",
     src = "Leaf.hs",
+    enable_th = True,
     deps = [
         ":branch_left",
         ":branch_right",

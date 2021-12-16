@@ -43,13 +43,6 @@ haskell_module(
     cross_library_deps = [":TestLibModule2"],
 )
 
-config_setting(
-    name = "debug_build",
-    values = {
-        "compilation_mode": "dbg",
-    },
-)
-
 # Modifying TestLibModule2 from TestLib2 doesn't cause a rebuild of
 # TestModule2 thanks to narrowing.
 #
@@ -59,10 +52,7 @@ haskell_module(
     name = "TestModule2",
     src = "TestModule2.hs",
     cross_library_deps = [":SimpleFoo"],
-    dont_narrow_deps = select({
-        ":debug_build": True,
-        "//conditions:default": False,
-    }),
+    enable_th = True,
 )
 
 haskell_library(

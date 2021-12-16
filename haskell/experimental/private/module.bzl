@@ -52,25 +52,24 @@ load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 # over-approximate by depending on all of them.
 #
 # When compilation doesn't involve Template Haskell, a module only needs
-# the interface files of its module dependencies. At the moment we have
-# no way to anticipate if a module will need Template Haskell though, so
-# we also pass the potentially needed object files in the inputs of the
-# build action of haskell_module.
+# the interface files of its module dependencies. When the user
+# specifies that a module uses Template Haskell via the enable_th
+# attribute, we also pass the potentially needed object files in the
+# inputs of the build action of haskell_module.
 #
 # Telling ghc which interface files are available is easy by specifying
 # package databases and package-ids on the command line. Passing object
 # files is harder because ghc only expects the object files of libraries
 # to be linked together in installed packages. It is possible to tell to
 # ghc about individual object files by listing their filepaths on the
-# command line. See Note [Empty Libraries] in haskell_impl.bzl for an
-# extra nuance though.
+# command line, but see Note [Empty Libraries] in haskell_impl.bzl for an
+# extra nuance.
 #
 # Unfortunately, passing object files in the command line doesn't cause
 # ghc to load them in the external interpreter, so narrowing doesn't
-# work in any configuration needing the external interpreter.
-# This is why we have an attribute dont_narrow_deps in haskell_module
-# to allow the user to disable narrowing per-module in these
-# configurations.
+# work in any configuration needing the external interpreter. Therefore,
+# profiling builds use the libraries of narrowed_deps instead of the
+# their object files.
 
 def _build_haskell_module(
         ctx,
@@ -258,7 +257,6 @@ def _build_haskell_module(
             transitive = [
                 dep_info.package_databases,
                 dep_info.interface_dirs,
-                dep_info.hs_libraries,
                 narrowed_deps_info.empty_hs_libraries,
                 narrowed_deps_info.empty_lib_package_databases,
                 pkg_info_inputs,
@@ -268,8 +266,12 @@ def _build_haskell_module(
                 plugin_tool_inputs,
                 preprocessors_inputs,
                 interface_inputs,
-                object_inputs,
                 narrowed_objects,
+            ] + [
+                files
+                for files in [dep_info.hs_libraries, object_inputs]
+                # libraries and object inputs are only needed if the module uses TH
+                if module[HaskellModuleInfo].attr.enable_th
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
@@ -501,9 +503,13 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
     module_interfaces = {}
     module_objects = {}
     for dep in transitive_module_deps:
+        # called in all cases to validate cross_library_deps, although the output
+        # might be ignored when disabling narrowing
         narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_interfaces, dep)
-        narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep)
-        if dep[HaskellModuleInfo].attr.dont_narrow_deps:
+        enable_th = dep[HaskellModuleInfo].attr.enable_th
+
+        # Narrowing doesn't work when using the external interpreter so we disable it here
+        if enable_th and is_profiling_enabled(hs):
             per_module_transitive_interfaces_i = []
             per_module_transitive_objects_i = []
             dep_info_i = all_deps_info
@@ -511,10 +517,11 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             narrowed_interfaces = depset()
             narrowed_objects = depset()
         else:
-            per_module_transitive_interfaces_i = per_module_transitive_interfaces
-            per_module_transitive_objects_i = per_module_transitive_objects
             dep_info_i = dep_info
             narrowed_deps_info_i = narrowed_deps_info
+
+            # objects are only needed if the module uses TH
+            narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep) if enable_th else depset()
 
         his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
