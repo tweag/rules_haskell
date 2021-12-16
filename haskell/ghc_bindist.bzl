@@ -430,6 +430,13 @@ def _ghc_bindist_impl(ctx):
         make_loc = ctx.which("make")
         if not make_loc:
             fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
+
+        if version == "9.2.1":
+            # Necessary for deterministic builds on macOS. See
+            # https://gitlab.haskell.org/ghc/ghc/-/issues/19963
+            ctx.file("{}/mk/relpath.sh".format(unpack_dir), ctx.read(ctx.path(ctx.attr._relpath_script)), executable = False, legacy_utf8 = False)
+            execute_or_fail_loudly(ctx, ["chmod", "+x", "mk/relpath.sh"], working_directory = unpack_dir)
+
         execute_or_fail_loudly(
             ctx,
             ["make", "install"],
@@ -530,6 +537,10 @@ _ghc_bindist = repository_rule(
         "locale": attr.string(
             mandatory = False,
         ),
+        "_relpath_script": attr.label(
+            allow_single_file = True,
+            default = Label("@rules_haskell//haskell:assets/relpath.sh"),
+        ),
     },
 )
 
@@ -627,15 +638,23 @@ def ghc_bindist(
     # Recent GHC versions on Windows contain a bug:
     # https://gitlab.haskell.org/ghc/ghc/issues/16466
     # We work around this by patching the base configuration.
-    patches = {
-        "8.6.2": ["@rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
-        "8.6.4": ["@rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"],
-        "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
-        "8.8.1": ["@rules_haskell//haskell:assets/ghc_8_8_1_win_base.patch"],
-        "8.8.2": ["@rules_haskell//haskell:assets/ghc_8_8_2_win_base.patch"],
-        "8.8.3": ["@rules_haskell//haskell:assets/ghc_8_8_3_win_base.patch"],
-        "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
-    }.get(version) if target == "windows_amd64" else None
+    patches = None
+    if target == "windows_amd64":
+        patches = {
+            "8.6.2": ["@rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
+            "8.6.4": ["@rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"],
+            "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
+            "8.8.1": ["@rules_haskell//haskell:assets/ghc_8_8_1_win_base.patch"],
+            "8.8.2": ["@rules_haskell//haskell:assets/ghc_8_8_2_win_base.patch"],
+            "8.8.3": ["@rules_haskell//haskell:assets/ghc_8_8_3_win_base.patch"],
+            "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
+        }.get(version)
+
+    if target == "darwin_amd64":
+        patches = {
+            # Patch for https://gitlab.haskell.org/ghc/ghc/-/issues/19963
+            "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_mac.patch"],
+        }.get(version)
 
     extra_attrs = {"patches": patches, "patch_args": ["-p0"]} if patches else {}
 
