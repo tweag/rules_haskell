@@ -10,18 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.14.0] YYYY-MM-DD
 
+[0.14.0]: https://github.com/tweag/rules_haskell/compare/v0.13...v0.14
+
 ### Highlights
 
-<!--
-
-What goes here? First approximation:
-
-* Supported Bazel versions
-* Supported GHC versions
+* Moved to exclusive support of Bazel 4
+* Support for GHC 8.8, 8.10, 9.0 and 9.2
 * Asterius support
-* `haskell_module`? (Still experimental?)
-
--->
+* Cross-compilation support
 
 ### Added
 
@@ -29,6 +25,7 @@ What goes here? First approximation:
 * Support for GHC 8.8.4, 8.10.3, 8.10.4, 8.10.7, 9.0.1 and 9.2.1.
 * Blacklisted empty `ghc-byteorder` package.
 * More reproducible GHC bindist on macOS.
+  See [#1462](https://github.com/tweag/rules_haskell/pull/1462).
 * Track GHC's `lib/settings` as an action input by exposing a `files`
   attribute in the `haskell_toolchain` rule, which is used in downstream
   actions.
@@ -40,7 +37,7 @@ What goes here? First approximation:
   for cross-compiling.
 * Added `hsc2hs` into the inputs of `cabal_wrapper` so it can be found
   when cross-compiling.
-* Support for platform constraints for GHCs in nixpkgs.
+* Support for platform constraints for GHCs in Nixpkgs.
 * Added `hie_bios_path_prefix` to the `haskell_repl` rule to allow
   hie-bios to output paths relative to a directory besides the workspace
   root.
@@ -84,11 +81,15 @@ What goes here? First approximation:
 * `cabal_wrapper` now takes its arguments as JSON.
 * Use GitHub API token in `stack_snapshot` pinning, if available, to
   avoid rate limiting.
+  See [#1494](https://github.com/tweag/rules_haskell/pull/1494).
 * Invoke a `runghc` for the execution platform in `cabal_wrapper`.
 * `compiler_flags` options have been renamed to `ghcopts` in macros and
   rules, for consistency. The old name will still work, but has been
   deprecated.
-* All repl targets are tagged as `manual`, so are only built on-demand.
+* Automatic visibility of `stack_snapshot` dependencies to vendored
+  packages.
+  See [#1583](https://github.com/tweag/rules_haskell/pull/1583).
+* All REPL targets are tagged as `manual`, so are only built on-demand.
 * Use a more deterministic `distdir` path in `haskell_cabal_*` rules to
   improve reproducibility.
   See [#1648](https://github.com/tweag/rules_haskell/pull/1648).
@@ -99,8 +100,8 @@ What goes here? First approximation:
   deeper down the tree.
 * A regression whereby dynamically linked binaries were missing their
   libraries in the runfiles.
-* Set `--keep_backend_build_event_connections_alive=false` to prevent
-  Build Event log upload timeouts.
+* Compatibility issue with macOS Big Sur.
+  See [#1442](https://github.com/tweag/rules_haskell/issues/1442).
 
 ## [0.13.0] 2020-09-20
 
