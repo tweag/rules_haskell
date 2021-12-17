@@ -403,7 +403,7 @@ explicitly. ::
 
 This declares that the Stackage package ``zlib`` has an additional dependency
 ``@zlib-deps//:libz``. The C library ``libz`` could be imported using
-rules_nixpkgs, or fetched and built by Bazel as follows. ::
+``rules_nixpkgs``, or fetched and built by Bazel as follows. ::
 
   http_archive(
       name = "zlib-deps",
@@ -493,10 +493,10 @@ a Hackage packages, for example one with patched Cabal version bounds. ::
       urls = ["http://hackage.haskell.org/package/split-0.2.3.3/split-0.2.3.3.tar.gz"],
   )
 
-  The ``stack_snapshot`` rule emits metadata determined during dependency
-  resolution into the file ``packages.bzl``. In the above example this file is
-  used to avoid manually repeating the version and the list of dependencies of
-  the ``split`` package, which is already defined in its Cabal file.
+The ``stack_snapshot`` rule emits metadata determined during dependency
+resolution into the file ``packages.bzl``. In the above example this file is
+used to avoid manually repeating the version and the list of dependencies of
+the ``split`` package, which is already defined in its Cabal file.
 
 .. _Cabal: https://haskell.org/cabal
 .. _Hackage: https://hackage.haskell.org
@@ -764,7 +764,7 @@ objects are disabled in profiling mode.)
 Persistent Worker Mode (experimental)
 -------------------------------------
 
-Bazel supports the special `persistent worker mode`_ when instead of calling the compiler
+Bazel supports the special `persistent worker mode`_ when, instead of calling the compiler
 from scratch to build every target separately, it spawns a resident process for this purpose
 and sends all compilation requests to it in the client-server fashion. This worker strategy
 may improve compilation times. We implemented a worker for GHC using GHC API.
@@ -961,8 +961,8 @@ Containerization with rules_docker
 Making use of both ``rules_docker`` and ``rules_nixpkgs``, it's possible to containerize
 ``rules_haskell`` ``haskell_binary`` build targets for deployment. In a nutshell, first we must use
 ``rules_nixpkgs`` to build a ``dockerTools.buildLayeredImage`` target with the basic library dependencies
-required to run a typical haskell binary. Thereafter, we can use ``rules_docker`` to use this as
-a base image upon which we can layer a bazel built haskell binary.
+required to run a typical Haskell binary. Thereafter, we can use ``rules_docker`` to use this as
+a base image upon which we can layer a Bazel built Haskell binary.
 
 Step one is to ensure you have all the necessary ``rules_docker`` paraphernalia loaded in your ``WORKSPACE``
 file: ::
@@ -977,7 +977,7 @@ file: ::
   load("@io_bazel_rules_docker//toolchains/docker:toolchain.bzl", docker_toolchain_configure="toolchain_configure")
 
 To make full use of post-build ``rules_docker`` functionality, we'll want to make sure this is set
-to the docker binary's location ::
+to the Docker binary's location ::
 
   docker_toolchain_configure(
       name = "docker_config",
@@ -1005,7 +1005,7 @@ Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nix
       """,
   )
 
-And finally use the ``rules_docker`` ``container_load`` functionality to grab the docker image built by the previous ``raw-haskell-base-image`` target ::
+And finally use the ``rules_docker`` ``container_load`` functionality to grab the Docker image built by the previous ``raw-haskell-base-image`` target ::
 
   container_load(
       name = "haskell-base-image",
@@ -1018,7 +1018,7 @@ Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as
   with import <nixpkgs> { system = "x86_64-linux"; };
 
   # Build the base image.
-  # The output of this derivation will be a docker archive in the same format as
+  # The output of this derivation will be a Docker archive in the same format as
   # the output of `docker save` that we can feed to
   # [container_load](https://github.com/bazelbuild/rules_docker#container_load)
   let
@@ -1034,7 +1034,7 @@ Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as
     gunzip -c ${haskellBase} > $out/image
   ''
 
-Step three pulls all this together in a build file to actually assemble our final docker image. In a BUILD.bazel file, we'll need the following ::
+Step three pulls all this together in a build file to actually assemble our final Docker image. In a BUILD.bazel file, we'll need the following ::
 
   load("@io_bazel_rules_docker//cc:image.bzl", "cc_image")
   load("@io_bazel_rules_docker//container:container.bzl", "container_push")
@@ -1063,7 +1063,7 @@ Step three pulls all this together in a build file to actually assemble our fina
       stamp = True,
   )
 
-And you may want to use ``rules_docker`` to push your docker image as follows ::
+And you may want to use ``rules_docker`` to push your Docker image as follows ::
 
   container_push(
       name = "my_binary_push",
@@ -1074,13 +1074,13 @@ And you may want to use ``rules_docker`` to push your docker image as follows ::
       tag = "{BUILD_USER}",
  )
 
-*n.b* Due to the `current inability`_ of nix to be used on macOS (darwin) for building docker images, it's currently
-not possible to build docker images for haskell binaries as above using rules_docker and nixpkgs on macOS.
+*n.b.* Due to the `current inability`_ of Nix to be used on macOS (darwin) for building Docker images, it's currently
+not possible to build Docker images for Haskell binaries as above using ``rules_docker`` and Nixpkgs on macOS.
 
 .. _current inability: https://github.com/NixOS/nixpkgs/issues/16696
 
-Following these steps you should end up with a fairly lightweight docker image, bringing the flexibility of nix
-as a docker base image manager and the power of ``rules_haskell`` for your haskell build together.
+Following these steps you should end up with a fairly lightweight Docker image, bringing the flexibility of Nix
+as a Docker base image manager and the power of ``rules_haskell`` for your Haskell build together.
 
 Cross-compilation
 -----------------
@@ -1091,7 +1091,7 @@ about it, and then requesting Bazel to build for the target platform.
 
 Ideally, providing a cross-compiler would only require the advice in
 `Picking a compiler`_. However, the case of ``arm`` requires to configure
-a few aspects at this time. One has to make available the llvm tools
+a few aspects at this time. One has to make available the LLVM tools
 to the compiler, emulation support needs to be set to enable
 compilation of Template Haskell splices via an external interpreter,
 and a compatible C cross-toolchain needs to be given as well for
@@ -1136,7 +1136,7 @@ of the core libraries. And finally, it specifies the execution and
 target platform constraints. More information on platform constraints
 and cross-compilation with Bazel can be found `here <https://docs.bazel.build/versions/master/platforms-intro.html>`_.
 
-When using rules that depend on ``Cabal``, ``rules_haskell`` also
+When using rules that depend on Cabal, ``rules_haskell`` also
 needs a compiler targeting the execution platform, so the ``Setup.hs``
 scripts can be executed. ::
 
