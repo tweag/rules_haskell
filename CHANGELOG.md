@@ -16,8 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 * Moved to exclusive support of Bazel 4
 * Support for GHC 8.8, 8.10, 9.0 and 9.2
-* Asterius support
+* Asterius support (experimental)
 * Cross-compilation support
+* `haskell_module` rule (experimental)
 
 ### Added
 
