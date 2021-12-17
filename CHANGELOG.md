@@ -33,7 +33,7 @@ What goes here? First approximation:
   attribute in the `haskell_toolchain` rule, which is used in downstream
   actions.
   See [#1478](https://github.com/tweag/rules_haskell/pull/1478).
-* Added `ghc-bugnum` to the list of core packages (since GHC 9.0.1).
+* Added `ghc-bignum` to the list of core packages (since GHC 9.0.1).
 * Provided a Bazel-compatible version of `ghc-paths`.
   See [#1508](https://github.com/tweag/rules_haskell/pull/1508).
 * Allow different repository names when registering Haskell toolchains
