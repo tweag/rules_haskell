@@ -573,6 +573,7 @@ def _haskell_cabal_library_impl(ctx):
     )
     hs_info = HaskellInfo(
         package_databases = depset([package_database], transitive = [dep_info.package_databases]),
+        empty_lib_package_databases = depset(transitive = [dep_info.empty_lib_package_databases]),
         version_macros = set.empty(),
         source_files = depset(),
         boot_files = depset(),
@@ -583,6 +584,7 @@ def _haskell_cabal_library_impl(ctx):
             transitive = [dep_info.hs_libraries],
             order = "topological",
         ),
+        empty_hs_libraries = dep_info.empty_hs_libraries,
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         compile_flags = [],
         user_compile_flags = [],
@@ -864,12 +866,14 @@ def _haskell_cabal_binary_impl(ctx):
 
     hs_info = HaskellInfo(
         package_databases = dep_info.package_databases,
+        empty_lib_package_databases = dep_info.empty_lib_package_databases,
         version_macros = set.empty(),
         source_files = depset(),
         boot_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
         hs_libraries = dep_info.hs_libraries,
+        empty_hs_libraries = dep_info.empty_hs_libraries,
         interface_dirs = dep_info.interface_dirs,
         compile_flags = [],
         user_compile_flags = [],

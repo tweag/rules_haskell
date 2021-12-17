@@ -26,6 +26,7 @@ _haskell_module = rule(
         ),
         "deps": attr.label_list(),
         "cross_library_deps": attr.label_list(),
+        "enable_th": attr.bool(),
         "ghcopts": attr.string_list(),
         "plugins": attr.label_list(
             aspects = [haskell_cc_libraries_aspect],
@@ -59,6 +60,7 @@ def haskell_module(
         module_name = "",
         deps = [],
         cross_library_deps = [],
+        enable_th = False,
         ghcopts = [],
         plugins = [],
         tools = [],
@@ -124,6 +126,9 @@ def haskell_module(
       cross_library_deps: List of other Haskell modules needed to compile this module that come from other libraries.
                They need to be included in the `modules` attribute of any library in the `narrowed_deps` attribute
                of the enclosing library, binary, or test
+      enable_th: Exposes object files or libraries to the build action. This is necessary when the module uses
+               Template Haskell. The libraries of narrowed deps are exposed instead of object files in profiling
+               builds due to technical limitations.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
                This is merged with the ghcopts attribute of rules that depend directly on this haskell_module rule.
       plugins: Compiler plugins to use during compilation. (Not implemented, yet)
@@ -140,6 +145,7 @@ def haskell_module(
         module_name = module_name,
         deps = deps,
         cross_library_deps = cross_library_deps,
+        enable_th = enable_th,
         ghcopts = ghcopts,
         plugins = plugins,
         tools = tools,

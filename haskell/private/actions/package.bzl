@@ -52,7 +52,8 @@ def package(
         exposed_modules,
         other_modules,
         my_pkg_id,
-        has_hs_library):
+        has_hs_library,
+        empty_libs_dir = ""):
     """Create GHC package using ghc-pkg.
 
     Args:
@@ -65,13 +66,17 @@ def package(
       other_modules: List of hidden modules.
       my_pkg_id: Package id object for this package.
       has_hs_library: Whether hs-libraries should be non-null.
+	  empty_libs_dir: Directory name where the empty library should be.
+          If empty, this is assumed to be a package description
+		  for a real library. See Note [Empty Libraries] in haskell_impl.bzl.
 
     Returns:
       (File, File): GHC package conf file, GHC package cache file
     """
     pkg_db_dir = pkg_id.to_string(my_pkg_id)
+    empty_libs_suffix = "_" + empty_libs_dir if empty_libs_dir else ""
     conf_file = hs.actions.declare_file(
-        paths.join(pkg_db_dir, "{0}.conf".format(pkg_db_dir)),
+        paths.join(pkg_db_dir + empty_libs_suffix, "{0}.conf".format(pkg_db_dir)),
     )
 
     import_dir = paths.join(
@@ -85,6 +90,8 @@ def package(
     else:
         extra_dynamic_lib_dirs = extra_lib_dirs
 
+    pkgroot_lib_path = paths.join("${pkgroot}", empty_libs_dir)
+
     # Create a file from which ghc-pkg will create the actual package
     # from.
     write_package_conf(hs, conf_file, {
@@ -95,8 +102,8 @@ def package(
         "exposed": "True",
         "hidden-modules": other_modules,
         "import-dirs": [import_dir],
-        "library-dirs": ["${pkgroot}"] + extra_lib_dirs,
-        "dynamic-library-dirs": ["${pkgroot}"] + extra_dynamic_lib_dirs,
+        "library-dirs": [pkgroot_lib_path] + extra_lib_dirs,
+        "dynamic-library-dirs": [pkgroot_lib_path] + extra_dynamic_lib_dirs,
         "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)] if has_hs_library else [],
         "extra-libraries": extra_libs,
         "depends": hs.package_ids,
