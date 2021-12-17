@@ -164,7 +164,7 @@ def link_libraries(libs, args, path_prefix = "", prefix_optl = False):
         args.extend([dirfmt % lib.dirname for lib in libs])
         args.extend([libfmt % get_lib_name(lib) for lib in libs])
 
-def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None):
+def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None, dirprefix = ""):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -180,6 +180,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
       args: Arguments to the linking action.
       dynamic: Whether to link dynamically, or statically.
       pic: Whether position independent code is required.
+      dirprefix: Where to put the config file.
 
     Returns:
       (cache_file, static_libs, dynamic_libs):
@@ -205,7 +206,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
     )
 
     package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")
-    conf_path = paths.join(package_name, package_name + ".conf")
+    conf_path = paths.join(dirprefix, package_name, package_name + ".conf")
     conf_file = hs.actions.declare_file(conf_path)
     libs = cc_static_libs + cc_dynamic_libs
     write_package_conf(hs, conf_file, {
