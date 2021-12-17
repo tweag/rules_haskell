@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 #
 # Checks the version of Bazel found in the PATH, and then initializes
 # a new Bazel workspace with dummy Haskell build targets.
@@ -16,7 +16,7 @@ stderr () {
 }
 
 usage () {
-    local exit_code="$1"
+    exit_code="$1"
 
     cat >&2 <<-"EOF"
 	start [--use-bindists|--use-nix|--help]
@@ -36,12 +36,12 @@ usage () {
 }
 
 # either bindists or nix
-declare MODE=
-declare -i PRINT_NIX_USAGE=0
+MODE=
+PRINT_NIX_USAGE=
 
 parse_args () {
     # Defaults, if no arguments provided
-    if ! (( $# )); then
+    if [ "$#" -eq 0 ]; then
         MODE="bindists"
         PRINT_NIX_USAGE=1
         return
@@ -56,31 +56,31 @@ parse_args () {
 }
 
 check_dir () {
-    local path="$1"
+    path="$1"
 
     # we can't write a file when a directory of that name exists
-    if [[ -d "${path}" ]]; then
+    if [ -d "${path}" ]; then
         stderr "STOP: There's a directory named ${path} but we want to write a file with the same name. Please delete or rename the ${path} directory."
         exit 1
     fi
 }
 
 check_alt () {
-    local path="$1"
-    local alternative="$2"
+    path="$1"
+    alternative="$2"
 
     check_dir "${alternative}"
-    if [[ -f "${path}" ]]; then
+    if [ -f "${path}" ]; then
         stderr "STOP: There's a ${path} file but we intend to write a ${alternative} file. When both exist, bazel will pick the one with the .bazel extension, ignoring the other one. Please delete the ${path} file."
         exit 1
     fi
 }
 
 check_clash () {
-    local path="$1"
+    path="$1"
 
     check_dir "${path}"
-    if [[ -e "${path}" ]]; then
+    if [ -e "${path}" ]; then
         stderr "STOP: The current directory already has a ${path} file and we don't want to overwrite it."
         exit 1
     fi
@@ -101,22 +101,24 @@ check_files_dont_exist () {
 }
 
 check_bazel_version () {
-    local actual_raw=$(bazel version | grep -E '^Build label:' | grep -Eo '[0-9.]+')
+    actual_raw=$(bazel version | grep -E '^Build label:' | grep -Eo '[0-9.]+')
 
     # shellcheck disable=SC2034
-    IFS=. read -r actual_major actual_minor actual_patch <<< "${actual_raw}"
+    IFS=. read -r actual_major actual_minor actual_patch <<-EOF
+	${actual_raw}
+	EOF
 
-    local expected_min="${MIN_BAZEL_MAJOR}.${MIN_BAZEL_MINOR}.0"
-    local expected_max="${MAX_BAZEL_MAJOR}.${MAX_BAZEL_MINOR}.x"
+    expected_min="${MIN_BAZEL_MAJOR}.${MIN_BAZEL_MINOR}.0"
+    expected_max="${MAX_BAZEL_MAJOR}.${MAX_BAZEL_MINOR}.x"
 
-    if (( actual_major > MAX_BAZEL_MAJOR )) || \
-       (( actual_major == MAX_BAZEL_MAJOR && actual_minor > MAX_BAZEL_MINOR ))
+    if [ "${actual_major}" -gt "${MAX_BAZEL_MAJOR}" ] || \
+       { [ "${actual_major}" -eq "${MAX_BAZEL_MAJOR}" ] && [ "${actual_minor}" -gt "${MAX_BAZEL_MINOR}" ]; }
     then
         stderr "Warning: a too new version of Bazel detected: v${actual_raw}."
         stderr "         Recommended versions are from v${expected_min} to v${expected_max}."
 
-    elif (( actual_major < MIN_BAZEL_MAJOR )) || \
-         (( actual_major == MIN_BAZEL_MAJOR && actual_minor < MIN_BAZEL_MINOR ))
+    elif [ "${actual_major}" -lt "${MIN_BAZEL_MAJOR}" ] || \
+         { [ "${actual_major}" -eq "${MIN_BAZEL_MAJOR}" ] && [ "${actual_minor}" -lt "${MIN_BAZEL_MINOR}" ]; }
     then
         stderr "Error: Need at least Bazel v${expected_min} but v${actual_raw} detected."
         exit 1
@@ -127,7 +129,7 @@ check_bazel_version () {
 
 parse_args "$@"
 
-if (( PRINT_NIX_USAGE )); then
+if [ "${PRINT_NIX_USAGE}" ]; then
     # shellcheck disable=SC2016
     stderr 'INFO: Creating a WORKSPACE file based on GHC bindists. If you want to use a nix-based setup (e.g. on NixOS), call with `--use-nix`. See `--help` for more info.'
 fi
@@ -332,7 +334,7 @@ build:ci-windows --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain
 
 EOF
 
-if [[ "${MODE}" = "nix" ]]; then
+if [ "${MODE}" = "nix" ]; then
     cat >> .bazelrc <<-EOF
 	# This project uses a GHC provisioned via nix.
 	# We need to use the rules_haskell nix toolchain accordingly:
