@@ -666,6 +666,7 @@ def ghc_bindist(
             "8.8.2": ["@rules_haskell//haskell:assets/ghc_8_8_2_win_base.patch"],
             "8.8.3": ["@rules_haskell//haskell:assets/ghc_8_8_3_win_base.patch"],
             "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
+            "9.0.1": ["@rules_haskell//haskell:assets/ghc_9_0_1_win.patch"],
             "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_win.patch"],
         }.get(version)
 
