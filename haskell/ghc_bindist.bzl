@@ -360,7 +360,10 @@ GHC_BINDIST_DOCDIR = \
     {
         "9.2.1": {
             "windows_amd64": "docs",
-        }
+        },
+        "9.0.1": {
+            "windows_amd64": "docs",
+        },
     }
 
 def _ghc_bindist_impl(ctx):
