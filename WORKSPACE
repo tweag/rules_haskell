@@ -88,6 +88,7 @@ stack_snapshot(
         "lens-family",
         "safe-exceptions",
         "temporary",
+        "prettyprinter-compat-annotated-wl-pprint",
     ],
     setup_deps = {"polysemy": ["cabal-doctest"]},
     snapshot = test_stack_snapshot,

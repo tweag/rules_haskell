@@ -3,6 +3,14 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
+    name = "libourclibrary",
+    # Import `:ourclibrary` as `srcs` to enforce the library name `libourclibrary.so`. Otherwise,
+    # Bazel would mangle the library name and Cabal wouldn't recognize it.
+    srcs = [":ourclibrary"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "ourclibrary",
     srcs = [":ourclibrary.c"],
     linkstatic = False,
