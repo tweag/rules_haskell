@@ -552,6 +552,8 @@ http_archive(
         "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
         "https://github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
     ],
+    patches = ["//:go_bazel_test_win.patch"],
+    patch_args = ["-p1"],
 )
 
 http_archive(
