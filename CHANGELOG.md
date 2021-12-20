@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 [Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.14...master
 
-## [0.14.0] 2021-12-20
+## [0.14.0] 2021-12-21
 
 [0.14.0]: https://github.com/tweag/rules_haskell/compare/v0.13...v0.14
 
