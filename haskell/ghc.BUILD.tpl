@@ -30,8 +30,8 @@ filegroup(
 )
 
 filegroup(
-    name = "doc",
-    srcs = glob(["doc/**"]),
+    name = "%{docdir}",
+    srcs = glob(["%{docdir}/**"]),
 )
 
 # Expose embedded MinGW toolchain when on Windows.

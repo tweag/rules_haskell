@@ -43,6 +43,9 @@ def unfold_fields(content):
 
 def path_to_label(path, pkgroot):
     """Substitute one pkgroot for another relative one to obtain a label."""
+    if path.find("${pkgroot}") != -1:
+        return os.path.normpath(path.strip("\"").replace("${pkgroot}", topdir)).replace('\\', '/')
+
     topdir_relative_path = path.replace(pkgroot, "$topdir")
     if topdir_relative_path.find("$topdir") != -1:
         return os.path.normpath(topdir_relative_path.replace("$topdir", topdir)).replace('\\', '/')
