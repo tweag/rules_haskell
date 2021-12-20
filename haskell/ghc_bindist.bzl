@@ -338,6 +338,34 @@ GHC_BINDIST = \
         },
     }
 
+GHC_BINDIST_STRIP_PREFIX = \
+    {
+        "9.2.1": {
+            "darwin_amd64": "ghc-9.2.1-x86_64-apple-darwin",
+            "windows_amd64": "ghc-9.2.1-x86_64-unknown-mingw32",
+        },
+        "9.0.1": {
+            "windows_amd64": "ghc-9.0.1-x86_64-unknown-mingw32",
+        },
+    }
+
+GHC_BINDIST_LIBDIR = \
+    {
+        "9.2.1": {
+            "darwin_amd64": "lib/lib",
+        },
+    }
+
+GHC_BINDIST_DOCDIR = \
+    {
+        "9.2.1": {
+            "windows_amd64": "docs",
+        },
+        "9.0.1": {
+            "windows_amd64": "docs",
+        },
+    }
+
 def _ghc_bindist_impl(ctx):
     filepaths = resolve_labels(ctx, [
         "@rules_haskell//haskell:ghc.BUILD.tpl",
@@ -362,12 +390,16 @@ def _ghc_bindist_impl(ctx):
     # the raw distribution.
     unpack_dir = "bindist_unpacked" if os != "windows" else ""
 
+    stripPrefix = "ghc-" + version
+    if GHC_BINDIST_STRIP_PREFIX.get(version) != None and GHC_BINDIST_STRIP_PREFIX[version].get(target) != None:
+        stripPrefix = GHC_BINDIST_STRIP_PREFIX[version][target]
+
     ctx.download_and_extract(
         url = url,
         output = unpack_dir,
         sha256 = sha256,
         type = "tar.xz",
-        stripPrefix = "ghc-" + version,
+        stripPrefix = stripPrefix,
     )
 
     if os == "windows":
@@ -411,6 +443,13 @@ def _ghc_bindist_impl(ctx):
         make_loc = ctx.which("make")
         if not make_loc:
             fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
+
+        if version == "9.2.1":
+            # Necessary for deterministic builds on macOS. See
+            # https://gitlab.haskell.org/ghc/ghc/-/issues/19963
+            ctx.file("{}/mk/relpath.sh".format(unpack_dir), ctx.read(ctx.path(ctx.attr._relpath_script)), executable = False, legacy_utf8 = False)
+            execute_or_fail_loudly(ctx, ["chmod", "+x", "mk/relpath.sh"], working_directory = unpack_dir)
+
         execute_or_fail_loudly(
             ctx,
             ["make", "install"],
@@ -443,7 +482,15 @@ rm -f
     if len(ctx.attr.patches) > 0:
         execute_or_fail_loudly(ctx, ["./bin/ghc-pkg", "recache"])
 
-    toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, "lib")
+    libdir = "lib"
+    if GHC_BINDIST_LIBDIR.get(version) != None and GHC_BINDIST_LIBDIR[version].get(target) != None:
+        libdir = GHC_BINDIST_LIBDIR[version][target]
+
+    docdir = "doc"
+    if GHC_BINDIST_DOCDIR.get(version) != None and GHC_BINDIST_DOCDIR[version].get(target) != None:
+        docdir = GHC_BINDIST_DOCDIR[version][target]
+
+    toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)
     locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
     toolchain = define_rule(
         "haskell_toolchain",
@@ -452,7 +499,7 @@ rm -f
         libraries = "toolchain_libraries",
         # See Note [GHC toolchain files]
         libdir = [":lib"],
-        docdir = [":doc"],
+        docdir = [":{}".format(docdir)],
         version = repr(ctx.attr.version),
         static_runtime = os == "windows",
         fully_static_link = False,  # XXX not yet supported for bindists.
@@ -468,6 +515,7 @@ rm -f
         substitutions = {
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
+            "%{docdir}": docdir,
         },
         executable = False,
     )
@@ -506,6 +554,10 @@ _ghc_bindist = repository_rule(
         ),
         "locale": attr.string(
             mandatory = False,
+        ),
+        "_relpath_script": attr.label(
+            allow_single_file = True,
+            default = Label("@rules_haskell//haskell:assets/relpath.sh"),
         ),
     },
 )
@@ -604,15 +656,25 @@ def ghc_bindist(
     # Recent GHC versions on Windows contain a bug:
     # https://gitlab.haskell.org/ghc/ghc/issues/16466
     # We work around this by patching the base configuration.
-    patches = {
-        "8.6.2": ["@rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
-        "8.6.4": ["@rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"],
-        "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
-        "8.8.1": ["@rules_haskell//haskell:assets/ghc_8_8_1_win_base.patch"],
-        "8.8.2": ["@rules_haskell//haskell:assets/ghc_8_8_2_win_base.patch"],
-        "8.8.3": ["@rules_haskell//haskell:assets/ghc_8_8_3_win_base.patch"],
-        "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
-    }.get(version) if target == "windows_amd64" else None
+    patches = None
+    if target == "windows_amd64":
+        patches = {
+            "8.6.2": ["@rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
+            "8.6.4": ["@rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"],
+            "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
+            "8.8.1": ["@rules_haskell//haskell:assets/ghc_8_8_1_win_base.patch"],
+            "8.8.2": ["@rules_haskell//haskell:assets/ghc_8_8_2_win_base.patch"],
+            "8.8.3": ["@rules_haskell//haskell:assets/ghc_8_8_3_win_base.patch"],
+            "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
+            "9.0.1": ["@rules_haskell//haskell:assets/ghc_9_0_1_win.patch"],
+            "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_win.patch"],
+        }.get(version)
+
+    if target == "darwin_amd64":
+        patches = {
+            # Patch for https://gitlab.haskell.org/ghc/ghc/-/issues/19963
+            "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_mac.patch"],
+        }.get(version)
 
     extra_attrs = {"patches": patches, "patch_args": ["-p0"]} if patches else {}
 
