@@ -402,7 +402,7 @@ def _reorder_module_deps_to_postorder(label, modules):
                in the enclosing library/binary/test.
 
     Returns:
-      A list with the targets in modules in postorder
+      A list with the modules in postorder
     """
     transitive_module_dep_labels = depset(
         direct = [m.label for m in modules],
