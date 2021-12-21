@@ -19,7 +19,7 @@ load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 
 # If you change this, change stackage's version in the start script
 # (see stackage.org).
-_GHC_DEFAULT_VERSION = "8.6.5"
+_GHC_DEFAULT_VERSION = "8.10.7"
 
 # Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist`
 # To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py,
