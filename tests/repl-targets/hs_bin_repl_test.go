@@ -95,7 +95,7 @@ message = "Hello GHCi!"
 }
 
 func TestHsBinRepl(t *testing.T) {
-        out, err := it.BazelOutput("run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
+        out, err := it.BazelOutput(it.Context.BazelBinary, "run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
         if err != nil {
                 t.Fatal(err)
         }
