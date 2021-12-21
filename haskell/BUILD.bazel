@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 load(
     "@rules_haskell//haskell:private/haskell_impl.bzl",
     "haskell_toolchain_libraries",
@@ -13,15 +13,26 @@ load(
     "cabal_wrapper",
 )
 load(
+    "@rules_haskell//haskell:private/runghc.bzl",
+    "runghc",
+)
+load(
     "@rules_haskell//haskell:toolchain_info.bzl",
     "haskell_toolchain_info",
+)
+load(
+    "@rules_haskell//haskell:toolchain.bzl",
+    "get_cc_toolchain",
+    "get_haskell_toolchain",
+    "get_nodejs_toolchain",
+    "get_posix_toolchain",
 )
 
 exports_files(
     glob(["*.bzl"]) + [
         "assets/ghci_script",
         "private/cabal_wrapper.sh.tpl",
-        "private/cabal_wrapper.py.tpl",
+        "private/cabal_wrapper.py",
         "private/coverage_wrapper.sh.tpl",
         "private/ghci_repl_wrapper.sh",
         "private/haddock_wrapper.sh.tpl",
@@ -59,6 +70,15 @@ bzl_library(
     ],
 )
 
+# @rules_cc//cc does not define a bzl_library itself, instead we  define our
+# own using the @rules_cc//cc:srcs filegroup.
+bzl_library(
+    name = "rules_cc",
+    srcs = [
+        "@rules_cc//cc:srcs",
+    ],
+)
+
 bzl_library(
     name = "haskell",
     srcs = glob(["**/*.bzl"]),
@@ -66,6 +86,11 @@ bzl_library(
     deps = [
         ":bazel_json",
         ":bazel_tools",
+        ":rules_cc",
+        "//haskell/asterius:asterius_bzl",
+        "//haskell/experimental:defs.bzl",
+        "//haskell/experimental:providers.bzl",
+        "//haskell/experimental/private:module.bzl",
         "@bazel_skylib//lib:collections",
         "@bazel_skylib//lib:dicts",
         "@bazel_skylib//lib:paths",
@@ -92,9 +117,15 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
-py_binary(
-    name = "ls_modules",
-    srcs = ["private/ls_modules.py"],
+py_library(
+    name = "package_configuration",
+    srcs = ["private/package_configuration.py"],
+    imports = ["private"],
+    visibility = ["//tests/package_configuration:__subpackages__"],
+)
+
+runghc(
+    name = "runghc",
     visibility = ["//visibility:public"],
 )
 
@@ -147,4 +178,35 @@ config_setting(
 
 haskell_toolchain_info(
     name = "toolchain_info",
+)
+
+get_nodejs_toolchain(
+    name = "current_nodejs_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_posix_toolchain(
+    name = "current_posix_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_haskell_toolchain(
+    name = "current_haskell_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_cc_toolchain(
+    name = "current_cc_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//haskell/c2hs:all_files",
+        "//haskell/experimental:all_files",
+        "//haskell/platforms:all_files",
+    ],
+    visibility = ["//visibility:public"],
 )

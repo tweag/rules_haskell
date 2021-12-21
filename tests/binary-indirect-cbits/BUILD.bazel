@@ -33,3 +33,10 @@ haskell_binary(
         "//tests/library-with-cbits:library-with-cbits-static",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

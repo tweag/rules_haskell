@@ -1,0 +1,81 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+load(
+    ":ghc_paths.bzl",
+    "ghc_files",
+    "ghc_paths",
+)
+
+exports_files(["ghc-paths.cabal"])
+
+haskell_toolchain_library(name = "base")
+
+haskell_toolchain_library(name = "directory")
+
+haskell_toolchain_library(name = "filepath")
+
+haskell_toolchain_library(name = "transformers")
+
+ghc_paths(
+    name = "GHC.Paths",
+    output = "GHC/Paths.hs",
+    template = "GHC/Paths.hs.tpl",
+)
+
+ghc_files(
+    name = "bin",
+    component = "bin",
+    visibility = ["//visibility:public"],
+)
+
+ghc_files(
+    name = "docdir",
+    component = "doc",
+    visibility = ["//visibility:public"],
+)
+
+ghc_files(
+    name = "libdir",
+    component = "lib",
+    visibility = ["//visibility:public"],
+)
+
+haskell_library(
+    name = "ghc-paths",
+    srcs = ["GHC/Paths.hs"],
+    version = "0.1.0.11",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":base",
+        ":filepath",
+        ":transformers",
+        "@rules_haskell//tools/runfiles",
+    ],
+)
+
+haskell_test(
+    name = "test",
+    srcs = ["Test.hs"],
+    data = [
+        ":bin",
+        ":docdir",
+        ":libdir",
+    ],
+    deps = [
+        ":base",
+        ":directory",
+        ":filepath",
+        ":ghc-paths",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -49,7 +49,7 @@ def get_cc_libraries(cc_libraries_info, libraries_to_link):
         if not cc_libraries_info.libraries[cc_library_key(lib_to_link)].is_haskell
     ]
 
-def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, include_real_paths = False):
+def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, *, include_real_paths = False, for_th_only = False):
     """Get libraries appropriate for loading with GHCi.
 
     See get_library_files for further information.
@@ -62,6 +62,9 @@ def get_ghci_library_files(hs, cc_libraries_info, libraries_to_link, include_rea
         pic = True,
         include_real_paths = include_real_paths,
     )
+    ghci_can_load_static_libs = hs.toolchain.static_runtime
+    if for_th_only and not ghci_can_load_static_libs:
+        return dynamic_libs
     return static_libs + dynamic_libs
 
 def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False, pic = None, include_real_paths = False):
@@ -161,7 +164,7 @@ def link_libraries(libs, args, path_prefix = "", prefix_optl = False):
         args.extend([dirfmt % lib.dirname for lib in libs])
         args.extend([libfmt % get_lib_name(lib) for lib in libs])
 
-def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None):
+def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None, dirprefix = ""):
     """Configure linker flags and inputs.
 
     Configure linker flags for C library dependencies and runtime dynamic
@@ -177,6 +180,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
       args: Arguments to the linking action.
       dynamic: Whether to link dynamically, or statically.
       pic: Whether position independent code is required.
+      dirprefix: Where to put the config file.
 
     Returns:
       (cache_file, static_libs, dynamic_libs):
@@ -202,7 +206,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
     )
 
     package_name = target_unique_name(hs, "link-config").replace("_", "-").replace("@", "-")
-    conf_path = paths.join(package_name, package_name + ".conf")
+    conf_path = paths.join(dirprefix, package_name, package_name + ".conf")
     conf_file = hs.actions.declare_file(conf_path)
     libs = cc_static_libs + cc_dynamic_libs
     write_package_conf(hs, conf_file, {
@@ -241,13 +245,17 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
 
     return (cache_file, static_libs, dynamic_libs)
 
+def _path_or_none(f):
+    if f != None:
+        return f.path
+
 def cc_library_key(library_to_link):
     """Convert a LibraryToLink into a hashable dictionary key."""
     return struct(
-        dynamic_library = library_to_link.dynamic_library,
-        interface_library = library_to_link.interface_library,
-        static_library = library_to_link.static_library,
-        pic_static_library = library_to_link.pic_static_library,
+        dynamic_library = _path_or_none(library_to_link.dynamic_library),
+        interface_library = _path_or_none(library_to_link.interface_library),
+        static_library = _path_or_none(library_to_link.static_library),
+        pic_static_library = _path_or_none(library_to_link.pic_static_library),
     )
 
 def deps_HaskellCcLibrariesInfo(deps):
@@ -304,34 +312,35 @@ def extend_HaskellCcLibrariesInfo(
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
     libraries = dict(cc_libraries_info.libraries)
 
-    for lib_to_link in cc_info.linking_context.libraries_to_link.to_list():
-        key = cc_library_key(lib_to_link)
-        if key in libraries:
-            continue
-        if is_haskell:
-            libraries[key] = HaskellCcLibraryInfo(
-                static_library_link = None,
-                pic_static_library_link = None,
-                is_haskell = True,
-            )
-        else:
-            libraries[key] = HaskellCcLibraryInfo(
-                static_library_link = mangle_static_library(
-                    ctx,
-                    posix,
-                    lib_to_link.dynamic_library,
-                    lib_to_link.static_library,
-                    outdir = "_ghc_a",
-                ),
-                pic_static_library_link = mangle_static_library(
-                    ctx,
-                    posix,
-                    lib_to_link.dynamic_library,
-                    lib_to_link.pic_static_library,
-                    outdir = "_ghc_pic_a",
-                ),
-                is_haskell = False,
-            )
+    for li in cc_info.linking_context.linker_inputs.to_list():
+        for lib_to_link in li.libraries:
+            key = cc_library_key(lib_to_link)
+            if key in libraries:
+                continue
+            if is_haskell:
+                libraries[key] = HaskellCcLibraryInfo(
+                    static_library_link = None,
+                    pic_static_library_link = None,
+                    is_haskell = True,
+                )
+            else:
+                libraries[key] = HaskellCcLibraryInfo(
+                    static_library_link = mangle_static_library(
+                        ctx,
+                        posix,
+                        lib_to_link.dynamic_library,
+                        lib_to_link.static_library,
+                        outdir = "_ghc_a",
+                    ),
+                    pic_static_library_link = mangle_static_library(
+                        ctx,
+                        posix,
+                        lib_to_link.dynamic_library,
+                        lib_to_link.pic_static_library,
+                        outdir = "_ghc_pic_a",
+                    ),
+                    is_haskell = False,
+                )
 
     return HaskellCcLibrariesInfo(libraries = libraries)
 

@@ -24,6 +24,7 @@ load(
         "deepseq",
         "directory",
         "filepath",
+        "ghc",
         "mtl",
         "template-haskell",
         "transformers",
@@ -33,3 +34,10 @@ load(
         "text",
     ]
 ]
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

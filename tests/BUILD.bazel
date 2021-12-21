@@ -1,5 +1,6 @@
 load(":inline_tests.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
+load("@os_info//:os_info.bzl", "is_windows")
 load("//tests:rule_test_exe.bzl", "rule_test_exe")
 load(
     "//haskell:c2hs.bzl",
@@ -35,10 +36,27 @@ exports_files(
 
 package(default_testonly = 1)
 
+config_setting(
+    name = "nix",
+    constraint_values = [
+        "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
+    ],
+)
+
+alias(
+    name = "zlib",
+    # This is a dependency to @stackage-zlib.
+    testonly = 0,
+    actual = select({
+        ":nix": "@zlib.dev//:zlib",
+        "//conditions:default": "@zlib.hs//:zlib",
+    }),
+    visibility = ["//visibility:public"],
+)
+
 haskell_doctest_toolchain(
     name = "doctest-toolchain",
-    doctest = "@doctest//:bin",
-    tags = ["requires_doctest"],
+    doctest = "@stackage-exe//doctest",
 )
 
 # This toolchain is morally testonly. However, that would break our
@@ -51,9 +69,6 @@ haskell_proto_toolchain(
     testonly = 0,
     plugin = "@stackage-exe//proto-lens-protoc",
     protoc = "@com_google_protobuf//:protoc",
-    tags = [
-        "requires_proto",
-    ],
     deps = [
         "@stackage//:base",
         "@stackage//:bytestring",
@@ -72,8 +87,7 @@ haskell_proto_toolchain(
 
 c2hs_toolchain(
     name = "c2hs-toolchain",
-    c2hs = "@c2hs//:bin",
-    tags = ["requires_c2hs"],
+    c2hs = "@stackage-exe//c2hs",
 )
 
 rule_test_exe(
@@ -90,37 +104,36 @@ rule_test_exe(
     rule = "//tests/binary-custom-main",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-with-lib",
     size = "small",
     generates = ["binary-with-lib"],
     rule = "//tests/binary-with-lib",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-with-prebuilt",
     size = "small",
     generates = ["binary-with-prebuilt"],
     rule = "//tests/binary-with-prebuilt",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-with-main",
     size = "small",
     generates = ["binary-with-main"],
     rule = "//tests/binary-with-main",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-binary-with-sysdeps",
     size = "small",
     generates = ["binary-with-sysdeps"],
     rule = "//tests/binary-with-sysdeps",
-    tags = ["requires_zlib"],
 )
 
 sh_test(
-    name = "test-binary-with-data",
+    name = "test-binary-with-data{}".format(".exe" if is_windows else ""),
     size = "small",
     srcs = ["//tests/binary-with-data"],
     args = ["$(location //tests/binary-with-data:bin1)"],
@@ -165,7 +178,6 @@ rule_test(
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
         ],
         ":fastbuild_windows": [
-            "libHStestsZSlibrary-depsZSlibrary-deps-ghc{}.dll".format(test_ghc_version),
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
         ],
         "//conditions:default": [
@@ -176,7 +188,7 @@ rule_test(
     rule = "//tests/library-deps",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-hsc",
     size = "small",
     generates = ["hsc"],
@@ -186,21 +198,20 @@ rule_test(
 rule_test(
     name = "test-haddock",
     size = "small",
-    generates =
-        [
-            "haddock/array-0.5.4.0",
-            "haddock/base-4.13.0.0",
-            "haddock/deepseq-1.4.4.0",
-            "haddock/ghc-boot-th-8.8.3",
-            "haddock/ghc-prim-0.5.3",
-            "haddock/index",
-            "haddock/integer-gmp-1.0.2.0",
-            "haddock/pretty-1.1.3.6",
-            "haddock/template-haskell-2.15.0.0",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-        ],
+    generates = [
+        "haddock/array-0.5.4.0",
+        "haddock/base-4.14.3.0",
+        "haddock/deepseq-1.4.4.0",
+        "haddock/ghc-boot-th-8.10.7",
+        "haddock/ghc-prim-0.6.1",
+        "haddock/index",
+        "haddock/integer-gmp-1.0.3.0",
+        "haddock/pretty-1.1.3.6",
+        "haddock/template-haskell-2.16.0.0",
+        "haddock/testsZShaddockZShaddock-lib-a",
+        "haddock/testsZShaddockZShaddock-lib-b",
+        "haddock/testsZShaddockZShaddock-lib-deep",
+    ],
     rule = "//tests/haddock",
 )
 
@@ -211,24 +222,23 @@ rule_test(
         "doctest-log-doctest-lib-lib-b",
     ],
     rule = "//tests/haskell_doctest:doctest-lib",
-    tags = ["requires_doctest"],
 )
 
-rule_test(
+rule_test_exe(
     name = "test-haskell_test",
     size = "small",
     generates = ["haskell_test"],
     rule = "//tests/haskell_test:haskell_test",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-java_classpath",
     size = "small",
     generates = ["java_classpath"],
     rule = "//tests/java_classpath",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-cc_haskell_import-cc-link",
     size = "small",
     generates = ["cc-bin"],
@@ -262,30 +272,34 @@ set -e
 # Fails if executable was linked without -threaded flag.
 $1 +RTS -N
 """,
+    tags = [
+        # On Windows this needs to use rlocation to determine the runtime location of the binary.
+        "dont_test_on_windows",
+    ],
 )
 
-rule_test(
+rule_test_exe(
     name = "test-lhs",
     size = "small",
     generates = ["lhs-bin"],
     rule = "//tests/lhs:lhs-bin",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-hs-boot",
     size = "small",
     generates = ["hs-boot"],
     rule = "//tests/hs-boot:hs-boot",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-textual-hdrs",
     size = "small",
     generates = ["textual-hdrs"],
     rule = "//tests/textual-hdrs:textual-hdrs",
 )
 
-rule_test(
+rule_test_exe(
     name = "test-two-libs",
     size = "small",
     generates = ["two-libs"],
@@ -352,9 +366,12 @@ haskell_binary(
     srcs = ["RunTests.hs"],
     deps = [
         "//tests/hackage:base",
+        "//tests/hackage:directory",
+        "//tests/hackage:filepath",
         "//tests/hackage:process",
         "@stackage//:hspec",
         "@stackage//:hspec-core",
+        "@stackage//:safe-exceptions",
         "@stackage//:temporary",
     ],
 )
@@ -384,7 +401,10 @@ haskell_library(
 
 haskell_doc(
     name = "toto",
-    tags = ["requires_lz4"],
+    tags = [
+        "dont_test_on_windows",
+        "requires_lz4",
+    ],
     deps = [":utils"],
 )
 
@@ -397,16 +417,101 @@ haskell_repl(
     ],
 )
 
-sh_test(
-    name = "ghcide-smoke-test",
-    srcs = ["@ghcide-exe//ghcide"],
-    args = ["--version"],
-    tags = [
-        # Building ghcide fails in profiling mode with:
-        #
-        #   exe/Rules.hs:106:28: fatal:
-        #       cannot find object file ‘/run/user/1000/tmp7b54rlve/build/ghcide/ghcide-tmp/Util.dyn_o’
-        #       while linking an interpreted expression
-        "requires_dynamic",
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/binary-custom-main:all_files",
+        "//tests/binary-dynamic:all_files",
+        "//tests/binary-exe-path:all_files",
+        "//tests/binary-indirect-cbits:all_files",
+        "//tests/binary-linkstatic-flag:all_files",
+        "//tests/binary-simple:all_files",
+        "//tests/binary-with-compiler-flags:all_files",
+        "//tests/binary-with-data:all_files",
+        "//tests/binary-with-import:all_files",
+        "//tests/binary-with-indirect-sysdeps:all_files",
+        "//tests/binary-with-lib:all_files",
+        "//tests/binary-with-lib-dynamic:all_files",
+        "//tests/binary-with-link-flags:all_files",
+        "//tests/binary-with-main:all_files",
+        "//tests/binary-with-plugin:all_files",
+        "//tests/binary-with-prebuilt:all_files",
+        "//tests/binary-with-sysdeps:all_files",
+        "//tests/binary-with-tool:all_files",
+        "//tests/c2hs:all_files",
+        "//tests/cabal-toolchain-flags:all_files",
+        "//tests/cc_haskell_import:all_files",
+        "//tests/c-compiles:all_files",
+        "//tests/c-compiles-still:all_files",
+        "//tests/cpp_macro_conflict:all_files",
+        "//tests/data:all_files",
+        "//tests/encoding:all_files",
+        "//tests/external-haskell-repository:all_files",
+        "//tests/extra-source-files:all_files",
+        "//tests/generated-modules:all_files",
+        "//tests/ghc:all_files",
+        "//tests/ghc-check:all_files",
+        "//tests/ghcide:all_files",
+        "//tests/hackage:all_files",
+        "//tests/haddock:all_files",
+        "//tests/haddock_protobuf:all_files",
+        "//tests/haddock-with-plugin:all_files",
+        "//tests/haskell_cabal_binary:all_files",
+        "//tests/haskell_cabal_doctest:all_files",
+        "//tests/haskell_cabal_library:all_files",
+        "//tests/haskell_cabal_library_depends_on_haskell_library:all_files",
+        "//tests/haskell_cabal_library_sublibrary_name:all_files",
+        "//tests/haskell_cabal_package:all_files",
+        "//tests/haskell_doctest:all_files",
+        "//tests/haskell_import:all_files",
+        "//tests/haskell_module:all_files",
+        "//tests/haskell_proto_library:all_files",
+        "//tests/haskell_proto_simple:all_files",
+        "//tests/haskell_test:all_files",
+        "//tests/haskell_toolchain_library:all_files",
+        "//tests/hidden-modules:all_files",
+        "//tests/hie-bios:all_files",
+        "//tests/hs-boot:all_files",
+        "//tests/hsc:all_files",
+        "//tests/indirect-link:all_files",
+        "//tests/java_classpath:all_files",
+        "//tests/lhs:all_files",
+        "//tests/library-deps:all_files",
+        "//tests/library-empty:all_files",
+        "//tests/library-exports:all_files",
+        "//tests/library-external-workspace:all_files",
+        "//tests/library-linkstatic-flag:all_files",
+        "//tests/library-with-cbits:all_files",
+        "//tests/library-with-includes:all_files",
+        "//tests/library-with-static-cc-dep:all_files",
+        "//tests/library-with-sysdeps:all_files",
+        "//tests/library-with-sysincludes:all_files",
+        "//tests/multi_repl:all_files",
+        "//tests/package_configuration:all_files",
+        "//tests/package-id-clash:all_files",
+        "//tests/package-id-clash-binary:all_files",
+        "//tests/package-name:all_files",
+        "//tests/package-reexport:all_files",
+        "//tests/plugin-install-order:all_files",
+        "//tests/repl-flags:all_files",
+        "//tests/repl-make-variables:all_files",
+        "//tests/repl-multiple-definition:all_files",
+        "//tests/repl-name-conflicts:all_files",
+        "//tests/repl-targets:all_files",
+        "//tests/runfiles:all_files",
+        "//tests/sandwich:all_files",
+        "//tests/shellcheck:all_files",
+        "//tests/solib_dir:all_files",
+        "//tests/stackage_zlib_runpath:all_files",
+        "//tests/stack-snapshot-deps:all_files",
+        "//tests/target-name:all_files",
+        "//tests/template-haskell-with-cbits:all_files",
+        "//tests/textual-hdrs:all_files",
+        "//tests/two-libs:all_files",
+        "//tests/two-same-file:all_files",
+        "//tests/unit-tests:all_files",
+        "//tests/version-macros:all_files",
     ],
+    visibility = ["//visibility:public"],
 )

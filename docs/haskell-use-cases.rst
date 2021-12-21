@@ -28,9 +28,9 @@ rules_haskell. To use a released version, do the following::
 
   http_archive(
       name = "rules_haskell",
-      strip_prefix = "rules_haskell-0.13",
-      urls = ["https://github.com/tweag/rules_haskell/archive/v0.13.tar.gz"],
-      sha256 = "b4e2c00da9bc6668fa0404275fecfdb31beb700abdba0e029e74cacc388d94d6",
+      strip_prefix = "rules_haskell-0.14",
+      urls = ["https://github.com/tweag/rules_haskell/archive/v0.14.tar.gz"],
+      sha256 = "851e16edc7c33b977649d66f2f587071dde178a6e5bcfeca5fe9ebbe81924334",
   )
 
 Picking a compiler
@@ -101,10 +101,10 @@ accordingly. For example, you can have the following in your
 .. _Bazel+Nix blog post: https://www.tweag.io/posts/2018-03-15-bazel-nix.html
 .. _Nix package manager: https://nixos.org/nix
 .. _Nixpkgs: https://nixos.org/nixpkgs/manual/
-.. _ghc_bindist: http://api.haskell.build/haskell/ghc_bindist.html#ghc_bindist
+.. _ghc_bindist: https://api.haskell.build/haskell/ghc_bindist.html#ghc_bindist
 .. _haskell.org: https://haskell.org
-.. _haskell_binary: http://api.haskell.build/haskell/haskell.html#haskell_binary
-.. _haskell_library: http://api.haskell.build/haskell/haskell.html#haskell_library
+.. _haskell_binary: https://api.haskell.build/haskell/defs.html#haskell_binary
+.. _haskell_library: https://api.haskell.build/haskell/defs.html#haskell_library
 .. _rules_nixpkgs: https://github.com/tweag/rules_nixpkgs
 .. _toolchain resolution: https://docs.bazel.build/versions/master/toolchains.html#toolchain-resolution
 
@@ -308,13 +308,195 @@ However, you seldom want to use them directly. Cabal packages
 typically have many dependencies, which themselves have dependencies
 and so on. It is tedious to describe all of these dependencies to
 Bazel by hand. You can use the `stack_snapshot`_ workspace rule
-to download the source of all necessary dependencies from Hackage,
-and extract a dependency graph from a Stackage_ snapshot.
+as described below to download the source of all necessary dependencies from
+Hackage, and extract a dependency graph from a Stackage_ snapshot.
 
 These rules are meant only to interoperate with third-party code. For
 code under your direct control, prefer using one of the core Haskell
 rules, which have more features, are more efficient and more
 customizable.
+
+Importing a Stackage snapshot
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `stack_snapshot`_ workspace rule interfaces with the Stack tool to resolve
+package versions and dependencies based on a given Stackage snapshot. It also
+downloads the packages sources and generates Bazel build definitions for the
+individual Cabal packages.
+
+This is how you import the Stackage LTS 14.0 snapshot ::
+
+  stack_snapshot(
+      name = "stackage",
+      snapshot = "lts-14.0",
+      packages = [
+          "base",
+          "optparse-applicative",
+      ],
+  )
+
+This will generate the labels ``@stackage//:base``, and
+``@stackage//:optparse-applicative``, which you can use in the ``deps``
+attribute of your Haskell targets. Note that ``base`` is a core package and its
+version is determined by the GHC toolchain and not the Stackage snapshot.
+
+Use the ``local_snapshot`` attribute to refer to a `custom Stack snapshot`_.
+
+Pinning
+^^^^^^^
+
+The ``stack_snapshot`` rule invokes ``stack`` for version and dependency
+resolution.  By default this will happen on every fetch of the `external
+repository`_. This may require arbitrary network access, which can slow down
+the build. It may also lead to reproducibility issues, for example if a new
+revision of a Hackage dependency is published. Finally, ``stack`` downloading
+packages is opaque to Bazel and therefore not eligible for `repository caching`_.
+
+You can enable pinning to avoid these issues. In this case ``stack`` will be
+called only once to perform dependency resolution and the results will be
+written to a lock file. Future fetches will only read from that lock file and
+download packages in a way that is eligible for Bazel repository caching.
+
+1. Generate a lock file by running ``bazel run @stackage-unpinned//:pin``.
+2. Set the ``stack_snapshot_json`` attribute. ::
+
+     stack_snapshot(
+         ...
+         stack_snapshot_json = "//:stackage_snapshot.json",
+     )
+
+Repeat step 1 when you change the ``stack_snapshot`` definition, e.g. the
+Stackage snapshot or the list of packages.
+
+Version overrides or Hackage dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can also depend on Hackage packages that are not part of a Stackage
+snapshot, or override the version of a package, by specifying the version in
+the ``packages`` attribute. ::
+
+  stack_snapshot(
+      ...
+      packages = [
+          ...
+          "optparse-helper-0.2.1.1",
+      ],
+  )
+
+Non-Haskell dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some Hackage packages depend on C libraries. Bazel builds should be hermetic,
+therefore, such library dependencies should be managed by Bazel and declared
+explicitly. ::
+
+  stack_snapshot(
+      ...
+      packages = [
+          ...
+          "zlib",
+      ],
+      extra_deps = {
+          "zlib": ["@zlib-deps//:libz"],
+      },
+  )
+
+This declares that the Stackage package ``zlib`` has an additional dependency
+``@zlib-deps//:libz``. The C library ``libz`` could be imported using
+``rules_nixpkgs``, or fetched and built by Bazel as follows. ::
+
+  http_archive(
+      name = "zlib-deps",
+      build_file_content = """
+  load("@rules_cc//cc:defs.bzl", "cc_library")
+  cc_library(
+      name = "libz",
+      # The indirection enforces the library name `libz.so`,
+      # otherwise Cabal won't find it.
+      srcs = [":z"],
+      hdrs = glob(["*.h"]),
+      includes = ["."],
+      visibility = ["//visibility:public"],
+  )
+  cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+  """,
+      sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+      strip_prefix = "zlib-1.2.11",
+      urls = ["http://zlib.net/zlib-1.2.11.tar.gz"],
+  )
+
+Vendoring packages
+^^^^^^^^^^^^^^^^^^
+
+You can inject a vendored or patched version of a package into the dependency
+graph generated by ``stack_snapshot``. For example, if you have a custom
+version of the ``hashable`` package in your repository under the label
+``//third-party/hashable``, then you can inject it into a ``stack_snapshot`` as
+follows. ::
+
+  workspace(name = "workspace-name")
+
+  stack_snapshot(
+      ...
+      packages = [
+          ...
+          "unordered-containers",
+      ],
+      vendored_packages = {
+          "hashable": "@workspace-name//third-party/hashable",
+      },
+  )
+
+In this case the package ``unordered-containers`` will be linked against your
+vendored version of ``hashable`` instead of the version defined by the original
+Stackage snapshot.
+
+Note that ``stack_snapshot`` still needs a Cabal file of vendored packages for
+version and dependency resolution. In the above example the Cabal file should
+be a static file under the label ``//third-party/hashable:hashable.cabal``.
+
+The vendored package does not have to be local to your workspace. Instead, it
+could be an external repository imported by a rule such as ``http_archive``,
+``local_repository``, or ``new_local_repository``. A common use-case is to
+patch version bounds as described below.
+
+Patching packages
+^^^^^^^^^^^^^^^^^
+
+The ``vendored_packages`` attribute can be used to inject a patched version of
+a Hackage packages, for example one with patched Cabal version bounds. ::
+
+  stack_snapshot(
+      ...
+      vendored_packages = {
+          "split": "@split//:split",
+      },
+  )
+
+  http_archive(
+      name = "split",
+      build_file_content = """
+  load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+  load("@stackage//:packages.bzl", "packages")
+  haskell_cabal_library(
+      name = "split",
+      version = packages["split"].version,
+      srcs = glob(["**"]),
+      deps = packages["split"].deps,
+      visibility = ["//visibility:public"],
+  )
+      """,
+      patch_args = ["-p1"],
+      patches = ["@rules_haskell_examples//:split.patch"],
+      sha256 = "1dcd674f7c5f276f33300f5fd59e49d1ac6fc92ae949fd06a0f6d3e9d9ac1413",
+      strip_prefix = "split-0.2.3.3",
+      urls = ["http://hackage.haskell.org/package/split-0.2.3.3/split-0.2.3.3.tar.gz"],
+  )
+
+The ``stack_snapshot`` rule emits metadata determined during dependency
+resolution into the file ``packages.bzl``. In the above example this file is
+used to avoid manually repeating the version and the list of dependencies of
+the ``split`` package, which is already defined in its Cabal file.
 
 .. _Cabal: https://haskell.org/cabal
 .. _Hackage: https://hackage.haskell.org
@@ -322,6 +504,9 @@ customizable.
 .. _haskell_cabal_library: https://api.haskell.build/haskell/cabal.html#haskell_cabal_library
 .. _haskell_cabal_binary: https://api.haskell.build/haskell/cabal.html#haskell_cabal_binary
 .. _stack_snapshot: https://api.haskell.build/haskell/cabal.html#stack_snapshot
+.. _custom Stack snapshot: https://docs.haskellstack.org/en/stable/pantry/#snapshots
+.. _external repository: https://docs.bazel.build/versions/master/external.html
+.. _repository caching: https://docs.bazel.build/versions/master/guide.html#the-repository-cache
 
 Building Cabal packages (using Nix)
 -----------------------------------
@@ -366,7 +551,7 @@ construct a compiler with all the packages you depend on in scope::
 Each package mentioned in ``ghc.nix`` can then be imported using
 `haskell_toolchain_library`_ in ``BUILD`` files.
 
-.. _haskell_toolchain_library: http://api.haskell.build/haskell/haskell.html#haskell_toolchain_library
+.. _haskell_toolchain_library: https://api.haskell.build/haskell/defs.html#haskell_toolchain_library
 
 Generating API documentation
 ----------------------------
@@ -386,7 +571,7 @@ any given target (or indeed all targets), like in the following:
   $ bazel build //my/pkg:mylib \
       --aspects @rules_haskell//haskell:defs.bzl%haskell_doc_aspect
 
-.. _haskell_doc: http://api.haskell.build/haskell/haddock.html#haskell_doc
+.. _haskell_doc: https://api.haskell.build/haskell/defs.html#haskell_doc
 
 Linting your code
 -----------------
@@ -396,7 +581,7 @@ apply warning flags using the ``compiler_flags`` attribute, for example ::
 
   haskell_library(
       ...
-      compiler_flags = [
+      ghcopts = [
           "-Werror",
           "-Wall",
           "-Wcompat",
@@ -411,12 +596,12 @@ apply warning flags using the ``compiler_flags`` attribute, for example ::
 For larger projects it can make sense to define a custom macro that
 applies such common flags by default. ::
 
-  common_compiler_flags = [ ... ]
+  common_ghcopts = [ ... ]
 
-  def my_haskell_library(name, compiler_flags = [], ...):
+  def my_haskell_library(name, ghcopts = [], ...):
       haskell_library(
           name = name,
-          compiler_flags = common_compiler_flags + compiler_flags,
+          ghcopts = common_ghcopts + ghcopts,
           ...
       )
 
@@ -456,6 +641,31 @@ in rule inputs (e.g. different source files for different platforms).
 .. _Version macros: https://ghc.gitlab.haskell.org/ghc/doc/users_guide/phases.html#standard-cpp-macros
 .. _version attribute: https://api.haskell.build/haskell/defs.html#haskell_library.version
 .. _select construct: https://docs.bazel.build/versions/master/configurable-attributes.html
+
+Using source code pre-processors
+--------------------------------
+
+GHC allows any number of pre-processors to run before parsing a file.
+These pre-processors can be specfied in compiler flags on the
+command-line or in pragmas in the source files. For example,
+`hspec-discover`_ is a pre-processor. To use it, it must be
+a `tools` dependency. You can then use a CPP macro to avoid hardcoding
+the location of the tool in source code pragmas. Example: ::
+
+  haskell_test(
+      name = "tests",
+      srcs = ["Main.hs", "Spec.hs"],
+      ghcopts = ["-DHSPEC_DISCOVER=$(location @stackage-exe//hspec-discover)"],
+      tools = ["@stackage-exe//hspec-discover"],
+      deps = ["@stackage//:base"],
+  )
+
+Where ``Spec.hs`` reads: ::
+
+  {-# LANGUAGE CPP #-}
+  {-# OPTIONS_GHC -F -pgmF HSPEC_DISCOVER #-}
+
+.. _hspec-discover: https://hackage.haskell.org/package/hspec-discover
 
 Checking code coverage
 ----------------------
@@ -539,10 +749,22 @@ There a couple of notes regarding the coverage analysis functionality:
 
 .. _hpc: https://hackage.haskell.org/package/hpc
 
+Profiling
+---------
+
+Exclusive profiling mode is activated by setting the `compilation mode`_
+to ``dbg``. In which case, only the profiling libraries and binaries are
+compiled (instead of both profiling and non-profiling). In profiling
+mode, the toolchain libraries only carry their static archives, as no
+shared libraries are provided. (Tests that strictly require shared
+objects are disabled in profiling mode.)
+
+.. _compilation mode: https://docs.bazel.build/versions/main/user-manual.html#flag--compilation_mode
+
 Persistent Worker Mode (experimental)
 -------------------------------------
 
-Bazel supports the special `persistent worker mode`_ when instead of calling the compiler
+Bazel supports the special `persistent worker mode`_ when, instead of calling the compiler
 from scratch to build every target separately, it spawns a resident process for this purpose
 and sends all compilation requests to it in the client-server fashion. This worker strategy
 may improve compilation times. We implemented a worker for GHC using GHC API.
@@ -739,8 +961,8 @@ Containerization with rules_docker
 Making use of both ``rules_docker`` and ``rules_nixpkgs``, it's possible to containerize
 ``rules_haskell`` ``haskell_binary`` build targets for deployment. In a nutshell, first we must use
 ``rules_nixpkgs`` to build a ``dockerTools.buildLayeredImage`` target with the basic library dependencies
-required to run a typical haskell binary. Thereafter, we can use ``rules_docker`` to use this as
-a base image upon which we can layer a bazel built haskell binary.
+required to run a typical Haskell binary. Thereafter, we can use ``rules_docker`` to use this as
+a base image upon which we can layer a Bazel built Haskell binary.
 
 Step one is to ensure you have all the necessary ``rules_docker`` paraphernalia loaded in your ``WORKSPACE``
 file: ::
@@ -755,7 +977,7 @@ file: ::
   load("@io_bazel_rules_docker//toolchains/docker:toolchain.bzl", docker_toolchain_configure="toolchain_configure")
 
 To make full use of post-build ``rules_docker`` functionality, we'll want to make sure this is set
-to the docker binary's location ::
+to the Docker binary's location ::
 
   docker_toolchain_configure(
       name = "docker_config",
@@ -783,7 +1005,7 @@ Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nix
       """,
   )
 
-And finally use the ``rules_docker`` ``container_load`` functionality to grab the docker image built by the previous ``raw-haskell-base-image`` target ::
+And finally use the ``rules_docker`` ``container_load`` functionality to grab the Docker image built by the previous ``raw-haskell-base-image`` target ::
 
   container_load(
       name = "haskell-base-image",
@@ -796,7 +1018,7 @@ Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as
   with import <nixpkgs> { system = "x86_64-linux"; };
 
   # Build the base image.
-  # The output of this derivation will be a docker archive in the same format as
+  # The output of this derivation will be a Docker archive in the same format as
   # the output of `docker save` that we can feed to
   # [container_load](https://github.com/bazelbuild/rules_docker#container_load)
   let
@@ -812,7 +1034,7 @@ Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as
     gunzip -c ${haskellBase} > $out/image
   ''
 
-Step three pulls all this together in a build file to actually assemble our final docker image. In a BUILD.bazel file, we'll need the following ::
+Step three pulls all this together in a build file to actually assemble our final Docker image. In a BUILD.bazel file, we'll need the following ::
 
   load("@io_bazel_rules_docker//cc:image.bzl", "cc_image")
   load("@io_bazel_rules_docker//container:container.bzl", "container_push")
@@ -820,7 +1042,7 @@ Step three pulls all this together in a build file to actually assemble our fina
   haskell_binary(
       name = "my_binary,
       srcs = ["Main.hs"],
-      compiler_flags = [
+      ghcopts = [
           "-O2",
           "-threaded",
           "-rtsopts",
@@ -841,7 +1063,7 @@ Step three pulls all this together in a build file to actually assemble our fina
       stamp = True,
   )
 
-And you may want to use ``rules_docker`` to push your docker image as follows ::
+And you may want to use ``rules_docker`` to push your Docker image as follows ::
 
   container_push(
       name = "my_binary_push",
@@ -852,10 +1074,132 @@ And you may want to use ``rules_docker`` to push your docker image as follows ::
       tag = "{BUILD_USER}",
  )
 
-*n.b* Due to the `current inability`_ of nix to be used on macOS (darwin) for building docker images, it's currently
-not possible to build docker images for haskell binaries as above using rules_docker and nixpkgs on macOS.
+*n.b.* Due to the `current inability`_ of Nix to be used on macOS (darwin) for building Docker images, it's currently
+not possible to build Docker images for Haskell binaries as above using ``rules_docker`` and Nixpkgs on macOS.
 
 .. _current inability: https://github.com/NixOS/nixpkgs/issues/16696
 
-Following these steps you should end up with a fairly lightweight docker image, bringing the flexibility of nix
-as a docker base image manager and the power of ``rules_haskell`` for your haskell build together.
+Following these steps you should end up with a fairly lightweight Docker image, bringing the flexibility of Nix
+as a Docker base image manager and the power of ``rules_haskell`` for your Haskell build together.
+
+Cross-compilation
+-----------------
+
+Currently, ``rules_haskell`` only supports cross-compiling to ``arm`` on Linux.
+Cross-compiling requires providing a cross-compiler, telling ``rules_haskell``
+about it, and then requesting Bazel to build for the target platform.
+
+Ideally, providing a cross-compiler would only require the advice in
+`Picking a compiler`_. However, the case of ``arm`` requires to configure
+a few aspects at this time. One has to make available the LLVM tools
+to the compiler, emulation support needs to be set to enable
+compilation of Template Haskell splices via an external interpreter,
+and a compatible C cross-toolchain needs to be given as well for
+linking. All of this is configured via Nix in the
+`arm example`_, and the configuration can be copied as
+is to other projects. Building the cross-compiler from this particular
+configuration can be avoided by telling Nix to fetch it from the
+`haskell.nix binary cache`_.
+
+.. _arm example: https://github.com/tweag/rules_haskell/blob/master/examples/arm/arm-cross.nix
+.. _haskell.nix binary cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started/#setting-up-the-binary-cache
+
+To tell ``rules_haskell`` about the cross-compiler, we can register it
+in the `WORKSPACE file <https://github.com/tweag/rules_haskell/blob/master/examples/arm/WORKSPACE>`_. ::
+
+  load(
+      "@rules_haskell//haskell:nixpkgs.bzl",
+      "haskell_register_ghc_nixpkgs",
+  )
+
+  haskell_register_ghc_nixpkgs(
+      name = "aarch64",
+      version = "8.10.4",
+      nix_file = "//:arm-cross.nix",
+      attribute_path = "ghc-aarch64",
+      static_runtime = True,
+      exec_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      target_constraints = [
+          "@platforms//cpu:aarch64",
+          "@platforms//os:linux",
+      ],
+      repository = "@nixpkgs",
+  )
+
+This rule indicates the Nix file and the Nix attribute path
+to reach the cross-compiler. It says to link a static
+runtime because the cross-compiler doesn't provide dynamic variants
+of the core libraries. And finally, it specifies the execution and
+target platform constraints. More information on platform constraints
+and cross-compilation with Bazel can be found `here <https://docs.bazel.build/versions/master/platforms-intro.html>`_.
+
+When using rules that depend on Cabal, ``rules_haskell`` also
+needs a compiler targeting the execution platform, so the ``Setup.hs``
+scripts can be executed. ::
+
+  haskell_register_ghc_nixpkgs(
+      name = "x86",
+      version = "8.10.4",
+      attribute_path = "haskell.compiler.ghc8102",
+      exec_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      target_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      repository = "@nixpkgs",
+  )
+
+Similarly, we need to register the native and cross-toolchains for C. ::
+
+  nixpkgs_cc_configure(
+      name = "nixpkgs_config_cc_x86",
+      exec_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      repository = "@nixpkgs",
+      target_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+  )
+
+  nixpkgs_cc_configure(
+      name = "nixpkgs_config_cc_arm",
+      attribute_path = "cc-aarch64",
+      exec_constraints = [
+          "@platforms//cpu:x86_64",
+          "@platforms//os:linux",
+      ],
+      nix_file = "//:arm-cross.nix",
+      repository = "@nixpkgs",
+      target_constraints = [
+          "@platforms//cpu:aarch64",
+          "@platforms//os:linux",
+      ],
+  )
+
+Having the toolchains registered, the last remaining bit is telling
+Bazel for which platform to build. Building for ``arm`` requires
+declaring the platform in the `BUILD <https://github.com/tweag/rules_haskell/blob/master/examples/arm/BUILD.bazel>`_ file. ::
+
+  platform(
+      name = "linux_aarch64",
+      constraint_values = [
+          "@platforms//os:linux",
+          "@platforms//cpu:aarch64",
+      ],
+  )
+
+Then we can invoke ::
+
+  bazel build --platforms=//:linux_aarch64 --incompatible_enable_cc_toolchain_resolution
+
+to create the ``arm`` artifact. The flag ``--incompatible_enable_cc_toolchain_resolution``
+is necessary to have Bazel use the platforms mechanism to select the C toolchains.

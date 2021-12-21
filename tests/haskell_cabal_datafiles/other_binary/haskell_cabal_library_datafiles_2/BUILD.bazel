@@ -1,0 +1,47 @@
+# tests that a haskell binary from another package can access
+# datafiles of it's cabal_library dependencY
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_binary",
+    "haskell_cabal_library",
+)
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+
+package(default_testonly = 1)
+
+haskell_toolchain_library(name = "base")
+
+haskell_binary(
+    name = "bin",
+    srcs = ["Main.hs"],
+    tags = ["skip_profiling"],
+    visibility = ["//tests/asterius/haskell_cabal_datafile:__pkg__"],
+    deps = [
+        ":base",
+        "//tests/haskell_cabal_datafiles/haskell_cabal_library_with_datafiles:lib",
+    ],
+)
+
+haskell_test(
+    name = "binary_other_pkg",
+    srcs = ["Main.hs"],
+    tags = ["skip_profiling"],
+    deps = [
+        ":base",
+        "//tests/haskell_cabal_datafiles/haskell_cabal_library_with_datafiles:lib",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

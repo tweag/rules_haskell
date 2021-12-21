@@ -137,11 +137,14 @@ def _haskell_doc_aspect_impl(target, ctx):
     cc_libraries = get_ghci_library_files(
         hs,
         target[HaskellCcLibrariesInfo],
-        target[CcInfo].linking_context.libraries_to_link.to_list(),
+        [lib for li in target[CcInfo].linking_context.linker_inputs.to_list() for lib in li.libraries],
     )
 
     # TODO(mboes): we should be able to instantiate this template only
     # once per toolchain instance, rather than here.
+    # TODO(aherrmann): Convert to a standalone sh_binary.
+    # Executable shell script files don't work on Windows.
+    # This fails with `%1 is not a valid Win32 application.`.
     haddock_wrapper = ctx.actions.declare_file("haddock_wrapper-{}".format(hs.name))
     ctx.actions.expand_template(
         template = ctx.file._haddock_wrapper_tpl,
@@ -161,6 +164,7 @@ def _haskell_doc_aspect_impl(target, ctx):
             target[HaskellInfo].package_databases,
             target[HaskellInfo].interface_dirs,
             target[HaskellInfo].source_files,
+            target[HaskellInfo].boot_files,
             target[HaskellInfo].extra_source_files,
             target[HaskellInfo].hs_libraries,
             depset(cc_libraries),
@@ -170,6 +174,9 @@ def _haskell_doc_aspect_impl(target, ctx):
                 hs.tools.ghc_pkg,
                 hs.tools.haddock,
             ]),
+            depset(hs.toolchain.bindir),
+            depset(hs.toolchain.docdir),
+            depset(hs.toolchain.libdir),
             locale_archive_depset,
         ]),
         outputs = [haddock_file, html_dir],

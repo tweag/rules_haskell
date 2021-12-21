@@ -15,8 +15,15 @@ haskell_binary(
 haskell_test(
     name = "binary-with-tool",
     srcs = ["Main.hs"],
-    compiler_flags = ["-DCAT=$(location :cat)"],
+    ghcopts = ["-DCAT=$(location :cat)"],
     tools = [":cat"],
     visibility = ["//visibility:public"],
     deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

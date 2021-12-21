@@ -16,7 +16,7 @@ finish() {
 
 trap finish EXIT
 
-bazel build //docs:api_html
+bazel build //docs:api_html --//docs:render_dev_website
 mkdir "$SCRATCH/api"
 unzip -d "$SCRATCH/api" bazel-bin/docs/api_html-stardoc.zip
 

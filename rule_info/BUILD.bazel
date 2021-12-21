@@ -10,6 +10,14 @@ proto_library(
 
 haskell_proto_library(
     name = "rule_info_haskell_proto",
+    tags = ["requires_dynamic"],
     visibility = ["//visibility:public"],
     deps = [":rule_info_proto"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

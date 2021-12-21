@@ -23,6 +23,7 @@ haskell_library(
         "header.h",
     ],
     compiler_flags = ["-I."],
+    tags = ["requires_dynamic"],
     deps = [
         ":haddock-lib-deep",
         "//tests/hackage:base",
@@ -40,19 +41,28 @@ haskell_library(
         "unicode.txt",
     ],
     tags = [
-        "requires_zlib",
+        # Requires a dynamic `libz` library to load for template Haskell.
+        # This is missing on darwin with bindist due to
+        # https://github.com/tweag/rules_haskell/issues/1317.
+        "dont_test_on_darwin_with_bindist",
+        "requires_dynamic",
     ],
     deps = [
         ":haddock-lib-a",
+        "//tests:zlib",
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
-        "@zlib",
     ],
 )
 
 haskell_doc(
     name = "haddock",
     index_transitive_deps = False,
+    tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+        "requires_dynamic",
+    ],
     deps = [":haddock-lib-b"],
 )
 
@@ -62,6 +72,8 @@ sh_test(
     args = ["$(rootpaths :haddock)"],
     data = [":haddock"],
     tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
         # Fails in profiling mode due to missing haddocks for Deep.
         "requires_dynamic",
     ],
@@ -71,6 +83,11 @@ sh_test(
 haskell_doc(
     name = "haddock-transitive",
     index_transitive_deps = True,
+    tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+        "requires_dynamic",
+    ],
     deps = [":haddock-lib-b"],
 )
 
@@ -80,8 +97,17 @@ sh_test(
     args = ["$(rootpaths :haddock-transitive)"],
     data = [":haddock-transitive"],
     tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
         # Fails in profiling mode due to missing haddocks for Deep.
         "requires_dynamic",
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

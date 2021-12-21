@@ -5,6 +5,11 @@ local_repository(
     path = "..",
 )
 
+local_repository(
+    name = "arm",
+    path = "arm",
+)
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
@@ -13,14 +18,14 @@ rules_haskell_dependencies()
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc865",
+    attribute_path = "haskell.compiler.ghc8107",
     repository = "@rules_haskell//nixpkgs:default.nix",
-    version = "8.6.5",
+    version = "8.10.7",
 )
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
-rules_haskell_toolchains(version = "8.6.5")
+rules_haskell_toolchains(version = "8.10.7")
 
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
@@ -29,8 +34,8 @@ load(
 )
 
 nixpkgs_cc_configure(
-    nix_file = "@rules_haskell//nixpkgs:cc-toolchain.nix",
-    nix_file_deps = ["@rules_haskell//nixpkgs:default.nix"],
+    # Don't override the default cc toolchain needed for bindist mode.
+    name = "nixpkgs_config_cc",
     repository = "@rules_haskell//nixpkgs:default.nix",
 )
 
@@ -106,7 +111,7 @@ stack_snapshot(
         "text",
         "text-show",
     ],
-    snapshot = "lts-14.0",
+    snapshot = "lts-18.0",
     # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
     # uncomment the following line.

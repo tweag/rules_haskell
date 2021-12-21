@@ -18,3 +18,12 @@ def expand_make_variables(name, ctx, strings, extra_label_attrs):
     strings = [ctx.expand_location(str, targets = targets) for str in strings]
     strings = [ctx.expand_make_variables(name, str, {}) for str in strings]
     return strings
+
+def haskell_library_extra_label_attrs(attr):
+    return [
+        attr.srcs,
+        attr.extra_srcs,
+        attr.data,
+        attr.plugins,
+        attr.tools,
+    ]

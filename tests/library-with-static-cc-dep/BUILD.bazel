@@ -1,0 +1,56 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
+
+cc_library(
+    name = "cbits-static",
+    srcs = ["cbits/impl.c"],
+    linkstatic = True,
+)
+
+haskell_library(
+    name = "mypkg",
+    srcs = ["src/MyModule.hs"],
+    ghcopts = ["-XTemplateHaskell"],
+    src_strip_prefix = "src",
+    deps = [
+        ":cbits-static",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "library-with-static-cc-dep-static",
+    srcs = ["test/Main.hs"],
+    linkstatic = True,
+    src_strip_prefix = "test",
+    deps = [
+        ":mypkg",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "library-with-static-cc-dep-dynamic",
+    srcs = ["test/Main.hs"],
+    linkstatic = False,
+    src_strip_prefix = "test",
+    deps = [
+        ":mypkg",
+        "//tests/hackage:base",
+    ],
+)
+
+test_suite(
+    name = "library-with-static-cc-dep",
+    tests = [
+        ":library-with-static-cc-dep-dynamic",
+        ":library-with-static-cc-dep-static",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

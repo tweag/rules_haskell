@@ -46,13 +46,25 @@ used to avoid command line length limitations.
 
     See https://gitlab.haskell.org/ghc/ghc/issues/17185.
 
-- Fixes invocations that handle temporary and intermediate binaries
+- Fixes invocations that handle temporary and intermediate binaries.
 
     GHC with Template Haskell or tools like hsc2hs build temporary Haskell
     binaries (that e.g. generate other Haskell code) as part of the build
     process. This wrapper ensures that linking behaviour for these binaries
     matches the characteristics of the wider build (e.g. runpath configuration,
     etc.)
+
+- Avoids arguments starting with `@`.
+
+    Bazel 4.0.0 has its own cc_wrapper on macOS which attempts to expand any
+    argument starting with `@` as a response file. This will wrongly interpret
+    the follwoing types of arguments as referencing a response file:
+
+      -install_name @rpath/...
+      -Xlinker -rpath -Xlinker @executable_path/...
+      -Xlinker -rpath -Xlinker @loader_path/...
+
+    See https://github.com/bazelbuild/bazel/pull/13044
 
 """
 
@@ -68,8 +80,9 @@ import sys
 import tempfile
 
 WORKSPACE = "{:workspace:}"
-CC = "{:cc:}"
-PLATFORM = "{:platform:}"
+CC = os.environ.get("CC_WRAPPER_CC_PATH", "{:cc:}")
+PLATFORM = os.environ.get("CC_WRAPPER_PLATFORM", "{:platform:}")
+CPU = os.environ.get("CC_WRAPPER_CPU", "{:cpu:}")
 INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
 OTOOL = "/usr/bin/otool"
 
@@ -198,6 +211,8 @@ class Args:
                 pass
             elif self._handle_linker_arg(arg, args, out):
                 pass
+            elif self._handle_install_name(arg, args, out):
+                pass
             elif self._handle_print_file_name(arg, args, out):
                 pass
             elif self._handle_compile(arg, args, out):
@@ -324,7 +339,15 @@ class Args:
                 raise RuntimeError("Unhandled _prev_ld_arg '{}'.".format(self._prev_ld_arg))
 
         if forward_ld_args:
-            if use_xlinker:
+            # Avoid arguments starting with `@`, see module docstring.
+            # Use `-Wl,...` in those cases instead of `-Xlinker ...`.
+            starts_with_at = any(
+                ld_arg.startswith("@rpath") or
+                ld_arg.startswith("@loader_path") or
+                ld_arg.startswith("@executable_path")
+                for ld_arg in forward_ld_args
+            )
+            if use_xlinker and not starts_with_at:
                 out.extend(
                     arg
                     for ld_arg in forward_ld_args
@@ -334,6 +357,18 @@ class Args:
                 out.append(",".join(["-Wl"] + forward_ld_args))
 
         return True
+
+    def _handle_install_name(self, arg, args, out):
+        consumed, install_name = argument(arg, args, long = "-install_name")
+
+        if consumed:
+            # Avoid arguments starting with `@`, see module docstring.
+            # The compiler wrapper forwards `-install_name` to the linker.
+            # Here we use `-Wl,-install_name,...` directly to send the flag to
+            # the linker and avoid an argument starting with `@`.
+            out.append("-Wl,-install_name,{}".format(install_name))
+
+        return consumed
 
     def _handle_rpath(self, rpath, out):
         # Filter out all RPATH flags for now and manually add the needed ones
@@ -518,11 +553,10 @@ def shorten_path(input_path):
 
 def rpath_args(rpaths):
     """Generate arguments for RUNPATHs."""
+    # Avoid arguments starting with `@`, see module docstring.
+    # Pass `-rpath` flags using `-Wl,...` instead of `-Xlinker ...`.
     for rpath in rpaths:
-        yield "-Xlinker"
-        yield "-rpath"
-        yield "-Xlinker"
-        yield rpath
+        yield "-Wl,-rpath,{}".format(rpath)
 
 
 # --------------------------------------------------------------------
@@ -754,8 +788,8 @@ def find_solib_rpath(rpaths, output):
         # the Bazel generated RPATHs are not forwarded, and the solib directory
         # is not visible on the command-line.
         for (root, dirnames, _) in breadth_first_walk(os.environ.get("RULES_HASKELL_EXEC_ROOT", ".")):
-            if "_solib_{:cpu:}" in dirnames:
-                return os.path.join(root, "_solib_{:cpu:}")
+            if "_solib_" + CPU in dirnames:
+                return os.path.join(root, "_solib_" + CPU)
 
     return None
 

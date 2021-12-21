@@ -5,11 +5,11 @@ load(
 )
 load(":private/set.bzl", "set")
 
-def gather_dep_info(ctx, deps):
+def gather_dep_info(name, deps):
     """Collapse dependencies into a single `HaskellInfo`.
 
     Args:
-      ctx: Rule context.
+      name: Rule name
       deps: deps attribute.
 
     Returns:
@@ -21,8 +21,18 @@ def gather_dep_info(ctx, deps):
         for dep in deps
         if HaskellInfo in dep
     ])
+    empty_lib_package_databases = depset(transitive = [
+        dep[HaskellInfo].empty_lib_package_databases
+        for dep in deps
+        if HaskellInfo in dep
+    ])
     hs_libraries = depset(transitive = [
         dep[HaskellInfo].hs_libraries
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+    empty_hs_libraries = depset(transitive = [
+        dep[HaskellInfo].empty_hs_libraries
         for dep in deps
         if HaskellInfo in dep
     ])
@@ -34,6 +44,12 @@ def gather_dep_info(ctx, deps):
 
     source_files = depset(transitive = [
         dep[HaskellInfo].source_files
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+
+    boot_files = depset(transitive = [
+        dep[HaskellInfo].boot_files
         for dep in deps
         if HaskellInfo in dep
     ])
@@ -56,10 +72,13 @@ def gather_dep_info(ctx, deps):
 
     acc = HaskellInfo(
         package_databases = package_databases,
+        empty_lib_package_databases = empty_lib_package_databases,
         version_macros = set.empty(),
         hs_libraries = hs_libraries,
+        empty_hs_libraries = empty_hs_libraries,
         interface_dirs = interface_dirs,
         source_files = source_files,
+        boot_files = boot_files,
         import_dirs = import_dirs,
         extra_source_files = extra_source_files,
         compile_flags = compile_flags,
@@ -71,16 +90,19 @@ def gather_dep_info(ctx, deps):
         if HaskellInfo in dep:
             binfo = dep[HaskellInfo]
             if HaskellLibraryInfo not in dep:
-                fail("Target {0} cannot depend on binary".format(ctx.attr.name))
+                fail("Target {0} cannot depend on binary".format(name))
             acc = HaskellInfo(
                 package_databases = acc.package_databases,
+                empty_lib_package_databases = acc.empty_lib_package_databases,
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
                 hs_libraries = depset(transitive = [acc.hs_libraries, binfo.hs_libraries]),
+                empty_hs_libraries = depset(transitive = [acc.empty_hs_libraries, binfo.empty_hs_libraries]),
                 interface_dirs = acc.interface_dirs,
                 import_dirs = import_dirs,
                 compile_flags = compile_flags,
                 extra_source_files = extra_source_files,
                 source_files = source_files,
+                boot_files = boot_files,
                 user_compile_flags = [],
                 user_repl_flags = [],
             )
@@ -90,11 +112,14 @@ def gather_dep_info(ctx, deps):
             # in the `CcInfo` provider.
             acc = HaskellInfo(
                 package_databases = acc.package_databases,
+                empty_lib_package_databases = acc.empty_lib_package_databases,
                 version_macros = acc.version_macros,
                 import_dirs = acc.import_dirs,
                 source_files = acc.source_files,
+                boot_files = acc.boot_files,
                 compile_flags = acc.compile_flags,
                 hs_libraries = acc.hs_libraries,
+                empty_hs_libraries = acc.empty_hs_libraries,
                 extra_source_files = acc.extra_source_files,
                 interface_dirs = acc.interface_dirs,
                 user_compile_flags = [],

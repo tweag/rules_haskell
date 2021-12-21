@@ -25,3 +25,10 @@ haskell_test(
         "//tests/hackage:template-haskell",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

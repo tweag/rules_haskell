@@ -2,8 +2,16 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//haskell:providers.bzl", "HaskellLibraryInfo", "all_dependencies_package_ids")
+load(":private/path_utils.bzl", "join_path_list")
 
 HaskellContext = provider()
+
+def append_to_path(env, is_windows, path_list):
+    if path_list:
+        if "PATH" in env and env["PATH"]:
+            env["PATH"] = join_path_list(is_windows, [env["PATH"]] + path_list)
+        else:
+            env["PATH"] = join_path_list(is_windows, path_list)
 
 def haskell_context(ctx, attr = None):
     toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
@@ -11,7 +19,7 @@ def haskell_context(ctx, attr = None):
     if not attr:
         attr = ctx.attr
 
-    deps = (attr.deps if hasattr(attr, "deps") else []) + (attr.exports if hasattr(attr, "exports") else [])
+    deps = (attr.deps if hasattr(attr, "deps") else []) + (attr.exports if hasattr(attr, "exports") else []) + (attr.narrowed_deps if hasattr(attr, "narrowed_deps") else [])
     package_ids = all_dependencies_package_ids(deps)
 
     if hasattr(attr, "src_strip_prefix"):
@@ -27,6 +35,10 @@ def haskell_context(ctx, attr = None):
 
     env = {
         "LANG": toolchain.locale,
+        "RULES_HASKELL_GHC_PATH": toolchain.tools.ghc.path,
+        "RULES_HASKELL_GHC_PKG_PATH": toolchain.tools.ghc_pkg.path,
+        "RULES_HASKELL_LIBDIR_PATH": toolchain.libdir_path,
+        "RULES_HASKELL_DOCDIR_PATH": toolchain.docdir_path,
     }
 
     if toolchain.locale_archive != None:
@@ -62,6 +74,7 @@ def haskell_context(ctx, attr = None):
         features = struct(
             fully_static_link = "fully_static_link" in ctx.features,
         ),
+        tools_config = toolchain.tools_config,
     )
 
 def render_env(env):

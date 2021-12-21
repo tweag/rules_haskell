@@ -31,13 +31,14 @@ haskell_cabal_binary(
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "d58e4d708b14ff332a8a8edad4fa8989cb6a9f518a7c6834e96281ac5f8ff232",
-    strip_prefix = "alex-3.2.4",
-    urls = ["http://hackage.haskell.org/package/alex-3.2.4/alex-3.2.4.tar.gz"],
+    sha256 = "91aa08c1d3312125fbf4284815189299bbb0be34421ab963b1f2ae06eccc5410",
+    strip_prefix = "alex-3.2.6",
+    urls = ["http://hackage.haskell.org/package/alex-3.2.6/alex-3.2.6.tar.gz"],
 )
 
 load(
     "@rules_haskell//:constants.bzl",
+    "test_asterius_version",
     "test_ghc_version",
     "test_stack_snapshot",
 )
@@ -67,25 +68,30 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
+        "c2hs",
         "cabal-doctest",
+        "doctest",
         "polysemy",
         "network",
         "language-c",
         "streaming",
         "void",
+        "ghc-check",
         "hspec",
         "hspec-core",
         "lens-family-core",
         "data-default-class",
-        "proto-lens",
-        "proto-lens-protoc",
-        "proto-lens-runtime",
+        "profunctors-5.5.2",
+        "proto-lens-0.7.0.0",
+        "proto-lens-protoc-0.7.0.0",
+        "proto-lens-runtime-0.7.0.0",
         "lens-family",
+        "safe-exceptions",
         "temporary",
     ],
     setup_deps = {"polysemy": ["cabal-doctest"]},
     snapshot = test_stack_snapshot,
-    stack_snapshot_json = "//:stackage_snapshot.json",
+    stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
     tools = [
         # This is not required, as `stack_snapshot` would build alex
         # automatically, however it is used as a test for user provided
@@ -93,15 +99,93 @@ stack_snapshot(
         # twice.
         "@alex",
     ],
+    vendored_packages = {
+        "ghc-paths": "@rules_haskell//tools/ghc-paths",
+    },
 )
 
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
     name = "stackage-zlib",
-    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
+    extra_deps = {"zlib": ["//tests:zlib"]},
     packages = ["zlib"],
     snapshot = test_stack_snapshot,
-    stack_snapshot_json = "//:stackage-zlib-snapshot.json",
+    stack_snapshot_json = "//:stackage-zlib-snapshot.json" if not is_windows else None,
+)
+
+stack_snapshot(
+    name = "stackage-pinning-test",
+    components = {
+        "package1": [
+            "lib:package1",
+            "lib:sublib",
+        ],
+    },
+    components_dependencies = {
+        "package1": """{"lib:package1": ["lib:sublib"]}""",
+    },
+    local_snapshot = "//:stackage-pinning-test.yaml",
+    packages = [
+        "hspec",
+        "package1",
+    ],
+    stack_snapshot_json = "//:stackage-pinning-test_snapshot.json" if not is_windows else None,
+)
+
+# Vendor data-default-instances-containers and data-default-instances-old-local
+# to work around build failures due to file paths exceeding `MAX_PATH` on
+# Windows.
+#
+#   ghc.exe: loadObj: C:\Users\runneradmin\_bazel_runneradmin\minshlu6\execroot\rules_haskell\bazel-out\x64_windows-fastbuild\bin\external\ghcide\data-default-instances-containers-0.0.1\_install\data-default-instances-containers-0.0.1_iface\HSdata-default-instances-containers-0.0.1.o: file doesn't exist
+#
+# Recent versions of GHC fix many `MAX_PATH` issues on Windows. However, GHC's
+# loader still exposes such an issue. A fix has been merged in GHC HEAD, but is
+# not included in GHC 8.10.4 or 9.0.1.
+# See https://gitlab.haskell.org/ghc/ghc/-/issues/19541
+http_archive(
+    name = "data-default-ic",
+    build_file_content = """
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
+load("@ghcide//:packages.bzl", "packages")
+package_name = "data-default-instances-containers"
+haskell_library(
+    name = "lib",
+    package_name = package_name,
+    version = packages[package_name].version,
+    srcs = glob(["**/*.hs"]),
+    deps = packages[package_name].deps,
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "a55e07af005c9815d82f3fc95e125db82994377c9f4a769428878701d4ec081a",
+    strip_prefix = "data-default-instances-containers-0.0.1",
+    urls = [
+        "https://hackage.haskell.org/package/data-default-instances-containers-0.0.1/data-default-instances-containers-0.0.1.tar.gz",
+        "https://s3.amazonaws.com/hackage.fpcomplete.com/package/data-default-instances-containers-0.0.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "data-default-ol",
+    build_file_content = """
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
+load("@ghcide//:packages.bzl", "packages")
+package_name = "data-default-instances-old-locale"
+haskell_library(
+    name = "lib",
+    package_name = package_name,
+    version = packages[package_name].version,
+    srcs = glob(["**/*.hs"]),
+    deps = packages[package_name].deps,
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "60d3b02922958c4908d7bf2b24ddf61511665745f784227d206745784b0c0802",
+    strip_prefix = "data-default-instances-old-locale-0.0.1",
+    urls = [
+        "https://hackage.haskell.org/package/data-default-instances-old-locale-0.0.1/data-default-instances-old-locale-0.0.1.tar.gz",
+        "https://s3.amazonaws.com/hackage.fpcomplete.com/package/data-default-instances-old-locale-0.0.1.tar.gz",
+    ],
 )
 
 stack_snapshot(
@@ -110,11 +194,18 @@ stack_snapshot(
         "lib",
         "exe",
     ]},
-    extra_deps = {"zlib": ["@zlib.dev//:zlib" if is_nix_shell else "@zlib.hs//:zlib"]},
+    extra_deps = {"zlib": ["//tests:zlib"]},
     haddock = False,
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
-    packages = ["ghcide"],
-    stack_snapshot_json = "//:ghcide-snapshot.json",
+    packages = [
+        "ghcide",
+    ],
+    stack_snapshot_json = "//:ghcide-snapshot.json" if not is_windows else None,
+    vendored_packages = {
+        "data-default-instances-containers": "@data-default-ic//:lib",
+        "data-default-instances-old-locale": "@data-default-ol//:lib",
+        "ghc-paths": "@rules_haskell//tools/ghc-paths",
+    },
 )
 
 load(
@@ -127,12 +218,9 @@ load(
 
 http_archive(
     name = "rules_proto",
-    sha256 = "73ebe9d15ba42401c785f9d0aeebccd73bd80bf6b8ac78f74996d31f2c0ad7a6",
-    strip_prefix = "rules_proto-2c0468366367d7ed97a1f702f9cd7155ab3f73c5",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/2c0468366367d7ed97a1f702f9cd7155ab3f73c5.tar.gz",
-        "https://github.com/bazelbuild/rules_proto/archive/2c0468366367d7ed97a1f702f9cd7155ab3f73c5.tar.gz",
-    ],
+    sha256 = "36476f17a78a4c495b9a9e70bd92d182e6e78db476d90c74bac1f5f19f0d6d04",
+    strip_prefix = "rules_proto-fcad4680fee127dbd8344e6a961a28eef5820ef4",
+    urls = ["https://github.com/bazelbuild/rules_proto/archive/fcad4680fee127dbd8344e6a961a28eef5820ef4.tar.gz"],
 )
 
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
@@ -146,7 +234,7 @@ nixpkgs_local_repository(
     nix_file = "//nixpkgs:default.nix",
 )
 
-test_compiler_flags = [
+test_ghcopts = [
     "-XStandaloneDeriving",  # Flag used at compile time
     "-threaded",  # Flag used at link time
 
@@ -170,7 +258,14 @@ test_cabalopts = [
     # Used by `tests/cabal-toolchain-flags`
     "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
     "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
-]
+] + ([
+    # To avoid ghcide linking errors with heapsize on Windows of the form
+    #
+    #   unknown symbol `heap_view_closurePtrs'
+    #
+    # See https://github.com/haskell/ghcide/pull/954
+    "--disable-library-for-ghci",
+] if is_windows else [])
 
 load(
     "@rules_haskell//haskell:nixpkgs.bzl",
@@ -180,13 +275,32 @@ load(
 haskell_register_ghc_nixpkgs(
     attribute_path = "",
     cabalopts = test_cabalopts,
-    compiler_flags = test_compiler_flags,
+    ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc883.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8107.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
+)
+
+load(
+    "//haskell/asterius:repositories.bzl",
+    "asterius_dependencies_bindist",
+    "asterius_dependencies_nix",
+    "rules_haskell_asterius_toolchains",
+)
+
+(asterius_dependencies_nix(
+    nix_repository = "@nixpkgs_default",
+    nixpkgs_package_rule = nixpkgs_package,
+) if is_nix_shell else asterius_dependencies_bindist())
+
+rules_haskell_asterius_toolchains(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    repl_ghci_args = test_repl_ghci_args,
+    version = test_asterius_version,
 )
 
 load(
@@ -196,7 +310,7 @@ load(
 
 haskell_register_ghc_bindists(
     cabalopts = test_cabalopts,
-    compiler_flags = test_compiler_flags,
+    ghcopts = test_ghcopts,
     version = test_ghc_version,
 )
 
@@ -207,8 +321,8 @@ register_toolchains(
 )
 
 nixpkgs_cc_configure(
-    nix_file = "//nixpkgs:cc-toolchain.nix",
-    nix_file_deps = ["//nixpkgs:default.nix"],
+    # Don't override the default cc toolchain needed for bindist mode.
+    name = "nixpkgs_config_cc",
     repository = "@nixpkgs_default",
 )
 
@@ -237,25 +351,13 @@ cc_library(
 )
 
 nixpkgs_package(
-    name = "c2hs",
-    attribute_path = "haskell.packages.ghc883.c2hs",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "doctest",
-    attribute_path = "haskell.packages.ghc883.doctest",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
     name = "python3",
     repository = "@nixpkgs_default",
 )
 
 nixpkgs_package(
     name = "sphinx",
-    attribute_path = "python37Packages.sphinx",
+    attribute_path = "python39Packages.sphinx",
     repository = "@nixpkgs_default",
 )
 
@@ -288,6 +390,13 @@ cc_library(
     hdrs = [":include"],
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
+    # This rule only bundles headers and a library and doesn't compile or link by itself.
+    # We set linkstatic = 1 to quiet to quiet the following warning:
+    #
+    #   in linkstatic attribute of cc_library rule @zlib.dev//:zlib:
+    #   setting 'linkstatic=1' is recommended if there are no object files.
+    #
+    linkstatic = 1,
 )
 """,
     repository = "@nixpkgs_default",
@@ -326,6 +435,9 @@ cc_library(
     name = "z",
     srcs = glob(["*.c"]),
     hdrs = glob(["*.h"]),
+    # Needed because XCode 12.0 Clang errors by default.
+    # See https://developer.apple.com/documentation/xcode-release-notes/xcode-12-release-notes.
+    copts = ["-Wno-error=implicit-function-declaration"],
     # Cabal packages depending on dynamic C libraries fail on MacOS
     # due to `-rpath` flags being forwarded indiscriminately.
     # See https://github.com/tweag/rules_haskell/issues/1317
@@ -356,6 +468,12 @@ local_repository(
     path = "tests/c2hs/repo",
 )
 
+# haskell_library rule in its own repository
+local_repository(
+    name = "library_repo",
+    path = "tests/library-external-workspace/repo",
+)
+
 load(
     "@rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
     "haskell_package_repository_dummy",
@@ -366,54 +484,11 @@ haskell_package_repository_dummy(
     name = "haskell_package_repository_dummy",
 )
 
-# For Stardoc
-
-nixpkgs_package(
-    name = "nixpkgs_nodejs",
-    build_file_content = 'exports_files(glob(["nixpkgs_nodejs/**"]))',
-    # XXX Indirection derivation to make all of NodeJS rooted in
-    # a single directory. We shouldn't need this, but it's
-    # a workaround for
-    # https://github.com/bazelbuild/bazel/issues/2927.
-    nix_file_content = """
-    with import <nixpkgs> { config = {}; overlays = []; };
-    runCommand "nodejs-rules_haskell" { buildInputs = [ nodejs ]; } ''
-      mkdir -p $out/nixpkgs_nodejs
-      cd $out/nixpkgs_nodejs
-      for i in ${nodejs}/*; do ln -s $i; done
-      ''
-    """,
-    nixopts = [
-        "--option",
-        "sandbox",
-        "false",
-    ],
-    repository = "@nixpkgs_default",
-)
-
-http_archive(
-    name = "build_bazel_rules_nodejs",
-    sha256 = "9901bc17138a79135048fb0c107ee7a56e91815ec6594c08cb9a17b80276d62b",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_nodejs/releases/download/0.40.0/rules_nodejs-0.40.0.tar.gz",
-        "https://github.com/bazelbuild/rules_nodejs/releases/download/0.40.0/rules_nodejs-0.40.0.tar.gz",
-    ],
-)
-
-load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories")
-
-node_repositories(
-    vendored_node = "@nixpkgs_nodejs",
-)
-
 http_archive(
     name = "io_bazel_rules_sass",
-    sha256 = "d5e0c0d16fb52f3dcce5bd7830d92d4813eb01bac0211119e74ec9e65eaf3b86",
-    strip_prefix = "rules_sass-1.23.3",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_sass/archive/1.23.3.tar.gz",
-        "https://github.com/bazelbuild/rules_sass/archive/1.23.3.tar.gz",
-    ],
+    sha256 = "53b42e9dc1c12d18716518a3810780a0131cd513a6d5c828e1eb3fbd30cc0ba6",
+    strip_prefix = "rules_sass-1.44.0",
+    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.44.0.tar.gz"],
 )
 
 load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
@@ -426,11 +501,10 @@ sass_repositories()
 
 http_archive(
     name = "io_bazel_stardoc",
-    sha256 = "6d07d18c15abb0f6d393adbd6075cd661a2219faab56a9517741f0fc755f6f3c",
-    strip_prefix = "stardoc-0.4.0",
+    sha256 = "c9794dcc8026a30ff67cf7cf91ebe245ca294b20b071845d12c192afe243ad72",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/archive/0.4.0.tar.gz",
-        "https://github.com/bazelbuild/stardoc/archive/0.4.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/releases/download/0.5.0/stardoc-0.5.0.tar.gz",
+        "https://github.com/bazelbuild/stardoc/releases/download/0.5.0/stardoc-0.5.0.tar.gz",
     ],
 )
 
@@ -456,23 +530,21 @@ register_toolchains(
 
 # For buildifier
 
+# starting from 0.29, rules_go requires bazel >= 4.2.0
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "b9aa86ec08a292b97ec4591cf578e020b35f98e12173bbd4a921f84f583aebd9",
+    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.20.2/rules_go-v0.20.2.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
     ],
 )
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "f3ef44916e6be705ae862c0520bac6834dd2ff1d4ac7e5abc61fe9f12ce7a865",
-    strip_prefix = "buildtools-0.29.0",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/buildtools/archive/0.29.0.tar.gz",
-        "https://github.com/bazelbuild/buildtools/archive/0.29.0.tar.gz",
-    ],
+    sha256 = "614c84128ddb86aab4e1f25ba2e027d32fd5c6da302ae30685b9d7973b13da1b",
+    strip_prefix = "buildtools-4.2.3",
+    urls = ["https://github.com/bazelbuild/buildtools/archive/4.2.3.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
@@ -491,7 +563,7 @@ go_rules_dependencies()
 
 # If in nix-shell, use the Go SDK provided by Nix.
 # Otherwise, ask Bazel to download a Go SDK.
-go_register_toolchains(go_version = "host") if is_nix_shell else go_register_toolchains()
+go_register_toolchains(version = "host") if is_nix_shell else go_register_toolchains(version = "1.16.2")
 
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
@@ -511,3 +583,18 @@ bind(
 load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 
 rules_haskell_worker_dependencies()
+
+local_repository(
+    name = "tutorial",
+    path = "tutorial",
+)
+
+local_repository(
+    name = "examples",
+    path = "examples",
+)
+
+local_repository(
+    name = "examples-arm",
+    path = "examples/arm",
+)

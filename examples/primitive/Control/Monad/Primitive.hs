@@ -20,10 +20,10 @@ module Control.Monad.Primitive (
   liftPrim, primToPrim, primToIO, primToST, ioToPrim, stToPrim,
   unsafePrimToPrim, unsafePrimToIO, unsafePrimToST, unsafeIOToPrim,
   unsafeSTToPrim, unsafeInlinePrim, unsafeInlineIO, unsafeInlineST,
-  touch, evalPrim
+  touch, evalPrim, unsafeInterleave, unsafeDupableInterleave, noDuplicate
 ) where
 
-import GHC.Prim   ( State#, RealWorld, touch# )
+import GHC.Exts   ( State#, RealWorld, noDuplicate#, touch# )
 import GHC.Base   ( unsafeCoerce#, realWorld# )
 #if MIN_VERSION_base(4,4,0)
 import GHC.Base   ( seq# )
@@ -59,6 +59,11 @@ import Control.Monad.Trans.Except   ( ExceptT  )
 #if MIN_VERSION_transformers(0,5,3)
 import Control.Monad.Trans.Accum    ( AccumT   )
 import Control.Monad.Trans.Select   ( SelectT  )
+#endif
+
+#if MIN_VERSION_transformers(0,5,6)
+import qualified Control.Monad.Trans.Writer.CPS as CPS
+import qualified Control.Monad.Trans.RWS.CPS as CPS
 #endif
 
 import qualified Control.Monad.Trans.RWS.Strict    as Strict ( RWST   )
@@ -146,10 +151,24 @@ instance (Monoid w, PrimMonad m) => PrimMonad (WriterT w m) where
   primitive = lift . primitive
   {-# INLINE primitive #-}
 
+#if MIN_VERSION_transformers(0,5,6)
+instance (Monoid w, PrimMonad m) => PrimMonad (CPS.WriterT w m) where
+  type PrimState (CPS.WriterT w m) = PrimState m
+  primitive = lift . primitive
+  {-# INLINE primitive #-}
+#endif
+
 instance (Monoid w, PrimMonad m) => PrimMonad (RWST r w s m) where
   type PrimState (RWST r w s m) = PrimState m
   primitive = lift . primitive
   {-# INLINE primitive #-}
+
+#if MIN_VERSION_transformers(0,5,6)
+instance (Monoid w, PrimMonad m) => PrimMonad (CPS.RWST r w s m) where
+  type PrimState (CPS.RWST r w s m) = PrimState m
+  primitive = lift . primitive
+  {-# INLINE primitive #-}
+#endif
 
 #if MIN_VERSION_transformers(0,4,0)
 instance PrimMonad m => PrimMonad (ExceptT e m) where
@@ -222,7 +241,7 @@ primToST :: PrimBase m => m a -> ST (PrimState m) a
 primToST = primToPrim
 
 -- | Convert an 'IO' action to a 'PrimMonad'.
--- 
+--
 -- @since 0.6.2.0
 ioToPrim :: (PrimMonad m, PrimState m ~ RealWorld) => IO a -> m a
 {-# INLINE ioToPrim #-}
@@ -252,9 +271,9 @@ unsafePrimToIO :: PrimBase m => m a -> IO a
 {-# INLINE unsafePrimToIO #-}
 unsafePrimToIO = unsafePrimToPrim
 
--- | Convert an 'ST' action with an arbitraty state token to any 'PrimMonad'.
+-- | Convert an 'ST' action with an arbitrary state token to any 'PrimMonad'.
 -- This operation is highly unsafe!
--- 
+--
 -- @since 0.6.2.0
 unsafeSTToPrim :: PrimMonad m => ST s a -> m a
 {-# INLINE unsafeSTToPrim #-}
@@ -296,3 +315,19 @@ evalPrim a = primitive (\s -> seq# a s)
 {-# NOINLINE evalPrim #-}
 evalPrim a = unsafePrimToPrim (evaluate a :: IO a)
 #endif
+
+noDuplicate :: PrimMonad m => m ()
+#if __GLASGOW_HASKELL__ >= 802
+noDuplicate = primitive $ \ s -> (# noDuplicate# s, () #)
+#else
+-- noDuplicate# was limited to RealWorld
+noDuplicate = unsafeIOToPrim $ primitive $ \s -> (# noDuplicate# s, () #)
+#endif
+
+unsafeInterleave, unsafeDupableInterleave :: PrimBase m => m a -> m a
+unsafeInterleave x = unsafeDupableInterleave (noDuplicate >> x)
+unsafeDupableInterleave x = primitive $ \ s -> let r' = case internal x s of (# _, r #) -> r in (# s, r' #)
+{-# INLINE unsafeInterleave #-}
+{-# NOINLINE unsafeDupableInterleave #-}
+-- See Note [unsafeDupableInterleaveIO should not be inlined]
+-- in GHC.IO.Unsafe

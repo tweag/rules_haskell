@@ -20,8 +20,8 @@ genrule(
 cc_library(
     name = "zlib",
     hdrs = ["@zlib.dev//:include"],
-    strip_include_prefix = "/external/zlib.dev/include",
-    tags = ["requires_zlib"],
+    strip_include_prefix = "/include",
+    tags = ["requires_nix"],
     deps = ["@zlib"],
 )
 
@@ -29,13 +29,13 @@ cc_library(
     name = "zlib-with-genrule-header",
     hdrs = [":genrule-header"],
     strip_include_prefix = "include",
-    tags = ["requires_zlib"],
+    tags = ["requires_nix"],
 )
 
 haskell_library(
     name = "intermediate-library",
     srcs = ["IntLib.hsc"],
-    tags = ["requires_zlib"],
+    tags = ["requires_nix"],
     deps = [
         ":zlib",
         ":zlib-with-genrule-header",
@@ -49,7 +49,10 @@ haskell_library(
         "Lib.hs",
         "TH.hs",
     ],
-    tags = ["requires_zlib"],
+    tags = [
+        "requires_dynamic",
+        "requires_nix",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":intermediate-library",
@@ -63,7 +66,7 @@ haskell_library(
 haskell_library(
     name = "intermediate-library-other",
     srcs = ["IntLib.hsc"],
-    tags = ["requires_zlib"],
+    tags = ["requires_nix"],
     deps = [
         ":zlib-with-genrule-header",
         "//tests/hackage:base",
@@ -77,11 +80,18 @@ haskell_library(
         "Lib.hs",
         "TH.hs",
     ],
-    tags = ["requires_zlib"],
+    tags = ["requires_nix"],
     visibility = ["//visibility:public"],
     deps = [
         ":intermediate-library-other",
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
     ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

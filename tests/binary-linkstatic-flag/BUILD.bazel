@@ -4,6 +4,10 @@ load(
     "haskell_library",
     "haskell_test",
 )
+load(
+    "//tests:analysis_tests.bzl",
+    "dynamic_libraries_in_runfiles_test",
+)
 load("//tests:inline_tests.bzl", "sh_inline_test")
 
 # test whether `linkstatic` works as expected
@@ -44,6 +48,17 @@ haskell_test(
     ],
 )
 
+dynamic_libraries_in_runfiles_test(
+    name = "dynamic-runfiles-test",
+    libs = [
+        ":HsLib",
+        ":c-lib",
+        "//tests/hackage:base",
+    ],
+    tags = ["dont_test_on_windows"],
+    target_under_test = ":binary-dynamic",
+)
+
 config_setting(
     name = "debug_build",
     values = {
@@ -65,7 +80,7 @@ sh_inline_test(
     set -eo pipefail
     binary="$1"
     # Symbols are prefixed with underscore on macOS but not on Linux.
-    if nm -u "$binary" | grep -q "\<_\?value"; then
+    if nm -u "$binary" | grep -q "\\<_\\?value"; then
         echo "C library dependency not linked statically: ${binary}"
         exit 1
     fi
@@ -74,6 +89,7 @@ sh_inline_test(
         exit 1
     fi
     """,
+    tags = ["dont_test_on_windows"],
 )
 
 # Ensure that linkstatic=False only links to dynamic library targets.
@@ -98,7 +114,7 @@ sh_inline_test(
         exit 0
     fi
     # Symbols are prefixed with underscore on macOS but not on Linux.
-    if ! nm -u "$binary" | grep -q "\<_\?value"; then
+    if ! nm -u "$binary" | grep -q "\\<_\\?value"; then
         echo "C library dependency not linked dynamically"
         exit 1
     fi
@@ -107,13 +123,22 @@ sh_inline_test(
         exit 1
     fi
     """,
+    tags = ["dont_test_on_windows"],
 )
 
 test_suite(
     name = "binary-linkstatic-flag",
+    tags = ["dont_test_on_windows"],
     tests = [
         ":test-binary-dynamic-symbols",
         ":test-binary-static-symbols",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
     visibility = ["//visibility:public"],
 )

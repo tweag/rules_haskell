@@ -1,0 +1,43 @@
+"""Test compilation of a multiple interdependent Haskell modules in a nested module hierarchy across multiple Bazel packages with only core-package dependencies."""
+
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+haskell_module(
+    name = "Branch.Right.Module",
+    src = "src/Branch/Right/Module.hs",
+    src_strip_prefix = "src",
+    deps = [
+        "//tests/haskell_module/nested/Root:Module",
+    ],
+)
+
+haskell_module(
+    name = "LeafModule",
+    src = "LeafModule.hs",
+    deps = [
+        ":Branch.Right.Module",
+        "//tests/haskell_module/nested/Branch/Left:Module",
+    ],
+)
+
+haskell_library(
+    name = "lib",
+    modules = [
+        ":LeafModule",
+        ":Branch.Right.Module",
+        "//tests/haskell_module/nested/Branch/Left:Module",
+        "//tests/haskell_module/nested/Root:Module",
+    ],
+    deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/haskell_module/nested/Branch/Left:all_files",
+        "//tests/haskell_module/nested/Root:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

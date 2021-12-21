@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(":cc.bzl", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -31,6 +32,7 @@ load(
     "link_libraries",
     "merge_HaskellCcLibrariesInfo",
 )
+load(":private/java.bzl", "java_interop_info")
 load(":private/set.bzl", "set")
 
 HaskellReplLoadInfo = provider(
@@ -40,12 +42,14 @@ HaskellReplLoadInfo = provider(
     """,
     fields = {
         "source_files": "Set of files that contain Haskell modules.",
+        "boot_files": "Set of Haskell boot files.",
         "import_dirs": "Set of Haskell import directories.",
         "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of transitive C dependencies.",
         "compiler_flags": "Flags to pass to the Haskell compiler.",
         "repl_ghci_args": "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
         "data_runfiles": "Runtime data dependencies of this target, i.e. the files and runfiles of the `data` attribute.",
+        "java_deps": "depset of Files to jars needed for building.",
     },
 )
 
@@ -115,30 +119,36 @@ def _data_runfiles(ctx, rule, attr):
 
 def _merge_HaskellReplLoadInfo(load_infos):
     source_files = depset()
+    boot_files = depset()
     import_dirs = depset()
     cc_libraries_infos = []
     cc_infos = []
     compiler_flags = []
     repl_ghci_args = []
     data_runfiles = []
+    java_deps = []
 
     for load_info in load_infos:
         source_files = depset(transitive = [source_files, load_info.source_files])
+        boot_files = depset(transitive = [boot_files, load_info.boot_files])
         import_dirs = depset(transitive = [import_dirs, load_info.import_dirs])
         cc_libraries_infos.append(load_info.cc_libraries_info)
         cc_infos.append(load_info.cc_info)
         compiler_flags += load_info.compiler_flags
         repl_ghci_args += load_info.repl_ghci_args
         data_runfiles.append(load_info.data_runfiles)
+        java_deps.append(load_info.java_deps)
 
     return HaskellReplLoadInfo(
         source_files = source_files,
+        boot_files = boot_files,
         import_dirs = import_dirs,
         cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = cc_libraries_infos),
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
         compiler_flags = compiler_flags,
         repl_ghci_args = repl_ghci_args,
         data_runfiles = _merge_runfiles(data_runfiles),
+        java_deps = depset(transitive = java_deps),
     )
 
 def _merge_HaskellReplDepInfo(dep_infos):
@@ -173,8 +183,13 @@ def _create_HaskellReplCollectInfo(target, ctx):
     hs_info = target[HaskellInfo]
 
     if not HaskellToolchainLibraryInfo in target:
+        if hasattr(ctx.rule.attr, "deps"):
+            java_deps = java_interop_info(ctx.rule.attr.deps).inputs
+        else:
+            java_deps = depset()
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = hs_info.source_files,
+            boot_files = hs_info.boot_files,
             import_dirs = set.to_depset(hs_info.import_dirs),
             cc_libraries_info = deps_HaskellCcLibrariesInfo([
                 dep
@@ -190,6 +205,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
             compiler_flags = hs_info.user_compile_flags,
             repl_ghci_args = hs_info.user_repl_flags,
             data_runfiles = _data_runfiles(ctx, ctx.rule, "data"),
+            java_deps = java_deps,
         )
     if HaskellLibraryInfo in target:
         lib_info = target[HaskellLibraryInfo]
@@ -267,7 +283,7 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
 def _concat(lists):
     return [item for l in lists for item in l]
 
-def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
+def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = ""):
     """Collect compiler flags and inputs.
 
     Compiler flags:
@@ -280,9 +296,11 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
       - Package databases.
       - C library dependencies.
       - Locale archive if required.
+      - Required CC toolchain inputs.
 
     Args:
       hs: Haskell context.
+      cc: CcToolchainInfo.
       repl_info: HaskellReplInfo.
       static: bool, Whether we're collecting libraries for static RTS.
         Contrary to GHCi, ghcide is built as a static executable using the static RTS.
@@ -310,13 +328,12 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         repl_info.load_info.cc_info,
         repl_info.dep_info.cc_info,
     ])
-    all_libraries = cc_info.linking_context.libraries_to_link.to_list()
+    all_libraries = [lib for li in cc_info.linking_context.linker_inputs.to_list() for lib in li.libraries]
     cc_libraries = get_cc_libraries(cc_libraries_info, all_libraries)
     if static:
         cc_library_files = _concat(get_library_files(hs, cc_libraries_info, cc_libraries))
     else:
         cc_library_files = get_ghci_library_files(hs, cc_libraries_info, cc_libraries)
-
     link_libraries(cc_library_files, args, path_prefix = path_prefix)
 
     if static:
@@ -329,16 +346,19 @@ def _compiler_flags_and_inputs(hs, repl_info, static = False, path_prefix = ""):
         repl_info.dep_info.package_databases,
         depset(all_library_files),
         depset([hs.toolchain.locale_archive] if hs.toolchain.locale_archive else []),
+        cc.all_files,
+        hs.toolchain.cc_wrapper.runfiles.files,
         repl_info.dep_info.interface_dirs,
     ])
-
     return (args, inputs)
 
-def _create_repl(hs, posix, ctx, repl_info, output):
+def _create_repl(hs, cc, posix, ctx, repl_info, output):
     """Build a multi target REPL.
 
     Args:
       hs: Haskell context.
+      cc: CcToolchainInfo.
+      posix: POSIX toolchain.
       ctx: Rule context.
       repl_info: HaskellReplInfo provider.
       output: The output for the executable REPL script.
@@ -367,17 +387,16 @@ def _create_repl(hs, posix, ctx, repl_info, output):
     # flags so that all required libraries are visible.
     compiler_flags, inputs = _compiler_flags_and_inputs(
         hs,
+        cc,
         repl_info,
         path_prefix = "$RULES_HASKELL_EXEC_ROOT",
     )
     args.extend(compiler_flags)
-    args.extend([
-        '"{}"'.format(arg)
-        for arg in ghc_cc_program_args(paths.join(
-            "$RULES_HASKELL_EXEC_ROOT",
-            hs.toolchain.cc_wrapper.executable.path,
-        ))
-    ])
+    cc_path = paths.join(
+        "$RULES_HASKELL_EXEC_ROOT",
+        hs.toolchain.cc_wrapper.executable.path,
+    )
+    args.extend(['"{}"'.format(arg) for arg in ghc_cc_program_args(hs, cc_path)])
 
     # Load source files
     # Force loading by source with `:add *...`.
@@ -420,19 +439,37 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         [ctx.attr.data],
     )
     quote_args = (
-        hs.toolchain.compiler_flags +
+        hs.toolchain.ghcopts +
         repl_info.load_info.compiler_flags +
         hs.toolchain.repl_ghci_args +
         repl_info.load_info.repl_ghci_args +
         repl_ghci_args
     )
 
+    env = dict(hs.env)
+
+    classpath_inputs = [
+        paths.join("$RULES_HASKELL_EXEC_ROOT", f.path)
+        for f in repl_info.load_info.java_deps.to_list()
+    ]
+    if len(classpath_inputs) > 0:
+        env["CLASSPATH"] = ":".join(classpath_inputs)
+
+    # These env-vars refer to the build-time GHC distribution. However, if the
+    # REPL uses ghc-paths then it should refer to the runtime GHC distribution,
+    # i.e. the one included in the runfiles. Therefore we remove these env-vars
+    # to force ghc-paths to look them up in the runfiles.
+    env.pop("RULES_HASKELL_GHC_PATH")
+    env.pop("RULES_HASKELL_GHC_PKG_PATH")
+    env.pop("RULES_HASKELL_LIBDIR_PATH")
+    env.pop("RULES_HASKELL_DOCDIR_PATH")
+
     hs.actions.expand_template(
         template = ctx.file._ghci_repl_wrapper,
         output = output,
         is_executable = True,
         substitutions = {
-            "%{ENV}": render_env(hs.env),
+            "%{ENV}": render_env(env),
             "%{TOOL}": hs.tools.ghci.path,
             "%{ARGS}": "(" + " ".join(
                 args + [
@@ -463,11 +500,13 @@ def _create_repl(hs, posix, ctx, repl_info, output):
         runfiles = _merge_runfiles(runfiles),
     )]
 
-def _create_hie_bios(hs, posix, ctx, repl_info):
+def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
     """Build a hie-bios argument file.
 
     Args:
       hs: Haskell context.
+      cc: CcToolchainInfo.
+      posix: POSIX toolchain.
       ctx: Rule context.
       repl_info: HaskellReplInfo provider.
       output: The output for the executable REPL script.
@@ -476,25 +515,29 @@ def _create_hie_bios(hs, posix, ctx, repl_info):
       List of providers:
         OutputGroupInfo provider for the hie-bios argument file.
     """
-    args, inputs = _compiler_flags_and_inputs(hs, repl_info, static = True)
-    args.extend(ghc_cc_program_args(hs.toolchain.cc_wrapper.executable.path))
-    args.extend(hs.toolchain.compiler_flags)
+    path_prefix = paths.join("", *path_prefix)
+    args, inputs = _compiler_flags_and_inputs(hs, cc, repl_info, path_prefix = path_prefix, static = True)
+    cc_path = paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path)
+    args.extend(ghc_cc_program_args(hs, cc_path))
+    args.extend(hs.toolchain.ghcopts)
     args.extend(repl_info.load_info.compiler_flags)
 
     # Add import directories.
     # Note, src_strip_prefix is deprecated. However, for now ghcide depends on
     # `-i` flags to find source files to modules.
     for import_dir in repl_info.load_info.import_dirs.to_list():
-        args.append("-i" + (import_dir if import_dir else "."))
+        args.append("-i" + (paths.join(path_prefix, import_dir) or "."))
 
     # List modules (Targets) covered by this cradle.
-    args.extend([f.path for f in repl_info.load_info.source_files.to_list()])
+    args.extend([paths.join(path_prefix, f.path) for f in repl_info.load_info.source_files.to_list()])
+
+    # List boot files
+    args.extend([f.path for f in repl_info.load_info.boot_files.to_list()])
 
     args_file = ctx.actions.declare_file(".%s.hie-bios" % ctx.label.name)
     args_link = ctx.actions.declare_file("%s@hie-bios" % ctx.label.name)
-    ctx.actions.write(args_file, "\n".join(args))
+    ctx.actions.write(args_file, "\n".join(args) + "\n")
     ln(hs, posix, args_file, args_link, extra_inputs = inputs)
-
     return [OutputGroupInfo(hie_bios = [args_link])]
 
 def _haskell_repl_aspect_impl(target, ctx):
@@ -540,9 +583,10 @@ def _haskell_repl_impl(ctx):
     from_binary = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_from_binary]
     repl_info = _create_HaskellReplInfo(from_source, from_binary, collect_info)
     hs = haskell_context(ctx)
+    cc = find_cc_toolchain(ctx)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
-    return _create_repl(hs, posix, ctx, repl_info, ctx.outputs.repl) + \
-           _create_hie_bios(hs, posix, ctx, repl_info)
+    return _create_repl(hs, cc, posix, ctx, repl_info, ctx.outputs.repl) + \
+           _create_hie_bios(hs, cc, posix, ctx, repl_info, ctx.attr.hie_bios_path_prefix)
 
 haskell_repl = rule(
     implementation = _haskell_repl_impl,
@@ -554,6 +598,9 @@ haskell_repl = rule(
         "_ghci_repl_wrapper": attr.label(
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "deps": attr.label_list(
             aspects = [
@@ -591,7 +638,7 @@ haskell_repl = rule(
             default = [],
         ),
         "repl_ghci_args": attr.string_list(
-            doc = "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
+            doc = "Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` (previously `compiler_flags`) and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
             default = [],
         ),
         "repl_ghci_commands": attr.string_list(
@@ -602,6 +649,11 @@ haskell_repl = rule(
             doc = "Whether to collect the data runfiles from the dependencies in srcs, data and deps attributes.",
             default = True,
         ),
+        "hie_bios_path_prefix": attr.string_list(
+            doc = """Path prefix for hie-bios paths. The elements of the list are joined together to build the path.
+                   See [IDE support](#ide-support-experimental).""",
+            default = [],
+        ),
     },
     executable = True,
     outputs = {
@@ -609,8 +661,10 @@ haskell_repl = rule(
     },
     toolchains = [
         "@rules_haskell//haskell:toolchain",
+        "@rules_cc//cc:toolchain_type",
         "@rules_sh//sh/posix:toolchain_type",
     ],
+    fragments = ["cpp"],
     doc = """\
 Build a REPL for multiple targets.
 

@@ -1,71 +1,77 @@
 """Workspace rules (repositories)"""
 
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load(":private/versions.bzl", "check_version")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load(
+    ":private/versions.bzl",
+    "check_version",
+)
 
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
-    excludes = native.existing_rules().keys()
     if "bazel_version" in dir(native):
         check_version(native.bazel_version)
 
-    if "platforms" not in excludes:
-        http_archive(
-            name = "platforms",
-            sha256 = "23566db029006fe23d8140d14514ada8c742d82b51973b4d331ee423c75a0bfa",
-            strip_prefix = "platforms-46993efdd33b73649796c5fc5c9efb193ae19d51",
-            urls = ["https://github.com/bazelbuild/platforms/archive/46993efdd33b73649796c5fc5c9efb193ae19d51.tar.gz"],
-        )
+    maybe(
+        http_archive,
+        name = "platforms",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.4/platforms-0.0.4.tar.gz",
+            "https://github.com/bazelbuild/platforms/releases/download/0.0.4/platforms-0.0.4.tar.gz",
+        ],
+        sha256 = "079945598e4b6cc075846f7fd6a9d0857c33a7afc0de868c2ccb96405225135d",
+    )
 
-    if "bazel_skylib" not in excludes:
-        http_archive(
-            name = "bazel_skylib",
-            sha256 = "e5d90f0ec952883d56747b7604e2a15ee36e288bb556c3d0ed33e818a4d971f2",
-            strip_prefix = "bazel-skylib-1.0.2",
-            urls = ["https://github.com/bazelbuild/bazel-skylib/archive/1.0.2.tar.gz"],
-        )
+    maybe(
+        http_archive,
+        name = "bazel_skylib",
+        urls = [
+            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
+        ],
+        sha256 = "c6966ec828da198c5d9adbaa94c05e3a1c7f21bd012a0b29ba8ddbccb2c93b0d",
+    )
 
-    if "rules_cc" not in excludes:
-        http_archive(
-            name = "rules_cc",
-            sha256 = "dafda2ff2a913028ce1718253b6b2f353b2d2163470f3069ca810a0d8d55a5a9",
-            strip_prefix = "rules_cc-cd7e8a690caf526e0634e3ca55b10308ee23182d",
-            urls = ["https://github.com/bazelbuild/rules_cc/archive/cd7e8a690caf526e0634e3ca55b10308ee23182d.tar.gz"],
-        )
+    maybe(
+        http_archive,
+        name = "rules_cc",
+        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.1/rules_cc-0.0.1.tar.gz"],
+        sha256 = "4dccbfd22c0def164c8f47458bd50e0c7148f3d92002cdb459c2a96a68498241",
+    )
 
-    if "rules_python" not in excludes:
-        http_archive(
-            name = "rules_python",
-            sha256 = "fa53cc0afe276d8f6675df1a424592e00e4f37b2a497e48399123233902e2e76",
-            strip_prefix = "rules_python-0.0.1",
-            urls = ["https://github.com/bazelbuild/rules_python/archive/0.0.1.tar.gz"],
-        )
+    maybe(
+        http_archive,
+        name = "rules_python",
+        url = "https://github.com/bazelbuild/rules_python/releases/download/0.5.0/rules_python-0.5.0.tar.gz",
+        sha256 = "cd6730ed53a002c56ce4e2f396ba3b3be262fd7cb68339f0377a45e8227fe332",
+    )
 
-    if "rules_sh" not in excludes:
-        http_archive(
-            name = "rules_sh",
-            sha256 = "83a065ba6469135a35786eb741e17d50f360ca92ab2897857475ab17c0d29931",
-            strip_prefix = "rules_sh-0.2.0",
-            urls = ["https://github.com/tweag/rules_sh/archive/v0.2.0.tar.gz"],
-        )
+    maybe(
+        git_repository,
+        name = "rules_sh",
+        commit = "670efdc93c97fde478a91abb7d2b8308cb835a40",
+        remote = "https://github.com/tweag/rules_sh.git",
+        shallow_since = "1637931407 +0100",
+    )
 
-    if "io_tweag_rules_nixpkgs" not in excludes:
-        http_archive(
-            name = "io_tweag_rules_nixpkgs",
-            sha256 = "5c80f5ed7b399a857dd04aa81e66efcb012906b268ce607aaf491d8d71f456c8",
-            strip_prefix = "rules_nixpkgs-0.7.0",
-            urls = ["https://github.com/tweag/rules_nixpkgs/archive/v0.7.0.tar.gz"],
-        )
+    maybe(
+        http_archive,
+        name = "io_tweag_rules_nixpkgs",
+        sha256 = "9b97f6cce67bd2a005089ca108358e9bbc24531794a9d1f8ca537470ee8ca2d1",
+        strip_prefix = "rules_nixpkgs-075794009270b12986d3d840e4fc065a3aceba00",
+        urls = ["https://github.com/tweag/rules_nixpkgs/archive/075794009270b12986d3d840e4fc065a3aceba00.tar.gz"],
+    )
 
-    if "com_google_protobuf" not in excludes:
-        http_archive(
-            name = "com_google_protobuf",
-            sha256 = "e8c7601439dbd4489fe5069c33d374804990a56c2f710e00227ee5d8fd650e67",
-            strip_prefix = "protobuf-3.11.2",
-            urls = [
-                "https://github.com/google/protobuf/archive/v3.11.2.tar.gz",
-            ],
-        )
+    maybe(
+        http_archive,
+        name = "com_google_protobuf",
+        sha256 = "87407cd28e7a9c95d9f61a098a53cf031109d451a7763e7dd1253abf8b4df422",
+        strip_prefix = "protobuf-3.19.1",
+        urls = [
+            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.19.1.tar.gz",
+        ],
+    )
 
     # Dependency of com_google_protobuf.
     # TODO(judahjacobson): this is a bit of a hack.
@@ -78,14 +84,21 @@ def rules_haskell_dependencies():
     # Alternately, consider adding another function from another
     # .bzl file that needs to be called from WORKSPACE, similar to:
     # https://github.com/grpc/grpc/blob/8c9dcf7c35e489c2072a9ad86635dbc4e28f88ea/bazel/grpc_extra_deps.bzl#L10
-    if "zlib" not in excludes:
-        http_archive(
-            name = "zlib",
-            build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-            sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
-            strip_prefix = "zlib-1.2.11",
-            urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
-        )
+    maybe(
+        http_archive,
+        name = "zlib",
+        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+        sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
+        strip_prefix = "zlib-1.2.11",
+        urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
+    )
+
+    maybe(
+        http_archive,
+        name = "build_bazel_rules_nodejs",
+        sha256 = "cfc289523cf1594598215901154a6c2515e8bf3671fd708264a6f6aefe02bf39",
+        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/4.4.6/rules_nodejs-4.4.6.tar.gz"],
+    )
 
 def haskell_repositories():
     """Alias for rules_haskell_dependencies

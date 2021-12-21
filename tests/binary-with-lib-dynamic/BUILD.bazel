@@ -3,6 +3,10 @@ load(
     "haskell_library",
     "haskell_test",
 )
+load(
+    "//tests:analysis_tests.bzl",
+    "dynamic_libraries_in_runfiles_test",
+)
 
 package(default_testonly = 1)
 
@@ -22,4 +26,20 @@ haskell_test(
         ":lib",
         "//tests/hackage:base",
     ],
+)
+
+dynamic_libraries_in_runfiles_test(
+    name = "runfiles-test",
+    libs = [
+        ":lib",
+        "//tests/hackage:base",
+    ],
+    target_under_test = ":binary-with-lib-dynamic",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

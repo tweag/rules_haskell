@@ -97,6 +97,6 @@ have any of the other features that follow them above.
 .. _Maven: https://maven.apache.org/index.html
 .. _Gradle: https://gradle.org/
 .. _Cabal: https://www.haskell.org/cabal/
-.. _Stack: http://haskellstack.org/
+.. _Stack: https://haskellstack.org/
 .. _Shake: https://shakebuild.com/
 .. _monorepos: https://en.wikipedia.org/wiki/Monorepo

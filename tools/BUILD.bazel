@@ -1,0 +1,10 @@
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tools/ghc-paths:all_files",
+        "//tools/runfiles:all_files",
+        "//tools/worker:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

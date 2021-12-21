@@ -1,2 +1,4 @@
 /bazel-*
 .bazelrc.local
+*.swp
+*.swo

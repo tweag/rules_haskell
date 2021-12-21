@@ -30,6 +30,18 @@ load(
     ":plugins.bzl",
     _ghc_plugin = "ghc_plugin",
 )
+load(
+    ":private/validate_attrs.bzl",
+    "check_deprecated_attribute_usage",
+)
+load(
+    "//haskell:providers.bzl",
+    "HaskellLibraryInfo",
+)
+load(
+    "//haskell/experimental:providers.bzl",
+    "HaskellModuleInfo",
+)
 
 # NOTE: Documentation needs to be added to the wrapper macros below.
 #   Currently it is not possible to automatically inherit rule documentation in
@@ -45,13 +57,22 @@ _haskell_common_attrs = {
     "deps": attr.label_list(
         aspects = [haskell_cc_libraries_aspect],
     ),
+    "narrowed_deps": attr.label_list(),
+    "modules": attr.label_list(
+        providers = [HaskellModuleInfo],
+    ),
+    # a proxy for ctx.label so that the transition can access it
+    "label_string": attr.string(),
     "data": attr.label_list(
         allow_files = True,
     ),
-    "compiler_flags": attr.string_list(),
+    "ghcopts": attr.string_list(),
     "repl_ghci_args": attr.string_list(),
     "runcompile_flags": attr.string_list(),
     "plugins": attr.label_list(
+        aspects = [haskell_cc_libraries_aspect],
+    ),
+    "non_default_plugins": attr.label_list(
         aspects = [haskell_cc_libraries_aspect],
     ),
     "tools": attr.label_list(
@@ -66,18 +87,13 @@ _haskell_common_attrs = {
         allow_single_file = True,
         default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
     ),
-    "_ls_modules": attr.label(
-        executable = True,
-        cfg = "host",
-        default = Label("@rules_haskell//haskell:ls_modules"),
-    ),
     "_version_macros": attr.label(
         executable = True,
         cfg = "host",
         default = Label("@rules_haskell//haskell:version_macros"),
     ),
     "_cc_toolchain": attr.label(
-        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        default = Label("@rules_cc//cc:current_cc_toolchain"),
     ),
     "_ghc_wrapper": attr.label(
         executable = True,
@@ -116,6 +132,10 @@ def _mk_binary_rule(**kwargs):
         ),
         main_function = attr.string(
             default = "Main.main",
+        ),
+        main_file = attr.label(
+            allow_single_file = True,
+            mandatory = False,
         ),
         version = attr.string(),
     )
@@ -161,7 +181,7 @@ def _mk_binary_rule(**kwargs):
             "runghc": "%{name}@runghc",
         },
         toolchains = [
-            "@bazel_tools//tools/cpp:toolchain_type",
+            "@rules_cc//cc:toolchain_type",
             "@rules_haskell//haskell:toolchain",
             "@rules_sh//sh/posix:toolchain_type",
         ],
@@ -196,7 +216,7 @@ _haskell_library = rule(
         "runghc": "%{name}@runghc",
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -204,6 +224,14 @@ _haskell_library = rule(
 )
 
 def _haskell_worker_wrapper(rule_type, **kwargs):
+    kwargs["ghcopts"] = check_deprecated_attribute_usage(
+        old_attr_name = "compiler_flags",
+        old_attr_value = kwargs["compiler_flags"],
+        new_attr_name = "ghcopts",
+        new_attr_value = kwargs["ghcopts"],
+    )
+    kwargs.pop("compiler_flags")
+
     defaults = dict(
         worker = select({
             "@rules_haskell//haskell:use_worker": Label("@rules_haskell//tools/worker:bin"),
@@ -225,18 +253,40 @@ def haskell_binary(
         srcs = [],
         extra_srcs = [],
         deps = [],
+        narrowed_deps = [],
         data = [],
         compiler_flags = [],
+        ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
         plugins = [],
+        non_default_plugins = [],
         tools = [],
         worker = None,
         linkstatic = True,
         main_function = "Main.main",
+        main_file = None,
         version = None,
         **kwargs):
     """Build an executable from Haskell source.
+
+    Haskell source file names must match their module names. E.g.
+    ```
+    My/Module.hs  -->  module My.Module
+    ```
+    Any invalid path prefix is stripped. E.g.
+    ```
+    Some/prefix/My/Module.hs  -->  module My.Module
+    ```
+
+    Binary targets require a main module named `Main` or with the module name
+    defined by `main_function`. If `main_file` is specified then it must have
+    the main module name. Otherwise, the following heuristics define the main
+    module file.
+
+    - The source file that matches the main module name. E.g. `Main.hs`.
+    - The source file that matches no valid module name. E.g. `exe.hs`.
+    - The only source file of the target.
 
     Every `haskell_binary` target also defines an optional REPL target that is
     not built by default, but can be built on request. The name of the REPL
@@ -262,18 +312,28 @@ def haskell_binary(
     Args:
       name: A unique name for this rule.
       src_strip_prefix: DEPRECATED. Attribute has no effect.
-      srcs: Haskell source files.
+      srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      narrowed_deps: Like deps, but only for dependencies using the modules
+          attribute. These dependencies are only used if this library uses
+          the modules attribute and the haskell_module rules depend on modules
+          provided by these dependencies.
+          Note: This attribute is experimental and not ready for production, yet.
+      modules: List of extra haskell_module() dependencies to be linked into this binary.
+          Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
-      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
-      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
-      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
-      plugins: Compiler plugins to use during compilation.
+      compiler_flags: DEPRECATED. Use new name ghcopts.
+      ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation. Every module is compiled with `-fplugin=...`.
+      non_default_plugins: Like `plugins` but doesn't pass `-fplugin=...` to modules by default.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
       linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
       main_function: A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.
+      main_file: The source file that defines the `Main` module or the module containing `main_function`.
       version: Executable version. If this is specified, CPP version macros will be generated for this build.
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
@@ -284,24 +344,24 @@ def haskell_binary(
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        narrowed_deps = narrowed_deps,
         data = data,
         compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         tools = tools,
         worker = worker,
         linkstatic = linkstatic,
         main_function = main_function,
+        main_file = main_file,
         version = version,
         **kwargs
     )
 
-    repl_kwargs = {
-        attr: kwargs[attr]
-        for attr in ["testonly", "tags"]
-        if attr in kwargs
-    }
+    repl_kwargs = make_repl_kwargs(["testonly", "tags"], kwargs)
     native.alias(
         # XXX Temporary backwards compatibility hack. Remove eventually.
         # See https://github.com/tweag/rules_haskell/pull/460.
@@ -317,21 +377,46 @@ def haskell_binary(
         **repl_kwargs
     )
 
+def make_repl_kwargs(args_list, kwargs):
+    """Create extra attributes for the auto-generated haskell_repl target.
+
+    Copies the extra attributes specified in `args_list` from the extra
+    `haskell_library|binary|test` attributes listed in `kwargs`.
+
+    Adds a `manual` tag so that the REPL is not built by default.
+    """
+    repl_kwargs = {
+        attr: kwargs[attr]
+        for attr in args_list
+        if attr in kwargs
+    }
+
+    if "tags" in repl_kwargs:
+        repl_kwargs["tags"] = repl_kwargs["tags"] + ["manual"]
+    else:
+        repl_kwargs["tags"] = ["manual"]
+
+    return repl_kwargs
+
 def haskell_test(
         name,
         src_strip_prefix = "",
         srcs = [],
         extra_srcs = [],
         deps = [],
+        narrowed_deps = [],
         data = [],
         compiler_flags = [],
+        ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
         plugins = [],
+        non_default_plugins = [],
         tools = [],
         worker = None,
         linkstatic = True,
         main_function = "Main.main",
+        main_file = None,
         version = None,
         expected_covered_expressions_percentage = -1,
         expected_uncovered_expression_count = -1,
@@ -340,6 +425,24 @@ def haskell_test(
         experimental_coverage_source_patterns = ["//..."],
         **kwargs):
     """Build a test suite.
+
+    Haskell source file names must match their module names. E.g.
+    ```
+    My/Module.hs  -->  module My.Module
+    ```
+    Any invalid path prefix is stripped. E.g.
+    ```
+    Some/prefix/My/Module.hs  -->  module My.Module
+    ```
+
+    Binary targets require a main module named `Main` or with the module name
+    defined by `main_function`. If `main_file` is specified then it must have
+    the main module name. Otherwise, the following heuristics define the main
+    module file.
+
+    - The source file that matches the main module name. E.g. `Main.hs`.
+    - The source file that matches no valid module name. E.g. `exe.hs`.
+    - The only source file of the target.
 
     Additionally, it accepts [all common bazel test rule
     fields][bazel-test-attrs]. This allows you to influence things like
@@ -350,18 +453,28 @@ def haskell_test(
     Args:
       name: A unique name for this rule.
       src_strip_prefix: DEPRECATED. Attribute has no effect.
-      srcs: Haskell source files.
+      srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      narrowed_deps: Like deps, but only for dependencies using the modules
+          attribute. These dependencies are only used if this library uses
+          the modules attribute and the haskell_module rules depend on modules
+          provided by these dependencies.
+          Note: This attribute is experimental and not ready for production, yet.
+      modules: List of extra haskell_module() dependencies to be linked into this test.
+          Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
-      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
-      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
-      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
-      plugins: Compiler plugins to use during compilation.
+      compiler_flags: DEPRECATED. Use new name ghcopts.
+      ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation. Every module is compiled with `-fplugin=...`.
+      non_default_plugins: Like `plugins` but doesn't pass `-fplugin=...` to modules by default.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
       linkstatic: Link dependencies statically wherever possible. Some system libraries may still be linked dynamically, as are libraries for which there is no static library. So the resulting executable will still be dynamically linked, hence only mostly static.
       main_function: A function with type `IO _`, either the qualified name of a function from any module or the bare name of a function from a `Main` module. It is also possible to give the qualified name of any module exposing a `main` function.
+      main_file: The source file that defines the `Main` module or the module containing `main_function`.
       version: Executable version. If this is specified, CPP version macros will be generated for this build.
       expected_covered_expressions_percentage: The expected percentage of expressions covered by testing.
       expected_uncovered_expression_count: The expected number of expressions which are not covered by testing.
@@ -385,15 +498,19 @@ def haskell_test(
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        narrowed_deps = narrowed_deps,
         data = data,
         compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         tools = tools,
         worker = worker,
         linkstatic = linkstatic,
         main_function = main_function,
+        main_file = main_file,
         version = version,
         expected_covered_expressions_percentage = expected_covered_expressions_percentage,
         expected_uncovered_expression_count = expected_uncovered_expression_count,
@@ -403,11 +520,7 @@ def haskell_test(
         **kwargs
     )
 
-    repl_kwargs = {
-        attr: kwargs[attr]
-        for attr in ["tags"]
-        if attr in kwargs
-    }
+    repl_kwargs = make_repl_kwargs(["tags"], kwargs)
     native.alias(
         # XXX Temporary backwards compatibility hack. Remove eventually.
         # See https://github.com/tweag/rules_haskell/pull/460.
@@ -431,11 +544,15 @@ def haskell_library(
         srcs = [],
         extra_srcs = [],
         deps = [],
+        narrowed_deps = [],
+        modules = [],
         data = [],
         compiler_flags = [],
+        ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
         plugins = [],
+        non_default_plugins = [],
         tools = [],
         worker = None,
         hidden_modules = [],
@@ -446,6 +563,15 @@ def haskell_library(
         version = "",
         **kwargs):
     """Build a library from Haskell source.
+
+    Haskell source file names must match their module names. E.g.
+    ```
+    My/Module.hs  -->  module My.Module
+    ```
+    Any invalid path prefix is stripped. E.g.
+    ```
+    Some/prefix/My/Module.hs  -->  module My.Module
+    ```
 
     Every `haskell_library` target also defines an optional REPL target that is
     not built by default, but can be built on request. It works the same way as
@@ -470,14 +596,23 @@ def haskell_library(
     Args:
       name: A unique name for this rule.
       src_strip_prefix: DEPRECATED. Attribute has no effect.
-      srcs: Haskell source files.
+      srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      narrowed_deps: Like deps, but only for dependencies using the modules
+          attribute. These dependencies are only used if this library uses
+          the modules attribute and the haskell_module rules depend on modules
+          provided by these dependencies.
+          Note: This attribute is experimental and not ready for production, yet.
+      modules: List of extra haskell_module() dependencies to be linked into this library.
+          Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
-      compiler_flags: Flags to pass to Haskell compiler. Subject to Make variable substitution.
-      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
-      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `compiler_flags` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
-      plugins: Compiler plugins to use during compilation.
+      compiler_flags: DEPRECATED. Use new name ghcopts.
+      ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
+      repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
+      runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      plugins: Compiler plugins to use during compilation. Every module is compiled with `-fplugin=...`.
+      non_default_plugins: Like `plugins` but doesn't pass `-fplugin=...` to modules by default.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
       hidden_modules: Modules that should be unavailable for import by dependencies.
@@ -494,15 +629,20 @@ def haskell_library(
     _haskell_worker_wrapper(
         "library",
         name = name,
+        label_string = native.repository_name() + "//" + native.package_name() + ":" + name,
         src_strip_prefix = src_strip_prefix,
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        narrowed_deps = narrowed_deps,
+        modules = modules,
         data = data,
         compiler_flags = compiler_flags,
+        ghcopts = ghcopts,
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         tools = tools,
         worker = worker,
         hidden_modules = hidden_modules,
@@ -514,11 +654,7 @@ def haskell_library(
         **kwargs
     )
 
-    repl_kwargs = {
-        attr: kwargs[attr]
-        for attr in ["testonly", "tags"]
-        if attr in kwargs
-    }
+    repl_kwargs = make_repl_kwargs(["testonly", "tags"], kwargs)
     native.alias(
         # XXX Temporary backwards compatibility hack. Remove eventually.
         # See https://github.com/tweag/rules_haskell/pull/460.
@@ -554,6 +690,15 @@ haskell_import = rule(
             default = Label("@rules_haskell//haskell:version_macros"),
         ),
     },
+    doc = """\
+Internal rule. Do not use.
+
+The attributes of this rule loosely correspond to the fields of the
+GHC package database. Refer to the [GHC User's Guide][ghc-doc-pkginfo]
+for documentation.
+
+[ghc-doc-pkginfo]: https://downloads.haskell.org/ghc/latest/docs/html/users_guide/packages.html#installedpackageinfo-a-package-specification
+""",
 )
 
 haskell_toolchain_library = rule(
@@ -570,7 +715,10 @@ haskell_toolchain_library = rule(
         "@rules_haskell//haskell:toolchain",
     ],
     doc = """\
-Import packages that are prebuilt outside of Bazel.
+Import prebuilt libraries supplied by the toolchain.
+
+Use this rule to make dependencies that are prebuilt (supplied as part
+of the compiler toolchain) available as targets.
 
 ### Examples
 
@@ -589,9 +737,6 @@ Import packages that are prebuilt outside of Bazel.
       ],
   )
   ```
-
-Use this rule to make dependencies that are prebuilt (supplied as part
-of the compiler toolchain) available as targets.
 """,
 )
 
@@ -599,7 +744,13 @@ haskell_doc = _haskell_doc
 
 haskell_doc_aspect = _haskell_doc_aspect
 
-haskell_register_toolchains = _haskell_register_toolchains
+def haskell_register_toolchains(**kwargs):
+    """Register GHC binary distributions for all platforms as toolchains.
+
+    Deprecated:
+        Use [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains) instead.
+    """
+    _haskell_register_toolchains(**kwargs)
 
 haskell_repl = _haskell_repl
 

@@ -12,12 +12,12 @@ haskell_library(
         "Foo.hs",
         "FooTH.hs",
     ],
-    # Test that the linker can also see the extra_srcs.
-    compiler_flags = ["-optl-Wl,@tests/extra-source-files/ld-options.txt"],
     extra_srcs = [
         "file.txt",
         "ld-options.txt",
     ],
+    # Test that the linker can also see the extra_srcs.
+    ghcopts = ["-optl-Wl,@tests/extra-source-files/ld-options.txt"],
     tags = [
         # ld on darwin does not support response files.
         "dont_test_on_darwin_with_bindist",
@@ -46,8 +46,16 @@ haskell_test(
         # ld on darwin does not support response files.
         "dont_test_on_darwin_with_bindist",
     ],
+    visibility = ["//tests/asterius/extra-source-files:__pkg__"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
     ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

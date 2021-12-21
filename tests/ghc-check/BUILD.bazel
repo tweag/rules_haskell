@@ -1,0 +1,51 @@
+load("@os_info//:os_info.bzl", "is_windows")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+)
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_binary",
+)
+
+haskell_test(
+    name = "ghc-check",
+    srcs = ["Main.hs"],
+    data = ["@rules_haskell//tools/ghc-paths:libdir"],
+    tags = ["requires_dynamic"],
+    deps = [
+        "@stackage//:base",
+        "@stackage//:ghc-check",
+        "@stackage//:ghc-paths",
+    ],
+)
+
+haskell_cabal_binary(
+    name = "ghc-check-cabal",
+    srcs = [
+        "Main.hs",
+        "ghc-check-cabal.cabal",
+    ],
+    tags = ["requires_dynamic"],
+    deps = [
+        "@stackage//:base",
+        "@stackage//:ghc-check",
+        "@stackage//:ghc-paths",
+    ],
+)
+
+# We don't currently have a haskell_cabal_test rule, so we wrap sh_test around
+# haskell_cabal_binary to generate a test-case.
+sh_test(
+    name = "ghc-check-cabal-test{}".format(".exe" if is_windows else ""),
+    srcs = [":ghc-check-cabal"],
+    data = ["@rules_haskell//tools/ghc-paths:libdir"],
+    tags = ["requires_dynamic"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -1,8 +1,31 @@
 load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
 load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_haskell//docs/pandoc:pandoc.bzl", "set_site_end_location")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+bool_flag(
+    name = "render_dev_website",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "dev_website_config",
+    flag_values = {
+        "render_dev_website": "True",
+    },
+)
+
+set_site_end_location(
+    name = "set_site_end_location",
+    site_end_location = select({
+        ":dev_website_config": "/api",
+        "//conditions:default": "",
+    }),
+)
 
 libraries = [
     "defs",
+    "toolchain",
     "cabal",
     "repositories",
     "ghc_bindist",
@@ -23,6 +46,7 @@ libraries = [
             input = "//haskell:%s.bzl" % lib,
             provider_template = ":templates/metadata/provider.vm",
             rule_template = ":templates/metadata/rule.vm",
+            tags = ["dont_test_on_windows"],
             deps = ["//haskell"],
         ),
         # Generate markdown API documentation.
@@ -35,6 +59,7 @@ libraries = [
             input = "//haskell:%s.bzl" % lib,
             provider_template = ":templates/markdown/provider.vm",
             rule_template = ":templates/markdown/rule.vm",
+            tags = ["dont_test_on_windows"],
             deps = ["//haskell"],
         ),
         # Convert markdown to html.
@@ -48,6 +73,7 @@ libraries = [
             outs = ["haskell/%s.html" % lib],
             cmd = """\
 $(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
   -f markdown \
   -t html \
   -s \
@@ -56,8 +82,10 @@ $(execpath //docs/pandoc) \
   --toc \
   --toc-depth=2 \
   -o $(OUTS) \
-  $(execpath :%s_md)
-""" % lib,
+  $(execpath :{}_md)
+""".format(lib),
+            tags = ["dont_test_on_windows"],
+            toolchains = [":set_site_end_location"],
             tools = ["//docs/pandoc"],
         ),
     )
@@ -77,6 +105,7 @@ for file in $(SRCS); do
   cat $$file >>$(OUTS)
 done
 """,
+    tags = ["dont_test_on_windows"],
 )
 
 # Generate top-level API documentation navigation sidebar.
@@ -89,6 +118,7 @@ genrule(
     outs = ["nav.html"],
     cmd = """\
 $(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
   -f markdown \
   -t html \
   -s \
@@ -98,6 +128,8 @@ $(execpath //docs/pandoc) \
   --metadata-file=$(execpath :metadata) \
   <<<""
 """,
+    tags = ["dont_test_on_windows"],
+    toolchains = [":set_site_end_location"],
     tools = ["//docs/pandoc"],
 )
 
@@ -114,6 +146,7 @@ genrule(
     cmd = """\
 # Render overview page body.
 $(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
   -f markdown \
   -t html \
   -s \
@@ -124,6 +157,7 @@ $(execpath //docs/pandoc) \
   <<<""
 # Render full overview page including navigation sidebar.
 $(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
   -f html \
   -t html \
   -s \
@@ -136,6 +170,8 @@ $(execpath //docs/pandoc) \
   --metadata-file=$(execpath :metadata) \
   index_body.html
 """,
+    tags = ["dont_test_on_windows"],
+    toolchains = [":set_site_end_location"],
     tools = ["//docs/pandoc"],
 )
 
@@ -160,6 +196,7 @@ $(location @bazel_tools//tools/zip:zipper) c $@ %s
             ":index_html",
         ] + [":%s_html" % lib for lib in libraries]
     ]),
+    tags = ["dont_test_on_windows"],
     tools = ["@bazel_tools//tools/zip:zipper"],
 )
 
@@ -169,6 +206,7 @@ py_binary(
     srcs = ["serve.py"],
     args = ["$(rootpath :api_html)"],
     data = [":api_html"],
+    tags = ["dont_test_on_windows"],
 )
 
 genrule(
@@ -190,9 +228,22 @@ genrule(
     (cd $$builddir/html && zip -q -r $$CWD/$@ .)
     rm -rf $$builddir
     """,
+    tags = [
+        "dont_test_on_windows",
+        "requires_nix",
+    ],
     tools = [
         "@graphviz//:bin",
         "@sphinx//:bin",
         "@zip//:bin",
     ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//docs/pandoc:all_files",
+    ],
+    visibility = ["//visibility:public"],
 )

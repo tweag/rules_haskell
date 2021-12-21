@@ -8,14 +8,9 @@ load(
 
 package(default_testonly = 1)
 
-config_setting(
-    name = "debug_build",
-    values = {
-        "compilation_mode": "dbg",
-    },
-)
-
 haskell_toolchain_library(name = "base")
+
+haskell_toolchain_library(name = "bytestring")
 
 haskell_toolchain_library(name = "ghc")
 
@@ -24,30 +19,70 @@ haskell_toolchain_library(name = "process")
 haskell_library(
     name = "plugin-lib",
     srcs = ["Plugin.hs"],
+    version = "0",
     deps = [
         ":base",
+        ":bytestring",
         ":ghc",
         ":process",
     ],
 )
 
 ghc_plugin(
-    name = "plugin",
-    args = ["$(location //tests/binary-simple)"],
+    name = "plugin1",
+    args = [
+        "$(location //tests/binary-simple)",
+        "plugin1",
+    ],
+    module = "Plugin",
+    tools = ["//tests/binary-simple"],
+    deps = [":plugin-lib"],
+)
+
+ghc_plugin(
+    name = "plugin2",
+    args = [
+        "$(location //tests/binary-simple)",
+        "plugin2",
+    ],
     module = "Plugin",
     tools = ["//tests/binary-simple"],
     deps = [":plugin-lib"],
 )
 
 haskell_test(
-    name = "binary-with-plugin",
+    name = "binary-with-plugin1",
     srcs = ["Main.hs"],
-    plugins = select({
-        # XXX If profiling is enabled, ignore the plugin because of
-        # https://gitlab.haskell.org/ghc/ghc/issues/14335.
-        ":debug_build": [],
-        "//conditions:default": [":plugin"],
-    }),
+    plugins = [":plugin1"],
+    # XXX If profiling is enabled, ignore the plugin tests because of
+    # https://gitlab.haskell.org/ghc/ghc/issues/14335.
+    tags = ["skip_profiling"],
     visibility = ["//visibility:public"],
     deps = [":base"],
+)
+
+haskell_test(
+    name = "binary-with-plugin2",
+    srcs = ["main2.hs"],
+    compiler_flags = ["-fplugin=Plugin"],
+    non_default_plugins = [":plugin2"],
+    tags = ["skip_profiling"],
+    visibility = ["//visibility:public"],
+    deps = [":base"],
+)
+
+haskell_test(
+    name = "binary-with-plugin3",
+    srcs = ["main3.hs"],
+    non_default_plugins = [":plugin2"],
+    tags = ["skip_profiling"],
+    visibility = ["//visibility:public"],
+    deps = [":base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

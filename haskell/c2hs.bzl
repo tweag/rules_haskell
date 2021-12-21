@@ -23,7 +23,10 @@ load(":private/version_macros.bzl", "version_macro_includes")
 def _c2hs_library_impl(ctx):
     hs = haskell_context(ctx)
 
-    cc = cc_interop_info(ctx)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
     args = hs.actions.args()
     c2hs = ctx.toolchains["@rules_haskell//haskell/c2hs:toolchain"].c2hs
     c2hs_exe = ctx.toolchains["@rules_haskell//haskell/c2hs:toolchain"].c2hs_exe
@@ -61,7 +64,7 @@ def _c2hs_library_impl(ctx):
 
     version_macro_headers = set.empty()
     if ctx.attr.version:
-        dep_info = gather_dep_info(ctx, ctx.attr.deps)
+        dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
         (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
         args.add_all(["-C" + x for x in version_macro_flags])
 
@@ -73,6 +76,8 @@ def _c2hs_library_impl(ctx):
             depset([chs_file]),
             depset(dep_chi_files),
             depset(cc.files),
+            depset(hs.toolchain.bindir),
+            depset(hs.toolchain.libdir),
             set.to_depset(version_macro_headers),
             inputs,
         ]),
@@ -132,15 +137,18 @@ c2hs_library = rule(
             doc = "Executable version. If this is specified, CPP version macros will be generated for this build.",
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell/c2hs:toolchain",
     ],
     fragments = ["cpp"],
+    doc = """\
+Process c2hs source into a Haskell module.
+""",
 )
 
 def _c2hs_toolchain_impl(ctx):
@@ -160,7 +168,6 @@ _c2hs_toolchain = rule(
     _c2hs_toolchain_impl,
     attrs = {
         "c2hs": attr.label(
-            doc = "The c2hs executable.",
             mandatory = True,
             allow_single_file = True,
             executable = True,
@@ -199,6 +206,12 @@ def c2hs_toolchain(name, c2hs, **kwargs):
 
       register_toolchains("//:c2hs")
       ```
+
+    Args:
+      name: A unique name for the toolchain.
+      c2hs: The c2hs executable.
+      **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
+
     """
     impl_name = name + "-impl"
     _c2hs_toolchain(

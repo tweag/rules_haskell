@@ -37,6 +37,8 @@
 
 set -euo pipefail
 
+CC_WRAPPER_CC_PATH=${CC_WRAPPER_CC_PATH:-"{:cc:}"}
+
 # ----------------------------------------------------------
 # Find compiler
 
@@ -65,6 +67,10 @@ find_exe() {
       { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
     # --- end runfiles.bash initialization v2 ---
 
+    # The RUNFILES_MANIFEST_FILE needs to be set explicitly
+    # when cc_wrapper is invoked from the cabal_wrapper
+    RUNFILES_MANIFEST_FILE="${RUNFILES_MANIFEST_FILE:-"$0.exe.runfiles_manifest"}"
+
     location="$(rlocation "{:workspace:}/$exe")"
     if [[ -f "$location" ]]; then
         return
@@ -77,7 +83,7 @@ find_exe() {
 }
 
 declare CC
-find_exe CC "{:cc:}"
+find_exe CC "${CC_WRAPPER_CC_PATH}"
 
 # ----------------------------------------------------------
 # Handle response file
@@ -183,7 +189,7 @@ handle_arg() {
         handle_lib_dir "$arg"
     elif [[ "$arg" =~ ^@(.*)$ ]]; then
         (( ++IN_RESPONSE_FILE ))
-        while read -r line; do
+        while IFS=$' \t\r\n' read -r line; do
             handle_arg "$line"
         done < "${BASH_REMATCH[1]}"
         (( --IN_RESPONSE_FILE )) || true

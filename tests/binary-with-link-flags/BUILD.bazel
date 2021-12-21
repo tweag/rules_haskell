@@ -11,7 +11,14 @@ package(
 haskell_test(
     name = "binary-with-link-flags",
     srcs = ["Main.hs"],
-    compiler_flags = ["-threaded"],
+    ghcopts = ["-threaded"],
     visibility = ["//visibility:public"],
     deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

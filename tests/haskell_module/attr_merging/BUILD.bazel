@@ -1,0 +1,76 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "ghc_plugin",
+    "haskell_library",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+package(default_testonly = 1)
+
+haskell_toolchain_library(name = "base")
+
+haskell_toolchain_library(name = "bytestring")
+
+haskell_toolchain_library(name = "ghc")
+
+haskell_toolchain_library(name = "process")
+
+haskell_library(
+    name = "plugin-lib",
+    srcs = ["Plugin.hs"],
+    version = "0",
+    deps = [
+        ":base",
+        ":bytestring",
+        ":ghc",
+        ":process",
+    ],
+)
+
+ghc_plugin(
+    name = "plugin",
+    module = "Plugin",
+    deps = [":plugin-lib"],
+)
+
+haskell_module(
+    name = "module-with-plugin",
+    src = "ModuleWith.hs",
+    tags = ["skip_profiling"],
+)
+
+haskell_library(
+    name = "lib",
+    ghcopts = [
+        "-fplugin-opt=Plugin:$(location //tests/binary-simple)",
+        "-fplugin-opt=Plugin:active",
+    ],
+    modules = [
+        ":module-with-plugin",
+    ],
+    plugins = [":plugin"],
+    tags = ["skip_profiling"],
+    tools = ["//tests/binary-simple"],
+    deps = [":base"],
+)
+
+haskell_test(
+    name = "bin",
+    size = "small",
+    srcs = ["Bin.hs"],
+    tags = ["skip_profiling"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

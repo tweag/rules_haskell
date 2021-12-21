@@ -44,6 +44,16 @@ if res != {}:
   pprint.pprint(res)
   exit(1)
 ''',
-    # it only works on linux
-    tags = ["dont_test_on_darwin"],
+    # it only works on linux with nixpkgs
+    tags = [
+        "dont_test_on_darwin",
+        "requires_nix",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

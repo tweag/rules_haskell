@@ -167,7 +167,7 @@ def compile_info_output_groups(
         "haskell_cdep_libs": depset(cc_libs),
         "haskell_runfiles": runfiles,
         "haskell_source_files": depset(transitive =
-                                           [c.source_files, c.extra_source_files]),
+                                           [c.source_files, c.boot_files, c.extra_source_files]),
         "haskell_compile_info": depset([_write_haskell_compile_info(
             workspace_name = workspace_name,
             hs = hs,

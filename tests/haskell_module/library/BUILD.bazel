@@ -1,0 +1,52 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "TestLib",
+    extra_srcs = ["extra_src2.md"],
+    modules = [
+        ":TestLibModule",
+        ":TestLibModule2",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "TestLibModule",
+    src = "TestLib.hs",
+    extra_srcs = ["extra_src.md"],
+)
+
+haskell_module(
+    name = "TestLibModule2",
+    src = "TestLib2.hs",
+    extra_srcs = ["extra_src.md"],
+    module_name = "Test.Lib",
+)
+
+haskell_test(
+    name = "bin-deps",
+    size = "small",
+    srcs = ["Bin.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":TestLib",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

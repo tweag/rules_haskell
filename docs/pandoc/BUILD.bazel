@@ -8,6 +8,7 @@ toolchain_type(
 
 pandoc(
     name = "pandoc",
+    tags = ["dont_test_on_windows"],
     visibility = ["//visibility:public"],
 )
 
@@ -39,4 +40,11 @@ toolchain(
     ],
     toolchain = "@macos_pandoc//:pandoc_toolchain",
     toolchain_type = ":toolchain_type",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

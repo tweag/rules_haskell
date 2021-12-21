@@ -64,7 +64,7 @@ shellcheck(
     name = "start-script",
     args = ["$(location //:start)"],
     data = ["//:start"],
-    sh_flavor = "bash",
+    sh_flavor = "sh",
 )
 
 shellcheck(
@@ -72,4 +72,11 @@ shellcheck(
     args = ["$(location //tests:scripts/exec.sh)"],
     data = ["//tests:scripts/exec.sh"],
     sh_flavor = "bash",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

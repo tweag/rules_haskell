@@ -4,6 +4,106 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+[Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.14...master
+
+## [0.14.0] 2021-12-21
+
+[0.14.0]: https://github.com/tweag/rules_haskell/compare/v0.13...v0.14
+
+### Highlights
+
+* Moved to exclusive support of Bazel 4
+* Support for GHC 8.8, 8.10, 9.0 and 9.2
+* Asterius support (experimental)
+* Cross-compilation support
+* `haskell_module` rule (experimental)
+
+### Added
+
+* Support for Bazel 4.1.0 and 4.2.1
+* Support for GHC 8.8.4, 8.10.3, 8.10.4, 8.10.7, 9.0.1 and 9.2.1.
+* Blacklisted empty `ghc-byteorder` package.
+* More reproducible GHC bindist on macOS.
+  See [#1462](https://github.com/tweag/rules_haskell/pull/1462).
+* Track GHC's `lib/settings` as an action input by exposing a `files`
+  attribute in the `haskell_toolchain` rule, which is used in downstream
+  actions.
+  See [#1478](https://github.com/tweag/rules_haskell/pull/1478).
+* Added `ghc-bignum` to the list of core packages (since GHC 9.0.1).
+* Provided a Bazel-compatible version of `ghc-paths`.
+  See [#1508](https://github.com/tweag/rules_haskell/pull/1508).
+* Allow different repository names when registering Haskell toolchains
+  for cross-compiling.
+* Added `hsc2hs` into the inputs of `cabal_wrapper` so it can be found
+  when cross-compiling.
+* Support for platform constraints for GHCs in Nixpkgs.
+* Added `hie_bios_path_prefix` to the `haskell_repl` rule to allow
+  hie-bios to output paths relative to a directory besides the workspace
+  root.
+* Experimental `haskell_module` rule, with profiling, hs-boot, plugin,
+  preprocessor, package database, dynamic build and Template Haskell
+  support.
+  See [#1553](https://github.com/tweag/rules_haskell/pull/1553).
+* Support for Cabal sublibraries, using the `sublibrary_name` attribute
+  of the `haskell_cabal_library` rule.
+* Added `generates_path_module` attribute to `haskell_cabal_library`,
+  such that its data files are accessible to `haskell_binary` rules.
+  See [#1575](https://github.com/tweag/rules_haskell/pull/1575).
+* Added `non_default_plugins` attribute to `haskell_library` and
+  `haskell_binary` rules to avoid setting `-fplugin` for every module.
+* Support for using Template Haskell and FFI with static C dependencies.
+  See [#1582](https://github.com/tweag/rules_haskell/pull/1582).
+* Support for Asterius.
+  See [#1614](https://github.com/tweag/rules_haskell/pull/1614),
+  [#1618](https://github.com/tweag/rules_haskell/pull/1618),
+  [#1619](https://github.com/tweag/rules_haskell/pull/1619),
+  [#1621](https://github.com/tweag/rules_haskell/pull/1621),
+  [#1643](https://github.com/tweag/rules_haskell/pull/1643) and
+  [#1660](https://github.com/tweag/rules_haskell/pull/1660).
+* Support for sublibraries in the `stack_snapshot` rule.
+  [#1638](https://github.com/tweag/rules_haskell/pull/1638).
+* Support for the `--incompatible_override_toolchain_transition` flag.
+
+### Removed
+
+* Support for Bazel pre-4.0.0
+
+### Changed
+
+* Source file names are explicitly mapped to module names and
+  corresponding object and interface files in Starlark. The `main`
+  module is determined heuristically, but can be overridden with the
+  `main_file` attribute.
+  See [#1281](https://github.com/tweag/rules_haskell/pull/1281).
+* `stack unpack` now uses versioned packages.
+  See [#1455](https://github.com/tweag/rules_haskell/pull/1455).
+* `cabal_wrapper` now takes its arguments as JSON.
+* Use GitHub API token in `stack_snapshot` pinning, if available, to
+  avoid rate limiting.
+  See [#1494](https://github.com/tweag/rules_haskell/pull/1494).
+* Invoke a `runghc` for the execution platform in `cabal_wrapper`.
+* `compiler_flags` options have been renamed to `ghcopts` in macros and
+  rules, for consistency. The old name will still work, but has been
+  deprecated.
+* Automatic visibility of `stack_snapshot` dependencies to vendored
+  packages.
+  See [#1583](https://github.com/tweag/rules_haskell/pull/1583).
+* All REPL targets are tagged as `manual`, so are only built on-demand.
+* Use a more deterministic `distdir` path in `haskell_cabal_*` rules to
+  improve reproducibility.
+  See [#1648](https://github.com/tweag/rules_haskell/pull/1648).
+
+### Fixed
+
+* `stack_snapshot` pinning with archives containing Cabal files located
+  deeper down the tree.
+* A regression whereby dynamically linked binaries were missing their
+  libraries in the runfiles.
+* Compatibility issue with macOS Big Sur.
+  See [#1442](https://github.com/tweag/rules_haskell/issues/1442).
+
 ## [0.13.0] 2020-09-20
 
 ### Added
@@ -45,9 +145,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   have PIE enabled by default, like Ubuntu from at least 18.04
   onwards. See [#1388](https://github.com/tweag/rules_haskell/pull/1388).
 
-### [0.12.0] - 2020-03-16
+## [0.12.0] - 2020-03-16
 
-## Highlights
+### Highlights
 
 * Various improvements to Windows support.
 
@@ -57,7 +157,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   [fail on macOS](https://app.circleci.com/jobs/github/tweag/rules_haskell/8684)
   with Bazel 0.29. Please use a more recent version for macOS.
 
-## Added
+### Added
 
 * `haskell_repl` now has a `hie_bios` output group
   See [#1263](https://github.com/tweag/rules_haskell/pull/1263)
@@ -82,12 +182,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   See [#1096](https://github.com/tweag/rules_haskell/issues/1096)
   for the issue that triggered this train of thought.
 
-## Removed
+### Removed
 
 * `hazel` has been deleted, please use `stack_snapshot` instead.
   See [#1158](https://github.com/tweag/rules_haskell/pull/1158).
 
-## Changed
+### Changed
 
 * The `haskell_register_toolchains()` is no longer defined in
   `haskell/repositories.bzl`, load it from `haskell/toolchain.bzl` instead.
@@ -116,7 +216,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   See [#1199](https://github.com/tweag/rules_haskell/pull/1199) and
   [#1090](https://github.com/tweag/rules_haskell/issues/1090).
 
-## Fixed
+### Fixed
 
 * `haskell_cabal_library` and `haskell_library` now set relative
   `RUNPATH` entries.

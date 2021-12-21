@@ -94,8 +94,11 @@ def _haskell_doctest_single(target, ctx):
     args = ctx.actions.args()
     args.add("--no-magic")
 
-    cc = cc_interop_info(ctx)
-    args.add_all(ghc_cc_program_args(cc.tools.cc))
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
+    args.add_all(ghc_cc_program_args(hs, cc.tools.cc))
 
     doctest_log = ctx.actions.declare_file(
         "doctest-log-" + ctx.label.name + "-" + target.label.name,
@@ -125,6 +128,7 @@ def _haskell_doctest_single(target, ctx):
     ctx.actions.run_shell(
         inputs = depset(transitive = [
             hs_info.source_files,
+            hs_info.boot_files,
             hs_info.package_databases,
             hs_info.interface_dirs,
             hs_info.extra_source_files,
@@ -142,6 +146,8 @@ def _haskell_doctest_single(target, ctx):
         progress_message = "HaskellDoctest {}".format(ctx.label),
         command = """
         {env}
+        # doctest needs PATH to call GHC and the C compiler and linker.
+        export PATH
         {doctest} "$@" {inputs} > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
         """.format(
             doctest = toolchain.doctest[0].path,
@@ -149,10 +155,9 @@ def _haskell_doctest_single(target, ctx):
             inputs = " ".join(inputs),
             # XXX Workaround
             # https://github.com/bazelbuild/bazel/issues/5980.
-            env = render_env(hs.env),
+            env = render_env(dicts.add(hs.env, cc.env)),
         ),
         arguments = [args],
-        env = hs.env,
         execution_requirements = {
             # Prevents a race condition among concurrent doctest tests on Linux.
             #
@@ -194,12 +199,12 @@ omitted, all exposed modules provided by `deps` will be tested.
 """,
         ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
     fragments = ["cpp"],
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell:doctest-toolchain",
         "@rules_sh//sh/posix:toolchain_type",

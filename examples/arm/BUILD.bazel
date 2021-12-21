@@ -1,0 +1,66 @@
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_library",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base")
+
+haskell_toolchain_library(name = "template-haskell")
+
+haskell_binary(
+    name = "example",
+    srcs = [":Example.hs"],
+    deps = [
+        ":base",
+        ":template-haskell",
+        "@stackage//:zlib",
+    ],
+)
+
+haskell_binary(
+    name = "example2",
+    srcs = [":Example2.hs"],
+    deps = [
+        ":base",
+        ":libexample",
+        ":template-haskell",
+    ],
+)
+
+haskell_library(
+    name = "libexample",
+    srcs = [":LibExample.hs"],
+    deps = [
+        ":base",
+        ":template-haskell",
+    ],
+)
+
+platform(
+    name = "linux_aarch64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "BUILD.zlib.bazel",
+        "Example.hs",
+        "Example2.hs",
+        "LibExample.hs",
+        "WORKSPACE",
+        "arm-cross.nix",
+        "qemu-shell.nix",
+        "shell.nix",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -12,10 +12,6 @@ load(
 )
 load(":cc.bzl", "cc_interop_info")
 load(
-    ":private/actions/compile.bzl",
-    "list_exposed_modules",
-)
-load(
     ":private/actions/info.bzl",
     "compile_info_output_groups",
     "library_info_output_groups",
@@ -27,17 +23,20 @@ load(
     "link_library_static",
 )
 load(":private/actions/package.bzl", "package")
+load(":private/plugins.bzl", "resolve_plugin_tools")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
-load(":private/expansions.bzl", "expand_make_variables")
+load(":private/expansions.bzl", "expand_make_variables", "haskell_library_extra_label_attrs")
 load(":private/java.bzl", "java_interop_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
+    "determine_module_names",
     "get_dynamic_hs_lib_name",
     "get_lib_extension",
     "get_static_hs_lib_name",
+    "infer_main_module",
     "ln",
     "match_label",
     "parse_pattern",
@@ -50,6 +49,26 @@ load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
+load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
+
+# Note [Empty Libraries]
+#
+# GHC 8.10.x wants to load the shared libraries corresponding to packages needed
+# for running TemplateHaskell splices. It wants to do this even when all the
+# necessary object files are passed in the command line.
+#
+# In order to satisfy GHC, and yet avoid passing the linked library as input, we
+# create a ficticious package which points to an empty shared library. The
+# ficticious and the real package share the same interface files.
+#
+# Avoiding to pass the real shared library as input is necessary when building
+# individual modules with haskell_module, otherwise building the module would
+# need to wait until all of the modules of library dependencies have been built.
+#
+# See Note [Narrowed Dependencies] for an overview of what this feature is
+# needed for.
 
 def _prepare_srcs(srcs):
     srcs_files = []
@@ -120,17 +139,6 @@ def _condition_coverage_src(hs, src):
 
     return conditioned_src
 
-def _resolve_plugin_tools(ctx, plugin_info):
-    """Convert a plugin provider to a struct with tools resolved to inputs."""
-    (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = plugin_info.tools)
-    return struct(
-        module = plugin_info.module,
-        deps = plugin_info.deps,
-        args = plugin_info.args,
-        tool_inputs = tool_inputs,
-        tool_input_manifests = tool_input_manifests,
-    )
-
 def _resolve_preprocessors(ctx, preprocessors):
     if not hasattr(ctx, "resolve_tools"):
         # No resolve_tools when ctx is faked (see protobuf.bzl).
@@ -146,37 +154,58 @@ def _resolve_preprocessors(ctx, preprocessors):
 
 def _expand_make_variables(name, ctx, strings):
     # All labels in all attributes should be location-expandable.
-    extra_label_attrs = [
-        ctx.attr.srcs,
-        ctx.attr.extra_srcs,
-        ctx.attr.data,
-        ctx.attr.plugins,
-        ctx.attr.tools,
-    ]
-    return expand_make_variables(name, ctx, strings, extra_label_attrs)
+    return expand_make_variables(name, ctx, strings, haskell_library_extra_label_attrs(ctx.attr))
+
+def haskell_module_from_target(m):
+    """ Produces the module name from a HaskellModuleInfo """
+    return paths.split_extension(get_module_path_from_target(m))[0].replace("/", ".")
+
+def is_main_as_haskell_module(modules, main_function):
+    main_module = infer_main_module(main_function).replace(".", "/")
+    for m in modules:
+        if haskell_module_from_target(m) == main_module:
+            return True
+    return False
 
 def _haskell_binary_common_impl(ctx, is_test):
     hs = haskell_context(ctx)
-    dep_info = gather_dep_info(ctx, ctx.attr.deps)
+    deps = ctx.attr.deps + ctx.attr.narrowed_deps
+    dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
+    all_deps_info = gather_dep_info(ctx.attr.name, deps)
+
+    modules = ctx.attr.modules
+    if modules and ctx.files.srcs:
+        fail("""Only one of "srcs" or "modules" attributes must be specified in {}""".format(ctx.label))
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins)
+    non_default_plugin_decl = reversed(ctx.attr.non_default_plugins)
+    all_plugin_decls = plugin_decl + non_default_plugin_decl
 
     plugin_dep_info = gather_dep_info(
-        ctx,
-        [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
+        ctx.attr.name,
+        [dep for plugin in all_plugin_decls for dep in plugin[GhcPluginInfo].deps],
     )
-    package_ids = all_dependencies_package_ids(ctx.attr.deps)
+    package_ids = all_dependencies_package_ids(deps)
 
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx)
-    java = java_interop_info(ctx)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
+    java = java_interop_info(deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
+    # Determine file directories.
+    interfaces_dir = paths.join("_iface", hs.name)
+    objects_dir = paths.join("_obj", hs.name)
+
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+    main_as_haskell_module = is_main_as_haskell_module(modules, ctx.attr.main_function)
+    module_map = determine_module_names(srcs_files, not main_as_haskell_module, ctx.attr.main_function, ctx.file.main_file)
     inspect_coverage = _should_inspect_coverage(ctx, hs, is_test)
 
     dynamic = not ctx.attr.linkstatic
@@ -187,9 +216,12 @@ def _haskell_binary_common_impl(ctx, is_test):
         # Also, static GHC doesn't support dynamic code
         dynamic = False
 
-    plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
+    module_outputs = build_haskell_modules(ctx, hs, cc, posix, "", dynamic, interfaces_dir, objects_dir)
+
+    plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
+    non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in non_default_plugin_decl]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_binary(
         hs,
         cc,
@@ -198,59 +230,64 @@ def _haskell_binary_common_impl(ctx, is_test):
         dep_info,
         plugin_dep_info,
         srcs = srcs_files,
-        ls_modules = ctx.executable._ls_modules,
+        module_map = module_map,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         user_compile_flags = user_compile_flags,
         dynamic = dynamic,
         with_profiling = with_profiling,
+        interfaces_dir = interfaces_dir,
+        objects_dir = objects_dir,
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         preprocessors = preprocessors,
     )
 
     # gather intermediary code coverage instrumentation data
     coverage_data = c.coverage_data
-    for dep in ctx.attr.deps:
+    for dep in deps:
         if HaskellCoverageInfo in dep:
             coverage_data += dep[HaskellCoverageInfo].coverage_data
             coverage_data = list.dedup_on(_get_mix_filepath, coverage_data)
 
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     (binary, solibs) = link_binary(
         hs,
         cc,
         posix,
-        dep_info,
+        all_deps_info,
         ctx.files.extra_srcs,
         user_compile_flags,
-        c.objects_dir,
+        c.object_files + c.dyn_object_files,
+        module_outputs.os,
         dynamic = dynamic,
         with_profiling = with_profiling,
         version = ctx.attr.version,
     )
 
     hs_info = HaskellInfo(
-        package_databases = dep_info.package_databases,
+        package_databases = all_deps_info.package_databases,
         version_macros = set.empty(),
         source_files = c.source_files,
+        boot_files = c.boot_files,
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
-        hs_libraries = dep_info.hs_libraries,
-        interface_dirs = dep_info.interface_dirs,
+        hs_libraries = all_deps_info.hs_libraries,
+        interface_dirs = all_deps_info.interface_dirs,
         compile_flags = c.compile_flags,
         user_compile_flags = user_compile_flags,
         user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
     )
     cc_info = cc_common.merge_cc_infos(
-        cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
+        cc_infos = [dep[CcInfo] for dep in deps if CcInfo in dep],
     )
 
     target_files = depset([binary])
 
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
     build_haskell_runghc(
         hs,
@@ -260,7 +297,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         extra_args = extra_args,
         user_compile_flags = user_compile_flags,
         output = ctx.outputs.runghc,
-        package_databases = dep_info.package_databases,
+        package_databases = all_deps_info.package_databases,
         version = ctx.attr.version,
         hs_info = hs_info,
     )
@@ -317,7 +354,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             ctx.file._bash_runfiles,
             hs.toolchain.tools.hpc,
             binary,
-        ] + mix_runfiles + srcs_runfiles + solibs
+        ] + mix_runfiles + srcs_runfiles + java.inputs.to_list()
 
     return [
         hs_info,
@@ -326,7 +363,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             executable = executable,
             files = target_files,
             runfiles = ctx.runfiles(
-                files = extra_runfiles,
+                files = extra_runfiles + solibs,
                 collect_data = True,
             ),
         ),
@@ -341,25 +378,84 @@ def _haskell_binary_common_impl(ctx, is_test):
         )),
     ]
 
+def _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling, empty_libs_dir):
+    """See Note [Empty Libraries]"""
+    dep_info = gather_dep_info("haskell_module-empty_lib", [])
+    empty_c = hs.actions.declare_file("empty.c")
+    hs.actions.write(empty_c, "")
+
+    static_library = link_library_static(
+        hs,
+        cc,
+        posix,
+        dep_info,
+        depset([empty_c]),
+        my_pkg_id,
+        with_profiling = with_profiling,
+        libdir = empty_libs_dir,
+    )
+    libs = [static_library]
+
+    if with_shared:
+        dynamic_library = link_library_dynamic(
+            hs,
+            cc,
+            posix,
+            dep_info,
+            depset(),
+            depset([empty_c]),
+            my_pkg_id,
+            [],
+            empty_libs_dir,
+        )
+        libs = [dynamic_library, static_library]
+
+    return libs
+
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
-    deps = ctx.attr.deps + ctx.attr.exports
-    dep_info = gather_dep_info(ctx, deps)
+    deps = ctx.attr.deps + ctx.attr.exports + ctx.attr.narrowed_deps
+    dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps + ctx.attr.exports)
+    narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
+    all_deps_info = gather_dep_info(ctx.attr.name, deps)
+    all_plugins = ctx.attr.plugins + ctx.attr.non_default_plugins
     plugin_dep_info = gather_dep_info(
-        ctx,
-        [dep for plugin in ctx.attr.plugins for dep in plugin[GhcPluginInfo].deps],
+        ctx.attr.name,
+        [dep for plugin in all_plugins for dep in plugin[GhcPluginInfo].deps],
     )
     package_ids = all_dependencies_package_ids(deps)
 
+    modules = ctx.attr.modules
+    if modules and ctx.files.srcs:
+        fail("""Only one of "srcs" or "modules" attributes must be specified in {}""".format(ctx.label))
+
+    if not modules and ctx.attr.narrowed_deps:
+        fail("""The attribute "narrowed_deps" is enabled only if "modules" is specified in {}""".format(ctx.label))
+
     # Add any interop info for other languages.
-    cc = cc_interop_info(ctx)
-    java = java_interop_info(ctx)
+    cc = cc_interop_info(
+        ctx,
+        override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+    )
+    java = java_interop_info(ctx.attr.deps + ctx.attr.narrowed_deps)
 
     # Make shell tools available.
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     with_profiling = is_profiling_enabled(hs)
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
+    module_map = determine_module_names(srcs_files)
+
+    package_name = getattr(ctx.attr, "package_name", None)
+    version = getattr(ctx.attr, "version", None)
+    my_pkg_id = pkg_id.new(ctx.label, package_name, version)
+
+    # If we're compiling a package, put the interfaces inside the
+    # package directory.
+    interfaces_dir = paths.join(pkg_id.to_string(my_pkg_id), "_iface")
+    objects_dir = paths.join("_obj", hs.name)
+
+    non_empty = srcs_files or modules
 
     with_shared = not ctx.attr.linkstatic
     if with_profiling or hs.toolchain.static_runtime:
@@ -369,13 +465,12 @@ def haskell_library_impl(ctx):
         # Also, static GHC doesn't support dynamic code
         with_shared = False
 
-    package_name = getattr(ctx.attr, "package_name", None)
-    version = getattr(ctx.attr, "version", None)
-    my_pkg_id = pkg_id.new(ctx.label, package_name, version)
+    module_outputs = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), with_shared, interfaces_dir, objects_dir)
 
-    plugins = [_resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
+    plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
+    non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
-    user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -384,48 +479,48 @@ def haskell_library_impl(ctx):
         dep_info,
         plugin_dep_info,
         srcs = srcs_files,
+        module_map = module_map,
         import_dir_map = import_dir_map,
         extra_srcs = depset(ctx.files.extra_srcs),
         user_compile_flags = user_compile_flags,
         with_shared = with_shared,
         with_profiling = with_profiling,
+        interfaces_dir = interfaces_dir,
+        objects_dir = objects_dir,
         my_pkg_id = my_pkg_id,
         plugins = plugins,
+        non_default_plugins = non_default_plugins,
         preprocessors = preprocessors,
     )
 
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.reexported_modules)
-    exposed_modules_file = list_exposed_modules(
-        hs,
-        ls_modules = ctx.executable._ls_modules,
-        other_modules = other_modules,
-        exposed_modules_reexports = exposed_modules_reexports,
-        interfaces_dir = c.interfaces_dir,
-        with_profiling = with_profiling,
-    )
+    haskell_module_names = [haskell_module_from_target(m) for m in modules]
+    exposed_modules = set.from_list(module_map.keys() + exposed_modules_reexports + haskell_module_names)
+    set.mutable_difference(exposed_modules, set.from_list(other_modules))
+    exposed_modules = set.to_list(exposed_modules)
 
-    if srcs_files:
+    if non_empty:
         static_library = link_library_static(
             hs,
             cc,
             posix,
-            dep_info,
-            c.objects_dir,
+            all_deps_info,
+            depset(c.object_files, transitive = [module_outputs.os]),
             my_pkg_id,
             with_profiling = with_profiling,
         )
     else:
         static_library = None
 
-    if with_shared and srcs_files:
+    if with_shared and non_empty:
         dynamic_library = link_library_dynamic(
             hs,
             cc,
             posix,
-            dep_info,
+            all_deps_info,
             depset(ctx.files.extra_srcs),
-            c.objects_dir,
+            depset(c.dyn_object_files, transitive = [module_outputs.dyn_os]),
             my_pkg_id,
             user_compile_flags,
         )
@@ -436,17 +531,31 @@ def haskell_library_impl(ctx):
         hs,
         cc,
         posix,
-        dep_info,
+        all_deps_info,
         with_shared,
-        exposed_modules_file,
+        exposed_modules,
         other_modules,
         my_pkg_id,
-        srcs_files != [],
+        non_empty,
+    )
+
+    empty_libs_dir = "empty_libs"
+    conf_file_empty, cache_file_empty = package(
+        hs,
+        cc,
+        posix,
+        all_deps_info,
+        with_shared,
+        exposed_modules,
+        other_modules,
+        my_pkg_id,
+        non_empty,
+        empty_libs_dir,
     )
 
     interface_dirs = depset(
-        direct = [c.interfaces_dir],
-        transitive = [dep_info.interface_dirs],
+        direct = c.interface_files,
+        transitive = [all_deps_info.interface_dirs, module_outputs.his, module_outputs.dyn_his],
     )
 
     version_macros = set.empty()
@@ -458,21 +567,38 @@ def haskell_library_impl(ctx):
             generate_version_macros(ctx, package_name, version),
         )
 
-    export_infos = gather_dep_info(ctx, ctx.attr.exports)
+    empty_libs = _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling, empty_libs_dir)
+
+    export_infos = gather_dep_info(ctx.attr.name, ctx.attr.exports)
     hs_info = HaskellInfo(
-        package_databases = depset([cache_file], transitive = [dep_info.package_databases, export_infos.package_databases]),
+        package_databases = depset([cache_file], transitive = [all_deps_info.package_databases, export_infos.package_databases]),
+        empty_lib_package_databases = depset(
+            direct = [cache_file_empty],
+            transitive = [
+                dep_info.package_databases,
+                narrowed_deps_info.empty_lib_package_databases,
+                export_infos.empty_lib_package_databases,
+            ],
+        ),
         version_macros = version_macros,
         source_files = c.source_files,
+        boot_files = c.boot_files,
         extra_source_files = c.extra_source_files,
         import_dirs = set.mutable_union(c.import_dirs, export_infos.import_dirs),
         hs_libraries = depset(
             direct = [lib for lib in [static_library, dynamic_library] if lib],
-            transitive = [dep_info.hs_libraries, export_infos.hs_libraries],
+            transitive = [all_deps_info.hs_libraries, export_infos.hs_libraries],
+        ),
+        empty_hs_libraries = depset(
+            direct = empty_libs,
+            transitive = [all_deps_info.empty_hs_libraries, export_infos.empty_hs_libraries],
         ),
         interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
         compile_flags = c.compile_flags,
         user_compile_flags = user_compile_flags,
         user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
+        per_module_transitive_interfaces = module_outputs.per_module_transitive_interfaces,
+        per_module_transitive_objects = module_outputs.per_module_transitive_objects,
     )
 
     exports = [
@@ -502,7 +628,7 @@ def haskell_library_impl(ctx):
 
     if hasattr(ctx, "outputs"):
         extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
-        user_compile_flags = _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
+        user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
         build_haskell_runghc(
             hs,
             cc,
@@ -511,7 +637,7 @@ def haskell_library_impl(ctx):
             extra_args = extra_args,
             user_compile_flags = user_compile_flags,
             output = ctx.outputs.runghc,
-            package_databases = dep_info.package_databases,
+            package_databases = all_deps_info.package_databases,
             version = ctx.attr.version,
             hs_info = hs_info,
             lib_info = lib_info,
@@ -522,7 +648,7 @@ def haskell_library_impl(ctx):
     if hasattr(ctx, "runfiles"):
         default_info = DefaultInfo(
             files = target_files,
-            runfiles = ctx.runfiles(collect_data = True),
+            runfiles = ctx.runfiles(transitive_files = java.inputs, collect_data = True),
         )
     else:
         default_info = DefaultInfo(
@@ -532,33 +658,37 @@ def haskell_library_impl(ctx):
     # Create a CcInfo provider so that CC rules can work with
     # a haskell library as if it was a regular CC one.
 
-    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
-    # Should be find_cpp_toolchain() instead.
-    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    # XXX: protobuf is passing a "patched ctx"
+    # which includes the real ctx as "real_ctx"
+    real_ctx = getattr(ctx, "real_ctx", ctx)
+    cc_toolchain = find_cc_toolchain(real_ctx)
     feature_configuration = cc_common.configure_features(
-        # XXX: protobuf is passing a "patched ctx"
-        # which includes the real ctx as "real_ctx"
-        ctx = getattr(ctx, "real_ctx", ctx),
+        ctx = real_ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
     )
     if dynamic_library or static_library:
-        libraries_to_link = [
-            cc_common.create_library_to_link(
-                actions = ctx.actions,
-                feature_configuration = feature_configuration,
-                dynamic_library = dynamic_library,
-                dynamic_library_symlink_path = dynamic_library.basename if dynamic_library else "",
-                static_library = static_library,
-                cc_toolchain = cc_toolchain,
+        linker_inputs = [
+            cc_common.create_linker_input(
+                owner = ctx.label,
+                libraries = depset(direct = [
+                    cc_common.create_library_to_link(
+                        actions = ctx.actions,
+                        feature_configuration = feature_configuration,
+                        dynamic_library = dynamic_library,
+                        dynamic_library_symlink_path = dynamic_library.basename if dynamic_library else "",
+                        static_library = static_library,
+                        cc_toolchain = cc_toolchain,
+                    ),
+                ]),
             ),
         ]
     else:
-        libraries_to_link = []
+        linker_inputs = []
     compilation_context = cc_common.create_compilation_context()
     linking_context = cc_common.create_linking_context(
-        libraries_to_link = libraries_to_link,
+        linker_inputs = depset(direct = linker_inputs),
     )
     out_cc_info = cc_common.merge_cc_infos(
         cc_infos = [
@@ -648,11 +778,9 @@ def _toolchain_library_symlink(dynamic_library):
 def haskell_toolchain_libraries_impl(ctx):
     hs = haskell_context(ctx)
     with_profiling = is_profiling_enabled(hs)
-    with_threaded = "-threaded" in hs.toolchain.compiler_flags
+    with_threaded = "-threaded" in hs.toolchain.ghcopts
 
-    # XXX Workaround https://github.com/bazelbuild/bazel/issues/6874.
-    # Should be find_cpp_toolchain() instead.
-    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
+    cc_toolchain = find_cc_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
         cc_toolchain = cc_toolchain,
@@ -727,25 +855,30 @@ def haskell_toolchain_libraries_impl(ctx):
                 if with_threaded:
                     libs["ffi"]["static"] = libs["Cffi_thr"]["static"]
                 libs.pop("Cffi_thr")
-        libraries_to_link = [
-            cc_common.create_library_to_link(
-                actions = ctx.actions,
-                feature_configuration = feature_configuration,
-                dynamic_library = lib.get("dynamic", None),
-                dynamic_library_symlink_path =
-                    _toolchain_library_symlink(lib["dynamic"]) if lib.get("dynamic") else "",
-                static_library = lib.get("static", None),
-                cc_toolchain = cc_toolchain,
-            )
-            for lib in libs.values()
+        linker_inputs = [
+            cc_common.create_linker_input(
+                owner = ctx.label,
+                libraries = depset(direct = [
+                    cc_common.create_library_to_link(
+                        actions = ctx.actions,
+                        feature_configuration = feature_configuration,
+                        dynamic_library = lib.get("dynamic", None),
+                        dynamic_library_symlink_path =
+                            _toolchain_library_symlink(lib["dynamic"]) if lib.get("dynamic") else "",
+                        static_library = lib.get("static", None),
+                        cc_toolchain = cc_toolchain,
+                    )
+                    for lib in libs.values()
+                ]),
+                user_link_flags = depset(direct = target[HaskellImportHack].linkopts),
+            ),
         ]
         compilation_context = cc_common.create_compilation_context(
             headers = target[HaskellImportHack].headers,
             includes = target[HaskellImportHack].includes,
         )
         linking_context = cc_common.create_linking_context(
-            libraries_to_link = libraries_to_link,
-            user_link_flags = target[HaskellImportHack].linkopts,
+            linker_inputs = depset(direct = linker_inputs),
         )
         cc_info = CcInfo(
             compilation_context = compilation_context,
@@ -768,11 +901,11 @@ haskell_toolchain_libraries = rule(
     haskell_toolchain_libraries_impl,
     attrs = {
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
     ],
     fragments = ["cpp"],
@@ -812,11 +945,14 @@ def haskell_import_impl(ctx):
     hs_info = HaskellInfo(
         # XXX Empty set of conf and cache files only works for global db.
         package_databases = depset(),
+        empty_lib_package_databases = depset(),
         version_macros = version_macros,
         source_files = depset(),
+        boot_files = depset(),
         extra_source_files = depset(),
         import_dirs = set.empty(),
         hs_libraries = depset(),
+        empty_hs_libraries = depset(),
         interface_dirs = depset(),
         compile_flags = [],
         user_compile_flags = [],

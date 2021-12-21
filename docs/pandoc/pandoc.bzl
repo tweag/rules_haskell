@@ -76,3 +76,15 @@ pandoc_toolchain(
 """,
             **kwargs
         )
+
+def _set_site_end_location(ctx):
+    return [
+        platform_common.TemplateVariableInfo({
+            "SITE_END_LOCATION": ctx.attr.site_end_location,
+        }),
+    ]
+
+set_site_end_location = rule(
+    implementation = _set_site_end_location,
+    attrs = {"site_end_location": attr.string()},
+)

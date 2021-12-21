@@ -1,0 +1,25 @@
+# Test that datafiles of a haskell_cabal_binary with generate_paths_module are accessible.
+
+load("@os_info//:os_info.bzl", "is_windows")
+
+package(default_testonly = 1)
+
+exe = ".exe" if is_windows else ""
+
+sh_test(
+    name = "test_cabal_binary_dep_datafiles".format(exe),
+    srcs = ["test_cabal_binary_dep_datafiles.sh"],
+    args = [
+        "$(rootpath //tests/haskell_cabal_datafiles/haskell_cabal_binary_with_datafiles:inside)",
+    ],
+    data = ["//tests/haskell_cabal_datafiles/haskell_cabal_binary_with_datafiles:inside"],
+    tags = ["skip_profiling"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

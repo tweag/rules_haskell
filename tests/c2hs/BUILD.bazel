@@ -11,16 +11,21 @@ c2hs_library(
     srcs = ["src/Foo/Foo.chs"],
     src_strip_prefix = "src",
     tags = [
-        "requires_c2hs",
-        "requires_zlib",
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
     ],
-    deps = ["@zlib.dev//:zlib"],
+    deps = ["//tests:zlib"],
 )
 
 c2hs_library(
     name = "bar",
     srcs = ["Bar.chs"],
-    tags = ["requires_c2hs"],
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+    ],
     deps = [":foo"],
 )
 
@@ -31,6 +36,17 @@ haskell_library(
         ":foo",
         "@c2hs_repo//:baz",
     ],
-    tags = ["requires_c2hs"],
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+    ],
     deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

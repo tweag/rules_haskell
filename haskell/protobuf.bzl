@@ -13,6 +13,7 @@ load(
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
 )
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(":private/pkg_id.bzl", "pkg_id")
 load(
     ":private/cc_libraries.bzl",
@@ -80,6 +81,7 @@ def _proto_path(proto, proto_source_roots):
     )
 
 def _haskell_proto_aspect_impl(target, ctx):
+    hs = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     pb = ctx.toolchains["@rules_haskell//protobuf:toolchain"].tools
 
     args = ctx.actions.args()
@@ -93,6 +95,9 @@ def _haskell_proto_aspect_impl(target, ctx):
 
     hs_files = []
     inputs = []
+
+    inputs.extend(hs.bindir)
+    inputs.extend(hs.libdir)
 
     direct_proto_paths = [target[ProtoInfo].proto_source_root]
     transitive_proto_paths = target[ProtoInfo].transitive_proto_path
@@ -109,7 +114,7 @@ def _haskell_proto_aspect_impl(target, ctx):
 
         # As with the native rules, require the .proto file to be in the same
         # Bazel package as the proto_library rule. This allows us to put the
-        # output .hs file next to the input .proto file. Unfortunately Skylark
+        # output .hs file next to the input .proto file. Unfortunately Starlark
         # doesn't let us check the package of the file directly, so instead we
         # just look at its short_path and rely on the proto_library rule itself
         # to check for consistency. We use the file's path rather than its
@@ -149,10 +154,16 @@ def _haskell_proto_aspect_impl(target, ctx):
         mnemonic = "HaskellProtoc",
         executable = pb.protoc,
         arguments = [args],
+        env = {
+            "RULES_HASKELL_GHC_PATH": hs.tools.ghc.path,
+            "RULES_HASKELL_GHC_PKG_PATH": hs.tools.ghc_pkg.path,
+            "RULES_HASKELL_LIBDIR_PATH": hs.libdir_path,
+            "RULES_HASKELL_DOCDIR_PATH": hs.docdir_path,
+        },
     )
 
     patched_attrs = {
-        "compiler_flags": [],
+        "ghcopts": [],
         "src_strip_prefix": "",
         "repl_interpreted": True,
         "repl_ghci_args": [],
@@ -164,10 +175,13 @@ def _haskell_proto_aspect_impl(target, ctx):
         "reexported_modules": {},
         "name": "proto-autogen-" + ctx.rule.attr.name,
         "srcs": hs_files,
+        "modules": [],
         "extra_srcs": [],
         "deps": ctx.rule.attr.deps +
                 ctx.toolchains["@rules_haskell//protobuf:toolchain"].deps,
+        "narrowed_deps": [],
         "plugins": [],
+        "non_default_plugins": [],
         "data": [],
         "tools": [],
         "_cc_toolchain": ctx.attr._cc_toolchain,
@@ -180,7 +194,6 @@ def _haskell_proto_aspect_impl(target, ctx):
         bin_dir = ctx.bin_dir,
         disabled_features = ctx.rule.attr.features,
         executable = struct(
-            _ls_modules = ctx.executable._ls_modules,
             _ghc_wrapper = ctx.executable._ghc_wrapper,
             worker = None,
         ),
@@ -267,13 +280,8 @@ _haskell_proto_aspect = aspect(
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
         ),
-        "_ls_modules": attr.label(
-            executable = True,
-            cfg = "host",
-            default = Label("@rules_haskell//haskell:ls_modules"),
-        ),
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
         "_ghc_wrapper": attr.label(
             executable = True,
@@ -283,7 +291,7 @@ _haskell_proto_aspect = aspect(
     },
     provides = [HaskellProtobufInfo],
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//protobuf:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
@@ -362,17 +370,14 @@ _protobuf_toolchain = rule(
             cfg = "host",
             allow_single_file = True,
             mandatory = True,
-            doc = "protoc compiler",
         ),
         "plugin": attr.label(
             executable = True,
             cfg = "host",
             allow_single_file = True,
             mandatory = True,
-            doc = "proto-lens-protoc plugin for protoc",
         ),
         "deps": attr.label_list(
-            doc = "List of other Haskell libraries to be linked to protobuf libraries.",
             aspects = [haskell_cc_libraries_aspect],
         ),
     },
@@ -436,6 +441,12 @@ def haskell_proto_toolchain(
         "//tests:protobuf-toolchain",
       )
       ```
+
+    Args:
+      name: A unique name for this toolchain.
+      protoc: Protoc compiler.
+      plugin: Proto-lens-protoc plugin for protoc.
+      deps: List of other Haskell libraries to be linked to protobuf libraries.
 
     """
     impl_name = name + "-impl"

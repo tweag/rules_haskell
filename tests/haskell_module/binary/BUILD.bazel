@@ -1,0 +1,48 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_test",
+)
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+package(default_testonly = 1)
+
+haskell_binary(
+    name = "TestBin",
+    modules = [
+        ":Main",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "Test",
+    modules = [
+        ":TestBinModule",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "TestBinModule",
+    src = "TestBin.hs",
+    module_name = "Main",
+)
+
+haskell_module(
+    name = "Main",
+    src = "Main.hs",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

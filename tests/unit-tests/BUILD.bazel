@@ -123,3 +123,10 @@ create_rpath_entry_test(
 dedup_on_test(
     name = "dedup_on_test",
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

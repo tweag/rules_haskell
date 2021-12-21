@@ -15,9 +15,7 @@ module Data.Primitive (
   module Data.Primitive.Types
   ,module Data.Primitive.Array
   ,module Data.Primitive.ByteArray
-  ,module Data.Primitive.Addr
   ,module Data.Primitive.SmallArray
-  ,module Data.Primitive.UnliftedArray
   ,module Data.Primitive.PrimArray
   ,module Data.Primitive.MutVar
   -- * Naming Conventions
@@ -27,9 +25,7 @@ module Data.Primitive (
 import Data.Primitive.Types
 import Data.Primitive.Array
 import Data.Primitive.ByteArray
-import Data.Primitive.Addr
 import Data.Primitive.SmallArray
-import Data.Primitive.UnliftedArray
 import Data.Primitive.PrimArray
 import Data.Primitive.MutVar
 
@@ -73,6 +69,9 @@ include:
 * 'IO' and 'ST'
 * Any combination of 'MaybeT', 'ExceptT', 'StateT' and 'Writer' on top
   of another sufficiently affine monad.
+* Any Monad which does not include backtracking or other mechanism where an effect can
+happen more than once is an Affine Monad in the sense we care about. ContT, LogicT, ListT are all
+examples of search/control monads which are NOT affine: they can run a sub computation more than once.
 
 There is one situation where the names deviate from effectful suffix convention
 described above. Throughout the haskell ecosystem, the 'Applicative' variant of

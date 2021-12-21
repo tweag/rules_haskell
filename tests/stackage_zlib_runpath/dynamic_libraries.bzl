@@ -3,13 +3,14 @@ def _dynamic_libraries_impl(ctx):
     solib_names = []
     for target in ctx.attr.srcs:
         cc_info = target[CcInfo]
-        for library_to_link in cc_info.linking_context.libraries_to_link.to_list():
-            library = library_to_link.resolved_symlink_dynamic_library
-            if not library or library.basename.find(ctx.attr.filter) == -1:
-                continue
-            outputs.append(library)
-            if library_to_link.dynamic_library:
-                solib_names.append(library_to_link.dynamic_library.short_path)
+        for li in cc_info.linking_context.linker_inputs.to_list():
+            for library_to_link in li.libraries:
+                library = library_to_link.resolved_symlink_dynamic_library
+                if not library or library.basename.find(ctx.attr.filter) == -1:
+                    continue
+                outputs.append(library)
+                if library_to_link.dynamic_library:
+                    solib_names.append(library_to_link.dynamic_library.short_path)
     if ctx.attr.solib_names:
         ctx.actions.write(
             ctx.outputs.solib_names,

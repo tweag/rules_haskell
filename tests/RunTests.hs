@@ -3,35 +3,51 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 
+import Control.Exception.Safe (bracket_)
 import Data.Foldable (for_)
 import Data.List (isInfixOf, sort)
+import System.Directory (copyFile)
 import System.Exit (ExitCode(..))
+import System.FilePath ((</>))
 import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
-import Test.Hspec (hspec, it, describe, runIO, shouldSatisfy, expectationFailure)
+import Test.Hspec (context, hspec, it, describe, runIO, shouldSatisfy, expectationFailure)
 
 main :: IO ()
 main = hspec $ do
-  it "bazel lint" $ do
-    assertSuccess (bazel ["run", "//:buildifier"])
-
   it "bazel test" $ do
-    assertSuccess (bazel ["test", "//...", "--build_tests_only"])
+    assertSuccess (bazel ["test", "//..."])
 
   it "bazel test prof" $ do
-    -- In .circleci/config.yml we specify --test_tag_filters
+    -- In .github/workflows/workflow.yaml we specify --test_tag_filters
     -- -dont_test_on_darwin. However, specifiying --test_tag_filters
     -- -requires_dynamic here alone would override that filter. So,
     -- we have to duplicate that filter here.
-    let tagFilter | os == "darwin" = "-dont_test_on_darwin,-requires_dynamic"
-                  | otherwise      = "-requires_dynamic"
-    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tests_only", "--test_tag_filters", tagFilter])
+    let tagFilter | os == "darwin" = "-dont_test_on_darwin,-requires_dynamic,-skip_profiling"
+                  | otherwise      = "-requires_dynamic,-skip_profiling"
+    assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tag_filters", tagFilter, "--test_tag_filters", tagFilter])
 
   it "bazel build worker" $ do
     assertSuccess (bazel ["build", "//tools/worker:bin"])
+
+  describe "stack_snapshot pinning" $
+    it "handles packages in subdirectories correctly" $ do
+      -- NOTE Keep in sync with
+      --   .github/workflows/workflow.yaml
+      let withBackup filename k =
+            withSystemTempDirectory "bazel_backup" $ \tmp_dir -> do
+              bracket_
+                (copyFile filename (tmp_dir </> "backup"))
+                (copyFile (tmp_dir </> "backup") filename)
+                k
+      -- Test that pinning works and produces buildable targets.
+      -- Backup the lock file to avoid unintended changes when run locally.
+      withBackup "stackage-pinning-test_snapshot.json" $ do
+        assertSuccess (bazel ["run", "@stackage-pinning-test-unpinned//:pin"])
+        assertSuccess (bazel ["build", "@stackage-pinning-test//:hspec"])
 
   describe "repl" $ do
     it "for libraries" $ do
@@ -48,6 +64,9 @@ main = hspec $ do
     it "with rebindable syntax" $ do
       let p' (stdout, _stderr) = lines stdout == ["True"]
       outputSatisfy p' (bazel ["run", "//tests/repl-targets:rebindable-syntax@repl", "--", "-ignore-dot-ghci", "-e", "check"])
+
+    it "sets classpath" $ do
+      assertSuccess (bazel ["run", "//tests/java_classpath:java_classpath@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
     -- Test `compiler_flags` from toolchain and rule for REPL
     it "compiler flags" $ do
@@ -96,6 +115,11 @@ main = hspec $ do
     for_ all_failure_tests $ \test -> do
       it test $ do
         assertFailure (bazel ["build", test])
+
+    context "known issues" $
+      it "haskell_doc fails with plugins #1549" $
+        -- https://github.com/tweag/rules_haskell/issues/1549
+        assertFailure (bazel ["build", "//tests/haddock-with-plugin"])
 
   -- Test that the repl still works if we shadow some Prelude functions
   it "repl name shadowing" $ do
@@ -155,11 +179,6 @@ assertFailure cmd = do
   case exitCode of
     ExitFailure _ -> pure ()
     ExitSuccess -> expectationFailure ("Unexpected success of a failure test with output:\n" ++ formatOutput exitCode stdout stderr)
-
--- | Execute in a sub shell the list of command
--- This will fail if any of the command in the list fail
-safeShell :: [String] -> Process.CreateProcess
-safeShell l = Process.shell (unlines ("set -e":l))
 
 -- * Formatting helpers
 

@@ -21,7 +21,7 @@ haskell_library(
         "src/Bazel/Arg0.hs",
         "src/Bazel/Runfiles.hs",
     ],
-    compiler_flags = [
+    ghcopts = [
         "-Wall",
         "-Wextra",
         "-Werror",
@@ -66,4 +66,11 @@ haskell_test(
         ":process",
         ":runfiles",
     ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

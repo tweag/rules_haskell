@@ -14,5 +14,13 @@ haskell_test(
         "-with-rtsopts=-N2 -qg -I0 -n2m -A128m",
         "-XLambdaCase",
     ],
+    visibility = ["//tests/asterius/binary-with-compiler-flags:__pkg__"],
     deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

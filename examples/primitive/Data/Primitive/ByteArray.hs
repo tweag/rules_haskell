@@ -61,7 +61,7 @@ import GHC.Base ( Int(..) )
 #if __GLASGOW_HASKELL__ >= 708
 import qualified GHC.Exts as Exts ( IsList(..) )
 #endif
-import GHC.Prim
+import GHC.Exts
 #if __GLASGOW_HASKELL__ >= 706
     hiding (setByteArray#)
 #endif
@@ -127,17 +127,17 @@ newAlignedPinnedByteArray (I# n#) (I# k#)
 -- | Yield a pointer to the array's data. This operation is only safe on
 -- /pinned/ byte arrays allocated by 'newPinnedByteArray' or
 -- 'newAlignedPinnedByteArray'.
-byteArrayContents :: ByteArray -> Addr
+byteArrayContents :: ByteArray -> Ptr Word8
 {-# INLINE byteArrayContents #-}
-byteArrayContents (ByteArray arr#) = Addr (byteArrayContents# arr#)
+byteArrayContents (ByteArray arr#) = Ptr (byteArrayContents# arr#)
 
 -- | Yield a pointer to the array's data. This operation is only safe on
 -- /pinned/ byte arrays allocated by 'newPinnedByteArray' or
 -- 'newAlignedPinnedByteArray'.
-mutableByteArrayContents :: MutableByteArray s -> Addr
+mutableByteArrayContents :: MutableByteArray s -> Ptr Word8
 {-# INLINE mutableByteArrayContents #-}
 mutableByteArrayContents (MutableByteArray arr#)
-  = Addr (byteArrayContents# (unsafeCoerce# arr#))
+  = Ptr (byteArrayContents# (unsafeCoerce# arr#))
 
 -- | Check if the two arrays refer to the same memory block.
 sameMutableByteArray :: MutableByteArray s -> MutableByteArray s -> Bool
@@ -208,7 +208,7 @@ sizeofByteArray :: ByteArray -> Int
 {-# INLINE sizeofByteArray #-}
 sizeofByteArray (ByteArray arr#) = I# (sizeofByteArray# arr#)
 
--- | Size of the mutable byte array in bytes. This function\'s behavior 
+-- | Size of the mutable byte array in bytes. This function\'s behavior
 -- is undefined if 'resizeMutableByteArray' is ever called on the mutable
 -- byte array given as the argument. Consequently, use of this function
 -- is discouraged. Prefer 'getSizeofMutableByteArray', which ensures correct
@@ -261,12 +261,13 @@ writeByteArray (MutableByteArray arr#) (I# i#) x
 
 -- | Right-fold over the elements of a 'ByteArray'.
 foldrByteArray :: forall a b. (Prim a) => (a -> b -> b) -> b -> ByteArray -> b
+{-# INLINE foldrByteArray #-}
 foldrByteArray f z arr = go 0
   where
     go i
-      | sizeofByteArray arr > i * sz = f (indexByteArray arr i) (go (i+1))
-      | otherwise                    = z
-    sz = sizeOf (undefined :: a)
+      | i < maxI  = f (indexByteArray arr i) (go (i+1))
+      | otherwise = z
+    maxI = sizeofByteArray arr `quot` sizeOf (undefined :: a)
 
 byteArrayFromList :: Prim a => [a] -> ByteArray
 byteArrayFromList xs = byteArrayFromListN (length xs) xs
@@ -325,13 +326,13 @@ copyMutableByteArray (MutableByteArray dst#) doff
 --   @since 0.6.4.0
 copyByteArrayToAddr
   :: PrimMonad m
-  => Addr -- ^ destination
+  => Ptr Word8 -- ^ destination
   -> ByteArray -- ^ source array
   -> Int -- ^ offset into source array
   -> Int -- ^ number of bytes to copy
   -> m ()
 {-# INLINE copyByteArrayToAddr #-}
-copyByteArrayToAddr (Addr dst#) (ByteArray src#) soff sz
+copyByteArrayToAddr (Ptr dst#) (ByteArray src#) soff sz
   = primitive_ (copyByteArrayToAddr# src# (unI# soff) dst# (unI# sz))
 
 -- | Copy a slice of a mutable byte array to an unmanaged address. These must
@@ -341,13 +342,13 @@ copyByteArrayToAddr (Addr dst#) (ByteArray src#) soff sz
 --   @since 0.6.4.0
 copyMutableByteArrayToAddr
   :: PrimMonad m
-  => Addr -- ^ destination
+  => Ptr Word8 -- ^ destination
   -> MutableByteArray (PrimState m) -- ^ source array
   -> Int -- ^ offset into source array
   -> Int -- ^ number of bytes to copy
   -> m ()
 {-# INLINE copyMutableByteArrayToAddr #-}
-copyMutableByteArrayToAddr (Addr dst#) (MutableByteArray src#) soff sz
+copyMutableByteArrayToAddr (Ptr dst#) (MutableByteArray src#) soff sz
   = primitive_ (copyMutableByteArrayToAddr# src# (unI# soff) dst# (unI# sz))
 #endif
 
@@ -461,7 +462,7 @@ instance Eq ByteArray where
 -- | Non-lexicographic ordering. This compares the lengths of
 -- the byte arrays first and uses a lexicographic ordering if
 -- the lengths are equal. Subject to change between major versions.
--- 
+--
 -- @since 0.6.3.0
 instance Ord ByteArray where
   ba1@(ByteArray ba1#) `compare` ba2@(ByteArray ba2#)

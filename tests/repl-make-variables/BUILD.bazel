@@ -11,6 +11,7 @@ haskell_test(
     srcs = ["Main.hs"],
     compiler_flags = ['-DDATA="$(rootpath data.txt)"'],
     data = ["data.txt"],
+    visibility = ["//tests/asterius/repl-make-variables:__pkg__"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:filepath",
@@ -56,4 +57,11 @@ haskell_repl(
     data = ["data.txt"],
     repl_ghci_args = ['-DDATA="$(rootpath data.txt)"'],
     deps = [":test-no-flags"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

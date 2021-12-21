@@ -35,7 +35,11 @@ haskell_test(
 c2hs_library(
     name = "c2hs-lib",
     srcs = ["C2hsLib.chs"],
-    tags = ["requires_c2hs"],
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+    ],
     version = "4.5.6.7",
     deps = [
         ":versioned-lib",
@@ -50,10 +54,23 @@ haskell_test(
         "MainC2hs.hs",
         ":c2hs-lib",
     ],
-    tags = ["requires_c2hs"],
+    main_file = "MainC2hs.hs",
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+    ],
     version = "4.5.6.7",
+    visibility = ["//tests/asterius/version-macros:__pkg__"],
     deps = [
         ":versioned-lib",
         "//tests/hackage:base",
     ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

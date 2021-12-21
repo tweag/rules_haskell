@@ -14,8 +14,16 @@ haskell_test(
     extra_srcs = [
         "unicode.txt",
     ],
+    visibility = ["//tests/asterius/encoding:__pkg__"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
     ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

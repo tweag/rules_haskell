@@ -4,15 +4,20 @@ HaskellInfo = provider(
     doc = "Common information about build process: dependencies, etc.",
     fields = {
         "package_databases": "Depset of package cache files.",
+        "empty_lib_package_databases": "Depset of package cache files corresponding to empty libraries.",
         "version_macros": "Depset of version macro files.",
         "import_dirs": "Import hierarchy roots.",
         "source_files": "Depset of files that contain Haskell modules.",
+        "boot_files": "Depset of Haskell boot files",
         "extra_source_files": "Depset of non-Haskell source files.",
         "hs_libraries": "Depset of compiled Haskell libraries in all available GHC ways.",
+        "empty_hs_libraries": "Depset of compiled empty Haskell libraries in all available GHC ways.",
         "interface_dirs": "Depset of interface dirs belonging to the packages.",
         "compile_flags": "Arguments that were used to compile the code.",
         "user_compile_flags": "Compiler flags specified by the user, after location expansion.",
         "user_repl_flags": "REPL flags specified by the user, after location expansion.",
+        "per_module_transitive_interfaces": "Dict of module labels to depsets of interface files of transitive module dependencies",
+        "per_module_transitive_objects": "Dict of module labels to depsets of object files of transitive module dependencies",
     },
 )
 

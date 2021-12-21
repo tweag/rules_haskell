@@ -15,11 +15,23 @@ load(
 
 package(default_visibility = ["//visibility:public"])
 
+%{toolchain_libraries}
+
 %{toolchain}
 
 filegroup(
     name = "bin",
     srcs = glob(["bin/*"]),
+)
+
+filegroup(
+    name = "lib",
+    srcs = glob(["lib/**"]),
+)
+
+filegroup(
+    name = "%{docdir}",
+    srcs = glob(["%{docdir}/**"]),
 )
 
 # Expose embedded MinGW toolchain when on Windows.

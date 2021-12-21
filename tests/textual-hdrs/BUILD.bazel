@@ -11,7 +11,14 @@ haskell_test(
         "Main.hs",
         "include/main_definition.h",
     ],
-    compiler_flags = ["-Itests/textual-hdrs/include"],
+    ghcopts = ["-Itests/textual-hdrs/include"],
     visibility = ["//visibility:public"],
     deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
 )

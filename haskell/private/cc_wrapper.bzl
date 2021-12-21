@@ -1,9 +1,41 @@
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_python//python:defs.bzl", "py_binary")
 
+# Note [On configuring the cc_wrapper]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# The cc_wrapper provides a thin compatibility layer between GHC and
+# the cc-toolchain that Bazel provides. It is a script that GHC will
+# invoke as the C compiler (pgmc) and that itself will invoke the C
+# compiler provided by Bazel's cc-toolchain. Therefore cc_wrapper only
+# needs the cc-toolchain at runtime, i.e. when building Haskell
+# binaries. More importantly, in case of cross-compilation, cc_wrapper
+# needs a cc-toolchain that targets the platform that we are building
+# the Haskell binary for.
+#
+# However, we do not have control over the arguments that GHC passes
+# to the cc_wrapper in all cases. Meaning, we cannot use command line
+# arguments to configure cc_wrapper to use a particular cc-toolchain.
+# Instead, we use environment variables to pass all relevant
+# information about the cc-toolchain to cc_wrapper.
+#
+# Unfortunately, environment variables are not available in the IDE
+# use-case, because we cannot specify environment variables at the
+# hie-bios interface. To work around this limitation, we configure a
+# fall-back cc-toolchain as a build-time dependency to cc_wrapper.
+#
+# Note, Bazel will not resolve the desired cc-toolchain at this
+# build-time dependency in case of cross-compilation. The cc_wrapper
+# is a dependency to the hs-toolchain and Bazel will build it to
+# target the build platform (execute) instead of the ultimate target
+# platform (target). Therefore, the fall-back cc-toolchain will not
+# target the cross-platform and should not be used for any build
+# actions.
+#
+
 def _cc_wrapper_impl(ctx):
-    cc_toolchain = find_cpp_toolchain(ctx)
+    cc_toolchain = find_cc_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
         cc_toolchain = cc_toolchain,
@@ -41,12 +73,16 @@ _cc_wrapper = rule(
             allow_single_file = True,
         ),
         "platform": attr.string(),
+        # See note [On configuring the cc_wrapper]
+        #
+        # TODO: Consider using execution groups to transition the toolchain
+        # to the target platform.
         "_cc_toolchain": attr.label(
-            default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
     fragments = ["cpp"],
-    toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
+    toolchains = ["@rules_cc//cc:toolchain_type"],
 )
 
 def cc_wrapper(name, **kwargs):

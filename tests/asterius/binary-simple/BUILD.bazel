@@ -1,0 +1,6 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+
+asterius_test_macro(
+    "//tests/binary-simple",
+    test_entry_point = "test_entry_point.mjs",
+)

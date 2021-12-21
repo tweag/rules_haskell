@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP, DeriveDataTypeable, FlexibleInstances, MagicHash, MultiParamTypeClasses, ScopedTypeVariables #-}
 
+
+
 -- |
 -- Module      : Data.Vector.Storable.Mutable
 -- Copyright   : (c) Roman Leshchinskiy 2009-2010
@@ -31,7 +33,7 @@ module Data.Vector.Storable.Mutable(
   -- * Construction
 
   -- ** Initialisation
-  new, unsafeNew, replicate, replicateM, clone,
+  new, unsafeNew, replicate, replicateM, generate, generateM, clone,
 
   -- ** Growing
   grow, unsafeGrow,
@@ -40,10 +42,18 @@ module Data.Vector.Storable.Mutable(
   clear,
 
   -- * Accessing individual elements
-  read, write, modify, swap,
-  unsafeRead, unsafeWrite, unsafeModify, unsafeSwap,
+  read, write, modify, modifyM, swap, exchange,
+  unsafeRead, unsafeWrite, unsafeModify, unsafeModifyM, unsafeSwap, unsafeExchange,
+
+  -- * Folds
+  mapM_, imapM_, forM_, iforM_,
+  foldl, foldl', foldM, foldM',
+  foldr, foldr', foldrM, foldrM',
+  ifoldl, ifoldl', ifoldM, ifoldM',
+  ifoldr, ifoldr', ifoldrM, ifoldrM',
 
   -- * Modifying vectors
+  nextPermutation,
 
   -- ** Filling and copying
   set, copy, move, unsafeCopy, unsafeMove,
@@ -51,13 +61,18 @@ module Data.Vector.Storable.Mutable(
   -- * Unsafe conversions
   unsafeCast,
 
+
   -- * Raw pointers
   unsafeFromForeignPtr, unsafeFromForeignPtr0,
   unsafeToForeignPtr,   unsafeToForeignPtr0,
   unsafeWith
 ) where
 
-import Control.DeepSeq ( NFData(rnf) )
+import Control.DeepSeq ( NFData(rnf)
+#if MIN_VERSION_deepseq(1,4,3)
+                       , NFData1(liftRnf)
+#endif
+                       )
 
 import qualified Data.Vector.Generic.Mutable as G
 import Data.Vector.Storable.Internal
@@ -74,24 +89,29 @@ import GHC.Prim (byteArrayContents#, unsafeCoerce#)
 import GHC.ForeignPtr
 #endif
 
-import Foreign.Ptr
+import GHC.Base ( Int(..) )
+
+import Foreign.Ptr (castPtr,plusPtr)
 import Foreign.Marshal.Array ( advancePtr, copyArray, moveArray )
 
 import Control.Monad.Primitive
-import Data.Primitive.Addr
 import Data.Primitive.Types (Prim)
+import qualified Data.Primitive.Types as DPT
 
 import GHC.Word (Word8, Word16, Word32, Word64)
 import GHC.Ptr (Ptr(..))
 
 import Prelude hiding ( length, null, replicate, reverse, map, read,
-                        take, drop, splitAt, init, tail )
+                        take, drop, splitAt, init, tail, foldr, foldl, mapM_ )
 
 import Data.Typeable ( Typeable )
+
 
 -- Data.Vector.Internal.Check is not needed
 #define NOT_VECTOR_MODULE
 #include "vector.h"
+
+
 
 -- | Mutable 'Storable'-based vectors
 data MVector s a = MVector {-# UNPACK #-} !Int
@@ -103,6 +123,11 @@ type STVector s = MVector s
 
 instance NFData (MVector s a) where
   rnf (MVector _ _) = ()
+
+#if MIN_VERSION_deepseq(1,4,3)
+instance NFData1 (MVector s) where
+  liftRnf _ (MVector _ _) = ()
+#endif
 
 instance Storable a => G.MVector MVector a where
   {-# INLINE basicLength #-}
@@ -128,7 +153,7 @@ instance Storable a => G.MVector MVector a where
         fp <- mallocVector n
         return $ MVector n fp
     where
-      size = sizeOf (undefined :: a)
+      size = sizeOf (undefined :: a) `max` 1
       mx = maxBound `quot` size :: Int
 
   {-# INLINE basicInitialize #-}
@@ -137,12 +162,12 @@ instance Storable a => G.MVector MVector a where
   {-# INLINE basicUnsafeRead #-}
   basicUnsafeRead (MVector _ fp) i
     = unsafePrimToPrim
-    $ withForeignPtr fp (`peekElemOff` i)
+    $ unsafeWithForeignPtr fp (`peekElemOff` i)
 
   {-# INLINE basicUnsafeWrite #-}
   basicUnsafeWrite (MVector _ fp) i x
     = unsafePrimToPrim
-    $ withForeignPtr fp $ \p -> pokeElemOff p i x
+    $ unsafeWithForeignPtr fp $ \p -> pokeElemOff p i x
 
   {-# INLINE basicSet #-}
   basicSet = storableSet
@@ -150,26 +175,24 @@ instance Storable a => G.MVector MVector a where
   {-# INLINE basicUnsafeCopy #-}
   basicUnsafeCopy (MVector n fp) (MVector _ fq)
     = unsafePrimToPrim
-    $ withForeignPtr fp $ \p ->
-      withForeignPtr fq $ \q ->
+    $ unsafeWithForeignPtr fp $ \p ->
+      unsafeWithForeignPtr fq $ \q ->
       copyArray p q n
 
   {-# INLINE basicUnsafeMove #-}
   basicUnsafeMove (MVector n fp) (MVector _ fq)
     = unsafePrimToPrim
-    $ withForeignPtr fp $ \p ->
-      withForeignPtr fq $ \q ->
+    $ unsafeWithForeignPtr fp $ \p ->
+      unsafeWithForeignPtr fq $ \q ->
       moveArray p q n
 
 storableZero :: forall a m. (Storable a, PrimMonad m) => MVector (PrimState m) a -> m ()
 {-# INLINE storableZero #-}
-storableZero (MVector n fp) = unsafePrimToPrim . withForeignPtr fp $ \(Ptr p) -> do
-  let q = Addr p
-  setAddr q byteSize (0 :: Word8)
+storableZero (MVector n fp) = unsafePrimToPrim . unsafeWithForeignPtr fp $ \ptr-> do
+  memsetPrimPtr_vector (castPtr ptr) byteSize (0 :: Word8)
  where
  x :: a
  x = undefined
-
  byteSize :: Int
  byteSize = n * sizeOf x
 
@@ -183,7 +206,7 @@ storableSet (MVector n fp) x
                   2 -> storableSetAsPrim n fp x (undefined :: Word16)
                   4 -> storableSetAsPrim n fp x (undefined :: Word32)
                   8 -> storableSetAsPrim n fp x (undefined :: Word64)
-                  _ -> withForeignPtr fp $ \p -> do
+                  _ -> unsafeWithForeignPtr fp $ \p -> do
                        poke p x
 
                        let do_set i
@@ -195,13 +218,34 @@ storableSet (MVector n fp) x
                        do_set 1
 
 storableSetAsPrim
-  :: (Storable a, Prim b) => Int -> ForeignPtr a -> a -> b -> IO ()
+  :: forall a b . (Storable a, Prim b) => Int -> ForeignPtr a -> a -> b -> IO ()
 {-# INLINE [0] storableSetAsPrim #-}
-storableSetAsPrim n fp x y = withForeignPtr fp $ \(Ptr p) -> do
-  poke (Ptr p) x
-  let q = Addr p
-  w <- readOffAddr q 0
-  setAddr (q `plusAddr` sizeOf x) (n-1) (w `asTypeOf` y)
+storableSetAsPrim n fp x _y = unsafeWithForeignPtr fp $ \ ptr  -> do
+    poke ptr x
+     -- we dont equate storable and prim reps, so we need to write to a slot
+     -- in storable
+     -- then read it back as a prim
+    w<- peakPrimPtr_vector ((castPtr ptr) :: Ptr  b) 0
+    memsetPrimPtr_vector ((castPtr ptr) `plusPtr` sizeOf x ) (n-1)  w
+
+
+
+{-
+AFTER primitive 0.7 is pretty old, move to using setPtr. which is really
+a confusing misnomer for whats often called memset (intialize )
+-}
+-- Fill a memory block with the given value. The length is in
+-- elements of type @a@ rather than in bytes.
+memsetPrimPtr_vector :: forall a c m. (Prim c, PrimMonad m) => Ptr a -> Int -> c -> m ()
+memsetPrimPtr_vector (Ptr addr#) (I# n#) x = primitive_ (DPT.setOffAddr# addr# 0# n# x)
+{-# INLINE memsetPrimPtr_vector #-}
+
+
+-- Read a value from a memory position given by an address and an offset.
+-- The offset is in elements of type @a@ rather than in bytes.
+peakPrimPtr_vector :: (Prim a, PrimMonad m) => Ptr a -> Int -> m a
+peakPrimPtr_vector (Ptr addr#) (I# i#) = primitive (DPT.readOffAddr# addr# i#)
+{-# INLINE peakPrimPtr_vector #-}
 
 {-# INLINE mallocVector #-}
 mallocVector :: Storable a => Int -> IO (ForeignPtr a)
@@ -246,8 +290,13 @@ null = G.null
 -- Extracting subvectors
 -- ---------------------
 
--- | Yield a part of the mutable vector without copying it.
-slice :: Storable a => Int -> Int -> MVector s a -> MVector s a
+-- | Yield a part of the mutable vector without copying it. The vector must
+-- contain at least @i+n@ elements.
+slice :: Storable a
+      => Int  -- ^ @i@ starting index
+      -> Int  -- ^ @n@ length
+      -> MVector s a
+      -> MVector s a
 {-# INLINE slice #-}
 slice = G.slice
 
@@ -313,7 +362,11 @@ new :: (PrimMonad m, Storable a) => Int -> m (MVector (PrimState m) a)
 {-# INLINE new #-}
 new = G.new
 
--- | Create a mutable vector of the given length. The memory is not initialized.
+-- | Create a mutable vector of the given length. The vector content
+--   is uninitialized, which means it is filled with whatever underlying memory
+--   buffer happens to contain.
+--
+-- @since 0.5
 unsafeNew :: (PrimMonad m, Storable a) => Int -> m (MVector (PrimState m) a)
 {-# INLINE unsafeNew #-}
 unsafeNew = G.unsafeNew
@@ -330,6 +383,23 @@ replicateM :: (PrimMonad m, Storable a) => Int -> m a -> m (MVector (PrimState m
 {-# INLINE replicateM #-}
 replicateM = G.replicateM
 
+-- | /O(n)/ Create a mutable vector of the given length (0 if the length is negative)
+-- and fill it with the results of applying the function to each index.
+--
+-- @since 0.12.3.0
+generate :: (PrimMonad m, Storable a) => Int -> (Int -> a) -> m (MVector (PrimState m) a)
+{-# INLINE generate #-}
+generate = G.generate
+
+-- | /O(n)/ Create a mutable vector of the given length (0 if the length is
+-- negative) and fill it with the results of applying the monadic function to each
+-- index. Iteration starts at index 0.
+--
+-- @since 0.12.3.0
+generateM :: (PrimMonad m, Storable a) => Int -> (Int -> m a) -> m (MVector (PrimState m) a)
+{-# INLINE generateM #-}
+generateM = G.generateM
+
 -- | Create a copy of a mutable vector.
 clone :: (PrimMonad m, Storable a)
       => MVector (PrimState m) a -> m (MVector (PrimState m) a)
@@ -339,15 +409,50 @@ clone = G.clone
 -- Growing
 -- -------
 
--- | Grow a vector by the given number of elements. The number must be
--- positive.
+-- | Grow a storable vector by the given number of elements. The number must be
+-- non-negative. Same semantics as in `G.grow` for generic vector.
+--
+-- ====__Examples__
+--
+-- >>> import qualified Data.Vector.Storable as VS
+-- >>> import qualified Data.Vector.Storable.Mutable as MVS
+-- >>> mv <- VS.thaw $ VS.fromList ([10, 20, 30] :: [Int])
+-- >>> mv' <- MVS.grow mv 2
+--
+-- Extra memory at the end of the newly allocated vector is initialized to 0
+-- bytes, which for `Storable` instance will usually correspond to some default
+-- value for a particular type, eg. @0@ for @Int@, @False@ for @Bool@,
+-- etc. However, if `unsafeGrow` was used instead this would not have been
+-- guaranteed and some garbage would be there instead:
+--
+-- >>> VS.unsafeFreeze mv'
+-- [10,20,30,0,0]
+--
+-- Having the extra space we can write new values in there:
+--
+-- >>> MVS.write mv' 3 999
+-- >>> VS.unsafeFreeze mv'
+-- [10,20,30,999,0]
+--
+-- It is important to note that the source mutable vector is not affected when
+-- the newly allocated one is mutated.
+--
+-- >>> MVS.write mv' 2 888
+-- >>> VS.unsafeFreeze mv'
+-- [10,20,888,999,0]
+-- >>> VS.unsafeFreeze mv
+-- [10,20,30]
+--
+-- @since 0.5
 grow :: (PrimMonad m, Storable a)
      => MVector (PrimState m) a -> Int -> m (MVector (PrimState m) a)
 {-# INLINE grow #-}
 grow = G.grow
 
--- | Grow a vector by the given number of elements. The number must be
--- positive but this is not checked.
+-- | Grow a vector by the given number of elements. The number must be non-negative but
+-- this is not checked. Same semantics as in `G.unsafeGrow` for generic vector.
+--
+-- @since 0.5
 unsafeGrow :: (PrimMonad m, Storable a)
            => MVector (PrimState m) a -> Int -> m (MVector (PrimState m) a)
 {-# INLINE unsafeGrow #-}
@@ -381,12 +486,23 @@ modify :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> (a -> a) -> In
 {-# INLINE modify #-}
 modify = G.modify
 
+-- | Modify the element at the given position using a monadic function.
+--
+-- @since 0.12.3.0
+modifyM :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> (a -> m a) -> Int -> m ()
+{-# INLINE modifyM #-}
+modifyM = G.modifyM
+
 -- | Swap the elements at the given positions.
 swap
     :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> Int -> Int -> m ()
 {-# INLINE swap #-}
 swap = G.swap
 
+-- | Replace the element at the given position and return the old element.
+exchange :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> Int -> a -> m a
+{-# INLINE exchange #-}
+exchange = G.exchange
 
 -- | Yield the element at the given position. No bounds checks are performed.
 unsafeRead :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> Int -> m a
@@ -404,11 +520,25 @@ unsafeModify :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> (a -> a)
 {-# INLINE unsafeModify #-}
 unsafeModify = G.unsafeModify
 
+-- | Modify the element at the given position using a monadic
+-- function. No bounds checks are performed.
+--
+-- @since 0.12.3.0
+unsafeModifyM :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> (a -> m a) -> Int -> m ()
+{-# INLINE unsafeModifyM #-}
+unsafeModifyM = G.unsafeModifyM
+
 -- | Swap the elements at the given positions. No bounds checks are performed.
 unsafeSwap
     :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> Int -> Int -> m ()
 {-# INLINE unsafeSwap #-}
 unsafeSwap = G.unsafeSwap
+
+-- | Replace the element at the given position and return the old element. No
+-- bounds checks are performed.
+unsafeExchange :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> Int -> a -> m a
+{-# INLINE unsafeExchange #-}
+unsafeExchange = G.unsafeExchange
 
 -- Filling and copying
 -- -------------------
@@ -444,7 +574,9 @@ unsafeCopy = G.unsafeCopy
 -- copied to a temporary vector and then the temporary vector was copied
 -- to the target vector.
 move :: (PrimMonad m, Storable a)
-     => MVector (PrimState m) a -> MVector (PrimState m) a -> m ()
+     => MVector (PrimState m) a   -- ^ target
+     -> MVector (PrimState m) a   -- ^ source
+     -> m ()
 {-# INLINE move #-}
 move = G.move
 
@@ -461,6 +593,161 @@ unsafeMove :: (PrimMonad m, Storable a)
            -> m ()
 {-# INLINE unsafeMove #-}
 unsafeMove = G.unsafeMove
+
+-- | Compute the next (lexicographically) permutation of given vector in-place.
+--   Returns False when input is the last permutation
+nextPermutation :: (PrimMonad m, Storable e, Ord e) => MVector (PrimState m) e -> m Bool
+{-# INLINE nextPermutation #-}
+nextPermutation = G.nextPermutation
+
+
+-- Folds
+-- -----
+
+-- | /O(n)/ Apply the monadic action to every element of the vector, discarding the results.
+--
+-- @since 0.12.3.0
+mapM_ :: (PrimMonad m, Storable a) => (a -> m b) -> MVector (PrimState m) a -> m ()
+{-# INLINE mapM_ #-}
+mapM_ = G.mapM_
+
+-- | /O(n)/ Apply the monadic action to every element of the vector and its index, discarding the results.
+--
+-- @since 0.12.3.0
+imapM_ :: (PrimMonad m, Storable a) => (Int -> a -> m b) -> MVector (PrimState m) a -> m ()
+{-# INLINE imapM_ #-}
+imapM_ = G.imapM_
+
+-- | /O(n)/ Apply the monadic action to every element of the vector,
+-- discarding the results. It's same as the @flip mapM_@.
+--
+-- @since 0.12.3.0
+forM_ :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> (a -> m b) -> m ()
+{-# INLINE forM_ #-}
+forM_ = G.forM_
+
+-- | /O(n)/ Apply the monadic action to every element of the vector
+-- and its index, discarding the results. It's same as the @flip imapM_@.
+--
+-- @since 0.12.3.0
+iforM_ :: (PrimMonad m, Storable a) => MVector (PrimState m) a -> (Int -> a -> m b) -> m ()
+{-# INLINE iforM_ #-}
+iforM_ = G.iforM_
+
+-- | /O(n)/ Pure left fold.
+--
+-- @since 0.12.3.0
+foldl :: (PrimMonad m, Storable a) => (b -> a -> b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE foldl #-}
+foldl = G.foldl
+
+-- | /O(n)/ Pure left fold with strict accumulator.
+--
+-- @since 0.12.3.0
+foldl' :: (PrimMonad m, Storable a) => (b -> a -> b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE foldl' #-}
+foldl' = G.foldl'
+
+-- | /O(n)/ Pure left fold (function applied to each element and its index).
+--
+-- @since 0.12.3.0
+ifoldl :: (PrimMonad m, Storable a) => (b -> Int -> a -> b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE ifoldl #-}
+ifoldl = G.ifoldl
+
+-- | /O(n)/ Pure left fold with strict accumulator (function applied to each element and its index).
+--
+-- @since 0.12.3.0
+ifoldl' :: (PrimMonad m, Storable a) => (b -> Int -> a -> b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE ifoldl' #-}
+ifoldl' = G.ifoldl'
+
+-- | /O(n)/ Pure right fold.
+--
+-- @since 0.12.3.0
+foldr :: (PrimMonad m, Storable a) => (a -> b -> b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE foldr #-}
+foldr = G.foldr
+
+-- | /O(n)/ Pure right fold with strict accumulator.
+--
+-- @since 0.12.3.0
+foldr' :: (PrimMonad m, Storable a) => (a -> b -> b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE foldr' #-}
+foldr' = G.foldr'
+
+-- | /O(n)/ Pure right fold (function applied to each element and its index).
+--
+-- @since 0.12.3.0
+ifoldr :: (PrimMonad m, Storable a) => (Int -> a -> b -> b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE ifoldr #-}
+ifoldr = G.ifoldr
+
+-- | /O(n)/ Pure right fold with strict accumulator (function applied
+-- to each element and its index).
+--
+-- @since 0.12.3.0
+ifoldr' :: (PrimMonad m, Storable a) => (Int -> a -> b -> b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE ifoldr' #-}
+ifoldr' = G.ifoldr'
+
+-- | /O(n)/ Monadic fold.
+--
+-- @since 0.12.3.0
+foldM :: (PrimMonad m, Storable a) => (b -> a -> m b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE foldM #-}
+foldM = G.foldM
+
+-- | /O(n)/ Monadic fold with strict accumulator.
+--
+-- @since 0.12.3.0
+foldM' :: (PrimMonad m, Storable a) => (b -> a -> m b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE foldM' #-}
+foldM' = G.foldM'
+
+-- | /O(n)/ Monadic fold (action applied to each element and its index).
+--
+-- @since 0.12.3.0
+ifoldM :: (PrimMonad m, Storable a) => (b -> Int -> a -> m b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE ifoldM #-}
+ifoldM = G.ifoldM
+
+-- | /O(n)/ Monadic fold with strict accumulator (action applied to each element and its index).
+--
+-- @since 0.12.3.0
+ifoldM' :: (PrimMonad m, Storable a) => (b -> Int -> a -> m b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE ifoldM' #-}
+ifoldM' = G.ifoldM'
+
+-- | /O(n)/ Monadic right fold.
+--
+-- @since 0.12.3.0
+foldrM :: (PrimMonad m, Storable a) => (a -> b -> m b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE foldrM #-}
+foldrM = G.foldrM
+
+-- | /O(n)/ Monadic right fold with strict accumulator.
+--
+-- @since 0.12.3.0
+foldrM' :: (PrimMonad m, Storable a) => (a -> b -> m b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE foldrM' #-}
+foldrM' = G.foldrM'
+
+-- | /O(n)/ Monadic right fold (action applied to each element and its index).
+--
+-- @since 0.12.3.0
+ifoldrM :: (PrimMonad m, Storable a) => (Int -> a -> b -> m b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE ifoldrM #-}
+ifoldrM = G.ifoldrM
+
+-- | /O(n)/ Monadic right fold with strict accumulator (action applied
+-- to each element and its index).
+--
+-- @since 0.12.3.0
+ifoldrM' :: (PrimMonad m, Storable a) => (Int -> a -> b -> m b) -> b -> MVector (PrimState m) a -> m b
+{-# INLINE ifoldrM' #-}
+ifoldrM' = G.ifoldrM'
+
 
 -- Unsafe conversions
 -- ------------------
@@ -540,4 +827,3 @@ unsafeToForeignPtr0 (MVector n fp) = (fp, n)
 unsafeWith :: Storable a => IOVector a -> (Ptr a -> IO b) -> IO b
 {-# INLINE unsafeWith #-}
 unsafeWith (MVector _ fp) = withForeignPtr fp
-
