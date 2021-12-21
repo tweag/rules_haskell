@@ -1,4 +1,4 @@
-module TestModule where
+module TestModule(bar, foo2) where
 
 import TestLibModule (foo)
 import TestLibModule2 (foo2)
