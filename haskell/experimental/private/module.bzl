@@ -376,14 +376,14 @@ def _collect_module_inputs(module_input_map, directs, dep):
     return all_inputs
 
 def _collect_narrowed_deps_module_files(ctx_label, per_module_transitive_files, dep):
-    transitive_cross_library_dep_labels = dep[HaskellModuleInfo].transitive_cross_library_dep_labels.to_list()
+    direct_cross_library_deps = dep[HaskellModuleInfo].direct_cross_library_deps
     transitives = [
-        per_module_transitive_files[m]
-        for m in transitive_cross_library_dep_labels
-        if m in per_module_transitive_files
+        per_module_transitive_files[m.label]
+        for m in direct_cross_library_deps
+        if m.label in per_module_transitive_files
     ]
-    if len(transitives) < len(transitive_cross_library_dep_labels):
-        missing = [str(m) for m in transitive_cross_library_dep_labels if not m in per_module_transitive_files]
+    if len(transitives) < len(direct_cross_library_deps):
+        missing = [str(m.label) for m in direct_cross_library_deps if not m.label in per_module_transitive_files]
         fail("The following dependencies of {} can't be found in 'narrowed_deps' of {}: {}".format(
             dep.label,
             ctx_label,
@@ -596,18 +596,12 @@ def haskell_module_impl(ctx):
         transitive = [dep[HaskellModuleInfo].transitive_module_dep_labels for dep in ctx.attr.deps],
         order = "postorder",
     )
-
-    transitive_cross_library_dep_labels = depset(
-        direct = [dep.label for dep in ctx.attr.cross_library_deps],
-        transitive = [dep[HaskellModuleInfo].transitive_cross_library_dep_labels for dep in deps],
-    )
-
     return [
         DefaultInfo(),
         HaskellModuleInfo(
             attr = ctx.attr,
             direct_module_deps = ctx.attr.deps,
-            transitive_cross_library_dep_labels = transitive_cross_library_dep_labels,
+            direct_cross_library_deps = ctx.attr.cross_library_deps,
             transitive_module_dep_labels = transitive_module_dep_labels,
         ),
     ]
