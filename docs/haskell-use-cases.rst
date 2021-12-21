@@ -30,7 +30,7 @@ rules_haskell. To use a released version, do the following::
       name = "rules_haskell",
       strip_prefix = "rules_haskell-0.14",
       urls = ["https://github.com/tweag/rules_haskell/archive/v0.14.tar.gz"],
-      sha256 = "6a98220d2947e2066949889454320aab5b5cba11d627bfafed03819e91aef2d1",
+      sha256 = "851e16edc7c33b977649d66f2f587071dde178a6e5bcfeca5fe9ebbe81924334",
   )
 
 Picking a compiler
