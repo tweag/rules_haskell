@@ -257,7 +257,6 @@ def _build_haskell_module(
             transitive = [
                 dep_info.package_databases,
                 dep_info.interface_dirs,
-                narrowed_deps_info.empty_hs_libraries,
                 narrowed_deps_info.empty_lib_package_databases,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
@@ -269,7 +268,11 @@ def _build_haskell_module(
                 narrowed_objects,
             ] + [
                 files
-                for files in [dep_info.hs_libraries, object_inputs]
+                for files in [
+                    dep_info.hs_libraries,
+                    narrowed_deps_info.empty_hs_libraries,
+                    object_inputs,
+                ]
                 # libraries and object inputs are only needed if the module uses TH
                 if module[HaskellModuleInfo].attr.enable_th
             ],
