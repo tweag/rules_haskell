@@ -5,10 +5,10 @@ import (
         "fmt"
         "os"
         "os/exec"
-        "path"
         "runtime"
         "strings"
         "testing"
+        "github.com/bazelbuild/rules_go/go/tools/bazel"
         "github.com/bazelbuild/rules_go/go/tools/bazel_testing"
 )
 
@@ -36,19 +36,17 @@ var Context struct {
 }
 
 func ParseArgs() error {
+        bazelPath := ""
         for _, arg := range os.Args {
                 if strings.HasPrefix(arg, "nixpkgs=") {
                         fmt.Sscanf(arg, "nixpkgs=%t", &Context.Nixpkgs)
                 } else if strings.HasPrefix(arg, "bazel_bin=") {
-                        fmt.Sscanf(arg, "bazel_bin=%s", &Context.BazelBinary)
+                        fmt.Sscanf(arg, "bazel_bin=%s", &bazelPath)
                 }
         }
-        cwd, err := os.Getwd()
-        if err != nil {
-                return err
-        }
-        Context.BazelBinary = path.Join(cwd, Context.BazelBinary)
-        return nil
+        bazelAbsPath, err := bazel.Runfile(bazelPath)
+        Context.BazelBinary = bazelAbsPath
+        return err
 }
 
 func GenerateBazelrc() string {
