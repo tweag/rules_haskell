@@ -431,10 +431,10 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
     Returns:
       pair of per_module_transitive_interfaces, per_module_transitive_objects:
         per_module_transitive_interfaces: dict of module labels to their
-		   interfaces and the interfaces of their transitive module dependencies
+           interfaces and the interfaces of their transitive module dependencies
         per_module_transitive_objects: dict of module labels to their
-		   object files and the object file of their transitive module
-		   dependencies
+           object files and the object file of their transitive module
+           dependencies
     """
     per_module_transitive_interfaces = {}
     per_module_transitive_objects = {}
