@@ -27,7 +27,8 @@ so bumping Bazel regularly is required.
 ## Cutting a New Release
 
 - [ ] Read through this process in its entirety so you understand it.
-- [ ] Copy this list of steps into an empty `rules_haskell` issue.
+- [ ] [Copy this list][checklist] of steps into an empty `rules_haskell`
+      issue.
 - [ ] Create and checkout a new release preparation branch, named
       `release-<major>.<minor>`.
 - [ ] Update the minimal Bazel version in [the `start` script][start],
@@ -133,3 +134,4 @@ the initial "v"; adjust as necessary.
 [changelog]: ./CHANGELOG.md
 [usecases]: ./docs/haskell-use-cases.rst
 [releases]: https://github.com/tweag/rules_haskell/releases
+[checklist]: https://github.com/tweag/rules_haskell/blob/52f867daa2c3e67e1afff9a0460666ef9083e714/MAINTAINERS.md?plain=1#L29-L86
