@@ -257,7 +257,6 @@ def _build_haskell_module(
             transitive = [
                 dep_info.package_databases,
                 dep_info.interface_dirs,
-                narrowed_deps_info.empty_hs_libraries,
                 narrowed_deps_info.empty_lib_package_databases,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
@@ -266,10 +265,13 @@ def _build_haskell_module(
                 plugin_tool_inputs,
                 preprocessors_inputs,
                 interface_inputs,
-                narrowed_objects,
             ] + [
                 files
-                for files in [dep_info.hs_libraries, object_inputs]
+                for files in [
+                    dep_info.hs_libraries,
+                    narrowed_deps_info.empty_hs_libraries,
+                    object_inputs,
+                ]
                 # libraries and object inputs are only needed if the module uses TH
                 if module[HaskellModuleInfo].attr.enable_th
             ],
@@ -350,11 +352,12 @@ def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
         ]
     return his, os
 
-def _collect_module_inputs(module_input_map, directs, dep):
+def _collect_module_inputs(module_input_map, extra_inputs, directs, dep):
     """ Put together inputs coming from direct and transitive dependencies.
 
     Args:
       module_input_map: maps labels of dependencies to all the inputs they require
+      extra_inputs: an addition depset of inputs to include
       directs: inputs of direct dependencies
       dep: the target for which to collect inputs
 
@@ -363,7 +366,7 @@ def _collect_module_inputs(module_input_map, directs, dep):
     """
     all_inputs = depset(
         direct = directs,
-        transitive = [
+        transitive = [extra_inputs] + [
             module_input_map[m.label]  # Will be set by a previous iteration, since all deps were visited before.
             for m in dep[HaskellModuleInfo].direct_module_deps
             if m.label in module_input_map
@@ -399,7 +402,7 @@ def _reorder_module_deps_to_postorder(label, modules):
                in the enclosing library/binary/test.
 
     Returns:
-      A list with the targets in modules in postorder
+      A list with the modules in postorder
     """
     transitive_module_dep_labels = depset(
         direct = [m.label for m in modules],
@@ -431,10 +434,10 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
     Returns:
       pair of per_module_transitive_interfaces, per_module_transitive_objects:
         per_module_transitive_interfaces: dict of module labels to their
-		   interfaces and the interfaces of their transitive module dependencies
+           interfaces and the interfaces of their transitive module dependencies
         per_module_transitive_objects: dict of module labels to their
-		   object files and the object file of their transitive module
-		   dependencies
+           object files and the object file of their transitive module
+           dependencies
     """
     per_module_transitive_interfaces = {}
     per_module_transitive_objects = {}
@@ -524,8 +527,8 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep) if enable_th else depset()
 
         his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
-        interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
-        object_inputs = _collect_module_inputs(module_objects, os, dep)
+        interface_inputs = _collect_module_inputs(module_interfaces, narrowed_interfaces, his, dep)
+        object_inputs = _collect_module_inputs(module_objects, narrowed_objects, os, dep)
 
         _build_haskell_module(
             ctx,
@@ -539,7 +542,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             hidir,
             odir,
             module_outputs[dep.label],
-            depset(transitive = [interface_inputs, narrowed_interfaces]),
+            interface_inputs,
             object_inputs,
             narrowed_objects,
             dep,

@@ -43,6 +43,12 @@ haskell_module(
     cross_library_deps = [":TestLibModule2"],
 )
 
+haskell_module(
+    name = "LibTop",
+    src = "LibTop.hs",
+    deps = [":TestModule"],
+)
+
 # Modifying TestLibModule2 from TestLib2 doesn't cause a rebuild of
 # TestModule2 thanks to narrowing.
 #
@@ -56,6 +62,7 @@ haskell_module(
 haskell_library(
     name = "lib",
     modules = [
+        ":LibTop",
         ":TestModule",
         ":TestModule2",
     ],
@@ -71,7 +78,7 @@ haskell_library(
 haskell_module(
     name = "TestBinModule",
     src = "TestBinModule.hs",
-    cross_library_deps = [":TestModule"],
+    cross_library_deps = [":LibTop"],
     module_name = "Main",
 )
 

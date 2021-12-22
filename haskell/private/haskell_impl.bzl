@@ -177,6 +177,9 @@ def _haskell_binary_common_impl(ctx, is_test):
     if modules and ctx.files.srcs:
         fail("""Only one of "srcs" or "modules" attributes must be specified in {}""".format(ctx.label))
 
+    if not modules and ctx.attr.narrowed_deps:
+        fail("""The attribute "narrowed_deps" can only be used if "modules" is specified in {}""".format(ctx.label))
+
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins)
     non_default_plugin_decl = reversed(ctx.attr.non_default_plugins)
