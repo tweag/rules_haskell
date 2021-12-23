@@ -27,8 +27,7 @@ so bumping Bazel regularly is required.
 ## Cutting a New Release
 
 - [ ] Read through this process in its entirety so you understand it.
-- [ ] [Copy this list][checklist] of steps into an empty `rules_haskell`
-      issue.
+- [ ] Copy this list of steps into an empty `rules_haskell` issue.
 - [ ] Create and checkout a new release preparation branch, named
       `release-<major>.<minor>`.
 - [ ] Update the minimal Bazel version in [the `start` script][start],
@@ -46,7 +45,7 @@ so bumping Bazel regularly is required.
   - [ ] Add a "Highlights" section for major improvements/changes.
   - [ ] Create "Added", "Removed", "Changed" and "Fixed" sections, as
         necessary.
-  - [ ] If relevant, add corresponding PRs to the changes.
+  - [ ] If relevant, add links to the corresponding PRs to the entries.
 - [ ] Set the revision in [the `start` script][start] and
       [`docs/haskell-use-cases`][usecases] to the current release
       preparation branch; comment out the checksum. (n.b., Search for
@@ -134,4 +133,3 @@ the initial "v"; adjust as necessary.
 [changelog]: ./CHANGELOG.md
 [usecases]: ./docs/haskell-use-cases.rst
 [releases]: https://github.com/tweag/rules_haskell/releases
-[checklist]: https://github.com/tweag/rules_haskell/blob/52f867daa2c3e67e1afff9a0460666ef9083e714/MAINTAINERS.md?plain=1#L29-L86

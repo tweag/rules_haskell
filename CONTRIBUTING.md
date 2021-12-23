@@ -25,4 +25,4 @@ maintenance-like contributions.
 
 ## Setting Up Your Development Environment
 
-Read how to [set up your development environment](https://bazel.build/contributing.html)
+Read how to [set up your development environment](https://github.com/tweag/rules_haskell#for-rules_haskell-developers).
