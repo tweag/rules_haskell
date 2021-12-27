@@ -1,6 +1,6 @@
 <p align="left"><img src="logo/horizontal.png" alt="rules_haskell" height="100px"></p>
 
-# Haskell rules for [Bazel][bazel]
+# [Bazel][bazel] rules for Haskell
 
 [![Continuous integration](https://github.com/tweag/rules_haskell/workflows/Continuous%20integration/badge.svg)](https://github.com/tweag/rules_haskell/actions?query=branch%3Amaster)
 
