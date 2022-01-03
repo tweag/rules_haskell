@@ -41,7 +41,7 @@ def normalise_arch(arch):
     if arch == "arm64": return "aarch64"
     return arch
  
-def generate_cabal_paths_module(component_name, ghc_version, is_windows, cabal_basename, cabal_dirname,
+def generate_cabal_paths_module(component_name, install_prefix, ghc_version, is_windows, cabal_basename, cabal_dirname,
                                 ghc, libdir, dynlibdir, bindir, datadir, pkgroot, workspace):
 
     # cabal calls ghc --info to recover the target arch and os, and uses these in path names.
@@ -177,7 +177,7 @@ version :: Version
 {version_definition}
 
 s = [pathSeparator]
-dataDirWorkspacePath = "{workspace}"++s++"{cabal_dirname}"++s++"_install"++s++"{datadir}"
+dataDirWorkspacePath = "{workspace}"++s++"{cabal_dirname}"++s++"{install_prefix}"++s++"{datadir}"
 packageName = "{component_name}"
 
 libdir = "{libdir}"
@@ -259,6 +259,7 @@ isPathSeparator :: Char -> Bool
         cabal_dirname = cabal_dirname,
         workspace = workspace,
         other_functions = other_functions,
+        install_prefix = install_prefix,
     )
     cabal_paths_file_name = f"Paths_{mangled_cabal_package_name}.hs"
     return (cabal_paths_file_name, cabal_paths_file_content)

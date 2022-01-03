@@ -204,6 +204,7 @@ def _prepare_cabal_inputs(
         verbose,
         transitive_haddocks,
         generate_paths_module,
+        install_prefix,
         is_library = False,
         dynamic_file = None):
     """Compute Cabal wrapper, arguments, inputs."""
@@ -364,6 +365,7 @@ def _prepare_cabal_inputs(
         ghc_version = ghc_version,
         cabal_basename = cabal.basename,
         cabal_dirname = cabal.dirname,
+        install_prefix = install_prefix,
     )
 
     ghc_files = hs.toolchain.bindir + hs.toolchain.libdir
@@ -457,38 +459,67 @@ def _haskell_cabal_library_impl(ctx):
         ])
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
+
+    # Different components are installed to different directories, so
+    # that different package databases point to different pkgroot.  We
+    # use a small name for this install directories because of the
+    # length limit of windows paths.
+
+    install_prefix = hs.label.name
     package_database = hs.actions.declare_file(
-        "_install/{}.conf.d/package.cache".format(package_id),
+        "{install_prefix}/db.conf.d/package.cache".format(
+            install_prefix = install_prefix,
+            package_id = package_id,
+        ),
         sibling = cabal,
     )
     interfaces_dir = hs.actions.declare_directory(
-        "_install/{}_iface".format(package_id),
+        "{install_prefix}/_iface".format(
+            install_prefix = install_prefix,
+            package_id = package_id,
+        ),
         sibling = cabal,
     )
     data_dir = hs.actions.declare_directory(
-        "_install/{}_data".format(package_id),
+        "{install_prefix}/_data".format(
+            install_prefix = install_prefix,
+            package_id = package_id,
+        ),
         sibling = cabal,
     )
     with_haddock = ctx.attr.haddock and hs.tools_config.supports_haddock
     if with_haddock:
         haddock_file = hs.actions.declare_file(
-            "_install/{}_haddock/{}.haddock".format(package_id, package_name),
+            "{install_prefix}/_haddock/{package_name}.haddock".format(
+                install_prefix = install_prefix,
+                package_id = package_id,
+                package_name = package_name,
+            ),
             sibling = cabal,
         )
         haddock_html_dir = hs.actions.declare_directory(
-            "_install/{}_haddock_html".format(package_id),
+            "{install_prefix}/_haddock_html".format(
+                install_prefix = install_prefix,
+                package_id = package_id,
+            ),
             sibling = cabal,
         )
     else:
         haddock_file = None
         haddock_html_dir = None
     vanilla_library = hs.actions.declare_file(
-        "_install/lib/libHS{}.a".format(package_id),
+        "{install_prefix}/lib/libHS{package_id}.a".format(
+            install_prefix = install_prefix,
+            package_id = package_id,
+        ),
         sibling = cabal,
     )
     if with_profiling:
         profiling_library = hs.actions.declare_file(
-            "_install/lib/libHS{}_p.a".format(package_id),
+            "{install_prefix}/lib/libHS{package_id}_p.a".format(
+                install_prefix = install_prefix,
+                package_id = package_id,
+            ),
             sibling = cabal,
         )
         static_library = profiling_library
@@ -499,7 +530,8 @@ def _haskell_cabal_library_impl(ctx):
         dynamic_library = None
     else:
         dynamic_library = hs.actions.declare_file(
-            "_install/lib/libHS{}-ghc{}.{}".format(
+            "{}/lib/libHS{}-ghc{}.{}".format(
+                install_prefix,
                 package_id,
                 hs.toolchain.version,
                 _so_extension(hs),
@@ -535,6 +567,7 @@ def _haskell_cabal_library_impl(ctx):
         generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = dynamic_library,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps) if with_haddock else depset([]),
+        install_prefix = install_prefix,
     )
     outputs = [
         package_database,
@@ -799,19 +832,25 @@ def _haskell_cabal_binary_impl(ctx):
         ])
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
+    install_prefix = hs.label.name
     package_database = hs.actions.declare_file(
-        "_install/{}.conf.d/package.cache".format(hs.label.name),
+        "{install_prefix}/db.conf.d/package.cache".format(
+            install_prefix = install_prefix,
+        ),
         sibling = cabal,
     )
     binary = hs.actions.declare_file(
-        "_install/bin/{name}{ext}".format(
+        "{install_prefix}/bin/{name}{ext}".format(
+            install_prefix = install_prefix,
             name = exe_name,
             ext = ".exe" if hs.toolchain.is_windows else "",
         ),
         sibling = cabal,
     )
     data_dir = hs.actions.declare_directory(
-        "_install/{}_data".format(hs.label.name),
+        "{install_prefix}/_data".format(
+            install_prefix = install_prefix,
+        ),
         sibling = cabal,
     )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
@@ -842,6 +881,7 @@ def _haskell_cabal_binary_impl(ctx):
         generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = binary,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps) if hs.tools_config.supports_haddock else depset([]),
+        install_prefix = install_prefix,
     )
     (_, runghc_manifest) = ctx.resolve_tools(tools = [ctx.attr._runghc])
     json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))

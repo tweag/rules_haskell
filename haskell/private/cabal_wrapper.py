@@ -31,6 +31,7 @@
 # , "ghc_version": List of int       # version of ghc
 # , "cabal_basename": basename of cabal binary
 # , "cabal_dirname": dirname of cabal binary
+# , "install_prefix": prefix for the installation directory
 # }
 
 from __future__ import print_function
@@ -108,13 +109,13 @@ setup = os.path.join(execroot, json_args["setup_path"])
 srcdir = os.path.join(execroot, json_args["pkg_dir"])
 # By definition (see ghc-pkg source code).
 pkgroot = os.path.realpath(os.path.join(execroot, os.path.dirname(json_args["package_db_path"])))
-libdir = os.path.join(pkgroot, "{}_iface".format(name))
+libdir = os.path.join(pkgroot, "_iface".format(name))
 dynlibdir = os.path.join(pkgroot, "lib")
 bindir = os.path.join(pkgroot, "bin")
-datadir = os.path.join(pkgroot, "{}_data".format(name))
-package_database = os.path.join(pkgroot, "{}.conf.d".format(name))
-haddockdir = os.path.join(pkgroot, "{}_haddock".format(name))
-htmldir = os.path.join(pkgroot, "{}_haddock_html".format(name))
+datadir = os.path.join(pkgroot, "_data".format(name))
+package_database = os.path.join(pkgroot, "db.conf.d".format(name))
+haddockdir = os.path.join(pkgroot, "_haddock".format(name))
+htmldir = os.path.join(pkgroot, "_haddock_html".format(name))
 runghc_args = json_args["runghc_args"]
 
 runghc = find_exe(toolchain_info["runghc"])
@@ -211,6 +212,7 @@ with mkdtemp(distdir_prefix()) as distdir:
         component_name = component.split(':')[1]
         (paths_file, cabal_paths_file_content) = generate_cabal_paths_module(
             component_name = component_name,
+            install_prefix = json_args["install_prefix"],
             ghc_version = json_args["ghc_version"],
             is_windows = is_windows,
             cabal_basename = json_args["cabal_basename"],
