@@ -219,7 +219,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         # Also, static GHC doesn't support dynamic code
         dynamic = False
 
-    module_outputs = build_haskell_modules(ctx, hs, cc, posix, "", dynamic, interfaces_dir, objects_dir)
+    module_outputs = build_haskell_modules(ctx, hs, cc, posix, "", with_profiling, dynamic, interfaces_dir, objects_dir)
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in non_default_plugin_decl]
@@ -468,7 +468,7 @@ def haskell_library_impl(ctx):
         # Also, static GHC doesn't support dynamic code
         with_shared = False
 
-    module_outputs = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), with_shared, interfaces_dir, objects_dir)
+    module_outputs = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), with_profiling, with_shared, interfaces_dir, objects_dir)
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
