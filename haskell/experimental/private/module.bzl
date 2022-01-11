@@ -512,8 +512,6 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
 
         # Narrowing doesn't work when using the external interpreter so we disable it here
         if enable_th and with_profiling:
-            per_module_transitive_interfaces_i = []
-            per_module_transitive_objects_i = []
             dep_info_i = all_deps_info
             narrowed_deps_info_i = empty_deps_info
             narrowed_interfaces = depset()
