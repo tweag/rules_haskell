@@ -372,6 +372,7 @@ def _collect_module_inputs(module_input_map, extra_inputs, directs, dep):
             for m in dep[HaskellModuleInfo].direct_module_deps
             if m.label in module_input_map
         ],
+        order = "postorder",
     )
     module_input_map[dep.label] = all_inputs
     return all_inputs
@@ -391,7 +392,10 @@ def _collect_narrowed_deps_module_files(ctx_label, per_module_transitive_files, 
             ", ".join(missing),
         ))
 
-    return depset(transitive = transitives)
+    return depset(
+        transitive = transitives,
+        order = "postorder",
+    )
 
 def _reorder_module_deps_to_postorder(label, modules):
     """ Reorders modules to a postorder traversal of the dependency dag.
@@ -572,6 +576,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
         dep.label: depset(
             [module_outputs[dep.label].o],
             transitive = [module_objects[dep.label]],
+            order = "postorder",
         )
         for dep in transitive_module_deps
     }
