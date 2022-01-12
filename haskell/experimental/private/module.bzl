@@ -247,6 +247,7 @@ def _build_haskell_module(
         if module_outputs.dyn_o:
             outputs += [module_outputs.dyn_o]
 
+    print(src, narrowed_objects)
     # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
