@@ -279,6 +279,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         hs_libraries = all_deps_info.hs_libraries,
+        deps_hs_libraries = all_deps_info.deps_hs_libraries,
         interface_dirs = all_deps_info.interface_dirs,
         deps_interface_dirs = all_deps_info.deps_interface_dirs,
         compile_flags = c.compile_flags,
@@ -592,6 +593,9 @@ def haskell_library_impl(ctx):
         hs_libraries = depset(
             direct = [lib for lib in [static_library, dynamic_library] if lib],
             transitive = [all_deps_info.hs_libraries, export_infos.hs_libraries],
+        ),
+        deps_hs_libraries = depset(
+            transitive = [dep_info.hs_libraries, narrowed_deps_info.deps_hs_libraries],
         ),
         empty_hs_libraries = depset(
             direct = empty_libs,
@@ -957,6 +961,7 @@ def haskell_import_impl(ctx):
         extra_source_files = depset(),
         import_dirs = set.empty(),
         hs_libraries = depset(),
+        deps_hs_libraries = depset(),
         empty_hs_libraries = depset(),
         interface_dirs = depset(),
         deps_interface_dirs = depset(),

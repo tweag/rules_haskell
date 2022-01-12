@@ -269,6 +269,8 @@ def _build_haskell_module(
                 files
                 for files in [
                     dep_info.hs_libraries,
+                    dep_info.deps_hs_libraries,
+                    narrowed_deps_info.deps_hs_libraries,
                     narrowed_deps_info.empty_hs_libraries,
                     object_inputs,
                 ]

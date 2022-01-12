@@ -584,6 +584,10 @@ def _haskell_cabal_library_impl(ctx):
             transitive = [dep_info.hs_libraries],
             order = "topological",
         ),
+        deps_hs_libraries = depset(
+            transitive = [dep_info.deps_hs_libraries],
+            order = "topological",
+        ),
         empty_hs_libraries = dep_info.empty_hs_libraries,
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         deps_interface_dirs = dep_info.deps_interface_dirs,
@@ -874,6 +878,7 @@ def _haskell_cabal_binary_impl(ctx):
         extra_source_files = depset(),
         import_dirs = set.empty(),
         hs_libraries = dep_info.hs_libraries,
+        deps_hs_libraries = dep_info.deps_hs_libraries,
         empty_hs_libraries = dep_info.empty_hs_libraries,
         interface_dirs = dep_info.interface_dirs,
         deps_interface_dirs = dep_info.deps_interface_dirs,
