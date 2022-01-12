@@ -576,7 +576,7 @@ def haskell_library_impl(ctx):
 
     export_infos = gather_dep_info(ctx.attr.name, ctx.attr.exports)
     hs_info = HaskellInfo(
-        package_databases = depset([cache_file], transitive = [all_deps_info.package_databases, export_infos.package_databases]),
+        package_databases = depset([cache_file], transitive = [all_deps_info.package_databases]),
         empty_lib_package_databases = depset(
             direct = [cache_file_empty],
             transitive = [
@@ -592,7 +592,7 @@ def haskell_library_impl(ctx):
         import_dirs = set.mutable_union(c.import_dirs, export_infos.import_dirs),
         hs_libraries = depset(
             direct = [lib for lib in [static_library, dynamic_library] if lib],
-            transitive = [all_deps_info.hs_libraries, export_infos.hs_libraries],
+            transitive = [all_deps_info.hs_libraries],
         ),
         deps_hs_libraries = depset(
             transitive = [dep_info.hs_libraries, narrowed_deps_info.deps_hs_libraries],
