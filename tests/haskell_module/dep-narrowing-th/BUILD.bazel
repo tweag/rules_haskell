@@ -23,6 +23,7 @@ haskell_library(
     ],
     deps = [
         "//tests/hackage:base",
+        "@stackage//:temporary",
     ],
 )
 
