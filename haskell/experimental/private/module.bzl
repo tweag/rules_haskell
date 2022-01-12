@@ -257,6 +257,7 @@ def _build_haskell_module(
                 dep_info.package_databases,
                 dep_info.interface_dirs,
                 narrowed_deps_info.empty_lib_package_databases,
+                narrowed_deps_info.deps_interface_dirs,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
                 plugin_dep_info.interface_dirs,

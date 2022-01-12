@@ -13,6 +13,7 @@ HaskellInfo = provider(
         "hs_libraries": "Depset of compiled Haskell libraries in all available GHC ways.",
         "empty_hs_libraries": "Depset of compiled empty Haskell libraries in all available GHC ways.",
         "interface_dirs": "Depset of interface dirs belonging to the packages.",
+        "deps_interface_dirs": "Depset of interface dirs belonging to libraries in the deps field of the rule or in the deps field of any transitive dependency (libraries in narrowed_deps are included in transitive dependencies for this sake)",
         "compile_flags": "Arguments that were used to compile the code.",
         "user_compile_flags": "Compiler flags specified by the user, after location expansion.",
         "user_repl_flags": "REPL flags specified by the user, after location expansion.",
