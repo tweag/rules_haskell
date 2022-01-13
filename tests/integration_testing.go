@@ -59,19 +59,18 @@ func GenerateBazelrc() string {
         return bazelrc
 }
 
-func BazelCmd(bazelPath string, args ...string) *exec.Cmd {
-        cmd := exec.Command(bazelPath)
-        if bazel_testing.OutputUserRoot != "" {
-                cmd.Args = append(cmd.Args, "--output_user_root="+bazel_testing.OutputUserRoot)
-        }
-        cmd.Args = append(cmd.Args, args...)
+func BazelEnv() []string {
+        env := []string{}
 	// It's important value of $HOME to be invariant between different integration test runs
         // and to be writable directory for bazel test. Probably TEST_TMPDIR is a valid choice
         // but documentation is not clear about it's default value
         // cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s", os.Getenv("TEST_TMPDIR")))
-        cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s", os.TempDir()))
+        env = append(env, fmt.Sprintf("HOME=%s", os.TempDir()))
         if runtime.GOOS == "darwin" {
-                cmd.Env = append(cmd.Env, "BAZEL_USE_CPP_ONLY_TOOLCHAIN=1")
+                env = append(env, "BAZEL_USE_CPP_ONLY_TOOLCHAIN=1")
+                if Context.Nixpkgs {
+                        env = append(env, "BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1")
+                }
         }
         for _, e := range os.Environ() {
                 // Filter environment variables set by the bazel test wrapper script.
@@ -79,8 +78,18 @@ func BazelCmd(bazelPath string, args ...string) *exec.Cmd {
                 if strings.HasPrefix(e, "TEST_") || strings.HasPrefix(e, "RUNFILES_") {
                         continue
                 }
-                cmd.Env = append(cmd.Env, e)
+                env = append(env, e)
         }
+        return env
+}
+
+func BazelCmd(bazelPath string, args ...string) *exec.Cmd {
+        cmd := exec.Command(bazelPath)
+        if bazel_testing.OutputUserRoot != "" {
+                cmd.Args = append(cmd.Args, "--output_user_root="+bazel_testing.OutputUserRoot)
+        }
+        cmd.Args = append(cmd.Args, args...)
+        cmd.Env = append(cmd.Env, BazelEnv()...)
         return cmd
 }
 
