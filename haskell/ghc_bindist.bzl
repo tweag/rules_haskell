@@ -358,6 +358,9 @@ GHC_BINDIST_STRIP_PREFIX = \
             "darwin_amd64": "ghc-9.2.1-x86_64-apple-darwin",
             "windows_amd64": "ghc-9.2.1-x86_64-unknown-mingw32",
         },
+        "9.0.2": {
+            "windows_amd64": "ghc-9.0.2-x86_64-unknown-mingw32",
+        },
         "9.0.1": {
             "windows_amd64": "ghc-9.0.1-x86_64-unknown-mingw32",
         },
@@ -373,6 +376,9 @@ GHC_BINDIST_LIBDIR = \
 GHC_BINDIST_DOCDIR = \
     {
         "9.2.1": {
+            "windows_amd64": "docs",
+        },
+        "9.0.2": {
             "windows_amd64": "docs",
         },
         "9.0.1": {
@@ -681,6 +687,7 @@ def ghc_bindist(
             "8.8.3": ["@rules_haskell//haskell:assets/ghc_8_8_3_win_base.patch"],
             "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
             "9.0.1": ["@rules_haskell//haskell:assets/ghc_9_0_1_win.patch"],
+            "9.0.2": ["@rules_haskell//haskell:assets/ghc_9_0_2_win.patch"],
             "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_win.patch"],
         }.get(version)
 
