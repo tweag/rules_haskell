@@ -237,7 +237,8 @@ def _build_haskell_module(
         moduleAttr.tools,
     ]
     args.add_all(expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs))
-    args.add_all(narrowed_objects)
+    if module[HaskellModuleInfo].attr.enable_th:
+        args.add_all(narrowed_objects)
 
     outputs = [module_outputs.hi]
     if module_outputs.o:
@@ -523,8 +524,9 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
             dep_info_i = dep_info
             narrowed_deps_info_i = narrowed_deps_info
 
-            # objects are only needed if the module uses TH
-            narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep) if enable_th else depset()
+            # even if TH is not enabled, we collect the narrowed_objects for building
+            # other modules that import this one and that might use TH
+            narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep)
 
         his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, narrowed_interfaces, his, dep)
