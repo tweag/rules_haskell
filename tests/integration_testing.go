@@ -50,14 +50,18 @@ func ParseArgs() error {
 }
 
 func GenerateBazelrc() string {
-        bazelrc := "-- .bazelrc --\n"
-        if Context.Nixpkgs {
-                bazelrc += "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host\n"
-                if runtime.GOOS == "darwin" {
-                        bazelrc += "build --incompatible_enable_cc_toolchain_resolution\n"
-                }
-        } else if runtime.GOOS == "windows" {
-                bazelrc += "build --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain\n"
+        bazelrc := `
+-- .bazelrc --
+build:linux-nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+build:linux-nixpkgs --incompatible_enable_cc_toolchain_resolution
+build:macos-nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+build:macos-nixpkgs --incompatible_enable_cc_toolchain_resolution
+build:linux-bindist --incompatible_enable_cc_toolchain_resolution
+build:macos-bindist --incompatible_enable_cc_toolchain_resolution
+build:windows-bindist --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain
+`
+        if bazel_testing.OutputUserRoot != "" {
+                bazelrc += fmt.Sprintf("startup: --output_user_root=%s\n", bazel_testing.OutputUserRoot)
         }
         return bazelrc
 }
@@ -67,7 +71,7 @@ func BazelEnv() []string {
 	// It's important value of $HOME to be invariant between different integration test runs
         // and to be writable directory for bazel test. Probably TEST_TMPDIR is a valid choice
         // but documentation is not clear about it's default value
-        // cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s", os.Getenv("TEST_TMPDIR")))
+        // env = append(env, fmt.Sprintf("HOME=%s", os.Getenv("TEST_TMPDIR")))
         env = append(env, fmt.Sprintf("HOME=%s", os.TempDir()))
         if runtime.GOOS == "darwin" {
                 env = append(env, "BAZEL_USE_CPP_ONLY_TOOLCHAIN=1")
@@ -86,11 +90,42 @@ func BazelEnv() []string {
         return env
 }
 
+func insertBazelFlags(args []string, flags ...string) []string {
+	for i, arg := range args {
+		switch arg {
+		case "build", "test", "run":
+			return append(append(append([]string{}, args[:i+1]...), flags...), args[i+1:]...)
+		default:
+			continue
+		}
+	}
+	return args
+}
+
+func BazelConfig() string {
+        switch os := runtime.GOOS; os {
+        case "linux":
+                if Context.Nixpkgs {
+                        return "linux-nixpkgs"
+                } else {
+                        return "linux-bindist"
+                }
+        case "darwin":
+                if Context.Nixpkgs {
+                        return "macos-nixpkgs"
+                } else {
+                        return "macos-bindist"
+                }
+        case "windows":
+                return "windows-bindist"
+        default:
+                panic(fmt.Sprintf("Unknown OS name: %s", os))
+        }
+}
+
 func BazelCmd(bazelPath string, args ...string) *exec.Cmd {
         cmd := exec.Command(bazelPath)
-        if bazel_testing.OutputUserRoot != "" {
-                cmd.Args = append(cmd.Args, "--output_user_root="+bazel_testing.OutputUserRoot)
-        }
+        args = insertBazelFlags(args, "--config", BazelConfig())
         cmd.Args = append(cmd.Args, args...)
         cmd.Env = append(cmd.Env, BazelEnv()...)
         return cmd
