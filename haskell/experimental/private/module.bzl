@@ -79,6 +79,7 @@ def _build_haskell_module(
         dep_info,
         narrowed_deps_info,
         package_name,
+        with_profiling,
         with_shared,
         hidir,
         odir,
@@ -97,6 +98,7 @@ def _build_haskell_module(
       dep_info: info on dependencies in deps
       narrowed_deps_info: info on dependencies in narrowed_deps
       package_name: name of this package, or empty if building a binary
+      with_profiling: Whether to build profiling object files
       with_shared: Whether to build dynamic object files
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
@@ -121,9 +123,6 @@ def _build_haskell_module(
     )
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     (preprocessors_inputs, preprocessors_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools + moduleAttr.tools)
-
-    # Determine outputs
-    with_profiling = is_profiling_enabled(hs)
 
     # TODO[AH] Support additional outputs such as `.hie`.
 
@@ -258,6 +257,7 @@ def _build_haskell_module(
                 dep_info.package_databases,
                 dep_info.interface_dirs,
                 narrowed_deps_info.empty_lib_package_databases,
+                narrowed_deps_info.deps_interface_dirs,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
                 plugin_dep_info.interface_dirs,
@@ -269,6 +269,8 @@ def _build_haskell_module(
                 files
                 for files in [
                     dep_info.hs_libraries,
+                    dep_info.deps_hs_libraries,
+                    narrowed_deps_info.deps_hs_libraries,
                     narrowed_deps_info.empty_hs_libraries,
                     object_inputs,
                 ]
@@ -301,12 +303,11 @@ def get_module_path_from_target(module):
 
     return paths.split_extension(paths.relativize(src, prefix_path))[0]
 
-def _declare_module_outputs(hs, with_shared, hidir, odir, module):
+def _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, module):
     module_path = get_module_path_from_target(module)
 
     src = module[HaskellModuleInfo].attr.src.files.to_list()[0].path
     hs_boot = paths.split_extension(src)[1] in [".hs-boot", ".lhs-boot"]
-    with_profiling = is_profiling_enabled(hs)
     extension_template = "%s"
     if hs_boot:
         extension_template = extension_template + "-boot"
@@ -463,7 +464,7 @@ def interfaces_as_list(with_shared, o):
     else:
         return [o.hi]
 
-def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, odir):
+def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with_shared, hidir, odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
         and in their dependencies
 
@@ -473,6 +474,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
       cc: CcInteropInfo, information about C dependencies
       posix: posix toolchain
       package_name: package name if building a library or empty if building a binary
+      with_profiling: Whether to build profiling object files
       with_shared: Whether to build dynamic object files
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
@@ -501,7 +503,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
     all_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.deps + ctx.attr.narrowed_deps)
     empty_deps_info = gather_dep_info(ctx.attr.name, [])
     transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules)
-    module_outputs = {dep.label: _declare_module_outputs(hs, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
+    module_outputs = {dep.label: _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
 
     module_interfaces = {}
     module_objects = {}
@@ -512,9 +514,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         enable_th = dep[HaskellModuleInfo].attr.enable_th
 
         # Narrowing doesn't work when using the external interpreter so we disable it here
-        if enable_th and is_profiling_enabled(hs):
-            per_module_transitive_interfaces_i = []
-            per_module_transitive_objects_i = []
+        if enable_th and with_profiling:
             dep_info_i = all_deps_info
             narrowed_deps_info_i = empty_deps_info
             narrowed_interfaces = depset()
@@ -538,6 +538,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             dep_info_i,
             narrowed_deps_info_i,
             package_name,
+            with_profiling,
             with_shared,
             hidir,
             odir,

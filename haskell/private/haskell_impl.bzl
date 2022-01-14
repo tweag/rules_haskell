@@ -219,7 +219,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         # Also, static GHC doesn't support dynamic code
         dynamic = False
 
-    module_outputs = build_haskell_modules(ctx, hs, cc, posix, "", dynamic, interfaces_dir, objects_dir)
+    module_outputs = build_haskell_modules(ctx, hs, cc, posix, "", with_profiling, dynamic, interfaces_dir, objects_dir)
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in non_default_plugin_decl]
@@ -279,7 +279,9 @@ def _haskell_binary_common_impl(ctx, is_test):
         extra_source_files = c.extra_source_files,
         import_dirs = c.import_dirs,
         hs_libraries = all_deps_info.hs_libraries,
+        deps_hs_libraries = all_deps_info.deps_hs_libraries,
         interface_dirs = all_deps_info.interface_dirs,
+        deps_interface_dirs = all_deps_info.deps_interface_dirs,
         compile_flags = c.compile_flags,
         user_compile_flags = user_compile_flags,
         user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
@@ -468,7 +470,7 @@ def haskell_library_impl(ctx):
         # Also, static GHC doesn't support dynamic code
         with_shared = False
 
-    module_outputs = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), with_shared, interfaces_dir, objects_dir)
+    module_outputs = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), with_profiling, with_shared, interfaces_dir, objects_dir)
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
@@ -574,7 +576,7 @@ def haskell_library_impl(ctx):
 
     export_infos = gather_dep_info(ctx.attr.name, ctx.attr.exports)
     hs_info = HaskellInfo(
-        package_databases = depset([cache_file], transitive = [all_deps_info.package_databases, export_infos.package_databases]),
+        package_databases = depset([cache_file], transitive = [all_deps_info.package_databases]),
         empty_lib_package_databases = depset(
             direct = [cache_file_empty],
             transitive = [
@@ -590,13 +592,17 @@ def haskell_library_impl(ctx):
         import_dirs = set.mutable_union(c.import_dirs, export_infos.import_dirs),
         hs_libraries = depset(
             direct = [lib for lib in [static_library, dynamic_library] if lib],
-            transitive = [all_deps_info.hs_libraries, export_infos.hs_libraries],
+            transitive = [all_deps_info.hs_libraries],
+        ),
+        deps_hs_libraries = depset(
+            transitive = [dep_info.hs_libraries, narrowed_deps_info.deps_hs_libraries],
         ),
         empty_hs_libraries = depset(
             direct = empty_libs,
             transitive = [all_deps_info.empty_hs_libraries, export_infos.empty_hs_libraries],
         ),
         interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
+        deps_interface_dirs = depset(transitive = [dep_info.interface_dirs, narrowed_deps_info.deps_interface_dirs]),
         compile_flags = c.compile_flags,
         user_compile_flags = user_compile_flags,
         user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
@@ -955,8 +961,10 @@ def haskell_import_impl(ctx):
         extra_source_files = depset(),
         import_dirs = set.empty(),
         hs_libraries = depset(),
+        deps_hs_libraries = depset(),
         empty_hs_libraries = depset(),
         interface_dirs = depset(),
+        deps_interface_dirs = depset(),
         compile_flags = [],
         user_compile_flags = [],
         user_repl_flags = [],

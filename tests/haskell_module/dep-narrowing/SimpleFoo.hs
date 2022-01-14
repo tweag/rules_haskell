@@ -1,4 +1,6 @@
-module SimpleFoo where
+module SimpleFoo(foo, depFoo) where
+
+import DepFoo
 
 foo :: Int
-foo = 23
+foo = depFoo
