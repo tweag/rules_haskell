@@ -171,11 +171,18 @@ def _ahc_impl(ctx):
         "BUILD",
         filepaths["@rules_haskell//haskell:ahc.BUILD.tpl"],
         substitutions = {
-            "%{toolchain_libraries}": toolchain_libraries,
+            "%{toolchain_libraries}": toolchain_libraries["file_content"],
             "%{toolchain}": toolchain,
             "%{asterius_toolchain}": asterius_toolchain,
         },
         executable = False,
+    )
+
+    # We make the list of toolchain libraries available for loading in the WORKSPACE file.
+    ctx.file(
+        "toolchain_libraries.bzl",
+        executable = False,
+        content = "toolchain_libraries = {}".format(toolchain_libraries["toolchain_libraries"]),
     )
 
 _ahc = repository_rule(
