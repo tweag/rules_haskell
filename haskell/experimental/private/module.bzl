@@ -71,9 +71,6 @@ load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 # profiling builds use the libraries of narrowed_deps instead of the
 # their object files.
 
-def _drop_dyn_os(f):
-    return None if f.extension == "dyn_o" else f.path
-
 def _build_haskell_module(
         ctx,
         hs,
@@ -243,7 +240,7 @@ def _build_haskell_module(
     ]
     args.add_all(expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs))
     if enable_th:
-        args.add_all(narrowed_objects, map_each = _drop_dyn_os)
+        args.add_all(narrowed_objects)
 
     outputs = [module_outputs.hi]
     if module_outputs.o:
