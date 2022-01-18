@@ -436,15 +436,15 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
       narrowed_deps: The contents of the narrowed_deps attribute
 
     Returns:
-      pair of per_module_transitive_interfaces, per_module_transitive_objects:
-        per_module_transitive_interfaces: dict of module labels to their
+      struct(transitive_interfaces, transitive_objects):
+        transitive_interfaces: dict of module labels to their
            interfaces and the interfaces of their transitive module dependencies
-        per_module_transitive_objects: dict of module labels to their
+        transitive_objects: dict of module labels to their
            object files and the object file of their transitive module
            dependencies
     """
-    per_module_transitive_interfaces = {}
-    per_module_transitive_objects = {}
+    transitive_interfaces = {}
+    transitive_objects = {}
     for dep in narrowed_deps:
         if not HaskellInfo in dep or not HaskellLibraryInfo in dep:
             fail("{}: depedency {} is not a haskell_library as required when used in narrowed_deps".format(
@@ -457,9 +457,12 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
                 str(rule_label),
                 str(dep.label),
             ))
-        _merge_depset_dicts(per_module_transitive_interfaces, lib_info.per_module_transitive_interfaces)
-        _merge_depset_dicts(per_module_transitive_objects, lib_info.per_module_transitive_objects)
-    return per_module_transitive_interfaces, per_module_transitive_objects
+        _merge_depset_dicts(transitive_interfaces, lib_info.per_module_transitive_interfaces)
+        _merge_depset_dicts(transitive_objects, lib_info.per_module_transitive_objects)
+    return struct(
+        transitive_interfaces = transitive_interfaces,
+        transitive_objects = transitive_objects,
+    )
 
 def interfaces_as_list(with_shared, o):
     if with_shared:
@@ -495,7 +498,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
             object files and the object files of their transitive module
             dependencies. See Note [Narrowed Dependencies].
     """
-    per_module_transitive_interfaces, per_module_transitive_objects = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
+    per_module_maps = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
 
     # We produce separate infos for narrowed_deps and deps because the module
     # files in dep_info are given as inputs to the build action, but the
@@ -513,7 +516,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
     for dep in transitive_module_deps:
         # called in all cases to validate cross_library_deps, although the output
         # might be ignored when disabling narrowing
-        narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_interfaces, dep)
+        narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_interfaces, dep)
         enable_th = dep[HaskellModuleInfo].attr.enable_th
 
         # Narrowing doesn't work when using the external interpreter so we disable it here
@@ -528,7 +531,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
 
             # even if TH is not enabled, we collect the narrowed_objects for building
             # other modules that import this one and that might use TH
-            narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep)
+            narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_objects, dep)
 
         his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, narrowed_interfaces, his, dep)
@@ -572,7 +575,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
         )
         for dep in transitive_module_deps
     }
-    _merge_depset_dicts(per_module_transitive_interfaces0, per_module_transitive_interfaces)
+    _merge_depset_dicts(per_module_transitive_interfaces0, per_module_maps.transitive_interfaces)
     per_module_transitive_objects0 = {
         dep.label: depset(
             [module_outputs[dep.label].o],
@@ -580,7 +583,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
         )
         for dep in transitive_module_deps
     }
-    _merge_depset_dicts(per_module_transitive_objects0, per_module_transitive_objects)
+    _merge_depset_dicts(per_module_transitive_objects0, per_module_maps.transitive_objects)
 
     return struct(
         his = hi_set,
