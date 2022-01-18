@@ -225,8 +225,6 @@ def _build_haskell_module(
         for manifest in plugin.tool_input_manifests
     ]
 
-    # TODO[AH] Support package id - see `-this-unit-id` flag.
-
     args.add_all(hs.toolchain.ghcopts)
 
     args.add_all(expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts, haskell_library_extra_label_attrs(ctx.attr)))
