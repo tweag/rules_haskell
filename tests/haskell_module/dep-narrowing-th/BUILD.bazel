@@ -59,6 +59,7 @@ haskell_module(
     name = "TestModule",
     src = "TestModule.hs",
     cross_library_deps = [":TestLibModule2"],
+    enable_th = True,
 )
 
 # Modifying TestLibModule2 from TestLib2 doesn't cause a rebuild of
