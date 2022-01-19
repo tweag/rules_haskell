@@ -60,7 +60,10 @@ haskell_library(
         ":module-without-plugin",
     ],
     tags = ["skip_profiling"],
-    deps = [":base"],
+    deps = [
+        ":base",
+        "@stackage//:temporary",
+    ],
 )
 
 haskell_test(
