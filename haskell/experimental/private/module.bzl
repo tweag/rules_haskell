@@ -227,8 +227,6 @@ def _build_haskell_module(
         for manifest in plugin.tool_input_manifests
     ]
 
-    # TODO[AH] Support package id - see `-this-unit-id` flag.
-
     args.add_all(hs.toolchain.ghcopts)
 
     args.add_all(expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts, haskell_library_extra_label_attrs(ctx.attr)))
@@ -238,6 +236,10 @@ def _build_haskell_module(
         moduleAttr.plugins,
         moduleAttr.tools,
     ]
+    if plugins and not enable_th:
+        # For #1681. These suppresses bogus warnings about missing libraries which
+        # aren't really needed.
+        args.add("-Wno-missed-extra-shared-lib")
     args.add_all(expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs))
     if enable_th:
         args.add_all(narrowed_objects)
