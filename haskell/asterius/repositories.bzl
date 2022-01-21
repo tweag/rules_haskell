@@ -171,11 +171,18 @@ def _ahc_impl(ctx):
         "BUILD",
         filepaths["@rules_haskell//haskell:ahc.BUILD.tpl"],
         substitutions = {
-            "%{toolchain_libraries}": toolchain_libraries,
+            "%{toolchain_libraries}": toolchain_libraries["file_content"],
             "%{toolchain}": toolchain,
             "%{asterius_toolchain}": asterius_toolchain,
         },
         executable = False,
+    )
+
+    # We make the list of toolchain libraries available for loading in the WORKSPACE file.
+    ctx.file(
+        "toolchain_libraries.bzl",
+        executable = False,
+        content = "toolchain_libraries = {}".format(toolchain_libraries["toolchain_libraries"]),
     )
 
 _ahc = repository_rule(
@@ -356,3 +363,33 @@ def asterius_dependencies_custom(**kwargs):
         ```
     """
     _asterius_dependencies_custom(**kwargs)
+
+def _toolchain_libraries_impl(repository_ctx):
+    if repository_ctx.attr.repository:
+        repository_ctx.file(
+            "toolchain_libraries.bzl",
+            executable = False,
+            content = """\
+load("@{}//:toolchain_libraries.bzl", _toolchain_libraries = "toolchain_libraries")
+toolchain_libraries = _toolchain_libraries
+    """.format(repository_ctx.attr.repository),
+        )
+    else:
+        repository_ctx.file(
+            "toolchain_libraries.bzl",
+            executable = False,
+            content = "toolchain_libraries = None",
+        )
+
+    repository_ctx.file("BUILD", executable = False, content = "")
+
+toolchain_libraries = repository_rule(
+    _toolchain_libraries_impl,
+    attrs = {
+        "repository": attr.string(
+            default = "",
+            doc = "An optional repository from which we recover the toolchain_libraries variable. If absent or empty, the toolchain_libraries variable will be equal to None.",
+        ),
+    },
+    doc = "Optionally recovers the `toolchain_libraries` variable from another repository",
+)

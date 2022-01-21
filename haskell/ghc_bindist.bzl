@@ -510,7 +510,7 @@ rm -f
     if GHC_BINDIST_DOCDIR.get(version) != None and GHC_BINDIST_DOCDIR[version].get(target) != None:
         docdir = GHC_BINDIST_DOCDIR[version][target]
 
-    toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)
+    toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
     locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
     toolchain = define_rule(
         "haskell_toolchain",
