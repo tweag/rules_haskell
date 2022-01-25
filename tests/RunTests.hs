@@ -18,9 +18,6 @@ import Test.Hspec (context, hspec, it, describe, runIO, shouldSatisfy, expectati
 
 main :: IO ()
 main = hspec $ do
-  it "bazel lint" $ do
-    assertSuccess (bazel ["run", "//:buildifier"])
-
   it "bazel test" $ do
     assertSuccess (bazel ["test", "//..."])
 

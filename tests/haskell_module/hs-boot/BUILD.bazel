@@ -11,9 +11,6 @@ haskell_module(
     name = "lib-A-boot",
     src = "src/A.hs-boot",
     src_strip_prefix = "src",
-    deps = [
-        "//tests/hackage:base",
-    ],
 )
 
 haskell_module(
@@ -22,7 +19,6 @@ haskell_module(
     src_strip_prefix = "src",
     deps = [
         ":lib-A-boot",
-        "//tests/hackage:base",
     ],
 )
 
@@ -32,7 +28,6 @@ haskell_module(
     src_strip_prefix = "src",
     deps = [
         ":lib-B",
-        "//tests/hackage:base",
     ],
 )
 

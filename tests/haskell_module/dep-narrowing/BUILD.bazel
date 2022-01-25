@@ -1,0 +1,109 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "TestLib",
+    srcs = ["TestLibModule.hs"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "depfoo",
+    srcs = ["DepFoo.hs"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "TestLib2",
+    modules = [
+        ":TestLibModule2",
+        ":SimpleFoo",
+    ],
+    deps = [
+        ":depfoo",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "TestLibModule2",
+    src = "TestLibModule2.hs",
+    deps = [":SimpleFoo"],
+)
+
+haskell_module(
+    name = "SimpleFoo",
+    src = "SimpleFoo.hs",
+)
+
+haskell_module(
+    name = "TestModule",
+    src = "TestModule.hs",
+    cross_library_deps = [":TestLibModule2"],
+)
+
+haskell_module(
+    name = "LibTop",
+    src = "LibTop.hs",
+    deps = [":TestModule"],
+)
+
+# Modifying TestLibModule2 from TestLib2 doesn't cause a rebuild of
+# TestModule2 thanks to narrowing.
+#
+# If cross_library_deps and narrowed_deps weren't used, then a change
+# in TestLib2 would cause all modules in lib to be rebuilt.
+haskell_module(
+    name = "TestModule2",
+    src = "TestModule2.hs",
+)
+
+haskell_library(
+    name = "lib",
+    modules = [
+        ":LibTop",
+        ":TestModule",
+        ":TestModule2",
+    ],
+    narrowed_deps = [
+        ":TestLib2",
+    ],
+    deps = [
+        ":TestLib",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "TestBinModule",
+    src = "TestBinModule.hs",
+    cross_library_deps = [":LibTop"],
+    module_name = "Main",
+)
+
+haskell_test(
+    name = "Test",
+    modules = [":TestBinModule"],
+    narrowed_deps = [":lib"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

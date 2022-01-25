@@ -20,6 +20,13 @@ load(
     "@rules_haskell//haskell:toolchain_info.bzl",
     "haskell_toolchain_info",
 )
+load(
+    "@rules_haskell//haskell:toolchain.bzl",
+    "get_cc_toolchain",
+    "get_haskell_toolchain",
+    "get_nodejs_toolchain",
+    "get_posix_toolchain",
+)
 
 exports_files(
     glob(["*.bzl"]) + [
@@ -63,6 +70,15 @@ bzl_library(
     ],
 )
 
+# @rules_cc//cc does not define a bzl_library itself, instead we  define our
+# own using the @rules_cc//cc:srcs filegroup.
+bzl_library(
+    name = "rules_cc",
+    srcs = [
+        "@rules_cc//cc:srcs",
+    ],
+)
+
 bzl_library(
     name = "haskell",
     srcs = glob(["**/*.bzl"]),
@@ -70,6 +86,7 @@ bzl_library(
     deps = [
         ":bazel_json",
         ":bazel_tools",
+        ":rules_cc",
         "//haskell/asterius:asterius_bzl",
         "//haskell/experimental:defs.bzl",
         "//haskell/experimental:providers.bzl",
@@ -161,6 +178,26 @@ config_setting(
 
 haskell_toolchain_info(
     name = "toolchain_info",
+)
+
+get_nodejs_toolchain(
+    name = "current_nodejs_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_posix_toolchain(
+    name = "current_posix_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_haskell_toolchain(
+    name = "current_haskell_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_cc_toolchain(
+    name = "current_cc_toolchain",
+    visibility = ["//visibility:public"],
 )
 
 filegroup(

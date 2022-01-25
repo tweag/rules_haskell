@@ -39,7 +39,6 @@ haskell_module(
     name = "module-with-plugin",
     src = "ModuleWith.hs",
     tags = ["skip_profiling"],
-    deps = [":base"],
 )
 
 haskell_library(

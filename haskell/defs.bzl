@@ -35,6 +35,10 @@ load(
     "check_deprecated_attribute_usage",
 )
 load(
+    "//haskell:providers.bzl",
+    "HaskellLibraryInfo",
+)
+load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
@@ -53,6 +57,7 @@ _haskell_common_attrs = {
     "deps": attr.label_list(
         aspects = [haskell_cc_libraries_aspect],
     ),
+    "narrowed_deps": attr.label_list(),
     "modules": attr.label_list(
         providers = [HaskellModuleInfo],
     ),
@@ -88,7 +93,7 @@ _haskell_common_attrs = {
         default = Label("@rules_haskell//haskell:version_macros"),
     ),
     "_cc_toolchain": attr.label(
-        default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
+        default = Label("@rules_cc//cc:current_cc_toolchain"),
     ),
     "_ghc_wrapper": attr.label(
         executable = True,
@@ -176,7 +181,7 @@ def _mk_binary_rule(**kwargs):
             "runghc": "%{name}@runghc",
         },
         toolchains = [
-            "@bazel_tools//tools/cpp:toolchain_type",
+            "@rules_cc//cc:toolchain_type",
             "@rules_haskell//haskell:toolchain",
             "@rules_sh//sh/posix:toolchain_type",
         ],
@@ -211,7 +216,7 @@ _haskell_library = rule(
         "runghc": "%{name}@runghc",
     },
     toolchains = [
-        "@bazel_tools//tools/cpp:toolchain_type",
+        "@rules_cc//cc:toolchain_type",
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -248,6 +253,7 @@ def haskell_binary(
         srcs = [],
         extra_srcs = [],
         deps = [],
+        narrowed_deps = [],
         data = [],
         compiler_flags = [],
         ghcopts = [],
@@ -309,7 +315,13 @@ def haskell_binary(
       srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      narrowed_deps: Like deps, but only for dependencies using the modules
+          attribute. These dependencies are only used if this library uses
+          the modules attribute and the haskell_module rules depend on modules
+          provided by these dependencies.
+          Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this binary.
+          Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -332,6 +344,7 @@ def haskell_binary(
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        narrowed_deps = narrowed_deps,
         data = data,
         compiler_flags = compiler_flags,
         ghcopts = ghcopts,
@@ -391,6 +404,7 @@ def haskell_test(
         srcs = [],
         extra_srcs = [],
         deps = [],
+        narrowed_deps = [],
         data = [],
         compiler_flags = [],
         ghcopts = [],
@@ -442,7 +456,13 @@ def haskell_test(
       srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      narrowed_deps: Like deps, but only for dependencies using the modules
+          attribute. These dependencies are only used if this library uses
+          the modules attribute and the haskell_module rules depend on modules
+          provided by these dependencies.
+          Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this test.
+          Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -478,6 +498,7 @@ def haskell_test(
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        narrowed_deps = narrowed_deps,
         data = data,
         compiler_flags = compiler_flags,
         ghcopts = ghcopts,
@@ -523,6 +544,7 @@ def haskell_library(
         srcs = [],
         extra_srcs = [],
         deps = [],
+        narrowed_deps = [],
         modules = [],
         data = [],
         compiler_flags = [],
@@ -577,7 +599,13 @@ def haskell_library(
       srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
       deps: List of other Haskell libraries to be linked to this target.
+      narrowed_deps: Like deps, but only for dependencies using the modules
+          attribute. These dependencies are only used if this library uses
+          the modules attribute and the haskell_module rules depend on modules
+          provided by these dependencies.
+          Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this library.
+          Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -606,6 +634,7 @@ def haskell_library(
         srcs = srcs,
         extra_srcs = extra_srcs,
         deps = deps,
+        narrowed_deps = narrowed_deps,
         modules = modules,
         data = data,
         compiler_flags = compiler_flags,
@@ -718,9 +747,8 @@ haskell_doc_aspect = _haskell_doc_aspect
 def haskell_register_toolchains(**kwargs):
     """Register GHC binary distributions for all platforms as toolchains.
 
-      Deprecated:
+    Deprecated:
         Use [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains) instead.
-
     """
     _haskell_register_toolchains(**kwargs)
 

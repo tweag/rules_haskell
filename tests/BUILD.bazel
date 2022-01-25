@@ -204,9 +204,9 @@ rule_test(
     size = "small",
     generates = [
         "haddock/array-0.5.4.0",
-        "haddock/base-4.14.1.0",
+        "haddock/base-4.14.3.0",
         "haddock/deepseq-1.4.4.0",
-        "haddock/ghc-boot-th-8.10.4",
+        "haddock/ghc-boot-th-8.10.7",
         "haddock/ghc-prim-0.6.1",
         "haddock/index",
         "haddock/integer-gmp-1.0.3.0",

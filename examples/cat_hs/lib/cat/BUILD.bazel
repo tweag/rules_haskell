@@ -31,3 +31,10 @@ haskell_test(
         "@stackage//:text",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

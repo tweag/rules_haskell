@@ -44,8 +44,8 @@ def check_version(actual_version):
 
     # Please use length 3 tuples, because bazel versions has 3 members;
     # to avoid surprising behaviors (for example (2,0) >/= (2, 0, 0))
-    min_bazel = (2, 1, 0)  # Change THIS LINE when changing bazel min version
-    max_bazel = (4, 1, 0)  # Change THIS LINE when changing bazel max version
+    min_bazel = (4, 0, 0)  # Change THIS LINE when changing bazel min version
+    max_bazel = (4, 2, 1)  # Change THIS LINE when changing bazel max version
 
     actual = tuple(_parse_bazel_version(actual_version))
 
@@ -58,9 +58,3 @@ def check_version(actual_version):
     adjective = "old" if actual < min_bazel else "recent"
 
     print("WARNING: bazel version is too {}. Supported versions range from {} to {}, but found: {}".format(adjective, min_bazel_string, max_bazel_string, actual_version))
-
-def supports_rules_nodejs_ge_4(actual_version):
-    if type(actual_version) != "string" or len(actual_version) < 5:
-        return False  # unexpected format
-    actual = tuple(_parse_bazel_version(actual_version))
-    return actual >= (4, 0, 0)

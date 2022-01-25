@@ -8,7 +8,6 @@ haskell_module(
     src = "src/Branch/Right/Module.hs",
     src_strip_prefix = "src",
     deps = [
-        "//tests/hackage:base",
         "//tests/haskell_module/nested/Root:Module",
     ],
 )
@@ -18,7 +17,6 @@ haskell_module(
     src = "LeafModule.hs",
     deps = [
         ":Branch.Right.Module",
-        "//tests/hackage:base",
         "//tests/haskell_module/nested/Branch/Left:Module",
     ],
 )

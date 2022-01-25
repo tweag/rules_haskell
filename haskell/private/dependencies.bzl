@@ -21,13 +21,33 @@ def gather_dep_info(name, deps):
         for dep in deps
         if HaskellInfo in dep
     ])
+    empty_lib_package_databases = depset(transitive = [
+        dep[HaskellInfo].empty_lib_package_databases
+        for dep in deps
+        if HaskellInfo in dep
+    ])
     hs_libraries = depset(transitive = [
         dep[HaskellInfo].hs_libraries
         for dep in deps
         if HaskellInfo in dep
     ])
+    deps_hs_libraries = depset(transitive = [
+        dep[HaskellInfo].deps_hs_libraries
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+    empty_hs_libraries = depset(transitive = [
+        dep[HaskellInfo].empty_hs_libraries
+        for dep in deps
+        if HaskellInfo in dep
+    ])
     interface_dirs = depset(transitive = [
         dep[HaskellInfo].interface_dirs
+        for dep in deps
+        if HaskellInfo in dep
+    ])
+    deps_interface_dirs = depset(transitive = [
+        dep[HaskellInfo].deps_interface_dirs
         for dep in deps
         if HaskellInfo in dep
     ])
@@ -62,9 +82,13 @@ def gather_dep_info(name, deps):
 
     acc = HaskellInfo(
         package_databases = package_databases,
+        empty_lib_package_databases = empty_lib_package_databases,
         version_macros = set.empty(),
         hs_libraries = hs_libraries,
+        deps_hs_libraries = deps_hs_libraries,
+        empty_hs_libraries = empty_hs_libraries,
         interface_dirs = interface_dirs,
+        deps_interface_dirs = deps_interface_dirs,
         source_files = source_files,
         boot_files = boot_files,
         import_dirs = import_dirs,
@@ -81,9 +105,13 @@ def gather_dep_info(name, deps):
                 fail("Target {0} cannot depend on binary".format(name))
             acc = HaskellInfo(
                 package_databases = acc.package_databases,
+                empty_lib_package_databases = acc.empty_lib_package_databases,
                 version_macros = set.mutable_union(acc.version_macros, binfo.version_macros),
                 hs_libraries = depset(transitive = [acc.hs_libraries, binfo.hs_libraries]),
+                deps_hs_libraries = depset(transitive = [acc.deps_hs_libraries, binfo.deps_hs_libraries]),
+                empty_hs_libraries = depset(transitive = [acc.empty_hs_libraries, binfo.empty_hs_libraries]),
                 interface_dirs = acc.interface_dirs,
+                deps_interface_dirs = acc.deps_interface_dirs,
                 import_dirs = import_dirs,
                 compile_flags = compile_flags,
                 extra_source_files = extra_source_files,
@@ -98,14 +126,18 @@ def gather_dep_info(name, deps):
             # in the `CcInfo` provider.
             acc = HaskellInfo(
                 package_databases = acc.package_databases,
+                empty_lib_package_databases = acc.empty_lib_package_databases,
                 version_macros = acc.version_macros,
                 import_dirs = acc.import_dirs,
                 source_files = acc.source_files,
                 boot_files = acc.boot_files,
                 compile_flags = acc.compile_flags,
                 hs_libraries = acc.hs_libraries,
+                deps_hs_libraries = acc.deps_hs_libraries,
+                empty_hs_libraries = acc.empty_hs_libraries,
                 extra_source_files = acc.extra_source_files,
                 interface_dirs = acc.interface_dirs,
+                deps_interface_dirs = acc.deps_interface_dirs,
                 user_compile_flags = [],
                 user_repl_flags = [],
             )

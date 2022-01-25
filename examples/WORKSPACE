@@ -5,6 +5,11 @@ local_repository(
     path = "..",
 )
 
+local_repository(
+    name = "arm",
+    path = "arm",
+)
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
@@ -13,14 +18,14 @@ rules_haskell_dependencies()
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8104",
+    attribute_path = "haskell.compiler.ghc8107",
     repository = "@rules_haskell//nixpkgs:default.nix",
-    version = "8.10.4",
+    version = "8.10.7",
 )
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
-rules_haskell_toolchains(version = "8.10.4")
+rules_haskell_toolchains(version = "8.10.7")
 
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",

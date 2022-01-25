@@ -9,8 +9,6 @@ package(default_testonly = 1)
 
 haskell_library(
     name = "TestLib",
-    # TODO: Remove when haskell_module supports dynamic builds
-    linkstatic = True,
     modules = [
         ":TestLibModule",
     ],
@@ -23,7 +21,6 @@ haskell_library(
 haskell_module(
     name = "TestLibModule",
     src = "TestLib2.hs",
-    deps = ["//tests/hackage:base"],
 )
 
 haskell_test(

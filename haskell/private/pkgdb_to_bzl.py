@@ -14,6 +14,7 @@ import os
 import sys
 import textwrap
 import types
+import json
 
 import package_configuration
 
@@ -43,6 +44,9 @@ def unfold_fields(content):
 
 def path_to_label(path, pkgroot):
     """Substitute one pkgroot for another relative one to obtain a label."""
+    if path.find("${pkgroot}") != -1:
+        return os.path.normpath(path.strip("\"").replace("${pkgroot}", topdir)).replace('\\', '/')
+
     topdir_relative_path = path.replace(pkgroot, "$topdir")
     if topdir_relative_path.find("$topdir") != -1:
         return os.path.normpath(topdir_relative_path.replace("$topdir", topdir)).replace('\\', '/')
@@ -214,11 +218,13 @@ for pkg_name, pkg_id in pkg_id_map:
     if pkg_id != pkg_name:
         output += ["""alias(name = '{}', actual = '{}')""".format(pkg_id, pkg_name)]
 
-output += [
-    textwrap.dedent("""
-      toolchain_libraries = {pkgs}
-      """.format(pkgs = [pkg_name for pkg_name, _ in pkg_id_map])
+# The _ahc_impl function recovers this toolchain_libraries variable and assumes it is defined on a single line.
+toolchain_libraries = textwrap.dedent("{pkgs}".format(pkgs = [pkg_name for pkg_name, _ in pkg_id_map])
     )
-]
+output.append("toolchain_libraries = {}".format(toolchain_libraries))
 
-print("\n".join(output))
+result = {
+    "file_content": "\n".join(output),
+    "toolchain_libraries": toolchain_libraries,
+}
+print(json.dumps(result))

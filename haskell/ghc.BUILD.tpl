@@ -12,18 +12,12 @@ load(
     "haskell_import",
     "haskell_toolchain",
 )
-load(
-    "@rules_haskell//haskell/asterius:defs.bzl",
-    "asterius_toolchain",
-)
 
 package(default_visibility = ["//visibility:public"])
 
 %{toolchain_libraries}
 
 %{toolchain}
-
-%{asterius_toolchain}
 
 filegroup(
     name = "bin",
@@ -36,8 +30,8 @@ filegroup(
 )
 
 filegroup(
-    name = "doc",
-    srcs = glob(["doc/**"]),
+    name = "%{docdir}",
+    srcs = glob(["%{docdir}/**"]),
 )
 
 # Expose embedded MinGW toolchain when on Windows.

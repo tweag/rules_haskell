@@ -16,7 +16,6 @@ load(
     "os_of_constraints",
     "platform_of_constraints",
 )
-load("//haskell:private/versions.bzl", "supports_rules_nodejs_ge_4")
 load("//haskell/asterius:asterius_config.bzl", "asterius_cabalopts")
 load(
     "//haskell/asterius:asterius_dependencies.bzl",
@@ -104,7 +103,7 @@ toolchain(
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
     toolchain = "{wasm_cc_toolchain}",
-    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+    toolchain_type = "@rules_cc//cc:toolchain_type",
 )
         """.format(
             bindist_name = ctx.attr.bindist_name,
@@ -131,7 +130,7 @@ _ahc_toolchain = repository_rule(
 
 def _ahc_impl(ctx):
     filepaths = resolve_labels(ctx, [
-        "@rules_haskell//haskell:ghc.BUILD.tpl",
+        "@rules_haskell//haskell:ahc.BUILD.tpl",
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
     ])
     lib_path = str(ctx.path(ctx.attr.asterius_lib_setting_file).dirname)
@@ -170,13 +169,20 @@ def _ahc_impl(ctx):
 
     ctx.template(
         "BUILD",
-        filepaths["@rules_haskell//haskell:ghc.BUILD.tpl"],
+        filepaths["@rules_haskell//haskell:ahc.BUILD.tpl"],
         substitutions = {
-            "%{toolchain_libraries}": toolchain_libraries,
+            "%{toolchain_libraries}": toolchain_libraries["file_content"],
             "%{toolchain}": toolchain,
             "%{asterius_toolchain}": asterius_toolchain,
         },
         executable = False,
+    )
+
+    # We make the list of toolchain libraries available for loading in the WORKSPACE file.
+    ctx.file(
+        "toolchain_libraries.bzl",
+        executable = False,
+        content = "toolchain_libraries = {}".format(toolchain_libraries["toolchain_libraries"]),
     )
 
 _ahc = repository_rule(
@@ -237,9 +243,6 @@ def rules_haskell_asterius_toolchain(
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
     """
-
-    if not supports_rules_nodejs_ge_4(native.bazel_version):
-        fail("Asterius is only supported starting from bazel 4 (because it depends on rules_nodejs >= 4)")
 
     _ahc(
         name = name,
@@ -360,3 +363,33 @@ def asterius_dependencies_custom(**kwargs):
         ```
     """
     _asterius_dependencies_custom(**kwargs)
+
+def _toolchain_libraries_impl(repository_ctx):
+    if repository_ctx.attr.repository:
+        repository_ctx.file(
+            "toolchain_libraries.bzl",
+            executable = False,
+            content = """\
+load("@{}//:toolchain_libraries.bzl", _toolchain_libraries = "toolchain_libraries")
+toolchain_libraries = _toolchain_libraries
+    """.format(repository_ctx.attr.repository),
+        )
+    else:
+        repository_ctx.file(
+            "toolchain_libraries.bzl",
+            executable = False,
+            content = "toolchain_libraries = None",
+        )
+
+    repository_ctx.file("BUILD", executable = False, content = "")
+
+toolchain_libraries = repository_rule(
+    _toolchain_libraries_impl,
+    attrs = {
+        "repository": attr.string(
+            default = "",
+            doc = "An optional repository from which we recover the toolchain_libraries variable. If absent or empty, the toolchain_libraries variable will be equal to None.",
+        ),
+    },
+    doc = "Optionally recovers the `toolchain_libraries` variable from another repository",
+)
