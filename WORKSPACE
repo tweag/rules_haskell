@@ -533,13 +533,13 @@ register_toolchains(
 # starting from 0.29, rules_go requires bazel >= 4.2.0
 http_archive(
     name = "io_bazel_rules_go",
+    patch_args = ["-p1"],
+    patches = ["//:rules_go_integration_testing.patch"],
     sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
         "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
     ],
-    patch_args = ["-p1"],
-    patches = ["//:rules_go_integration_testing.patch"],
 )
 
 http_archive(
