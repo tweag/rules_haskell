@@ -58,7 +58,7 @@ def link_binary(
     executable = hs.actions.declare_file(exe_name)
 
     args = hs.actions.args()
-    args.add_all(["-optl" + f for f in cc.linker_flags])
+    args.add_all(cc.linker_flags, format_each = "-optl%s")
     if with_profiling:
         args.add("-prof")
     args.add_all(hs.toolchain.ghcopts)
@@ -270,7 +270,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     )
 
     args = hs.actions.args()
-    args.add_all(["-optl" + f for f in cc.linker_flags])
+    args.add_all(cc.linker_flags, format_each = "-optl%s")
     args.add_all(["-shared", "-dynamic"])
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)

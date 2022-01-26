@@ -52,10 +52,10 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     args.add_all(["-l", cc.tools.cc])
     args.add("-ighcplatform.h")
     args.add("-ighcversion.h")
-    args.add_all(["--cflag=" + f for f in cc.cpp_flags])
-    args.add_all(["--cflag=" + f for f in cc.compiler_flags])
-    args.add_all(["--cflag=" + f for f in cc.include_args])
-    args.add_all(["--lflag=" + f for f in cc.linker_flags])
+    args.add_all(cc.cpp_flags, format_each = "--cflag=%s")
+    args.add_all(cc.compiler_flags, format_each = "--cflag=%s")
+    args.add_all(cc.include_args, format_each = "--cflag=%s")
+    args.add_all(cc.linker_flags, format_each = "--lflag=%s")
 
     # If are building fully-statically-linked binaries, we need to ensure that
     # we pass arguments to `hsc2hs` such that objects it builds are statically
