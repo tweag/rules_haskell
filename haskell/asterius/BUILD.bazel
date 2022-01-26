@@ -21,6 +21,13 @@ platform(
     ],
 )
 
+config_setting(
+    name = "asterius",
+    constraint_values = [
+        "@platforms//cpu:wasm32",
+    ],
+)
+
 # Toolchain type for asterius specific tools such as ahc-dist,
 # which are not part of the regular haskell toolchain.
 toolchain_type(

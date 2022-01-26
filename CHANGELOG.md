@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 [Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.14...master
 
+### Changed
+
+* By default, the `stack_snapshot` rule now relies on stack to determine toolchain libraries.
+This can be a breaking change on windows if we rely on a stack snapshot containing `Win32 <= 2.13.2.0`,
+as we encounter [this issue](https://github.com/haskell/win32/issues/193).
+In this case, to ensure the toolchain `Win32` library is used (instead of trying to compile a new one),
+it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yaml](./stackage_snapshot.yaml) file.
+
 ## [0.14.0] 2021-12-21
 
 [0.14.0]: https://github.com/tweag/rules_haskell/compare/v0.13...v0.14
