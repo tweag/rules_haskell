@@ -1,12 +1,12 @@
 package hs_bin_repl_test
 
 import (
-        "testing"
-        it "github.com/tweag/rules_haskell/tests/integration_testing"
+	it "github.com/tweag/rules_haskell/tests/integration_testing"
+	"testing"
 )
 
 func TestMain(m *testing.M) {
-        it.TestMain(m, `
+	it.TestMain(m, `
 -- WORKSPACE --
 local_repository(
         name = "rules_haskell",
@@ -95,9 +95,9 @@ message = "Hello GHCi!"
 }
 
 func TestHsBinRepl(t *testing.T) {
-        out, err := it.BazelOutput(it.Context.BazelBinary, "run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
-        if err != nil {
-                t.Fatal(err)
-        }
-        it.AssertOutput(t, out, "Hello GHCi!\n")
+	out, err := it.BazelOutput(it.Context.BazelBinary, "run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	it.AssertOutput(t, out, "Hello GHCi!\n")
 }
