@@ -68,8 +68,8 @@ build:windows-bindist --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_tool
 
 func BazelEnv() []string {
 	env := []string{}
-	// It's important value of $HOME to be invariant between different integration test runs
-	// and to be writable directory for bazel test.
+	// It's important that the value of $HOME is invariant between different integration test runs
+	// and that the directory is writable for bazel test.
 	env = append(env, fmt.Sprintf("HOME=%s", os.TempDir()))
 	if runtime.GOOS == "darwin" {
 		env = append(env, "BAZEL_USE_CPP_ONLY_TOOLCHAIN=1")
