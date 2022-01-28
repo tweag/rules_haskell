@@ -531,6 +531,10 @@ register_toolchains(
 # For buildifier
 
 # starting from 0.29, rules_go requires bazel >= 4.2.0
+# this patch is needed in order to use bazel integration testing mechanism from rules_go:
+#   1. it fixes the issue with go_bazel_test on Windows: https://github.com/bazelbuild/rules_go/issues/3034
+#       fix will be available in rules_go starting from 0.30.0
+#   2. it makes outputUserRoot variable public and available for commands running bazel functions redefined in rules_haskell
 http_archive(
     name = "io_bazel_rules_go",
     patch_args = ["-p1"],
