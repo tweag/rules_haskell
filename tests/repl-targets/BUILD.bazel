@@ -117,6 +117,7 @@ haskell_library(
 integration_test(
     name = "hs_bin_repl_test",
     size = "medium",
+    bazel = "//tests:bazel",
 )
 
 filegroup(

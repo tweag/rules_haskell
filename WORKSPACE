@@ -587,11 +587,11 @@ bind(
 
 # For persistent worker (tools/worker)
 load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
-load("//tools:repositories.bzl", "bazel_binaries_for_integraion_testing")
+load("//tools:repositories.bzl", "bazel_binaries_for_integration_testing")
 
 rules_haskell_worker_dependencies()
 
-bazel_binaries_for_integraion_testing()
+bazel_binaries_for_integration_testing()
 
 # Stack snapshot repository for testing non standard toolchains
 # The toolchain_libraries rule provide a default value for the toolchain_libraries

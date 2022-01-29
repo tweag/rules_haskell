@@ -2,6 +2,7 @@
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 
 def rules_haskell_worker_dependencies(**stack_kwargs):
     """Provide all repositories that are necessary for `rules_haskell`'s tools to
@@ -30,7 +31,7 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
             **stack_kwargs
         )
 
-def bazel_binaries_for_integraion_testing():
+def bazel_binaries_for_integration_testing():
     http_file(
         name = "bazel_bin_linux",
         executable = True,
@@ -50,4 +51,16 @@ def bazel_binaries_for_integraion_testing():
         executable = True,
         sha256 = "7b2077af7055b421fe31822f83c3c3c15e36ff39b69560ba2472dde92dd45b46",
         urls = ["https://github.com/bazelbuild/bazel/releases/download/4.1.0/bazel-4.1.0-windows-x86_64.exe"],
+    )
+
+    nixpkgs_package(
+        name = "bazel_4",
+        repository = "@nixpkgs_default",
+        build_file_content = """\
+filegroup(
+    name = "bazel_bin",
+    srcs = ["bin/bazel"],
+    visibility = [ "//visibility:public" ],
+)
+""",
     )
