@@ -604,11 +604,11 @@ the ``modules`` attribute. When a module depends on another module of
 the same library, the dependency can be expressed in the ``deps``
 attribute of the ``haskell_module`` rule.
 
-Now, when ``LibMod1.hs`` changes ``rules_haskell`` can update the
+Now, when ``LibMod1.hs`` changes, ``rules_haskell`` can update the
 ``lib`` target without rebuilding ``LibMod2.hs``, since ``:LibMod2``
 doesn't depend on ``:LibMod1``. ``rules_haskell`` can't detect
-redundant dependencies, but it will produce an error when building if
-``:LibMod2`` needs a dependency that hasn't been declared.
+redundant dependencies, but it will produce an error in sandboxed
+builds if ``:LibMod2`` needs a dependency that hasn't been declared.
 
 Dependencies of ``haskell_module`` come in three flavors. Firstly,
 required modules can be listed in the ``deps`` attribute. Secondly,
@@ -652,7 +652,7 @@ depend on specific modules from other libraries via the
 coming from the same library (like ``:LibMod1``). The alternative would be
 to add ``:lib`` to the ``deps`` attribute of ``:lib2``, but this would
 cause builds of ``:Lib2Mod1`` and ``:Lib2Mod2`` to depend on all of the
-modules of ``:lib``::
+modules of ``:lib``, as in the following snippet.::
 
   haskell_module(
       name = "Lib2Mod1",
