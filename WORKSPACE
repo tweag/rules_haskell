@@ -531,6 +531,8 @@ register_toolchains(
 # For buildifier
 
 # starting from 0.29, rules_go requires bazel >= 4.2.0
+# rules_go dependency used only for rules_haskell developers for integration testing
+# and it doesn't needed for downstream users of rules_haskell
 # this patch is needed in order to use bazel integration testing mechanism from rules_go:
 #   1. it fixes the issue with go_bazel_test on Windows: https://github.com/bazelbuild/rules_go/issues/3034
 #       fix will be available in rules_go starting from 0.30.0
