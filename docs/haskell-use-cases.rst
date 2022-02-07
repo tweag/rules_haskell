@@ -559,7 +559,7 @@ Building incrementally
 By default, Haskell rules that build libraries or binaries with multiple
 modules will rebuild all of their modules after any change. This is because
 ``rules_haskell`` doesn't analyze the source code to discover dependencies
-between the modules. Instead, it pesimistically assumes that all the modules
+between the modules. Instead, it pessimistically assumes that all the modules
 depend on every other.
 
 The user, however, can describe the dependencies between the modules,
