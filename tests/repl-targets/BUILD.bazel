@@ -4,6 +4,8 @@ load(
     "haskell_library",
     "haskell_test",
 )
+load("@io_bazel_rules_go//go/tools/bazel_testing:def.bzl", "go_bazel_test")
+load("//tests:integration_tests.bzl", "integration_test")
 
 package(default_testonly = 1)
 
@@ -110,6 +112,12 @@ haskell_library(
     ],
     visibility = ["//visibility:public"],
     deps = ["//tests/hackage:base"],
+)
+
+integration_test(
+    name = "hs_bin_repl_test",
+    size = "medium",
+    bazel = "//tests:bazel",
 )
 
 filegroup(
