@@ -188,6 +188,11 @@ def _build_haskell_module(
 
     args.add_all(cc.include_args)
 
+    if plugins or enable_th:
+        # cc toolchain linker flags would be necessary when the interpreter wants to
+        # load any libraries
+        args.add_all(cc.linker_flags, format_each = "-optl%s")
+
     # Collect library dependency arguments
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
