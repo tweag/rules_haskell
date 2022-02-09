@@ -33,6 +33,8 @@ CcInteropInfo = provider(
         "cc_libraries_info": "HaskellCcLibrariesInfo",
         "cc_libraries": "depset, C libraries from direct linking dependencies.",
         "transitive_libraries": "depset, C and Haskell libraries from transitive linking dependencies.",
+        "cc_th_libraries": "depset, C libraries from TemplateHaskell dependencies.",
+        "transitive_th_libraries": "depset, C and Haskell libraries from transitive TemplateHaskell dependencies.",
         "plugin_libraries": "depset, C and Haskell libraries from transitive plugin dependencies.",
         "setup_libraries": "depset, C and Haskell libraries from Cabal setup dependencies.",
     },
@@ -50,6 +52,15 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
       CcInteropInfo: Information needed for CC interop.
     """
     ccs = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep and HaskellInfo not in dep]
+
+    if hasattr(ctx.attr, "th_deps"):
+        th_deps = ctx.attr.th_deps
+        if not th_deps and ctx.attr.use_deps_on_empty_th_deps:
+            th_deps = ctx.attr.deps
+    else:
+        th_deps = ctx.attr.deps
+
+    th_ccs = [dep[CcInfo] for dep in th_deps if CcInfo in dep and HaskellInfo not in dep]
 
     hdrs = []
     include_args = []
@@ -151,7 +162,7 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
     env["CC_WRAPPER_CPU"] = cc_toolchain.cpu
 
     cc_libraries_info = deps_HaskellCcLibrariesInfo(
-        ctx.attr.deps + getattr(ctx.attr, "plugins", []) + getattr(ctx.attr, "setup_deps", []),
+        ctx.attr.deps + th_deps + getattr(ctx.attr, "plugins", []) + getattr(ctx.attr, "setup_deps", []),
     )
     return CcInteropInfo(
         tools = struct(**tools),
@@ -168,9 +179,19 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
         linker_flags = linker_flags,
         cc_libraries_info = cc_libraries_info,
         cc_libraries = get_cc_libraries(cc_libraries_info, [lib for li in cc_common.merge_cc_infos(cc_infos = ccs).linking_context.linker_inputs.to_list() for lib in li.libraries]),
+        cc_th_libraries = get_cc_libraries(cc_libraries_info, [
+            lib
+            for li in cc_common.merge_cc_infos(cc_infos = th_ccs).linking_context.linker_inputs.to_list()
+            for lib in li.libraries
+        ]),
         transitive_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = [
             dep[CcInfo]
             for dep in ctx.attr.deps
+            if CcInfo in dep
+        ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
+        transitive_th_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = [
+            dep[CcInfo]
+            for dep in th_deps
             if CcInfo in dep
         ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
         plugin_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = [

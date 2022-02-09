@@ -173,6 +173,12 @@ def _haskell_binary_common_impl(ctx, is_test):
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     all_deps_info = gather_dep_info(ctx.attr.name, deps)
 
+    th_deps = getattr(ctx.attr, "th_deps", [])
+    if not th_deps and ctx.attr.use_deps_on_empty_th_deps:
+        th_deps = deps
+
+    th_dep_info = gather_dep_info(ctx.attr.name, th_deps)
+
     modules = ctx.attr.modules
     if modules and ctx.files.srcs:
         fail("""Only one of "srcs" or "modules" attributes must be specified in {}""".format(ctx.label))
@@ -231,6 +237,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         java,
         posix,
         dep_info,
+        th_dep_info,
         plugin_dep_info,
         srcs = srcs_files,
         module_map = module_map,
@@ -423,6 +430,12 @@ def haskell_library_impl(ctx):
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps + ctx.attr.exports)
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
     all_deps_info = gather_dep_info(ctx.attr.name, deps)
+
+    th_deps = getattr(ctx.attr, "th_deps", [])
+    if not th_deps and ctx.attr.use_deps_on_empty_th_deps:
+        th_deps = deps
+    th_dep_info = gather_dep_info(ctx.attr.name, th_deps)
+
     all_plugins = ctx.attr.plugins + ctx.attr.non_default_plugins
     plugin_dep_info = gather_dep_info(
         ctx.attr.name,
@@ -482,6 +495,7 @@ def haskell_library_impl(ctx):
         java,
         posix,
         dep_info,
+        th_dep_info,
         plugin_dep_info,
         srcs = srcs_files,
         module_map = module_map,

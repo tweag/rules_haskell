@@ -176,6 +176,13 @@ config_setting(
     },
 )
 
+config_setting(
+    name = "use_deps_on_empty_th_deps",
+    flag_values = {
+        "@rules_haskell//flags:incompatible_use_deps_on_empty_th_deps": "true"
+    },
+)
+
 haskell_toolchain_info(
     name = "toolchain_info",
 )

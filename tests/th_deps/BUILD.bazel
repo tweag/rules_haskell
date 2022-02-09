@@ -1,0 +1,55 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+test_suite(
+    name = "th_deps",
+    tests = [
+        ":use-lib-b"
+    ],
+   )
+
+
+haskell_library(
+    name = "lib-a",
+    srcs = [ "LibA.hs" ],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "lib-b",
+    srcs = [ "LibB.hs", "TH.hs" ],
+    hidden_modules = ["TH"],
+    th_deps = [
+        ":lib-a",
+        "//tests/data:ourclibrary",
+        "//tests/hackage:template-haskell",
+    ],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "use-lib-b",
+    srcs = [
+        "Main.hs",
+    ],
+    deps = [
+        ":lib-b",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

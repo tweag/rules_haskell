@@ -19,8 +19,21 @@ def haskell_context(ctx, attr = None):
     if not attr:
         attr = ctx.attr
 
-    deps = (attr.deps if hasattr(attr, "deps") else []) + (attr.exports if hasattr(attr, "exports") else []) + (attr.narrowed_deps if hasattr(attr, "narrowed_deps") else [])
-    package_ids = all_dependencies_package_ids(deps)
+    deps = getattr(attr, "deps", [])
+
+    if hasattr(attr, "th_deps"):
+        th_deps = attr.th_deps
+        if not th_deps and attr.use_deps_on_empty_th_deps:
+            th_deps = deps
+    else:
+        th_deps = deps
+
+    package_ids = all_dependencies_package_ids(
+        deps +
+        getattr(attr, "exports", []) +
+        getattr(attr, "narrowed_deps", [])
+    )
+    th_package_ids = all_dependencies_package_ids(th_deps)
 
     if hasattr(attr, "src_strip_prefix"):
         src_strip_prefix = attr.src_strip_prefix
@@ -63,6 +76,7 @@ def haskell_context(ctx, attr = None):
         ghc_wrapper = ghc_wrapper,
         worker = worker,
         package_ids = package_ids,
+        th_package_ids = th_package_ids,
         src_root = src_root,
         package_root = paths.join(ctx.label.workspace_root, ctx.label.package),
         env = env,

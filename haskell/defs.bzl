@@ -61,6 +61,9 @@ _haskell_common_attrs = {
     "modules": attr.label_list(
         providers = [HaskellModuleInfo],
     ),
+    "th_deps": attr.label_list(
+        aspects = [haskell_cc_libraries_aspect],
+    ),
     # a proxy for ctx.label so that the transition can access it
     "label_string": attr.string(),
     "data": attr.label_list(
@@ -99,6 +102,10 @@ _haskell_common_attrs = {
         executable = True,
         cfg = "host",
         default = Label("@rules_haskell//haskell:ghc_wrapper"),
+    ),
+    "use_deps_on_empty_th_deps": attr.bool(
+        # Should be provided by the wrappers, not the user
+        mandatory=True,
     ),
     "worker": attr.label(
         default = None,
@@ -233,6 +240,10 @@ def _haskell_worker_wrapper(rule_type, **kwargs):
     kwargs.pop("compiler_flags")
 
     defaults = dict(
+        use_deps_on_empty_th_deps = select({
+            "@rules_haskell//haskell:use_deps_on_empty_th_deps": True,
+            "//conditions:default": False,
+        }),
         worker = select({
             "@rules_haskell//haskell:use_worker": Label("@rules_haskell//tools/worker:bin"),
             "//conditions:default": None,
@@ -254,6 +265,7 @@ def haskell_binary(
         extra_srcs = [],
         deps = [],
         narrowed_deps = [],
+        th_deps = [],
         data = [],
         compiler_flags = [],
         ghcopts = [],
@@ -322,6 +334,8 @@ def haskell_binary(
           Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this binary.
           Note: This attribute is experimental and not ready for production, yet.
+      th_deps: List of libraries needed to run TemplateHaskell code. These are needed
+          only at compile time.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -345,6 +359,7 @@ def haskell_binary(
         extra_srcs = extra_srcs,
         deps = deps,
         narrowed_deps = narrowed_deps,
+        th_deps = th_deps,
         data = data,
         compiler_flags = compiler_flags,
         ghcopts = ghcopts,
@@ -405,6 +420,7 @@ def haskell_test(
         extra_srcs = [],
         deps = [],
         narrowed_deps = [],
+        th_deps = [],
         data = [],
         compiler_flags = [],
         ghcopts = [],
@@ -463,6 +479,8 @@ def haskell_test(
           Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this test.
           Note: This attribute is experimental and not ready for production, yet.
+      th_deps: List of libraries needed to run TemplateHaskell code. These are needed
+          only at compile time.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -499,6 +517,7 @@ def haskell_test(
         extra_srcs = extra_srcs,
         deps = deps,
         narrowed_deps = narrowed_deps,
+        th_deps = th_deps,
         data = data,
         compiler_flags = compiler_flags,
         ghcopts = ghcopts,
@@ -546,6 +565,7 @@ def haskell_library(
         deps = [],
         narrowed_deps = [],
         modules = [],
+        th_deps = [],
         data = [],
         compiler_flags = [],
         ghcopts = [],
@@ -606,6 +626,8 @@ def haskell_library(
           Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this library.
           Note: This attribute is experimental and not ready for production, yet.
+      th_deps: List of libraries needed to run TemplateHaskell code. These are needed
+          only at compile time.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
       compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
@@ -636,6 +658,7 @@ def haskell_library(
         deps = deps,
         narrowed_deps = narrowed_deps,
         modules = modules,
+        th_deps = th_deps,
         data = data,
         compiler_flags = compiler_flags,
         ghcopts = ghcopts,

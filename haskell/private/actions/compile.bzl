@@ -104,7 +104,28 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, module_map, import_dir_map, extra_srcs, user_compile_flags, output_mode, with_profiling, interfaces_dir, objects_dir, my_pkg_id, version, plugins, non_default_plugins, preprocessors):
+def _compilation_defaults(
+    hs,
+    cc,
+    java,
+    posix,
+    dep_info,
+    th_dep_info,
+    plugin_dep_info,
+    srcs,
+    module_map,
+    import_dir_map,
+    extra_srcs,
+    user_compile_flags,
+    output_mode,
+    with_profiling,
+    interfaces_dir,
+    objects_dir,
+    my_pkg_id,
+    version,
+    plugins,
+    non_default_plugins,
+    preprocessors):
     """Compute variables common to all compilation targets (binary and library).
 
     Returns:
@@ -192,8 +213,15 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
-            package_ids = hs.package_ids,
-            package_databases = dep_info.package_databases,
+            package_ids = set.to_list(
+                set.from_list(
+                    hs.package_ids + hs.th_package_ids
+                )
+            ),
+            package_databases = depset(transitive=[
+                dep_info.package_databases,
+                th_dep_info.package_databases,
+            ]),
             version = version,
         ),
         plugin_pkg_info = expose_packages(
@@ -212,9 +240,10 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
 
     hsc_inputs = []
     if version:
-        (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
-        hsc_flags += ["--cflag=" + x for x in version_macro_flags]
-        hsc_inputs += set.to_list(version_macro_headers)
+        for info in [dep_info, th_dep_info]:
+            (version_macro_headers, version_macro_flags) = version_macro_includes(info)
+            hsc_flags += ["--cflag=" + x for x in version_macro_flags]
+            hsc_inputs += set.to_list(version_macro_headers)
 
     # Add import hierarchy root.
     # Note that this is not perfect, since GHC requires hs-boot files
@@ -349,7 +378,7 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
 
     # Transitive library dependencies for runtime.
     link_libraries(
-        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries, for_th_only = True),
+        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_th_libraries, for_th_only = True),
         args,
     )
 
@@ -363,11 +392,13 @@ def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, 
             depset(cc.hdrs),
             dep_info.package_databases,
             dep_info.interface_dirs,
-            dep_info.hs_libraries,
+            th_dep_info.package_databases,
+            th_dep_info.interface_dirs,
+            th_dep_info.hs_libraries,
             plugin_dep_info.package_databases,
             plugin_dep_info.interface_dirs,
             plugin_dep_info.hs_libraries,
-            depset(get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries + cc.plugin_libraries)),
+            depset(get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_th_libraries + cc.plugin_libraries)),
             java.inputs,
             preprocessors.inputs,
             plugin_tool_inputs,
@@ -405,6 +436,7 @@ def compile_binary(
         java,
         posix,
         dep_info,
+        th_dep_info,
         plugin_dep_info,
         srcs,
         module_map,
@@ -431,7 +463,29 @@ def compile_binary(
         source_files: set of Haskell source files
         boot_files: set of Haskell boot files
     """
-    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, module_map, import_dir_map, extra_srcs, user_compile_flags, "dynamic" if dynamic else "static", with_profiling, interfaces_dir, objects_dir, my_pkg_id = None, version = version, plugins = plugins, non_default_plugins = non_default_plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(
+        hs,
+        cc,
+        java,
+        posix,
+        dep_info,
+        th_dep_info,
+        plugin_dep_info,
+        srcs,
+        module_map,
+        import_dir_map,
+        extra_srcs,
+        user_compile_flags,
+        "dynamic" if dynamic else "static",
+        with_profiling,
+        interfaces_dir,
+        objects_dir,
+        my_pkg_id = None,
+        version = version,
+        plugins = plugins,
+        non_default_plugins = non_default_plugins,
+        preprocessors = preprocessors,
+    )
     c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
@@ -477,6 +531,7 @@ def compile_library(
         java,
         posix,
         dep_info,
+        th_dep_info,
         plugin_dep_info,
         srcs,
         module_map,
@@ -505,7 +560,29 @@ def compile_library(
         boot_files: set of Haskell boot files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, module_map, import_dir_map, extra_srcs, user_compile_flags, "dynamic-too" if with_shared else "static", with_profiling, interfaces_dir, objects_dir, my_pkg_id = my_pkg_id, version = my_pkg_id.version, plugins = plugins, non_default_plugins = non_default_plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(
+        hs,
+        cc,
+        java,
+        posix,
+        dep_info,
+        th_dep_info,
+        plugin_dep_info,
+        srcs,
+        module_map,
+        import_dir_map,
+        extra_srcs,
+        user_compile_flags,
+        "dynamic-too" if with_shared else "static",
+        with_profiling,
+        interfaces_dir,
+        objects_dir,
+        my_pkg_id = my_pkg_id,
+        version = my_pkg_id.version,
+        plugins = plugins,
+        non_default_plugins = non_default_plugins,
+        preprocessors = preprocessors,
+    )
     if with_shared:
         c.args.add("-dynamic-too")
 
