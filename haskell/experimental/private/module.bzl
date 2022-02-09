@@ -71,6 +71,20 @@ load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 # profiling builds use the libraries of narrowed_deps instead of the
 # their object files.
 
+# Note [Deps as both narrowed and not narrowed]
+#
+# Package databases are searched in reversed order with respect to
+# how they appear in the command line of GHC or in environment files.
+#
+# If a package appears both in narrowed_deps and in normal deps, different
+# versions of the package will appear in different package databases.
+# One of the versions points to an empty shared library, and the other
+# version points to the real shared library.
+#
+# When both versions are needed, we want package database pointing
+# to the real shared library to take precedence. Thus it should appear
+# last in the command line or the environment files.
+
 def _build_haskell_module(
         ctx,
         hs,
@@ -200,8 +214,10 @@ def _build_haskell_module(
             package_ids = hs.package_ids,
             package_databases = depset(
                 transitive = [
-                    dep_info.package_databases,
+                    # Mind the order in which databases are specified here.
+                    # See Note [Deps as both narrowed and not narrowed].
                     narrowed_deps_info.empty_lib_package_databases,
+                    dep_info.package_databases,
                 ],
             ),
             # TODO[AH] Support version macros
