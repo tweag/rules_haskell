@@ -122,7 +122,7 @@ integration_test(
 
 integration_test(
     name = "hs_lib_repl_test",
-    size = "medium",
+    size = "large",
     bazel = "//tests:bazel",
 )
 
