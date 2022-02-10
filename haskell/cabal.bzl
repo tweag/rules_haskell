@@ -573,7 +573,7 @@ def _haskell_cabal_library_impl(ctx):
     )
     hs_info = HaskellInfo(
         package_databases = depset([package_database], transitive = [dep_info.package_databases]),
-        empty_lib_package_databases = depset(transitive = [dep_info.empty_lib_package_databases]),
+        empty_lib_package_databases = dep_info.empty_lib_package_databases,
         version_macros = set.empty(),
         source_files = depset(),
         boot_files = depset(),
