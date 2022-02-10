@@ -120,6 +120,12 @@ integration_test(
     bazel = "//tests:bazel",
 )
 
+integration_test(
+    name = "hs_lib_repl_test",
+    size = "medium",
+    bazel = "//tests:bazel",
+)
+
 filegroup(
     name = "all_files",
     testonly = True,

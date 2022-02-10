@@ -22,6 +22,8 @@ filegroup(
         "BUILD.bazel",
         "WORKSPACE",
         "constants.bzl",
+        "stackage_snapshot.json",
+        "stackage_snapshot.yaml",
         "//debug/linking_utils:all_files",
         "//docs:all_files",
         "//haskell:all_files",
