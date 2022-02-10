@@ -219,6 +219,7 @@ def _build_haskell_module(
                     narrowed_deps_info.empty_lib_package_databases,
                     dep_info.package_databases,
                 ],
+                order = "postorder",
             ),
             # TODO[AH] Support version macros
             version = None,
