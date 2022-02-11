@@ -31,6 +31,17 @@ haskell_module(
 )
 
 haskell_library(
+    name = "NonModulesTestLib",
+    srcs = [
+        "NonModulesTestLib.hs",
+    ],
+    deps = [
+        ":TestLib1",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
     name = "TestLib2",
     modules = [
         ":TestLibModule2",
@@ -84,6 +95,7 @@ haskell_library(
         ":TestLib2",
     ],
     deps = [
+        ":NonModulesTestLib",
         ":TestLib",
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",

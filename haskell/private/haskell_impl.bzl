@@ -580,10 +580,13 @@ def haskell_library_impl(ctx):
         empty_lib_package_databases = depset(
             direct = [cache_file_empty],
             transitive = [
-                dep_info.package_databases,
+                # Mind the order in which databases are specified here.
+                # See Note [Deps as both narrowed and not narrowed].
                 narrowed_deps_info.empty_lib_package_databases,
                 export_infos.empty_lib_package_databases,
+                dep_info.package_databases,
             ],
+            order = "preorder",
         ),
         version_macros = version_macros,
         source_files = c.source_files,
