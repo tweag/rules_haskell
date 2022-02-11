@@ -50,7 +50,6 @@ jobs:
           nix-shell --arg docTools false --pure --run '
             set -euo pipefail
             ./tests/run-start-script.sh --use-nix
-            bazel shutdown
             bazel build //tests:run-tests
             ./bazel-ci-bin/tests/run-tests
             bazel coverage //...
@@ -144,10 +143,8 @@ jobs:
           ./tests/run-start-script.sh --use-bindists
           if [[ ${{ runner.os }} == Windows ]]; then
             # On Windows `//...` expands to `/...`.
-            bazel shutdown
             bazel test ///...
           else
-            bazel shutdown
             bazel test //...
           fi
           # Test stack_snapshot pinning
