@@ -29,6 +29,7 @@ jobs:
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
+          sudo sysctl -w net.ipv4.tcp_keepalive_time=60
           case ${{ runner.os }} in
             macOS) BUILD_CONFIG=ci-macos-nixpkgs;;
             Linux) BUILD_CONFIG=ci-linux-nixpkgs;;
@@ -77,6 +78,7 @@ jobs:
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
+          sudo sysctl -w net.ipv4.tcp_keepalive_time=60
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=linux-nixpkgs
@@ -121,6 +123,7 @@ jobs:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         shell: bash
         run: |
+          sudo sysctl -w net.ipv4.tcp_keepalive_time=60
           case ${{ runner.os }} in
             macOS) BUILD_CONFIG=ci-macos-bindist;;
             Linux) BUILD_CONFIG=ci-linux-bindist;;
