@@ -1,0 +1,19 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+
+haskell_binary(
+    name = "hsbin",
+    src_strip_prefix = "hs",
+    srcs = ["hs/Main.hs"],
+    deps = [
+        "//tests/hackage:base",
+        "cclib",
+    ],
+)
+
+cc_library(
+  name = "cclib",
+  srcs = ["cc/lib.cpp"],
+  hdrs = ["cc/lib.h"],
+  strip_include_prefix = "cc/",
+  linkstatic = True,
+)
