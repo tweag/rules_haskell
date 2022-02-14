@@ -140,14 +140,16 @@ jobs:
         run: |
           export PATH=$HOME/bazel:$PATH
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
-          ./tests/run-start-script.sh --use-bindists
+          #./tests/run-start-script.sh --use-bindists
           if [[ ${{ runner.os }} == Windows ]]; then
             # On Windows `//...` expands to `/...`.
-            bazel test ///...
+            bazel build ///tests/libcxx:hsbin
+            bazel run ///tests/libcxx:hsbin
           else
-            bazel test //...
+            bazel build //tests/libcxx:hsbin
+            bazel run //tests/libcxx:hsbin
           fi
           # Test stack_snapshot pinning
           # NOTE keep in sync with tests/RunTests.hs
-          bazel run @stackage-pinning-test-unpinned//:pin
-          bazel build @stackage-pinning-test//:hspec
+          #bazel run @stackage-pinning-test-unpinned//:pin
+          #bazel build @stackage-pinning-test//:hspec
