@@ -1,6 +1,5 @@
 package hs_lib_repl_test
 
-
 import (
 	it "github.com/tweag/rules_haskell/tests/integration_testing"
 	"testing"
@@ -144,7 +143,7 @@ stack_snapshot(
     },
     local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
     packages = [
-	"array",
+        "array",
         "base",
         "bytestring",
 	"containers",
@@ -157,10 +156,10 @@ stack_snapshot(
         "text",
         "vector",
         "c2hs",
-	"cabal-doctest",
+        "cabal-doctest",
         "doctest",
         "polysemy",
-	"network",
+        "network",
         "language-c",
         "streaming",
         "void",
