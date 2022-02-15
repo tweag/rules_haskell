@@ -26,7 +26,7 @@ func TestMain(m *testing.M, workspace string) {
 
 func AssertOutput(t *testing.T, output []byte, expected string) {
 	if string(output) != expected {
-		t.Fatalf("output of bazel process is invalid.\nExpected: %v\n, Actual: %v\n", expected, string(output))
+		t.Fatalf("output of bazel process is invalid.\n%-10s%v\n%-10s%v\n", "Expected:", expected, "Actual:", string(output))
 	}
 }
 
