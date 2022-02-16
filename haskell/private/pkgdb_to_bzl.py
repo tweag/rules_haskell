@@ -122,11 +122,11 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     # first, try to get a path within the package
     haddock_html = None
 
-    # We check if the file exists because cabal will unconditionally
-    # generate the database entry even if no haddock was generated.
-    if pkg.haddock_html and os.path.exists(pkg.haddock_html):
+    if pkg.haddock_html:
         haddock_html = path_to_label(pkg.haddock_html, pkgroot)
-        if not haddock_html:
+        # We check if the file exists because cabal will unconditionally
+        # generate the database entry even if no haddock was generated.
+        if not haddock_html and os.path.exists(pkg.haddock_html):
             haddock_html = os.path.join("haddock", "html", pkg.name)
             output.append("#SYMLINK: {} {}".format(pkg.haddock_html, haddock_html))
 
@@ -138,7 +138,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
 
         # We check if the file exists because cabal will unconditionally
         # generate the database entry even if no haddock was generated.
-        if not os.path.exists(interface_path):
+        if not os.path.exists(interface or interface_path):
             continue
 
         if not interface:
