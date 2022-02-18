@@ -2343,6 +2343,8 @@ def _fetch_stack_impl(repository_ctx):
 
 _fetch_stack = repository_rule(
     _fetch_stack_impl,
+    configure = True,
+    environ = ["PATH"],
 )
 """Find a suitably recent local Stack or download it."""
 
