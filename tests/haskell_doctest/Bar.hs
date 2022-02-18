@@ -1,5 +1,9 @@
 module Bar (bar) where
 
+-- Regression test for https://github.com/tweag/rules_haskell/issues/936
+import Data.Default.Class (def)  -- Stackage dependency
+import Data.Functor.Constant  -- GHC package-db dependency
+
 import Foo (foo)
 import Numeric
 
@@ -10,4 +14,4 @@ import Numeric
 -- "9!"
 
 bar :: Int
-bar = 4 + foo
+bar = getConstant $ Constant $ 4 + foo + def

@@ -120,6 +120,17 @@ integration_test(
     bazel = "//tests:bazel",
 )
 
+integration_test(
+    name = "hs_lib_repl_test",
+    size = "large",
+    bazel = "//tests:bazel",
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+    ],
+)
+
 filegroup(
     name = "all_files",
     testonly = True,
