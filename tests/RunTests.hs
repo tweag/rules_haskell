@@ -113,10 +113,13 @@ main = hspec $ do
       it test $ do
         assertFailure (bazel ["build", test])
 
-    context "known issues" $
+    context "known issues" $ do
       it "haskell_doc fails with plugins #1549" $
         -- https://github.com/tweag/rules_haskell/issues/1549
         assertFailure (bazel ["build", "//tests/haddock-with-plugin"])
+      it "transitive re-exports do not work #1145" $
+        -- https://github.com/tweag/rules_haskell/issues/1145
+        assertFailure (bazel ["build", "//tests/package-reexport-transitive"])
 
   -- Test that the repl still works if we shadow some Prelude functions
   it "repl name shadowing" $ do
