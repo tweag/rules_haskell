@@ -1,6 +1,7 @@
 """Workspace rules (GHC binary distributions)"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:versions.bzl", "versions")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
@@ -770,6 +771,12 @@ def haskell_register_ghc_bindists(
 def _configure_python3_toolchain_impl(repository_ctx):
     cpu = get_cpu_value(repository_ctx)
     python3_path = find_python(repository_ctx)
+    if versions.is_at_least("4.2.0", versions.get()):
+        stub_shebang = """stub_shebang = "#!{python3_path}",""".format(
+            python3_path = python3_path,
+        )
+    else:
+        stub_shebang = ""
     repository_ctx.file("BUILD.bazel", executable = False, content = """
 load(
     "@bazel_tools//tools/python:toolchain.bzl",
@@ -779,6 +786,7 @@ py_runtime(
     name = "python3_runtime",
     interpreter_path = "{python3}",
     python_version = "PY3",
+    {stub_shebang}
 )
 py_runtime_pair(
     name = "py_runtime_pair",
@@ -803,6 +811,7 @@ toolchain(
             "darwin": "osx",
             "x64_windows": "windows",
         }.get(cpu, "linux"),
+        stub_shebang = stub_shebang,
     ))
 
 _config_python3_toolchain = repository_rule(
