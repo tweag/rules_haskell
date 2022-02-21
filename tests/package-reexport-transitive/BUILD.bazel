@@ -1,0 +1,49 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "root",
+    srcs = ["Root.hs"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_library(
+    name = "intermediate",
+    exports = [
+        ":root",
+    ],
+    deps = [
+        ":root",
+    ],
+)
+
+haskell_library(
+    name = "lib",
+    exports = [":intermediate"],
+    deps = [
+        ":intermediate",
+    ],
+)
+
+# Failure test for https://github.com/tweag/rules_haskell/issues/1145
+# TODO Turn into regression test once that issue is resolved.
+haskell_test(
+    name = "final",
+    srcs = ["Main.hs"],
+    tags = ["manual"],
+    deps = [
+        ":lib",
+        "//tests/hackage:base",
+    ],
+)
+
+test_suite(
+    name = "package-reexport-transitive",
+    tags = ["manual"],
+    tests = [":final"],
+)
