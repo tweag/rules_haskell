@@ -2331,15 +2331,16 @@ def _fetch_stack_impl(repository_ctx):
     prefix = paths.basename(url)[:-len(".tar.gz")]
     repository_ctx.download_and_extract(url = url, sha256 = sha256)
     stack_cmd = repository_ctx.path(prefix).get_child("stack.exe" if os == "windows" else "stack")
-    _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--version"])
     exec_result = repository_ctx.execute([stack_cmd, "--version"], quiet = True)
     if exec_result.return_code != 0:
-        error_messsage = ["A Stack binary for your platform exists, but it failed to execute."]
+        error_message = exec_result.stdout
+        error_message.append("A Stack binary for your platform exists,")
+        error_message.append("but it failed to execute (exit status {}).".format(exec_result.return_code))
         if os == "linux":
-            error_messsage.append("HINT: If you are on NixOS,")
-            error_messsage.append("* make Stack available on the PATH, or")
-            error_messsage.append("* specify a Stack binary using the stack attribute.")
-        fail("\n".join(error_messsage).format(exec_result.return_code))
+            error_message.append("HINT: If you are on NixOS,")
+            error_message.append("* make Stack available on the PATH, or")
+            error_message.append("* specify a Stack binary using the stack attribute.")
+        fail("\n".join(error_message))
     repository_ctx.symlink(stack_cmd, "stack")
 
 _fetch_stack = repository_rule(
