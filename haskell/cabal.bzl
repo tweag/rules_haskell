@@ -2653,34 +2653,35 @@ _use_stack = repository_rule(
 )
 
 def use_stack(stack):
-    """force given `stack` binary in all invocations of `stack_snapshot`.
+    """Force given `stack` binary in all invocations of `stack_snapshot`.
 
-    allows global override of `stack` executable, independent of call site,
+    Allows global override of `stack` executable, independent of call site,
     specifically from dependants of a `stack_snapshot`.
+    Call this in `WORKSPACE` before any use of `stack_snapshot`.
 
-    call this in `WORKSPACE` before any use of `stack_snapshot`.
+    WARNING: Use it only as a stop-gap measure if tracing discrepancies in
+    `stack` versions becomes overwhelming. Try to avoid its spooky action at
+    distance, and instead explicitly pass `stack` to macros which end up
+    calling `stack_snapshot`. It should always be possible and is a bug otherwise.
 
     Example:
     # WORKSPACE
 
-    # ...
-    # order is important!
-    local_repository(
-        name = "my_stack",
-        path = "../my_stack",
-    )
-    use_stack("@my_stack//:stack")
+    # Order is important! Placing `use_stack()` after any occurrence of `stack_snapshot`
+    # (also any one nested within another macro call) will fail the build.
+    use_stack("@x_stack//:stack")
     stack_snapshot(
         name = "x",
-        # this is ignored
-        stack = "@some_stack:stack",
+        # this is ignored due to `use_stack()
+        stack = "@y_stack:stack",
         # ...
     )
+
+    # BUILD
     haskell_binary(
-        name = "example",
-        srcs = [":Example.hs"],
-        # targets in `x` will be built using `my_stack`
-        deps = ["@x//:y"],
+        # ...
+        # targets in `x` will be built using `x_stack`, NOT `y_stack`
+        deps = ["@x//:all"],
     )
     """
     if native.existing_rule("rules_haskell_stack"):
