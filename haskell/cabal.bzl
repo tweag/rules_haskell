@@ -996,6 +996,9 @@ be listed in `srcs` (crucially, including the `.cabal` file).
 
 _STACK_DEFAULT_VERSION = "2.3.1"
 
+# minimum required version
+_STACK_MIN_VERSION = (2, 3)
+
 # Only ever need one version, but use same structure as for GHC bindists.
 _STACK_BINDISTS = \
     {
@@ -1017,11 +1020,11 @@ _STACK_BINDISTS = \
 
 def _stack_version_check(repository_ctx, stack_cmd):
     """Returns False if version not recent enough."""
-    exec_result = _execute_or_fail_loudly(repository_ctx, [stack_cmd, "--numeric-version"])
-
-    stack_major_version = int(exec_result.stdout.split(".")[0])
-    stack_minor_version = int(exec_result.stdout.split(".")[1])
-    return stack_major_version >= 2 and stack_minor_version >= 3
+    exec_result = repository_ctx.execute([stack_cmd, "--numeric-version"])
+    if exec_result.return_code != 0:
+        return False, "not"  # HACK: use as "Stack {} found".format(version)
+    version = tuple([int(x) for x in exec_result.stdout.split(".")[:2]])
+    return version >= _STACK_MIN_VERSION, exec_result.stdout.strip()
 
 def _resolve_component_target_name(package, component):
     if component in ["lib", "lib:%s" % package]:
@@ -1295,8 +1298,9 @@ version: 0.0.0.0
 
     # Invoke stack to calculate the transitive dependencies.
     stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
-    if not _stack_version_check(repository_ctx, stack_cmd):
-        fail("Stack version not recent enough. Need version 2.3 or newer.")
+    valid, version = _stack_version_check(repository_ctx, stack_cmd)
+    if not valid:
+        fail("Stack {} found. Need version {}.{} or newer.".format(version, *_STACK_MIN_VERSION))
     stack = [stack_cmd]
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
@@ -2319,12 +2323,12 @@ def _fetch_stack_impl(repository_ctx):
     repository_ctx.file("BUILD.bazel")
     stack_cmd = repository_ctx.which("stack")
     if stack_cmd:
-        if _stack_version_check(repository_ctx, stack_cmd):
+        valid, version = _stack_version_check(repository_ctx, stack_cmd)
+        if valid:
             repository_ctx.symlink(stack_cmd, "stack")
             return
-        else:
-            print("Stack version not recent enough.", end=" ")
-    print("Downloading stack {} ...".format(_STACK_DEFAULT_VERSION))
+        print("Stack {} found. Need version {}.{} or newer.".format(version, *_STACK_MIN_VERSION))
+    print("Downloading Stack {} ...".format(_STACK_DEFAULT_VERSION))
     (os, arch) = _get_platform(repository_ctx)
     version = _STACK_DEFAULT_VERSION
     (url, sha256) = _STACK_BINDISTS[version]["{}-{}".format(os, arch)]
@@ -2561,6 +2565,12 @@ def stack_snapshot(
 
     """
     typecheck_stackage_extradeps(extra_deps)
+
+    # Allow overriding stack binary at workspace level by `use_stack()`.
+    # Otherwise this is a no-op.
+    if native.existing_rule("rules_haskell_stack"):
+        stack = Label("@rules_haskell_stack//:stack")
+
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
         stack = Label("@rules_haskell_stack//:stack")
@@ -2626,3 +2636,57 @@ def _expand_make_variables(name, ctx, strings):
         ctx.attr.tools,
     ]
     return expand_make_variables(name, ctx, strings, extra_label_attrs)
+
+def _use_stack_impl(repository_ctx):
+    # sanity check
+    stack = repository_ctx.path(repository_ctx.attr.stack)
+    valid, version = _stack_version_check(repository_ctx, stack)
+    if not valid:
+        fail("Stack {} found. Need version {}.{} or newer.".format(version, *_STACK_MIN_VERSION))
+    repository_ctx.file("BUILD.bazel")
+    repository_ctx.symlink(stack, "stack")
+
+_use_stack = repository_rule(
+    _use_stack_impl,
+    attrs = {
+        "stack": attr.label(),
+    },
+)
+
+def use_stack(stack):
+    """force given `stack` binary in all invocations of `stack_snapshot`.
+
+    allows global override of `stack` executable, independent of call site,
+    specifically from dependants of a `stack_snapshot`.
+
+    call this in `WORKSPACE` before any use of `stack_snapshot`.
+
+    Example:
+    # WORKSPACE
+
+    # ...
+    # order is important!
+    local_repository(
+        name = "my_stack",
+        path = "../my_stack",
+    )
+    use_stack("@my_stack//:stack")
+    stack_snapshot(
+        name = "x",
+        # this is ignored
+        stack = "@some_stack:stack",
+        # ...
+    )
+    haskell_binary(
+        name = "example",
+        srcs = [":Example.hs"],
+        # targets in `x` will be built using `my_stack`
+        deps = ["@x//:y"],
+    )
+    """
+    if native.existing_rule("rules_haskell_stack"):
+        fail("`rules_haskell_stack` already defined. call `use_stack()` before `stack_snapshot()` in `WORKSPACE`")
+    _use_stack(
+        name = "rules_haskell_stack",
+        stack = stack,
+    )
