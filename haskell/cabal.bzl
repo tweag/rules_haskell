@@ -8,7 +8,7 @@ load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/actions/info.bzl", "library_info_output_groups")
-load(":private/context.bzl", "haskell_context", "render_env")
+load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "expand_make_variables")
 load(":private/mode.bzl", "is_profiling_enabled")
@@ -35,7 +35,6 @@ load(
 )
 load(
     ":private/cc_libraries.bzl",
-    "deps_HaskellCcLibrariesInfo",
     "get_cc_libraries",
     "get_ghci_library_files",
     "get_library_files",
