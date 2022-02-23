@@ -7,6 +7,6 @@ haskell_cabal_library(
         "src/LibA.hsc",
     ],
     version = "0.1.0.0",
-    deps = ["//tests/haskell_cabal_reproducibility/clib:libmyclib"],
     visibility = ["//tests/haskell_cabal_reproducibility:__subpackages__"],
+    deps = ["//tests/haskell_cabal_reproducibility/clib:libmyclib"],
 )

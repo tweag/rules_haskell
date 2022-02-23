@@ -7,8 +7,8 @@ load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
 haskell_cabal_binary(
     name = "pkg-b",
     srcs = [
-        "pkg-b.cabal",
         "exe/Main.hs",
+        "pkg-b.cabal",
     ],
     deps = ["//tests/haskell_cabal_reproducibility/pkg-a"],
 )

@@ -5,13 +5,13 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(
     ":private/versions.bzl",
-    "check_version",
+    "check_bazel_version_compatible",
 )
 
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
     if "bazel_version" in dir(native):
-        check_version(native.bazel_version)
+        check_bazel_version_compatible(native.bazel_version)
 
     maybe(
         http_archive,
