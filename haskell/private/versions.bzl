@@ -46,6 +46,7 @@ def _is_at_least(threshold, version):
     Returns:
       True if version >= threshold.
     """
+
     # Vendored from https://github.com/bazelbuild/bazel-skylib/blob/e30197f3799eb038fbed424e365573f493d52fa5/lib/versions.bzl
     # Needed for check_bazel_version below.
     return _parse_bazel_version(version) >= _parse_bazel_version(threshold)
@@ -58,6 +59,7 @@ def _is_at_most(threshold, version):
     Returns:
       True if version <= threshold.
     """
+
     # Vendored from https://github.com/bazelbuild/bazel-skylib/blob/e30197f3799eb038fbed424e365573f493d52fa5/lib/versions.bzl
     # Needed for check_bazel_version below.
     return _parse_bazel_version(version) <= _parse_bazel_version(threshold)
@@ -73,7 +75,8 @@ def check_bazel_version(minimum_bazel_version, maximum_bazel_version = None, baz
         bool: `True`, if the version meets the criteria, otherwise `False`.
         string: An appropriate message if the version doesn't match.
     """
-    # Vendored from https://github.com/bazelbuild/bazel-skylib/blob/e30197f3799eb038fbed424e365573f493d52fa5/lib/versions.bzl#L82 
+
+    # Vendored from https://github.com/bazelbuild/bazel-skylib/blob/e30197f3799eb038fbed424e365573f493d52fa5/lib/versions.bzl#L82
     # The upstream version `fail`s if the version doesn't match.
     # This version instead returns false.
     if not bazel_version:

@@ -10,6 +10,6 @@ cc_library(
     srcs = [":myclib"],
     hdrs = ["myclib.h"],
     includes = ["."],
-    visibility = ["//tests/haskell_cabal_reproducibility:__subpackages__"],
     linkstatic = True,
+    visibility = ["//tests/haskell_cabal_reproducibility:__subpackages__"],
 )
