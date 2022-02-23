@@ -1,4 +1,4 @@
-# check_version below cannot be called from anywhere
+# check_bazel_version_compatible below cannot be called from anywhere
 # because native.bazel_version's availability is restricted:
 #   https://github.com/bazelbuild/bazel/issues/8305
 # An alternative hacky way is as follows:
@@ -37,27 +37,6 @@ def _parse_bazel_version(bazel_version):
       The version as a int list such as [2, 0], [0, 29, 1], or [0, 29]
     """
     return [int(_parse_version_chunk(x)) for x in bazel_version.split(".")]
-
-def check_version(actual_version):
-    if type(actual_version) != "string" or len(actual_version) < 5:
-        return  # Unexpected format
-
-    # Please use length 3 tuples, because bazel versions has 3 members;
-    # to avoid surprising behaviors (for example (2,0) >/= (2, 0, 0))
-    min_bazel = (4, 0, 0)  # Change THIS LINE when changing bazel min version
-    max_bazel = (4, 2, 2)  # Change THIS LINE when changing bazel max version
-
-    actual = tuple(_parse_bazel_version(actual_version))
-
-    if (min_bazel <= actual) and (actual <= max_bazel):
-        return  # All good
-
-    min_bazel_string = ".".join([str(x) for x in min_bazel])
-    max_bazel_string = ".".join([str(x) for x in max_bazel])
-
-    adjective = "old" if actual < min_bazel else "recent"
-
-    print("WARNING: bazel version is too {}. Supported versions range from {} to {}, but found: {}".format(adjective, min_bazel_string, max_bazel_string, actual_version))
 
 def _is_at_least(threshold, version):
     """Check that a version is higher or equals to a threshold.
@@ -128,3 +107,12 @@ def check_bazel_version(minimum_bazel_version, maximum_bazel_version = None, baz
             ))
 
     return (True, "")
+
+def check_bazel_version_compatible(actual_version):
+    min_bazel = "4.0.0"  # Change THIS LINE when changing bazel min version
+    max_bazel = "4.2.2"  # Change THIS LINE when changing bazel max version
+
+    (compatible, msg) = check_bazel_version(min_bazel, max_bazel, actual_version)
+
+    if not compatible:
+        print("WARNING:", msg)
