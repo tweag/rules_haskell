@@ -771,7 +771,7 @@ def haskell_register_ghc_bindists(
 def _configure_python3_toolchain_impl(repository_ctx):
     cpu = get_cpu_value(repository_ctx)
     python3_path = find_python(repository_ctx)
-    if versions.is_at_least("4.2.0", versions.get()):
+    if versions.check("4.2.0"):
         stub_shebang = """stub_shebang = "#!{python3_path}",""".format(
             python3_path = python3_path,
         )
