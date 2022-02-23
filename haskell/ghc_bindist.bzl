@@ -1,7 +1,6 @@
 """Workspace rules (GHC binary distributions)"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_skylib//lib:versions.bzl", "versions")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
@@ -9,6 +8,7 @@ load(
     ":private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
 )
+load(":private/versions.bzl", "check_bazel_version")
 load(
     ":private/workspace_utils.bzl",
     "define_rule",
@@ -771,7 +771,7 @@ def haskell_register_ghc_bindists(
 def _configure_python3_toolchain_impl(repository_ctx):
     cpu = get_cpu_value(repository_ctx)
     python3_path = find_python(repository_ctx)
-    if versions.check("4.2.0"):
+    if check_bazel_version("4.2.0")[0]:
         stub_shebang = """stub_shebang = "#!{python3_path}",""".format(
             python3_path = python3_path,
         )
