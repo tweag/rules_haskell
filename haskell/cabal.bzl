@@ -1018,12 +1018,16 @@ _STACK_BINDISTS = \
     }
 
 def _stack_version_check(repository_ctx, stack_cmd):
-    """Returns False if version not recent enough."""
+    """Returns error string if version is not recent enough"""
     exec_result = repository_ctx.execute([stack_cmd, "--numeric-version"])
     if exec_result.return_code != 0:
-        return False, "not"  # HACK: use as "Stack {} found".format(version)
-    version = tuple([int(x) for x in exec_result.stdout.split(".")[:2]])
-    return version >= _STACK_MIN_VERSION, exec_result.stdout.strip()
+        print(exec_result.stderr)
+        print(exec_result.stdout)
+        return "Stack not found."
+    version = tuple([int(x) for x in exec_result.stdout.strip().split(".")])
+    if version < _STACK_MIN_VERSION:
+        return "Stack {} found. Need {} or newer.".format(".".join(version), ".".join(_STACK_MIN_VERSION))
+    return None
 
 def _resolve_component_target_name(package, component):
     if component in ["lib", "lib:%s" % package]:
@@ -1297,9 +1301,9 @@ version: 0.0.0.0
 
     # Invoke stack to calculate the transitive dependencies.
     stack_cmd = repository_ctx.path(repository_ctx.attr.stack)
-    valid, version = _stack_version_check(repository_ctx, stack_cmd)
-    if not valid:
-        fail("Stack {} found. Need version {}.{} or newer.".format(version, *_STACK_MIN_VERSION))
+    error = _stack_version_check(repository_ctx, stack_cmd)
+    if error:
+        fail(error)
     stack = [stack_cmd]
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
@@ -2322,11 +2326,11 @@ def _fetch_stack_impl(repository_ctx):
     repository_ctx.file("BUILD.bazel")
     stack_cmd = repository_ctx.which("stack")
     if stack_cmd:
-        valid, version = _stack_version_check(repository_ctx, stack_cmd)
-        if valid:
+        error = _stack_version_check(repository_ctx, stack_cmd)
+        if not error:
             repository_ctx.symlink(stack_cmd, "stack")
             return
-        print("Stack {} found. Need version {}.{} or newer.".format(version, *_STACK_MIN_VERSION))
+        print(error)
     print("Downloading Stack {} ...".format(_STACK_DEFAULT_VERSION))
     (os, arch) = _get_platform(repository_ctx)
     version = _STACK_DEFAULT_VERSION
@@ -2639,9 +2643,9 @@ def _expand_make_variables(name, ctx, strings):
 def _use_stack_impl(repository_ctx):
     # sanity check
     stack = repository_ctx.path(repository_ctx.attr.stack)
-    valid, version = _stack_version_check(repository_ctx, stack)
-    if not valid:
-        fail("Stack {} found. Need version {}.{} or newer.".format(version, *_STACK_MIN_VERSION))
+    error = _stack_version_check(repository_ctx, stack)
+    if error:
+        fail(error)
     repository_ctx.file("BUILD.bazel")
     repository_ctx.symlink(stack, "stack")
 
