@@ -7,7 +7,7 @@ def integration_test(name, bazel, **kwargs):
 
     it_library = "@rules_haskell//tests:integration_testing"
     if it_library not in kwargs["deps"]:
-        kwargs["deps"] += [it_library]
+        kwargs["deps"].append(it_library)
 
     go_bazel_test(
         name = name,
@@ -18,6 +18,6 @@ def integration_test(name, bazel, **kwargs):
             "//tests:nix": ["nixpkgs=true"],
             "//conditions:default": ["nixpkgs=false"],
         }) + ["bazel_bin=$(location {})".format(bazel)],
-        data = [bazel],
+        data = [bazel] + kwargs.pop("data", []),
         **kwargs
     )
