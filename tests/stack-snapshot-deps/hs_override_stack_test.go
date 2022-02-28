@@ -90,18 +90,16 @@ main = putStrLn "Hello GHCi!"
 }
 
 func TestHsBinRepl(t *testing.T) {
-    // FIXME: This test is only partial due to limitations of `bazel_testing`.
-    // It is not possible to define a file as executable in `txtar`, and no
-    // obvious way to inject a pre-made executable into the build.
-    // To do this properly, the whole testing method needs to be reworked.
-    _, err := it.BazelOutput(it.Context.BazelBinary, "run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
-    out := string(err.(*bazel_testing.StderrExitError).Err.Stderr)
-    if err == nil {
-        t.Fatal(out, "build succeeds, but should fail due invalid `stack` binary")
-    }
-    // FIXME: Update check for error message that indicates that `stack` was tried
-    // to be used in `stack_snapshot()` and not in the sanity check within `use_stack()`
-    if !strings.Contains(out, "Stack not found.") {
-        t.Fatal(out, "build does not use specified dummy `stack`")
-    }
+	// FIXME: This test is only partial, as is not possible to define a file as executable in `txtar`.
+	// One could use the [`data`][data] attribute in `go_bazel_test` to pass on proper files.
+	_, err := it.BazelOutput(it.Context.BazelBinary, "run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
+	out := string(err.(*bazel_testing.StderrExitError).Err.Stderr)
+	if err == nil {
+		t.Fatal(out, "build succeeds, but should fail due invalid `stack` binary")
+	}
+	// FIXME: Update check for error message that indicates that `stack` was tried
+	// to be used in `stack_snapshot()` and not in the sanity check within `use_stack()`
+	if !strings.Contains(out, "Stack not found.") {
+		t.Fatal(out, "build does not use specified dummy `stack`")
+	}
 }

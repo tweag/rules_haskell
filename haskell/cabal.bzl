@@ -2655,14 +2655,8 @@ _use_stack = repository_rule(
 def use_stack(stack):
     """Force given `stack` binary in all invocations of `stack_snapshot`.
 
-    Allows global override of `stack` executable, independent of call site,
-    specifically from dependants of a `stack_snapshot`.
-    Call this in `WORKSPACE` before any use of `stack_snapshot`.
-
-    WARNING: Use it only as a stop-gap measure if tracing discrepancies in
-    `stack` versions becomes overwhelming. Try to avoid its spooky action at
-    distance, and instead explicitly pass `stack` to macros which end up
-    calling `stack_snapshot`. It should always be possible and is a bug otherwise.
+    Globally override the `stack` version used by all instances of `stack_snapshot`.
+    WARNING: This should only be used in the top-level repository.
 
     Example:
     # WORKSPACE
