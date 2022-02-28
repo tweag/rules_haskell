@@ -1,14 +1,14 @@
 package hs_override_stack_test
 
 import (
-    it "github.com/tweag/rules_haskell/tests/integration_testing"
-    "github.com/bazelbuild/rules_go/go/tools/bazel_testing"
-    "strings"
-    "testing"
+	"github.com/bazelbuild/rules_go/go/tools/bazel_testing"
+	it "github.com/tweag/rules_haskell/tests/integration_testing"
+	"strings"
+	"testing"
 )
 
 func TestMain(m *testing.M) {
-    it.TestMain(m, `
+	it.TestMain(m, `
 -- WORKSPACE --
 local_repository(
     name = "rules_haskell",
