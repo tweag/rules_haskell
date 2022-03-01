@@ -1,14 +1,15 @@
 package hs_override_stack_test
 
 import (
-	"github.com/bazelbuild/rules_go/go/tools/bazel_testing"
+	bt "github.com/bazelbuild/rules_go/go/tools/bazel_testing"
 	it "github.com/tweag/rules_haskell/tests/integration_testing"
+	"os"
+	"path"
 	"strings"
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	it.TestMain(m, `
+var testcase = `
 -- WORKSPACE --
 local_repository(
     name = "rules_haskell",
@@ -64,6 +65,7 @@ stack_snapshot(
         "base",
     ],
 )
+
 -- stack --
 #!/bin/sh
 echo 2.3.1
@@ -86,20 +88,35 @@ module Main (main) where
 
 main :: IO ()
 main = putStrLn "Hello GHCi!"
-`)
+`
+
+func TestMain(m *testing.M) {
+	it.TestMain(m, bt.Args{
+		Main: testcase,
+		SetUp: func() (err error) {
+			// set executable bit on dummy script, since `bazel_testing` does not allow it
+			// https://github.com/bazelbuild/rules_go/issues/2281
+			dir, err := os.Getwd()
+			if err != nil {
+				return
+			}
+			stack := path.Join(dir, "stack")
+			info, err := os.Stat(stack)
+			if err != nil {
+				return
+			}
+			return os.Chmod(stack, 0700|info.Mode())
+		},
+	})
 }
 
 func TestHsBinRepl(t *testing.T) {
-	// FIXME: This test is only partial, as is not possible to define a file as executable in `txtar`.
-	// One could use the [`data`][data] attribute in `go_bazel_test` to pass on proper files.
 	_, err := it.BazelOutput(it.Context.BazelBinary, "run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
-	out := string(err.(*bazel_testing.StderrExitError).Err.Stderr)
+	out := string(err.(*bt.StderrExitError).Err.Stderr)
 	if err == nil {
 		t.Fatal(out, "build succeeds, but should fail due invalid `stack` binary")
 	}
-	// FIXME: Update check for error message that indicates that `stack` was tried
-	// to be used in `stack_snapshot()` and not in the sanity check within `use_stack()`
-	if !strings.Contains(out, "Stack not found.") {
+	if !strings.Contains(out, "parsing JSON failed") {
 		t.Fatal(out, "build does not use specified dummy `stack`")
 	}
 }

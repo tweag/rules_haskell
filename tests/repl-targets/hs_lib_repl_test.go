@@ -1,12 +1,12 @@
 package hs_lib_repl_test
 
 import (
+	bt "github.com/bazelbuild/rules_go/go/tools/bazel_testing"
 	it "github.com/tweag/rules_haskell/tests/integration_testing"
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	it.TestMain(m, `
+var testcase = `
 -- WORKSPACE --
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 local_repository(
@@ -293,7 +293,10 @@ where
 bar :: String
 bar = "bar"
 #endif
-`)
+`
+
+func TestMain(m *testing.M) {
+	it.TestMain(m, bt.Args{Main: testcase})
 }
 
 func TestHsLibRepl(t *testing.T) {
