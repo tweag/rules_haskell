@@ -112,11 +112,10 @@ func TestMain(m *testing.M) {
 
 func TestHsBinRepl(t *testing.T) {
 	_, err := it.BazelOutput(it.Context.BazelBinary, "run", "//:hs-bin@repl", "--", "-ignore-dot-ghci", "-e", ":main")
-	out := string(err.(*bt.StderrExitError).Err.Stderr)
 	if err == nil {
-		t.Fatal(out, "build succeeds, but should fail due invalid `stack` binary")
+		t.Fatal(err, "build succeeds, but should fail due invalid `stack` binary")
 	}
-	if !strings.Contains(out, "parsing JSON failed") {
-		t.Fatal(out, "build does not use specified dummy `stack`")
+	if !strings.Contains(err.Error(), "parsing JSON failed") {
+		t.Fatal(err, "build does not use specified dummy `stack`")
 	}
 }
