@@ -1,12 +1,12 @@
 package hs_bin_repl_test
 
 import (
+	bt "github.com/bazelbuild/rules_go/go/tools/bazel_testing"
 	it "github.com/tweag/rules_haskell/tests/integration_testing"
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	it.TestMain(m, `
+var testcase = `
 -- WORKSPACE --
 local_repository(
         name = "rules_haskell",
@@ -91,7 +91,10 @@ module QuuxLib (message) where
 
 message :: String
 message = "Hello GHCi!"
-`)
+`
+
+func TestMain(m *testing.M) {
+	it.TestMain(m, bt.Args{Main: testcase})
 }
 
 func TestHsBinRepl(t *testing.T) {

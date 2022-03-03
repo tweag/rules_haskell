@@ -12,16 +12,15 @@ import (
 	"testing"
 )
 
-func TestMain(m *testing.M, workspace string) {
+func TestMain(m *testing.M, args bazel_testing.Args) {
 	if err := ParseArgs(); err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return
 	}
 	defer exec.Command(Context.BazelBinary, "shutdown")
 
-	bazel_testing.TestMain(m, bazel_testing.Args{
-		Main: workspace + GenerateBazelrc(),
-	})
+	args.Main += GenerateBazelrc()
+	bazel_testing.TestMain(m, args)
 }
 
 func AssertOutput(t *testing.T, output []byte, expected string) {
