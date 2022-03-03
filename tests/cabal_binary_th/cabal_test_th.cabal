@@ -1,0 +1,24 @@
+cabal-version: 1.12
+
+name:           cabal-test-th
+version:        0.0.1
+license:        AllRightsReserved
+build-type:     Simple
+
+library
+  other-modules:
+     Main
+     QQ
+  build-depends:
+     base
+    , template-haskell
+  default-language: Haskell2010
+
+executable anexe
+  main-is: Main.hs
+  other-modules:
+      QQ
+  build-depends:
+     base
+    , template-haskell
+  default-language: Haskell2010

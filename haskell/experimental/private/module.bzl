@@ -154,6 +154,8 @@ def _build_haskell_module(
         "-i" + paths.join(hs.bin_dir.path, hs.package_root, hidir),
         src,
     ])
+    if hs.mode == "opt":
+        args.add("-O2")
     if with_shared:
         args.add("-dynamic-too")
     args.add_all([
