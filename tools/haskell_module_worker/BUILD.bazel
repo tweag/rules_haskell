@@ -1,0 +1,26 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "worker_protocol_proto",
+    srcs = ["worker_protocol.proto"],
+)
+
+cc_proto_library(
+    name = "worker_protocol_cc_proto",
+    deps = [":worker_protocol_proto"],
+)
+
+cc_library(
+    name = "worker_protocol_cc_proto_lib",
+    srcs = ["cbits/protoclient.cpp"],
+    hdrs = ["cbits/protoclient.h"],
+    deps = [":worker_protocol_cc_proto"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
