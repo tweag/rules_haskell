@@ -171,10 +171,11 @@ def _cabal_toolchain_info(hs, cc, workspace_name, runghc):
         runghc = runghc.path,
         ar = ar,
         cc = cc.tools.cc,
+        ld = cc.tools.ld,
         strip = cc.tools.strip,
         is_windows = hs.toolchain.is_windows,
         workspace = workspace_name,
-        ghc_cc_args = ghc_cc_program_args(hs, "$CC"),
+        ghc_cc_args = ghc_cc_program_args(hs, "$CC", cc.tools.ld),
     )
 
 def _prepare_cabal_inputs(
