@@ -206,6 +206,8 @@ def ghc_cc_program_args(hs, cc, ld):
         cc,
         "-pgmlm",
         ld,
+        "-optlm",
+        "-r",
         # Setting -pgm* flags explicitly has the unfortunate side effect
         # of resetting any program flags in the GHC settings file. So we
         # restore them here. See
