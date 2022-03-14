@@ -189,7 +189,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx.attr.name,
         [dep for plugin in all_plugin_decls for dep in plugin[GhcPluginInfo].deps],
     )
-    package_ids = all_dependencies_package_ids(deps)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(
@@ -428,7 +427,6 @@ def haskell_library_impl(ctx):
         ctx.attr.name,
         [dep for plugin in all_plugins for dep in plugin[GhcPluginInfo].deps],
     )
-    package_ids = all_dependencies_package_ids(deps)
 
     modules = ctx.attr.modules
     if modules and ctx.files.srcs:
