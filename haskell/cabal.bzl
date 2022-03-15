@@ -1019,9 +1019,9 @@ _STACK_BINDISTS = \
 
 def _stack_version_check(repository_ctx, stack_cmd):
     """Returns error string if version is not recent enough"""
-    exec_result = repository_ctx.execute([stack_cmd, "--numeric-version"])
-    if not stack_cmd.exists:
+    if not (stack_cmd and stack_cmd.exists):
         return "Stack not found."
+    exec_result = repository_ctx.execute([stack_cmd, "--numeric-version"])
     if exec_result.return_code != 0:
         error_message = [
             "Stack exited with error.",
