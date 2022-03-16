@@ -251,6 +251,13 @@ def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_p
 
     return static_library
 
+def dynamic_library_filename(hs, my_pkg_id):
+    return "lib{0}-ghc{1}.{2}".format(
+        pkg_id.library_name(hs, my_pkg_id),
+        hs.toolchain.version,
+        _so_extension(hs),
+    )
+
 def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_pkg_id, compiler_flags, empty_lib_prefix = ""):
     """Link a dynamic library for the package using given object files.
 
@@ -259,14 +266,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     """
 
     dynamic_library = hs.actions.declare_file(
-        paths.join(
-            empty_lib_prefix,
-            "lib{0}-ghc{1}.{2}".format(
-                pkg_id.library_name(hs, my_pkg_id),
-                hs.toolchain.version,
-                _so_extension(hs),
-            ),
-        ),
+        paths.join(empty_lib_prefix, dynamic_library_filename(hs, my_pkg_id)),
     )
 
     args = hs.actions.args()
