@@ -120,6 +120,9 @@ main = hspec $ do
       it "transitive re-exports do not work #1145" $
         -- https://github.com/tweag/rules_haskell/issues/1145
         assertFailure (bazel ["build", "//tests/package-reexport-transitive"])
+      it "doctest failure with foreign import #1559" $
+        -- https://github.com/tweag/rules_haskell/issues/1559
+        assertFailure (bazel ["build", "//tests/haskell_doctest_ffi_1559:doctest-a"])
 
   -- Test that the repl still works if we shadow some Prelude functions
   it "repl name shadowing" $ do
