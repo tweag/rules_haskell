@@ -77,6 +77,12 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, basename, dynamic):
         dynamic,
     )
 
+    # The flags use in the invocation to nm are MacOS-specific and
+    # tested to exist at least since 10.15.
+    #
+    # -p     Don't sort; display in symbol-table order.
+    # -j     Just display the symbol names (no value or type).
+    # -U     Don't display undefined symbols.
     hs.actions.run_shell(
         inputs = cc_dynamic_libs,
         outputs = [linker_flags_file],
