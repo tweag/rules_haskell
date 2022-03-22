@@ -222,7 +222,18 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, hs.name, dynamic)
 
-    module_outputs = build_haskell_modules(ctx, hs, cc, posix, "", with_profiling, dynamic, interfaces_dir, objects_dir)
+    module_outputs = build_haskell_modules(
+        ctx,
+        hs,
+        cc,
+        posix,
+        "",
+        with_profiling,
+        dynamic,
+        extra_ldflags_file,
+        interfaces_dir,
+        objects_dir,
+    )
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in non_default_plugin_decl]
@@ -477,7 +488,18 @@ def haskell_library_impl(ctx):
 
     extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, dynamic_library_filename(hs, my_pkg_id), with_shared)
 
-    module_outputs = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), with_profiling, with_shared, interfaces_dir, objects_dir)
+    module_outputs = build_haskell_modules(
+        ctx,
+        hs,
+        cc,
+        posix,
+        pkg_id.to_string(my_pkg_id),
+        with_profiling,
+        with_shared,
+        extra_ldflags_file,
+        interfaces_dir,
+        objects_dir,
+    )
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
