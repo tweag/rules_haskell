@@ -31,6 +31,7 @@
 # , "ghc_version": List of int       # version of ghc
 # , "cabal_basename": basename of cabal binary
 # , "cabal_dirname": dirname of cabal binary
+# , "extra_ldflags_file": File with extra flags for ld or null
 # }
 
 from __future__ import print_function
@@ -103,6 +104,7 @@ os.environ["RULES_HASKELL_DOCDIR_PATH"] = canonicalize_path(os.getenv("RULES_HAS
 component = json_args["component"]
 name = json_args["pkg_name"]
 haddock = json_args["generate_haddock"]
+extra_ldflags_file = json_args["extra_ldflags_file"]
 execroot = os.getcwd()
 setup = os.path.join(execroot, json_args["setup_path"])
 srcdir = os.path.join(execroot, json_args["pkg_dir"])
@@ -265,6 +267,7 @@ with mkdtemp(distdir_prefix()) as distdir:
         "--enable-deterministic", \
         ] +
         [ "--ghc-option=" + flag.replace("$CC", cc) for flag in toolchain_info["ghc_cc_args"] ] +
+        [ "--ghc-option=-optl@" + os.path.join(cfg_execroot, f) for f in [extra_ldflags_file] if f ] +
         enable_relocatable_flags + \
         [ \
         # Make `--builddir` a relative path. Using an absolute path would
