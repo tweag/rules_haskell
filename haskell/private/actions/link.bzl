@@ -51,8 +51,12 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, basename, dynamic):
       dynamic: Bool: Whether to link dynamically or statically.
 
     Returns:
-      File: Parameter file with additional linker flags. To be passed to GHC.
+      File: Parameter file with additional linker flags to be passed to GHC,
+      or None if we aren't building for darwin.
     """
+
+    if not hs.toolchain.is_darwin:
+        return None
 
     # On Darwin GHC will pass the dead_strip_dylibs flag to the linker. This
     # flag will remove any shared library loads from the binary's header that
