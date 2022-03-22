@@ -280,7 +280,7 @@ def _build_haskell_module(
 
     input_files = [src] + extra_srcs + [optp_args_file]
     if enable_th and extra_ldflags_file:
-        args.add_all(["-optl", "@{}".format(extra_ldflags_file.path)])
+        args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
     # Compile the module

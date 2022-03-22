@@ -376,7 +376,7 @@ def _compilation_defaults(
 
     input_files = []
     if extra_ldflags_file:
-        args.add_all(["-optl", "@{}".format(extra_ldflags_file.path)])
+        args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
     return struct(

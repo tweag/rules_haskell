@@ -205,7 +205,7 @@ def link_binary(
 
     input_files = [cache_file] + object_files
     if extra_ldflags_file:
-        args.add_all(["-optl", "@{}".format(extra_ldflags_file.path)])
+        args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
     hs.toolchain.actions.run_ghc(
@@ -378,7 +378,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
 
     input_files = [cache_file]
     if extra_ldflags_file:
-        args.add_all(["-optl", "@{}".format(extra_ldflags_file.path)])
+        args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
     hs.toolchain.actions.run_ghc(
