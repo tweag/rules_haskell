@@ -502,7 +502,16 @@ def interfaces_as_list(with_shared, o):
     else:
         return [o.hi]
 
-def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with_shared, hidir, odir):
+def build_haskell_modules(
+        ctx,
+        hs,
+        cc,
+        posix,
+        package_name,
+        with_profiling,
+        with_shared,
+        hidir,
+        odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
         and in their dependencies
 
