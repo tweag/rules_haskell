@@ -104,7 +104,28 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
 
     return hs_out, idir
 
-def _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, module_map, import_dir_map, extra_srcs, user_compile_flags, output_mode, with_profiling, interfaces_dir, objects_dir, my_pkg_id, version, extra_ldflags_file, plugins, non_default_plugins, preprocessors):
+def _compilation_defaults(
+        hs,
+        cc,
+        java,
+        posix,
+        dep_info,
+        plugin_dep_info,
+        srcs,
+        module_map,
+        import_dir_map,
+        extra_srcs,
+        user_compile_flags,
+        output_mode,
+        with_profiling,
+        interfaces_dir,
+        objects_dir,
+        my_pkg_id,
+        version,
+        extra_ldflags_file,
+        plugins,
+        non_default_plugins,
+        preprocessors):
     """Compute variables common to all compilation targets (binary and library).
 
     Returns:
@@ -437,7 +458,29 @@ def compile_binary(
         source_files: set of Haskell source files
         boot_files: set of Haskell boot files
     """
-    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, module_map, import_dir_map, extra_srcs, user_compile_flags, "dynamic" if dynamic else "static", with_profiling, interfaces_dir, objects_dir, my_pkg_id = None, version = version, extra_ldflags_file = extra_ldflags_file, plugins = plugins, non_default_plugins = non_default_plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(
+        hs,
+        cc,
+        java,
+        posix,
+        dep_info,
+        plugin_dep_info,
+        srcs,
+        module_map,
+        import_dir_map,
+        extra_srcs,
+        user_compile_flags,
+        "dynamic" if dynamic else "static",
+        with_profiling,
+        interfaces_dir,
+        objects_dir,
+        my_pkg_id = None,
+        version = version,
+        extra_ldflags_file = extra_ldflags_file,
+        plugins = plugins,
+        non_default_plugins = non_default_plugins,
+        preprocessors = preprocessors,
+    )
     c.args.add_all(["-main-is", main_function])
     if dynamic:
         # For binaries, GHC creates .o files even for code to be
@@ -512,7 +555,29 @@ def compile_library(
         boot_files: set of Haskell boot files
         import_dirs: import directories that should make all modules visible (for GHCi)
     """
-    c = _compilation_defaults(hs, cc, java, posix, dep_info, plugin_dep_info, srcs, module_map, import_dir_map, extra_srcs, user_compile_flags, "dynamic-too" if with_shared else "static", with_profiling, interfaces_dir, objects_dir, my_pkg_id = my_pkg_id, version = my_pkg_id.version, extra_ldflags_file = extra_ldflags_file, plugins = plugins, non_default_plugins = non_default_plugins, preprocessors = preprocessors)
+    c = _compilation_defaults(
+        hs,
+        cc,
+        java,
+        posix,
+        dep_info,
+        plugin_dep_info,
+        srcs,
+        module_map,
+        import_dir_map,
+        extra_srcs,
+        user_compile_flags,
+        "dynamic-too" if with_shared else "static",
+        with_profiling,
+        interfaces_dir,
+        objects_dir,
+        my_pkg_id = my_pkg_id,
+        version = my_pkg_id.version,
+        extra_ldflags_file = extra_ldflags_file,
+        plugins = plugins,
+        non_default_plugins = non_default_plugins,
+        preprocessors = preprocessors,
+    )
     if with_shared:
         c.args.add("-dynamic-too")
 
