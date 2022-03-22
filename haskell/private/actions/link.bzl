@@ -67,7 +67,7 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, basename, dynamic):
     # produced by Bazel's cc rules never load shared libraries themselves. This
     # causes missing symbols at runtime on MacOS, see #170.
     #
-    # The following work-around applies the `-u` flag to the linker for a
+    # The following work-around applies the `-u` flag to the linker for an external
     # symbol of each cc dependency. This forces the linker to resolve these
     # undefined symbols in all the transitive shared cc library dependencies
     # and keep the corresponding load commands in the binary's header.
@@ -81,11 +81,12 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, basename, dynamic):
         dynamic,
     )
 
-    # The flags use in the invocation to nm are MacOS-specific and
+    # Some flags used in the invocation to nm are MacOS-specific and
     # tested to exist at least since 10.15.
     #
-    # -p     Don't sort; display in symbol-table order.
+    # -g     Display only global (external) symbols.
     # -j     Just display the symbol names (no value or type).
+    # -p     Don't sort; display in symbol-table order.
     # -U     Don't display undefined symbols.
     hs.actions.run_shell(
         inputs = cc_dynamic_libs,
@@ -93,7 +94,7 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, basename, dynamic):
         command = """
         touch {out}
         for lib in {solibs}; do
-            {nm} -Ujp "$lib" | head -1 | sed 's/^/-u /' >> {out}
+            {nm} -Ujpg "$lib" | head -1 | sed 's/^/-u /' >> {out}
         done
         """.format(
             nm = cc.tools.nm,
