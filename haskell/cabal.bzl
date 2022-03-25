@@ -346,7 +346,7 @@ def _prepare_cabal_inputs(
     if with_profiling:
         extra_args.append("--enable-profiling")
 
-    extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, hs.name, dynamic = True)
+    extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, hs.name, dynamic = True)
 
     # Redundant with _binary_paths() above, but better be explicit when we can.
     path_args.extend([_cabal_tool_flag(tool_flag) for tool_flag in tool_inputs.to_list() if _cabal_tool_flag(tool_flag)])

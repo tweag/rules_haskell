@@ -220,7 +220,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         # Also, static GHC doesn't support dynamic code
         dynamic = False
 
-    extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, hs.name, dynamic)
+    extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, hs.name, dynamic)
 
     module_outputs = build_haskell_modules(
         ctx,
@@ -486,7 +486,7 @@ def haskell_library_impl(ctx):
         # Also, static GHC doesn't support dynamic code
         with_shared = False
 
-    extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, dynamic_library_filename(hs, my_pkg_id), with_shared)
+    extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, dynamic_library_filename(hs, my_pkg_id), with_shared)
 
     module_outputs = build_haskell_modules(
         ctx,

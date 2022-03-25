@@ -36,7 +36,7 @@ def merge_parameter_files(hs, file1, file2):
     )
     return params_file
 
-def darwin_flags_for_linking_indirect_cc_deps(hs, cc, basename, dynamic):
+def darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, basename, dynamic):
     """Write flags to force linking cc dependencies on MacOS to a parameter file.
 
     GHC uses -dead_strip_dylibs in MacOS which discards all of the
@@ -47,6 +47,7 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, basename, dynamic):
     Args:
       hs: Haskell context.
       cc: CcInteropInfo, information about C dependencies.
+      posix: Posix toolchain
       basename: The basename to use for the output file.
       dynamic: Bool: Whether to link dynamically or statically.
 
@@ -94,10 +95,12 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, basename, dynamic):
         command = """
         touch {out}
         for lib in {solibs}; do
-            {nm} -Ujpg "$lib" | head -1 | sed 's/^/-u /' >> {out}
+            {nm} -Ujpg "$lib" | {head} -1 | {sed} 's/^/-u /' >> {out}
         done
         """.format(
             nm = cc.tools.nm,
+            head = posix.commands["head"],
+            sed = posix.commands["sed"],
             solibs = " ".join(["\"" + l.path + "\"" for l in cc_dynamic_libs]),
             out = linker_flags_file.path,
         ),
