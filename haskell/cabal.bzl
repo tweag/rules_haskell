@@ -8,6 +8,7 @@ load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/actions/info.bzl", "library_info_output_groups")
+load(":private/actions/link.bzl", "darwin_flags_for_linking_indirect_cc_deps")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -345,6 +346,8 @@ def _prepare_cabal_inputs(
     if with_profiling:
         extra_args.append("--enable-profiling")
 
+    extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, hs.name, dynamic = True)
+
     # Redundant with _binary_paths() above, but better be explicit when we can.
     path_args.extend([_cabal_tool_flag(tool_flag) for tool_flag in tool_inputs.to_list() if _cabal_tool_flag(tool_flag)])
 
@@ -363,14 +366,19 @@ def _prepare_cabal_inputs(
         ghc_version = ghc_version,
         cabal_basename = cabal.basename,
         cabal_dirname = cabal.dirname,
+        extra_ldflags_file = extra_ldflags_file.path if extra_ldflags_file else None,
     )
 
     ghc_files = hs.toolchain.bindir + hs.toolchain.libdir
     if generate_haddock:
         ghc_files.extend(hs.toolchain.docdir)
 
+    input_files = [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.hsc2hs]
+    if extra_ldflags_file:
+        input_files.append(extra_ldflags_file)
+
     inputs = depset(
-        [setup, hs.tools.ghc, hs.tools.ghc_pkg, hs.tools.hsc2hs],
+        input_files,
         transitive = [
             depset(srcs),
             depset(cc.files),

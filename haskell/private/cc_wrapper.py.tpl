@@ -134,7 +134,6 @@ class Args:
         - Detects the requested action.
         - Keeps rpath arguments for further processing when linking.
         - Keeps print-file-name arguments for further processing.
-        - Filters out -dead_strip_dylibs.
 
         Args:
           args: Iterable over command-line arguments.
@@ -317,18 +316,6 @@ class Args:
                     self._prev_ld_arg = ld_arg
                 elif ld_arg.startswith("-rpath="):
                     self._handle_rpath(ld_arg[len("-rpath="):], out)
-                elif ld_arg == "-dead_strip_dylibs":
-                    # On Darwin GHC will pass the dead_strip_dylibs flag to the linker.
-                    # This flag will remove any shared library loads from the binary's
-                    # header that are not directly resolving undefined symbols in the
-                    # binary. I.e. any indirect shared library dependencies will be
-                    # removed. This conflicts with Bazel's builtin cc rules, which assume
-                    # that the final binary will load all transitive shared library
-                    # dependencies. In particlar shared libraries produced by Bazel's cc
-                    # rules never load shared libraries themselves. This causes missing
-                    # symbols at runtime on macOS, see #170. To avoid this issue, we drop
-                    # the -dead_strip_dylibs flag if it is set.
-                    pass
                 else:
                     forward_ld_args.append(ld_arg)
             elif self._prev_ld_arg == "-rpath":

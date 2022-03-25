@@ -18,6 +18,8 @@ load(
 )
 load(
     ":private/actions/link.bzl",
+    "darwin_flags_for_linking_indirect_cc_deps",
+    "dynamic_library_filename",
     "link_binary",
     "link_library_dynamic",
     "link_library_static",
@@ -189,7 +191,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         ctx.attr.name,
         [dep for plugin in all_plugin_decls for dep in plugin[GhcPluginInfo].deps],
     )
-    package_ids = all_dependencies_package_ids(deps)
 
     # Add any interop info for other languages.
     cc = cc_interop_info(
@@ -219,7 +220,20 @@ def _haskell_binary_common_impl(ctx, is_test):
         # Also, static GHC doesn't support dynamic code
         dynamic = False
 
-    module_outputs = build_haskell_modules(ctx, hs, cc, posix, "", with_profiling, dynamic, interfaces_dir, objects_dir)
+    extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, hs.name, dynamic)
+
+    module_outputs = build_haskell_modules(
+        ctx,
+        hs,
+        cc,
+        posix,
+        "",
+        with_profiling,
+        dynamic,
+        extra_ldflags_file,
+        interfaces_dir,
+        objects_dir,
+    )
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in non_default_plugin_decl]
@@ -244,6 +258,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         main_function = ctx.attr.main_function,
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
+        extra_ldflags_file = extra_ldflags_file,
         plugins = plugins,
         non_default_plugins = non_default_plugins,
         preprocessors = preprocessors,
@@ -266,6 +281,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         user_compile_flags,
         c.object_files + c.dyn_object_files,
         module_outputs.os,
+        extra_ldflags_file,
         dynamic = dynamic,
         with_profiling = with_profiling,
         version = ctx.attr.version,
@@ -411,6 +427,7 @@ def _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling,
             depset([empty_c]),
             my_pkg_id,
             [],
+            None,
             empty_libs_dir,
         )
         libs = [dynamic_library, static_library]
@@ -428,7 +445,6 @@ def haskell_library_impl(ctx):
         ctx.attr.name,
         [dep for plugin in all_plugins for dep in plugin[GhcPluginInfo].deps],
     )
-    package_ids = all_dependencies_package_ids(deps)
 
     modules = ctx.attr.modules
     if modules and ctx.files.srcs:
@@ -470,7 +486,20 @@ def haskell_library_impl(ctx):
         # Also, static GHC doesn't support dynamic code
         with_shared = False
 
-    module_outputs = build_haskell_modules(ctx, hs, cc, posix, pkg_id.to_string(my_pkg_id), with_profiling, with_shared, interfaces_dir, objects_dir)
+    extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, dynamic_library_filename(hs, my_pkg_id), with_shared)
+
+    module_outputs = build_haskell_modules(
+        ctx,
+        hs,
+        cc,
+        posix,
+        pkg_id.to_string(my_pkg_id),
+        with_profiling,
+        with_shared,
+        extra_ldflags_file,
+        interfaces_dir,
+        objects_dir,
+    )
 
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
@@ -493,6 +522,7 @@ def haskell_library_impl(ctx):
         interfaces_dir = interfaces_dir,
         objects_dir = objects_dir,
         my_pkg_id = my_pkg_id,
+        extra_ldflags_file = extra_ldflags_file,
         plugins = plugins,
         non_default_plugins = non_default_plugins,
         preprocessors = preprocessors,
@@ -528,6 +558,7 @@ def haskell_library_impl(ctx):
             depset(c.dyn_object_files, transitive = [module_outputs.dyn_os]),
             my_pkg_id,
             user_compile_flags,
+            extra_ldflags_file,
         )
     else:
         dynamic_library = None

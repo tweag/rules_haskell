@@ -102,6 +102,7 @@ def _build_haskell_module(
         interface_inputs,
         object_inputs,
         narrowed_objects,
+        extra_ldflags_file,
         module):
     """Build a module
 
@@ -122,6 +123,7 @@ def _build_haskell_module(
       interface_inputs: A depset containing the interface files needed as input
       object_inputs: A depset containing the object files needed as input
       narrowed_objects: A depset containing the narrowed object files needed as arguments to ghc.
+      extra_ldflags_file: A File with flags for ld or None.
       module: The Target of the haskell_module rule
     """
 
@@ -276,12 +278,17 @@ def _build_haskell_module(
         if module_outputs.dyn_o:
             outputs += [module_outputs.dyn_o]
 
+    input_files = [src] + extra_srcs + [optp_args_file]
+    if enable_th and extra_ldflags_file:
+        args.add("-optl@{}".format(extra_ldflags_file.path))
+        input_files.append(extra_ldflags_file)
+
     # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
         inputs = depset(
-            direct = [src] + extra_srcs + [optp_args_file],
+            direct = input_files,
             transitive = [
                 dep_info.package_databases,
                 dep_info.interface_dirs,
@@ -502,7 +509,17 @@ def interfaces_as_list(with_shared, o):
     else:
         return [o.hi]
 
-def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with_shared, hidir, odir):
+def build_haskell_modules(
+        ctx,
+        hs,
+        cc,
+        posix,
+        package_name,
+        with_profiling,
+        with_shared,
+        extra_ldflags_file,
+        hidir,
+        odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
         and in their dependencies
 
@@ -514,6 +531,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
       package_name: package name if building a library or empty if building a binary
       with_profiling: Whether to build profiling object files
       with_shared: Whether to build dynamic object files
+      extra_ldflags_file: A File with flags for ld or None.
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
 
@@ -591,6 +609,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_profiling, with
             interface_inputs,
             object_inputs,
             narrowed_objects,
+            extra_ldflags_file,
             dep,
         )
 
