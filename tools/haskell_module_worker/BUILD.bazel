@@ -1,6 +1,22 @@
 load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 
+haskell_binary(
+    name = "haskell_module_worker",
+    srcs = glob(["src/*.hs"]),
+    ghcopts = ["-Werror", "-Wall", "-threaded"],
+    # Requires more recent GHC version than we use on Windows.
+    tags = ["dont_test_on_windows"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_haskell_worker_dependencies//:base",
+        "@rules_haskell_worker_dependencies//:filepath",
+        "@rules_haskell_worker_dependencies//:ghc",
+        "@rules_haskell_worker_dependencies//:ghc-paths",
+        "@rules_haskell_worker_dependencies//:mtl",
+    ],
+)
+
 proto_library(
     name = "worker_protocol_proto",
     srcs = ["worker_protocol.proto"],
