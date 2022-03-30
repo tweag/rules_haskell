@@ -12,7 +12,12 @@ haskell_toolchain_library(name = "mtl")
 haskell_binary(
     name = "haskell_module_worker",
     srcs = glob(["src/*.hs"]),
-    ghcopts = ["-Werror", "-Wall", "-threaded"],
+    ghcopts = [
+        "-Werror",
+        "-Wall",
+        "-optc-Wno-incompatible-pointer-types",
+        "-threaded",
+        ],
     # Requires more recent GHC version than we use on Windows.
     tags = ["dont_test_on_windows"],
     visibility = ["//visibility:public"],
@@ -22,6 +27,7 @@ haskell_binary(
         ":ghc",
         "@rules_haskell_worker_dependencies//:ghc-paths",
         ":mtl",
+        ":worker_protocol_cc_proto_lib",
     ],
 )
 
