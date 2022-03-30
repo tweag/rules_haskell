@@ -4,7 +4,7 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 haskell_binary(
     name = "haskell_module_worker",
     srcs = glob(["src/*.hs"]),
-    ghcopts = ["-Werror", "-Wall", "-threaded"],
+    ghcopts = ["-Werror", "-Wall", "-with-rtsopts=-T", "-threaded"],
     # Requires more recent GHC version than we use on Windows.
     tags = ["dont_test_on_windows"],
     visibility = ["//visibility:public"],
