@@ -4,7 +4,13 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 haskell_binary(
     name = "haskell_module_worker",
     srcs = glob(["src/*.hs"]),
-    ghcopts = ["-Werror", "-Wall", "-with-rtsopts=-T", "-threaded"],
+    ghcopts = [
+        "-Werror",
+        "-Wall",
+        "-with-rtsopts=-T",
+        "-optc-Wno-incompatible-pointer-types",
+        "-threaded",
+        ],
     # Requires more recent GHC version than we use on Windows.
     tags = ["dont_test_on_windows"],
     visibility = ["//visibility:public"],
@@ -14,6 +20,7 @@ haskell_binary(
         "@rules_haskell_worker_dependencies//:ghc",
         "@rules_haskell_worker_dependencies//:ghc-paths",
         "@rules_haskell_worker_dependencies//:mtl",
+        ":worker_protocol_cc_proto_lib",
     ],
 )
 
