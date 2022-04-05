@@ -321,6 +321,7 @@ def _build_haskell_module(
         env = hs.env,
         arguments = args,
         extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
+        worker = ctx.executable.haskell_module_worker,
     )
 
 def get_module_path_from_target(module):

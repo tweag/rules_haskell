@@ -43,7 +43,6 @@ _haskell_module = rule(
             cfg = "host",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
-        # TODO[AH] Suppport worker
     },
     toolchains = [
         "@rules_cc//cc:toolchain_type",
@@ -64,7 +63,6 @@ def haskell_module(
         ghcopts = [],
         plugins = [],
         tools = [],
-        worker = None,
         **kwargs):
     """Declare a module and its dependencies on other modules.
 
@@ -183,7 +181,6 @@ def haskell_module(
                This is merged with the plugins attribute of rules that depend directly on this haskell_module rule.
       tools: Extra tools needed at compile-time, like preprocessors. (Not implemented, yet)
              This is merged with the tools attribute of rules that depend directly on this haskell_module rule.
-      worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental). (Not implemented, yet)
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
     _haskell_module(
@@ -197,6 +194,5 @@ def haskell_module(
         ghcopts = ghcopts,
         plugins = plugins,
         tools = tools,
-        #worker = worker,
         **kwargs
     )
