@@ -27,7 +27,7 @@ load(
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
-def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = None, progress_message = None, input_manifests = None, extra_name = ""):
+def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = None, progress_message = None, input_manifests = None, extra_name = "", worker = None):
     args = hs.actions.args()
     extra_inputs = []
 
@@ -35,11 +35,17 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     flagsfile_prefix = ""
     execution_requirements = {}
     tools = []
-    if hs.worker != None:
+    if hs.worker != None and worker == None:
+        worker = hs.worker
+
+    if worker != None:
         flagsfile_prefix = "@"
-        execution_requirements = {"supports-workers": "1"}
-        args.add(hs.worker.path)
-        tools = [hs.worker]
+        execution_requirements = {
+            "supports-workers": "1",
+            "requires-worker-protocol": "proto",
+        }
+        args.add(worker.path)
+        tools = [worker]
     else:
         args.add(hs.tools.ghc)
         extra_inputs += [hs.tools.ghc]

@@ -105,6 +105,11 @@ _haskell_common_attrs = {
         executable = True,
         cfg = "host",
     ),
+    "haskell_module_worker": attr.label(
+        default = None,
+        executable = True,
+        cfg = "host",
+    ),
 }
 
 def _mk_binary_rule(**kwargs):
@@ -234,11 +239,20 @@ def _haskell_worker_wrapper(rule_type, **kwargs):
 
     defaults = dict(
         worker = select({
-            "@rules_haskell//haskell:use_worker": Label("@rules_haskell//tools/worker:bin"),
+            "@rules_haskell//haskell:use_old_worker": Label("@rules_haskell//tools/worker:bin"),
             "//conditions:default": None,
         }),
     )
     defaults.update(kwargs)
+
+    if native.package_name() != "tools/haskell_module_worker" or kwargs["name"] != "haskell_module_worker":
+        defaults = dict(
+            haskell_module_worker = select({
+                "@rules_haskell//haskell:use_worker": Label("@rules_haskell//tools/haskell_module_worker"),
+                "//conditions:default": None,
+            }),
+        )
+        defaults.update(kwargs)
 
     if rule_type == "binary":
         _haskell_binary(**defaults)

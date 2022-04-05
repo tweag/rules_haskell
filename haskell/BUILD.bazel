@@ -170,6 +170,13 @@ haskell_toolchain_libraries(
 )
 
 config_setting(
+    name = "use_old_worker",
+    define_values = {
+        "use_old_worker": "True",
+    },
+)
+
+config_setting(
     name = "use_worker",
     define_values = {
         "use_worker": "True",
