@@ -6,7 +6,7 @@
 
 import pprint
 import sys
-import urllib2
+from urllib.request import urlopen
 
 # All GHC versions we generate.
 # `version` is the version number
@@ -65,7 +65,7 @@ def parse_sha256_file(content, version, url):
     errs = []
     for line in content:
         # f5763983a26dedd88b65a0b17267359a3981b83a642569b26334423f684f8b8c  ./ghc-8.4.3-i386-deb8-linux.tar.xz
-        (hash, file_) = line.strip().split("  ./")
+        (hash, file_) = line.decode().strip().split("  ./")
         prefix = "ghc-{ver}-".format(ver = version.get("distribution_version", version['version']))
         suffix = ".tar.xz"
 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     for ver in VERSIONS:
         eprint("fetching " + ver['version'])
         url = link_for_sha256_file(ver['version'])
-        res = urllib2.urlopen(url)
+        res = urlopen(url)
         if res.getcode() != 200:
             eprint("download of {} failed with status {}".format(url, res.getcode()))
             sys.exit(1)
