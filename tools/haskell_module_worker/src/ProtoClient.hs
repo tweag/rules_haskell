@@ -7,24 +7,26 @@ module ProtoClient
   , createProtoClient
   , readWorkRequest
   , writeWorkResponse
+  , redirectStdoutToStderr
   ) where
 
 import Control.Monad (forM, when)
 import GHC.Foreign (peekCString, withCString)
-import GHC.IO.Handle.FD (handleToFd)
-import GHC.IO.FD (fdFD)
 import Foreign.C.Types
 import Foreign.Marshal.Alloc (alloca, free)
 import Foreign.Marshal.Array (peekArray)
 import Foreign.Ptr
 import Foreign.Storable (peek)
-import System.IO (Handle, utf8)
+import System.IO (utf8)
 
 newtype ProtoClient = ProtoClient (Ptr ProtoClient)
 data WorkRequest = WorkRequest
   { wrArgs :: [String]
   , wrVerbosity :: Int
   }
+
+foreign import capi unsafe "tools/haskell_module_worker/cbits/protoclient.h redirectStdoutToStderr"
+  c_redirectStdoutToStderr :: IO CInt
 
 foreign import capi unsafe "tools/haskell_module_worker/cbits/protoclient.h createProtoClient"
   c_createProtoClient :: CInt -> CInt -> IO (Ptr ProtoClient)
@@ -36,13 +38,14 @@ foreign import capi safe "tools/haskell_module_worker/cbits/protoclient.h readWo
 foreign import capi safe "tools/haskell_module_worker/cbits/protoclient.h writeWorkResponse"
   c_writeWorkResponse :: Ptr ProtoClient -> CInt -> Ptr CChar -> IO CInt
 
--- | Takes the handle of file to read messages from and the
--- handle of a file to write messages to.
-createProtoClient :: Handle -> Handle -> IO ProtoClient
-createProtoClient hIn hOut = do
-    fdIn <- handleToFd hIn
-    fdOut <- handleToFd hOut
-    ProtoClient <$> c_createProtoClient (fdFD fdIn) (fdFD fdOut)
+redirectStdoutToStderr :: IO CInt
+redirectStdoutToStderr = c_redirectStdoutToStderr
+
+-- | Takes the file descriptor of a file to read messages from and the
+-- file descriptor of a file to write messages to.
+createProtoClient :: CInt -> CInt -> IO ProtoClient
+createProtoClient fdIn fdOut = do
+    ProtoClient <$> c_createProtoClient fdIn fdOut
 
 -- | Reads a request from stdin.
 readWorkRequest :: ProtoClient -> IO WorkRequest

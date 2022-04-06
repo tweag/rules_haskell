@@ -2,24 +2,29 @@
 module Main where
 
 import Compile (Status(..), runSession, compile)
-import Control.Exception (try)
 import Control.Monad (forever, unless, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.List (intersperse)
 import Data.Word (Word64)
 import GHC.Stats (getRTSStats, getRTSStatsEnabled, max_live_bytes)
 import Options (Options(..), parseArgs)
-import ProtoClient (WorkRequest(..), createProtoClient, readWorkRequest, writeWorkResponse)
+import ProtoClient
+  ( WorkRequest(..)
+  , createProtoClient
+  , readWorkRequest
+  , writeWorkResponse
+  , redirectStdoutToStderr
+  )
 import System.Environment (getArgs)
-import System.IO (Handle, hSetBinaryMode, stdin, stderr, stdout)
-import System.IO.Error (alreadyInUseErrorType, ioeGetErrorType)
+import System.IO (hSetBinaryMode, stdin, stdout)
 
 main :: IO ()
 main = do
     opts <- getArgs >>= parseArgs
     hSetBinaryMode stdin True
     hSetBinaryMode stdout True
-    pc <- createProtoClient stdin stdout
+    stdout_dup <- redirectStdoutToStderr
+    pc <- createProtoClient 0 stdout_dup
     runSession $ (if optPersist opts then forever else id) $ do
       wr <- liftIO $ readWorkRequest pc
       st <- compile (wrArgs wr) (wrVerbosity wr)

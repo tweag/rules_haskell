@@ -3,12 +3,29 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/delimited_message_util.h>
+#include <errno.h>
+#include <unistd.h>
 #include "tools/haskell_module_worker/worker_protocol.pb.h"
 
 struct ProtoClient {
     google::protobuf::io::ZeroCopyInputStream* input;
     google::protobuf::io::FileOutputStream* output;
 };
+
+extern "C" int redirectStdoutToStderr() {
+    int stdout_dup = dup(1);
+    int newfd;
+    int count = 0;
+    do {
+        newfd = dup2(2, 1);
+        count++;
+    } while (newfd == -1 && errno == EBUSY && count <15);
+    if (newfd == -1) {
+        perror("redirectStdoutToStderr dup2");
+        exit(1);
+    }
+    return stdout_dup;
+}
 
 extern "C" struct ProtoClient* createProtoClient(int fdIn, int fdOut) {
     struct ProtoClient* pc = new ProtoClient();

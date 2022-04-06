@@ -18,6 +18,12 @@ int readWorkRequest(struct ProtoClient*, char*** args, int* nargs, int* verbosit
 // Writes a WorkResponse
 int writeWorkResponse(struct ProtoClient*, int exit_code, const char* output);
 
+// Redirect stdout to stderr
+//
+// stdout is afterwards reachable through the returned
+// file descriptor.
+int redirectStdoutToStderr();
+
 #ifdef __cplusplus
 }
 #endif
