@@ -10,6 +10,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":private/path_utils.bzl",
     "declare_compiled",
+    "rel_path_to_module",
     "target_unique_name",
 )
 load(":private/pkg_id.bzl", "pkg_id")
@@ -27,7 +28,7 @@ load(
 load(":private/set.bzl", "set")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 
-def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
+def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file, extra_srcs):
     """Process a single hsc file.
 
     Args:
@@ -82,12 +83,19 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     if hs.env.get("PATH") == None and hs.toolchain.is_windows:
         hs.env["PATH"] = ""
 
+    # TODO[GL] should we be using extra_srcs for this?
+    # it generally seems like the right place, but also has some other use for extra_srcs
+    # then we will be needleslly symlinking. A much more sophisticated idea would be to
+    # scan the hsc files for includes and filter only included files out..
+    extra_src_files = [_symlink_header(hs, x, hsc_dir_raw) for x in extra_srcs.to_list()]
+
     hs.actions.run(
         inputs = depset(transitive = [
             depset(cc.hdrs),
             depset([hsc_file]),
             depset(cc.files),
             depset(hsc_inputs),
+            depset(extra_src_files),
         ]),
         input_manifests = cc.manifests,
         outputs = [hs_out],
@@ -104,6 +112,31 @@ def _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     )
 
     return hs_out, idir
+
+# Not strictly for headers but that's my motivating example..
+# TODO[GL} this will fail if the header is outside of our projec root
+# what do we do then?
+def _symlink_header(hs, header, hsc_dir_raw):
+    """Symlink the given file to the output dir for hsc, preserving the "module directory structure".
+    The idea here is that hsc files often have includes with relative paths in them. We want to
+    preserve the relationship between the hsc including file and the header it includes, so in essence
+    we need to have the same directory structure.
+    Args:
+      hs: Haskell context.
+      header: The header we want to copy. Note that this is not strictly required to be a header.
+      hsc_dir_raw: The directory where we will be outputting a result with hsc2hs.
+        This is where we'll be mirroring the module structure.
+    Returns:
+      File: The generated file which is now a symlink to header.
+    """
+
+    # TODO[GL] fine to use rel_path_to_module here?
+    header_file = hs.actions.declare_file(paths.join(hsc_dir_raw, rel_path_to_module(hs, header)))
+    hs.actions.symlink(
+        output = header_file,
+        target_file = header,
+    )
+    return header_file
 
 def _compilation_defaults(
         hs,
@@ -257,7 +290,7 @@ def _compilation_defaults(
         if s.extension == "h":
             header_files.append(s)
         elif s.extension == "hsc":
-            s0, idir = _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, s)
+            s0, idir = _process_hsc_file(hs, cc, hsc_flags, hsc_inputs, s, extra_srcs)
             source_files.append(s0)
             set.mutable_insert(import_dirs, idir)
         elif s.extension in ["hs-boot", "lhs-boot"]:

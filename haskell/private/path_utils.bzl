@@ -197,7 +197,7 @@ def declare_compiled(hs, src, ext, directory = None, rel_path = None):
     rpath = rel_path
 
     if not rpath:
-        rpath = _rel_path_to_module(hs, src)
+        rpath = rel_path_to_module(hs, src)
 
     fp = paths.replace_extension(rpath, ext)
     fp_with_dir = fp if directory == None else paths.join(directory, fp)
@@ -465,11 +465,11 @@ def create_rpath_entry(
     else:
         return prefix + "/" + path
 
-def _rel_path_to_module(hs, f):
+def rel_path_to_module(hs, f):
     """Make given file name relative to the directory where the module hierarchy
     starts.
 
-    _rel_path_to_module(
+    rel_path_to_module(
       "some-workspace/some-package/src/Foo/Bar/Baz.hs"
     ) => "Foo/Bar/Baz.hs"
 
