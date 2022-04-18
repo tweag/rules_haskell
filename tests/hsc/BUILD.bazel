@@ -21,6 +21,19 @@ haskell_library(
     deps = ["//tests/hackage:base"],
 )
 
+haskell_library(
+    name = "hsc-lib-with-header",
+    srcs = [
+        "WithHeader/Point.hsc",
+        "WithHeader/PointRelativePath.hsc",
+    ],
+    extra_srcs = [
+        "WithHeader/point.h",
+        "headers/point.h",
+    ],
+    deps = ["//tests/hackage:base"],
+)
+
 haskell_test(
     name = "hsc",
     srcs = [
