@@ -2,3 +2,4 @@
 .bazelrc.local
 *.swp
 *.swo
+__pycache__
