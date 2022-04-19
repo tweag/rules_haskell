@@ -6,7 +6,7 @@ load(
 load(
     "//haskell:private/expansions.bzl",
     "expand_make_variables",
-    "haskell_library_extra_label_attrs",
+    "haskell_library_expand_make_variables",
 )
 load(
     "//haskell:private/mode.bzl",
@@ -255,7 +255,7 @@ def _build_haskell_module(
 
     args.add_all(hs.toolchain.ghcopts)
 
-    args.add_all(expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts, haskell_library_extra_label_attrs(ctx.attr)))
+    args.add_all(haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts))
     module_extra_attrs = [
         [moduleAttr.src],
         moduleAttr.extra_srcs,
