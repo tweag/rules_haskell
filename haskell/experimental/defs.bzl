@@ -16,7 +16,7 @@ _haskell_module = rule(
         "src": attr.label(
             # TODO[AH] How to handle .hsc files?
             # TODO[AH] Do we need .h files in here?
-            allow_single_file = [".hs", ".lhs", ".hs-boot", ".lhs-boot"],  #, ".hsc", ".h"],
+            allow_single_file = [".hs", ".lhs", ".hs-boot", ".lhs-boot", ".hsc"],  #, ".h"],
             mandatory = True,
         ),
         "src_strip_prefix": attr.string(),
