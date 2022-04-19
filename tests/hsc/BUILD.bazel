@@ -43,6 +43,7 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":hsc-lib",
+        ":hsc-lib-with-header",
         "//tests/hackage:base",
     ],
 )
