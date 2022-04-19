@@ -1,0 +1,84 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+)
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+package(default_testonly = 1)
+
+haskell_test(
+    name = "hsc",
+    modules = [
+        ":hsc.Main",
+        ":hsc.Bar",
+        ":hsc.Bar.Baz",
+        ":hsc.Flags",
+        ":hsc.Foo",
+        ":hsc.BinHsc",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "hsc.Main",
+    src = "Main.hs",
+    module_name = "Main",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":hsc.Bar",
+        ":hsc.Bar.Baz",
+        ":hsc.BinHsc",
+        ":hsc.Flags",
+        ":hsc.Foo",
+    ],
+)
+
+haskell_module(
+    name = "hsc.BinHsc",
+    src = "BinHsc.hsc",
+    module_name = "BinHsc",
+    visibility = ["//visibility:public"],
+    deps = ["hsc.Bar.Baz"],
+)
+
+haskell_module(
+    name = "hsc.Bar",
+    src = "Bar.hsc",
+    module_name = "Bar",
+    visibility = ["//visibility:public"],
+)
+
+haskell_module(
+    name = "hsc.Bar.Baz",
+    src = "Bar/Baz.hsc",
+    module_name = "Bar.Baz",
+    visibility = ["//visibility:public"],
+)
+
+haskell_module(
+    name = "hsc.Flags",
+    src = "Flags.hsc",
+    ghcopts = [
+        "-DTHIS_IS_TRUE",
+        "-optP-DTHIS_TOO_IS_TRUE",
+    ],
+    module_name = "Flags",
+    visibility = ["//visibility:public"],
+)
+
+haskell_module(
+    name = "hsc.Foo",
+    src = "Foo.hsc",
+    module_name = "Foo",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
