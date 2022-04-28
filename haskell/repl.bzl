@@ -41,9 +41,9 @@ HaskellReplLoadInfo = provider(
     Information to a Haskell target to load into the REPL as source.
     """,
     fields = {
-        "source_files": "Set of files that contain Haskell modules.",
-        "boot_files": "Set of Haskell boot files.",
-        "import_dirs": "Set of Haskell import directories.",
+        "source_files": "Depset of files that contain Haskell modules.",
+        "boot_files": "Depset of Haskell boot files.",
+        "import_dirs": "Depset of Haskell import directories.",
         "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of transitive C dependencies.",
         "compiler_flags": "Flags to pass to the Haskell compiler.",
