@@ -1039,9 +1039,11 @@ def _stack_version_check(repository_ctx, stack_cmd):
             "{}",
         ]
         return "\n".join(error_message).format(exec_result.stdout, exec_result.stderr)
-    version = tuple([int(x) for x in exec_result.stdout.strip().split(".")])
+    version_str = exec_result.stdout.strip()
+    version = tuple([int(x) for x in version_str.split(".")])
     if version < _STACK_MIN_VERSION:
-        return "Stack {} found. Need {} or newer.".format(".".join(version), ".".join(_STACK_MIN_VERSION))
+        min_version_str = [str(x) for x in _STACK_MIN_VERSION]
+        return "Stack {} found. Need {} or newer.".format(version_str, ".".join(min_version_str))
     return None
 
 def _resolve_component_target_name(package, component):
