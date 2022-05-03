@@ -32,14 +32,12 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     extra_inputs = []
 
     # Detect persistent worker support
-    flagsfile_prefix = ""
     execution_requirements = {}
     tools = []
     if hs.worker != None and worker == None:
         worker = hs.worker
 
     if worker != None:
-        flagsfile_prefix = "@"
         execution_requirements = {
             "supports-workers": "1",
             "requires-worker-protocol": "proto",
@@ -100,7 +98,7 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
         # for different actions. This allows persistent workers to be
         # reused for different actions. Otherwise, a different worker
         # would be spawned for each action.
-        arguments = [exe_path, flagsfile_prefix + flagsfile.path],
+        arguments = [exe_path, "@%s" % flagsfile.path],
         execution_requirements = execution_requirements,
     )
 
