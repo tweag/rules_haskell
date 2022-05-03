@@ -16,7 +16,9 @@ else
     # "Warning: the following files ..." is produced when we tell GHC
     # to load object files in the interpreter in the build action
     # of haskell_module which doesn't do any linking.
-    while IFS= read -r line; do extra_args+=("$line"); done < "$2"
+    #
+    # "${2:1}" drops the '@' sign at the begining of the filepath
+    while IFS= read -r line; do extra_args+=("$line"); done < "${2:1}"
     "$1" "${extra_args[@]}" 2>&1 \
       | while IFS= read -r line; do [[ $line =~ ^(Loaded|Warning: the following files would be used as linker inputs, but linking is not being done:) ]] || echo "$line"; done >&2
 fi
