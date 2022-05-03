@@ -44,10 +44,10 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
             "supports-workers": "1",
             "requires-worker-protocol": "proto",
         }
-        args.add(worker.path)
+        exe_path = worker.path
         tools = [worker]
     else:
-        args.add(hs.tools.ghc)
+        exe_path = hs.tools.ghc.path
         extra_inputs += [hs.tools.ghc]
 
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
@@ -62,18 +62,17 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     hs.actions.write(compile_flags_file, args)
     hs.actions.write(extra_args_file, arguments)
 
-    extra_inputs += [
-        compile_flags_file,
-        extra_args_file,
-    ] + cc.files + hs.toolchain.bindir + hs.toolchain.libdir
+    extra_inputs += cc.files + hs.toolchain.bindir + hs.toolchain.libdir
 
     if hs.toolchain.locale_archive != None:
         extra_inputs.append(hs.toolchain.locale_archive)
 
-    flagsfile = extra_args_file
     if params_file:
-        flagsfile = merge_parameter_files(hs, extra_args_file, params_file)
-        extra_inputs.append(flagsfile)
+        flagsfile0 = merge_parameter_files(hs, extra_args_file, params_file)
+    else:
+        flagsfile0 = extra_args_file
+    flagsfile = merge_parameter_files(hs, compile_flags_file, flagsfile0)
+    extra_inputs.append(flagsfile)
 
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
@@ -97,7 +96,11 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = [compile_flags_file.path, flagsfile_prefix + flagsfile.path],
+        # Mind that the argument list here only differs on the last argument
+        # for different actions. This allows persistent workers to be
+        # reused for different actions. Otherwise, a different worker
+        # would be spawned for each action.
+        arguments = [exe_path, flagsfile_prefix + flagsfile.path],
         execution_requirements = execution_requirements,
     )
 
