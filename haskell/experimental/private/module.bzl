@@ -561,7 +561,8 @@ def build_haskell_modules(
         hidir,
         odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
-        and in their dependencies
+        and in their dependencies. The repl_info returned here aggregates data
+        from all the haskell_modules being run here.
 
     Args:
       ctx: The context of the rule with module dependencies
@@ -588,7 +589,11 @@ def build_haskell_modules(
             object files and the object files of their transitive module
             dependencies. See Note [Narrowed Dependencies].
         per_module_transitive_dyn_objects: like per_module_transitive_objects but for dyn_o files
-        repl_info: struct(source_files, boot_files, import_dirs, user_compile_flags)
+        repl_info: struct(source_files, boot_files, import_dirs, user_compile_flags):
+          source_files: Depset of files that contain Haskell modules.
+          boot_files: Depset of files that contain Haskell boot modules.
+          import_dirs: Set of newly generated import directories. hsc2hs generates these.
+          user_compile_flags: Compiler flags specified by the user, after location expansion.
     """
     per_module_maps = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
 
