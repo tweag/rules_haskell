@@ -1,0 +1,21 @@
+load("//tests:integration_tests.bzl", "integration_test")
+
+package(default_testonly = 1)
+
+integration_test(
+    name = "haskell_module_repl_test",
+    size = "small",
+    bazel = "//tests:bazel",
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1486
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
