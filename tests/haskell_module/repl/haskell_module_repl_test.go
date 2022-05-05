@@ -122,13 +122,6 @@ haskell_library(
     ],
     deps = [":base"],
 )
-
-filegroup(
-    name = "all_files",
-    testonly = True,
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
-)
 -- BranchLeft.hs --
 module BranchLeft where
 
