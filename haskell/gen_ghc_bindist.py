@@ -7,6 +7,7 @@
 import pprint
 import sys
 from urllib.request import urlopen
+from distutils.version import StrictVersion
 
 # All GHC versions we generate.
 # `version` is the version number
@@ -173,5 +174,8 @@ if __name__ == "__main__":
 # To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py,
 # regenerate the dict and copy it here.
 GHC_BINDIST = \\""")
-    pprint.pprint(ghc_bindists)
-
+    print("{")
+    for version in sorted(ghc_bindists.keys(), key=StrictVersion):
+       print('    ', repr(version), end=': ')
+       print(pprint.pformat(ghc_bindists[version], indent=8), end=',\n')
+    print("}")
