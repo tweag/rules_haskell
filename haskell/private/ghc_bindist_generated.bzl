@@ -1,5 +1,6 @@
-# Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist | sponge haskell/private/ghc_bindist_generated.bzl`
-# To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py
+# Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist`
+# To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py,
+# regenerate the dict and copy it here.
 GHC_BINDIST = \
     {
         "7.10.3": {
@@ -273,6 +274,10 @@ GHC_BINDIST = \
                 "https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-apple-darwin.tar.xz",
                 "287db0f9c338c9f53123bfa8731b0996803ee50f6ee847fe388092e5e5132047",
             ),
+            "darwin_arm64": (
+                "https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-aarch64-apple-darwin.tar.xz",
+                "dc469fc3c35fd2a33a5a575ffce87f13de7b98c2d349a41002e200a56d9bba1c",
+            ),
             "linux_amd64": (
                 "https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-deb9-linux.tar.xz",
                 "ced9870ea351af64fb48274b81a664cdb6a9266775f1598a79cbb6fdd5770a23",
@@ -301,6 +306,10 @@ GHC_BINDIST = \
                 "https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-apple-darwin.tar.xz",
                 "e1fe990eb987f5c4b03e0396f9c228a10da71769c8a2bc8fadbc1d3b10a0f53a",
             ),
+            "darwin_arm64": (
+                "https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-aarch64-apple-darwin.tar.xz",
+                "b1fcab17fe48326d2ff302d70c12bc4cf4d570dfbbce68ab57c719cfec882b05",
+            ),
             "linux_amd64": (
                 "https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-deb9-linux.tar.xz",
                 "805f5628ce6cec678ba77ff48c924831ebdf75ec2c66368e8935a618913a150e",
@@ -314,6 +323,10 @@ GHC_BINDIST = \
             "darwin_amd64": (
                 "https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-apple-darwin.tar.xz",
                 "c527700a210306098ce85d2c956089deea539aefe1d1816701d5c14cf9c113b7",
+            ),
+            "darwin_arm64": (
+                "https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-aarch64-apple-darwin.tar.xz",
+                "356b99081ae38ded43b78840d673e8c782e0088e9a2aea0e19faaf677ccb54cf",
             ),
             "linux_amd64": (
                 "https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-deb9-linux.tar.xz",
