@@ -255,11 +255,19 @@ _ghc_bindist = repository_rule(
 
 def _ghc_bindist_toolchain_impl(ctx):
     os, _, arch = ctx.attr.target.partition("_")
-    exec_constraints = [{
-        "darwin": "@platforms//os:osx",
-        "linux": "@platforms//os:linux",
-        "windows": "@platforms//os:windows",
-    }.get(os)]
+    os_constraint = {
+        "darwin": "osx",
+        "linux": "linux",
+        "windows": "windows",
+    }.get(os)
+    cpu_constraint = {
+        "amd64": "x86_64",
+        "arm64": "arm64",
+    }.get(arch)
+    exec_constraints = [
+        "@platforms//os:{}".format(os_constraint),
+        "@platforms//cpu:{}".format(cpu_constraint),
+    ]
     target_constraints = exec_constraints
     ctx.file(
         "BUILD",
