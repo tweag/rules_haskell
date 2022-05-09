@@ -15,6 +15,25 @@ from urllib.request import urlopen
 # `ignore_prefixes` is the prefix of files to ignore
 # `ignore_suffixes` is the suffix of files to ignore
 VERSIONS = [
+    { "version": "9.2.1",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.0.2",
+      "ignore_prefixes": ["ghc-9.0.2a"],
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.0.1",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "8.10.7",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "8.10.4" },
+    { "version": "8.10.3" },
+    { "version": "8.10.2" },
+    { "version": "8.10.1",
+      "ignore_suffixes": [".lz"] },
+    { "version": "8.8.4" },
+    { "version": "8.8.3",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "8.8.2" },
+    { "version": "8.8.1" },
     { "version": "8.6.5" },
     { "version": "8.6.4" },
     { "version": "8.6.3" },
@@ -34,14 +53,14 @@ VERSIONS = [
 
 # All architectures we generate.
 # bazel: bazel name
-# upstream: download.haskell.org name
+# upstream: list of download.haskell.org name
 ARCHES = [
     { "bazel": "linux_amd64",
-      "upstream": "x86_64-deb8-linux", },
+      "upstream": ["x86_64-deb8-linux", "x86_64-deb9-linux", "x86_64-deb10-linux"], },
     { "bazel": "darwin_amd64",
-      "upstream": "x86_64-apple-darwin" },
+      "upstream": ["x86_64-apple-darwin"] },
     { "bazel": "windows_amd64",
-      "upstream": "x86_64-unknown-mingw32" },
+      "upstream": ["x86_64-unknown-mingw32"] },
 ]
 
 
@@ -94,6 +113,11 @@ def parse_sha256_file(content, version, url):
 def eprint(mes):
     print(mes, file = sys.stderr)
 
+def select_one(xs, ys):
+    """Select a single item from xs, prefer the first item also in ys."""
+    items = [x for x in xs if x in ys]
+    return items[0] if items else xs[0]
+
 # Main.
 if __name__ == "__main__":
 
@@ -115,7 +139,8 @@ if __name__ == "__main__":
     errs = {}
     for ver, hashes in grab.items():
       real_arches = frozenset(hashes.keys())
-      needed_arches = frozenset([a['upstream'] for a in ARCHES])
+      upstreams = [select_one(a['upstream'], real_arches) for a in ARCHES]
+      needed_arches = frozenset(upstreams)
       missing_arches = needed_arches.difference(real_arches)
       if missing_arches:
           errs[ver] = missing_arches
@@ -132,19 +157,21 @@ if __name__ == "__main__":
         # { bazel_arch: (tarball_url, sha256_hash) }
         arch_dists = {}
         for arch in ARCHES:
-            hashes[arch['upstream']]
+            upstream = select_one(arch['upstream'], hashes)
+
             arch_dists[arch['bazel']] = (
-                link_for_tarball(arch['upstream'], ver),
-                hashes[arch['upstream']]
+                link_for_tarball(upstream, ver),
+                hashes[upstream]
             )
         ghc_bindists[ver] = arch_dists
 
     # Print to stdout. Be aware that you can't `> foo.bzl`,
     # because that truncates the source file which is needed
     # for bazel to run in the first place.
-    print(""" \
-# Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist | sponge haskell/private/ghc_bindist_generated.bzl`
-# To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py
+    print("""\
+# Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist`
+# To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py,
+# regenerate the dict and copy it here.
 GHC_BINDIST = \\""")
     pprint.pprint(ghc_bindists)
 
