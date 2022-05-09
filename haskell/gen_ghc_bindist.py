@@ -60,6 +60,8 @@ ARCHES = [
       "upstream": ["x86_64-deb8-linux", "x86_64-deb9-linux", "x86_64-deb10-linux"], },
     { "bazel": "darwin_amd64",
       "upstream": ["x86_64-apple-darwin"] },
+    { "bazel": "darwin_arm64",
+      "upstream": ["aarch64-apple-darwin"] },
     { "bazel": "windows_amd64",
       "upstream": ["x86_64-unknown-mingw32"] },
 ]
@@ -121,7 +123,6 @@ def select_one(xs, ys):
 
 # Main.
 if __name__ == "__main__":
-
     # Fetch all hashsum files
     # grab : { version: { arch: sha256 } }
     grab = {}
@@ -147,9 +148,12 @@ if __name__ == "__main__":
           errs[ver] = missing_arches
     if errs:
         for ver, missing in errs.items():
-            eprint("version {ver} is missing hashes for required architectures {arches}".format(
-                ver = ver,
-                arches = missing))
+            print(
+                "WARN: version {ver} is missing hashes for architectures {arches}".format(
+                    ver = ver,
+                    arches = ','.join(missing)),
+                file=sys.stderr
+            )
 
     # fetch the arches we need and create the GHC_BINDISTS dict
     # ghc_bindists : { version: { bazel_arch: (tarball_url, sha256_hash) } }
@@ -160,10 +164,11 @@ if __name__ == "__main__":
         for arch in ARCHES:
             upstream = select_one(arch['upstream'], hashes)
 
-            arch_dists[arch['bazel']] = (
-                link_for_tarball(upstream, ver),
-                hashes[upstream]
-            )
+            if upstream in hashes:
+                arch_dists[arch['bazel']] = (
+                    link_for_tarball(upstream, ver),
+                    hashes[upstream]
+                )
         ghc_bindists[ver] = arch_dists
 
     # Print to stdout. Be aware that you can't `> foo.bzl`,
