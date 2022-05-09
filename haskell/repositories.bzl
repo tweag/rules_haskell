@@ -8,6 +8,9 @@ load(
     "check_bazel_version_compatible",
 )
 
+_rules_nixpkgs_version = "210d30a81cedde04b4281fd163428722278fddfb"
+_rules_nixpkgs_sha256 = "61b24e273821a15146f9ae7577e64b53f6aa332d5a7056abe8221ae2c346fdbd"
+
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
     if "bazel_version" in dir(native):
@@ -55,13 +58,34 @@ def rules_haskell_dependencies():
         shallow_since = "1637931407 +0100",
     )
 
-    maybe(
-        http_archive,
-        name = "io_tweag_rules_nixpkgs",
-        sha256 = "9b97f6cce67bd2a005089ca108358e9bbc24531794a9d1f8ca537470ee8ca2d1",
-        strip_prefix = "rules_nixpkgs-075794009270b12986d3d840e4fc065a3aceba00",
-        urls = ["https://github.com/tweag/rules_nixpkgs/archive/075794009270b12986d3d840e4fc065a3aceba00.tar.gz"],
-    )
+    if "io_tweag_rules_nixpkgs" not in native.existing_rules():
+        # N.B. rules_nixpkgs was split into separate components, which need to be loaded separately
+        #
+        # See https://github.com/tweag/rules_nixpkgs/issues/182 for the rational
+
+        strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version
+
+        http_archive(
+            name = "io_tweag_rules_nixpkgs",
+            strip_prefix = strip_prefix,
+            urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+            sha256 = _rules_nixpkgs_sha256,
+        )
+
+        http_archive(
+            name = "rules_nixpkgs_core",
+            strip_prefix = strip_prefix + "/core",
+            urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+            sha256 = _rules_nixpkgs_sha256,
+        )
+
+        for toolchain in ["cc", "java", "python", "go", "rust", "posix"]:
+            http_archive(
+                name = "rules_nixpkgs_" + toolchain,
+                strip_prefix = strip_prefix + "/toolchains/" + toolchain,
+                urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+                sha256 = _rules_nixpkgs_sha256,
+            )
 
     maybe(
         http_archive,
