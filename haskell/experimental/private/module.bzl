@@ -183,6 +183,10 @@ def _build_haskell_module(
     # Construct compiler arguments
 
     args = ctx.actions.args()
+
+    if (moduleAttr.src == ctx.attr.main_file):
+        args.add_all(["-main-is", ctx.attr.main_function])
+
     args.add_all([
         "-c",
         "-odir",
