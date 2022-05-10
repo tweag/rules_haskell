@@ -29,7 +29,7 @@ load(":private/plugins.bzl", "resolve_plugin_tools")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
-load(":private/expansions.bzl", "expand_make_variables", "haskell_library_extra_label_attrs")
+load(":private/expansions.bzl", "haskell_library_expand_make_variables")
 load(":private/java.bzl", "java_interop_info")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
@@ -154,10 +154,6 @@ def _resolve_preprocessors(ctx, preprocessors):
         input_manifests = input_manifests,
     )
 
-def _expand_make_variables(name, ctx, strings):
-    # All labels in all attributes should be location-expandable.
-    return expand_make_variables(name, ctx, strings, haskell_library_extra_label_attrs(ctx.attr))
-
 def haskell_module_from_target(m):
     """ Produces the module name from a HaskellModuleInfo """
     return paths.split_extension(get_module_path_from_target(m))[0].replace("/", ".")
@@ -238,7 +234,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in non_default_plugin_decl]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
-    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
+    user_compile_flags = haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_binary(
         hs,
         cc,
@@ -271,7 +267,7 @@ def _haskell_binary_common_impl(ctx, is_test):
             coverage_data += dep[HaskellCoverageInfo].coverage_data
             coverage_data = list.dedup_on(_get_mix_filepath, coverage_data)
 
-    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
+    user_compile_flags = haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     (binary, solibs) = link_binary(
         hs,
         cc,
@@ -300,7 +296,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         deps_interface_dirs = all_deps_info.deps_interface_dirs,
         compile_flags = c.compile_flags,
         user_compile_flags = user_compile_flags,
-        user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
+        user_repl_flags = haskell_library_expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
     )
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in deps if CcInfo in dep],
@@ -308,8 +304,8 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     target_files = depset([binary])
 
-    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
-    extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
+    user_compile_flags = haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
+    extra_args = haskell_library_expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
     build_haskell_runghc(
         hs,
         cc,
@@ -504,7 +500,7 @@ def haskell_library_impl(ctx):
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
     non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
     preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
-    user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
+    user_compile_flags = haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_library(
         hs,
         cc,
@@ -639,7 +635,7 @@ def haskell_library_impl(ctx):
         deps_interface_dirs = depset(transitive = [dep_info.interface_dirs, narrowed_deps_info.deps_interface_dirs]),
         compile_flags = c.compile_flags,
         user_compile_flags = user_compile_flags,
-        user_repl_flags = _expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
+        user_repl_flags = haskell_library_expand_make_variables("repl_ghci_args", ctx, ctx.attr.repl_ghci_args),
         per_module_transitive_interfaces = module_outputs.per_module_transitive_interfaces,
         per_module_transitive_objects = module_outputs.per_module_transitive_objects,
         per_module_transitive_dyn_objects = module_outputs.per_module_transitive_dyn_objects,
@@ -671,8 +667,8 @@ def haskell_library_impl(ctx):
     target_files = depset([file for file in [static_library, dynamic_library] if file])
 
     if hasattr(ctx, "outputs"):
-        extra_args = _expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
-        user_compile_flags = _expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
+        extra_args = haskell_library_expand_make_variables("runcompile_flags", ctx, ctx.attr.runcompile_flags)
+        user_compile_flags = haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
         build_haskell_runghc(
             hs,
             cc,

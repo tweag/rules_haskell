@@ -6,7 +6,7 @@ load(
 load(
     "//haskell:private/expansions.bzl",
     "expand_make_variables",
-    "haskell_library_extra_label_attrs",
+    "haskell_library_expand_make_variables",
 )
 load(
     "//haskell:private/mode.bzl",
@@ -32,6 +32,11 @@ load(
     "HaskellModuleInfo",
 )
 load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
+load(
+    "//haskell:private/actions/process_hsc_file.bzl",
+    "preprocess_hsc_flags_and_inputs",
+    "process_hsc_file",
+)
 
 # Note [Narrowed Dependencies]
 #
@@ -132,6 +137,26 @@ def _build_haskell_module(
     # Collect dependencies
     src = moduleAttr.src.files.to_list()[0]
     extra_srcs = [f for t in moduleAttr.extra_srcs + ctx.attr.extra_srcs for f in t.files.to_list()]
+
+    user_ghcopts = []
+    user_ghcopts += haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
+
+    module_extra_attrs = [
+        [moduleAttr.src],
+        moduleAttr.extra_srcs,
+        moduleAttr.plugins,
+        moduleAttr.tools,
+    ]
+
+    user_ghcopts += expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs)
+
+    if src.extension == "hsc":
+        # TODO[AH] Support version macros
+        hsc_flags, hsc_inputs = preprocess_hsc_flags_and_inputs(dep_info, user_ghcopts, None)
+
+        # TODO[GL] Use idir when providing HaskellReplLoadInfo
+        hs_out, idir = process_hsc_file(hs, cc, hsc_flags, hsc_inputs, src)
+        src = hs_out
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins + moduleAttr.plugins)
@@ -235,6 +260,7 @@ def _build_haskell_module(
                 for pkg_id in all_dependencies_package_ids(plugin.deps)
             ],
             package_databases = plugin_dep_info.package_databases,
+            # TODO[AH] Support version macros
             version = None,
         ),
         prefix = "compile-{}-".format(module.label.name),
@@ -254,19 +280,12 @@ def _build_haskell_module(
     ]
 
     args.add_all(hs.toolchain.ghcopts)
+    args.add_all(user_ghcopts)
 
-    args.add_all(expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts, haskell_library_extra_label_attrs(ctx.attr)))
-    module_extra_attrs = [
-        [moduleAttr.src],
-        moduleAttr.extra_srcs,
-        moduleAttr.plugins,
-        moduleAttr.tools,
-    ]
     if plugins and not enable_th:
         # For #1681. These suppresses bogus warnings about missing libraries which
         # aren't really needed.
         args.add("-Wno-missed-extra-shared-lib")
-    args.add_all(expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs))
     if enable_th:
         args.add_all(narrowed_objects)
 
