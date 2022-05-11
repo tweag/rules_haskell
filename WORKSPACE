@@ -318,6 +318,7 @@ register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
+    "//tests:protobuf-toolchain-osx_arm64",
 )
 
 nixpkgs_cc_configure(
