@@ -467,3 +467,14 @@ def haskell_proto_toolchain(
             "@platforms//cpu:x86_64",
         ],
     )
+
+    # TODO define explicit toolchain instead, or pass in target
+    native.toolchain(
+        name = name + "-osx_arm64",
+        toolchain_type = "@rules_haskell//protobuf:toolchain",
+        toolchain = ":" + impl_name,
+        exec_compatible_with = [
+            "@platforms//os:osx",
+            "@platforms//cpu:arm64",
+        ],
+    )
