@@ -6,23 +6,23 @@ load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/cc_libraries.bzl", "create_link_config", "get_cc_libraries", "get_library_files")
 
-def merge_parameter_files(hs, file1, file2):
+def merge_parameter_files(hs, file1, file2, filename = None):
     """Merge two GHC parameter files into one.
 
     Args:
       hs: Haskell context.
       file1: The first parameter file.
       file2: The second parameter file.
+      filename: An optional file name for the result
 
     Returns:
       File: A new parameter file containing the parameters of both input files.
-        The file name is based on the file names of the input files. The file
-        is located next to the first input file.
+        The file name is based on the file names of the input files if no filename
+        is given in the invocation. The file is located next to the first input file.
     """
-    params_file = hs.actions.declare_file(
-        file1.basename + ".and." + file2.basename,
-        sibling = file1,
-    )
+    if not filename:
+        filename = file1.basename + ".and." + file2.basename
+    params_file = hs.actions.declare_file(filename, sibling = file1)
     hs.actions.run_shell(
         inputs = [file1, file2],
         outputs = [params_file],
