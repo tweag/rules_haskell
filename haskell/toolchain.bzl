@@ -66,10 +66,10 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
         extra_inputs.append(hs.toolchain.locale_archive)
 
     if params_file:
-        flagsfile0 = merge_parameter_files(hs, extra_args_file, params_file)
+        flagsfile0 = merge_parameter_files(hs, extra_args_file, params_file, "v1_" + extra_args_file.basename)
     else:
         flagsfile0 = extra_args_file
-    flagsfile = merge_parameter_files(hs, compile_flags_file, flagsfile0)
+    flagsfile = merge_parameter_files(hs, compile_flags_file, flagsfile0, "v2_" + extra_args_file.basename)
     extra_inputs.append(flagsfile)
 
     if type(inputs) == type(depset()):
