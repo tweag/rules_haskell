@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NondecreasingIndentation #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE CPP #-}
 
 -- | This module implements a function to compile modules individually
@@ -10,17 +11,20 @@
 module Compile (CompileM, Status(..), compile, runSession) where
 
 import Control.Exception (throwIO)
-import Control.Monad (guard, when)
+import Control.Monad (guard, forM_, when)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.Reader (ReaderT(..))
+import Control.Monad.Trans.Except ( ExceptT(..), runExceptT )
 import Data.IORef
 import Data.List (intercalate, isPrefixOf, partition)
 import Data.Maybe
+import Data.Time (UTCTime)
 import System.FilePath
 import System.IO (hFlush, hPutStrLn, stderr)
 
 import GHC hiding (Succeeded)
 import GHC.Paths (libdir)
+import GhcMake (IsBoot(..), findExtraSigImports, implicitRequirements)
 import DynFlags
   ( CompilerInfo
   , FlagSpec
@@ -32,22 +36,34 @@ import DynFlags
   , defaultFlushOut
   , flagSpecFlag
   , flagSpecName
+  , isObjectTarget
   , warningGroups
   , warningHierarchies
   , wWarningFlags
   )
 import DriverPhases
-import DriverPipeline (compileFile)
+import DriverPipeline (compileOne, preprocess, writeInterfaceOnlyMode)
 import ErrUtils
-  ( MsgDoc
+  ( ErrorMessages
+  , MsgDoc
   , getCaretDiagnostic
   , mkLocMessageAnn
   , pprErrMsgBagWithLoc
   )
-import HscTypes (handleFlagWarnings, hsc_dflags, srcErrorMessages)
+import FastString (FastString)
+import Finder (addHomeModuleToFinder, mkHomeModLocation)
+import HeaderInfo (getImports)
+import HscTypes
+  ( SourceModified(SourceModified)
+  , handleFlagWarnings
+  , hsc_dflags
+  , srcErrorMessages
+  , throwErrors
+  )
 import Panic (fromException, try)
 import PlainPanic (PlainGhcException(PlainPanic))
 import Outputable
+import StringBuffer (StringBuffer, hGetStringBuffer)
 import Util
 import System.Process (callCommand)
 
@@ -190,7 +206,12 @@ doCompile logsRef srcs = do
       liftIO $ callCommand $ "/usr/bin/find -L . > /tmp/persistent-wfile-" ++ (map replaceSlash $ fst $ head hs_srcs)
       hsc_env <- GHC.getSession
       collectStatus logsRef $
-        mapM_ (compileFile hsc_env StopLn) hs_srcs
+        forM_ hs_srcs $ \(src, phase) -> do
+          emodSum <- summariseFile hsc_env src phase True Nothing
+          case emodSum of
+            Right modSum ->
+              compileOne hsc_env modSum 0 0 Nothing Nothing SourceModified
+            Left errs -> throwErrors errs
     else
       return $ NonHaskellInputs $ map fst non_hs_srcs
 
@@ -318,3 +339,139 @@ smallestGroups flag = mapMaybe go warningHierarchies where
         guard (flag `elem` flags)
         pure (Just group)
     go [] = Nothing
+
+
+-- Copied from
+-- https://gitlab.haskell.org/ghc/ghc/-/blob/ghc-8.10.7-release/compiler/main/GhcMake.hs#L2413
+summariseFile
+        :: HscEnv
+        -> FilePath                     -- source file name
+        -> Maybe Phase                  -- start phase
+        -> Bool                         -- object code allowed?
+        -> Maybe (StringBuffer,UTCTime)
+        -> IO (Either ErrorMessages ModSummary)
+
+summariseFile hsc_env src_fn0 mb_phase obj_allowed maybe_buf
+   = do src_timestamp <- get_src_timestamp
+        new_summary src_fn0 src_timestamp
+  where
+    get_src_timestamp = case maybe_buf of
+                           Just (_,t) -> return t
+                           Nothing    -> liftIO $ getModificationUTCTime src_fn0
+                        -- getModificationUTCTime may fail
+
+    new_summary src_fn src_timestamp = runExceptT $ do
+        preimps@PreprocessedImports {..}
+            <- getPreprocessedImports hsc_env src_fn mb_phase maybe_buf
+
+
+        -- Make a ModLocation for this file
+        location <- liftIO $ mkHomeModLocation (hsc_dflags hsc_env) pi_mod_name src_fn
+
+        -- Tell the Finder cache where it is, so that subsequent calls
+        -- to findModule will find it, even if it's not on any search path
+        mod0 <- liftIO $ addHomeModuleToFinder hsc_env pi_mod_name location
+
+        liftIO $ makeNewModSummary hsc_env $ MakeNewModSummary
+            { nms_src_fn = src_fn
+            , nms_src_timestamp = src_timestamp
+            , nms_is_boot = NotBoot
+            , nms_hsc_src =
+                if isHaskellSigFilename src_fn
+                   then HsigFile
+                   else HsSrcFile
+            , nms_location = location
+            , nms_mod = mod0
+            , nms_obj_allowed = obj_allowed
+            , nms_preimps = preimps
+            }
+
+data MakeNewModSummary
+  = MakeNewModSummary
+      { nms_src_fn :: FilePath
+      , nms_src_timestamp :: UTCTime
+      , nms_is_boot :: IsBoot
+      , nms_hsc_src :: HscSource
+      , nms_location :: ModLocation
+      , nms_mod :: Module
+      , nms_obj_allowed :: Bool
+      , nms_preimps :: PreprocessedImports
+      }
+
+makeNewModSummary :: HscEnv -> MakeNewModSummary -> IO ModSummary
+makeNewModSummary hsc_env MakeNewModSummary{..} = do
+  let PreprocessedImports{..} = nms_preimps
+  let dflags = hsc_dflags hsc_env
+
+  -- when the user asks to load a source file by name, we only
+  -- use an object file if -fobject-code is on.  See #1205.
+  obj_timestamp <- liftIO $
+      if isObjectTarget (hscTarget dflags)
+         || nms_obj_allowed -- bug #1205
+          then getObjTimestamp nms_location nms_is_boot
+          else return Nothing
+
+  hi_timestamp <- maybeGetIfaceDate dflags nms_location
+  hie_timestamp <- modificationTimeIfExists (ml_hie_file nms_location)
+
+  extra_sig_imports <- findExtraSigImports hsc_env nms_hsc_src pi_mod_name
+  required_by_imports <- implicitRequirements hsc_env pi_theimps
+
+  return $ ModSummary
+      { ms_mod = nms_mod
+      , ms_hsc_src = nms_hsc_src
+      , ms_location = nms_location
+      , ms_hspp_file = pi_hspp_fn
+      , ms_hspp_opts = pi_local_dflags
+      , ms_hspp_buf  = Just pi_hspp_buf
+      , ms_parsed_mod = Nothing
+      , ms_srcimps = pi_srcimps
+      , ms_textual_imps =
+          pi_theimps ++ extra_sig_imports ++ required_by_imports
+      , ms_hs_date = nms_src_timestamp
+      , ms_iface_date = hi_timestamp
+      , ms_hie_date = hie_timestamp
+      , ms_obj_date = obj_timestamp
+      }
+
+data PreprocessedImports
+  = PreprocessedImports
+      { pi_local_dflags :: DynFlags
+      , pi_srcimps  :: [(Maybe FastString, Located ModuleName)]
+      , pi_theimps  :: [(Maybe FastString, Located ModuleName)]
+      , pi_hspp_fn  :: FilePath
+      , pi_hspp_buf :: StringBuffer
+      , pi_mod_name_loc :: SrcSpan
+      , pi_mod_name :: ModuleName
+      }
+
+-- Preprocess the source file and get its imports
+-- The pi_local_dflags contains the OPTIONS pragmas
+getPreprocessedImports
+    :: HscEnv
+    -> FilePath
+    -> Maybe Phase
+    -> Maybe (StringBuffer, UTCTime)
+    -- ^ optional source code buffer and modification time
+    -> ExceptT ErrorMessages IO PreprocessedImports
+getPreprocessedImports hsc_env src_fn mb_phase maybe_buf = do
+  (pi_local_dflags, pi_hspp_fn)
+      <- ExceptT $ preprocess hsc_env src_fn (fst <$> maybe_buf) mb_phase
+  pi_hspp_buf <- liftIO $ hGetStringBuffer pi_hspp_fn
+  (pi_srcimps, pi_theimps, L pi_mod_name_loc pi_mod_name)
+      <- ExceptT $ getImports pi_local_dflags pi_hspp_buf pi_hspp_fn src_fn
+  return PreprocessedImports {..}
+
+maybeGetIfaceDate :: DynFlags -> ModLocation -> IO (Maybe UTCTime)
+maybeGetIfaceDate dflags location
+ | writeInterfaceOnlyMode dflags
+    -- Minor optimization: it should be harmless to check the hi file location
+    -- always, but it's better to avoid hitting the filesystem if possible.
+    = modificationTimeIfExists (ml_hi_file location)
+ | otherwise
+    = return Nothing
+
+getObjTimestamp :: ModLocation -> IsBoot -> IO (Maybe UTCTime)
+getObjTimestamp location is_boot
+  = if is_boot == IsBoot then return Nothing
+                         else modificationTimeIfExists (ml_obj_file location)

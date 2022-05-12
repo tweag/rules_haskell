@@ -13,6 +13,10 @@ haskell_toolchain_library(name = "mtl")
 
 haskell_toolchain_library(name = "process")
 
+haskell_toolchain_library(name = "time")
+
+haskell_toolchain_library(name = "transformers")
+
 haskell_toolchain_library(name = "unix")
 
 haskell_binary(
@@ -37,6 +41,8 @@ haskell_binary(
         "@rules_haskell_worker_dependencies//:ghc-paths",
         ":mtl",
         ":process",
+        ":time",
+        ":transformers",
         ":unix",
         ":worker_protocol_cc_proto_lib",
     ],
