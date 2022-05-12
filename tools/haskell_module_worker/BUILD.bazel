@@ -9,10 +9,6 @@ haskell_toolchain_library(name = "ghc")
 
 haskell_toolchain_library(name = "mtl")
 
-haskell_toolchain_library(name = "time")
-
-haskell_toolchain_library(name = "transformers")
-
 haskell_binary(
     name = "haskell_module_worker",
     srcs = glob(["src/*.hs"]),
@@ -32,8 +28,6 @@ haskell_binary(
         ":ghc",
         "@rules_haskell_worker_dependencies//:ghc-paths",
         ":mtl",
-        ":time",
-        ":transformers",
         ":worker_protocol_cc_proto_lib",
     ],
 )
