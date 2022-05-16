@@ -84,6 +84,7 @@ CC = os.environ.get("CC_WRAPPER_CC_PATH", "{:cc:}")
 PLATFORM = os.environ.get("CC_WRAPPER_PLATFORM", "{:platform:}")
 CPU = os.environ.get("CC_WRAPPER_CPU", "{:cpu:}")
 INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
+CODESIGN = "/usr/bin/codesign"
 OTOOL = "/usr/bin/otool"
 
 
@@ -925,6 +926,14 @@ def darwin_rewrite_load_commands(rewrites, output):
         args.extend(["-change", old, os.path.join("@rpath", new)])
     if args:
         subprocess.check_call([INSTALL_NAME_TOOL] + args + [output])
+        # Resign the binary after patching it.
+        # This is necessary on MacOS Monterey on M1.
+        # The moving back and forth is necessary because the OS caches the signature.
+        # See this note from nixpkgs for reference:
+        # https://github.com/NixOS/nixpkgs/blob/5855ff74f511423e3e2646248598b3ffff229223/pkgs/os-specific/darwin/signing-utils/utils.sh#L1-L6
+        os.rename(output, f"{output}.resign")
+        subprocess.check_call([CODESIGN] + ["-f", "-s", "-"] + [f"{output}.resign"])
+        os.rename(f"{output}.resign", output)
 
 
 # --------------------------------------------------------------------
