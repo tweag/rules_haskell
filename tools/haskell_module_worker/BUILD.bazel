@@ -9,6 +9,8 @@ haskell_toolchain_library(name = "ghc")
 
 haskell_toolchain_library(name = "mtl")
 
+haskell_toolchain_library(name = "unix")
+
 haskell_binary(
     name = "haskell_module_worker",
     srcs = glob(["src/*.hs"]),
@@ -26,8 +28,10 @@ haskell_binary(
         ":base",
         ":filepath",
         ":ghc",
+        "@rules_haskell_worker_dependencies//:clock",
         "@rules_haskell_worker_dependencies//:ghc-paths",
         ":mtl",
+        ":unix",
         ":worker_protocol_cc_proto_lib",
     ],
 )

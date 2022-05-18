@@ -17,7 +17,7 @@ import Data.IORef
 import Data.List (intercalate, isPrefixOf, partition)
 import Data.Maybe
 import System.FilePath
-import System.IO (hPutStrLn, stderr)
+import System.IO (hFlush, hPutStrLn, stderr)
 
 import GHC hiding (Succeeded)
 import GHC.Paths (libdir)
@@ -164,8 +164,9 @@ compileOneShot flags workerVerbosity = CompileM $ ReaderT $ \dflagsState0 -> do
         { ldInputs = map (FileOption "") objs ++ ldInputs dflags2
         , ghcMode = OneShot
         , log_action = renderLog $ \msg -> do
-            when (workerVerbosity > 0) $
+            when (workerVerbosity > 0) $ do
               hPutStrLn stderr msg
+              hFlush stderr
             modifyIORef logsRef (msg:)
         }
 
