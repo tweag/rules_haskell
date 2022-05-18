@@ -16,6 +16,7 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
             packages = [
                 "base",
                 "bytestring",
+                "clock",
                 "filepath",
                 "ghc",
                 "ghc-paths",

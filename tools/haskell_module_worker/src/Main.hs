@@ -15,8 +15,10 @@ import ProtoClient
   , writeWorkResponse
   , redirectStdoutToStderr
   )
+import System.Clock
 import System.Environment (getArgs)
-import System.IO (hSetBinaryMode, stdin, stdout)
+import System.IO (IOMode(WriteMode), hPrint, hSetBinaryMode, stdin, stdout, withFile)
+import System.Posix.Process (getProcessID)
 
 main :: IO ()
 main = do
@@ -25,9 +27,15 @@ main = do
     hSetBinaryMode stdout True
     stdout_dup <- redirectStdoutToStderr
     pc <- createProtoClient 0 stdout_dup
-    runSession $ (if optPersist opts then forever else id) $ do
+    pid <- getProcessID
+
+    withFile ("/tmp/persistenworker_" ++ show pid) WriteMode $ \h -> runSession $ (if optPersist opts then forever else id) $ do
       wr <- liftIO $ readWorkRequest pc
+      t0 <- liftIO $ getTime Monotonic
       st <- compile (wrArgs wr) (wrVerbosity wr)
+      tf <- liftIO $ getTime Monotonic
+      let d = tf - t0
+      liftIO $ hPrint h (fromIntegral (sec d) + (fromIntegral (nsec d) / 1000000000) :: Double)
       liftIO $ writeWorkResponse pc (statusExitCode st) (statusOutput st)
       liftIO $ when (optPersist opts) $
         terminateIfUsingTooMuchMemory (optMemoryAllowance opts)
