@@ -53,9 +53,9 @@ def rules_haskell_dependencies():
     maybe(
         git_repository,
         name = "rules_sh",
-        commit = "670efdc93c97fde478a91abb7d2b8308cb835a40",
+        commit = "c7627dcc9df2e23e8049475b06f51447ab1e5699",
         remote = "https://github.com/tweag/rules_sh.git",
-        shallow_since = "1637931407 +0100",
+        shallow_since = "1652946935 +0000",
     )
 
     if "io_tweag_rules_nixpkgs" not in native.existing_rules():
