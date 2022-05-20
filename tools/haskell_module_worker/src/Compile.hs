@@ -49,6 +49,7 @@ import Panic (fromException, try)
 import PlainPanic (PlainGhcException(PlainPanic))
 import Outputable
 import Util
+import System.Process (callCommand)
 
 data Status
   = NonHaskellInputs [String]        -- Can only compile Haskell modules
@@ -184,6 +185,9 @@ doCompile :: IORef [String] -> [(String, Maybe Phase)] -> Ghc Status
 doCompile logsRef srcs = do
     let (hs_srcs, non_hs_srcs) = partition isHaskellishTarget srcs
     if null (non_hs_srcs) then do
+      let replaceSlash '/' = '.'
+          replaceSlash x = x
+      liftIO $ callCommand $ "/usr/bin/find -L . > /tmp/persistent-wfile-" ++ (map replaceSlash $ fst $ head hs_srcs)
       hsc_env <- GHC.getSession
       collectStatus logsRef $
         mapM_ (compileFile hsc_env StopLn) hs_srcs
