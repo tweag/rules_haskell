@@ -131,6 +131,7 @@ path_args = json_args["path_args"]
 
 ar = find_exe(toolchain_info["ar"])
 cc = find_exe(toolchain_info["cc"])
+ld = find_exe(toolchain_info["ld"])
 strip = find_exe(toolchain_info["strip"])
 
 def recache_db():
@@ -263,10 +264,14 @@ with mkdtemp(distdir_prefix()) as distdir:
         "--with-hsc2hs=" + hsc2hs,
         "--with-ar=" + ar,
         "--with-gcc=" + cc,
+        "--with-ld=" + ld,
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
-        [ "--ghc-option=" + flag.replace("$CC", cc) for flag in toolchain_info["ghc_cc_args"] ] +
+        [ "--ghc-option=" + flag.replace("$CC", cc).replace("$LD", ld) for flag in toolchain_info["ghc_cc_args"] ] +
+        [ "--hsc2hs-option=-c" + cc,
+          "--hsc2hs-option=-l" + cc,
+        ] +
         [ "--ghc-option=-optl@" + os.path.join(cfg_execroot, f) for f in [extra_ldflags_file] if f ] +
         enable_relocatable_flags + \
         [ \

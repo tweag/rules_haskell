@@ -153,17 +153,21 @@ config_setting(
 
 config_setting(
     name = "fastbuild_darwin",
+    constraint_values = [
+        "@platforms//os:osx",
+    ],
     values = {
         "compilation_mode": "fastbuild",
-        "cpu": "darwin",
     },
 )
 
 config_setting(
     name = "fastbuild_windows",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
     values = {
         "compilation_mode": "fastbuild",
-        "cpu": "x64_windows",
     },
 )
 

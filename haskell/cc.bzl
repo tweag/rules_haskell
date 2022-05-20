@@ -186,11 +186,12 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
         ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
     )
 
-def ghc_cc_program_args(hs, cc):
+def ghc_cc_program_args(hs, cc, ld):
     """Returns the -pgm* flags required to override cc.
 
     Args:
       cc: string, path to the C compiler (cc_wrapper).
+      ld: string, path to the linker (ld).
 
     Returns:
       list of string, GHC arguments.
@@ -220,4 +221,11 @@ def ghc_cc_program_args(hs, cc):
     ]
     if hs.toolchain.numeric_version >= [8, 10, 3]:
         args.append("-pgmc-supports-no-pie")
+    if hs.toolchain.numeric_version >= [9, 0, 1]:
+        args.extend([
+            "-pgmlm",
+            ld,
+            "-optlm",
+            "-r",
+        ])
     return args
