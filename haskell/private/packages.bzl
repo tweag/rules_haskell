@@ -37,19 +37,20 @@ def pkg_info_to_compile_flags(hs, pkg_info, plugin_pkg_info = None, prefix = "")
         ])
 
     # Use package environment file for regular package dependencies.
-    env_file = hs.actions.declare_file(
-        target_unique_name(hs, "{}package_env".format(prefix)),
-    )
-    args.extend(["-package-env", env_file.path])
-    env_args = hs.actions.args()
+    #env_file = hs.actions.declare_file(
+    #    target_unique_name(hs, "{}package_env".format(prefix)),
+    #)
+    #args.extend(["-package-env", env_file.path])
+    #env_args = hs.actions.args()
     for package_id in pkg_info.package_ids:
-        env_args.add("package-id {}".format(package_id))
+        args.extend(["-package-id", package_id])
     for package_db in pkg_info.package_databases:
         # paths in package environment files are relative to the file.
-        package_db = truly_relativize(package_db, env_file.dirname)
-        env_args.add("package-db {}".format(package_db))
-    env_args.set_param_file_format("multiline")
-    hs.actions.write(env_file, env_args)
+        # print("!!!!!!", package_db)
+        #package_db = truly_relativize(package_db, env_file.dirname)
+        args.extend(["-package-db", package_db])
+    #env_args.set_param_file_format("multiline")
+    #hs.actions.write(env_file, env_args)
 
     # GHC package environment files don't support plugin flags.
     if plugin_pkg_info:
@@ -59,7 +60,7 @@ def pkg_info_to_compile_flags(hs, pkg_info, plugin_pkg_info = None, prefix = "")
         for package_db in plugin_pkg_info.package_databases:
             args.extend(["-package-db", package_db])
 
-    return (depset([env_file]), args)
+    return (depset([]), args)
 
 def expose_packages(package_ids, package_databases, version):
     """
