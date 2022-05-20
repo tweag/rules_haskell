@@ -13,7 +13,7 @@ import ProtoClient
   , createProtoClient
   , readWorkRequest
   , writeWorkResponse
-  , redirectStdoutToStderr
+--  , redirectStdoutToStderr
   )
 import System.Clock
 import System.Environment (getArgs)
@@ -25,7 +25,8 @@ main = do
     opts <- getArgs >>= parseArgs
     hSetBinaryMode stdin True
     hSetBinaryMode stdout True
-    stdout_dup <- redirectStdoutToStderr
+    let stdout_dup = 1
+    -- stdout_dup <- redirectStdoutToStderr
     pc <- createProtoClient 0 stdout_dup
     pid <- getProcessID
 
