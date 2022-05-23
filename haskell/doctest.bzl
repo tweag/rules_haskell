@@ -98,7 +98,7 @@ def _haskell_doctest_single(target, ctx):
         ctx,
         override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
     )
-    args.add_all(ghc_cc_program_args(hs, cc.tools.cc))
+    args.add_all(ghc_cc_program_args(hs, cc.tools.cc, cc.tools.ld))
 
     doctest_log = ctx.actions.declare_file(
         "doctest-log-" + ctx.label.name + "-" + target.label.name,

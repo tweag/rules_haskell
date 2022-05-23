@@ -5,6 +5,7 @@ load(
     "nixpkgs_package",
     "nixpkgs_sh_posix_configure",
 )
+load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load(
     ":private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
@@ -146,7 +147,10 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     # toolchain resolution prefers other toolchains with more specific
     # constraints otherwise.
     if repository_ctx.attr.target_constraints == [] and repository_ctx.attr.exec_constraints == []:
-        target_constraints = ["@platforms//cpu:x86_64"]
+        cpu_value = get_cpu_value(repository_ctx)
+        target_constraints = ["@platforms//cpu:{}".format(
+            "arm64" if "arm64" in cpu_value else "x86_64",
+        )]
         if repository_ctx.os.name == "linux":
             target_constraints.append("@platforms//os:linux")
         elif repository_ctx.os.name == "mac os x":
