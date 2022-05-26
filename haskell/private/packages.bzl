@@ -26,6 +26,8 @@ def pkg_info_to_compile_flags(hs, pkg_info, plugin_pkg_info = None, prefix = "")
         # link-time failures. See
         # https://github.com/tweag/rules_haskell/issues/395.
         "-hide-all-packages",
+        "-clear-package-db",
+        "-global-package-db",
     ]
 
     if not pkg_info.has_version:
