@@ -379,7 +379,7 @@ def _haskell_cc_libraries_aspect_impl(target, ctx):
 
 haskell_cc_libraries_aspect = aspect(
     implementation = _haskell_cc_libraries_aspect_impl,
-    attr_aspects = ["deps", "exports", "plugins"],
+    attr_aspects = ["deps", "narrowed_deps", "exports", "plugins"],
     provides = [HaskellCcLibrariesInfo],
     required_aspect_providers = [HaskellProtobufInfo],
     toolchains = [

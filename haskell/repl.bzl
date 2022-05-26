@@ -545,14 +545,22 @@ def _haskell_repl_aspect_impl(target, ctx):
         return []
 
     target_info = _create_HaskellReplCollectInfo(target, ctx)
+    deps_infos = []
+
     if hasattr(ctx.rule.attr, "deps"):
-        deps_infos = [
+        deps_infos += [
             dep[HaskellReplCollectInfo]
             for dep in ctx.rule.attr.deps
             if HaskellReplCollectInfo in dep
         ]
-    else:
-        deps_infos = []
+
+    if hasattr(ctx.rule.attr, "narrowed_deps"):
+        deps_infos += [
+            dep[HaskellReplCollectInfo]
+            for dep in ctx.rule.attr.narrowed_deps
+            if HaskellReplCollectInfo in dep
+        ]
+
     collect_info = _merge_HaskellReplCollectInfo([target_info] + deps_infos)
 
     # This aspect currently does not generate an executable REPL script by
@@ -563,7 +571,7 @@ def _haskell_repl_aspect_impl(target, ctx):
 
 haskell_repl_aspect = aspect(
     implementation = _haskell_repl_aspect_impl,
-    attr_aspects = ["deps"],
+    attr_aspects = ["deps", "narrowed_deps"],
     required_aspect_providers = [HaskellCcLibrariesInfo],
     doc = """\
 Haskell REPL aspect.
