@@ -85,6 +85,14 @@ load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 # to the real shared library to take precedence. Thus it should appear
 # last in the command line or the environment files.
 
+
+def _hash_string_list(xs):
+    """Computes the hash of a list of strings"""
+    h = 0
+    for x in xs:
+        h = 31 * h + hash(x)
+    return h
+
 def _build_haskell_module(
         ctx,
         hs,
@@ -328,6 +336,7 @@ def _build_haskell_module(
         arguments = args,
         extra_name = module.label.name,
         worker = ctx.executable.haskell_module_worker,
+        package_env_hash = _hash_string_list(pkg_info_args),
     )
 
 def get_module_path_from_target(module):

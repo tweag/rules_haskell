@@ -39,7 +39,8 @@ def _run_ghc(
         progress_message = None,
         input_manifests = None,
         extra_name = "",
-        worker = None):
+        worker = None,
+        package_env_hash = None):
     args = hs.actions.args()
     extra_inputs = []
 
@@ -97,6 +98,18 @@ def _run_ghc(
     tools.extend(hs.tools_config.tools_for_ghc)
     append_to_path(env, hs.toolchain.is_windows, hs.tools_config.path_for_run_ghc)
 
+    # Add the package environment hash as a parameter of the worker to cause
+    # bazel to spawn one worker per distinct package environment. See
+    # https://github.com/tweag/rules_haskell/issues/1748
+    if worker == None || package_env_hash == None:
+        action_args = [exe_path, "@%s" % flagsfile.path]
+    else:
+        # Mind that the argument list here only differs on the last argument
+        # and the package environment hash for different actions. This allows
+        # persistent workers to be reused for different actions. Otherwise, a
+        # different worker would be spawned for each action.
+        action_args = [exe_path, str(package_env_hash) , "@%s" % flagsfile.path]
+
     hs.actions.run(
         inputs = inputs,
         tools = tools,
@@ -106,11 +119,7 @@ def _run_ghc(
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        # Mind that the argument list here only differs on the last argument
-        # for different actions. This allows persistent workers to be
-        # reused for different actions. Otherwise, a different worker
-        # would be spawned for each action.
-        arguments = [exe_path, "@%s" % flagsfile.path],
+        arguments = action_args,
         execution_requirements = execution_requirements,
     )
 
