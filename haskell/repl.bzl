@@ -182,6 +182,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
 
     hs_info = target[HaskellInfo]
 
+    # TODO[GL]: do we need to also take into account narrowed_deps here, everywhere "deps" is checked?
     if not HaskellToolchainLibraryInfo in target:
         if hasattr(ctx.rule.attr, "deps"):
             java_deps = java_interop_info(ctx.rule.attr.deps).inputs
