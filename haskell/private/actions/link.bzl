@@ -165,7 +165,7 @@ def link_binary(
 
     args.add_all(["-o", executable.path])
 
-    (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
+    (pkg_info_inputs, pkg_info_args, _) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
             package_ids = hs.package_ids,
@@ -353,7 +353,7 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     args.add_all(compiler_flags)
     extra_prefix = empty_lib_prefix
 
-    (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
+    (pkg_info_inputs, pkg_info_args, _) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
             package_ids = [] if empty_lib_prefix else hs.package_ids,

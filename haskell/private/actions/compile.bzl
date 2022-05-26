@@ -138,7 +138,7 @@ def _compilation_defaults(
     for plugin in all_plugins:
         package_ids.extend(all_dependencies_package_ids(plugin.deps))
 
-    (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
+    (pkg_info_inputs, pkg_info_args, _) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
             package_ids = hs.package_ids,

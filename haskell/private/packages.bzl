@@ -2,6 +2,13 @@
 
 load(":private/path_utils.bzl", "target_unique_name", "truly_relativize")
 
+def _hash_string_list(xs):
+    """Computes the hash of a list of strings"""
+    h = 0
+    for x in xs:
+        h = 31 * h + hash(x)
+    return h
+
 def pkg_info_to_compile_flags(hs, pkg_info, plugin_pkg_info = None, prefix = ""):
     """Map package info to GHC command-line arguments.
 
@@ -18,6 +25,7 @@ def pkg_info_to_compile_flags(hs, pkg_info, plugin_pkg_info = None, prefix = "")
       (extra_inputs, args)
         extra_inputs: depset of additional input files to GHC.
         args: The list of command-line arguments that should be passed to GHC.
+        hash: An int hash of the package environment
     """
     args = [
         # In compile.bzl, we pass this just before all -package-id
@@ -42,12 +50,14 @@ def pkg_info_to_compile_flags(hs, pkg_info, plugin_pkg_info = None, prefix = "")
     )
     args.extend(["-package-env", env_file.path])
     env_args = hs.actions.args()
+    env_args_list = [env_file.dirname]
     for package_id in pkg_info.package_ids:
         env_args.add("package-id {}".format(package_id))
     for package_db in pkg_info.package_databases:
         # paths in package environment files are relative to the file.
         package_db = truly_relativize(package_db, env_file.dirname)
         env_args.add("package-db {}".format(package_db))
+        env_args_list.append(package_db)
     env_args.set_param_file_format("multiline")
     hs.actions.write(env_file, env_args)
 
@@ -59,7 +69,7 @@ def pkg_info_to_compile_flags(hs, pkg_info, plugin_pkg_info = None, prefix = "")
         for package_db in plugin_pkg_info.package_databases:
             args.extend(["-package-db", package_db])
 
-    return (depset([env_file]), args)
+    return (depset([env_file]), args, _hash_string_list(env_args_list))
 
 def expose_packages(package_ids, package_databases, version):
     """

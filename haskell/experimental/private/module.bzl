@@ -237,7 +237,7 @@ def _build_haskell_module(
         args.add_all(cc.linker_flags, format_each = "-optl%s")
 
     # Collect library dependency arguments
-    (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
+    (pkg_info_inputs, pkg_info_args, pkg_info_hash) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
             package_ids = hs.package_ids,
@@ -347,6 +347,7 @@ def _build_haskell_module(
         arguments = args,
         extra_name = module.label.name,
         worker = ctx.executable.haskell_module_worker,
+        package_env_hash = pkg_info_hash,
     )
 
 def get_module_path_from_target(module):

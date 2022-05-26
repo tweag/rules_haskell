@@ -3,6 +3,8 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 
 haskell_toolchain_library(name = "base")
 
+haskell_toolchain_library(name = "containers")
+
 haskell_toolchain_library(name = "filepath")
 
 haskell_toolchain_library(name = "ghc")
@@ -28,6 +30,7 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":base",
+        ":containers",
         ":filepath",
         ":ghc",
         "@rules_haskell_worker_dependencies//:clock",

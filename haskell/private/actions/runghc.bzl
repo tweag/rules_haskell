@@ -45,7 +45,7 @@ def build_haskell_runghc(
       None.
     """
 
-    (pkg_info_inputs, args) = pkg_info_to_compile_flags(
+    (pkg_info_inputs, args, _) = pkg_info_to_compile_flags(
         hs,
         pkg_info = expose_packages(
             package_ids = hs.package_ids,
