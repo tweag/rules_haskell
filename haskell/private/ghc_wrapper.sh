@@ -3,10 +3,21 @@ set -ueo pipefail
 export PATH=${PATH:-} # otherwise GCC fails on Windows
 
 # Detect if we are in the persistent worker mode
-if [ "$2" == "--persistent_worker" ]; then
+PERSISTENT_WORKER=0
+for i in "$@"; do
+    if [ "$i" == "--persistent_worker" ]; then
+        PERSISTENT_WORKER=1
+        break
+    fi
+done
+
+if [ $PERSISTENT_WORKER == 1 ]; then
     # This runs our proof-of-concept implementation of a persistent worker
     # wrapping GHC.
-    exec "$@"
+    #
+    # The path to "$1" is passed in the invocation so the persistent worker
+    # can start the background workers.
+    exec "$1" "$1" "${@:2}"
 else
     # Drop messages that GHC produces on features that we rely upon.
     #

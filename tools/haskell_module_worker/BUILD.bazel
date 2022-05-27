@@ -3,11 +3,21 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 
 haskell_toolchain_library(name = "base")
 
+haskell_toolchain_library(name = "binary")
+
+haskell_toolchain_library(name = "bytestring")
+
+haskell_toolchain_library(name = "directory")
+
 haskell_toolchain_library(name = "filepath")
 
 haskell_toolchain_library(name = "ghc")
 
 haskell_toolchain_library(name = "mtl")
+
+haskell_toolchain_library(name = "process")
+
+haskell_toolchain_library(name = "text")
 
 haskell_binary(
     name = "haskell_module_worker",
@@ -23,10 +33,15 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":base",
+        ":binary",
+        ":bytestring",
+        ":directory",
         ":filepath",
         ":ghc",
         "@rules_haskell_worker_dependencies//:ghc-paths",
         ":mtl",
+        ":process",
+        ":text",
         ":worker_protocol_cc_proto_lib",
     ],
 )

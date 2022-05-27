@@ -53,6 +53,8 @@ def _run_ghc(
         execution_requirements = {
             "supports-workers": "1",
             "requires-worker-protocol": "proto",
+            "supports-multiplex-workers": "1",
+            "supports-multiplex-sandboxing": "1",
         }
         exe_path = worker.path
         tools = [worker]

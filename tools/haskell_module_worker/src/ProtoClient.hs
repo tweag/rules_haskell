@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE CApiFFI #-}
 -- | Reading and writing of protobuf messages from handles
@@ -10,7 +11,9 @@ module ProtoClient
   ) where
 
 import Control.Monad (forM, when)
+import Data.Binary (Binary)
 import GHC.Foreign (peekCString, withCString)
+import GHC.Generics (Generic)
 import GHC.IO.Handle.FD (handleToFd)
 import GHC.IO.FD (fdFD)
 import Foreign.C.String (CString)
@@ -28,6 +31,9 @@ data WorkRequest = WorkRequest
   , wrVerbosity :: Int
   , wrSandboxDir :: Maybe FilePath
   }
+  deriving Generic
+
+instance Binary WorkRequest
 
 foreign import capi unsafe "tools/haskell_module_worker/cbits/protoclient.h createProtoClient"
   c_createProtoClient :: CInt -> CInt -> IO (Ptr ProtoClient)

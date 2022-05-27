@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -13,6 +14,7 @@ import Control.Exception (throwIO)
 import Control.Monad (guard, when)
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.Reader (ReaderT(..))
+import Data.Binary (Binary)
 import Data.IORef
 import Data.List (intercalate, isPrefixOf, partition)
 import Data.Maybe
@@ -20,6 +22,7 @@ import System.FilePath
 import System.IO (hPutStrLn, stderr)
 
 import GHC hiding (Succeeded)
+import GHC.Generics (Generic)
 import GHC.Paths (libdir)
 import DynFlags
   ( FlagSpec
@@ -53,7 +56,9 @@ data Status
   | NonOneShotCompilation            -- Can only compile in OneShot mode
   | CompileErrors [String] [String]  -- Logs and compilation errors
   | Succeeded [String]               -- Logs (include warnings)
-  deriving Show
+  deriving (Generic, Show)
+
+instance Binary Status
 
 isErrorStatus :: Status -> Bool
 isErrorStatus = \case Succeeded{} -> False; _ -> True
