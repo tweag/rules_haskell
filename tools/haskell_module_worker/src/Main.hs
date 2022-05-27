@@ -2,7 +2,7 @@
 module Main where
 
 import Compile (Status(..), runSession, compile)
-import Control.Concurrent (ThreadId, forkIO)
+import Control.Concurrent (ThreadId, forkIO, killThread, threadDelay)
 import Control.Concurrent.MVar
 import Control.Monad (forever, unless, when)
 import Control.Monad.IO.Class (liftIO)
@@ -19,7 +19,7 @@ import ProtoClient
   )
 import System.Clock
 import System.Environment (getArgs)
-import System.IO (IOMode(WriteMode), hPrint, hSetBinaryMode, stdin, stdout, withFile)
+import System.IO (IOMode(WriteMode), hPrint, hPutStrLn, hSetBinaryMode, stdin, stderr, stdout, withFile)
 import System.Posix.Process (getProcessID)
 
 main :: IO ()
@@ -35,10 +35,12 @@ main = do
     withFile ("/tmp/persistenworker_" ++ show pid) WriteMode $ \h -> do
       whMV <- initWorkerLoop >>= newMVar
       (if optPersist opts then forever else id) $ do
+        timerThreadId <- startTimerThread (2 * 1000000) (resetWorkerLoop whMV)
         wr <- readWorkRequest pc
         t0 <- getTime Monotonic
         st <- withMVar whMV $ \wh -> do
           putMVar (whIncomingMVar wh) wr
+          killThread timerThreadId
           takeMVar (whOutgoingMVar wh)
         tf <- getTime Monotonic
         let d = tf - t0
@@ -66,6 +68,13 @@ data WorkerHandle = WorkerHandle
     , whOutgoingMVar :: MVar Status
     }
 
+resetWorkerLoop :: MVar WorkerHandle -> IO ()
+resetWorkerLoop mv =
+    modifyMVar_ mv $ \wh -> do
+      hPutStrLn stderr "INFO: Discarding compiler session"
+      killThread (whThreadId wh)
+      initWorkerLoop
+
 initWorkerLoop :: IO WorkerHandle
 initWorkerLoop = do
     incomingMV <- newEmptyMVar
@@ -83,6 +92,9 @@ workerLoop incomingMV outgoingMV =
       wr <- liftIO $ takeMVar incomingMV
       st <- compile (wrArgs wr) (wrVerbosity wr)
       liftIO $ putMVar outgoingMV st
+
+startTimerThread :: Int -> IO () -> IO ThreadId
+startTimerThread delay action = forkIO $ threadDelay delay >> action
 
 -- | Terminates the worker if it exceeds the memory allowance
 terminateIfUsingTooMuchMemory :: Word64 -> IO ()
