@@ -542,6 +542,7 @@ def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
     return [OutputGroupInfo(hie_bios = [args_link])]
 
 def _haskell_repl_aspect_impl(target, ctx):
+    # TODO[GL]: try removing this and using required_providers, once we're on a newer version of bazel
     if HaskellInfo not in target:
         return []
 
@@ -570,6 +571,9 @@ def _haskell_repl_aspect_impl(target, ctx):
 
     return [collect_info]
 
+# We don't have a provides field here, since we might not actually return HaskellReplCollectInfo,
+# if the target doesn't have a HaskellInfo.
+# TODO[GL]: try adding it once we can use required_providers.
 haskell_repl_aspect = aspect(
     implementation = _haskell_repl_aspect_impl,
     attr_aspects = ["deps", "narrowed_deps"],
