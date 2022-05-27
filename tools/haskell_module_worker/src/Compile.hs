@@ -89,13 +89,13 @@ captureDynFlagsState dflags = do
 getDynFlagsFromState :: DynFlagsState -> IO DynFlags
 getDynFlagsFromState DynFlagsState
       { initialDFlags
-      , initialRTCCInfo
-      , initialRTLDInfo
-      , initialCanGenerateDynamicToo
+--      , initialRTCCInfo
+--      , initialRTLDInfo
+--      , initialCanGenerateDynamicToo
       } = do
-    writeIORef (rtccInfo initialDFlags) initialRTCCInfo
-    writeIORef (rtldInfo initialDFlags) initialRTLDInfo
-    writeIORef (canGenerateDynamicToo initialDFlags) initialCanGenerateDynamicToo
+--    writeIORef (rtccInfo initialDFlags) initialRTCCInfo
+--    writeIORef (rtldInfo initialDFlags) initialRTLDInfo
+--    writeIORef (canGenerateDynamicToo initialDFlags) initialCanGenerateDynamicToo
     return initialDFlags
 
 -- | Monad used for compiling.
