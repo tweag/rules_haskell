@@ -347,6 +347,7 @@ def _build_haskell_module(
         arguments = args,
         extra_name = module.label.name,
         worker = ctx.executable.haskell_module_worker,
+        library_exe_label = ctx.label,
     )
 
 def get_module_path_from_target(module):

@@ -3,10 +3,11 @@ set -ueo pipefail
 export PATH=${PATH:-} # otherwise GCC fails on Windows
 
 # Detect if we are in the persistent worker mode
-if [ "$2" == "--persistent_worker" ]; then
+if [ "${3:-}" == "--persistent_worker" ]; then
     # This runs our proof-of-concept implementation of a persistent worker
     # wrapping GHC.
-    exec "$@"
+    # $2 contains the library label which is only needed by bazel
+    exec "$1" "$3"
 else
     # Drop messages that GHC produces on features that we rely upon.
     #
