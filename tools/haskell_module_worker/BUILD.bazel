@@ -21,7 +21,7 @@ haskell_binary(
     ghcopts = [
         "-Werror",
         "-Wall",
-        "-with-rtsopts=-T",
+        "-with-rtsopts=--disable-delayed-os-memory-return",
         "-optc-Wno-incompatible-pointer-types",
         "-threaded",
         ],
