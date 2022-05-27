@@ -345,7 +345,7 @@ def _build_haskell_module(
         progress_message = "HaskellBuildObject {} {}".format(hs.label, module.label),
         env = hs.env,
         arguments = args,
-        extra_name = module.label.name,
+        extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
         worker = ctx.executable.haskell_module_worker,
         package_env_hash = pkg_info_hash,
     )
