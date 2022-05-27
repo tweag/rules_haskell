@@ -2,6 +2,8 @@
 module Main where
 
 import Compile (Status(..), runSession, compile)
+import Control.Concurrent (ThreadId, forkIO)
+import Control.Concurrent.MVar
 import Control.Monad (forever, unless, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.List (intersperse)
@@ -30,16 +32,20 @@ main = do
     pc <- createProtoClient 0 stdout_dup
     pid <- getProcessID
 
-    withFile ("/tmp/persistenworker_" ++ show pid) WriteMode $ \h -> runSession $ (if optPersist opts then forever else id) $ do
-      wr <- liftIO $ readWorkRequest pc
-      t0 <- liftIO $ getTime Monotonic
-      st <- compile (wrArgs wr) (wrVerbosity wr)
-      tf <- liftIO $ getTime Monotonic
-      let d = tf - t0
-      liftIO $ hPrint h (fromIntegral (sec d) + (fromIntegral (nsec d) / 1000000000) :: Double)
-      liftIO $ writeWorkResponse pc (statusExitCode st) (statusOutput st)
-      liftIO $ when (optPersist opts) $
-        terminateIfUsingTooMuchMemory (optMemoryAllowance opts)
+    withFile ("/tmp/persistenworker_" ++ show pid) WriteMode $ \h -> do
+      whMV <- initWorkerLoop >>= newMVar
+      (if optPersist opts then forever else id) $ do
+        wr <- readWorkRequest pc
+        t0 <- getTime Monotonic
+        st <- withMVar whMV $ \wh -> do
+          putMVar (whIncomingMVar wh) wr
+          takeMVar (whOutgoingMVar wh)
+        tf <- getTime Monotonic
+        let d = tf - t0
+        hPrint h (fromIntegral (sec d) + (fromIntegral (nsec d) / 1000000000) :: Double)
+        writeWorkResponse pc (statusExitCode st) (statusOutput st)
+        when (optPersist opts) $
+          terminateIfUsingTooMuchMemory (optMemoryAllowance opts)
   where
     statusExitCode = \case { Succeeded{} -> 0; _ -> 1 }
     statusOutput = \case
@@ -49,6 +55,34 @@ main = do
         unlines $ "haskell_module_worker error: non-haskell inputs:" : files
       NonOneShotCompilation ->
         "haskell_module_worker error: only on-shot compilation (-c) is supported"
+
+-- | A worker is a thread that runs the compiler on a loop.
+--
+-- The handle contains MVars for communicating with the worker,
+-- and the thread identifier that it is used to kill it.
+data WorkerHandle = WorkerHandle
+    { whThreadId :: ThreadId
+    , whIncomingMVar :: MVar WorkRequest
+    , whOutgoingMVar :: MVar Status
+    }
+
+initWorkerLoop :: IO WorkerHandle
+initWorkerLoop = do
+    incomingMV <- newEmptyMVar
+    outgoingMV <- newEmptyMVar
+    tid <- forkIO $ workerLoop incomingMV outgoingMV
+    return WorkerHandle
+      { whThreadId = tid
+      , whIncomingMVar = incomingMV
+      , whOutgoingMVar = outgoingMV
+      }
+
+workerLoop :: MVar WorkRequest -> MVar Status -> IO ()
+workerLoop incomingMV outgoingMV =
+    runSession $ forever $ do
+      wr <- liftIO $ takeMVar incomingMV
+      st <- compile (wrArgs wr) (wrVerbosity wr)
+      liftIO $ putMVar outgoingMV st
 
 -- | Terminates the worker if it exceeds the memory allowance
 terminateIfUsingTooMuchMemory :: Word64 -> IO ()
