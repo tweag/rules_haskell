@@ -547,21 +547,13 @@ def _haskell_repl_aspect_impl(target, ctx):
         return []
 
     target_info = _create_HaskellReplCollectInfo(target, ctx)
-    deps_infos = []
 
-    if hasattr(ctx.rule.attr, "deps"):
-        deps_infos += [
-            dep[HaskellReplCollectInfo]
-            for dep in ctx.rule.attr.deps
-            if HaskellReplCollectInfo in dep
-        ]
-
-    if hasattr(ctx.rule.attr, "narrowed_deps"):
-        deps_infos += [
-            dep[HaskellReplCollectInfo]
-            for dep in ctx.rule.attr.narrowed_deps
-            if HaskellReplCollectInfo in dep
-        ]
+    deps_infos = [
+        dep[HaskellReplCollectInfo]
+        for deps_field_name in ["deps", "narrowed_deps"]
+        for dep in getattr(ctx.rule.attr, deps_field_name, [])
+        if HaskellReplCollectInfo in dep
+    ]
 
     collect_info = _merge_HaskellReplCollectInfo([target_info] + deps_infos)
 
