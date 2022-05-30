@@ -194,21 +194,21 @@ def _create_HaskellReplCollectInfo(target, ctx):
 
         java_deps = depset(transitive = java_deps_list)
 
-        # TODO[GL]: do we need to also take into account narrowed_deps here, everywhere "deps" is checked?
+        # TODO[GL]: add tests for CcInfo deps in narrowed_deps
+        ccInfoDeps = [
+            dep
+            for dep in getattr(ctx.rule.attr, "deps", []) + getattr(ctx.rule.attr, "narrowed_deps", [])
+            if CcInfo in dep and not HaskellInfo in dep
+        ]
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = hs_info.source_files,
             boot_files = hs_info.boot_files,
             import_dirs = set.to_depset(hs_info.import_dirs),
-            cc_libraries_info = deps_HaskellCcLibrariesInfo([
-                dep
-                for dep in getattr(ctx.rule.attr, "deps", [])
-                if CcInfo in dep and not HaskellInfo in dep
-            ]),
+            cc_libraries_info = deps_HaskellCcLibrariesInfo(ccInfoDeps),
             cc_info = cc_common.merge_cc_infos(cc_infos = [
                 # Collect pure C library dependencies, no Haskell dependencies.
                 dep[CcInfo]
-                for dep in getattr(ctx.rule.attr, "deps", [])
-                if CcInfo in dep and not HaskellInfo in dep
+                for dep in ccInfoDeps
             ]),
             compiler_flags = hs_info.user_compile_flags,
             repl_ghci_args = hs_info.user_repl_flags,
