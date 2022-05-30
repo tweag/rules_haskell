@@ -182,12 +182,19 @@ def _create_HaskellReplCollectInfo(target, ctx):
 
     hs_info = target[HaskellInfo]
 
-    # TODO[GL]: do we need to also take into account narrowed_deps here, everywhere "deps" is checked?
     if not HaskellToolchainLibraryInfo in target:
+        java_deps_list = []
+
         if hasattr(ctx.rule.attr, "deps"):
-            java_deps = java_interop_info(ctx.rule.attr.deps).inputs
-        else:
-            java_deps = depset()
+            java_deps_list += [java_interop_info(ctx.rule.attr.deps).inputs]
+
+        # TODO[GL]: add tests for the java deps in narrowed_deps
+        if hasattr(ctx.rule.attr, "narrowed_deps"):
+            java_deps_list += [java_interop_info(ctx.rule.attr.narrowed_deps).inputs]
+
+        java_deps = depset(transitive = java_deps_list)
+
+        # TODO[GL]: do we need to also take into account narrowed_deps here, everywhere "deps" is checked?
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = hs_info.source_files,
             boot_files = hs_info.boot_files,
