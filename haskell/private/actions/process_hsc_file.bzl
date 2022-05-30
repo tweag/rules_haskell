@@ -60,17 +60,32 @@ def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     if hs.env.get("PATH") == None and hs.toolchain.is_windows:
         hs.env["PATH"] = ""
 
-    hs.actions.run(
+    hs.actions.run_shell(
         inputs = depset(transitive = [
             depset(cc.hdrs),
             depset([hsc_file]),
             depset(cc.files),
             depset(hsc_inputs),
+            depset(hs.toolchain.bindir),
         ]),
         input_manifests = cc.manifests,
         outputs = [hs_out],
         mnemonic = "HaskellHsc2hs",
-        executable = hs.tools.hsc2hs,
+        command =
+            # cpp (called via c2hs) gets very unhappy if the mingw bin dir is
+            # not in PATH so we add it to PATH explicitly.
+            """
+            export PATH=$PATH:{mingw_bin}
+
+            # Include libdir in include path just like hsc2hs does.
+            libdir=$({ghc} --print-libdir)
+            # GHC >=9 on Windows stores the includes outside of libdir
+            {hsc2hs} -C-I$libdir/include -C-I$libdir/../include "$@"
+            """.format(
+                mingw_bin = paths.dirname(cc.tools.cc) if hs.toolchain.is_windows else "",
+                ghc = hs.tools.ghc.path,
+                hsc2hs = hs.tools.hsc2hs.path,
+            ),
         arguments = [args],
         env = hs.env,
     )
