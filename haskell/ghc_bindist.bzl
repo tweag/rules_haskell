@@ -43,6 +43,9 @@ GHC_BINDIST_LIBDIR = \
         "9.2.1": {
             "darwin_amd64": "lib/lib",
         },
+        "9.0.2": {
+            "darwin_amd64": "lib/lib",
+        },
     }
 
 GHC_BINDIST_DOCDIR = \
