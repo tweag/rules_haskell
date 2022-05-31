@@ -149,7 +149,7 @@ jobs:
         run: |
           export PATH=$HOME/bazel:$PATH
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
-          ./tests/run-start-script.sh --use-bindists
+          ./tests/run-start-script.sh --use-bindists=9.2.1
           if [[ ${{ runner.os }} == Windows ]]; then
             # On Windows `//...` expands to `/...`.
             bazel test ///...
