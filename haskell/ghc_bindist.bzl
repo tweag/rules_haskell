@@ -31,6 +31,7 @@ GHC_BINDIST_STRIP_PREFIX = \
         },
         "9.0.2": {
             "windows_amd64": "ghc-9.0.2-x86_64-unknown-mingw32",
+            "darwin_amd64": "ghc-9.0.2-x86_64-apple-darwin",
         },
         "9.0.1": {
             "windows_amd64": "ghc-9.0.1-x86_64-unknown-mingw32",
