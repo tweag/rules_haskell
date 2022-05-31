@@ -38,6 +38,7 @@ usage () {
 # either bindists or nix
 MODE=
 PRINT_NIX_USAGE=
+GHC_BINDIST_VERSION=8.10.7
 
 parse_args () {
     # Defaults, if no arguments provided
@@ -48,10 +49,11 @@ parse_args () {
     fi
 
     case "$1" in
-        "--help")         usage 0 ;;
-        "--use-bindists") MODE="bindists" ;;
-        "--use-nix")      MODE="nix" ;;
-        *)                usage 1 ;;
+        "--help")           usage 0 ;;
+        "--use-bindists="*) MODE="bindists" ; GHC_BINDIST_VERSION="${1#*=}" ;;
+        "--use-bindists")   MODE="bindists" ;;
+        "--use-nix")        MODE="nix" ;;
+        *)                  usage 1 ;;
     esac
 }
 
@@ -245,7 +247,7 @@ case "${MODE}" in
     "bindists") cat <<-EOF
 		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
 		rules_haskell_toolchains(
-		    version = "8.10.7",
+		    version = "$GHC_BINDIST_VERSION",
 		)
 		
 		http_archive(
@@ -300,7 +302,7 @@ case "${MODE}" in
 		haskell_register_ghc_nixpkgs(
 		    repository = "@nixpkgs",
 		    attribute_path = "ghc",
-		    version = "8.10.7",
+		    version = "$GHC_BINDIST_VERSION",
 		)
 		
 		# For ${ZLIB_BUILD_FILE}
