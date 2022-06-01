@@ -34,27 +34,29 @@ extern "C" struct ProtoClient* createProtoClient(int fdIn, int fdOut) {
     return pc;
 }
 
-extern "C" int readWorkRequest(struct ProtoClient* pc, char*** args, int* nargs, int* verbosity) {
+extern "C" int readWorkRequest(struct ProtoClient* pc, int* request_id, char*** args, int* nargs, int* verbosity, char** sandbox_dir) {
     blaze::worker::WorkRequest message;
     bool rc = google::protobuf::util::ParseDelimitedFromZeroCopyStream(&message, pc->input, NULL);
 
     if (rc) {
+        *request_id = message.request_id();
         *verbosity = message.verbosity();
         *nargs = message.arguments_size();
         *args = (char**)malloc((*nargs)*sizeof(char*));
         for(int i=0;i<*nargs;i++) {
             (*args)[i] = (char*) strdup(message.arguments(i).c_str());
         }
+        *sandbox_dir = (char*) strdup(message.sandbox_dir().c_str());
     }
 
     return !rc;
 }
 
-extern "C" int writeWorkResponse(struct ProtoClient* pc, int exit_code, const char* output) {
+extern "C" int writeWorkResponse(struct ProtoClient* pc, int request_id, int exit_code, const char* output) {
     blaze::worker::WorkResponse message;
+    message.set_request_id(request_id);
     message.set_exit_code(exit_code);
     message.set_output(output);
-    message.clear_request_id();
     message.clear_was_cancelled();
     bool rc = google::protobuf::util::SerializeDelimitedToZeroCopyStream(message, pc->output);
     if (rc)

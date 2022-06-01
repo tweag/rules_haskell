@@ -13,10 +13,10 @@ struct ProtoClient* createProtoClient(int, int);
 // Reads a WorkRequest
 //
 // Input files are ignored for now.
-int readWorkRequest(struct ProtoClient*, char*** args, int* nargs, int* verbosity);
+int readWorkRequest(struct ProtoClient*, int* request_id, char*** args, int* nargs, int* verbosity, char** sandbox_dir);
 
 // Writes a WorkResponse
-int writeWorkResponse(struct ProtoClient*, int exit_code, const char* output);
+int writeWorkResponse(struct ProtoClient*, int request_id, int exit_code, const char* output);
 
 // Redirect stdout to stderr
 //

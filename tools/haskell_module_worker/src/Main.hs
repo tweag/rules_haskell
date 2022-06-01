@@ -54,7 +54,7 @@ forwardRequests opts wh = do
         tf <- getTime Monotonic
         let d = tf - t0
         hPrint h (fromIntegral (sec d) + (fromIntegral (nsec d) / 1000000000) :: Double)
-        writeWorkResponse pc (statusExitCode st) (statusOutput st)
+        writeWorkResponse pc (wrRequestId wr) (statusExitCode st) (statusOutput st)
   where
     statusExitCode = \case { Succeeded{} -> 0; _ -> 1 }
     statusOutput = \case
