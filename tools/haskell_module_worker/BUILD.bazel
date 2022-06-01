@@ -3,6 +3,10 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 
 haskell_toolchain_library(name = "base")
 
+haskell_toolchain_library(name = "binary")
+
+haskell_toolchain_library(name = "bytestring")
+
 haskell_toolchain_library(name = "containers")
 
 haskell_toolchain_library(name = "filepath")
@@ -34,6 +38,8 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":base",
+        ":binary",
+        ":bytestring",
         ":containers",
         ":filepath",
         ":ghc",

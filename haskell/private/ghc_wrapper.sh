@@ -6,8 +6,12 @@ export PATH=${PATH:-} # otherwise GCC fails on Windows
 if [ "${3:-}" == "--persistent_worker" ]; then
     # This runs our proof-of-concept implementation of a persistent worker
     # wrapping GHC.
+    #
     # $2 contains the package environment hash which is only needed by bazel
-    exec "$1" "$3"
+    #
+    # The path to "$1" is passed in the invocation so the persistent worker
+    # can start the background workers.
+    exec "$1" "$1" "$3"
 else
     # Drop messages that GHC produces on features that we rely upon.
     #

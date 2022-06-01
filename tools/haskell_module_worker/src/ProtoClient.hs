@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE CApiFFI #-}
 -- | Reading and writing of protobuf messages from handles
@@ -11,7 +12,9 @@ module ProtoClient
   ) where
 
 import Control.Monad (forM, when)
+import Data.Binary (Binary)
 import GHC.Foreign (peekCString, withCString)
+import GHC.Generics (Generic)
 import Foreign.C.Types
 import Foreign.Marshal.Alloc (alloca, free)
 import Foreign.Marshal.Array (peekArray)
@@ -24,6 +27,9 @@ data WorkRequest = WorkRequest
   { wrArgs :: [String]
   , wrVerbosity :: Int
   }
+  deriving Generic
+
+instance Binary WorkRequest
 
 foreign import capi unsafe "tools/haskell_module_worker/cbits/protoclient.h redirectStdoutToStderr"
   c_redirectStdoutToStderr :: IO CInt

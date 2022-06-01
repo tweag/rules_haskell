@@ -1,5 +1,6 @@
 module Options (Options(..), parseArgs) where
 
+import Data.Maybe (listToMaybe)
 import Data.Word (Word64)
 import System.Exit (ExitCode(ExitFailure), exitSuccess, exitWith)
 import System.IO (hPutStrLn, stderr)
@@ -7,6 +8,7 @@ import System.IO (hPutStrLn, stderr)
 data Options = Options
   { optMemoryAllowance :: Word64
   , optPersist :: Bool
+  , optServerExecutable :: Maybe FilePath
   }
 
 -- | Yields the memory allowance
@@ -19,6 +21,7 @@ parseArgs args =
       Right (rest, memoryAllowance) -> return Options
         { optMemoryAllowance = memoryAllowance
         , optPersist = elem persistentWorkerLabel rest
+        , optServerExecutable = listToMaybe rest
         }
       Left e -> do
         hPutStrLn stderr $ "error: " ++ e
