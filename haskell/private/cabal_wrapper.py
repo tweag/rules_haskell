@@ -191,10 +191,8 @@ def distdir_prefix():
 # into the 'flag hash' field of generated interface files. We try to use a
 # reproducible path for the distdir to keep interface files reproducible.
 with mkdtemp(distdir_prefix()) as distdir:
-    enable_relocatable_flags = []
-    if not is_windows and json_args["ghc_version"] != None and json_args["ghc_version"] < [9,2,1]:
-        # ToDo: not work relocatable from Cabal-3.6.0.0 buildin GHC 9.2.1
-        enable_relocatable_flags = ["--enable-relocatable"]
+    enable_relocatable_flags = ["--enable-relocatable"] \
+            if not is_windows else []
 
     # Cabal really wants the current working directory to be directory
     # where the .cabal file is located. So we have no choice but to chance
