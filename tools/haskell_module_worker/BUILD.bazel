@@ -9,6 +9,8 @@ haskell_toolchain_library(name = "bytestring")
 
 haskell_toolchain_library(name = "containers")
 
+haskell_toolchain_library(name = "directory")
+
 haskell_toolchain_library(name = "filepath")
 
 haskell_toolchain_library(name = "ghc")
@@ -16,6 +18,8 @@ haskell_toolchain_library(name = "ghc")
 haskell_toolchain_library(name = "mtl")
 
 haskell_toolchain_library(name = "process")
+
+haskell_toolchain_library(name = "text")
 
 haskell_toolchain_library(name = "time")
 
@@ -41,12 +45,14 @@ haskell_binary(
         ":binary",
         ":bytestring",
         ":containers",
+        ":directory",
         ":filepath",
         ":ghc",
         "@rules_haskell_worker_dependencies//:clock",
         "@rules_haskell_worker_dependencies//:ghc-paths",
         ":mtl",
         ":process",
+        ":text",
         ":time",
         ":transformers",
         ":unix",

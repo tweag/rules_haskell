@@ -5,14 +5,18 @@
 module Worker
   ( Handle
   , interact
-  , withWorker
+  , new
+  , kill
   ) where
 
+import Control.Concurrent (forkIO)
 import Control.Concurrent.MVar
-import Control.Exception (bracket)
+import Control.Monad (forever)
 import Data.Binary (Binary)
 import qualified Data.Binary as Binary
 import qualified Data.ByteString.Lazy as ByteString.Lazy
+import Data.Text (Text)
+import qualified Data.Text.IO as Text
 import Prelude hiding (interact)
 import System.IO (hFlush, hSetBinaryMode)
 import qualified System.IO as IO (Handle)
@@ -40,14 +44,6 @@ data Info = Info
     , wiOutBS :: ByteString.Lazy.ByteString
     }
 
--- | Starts a worker, performs the given action, and terminates the worker.
--- Waits until the worker finishes.
-withWorker :: FilePath -> (Handle -> IO a) -> IO a
-withWorker exePath =
-    bracket
-      (initWorker exePath >>= fmap Handle . newMVar)
-      kill
-
 -- | Send a request @a@ and expect a response @b@.
 --
 -- May throw an exception if the worker dies.
@@ -60,6 +56,14 @@ interact (Handle mv) a =
         Right (rest, _, b) -> return (wi { wiOutBS = rest }, b)
         Left (_, _, err) -> error $ "Error decoding status: " ++ err
 
+new
+  :: FilePath
+  -> [String]
+  -> (Text -> IO ())
+  -> IO Handle
+new exePath args handleStderrLine =
+    initWorker exePath args handleStderrLine >>= fmap Handle . newMVar
+
 kill :: Handle -> IO ()
 kill (Handle mv) =
     withMVar mv $ \wi -> do
@@ -67,17 +71,24 @@ kill (Handle mv) =
       _ <- waitForProcess (wiProcessHandle wi)
       return ()
 
-initWorker :: FilePath -> IO Info
-initWorker exePath = do
-    (mpin, mpout, _merr, ph) <- createProcess (proc exePath [])
+initWorker
+  :: FilePath
+  -> [String]
+  -> (Text -> IO ())
+  -> IO Info
+initWorker exePath args handleStderrLine = do
+    (mpin, mpout, mperr, ph) <- createProcess (proc exePath args)
       { std_in = CreatePipe
       , std_out = CreatePipe
+      , std_err = CreatePipe
       }
-    case (mpin, mpout) of
-      (Just pin, Just pout) -> do
+    case (mpin, mpout, mperr) of
+      (Just pin, Just pout, Just perr) -> do
         hSetBinaryMode pin True
         hSetBinaryMode pout True
         outBS <- ByteString.Lazy.hGetContents pout
+        _ <- forkIO $ forever $
+          Text.hGetLine perr >>= handleStderrLine
         return Info
           { wiProcessHandle = ph
           , wiIn = pin
