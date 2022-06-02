@@ -31,6 +31,7 @@ GHC_BINDIST_STRIP_PREFIX = \
         },
         "9.0.2": {
             "windows_amd64": "ghc-9.0.2-x86_64-unknown-mingw32",
+            "darwin_amd64": "ghc-9.0.2-x86_64-apple-darwin",
         },
         "9.0.1": {
             "windows_amd64": "ghc-9.0.1-x86_64-unknown-mingw32",
@@ -40,6 +41,9 @@ GHC_BINDIST_STRIP_PREFIX = \
 GHC_BINDIST_LIBDIR = \
     {
         "9.2.1": {
+            "darwin_amd64": "lib/lib",
+        },
+        "9.0.2": {
             "darwin_amd64": "lib/lib",
         },
     }
