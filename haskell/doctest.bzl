@@ -148,6 +148,7 @@ def _haskell_doctest_single(target, ctx):
         {env}
         # doctest needs PATH to call GHC and the C compiler and linker.
         export PATH
+        export NIX_DEBUG=8
         {doctest} "$@" {inputs} > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
         """.format(
             doctest = toolchain.doctest[0].path,
