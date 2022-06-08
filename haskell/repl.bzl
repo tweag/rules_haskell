@@ -404,7 +404,11 @@ def _create_repl(hs, cc, posix, ctx, repl_info, output):
         "$RULES_HASKELL_EXEC_ROOT",
         hs.toolchain.cc_wrapper.executable.path,
     )
-    args.extend(['"{}"'.format(arg) for arg in ghc_cc_program_args(hs, cc_path)])
+    ld_path = paths.join(
+        "$RULES_HASKELL_EXEC_ROOT",
+        cc.ld_executable,
+    )
+    args.extend(['"{}"'.format(arg) for arg in ghc_cc_program_args(hs, cc_path, ld_path)])
 
     # Load source files
     # Force loading by source with `:add *...`.
@@ -526,7 +530,8 @@ def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
     path_prefix = paths.join("", *path_prefix)
     args, inputs = _compiler_flags_and_inputs(hs, cc, repl_info, path_prefix = path_prefix, static = True)
     cc_path = paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path)
-    args.extend(ghc_cc_program_args(hs, cc_path))
+    ld_path = paths.join(path_prefix, cc.ld_executable)
+    args.extend(ghc_cc_program_args(hs, cc_path, ld_path))
     args.extend(hs.toolchain.ghcopts)
     args.extend(repl_info.load_info.compiler_flags)
 

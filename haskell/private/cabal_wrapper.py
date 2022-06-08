@@ -131,6 +131,7 @@ path_args = json_args["path_args"]
 
 ar = find_exe(toolchain_info["ar"])
 cc = find_exe(toolchain_info["cc"])
+ld = find_exe(toolchain_info["ld"])
 strip = find_exe(toolchain_info["strip"])
 
 def recache_db():
@@ -190,10 +191,8 @@ def distdir_prefix():
 # into the 'flag hash' field of generated interface files. We try to use a
 # reproducible path for the distdir to keep interface files reproducible.
 with mkdtemp(distdir_prefix()) as distdir:
-    enable_relocatable_flags = []
-    if not is_windows and json_args["ghc_version"] != None and json_args["ghc_version"] < [9,2,1]:
-        # ToDo: not work relocatable from Cabal-3.6.0.0 buildin GHC 9.2.1
-        enable_relocatable_flags = ["--enable-relocatable"]
+    enable_relocatable_flags = ["--enable-relocatable"] \
+            if not is_windows else []
 
     # Cabal really wants the current working directory to be directory
     # where the .cabal file is located. So we have no choice but to chance
@@ -263,10 +262,14 @@ with mkdtemp(distdir_prefix()) as distdir:
         "--with-hsc2hs=" + hsc2hs,
         "--with-ar=" + ar,
         "--with-gcc=" + cc,
+        "--with-ld=" + ld,
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
-        [ "--ghc-option=" + flag.replace("$CC", cc) for flag in toolchain_info["ghc_cc_args"] ] +
+        [ "--ghc-option=" + flag.replace("$CC", cc).replace("$LD", ld) for flag in toolchain_info["ghc_cc_args"] ] +
+        [ "--hsc2hs-option=-c" + cc,
+          "--hsc2hs-option=-l" + cc,
+        ] +
         [ "--ghc-option=-optl@" + os.path.join(cfg_execroot, f) for f in [extra_ldflags_file] if f ] +
         enable_relocatable_flags + \
         [ \
