@@ -162,6 +162,8 @@ collectStatus logsRef action = do
       ee <- try action
       logs <- reverse <$> readIORef logsRef
       case ee of
+        Right _ ->
+          return (Succeeded logs)
         Left se -> case fromException se of
           Just e -> do
             return $
@@ -179,8 +181,6 @@ collectStatus logsRef action = do
                   CompileErrors logs [show (e :: GhcException)]
               _ ->
                 throwIO se
-        Right _ ->
-          return (Succeeded logs)
   where
     isPanic (Panic{}) = True
     isPanic (PprPanic{}) = True
