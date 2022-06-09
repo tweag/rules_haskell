@@ -3,6 +3,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NondecreasingIndentation #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE CPP #-}
 
 -- | This module implements a function to compile modules individually
@@ -45,7 +46,7 @@ import ErrUtils
   , mkLocMessageAnn
   , pprErrMsgBagWithLoc
   )
-import HscTypes (handleFlagWarnings, hsc_dflags, srcErrorMessages)
+import HscTypes (SourceError, handleFlagWarnings, hsc_dflags, srcErrorMessages)
 import Panic (fromException, try)
 import PlainPanic (PlainGhcException(PlainPanic))
 import Outputable
@@ -164,21 +165,21 @@ collectStatus logsRef action = do
       case ee of
         Right _ ->
           return (Succeeded logs)
-        Left se -> case fromException se of
+        Left se -> case fromException @SourceError se of
           Just e -> do
             return $
               CompileErrors logs $
               map (showSDoc $ hsc_dflags hsc_env) $
               pprErrMsgBagWithLoc $
               srcErrorMessages e
-          Nothing -> case fromException se of
+          Nothing -> case fromException @PlainGhcException se of
             Just e | isPlainPanic e ->
               return $
-                CompileErrors logs [show (e :: PlainGhcException)]
-            _ -> case fromException se of
+                CompileErrors logs [show e]
+            _ -> case fromException @GhcException se of
               Just e | not (isPanic e) ->
                 return $
-                  CompileErrors logs [show (e :: GhcException)]
+                  CompileErrors logs [show e]
               _ ->
                 throwIO se
   where
