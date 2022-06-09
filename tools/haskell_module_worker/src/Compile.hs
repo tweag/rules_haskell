@@ -224,7 +224,7 @@ renderLog
   -> MsgDoc
   -> IO a
 renderLog k dflags reason severity srcSpan pprStyle msg
-    = (>>= k) $ case severity of
+    = k =<< case severity of
       SevWarning     -> printWarns
       SevError       -> printWarns
       _      -> return $ showSDoc dflags msg
