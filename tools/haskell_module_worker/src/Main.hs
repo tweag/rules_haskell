@@ -176,7 +176,7 @@ forwardRequest semWorkers outChan lruV pc = do
       NonHaskellInputs files ->
         unlines $ "haskell_module_worker error: non-haskell inputs:" : files
       NonOneShotCompilation ->
-        "haskell_module_worker error: only on-shot compilation (-c) is supported"
+        "haskell_module_worker error: only one-shot compilation (-c) is supported"
 
 -- The key of the request is computed from the compiler arguments
 -- in the request
