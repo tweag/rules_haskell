@@ -7,7 +7,7 @@ import Control.Concurrent.Chan
 import Control.Concurrent.MVar
 import Control.Concurrent.QSem
 import Control.Exception (SomeException, bracketOnError, finally, handle, throwIO)
-import Control.Monad (forM_, forever, join, void)
+import Control.Monad (forM_, forever, join, void, when)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Binary as Binary
 import qualified Data.ByteString.Lazy as ByteString.Lazy
@@ -128,10 +128,7 @@ serveRequests opts semWorkers outChan lruV pc = go
   where
     go = do
       forwardRequest semWorkers outChan lruV pc
-      if optPersist opts then
-        go
-      else
-        return ()
+      when (optPersist opts) go
 
 -- | Waits for a request and sends it to a worker to be processed
 -- asynchronously.
