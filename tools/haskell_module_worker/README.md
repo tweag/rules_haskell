@@ -1,6 +1,9 @@
 This is a work-in-progress implementation of a persistent worker for
 the `haskell_module` rule.
 
+See [#1758](https://github.com/tweag/rules_haskell/issues/1758) to learn
+about the standing issues to make it ready for general use.
+
 To run `haskell_module` tests with it run
 ```
 USE_BAZEL_VERSION=6.0.0-pre.20220520.1 bazelisk test \
@@ -33,28 +36,23 @@ The flag `--experimental_worker_max_multiplex_instances=2` tells `bazel` to send
 at most 2 concurrent requests to the persistent worker.
 
 The flag `--worker_extra_flag --num-workers=2` tells the worker to spawn at most
-two backgound compilation servers. Each compilation server is used to build the
-modules of a library or binary, and it is discarded when requests to build new
-libraries or binaries make it fall from an LRU cache of workers.
+two background workers. Each background worker is used to build the modules of a
+library or binary, and it is discarded when requests to build new libraries or
+binaries make it fall from an LRU cache of workers.
 
 We have teams of background workers specialize on compiling modules of a
-particular library to further simplify the management of the internal state.
-Once persistent workers are specialized to libraries, `bazel` is unable to
-constrain the total amount of workers. `bazel` can only constrain the total
-amount of workers assigned to a combination of mnemonic and startup parameters.
-Or said differently it can only constrain the amount of workers assigned to a
-particular library. This is why this persistent worker implements an LRU cache
-to keep the amount of workers limited, and thus ensures that the memory does
-not fill up with unused persistent workers.
+particular library and configuration to further simplify the management of the
+internal state. The persistent worker implements an LRU cache to keep the amount
+of background workers limited, and thus ensures that the memory does not fill up
+with unused persistent workers.
 
-A few issues need to be investigated to make this implementation ready for
-general use. At the time of this writting they are:
+For each compilation request we compute a key. Requests with the same key are
+handled by background workers associated to this key in the LRU cache.
 
-* Multiplex sandboxing in Bazel 6 does not reliably expose all of the inputs
-  to the persistent worker yet.
-* The persistent worker sometimes fails when attempting to reload libraries
-  for TH that have been already loaded.
-* The persistent worker fails sometimes when interface files provided to
-  earlier compilation requests are not available to newer compilation requests.
-  This can happen if different modules depend on a same library, but each of
-  them uses different modules from this library.
+As a first attempt in the wild, the key is computed from the paths to the package
+databases in the work request. This key is used to ensure that if the paths
+change, we don't reuse the worker.
+
+It would make sense to try eventually to make the key from a pair of the
+library/binary name and the configuration hash. Both pieces of data are present
+in the `-odir` flag, so we could use it to approximate the ideal key.
