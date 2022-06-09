@@ -1005,7 +1005,7 @@ be listed in `srcs` (crucially, including the `.cabal` file).
 _STACK_DEFAULT_VERSION = "2.7.5"
 
 # minimum required version
-_STACK_MIN_VERSION = (2, 7, 5)
+_STACK_MIN_VERSION = (2, 3)
 
 # Only ever need one version, but use same structure as for GHC bindists.
 _STACK_BINDISTS = \
