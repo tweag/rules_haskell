@@ -53,8 +53,9 @@ jobs:
           nix-shell --arg docTools false --pure --run '
             set -xeuo pipefail
             ./tests/run-start-script.sh --use-nix
-            bazel build //tests:run-tests
-            ./bazel-ci-bin/tests/run-tests
+            #bazel build //tests:run-tests
+            #./bazel-ci-bin/tests/run-tests
+            export NIX_DEBUG=8
             bazel coverage //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
