@@ -1002,7 +1002,7 @@ be listed in `srcs` (crucially, including the `.cabal` file).
 """,
 )
 
-_STACK_DEFAULT_VERSION = "2.3.1"
+_STACK_DEFAULT_VERSION = "2.7.5"
 
 # minimum required version
 _STACK_MIN_VERSION = (2, 3)
@@ -1010,18 +1010,18 @@ _STACK_MIN_VERSION = (2, 3)
 # Only ever need one version, but use same structure as for GHC bindists.
 _STACK_BINDISTS = \
     {
-        "2.3.1": {
+        "2.7.5": {
             "linux-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.3.1/stack-2.3.1-linux-x86_64-static.tar.gz",
-                "4bae8830b2614dddf3638a6d1a7bbbc3a5a833d05b2128eae37467841ac30e47",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-linux-x86_64-static.tar.gz",
+                "2a02fefefcc1758033d0aea566a521a290e3c68739ce9894bd6492a346af79c5",
             ),
             "osx-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.3.1/stack-2.3.1-osx-x86_64.tar.gz",
-                "73eee7e5f24d11fd0af00cb05f16119e86be5d578c35083250e6b85ed1ca3621",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-osx-x86_64.tar.gz",
+                "94176b71425d76b94b088515103316ae1ff96d123344b1f4609c103d0d5bdcc4",
             ),
             "windows-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.3.1/stack-2.3.1-windows-x86_64.tar.gz",
-                "440588c92ffcb42b88fd6455dc68728dae9b08bdd1a683d1cf5f80aa9aa8b014",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-windows-x86_64.tar.gz",
+                "c9b07982590d63db2310a44bfcf33c9f8bd84a0828abc17b2a394e90fbf6a914",
             ),
         },
     }
@@ -1152,7 +1152,7 @@ def _parse_package_spec(package_spec, enable_custom_toolchain_libraries, custom_
     """Parse a package description from `stack ls dependencies json`.
 
     The definition of the JSON format can be found in the `stack` sources:
-    https://github.com/commercialhaskell/stack/blob/v2.3.1/src/Stack/Dot.hs#L173-L198
+    https://github.com/commercialhaskell/stack/blob/v2.7.5/src/Stack/Dot.hs#L173-L198
     """
     errmsg = "Unexpected output format for `stack ls dependencies json` in {context}: {{error}}"
 
