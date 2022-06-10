@@ -6,7 +6,7 @@ HaskellInfo = provider(
         "package_databases": "Depset of package cache files.",
         "empty_lib_package_databases": "Depset of package cache files corresponding to empty libraries.",
         "version_macros": "Depset of version macro files.",
-        "import_dirs": "Import hierarchy roots.",
+        "import_dirs": "Set of import hierarchy roots.",
         "source_files": "Depset of files that contain Haskell modules.",
         "boot_files": "Depset of Haskell boot files",
         "extra_source_files": "Depset of non-Haskell source files.",

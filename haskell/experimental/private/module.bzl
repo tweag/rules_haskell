@@ -22,6 +22,7 @@ load(
     "//haskell:private/plugins.bzl",
     "resolve_plugin_tools",
 )
+load("//haskell:private/set.bzl", "set")
 load(
     "//haskell:providers.bzl",
     "GhcPluginInfo",
@@ -109,7 +110,7 @@ def _build_haskell_module(
         narrowed_objects,
         extra_ldflags_file,
         module):
-    """Build a module
+    """Build a module. Returns data needed by haskell_repl.
 
     Args:
       ctx: The context of the binary, library, or test rule using the module
@@ -130,6 +131,13 @@ def _build_haskell_module(
       narrowed_objects: A depset containing the narrowed object files needed as arguments to ghc.
       extra_ldflags_file: A File with flags for ld or None.
       module: The Target of the haskell_module rule
+
+    Returns:
+      struct(source_file, boot_file, import_dir, user_compile_flags):
+        source_file: The file that contains the Haskell module. None if it's a boot file.
+        boot_file: The file that contains the boot Haskell module. None if it's not a boot file.
+        import_dir: A possibly (e.g. due to hsc) newly generated import directory.
+        user_compile_flags: Compiler flags specified by the user in this module after location expansion.
     """
 
     moduleAttr = module[HaskellModuleInfo].attr
@@ -148,15 +156,17 @@ def _build_haskell_module(
         moduleAttr.tools,
     ]
 
-    user_ghcopts += expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs)
+    user_compile_flags = expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs)
+    user_ghcopts += user_compile_flags
 
+    import_dir = None
     if src.extension == "hsc":
         # TODO[AH] Support version macros
         hsc_flags, hsc_inputs = preprocess_hsc_flags_and_inputs(dep_info, user_ghcopts, None)
 
-        # TODO[GL] Use idir when providing HaskellReplLoadInfo
         hs_out, idir = process_hsc_file(hs, cc, hsc_flags, hsc_inputs, src)
         src = hs_out
+        import_dir = idir
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins + moduleAttr.plugins)
@@ -342,6 +352,14 @@ def _build_haskell_module(
         extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
     )
 
+    is_boot = _is_boot(src.path)
+    return struct(
+        source_file = None if is_boot else src,
+        boot_file = src if is_boot else None,
+        import_dir = import_dir,
+        user_compile_flags = user_compile_flags,
+    )
+
 def get_module_path_from_target(module):
     module_name = module[HaskellModuleInfo].attr.module_name
     if module_name:
@@ -358,11 +376,14 @@ def get_module_path_from_target(module):
 
     return paths.split_extension(paths.relativize(src, prefix_path))[0]
 
+def _is_boot(path):
+    return paths.split_extension(path)[1] in [".hs-boot", ".lhs-boot"]
+
 def _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, module):
     module_path = get_module_path_from_target(module)
 
     src = module[HaskellModuleInfo].attr.src.files.to_list()[0].path
-    hs_boot = paths.split_extension(src)[1] in [".hs-boot", ".lhs-boot"]
+    hs_boot = _is_boot(src)
     extension_template = "%s"
     if hs_boot:
         extension_template = extension_template + "-boot"
@@ -540,7 +561,8 @@ def build_haskell_modules(
         hidir,
         odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
-        and in their dependencies
+        and in their dependencies. The repl_info returned here aggregates data
+        from all the haskell_modules being run here.
 
     Args:
       ctx: The context of the rule with module dependencies
@@ -555,7 +577,7 @@ def build_haskell_modules(
       odir: The directory in which to output object files
 
     Returns:
-      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces, per_module_transitive_objects, per_module_transitive_dyn_objects):
+      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces, per_module_transitive_objects, per_module_transitive_dyn_objects, repl_info):
         his: interface files of all modules in ctx.attr.modules
         dyn_his: dynamic interface files of all modules in ctx.attr.modules
         os: object files of all modules in ctx.attr.modules
@@ -567,6 +589,11 @@ def build_haskell_modules(
             object files and the object files of their transitive module
             dependencies. See Note [Narrowed Dependencies].
         per_module_transitive_dyn_objects: like per_module_transitive_objects but for dyn_o files
+        repl_info: struct(source_files, boot_files, import_dirs, user_compile_flags):
+          source_files: Depset of files that contain Haskell modules.
+          boot_files: Depset of files that contain Haskell boot modules.
+          import_dirs: Set of newly generated import directories. hsc2hs generates these.
+          user_compile_flags: Compiler flags specified by the user, after location expansion.
     """
     per_module_maps = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
 
@@ -584,6 +611,12 @@ def build_haskell_modules(
     module_interfaces = {}
     module_objects = {}
     module_dyn_objects = {}
+
+    source_files = []
+    boot_files = []
+    import_dirs = []
+    user_compile_flags = []
+
     for dep in transitive_module_deps:
         # called in all cases to validate cross_library_deps, although the output
         # might be ignored when disabling narrowing
@@ -611,7 +644,7 @@ def build_haskell_modules(
             _collect_module_inputs(module_dyn_objects, narrowed_objects, dyn_os, dep),
         ])
 
-        _build_haskell_module(
+        module_output = _build_haskell_module(
             ctx,
             hs,
             cc,
@@ -631,6 +664,13 @@ def build_haskell_modules(
             extra_ldflags_file,
             dep,
         )
+        if module_output.source_file:
+            source_files.append(module_output.source_file)
+        if module_output.boot_file:
+            boot_files.append(module_output.boot_file)
+        if module_output.import_dir:
+            import_dirs.append(module_output.import_dir)
+        user_compile_flags += module_output.user_compile_flags
 
     module_outputs_list = module_outputs.values()
     hi_set = depset([outputs.hi for outputs in module_outputs_list])
@@ -676,6 +716,12 @@ def build_haskell_modules(
         per_module_transitive_interfaces = per_module_transitive_interfaces0,
         per_module_transitive_objects = per_module_transitive_objects0,
         per_module_transitive_dyn_objects = per_module_transitive_dyn_objects0,
+        repl_info = struct(
+            source_files = depset(source_files),
+            boot_files = depset(boot_files),
+            import_dirs = set.from_list(import_dirs),
+            user_compile_flags = user_compile_flags,
+        ),
     )
 
 def haskell_module_impl(ctx):

@@ -7,6 +7,7 @@ load(
 )
 load("//haskell:private/cc_libraries.bzl", "haskell_cc_libraries_aspect")
 
+# TODO[GL] should we have repl_ghci_args here?
 _haskell_module = rule(
     _haskell_module_impl,
     # NOTE: Documentation needs to be added to the wrapper macros below.
