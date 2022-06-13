@@ -56,7 +56,7 @@ jobs:
             #bazel build //tests:run-tests
             #./bazel-ci-bin/tests/run-tests
             export NIX_DEBUG=8
-            bazel coverage --action_env=NIX_DEBUG=8 -s //...
+            bazel coverage --action_env=NIX_DEBUG=8 -s --verbose_failures //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
             '
