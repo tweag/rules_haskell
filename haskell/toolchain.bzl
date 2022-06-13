@@ -25,7 +25,7 @@ load(
     "asterius_tools_config",
 )
 
-_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
+_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "runghc", "hpc"]
 
 def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = None, progress_message = None, input_manifests = None, extra_name = ""):
     args = hs.actions.args()
