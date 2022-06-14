@@ -3,6 +3,7 @@ load(
     "haskell_library",
     "haskell_test",
 )
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 load(
     "@rules_haskell//haskell:c2hs.bzl",
     "c2hs_library",
@@ -30,6 +31,40 @@ haskell_test(
         ":versioned-lib",
         "//tests/hackage:base",
     ],
+)
+
+haskell_test(
+    name = "version_macros_haskell_module",
+    size = "small",
+    modules = [
+        ":HsLib",
+        ":HscLib",
+        ":Main",
+    ],
+    version = "3.4.5.6",
+    deps = [
+        ":versioned-lib",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "Main",
+    src = "Main.hs",
+    deps = [
+        ":HsLib",
+        ":HscLib",
+    ],
+)
+
+haskell_module(
+    name = "HscLib",
+    src = "HscLib.hsc",
+)
+
+haskell_module(
+    name = "HsLib",
+    src = "HsLib.hs",
 )
 
 c2hs_library(
