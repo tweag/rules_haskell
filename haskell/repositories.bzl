@@ -68,6 +68,8 @@ def rules_haskell_dependencies():
         http_archive(
             name = "io_tweag_rules_nixpkgs",
             strip_prefix = strip_prefix,
+            patches = [ "@rules_haskell//:nixpkgs_cc.diff" ],
+            patch_args = ["-p1"],
             urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
             sha256 = _rules_nixpkgs_sha256,
         )
@@ -83,6 +85,8 @@ def rules_haskell_dependencies():
             http_archive(
                 name = "rules_nixpkgs_" + toolchain,
                 strip_prefix = strip_prefix + "/toolchains/" + toolchain,
+                patches = [ "@rules_haskell//:nixpkgs_cc.diff" ] if toolchain == "cc" else [],
+                patch_args = ["-p3"],
                 urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
                 sha256 = _rules_nixpkgs_sha256,
             )
