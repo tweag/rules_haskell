@@ -140,6 +140,7 @@ def _build_haskell_module(
         user_compile_flags: Compiler flags specified by the user in this module after location expansion.
     """
 
+    version = getattr(ctx.attr, "version", None)
     moduleAttr = module[HaskellModuleInfo].attr
 
     # Collect dependencies
@@ -161,8 +162,7 @@ def _build_haskell_module(
 
     import_dir = None
     if src.extension == "hsc":
-        # TODO[AH] Support version macros
-        hsc_flags, hsc_inputs = preprocess_hsc_flags_and_inputs(dep_info, user_ghcopts, None)
+        hsc_flags, hsc_inputs = preprocess_hsc_flags_and_inputs(dep_info, user_ghcopts, version)
 
         hs_out, idir = process_hsc_file(hs, cc, hsc_flags, hsc_inputs, src)
         src = hs_out
@@ -260,8 +260,7 @@ def _build_haskell_module(
                 ],
                 order = "preorder",
             ),
-            # TODO[AH] Support version macros
-            version = None,
+            version = version,
         ),
         plugin_pkg_info = expose_packages(
             package_ids = [
@@ -270,8 +269,7 @@ def _build_haskell_module(
                 for pkg_id in all_dependencies_package_ids(plugin.deps)
             ],
             package_databases = plugin_dep_info.package_databases,
-            # TODO[AH] Support version macros
-            version = None,
+            version = version,
         ),
         prefix = "compile-{}-".format(module.label.name),
     )
