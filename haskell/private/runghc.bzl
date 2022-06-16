@@ -19,6 +19,10 @@ def _runghc_wrapper_impl(ctx):
     f = hs_toolchain.tools.runghc
     runghc_runfile_path = paths.join(f.owner.workspace_name, f.owner.package, f.owner.name)
     runghc_wrapper_file = ctx.actions.declare_file(ctx.label.name)
+
+    f = hs_toolchain.tools.ghc
+    ghc_runfile_path = paths.join(f.owner.workspace_name, f.owner.package, f.owner.name)
+
     ctx.actions.write(
         output = runghc_wrapper_file,
         content = """\
@@ -30,15 +34,15 @@ from rules_python.python.runfiles import runfiles
 
 r = runfiles.Create()
 
-subprocess.run([r.Rlocation("{runghc}")] + sys.argv[1:], check=True)
-""".format(runghc = runghc_runfile_path),
+subprocess.run([r.Rlocation("{runghc}")] + ["-f", r.Rlocation("{ghc}")] + sys.argv[1:], check=True)
+""".format(runghc = runghc_runfile_path, ghc = ghc_runfile_path),
         is_executable = True,
     )
 
     return [DefaultInfo(
         executable = runghc_wrapper_file,
         runfiles = hs_toolchain.cc_wrapper.runfiles.merge(
-            ctx.runfiles(files = [runghc_wrapper_file, hs_toolchain.tools.runghc]),
+            ctx.runfiles(files = [runghc_wrapper_file, hs_toolchain.tools.runghc, hs_toolchain.tools.ghc]),
         ),
     )]
 
