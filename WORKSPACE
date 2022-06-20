@@ -304,14 +304,18 @@ rules_haskell_asterius_toolchains(
 )
 
 load(
-    "@rules_haskell//haskell:ghc_bindist.bzl",
-    "haskell_register_ghc_bindists",
+    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+    "haskell_register_ghc_bindists_hadrian",
 )
 
-haskell_register_ghc_bindists(
+haskell_register_ghc_bindists_hadrian(
+    url = "file:///home/aj/scratch/hadrian-bindist/quick/ghc-9.2.3-x86_64-unknown-linux.tar.xz",
+    sha256 = "00a3b145ad1a2721949ca1f5c98b6b9c873467efd7d9d2e24616eda187bcfd01",
+    strip_prefix = "ghc-9.2.3-x86_64-unknown-linux",
+    version = "9.2.3",
+    target = "x86_64-unknown-linux",
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
-    version = test_ghc_version,
 )
 
 register_toolchains(
