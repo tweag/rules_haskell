@@ -30,7 +30,7 @@ load(
 
 nixpkgs_git_repository(
     name = "nixpkgs",
-    revision = "ad4db3f4d8ae54482c63c31c14921cb73953548d",
+    revision = "d17a56d90ecbd1b8fc908d49598fb854ef188461",
 )
 
 nixpkgs_python_configure(
@@ -92,12 +92,12 @@ haskell_register_ghc_nixpkgs(
         "@platforms//cpu:aarch64",
         "@platforms//os:linux",
     ],
-    version = "8.10.4",
+    version = "8.10.7",
 )
 
 haskell_register_ghc_nixpkgs(
     name = "x86",
-    attribute_path = "haskell.compiler.ghc8104",
+    attribute_path = "haskell.compiler.ghc8107",
     exec_constraints = [
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
@@ -107,7 +107,7 @@ haskell_register_ghc_nixpkgs(
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
     ],
-    version = "8.10.4",
+    version = "8.10.7",
 )
 
 ############################
