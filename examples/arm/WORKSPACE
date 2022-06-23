@@ -92,12 +92,12 @@ haskell_register_ghc_nixpkgs(
         "@platforms//cpu:aarch64",
         "@platforms//os:linux",
     ],
-    version = "8.10.7",
+    version = "9.0.2",
 )
 
 haskell_register_ghc_nixpkgs(
     name = "x86",
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path = "haskell.compiler.ghc902",
     exec_constraints = [
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
@@ -107,7 +107,7 @@ haskell_register_ghc_nixpkgs(
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
     ],
-    version = "8.10.7",
+    version = "9.0.2",
 )
 
 ############################
