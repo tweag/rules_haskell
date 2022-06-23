@@ -1,0 +1,82 @@
+load("@rules_haskell//haskell:c2hs.bzl", "c2hs_library", "c2hs_toolchain")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_toolchain_library",
+)
+
+[
+    haskell_toolchain_library(name = name)
+    for name in [
+        "array",
+        "base",
+    ]
+]
+
+genrule(
+    name = "codegen",
+    outs = [
+        "Gen.hs",
+    ],
+    cmd = """
+  echo "module Gen (gen) where" >> $(location :Gen.hs)
+  echo "gen :: String" >> $(location :Gen.hs)
+  echo "gen = \\"gen\\"" >> $(location :Gen.hs)
+""",
+)
+
+c2hs_toolchain(
+    name = "c2hs-toolchain",
+    c2hs = "@stackage-exe//c2hs",
+)
+
+c2hs_library(
+    name = "chs",
+    srcs = ["Chs.chs"],
+)
+
+cc_library(
+    name = "ourclibrary",
+    srcs = [":ourclibrary.c"],
+    linkstatic = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "nix",
+    constraint_values = [
+        "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
+    ],
+)
+
+alias(
+    name = "zlib",
+    # This is a dependency to @stackage-zlib.
+    testonly = 0,
+    actual = select({
+        ":nix": "@zlib.dev//:zlib",
+        "//conditions:default": "@zlib.hs//:zlib",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+haskell_library(
+    name = "hs-lib",
+    srcs = [
+        "Foo.hs",
+        "Hsc.hsc",
+        ":chs",
+        ":codegen",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":array",
+        ":base",
+        ":ourclibrary",
+        ":zlib",
+    ],
+)

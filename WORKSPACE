@@ -532,16 +532,8 @@ register_toolchains(
 # For buildifier
 
 # starting from 0.29, rules_go requires bazel >= 4.2.0
-# rules_go dependency used only for rules_haskell developers for integration testing
-# and it doesn't needed for downstream users of rules_haskell
-# this patch is needed in order to use bazel integration testing mechanism from rules_go:
-#   1. it fixes the issue with go_bazel_test on Windows: https://github.com/bazelbuild/rules_go/issues/3034
-#       fix will be available in rules_go starting from 0.30.0
-#   2. it makes outputUserRoot variable public and available for commands running bazel functions redefined in rules_haskell
 http_archive(
     name = "io_bazel_rules_go",
-    patch_args = ["-p1"],
-    patches = ["//:rules_go_integration_testing.patch"],
     sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
@@ -578,6 +570,23 @@ load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_depen
 
 buildifier_dependencies()
 
+http_archive(
+    name = "contrib_rules_bazel_integration_test",
+    sha256 = "24e5e8f388bec2da0975cfda6073ed0174a4f62cb874b5dc8037c98faa6acdfd",
+    strip_prefix = "rules_bazel_integration_test-0.7.0",
+    urls = [
+        "http://github.com/bazel-contrib/rules_bazel_integration_test/archive/v0.7.0.tar.gz",
+    ],
+)
+
+load("@contrib_rules_bazel_integration_test//bazel_integration_test:deps.bzl", "bazel_integration_test_rules_dependencies")
+
+bazel_integration_test_rules_dependencies()
+
+load("@cgrindel_bazel_starlib//:deps.bzl", "bazel_starlib_dependencies")
+
+bazel_starlib_dependencies()
+
 # For profiling
 # Required to make use of `bazel build --profile`.
 
@@ -590,11 +599,8 @@ bind(
 
 # For persistent worker (tools/worker)
 load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
-load("//tools:repositories.bzl", "bazel_binaries_for_integration_testing")
 
 rules_haskell_worker_dependencies()
-
-bazel_binaries_for_integration_testing()
 
 # Stack snapshot repository for testing non standard toolchains
 # The toolchain_libraries rule provide a default value for the toolchain_libraries
@@ -616,6 +622,10 @@ stack_snapshot(
     stack_snapshot_json = "@rules_haskell//tests/asterius/stack_toolchain_libraries:snapshot.json",
     toolchain_libraries = toolchain_libraries,
 ) if is_linux else None
+
+load("//tools:repositories.bzl", "bazel_binaries_for_integration_testing")
+
+bazel_binaries_for_integration_testing()
 
 local_repository(
     name = "tutorial",
