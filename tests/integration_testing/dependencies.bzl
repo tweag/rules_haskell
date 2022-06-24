@@ -22,6 +22,5 @@ filegroup(
             fail_not_supported = False,
         )
 
-
 def nixpkgs_bazel_label(package):
     return "@%s//:bazel_bin" % package

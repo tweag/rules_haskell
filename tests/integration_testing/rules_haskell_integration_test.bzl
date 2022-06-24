@@ -9,6 +9,7 @@ load(
     "SUPPORTED_NIXPKGS_BAZEL_PACKAGES",
 )
 load("//tests/integration_testing:dependencies.bzl", "nixpkgs_bazel_label")
+load("@os_info//:os_info.bzl", "is_nix_shell")
 
 def rules_haskell_integration_test(
         name,
@@ -27,31 +28,32 @@ def rules_haskell_integration_test(
         for package in nixpkgs_bazel_packages
     }
 
-    haskell_bazel_integration_test(
-        name = "%s_bindist" % name,
-        srcs = srcs,
-        deps = deps,
-        bazel_binaries = bindist_bazel_binaries,
-        workspace_path = workspace_path,
-        rule_files = ["//:distribution"],
-        target_compatible_with = select({
-            "//tests:nix": ["@platforms//:incompatible"],
-            "//conditions:default": [],
-        }),
-        **kwargs
-    )
-
-    haskell_bazel_integration_test(
-        name = "%s_nixpkgs" % name,
-        srcs = srcs,
-        deps = deps,
-        args = ["nixpkgs"],
-        bazel_binaries = nixpkgs_bazel_binaries,
-        workspace_path = workspace_path,
-        rule_files = ["//:distribution"],
-        target_compatible_with = select({
-            "//tests:nix": [],
-            "//conditions:default": ["@platforms//:incompatible"],
-        }),
-        **kwargs
-    )
+    if is_nix_shell:
+        haskell_bazel_integration_test(
+            name = "%s_nixpkgs" % name,
+            srcs = srcs,
+            deps = deps,
+            args = ["nixpkgs"],
+            bazel_binaries = nixpkgs_bazel_binaries,
+            workspace_path = workspace_path,
+            rule_files = ["//:distribution"],
+            target_compatible_with = select({
+                "//tests:nix": [],
+                "//conditions:default": ["@platforms//:incompatible"],
+            }),
+            **kwargs
+        )
+    else:
+        haskell_bazel_integration_test(
+            name = "%s_bindist" % name,
+            srcs = srcs,
+            deps = deps,
+            bazel_binaries = bindist_bazel_binaries,
+            workspace_path = workspace_path,
+            rule_files = ["//:distribution"],
+            target_compatible_with = select({
+                "//tests:nix": ["@platforms//:incompatible"],
+                "//conditions:default": [],
+            }),
+            **kwargs
+        )

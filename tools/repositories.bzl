@@ -30,4 +30,3 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
             snapshot = "lts-18.0",
             **stack_kwargs
         )
-
