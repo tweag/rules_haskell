@@ -19,7 +19,7 @@ let
     PATH="${pkgs.llvm_9}/bin:''${PATH:-}" ${crossGHC}/bin/aarch64-unknown-linux-gnu-ghc -pgmi ${qemuIservWrapper}/bin/iserv-wrapper -fexternal-interpreter -optl-L${crossNumactl}/lib "$@"
   '';
 
-  crossGHC = crossPkgs.buildPackages.haskell-nix.compiler.ghc922;
+  crossGHC = crossPkgs.buildPackages.haskell-nix.compiler.ghc923;
   crossGCC = crossPkgs.buildPackages.gcc;
   crossGCCUnwrapped = crossPkgs.buildPackages.gcc-unwrapped;
   crossBinutils = crossPkgs.buildPackages.binutils;
@@ -31,20 +31,20 @@ let
       for tool in \
         ghc-9.2.3 \
         ghc-pkg \
-        ghc-pkg-9.2.2 \
+        ghc-pkg-9.2.3 \
         ghci \
-        ghci-9.2.2 \
+        ghci-9.2.3 \
         hp2ps \
         hpc \
         hsc2hs \
         runghc \
-        runghc-9.2.2 \
+        runghc-9.2.3 \
         runhaskell
       do
           ln -s ${crossGHC}/bin/aarch64-unknown-linux-gnu-$tool $out/bin/$tool
       done;
       mkdir -p $out/lib
-      ln -s ${crossGHC}/lib/aarch64-unknown-linux-gnu-ghc-9.2.2 $out/lib/ghc-9.2.2
+      ln -s ${crossGHC}/lib/aarch64-unknown-linux-gnu-ghc-9.2.3 $out/lib/ghc-9.2.3
       ln -s ${crossGHCLLVMWrapper}/bin/ghc-llvm-wrapper $out/bin/ghc
       touch $out/bin/haddock
     '';
