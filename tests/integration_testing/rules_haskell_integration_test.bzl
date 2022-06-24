@@ -41,6 +41,7 @@ def rules_haskell_integration_test(
                 "//tests:nix": [],
                 "//conditions:default": ["@platforms//:incompatible"],
             }),
+            additional_env_inherit = ["BAZEL_USE_CPP_ONLY_TOOLCHAIN"],
             **kwargs
         )
     else:
@@ -55,5 +56,6 @@ def rules_haskell_integration_test(
                 "//tests:nix": ["@platforms//:incompatible"],
                 "//conditions:default": [],
             }),
+            additional_env_inherit = ["BAZEL_USE_CPP_ONLY_TOOLCHAIN"],
             **kwargs
         )
