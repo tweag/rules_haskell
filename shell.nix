@@ -7,7 +7,6 @@ mkShell {
   # will be catched earlier
   # See: https://github.com/bazelbuild/bazel/issues/4231
   BAZEL_USE_CPP_ONLY_TOOLCHAIN=1;
-  TMPDIR="/tmp";
 
   # Set UTF-8 local so that run-tests can parse GHC's unicode output.
   LANG="C.UTF-8";
@@ -35,6 +34,8 @@ mkShell {
     # check the start script for problems
     shellcheck
     file
+    # Needed for rules_bazel_integration_test
+    clang
   ] ++ lib.optionals docTools [graphviz python39Packages.sphinx zip unzip];
 
   shellHook = ''
