@@ -11,7 +11,6 @@ package(default_visibility = ["//visibility:public"])
 
 haskell_toolchain_library(name = "base")
 
-
 # gazelle_haskell_modules:srcs: src/
 haskell_library(
     name = "package-a",
@@ -41,4 +40,3 @@ haskell_module(
     src_strip_prefix = "src",
     deps = [":package-a.PackageA.Mod1"],
 )
-

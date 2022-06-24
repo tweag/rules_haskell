@@ -1,7 +1,8 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 local_repository(
-        name = "rules_haskell",
-        path = "../rules_haskell",
+    name = "rules_haskell",
+    path = "../rules_haskell",
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
@@ -12,6 +13,7 @@ os_info(name = "os_info")
 load("@os_info//:os_info.bzl", "is_windows")
 
 rules_haskell_dependencies()
+
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
@@ -27,9 +29,9 @@ rules_haskell_toolchains(version = "8.10.7")
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_cc_configure",
-    "nixpkgs_python_configure",
     "nixpkgs_local_repository",
     "nixpkgs_package",
+    "nixpkgs_python_configure",
 )
 
 nixpkgs_cc_configure(
