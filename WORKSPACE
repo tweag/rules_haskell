@@ -623,9 +623,12 @@ stack_snapshot(
     toolchain_libraries = toolchain_libraries,
 ) if is_linux else None
 
-load("//tools:repositories.bzl", "bazel_binaries_for_integration_testing")
+load(
+    "//tests/integration_testing:dependencies.bzl",
+    "integration_testing_bazel_binaries",
+)
 
-bazel_binaries_for_integration_testing()
+integration_testing_bazel_binaries()
 
 local_repository(
     name = "tutorial",

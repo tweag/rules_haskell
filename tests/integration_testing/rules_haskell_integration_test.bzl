@@ -8,7 +8,7 @@ load(
     "SUPPORTED_BAZEL_VERSIONS",
     "SUPPORTED_NIXPKGS_BAZEL_PACKAGES",
 )
-load("//tools:repositories.bzl", "nixpkgs_bazel_label")
+load("//tests/integration_testing:dependencies.bzl", "nixpkgs_bazel_label")
 
 def rules_haskell_integration_test(
         name,
