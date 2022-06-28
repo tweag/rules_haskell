@@ -91,9 +91,9 @@ def _chop_version(name):
     """Remove any version component from the given package name."""
     return name.rpartition("-")[0]
 
-def _find_cabal(hs, srcs):
+def _find_cabal(hs, cabalFile, srcs):
     """Check that a .cabal file exists. Choose the root one."""
-    cabal = None
+    cabal = cabalFile
     for f in srcs:
         if f.extension == "cabal":
             if not cabal or f.dirname < cabal.dirname:
@@ -463,7 +463,7 @@ def _haskell_cabal_library_impl(ctx):
             "--ghc-option=" + opt
             for opt in _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
         ])
-    cabal = _find_cabal(hs, ctx.files.srcs)
+    cabal = _find_cabal(hs, ctx.files.cabalFile, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
         "_install/{}.conf.d/package.cache".format(package_id),
