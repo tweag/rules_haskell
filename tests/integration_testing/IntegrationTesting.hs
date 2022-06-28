@@ -32,6 +32,7 @@ bazelCmd workspaceDir outputUserRoot = do
 
 isNixpkgs = (elem "nixpkgs") <$> getArgs
 
+bazelConfig :: Bool -> String
 bazelConfig isnix
     | isnix = case os of
         "darwin" -> "macos-nixpkgs"
@@ -41,6 +42,7 @@ bazelConfig isnix
         "mingw32" -> "windows-bindist"
         _ -> "linux-bindist"
 
+outputBaseDir :: IO String
 outputBaseDir = do
     tmpDir <- getEnv "TEST_TMPDIR"
     return (unpack . fst $ breakOn (pack (pathSeparators ++ "execroot" ++ pathSeparators)) (pack tmpDir))
@@ -50,14 +52,17 @@ replaceInFile path from to = do
     content <- Data.Text.IO.readFile path
     Data.Text.IO.writeFile path (replace (pack from) (pack to) content)
 
+removeDirIfExist :: FilePath -> IO ()
 removeDirIfExist path = do
     dirExist <- doesDirectoryExist path
     when dirExist (removePathForcibly path)
 
+createDirIfNotExist :: FilePath -> IO ()
 createDirIfNotExist path = do
     dirExist <- doesDirectoryExist path
     unless dirExist (createDirectory path)
 
+generateBazelRc :: FilePath -> IO ()
 generateBazelRc dir = do
     alreadyExist <- doesFileExist (dir </> ".bazelrc")
     unless alreadyExist $ Data.Text.IO.writeFile (dir </> ".bazelrc") (pack " \n\
