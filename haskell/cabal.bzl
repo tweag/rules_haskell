@@ -463,7 +463,7 @@ def _haskell_cabal_library_impl(ctx):
             "--ghc-option=" + opt
             for opt in _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
         ])
-    cabal = _find_cabal(hs, ctx.files.cabalFile, ctx.files.srcs)
+    cabal = _find_cabal(hs, ctx.attr.cabalFile, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
         "_install/{}.conf.d/package.cache".format(package_id),
