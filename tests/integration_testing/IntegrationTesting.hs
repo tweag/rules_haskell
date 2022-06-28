@@ -24,8 +24,10 @@ bazelCmd :: String -> String -> IO ([String] -> Process.CreateProcess)
 bazelCmd workspaceDir outputUserRoot = do
     bazelPath <- getEnv "BIT_BAZEL_BINARY"
     config <- (fmap bazelConfig isNixpkgs)
+    let bazelConfigurableSubcommands =
+            ["aquery", "build", "canonicalize-flags", "clean", "coverage", "cquery", "info", "mobile-install", "print_action", "run", "test"]
     return (\args -> case args of
-        subcommand:xs | elem subcommand ["build", "test", "run", "query"] -> (Process.proc bazelPath (["--output_user_root", outputUserRoot, subcommand, "--config", config] ++ xs)) { Process.cwd = Just workspaceDir }
+        subcommand:xs | elem subcommand bazelConfigurableSubcommands -> (Process.proc bazelPath (["--output_user_root", outputUserRoot, subcommand, "--config", config] ++ xs)) { Process.cwd = Just workspaceDir }
         xs -> (Process.proc bazelPath (["--output_user_root", outputUserRoot] ++ xs)) { Process.cwd = Just workspaceDir })
 
 isNixpkgs = (elem "nixpkgs") <$> getArgs
