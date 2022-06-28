@@ -6,7 +6,7 @@ load(
 )
 load("@cgrindel_bazel_starlib//shlib/rules:execute_binary.bzl", "execute_binary")
 
-DEFAULT_TAGS = ["exclusive", "integration", "dont_test_on_windows"]
+DEFAULT_TAGS = ["exclusive", "integration"]
 DEFAULT_HASKELL_DEPS = [
     "//tests/integration_testing",
     "//tests/hackage:base",

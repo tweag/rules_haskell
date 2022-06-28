@@ -9,7 +9,7 @@ load(
     "SUPPORTED_NIXPKGS_BAZEL_PACKAGES",
 )
 load("//tests/integration_testing:dependencies.bzl", "nixpkgs_bazel_label")
-load("@os_info//:os_info.bzl", "is_nix_shell")
+load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 
 def rules_haskell_integration_test(
         name,
@@ -44,7 +44,7 @@ def rules_haskell_integration_test(
             additional_env_inherit = ["BAZEL_USE_CPP_ONLY_TOOLCHAIN"],
             **kwargs
         )
-    else:
+    elif not is_windows:
         haskell_bazel_integration_test(
             name = "%s_bindist" % name,
             srcs = srcs,
