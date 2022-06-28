@@ -30,6 +30,7 @@ bazelCmd workspaceDir outputUserRoot = do
         subcommand:xs | elem subcommand bazelConfigurableSubcommands -> (Process.proc bazelPath (["--output_user_root", outputUserRoot, subcommand, "--config", config] ++ xs)) { Process.cwd = Just workspaceDir }
         xs -> (Process.proc bazelPath (["--output_user_root", outputUserRoot] ++ xs)) { Process.cwd = Just workspaceDir })
 
+isNixpkgs :: IO Bool
 isNixpkgs = (elem "nixpkgs") <$> getArgs
 
 bazelConfig :: Bool -> String
