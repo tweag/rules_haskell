@@ -13,5 +13,4 @@ haskell_library(
         "@stackage//:hspec",
         "@stackage//:hspec-core",
     ],
-    # visibility = ["//visibility:public"],
 )
