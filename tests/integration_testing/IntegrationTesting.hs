@@ -10,7 +10,7 @@ module IntegrationTesting
     ) where
 
 import qualified System.Process as Process
-import System.Environment (getEnv, getArgs, unsetEnv)
+import System.Environment (getEnv, unsetEnv, lookupEnv)
 import System.Info (os)
 import System.FilePath (pathSeparators, (</>))
 import System.Directory (copyFile, doesDirectoryExist, doesFileExist, removePathForcibly, createDirectory, listDirectory, doesPathExist)
@@ -31,7 +31,10 @@ bazelCmd workspaceDir outputUserRoot = do
         xs -> (Process.proc bazelPath (["--output_user_root", outputUserRoot] ++ xs)) { Process.cwd = Just workspaceDir })
 
 isNixpkgs :: IO Bool
-isNixpkgs = (elem "nixpkgs") <$> getArgs
+isNixpkgs = lookupEnv "NIXPKGS" >>= \value ->
+    case value of
+        Just "1" -> pure True
+        _ -> pure False
 
 bazelConfig :: Bool -> String
 bazelConfig isnix

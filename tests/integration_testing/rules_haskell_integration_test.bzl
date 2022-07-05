@@ -33,7 +33,9 @@ def rules_haskell_integration_test(
             name = "%s_nixpkgs" % name,
             srcs = srcs,
             deps = deps,
-            args = ["nixpkgs"],
+            env = {
+                "NIXPKGS": "1",
+            },
             bazel_binaries = nixpkgs_bazel_binaries,
             workspace_path = workspace_path,
             rule_files = ["//:distribution"],
