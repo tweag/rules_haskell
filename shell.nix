@@ -35,8 +35,6 @@ mkShell {
     # check the start script for problems
     shellcheck
     file
-    # Needed for rules_bazel_integration_test
-    clang
   ] ++ lib.optionals docTools [graphviz python39Packages.sphinx zip unzip];
 
   shellHook = ''

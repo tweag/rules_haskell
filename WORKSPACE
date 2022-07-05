@@ -572,10 +572,10 @@ buildifier_dependencies()
 
 http_archive(
     name = "contrib_rules_bazel_integration_test",
-    sha256 = "24e5e8f388bec2da0975cfda6073ed0174a4f62cb874b5dc8037c98faa6acdfd",
-    strip_prefix = "rules_bazel_integration_test-0.7.0",
+    sha256 = "f80c4052df80e9099ed0f2f27ef4084604333566a7b028f524ceae6e5569b429",
+    strip_prefix = "rules_bazel_integration_test-7ee995a20bbaa2f6540103c63ff4891166133c2f",
     urls = [
-        "http://github.com/bazel-contrib/rules_bazel_integration_test/archive/v0.7.0.tar.gz",
+        "https://github.com/bazel-contrib/rules_bazel_integration_test/archive/7ee995a20bbaa2f6540103c63ff4891166133c2f.zip",
     ],
 )
 
