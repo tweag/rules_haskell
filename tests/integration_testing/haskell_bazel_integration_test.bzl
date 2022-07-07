@@ -10,6 +10,8 @@ DEFAULT_TAGS = ["exclusive", "integration"]
 DEFAULT_HASKELL_DEPS = [
     "//tests/integration_testing",
     "//tests/hackage:base",
+    "@stackage//:hspec",
+    "@stackage//:hspec-core",
 ]
 
 def haskell_bazel_integration_test(
