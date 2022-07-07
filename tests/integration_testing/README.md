@@ -54,9 +54,11 @@ So for example we can create the simplest scenario for `SomeTest.hs`:
 
 `SomeTest.hs`
 ```haskell
+import Test.Hspec (hspec, it)
 import IntegrationTesting
 
-main = do
+main = hspec $ do
+  it "bazel test" $ do
     bazel <- setupTestBazel
     assertSuccess $ bazel ["test", "//..."]
 ```
