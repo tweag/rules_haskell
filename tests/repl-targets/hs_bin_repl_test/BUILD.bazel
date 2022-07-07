@@ -1,0 +1,32 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_toolchain_library",
+)
+
+[
+    haskell_toolchain_library(name = name)
+    for name in [
+        "base",
+    ]
+]
+
+haskell_library(
+    name = "QuuxLib",
+    srcs = ["QuuxLib.hs"],
+    deps = [":base"],
+)
+
+haskell_test(
+    name = "hs-bin",
+    srcs = ["Quux.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":QuuxLib",
+        ":base",
+    ],
+)

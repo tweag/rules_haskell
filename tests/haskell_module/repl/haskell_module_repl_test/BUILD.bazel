@@ -1,0 +1,52 @@
+"""Test compilation of a multiple interdependent Haskell modules with only core-package dependencies."""
+
+load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_repl", "haskell_toolchain_library")
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+haskell_toolchain_library(name = "base")
+
+haskell_repl(
+    name = "repl",
+    deps = [":lib"],
+)
+
+haskell_module(
+    name = "root",
+    src = "Root.hs",
+)
+
+haskell_module(
+    name = "branch_left",
+    src = "BranchLeft.hs",
+    deps = [
+        ":root",
+    ],
+)
+
+haskell_module(
+    name = "branch_right",
+    src = "BranchRight.hs",
+    deps = [
+        ":root",
+    ],
+)
+
+haskell_module(
+    name = "leaf",
+    src = "Leaf.hs",
+    deps = [
+        ":branch_left",
+        ":branch_right",
+    ],
+)
+
+haskell_library(
+    name = "lib",
+    modules = [
+        ":root",
+        ":branch_left",
+        ":branch_right",
+        ":leaf",
+    ],
+    deps = [":base"],
+)

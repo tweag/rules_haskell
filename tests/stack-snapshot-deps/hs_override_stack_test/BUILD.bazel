@@ -1,0 +1,11 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+)
+
+haskell_test(
+    name = "hs-bin",
+    srcs = ["Quux.hs"],
+    visibility = ["//visibility:public"],
+    deps = ["@stackage//:base"],
+)

@@ -1,0 +1,16 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
+
+haskell_library(
+    name = "integration_testing",
+    srcs = ["IntegrationTesting.hs"],
+    visibility = ["//tests:__subpackages__"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:directory",
+        "//tests/hackage:filepath",
+        "//tests/hackage:process",
+        "//tests/hackage:text",
+        "@stackage//:hspec",
+        "@stackage//:hspec-core",
+    ],
+)
