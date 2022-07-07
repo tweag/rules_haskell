@@ -60,6 +60,11 @@ jobs:
             bazel build //docs:api_html
             bazel build //docs:guide_html
             '
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
   # test-nixpkgs-cross:
   #   name: Build & Test - Cross
