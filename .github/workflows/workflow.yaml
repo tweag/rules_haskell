@@ -113,7 +113,7 @@ jobs:
           sudo apt update && sudo apt install qemu-user-static
       - name: Run
         run: |
-          docker buildx build --platform arm64/linux -f examples/arm/Dockerfile .
+          docker build --platform arm64/linux -f examples/arm/Dockerfile .
 
   # test-bindist:
   #   name: Build & Test - bindist
