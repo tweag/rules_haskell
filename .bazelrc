@@ -68,7 +68,7 @@ build:ci-common --remote_timeout=3600
 # See https://github.com/tweag/rules_haskell/issues/1498.
 build:ci-common --keep_backend_build_event_connections_alive=false
 
-test:ci --test_output=errors
+test:ci-common --test_output=errors
 
 build:ci-linux-bindist --config=linux-bindist
 build:ci-linux-nixpkgs --config=linux-nixpkgs
