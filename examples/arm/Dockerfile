@@ -32,7 +32,7 @@ WORKDIR /build/examples/arm
 ENV USE_BAZEL_VERSION 5.2.0
 
 RUN . /home/builder/.nix-profile/etc/profile.d/nix.sh \
-    && nix-shell --pure --keep USE_BAZEL_VERSION --run "bazelisk build //... --config linux-nixpkgs"
+    && nix-shell --pure --keep USE_BAZEL_VERSION --run "/usr/bin/bazelisk build //... --config linux-nixpkgs"
 
 RUN . /home/builder/.nix-profile/etc/profile.d/nix.sh \
     && nix-shell --pure --run "bazel-bin/example"
