@@ -149,7 +149,7 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
     if repository_ctx.attr.target_constraints == [] and repository_ctx.attr.exec_constraints == []:
         cpu_value = get_cpu_value(repository_ctx)
         target_constraints = ["@platforms//cpu:{}".format(
-            "arm64" if "arm64" in cpu_value else "x86_64",
+            "arm64" if ("arm64" in cpu_value or "aarch64" in cpu_value) else "x86_64",
         )]
         if repository_ctx.os.name == "linux":
             target_constraints.append("@platforms//os:linux")
