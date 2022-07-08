@@ -103,6 +103,18 @@ jobs:
           nix-shell --arg docTools false --pure qemu-shell.nix --run "qemu-aarch64 bazel-ci-bin/example"
           nix-shell --arg docTools false --pure qemu-shell.nix --run "qemu-aarch64 bazel-ci-bin/example2"
 
+  test-arm64-linux:
+    name: Build & Test - Linux aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup
+        run: |
+          sudo apt update && sudo apt install qemu-user-static
+      - name: Run
+        run: |
+          docker buildx build --platform arm64/linux examples/arm/Dockerfile
+
   test-bindist:
     name: Build & Test - bindist
     strategy:
