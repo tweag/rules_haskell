@@ -1,7 +1,10 @@
 FROM ubuntu@sha256:0f744430d9643a0ec647a4addcac14b1fbb11424be434165c15e2cc7269f70f8 AS nix
 
+ADD https://github.com/bazelbuild/bazelisk/releases/download/v1.12.0/bazelisk-linux-arm64 /usr/bin/bazelisk
+
 RUN adduser builder \
     && install -d -m755 -o builder -g builder /nix \
+    && chmod +x /usr/bin/bazelisk \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
          ca-certificates=20211016 curl=7.81.0-1ubuntu1.3 git=1:2.34.1-1ubuntu1.2 xz-utils=5.2.5-2ubuntu1 \
@@ -25,8 +28,11 @@ COPY . /build/
 
 WORKDIR /build/examples/arm
 
+# running from qemu only works in Bazel 5.2+, see https://github.com/bazelbuild/bazel/pull/15223
+ENV USE_BAZEL_VERSION 5.2.0
+
 RUN . /home/builder/.nix-profile/etc/profile.d/nix.sh \
-    && nix-shell --pure --run "bazel build //... --config linux-nixpkgs"
+    && nix-shell --pure --keep USE_BAZEL_VERSION --run "bazelisk build //... --config linux-nixpkgs"
 
 RUN . /home/builder/.nix-profile/etc/profile.d/nix.sh \
     && nix-shell --pure --run "bazel-bin/example"
