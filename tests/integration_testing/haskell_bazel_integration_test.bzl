@@ -20,6 +20,7 @@ def haskell_bazel_integration_test(
         bazel_binaries,
         workspace_path,
         args = [],
+        env = {},
         deps = [],
         rule_files = [],
         **kwargs):
@@ -40,12 +41,13 @@ def haskell_bazel_integration_test(
         arguments = args,
     )
 
-    for bazel_name, bazel_binary in bazel_binaries.items():
+    for bazel_id, bazel_binary in bazel_binaries.items():
         bazel_integration_test(
-            name = "%s_%s" % (name, bazel_name),
+            name = "%s_%s" % (name, bazel_id),
             test_runner = runner_name,
             bazel_binary = bazel_binary,
             workspace_files = integration_test_utils.glob_workspace_files(workspace_path) + rule_files,
             workspace_path = workspace_path,
+            env = dict(env, **{"BIT_BAZEL_BIN_ID": bazel_id}),
             **kwargs
         )
