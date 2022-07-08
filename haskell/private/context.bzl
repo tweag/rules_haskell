@@ -52,6 +52,10 @@ def haskell_context(ctx, attr = None):
     if hasattr(ctx.executable, "_ghc_wrapper"):
         ghc_wrapper = ctx.executable._ghc_wrapper
 
+    ghc_wrapper_redirect = None
+    if hasattr(ctx.executable, "_ghc_wrapper_redirect"):
+        ghc_wrapper_redirect = ctx.executable._ghc_wrapper_redirect
+
     worker = getattr(ctx.executable, "worker", None)
 
     return HaskellContext(
@@ -61,6 +65,7 @@ def haskell_context(ctx, attr = None):
         toolchain = toolchain,
         tools = toolchain.tools,
         ghc_wrapper = ghc_wrapper,
+        ghc_wrapper_redirect = ghc_wrapper_redirect,
         worker = worker,
         package_ids = package_ids,
         src_root = src_root,

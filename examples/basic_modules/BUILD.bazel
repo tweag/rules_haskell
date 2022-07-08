@@ -1,0 +1,41 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+)
+load(
+    "@rules_haskell//haskell/experimental:defs.bzl",
+    "haskell_module",
+)
+
+haskell_library(
+    name = "basic_modules",
+    version = "0",
+    visibility = ["//visibility:public"],
+    ghcopts = ["-XNoImplicitPrelude"],
+    modules = [
+        ":A",
+        ":B",
+        ":C",
+    ],
+)
+
+haskell_module(
+    name = "A",
+    src = "src/A.hs",
+    src_strip_prefix = "src",
+    ghcopts = ["-O",],
+)
+
+haskell_module(
+    name = "B",
+    src = "src/B.hs",
+    src_strip_prefix = "src",
+    deps = [ ":A", ],
+)
+
+haskell_module(
+    name = "C",
+    src = "src/C.hs",
+    src_strip_prefix = "src",
+    deps = [ ":B", ],
+)

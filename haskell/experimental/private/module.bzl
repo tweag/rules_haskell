@@ -106,6 +106,7 @@ def _build_haskell_module(
         odir,
         module_outputs,
         interface_inputs,
+        abi_inputs,
         object_inputs,
         narrowed_objects,
         extra_ldflags_file,
@@ -310,6 +311,8 @@ def _build_haskell_module(
         args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
+    module_name = module.label.package.replace("/", "_") + "_" + module.label.name
+
     # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
@@ -328,6 +331,7 @@ def _build_haskell_module(
                 plugin_tool_inputs,
                 preprocessors_inputs,
                 interface_inputs,
+                abi_inputs,
             ] + [
                 files
                 for files in [
@@ -348,9 +352,27 @@ def _build_haskell_module(
         env = hs.env,
         arguments = args,
         extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
+        interface_inputs = interface_inputs,
+        module_name = module_name,
     )
 
     is_boot = _is_boot(src.path)
+
+    hs.toolchain.actions.readable_hi(
+        hs,
+        module_name = module_name,
+        inputs = [module_outputs.hi],
+        outputs = [module_outputs.readable_hi],
+        progress_message = "HaskellReadInterface {} {}".format(hs.label, module.label),
+    )
+
+    hs.toolchain.actions.create_abi(
+        hs,
+        inputs = [module_outputs.readable_hi],
+        outputs = [module_outputs.abi],
+        progress_message = "HaskellBuildAbi {} {}".format(hs.label, module.label),
+    )
+
     return struct(
         source_file = None if is_boot else src,
         boot_file = src if is_boot else None,
@@ -390,6 +412,8 @@ def _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, module
     extension_template = module_path + "." + extension_template
 
     hi = hs.actions.declare_file(paths.join(hidir, extension_template % "hi"))
+    readable_hi = hs.actions.declare_file(paths.join(hidir, extension_template % "readable_hi"))
+    abi = hs.actions.declare_file(paths.join(hidir, extension_template % "abi"))
     o = None if hs_boot else hs.actions.declare_file(paths.join(odir, extension_template % "o"))
     if with_shared:
         dyn_o = None if hs_boot else hs.actions.declare_file(paths.join(odir, extension_template % "dyn_o"))
@@ -397,11 +421,16 @@ def _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, module
     else:
         dyn_hi = None
         dyn_o = None
-    return struct(hi = hi, dyn_hi = dyn_hi, o = o, dyn_o = dyn_o)
+    return struct(hi = hi, dyn_hi = dyn_hi, o = o, dyn_o = dyn_o, abi = abi, readable_hi = readable_hi)
 
 def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
     his = [
         module_outputs[m.label].hi
+        for m in dep[HaskellModuleInfo].direct_module_deps
+        if m.label in module_outputs
+    ]
+    abis = [
+        module_outputs[m.label].abi
         for m in dep[HaskellModuleInfo].direct_module_deps
         if m.label in module_outputs
     ]
@@ -427,7 +456,7 @@ def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
         ]
     else:
         dyn_os = []
-    return his, os, dyn_os
+    return his, abis, os, dyn_os
 
 def _collect_module_inputs(module_input_map, extra_inputs, directs, dep):
     """ Put together inputs coming from direct and transitive dependencies.
@@ -543,7 +572,7 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
 
 def interfaces_as_list(with_shared, o):
     if with_shared:
-        return [o.hi, o.dyn_hi]
+        return [o.hi, o.dyn_hi, o.abi]
     else:
         return [o.hi]
 
@@ -635,8 +664,9 @@ def build_haskell_modules(
             # other modules that import this one and that might use TH
             narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_objects, dep)
 
-        his, os, dyn_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
+        his, abis, os, dyn_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
         interface_inputs = _collect_module_inputs(module_interfaces, narrowed_interfaces, his, dep)
+        abi_inputs = depset(direct = abis)
         object_inputs = depset(transitive = [
             _collect_module_inputs(module_objects, narrowed_objects, os, dep),
             _collect_module_inputs(module_dyn_objects, narrowed_objects, dyn_os, dep),
@@ -657,6 +687,7 @@ def build_haskell_modules(
             odir,
             module_outputs[dep.label],
             interface_inputs,
+            abi_inputs,
             object_inputs,
             narrowed_objects,
             extra_ldflags_file,
@@ -672,6 +703,7 @@ def build_haskell_modules(
 
     module_outputs_list = module_outputs.values()
     hi_set = depset([outputs.hi for outputs in module_outputs_list])
+    abi_set = depset([outputs.abi for outputs in module_outputs_list])
     o_set = depset([outputs.o for outputs in module_outputs_list if outputs.o])
     if with_shared:
         dyn_hi_set = depset([outputs.dyn_hi for outputs in module_outputs_list])
@@ -711,6 +743,7 @@ def build_haskell_modules(
         dyn_his = dyn_hi_set,
         os = o_set,
         dyn_os = dyn_o_set,
+        abis = abi_set,
         per_module_transitive_interfaces = per_module_transitive_interfaces0,
         per_module_transitive_objects = per_module_transitive_objects0,
         per_module_transitive_dyn_objects = per_module_transitive_dyn_objects0,
@@ -733,7 +766,8 @@ def haskell_module_impl(ctx):
         transitive = [dep[HaskellModuleInfo].transitive_module_dep_labels for dep in ctx.attr.deps],
         order = "postorder",
     )
-    return [
+
+    result = [
         DefaultInfo(),
         HaskellModuleInfo(
             attr = ctx.attr,
@@ -742,3 +776,5 @@ def haskell_module_impl(ctx):
             transitive_module_dep_labels = transitive_module_dep_labels,
         ),
     ]
+
+    return result
