@@ -10,6 +10,8 @@
 # in this file executes (and there's no way to execute it later; see first
 # paragraph above).
 
+load("//:bazel_versions.bzl", "SUPPORTED_BAZEL_VERSIONS")
+
 def _parse_version_chunk(version_chunk):
     """
     Args:
@@ -112,8 +114,8 @@ def check_bazel_version(minimum_bazel_version, maximum_bazel_version = None, baz
     return (True, "")
 
 def check_bazel_version_compatible(actual_version):
-    min_bazel = "4.0.0"  # Change THIS LINE when changing bazel min version
-    max_bazel = "4.2.2"  # Change THIS LINE when changing bazel max version
+    min_bazel = SUPPORTED_BAZEL_VERSIONS[0]
+    max_bazel = SUPPORTED_BAZEL_VERSIONS[-1]
 
     (compatible, msg) = check_bazel_version(min_bazel, max_bazel, actual_version)
 
