@@ -7,6 +7,11 @@ RUN adduser builder \
          ca-certificates=20211016 curl=7.81.0-1ubuntu1.3 git=1:2.34.1-1ubuntu1.2 xz-utils=5.2.5-2ubuntu1 \
     && rm -rf /var/lib/apt/lists/*
 
+# TODO: add extra substituters
+#    trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+#    extra-substituters = https://hydra.iohk.io
+
+
 USER builder
 ENV USER=builder
 
