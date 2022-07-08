@@ -88,17 +88,9 @@ haskell_register_ghc_nixpkgs(
 )
 
 haskell_register_ghc_nixpkgs(
-    name = "x86",
+    name = "haskell_compiler",
     attribute_path = "haskell.compiler.ghc8104",
-    exec_constraints = [
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ],
     repositories = {"nixpkgs": "@nixpkgs"},
-    target_constraints = [
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ],
     version = "8.10.4",
 )
 
