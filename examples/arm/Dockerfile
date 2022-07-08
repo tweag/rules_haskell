@@ -18,9 +18,13 @@ FROM nix AS builder
 
 COPY . /build/
 
-WORKDIR /build/example/arm
+WORKDIR /build/examples/arm
 
-RUN nix-shell --pure --run "bazel build //... --config linux-nixpkgs"
+RUN . /home/builder/.nix-profile/etc/profile.d/nix.sh \
+    && nix-shell --pure --run "bazel build //... --config linux-nixpkgs"
 
-RUN nix-shell --pure --run "bazel-bin/example"
-RUN nix-shell --pure --run "bazel-bin/example2"
+RUN . /home/builder/.nix-profile/etc/profile.d/nix.sh \
+    && nix-shell --pure --run "bazel-bin/example"
+
+RUN . /home/builder/.nix-profile/etc/profile.d/nix.sh \
+    && nix-shell --pure --run "bazel-bin/example2"
