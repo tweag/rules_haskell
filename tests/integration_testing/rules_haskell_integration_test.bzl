@@ -20,11 +20,11 @@ def rules_haskell_integration_test(
         nixpkgs_bazel_packages = SUPPORTED_NIXPKGS_BAZEL_PACKAGES,
         **kwargs):
     bindist_bazel_binaries = {
-        version: integration_test_utils.bazel_binary_label(version)
+        version.replace(".", "_"): integration_test_utils.bazel_binary_label(version)
         for version in bindist_bazel_versions
     }
     nixpkgs_bazel_binaries = {
-        package: nixpkgs_bazel_label(package)
+        package.replace(".", "_"): nixpkgs_bazel_label(package)
         for package in nixpkgs_bazel_packages
     }
 
