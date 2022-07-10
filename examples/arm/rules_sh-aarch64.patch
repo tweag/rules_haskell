@@ -1,0 +1,12 @@
+diff --git a/sh/posix.bzl b/sh/posix.bzl
+index 398f526..8116880 100644
+--- a/sh/posix.bzl
++++ b/sh/posix.bzl
+@@ -325,6 +325,7 @@ toolchain(
+         arch = {
+             "darwin_arm64": "arm64",
+             "arm64_windows": "arm64",
++            "aarch64": "arm64",
+         }.get(cpu, "x86_64"),
+         os = {
+             "darwin": "osx",
