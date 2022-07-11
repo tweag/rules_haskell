@@ -10,7 +10,14 @@
 # in this file executes (and there's no way to execute it later; see first
 # paragraph above).
 
-load("//:bazel_versions.bzl", "SUPPORTED_BAZEL_VERSIONS")
+SUPPORTED_BAZEL_VERSIONS = [
+    "4.0.0",
+    "4.2.2",
+]
+
+SUPPORTED_NIXPKGS_BAZEL_PACKAGES = [
+    "bazel_4",
+]
 
 def _parse_version_chunk(version_chunk):
     """
