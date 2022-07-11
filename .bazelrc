@@ -61,8 +61,8 @@ build:ci-common --experimental_repository_cache_hardlinks
 
 # Use a remote cache during CI
 build:ci-common --bes_results_url=https://app.buildbuddy.io/invocation/
-build:ci-common --bes_backend=grpcs://cloud.buildbuddy.io
-build:remote-cache --remote_cache=grpcs://cloud.buildbuddy.io
+build:ci-common --bes_backend=grpcs://remote.buildbuddy.io
+build:remote-cache --remote_cache=grpcs://remote.buildbuddy.io
 build:ci-common --remote_timeout=3600
 # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
 # See https://github.com/tweag/rules_haskell/issues/1498.
