@@ -82,11 +82,12 @@ generateBazelRc dir = do
 setupWorkspace :: IO (String, String)
 setupWorkspace = do
     workspaceDir <- getEnv "BIT_WORKSPACE_DIR"
+    bazelBinId <- getEnv "BIT_BAZEL_BIN_ID"
     outputBase <- outputBaseDir
     runfilesDir <- getEnv "RUNFILES_DIR"
     let execDir = outputBase </> "bazel_testing"
     createDirIfNotExist execDir
-    let newWorkspaceDir = execDir </> "main"
+    let newWorkspaceDir = execDir </> bazelBinId
     let outputUserRoot = outputBase
     removeDirIfExist newWorkspaceDir
     copyDirectoryRecursive workspaceDir newWorkspaceDir
