@@ -2,7 +2,7 @@ diff --git a/toolchains/cc/cc.nix b/toolchains/cc/cc.nix
 index 7e40547..e01e11f 100644
 --- a/toolchains/cc/cc.nix
 +++ b/toolchains/cc/cc.nix
-@@ -27,8 +27,8 @@ let
+@@ -27,8 +27,9 @@ let
      # Work around https://github.com/NixOS/nixpkgs/issues/42059.
      # See also https://github.com/NixOS/nixpkgs/pull/41589.
      pkgs.wrapCCWith rec {
@@ -13,6 +13,7 @@ index 7e40547..e01e11f 100644
        extraBuildCommands = with pkgs.darwin.apple_sdk.frameworks; ''
          echo "-Wno-unused-command-line-argument" >> $out/nix-support/cc-cflags
          echo "-isystem ${pkgs.llvmPackages.libcxx.dev}/include/c++/v1" >> $out/nix-support/cc-cflags
++        echo "-resource-dir=${pkgs.stdenv.cc}/resource-root" >> $out/nix-support/cc-cflags
 @@ -41,12 +41,6 @@ let
          echo "-L${pkgs.llvmPackages.libcxxabi}/lib" >> $out/nix-support/cc-cflags
          echo "-L${pkgs.libiconv}/lib" >> $out/nix-support/cc-cflags
