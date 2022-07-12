@@ -71,40 +71,52 @@ def _run_ghc(
     hs.actions.write(compile_flags_file, args)
     hs.actions.write(extra_args_file, arguments)
 
-    unused_inputs_list = hs.actions.declare_file("unused_%s_%s" % (hs.name, extra_name))
-    unused_inputs_args = hs.actions.args()
-    unused_inputs_args.set_param_file_format("multiline")
-    unused_inputs_args.add_all(interface_inputs)
-    hs.actions.write(unused_inputs_list, unused_inputs_args)
-
     if abi_file != None:
+        # We declare the 2 files containing informations about the call to GHC with --show-iface.
         compiler_file = hs.actions.declare_file("compiler_%s" % (hs.name))
         flags_file = hs.actions.declare_file("flags_%s_%s" % (hs.name, extra_name))
 
+        # The first one contains the path to GHC
         ghc_args = hs.actions.args()
         ghc_args.set_param_file_format("multiline")
         ghc_args.add(hs.tools.ghc.path)
+        hs.actions.write(compiler_file, ghc_args)
 
+        # The second one contains the "--show-iface" option and the name of the hi file.
         flag_args = hs.actions.args()
         flag_args.set_param_file_format("multiline")
         flag_args.add("--show-iface ")
         flag_args.add(hi_file.path)
-
-        hs.actions.write(compiler_file, ghc_args)
         hs.actions.write(flags_file, flag_args)
 
-        extra_inputs += [hs.tools.ghc, compiler_file, flags_file]
-        outputs += [abi_file, readable_hi_file]
+        # We create a file containing the name of all the interface files which should not be considered
+        # by the caching mechanism to know if recompilation should be triggered.
+        # This behaivour is extensively described in the comment "On ABI hash" in haskell/experimaental/private/module.bzl
+        interface_with_abis_list = hs.actions.declare_file("interfaces_%s_%s" % (hs.name, extra_name))
+        interface_with_abis_args = hs.actions.args()
+        interface_with_abis_args.set_param_file_format("multiline")
+        interface_with_abis_args.add_all(interface_inputs)
+        hs.actions.write(interface_with_abis_list, interface_with_abis_args)
+
+        # The interface_with_abis_list should be used as unused_inputs_list.
+        # However, since it is more traditional to generate the unused_inputs_list within the action itself,
+        # and this proposition is already quite hackish, we wanted to stick to the usage,
+        # expecting it to offer us a stronger reliability, even with the future evolution of Bazel.
+        unused_inputs_list = hs.actions.declare_file("unused_%s_%s" % (hs.name, extra_name))
+
+        extra_inputs += [compiler_file, flags_file, interface_with_abis_list]
+        outputs += [abi_file, readable_hi_file, unused_inputs_list]
         env.update({"MUST_EXTRACT_ABI": "true"})
-        new_args = [compiler_file.path, flags_file.path, readable_hi_file.path, abi_file.path]
+
+        new_args = [compiler_file.path, flags_file.path, readable_hi_file.path, abi_file.path, interface_with_abis_list.path, unused_inputs_list.path]
     else:
         env.update({"MUST_EXTRACT_ABI": "false"})
         new_args = []
+        unused_inputs_list = None
 
     extra_inputs += [
         compile_flags_file,
         extra_args_file,
-        unused_inputs_list,
     ] + cc.files + hs.toolchain.bindir + hs.toolchain.libdir
 
     if hs.toolchain.locale_archive != None:

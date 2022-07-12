@@ -56,5 +56,11 @@ else
         # The last step is to extract the ABI hash from the textual version of the interface
 
         sed -n "s/^\s*ABI hash:\s*\(\S*\)$/\1/p" "$5" > "$6"
+
+        # We then copy the interface_inputs_list in the unused_inputs_list.
+        # The seventh argument contains the name of the file containing the list of interfaces
+        #   which should be ignored by the caching mechanism to know if recompilation should be triggered.
+        # The eighth argument contains the name of the file used as unused_inputs_list.
+        cp "$7" "$8"
     fi
 fi
