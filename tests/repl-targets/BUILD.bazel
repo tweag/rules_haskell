@@ -113,6 +113,10 @@ rules_haskell_integration_test(
 rules_haskell_integration_test(
     name = "hs_lib_repl_test",
     srcs = ["HsLibReplTest.hs"],
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1779
+        "dont_test_on_darwin_with_bindist",
+    ],
     workspace_path = "hs_lib_repl_test",
 )
 
