@@ -42,8 +42,7 @@ def _run_ghc(
         extra_name = "",
         hi_file = None,
         readable_hi_file = None,
-        abi_file = None,
-        ):
+        abi_file = None):
     args = hs.actions.args()
     extra_inputs = []
 
@@ -101,7 +100,6 @@ def _run_ghc(
     else:
         env.update({"MUST_EXTRACT_ABI": "false"})
         new_args = []
-
 
     extra_inputs += [
         compile_flags_file,
