@@ -1,7 +1,7 @@
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
 load("@contrib_rules_bazel_integration_test//bazel_integration_test:defs.bzl", "bazel_binaries")
 load(
-    "//:bazel_versions.bzl",
+    "//haskell:private/versions.bzl",
     "SUPPORTED_BAZEL_VERSIONS",
     "SUPPORTED_NIXPKGS_BAZEL_PACKAGES",
 )
