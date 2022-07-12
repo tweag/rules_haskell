@@ -24,11 +24,6 @@ genrule(
 c2hs_library(
     name = "chs",
     srcs = ["Chs.chs"],
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
 )
 
 haskell_library(
@@ -38,11 +33,6 @@ haskell_library(
         "Hsc.hsc",
         ":chs",
         ":codegen",
-    ],
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -123,11 +113,6 @@ rules_haskell_integration_test(
 rules_haskell_integration_test(
     name = "hs_lib_repl_test",
     srcs = ["HsLibReplTest.hs"],
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
     workspace_path = "hs_lib_repl_test",
 )
 
