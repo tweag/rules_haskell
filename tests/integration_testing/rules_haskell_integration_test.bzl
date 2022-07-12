@@ -4,7 +4,7 @@ load(
     "integration_test_utils",
 )
 load(
-    "//:bazel_versions.bzl",
+    "//haskell:private/versions.bzl",
     "SUPPORTED_BAZEL_VERSIONS",
     "SUPPORTED_NIXPKGS_BAZEL_PACKAGES",
 )
