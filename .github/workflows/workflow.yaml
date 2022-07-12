@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Mount Bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Mount Bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
@@ -113,7 +113,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Mount Bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
