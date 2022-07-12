@@ -70,11 +70,6 @@ haskell_module(
 c2hs_library(
     name = "c2hs-lib",
     srcs = ["C2hsLib.chs"],
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
     version = "4.5.6.7",
     deps = [
         ":versioned-lib",
@@ -90,11 +85,6 @@ haskell_test(
         ":c2hs-lib",
     ],
     main_file = "MainC2hs.hs",
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
     version = "4.5.6.7",
     visibility = ["//tests/asterius/version-macros:__pkg__"],
     deps = [

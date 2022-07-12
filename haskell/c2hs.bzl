@@ -42,7 +42,7 @@ def _c2hs_library_impl(ctx):
     args.add_all([chs_file.path, "-o", hs_file.path])
 
     args.add("-C-E")
-    args.add_all(["--cpp", cc.tools.cpp])
+    args.add_all(["--cpp", cc.tools.cc])
     args.add("-C-includeghcplatform.h")
     args.add("-C-includeghcversion.h")
     args.add_all(["-C" + x for x in cc.cpp_flags])
