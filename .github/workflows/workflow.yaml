@@ -13,7 +13,7 @@ jobs:
         os: [ubuntu-latest, macos-10.15]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Mount Bazel cache
         uses: actions/cache@v3
         with:
@@ -64,7 +64,7 @@ jobs:
     name: Build & Test - Cross
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Mount Bazel cache
         uses: actions/cache@v3
         with:
@@ -111,7 +111,7 @@ jobs:
         os: [ubuntu-latest, macos-10.15, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Mount Bazel cache
         uses: actions/cache@v3
         with:
