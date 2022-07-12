@@ -351,27 +351,14 @@ def _build_haskell_module(
         progress_message = "HaskellBuildObject {} {}".format(hs.label, module.label),
         env = hs.env,
         arguments = args,
-        extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
         interface_inputs = interface_inputs,
-        module_name = module_name,
+        extra_name = module_name,
+        hi_file = module_outputs.hi,
+        readable_hi_file = module_outputs.readable_hi,
+        abi_file = module_outputs.abi,
     )
 
     is_boot = _is_boot(src.path)
-
-    hs.toolchain.actions.readable_hi(
-        hs,
-        module_name = module_name,
-        inputs = [module_outputs.hi],
-        outputs = [module_outputs.readable_hi],
-        progress_message = "HaskellReadInterface {} {}".format(hs.label, module.label),
-    )
-
-    hs.toolchain.actions.create_abi(
-        hs,
-        inputs = [module_outputs.readable_hi],
-        outputs = [module_outputs.abi],
-        progress_message = "HaskellBuildAbi {} {}".format(hs.label, module.label),
-    )
 
     return struct(
         source_file = None if is_boot else src,
@@ -574,7 +561,7 @@ def interfaces_as_list(with_shared, o):
     if with_shared:
         return [o.hi, o.dyn_hi, o.abi]
     else:
-        return [o.hi]
+        return [o.hi, o.abi]
 
 def build_haskell_modules(
         ctx,

@@ -100,11 +100,6 @@ _haskell_common_attrs = {
         cfg = "host",
         default = Label("@rules_haskell//haskell:ghc_wrapper"),
     ),
-    "_ghc_wrapper_redirect": attr.label(
-        executable = True,
-        cfg = "host",
-        default = Label("@rules_haskell//haskell:ghc_wrapper_redirect"),
-    ),
     "worker": attr.label(
         default = None,
         executable = True,

@@ -44,11 +44,6 @@ _haskell_module = rule(
             cfg = "host",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
-        "_ghc_wrapper_redirect": attr.label(
-            executable = True,
-            cfg = "host",
-            default = Label("@rules_haskell//haskell:ghc_wrapper_redirect"),
-        ),
         # TODO[AH] Suppport worker
     },
     toolchains = [

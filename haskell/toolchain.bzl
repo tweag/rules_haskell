@@ -27,44 +27,6 @@ load(
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
-def _create_abi(hs, inputs, outputs, progress_message = None):
-    hs.actions.run_shell(
-        inputs = inputs,
-        outputs = outputs,
-        command =
-            """sed -n "s/^\\s*ABI hash:\\s*\\(\\S*\\)$/\\1/p" {readable_hi_input} > {abi_output}""".format(
-                ghc = hs.tools.ghc.path,
-                readable_hi_input = inputs[0].path,
-                abi_output = outputs[0].path,
-            ),
-        progress_message = progress_message,
-    )
-
-def _readable_hi(hs, module_name, inputs, outputs, progress_message = None):
-    compiler_file = hs.actions.declare_file("compiler_%s" % (hs.name))
-    flags_file = hs.actions.declare_file("flags_%s_%s" % (hs.name, module_name))
-
-    ghc_args = hs.actions.args()
-    ghc_args.set_param_file_format("multiline")
-    ghc_args.add(hs.tools.ghc.path)
-
-    flag_args = hs.actions.args()
-    flag_args.set_param_file_format("multiline")
-    flag_args.add("--show-iface ")
-    flag_args.add(inputs[0].path)
-
-    hs.actions.write(compiler_file, ghc_args)
-    hs.actions.write(flags_file, flag_args)
-
-    hs.actions.run(
-        inputs = inputs + [hs.tools.ghc, compiler_file, flags_file],
-        outputs = outputs,
-        executable = hs.ghc_wrapper_redirect,
-        progress_message = progress_message,
-        arguments = [compiler_file.path, flags_file.path, outputs[0].path],
-        env = hs.env,
-    )
-
 def _run_ghc(
         hs,
         cc,
@@ -76,9 +38,12 @@ def _run_ghc(
         params_file = None,
         progress_message = None,
         input_manifests = None,
-        extra_name = "",
         interface_inputs = [],
-        module_name = ""):
+        extra_name = "",
+        hi_file = None,
+        readable_hi_file = None,
+        abi_file = None,
+        ):
     args = hs.actions.args()
     extra_inputs = []
 
@@ -107,11 +72,36 @@ def _run_ghc(
     hs.actions.write(compile_flags_file, args)
     hs.actions.write(extra_args_file, arguments)
 
-    unused_inputs_list = hs.actions.declare_file("unused_%s_%s" % (hs.name, module_name))
+    unused_inputs_list = hs.actions.declare_file("unused_%s_%s" % (hs.name, extra_name))
     unused_inputs_args = hs.actions.args()
     unused_inputs_args.set_param_file_format("multiline")
     unused_inputs_args.add_all(interface_inputs)
     hs.actions.write(unused_inputs_list, unused_inputs_args)
+
+    if abi_file != None:
+        compiler_file = hs.actions.declare_file("compiler_%s" % (hs.name))
+        flags_file = hs.actions.declare_file("flags_%s_%s" % (hs.name, extra_name))
+
+        ghc_args = hs.actions.args()
+        ghc_args.set_param_file_format("multiline")
+        ghc_args.add(hs.tools.ghc.path)
+
+        flag_args = hs.actions.args()
+        flag_args.set_param_file_format("multiline")
+        flag_args.add("--show-iface ")
+        flag_args.add(hi_file.path)
+
+        hs.actions.write(compiler_file, ghc_args)
+        hs.actions.write(flags_file, flag_args)
+
+        extra_inputs += [hs.tools.ghc, compiler_file, flags_file]
+        outputs += [abi_file, readable_hi_file]
+        env.update({"MUST_EXTRACT_ABI": "true"})
+        new_args = [compiler_file.path, flags_file.path, readable_hi_file.path, abi_file.path]
+    else:
+        env.update({"MUST_EXTRACT_ABI": "false"})
+        new_args = []
+
 
     extra_inputs += [
         compile_flags_file,
@@ -149,7 +139,7 @@ def _run_ghc(
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = [compile_flags_file.path, flagsfile_prefix + flagsfile.path],
+        arguments = [compile_flags_file.path, flagsfile_prefix + flagsfile.path] + new_args,
         execution_requirements = execution_requirements,
         unused_inputs_list = unused_inputs_list,
     )
@@ -312,8 +302,6 @@ def _haskell_toolchain_impl(ctx):
                 link_library_static = link_library_static,
                 package = package,
                 run_ghc = _run_ghc,
-                readable_hi = _readable_hi,
-                create_abi = _create_abi,
             ),
             libraries = libraries,
             is_darwin = ctx.attr.is_darwin,
