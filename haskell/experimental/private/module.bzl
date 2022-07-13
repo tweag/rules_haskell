@@ -708,6 +708,7 @@ def build_haskell_modules(
         # called in all cases to validate cross_library_deps, although the output
         # might be ignored when disabling narrowing
         narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_interfaces, dep)
+
         # See Note [On the ABI hash]
         narrowed_abis = _collect_narrowed_direct_deps(ctx.label, per_module_maps.abis, dep)
         enable_th = dep[HaskellModuleInfo].attr.enable_th

@@ -9,33 +9,33 @@ load(
 
 haskell_library(
     name = "basic_modules",
-    version = "0",
-    visibility = ["//visibility:public"],
     ghcopts = ["-XNoImplicitPrelude"],
     modules = [
         ":A",
         ":B",
         ":C",
     ],
+    version = "0",
+    visibility = ["//visibility:public"],
 )
 
 haskell_module(
     name = "A",
     src = "src/A.hs",
+    ghcopts = ["-O"],
     src_strip_prefix = "src",
-    ghcopts = ["-O",],
 )
 
 haskell_module(
     name = "B",
     src = "src/B.hs",
     src_strip_prefix = "src",
-    deps = [ ":A", ],
+    deps = [":A"],
 )
 
 haskell_module(
     name = "C",
     src = "src/C.hs",
     src_strip_prefix = "src",
-    deps = [ ":B", ],
+    deps = [":B"],
 )
