@@ -8,8 +8,8 @@ load(
     "check_bazel_version_compatible",
 )
 
-_rules_nixpkgs_version = "946def9f84deb0829126938e1cc2741fed6054a0"
-_rules_nixpkgs_sha256 = "785600c74e6885ec5536c3ef5b881e6118677f48c6e5870759e0ecdeaa3f3ec3"
+_rules_nixpkgs_version = "2ba30bdbd5fe9b0c8039c52a222bc1fc2abe6b04"
+_rules_nixpkgs_sha256 = "e5d28ebe3fa20b7a4c30d1b5e72438b0454956c7a91f1f31af58e7a597acad73"
 
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
