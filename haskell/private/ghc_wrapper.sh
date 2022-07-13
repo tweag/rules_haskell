@@ -51,12 +51,12 @@ else
         abi="$4"
 
         # This is the generation of the readable interface.
-        "${compile_show_iface[@]}" > $readable_hi 2>&1 \
+        "${compile_show_iface[@]}" > "$readable_hi" 2>&1 \
             | drop_loaded_and_warning >&2
 
         # The last step is to extract the ABI hash from the textual version of the interface
 
-        sed -n "s/^\s*ABI hash:\s*\(\S*\)$/\1/p" $readable_hi > $abi
+        sed -n "s/^\s*ABI hash:\s*\(\S*\)$/\1/p" "$readable_hi" > "$abi"
 
         # We then copy the interface_inputs_list in the unused_inputs_list.
         # The fifth argument contains the name of the file containing the list of interfaces
