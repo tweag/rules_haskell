@@ -583,41 +583,56 @@ def interfaces_as_list(with_shared, o):
 
 # Note [On the ABI hash]
 #
-# The ABI hash is contained in the interface file and is the piece of information used by GHC to know if recompilation is necessary.
-# The details on GHC recompilation avoidance can be found at:
+# The ABI hash is contained in the interface file and is the piece of
+# information used by GHC to know if recompilation is necessary. The
+# details on GHC recompilation avoidance can be found at:
 # https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/recompilation-avoidance
 #
-# Whenever one compiles a module, it produces an interface file, which contains a lot of information,
-# is modified often and is required to compile the files which depends of this module
-# and an ABI hash which contains the minimal information required to know if recompilation is required and is modified less often.
+# Whenever one compiles a module, it produces an interface file which
+# contains a lot of information. It is modified often and it is
+# required to compile the files which depend on this module. The
+# interface file contains an ABI hash computed from the minimal
+# information required to know if recompilation is required and is
+# modified less often.
 #
-# So the goal is to set the inputs of a module in order to know if a recompilation is required,
-# and in case it is, to retrigger it.
-# To do so, the run_ghc action takes as input not only the transitive closure of the interface files required,
-# but also the ABI files of the direct dependencies of the module.
-# Then, we use the unused_inputs_list to pretend that interface files are "unused",
-# hence the caching mechanism of Bazel will not detect changes in the interface files that did not affect the ABI hashes,
-# saving us some useless compilation.
-# On the other hand, when the ABI hash has changed, since the interface files are provided in the inputs,
-# Bazel won't blame us for lying to it and will gladly use the interface files to rebuild the target.
+# We aim to recompile only when the ABI hash changes. So we set the
+# inputs of a module to signal this to bazel. The run_ghc action takes
+# as input not only the transitive closure of the interface files
+# required, but also the ABI files of the direct dependencies of the
+# module. Then, we use the unused_inputs_list to pretend that the
+# interface files are "unused", hence the caching mechanism of Bazel
+# will not rebuild on changes to the interface files that do not
+# affect the ABI hashes, thus saving us some useless compilation.
 #
-# WARNING: This deflect the documented use of unused_inputs_list, but seems to be working quite effectively on the tested examples.
+# On the other hand, when the ABI hash changes, bazel will rebuild
+# modules because they have been fed as inputs.
 #
-# There are 3 cases:
+# WARNING: We realize this deviates from the intended use of
+# unused_inputs_list, but there doesn't seem to be another way to
+# signal to bazel which changes on an input are irrelevant and which
+# changes require recompilation.
+#
+# There are 3 cases of imports that build_haskell_modules handles:
 #  - When the module imports modules from the current library,
-#    its interface file is in interface_inputs, which is the unused_inputs_list passed to run_ghc,
-#    and the abi files are in abi_inputs, hence passed as inputs.
+#    their interface files are in interface_inputs, which is the
+#    unused_inputs_list passed to run_ghc, and the abi files are
+#    in abi_inputs, hence passed as inputs too.
 #  - When the module imports modules from other narrowed libraries,
-#    its interface file is in interface_inputs, which is the unused_inputs_list passed to run_ghc.
-#    It should pass as input to the ghc_wrapper the abi files of the modules that it imports directly from those libraries.
-#    Those are the narrowed_abis which is also in abi_inputs
+#    their interface files are in interface_inputs as well.
+#    In this case we should pass as inputs to the ghc_wrapper the
+#    abi files of the modules that it imports directly from those
+#    libraries. Those are the narrowed_abis which are also in
+#    abi_inputs.
 #  - When the module imports modules from other non-narrowed libraries
-#    (e.g. base, haskell_cabal_librarys, or haskell_librarys that don't use the modules attribute),
-#    there is no information available about which of these libraries provide which of the modules that aren't from the enclosing library
-#    or from narrowed libraries.
+#    (e.g. base, haskell_cabal_librarys, or haskell_librarys that
+#    don't use the modules attribute), there is no information
+#    available about which of these libraries provide which of the
+#    modules that aren't from the enclosing library or from narrowed
+#    libraries.
 #    In this scenario, we can't produce abi files for these modules,
 #    but on the other hand their interface files are stored in dep_info_i,
-#    which is not passed to unused_inputs_list.
+#    which is not passed to unused_inputs_list. The net effect is that
+#    modules are recompiled if any non-narrowed libraries are changed.
 
 def build_haskell_modules(
         ctx,
@@ -693,6 +708,7 @@ def build_haskell_modules(
         # called in all cases to validate cross_library_deps, although the output
         # might be ignored when disabling narrowing
         narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_interfaces, dep)
+        # See Note [On the ABI hash]
         narrowed_abis = _collect_narrowed_direct_deps(ctx.label, per_module_maps.abis, dep)
         enable_th = dep[HaskellModuleInfo].attr.enable_th
 
