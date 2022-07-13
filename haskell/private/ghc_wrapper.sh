@@ -43,24 +43,25 @@ else
     then
         # The next step is to generate a human-readable interface file.
 
-        # We generate the call to `ghc --show-iface module_name.hi` from the 2 files passed as third and forth argument.
+        # We generate the call to `ghc --show-iface module_name.hi` from the file passed as third argument.
         while IFS= read -r line; do compile_show_iface+=("$line"); done < "$3"
-        while IFS= read -r line; do show_iface_args+=("$line"); done < "$4"
+
+        # The fourth argument contains the name of the file in which ABI hash should be written.
+        readable_hi="$4.readable_hi"
+        abi="$4"
 
         # This is the generation of the readable interface.
-        # The fifth argument contains the name of the file in which the human-readable interface is written.
-        # The sixth argument contains the name of the file in which the ABI hash is written.
-        "${compile_show_iface[@]}" "${show_iface_args[@]}" > "$5" 2>&1 \
+        "${compile_show_iface[@]}" > $readable_hi 2>&1 \
             | drop_loaded_and_warning >&2
 
         # The last step is to extract the ABI hash from the textual version of the interface
 
-        sed -n "s/^\s*ABI hash:\s*\(\S*\)$/\1/p" "$5" > "$6"
+        sed -n "s/^\s*ABI hash:\s*\(\S*\)$/\1/p" $readable_hi > $abi
 
         # We then copy the interface_inputs_list in the unused_inputs_list.
-        # The seventh argument contains the name of the file containing the list of interfaces
+        # The fifth argument contains the name of the file containing the list of interfaces
         #   which should be ignored by the caching mechanism to know if recompilation should be triggered.
-        # The eighth argument contains the name of the file used as unused_inputs_list.
-        cp "$7" "$8"
+        # The sixth argument contains the name of the file used as unused_inputs_list.
+        cp "$5" "$6"
     fi
 fi

@@ -41,7 +41,6 @@ def _run_ghc(
         interface_inputs = [],
         extra_name = "",
         hi_file = None,
-        readable_hi_file = None,
         abi_file = None):
     args = hs.actions.args()
     extra_inputs = []
@@ -72,26 +71,18 @@ def _run_ghc(
     hs.actions.write(extra_args_file, arguments)
 
     if abi_file != None:
-        # We declare the 2 files containing informations about the call to GHC with --show-iface.
-        compiler_file = hs.actions.declare_file("compiler_%s" % (hs.name))
-        flags_file = hs.actions.declare_file("flags_%s_%s" % (hs.name, extra_name))
-
-        # The first one contains the path to GHC
-        ghc_args = hs.actions.args()
-        ghc_args.set_param_file_format("multiline")
-        ghc_args.add(hs.tools.ghc.path)
-        hs.actions.write(compiler_file, ghc_args)
-
-        # The second one contains the "--show-iface" option and the name of the hi file.
-        flag_args = hs.actions.args()
-        flag_args.set_param_file_format("multiline")
-        flag_args.add("--show-iface ")
-        flag_args.add(hi_file.path)
-        hs.actions.write(flags_file, flag_args)
+        # We declare the file containing informations about the call to GHC with --show-iface.
+        show_iface_file = hs.actions.declare_file("show_iface_%s_%s" % (hs.name, extra_name))
+        show_iface_args = hs.actions.args()
+        show_iface_args.set_param_file_format("multiline")
+        show_iface_args.add(hs.tools.ghc.path)
+        show_iface_args.add("--show-iface ")
+        show_iface_args.add(hi_file.path)
+        hs.actions.write(show_iface_file, show_iface_args)
 
         # We create a file containing the name of all the interface files which should not be considered
         # by the caching mechanism to know if recompilation should be triggered.
-        # This behaivour is extensively described in the comment "On ABI hash" in haskell/experimaental/private/module.bzl
+        # This behaivour is extensively described in the Note [On the ABI hash] in haskell/experimaental/private/module.bzl
         interface_with_abis_list = hs.actions.declare_file("interfaces_%s_%s" % (hs.name, extra_name))
         interface_with_abis_args = hs.actions.args()
         interface_with_abis_args.set_param_file_format("multiline")
@@ -104,11 +95,11 @@ def _run_ghc(
         # expecting it to offer us a stronger reliability, even with the future evolution of Bazel.
         unused_inputs_list = hs.actions.declare_file("unused_%s_%s" % (hs.name, extra_name))
 
-        extra_inputs += [compiler_file, flags_file, interface_with_abis_list]
-        outputs += [abi_file, readable_hi_file, unused_inputs_list]
+        extra_inputs += [show_iface_file, interface_with_abis_list]
+        outputs += [abi_file, unused_inputs_list]
         env.update({"MUST_EXTRACT_ABI": "true"})
 
-        new_args = [compiler_file.path, flags_file.path, readable_hi_file.path, abi_file.path, interface_with_abis_list.path, unused_inputs_list.path]
+        new_args = [show_iface_file.path, abi_file.path, interface_with_abis_list.path, unused_inputs_list.path]
     else:
         env.update({"MUST_EXTRACT_ABI": "false"})
         new_args = []

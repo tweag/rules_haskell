@@ -354,7 +354,6 @@ def _build_haskell_module(
         interface_inputs = interface_inputs,
         extra_name = module_name,
         hi_file = module_outputs.hi,
-        readable_hi_file = module_outputs.readable_hi,
         abi_file = module_outputs.abi,
     )
 
@@ -399,7 +398,6 @@ def _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, module
     extension_template = module_path + "." + extension_template
 
     hi = hs.actions.declare_file(paths.join(hidir, extension_template % "hi"))
-    readable_hi = hs.actions.declare_file(paths.join(hidir, extension_template % "readable_hi"))
     abi = hs.actions.declare_file(paths.join(hidir, extension_template % "abi"))
     o = None if hs_boot else hs.actions.declare_file(paths.join(odir, extension_template % "o"))
     if with_shared:
@@ -408,7 +406,7 @@ def _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, module
     else:
         dyn_hi = None
         dyn_o = None
-    return struct(hi = hi, dyn_hi = dyn_hi, o = o, dyn_o = dyn_o, abi = abi, readable_hi = readable_hi)
+    return struct(hi = hi, dyn_hi = dyn_hi, o = o, dyn_o = dyn_o, abi = abi)
 
 def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
     his = [
@@ -533,7 +531,7 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
            dependencies
         transitive_dyn_objects: like per_module_transitive_objects but for dyn_o files
     """
-    transitive_abis = {}
+    abis = {}
     transitive_interfaces = {}
     transitive_objects = {}
     transitive_dyn_objects = {}
@@ -549,12 +547,12 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
                 str(rule_label),
                 str(dep.label),
             ))
-        _merge_depset_dicts(transitive_abis, lib_info.per_module_transitive_abis)
+        abis.update(lib_info.per_module_abi)
         _merge_depset_dicts(transitive_interfaces, lib_info.per_module_transitive_interfaces)
         _merge_depset_dicts(transitive_objects, lib_info.per_module_transitive_objects)
         _merge_depset_dicts(transitive_dyn_objects, lib_info.per_module_transitive_dyn_objects)
     return struct(
-        transitive_abis = transitive_abis,
+        abis = abis,
         transitive_interfaces = transitive_interfaces,
         transitive_objects = transitive_objects,
         transitive_dyn_objects = transitive_dyn_objects,
@@ -565,6 +563,44 @@ def interfaces_as_list(with_shared, o):
         return [o.hi, o.dyn_hi, o.abi]
     else:
         return [o.hi, o.abi]
+
+# Note [On the ABI hash]
+#
+# The ABI hash is contained in the interface file and is the piece of information used by GHC to know if recompilation is necessary.
+# The details on GHC recompilation avoidance can be found at:
+# https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/recompilation-avoidance
+#
+# Whenever one compiles a module, it produces an interface file, which contains a lot of information,
+# is modified often and is required to compile the files which depends of this module
+# and an ABI hash which contains the minimal information required to know if recompilation is required and is modified less often.
+#
+# So the goal is to set the inputs of a module in order to know if a recompilation is required,
+# and in case it is, to retrigger it.
+# To do so, the run_ghc action takes as input not only the transitive closure of the interface files required,
+# but also the ABI files of the direct dependencies of the module.
+# Then, we use the unused_inputs_list to pretend that interface files are "unused",
+# hence the caching mechanism of Bazel will not detect changes in the interface files that did not affect the ABI hashes,
+# saving us some useless compilation.
+# On the other hand, when the ABI hash has changed, since the interface files are provided in the inputs,
+# Bazel won't blame us for lying to it and will gladly use the interface files to rebuild the target.
+#
+# WARNING: This deflect the documented use of unused_inputs_list, but seems to be working quite effectively on the tested examples.
+#
+# There are 3 cases:
+#  - When the module imports modules from the current library,
+#    its interface file is in interface_inputs, which is the unused_inputs_list passed to run_ghc,
+#    and the abi files are in abi_inputs, hence passed as inputs.
+#  - When the module imports modules from other narrowed libraries,
+#    its interface file is in interface_inputs, which is the unused_inputs_list passed to run_ghc.
+#    It should pass as input to the ghc_wrapper the abi files of the modules that it imports directly from those libraries.
+#    Those are the narrowed_abis which is also in abi_inputs
+#  - When the module imports modules from other non-narrowed libraries
+#    (e.g. base, haskell_cabal_librarys, or haskell_librarys that don't use the modules attribute),
+#    there is no information available about which of these libraries provide which of the modules that aren't from the enclosing library
+#    or from narrowed libraries.
+#    In this scenario, we can't produce abi files for these modules,
+#    but on the other hand their interface files are stored in dep_info_i,
+#    which is not passed to unused_inputs_list.
 
 def build_haskell_modules(
         ctx,
@@ -640,7 +676,7 @@ def build_haskell_modules(
         # called in all cases to validate cross_library_deps, although the output
         # might be ignored when disabling narrowing
         narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_interfaces, dep)
-        narrowed_abis = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_abis, dep)
+        narrowed_abis = [per_module_maps.abis[m] for m in per_module_maps.abis]
         enable_th = dep[HaskellModuleInfo].attr.enable_th
 
         # Narrowing doesn't work when using the external interpreter so we disable it here
@@ -658,52 +694,16 @@ def build_haskell_modules(
             narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_objects, dep)
 
         his, abis, os, dyn_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
+
         # interface_inputs collects the interfaces of the transitive dependencies to a module from the library we are compiling,
         # and the narrowed dependencies.
         interface_inputs = _collect_module_inputs(module_interfaces, narrowed_interfaces, his, dep)
+
         # Similarly abi_inputs contains the direct dependencies to a module from the library we are compiling,
         # and the narrowed dependencies.
         # One only wants the direct abi files, since if a modifiaction in a transitive dependency did not affect any abi of a direct dependency,
         # it means that those changes do not impact the file we are considering, hence recompilation can be avoided.
-        abi_inputs = depset(direct = abis, transitive = [narrowed_abis])
-
-        ### On the ABI hash ###
-
-        # The ABI hash is contained in the interface file and is the piece of information used by GHC to know if recompilation is necessary.
-        # The details on GHC recompilation avoidance can be found at:
-        # https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/recompilation-avoidance
-
-        # Whenever one compiles a module, it produces an interface file, which contains a lot of information,
-        # is modified often and is required to compile the files which depends of this module
-        # and an ABI hash which contains the minimal information required to know if recompilation is required and is modified less often.
-
-        # So the goal is to set the inputs of a module in order to know if a recompilation is required,
-        # and in case it is, to retrigger it.
-        # To do so, the run_ghc action takes as input not only the transitive closure of the interface files required,
-        # but also the ABI files of the direct dependencies of the module.
-        # Then, we use the unused_inputs_list to pretend that interface files are "unused",
-        # hence the caching mechanism of Bazel will not detect changes in the interface files that did not affect the ABI hashes,
-        # saving us some useless compilation.
-        # On the other hand, when the ABI hash has changed, since the interface files are provided in the inputs,
-        # Bazel won't blame us for lying to it and will gladly use the interface files to rebuild the target.
-
-        # WARNING: This deflect the documented use of unused_inputs_list, but seems to be working quite effectively on the tested examples.
-
-        # There are 3 cases:
-        #  - When the module imports modules from the current library,
-        #    its interface file is in interface_inputs, which is the unused_inputs_list passed to run_ghc,
-        #    and the abi files are in abi_inputs, hence passed as inputs.
-        #  - When the module imports modules from other narrowed libraries,
-        #    its interface file is in interface_inputs, which is the unused_inputs_list passed to run_ghc.
-        #    It should pass as input to the ghc_wrapper the abi files of the modules that it imports directly from those libraries.
-        #    Those are the narrowed_abis which is also in abi_inputs
-        #  - When the module imports modules from other non-narrowed libraries
-        #    (e.g. base, haskell_cabal_librarys, or haskell_librarys that don't use the modules attribute),
-        #    there is no information available about which of these libraries provide which of the modules that aren't from the enclosing library
-        #    or from narrowed libraries.
-        #    In this scenario, we can't produce abi files for these modules,
-        #    but on the other hand their interface files are stored in dep_info_i,
-        #    which is not passed to unused_inputs_list.
+        abi_inputs = depset(direct = abis + narrowed_abis)
 
         object_inputs = depset(transitive = [
             _collect_module_inputs(module_objects, narrowed_objects, os, dep),
@@ -772,17 +772,14 @@ def build_haskell_modules(
         )
         for dep in transitive_module_deps
     } if with_shared else {}
-    per_module_transitive_abis0 = {
-        dep.label: depset(
-            [module_outputs[dep.label].abi],
-            transitive = [module_objects[dep.label]],
-        )
+    per_module_abi0 = {
+        dep.label: module_outputs[dep.label].abi
         for dep in transitive_module_deps
     }
     _merge_depset_dicts(per_module_transitive_interfaces0, per_module_maps.transitive_interfaces)
     _merge_depset_dicts(per_module_transitive_objects0, per_module_maps.transitive_objects)
     _merge_depset_dicts(per_module_transitive_dyn_objects0, per_module_maps.transitive_dyn_objects)
-    _merge_depset_dicts(per_module_transitive_abis0, per_module_maps.transitive_abis)
+    _merge_depset_dicts(per_module_abi0, per_module_maps.abis)
 
     return struct(
         his = hi_set,
@@ -793,7 +790,7 @@ def build_haskell_modules(
         per_module_transitive_interfaces = per_module_transitive_interfaces0,
         per_module_transitive_objects = per_module_transitive_objects0,
         per_module_transitive_dyn_objects = per_module_transitive_dyn_objects0,
-        per_module_transitive_abis = per_module_transitive_abis0,
+        per_module_abi = per_module_abi0,
         repl_info = struct(
             source_files = depset(source_files),
             boot_files = depset(boot_files),
