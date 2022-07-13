@@ -298,7 +298,7 @@ def _build_haskell_module(
     if enable_th:
         args.add_all(narrowed_objects)
 
-    outputs = [module_outputs.hi]
+    outputs = [module_outputs.hi, module_outputs.abi]
     if module_outputs.o:
         outputs += [module_outputs.o]
     if with_shared:
@@ -482,6 +482,23 @@ def _collect_narrowed_deps_module_files(ctx_label, per_module_transitive_files, 
         ))
 
     return depset(transitive = transitives)
+
+def _collect_narrowed_direct_deps(ctx_label, per_module_tag, dep):
+    direct_cross_library_deps = dep[HaskellModuleInfo].direct_cross_library_deps
+    direct_deps = [
+        per_module_tag[m.label]
+        for m in direct_cross_library_deps
+        if m.label in per_module_tag
+    ]
+    if len(direct_deps) < len(direct_cross_library_deps):
+        missing = [str(m.label) for m in direct_cross_library_deps if not m.label in per_module_tag]
+        fail("The following dependencies of {} can't be found in 'narrowed_deps' of {}: {}".format(
+            dep.label,
+            ctx_label,
+            ", ".join(missing),
+        ))
+
+    return direct_deps
 
 def _reorder_module_deps_to_postorder(label, modules):
     """ Reorders modules to a postorder traversal of the dependency dag.
@@ -676,7 +693,7 @@ def build_haskell_modules(
         # called in all cases to validate cross_library_deps, although the output
         # might be ignored when disabling narrowing
         narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_interfaces, dep)
-        narrowed_abis = [per_module_maps.abis[m] for m in per_module_maps.abis]
+        narrowed_abis = _collect_narrowed_direct_deps(ctx.label, per_module_maps.abis, dep)
         enable_th = dep[HaskellModuleInfo].attr.enable_th
 
         # Narrowing doesn't work when using the external interpreter so we disable it here

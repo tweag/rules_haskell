@@ -96,7 +96,7 @@ def _run_ghc(
         unused_inputs_list = hs.actions.declare_file("unused_%s_%s" % (hs.name, extra_name))
 
         extra_inputs += [show_iface_file, interface_with_abis_list]
-        outputs += [abi_file, unused_inputs_list]
+        outputs += [unused_inputs_list]
         env.update({"MUST_EXTRACT_ABI": "true"})
 
         new_args = [show_iface_file.path, abi_file.path, interface_with_abis_list.path, unused_inputs_list.path]
