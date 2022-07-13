@@ -587,7 +587,7 @@ def haskell_library_impl(ctx):
 
     interface_dirs = depset(
         direct = c.interface_files,
-        transitive = [all_deps_info.interface_dirs, module_outputs.abis, module_outputs.his, module_outputs.dyn_his],
+        transitive = [all_deps_info.interface_dirs, module_outputs.his, module_outputs.dyn_his],
     )
 
     version_macros = set.empty()

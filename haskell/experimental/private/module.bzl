@@ -741,7 +741,6 @@ def build_haskell_modules(
 
     module_outputs_list = module_outputs.values()
     hi_set = depset([outputs.hi for outputs in module_outputs_list])
-    abi_set = depset([outputs.abi for outputs in module_outputs_list])
     o_set = depset([outputs.o for outputs in module_outputs_list if outputs.o])
     if with_shared:
         dyn_hi_set = depset([outputs.dyn_hi for outputs in module_outputs_list])
@@ -786,7 +785,6 @@ def build_haskell_modules(
         dyn_his = dyn_hi_set,
         os = o_set,
         dyn_os = dyn_o_set,
-        abis = abi_set,
         per_module_transitive_interfaces = per_module_transitive_interfaces0,
         per_module_transitive_objects = per_module_transitive_objects0,
         per_module_transitive_dyn_objects = per_module_transitive_dyn_objects0,
