@@ -8,11 +8,11 @@ tasks:
       - "sudo apt -y update && sudo apt -y install libgmp-dev"
     build_flags:
       - "--config=ci-common"
-      - "--build_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci"
+      - "--build_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci,-integration"
     build_targets:
       - "//tests/..."
     test_flags:
       - "--config=ci-common"
-      - "--test_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci"
+      - "--test_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci,-integration"
     test_targets:
       - "//tests/..."
