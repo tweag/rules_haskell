@@ -729,14 +729,13 @@ def build_haskell_modules(
 
         his, abis, os, dyn_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
 
-        # interface_inputs collects the interfaces of the transitive dependencies to a module from the library we are compiling,
-        # and the narrowed dependencies.
+        # interface_inputs contains the interface files of transitively imported
+        # modules from the enclosing library and from the narrowed dependencies.
         interface_inputs = _collect_module_inputs(module_interfaces, narrowed_interfaces, his, dep)
 
-        # Similarly abi_inputs contains the direct dependencies to a module from the library we are compiling,
-        # and the narrowed dependencies.
-        # One only wants the direct abi files, since if a modifiaction in a transitive dependency did not affect any abi of a direct dependency,
-        # it means that those changes do not impact the file we are considering, hence recompilation can be avoided.
+        # Similarly abi_inputs contains the abi files of directly imported
+        # modules from the enclosing library and the narrowed dependencies.
+        # See Note [On the ABI hash]
         abi_inputs = depset(direct = abis + narrowed_abis)
 
         object_inputs = depset(transitive = [
