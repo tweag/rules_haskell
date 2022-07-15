@@ -337,4 +337,40 @@ GHC_BINDIST = \
                 "649e04abd4fa35796070b35de1c353721507a49842b18663aa1c7adc6b4115d8",
             ),
         },
+        "9.2.2": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-apple-darwin.tar.xz",
+                "934abbd6083d3aeb5ff081955682d7711d9e79db57b1613eb229c325dd06f83f",
+            ),
+            "darwin_arm64": (
+                "https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-aarch64-apple-darwin.tar.xz",
+                "d1f04f7cc062ed134f863305c67dfe2c42df46ed658dd34f9dd552186f194e5c",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-deb9-linux.tar.xz",
+                "91052766a8bec6a1a8529eda9ff587ce821a071cf52705e1b8caa3d38d3913f4",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/9.2.2/ghc-9.2.2-x86_64-unknown-mingw32.tar.xz",
+                "02d0c0cceb9bc14ba42940c83797f819e1903db4a71b630e9bc6d14b6b80298b",
+            ),
+        },
+        "9.2.3": {
+            "darwin_amd64": (
+                "https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-x86_64-apple-darwin.tar.xz",
+                "42f2d4e384a21956e806bcf8745ed436f799e5eca28839dfb81dd3dc7895ca41",
+            ),
+            "darwin_arm64": (
+                "https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-aarch64-apple-darwin.tar.xz",
+                "56a03022703e4305020a267105bd5ebfb1bcb8e7eed33261b3987f79445bcc3a",
+            ),
+            "linux_amd64": (
+                "https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-x86_64-deb9-linux.tar.xz",
+                "7a3198fff8ae59abe071103dbf4a55d595fe79e93e47d4e22f605097ae1402f1",
+            ),
+            "windows_amd64": (
+                "https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-x86_64-unknown-mingw32.tar.xz",
+                "0543d80c1ef453a5f82d0a2bc436f93d2feb3d5855114c8a78a12c561c9bc8df",
+            ),
+        },
     }
