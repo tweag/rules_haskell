@@ -24,7 +24,7 @@ ENV USER=builder
 
 RUN \
     echo $'trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=\nextra-substituters = https://hydra.iohk.io' >> /home/builder/extra.conf \
-    && sh <( curl -L https://nixos.org/nix/install ) --no-channel-add --nix-extra-conf-file "/home/builder/extra.conf"
+    && bash <( curl -L https://nixos.org/nix/install ) --no-channel-add --nix-extra-conf-file "/home/builder/extra.conf"
 
 # ----------------------------------------------------------------------
 
