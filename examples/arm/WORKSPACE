@@ -138,14 +138,14 @@ haskell_register_ghc_nixpkgs(
         "@platforms//cpu:aarch64",
         "@platforms//os:linux",
     ],
-    version = "8.10.7",
+    version = "8.10.4",
 )
 
 haskell_register_ghc_nixpkgs(
     name = "haskell_compiler",
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path = "haskell.compiler.ghc8104",
     repositories = {"nixpkgs": "@nixpkgs"},
-    version = "8.10.7",
+    version = "8.10.4",
 )
 
 ############################

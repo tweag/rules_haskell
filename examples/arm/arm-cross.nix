@@ -1,8 +1,8 @@
 let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
     haskellNix = import (builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/0d781c04c4ab9045a165bacf428b043995a167f6.tar.gz) {};
     pkgs = import haskellNix.sources.nixpkgs haskellNix.nixpkgsArgs;
-    iserv-proxy = pkgs.buildPackages.ghc-extra-packages.ghc8107.iserv-proxy.components.exes.iserv-proxy;
-    remote-iserv = crossPkgs.ghc-extra-packages.ghc8107.remote-iserv.components.exes.remote-iserv;
+    iserv-proxy = pkgs.buildPackages.ghc-extra-packages.ghc8104.iserv-proxy.components.exes.iserv-proxy;
+    remote-iserv = crossPkgs.ghc-extra-packages.ghc8104.remote-iserv.components.exes.remote-iserv;
     crossNumactl = crossPkgs.numactl;
     qemu = pkgs.buildPackages.qemu;
     qemuIservWrapper = pkgs.writeScriptBin "iserv-wrapper" ''
@@ -35,7 +35,7 @@ let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
       PATH="${pkgs.llvm_9}/bin:''${PATH:-}" ${crossGHC}/bin/aarch64-unknown-linux-gnu-ghc -pgmi ${qemuIservWrapper}/bin/iserv-wrapper -fexternal-interpreter -optl-L${crossNumactl}/lib "$@"
       '';
  
-    crossGHC = crossPkgs.buildPackages.haskell-nix.compiler.ghc8107;
+    crossGHC = crossPkgs.buildPackages.haskell-nix.compiler.ghc8104;
     crossGCC = crossPkgs.buildPackages.gcc;
     crossGCCUnwrapped = crossPkgs.buildPackages.gcc-unwrapped;
     crossBinutils = crossPkgs.buildPackages.binutils;
@@ -44,22 +44,22 @@ let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
     prefixStrippedGHC = pkgs.runCommand "ghc-aarch64-symlinks" {} ''
       mkdir -p $out/bin
       for tool in \
-        ghc-8.10.7 \
+        ghc-8.10.4 \
         ghc-pkg \
-        ghc-pkg-8.10.7 \
+        ghc-pkg-8.10.4 \
         ghci \
-        ghci-8.10.7 \
+        ghci-8.10.4 \
         hp2ps \
         hpc \
         hsc2hs \
         runghc \
-        runghc-8.10.7 \
+        runghc-8.10.4 \
         runhaskell
       do
           ln -s ${crossGHC}/bin/aarch64-unknown-linux-gnu-$tool $out/bin/$tool
       done;
       mkdir -p $out/lib
-      ln -s ${crossGHC}/lib/aarch64-unknown-linux-gnu-ghc-8.10.7 $out/lib/ghc-8.10.7
+      ln -s ${crossGHC}/lib/aarch64-unknown-linux-gnu-ghc-8.10.4 $out/lib/ghc-8.10.4
       ln -s ${crossGHCLLVMWrapper}/bin/ghc-llvm-wrapper $out/bin/ghc
       touch $out/bin/haddock
       '';
