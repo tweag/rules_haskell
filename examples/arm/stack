@@ -1,0 +1,3 @@
+#! /usr/bin/env bash
+
+exec /opt/stack/stack --arch aarch64 "$@"

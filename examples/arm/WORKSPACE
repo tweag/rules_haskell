@@ -69,6 +69,7 @@ rules_haskell_dependencies()
 load(
     "@rules_haskell//haskell:cabal.bzl",
     "stack_snapshot",
+    "use_stack",
 )
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
@@ -110,6 +111,9 @@ nixpkgs_cc_configure(
         "@platforms//os:linux",
     ],
 )
+
+
+use_stack('//:stack')
 
 ###########################################
 # GHC toolchains for x86 and arm
