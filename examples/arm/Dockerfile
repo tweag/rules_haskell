@@ -7,7 +7,7 @@ RUN adduser builder \
     && chmod +x /usr/bin/bazelisk \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-         ca-certificates=20211016 curl=7.81.0-1ubuntu1.3 git=1:2.34.1-1ubuntu1.2 xz-utils=5.2.5-2ubuntu1 \
+         ca-certificates curl git xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # TODO: add extra substituters
