@@ -1,4 +1,4 @@
-FROM ubuntu@sha256:c01a10535d9ea3e4065dee4abdb288821b2918929f1e1584287a03e731b9176c
+FROM ubuntu@sha256:6a4619c02fbaf80504f316f42bd4b732831d9590e9c1c0df2b6f294ffbee86c9
 
 ADD https://github.com/bazelbuild/bazelisk/releases/download/v1.12.0/bazelisk-linux-arm64 /usr/bin/bazelisk
 ADD https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-linux-x86_64-static.tar.gz /tmp/stack.tgz
