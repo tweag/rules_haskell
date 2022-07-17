@@ -29,9 +29,7 @@ RUN \
 
 # ----------------------------------------------------------------------
 
-FROM nix AS builder
-
-COPY . /build/
+COPY --chown=builder . /build/
 
 WORKDIR /build/examples/arm
 
