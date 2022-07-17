@@ -17,8 +17,8 @@ filegroup(
 cc_library(
     name = "zlib",
     srcs = select({
-        "//:is_linux_aarch64": ["@nixpkgs_zlib_arm//:lib"],
-        "//conditions:default": ["@nixpkgs_zlib_x86//:lib"],
+        #"//:is_linux_aarch64": ["@nixpkgs_zlib_arm//:lib"],
+        "//conditions:default": ["@nixpkgs_zlib//:lib"],
     }),
     hdrs = [":include"],
     strip_include_prefix = "include",

@@ -153,7 +153,7 @@ haskell_register_ghc_nixpkgs(
 ############################
 
 nixpkgs_package(
-    name = "nixpkgs_zlib_x86",
+    name = "nixpkgs_zlib",
     attribute_path = "zlib",
     repository = "@nixpkgs",
 )
