@@ -1,4 +1,4 @@
-FROM ubuntu@sha256:0f744430d9643a0ec647a4addcac14b1fbb11424be434165c15e2cc7269f70f8 AS nix
+FROM ubuntu:focal AS nix
 
 ADD https://github.com/bazelbuild/bazelisk/releases/download/v1.12.0/bazelisk-linux-arm64 /usr/bin/bazelisk
 ADD https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-linux-x86_64-static.tar.gz /tmp/stack.tgz
