@@ -81,7 +81,8 @@ load(
 
 nixpkgs_git_repository(
     name = "nixpkgs",
-    revision = "ad4db3f4d8ae54482c63c31c14921cb73953548d",
+    # 2022-07-16
+    revision = "365e1b3a859281cf11b94f87231adeabbdd878a2",
 )
 
 nixpkgs_python_configure(
