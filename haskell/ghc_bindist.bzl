@@ -392,12 +392,16 @@ def ghc_bindist(
             "9.0.1": ["@rules_haskell//haskell:assets/ghc_9_0_1_win.patch"],
             "9.0.2": ["@rules_haskell//haskell:assets/ghc_9_0_2_win.patch"],
             "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_win.patch"],
+            "9.2.2": ["@rules_haskell//haskell:assets/ghc_9_2_2_win.patch"],
+            "9.2.3": ["@rules_haskell//haskell:assets/ghc_9_2_3_win.patch"],
         }.get(version)
 
     if target == "darwin_amd64":
         patches = {
             # Patch for https://gitlab.haskell.org/ghc/ghc/-/issues/19963
-            "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_mac.patch"],
+            "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_mac.patch"],
+            "9.2.2": ["@rules_haskell//haskell:assets/ghc_9_2_mac.patch"],
+            "9.2.3": ["@rules_haskell//haskell:assets/ghc_9_2_mac.patch"],
         }.get(version)
 
     extra_attrs = {"patches": patches, "patch_args": ["-p0"]} if patches else {}

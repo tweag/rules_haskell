@@ -16,6 +16,8 @@ as we encounter [this issue](https://github.com/haskell/win32/issues/193).
 In this case, to ensure the toolchain `Win32` library is used (instead of trying to compile a new one),
 it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yaml](./stackage_snapshot.yaml) file.
 
+* Add support for GHC 9.2.2 and 9.2.3
+
 ## [0.14.0] 2021-12-21
 
 [0.14.0]: https://github.com/tweag/rules_haskell/compare/v0.13...v0.14
@@ -243,10 +245,10 @@ it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yam
 
 * Initial experimental Windows support for `cabal_binary/library` and
   `stack_snapshot`.
-  
+
 * [`start`](./start) script for setting up `rules_haskell` allows to set up a nixpkgs-based
   bazel workspace, for NixOS users, via the `--use-nix` option.
-  
+
 ### Added
 
 * Windows-support for cabal/stack.
@@ -255,7 +257,7 @@ it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yam
   overriding packages in a stack snapshot.
   There is an example in [./examples/WORKSPACE](./examples/WORKSPACE).
   See [#1060](https://github.com/tweag/rules_haskell/pull/1060).
-  
+
 ### Removed
 
 * The `haskell/haskell.bzl` entrypoint, which was deprecated in the
@@ -269,7 +271,7 @@ it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yam
   to all packages, but instead a dictionary specifying additional dependencies
   to select packages. See `stack_snapshot` API docs for an example. See
   [#1068](https://github.com/tweag/rules_haskell/pull/1068).
-  
+
 ### Fixed
 
 * Unified the `cc_wrapper` on all OSes.
