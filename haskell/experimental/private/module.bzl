@@ -311,8 +311,6 @@ def _build_haskell_module(
         args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
-    module_name = module.label.package.replace("/", "_") + "_" + module.label.name
-
     # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
@@ -352,7 +350,7 @@ def _build_haskell_module(
         env = hs.env,
         arguments = args,
         interface_inputs = interface_inputs,
-        extra_name = module_name,
+        extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
         hi_file = module_outputs.hi,
         abi_file = module_outputs.abi,
     )
@@ -483,15 +481,15 @@ def _collect_narrowed_deps_module_files(ctx_label, per_module_transitive_files, 
 
     return depset(transitive = transitives)
 
-def _collect_narrowed_direct_deps(ctx_label, per_module_tag, dep):
+def _collect_narrowed_direct_deps(ctx_label, per_module_file, dep):
     direct_cross_library_deps = dep[HaskellModuleInfo].direct_cross_library_deps
     direct_deps = [
-        per_module_tag[m.label]
+        per_module_file[m.label]
         for m in direct_cross_library_deps
-        if m.label in per_module_tag
+        if m.label in per_module_file
     ]
     if len(direct_deps) < len(direct_cross_library_deps):
-        missing = [str(m.label) for m in direct_cross_library_deps if not m.label in per_module_tag]
+        missing = [str(m.label) for m in direct_cross_library_deps if not m.label in per_module_file]
         fail("The following dependencies of {} can't be found in 'narrowed_deps' of {}: {}".format(
             dep.label,
             ctx_label,
@@ -540,7 +538,8 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
       narrowed_deps: The contents of the narrowed_deps attribute
 
     Returns:
-      struct(transitive_interfaces, transitive_objects, transitive_dyn_objects):
+      struct(abis, transitive_interfaces, transitive_objects, transitive_dyn_objects):
+        abis: dict of module labels to their abi files.
         transitive_interfaces: dict of module labels to their
            interfaces and the interfaces of their transitive module dependencies
         transitive_objects: dict of module labels to their
@@ -577,9 +576,9 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
 
 def interfaces_as_list(with_shared, o):
     if with_shared:
-        return [o.hi, o.dyn_hi, o.abi]
+        return [o.hi, o.dyn_hi]
     else:
-        return [o.hi, o.abi]
+        return [o.hi]
 
 # Note [On the ABI hash]
 #
@@ -662,7 +661,7 @@ def build_haskell_modules(
       odir: The directory in which to output object files
 
     Returns:
-      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces, per_module_transitive_objects, per_module_transitive_dyn_objects, repl_info):
+      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces, per_module_transitive_objects, per_module_transitive_dyn_objects, per_module_abi, repl_info):
         his: interface files of all modules in ctx.attr.modules
         dyn_his: dynamic interface files of all modules in ctx.attr.modules
         os: object files of all modules in ctx.attr.modules
@@ -674,6 +673,7 @@ def build_haskell_modules(
             object files and the object files of their transitive module
             dependencies. See Note [Narrowed Dependencies].
         per_module_transitive_dyn_objects: like per_module_transitive_objects but for dyn_o files
+        per_module_abi: dict of module labels to their abi files.
         repl_info: struct(source_files, boot_files, import_dirs, user_compile_flags):
           source_files: Depset of files that contain Haskell modules.
           boot_files: Depset of files that contain Haskell boot modules.
@@ -842,7 +842,7 @@ def haskell_module_impl(ctx):
         order = "postorder",
     )
 
-    result = [
+    return [
         DefaultInfo(),
         HaskellModuleInfo(
             attr = ctx.attr,
@@ -851,5 +851,3 @@ def haskell_module_impl(ctx):
             transitive_module_dep_labels = transitive_module_dep_labels,
         ),
     ]
-
-    return result
