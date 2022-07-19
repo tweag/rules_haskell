@@ -10,6 +10,9 @@
 # in this file executes (and there's no way to execute it later; see first
 # paragraph above).
 
+# It's important to keep this list short enough (not more then 4 items)
+# because every bazel version tested requires a lot of space on CI
+# See https://github.com/tweag/rules_haskell/pull/1781#issuecomment-1187640454
 SUPPORTED_BAZEL_VERSIONS = [
     "4.0.0",
     "4.2.2",
