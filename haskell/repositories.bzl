@@ -8,8 +8,8 @@ load(
     "check_bazel_version_compatible",
 )
 
-_rules_nixpkgs_version = "2ba30bdbd5fe9b0c8039c52a222bc1fc2abe6b04"
-_rules_nixpkgs_sha256 = "e5d28ebe3fa20b7a4c30d1b5e72438b0454956c7a91f1f31af58e7a597acad73"
+_rules_nixpkgs_version = "v0.9.0"
+_rules_nixpkgs_sha256 = "b01f170580f646ee3cde1ea4c117d00e561afaf3c59eda604cf09194a824ff10"
 
 _rules_sh_version = "v0.3.0"
 _rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
@@ -66,7 +66,7 @@ def rules_haskell_dependencies():
         #
         # See https://github.com/tweag/rules_nixpkgs/issues/182 for the rational
 
-        strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version
+        strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version.lstrip("v")
 
         http_archive(
             name = "io_tweag_rules_nixpkgs",
