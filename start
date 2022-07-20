@@ -249,7 +249,7 @@ case "${MODE}" in
     "bindists") cat <<-EOF
 		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
 		rules_haskell_toolchains(
-		    version = ${GHC_VERSION},
+		    version = "${GHC_VERSION}",
 		)
 
 		http_archive(
@@ -304,7 +304,7 @@ case "${MODE}" in
 		haskell_register_ghc_nixpkgs(
 		    repository = "@nixpkgs",
 		    attribute_path = "ghc",
-		    version = ${GHC_VERSION},
+		    version = "${GHC_VERSION}",
 		)
 
 		# For ${ZLIB_BUILD_FILE}
