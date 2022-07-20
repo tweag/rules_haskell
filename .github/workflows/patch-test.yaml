@@ -13,6 +13,7 @@ jobs:
     name: Find GHC versions for which a bindist is provided
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Extract from gen_ghc_bindist
         run: python tests/extract_from_ghc_bindist.py
   test-ghc-patches:
