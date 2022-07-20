@@ -9,4 +9,4 @@ import gen_ghc_bindist
 
 version_numbers = [x['version'] for x in gen_ghc_bindist.VERSIONS]
 
-print("::set-output name=ghc-matrix::", version_numbers)
+print("::set-output name=ghc-matrix::{}".format(version_numbers))
