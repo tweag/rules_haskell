@@ -6,7 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.14...master
+[Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.15...master
+
+## [0.15] 2022-07-22
+
+[0.15]: https://github.com/tweag/rules_haskell/compare/v0.14...v0.15
+
+### Highlights
+
+* Support for Bazel version 5.x (see [#1781])
+
+[#1781]: https://github.com/tweag/rules_haskell/pull/1781
+
+### Added
+
+* add use_stack() to override stack from anywhere (see [#1705])
+* Add GHC 9.0.2 bindist (see [#1672])
+
+[#1705]: https://github.com/tweag/rules_haskell/pull/1705
+[#1672]: https://github.com/tweag/rules_haskell/pull/1672
 
 ### Changed
 
@@ -15,6 +33,45 @@ This can be a breaking change on windows if we rely on a stack snapshot containi
 as we encounter [this issue](https://github.com/haskell/win32/issues/193).
 In this case, to ensure the toolchain `Win32` library is used (instead of trying to compile a new one),
 it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yaml](./stackage_snapshot.yaml) file.
+* Handle CPU value darwin_arm64 (see [#1739])
+* Support Bazel 4.2.2 (see [#1695])
+* haskell_module: Enable optimizations in opt mode (see [#1708])
+* haskell_module: Pass cc toolchain linker flags when using the interpreter (see [#1686])
+* Add more documentation for haskell_module (see [#1688])
+* Reproducible interface files for Cabal packages with C dependencies (see [#1689])
+* Handling of toolchain libraries in stack_snapshot (see [#1685])
+* Expose object files of transitive dependencies when using TH (see [#1680])
+* Expose dependencies of cross-library dependencies in the inputs of the build action of haskell_module (see [#1678])
+
+[#1739]: https://github.com/tweag/rules_haskell/pull/1739
+[#1695]: https://github.com/tweag/rules_haskell/pull/1695
+[#1708]: https://github.com/tweag/rules_haskell/pull/1708
+[#1686]: https://github.com/tweag/rules_haskell/pull/1686
+[#1688]: https://github.com/tweag/rules_haskell/pull/1688
+[#1689]: https://github.com/tweag/rules_haskell/pull/1689
+[#1685]: https://github.com/tweag/rules_haskell/pull/1685
+[#1680]: https://github.com/tweag/rules_haskell/pull/1680
+[#1678]: https://github.com/tweag/rules_haskell/pull/1678
+
+### Fixed
+
+* HaskellC2Hs fails with clang: error: no input files (see [#1778])
+* Fix build problems with GHC 9.x (see [#1749])
+* Fix the error message in the stack version check (see [#1722])
+* Fix all_files captures "bazel-*" directories (see [#1674])
+* Fix computation of transitive dependencies (see [#1669])
+* Don't discard `dead_strip_dylibs` in macos (see [#1718])
+* Fix haskell_module when dependencies appear both as narrowed and not-narrowed (see [#1691])
+* Fix stripPrefix for ghc 9.0.2 of win (see [#1677])
+
+[#1778]: https://github.com/tweag/rules_haskell/pull/1778
+[#1749]: https://github.com/tweag/rules_haskell/pull/1749
+[#1722]: https://github.com/tweag/rules_haskell/pull/1722
+[#1674]: https://github.com/tweag/rules_haskell/pull/1674
+[#1669]: https://github.com/tweag/rules_haskell/pull/1669
+[#1718]: https://github.com/tweag/rules_haskell/pull/1718
+[#1691]: https://github.com/tweag/rules_haskell/pull/1691
+[#1677]: https://github.com/tweag/rules_haskell/pull/1677
 
 ## [0.14.0] 2021-12-21
 
