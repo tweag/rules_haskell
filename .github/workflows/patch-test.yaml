@@ -19,13 +19,6 @@ jobs:
       - id: set-ghc-versions
         name: Extract from gen_ghc_bindist
         run: python tests/extract_from_ghc_bindist.py
-  verify:
-    name: Verify ghc-version contents
-    needs: find-ghc-version
-    runs-on: ubuntu-latest
-    steps:
-      - name: PRINT
-        run: echo ${{ needs.find-ghc-version.outputs.ghc-matrix }}
   test-ghc-patches:
     name: Test GHC patches
     needs: find-ghc-version
@@ -76,4 +69,3 @@ jobs:
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           export GHC_VERSION=${{ matrix.ghc-version }}
           ./tests/run-start-script.sh --use-bindists
-          bazel run //:example
