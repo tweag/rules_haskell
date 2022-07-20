@@ -7,7 +7,8 @@ sys.path.append( haskell_dir )
 
 import gen_ghc_bindist
 
+print(gen_ghc_bindist.VERSIONS)
+
 version_numbers = [x['version'] for x in gen_ghc_bindist.VERSIONS]
 
-print("Coucou")
 print("::set-output name=ghc-matrix::{}".format(version_numbers))
