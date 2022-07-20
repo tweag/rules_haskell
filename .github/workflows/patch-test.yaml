@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PRINT
-        run: echo ${{ fromJSON(needs.find-ghc-version.outputs.ghc-matrix) }}
+        run: echo ${{ needs.find-ghc-version.outputs.ghc-matrix }}
   test-ghc-patches:
     name: Test GHC patches
     needs: find-ghc-version

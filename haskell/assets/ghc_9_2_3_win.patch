@@ -355,3 +355,4 @@
 -haddock-html:         ${pkgroot}/../../docs/html/libraries/xhtml
 +haddock-interfaces:   ${pkgroot}/../docs/html/libraries/xhtml\xhtml.haddock
 +haddock-html:         ${pkgroot}/../docs/html/libraries/xhtml
+
