@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Extract from gen_ghc_bindist
-        run: ./tests/extract_from_ghc_bindist.py
+        run: python tests/extract_from_ghc_bindist.py
   test-ghc-patches:
     name: Test GHC patches
     needs: find-ghc-version
