@@ -11,6 +11,7 @@ env:
 jobs:
   find-ghc-version:
     name: Find GHC versions for which a bindist is provided
+    runs-on: ubuntu-latest
     steps:
       - name: Extract from gen_ghc_bindist
         run: ./tests/extract_from_ghc_bindist.py
