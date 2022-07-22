@@ -55,7 +55,7 @@ jobs:
             ./tests/run-start-script.sh --use-nix
             bazel build //tests:run-tests
             ./bazel-ci-bin/tests/run-tests
-            bazel coverage //... || [[ ${{ runner.os }} == macOS ]] # FIXME: does not work on Darwin currently, see #1768
+            bazel coverage //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
             '
