@@ -16,13 +16,41 @@ haskell_library(
 )
 
 haskell_library(
+    name = "TestLib1",
+    modules = [
+        ":TestLibModule1",
+    ],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "TestLibModule1",
+    src = "TestLibModule1.hs",
+)
+
+haskell_library(
+    name = "NonModulesTestLib",
+    srcs = [
+        "NonModulesTestLib.hs",
+    ],
+    deps = [
+        ":TestLib1",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
     name = "TestLib2",
     modules = [
         ":TestLibModule2",
         ":SimpleFoo",
     ],
+    narrowed_deps = [":TestLib1"],
     deps = [
         "//tests/hackage:base",
+        "@stackage//:temporary",
     ],
 )
 
@@ -35,12 +63,14 @@ haskell_module(
 haskell_module(
     name = "SimpleFoo",
     src = "SimpleFoo.hs",
+    cross_library_deps = [":TestLibModule1"],
 )
 
 haskell_module(
     name = "TestModule",
     src = "TestModule.hs",
     cross_library_deps = [":TestLibModule2"],
+    enable_th = True,
 )
 
 # Modifying TestLibModule2 from TestLib2 doesn't cause a rebuild of
@@ -65,6 +95,7 @@ haskell_library(
         ":TestLib2",
     ],
     deps = [
+        ":NonModulesTestLib",
         ":TestLib",
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",

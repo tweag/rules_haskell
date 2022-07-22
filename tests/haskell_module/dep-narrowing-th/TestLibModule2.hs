@@ -2,5 +2,5 @@ module TestLibModule2 where
 
 import SimpleFoo
 
-foo2 :: Int
-foo2 = foo - 2
+foo2 :: IO Int
+foo2 = (\x -> x - 2) <$> foo

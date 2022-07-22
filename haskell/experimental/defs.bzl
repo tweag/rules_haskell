@@ -7,6 +7,7 @@ load(
 )
 load("//haskell:private/cc_libraries.bzl", "haskell_cc_libraries_aspect")
 
+# TODO[GL] should we have repl_ghci_args here?
 _haskell_module = rule(
     _haskell_module_impl,
     # NOTE: Documentation needs to be added to the wrapper macros below.
@@ -16,7 +17,7 @@ _haskell_module = rule(
         "src": attr.label(
             # TODO[AH] How to handle .hsc files?
             # TODO[AH] Do we need .h files in here?
-            allow_single_file = [".hs", ".lhs", ".hs-boot", ".lhs-boot"],  #, ".hsc", ".h"],
+            allow_single_file = [".hs", ".lhs", ".hs-boot", ".lhs-boot", ".hsc"],  #, ".h"],
             mandatory = True,
         ),
         "src_strip_prefix": attr.string(),
@@ -71,15 +72,64 @@ def haskell_module(
     This allows library, binary, and test rules to do incremental builds when only a
     few modules are affected by a change.
 
+    There are three types of dependencies. `deps` contains other modules included in the
+    same enclosing library, binary, or test. `cross_library_deps` contains modules
+    coming from other libraries, and these libraries need to be listed in the
+    `narrowed_deps` attribute of the enclosing library, binary, or test. Finally,
+    `haskell_module` depends on all the libraries in the `deps` attribute of the
+    enclosing library, binary or test.
+
     Note: This rule is experimental and not ready for production, yet.
 
     ### Examples
 
       ```bzl
       haskell_module(
+          name = "LibMod1",
+          src = "src/LibMod1.hs",
+          src_strip_prefix = "src",
+          # Modules listed here need to come from the same
+          # library as LibMod1.
+          deps = [
+              ":LibMod2",
+          ],
+      )
+
+      haskell_module(
+          name = "LibMod2",
+          src = "src/LibMod2.hs",
+          src_strip_prefix = "src",
+          # If the module uses TH, set this to True. Otherwise object
+          # files and shared libraries of dependencies won't be
+          # available when building.
+          enable_th = True,
+      )
+
+      haskell_library(
+          name = "lib",
+          # Must choose either one of srcs or modules
+          # srcs = ...,
+          modules = [
+              # All modules to link into the binary need to be listed here
+              "LibMod1",
+              "LibMod2",
+          ],
+          # Any library dependencies of modules need to be listed here
+          deps = [
+              "//:base",
+              "//:template-haskell",
+          ],
+      )
+
+      haskell_module(
           name = "Example.Module",
           src = "src/Example/Module.hs",
           src_strip_prefix = "src",
+          # Modules listed here need to come from libraries
+          # listed in narrowed_deps
+          cross_library_deps = [":LibMod1"],
+          # Modules listed here need to come from the same
+          # library as Example.Module.
           deps = [
               "//:Another.Module",
           ],
@@ -89,22 +139,21 @@ def haskell_module(
           name = "Another.Module",
           src = "src/Another/Module.hs",
           src_strip_prefix = "src",
+          cross_library_deps = [":LibMod2"],
       )
 
       haskell_binary(
           name = "haskellbin",
-          # Must choose either one of srcs or modules
-          # srcs = ...,
           modules = [
-              # All modules to link into the binary need to be listed here
               "//:Example.Module",
               "//:Another.Module",
           ],
-          # Any library dependencies of modules need to be listed here
           deps = [
               "//:base",
               "//:template-haskell",
           ],
+          # Any library dependencies of modules need to be listed here
+          narrowed_deps = [":lib"]
       )
       ```
 

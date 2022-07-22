@@ -6,7 +6,8 @@
 
 import pprint
 import sys
-import urllib2
+from urllib.request import urlopen
+from distutils.version import StrictVersion
 
 # All GHC versions we generate.
 # `version` is the version number
@@ -15,6 +16,25 @@ import urllib2
 # `ignore_prefixes` is the prefix of files to ignore
 # `ignore_suffixes` is the suffix of files to ignore
 VERSIONS = [
+    { "version": "9.2.1",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.0.2",
+      "ignore_prefixes": ["ghc-9.0.2a"],
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.0.1",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "8.10.7",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "8.10.4" },
+    { "version": "8.10.3" },
+    { "version": "8.10.2" },
+    { "version": "8.10.1",
+      "ignore_suffixes": [".lz"] },
+    { "version": "8.8.4" },
+    { "version": "8.8.3",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "8.8.2" },
+    { "version": "8.8.1" },
     { "version": "8.6.5" },
     { "version": "8.6.4" },
     { "version": "8.6.3" },
@@ -34,14 +54,16 @@ VERSIONS = [
 
 # All architectures we generate.
 # bazel: bazel name
-# upstream: download.haskell.org name
+# upstream: list of download.haskell.org name
 ARCHES = [
     { "bazel": "linux_amd64",
-      "upstream": "x86_64-deb8-linux", },
+      "upstream": ["x86_64-deb8-linux", "x86_64-deb9-linux", "x86_64-deb10-linux"], },
     { "bazel": "darwin_amd64",
-      "upstream": "x86_64-apple-darwin" },
+      "upstream": ["x86_64-apple-darwin"] },
+    { "bazel": "darwin_arm64",
+      "upstream": ["aarch64-apple-darwin"] },
     { "bazel": "windows_amd64",
-      "upstream": "x86_64-unknown-mingw32" },
+      "upstream": ["x86_64-unknown-mingw32"] },
 ]
 
 
@@ -65,7 +87,7 @@ def parse_sha256_file(content, version, url):
     errs = []
     for line in content:
         # f5763983a26dedd88b65a0b17267359a3981b83a642569b26334423f684f8b8c  ./ghc-8.4.3-i386-deb8-linux.tar.xz
-        (hash, file_) = line.strip().split("  ./")
+        (hash, file_) = line.decode().strip().split("  ./")
         prefix = "ghc-{ver}-".format(ver = version.get("distribution_version", version['version']))
         suffix = ".tar.xz"
 
@@ -94,16 +116,20 @@ def parse_sha256_file(content, version, url):
 def eprint(mes):
     print(mes, file = sys.stderr)
 
+def select_one(xs, ys):
+    """Select a single item from xs, prefer the first item also in ys."""
+    items = [x for x in xs if x in ys]
+    return items[0] if items else xs[0]
+
 # Main.
 if __name__ == "__main__":
-
     # Fetch all hashsum files
     # grab : { version: { arch: sha256 } }
     grab = {}
     for ver in VERSIONS:
         eprint("fetching " + ver['version'])
         url = link_for_sha256_file(ver['version'])
-        res = urllib2.urlopen(url)
+        res = urlopen(url)
         if res.getcode() != 200:
             eprint("download of {} failed with status {}".format(url, res.getcode()))
             sys.exit(1)
@@ -115,15 +141,19 @@ if __name__ == "__main__":
     errs = {}
     for ver, hashes in grab.items():
       real_arches = frozenset(hashes.keys())
-      needed_arches = frozenset([a['upstream'] for a in ARCHES])
+      upstreams = [select_one(a['upstream'], real_arches) for a in ARCHES]
+      needed_arches = frozenset(upstreams)
       missing_arches = needed_arches.difference(real_arches)
       if missing_arches:
           errs[ver] = missing_arches
     if errs:
         for ver, missing in errs.items():
-            eprint("version {ver} is missing hashes for required architectures {arches}".format(
-                ver = ver,
-                arches = missing))
+            print(
+                "WARN: version {ver} is missing hashes for architectures {arches}".format(
+                    ver = ver,
+                    arches = ','.join(missing)),
+                file=sys.stderr
+            )
 
     # fetch the arches we need and create the GHC_BINDISTS dict
     # ghc_bindists : { version: { bazel_arch: (tarball_url, sha256_hash) } }
@@ -132,19 +162,25 @@ if __name__ == "__main__":
         # { bazel_arch: (tarball_url, sha256_hash) }
         arch_dists = {}
         for arch in ARCHES:
-            hashes[arch['upstream']]
-            arch_dists[arch['bazel']] = (
-                link_for_tarball(arch['upstream'], ver),
-                hashes[arch['upstream']]
-            )
+            upstream = select_one(arch['upstream'], hashes)
+
+            if upstream in hashes:
+                arch_dists[arch['bazel']] = (
+                    link_for_tarball(upstream, ver),
+                    hashes[upstream]
+                )
         ghc_bindists[ver] = arch_dists
 
     # Print to stdout. Be aware that you can't `> foo.bzl`,
     # because that truncates the source file which is needed
     # for bazel to run in the first place.
-    print(""" \
-# Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist | sponge haskell/private/ghc_bindist_generated.bzl`
-# To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py
+    print("""\
+# Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist`
+# To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py,
+# regenerate the dict and copy it here.
 GHC_BINDIST = \\""")
-    pprint.pprint(ghc_bindists)
-
+    print("{")
+    for version in sorted(ghc_bindists.keys(), key=StrictVersion):
+       print('    ', repr(version), end=': ')
+       print(pprint.pformat(ghc_bindists[version], indent=8), end=',\n')
+    print("}")

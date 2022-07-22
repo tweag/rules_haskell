@@ -1,0 +1,12 @@
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+
+haskell_cabal_library(
+    name = "pkg-a",
+    srcs = [
+        "pkg-a.cabal",
+        "src/LibA.hsc",
+    ],
+    version = "0.1.0.0",
+    visibility = ["//tests/haskell_cabal_reproducibility:__subpackages__"],
+    deps = ["//tests/haskell_cabal_reproducibility/clib:libmyclib"],
+)

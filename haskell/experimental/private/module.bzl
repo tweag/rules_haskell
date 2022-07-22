@@ -6,7 +6,7 @@ load(
 load(
     "//haskell:private/expansions.bzl",
     "expand_make_variables",
-    "haskell_library_extra_label_attrs",
+    "haskell_library_expand_make_variables",
 )
 load(
     "//haskell:private/mode.bzl",
@@ -22,6 +22,7 @@ load(
     "//haskell:private/plugins.bzl",
     "resolve_plugin_tools",
 )
+load("//haskell:private/set.bzl", "set")
 load(
     "//haskell:providers.bzl",
     "GhcPluginInfo",
@@ -32,6 +33,11 @@ load(
     "HaskellModuleInfo",
 )
 load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
+load(
+    "//haskell:private/actions/process_hsc_file.bzl",
+    "preprocess_hsc_flags_and_inputs",
+    "process_hsc_file",
+)
 
 # Note [Narrowed Dependencies]
 #
@@ -71,6 +77,20 @@ load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
 # profiling builds use the libraries of narrowed_deps instead of the
 # their object files.
 
+# Note [Deps as both narrowed and not narrowed]
+#
+# Package databases are searched in reversed order with respect to
+# how they appear in the command line of GHC or in environment files.
+#
+# If a package appears both in narrowed_deps and in normal deps, different
+# versions of the package will appear in different package databases.
+# One of the versions points to an empty shared library, and the other
+# version points to the real shared library.
+#
+# When both versions are needed, we want package database pointing
+# to the real shared library to take precedence. Thus it should appear
+# last in the command line or the environment files.
+
 def _build_haskell_module(
         ctx,
         hs,
@@ -79,15 +99,18 @@ def _build_haskell_module(
         dep_info,
         narrowed_deps_info,
         package_name,
+        with_profiling,
         with_shared,
+        enable_th,
         hidir,
         odir,
         module_outputs,
         interface_inputs,
         object_inputs,
         narrowed_objects,
+        extra_ldflags_file,
         module):
-    """Build a module
+    """Build a module. Returns data needed by haskell_repl.
 
     Args:
       ctx: The context of the binary, library, or test rule using the module
@@ -97,21 +120,53 @@ def _build_haskell_module(
       dep_info: info on dependencies in deps
       narrowed_deps_info: info on dependencies in narrowed_deps
       package_name: name of this package, or empty if building a binary
+      with_profiling: Whether to build profiling object files
       with_shared: Whether to build dynamic object files
+      enable_th: Whether object files and shared libraries need to be exposed to the build action
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
       module_outputs: A struct containing the interfaces and object files produced for a haskell_module.
       interface_inputs: A depset containing the interface files needed as input
       object_inputs: A depset containing the object files needed as input
       narrowed_objects: A depset containing the narrowed object files needed as arguments to ghc.
+      extra_ldflags_file: A File with flags for ld or None.
       module: The Target of the haskell_module rule
+
+    Returns:
+      struct(source_file, boot_file, import_dir, user_compile_flags):
+        source_file: The file that contains the Haskell module. None if it's a boot file.
+        boot_file: The file that contains the boot Haskell module. None if it's not a boot file.
+        import_dir: A possibly (e.g. due to hsc) newly generated import directory.
+        user_compile_flags: Compiler flags specified by the user in this module after location expansion.
     """
 
+    version = getattr(ctx.attr, "version", None)
     moduleAttr = module[HaskellModuleInfo].attr
 
     # Collect dependencies
     src = moduleAttr.src.files.to_list()[0]
     extra_srcs = [f for t in moduleAttr.extra_srcs + ctx.attr.extra_srcs for f in t.files.to_list()]
+
+    user_ghcopts = []
+    user_ghcopts += haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
+
+    module_extra_attrs = [
+        [moduleAttr.src],
+        moduleAttr.extra_srcs,
+        moduleAttr.plugins,
+        moduleAttr.tools,
+    ]
+
+    user_compile_flags = expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs)
+    user_ghcopts += user_compile_flags
+
+    import_dir = None
+    if src.extension == "hsc":
+        hsc_flags, hsc_inputs = preprocess_hsc_flags_and_inputs(dep_info, user_ghcopts, version)
+
+        hs_out, idir = process_hsc_file(hs, cc, hsc_flags, hsc_inputs, src)
+        src = hs_out
+        import_dir = idir
 
     # Note [Plugin order]
     plugin_decl = reversed(ctx.attr.plugins + moduleAttr.plugins)
@@ -121,9 +176,6 @@ def _build_haskell_module(
     )
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
     (preprocessors_inputs, preprocessors_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools + moduleAttr.tools)
-
-    # Determine outputs
-    with_profiling = is_profiling_enabled(hs)
 
     # TODO[AH] Support additional outputs such as `.hie`.
 
@@ -139,6 +191,8 @@ def _build_haskell_module(
         "-i" + paths.join(hs.bin_dir.path, hs.package_root, hidir),
         src,
     ])
+    if hs.mode == "opt":
+        args.add("-O2")
     if with_shared:
         args.add("-dynamic-too")
     args.add_all([
@@ -187,6 +241,11 @@ def _build_haskell_module(
 
     args.add_all(cc.include_args)
 
+    if plugins or enable_th:
+        # cc toolchain linker flags would be necessary when the interpreter wants to
+        # load any libraries
+        args.add_all(cc.linker_flags, format_each = "-optl%s")
+
     # Collect library dependency arguments
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
@@ -194,12 +253,14 @@ def _build_haskell_module(
             package_ids = hs.package_ids,
             package_databases = depset(
                 transitive = [
-                    dep_info.package_databases,
+                    # Mind the order in which databases are specified here.
+                    # See Note [Deps as both narrowed and not narrowed].
                     narrowed_deps_info.empty_lib_package_databases,
+                    dep_info.package_databases,
                 ],
+                order = "preorder",
             ),
-            # TODO[AH] Support version macros
-            version = None,
+            version = version,
         ),
         plugin_pkg_info = expose_packages(
             package_ids = [
@@ -208,7 +269,7 @@ def _build_haskell_module(
                 for pkg_id in all_dependencies_package_ids(plugin.deps)
             ],
             package_databases = plugin_dep_info.package_databases,
-            version = None,
+            version = version,
         ),
         prefix = "compile-{}-".format(module.label.name),
     )
@@ -226,19 +287,15 @@ def _build_haskell_module(
         for manifest in plugin.tool_input_manifests
     ]
 
-    # TODO[AH] Support package id - see `-this-unit-id` flag.
-
     args.add_all(hs.toolchain.ghcopts)
+    args.add_all(user_ghcopts)
 
-    args.add_all(expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts, haskell_library_extra_label_attrs(ctx.attr)))
-    module_extra_attrs = [
-        [moduleAttr.src],
-        moduleAttr.extra_srcs,
-        moduleAttr.plugins,
-        moduleAttr.tools,
-    ]
-    args.add_all(expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs))
-    args.add_all(narrowed_objects)
+    if plugins and not enable_th:
+        # For #1681. These suppresses bogus warnings about missing libraries which
+        # aren't really needed.
+        args.add("-Wno-missed-extra-shared-lib")
+    if enable_th:
+        args.add_all(narrowed_objects)
 
     outputs = [module_outputs.hi]
     if module_outputs.o:
@@ -248,17 +305,22 @@ def _build_haskell_module(
         if module_outputs.dyn_o:
             outputs += [module_outputs.dyn_o]
 
+    input_files = [src] + extra_srcs + [optp_args_file]
+    if enable_th and extra_ldflags_file:
+        args.add("-optl@{}".format(extra_ldflags_file.path))
+        input_files.append(extra_ldflags_file)
+
     # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
         inputs = depset(
-            direct = [src] + extra_srcs + [optp_args_file],
+            direct = input_files,
             transitive = [
                 dep_info.package_databases,
                 dep_info.interface_dirs,
-                narrowed_deps_info.empty_hs_libraries,
                 narrowed_deps_info.empty_lib_package_databases,
+                narrowed_deps_info.deps_interface_dirs,
                 pkg_info_inputs,
                 plugin_dep_info.package_databases,
                 plugin_dep_info.interface_dirs,
@@ -266,12 +328,17 @@ def _build_haskell_module(
                 plugin_tool_inputs,
                 preprocessors_inputs,
                 interface_inputs,
-                narrowed_objects,
             ] + [
                 files
-                for files in [dep_info.hs_libraries, object_inputs]
+                for files in [
+                    dep_info.hs_libraries,
+                    dep_info.deps_hs_libraries,
+                    narrowed_deps_info.deps_hs_libraries,
+                    narrowed_deps_info.empty_hs_libraries,
+                    object_inputs,
+                ]
                 # libraries and object inputs are only needed if the module uses TH
-                if module[HaskellModuleInfo].attr.enable_th
+                if enable_th
             ],
         ),
         input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
@@ -281,6 +348,14 @@ def _build_haskell_module(
         env = hs.env,
         arguments = args,
         extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
+    )
+
+    is_boot = _is_boot(src.path)
+    return struct(
+        source_file = None if is_boot else src,
+        boot_file = src if is_boot else None,
+        import_dir = import_dir,
+        user_compile_flags = user_compile_flags,
     )
 
 def get_module_path_from_target(module):
@@ -299,12 +374,14 @@ def get_module_path_from_target(module):
 
     return paths.split_extension(paths.relativize(src, prefix_path))[0]
 
-def _declare_module_outputs(hs, with_shared, hidir, odir, module):
+def _is_boot(path):
+    return paths.split_extension(path)[1] in [".hs-boot", ".lhs-boot"]
+
+def _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, module):
     module_path = get_module_path_from_target(module)
 
     src = module[HaskellModuleInfo].attr.src.files.to_list()[0].path
-    hs_boot = paths.split_extension(src)[1] in [".hs-boot", ".lhs-boot"]
-    with_profiling = is_profiling_enabled(hs)
+    hs_boot = _is_boot(src)
     extension_template = "%s"
     if hs_boot:
         extension_template = extension_template + "-boot"
@@ -341,20 +418,23 @@ def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
             for m in dep[HaskellModuleInfo].direct_module_deps
             if m.label in module_outputs
         ]
-        os += [
+        dyn_os = [
             dyn_o
             for m in dep[HaskellModuleInfo].direct_module_deps
             if m.label in module_outputs
             for dyn_o in [module_outputs[m.label].dyn_o]
             if dyn_o  # boot module files produce no useful object files
         ]
-    return his, os
+    else:
+        dyn_os = []
+    return his, os, dyn_os
 
-def _collect_module_inputs(module_input_map, directs, dep):
+def _collect_module_inputs(module_input_map, extra_inputs, directs, dep):
     """ Put together inputs coming from direct and transitive dependencies.
 
     Args:
       module_input_map: maps labels of dependencies to all the inputs they require
+      extra_inputs: an addition depset of inputs to include
       directs: inputs of direct dependencies
       dep: the target for which to collect inputs
 
@@ -363,7 +443,7 @@ def _collect_module_inputs(module_input_map, directs, dep):
     """
     all_inputs = depset(
         direct = directs,
-        transitive = [
+        transitive = [extra_inputs] + [
             module_input_map[m.label]  # Will be set by a previous iteration, since all deps were visited before.
             for m in dep[HaskellModuleInfo].direct_module_deps
             if m.label in module_input_map
@@ -399,7 +479,7 @@ def _reorder_module_deps_to_postorder(label, modules):
                in the enclosing library/binary/test.
 
     Returns:
-      A list with the targets in modules in postorder
+      A list with the modules in postorder
     """
     transitive_module_dep_labels = depset(
         direct = [m.label for m in modules],
@@ -429,15 +509,17 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
       narrowed_deps: The contents of the narrowed_deps attribute
 
     Returns:
-      pair of per_module_transitive_interfaces, per_module_transitive_objects:
-        per_module_transitive_interfaces: dict of module labels to their
-		   interfaces and the interfaces of their transitive module dependencies
-        per_module_transitive_objects: dict of module labels to their
-		   object files and the object file of their transitive module
-		   dependencies
+      struct(transitive_interfaces, transitive_objects, transitive_dyn_objects):
+        transitive_interfaces: dict of module labels to their
+           interfaces and the interfaces of their transitive module dependencies
+        transitive_objects: dict of module labels to their
+           object files and the object file of their transitive module
+           dependencies
+        transitive_dyn_objects: like per_module_transitive_objects but for dyn_o files
     """
-    per_module_transitive_interfaces = {}
-    per_module_transitive_objects = {}
+    transitive_interfaces = {}
+    transitive_objects = {}
+    transitive_dyn_objects = {}
     for dep in narrowed_deps:
         if not HaskellInfo in dep or not HaskellLibraryInfo in dep:
             fail("{}: depedency {} is not a haskell_library as required when used in narrowed_deps".format(
@@ -450,9 +532,14 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
                 str(rule_label),
                 str(dep.label),
             ))
-        _merge_depset_dicts(per_module_transitive_interfaces, lib_info.per_module_transitive_interfaces)
-        _merge_depset_dicts(per_module_transitive_objects, lib_info.per_module_transitive_objects)
-    return per_module_transitive_interfaces, per_module_transitive_objects
+        _merge_depset_dicts(transitive_interfaces, lib_info.per_module_transitive_interfaces)
+        _merge_depset_dicts(transitive_objects, lib_info.per_module_transitive_objects)
+        _merge_depset_dicts(transitive_dyn_objects, lib_info.per_module_transitive_dyn_objects)
+    return struct(
+        transitive_interfaces = transitive_interfaces,
+        transitive_objects = transitive_objects,
+        transitive_dyn_objects = transitive_dyn_objects,
+    )
 
 def interfaces_as_list(with_shared, o):
     if with_shared:
@@ -460,9 +547,20 @@ def interfaces_as_list(with_shared, o):
     else:
         return [o.hi]
 
-def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, odir):
+def build_haskell_modules(
+        ctx,
+        hs,
+        cc,
+        posix,
+        package_name,
+        with_profiling,
+        with_shared,
+        extra_ldflags_file,
+        hidir,
+        odir):
     """ Build all the modules of haskell_module rules in ctx.attr.modules
-        and in their dependencies
+        and in their dependencies. The repl_info returned here aggregates data
+        from all the haskell_modules being run here.
 
     Args:
       ctx: The context of the rule with module dependencies
@@ -470,12 +568,14 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
       cc: CcInteropInfo, information about C dependencies
       posix: posix toolchain
       package_name: package name if building a library or empty if building a binary
+      with_profiling: Whether to build profiling object files
       with_shared: Whether to build dynamic object files
+      extra_ldflags_file: A File with flags for ld or None.
       hidir: The directory in which to output interface files
       odir: The directory in which to output object files
 
     Returns:
-      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces, per_module_transitive_objects):
+      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces, per_module_transitive_objects, per_module_transitive_dyn_objects, repl_info):
         his: interface files of all modules in ctx.attr.modules
         dyn_his: dynamic interface files of all modules in ctx.attr.modules
         os: object files of all modules in ctx.attr.modules
@@ -486,8 +586,14 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         per_module_transitive_objects: dict of module labels to their
             object files and the object files of their transitive module
             dependencies. See Note [Narrowed Dependencies].
+        per_module_transitive_dyn_objects: like per_module_transitive_objects but for dyn_o files
+        repl_info: struct(source_files, boot_files, import_dirs, user_compile_flags):
+          source_files: Depset of files that contain Haskell modules.
+          boot_files: Depset of files that contain Haskell boot modules.
+          import_dirs: Set of newly generated import directories. hsc2hs generates these.
+          user_compile_flags: Compiler flags specified by the user, after location expansion.
     """
-    per_module_transitive_interfaces, per_module_transitive_objects = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
+    per_module_maps = _merge_narrowed_deps_dicts(ctx.label, ctx.attr.narrowed_deps)
 
     # We produce separate infos for narrowed_deps and deps because the module
     # files in dep_info are given as inputs to the build action, but the
@@ -498,20 +604,25 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
     all_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.deps + ctx.attr.narrowed_deps)
     empty_deps_info = gather_dep_info(ctx.attr.name, [])
     transitive_module_deps = _reorder_module_deps_to_postorder(ctx.label, ctx.attr.modules)
-    module_outputs = {dep.label: _declare_module_outputs(hs, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
+    module_outputs = {dep.label: _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, dep) for dep in transitive_module_deps}
 
     module_interfaces = {}
     module_objects = {}
+    module_dyn_objects = {}
+
+    source_files = []
+    boot_files = []
+    import_dirs = []
+    user_compile_flags = []
+
     for dep in transitive_module_deps:
         # called in all cases to validate cross_library_deps, although the output
         # might be ignored when disabling narrowing
-        narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_interfaces, dep)
+        narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_interfaces, dep)
         enable_th = dep[HaskellModuleInfo].attr.enable_th
 
         # Narrowing doesn't work when using the external interpreter so we disable it here
-        if enable_th and is_profiling_enabled(hs):
-            per_module_transitive_interfaces_i = []
-            per_module_transitive_objects_i = []
+        if enable_th and with_profiling:
             dep_info_i = all_deps_info
             narrowed_deps_info_i = empty_deps_info
             narrowed_interfaces = depset()
@@ -520,14 +631,18 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             dep_info_i = dep_info
             narrowed_deps_info_i = narrowed_deps_info
 
-            # objects are only needed if the module uses TH
-            narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_transitive_objects, dep) if enable_th else depset()
+            # even if TH is not enabled, we collect the narrowed_objects for building
+            # other modules that import this one and that might use TH
+            narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_objects, dep)
 
-        his, os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
-        interface_inputs = _collect_module_inputs(module_interfaces, his, dep)
-        object_inputs = _collect_module_inputs(module_objects, os, dep)
+        his, os, dyn_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
+        interface_inputs = _collect_module_inputs(module_interfaces, narrowed_interfaces, his, dep)
+        object_inputs = depset(transitive = [
+            _collect_module_inputs(module_objects, narrowed_objects, os, dep),
+            _collect_module_inputs(module_dyn_objects, narrowed_objects, dyn_os, dep),
+        ])
 
-        _build_haskell_module(
+        module_output = _build_haskell_module(
             ctx,
             hs,
             cc,
@@ -535,15 +650,25 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
             dep_info_i,
             narrowed_deps_info_i,
             package_name,
+            with_profiling,
             with_shared,
+            enable_th,
             hidir,
             odir,
             module_outputs[dep.label],
-            depset(transitive = [interface_inputs, narrowed_interfaces]),
+            interface_inputs,
             object_inputs,
             narrowed_objects,
+            extra_ldflags_file,
             dep,
         )
+        if module_output.source_file:
+            source_files.append(module_output.source_file)
+        if module_output.boot_file:
+            boot_files.append(module_output.boot_file)
+        if module_output.import_dir:
+            import_dirs.append(module_output.import_dir)
+        user_compile_flags += module_output.user_compile_flags
 
     module_outputs_list = module_outputs.values()
     hi_set = depset([outputs.hi for outputs in module_outputs_list])
@@ -563,7 +688,7 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         )
         for dep in transitive_module_deps
     }
-    _merge_depset_dicts(per_module_transitive_interfaces0, per_module_transitive_interfaces)
+    _merge_depset_dicts(per_module_transitive_interfaces0, per_module_maps.transitive_interfaces)
     per_module_transitive_objects0 = {
         dep.label: depset(
             [module_outputs[dep.label].o],
@@ -571,7 +696,15 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         )
         for dep in transitive_module_deps
     }
-    _merge_depset_dicts(per_module_transitive_objects0, per_module_transitive_objects)
+    per_module_transitive_dyn_objects0 = {
+        dep.label: depset(
+            [module_outputs[dep.label].dyn_o],
+            transitive = [module_dyn_objects[dep.label]],
+        )
+        for dep in transitive_module_deps
+    } if with_shared else {}
+    _merge_depset_dicts(per_module_transitive_objects0, per_module_maps.transitive_objects)
+    _merge_depset_dicts(per_module_transitive_dyn_objects0, per_module_maps.transitive_dyn_objects)
 
     return struct(
         his = hi_set,
@@ -580,6 +713,13 @@ def build_haskell_modules(ctx, hs, cc, posix, package_name, with_shared, hidir, 
         dyn_os = dyn_o_set,
         per_module_transitive_interfaces = per_module_transitive_interfaces0,
         per_module_transitive_objects = per_module_transitive_objects0,
+        per_module_transitive_dyn_objects = per_module_transitive_dyn_objects0,
+        repl_info = struct(
+            source_files = depset(source_files),
+            boot_files = depset(boot_files),
+            import_dirs = set.from_list(import_dirs),
+            user_compile_flags = user_compile_flags,
+        ),
     )
 
 def haskell_module_impl(ctx):

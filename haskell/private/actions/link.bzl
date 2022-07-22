@@ -4,7 +4,7 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/cc_libraries.bzl", "create_link_config")
+load(":private/cc_libraries.bzl", "create_link_config", "get_cc_libraries", "get_library_files")
 
 def merge_parameter_files(hs, file1, file2):
     """Merge two GHC parameter files into one.
@@ -36,6 +36,77 @@ def merge_parameter_files(hs, file1, file2):
     )
     return params_file
 
+def darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, basename, dynamic):
+    """Write flags to force linking cc dependencies on MacOS to a parameter file.
+
+    GHC uses -dead_strip_dylibs in MacOS which discards all of the
+    indirect dependencies. Since cc libraries are underlinked, we use
+    -u symbol flags to force the linker to keep the cc dependencies
+    even when -dead_strip_dylibs is used.
+
+    Args:
+      hs: Haskell context.
+      cc: CcInteropInfo, information about C dependencies.
+      posix: Posix toolchain
+      basename: The basename to use for the output file.
+      dynamic: Bool: Whether to link dynamically or statically.
+
+    Returns:
+      File: Parameter file with additional linker flags to be passed to GHC,
+      or None if we aren't building for darwin.
+    """
+
+    if not hs.toolchain.is_darwin:
+        return None
+
+    # On Darwin GHC will pass the dead_strip_dylibs flag to the linker. This
+    # flag will remove any shared library loads from the binary's header that
+    # are not directly resolving undefined symbols in the binary. I.e. any
+    # indirect shared library dependencies will be removed. This conflicts with
+    # Bazel's builtin cc rules, which assume that the final binary will load
+    # all transitive shared library dependencies. In particlar shared libraries
+    # produced by Bazel's cc rules never load shared libraries themselves. This
+    # causes missing symbols at runtime on MacOS, see #170.
+    #
+    # The following work-around applies the `-u` flag to the linker for an external
+    # symbol of each cc dependency. This forces the linker to resolve these
+    # undefined symbols in all the transitive shared cc library dependencies
+    # and keep the corresponding load commands in the binary's header.
+    suffix = ".dynamic.linker_flags" if dynamic else ".static.linker_flags"
+    linker_flags_file = hs.actions.declare_file(basename + suffix)
+
+    (_cc_static_libs, cc_dynamic_libs) = get_library_files(
+        hs,
+        cc.cc_libraries_info,
+        get_cc_libraries(cc.cc_libraries_info, cc.transitive_libraries),
+        dynamic,
+    )
+
+    # Some flags used in the invocation to nm are MacOS-specific and
+    # tested to exist at least since 10.15.
+    #
+    # -g     Display only global (external) symbols.
+    # -j     Just display the symbol names (no value or type).
+    # -p     Don't sort; display in symbol-table order.
+    # -U     Don't display undefined symbols.
+    hs.actions.run_shell(
+        inputs = cc_dynamic_libs,
+        outputs = [linker_flags_file],
+        command = """
+        touch {out}
+        for lib in {solibs}; do
+            {nm} -Ujpg "$lib" | {head} -1 | {sed} 's/^/-u /' >> {out}
+        done
+        """.format(
+            nm = cc.tools.nm,
+            head = posix.commands["head"],
+            sed = posix.commands["sed"],
+            solibs = " ".join(["\"" + l.path + "\"" for l in cc_dynamic_libs]),
+            out = linker_flags_file.path,
+        ),
+    )
+    return linker_flags_file
+
 def link_binary(
         hs,
         cc,
@@ -45,6 +116,7 @@ def link_binary(
         compiler_flags,
         object_files,
         extra_objects,
+        extra_ldflags_file,
         dynamic,
         with_profiling,
         version):
@@ -58,7 +130,7 @@ def link_binary(
     executable = hs.actions.declare_file(exe_name)
 
     args = hs.actions.args()
-    args.add_all(["-optl" + f for f in cc.linker_flags])
+    args.add_all(cc.linker_flags, format_each = "-optl%s")
     if with_profiling:
         args.add("-prof")
     args.add_all(hs.toolchain.ghcopts)
@@ -135,6 +207,11 @@ def link_binary(
         # TODO remove this gross hack.
         args.add("-liconv")
 
+    input_files = [cache_file] + object_files
+    if extra_ldflags_file:
+        args.add("-optl@{}".format(extra_ldflags_file.path))
+        input_files.append(extra_ldflags_file)
+
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
@@ -142,7 +219,7 @@ def link_binary(
             depset(extra_srcs),
             dep_info.package_databases,
             dep_info.hs_libraries,
-            depset([cache_file] + object_files, transitive = [extra_objects]),
+            depset(input_files, transitive = [extra_objects]),
             pkg_info_inputs,
             depset(static_libs + dynamic_libs),
         ]),
@@ -251,7 +328,14 @@ def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_p
 
     return static_library
 
-def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_pkg_id, compiler_flags, empty_lib_prefix = ""):
+def dynamic_library_filename(hs, my_pkg_id):
+    return "lib{0}-ghc{1}.{2}".format(
+        pkg_id.library_name(hs, my_pkg_id),
+        hs.toolchain.version,
+        _so_extension(hs),
+    )
+
+def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_pkg_id, compiler_flags, extra_ldflags_file, empty_lib_prefix = ""):
     """Link a dynamic library for the package using given object files.
 
     Returns:
@@ -259,18 +343,11 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     """
 
     dynamic_library = hs.actions.declare_file(
-        paths.join(
-            empty_lib_prefix,
-            "lib{0}-ghc{1}.{2}".format(
-                pkg_id.library_name(hs, my_pkg_id),
-                hs.toolchain.version,
-                _so_extension(hs),
-            ),
-        ),
+        paths.join(empty_lib_prefix, dynamic_library_filename(hs, my_pkg_id)),
     )
 
     args = hs.actions.args()
-    args.add_all(["-optl" + f for f in cc.linker_flags])
+    args.add_all(cc.linker_flags, format_each = "-optl%s")
     args.add_all(["-shared", "-dynamic"])
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
@@ -303,10 +380,15 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
 
     args.add_all(object_files)
 
+    input_files = [cache_file]
+    if extra_ldflags_file:
+        args.add("-optl@{}".format(extra_ldflags_file.path))
+        input_files.append(extra_ldflags_file)
+
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
-        inputs = depset([cache_file], transitive = [
+        inputs = depset(input_files, transitive = [
             object_files,
             extra_srcs,
             dep_info.package_databases,

@@ -5,13 +5,19 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(
     ":private/versions.bzl",
-    "check_version",
+    "check_bazel_version_compatible",
 )
+
+_rules_nixpkgs_version = "v0.9.0"
+_rules_nixpkgs_sha256 = "b01f170580f646ee3cde1ea4c117d00e561afaf3c59eda604cf09194a824ff10"
+
+_rules_sh_version = "v0.3.0"
+_rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
 
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
     if "bazel_version" in dir(native):
-        check_version(native.bazel_version)
+        check_bazel_version_compatible(native.bazel_version)
 
     maybe(
         http_archive,
@@ -48,20 +54,41 @@ def rules_haskell_dependencies():
     )
 
     maybe(
-        git_repository,
+        http_archive,
         name = "rules_sh",
-        commit = "670efdc93c97fde478a91abb7d2b8308cb835a40",
-        remote = "https://github.com/tweag/rules_sh.git",
-        shallow_since = "1637931407 +0100",
+        urls = ["https://github.com/tweag/rules_sh/archive/%s.tar.gz" % _rules_sh_version],
+        sha256 = _rules_sh_sha256,
+        strip_prefix = "rules_sh-%s" % _rules_sh_version.lstrip("v"),
     )
 
-    maybe(
-        http_archive,
-        name = "io_tweag_rules_nixpkgs",
-        sha256 = "9b97f6cce67bd2a005089ca108358e9bbc24531794a9d1f8ca537470ee8ca2d1",
-        strip_prefix = "rules_nixpkgs-075794009270b12986d3d840e4fc065a3aceba00",
-        urls = ["https://github.com/tweag/rules_nixpkgs/archive/075794009270b12986d3d840e4fc065a3aceba00.tar.gz"],
-    )
+    if "io_tweag_rules_nixpkgs" not in native.existing_rules():
+        # N.B. rules_nixpkgs was split into separate components, which need to be loaded separately
+        #
+        # See https://github.com/tweag/rules_nixpkgs/issues/182 for the rational
+
+        strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version.lstrip("v")
+
+        http_archive(
+            name = "io_tweag_rules_nixpkgs",
+            strip_prefix = strip_prefix,
+            urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+            sha256 = _rules_nixpkgs_sha256,
+        )
+
+        http_archive(
+            name = "rules_nixpkgs_core",
+            strip_prefix = strip_prefix + "/core",
+            urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+            sha256 = _rules_nixpkgs_sha256,
+        )
+
+        for toolchain in ["cc", "java", "python", "go", "rust", "posix"]:
+            http_archive(
+                name = "rules_nixpkgs_" + toolchain,
+                strip_prefix = strip_prefix + "/toolchains/" + toolchain,
+                urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+                sha256 = _rules_nixpkgs_sha256,
+            )
 
     maybe(
         http_archive,

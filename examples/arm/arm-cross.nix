@@ -97,6 +97,7 @@ in
   };
   cc-aarch64 = pkgs.buildEnv {
     name = "cc-aarch64-env";
+    passthru = { isClang = false; };
     paths =
       [ prefixStrippedGCC
       ];

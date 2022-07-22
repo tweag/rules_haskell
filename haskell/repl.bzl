@@ -41,9 +41,9 @@ HaskellReplLoadInfo = provider(
     Information to a Haskell target to load into the REPL as source.
     """,
     fields = {
-        "source_files": "Set of files that contain Haskell modules.",
-        "boot_files": "Set of Haskell boot files.",
-        "import_dirs": "Set of Haskell import directories.",
+        "source_files": "Depset of files that contain Haskell modules.",
+        "boot_files": "Depset of Haskell boot files.",
+        "import_dirs": "Depset of Haskell import directories.",
         "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of transitive C dependencies.",
         "compiler_flags": "Flags to pass to the Haskell compiler.",
@@ -183,24 +183,32 @@ def _create_HaskellReplCollectInfo(target, ctx):
     hs_info = target[HaskellInfo]
 
     if not HaskellToolchainLibraryInfo in target:
+        java_deps_list = []
+
         if hasattr(ctx.rule.attr, "deps"):
-            java_deps = java_interop_info(ctx.rule.attr.deps).inputs
-        else:
-            java_deps = depset()
+            java_deps_list += [java_interop_info(ctx.rule.attr.deps).inputs]
+
+        # TODO[GL]: add tests for the java deps in narrowed_deps
+        if hasattr(ctx.rule.attr, "narrowed_deps"):
+            java_deps_list += [java_interop_info(ctx.rule.attr.narrowed_deps).inputs]
+
+        java_deps = depset(transitive = java_deps_list)
+
+        # TODO[GL]: add tests for CcInfo deps in narrowed_deps
+        ccInfoDeps = [
+            dep
+            for dep in getattr(ctx.rule.attr, "deps", []) + getattr(ctx.rule.attr, "narrowed_deps", [])
+            if CcInfo in dep and not HaskellInfo in dep
+        ]
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = hs_info.source_files,
             boot_files = hs_info.boot_files,
             import_dirs = set.to_depset(hs_info.import_dirs),
-            cc_libraries_info = deps_HaskellCcLibrariesInfo([
-                dep
-                for dep in getattr(ctx.rule.attr, "deps", [])
-                if CcInfo in dep and not HaskellInfo in dep
-            ]),
+            cc_libraries_info = deps_HaskellCcLibrariesInfo(ccInfoDeps),
             cc_info = cc_common.merge_cc_infos(cc_infos = [
                 # Collect pure C library dependencies, no Haskell dependencies.
                 dep[CcInfo]
-                for dep in getattr(ctx.rule.attr, "deps", [])
-                if CcInfo in dep and not HaskellInfo in dep
+                for dep in ccInfoDeps
             ]),
             compiler_flags = hs_info.user_compile_flags,
             repl_ghci_args = hs_info.user_repl_flags,
@@ -396,7 +404,11 @@ def _create_repl(hs, cc, posix, ctx, repl_info, output):
         "$RULES_HASKELL_EXEC_ROOT",
         hs.toolchain.cc_wrapper.executable.path,
     )
-    args.extend(['"{}"'.format(arg) for arg in ghc_cc_program_args(hs, cc_path)])
+    ld_path = paths.join(
+        "$RULES_HASKELL_EXEC_ROOT",
+        cc.ld_executable,
+    )
+    args.extend(['"{}"'.format(arg) for arg in ghc_cc_program_args(hs, cc_path, ld_path)])
 
     # Load source files
     # Force loading by source with `:add *...`.
@@ -518,7 +530,8 @@ def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
     path_prefix = paths.join("", *path_prefix)
     args, inputs = _compiler_flags_and_inputs(hs, cc, repl_info, path_prefix = path_prefix, static = True)
     cc_path = paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path)
-    args.extend(ghc_cc_program_args(hs, cc_path))
+    ld_path = paths.join(path_prefix, cc.ld_executable)
+    args.extend(ghc_cc_program_args(hs, cc_path, ld_path))
     args.extend(hs.toolchain.ghcopts)
     args.extend(repl_info.load_info.compiler_flags)
 
@@ -541,18 +554,19 @@ def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
     return [OutputGroupInfo(hie_bios = [args_link])]
 
 def _haskell_repl_aspect_impl(target, ctx):
+    # TODO[GL]: try removing this and using required_providers, once we're on a newer version of bazel
     if HaskellInfo not in target:
         return []
 
     target_info = _create_HaskellReplCollectInfo(target, ctx)
-    if hasattr(ctx.rule.attr, "deps"):
-        deps_infos = [
-            dep[HaskellReplCollectInfo]
-            for dep in ctx.rule.attr.deps
-            if HaskellReplCollectInfo in dep
-        ]
-    else:
-        deps_infos = []
+
+    deps_infos = [
+        dep[HaskellReplCollectInfo]
+        for deps_field_name in ["deps", "narrowed_deps"]
+        for dep in getattr(ctx.rule.attr, deps_field_name, [])
+        if HaskellReplCollectInfo in dep
+    ]
+
     collect_info = _merge_HaskellReplCollectInfo([target_info] + deps_infos)
 
     # This aspect currently does not generate an executable REPL script by
@@ -561,9 +575,12 @@ def _haskell_repl_aspect_impl(target, ctx):
 
     return [collect_info]
 
+# We don't have a provides field here, since we might not actually return HaskellReplCollectInfo,
+# if the target doesn't have a HaskellInfo.
+# TODO[GL]: try adding it once we can use required_providers.
 haskell_repl_aspect = aspect(
     implementation = _haskell_repl_aspect_impl,
-    attr_aspects = ["deps"],
+    attr_aspects = ["deps", "narrowed_deps"],
     required_aspect_providers = [HaskellCcLibrariesInfo],
     doc = """\
 Haskell REPL aspect.

@@ -14,6 +14,7 @@ import os
 import sys
 import textwrap
 import types
+import json
 
 import package_configuration
 
@@ -22,24 +23,6 @@ if len(sys.argv) == 3:
     topdir = sys.argv[2]
 else:
     sys.exit("Usage: pkgdb_to_bzl.py <REPO_NAME> <TOPDIR>")
-
-def unfold_fields(content):
-    """Unfold fields that were split over multiple lines.
-
-    Returns:
-        A list of strings. Each string represents one field (a name/value pair
-        separated by a colon).
-
-    >>> unfold_fields("foo  \n   bar  \n   baz  \nbiz   \nboz   ")
-    ['foo     bar     baz  ', 'biz   ', 'boz   ']
-    """
-    fields = []
-    for line in content.splitlines():
-        if line.startswith(" "):
-            fields[-1] += line
-        elif line:
-            fields.append(line)
-    return fields
 
 def path_to_label(path, pkgroot):
     """Substitute one pkgroot for another relative one to obtain a label."""
@@ -119,12 +102,13 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     # output a SYMLINK information for the parent process
 
     # first, try to get a path within the package
-    # We check if the file exists because cabal will unconditionally
-    # generate the database entry even if no haddock was generated.
     haddock_html = None
+
     if pkg.haddock_html:
         haddock_html = path_to_label(pkg.haddock_html, pkgroot)
-        if not haddock_html:
+        # We check if the file exists because cabal will unconditionally
+        # generate the database entry even if no haddock was generated.
+        if not haddock_html and os.path.exists(pkg.haddock_html):
             haddock_html = os.path.join("haddock", "html", pkg.name)
             output.append("#SYMLINK: {} {}".format(pkg.haddock_html, haddock_html))
 
@@ -133,6 +117,12 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     haddock_interfaces = []
     for interface_path in pkg.haddock_interfaces:
         interface = path_to_label(interface_path, pkgroot)
+
+        # We check if the file exists because cabal will unconditionally
+        # generate the database entry even if no haddock was generated.
+        if not os.path.exists(interface or interface_path):
+            continue
+
         if not interface:
             interface = os.path.join(
                 "haddock",
@@ -217,11 +207,13 @@ for pkg_name, pkg_id in pkg_id_map:
     if pkg_id != pkg_name:
         output += ["""alias(name = '{}', actual = '{}')""".format(pkg_id, pkg_name)]
 
-output += [
-    textwrap.dedent("""
-      toolchain_libraries = {pkgs}
-      """.format(pkgs = [pkg_name for pkg_name, _ in pkg_id_map])
+# The _ahc_impl function recovers this toolchain_libraries variable and assumes it is defined on a single line.
+toolchain_libraries = textwrap.dedent("{pkgs}".format(pkgs = [pkg_name for pkg_name, _ in pkg_id_map])
     )
-]
+output.append("toolchain_libraries = {}".format(toolchain_libraries))
 
-print("\n".join(output))
+result = {
+    "file_content": "\n".join(output),
+    "toolchain_libraries": toolchain_libraries,
+}
+print(json.dumps(result))

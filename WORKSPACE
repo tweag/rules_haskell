@@ -40,7 +40,6 @@ load(
     "@rules_haskell//:constants.bzl",
     "test_asterius_version",
     "test_ghc_version",
-    "test_stack_snapshot",
 )
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
@@ -53,6 +52,7 @@ stack_snapshot(
             "exe",
         ],
     },
+    local_snapshot = "//:stackage_snapshot.yaml",
     packages = [
         # Core libraries
         "array",
@@ -90,7 +90,6 @@ stack_snapshot(
         "temporary",
     ],
     setup_deps = {"polysemy": ["cabal-doctest"]},
-    snapshot = test_stack_snapshot,
     stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
     tools = [
         # This is not required, as `stack_snapshot` would build alex
@@ -108,8 +107,8 @@ stack_snapshot(
 stack_snapshot(
     name = "stackage-zlib",
     extra_deps = {"zlib": ["//tests:zlib"]},
+    local_snapshot = "//:stackage_snapshot.yaml",
     packages = ["zlib"],
-    snapshot = test_stack_snapshot,
     stack_snapshot_json = "//:stackage-zlib-snapshot.json" if not is_windows else None,
 )
 
@@ -289,6 +288,7 @@ load(
     "asterius_dependencies_bindist",
     "asterius_dependencies_nix",
     "rules_haskell_asterius_toolchains",
+    "toolchain_libraries",
 )
 
 (asterius_dependencies_nix(
@@ -318,6 +318,7 @@ register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
+    "//tests:protobuf-toolchain-osx_arm64",
 )
 
 nixpkgs_cc_configure(
@@ -569,6 +570,23 @@ load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_depen
 
 buildifier_dependencies()
 
+http_archive(
+    name = "contrib_rules_bazel_integration_test",
+    sha256 = "f80c4052df80e9099ed0f2f27ef4084604333566a7b028f524ceae6e5569b429",
+    strip_prefix = "rules_bazel_integration_test-7ee995a20bbaa2f6540103c63ff4891166133c2f",
+    urls = [
+        "https://github.com/bazel-contrib/rules_bazel_integration_test/archive/7ee995a20bbaa2f6540103c63ff4891166133c2f.zip",
+    ],
+)
+
+load("@contrib_rules_bazel_integration_test//bazel_integration_test:deps.bzl", "bazel_integration_test_rules_dependencies")
+
+bazel_integration_test_rules_dependencies()
+
+load("@cgrindel_bazel_starlib//:deps.bzl", "bazel_starlib_dependencies")
+
+bazel_starlib_dependencies()
+
 # For profiling
 # Required to make use of `bazel build --profile`.
 
@@ -583,6 +601,34 @@ bind(
 load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 
 rules_haskell_worker_dependencies()
+
+# Stack snapshot repository for testing non standard toolchains
+# The toolchain_libraries rule provide a default value for the toolchain_libraries
+# variable, so we can load it even if we are not on linux.
+
+toolchain_libraries(
+    name = "toolchains_libraries",
+    repository = "linux_amd64_asterius" if is_linux else "",
+)
+
+load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
+
+stack_snapshot(
+    name = "stackage_asterius",
+    local_snapshot = "@rules_haskell//tests/asterius/stack_toolchain_libraries:snapshot.yaml",
+    packages = [
+        "xhtml",
+    ],
+    stack_snapshot_json = "@rules_haskell//tests/asterius/stack_toolchain_libraries:snapshot.json",
+    toolchain_libraries = toolchain_libraries,
+) if is_linux else None
+
+load(
+    "//tests/integration_testing:dependencies.bzl",
+    "integration_testing_bazel_binaries",
+)
+
+integration_testing_bazel_binaries()
 
 local_repository(
     name = "tutorial",

@@ -204,6 +204,7 @@ filegroup(
     name = "all_files",
     testonly = True,
     srcs = glob(["**"]) + [
+        "//haskell/asterius:all_files",
         "//haskell/c2hs:all_files",
         "//haskell/experimental:all_files",
         "//haskell/platforms:all_files",

@@ -1,4 +1,4 @@
-# check_version below cannot be called from anywhere
+# check_bazel_version_compatible below cannot be called from anywhere
 # because native.bazel_version's availability is restricted:
 #   https://github.com/bazelbuild/bazel/issues/8305
 # An alternative hacky way is as follows:
@@ -9,6 +9,20 @@
 # But we don't want to use them, as skylib is not yet loaded when code
 # in this file executes (and there's no way to execute it later; see first
 # paragraph above).
+
+# It's important to keep this list short enough (not more then 4 items)
+# because every bazel version tested requires a lot of space on CI
+# See https://github.com/tweag/rules_haskell/pull/1781#issuecomment-1187640454
+SUPPORTED_BAZEL_VERSIONS = [
+    "4.0.0",
+    "4.2.2",
+    "5.0.0",
+    "5.2.0",
+]
+
+SUPPORTED_NIXPKGS_BAZEL_PACKAGES = [
+    "bazel_4",
+]
 
 def _parse_version_chunk(version_chunk):
     """
@@ -38,23 +52,84 @@ def _parse_bazel_version(bazel_version):
     """
     return [int(_parse_version_chunk(x)) for x in bazel_version.split(".")]
 
-def check_version(actual_version):
-    if type(actual_version) != "string" or len(actual_version) < 5:
-        return  # Unexpected format
+def _is_at_least(threshold, version):
+    """Check that a version is higher or equals to a threshold.
+    Args:
+      threshold: the minimum version string
+      version: the version string to be compared to the threshold
+    Returns:
+      True if version >= threshold.
+    """
 
-    # Please use length 3 tuples, because bazel versions has 3 members;
-    # to avoid surprising behaviors (for example (2,0) >/= (2, 0, 0))
-    min_bazel = (4, 0, 0)  # Change THIS LINE when changing bazel min version
-    max_bazel = (4, 2, 1)  # Change THIS LINE when changing bazel max version
+    # Vendored from https://github.com/bazelbuild/bazel-skylib/blob/e30197f3799eb038fbed424e365573f493d52fa5/lib/versions.bzl
+    # Needed for check_bazel_version below.
+    return _parse_bazel_version(version) >= _parse_bazel_version(threshold)
 
-    actual = tuple(_parse_bazel_version(actual_version))
+def _is_at_most(threshold, version):
+    """Check that a version is lower or equals to a threshold.
+    Args:
+      threshold: the maximum version string
+      version: the version string to be compared to the threshold
+    Returns:
+      True if version <= threshold.
+    """
 
-    if (min_bazel <= actual) and (actual <= max_bazel):
-        return  # All good
+    # Vendored from https://github.com/bazelbuild/bazel-skylib/blob/e30197f3799eb038fbed424e365573f493d52fa5/lib/versions.bzl
+    # Needed for check_bazel_version below.
+    return _parse_bazel_version(version) <= _parse_bazel_version(threshold)
 
-    min_bazel_string = ".".join([str(x) for x in min_bazel])
-    max_bazel_string = ".".join([str(x) for x in max_bazel])
+def check_bazel_version(minimum_bazel_version, maximum_bazel_version = None, bazel_version = None):
+    """Check that the version of Bazel is valid within the specified range.
+    Args:
+      minimum_bazel_version: minimum version of Bazel expected
+      maximum_bazel_version: maximum version of Bazel expected
+      bazel_version: the version of Bazel to check. Used for testing, defaults to native.bazel_version
+    Returns:
+      (bool, string):
+        bool: `True`, if the version meets the criteria, otherwise `False`.
+        string: An appropriate message if the version doesn't match.
+    """
 
-    adjective = "old" if actual < min_bazel else "recent"
+    # Vendored from https://github.com/bazelbuild/bazel-skylib/blob/e30197f3799eb038fbed424e365573f493d52fa5/lib/versions.bzl#L82
+    # The upstream version `fail`s if the version doesn't match.
+    # This version instead returns false.
+    if not bazel_version:
+        if "bazel_version" not in dir(native):
+            return (False, "Current Bazel version is lower than 0.2.1; expected at least {}".format(
+                minimum_bazel_version,
+            ))
+        elif not native.bazel_version:
+            # Using a non-release version, assume it is good.
+            return (True, "")
+        else:
+            bazel_version = native.bazel_version
 
-    print("WARNING: bazel version is too {}. Supported versions range from {} to {}, but found: {}".format(adjective, min_bazel_string, max_bazel_string, actual_version))
+    if not _is_at_least(
+        threshold = minimum_bazel_version,
+        version = bazel_version,
+    ):
+        return (False, "Current Bazel version is {}; expected at least {}".format(
+            bazel_version,
+            minimum_bazel_version,
+        ))
+
+    if maximum_bazel_version:
+        if not _is_at_most(
+            threshold = maximum_bazel_version,
+            version = bazel_version,
+        ):
+            return (False, "Current Bazel version is {}; expected at most {}".format(
+                bazel_version,
+                maximum_bazel_version,
+            ))
+
+    return (True, "")
+
+def check_bazel_version_compatible(actual_version):
+    min_bazel = SUPPORTED_BAZEL_VERSIONS[0]
+    max_bazel = SUPPORTED_BAZEL_VERSIONS[-1]
+
+    (compatible, msg) = check_bazel_version(min_bazel, max_bazel, actual_version)
+
+    if not compatible:
+        print("WARNING:", msg)

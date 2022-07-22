@@ -1,0 +1,54 @@
+local_repository(
+    name = "rules_haskell",
+    path = "%RULES_HASKELL_PATH%",
+)
+
+load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
+
+rules_haskell_dependencies()
+
+load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+
+haskell_register_ghc_nixpkgs(
+    attribute_path = "haskell.compiler.ghc8107",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+    version = "8.10.7",
+)
+
+load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
+
+rules_haskell_toolchains(version = "8.10.7")
+
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_cc_configure",
+    "nixpkgs_python_configure",
+)
+
+nixpkgs_cc_configure(
+    name = "nixpkgs_config_cc",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+nixpkgs_python_configure(
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "stack_snapshot",
+    "use_stack",
+)
+
+# use dummy stack that only passes version check.
+# this should override the default behavior of 'stack_snapshot'
+# to use whatever is available in the environment.
+use_stack("//:stack")
+
+stack_snapshot(
+    name = "stackage",
+    local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
+    packages = [
+        "base",
+    ],
+)

@@ -136,7 +136,7 @@ main_file = "{}" is not listed in the "srcs" attribute.
             else:
                 fail("""\
 No source file defining the main module '{main_module}'.
-You may need to set the 'main_file' attribute.
+You may need to set the 'main_file' attribute or the 'module_name' attribute in a 'haskell_module' rule.
 """.format(main_module = main_module))
 
     if undetermined:

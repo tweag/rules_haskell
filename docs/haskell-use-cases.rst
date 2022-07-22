@@ -28,9 +28,9 @@ rules_haskell. To use a released version, do the following::
 
   http_archive(
       name = "rules_haskell",
-      strip_prefix = "rules_haskell-0.14",
-      urls = ["https://github.com/tweag/rules_haskell/archive/v0.14.tar.gz"],
-      sha256 = "851e16edc7c33b977649d66f2f587071dde178a6e5bcfeca5fe9ebbe81924334",
+      strip_prefix = "rules_haskell-0.15",
+      urls = ["https://github.com/tweag/rules_haskell/archive/v0.15.tar.gz"],
+      sha256 = "1424cd5a798f75971568f8cda3c2d94f2a6faf647487cc9c94f6b4ba6a8f3712",
   )
 
 Picking a compiler
@@ -552,6 +552,133 @@ Each package mentioned in ``ghc.nix`` can then be imported using
 `haskell_toolchain_library`_ in ``BUILD`` files.
 
 .. _haskell_toolchain_library: https://api.haskell.build/haskell/defs.html#haskell_toolchain_library
+
+Building incrementally
+----------------------
+
+By default, Haskell rules that build libraries or binaries with multiple
+modules will rebuild all of their modules after any change. This is because
+``rules_haskell`` doesn't analyze the source code to discover dependencies
+between the modules. Instead, it pessimistically assumes that all the modules
+depend on every other.
+
+The user, however, can describe the dependencies between the modules,
+and avoid unnecessary recompilation by using the ``haskell_module``
+rule.::
+
+  load("@rules_haskell//haskell:defs.bzl", "haskell_library")
+  load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+  haskell_module(
+      name = "LibMod1",
+      src = "src/LibMod1.hs",
+      src_strip_prefix = "src",
+      deps = [":LibMod2"],
+      # set to True if TemplateHaskell is needed
+      enable_th = True,
+  )
+
+  haskell_module(
+      name = "LibMod2",
+      src = "src/LibMod2.hs",
+      src_strip_prefix = "src",
+  )
+
+  haskell_library(
+      name = "lib",
+      # Must choose either one of srcs or modules
+      # srcs = ...,
+      modules = [
+          "LibMod1",
+          "LibMod2",
+      ],
+      deps = [
+          "//:base",
+          "//:template-haskell",
+      ],
+  )
+
+Instead of using the ``srcs`` attribute of ``haskell_library``, each
+source file gets a ``haskell_module`` rule that is then referenced in
+the ``modules`` attribute. When a module depends on another module of
+the same library, the dependency can be expressed in the ``deps``
+attribute of the ``haskell_module`` rule.
+
+Now, when ``LibMod1.hs`` changes, ``rules_haskell`` can update the
+``lib`` target without rebuilding ``LibMod2.hs``, since ``:LibMod2``
+doesn't depend on ``:LibMod1``. ``rules_haskell`` can't detect
+redundant dependencies, but it will produce an error in sandboxed
+builds if ``:LibMod2`` needs a dependency that hasn't been declared.
+
+Dependencies of ``haskell_module`` come in three flavors. Firstly,
+required modules can be listed in the ``deps`` attribute. Secondly,
+other libraries are dependencies of the module if they appear listed
+in the ``deps`` attribute of the enclosing library (that would be
+``:lib`` in our example). Finally, the ``haskell_module`` rule can also
+depend on specific modules from other libraries via the
+``cross_library_deps`` attribute.::
+
+  haskell_module(
+      name = "Lib2Mod1",
+      src = "src/LibMod1.hs",
+      src_strip_prefix = "src",
+      deps = [":Lib2Mod2"],
+      # Any modules listed here must come from libraries
+      # listed in the narrowed_deps of :lib2
+      cross_library_deps = [":LibMod2"],
+  )
+
+  haskell_module(
+      name = "Lib2Mod2",
+      src = "src/LibMod2.hs",
+      src_strip_prefix = "src",
+  )
+
+  haskell_library(
+      name = "lib2",
+      modules = [
+          "Lib2Mod1",
+          "Lib2Mod2",
+      ],
+      deps = [
+          "//:base",
+          "//:template-haskell",
+      ],
+      narrowed_deps = [":lib"],
+  )
+
+``cross_library_deps`` allows to express dependencies on specific modules
+(like ``:LibMod2``), without the build having to depend on other modules
+coming from the same library (like ``:LibMod1``). The alternative would be
+to add ``:lib`` to the ``deps`` attribute of ``:lib2``, but this would
+cause builds of ``:Lib2Mod1`` and ``:Lib2Mod2`` to depend on all of the
+modules of ``:lib``, as in the following snippet.::
+
+  haskell_module(
+      name = "Lib2Mod1",
+      src = "src/LibMod1.hs",
+      src_strip_prefix = "src",
+      deps = [":Lib2Mod2"],
+  )
+
+  haskell_library(
+      name = "lib2",
+      modules = [
+          "Lib2Mod1",
+          "Lib2Mod2",
+      ],
+      deps = [
+          ":lib",
+          "//:base",
+          "//:template-haskell",
+      ],
+  )
+
+In order to avoid manually keeping the build configuration in sync with
+the graph of module imports, there is the `gazelle_haskell_modules`_ tool
+which analyzes the source code and updates the ``haskell_module`` rules.
+
+.. _gazelle_haskell_modules: https://github.com/tweag/gazelle_haskell_modules
 
 Generating API documentation
 ----------------------------

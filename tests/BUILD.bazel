@@ -25,6 +25,10 @@ load(
     "//:constants.bzl",
     "test_ghc_version",
 )
+load(
+    "@io_bazel_rules_go//go:def.bzl",
+    "go_library",
+)
 
 exports_files(
     [
@@ -149,17 +153,21 @@ config_setting(
 
 config_setting(
     name = "fastbuild_darwin",
+    constraint_values = [
+        "@platforms//os:osx",
+    ],
     values = {
         "compilation_mode": "fastbuild",
-        "cpu": "darwin",
     },
 )
 
 config_setting(
     name = "fastbuild_windows",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
     values = {
         "compilation_mode": "fastbuild",
-        "cpu": "x64_windows",
     },
 )
 
@@ -369,6 +377,7 @@ haskell_binary(
         "//tests/hackage:directory",
         "//tests/hackage:filepath",
         "//tests/hackage:process",
+        "//tests/integration_testing",
         "@stackage//:hspec",
         "@stackage//:hspec-core",
         "@stackage//:safe-exceptions",

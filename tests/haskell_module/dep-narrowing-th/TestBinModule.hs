@@ -1,4 +1,4 @@
 import TestModule
 
 main :: IO ()
-main = print bar
+main = bar >>= print

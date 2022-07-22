@@ -10,22 +10,12 @@ c2hs_library(
     name = "foo",
     srcs = ["src/Foo/Foo.chs"],
     src_strip_prefix = "src",
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
     deps = ["//tests:zlib"],
 )
 
 c2hs_library(
     name = "bar",
     srcs = ["Bar.chs"],
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
     deps = [":foo"],
 )
 
@@ -35,11 +25,6 @@ haskell_library(
         ":bar",
         ":foo",
         "@c2hs_repo//:baz",
-    ],
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
     ],
     deps = ["//tests/hackage:base"],
 )

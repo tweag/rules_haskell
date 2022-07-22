@@ -1,0 +1,83 @@
+load("@os_info//:os_info.bzl", "is_windows")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary", "haskell_cabal_library")
+
+# This test shows that haskell_cabal_library and
+# haskell_cabal_binary handle indirect C dependencies
+# correctly
+
+cc_library(
+    name = "c-lib2",
+    srcs = ["c-lib2.c"],
+)
+
+# Embedding libraries like this causes libc-lib2.so
+# to be created for the extra-libraries field of cabal
+cc_library(
+    name = "c-lib2final",
+    srcs = [":c-lib2"],
+    linkstatic = 1,
+)
+
+cc_library(
+    name = "c-lib",
+    srcs = ["c-lib.c"],
+    hdrs = ["c-lib.h"],
+    deps = ["c-lib2"],
+)
+
+cc_library(
+    name = "c-libfinal",
+    srcs = [":c-lib"],
+    hdrs = ["c-lib.h"],
+    linkstatic = 1,
+    deps = ["c-lib2final"],
+)
+
+haskell_cabal_library(
+    name = "lib",
+    srcs = [
+        "Lib.hs",
+        "lib.cabal",
+    ],
+    version = "0.1.0.0",
+    deps = [
+        ":c-lib2final",
+        ":c-libfinal",
+    ],
+)
+
+haskell_cabal_binary(
+    name = "main",
+    srcs = [
+        "Main.hs",
+        "lib.cabal",
+    ],
+    deps = [":c-libfinal"],
+)
+
+sh_test(
+    name = "test-main{}".format(".exe" if is_windows else ""),
+    srcs = [":main"],
+)
+
+haskell_cabal_binary(
+    name = "main2",
+    srcs = [
+        "lib.cabal",
+        "main2.hs",
+    ],
+    deps = [":lib"],
+)
+
+sh_test(
+    name = "test-main2{}".format(".exe" if is_windows else ""),
+    srcs = [":main2"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -13,13 +13,13 @@ jobs:
         os: [ubuntu-latest, macos-10.15]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Mount Bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v12
+      - uses: cachix/install-nix-action@v17
         with:
           nix_path: nixpkgs=./nixpkgs/default.nix
           extra_nix_config: |
@@ -29,6 +29,9 @@ jobs:
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
+          # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
+          # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
+          [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
           case ${{ runner.os }} in
             macOS) BUILD_CONFIG=ci-macos-nixpkgs;;
             Linux) BUILD_CONFIG=ci-linux-nixpkgs;;
@@ -61,13 +64,13 @@ jobs:
     name: Build & Test - Cross
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Mount Bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v12
+      - uses: cachix/install-nix-action@v17
         with:
           nix_path: nixpkgs=./nixpkgs/default.nix
           extra_nix_config: |
@@ -77,6 +80,9 @@ jobs:
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
+          # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
+          # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
+          sudo sysctl -w net.ipv4.tcp_keepalive_time=60
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=linux-nixpkgs
@@ -105,9 +111,15 @@ jobs:
         os: [ubuntu-latest, macos-10.15, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |-
+          sudo swapoff -a
+          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt clean
+          docker rmi $(docker images -q) -f
+      - uses: actions/checkout@v3
       - name: Mount Bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
@@ -121,6 +133,9 @@ jobs:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         shell: bash
         run: |
+          # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
+          # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
+          [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
           case ${{ runner.os }} in
             macOS) BUILD_CONFIG=ci-macos-bindist;;
             Linux) BUILD_CONFIG=ci-linux-bindist;;

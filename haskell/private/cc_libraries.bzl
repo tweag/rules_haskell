@@ -88,8 +88,8 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
 
     Returns:
       (static_libraries, dynamic_libraries):
-        static_libraries: depset of File, the static libraries that should be passed to GHC for linking.
-        dynamic_libraries: depset of File, the dynamic libraries that should be passed to GHC for linking.
+        static_libraries: list of File, the static libraries that should be passed to GHC for linking.
+        dynamic_libraries: list of File, the dynamic libraries that should be passed to GHC for linking.
 
     """
     static_libs = []
@@ -185,8 +185,8 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
     Returns:
       (cache_file, static_libs, dynamic_libs):
         cache_file: File, the cached package configuration.
-        static_libs: depset of File, static library files.
-        dynamic_libs: depset of File, dynamic library files.
+        static_libs: list of File, static library files.
+        dynamic_libs: list of File, dynamic library files.
     """
 
     (static_libs, dynamic_libs) = get_library_files(
@@ -379,7 +379,7 @@ def _haskell_cc_libraries_aspect_impl(target, ctx):
 
 haskell_cc_libraries_aspect = aspect(
     implementation = _haskell_cc_libraries_aspect_impl,
-    attr_aspects = ["deps", "exports", "plugins"],
+    attr_aspects = ["deps", "narrowed_deps", "exports", "plugins"],
     provides = [HaskellCcLibrariesInfo],
     required_aspect_providers = [HaskellProtobufInfo],
     toolchains = [

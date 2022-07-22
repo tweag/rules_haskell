@@ -314,11 +314,11 @@ def haskell_binary(
       src_strip_prefix: DEPRECATED. Attribute has no effect.
       srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
-      deps: List of other Haskell libraries to be linked to this target.
-      narrowed_deps: Like deps, but only for dependencies using the modules
-          attribute. These dependencies are only used if this library uses
-          the modules attribute and the haskell_module rules depend on modules
-          provided by these dependencies.
+      deps: List of other Haskell libraries to be linked to this target. Any module coming from
+          a library in `deps` is available to be imported in any modules in this binary.
+      narrowed_deps: Like deps, but modules in these libraries can only be imported by modules
+          listed in the `modules` attribute, and only if the corresponding `haskell_module` rules
+          list such modules as dependencies.
           Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this binary.
           Note: This attribute is experimental and not ready for production, yet.
@@ -455,11 +455,11 @@ def haskell_test(
       src_strip_prefix: DEPRECATED. Attribute has no effect.
       srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
-      deps: List of other Haskell libraries to be linked to this target.
-      narrowed_deps: Like deps, but only for dependencies using the modules
-          attribute. These dependencies are only used if this library uses
-          the modules attribute and the haskell_module rules depend on modules
-          provided by these dependencies.
+      deps: List of other Haskell libraries to be linked to this target. Any module coming from
+          a library in `deps` is available to be imported in any modules in this test suite.
+      narrowed_deps: Like deps, but modules in these libraries can only be imported by modules
+          listed in the `modules` attribute, and only if the corresponding `haskell_module` rules
+          list such modules as dependencies.
           Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this test.
           Note: This attribute is experimental and not ready for production, yet.
@@ -598,11 +598,11 @@ def haskell_library(
       src_strip_prefix: DEPRECATED. Attribute has no effect.
       srcs: Haskell source files. File names must match module names, see above.
       extra_srcs: Extra (non-Haskell) source files that will be needed at compile time (e.g. by Template Haskell).
-      deps: List of other Haskell libraries to be linked to this target.
-      narrowed_deps: Like deps, but only for dependencies using the modules
-          attribute. These dependencies are only used if this library uses
-          the modules attribute and the haskell_module rules depend on modules
-          provided by these dependencies.
+      deps: List of other Haskell libraries to be linked to this target. Any module coming from
+          a library in `deps` is available to be imported in any modules in this library.
+      narrowed_deps: Like deps, but modules in these libraries can only be imported by modules
+          listed in the `modules` attribute, and only if the corresponding `haskell_module` rules
+          list such modules as dependencies.
           Note: This attribute is experimental and not ready for production, yet.
       modules: List of extra haskell_module() dependencies to be linked into this library.
           Note: This attribute is experimental and not ready for production, yet.

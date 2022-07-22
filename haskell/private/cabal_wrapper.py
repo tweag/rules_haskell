@@ -31,6 +31,7 @@
 # , "ghc_version": List of int       # version of ghc
 # , "cabal_basename": basename of cabal binary
 # , "cabal_dirname": dirname of cabal binary
+# , "extra_ldflags_file": File with extra flags for ld or null
 # }
 
 from __future__ import print_function
@@ -103,11 +104,13 @@ os.environ["RULES_HASKELL_DOCDIR_PATH"] = canonicalize_path(os.getenv("RULES_HAS
 component = json_args["component"]
 name = json_args["pkg_name"]
 haddock = json_args["generate_haddock"]
+extra_ldflags_file = json_args["extra_ldflags_file"]
 execroot = os.getcwd()
 setup = os.path.join(execroot, json_args["setup_path"])
 srcdir = os.path.join(execroot, json_args["pkg_dir"])
 # By definition (see ghc-pkg source code).
-pkgroot = os.path.realpath(os.path.join(execroot, os.path.dirname(json_args["package_db_path"])))
+rel_pkgroot = os.path.dirname(json_args["package_db_path"])
+pkgroot = os.path.realpath(os.path.join(execroot, rel_pkgroot))
 libdir = os.path.join(pkgroot, "{}_iface".format(name))
 dynlibdir = os.path.join(pkgroot, "lib")
 bindir = os.path.join(pkgroot, "bin")
@@ -128,6 +131,7 @@ path_args = json_args["path_args"]
 
 ar = find_exe(toolchain_info["ar"])
 cc = find_exe(toolchain_info["cc"])
+ld = find_exe(toolchain_info["ld"])
 strip = find_exe(toolchain_info["strip"])
 
 def recache_db():
@@ -187,10 +191,8 @@ def distdir_prefix():
 # into the 'flag hash' field of generated interface files. We try to use a
 # reproducible path for the distdir to keep interface files reproducible.
 with mkdtemp(distdir_prefix()) as distdir:
-    enable_relocatable_flags = []
-    if not is_windows and json_args["ghc_version"] != None and json_args["ghc_version"] < [9,2,1]:
-        # ToDo: not work relocatable from Cabal-3.6.0.0 buildin GHC 9.2.1
-        enable_relocatable_flags = ["--enable-relocatable"]
+    enable_relocatable_flags = ["--enable-relocatable"] \
+            if not is_windows else []
 
     # Cabal really wants the current working directory to be directory
     # where the .cabal file is located. So we have no choice but to chance
@@ -204,6 +206,10 @@ with mkdtemp(distdir_prefix()) as distdir:
     os.putenv("TMP", os.path.join(distdir, "tmp"))
     os.putenv("TEMP", os.path.join(distdir, "tmp"))
     os.makedirs(os.path.join(distdir, "tmp"))
+
+    rel_execroot = os.path.relpath(execroot)
+    cfg_execroot = rel_execroot if not is_windows else execroot
+    cfg_pkgroot = os.path.join(cfg_execroot, rel_pkgroot)
 
 
     # Create a Paths module that will be used instead of the cabal generated one.
@@ -256,10 +262,15 @@ with mkdtemp(distdir_prefix()) as distdir:
         "--with-hsc2hs=" + hsc2hs,
         "--with-ar=" + ar,
         "--with-gcc=" + cc,
+        "--with-ld=" + ld,
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
-        [ "--ghc-option=" + flag.replace("$CC", cc) for flag in toolchain_info["ghc_cc_args"] ] +
+        [ "--ghc-option=" + flag.replace("$CC", cc).replace("$LD", ld) for flag in toolchain_info["ghc_cc_args"] ] +
+        [ "--hsc2hs-option=-c" + cc,
+          "--hsc2hs-option=-l" + cc,
+        ] +
+        [ "--ghc-option=-optl@" + os.path.join(cfg_execroot, f) for f in [extra_ldflags_file] if f ] +
         enable_relocatable_flags + \
         [ \
         # Make `--builddir` a relative path. Using an absolute path would
@@ -283,13 +294,20 @@ with mkdtemp(distdir_prefix()) as distdir:
         "--package-db=global", \
         ] + \
         extra_args + \
-        [ arg.replace("=", "=" + execroot + "/") for arg in path_args ] + \
+        [ arg.replace("=", "=" + cfg_execroot + "/") for arg in path_args ] + \
         [ "--package-db=" + package_database ], # This arg must come last.
         )
     run([runghc] + runghc_args + [setup, "build", "--verbose=0", "--builddir=" + distdir])
     if haddock:
         run([runghc] + runghc_args + [setup, "haddock", "--verbose=0", "--builddir=" + distdir])
-    run([runghc] + runghc_args + [setup, "install", "--verbose=0", "--builddir=" + distdir])
+    # Setup.hs install fails if the configuration uses relative C header or
+    # library search paths. Instead, we use Setup.hs copy to install the
+    # package files and then manually register the package configuration in the
+    # package-db.
+    # See https://github.com/haskell/cabal/issues/1317#issuecomment-1025942396
+    run([runghc] + runghc_args + [setup, "copy", "--verbose=0", "--builddir=" + distdir])
+    if component.startswith("lib"):
+        run([runghc] + runghc_args + [setup, "register", "--gen-pkg-config=" + os.path.join(package_database, name + ".conf"), "--verbose=0", "--builddir=" + distdir])
     # Bazel builds are not sandboxed on Windows and can be non-sandboxed on
     # other OSs. Operations like executing `configure` scripts can modify the
     # source tree. If the `srcs` attribute uses a glob like `glob(["**"])`,
@@ -315,12 +333,18 @@ def make_relocatable_paths(line):
     line = re.sub("library-dirs:.*", "library-dirs: ${pkgroot}/lib", line)
 
     def make_relative_to_pkgroot(matchobj):
-        abspath=matchobj.group(0)
-        return os.path.join("${pkgroot}", os.path.relpath(abspath, start=pkgroot))
+        oldpath=matchobj.group(0)
+        rel_to_pkgroot = os.path.relpath(oldpath, start=cfg_pkgroot)
+        return os.path.join("${pkgroot}", rel_to_pkgroot)
 
-    # The $execroot is an absolute path and should not leak into the output.
-    # Replace each ocurrence of execroot by a path relative to ${pkgroot}.
-    line = re.sub(re.escape(execroot) + '\S*', make_relative_to_pkgroot, line)
+    # On Windows paths may contain the absolute path to the execroot.
+    # This path is non-reproducible and should not leak into build outputs.
+    #
+    # On other systems paths may be relative to the distdir.
+    # These paths are invalid in the package configuration.
+    #
+    # Replace each ocurrence of either kind of path by one relative to ${pkgroot}.
+    line = re.sub(re.escape(cfg_execroot) + '\S*', make_relative_to_pkgroot, line)
     return line
 
 if libraries != [] and os.path.isfile(package_conf_file):

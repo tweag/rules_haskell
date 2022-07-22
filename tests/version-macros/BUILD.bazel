@@ -3,6 +3,7 @@ load(
     "haskell_library",
     "haskell_test",
 )
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 load(
     "@rules_haskell//haskell:c2hs.bzl",
     "c2hs_library",
@@ -32,14 +33,43 @@ haskell_test(
     ],
 )
 
+haskell_test(
+    name = "version_macros_haskell_module",
+    size = "small",
+    modules = [
+        ":HsLib",
+        ":HscLib",
+        ":Main",
+    ],
+    version = "3.4.5.6",
+    deps = [
+        ":versioned-lib",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "Main",
+    src = "Main.hs",
+    deps = [
+        ":HsLib",
+        ":HscLib",
+    ],
+)
+
+haskell_module(
+    name = "HscLib",
+    src = "HscLib.hsc",
+)
+
+haskell_module(
+    name = "HsLib",
+    src = "HsLib.hs",
+)
+
 c2hs_library(
     name = "c2hs-lib",
     srcs = ["C2hsLib.chs"],
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
     version = "4.5.6.7",
     deps = [
         ":versioned-lib",
@@ -55,11 +85,6 @@ haskell_test(
         ":c2hs-lib",
     ],
     main_file = "MainC2hs.hs",
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
     version = "4.5.6.7",
     visibility = ["//tests/asterius/version-macros:__pkg__"],
     deps = [

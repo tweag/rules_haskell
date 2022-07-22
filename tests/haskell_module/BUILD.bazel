@@ -14,6 +14,8 @@ filegroup(
         "//tests/haskell_module/plugin:all_files",
         "//tests/haskell_module/th:all_files",
         "//tests/haskell_module/tools:all_files",
+        "//tests/haskell_module/hsc:all_files",
+        "//tests/haskell_module/repl:all_files",
     ],
     visibility = ["//visibility:public"],
 )

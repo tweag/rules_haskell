@@ -20,12 +20,14 @@ def pkgdb_to_bzl(repository_ctx, paths, libdir):
     if result.return_code:
         fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
 
+    result_dict = json.decode(result.stdout)
+
     # Haddock files on nixpkgs are stored outside of the ghc package
     # The pkgdb_to_bzl.py program generates bazel labels for theses files
     # and asks the parent process to generate the associated bazel symlink
-    for line in result.stdout.split("\n"):
+    for line in result_dict["file_content"].split("\n"):
         if line.startswith("#SYMLINK:"):
             _, path, name = line.split(" ")
             repository_ctx.symlink(path, name)
 
-    return result.stdout
+    return result_dict
