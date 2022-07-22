@@ -8,7 +8,7 @@ set -eu
 readonly MIN_BAZEL_MAJOR=4
 readonly MIN_BAZEL_MINOR=0
 
-readonly MAX_BAZEL_MAJOR=4
+readonly MAX_BAZEL_MAJOR=5
 readonly MAX_BAZEL_MINOR=2
 
 stderr () {
