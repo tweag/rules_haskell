@@ -8,7 +8,7 @@ set -eu
 readonly MIN_BAZEL_MAJOR=4
 readonly MIN_BAZEL_MINOR=0
 
-readonly MAX_BAZEL_MAJOR=4
+readonly MAX_BAZEL_MAJOR=5
 readonly MAX_BAZEL_MINOR=2
 
 stderr () {
@@ -203,7 +203,7 @@ http_archive(
     name = "rules_haskell",
     strip_prefix = "rules_haskell-0.15",
     urls = ["https://github.com/tweag/rules_haskell/archive/v0.15.tar.gz"],
-    sha256 = "1424cd5a798f75971568f8cda3c2d94f2a6faf647487cc9c94f6b4ba6a8f3712",
+    sha256 = "aba3c16015a2363b16e2f867bdc5c792fa71c68cb97d8fe95fddc41e409d6ba8",
 )
 
 load(
