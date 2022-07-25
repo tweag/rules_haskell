@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 [Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.15...master
 
+### Removed
+
+* Remove support for bindists of GHC versions 7.10.3, 8.0.2, 8.6.2, 8.6.3, 8.6.4, 8.8.1, 8.8.2, 8.8.3, 8.10.1 and 8.10.2 (see [#1790])
+
+[#1790]: https://github.com/tweag/rules_haskell/pull/1790
+
 ## [0.15] 2022-07-22
 
 [0.15]: https://github.com/tweag/rules_haskell/compare/v0.14...v0.15
@@ -300,10 +306,10 @@ it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yam
 
 * Initial experimental Windows support for `cabal_binary/library` and
   `stack_snapshot`.
-  
+
 * [`start`](./start) script for setting up `rules_haskell` allows to set up a nixpkgs-based
   bazel workspace, for NixOS users, via the `--use-nix` option.
-  
+
 ### Added
 
 * Windows-support for cabal/stack.
@@ -312,7 +318,7 @@ it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yam
   overriding packages in a stack snapshot.
   There is an example in [./examples/WORKSPACE](./examples/WORKSPACE).
   See [#1060](https://github.com/tweag/rules_haskell/pull/1060).
-  
+
 ### Removed
 
 * The `haskell/haskell.bzl` entrypoint, which was deprecated in the
@@ -326,7 +332,7 @@ it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yam
   to all packages, but instead a dictionary specifying additional dependencies
   to select packages. See `stack_snapshot` API docs for an example. See
   [#1068](https://github.com/tweag/rules_haskell/pull/1068).
-  
+
 ### Fixed
 
 * Unified the `cc_wrapper` on all OSes.
