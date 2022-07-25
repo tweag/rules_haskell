@@ -10,7 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Removed
 
-* Remove support for bindists of GHC versions 7.10.3, 8.0.2, 8.6.2, 8.6.3, 8.6.4, 8.8.1, 8.8.2, 8.8.3, 8.10.1 and 8.10.2 (see[#1790])
+* Remove support for bindists of GHC versions 7.10.3, 8.0.2, 8.6.2, 8.6.3, 8.6.4, 8.8.1, 8.8.2, 8.8.3, 8.10.1 and 8.10.2 (see [#1790])
+
+[#1790]: https://github.com/tweag/rules_haskell/pull/1790
 
 ## [0.15] 2022-07-22
 
