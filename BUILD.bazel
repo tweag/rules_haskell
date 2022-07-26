@@ -19,6 +19,7 @@ filegroup(
     name = "distribution",
     testonly = True,
     srcs = [
+        ".bazelrc",
         "BUILD.bazel",
         "WORKSPACE",
         "constants.bzl",

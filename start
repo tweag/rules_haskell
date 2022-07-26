@@ -5,10 +5,14 @@
 
 set -eu
 
+# If the environment variable `GHC_VERSION` is not set yet,
+# we use the default version (currently "8.10.7").
+GHC_VERSION=${GHC_VERSION:="8.10.7"}
+
 readonly MIN_BAZEL_MAJOR=4
 readonly MIN_BAZEL_MINOR=0
 
-readonly MAX_BAZEL_MAJOR=4
+readonly MAX_BAZEL_MAJOR=5
 readonly MAX_BAZEL_MINOR=2
 
 stderr () {
@@ -20,15 +24,15 @@ usage () {
 
     cat >&2 <<-"EOF"
 	start [--use-bindists|--use-nix|--help]
-	
+
 	Set up a minimal rules_haskell bazel configuration.
-	
+
 	--use-bindists: The project is set up to provision GHC from binary distributions. This does not require nix to build.
 	--use-nix: The project is set up to provision GHC from nixpkgs. This requires nix to build.
-	
+
 	If no argument is given, `--use-bindists` is assumed
 	and a helpful message is printed that `--use-nix` also exists.
-	
+
 	For more information visit https://haskell.build/
 	EOF
 
@@ -146,7 +150,7 @@ stderr "Creating ${ZLIB_BUILD_FILE}"
 case "${MODE}" in
     "bindists") cat <<-EOF
 		load("@rules_cc//cc:defs.bzl", "cc_library")
-		
+
 		cc_library(
 		    name = "zlib",
 		    # Import ':z' as 'srcs' to enforce the library name 'libz.so'. Otherwise,
@@ -167,7 +171,7 @@ case "${MODE}" in
 
     "nix") cat <<-EOF
 		load("@rules_cc//cc:defs.bzl", "cc_library")
-		
+
 		filegroup(
 		    name = "include",
 		    srcs = glob(["include/*.h"]),
@@ -201,9 +205,9 @@ load(
 # Download rules_haskell and make it accessible as "@rules_haskell".
 http_archive(
     name = "rules_haskell",
-    strip_prefix = "rules_haskell-0.14",
-    urls = ["https://github.com/tweag/rules_haskell/archive/v0.14.tar.gz"],
-    sha256 = "851e16edc7c33b977649d66f2f587071dde178a6e5bcfeca5fe9ebbe81924334",
+    strip_prefix = "rules_haskell-0.15",
+    urls = ["https://github.com/tweag/rules_haskell/archive/v0.15.tar.gz"],
+    sha256 = "aba3c16015a2363b16e2f867bdc5c792fa71c68cb97d8fe95fddc41e409d6ba8",
 )
 
 load(
@@ -245,9 +249,9 @@ case "${MODE}" in
     "bindists") cat <<-EOF
 		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
 		rules_haskell_toolchains(
-		    version = "8.10.7",
+		    version = "${GHC_VERSION}",
 		)
-		
+
 		http_archive(
 		    name = "zlib.dev",
 		    build_file = "//:${ZLIB_BUILD_FILE}",
@@ -271,7 +275,7 @@ case "${MODE}" in
 		    "nixpkgs_package",
 		    "nixpkgs_python_configure",
 		)
-		
+
 		# Fetch a version of nixpkgs from GitHub.
 		# For more information see the documentation of rules_nixpkgs at
 		# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
@@ -280,36 +284,36 @@ case "${MODE}" in
 		    revision = "21.11",
 		    sha256 = "c77bb41cf5dd82f4718fa789d49363f512bb6fa6bc25f8d60902fe2d698ed7cc",
 		)
-		
+
 		nixpkgs_cc_configure(
 		    repository = "@nixpkgs",
 		)
-		
+
 		nixpkgs_python_configure(
 		    repository = "@nixpkgs",
 		)
-		
+
 		load(
 		    "@rules_haskell//haskell:nixpkgs.bzl",
 		    "haskell_register_ghc_nixpkgs",
 		)
-		
+
 		# Fetch a GHC binary distribution from nixpkgs and register it as a toolchain.
 		# For more information:
 		# https://api.haskell.build/haskell/nixpkgs.html#haskell_register_ghc_nixpkgs
 		haskell_register_ghc_nixpkgs(
 		    repository = "@nixpkgs",
 		    attribute_path = "ghc",
-		    version = "8.10.7",
+		    version = "${GHC_VERSION}",
 		)
-		
+
 		# For ${ZLIB_BUILD_FILE}
 		nixpkgs_package(
 		    name = "nixpkgs_zlib",
 		    attribute_path = "zlib",
 		    repository = "@nixpkgs",
 		)
-		
+
 		nixpkgs_package(
 		    name = "zlib.dev",
 		    build_file = "//:${ZLIB_BUILD_FILE}",
@@ -339,7 +343,7 @@ if [ "${MODE}" = "nix" ]; then
 	# We need to use the rules_haskell nix toolchain accordingly:
 	build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
 	run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
-	
+
 	EOF
 fi
 

@@ -7,14 +7,15 @@ import Control.Exception.Safe (bracket_)
 import Data.Foldable (for_)
 import Data.List (isInfixOf, sort)
 import System.Directory (copyFile)
-import System.Exit (ExitCode(..))
 import System.FilePath ((</>))
 import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
-import Test.Hspec (context, hspec, it, describe, runIO, shouldSatisfy, expectationFailure)
+import Test.Hspec (context, hspec, it, describe, runIO)
+
+import IntegrationTesting
 
 main :: IO ()
 main = hspec $ do
@@ -155,51 +156,3 @@ bazel args = Process.proc "bazel" args
 -- | Runs a bazel query and return the list of matching targets
 bazelQuery :: String -> SpecM a [String]
 bazelQuery q = lines <$> runIO (Process.readProcess "bazel" ["query", q] "")
-
--- * Action helpers
-
--- | Ensure that @(stdout, stderr)@ of the command satisfies a predicate
-outputSatisfy
-  :: ((String, String) -> Bool)
-  -> Process.CreateProcess
-  -> IO ()
-outputSatisfy predicate cmd = do
-  (exitCode, stdout, stderr) <- Process.readCreateProcessWithExitCode cmd ""
-
-  case exitCode of
-    ExitSuccess -> (stdout, stderr) `shouldSatisfy` predicate
-    ExitFailure _ -> expectationFailure (formatOutput exitCode stdout stderr)
-
--- | The command must succeed
-assertSuccess :: Process.CreateProcess -> IO ()
-assertSuccess = outputSatisfy (const True)
-
--- | The command must fail
-assertFailure :: Process.CreateProcess -> IO ()
-assertFailure cmd = do
-  (exitCode, stdout, stderr) <- Process.readCreateProcessWithExitCode cmd ""
-
-  case exitCode of
-    ExitFailure _ -> pure ()
-    ExitSuccess -> expectationFailure ("Unexpected success of a failure test with output:\n" ++ formatOutput exitCode stdout stderr)
-
--- * Formatting helpers
-
-formatOutput :: ExitCode -> String -> String -> String
-formatOutput exitcode stdout stderr =
-  let
-    header = replicate 20 '-'
-    headerLarge = replicate 20 '='
-
-  in unlines [
-      headerLarge
-    , "Exit Code: " <> show exitcode
-    , headerLarge
-    , "Standard Output"
-    , header
-    , stdout
-    , headerLarge
-    , "Error Output"
-    , header
-    , stderr
-    , header]

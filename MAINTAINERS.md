@@ -114,7 +114,8 @@ this to "unlimited"; adjust as necessary.
 The Git archive checksum can be calculated with:
 
 ```bash
-git archive --format=tar.gz --prefix=rules-haskell-${REV}/ ${REV} | sha256sum
+REV=0.x
+git archive --format=tar.gz --prefix=rules_haskell-${REV}/ v${REV} | sha256sum
 ```
 
 **Note** The trailing slash on the prefix is important; don't forget it.

@@ -377,6 +377,7 @@ haskell_binary(
         "//tests/hackage:directory",
         "//tests/hackage:filepath",
         "//tests/hackage:process",
+        "//tests/integration_testing",
         "@stackage//:hspec",
         "@stackage//:hspec-core",
         "@stackage//:safe-exceptions",
@@ -422,36 +423,6 @@ haskell_repl(
     deps = [
         "//tests:run-tests",
         "//tests/binary-with-lib",
-    ],
-)
-
-filegroup(
-    name = "bazel_bindist",
-    srcs = select({
-        "@platforms//os:osx": ["@bazel_bin_darwin//file"],
-        "@platforms//os:linux": ["@bazel_bin_linux//file"],
-        "@platforms//os:windows": ["@bazel_bin_windows//file"],
-    }),
-)
-
-filegroup(
-    name = "bazel",
-    testonly = True,
-    srcs = select({
-        "//tests:nix": ["@bazel_4//:bazel_bin"],
-        "//conditions:default": [":bazel_bindist"],
-    }),
-    visibility = ["//tests:__subpackages__"],
-)
-
-go_library(
-    name = "integration_testing",
-    srcs = ["integration_testing.go"],
-    importpath = "github.com/tweag/rules_haskell/tests/integration_testing",
-    visibility = ["//visibility:public"],
-    deps = [
-        "@io_bazel_rules_go//go/tools/bazel",
-        "@io_bazel_rules_go//go/tools/bazel_testing",
     ],
 )
 

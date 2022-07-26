@@ -3,7 +3,7 @@ load(
     "haskell_test",
 )
 load("@io_bazel_rules_go//go/tools/bazel_testing:def.bzl", "go_bazel_test")
-load("//tests:integration_tests.bzl", "integration_test")
+load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_haskell_integration_test")
 
 package(default_testonly = 1)
 
@@ -24,9 +24,10 @@ haskell_test(
     ],
 )
 
-integration_test(
+rules_haskell_integration_test(
     name = "hs_override_stack_test",
-    bazel = "//tests:bazel",
+    srcs = ["HsOverrideStackTest.hs"],
+    workspace_path = "hs_override_stack_test",
 )
 
 filegroup(

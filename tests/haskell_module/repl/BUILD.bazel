@@ -1,27 +1,19 @@
-load("//tests:integration_tests.bzl", "integration_test")
+load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_haskell_integration_test")
 
 package(default_testonly = 1)
 
-integration_test(
+rules_haskell_integration_test(
     name = "haskell_module_repl_test",
     size = "small",
-    bazel = "//tests:bazel",
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
+    srcs = ["HaskellModuleReplTest.hs"],
+    workspace_path = "haskell_module_repl_test",
 )
 
-integration_test(
+rules_haskell_integration_test(
     name = "haskell_module_repl_cross_library_deps_test",
     size = "small",
-    bazel = "//tests:bazel",
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
+    srcs = ["HaskellModuleReplCrossLibraryDepsTest.hs"],
+    workspace_path = "haskell_module_repl_cross_library_deps_test",
 )
 
 filegroup(

@@ -10,6 +10,20 @@
 # in this file executes (and there's no way to execute it later; see first
 # paragraph above).
 
+# It's important to keep this list short enough (not more then 4 items)
+# because every bazel version tested requires a lot of space on CI
+# See https://github.com/tweag/rules_haskell/pull/1781#issuecomment-1187640454
+SUPPORTED_BAZEL_VERSIONS = [
+    "4.0.0",
+    "4.2.2",
+    "5.0.0",
+    "5.2.0",
+]
+
+SUPPORTED_NIXPKGS_BAZEL_PACKAGES = [
+    "bazel_4",
+]
+
 def _parse_version_chunk(version_chunk):
     """
     Args:
@@ -112,8 +126,8 @@ def check_bazel_version(minimum_bazel_version, maximum_bazel_version = None, baz
     return (True, "")
 
 def check_bazel_version_compatible(actual_version):
-    min_bazel = "4.0.0"  # Change THIS LINE when changing bazel min version
-    max_bazel = "4.2.2"  # Change THIS LINE when changing bazel max version
+    min_bazel = SUPPORTED_BAZEL_VERSIONS[0]
+    max_bazel = SUPPORTED_BAZEL_VERSIONS[-1]
 
     (compatible, msg) = check_bazel_version(min_bazel, max_bazel, actual_version)
 

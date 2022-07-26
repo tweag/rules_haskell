@@ -1,17 +1,8 @@
-package hs_lib_repl_test
-
-import (
-	bt "github.com/bazelbuild/rules_go/go/tools/bazel_testing"
-	it "github.com/tweag/rules_haskell/tests/integration_testing"
-	"testing"
-)
-
-var testcase = `
--- WORKSPACE --
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 local_repository(
-        name = "rules_haskell",
-        path = "../rules_haskell",
+    name = "rules_haskell",
+    path = "%RULES_HASKELL_PATH%",
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
@@ -22,6 +13,7 @@ os_info(name = "os_info")
 load("@os_info//:os_info.bzl", "is_windows")
 
 rules_haskell_dependencies()
+
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
@@ -37,9 +29,9 @@ rules_haskell_toolchains(version = "8.10.7")
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
     "nixpkgs_cc_configure",
-    "nixpkgs_python_configure",
     "nixpkgs_local_repository",
     "nixpkgs_package",
+    "nixpkgs_python_configure",
 )
 
 nixpkgs_cc_configure(
@@ -141,19 +133,19 @@ stack_snapshot(
     packages = [
         "array",
         "base",
-        "ghc-heap",
         "c2hs",
+        "data-default-class",
         "doctest",
-        "polysemy",
-        "network",
-        "streaming",
-        "void",
         "ghc-check",
+        "ghc-heap",
         "hspec",
         "hspec-core",
-        "data-default-class",
+        "network",
+        "polysemy",
         "proto-lens-protoc-0.7.0.0",
+        "streaming",
         "temporary",
+        "void",
     ],
     stack_snapshot_json = "@rules_haskell//:stackage_snapshot.json" if not is_windows else None,
     tools = [
@@ -167,142 +159,3 @@ stack_snapshot(
 register_toolchains(
     ":c2hs-toolchain",
 )
--- BUILD.bazel --
-load("@rules_haskell//haskell:c2hs.bzl", "c2hs_library", "c2hs_toolchain")
-load(
-    "@rules_haskell//haskell:defs.bzl",
-    "haskell_library",
-    "haskell_test",
-)
-
-load(
-    "@rules_haskell//haskell:defs.bzl",
-    "haskell_toolchain_library",
-)
-
-[
-    haskell_toolchain_library(name = name)
-    for name in [
-        "array",
-        "base",
-    ]
-]
-
-genrule(
-    name = "codegen",
-    outs = [
-        "Gen.hs",
-    ],
-    cmd = """
-  echo "module Gen (gen) where" >> $(location :Gen.hs)
-  echo "gen :: String" >> $(location :Gen.hs)
-  echo "gen = \\"gen\\"" >> $(location :Gen.hs)
-""",
-)
-
-c2hs_toolchain(
-    name = "c2hs-toolchain",
-    c2hs = "@stackage-exe//c2hs",
-)
-c2hs_library(
-    name = "chs",
-    srcs = ["Chs.chs"],
-)
-
-cc_library(
-    name = "ourclibrary",
-    srcs = [":ourclibrary.c"],
-    linkstatic = False,
-    visibility = ["//visibility:public"],
-)
-
-config_setting(
-    name = "nix",
-    constraint_values = [
-        "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
-    ],
-)
-
-alias(
-    name = "zlib",
-    # This is a dependency to @stackage-zlib.
-    testonly = 0,
-    actual = select({
-        ":nix": "@zlib.dev//:zlib",
-        "//conditions:default": "@zlib.hs//:zlib",
-    }),
-    visibility = ["//visibility:public"],
-)
-
-
-haskell_library(
-    name = "hs-lib",
-    srcs = [
-        "Foo.hs",
-        "Hsc.hsc",
-        ":chs",
-        ":codegen",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":zlib",
-        ":ourclibrary",
-        ":array",
-        ":base",
-    ],
-)
-
--- Chs.chs --
-module Chs
-  ( baz )
-where
-
-baz :: String
-baz = "baz"
--- Hsc.hs --
-module Hsc
-  ( bar )
-where
-
-#ifndef _INTERNAL_HSC_DO_NOT_DEFINE_ME
-bar :: String
-bar = "bar"
-#endif
--- Foo.hs --
-{-# LANGUAGE ForeignFunctionInterface #-}
-
-module Foo (foo) where
-
-foreign import ccall "c_add_one"
-  c_add_one :: Int -> Int
-
-foo :: Int -> Int
-foo = (+ 5) . c_add_one
--- ourclibrary.c --
-#include <stdint.h>
-
-int32_t c_add_one(int32_t x) {
-  return 1 + x;
-}
--- Hsc.hsc --
-module Hsc
-  ( bar )
-where
-
-#ifndef _INTERNAL_HSC_DO_NOT_DEFINE_ME
-bar :: String
-bar = "bar"
-#endif
-`
-
-func TestMain(m *testing.M) {
-	it.TestMain(m, bt.Args{Main: testcase})
-}
-
-func TestHsLibRepl(t *testing.T) {
-	out, err := it.BazelOutput(it.Context.BazelBinary, "run", "//:hs-lib@repl", "--", "-ignore-dot-ghci", "-e", "show (foo 10) ++ bar ++ baz ++ gen")
-	if err != nil {
-		t.Fatal(err)
-	}
-	it.AssertOutput(t, out, "\"16barbazgen\"\n")
-}

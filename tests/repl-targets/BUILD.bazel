@@ -1,11 +1,11 @@
 load("@rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load(
     "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
     "haskell_library",
     "haskell_test",
 )
-load("@io_bazel_rules_go//go/tools/bazel_testing:def.bzl", "go_bazel_test")
-load("//tests:integration_tests.bzl", "integration_test")
+load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_haskell_integration_test")
 
 package(default_testonly = 1)
 
@@ -24,11 +24,6 @@ genrule(
 c2hs_library(
     name = "chs",
     srcs = ["Chs.chs"],
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
-    ],
 )
 
 haskell_library(
@@ -38,11 +33,6 @@ haskell_library(
         "Hsc.hsc",
         ":chs",
         ":codegen",
-    ],
-    tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
-        "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -114,21 +104,20 @@ haskell_library(
     deps = ["//tests/hackage:base"],
 )
 
-integration_test(
+rules_haskell_integration_test(
     name = "hs_bin_repl_test",
-    size = "medium",
-    bazel = "//tests:bazel",
+    srcs = ["HsBinReplTest.hs"],
+    workspace_path = "hs_bin_repl_test",
 )
 
-integration_test(
+rules_haskell_integration_test(
     name = "hs_lib_repl_test",
-    size = "large",
-    bazel = "//tests:bazel",
+    srcs = ["HsLibReplTest.hs"],
     tags = [
-        # See https://github.com/tweag/rules_haskell/issues/1486
+        # See https://github.com/tweag/rules_haskell/issues/1779
         "dont_test_on_darwin_with_bindist",
-        "dont_test_on_windows",
     ],
+    workspace_path = "hs_lib_repl_test",
 )
 
 filegroup(
