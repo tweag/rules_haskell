@@ -1,8 +1,7 @@
 let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
     haskellNix = import (builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/0d781c04c4ab9045a165bacf428b043995a167f6.tar.gz) {};
     pkgs = import haskellNix.sources.nixpkgs haskellNix.nixpkgsArgs;
-    iserv-proxy = pkgs.buildPackages.ghc-extra-packages.ghc8104.iserv-proxy.components.exes.iserv-proxy;
-    remote-iserv = crossPkgs.ghc-extra-packages.ghc8104.remote-iserv.components.exes.remote-iserv;
+    ghc-iserv = "${crossGHC}/lib/${crossGHC.targetPrefix}ghc-${crossGHC.version}/bin/ghc-iserv";
     crossNumactl = crossPkgs.numactl;
     qemu = pkgs.buildPackages.qemu;
     qemuIservWrapper = pkgs.writeScriptBin "iserv-wrapper" ''
@@ -10,23 +9,7 @@ let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
       set -euo pipefail
       # Unset configure flags as configure should have run already
       unset configureFlags
-      # We try starting the remote-iserv process a few times,
-      # in case the chosen port is taken.
-      for((i=0;i<4;i++))
-      do
-          PORT=$((5000 + $RANDOM % 5000))
-          (>&2 echo "---> Starting remote-iserv on port $PORT")
-          rm -rf iserv-pipe
-          mkfifo iserv-pipe
-          exec 3<> iserv-pipe
-          ${qemu}/bin/qemu-aarch64 ${remote-iserv}/bin/remote-iserv tmp $PORT -v &> iserv-pipe &
-          RISERV_PID="$!"
-          head -1 iserv-pipe | grep -q "Opening socket" && break
-      done
-      (>&2 echo "---| remote-iserv should have started on $PORT")
-      ${iserv-proxy}/bin/iserv-proxy $@ 127.0.0.1 "$PORT"
-      (>&2 echo "---> killing remote-iserve...")
-      kill $RISERV_PID
+      exec ${qemu}/bin/qemu-aarch64 ${ghc-iserv} "$@"
       '';
     
     crossGHCLLVMWrapper = pkgs.writeScriptBin "ghc-llvm-wrapper" ''
