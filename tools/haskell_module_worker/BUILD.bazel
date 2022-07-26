@@ -1,0 +1,71 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary", "haskell_toolchain_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+haskell_toolchain_library(name = "base")
+
+haskell_toolchain_library(name = "binary")
+
+haskell_toolchain_library(name = "bytestring")
+
+haskell_toolchain_library(name = "directory")
+
+haskell_toolchain_library(name = "filepath")
+
+haskell_toolchain_library(name = "ghc")
+
+haskell_toolchain_library(name = "mtl")
+
+haskell_toolchain_library(name = "process")
+
+haskell_toolchain_library(name = "text")
+
+haskell_binary(
+    name = "haskell_module_worker",
+    srcs = glob(["src/*.hs"]),
+    ghcopts = [
+        "-Werror",
+        "-Wall",
+        "-optc-Wno-incompatible-pointer-types",
+        "-threaded",
+        ],
+    # Requires more recent GHC version than we use on Windows.
+    tags = ["dont_test_on_windows"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":base",
+        ":binary",
+        ":bytestring",
+        ":directory",
+        ":filepath",
+        ":ghc",
+        "@rules_haskell_worker_dependencies//:ghc-paths",
+        ":mtl",
+        ":process",
+        ":text",
+        ":worker_protocol_cc_proto_lib",
+    ],
+)
+
+proto_library(
+    name = "worker_protocol_proto",
+    srcs = ["worker_protocol.proto"],
+)
+
+cc_proto_library(
+    name = "worker_protocol_cc_proto",
+    deps = [":worker_protocol_proto"],
+)
+
+cc_library(
+    name = "worker_protocol_cc_proto_lib",
+    srcs = ["cbits/protoclient.cpp"],
+    hdrs = ["cbits/protoclient.h"],
+    deps = [":worker_protocol_cc_proto"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

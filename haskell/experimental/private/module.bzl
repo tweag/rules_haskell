@@ -306,7 +306,7 @@ def _build_haskell_module(
             outputs += [module_outputs.dyn_o]
 
     input_files = [src] + extra_srcs + [optp_args_file]
-    if enable_th and extra_ldflags_file:
+    if (plugins or enable_th) and extra_ldflags_file:
         args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
@@ -333,11 +333,17 @@ def _build_haskell_module(
                 for files in [
                     dep_info.hs_libraries,
                     dep_info.deps_hs_libraries,
+                ]
+                # libraries are needed by the interpreter (either when using plugins or TH)
+                if plugins or enable_th
+            ] + [
+                files
+                for files in [
                     narrowed_deps_info.deps_hs_libraries,
                     narrowed_deps_info.empty_hs_libraries,
                     object_inputs,
                 ]
-                # libraries and object inputs are only needed if the module uses TH
+                # libraries of narrowed deps and object inputs are only needed if the module uses TH
                 if enable_th
             ],
         ),
@@ -348,6 +354,7 @@ def _build_haskell_module(
         env = hs.env,
         arguments = args,
         extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
+        worker = ctx.executable.haskell_module_worker,
     )
 
     is_boot = _is_boot(src.path)

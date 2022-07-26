@@ -27,21 +27,39 @@ load(
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
-def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = None, progress_message = None, input_manifests = None, extra_name = ""):
+def _run_ghc(
+        hs,
+        cc,
+        inputs,
+        outputs,
+        mnemonic,
+        arguments,
+        env,
+        params_file = None,
+        progress_message = None,
+        input_manifests = None,
+        extra_name = "",
+        worker = None):
     args = hs.actions.args()
     extra_inputs = []
 
     # Detect persistent worker support
-    flagsfile_prefix = ""
     execution_requirements = {}
     tools = []
-    if hs.worker != None:
-        flagsfile_prefix = "@"
-        execution_requirements = {"supports-workers": "1"}
-        args.add(hs.worker.path)
-        tools = [hs.worker]
+    if hs.worker != None and worker == None:
+        worker = hs.worker
+
+    if worker != None:
+        execution_requirements = {
+            "supports-workers": "1",
+            "requires-worker-protocol": "proto",
+            "supports-multiplex-workers": "1",
+            "supports-multiplex-sandboxing": "1",
+        }
+        exe_path = worker.path
+        tools = [worker]
     else:
-        args.add(hs.tools.ghc)
+        exe_path = hs.tools.ghc.path
         extra_inputs += [hs.tools.ghc]
 
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
@@ -56,18 +74,17 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     hs.actions.write(compile_flags_file, args)
     hs.actions.write(extra_args_file, arguments)
 
-    extra_inputs += [
-        compile_flags_file,
-        extra_args_file,
-    ] + cc.files + hs.toolchain.bindir + hs.toolchain.libdir
+    extra_inputs += cc.files + hs.toolchain.bindir + hs.toolchain.libdir
 
     if hs.toolchain.locale_archive != None:
         extra_inputs.append(hs.toolchain.locale_archive)
 
-    flagsfile = extra_args_file
     if params_file:
-        flagsfile = merge_parameter_files(hs, extra_args_file, params_file)
-        extra_inputs.append(flagsfile)
+        flagsfile0 = merge_parameter_files(hs, extra_args_file, params_file, "v1_" + extra_args_file.basename)
+    else:
+        flagsfile0 = extra_args_file
+    flagsfile = merge_parameter_files(hs, compile_flags_file, flagsfile0, "v2_" + extra_args_file.basename)
+    extra_inputs.append(flagsfile)
 
     if type(inputs) == type(depset()):
         inputs = depset(extra_inputs, transitive = [inputs])
@@ -91,7 +108,11 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = [compile_flags_file.path, flagsfile_prefix + flagsfile.path],
+        # Mind that the argument list here only differs on the last argument
+        # for different actions. This allows persistent workers to be
+        # reused for different actions. Otherwise, a different worker
+        # would be spawned for each action.
+        arguments = [exe_path, "@%s" % flagsfile.path],
         execution_requirements = execution_requirements,
     )
 

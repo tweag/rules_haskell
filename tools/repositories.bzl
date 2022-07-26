@@ -20,6 +20,7 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
                 "ghc",
                 "ghc-paths",
                 "microlens",
+                "mtl",
                 "process",
                 "profunctors-5.5.2",
                 "proto-lens-0.7.0.0",
