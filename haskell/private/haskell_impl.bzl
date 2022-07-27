@@ -463,6 +463,13 @@ def haskell_library_impl(ctx):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     module_map = determine_module_names(srcs_files)
 
+
+    # Validate that hidden modules appear as modules in src list:
+    hidden_minus_all_modules = set.difference(set.from_list(ctx.attr.hidden_modules), set.from_list(module_map.keys()))
+    if not hidden_minus_all_modules == set.empty():
+        fail("""Hidden modules must be a subset of all modules, found additional hidden modules {}""".format(set.to_list(hidden_minus_all_modules)))
+
+
     package_name = getattr(ctx.attr, "package_name", None)
     version = getattr(ctx.attr, "version", None)
     my_pkg_id = pkg_id.new(ctx.label, package_name, version)
@@ -526,6 +533,12 @@ def haskell_library_impl(ctx):
 
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.reexported_modules)
+
+    # Validate that hidden modules do not appear as reexports:
+    reexported_and_hidden_modules = set.intersection(set.from_list(exposed_modules_reexports), set.from_list(ctx.attr.hidden_modules))
+    if not reexported_and_hidden_modules == set.empty():
+        fail("""Hidden modules may not appear as reexports, found reexported hidden modules {}""".format(set.to_list(reexported_and_hidden_modules)))
+
     haskell_module_names = [haskell_module_from_target(m) for m in modules]
     exposed_modules = set.from_list(module_map.keys() + exposed_modules_reexports + haskell_module_names)
     set.mutable_difference(exposed_modules, set.from_list(other_modules))
