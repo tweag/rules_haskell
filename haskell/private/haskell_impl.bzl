@@ -463,12 +463,10 @@ def haskell_library_impl(ctx):
     srcs_files, import_dir_map = _prepare_srcs(ctx.attr.srcs)
     module_map = determine_module_names(srcs_files)
 
-
     # Validate that hidden modules appear as modules in src list:
     hidden_minus_all_modules = set.difference(set.from_list(ctx.attr.hidden_modules), set.from_list(module_map.keys()))
     if not hidden_minus_all_modules == set.empty():
         fail("""Hidden modules must be a subset of all modules, found additional hidden modules {}""".format(set.to_list(hidden_minus_all_modules)))
-
 
     package_name = getattr(ctx.attr, "package_name", None)
     version = getattr(ctx.attr, "version", None)
