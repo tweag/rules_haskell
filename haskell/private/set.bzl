@@ -62,23 +62,6 @@ def _mutable_insert(s, e):
     s._set_items[e] = None
     return s
 
-def _intersection(s0, s1):
-    """Return intersection of two sets.
-
-    Args:
-      s0: One set.
-      s1: Another set.
-
-    Result:
-      set, intersection of the two sets.
-    """
-
-    s2 = _empty()
-    for item in s0._set_items:
-        if _is_member(s1, item):
-            _mutable_insert(s2, item)
-    return s2
-
 def _union(s0, s1):
     """Return union of two sets.
 
@@ -188,7 +171,6 @@ set = struct(
     is_member = _is_member,
     insert = _insert,
     mutable_insert = _mutable_insert,
-    intersection = _intersection,
     union = _union,
     mutable_union = _mutable_union,
     difference = _difference,
