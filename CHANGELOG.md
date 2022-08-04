@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 [Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.15...master
 
+### Added
+
+* Add support for GHC 9.2.3 (see [#1791])
+
+[#1791]: https://github.com/tweag/rules_haskell/pull/1791
+
 ### Removed
 
 * Remove support for bindists of GHC versions 7.10.3, 8.0.2, 8.6.2, 8.6.3, 8.6.4, 8.8.1, 8.8.2, 8.8.3, 8.10.1 and 8.10.2 (see [#1790])
