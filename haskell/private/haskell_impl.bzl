@@ -639,6 +639,7 @@ def haskell_library_impl(ctx):
         per_module_transitive_interfaces = module_outputs.per_module_transitive_interfaces,
         per_module_transitive_objects = module_outputs.per_module_transitive_objects,
         per_module_transitive_dyn_objects = module_outputs.per_module_transitive_dyn_objects,
+        per_module_abi = module_outputs.per_module_abi,
     )
 
     exports = [
