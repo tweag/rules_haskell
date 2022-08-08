@@ -155,13 +155,13 @@ main = hspec $ do
     let recompilation_is_not_triggered_by_patch :: Int -> IO ()
         recompilation_is_not_triggered_by_patch i = do
           assertSuccess $
-            bazel ["build", "//tests/recompilation/basic_modules"]
+            bazel ["build", "//tests/recompilation:basic_modules"]
           -- When a patch is applied,
           assertSuccess $ in_recompilation $
             Process.proc "git" ["apply", "patch" ++ show i]
           -- it triggers the recompilation of some modules,
           assertSuccess $ in_recompilation $
-            bazel ["build", "//tests/recompilation/basic_modules", "--execution_log_json_file=logfile.json"]
+            bazel ["build", "//tests/recompilation:basic_modules", "--execution_log_json_file=logfile.json"]
           -- but the recompilation avoidance mechanism should guarantee that the module `C` is not recompiled.
           assertFailure $ in_recompilation $
             Process.proc "grep" ["C.hs", "logfile.json"]
