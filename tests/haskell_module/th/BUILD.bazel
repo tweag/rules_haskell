@@ -34,6 +34,15 @@ haskell_module(
     ],
 )
 
+haskell_module(
+    name = "withlibs",
+    src = "WithLibs.hs",
+    enable_th = True,
+    deps = [
+        ":root",
+    ],
+)
+
 haskell_library(
     name = "lib",
     modules = [
@@ -41,11 +50,14 @@ haskell_library(
         ":branch_left",
         ":branch_right",
         ":leaf",
+        ":withlibs",
     ],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
         "@stackage//:vector",
+        "@stackage-zlib//:zlib",
+        "@stackage-phone-numbers//:phone-numbers",
     ],
 )
 
