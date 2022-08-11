@@ -6,5 +6,8 @@
 # https://github.com/haskell/win32/issues/193
 
 resolver: lts-18.18
+packages:
+  - git: https://github.com/christian-marie/phone-numbers.git
+    commit: 4e68f847370044e9b78c46ce4c94abcdb4697813
 drop-packages:
   - Win32
