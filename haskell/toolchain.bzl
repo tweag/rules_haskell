@@ -271,7 +271,14 @@ def _haskell_toolchain_impl(ctx):
             tools_for_ghc_pkg = ctx.files.tools,
         )
     else:
-        tools_config = default_tools_config
+        tools_config = struct(
+            path_for_run_ghc = default_tools_config.path_for_run_ghc + ctx.attr._exec_posix_toolchain[platform_common.ToolchainInfo].paths,
+            tools_for_ghc = default_tools_config.tools_for_ghc,
+            path_for_cabal = default_tools_config.path_for_cabal,
+            tools_for_ghc_pkg = default_tools_config.tools_for_ghc_pkg,
+            maybe_exec_cc_toolchain = default_tools_config.maybe_exec_cc_toolchain,
+            supports_haddock = default_tools_config.supports_haddock,
+        )
 
     return [
         platform_common.ToolchainInfo(
@@ -376,6 +383,10 @@ common_attrs = {
         allow_single_file = True,
         default = Label("@rules_haskell//rule_info:rule_info_proto"),
     ),
+    "_exec_posix_toolchain": attr.label(
+        default = Label("@rules_haskell//haskell:current_posix_toolchain"),
+        cfg = "exec",
+    ),
 }
 
 _ahc_haskell_toolchain = rule(
@@ -392,10 +403,6 @@ _ahc_haskell_toolchain = rule(
         ),
         _exec_cc_toolchain = attr.label(
             default = Label("@rules_haskell//haskell:current_cc_toolchain"),
-            cfg = "exec",
-        ),
-        _exec_posix_toolchain = attr.label(
-            default = Label("@rules_haskell//haskell:current_posix_toolchain"),
             cfg = "exec",
         ),
     ),
