@@ -1,0 +1,15 @@
+name: Traffic Statistics
+on: [push]
+
+jobs:
+  query-gh-api:
+    name: Query GitHub Traffic API
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Query Github Traffic API
+        run: |
+          curl \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/traffic/views"
