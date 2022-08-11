@@ -38,6 +38,10 @@ load(
     "preprocess_hsc_flags_and_inputs",
     "process_hsc_file",
 )
+load("//haskell:private/cc_libraries.bzl", 
+     "get_library_files",
+)
+
 
 # Note [Narrowed Dependencies]
 #
@@ -276,6 +280,14 @@ def _build_haskell_module(
     )
     args.add_all(pkg_info_args)
 
+    (static_libs, dynamic_libs) = get_library_files(
+        hs = hs,
+        cc_libraries_info = cc.cc_libraries_info,
+        libraries_to_link = cc.transitive_libraries,
+        dynamic = True,
+        pic = True,
+        )
+
     for plugin in plugins:
         args.add("-fplugin={}".format(plugin.module))
         for opt in plugin.args:
@@ -338,6 +350,7 @@ def _build_haskell_module(
                     narrowed_deps_info.deps_hs_libraries,
                     narrowed_deps_info.empty_hs_libraries,
                     object_inputs,
+                    depset(static_libs + dynamic_libs),
                 ]
                 # libraries and object inputs are only needed if the module uses TH
                 if enable_th
