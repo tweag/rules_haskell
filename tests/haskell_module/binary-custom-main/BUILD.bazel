@@ -19,7 +19,6 @@ haskell_test(
 
 haskell_test(
     name = "TestNoModuleNameCustomMainFunction",
-    main_file = "TestBin.hs",
     main_function = "TestBin.custom_main",
     modules = [":TestBinNoModuleName"],
     visibility = ["//visibility:public"],
@@ -40,7 +39,6 @@ haskell_binary(
 
 haskell_binary(
     name = "BinNoModuleNameCustomMainFunction",
-    main_file = "TestBin.hs",
     main_function = "TestBin.custom_main",
     modules = [":TestBinNoModuleName"],
     visibility = ["//visibility:public"],
