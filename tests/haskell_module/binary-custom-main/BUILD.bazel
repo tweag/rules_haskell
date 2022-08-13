@@ -9,19 +9,28 @@ package(default_testonly = 1)
 
 haskell_test(
     name = "Test",
-    main_file = "TestBin.hs",
-    main_function = "custom_main",
+    main_function = "TestBin.custom_main",
     modules = [":TestBinModule"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
     ],
+)
+
+haskell_test(
+    name = "TestNoModuleNameCustomMainFunction",
+    main_file = "TestBin.hs",
+    main_function = "TestBin.custom_main",
+    modules = [":TestBinNoModuleName"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ]
 )
 
 haskell_binary(
     name = "Bin",
-    main_file = "TestBin.hs",
-    main_function = "custom_main",
+    main_function = "TestBin.custom_main",
     modules = [":TestBinModule"],
     visibility = ["//visibility:public"],
     deps = [
@@ -30,9 +39,10 @@ haskell_binary(
 )
 
 haskell_binary(
-    name = "BinNoMainFile",
+    name = "BinNoModuleNameCustomMainFunction",
+    main_file = "TestBin.hs",
     main_function = "TestBin.custom_main",
-    modules = [":TestBinModule"],
+    modules = [":TestBinNoModuleName"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
@@ -43,6 +53,11 @@ haskell_module(
     name = "TestBinModule",
     src = "TestBin.hs",
     module_name = "TestBin",
+)
+
+haskell_module(
+    name = "TestBinNoModuleName",
+    src = "TestBin.hs",
 )
 
 filegroup(
