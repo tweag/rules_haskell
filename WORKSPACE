@@ -103,22 +103,9 @@ stack_snapshot(
     },
 )
 
-new_local_repository(
-    name = "system-libs",
-    # pkg-config --variable=libdir x11
-    path = "/usr/local/lib",
-    build_file_content = """
-cc_library(
-    name = "phonenumbers",
-    srcs = ["libphonenumber.so"],
-    visibility = ["//visibility:public"],
-)
-""",
-)
-
 stack_snapshot(
     name = "stackage-phone-numbers",
-    extra_deps = {"phone-numbers": ["@system-libs//:phonenumbers"]},
+    extra_deps = {"phone-numbers": ["@libphonenumber//:lib", "@protobuf//:lib"]},
     local_snapshot = "//:stackage_snapshot.yaml",
     packages = ["phone-numbers"]
 )
@@ -433,6 +420,36 @@ package(default_visibility = ["//visibility:public"])
 filegroup(
     name = "locale-archive",
     srcs = ["lib/locale/locale-archive"],
+)
+""",
+    repository = "@nixpkgs_default",
+)
+
+nixpkgs_package(
+    name = "libphonenumber",
+    build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+cc_library(
+    name = "lib",
+    srcs = glob(["lib/*.so*",]),
+    hdrs = [":include"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
+""",
+    repository = "@nixpkgs_default",
+)
+
+nixpkgs_package(
+    name = "protobuf",
+    build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+cc_library(
+    name = "lib",
+    srcs = glob(["lib/*.so*",]),
+    hdrs = [":include"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
 )
 """,
     repository = "@nixpkgs_default",
