@@ -38,10 +38,10 @@ load(
     "preprocess_hsc_flags_and_inputs",
     "process_hsc_file",
 )
-load("//haskell:private/cc_libraries.bzl", 
-     "get_library_files",
+load(
+    "//haskell:private/cc_libraries.bzl",
+    "get_library_files",
 )
-
 
 # Note [Narrowed Dependencies]
 #
@@ -286,7 +286,7 @@ def _build_haskell_module(
         libraries_to_link = cc.transitive_libraries,
         dynamic = True,
         pic = True,
-        )
+    )
 
     for plugin in plugins:
         args.add("-fplugin={}".format(plugin.module))

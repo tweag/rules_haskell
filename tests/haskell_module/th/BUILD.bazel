@@ -55,9 +55,9 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
-        "@stackage//:vector",
-        "@stackage-zlib//:zlib",
         "@stackage-phone-numbers//:phone-numbers",
+        "@stackage-zlib//:zlib",
+        "@stackage//:vector",
     ],
 )
 

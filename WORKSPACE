@@ -105,11 +105,13 @@ stack_snapshot(
 
 stack_snapshot(
     name = "stackage-phone-numbers",
-    extra_deps = {"phone-numbers": ["@libphonenumber//:lib", "@protobuf//:lib"]},
+    extra_deps = {"phone-numbers": [
+        "@libphonenumber//:lib",
+        "@protobuf//:lib",
+    ]},
     local_snapshot = "//:stackage_snapshot.yaml",
-    packages = ["phone-numbers"]
+    packages = ["phone-numbers"],
 )
-
 
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
