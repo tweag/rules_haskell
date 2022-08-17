@@ -24,7 +24,7 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
-    ]
+    ],
 )
 
 haskell_binary(
