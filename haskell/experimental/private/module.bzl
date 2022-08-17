@@ -188,13 +188,13 @@ def _build_haskell_module(
     main_function = getattr(ctx.attr, "main_function", None)
 
     if main_function:
-        main_file = getattr(ctx.attr, "main_file", None)
-        main_function_module = infer_main_module(main_function)
         if moduleAttr.module_name:
             guess_module_name = moduleAttr.module_name
         else:
             guess_module_name = paths.split_extension(get_module_path_from_target(module))[0].replace("/", ".")
 
+        main_file = getattr(ctx.attr, "main_file", None)
+        main_function_module = infer_main_module(main_function)
         if (moduleAttr.src == main_file or main_function_module == guess_module_name):
             args.add_all(["-main-is", ctx.attr.main_function])
 
