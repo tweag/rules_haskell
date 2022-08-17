@@ -191,7 +191,7 @@ def _build_haskell_module(
         if moduleAttr.module_name:
             guess_module_name = moduleAttr.module_name
         else:
-            guess_module_name = paths.split_extension(get_module_path_from_target(module))[0].replace("/", ".")
+            guess_module_name = get_module_path_from_target(module).replace("/", ".")
 
         main_file = getattr(ctx.attr, "main_file", None)
         main_function_module = infer_main_module(main_function)
