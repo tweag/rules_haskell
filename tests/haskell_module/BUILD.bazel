@@ -5,6 +5,7 @@ filegroup(
         "//tests/haskell_module/attr_merging:all_files",
         "//tests/haskell_module/hs-boot:all_files",
         "//tests/haskell_module/binary:all_files",
+        "//tests/haskell_module/binary-custom-main:all_files",
         "//tests/haskell_module/library:all_files",
         "//tests/haskell_module/library-dep:all_files",
         "//tests/haskell_module/dep-narrowing:all_files",
