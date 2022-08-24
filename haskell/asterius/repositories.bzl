@@ -30,8 +30,8 @@ AHC_BINDIST = \
     {
         "0.0.1": {
             "linux_amd64": (
-                "https://github.com/tweag/asterius_bundles_for_bazel/releases/download/0.0.1/asterius_bundle.tar.gz",
-                "747cb0d3f0205a5221c4476589374707496e29649f4690de4ff287acdddc1bb4",
+                "https://github.com/tweag/asterius_bundles_for_bazel/releases/download/0.0.2/asterius_bundle.tar.gz",
+                "bb051b73547e5b35e77ececbbca59a551cb45bca34c87ad1f09e166ccf1210e6",
             ),
         },
     }

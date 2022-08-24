@@ -322,7 +322,6 @@ The ahc_dist target (built with target="browser") from which we will create a bu
 _node_options = [
     "--experimental-modules",
     "--experimental-wasi-unstable-preview1",
-    "--experimental-wasm-bigint",
     "--experimental-wasm-return-call",
     "--no-wasm-bounds-checks",
     "--no-wasm-stack-checks",
