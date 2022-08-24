@@ -2,6 +2,10 @@ load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
 )
+load(
+    "hidden_modules_test.bzl",
+    "hidden_modules_test_suite",
+)
 
 package(
     default_testonly = 1,
@@ -32,6 +36,10 @@ haskell_library(
         ":lib-b",
         "//tests/hackage:base",
     ],
+)
+
+hidden_modules_test_suite(
+    name="test-missing-module",
 )
 
 filegroup(
