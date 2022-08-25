@@ -344,7 +344,7 @@ def asterius_dependencies_nix(**kwargs):
       nixpkgs_package_rule: The `nixpkgs_package` rule from `rules_nixpkgs`.
       package_json: The package.json file that will be passed to [yarn_install](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#yarn_install)
       yarn_lock: The yarn.lock file that will be passed to [yarn_install](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#yarn_install)
-      nixpkgs_nodejs: The name for the nodejs that will be installed with `nixpkgs_package`.
+      nixpkgs_nodejs: The prefix for the repository containing node that will be installed with `nixpkgs_package`.
     """
     _asterius_dependencies_nix(**kwargs)
 

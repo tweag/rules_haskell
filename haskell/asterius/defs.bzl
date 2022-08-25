@@ -121,7 +121,7 @@ _SUBFOLDER_PREFIX = "asterius"
 def _ahc_dist_impl(ctx):
     asterius_toolchain = ctx.toolchains["@rules_haskell//haskell/asterius:toolchain_type"]
     posix_toolchain = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
-    nodejs_toolchain = ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"]
+    nodejs_toolchain = ctx.toolchains["@rules_nodejs//nodejs:toolchain_type"]
     node_toolfiles = nodejs_toolchain.nodeinfo.tool_files
 
     subfolder_name = ctx.attr.subfolder_name or "{}_{}".format(_SUBFOLDER_PREFIX, ctx.label.name)
@@ -255,7 +255,7 @@ ahc_dist = rule(
     toolchains = [
         "@rules_sh//sh/posix:toolchain_type",
         "@rules_haskell//haskell/asterius:toolchain_type",
-        "@build_bazel_rules_nodejs//toolchains/node:toolchain_type",
+        "@rules_nodejs//nodejs:toolchain_type",
     ],
     doc = "This rule transforms a haskell binary target into an archive containing javascript files.",
 )
