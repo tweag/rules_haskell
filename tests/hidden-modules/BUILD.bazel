@@ -39,7 +39,7 @@ haskell_library(
 )
 
 hidden_modules_test_suite(
-    name="test-missing-module",
+    name = "test-missing-module",
 )
 
 filegroup(

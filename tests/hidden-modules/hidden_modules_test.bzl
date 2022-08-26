@@ -1,7 +1,6 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("@rules_haskell//haskell:defs.bzl","haskell_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
 load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
-
 
 # Test for failure in the case of hiding non existent modules
 def _hidden_module_test_impl(ctx):
@@ -18,7 +17,6 @@ hidden_module_test = analysistest.make(
 
 # test using the standard haskell library rules
 def _test_hidden_modules1():
-
     haskell_library(
         name = "lib-hidden-1",
         srcs = native.glob(["lib-a/*.hs"]),
@@ -35,7 +33,6 @@ def _test_hidden_modules1():
 
 # Test using haskell modules
 def _test_hidden_modules2():
-
     haskell_module(
         name = "FooModule",
         src = "lib-a/Foo.hs",
@@ -67,7 +64,6 @@ def _test_hidden_modules2():
         name = "hidden_module_test-2",
         target_under_test = ":lib-hidden-2",
     )
-
 
 # Run all of the expect failure tests
 def hidden_modules_test_suite(name):
