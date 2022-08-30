@@ -526,7 +526,15 @@ def haskell_library_impl(ctx):
 
     other_modules = ctx.attr.hidden_modules
     exposed_modules_reexports = _exposed_modules_reexports(ctx.attr.reexported_modules)
+
     haskell_module_names = [haskell_module_from_target(m) for m in modules]
+
+    # Validate that hidden modules appear as modules in src list or modules list, depending which appears:
+    declared_modules = haskell_module_names if modules else module_map.keys()
+    hidden_minus_declared_modules = set.difference(set.from_list(ctx.attr.hidden_modules), set.from_list(declared_modules))
+    if not hidden_minus_declared_modules == set.empty():
+        fail("""Hidden modules must be a subset of all modules, found additional hidden modules {}""".format(set.to_list(hidden_minus_declared_modules)))
+
     exposed_modules = set.from_list(module_map.keys() + exposed_modules_reexports + haskell_module_names)
     set.mutable_difference(exposed_modules, set.from_list(other_modules))
     exposed_modules = set.to_list(exposed_modules)
