@@ -25,6 +25,10 @@ _GHC_DEFAULT_VERSION = "8.10.7"
 
 GHC_BINDIST_STRIP_PREFIX = \
     {
+        "9.2.4": {
+            "darwin_amd64": "ghc-9.2.4-x86_64-apple-darwin",
+            "windows_amd64": "ghc-9.2.4-x86_64-unknown-mingw32",
+        },
         "9.2.3": {
             "darwin_amd64": "ghc-9.2.3-x86_64-apple-darwin",
             "windows_amd64": "ghc-9.2.3-x86_64-unknown-mingw32",
@@ -44,6 +48,9 @@ GHC_BINDIST_STRIP_PREFIX = \
 
 GHC_BINDIST_LIBDIR = \
     {
+        "9.2.4": {
+            "darwin_amd64": "lib/lib",
+        },
         "9.2.3": {
             "darwin_amd64": "lib/lib",
         },
@@ -57,6 +64,9 @@ GHC_BINDIST_LIBDIR = \
 
 GHC_BINDIST_DOCDIR = \
     {
+        "9.2.4": {
+            "windows_amd64": "docs",
+        },
         "9.2.3": {
             "windows_amd64": "docs",
         },
@@ -149,7 +159,7 @@ def _ghc_bindist_impl(ctx):
         if not make_loc:
             fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
 
-        if version in ["9.2.1", "9.2.3"]:
+        if version in ["9.2.1", "9.2.3", "9.2.4"]:
             # Necessary for deterministic builds on macOS. See
             # https://gitlab.haskell.org/ghc/ghc/-/issues/19963
             ctx.file("{}/mk/relpath.sh".format(unpack_dir), ctx.read(ctx.path(ctx.attr._relpath_script)), executable = False, legacy_utf8 = False)
@@ -378,6 +388,7 @@ def ghc_bindist(
             "9.0.2": ["@rules_haskell//haskell:assets/ghc_9_0_2_win.patch"],
             "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_win.patch"],
             "9.2.3": ["@rules_haskell//haskell:assets/ghc_9_2_3_win.patch"],
+            "9.2.4": ["@rules_haskell//haskell:assets/ghc_9_2_4_win.patch"],
         }.get(version)
 
     if target == "darwin_amd64":
