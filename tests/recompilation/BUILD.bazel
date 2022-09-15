@@ -1,41 +1,7 @@
-load(
-    "@rules_haskell//haskell:defs.bzl",
-    "haskell_library",
-)
-load(
-    "@rules_haskell//haskell/experimental:defs.bzl",
-    "haskell_module",
-)
+load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_haskell_integration_test")
 
-haskell_library(
-    name = "basic_modules",
-    ghcopts = ["-XNoImplicitPrelude"],
-    modules = [
-        ":A",
-        ":B",
-        ":C",
-    ],
-    version = "0",
-    visibility = ["//visibility:public"],
-)
-
-haskell_module(
-    name = "A",
-    src = "src/A.hs",
-    ghcopts = ["-O"],
-    src_strip_prefix = "src",
-)
-
-haskell_module(
-    name = "B",
-    src = "src/B.hs",
-    src_strip_prefix = "src",
-    deps = [":A"],
-)
-
-haskell_module(
-    name = "C",
-    src = "src/C.hs",
-    src_strip_prefix = "src",
-    deps = [":B"],
+rules_haskell_integration_test(
+    name = "recompilation_test",
+    srcs = ["SomeTest.hs"],
+    workspace_path = "recompilation_workspace",
 )
