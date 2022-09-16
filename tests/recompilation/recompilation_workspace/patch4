@@ -1,7 +1,7 @@
-diff --git a/tests/recompilation/src/B.hs b/tests/recompilation/src/B.hs
+diff --git a/src/B.hs b/src/B.hs
 index 1e79718d..181a011b 100644
---- a/tests/recompilation/src/B.hs
-+++ b/tests/recompilation/src/B.hs
+--- a/src/B.hs
++++ b/src/B.hs
 @@ -1,5 +1,5 @@
  module B where
 -import qualified A (f, g, T)

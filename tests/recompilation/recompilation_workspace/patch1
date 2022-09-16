@@ -1,7 +1,7 @@
-diff --git a/tests/recompilation/src/A.hs b/tests/recompilation/src/A.hs
+diff --git a/src/A.hs b/src/A.hs
 index 3da440be..a63b1242 100644
---- a/tests/recompilation/src/A.hs
-+++ b/tests/recompilation/src/A.hs
+--- a/src/A.hs
++++ b/src/A.hs
 @@ -1,4 +1,4 @@
 -module A (f, g, T, a) where
 +module A (f, g, T) where

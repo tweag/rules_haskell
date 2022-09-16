@@ -1,11 +1,26 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 local_repository(
     name = "rules_haskell",
-    path = "%RULES_HASKELL_PATH%"
+    path = "%RULES_HASKELL_PATH%",
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
+load("@rules_haskell//tools:os_info.bzl", "os_info")
+
+os_info(name = "os_info")
+
+load("@os_info//:os_info.bzl", "is_windows")
 
 rules_haskell_dependencies()
+
+load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+
+haskell_register_ghc_nixpkgs(
+    attribute_path = "haskell.compiler.ghc8107",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+    version = "8.10.7",
+)
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
