@@ -1,5 +1,7 @@
 import Test.Hspec (hspec, it)
 import IntegrationTesting
+import qualified System.Process as Process
+import Data.Foldable (for_)
 
 main = hspec $ do
   it "bazel test recompilation" $
@@ -8,13 +10,13 @@ main = hspec $ do
     let recompilation_is_not_triggered_by_patch :: Int -> IO ()
         recompilation_is_not_triggered_by_patch i = do
           assertSuccess $
-            bazel ["build", "//:basic_modules"]
+            Process.proc "bazel"  ["build", "//:basic_modules"]
           -- When a patch is applied,
           assertSuccess $ in_recompilation $
             Process.proc "git" ["apply", "patch" ++ show i]
           -- it triggers the recompilation of some modules,
           assertSuccess $ in_recompilation $
-            bazel ["build", "//:basic_modules", "--execution_log_json_file=logfile.json"]
+            Process.proc "bazel"  ["build", "//:basic_modules", "--execution_log_json_file=logfile.json"]
           -- but the recompilation avoidance mechanism should guarantee that the module `C` is not recompiled.
           assertFailure $ in_recompilation $
             Process.proc "grep" ["C.hs", "logfile.json"]

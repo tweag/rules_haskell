@@ -4,4 +4,9 @@ rules_haskell_integration_test(
     name = "recompilation_test",
     srcs = ["SomeTest.hs"],
     workspace_path = "recompilation_workspace",
+    deps = [
+        "//tests/hackage:process",
+    ]
 )
+
+package(default_testonly = 1)
