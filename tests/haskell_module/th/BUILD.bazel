@@ -52,6 +52,7 @@ haskell_library(
         ":leaf",
         ":withlibs",
     ],
+    tags = ["requires_nix"],
     deps = [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
