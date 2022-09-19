@@ -1625,6 +1625,8 @@ def _parse_packages_list(packages, vendored_packages):
         unversioned = _chop_version(package) if has_version else package
         if unversioned in vendored_packages:
             fail("Duplicate package '{}'. Packages may not be listed in both 'packages' and 'vendored_packages'.".format(package))
+        if unversioned in all_packages:
+            fail("Duplicate package '{}'. Packages should be declared only once in 'packages'.".format(package))
         all_packages.append(unversioned)
         if has_version:
             versioned_packages.append(package)
