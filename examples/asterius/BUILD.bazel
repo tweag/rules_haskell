@@ -12,8 +12,11 @@ load(
 # We first define an Haskell binary.
 haskell_binary(
     name = "main-bin",
+    srcs = [
+        "Main.hs",
+        "src/Lib.hs",
+    ],
     main_file = "Main.hs",
-    srcs = ["Main.hs", "src/Lib.hs"],
     src_strip_prefix = "src/",
     deps = [
         "@stackage//:base",
@@ -31,10 +34,10 @@ ahc_dist(
 # the Asterius binary and Asterius bundle.
 asterius_binary(
     name = "asterius_binary",
-    ahc_dist_dep = ":asterius"
+    ahc_dist_dep = ":asterius",
 )
 
 asterius_webpack(
     name = "asterius_bundle",
-    ahc_dist_dep = ":asterius"
+    ahc_dist_dep = ":asterius",
 )

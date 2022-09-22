@@ -21,6 +21,7 @@ load(
     "asterius_dependencies_bindist",
     "rules_haskell_asterius_toolchains",
 )
+
 asterius_dependencies_bindist()
 
 rules_haskell_asterius_toolchains()
