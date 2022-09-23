@@ -20,6 +20,7 @@ load(
     "@rules_haskell//haskell/asterius:repositories.bzl",
     "asterius_dependencies_bindist",
     "rules_haskell_asterius_toolchains",
+    "asterius_dependencies_nix",
 )
 
 asterius_dependencies_bindist()
@@ -29,6 +30,12 @@ rules_haskell_asterius_toolchains()
 # This example relies on Nixpkgs to get a lot of tools,
 # including GHC.
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+
+asterius_dependencies_nix(
+	nix_repository = "@nixpkgs",
+	nixpkgs_package_rule = nixpkgs_package,
+	nixpkgs_nodejs = "nodejs-16_x",
+)
 
 haskell_register_ghc_nixpkgs(
     attribute_path = "haskell.compiler.ghc8107",
