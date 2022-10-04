@@ -78,6 +78,7 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
         repl_ghci_args = ctx.attr.repl_ghci_args,
         cabalopts = ctx.attr.cabalopts,
         locale = repr(locale),
+        hadrian_bindist = True,
     )
     ctx.template(
         "BUILD",
