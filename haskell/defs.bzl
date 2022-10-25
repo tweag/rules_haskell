@@ -615,7 +615,7 @@ def haskell_library(
       non_default_plugins: Like `plugins` but doesn't pass `-fplugin=...` to modules by default.
       tools: Extra tools needed at compile-time, like preprocessors.
       worker: Experimental. Worker binary employed by Bazel's persistent worker mode. See [use-cases documentation](https://rules-haskell.readthedocs.io/en/latest/haskell-use-cases.html#persistent-worker-mode-experimental).
-      hidden_modules: Modules that should be unavailable for import by dependencies.
+      hidden_modules: Modules that should be unavailable for import by any Haskell module outside of this library.
       reexported_modules: A dictionary mapping dependencies to module reexports that should be available for import by dependencies.
       exports: A list of other haskell libraries that will be transparently added as a dependency to every downstream rule
       linkstatic: Create a static library, not both a static and a shared library.
