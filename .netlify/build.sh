@@ -2,7 +2,7 @@
 
 set -eux
 
-export PATH=$HOME/bin:$PATH
+export PATH="$HOME/bin:$PATH"
 
 # XXX We don't want to be using the Nixpkgs CC toolchain, because
 # Nixpkgs is not available. But currently we can only override the

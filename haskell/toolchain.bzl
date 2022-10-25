@@ -568,12 +568,12 @@ def rules_haskell_toolchains(
 # and control their configurations using the `cfg` field.
 
 def get_nodejs_toolchain_impl(ctx):
-    return ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"]
+    return ctx.toolchains["@rules_nodejs//nodejs:toolchain_type"]
 
 get_nodejs_toolchain = rule(
     get_nodejs_toolchain_impl,
     toolchains = [
-        "@build_bazel_rules_nodejs//toolchains/node:toolchain_type",
+        "@rules_nodejs//nodejs:toolchain_type",
     ],
 )
 
