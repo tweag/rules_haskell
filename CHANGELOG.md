@@ -20,6 +20,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 [#1790]: https://github.com/tweag/rules_haskell/pull/1790
 
+### Changed
+
+* Use node version 16 when compiling with asterius, and update `rules_nodejs` dependency to version 5.0.0 (see [#1810])
+
+[#1810]: https://github.com/tweag/rules_haskell/pull/1810
+
+
+
 ## [0.15] 2022-07-22
 
 [0.15]: https://github.com/tweag/rules_haskell/compare/v0.14...v0.15
