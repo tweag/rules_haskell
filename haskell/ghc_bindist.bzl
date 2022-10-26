@@ -97,13 +97,15 @@ def _ghc_bindist_impl(ctx):
 
     bindist_dir = ctx.path(".")  # repo path
 
-    # The Windows bindist is ready to use after unpacking, so we can unpack it
-    # straight into the repository root. However, the Linux bindist requires a
-    # `./configure && make install` which will install the final bindist into
-    # the destination directory. We unpack the distribution into a
-    # sub-directory in order to cleanly separate the usable installation from
-    # the raw distribution.
-    unpack_dir = "bindist_unpacked" if os != "windows" else ""
+    # # The Windows bindist is ready to use after unpacking, so we can unpack it
+    # # straight into the repository root. However, the Linux bindist requires a
+    # # `./configure && make install` which will install the final bindist into
+    # # the destination directory. We unpack the distribution into a
+    # # sub-directory in order to cleanly separate the usable installation from
+    # # the raw distribution.
+    # unpack_dir = "bindist_unpacked" if os != "windows" else ""
+
+    unpack_dir = ""
 
     stripPrefix = "ghc-" + version
     if GHC_BINDIST_STRIP_PREFIX.get(version) != None and GHC_BINDIST_STRIP_PREFIX[version].get(target) != None:
