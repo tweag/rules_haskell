@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 * Add support for GHC 9.2.4 (see [#1814])
 
 [#1791]: https://github.com/tweag/rules_haskell/pull/1791
-[#1791]: https://github.com/tweag/rules_haskell/pull/1814
+[#1814]: https://github.com/tweag/rules_haskell/pull/1814
 
 ### Removed
 

@@ -17,4 +17,6 @@ version_numbers = [x['version'] for x in gen_ghc_bindist.VERSIONS]
 
 unexpected(["8.10.1", "8.10.2"], version_numbers, "GHC 8.10.1 and 8.10.2 not supported. Upgrade to 8.10.3 or later.")
 
-print("::set-output name=ghc-matrix::{}".format(version_numbers))
+with open(os.environ['GITHUB_OUTPUT'], mode='a', encoding='utf-8') as output:
+  output.write("ghc-matrix={}\n".format(version_numbers))
+
