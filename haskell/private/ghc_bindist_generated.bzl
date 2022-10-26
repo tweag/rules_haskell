@@ -172,7 +172,7 @@ GHC_BINDIST = \
             ),
             "linux_amd64": (
                 "file:///home/guillaume/ExternalPrograms/ghc-9.0.2.tar.xz",
-                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "23c707805f22bfb1099dc832357c8d2748731b3ed8dd867950bdd0c288333808",
             ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-unknown-mingw32.tar.xz",
