@@ -189,7 +189,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
                     for dynamic_library_dir in pkg.dynamic_library_dirs + pkg.library_dirs
                     if path_to_label(dynamic_library_dir, pkgroot)
                 ]),
-                haddock_html = repr(haddock_html + enrich_haddock_html),
+                haddock_html = repr(haddock_html),
                 haddock_interfaces = repr(haddock_interfaces),
                 deps = pkg.depends,
                 linkopts = pkg.ld_options + [
