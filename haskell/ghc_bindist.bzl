@@ -148,50 +148,50 @@ def _ghc_bindist_impl(ctx):
         patch_args.extend(["-d", unpack_dir])
     patch(ctx, patch_args = patch_args)
 
-    # On Windows the bindist already contains the built executables
-    if os != "windows":
-        # IMPORTANT: all these scripts have to be compatible with BSD
-        # tools! This means that sed -i always takes an argument.
-        execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
-        execute_or_fail_loudly(ctx, ["rm", "-f", "mk/config.mk.in.bak"], working_directory = unpack_dir)
-        execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath], working_directory = unpack_dir)
-        make_loc = ctx.which("make")
-        if not make_loc:
-            fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
+#     # On Windows the bindist already contains the built executables
+#     if os != "windows":
+#         # IMPORTANT: all these scripts have to be compatible with BSD
+#         # tools! This means that sed -i always takes an argument.
+#         execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
+#         execute_or_fail_loudly(ctx, ["rm", "-f", "mk/config.mk.in.bak"], working_directory = unpack_dir)
+#         execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath], working_directory = unpack_dir)
+#         make_loc = ctx.which("make")
+#         if not make_loc:
+#             fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
 
-        if version in ["9.2.1", "9.2.3", "9.2.4"]:
-            # Necessary for deterministic builds on macOS. See
-            # https://gitlab.haskell.org/ghc/ghc/-/issues/19963
-            ctx.file("{}/mk/relpath.sh".format(unpack_dir), ctx.read(ctx.path(ctx.attr._relpath_script)), executable = False, legacy_utf8 = False)
-            execute_or_fail_loudly(ctx, ["chmod", "+x", "mk/relpath.sh"], working_directory = unpack_dir)
+#         if version in ["9.2.1", "9.2.3", "9.2.4"]:
+#             # Necessary for deterministic builds on macOS. See
+#             # https://gitlab.haskell.org/ghc/ghc/-/issues/19963
+#             ctx.file("{}/mk/relpath.sh".format(unpack_dir), ctx.read(ctx.path(ctx.attr._relpath_script)), executable = False, legacy_utf8 = False)
+#             execute_or_fail_loudly(ctx, ["chmod", "+x", "mk/relpath.sh"], working_directory = unpack_dir)
 
-        execute_or_fail_loudly(
-            ctx,
-            ["make", "install"],
-            # Necessary for deterministic builds on macOS. See
-            # https://blog.conan.io/2019/09/02/Deterministic-builds-with-C-C++.html.
-            # The proper fix is for the GHC bindist to always use ar
-            # and never use libtool, which has a -D flag for
-            # deterministic builds that works better than
-            # ZERO_AR_DATE. See
-            # https://source.chromium.org/chromium/chromium/src/+/62848c8d298690e086e49a9832278ff56b6976b5.
-            environment = {"ZERO_AR_DATE": "1"},
-            working_directory = unpack_dir,
-        )
-        ctx.file(paths.join(unpack_dir, "patch_bins"), executable = True, content = r"""#!/usr/bin/env bash
-find bin -type f -print0 | xargs -0 \
-grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
-    sed -i.bak \
-        -e '2i\
-DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(readlink "$(basename "$resolved")")"; do resolved="$tmp"; cd "$(dirname "$resolved")"; done; echo "$PWD/$(basename "$resolved")")" )/.."' \
-        -e 's:{bindist_dir}:$DISTDIR:'
-find bin -type f -print0 | xargs -0 \
-grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
-rm -f
-""".format(
-            bindist_dir = bindist_dir.realpath,
-        ))
-        execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
+#         execute_or_fail_loudly(
+#             ctx,
+#             ["make", "install"],
+#             # Necessary for deterministic builds on macOS. See
+#             # https://blog.conan.io/2019/09/02/Deterministic-builds-with-C-C++.html.
+#             # The proper fix is for the GHC bindist to always use ar
+#             # and never use libtool, which has a -D flag for
+#             # deterministic builds that works better than
+#             # ZERO_AR_DATE. See
+#             # https://source.chromium.org/chromium/chromium/src/+/62848c8d298690e086e49a9832278ff56b6976b5.
+#             environment = {"ZERO_AR_DATE": "1"},
+#             working_directory = unpack_dir,
+#         )
+#         ctx.file(paths.join(unpack_dir, "patch_bins"), executable = True, content = r"""#!/usr/bin/env bash
+# find bin -type f -print0 | xargs -0 \
+# grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
+#     sed -i.bak \
+#         -e '2i\
+# DISTDIR="$( dirname "$(resolved="$0"; cd "$(dirname "$resolved")"; while tmp="$(readlink "$(basename "$resolved")")"; do resolved="$tmp"; cd "$(dirname "$resolved")"; done; echo "$PWD/$(basename "$resolved")")" )/.."' \
+#         -e 's:{bindist_dir}:$DISTDIR:'
+# find bin -type f -print0 | xargs -0 \
+# grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
+# rm -f
+# """.format(
+#             bindist_dir = bindist_dir.realpath,
+#         ))
+#         execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
 
     # As the patches may touch the package DB we regenerate the cache.
     if len(ctx.attr.patches) > 0:

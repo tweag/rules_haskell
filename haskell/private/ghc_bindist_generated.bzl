@@ -171,8 +171,8 @@ GHC_BINDIST = \
                 "b1fcab17fe48326d2ff302d70c12bc4cf4d570dfbbce68ab57c719cfec882b05",
             ),
             "linux_amd64": (
-                "https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-deb9-linux.tar.xz",
-                "805f5628ce6cec678ba77ff48c924831ebdf75ec2c66368e8935a618913a150e",
+                "https://drive.google.com/file/d/1Pl15lCazbuLeqdg-e5oNFWdnzTI7hdBe/view?usp=sharing",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-unknown-mingw32.tar.xz",
