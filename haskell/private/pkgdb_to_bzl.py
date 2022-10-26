@@ -86,8 +86,8 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     # pkgroot is not part of .conf files. It's a computed value. It is
     # defined to be the directory enclosing the package database
     # directory.
-    pkgroot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(conf))))
-    enrich_haddock_html = "\nFor conf {}\n  the root is {}".format(conf, pkgroot)
+    pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
+    enrich_haddock_html = "    For conf {}    the root is {}".format(conf, pkgroot)
 
     pkg_id_map.append((pkg.name, pkg.id))
 
@@ -107,10 +107,12 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
 
     if pkg.haddock_html:
         haddock_html = path_to_label(pkg.haddock_html, pkgroot)
+        enrich_haddock_html += "    and haddock_html is {}".format(haddock_html)
         # We check if the file exists because cabal will unconditionally
         # generate the database entry even if no haddock was generated.
         if not haddock_html and os.path.exists(pkg.haddock_html):
             haddock_html = os.path.join("haddock", "html", pkg.name)
+            enrich_haddock_html += "    IN THE NOT CASE haddock_html is {}".format(haddock_html)
             output.append("#SYMLINK: {} {}".format(pkg.haddock_html, haddock_html))
 
     # If there is many interfaces, we give them a number
