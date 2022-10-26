@@ -1015,9 +1015,20 @@ _STACK_BINDISTS = \
                 "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-linux-x86_64-static.tar.gz",
                 "2a02fefefcc1758033d0aea566a521a290e3c68739ce9894bd6492a346af79c5",
             ),
+            "linux-aarch64": (
+                # GHCup provides unofficial aarch64 linux binaries
+                # FIXME: use the official ones after upgrading to 2.9.1
+                "https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-aarch64.tar.gz",
+                "f362fa4786b17252004b2619ec96b9687e561dc4e55c2612c53d60be767cabba",
+            ),
             "osx-x86_64": (
                 "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-osx-x86_64.tar.gz",
                 "94176b71425d76b94b088515103316ae1ff96d123344b1f4609c103d0d5bdcc4",
+            ),
+            "osx-aarch64": (
+                # GHCup provides unofficial aarch64 macOS binaries
+                "https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-osx-aarch64.tar.gz",
+                "cea34367981ed6f5629d23d17957920b1a06cc0a00580ba62e960a64087f25fe",
             ),
             "windows-x86_64": (
                 "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-windows-x86_64.tar.gz",
@@ -2329,7 +2340,7 @@ def _get_platform(repository_ctx):
         result = repository_ctx.execute(["uname", "-m"])
         if result.stdout.strip() in ["arm", "armv7l"]:
             arch = "arm"
-        elif result.stdout.strip() in ["aarch64"]:
+        elif result.stdout.strip() in ["aarch64", "arm64"]:
             arch = "aarch64"
         elif result.stdout.strip() in ["amd64", "x86_64", "x64"]:
             arch = "x86_64"
