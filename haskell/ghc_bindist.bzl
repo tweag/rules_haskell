@@ -75,6 +75,7 @@ GHC_BINDIST_DOCDIR = \
         },
         "9.0.2": {
             "windows_amd64": "docs",
+            "linux_amd64": "docs",
         },
         "9.0.1": {
             "windows_amd64": "docs",
