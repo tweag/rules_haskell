@@ -86,7 +86,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     # pkgroot is not part of .conf files. It's a computed value. It is
     # defined to be the directory enclosing the package database
     # directory.
-    pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
+    pkgroot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(conf))))
     enrich_haddock_html = "For conf {}\n  the root is {}".format(conf, pkgroot)
 
     pkg_id_map.append((pkg.name, pkg.id))
