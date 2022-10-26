@@ -87,6 +87,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
     # defined to be the directory enclosing the package database
     # directory.
     pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
+    print("For conf {}\n  the root is {}".format(conf, pkgroot))
 
     pkg_id_map.append((pkg.name, pkg.id))
 
