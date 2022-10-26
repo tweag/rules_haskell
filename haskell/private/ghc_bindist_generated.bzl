@@ -171,7 +171,7 @@ GHC_BINDIST = \
                 "b1fcab17fe48326d2ff302d70c12bc4cf4d570dfbbce68ab57c719cfec882b05",
             ),
             "linux_amd64": (
-                "file:///home/guillaume/ExternalPrograms/bla.tar.xz",
+                "file:///home/guillaume/ExternalPrograms/ghc-9.0.2.tar.xz",
                 "62682c4a3513937ab548e504e69a443c25d1b842710e776f2455b6f8e4cfb9e4",
             ),
             "windows_amd64": (
