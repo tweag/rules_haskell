@@ -114,6 +114,7 @@ for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
             haddock_html = os.path.join("haddock", "html", pkg.name)
             enrich_haddock_html += "    IN THE NOT CASE haddock_html is {}".format(haddock_html)
             output.append("#SYMLINK: {} {}".format(pkg.haddock_html, haddock_html))
+    else: haddock_html="NOT pkg.haddock_html"
 
     # If there is many interfaces, we give them a number
     interface_id = 0
