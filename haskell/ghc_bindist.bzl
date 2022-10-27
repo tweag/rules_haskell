@@ -208,6 +208,18 @@ def _ghc_bindist_impl(ctx):
     if GHC_BINDIST_DOCDIR.get(version) != None and GHC_BINDIST_DOCDIR[version].get(target) != None:
         docdir = GHC_BINDIST_DOCDIR[version][target]
 
+    result = ctx.execute(["bash", "-c", """\
+set -euo pipefail
+find {lib}/package.conf.d -name "*.conf" -print0 | \\
+  xargs -0 sed -i.bak 's|\\${{pkgroot}}/\\.\\./\\.\\.|${{pkgroot}}/..|'
+find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
+  xargs -0 sed -i.bak2 's|haddock-html:.*$|haddock-html:|'
+""".format(
+        lib = libdir,
+    )])
+    if result.return_code != 0:
+        fail(result.stderr)
+
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
     locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
     toolchain = define_rule(
