@@ -2363,9 +2363,16 @@ def _fetch_stack_impl(repository_ctx):
     (os, arch) = _get_platform(repository_ctx)
     version = _STACK_DEFAULT_VERSION
     (url, sha256) = _STACK_BINDISTS[version]["{}-{}".format(os, arch)]
-    prefix = paths.basename(url)[:-len(".tar.gz")]
+    if "unofficial" in url:
+        # the unofficial stack bindists from GHCup do not use a prefix directory
+        prefix = ""
+    else:
+        prefix = paths.basename(url)[:-len(".tar.gz")]
     repository_ctx.download_and_extract(url = url, sha256 = sha256)
     stack_cmd = repository_ctx.path(prefix).get_child("stack.exe" if os == "windows" else "stack")
+    if "unofficial" in url:
+        # the stack binary from the unofficial bindists from GHCup lacks the executable bit
+        _execute_or_fail_loudly(repository_ctx, ["chmod", "+x", stack_cmd])
     exec_result = repository_ctx.execute([stack_cmd, "--version"], quiet = True)
     if exec_result.return_code != 0:
         error_message = [
@@ -2380,7 +2387,9 @@ def _fetch_stack_impl(repository_ctx):
             error_message.append("* make Stack available on the PATH, or")
             error_message.append("* specify a Stack binary using the stack attribute.")
         fail("\n".join(error_message))
-    repository_ctx.symlink(stack_cmd, "stack")
+    if not "unofficial" in url:
+        # only needed for the official bindists
+        repository_ctx.symlink(stack_cmd, "stack")
 
 _fetch_stack = repository_rule(
     _fetch_stack_impl,
