@@ -309,10 +309,9 @@ load(
 )
 
 haskell_register_ghc_bindists_hadrian(
-    url = "file:///home/aj/scratch/hadrian-bindist/quick/ghc-9.2.3-x86_64-unknown-linux.tar.xz",
-    sha256 = "00a3b145ad1a2721949ca1f5c98b6b9c873467efd7d9d2e24616eda187bcfd01",
-    strip_prefix = "ghc-9.2.3-x86_64-unknown-linux",
-    version = "9.2.3",
+    url = "file:///home/guillaume/ExternalPrograms/ghc-9.0.2.tar.xz",
+    strip_prefix = "ghc-9.0.2",
+    version = "9.0.2",
     target = "x86_64-unknown-linux",
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
