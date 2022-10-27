@@ -2368,9 +2368,13 @@ def _fetch_stack_impl(repository_ctx):
     stack_cmd = repository_ctx.path(prefix).get_child("stack.exe" if os == "windows" else "stack")
     exec_result = repository_ctx.execute([stack_cmd, "--version"], quiet = True)
     if exec_result.return_code != 0:
-        error_message = exec_result.stdout
-        error_message.append("A Stack binary for your platform exists,")
-        error_message.append("but it failed to execute (exit status {}).".format(exec_result.return_code))
+        error_message = [
+            "A Stack binary for your platform exists, but it failed to execute (exit status {}).".format(exec_result.return_code),
+            "stdout:",
+            exec_result.stdout,
+            "stderr:",
+            exec_result.stderr,
+        ]
         if os == "linux":
             error_message.append("HINT: If you are on NixOS,")
             error_message.append("* make Stack available on the PATH, or")
