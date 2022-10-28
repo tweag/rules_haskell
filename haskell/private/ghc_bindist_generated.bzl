@@ -110,6 +110,10 @@ GHC_BINDIST = \
                 "https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-deb9-linux.tar.xz",
                 "95e4aadea30701fe5ab84d15f757926d843ded7115e11c4cd827809ca830718d",
             ),
+            "linux_arm64": (
+                "https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-aarch64-deb10-linux.tar.xz",
+                "a531432d505a1fe886cdc8639d168eb1c92d76464c1270713e01ce81891bbadb",
+            ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/8.10.3/ghc-8.10.3-x86_64-unknown-mingw32.tar.xz",
                 "927a6c699533a115cd49772ef2c753d9af2c13bf9f0b2d3bd13645cc6a144ee3",
@@ -123,6 +127,10 @@ GHC_BINDIST = \
             "linux_amd64": (
                 "https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-deb9-linux.tar.xz",
                 "5694200a5c38f22c142baf850b1d2f3784211d2ec9302e11693259a1ae8e38b7",
+            ),
+            "linux_arm64": (
+                "https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-aarch64-deb10-linux.tar.xz",
+                "249da6310be799a5eefe0579b6dae1701eb984afb980fe08309d19cf704038ed",
             ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/8.10.4/ghc-8.10.4-x86_64-unknown-mingw32.tar.xz",
@@ -141,6 +149,10 @@ GHC_BINDIST = \
             "linux_amd64": (
                 "https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-deb9-linux.tar.xz",
                 "ced9870ea351af64fb48274b81a664cdb6a9266775f1598a79cbb6fdd5770a23",
+            ),
+            "linux_arm64": (
+                "https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-aarch64-deb10-linux.tar.xz",
+                "fad2417f9b295233bf8ade79c0e6140896359e87be46cb61cd1d35863d9d0e55",
             ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-x86_64-unknown-mingw32.tar.xz",
@@ -174,6 +186,10 @@ GHC_BINDIST = \
                 "https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-deb9-linux.tar.xz",
                 "805f5628ce6cec678ba77ff48c924831ebdf75ec2c66368e8935a618913a150e",
             ),
+            "linux_arm64": (
+                "https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-aarch64-deb10-linux.tar.xz",
+                "cb016344c70a872738a24af60bd15d3b18749087b9905c1b3f1b1549dc01f46d",
+            ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-unknown-mingw32.tar.xz",
                 "f6fbb8047ae16049dc6215a6abb652b4307205310bfffddea695a854af92dc99",
@@ -191,6 +207,10 @@ GHC_BINDIST = \
             "linux_amd64": (
                 "https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-deb9-linux.tar.xz",
                 "f09133ed735e9f3b221b5ed54787e5651f039ed0f7dab0ab834a27c8ca68fc9b",
+            ),
+            "linux_arm64": (
+                "https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-aarch64-deb10-linux.tar.xz",
+                "717d4246a8b407a807048ce6eddb2785aca2e4c73b6b634c01e1726f42d539a1",
             ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/9.2.1/ghc-9.2.1-x86_64-unknown-mingw32.tar.xz",
@@ -210,6 +230,10 @@ GHC_BINDIST = \
                 "https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-x86_64-deb9-linux.tar.xz",
                 "7a3198fff8ae59abe071103dbf4a55d595fe79e93e47d4e22f605097ae1402f1",
             ),
+            "linux_arm64": (
+                "https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-aarch64-deb10-linux.tar.xz",
+                "4b0b3848606ca83923b666dc8325df6a93986682c57b2865a44c52795a30f808",
+            ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/9.2.3/ghc-9.2.3-x86_64-unknown-mingw32.tar.xz",
                 "0543d80c1ef453a5f82d0a2bc436f93d2feb3d5855114c8a78a12c561c9bc8df",
@@ -227,6 +251,10 @@ GHC_BINDIST = \
             "linux_amd64": (
                 "https://downloads.haskell.org/~ghc/9.2.4/ghc-9.2.4-x86_64-deb9-linux.tar.xz",
                 "e6eccc65a3dded27291c3f80cce18b1e51fd64e92bad7556142020f0ffe3f7aa",
+            ),
+            "linux_arm64": (
+                "https://downloads.haskell.org/~ghc/9.2.4/ghc-9.2.4-aarch64-deb10-linux.tar.xz",
+                "fc7dbc6bae36ea5ac30b7e9a263b7e5be3b45b0eb3e893ad0bc2c950a61f14ec",
             ),
             "windows_amd64": (
                 "https://downloads.haskell.org/~ghc/9.2.4/ghc-9.2.4-x86_64-unknown-mingw32.tar.xz",
