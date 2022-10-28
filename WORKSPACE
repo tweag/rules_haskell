@@ -310,6 +310,7 @@ load(
 
 haskell_register_ghc_bindists_hadrian(
     url = "file:///home/guillaume/ExternalPrograms/ghc-9.0.2.tar.xz",
+    sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     strip_prefix = "ghc-9.0.2",
     version = "9.0.2",
     target = "x86_64-unknown-linux",
