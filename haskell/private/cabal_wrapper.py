@@ -191,8 +191,9 @@ def distdir_prefix():
 # into the 'flag hash' field of generated interface files. We try to use a
 # reproducible path for the distdir to keep interface files reproducible.
 with mkdtemp(distdir_prefix()) as distdir:
+    is_exe = component.startswith("exe:")
     enable_relocatable_flags = ["--enable-relocatable"] \
-            if not is_windows else []
+            if is_exe and not is_windows else []
 
     # Cabal really wants the current working directory to be directory
     # where the .cabal file is located. So we have no choice but to chance
