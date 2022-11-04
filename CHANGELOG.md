@@ -27,9 +27,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Changed
 
 * Use node version 16 when compiling with asterius, and update `rules_nodejs` dependency to version 5.0.0 (see [#1810])
+* Improved support for arm64 on Darwin and Linux (see [#1825])
 
 [#1810]: https://github.com/tweag/rules_haskell/pull/1810
-
+[#1825]: https://github.com/tweag/rules_haskell/pull/1825
 
 
 ## [0.15] 2022-07-22
