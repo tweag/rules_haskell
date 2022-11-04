@@ -12,6 +12,7 @@
 startup --host_jvm_args=-Djdk.tls.client.protocols=TLSv1.2
 
 common --incompatible_require_linker_input_cc_api
+common --incompatible_disallow_empty_glob
 
 # test environment does not propagate locales by default some tests reads files
 # written in UTF8, we need to propagate the correct environment variables, such
