@@ -25,6 +25,10 @@ _GHC_DEFAULT_VERSION = "8.10.7"
 
 GHC_BINDIST_STRIP_PREFIX = \
     {
+        "9.4.3": {
+            "darwin_amd64": "ghc-9.4.3-x86_64-apple-darwin",
+            "windows_amd64": "ghc-9.4.3-x86_64-unknown-mingw32",
+        },
         "9.2.4": {
             "darwin_amd64": "ghc-9.2.4-x86_64-apple-darwin",
             "windows_amd64": "ghc-9.2.4-x86_64-unknown-mingw32",
@@ -51,6 +55,9 @@ GHC_BINDIST_STRIP_PREFIX = \
 
 GHC_BINDIST_LIBDIR = \
     {
+        "9.4.3": {
+            "darwin_amd64": "lib/lib",
+        },
         "9.2.4": {
             "darwin_amd64": "lib/lib",
         },
@@ -67,6 +74,9 @@ GHC_BINDIST_LIBDIR = \
 
 GHC_BINDIST_DOCDIR = \
     {
+        "9.4.3": {
+            "windows_amd64": "docs",
+        },
         "9.2.4": {
             "windows_amd64": "docs",
         },
@@ -392,6 +402,7 @@ def ghc_bindist(
             "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_win.patch"],
             "9.2.3": ["@rules_haskell//haskell:assets/ghc_9_2_3_win.patch"],
             "9.2.4": ["@rules_haskell//haskell:assets/ghc_9_2_4_win.patch"],
+            "9.4.3": ["@rules_haskell//haskell:assets/ghc_9_4_3_win.patch"],
         }.get(version)
 
     if target == "darwin_amd64":
