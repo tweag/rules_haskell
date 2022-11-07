@@ -28,7 +28,7 @@ GHC_BINDIST_STRIP_PREFIX = \
         "9.4.3": {
             "darwin_amd64": "ghc-9.4.3-x86_64-apple-darwin",
             "windows_amd64": "ghc-9.4.3-x86_64-unknown-mingw32",
-            "linux_amd64": "ghc-9.4.3-x86_64-unknown-linux"
+            "linux_amd64": "ghc-9.4.3-x86_64-unknown-linux",
         },
         "9.2.4": {
             "darwin_amd64": "ghc-9.2.4-x86_64-apple-darwin",
