@@ -26,6 +26,7 @@ config_setting(
     constraint_values = [
         "@platforms//cpu:wasm32",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # Toolchain type for asterius specific tools such as ahc-dist,
