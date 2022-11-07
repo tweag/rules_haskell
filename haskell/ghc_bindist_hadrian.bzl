@@ -46,6 +46,8 @@ def _ghc_bindist_hadrian_impl(ctx):
     libdir = "lib"
     docdir = "docs"
 
+    # The bindist requires patching invalid haddock paths. See Makefile of GHC:
+    # https://gitlab.haskell.org/ghc/ghc/-/blob/ghc-9.2.3-release/hadrian/bindist/Makefile#L54-74
     result = ctx.execute(["bash", "-c", """\
 set -euo pipefail
 find {lib}/package.conf.d -name "*.conf" -print0 | \\
