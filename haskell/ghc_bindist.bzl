@@ -76,9 +76,6 @@ GHC_BINDIST_LIBDIR = \
 
 GHC_BINDIST_DOCDIR = \
     {
-        "9.4.3": {
-            "windows_amd64": "docs",
-        },
         "9.2.4": {
             "windows_amd64": "docs",
         },
