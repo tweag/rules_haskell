@@ -234,7 +234,7 @@ stack_snapshot(
     packages = ["zlib"],
 
     # LTS snapshot published for ghc-8.10.7 (default version used by rules_haskell)
-    snapshot = "lts-18.18",
+    snapshot = "lts-19.31",
 
     # This uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run \`bazel run @stackage-unpinned//:pin\` and

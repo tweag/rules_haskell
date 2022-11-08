@@ -58,6 +58,7 @@ GHC_BINDIST_LIBDIR = \
     {
         "9.4.3": {
             "darwin_amd64": "lib/lib",
+            "linux_amd64": "lib/lib",
         },
         "9.2.4": {
             "darwin_amd64": "lib/lib",
