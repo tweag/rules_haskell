@@ -23,6 +23,7 @@ def _ghc_bindist_hadrian_impl(ctx):
         "@rules_haskell//haskell:ghc.BUILD.tpl",
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
     ])
+    _, os = _split_target(ctx.attr.target)
     unpack_dir = ""
 
     ctx.download_and_extract(
