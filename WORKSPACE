@@ -341,14 +341,14 @@ nixpkgs_package(
 
 nixpkgs_package(
     name = "nixpkgs_lz4",
-    attribute_path = "lz4",
+    attribute_path = "lz4.out",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
   name = "nixpkgs_lz4",
-  srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"]),
+  srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"], allow_empty = True),
   includes = ["include"],
 )
     """,

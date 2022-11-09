@@ -13,6 +13,9 @@ startup --host_jvm_args=-Djdk.tls.client.protocols=TLSv1.2
 
 common --incompatible_require_linker_input_cc_api
 
+# TODO enable when using Bazel >= 5, see https://github.com/tweag/rules_haskell/pull/1828
+common --incompatible_disallow_empty_glob=false
+
 # test environment does not propagate locales by default some tests reads files
 # written in UTF8, we need to propagate the correct environment variables, such
 # as LOCALE_ARCHIVE We also need to setup an utf8 locale

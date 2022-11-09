@@ -39,7 +39,7 @@ haskell_cabal_binary(
 filegroup(
     name = "all_files",
     testonly = True,
-    srcs = glob(["**"]) + glob(["cabal_binary/**"]),
+    srcs = glob(["**"]),
     visibility = ["//visibility:public"],
 )
 
