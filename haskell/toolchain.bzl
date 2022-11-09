@@ -387,7 +387,7 @@ export CPP={cpp}
 export STRIP={strip}
 export PATH="${{LD%/*}}:$PATH"
 echo {srcs}
-(cd {outdir} && {configure} && {make} -f {makefile} lib/settings)
+(cd {outdir} && {make} -f {makefile} lib/settings)
 """.format(
             outdir = outdir,
             configure = truly_relativize(ctx.file.configure.path, outdir),
