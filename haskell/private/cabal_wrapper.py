@@ -262,7 +262,7 @@ with mkdtemp(distdir_prefix()) as distdir:
         "--with-hsc2hs=" + hsc2hs,
         "--with-ar=" + ar,
         "--with-gcc=" + cc,
-        "--with-ld=" + ld,
+        "--with-ld=" + ld.replace("ld.exe", "ld.lld.exe"),
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
