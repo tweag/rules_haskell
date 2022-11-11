@@ -255,7 +255,7 @@ with mkdtemp(distdir_prefix()) as distdir:
     runghc_args = [arg.replace("./", execroot + "/") for arg in runghc_args]
     run([runghc] + runghc_args + [setup, "configure", \
         component, \
-        "--verbose=0", \
+        "--verbose=3", \
         "--user", \
         "--with-compiler=" + ghc,
         "--with-hc-pkg=" + ghc_pkg,
@@ -297,7 +297,7 @@ with mkdtemp(distdir_prefix()) as distdir:
         [ arg.replace("=", "=" + cfg_execroot + "/") for arg in path_args ] + \
         [ "--package-db=" + package_database ], # This arg must come last.
         )
-    run([runghc] + runghc_args + [setup, "build", "--verbose=0", "--builddir=" + distdir])
+    run([runghc] + runghc_args + [setup, "build", "--verbose=3", "--builddir=" + distdir])
     if haddock:
         run([runghc] + runghc_args + [setup, "haddock", "--verbose=0", "--builddir=" + distdir])
     # Setup.hs install fails if the configuration uses relative C header or

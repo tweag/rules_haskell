@@ -265,8 +265,7 @@ def _prepare_cabal_inputs(
     if hs.toolchain.is_darwin:
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
 
-    if verbose:
-        env["CABAL_VERBOSE"] = "True"
+    env["CABAL_VERBOSE"] = "True"
 
     package_databases = dep_info.package_databases
     transitive_headers = cc_info.compilation_context.headers

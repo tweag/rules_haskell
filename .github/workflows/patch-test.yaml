@@ -1,33 +1,20 @@
 name: Test patches
 on:
   push:
-    paths:
-    - 'haskell/ghc_bindist.bzl'
-    - 'haskell/assets/**'
-  workflow_dispatch:
+
 env:
   # Bump this number to invalidate the GH actions cache
   cache-version: 0
 
 jobs:
-  find-ghc-version:
-    name: Find GHC versions for which a bindist is provided
-    runs-on: ubuntu-latest
-    outputs:
-      ghc-matrix: ${{ steps.set-ghc-versions.outputs.ghc-matrix }}
-    steps:
-      - uses: actions/checkout@v3
-      - id: set-ghc-versions
-        name: Extract from gen_ghc_bindist
-        run: python tests/extract_from_ghc_bindist.py
   test-ghc-patches:
     name: Test GHC patches
-    needs: find-ghc-version
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-11, windows-latest]
-        ghc-version: ${{ fromJSON(needs.find-ghc-version.outputs.ghc-matrix) }}
+        os: [windows-latest]
+        ghc-version:
+          - '9.4.3'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
