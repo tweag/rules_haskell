@@ -385,9 +385,12 @@ export CPP={cpp}
 export STRIP={strip}
 export PATH="${{LD%/*}}:$PATH"
 echo {srcs}
+mkdir -p {outdir}/mk
+cp {workspace_root}/mk/project.mk {outdir}/mk
 (cd {outdir} && {configure} && {make} -f {makefile} lib/settings)
 """.format(
             outdir = outdir,
+            workspace_root = ctx.label.workspace_root,
             configure = truly_relativize(ctx.file.configure.path, outdir),
             ar = cc.ar_executable,
             cc = cc.compiler_executable,
