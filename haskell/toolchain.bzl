@@ -360,6 +360,7 @@ _haskell_toolchain = rule(
 )
 
 def _hadrian_bindist_settings_impl(ctx):
+    print("HELLO\n\n")
     cc = find_cc_toolchain(ctx)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
     settings_file = ctx.actions.declare_file("lib/settings")
@@ -368,7 +369,6 @@ def _hadrian_bindist_settings_impl(ctx):
         ctx.label.workspace_root,
         paths.dirname(ctx.build_file_path),
     ))
-    print("HELLO\n\n")
     print("SRCS={}\n\n".format([src.path for src in ctx.files.srcs]))
     print("OUTDIR={}\n\n".format(outdir))
     print("WORKSPACE_ROOT={}\n\n".format(ctx.label.workspace_root))
@@ -550,7 +550,7 @@ def haskell_toolchain(
     )
 
     if hadrian_bindist:
-        print("HADRIN BINDIST\n\n")
+        print("HADRIAN BINDIST\n\n")
         _hadrian_bindist_settings(
             name = "settings",
             configure = "configure",
