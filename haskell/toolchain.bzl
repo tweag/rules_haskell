@@ -369,11 +369,8 @@ def _hadrian_bindist_settings_impl(ctx):
         ctx.label.workspace_root,
         paths.dirname(ctx.build_file_path),
     ))
-<<<<<<< HEAD
     workspace_root = ctx.label.workspace_root
     args = ctx.actions.args()
-=======
->>>>>>> 7b326510 (Attempt)
     ctx.actions.run_shell(
         outputs = [settings_file],
         inputs = [ctx.file.configure, ctx.file.makefile] + ctx.files.srcs,
