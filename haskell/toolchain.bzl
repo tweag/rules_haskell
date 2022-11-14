@@ -384,7 +384,12 @@ export OBJDUMP={objdump}
 export CPP={cpp}
 export STRIP={strip}
 export PATH="${{LD%/*}}:$PATH"
+echo "SRCS="
 echo {srcs}
+echo "OUTDiR="
+echo {outdir}
+echo "WORKSPACE_ROOT="
+echo {workspace_root}
 mkdir -p {outdir}/mk
 cp {workspace_root}/mk/project.mk {outdir}/mk
 (cd {outdir} && {configure} && {make} -f {makefile} lib/settings)

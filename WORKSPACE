@@ -305,17 +305,6 @@ rules_haskell_asterius_toolchains(
 
 load(
     "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
-    "haskell_register_ghc_bindists_hadrian",
-)
-
-haskell_register_ghc_bindists_hadrian(
-    url = "file:///home/guillaume/ExternalPrograms/ghc/_build/ghc-9.0.2-x86_64-unknown-linux.tar.xz",
-    sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    strip_prefix = "ghc-9.0.2-x86_64-unknown-linux",
-    version = "9.0.2",
-    target = "x86_64-unknown-linux",
-    cabalopts = test_cabalopts,
-    ghcopts = test_ghcopts,
 )
 
 register_toolchains(
