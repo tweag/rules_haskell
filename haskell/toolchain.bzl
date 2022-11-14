@@ -423,9 +423,7 @@ ls -R
         files = depset(direct = [settings_file]),
     )]
 
-_hadrian_bindist_settings =
-    print("COUCOU\n\n")
-    rule(
+_hadrian_bindist_settings = rule(
     _hadrian_bindist_settings_impl,
     attrs = {
         "configure": attr.label(
