@@ -363,15 +363,17 @@ _haskell_toolchain = rule(
 def _hadrian_bindist_settings_impl(ctx):
     cc = find_cc_toolchain(ctx)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
-    configure_file = None
     settings_file = ctx.actions.declare_file("lib/settings")
     outdir = paths.normalize(paths.join(
         ctx.bin_dir.path,
         ctx.label.workspace_root,
         paths.dirname(ctx.build_file_path),
     ))
+<<<<<<< HEAD
     workspace_root = ctx.label.workspace_root
     args = ctx.actions.args()
+=======
+>>>>>>> 7b326510 (Attempt)
     ctx.actions.run_shell(
         outputs = [settings_file],
         inputs = [ctx.file.configure, ctx.file.makefile] + ctx.files.srcs,
