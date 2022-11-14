@@ -508,6 +508,8 @@ def haskell_toolchain(
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
 
     """
+    print("ENTERING HASKELL_TOOLCHAIN\n\n")
+
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
     ghcopts = check_deprecated_attribute_usage(
         old_attr_name = "compiler_flags",
@@ -548,6 +550,7 @@ def haskell_toolchain(
     )
 
     if hadrian_bindist:
+        print("HADRIN BINDIST\n\n")
         _hadrian_bindist_settings(
             name = "settings",
             configure = "configure",
@@ -561,6 +564,8 @@ def haskell_toolchain(
                 "mk/project.mk",
             ],
         )
+    else:
+        print("NOT HADRIAN BINDIST\n\n")
 
 def rules_haskell_toolchains(
         version = None,
