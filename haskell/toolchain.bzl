@@ -368,6 +368,10 @@ def _hadrian_bindist_settings_impl(ctx):
         ctx.label.workspace_root,
         paths.dirname(ctx.build_file_path),
     ))
+    print("HELLO\n\n")
+    print("SRCS={}\n\n".format([src.path for src in ctx.files.srcs]))
+    print("OUTDIR={}\n\n".format(outdir))
+    print("WORKSPACE_ROOT={}\n\n".format(ctx.label.workspace_root))
     ctx.actions.run_shell(
         outputs = [settings_file],
         inputs = [ctx.file.configure, ctx.file.makefile] + ctx.files.srcs,
@@ -384,12 +388,6 @@ export OBJDUMP={objdump}
 export CPP={cpp}
 export STRIP={strip}
 export PATH="${{LD%/*}}:$PATH"
-echo "SRCS="
-echo {srcs}
-echo "OUTDiR="
-echo {outdir}
-echo "WORKSPACE_ROOT="
-echo {workspace_root}
 mkdir -p {outdir}/mk
 cp {workspace_root}/mk/project.mk {outdir}/mk
 (cd {outdir} && {configure} && {make} -f {makefile} lib/settings)
