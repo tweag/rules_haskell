@@ -1,0 +1,358 @@
+--- lib/package.conf.d/Cabal-3.6.3.0.conf
++++ lib/package.conf.d/Cabal-3.6.3.0.conf
+@@ -185,5 +185,5 @@ depends:
+     pretty-1.1.3.6 process-1.6.13.2 text-1.2.5.0 time-1.11.1.1
+     transformers-0.5.6.2
+ 
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/Cabal\Cabal.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/Cabal
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/Cabal\Cabal.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/Cabal
+--- lib/package.conf.d/Win32-2.12.0.1.conf
++++ lib/package.conf.d/Win32-2.12.0.1.conf
+@@ -62,5 +62,5 @@ includes:
+     alignment.h
+ 
+ depends:              base-4.16.3.0 filepath-1.4.2.2
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/Win32\Win32.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/Win32
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/Win32\Win32.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/Win32
+--- lib/package.conf.d/array-0.5.4.0.conf
++++ lib/package.conf.d/array-0.5.4.0.conf
+@@ -29,5 +29,5 @@ dynamic-library-dirs: ${pkgroot}\x86_64-windows-ghc-9.2.5
+ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\array-0.5.4.0
+ hs-libraries:         HSarray-0.5.4.0
+ depends:              base-4.16.3.0
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/array\array.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/array
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/array\array.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/array
+--- lib/package.conf.d/base-4.16.3.0.conf
++++ lib/package.conf.d/base-4.16.3.0.conf
+@@ -114,5 +114,5 @@ extra-libraries:
+ include-dirs:         ${pkgroot}\x86_64-windows-ghc-9.2.5\base-4.16.3.0\include
+ includes:             HsBase.h
+ depends:              ghc-bignum-1.2 ghc-prim-0.8.0 rts-1.0.2
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/base\base.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/base
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/base\base.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/base
+--- lib/package.conf.d/binary-0.8.9.0.conf
++++ lib/package.conf.d/binary-0.8.9.0.conf
+@@ -40,5 +40,5 @@ hs-libraries:         HSbinary-0.8.9.0
+ depends:
+     array-0.5.4.0 base-4.16.3.0 bytestring-0.11.3.1 containers-0.6.5.1
+ 
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/binary\binary.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/binary
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/binary\binary.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/binary
+--- lib/package.conf.d/bytestring-0.11.3.1.conf
++++ lib/package.conf.d/bytestring-0.11.3.1.conf
+@@ -100,6 +100,6 @@ depends:
+     template-haskell-2.18.0.0
+ 
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/bytestring\bytestring.haddock
++    ${pkgroot}/../docs/html/libraries/bytestring\bytestring.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/bytestring
++haddock-html:         ${pkgroot}/../docs/html/libraries/bytestring
+--- lib/package.conf.d/containers-0.6.5.1.conf
++++ lib/package.conf.d/containers-0.6.5.1.conf
+@@ -50,6 +50,6 @@ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\containers-0.6.5.1
+ hs-libraries:         HScontainers-0.6.5.1
+ depends:              array-0.5.4.0 base-4.16.3.0 deepseq-1.4.6.1
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/containers\containers.haddock
++    ${pkgroot}/../docs/html/libraries/containers\containers.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/containers
++haddock-html:         ${pkgroot}/../docs/html/libraries/containers
+--- lib/package.conf.d/deepseq-1.4.6.1.conf
++++ lib/package.conf.d/deepseq-1.4.6.1.conf
+@@ -33,6 +33,6 @@ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\deepseq-1.4.6.1
+ hs-libraries:         HSdeepseq-1.4.6.1
+ depends:              array-0.5.4.0 base-4.16.3.0
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/deepseq\deepseq.haddock
++    ${pkgroot}/../docs/html/libraries/deepseq\deepseq.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/deepseq
++haddock-html:         ${pkgroot}/../docs/html/libraries/deepseq
+--- lib/package.conf.d/directory-1.3.6.2.conf
++++ lib/package.conf.d/directory-1.3.6.2.conf
+@@ -31,6 +31,6 @@ depends:
+     Win32-2.12.0.1 base-4.16.3.0 filepath-1.4.2.2 time-1.11.1.1
+ 
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/directory\directory.haddock
++    ${pkgroot}/../docs/html/libraries/directory\directory.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/directory
++haddock-html:         ${pkgroot}/../docs/html/libraries/directory
+--- lib/package.conf.d/exceptions-0.10.4.conf
++++ lib/package.conf.d/exceptions-0.10.4.conf
+@@ -28,6 +28,6 @@ depends:
+     transformers-0.5.6.2
+ 
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/exceptions\exceptions.haddock
++    ${pkgroot}/../docs/html/libraries/exceptions\exceptions.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/exceptions
++haddock-html:         ${pkgroot}/../docs/html/libraries/exceptions
+--- lib/package.conf.d/filepath-1.4.2.2.conf
++++ lib/package.conf.d/filepath-1.4.2.2.conf
+@@ -33,6 +33,6 @@ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\filepath-1.4.2.2
+ hs-libraries:         HSfilepath-1.4.2.2
+ depends:              base-4.16.3.0
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/filepath\filepath.haddock
++    ${pkgroot}/../docs/html/libraries/filepath\filepath.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/filepath
++haddock-html:         ${pkgroot}/../docs/html/libraries/filepath
+--- lib/package.conf.d/ghc-9.2.5.conf
++++ lib/package.conf.d/ghc-9.2.5.conf
+@@ -246,5 +246,5 @@ depends:
+     ghc-heap-9.2.5 ghci-9.2.5 hpc-0.6.1.0 process-1.6.13.2
+     template-haskell-2.18.0.0 time-1.11.1.1 transformers-0.5.6.2
+ 
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/ghc\ghc.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/ghc
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/ghc\ghc.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/ghc
+--- lib/package.conf.d/ghc-bignum-1.2.conf
++++ lib/package.conf.d/ghc-bignum-1.2.conf
+@@ -28,6 +28,6 @@ hs-libraries:         HSghc-bignum-1.2
+ include-dirs:         ${pkgroot}\x86_64-windows-ghc-9.2.5\ghc-bignum-1.2\include
+ depends:              ghc-prim-0.8.0
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/ghc-bignum\ghc-bignum.haddock
++    ${pkgroot}/../docs/html/libraries/ghc-bignum\ghc-bignum.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/ghc-bignum
++haddock-html:         ${pkgroot}/../docs/html/libraries/ghc-bignum
+--- lib/package.conf.d/ghc-boot-9.2.5.conf
++++ lib/package.conf.d/ghc-boot-9.2.5.conf
+@@ -45,6 +45,6 @@ depends:
+     ghc-boot-th-9.2.5
+ 
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/ghc-boot\ghc-boot.haddock
++    ${pkgroot}/../docs/html/libraries/ghc-boot\ghc-boot.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/ghc-boot
++haddock-html:         ${pkgroot}/../docs/html/libraries/ghc-boot
+--- lib/package.conf.d/ghc-boot-th-9.2.5.conf
++++ lib/package.conf.d/ghc-boot-th-9.2.5.conf
+@@ -30,6 +30,6 @@ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\ghc-boot-th-9.2.5
+ hs-libraries:         HSghc-boot-th-9.2.5
+ depends:              base-4.16.3.0
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/ghc-boot-th\ghc-boot-th.haddock
++    ${pkgroot}/../docs/html/libraries/ghc-boot-th\ghc-boot-th.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/ghc-boot-th
++haddock-html:         ${pkgroot}/../docs/html/libraries/ghc-boot-th
+--- lib/package.conf.d/ghc-compact-0.1.0.0.conf
++++ lib/package.conf.d/ghc-compact-0.1.0.0.conf
+@@ -31,6 +31,6 @@ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\ghc-compact-0.1.0.0
+ hs-libraries:         HSghc-compact-0.1.0.0
+ depends:              base-4.16.3.0 bytestring-0.11.3.1 ghc-prim-0.8.0
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/ghc-compact\ghc-compact.haddock
++    ${pkgroot}/../docs/html/libraries/ghc-compact\ghc-compact.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/ghc-compact
++haddock-html:         ${pkgroot}/../docs/html/libraries/ghc-compact
+--- lib/package.conf.d/ghc-heap-9.2.5.conf
++++ lib/package.conf.d/ghc-heap-9.2.5.conf
+@@ -33,6 +33,6 @@ depends:
+     base-4.16.3.0 containers-0.6.5.1 ghc-prim-0.8.0 rts-1.0.2
+ 
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/ghc-heap\ghc-heap.haddock
++    ${pkgroot}/../docs/html/libraries/ghc-heap\ghc-heap.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/ghc-heap
++haddock-html:         ${pkgroot}/../docs/html/libraries/ghc-heap
+--- lib/package.conf.d/ghc-prim-0.8.0.conf
++++ lib/package.conf.d/ghc-prim-0.8.0.conf
+@@ -25,6 +25,6 @@ hs-libraries:         HSghc-prim-0.8.0
+ extra-libraries:      user32 mingw32 mingwex
+ depends:              rts-1.0.2
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/ghc-prim\ghc-prim.haddock
++    ${pkgroot}/../docs/html/libraries/ghc-prim\ghc-prim.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/ghc-prim
++haddock-html:         ${pkgroot}/../docs/html/libraries/ghc-prim
+--- lib/package.conf.d/ghci-9.2.5.conf
++++ lib/package.conf.d/ghci-9.2.5.conf
+@@ -31,5 +31,5 @@ depends:
+     ghc-heap-9.2.5 ghc-prim-0.8.0 rts-1.0.2 template-haskell-2.18.0.0
+     transformers-0.5.6.2
+ 
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/ghci\ghci.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/ghci
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/ghci\ghci.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/ghci
+--- lib/package.conf.d/haskeline-0.8.2.conf
++++ lib/package.conf.d/haskeline-0.8.2.conf
+@@ -57,6 +57,6 @@ depends:
+     process-1.6.13.2 stm-2.5.0.2 transformers-0.5.6.2
+ 
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/haskeline\haskeline.haddock
++    ${pkgroot}/../docs/html/libraries/haskeline\haskeline.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/haskeline
++haddock-html:         ${pkgroot}/../docs/html/libraries/haskeline
+--- lib/package.conf.d/hpc-0.6.1.0.conf
++++ lib/package.conf.d/hpc-0.6.1.0.conf
+@@ -28,5 +28,5 @@ depends:
+     base-4.16.3.0 containers-0.6.5.1 deepseq-1.4.6.1 directory-1.3.6.2
+     filepath-1.4.2.2 time-1.11.1.1
+ 
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/hpc\hpc.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/hpc
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/hpc\hpc.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/hpc
+--- lib/package.conf.d/integer-gmp-1.1.conf
++++ lib/package.conf.d/integer-gmp-1.1.conf
+@@ -28,6 +28,6 @@ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\integer-gmp-1.1
+ hs-libraries:         HSinteger-gmp-1.1
+ depends:              base-4.16.3.0 ghc-bignum-1.2 ghc-prim-0.8.0
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/integer-gmp\integer-gmp.haddock
++    ${pkgroot}/../docs/html/libraries/integer-gmp\integer-gmp.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/integer-gmp
++haddock-html:         ${pkgroot}/../docs/html/libraries/integer-gmp
+--- lib/package.conf.d/libiserv-9.2.5.conf
++++ lib/package.conf.d/libiserv-9.2.5.conf
+@@ -27,6 +27,6 @@ depends:
+     deepseq-1.4.6.1 ghci-9.2.5
+ 
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/libiserv\libiserv.haddock
++    ${pkgroot}/../docs/html/libraries/libiserv\libiserv.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/libiserv
++haddock-html:         ${pkgroot}/../docs/html/libraries/libiserv
+--- lib/package.conf.d/mtl-2.2.2.conf
++++ lib/package.conf.d/mtl-2.2.2.conf
+@@ -36,5 +36,5 @@ dynamic-library-dirs: ${pkgroot}\x86_64-windows-ghc-9.2.5
+ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\mtl-2.2.2
+ hs-libraries:         HSmtl-2.2.2
+ depends:              base-4.16.3.0 transformers-0.5.6.2
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/mtl\mtl.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/mtl
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/mtl\mtl.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/mtl
+--- lib/package.conf.d/parsec-3.1.15.0.conf
++++ lib/package.conf.d/parsec-3.1.15.0.conf
+@@ -54,5 +54,5 @@ hs-libraries:         HSparsec-3.1.15.0
+ depends:
+     base-4.16.3.0 bytestring-0.11.3.1 mtl-2.2.2 text-1.2.5.0
+ 
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/parsec\parsec.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/parsec
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/parsec\parsec.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/parsec
+--- lib/package.conf.d/pretty-1.1.3.6.conf
++++ lib/package.conf.d/pretty-1.1.3.6.conf
+@@ -32,5 +32,5 @@ dynamic-library-dirs: ${pkgroot}\x86_64-windows-ghc-9.2.5
+ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\pretty-1.1.3.6
+ hs-libraries:         HSpretty-1.1.3.6
+ depends:              base-4.16.3.0 deepseq-1.4.6.1 ghc-prim-0.8.0
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/pretty\pretty.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/pretty
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/pretty\pretty.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/pretty
+--- lib/package.conf.d/process-1.6.13.2.conf
++++ lib/package.conf.d/process-1.6.13.2.conf
+@@ -35,6 +35,6 @@ depends:
+     filepath-1.4.2.2
+ 
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/process\process.haddock
++    ${pkgroot}/../docs/html/libraries/process\process.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/process
++haddock-html:         ${pkgroot}/../docs/html/libraries/process
+--- lib/package.conf.d/rts-1.0.2.conf
++++ lib/package.conf.d/rts-1.0.2.conf
+@@ -78,5 +78,5 @@ ld-options:
+     "-Wl,-u,hs_atomicwrite16" "-Wl,-u,hs_atomicwrite32"
+     "-Wl,-u,base_GHCziEventziWindows_processRemoteCompletion_closure"
+ 
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/rts\rts.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/rts
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/rts\rts.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/rts
+--- lib/package.conf.d/stm-2.5.0.2.conf
++++ lib/package.conf.d/stm-2.5.0.2.conf
+@@ -34,5 +34,5 @@ dynamic-library-dirs: ${pkgroot}\x86_64-windows-ghc-9.2.5
+ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\stm-2.5.0.2
+ hs-libraries:         HSstm-2.5.0.2
+ depends:              array-0.5.4.0 base-4.16.3.0
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/stm\stm.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/stm
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/stm\stm.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/stm
+--- lib/package.conf.d/template-haskell-2.18.0.0.conf
++++ lib/package.conf.d/template-haskell-2.18.0.0.conf
+@@ -39,6 +39,6 @@ depends:
+     base-4.16.3.0 ghc-boot-th-9.2.5 ghc-prim-0.8.0 pretty-1.1.3.6
+ 
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/template-haskell\template-haskell.haddock
++    ${pkgroot}/../docs/html/libraries/template-haskell\template-haskell.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/template-haskell
++haddock-html:         ${pkgroot}/../docs/html/libraries/template-haskell
+--- lib/package.conf.d/text-1.2.5.0.conf
++++ lib/package.conf.d/text-1.2.5.0.conf
+@@ -92,5 +92,5 @@ depends:
+     array-0.5.4.0 base-4.16.3.0 binary-0.8.9.0 bytestring-0.11.3.1
+     deepseq-1.4.6.1 ghc-prim-0.8.0 template-haskell-2.18.0.0
+ 
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/text\text.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/text
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/text\text.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/text
+--- lib/package.conf.d/time-1.11.1.1.conf
++++ lib/package.conf.d/time-1.11.1.1.conf
+@@ -50,5 +50,5 @@ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\time-1.11.1.1
+ hs-libraries:         HStime-1.11.1.1
+ include-dirs:         ${pkgroot}\x86_64-windows-ghc-9.2.5\time-1.11.1.1\include
+ depends:              Win32-2.12.0.1 base-4.16.3.0 deepseq-1.4.6.1
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/time\time.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/time
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/time\time.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/time
+--- lib/package.conf.d/transformers-0.5.6.2.conf
++++ lib/package.conf.d/transformers-0.5.6.2.conf
+@@ -56,6 +56,6 @@ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\transformers-0.5.6.2
+ hs-libraries:         HStransformers-0.5.6.2
+ depends:              base-4.16.3.0
+ haddock-interfaces:
+-    ${pkgroot}/../../docs/html/libraries/transformers\transformers.haddock
++    ${pkgroot}/../docs/html/libraries/transformers\transformers.haddock
+ 
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/transformers
++haddock-html:         ${pkgroot}/../docs/html/libraries/transformers
+--- lib/package.conf.d/xhtml-3000.2.2.1.conf
++++ lib/package.conf.d/xhtml-3000.2.2.1.conf
+@@ -37,5 +37,5 @@ dynamic-library-dirs: ${pkgroot}\x86_64-windows-ghc-9.2.5
+ data-dir:             ${pkgroot}\x86_64-windows-ghc-9.2.5\xhtml-3000.2.2.1
+ hs-libraries:         HSxhtml-3000.2.2.1
+ depends:              base-4.16.3.0
+-haddock-interfaces:   ${pkgroot}/../../docs/html/libraries/xhtml\xhtml.haddock
+-haddock-html:         ${pkgroot}/../../docs/html/libraries/xhtml
++haddock-interfaces:   ${pkgroot}/../docs/html/libraries/xhtml\xhtml.haddock
++haddock-html:         ${pkgroot}/../docs/html/libraries/xhtml
