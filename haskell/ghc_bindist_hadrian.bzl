@@ -15,10 +15,12 @@ load(
 )
 
 def _split_target(target):
+    print("_split_target in HADRIAN")
     arch, _, os = target.split("-")
     return (arch, os)
 
 def _ghc_bindist_hadrian_impl(ctx):
+    print("_ghc_bindist_hadrian_impl in HADRIAN")
     filepaths = resolve_labels(ctx, [
         "@rules_haskell//haskell:ghc.BUILD.tpl",
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
@@ -128,6 +130,7 @@ _ghc_bindist_hadrian = repository_rule(
 )
 
 def _ghc_bindist_hadrian_toolchain_impl(ctx):
+    print("_ghc_bindist_hadrian_toolchain_impl in HADRIAN")
     arch, os = _split_target(ctx.attr.target)
     os_constraint = {
         "darwin": "osx",
@@ -183,6 +186,7 @@ def ghc_bindist_hadrian(
         repl_ghci_args = None,
         cabalopts = None,
         locale = None):
+    print("ghc_bindist_hadrian in HADRIAN")
 
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
@@ -225,6 +229,7 @@ def haskell_register_ghc_bindists_hadrian(
         repl_ghci_args = None,
         cabalopts = None,
         locale = None):
+    print("haskell_register_ghc_bindists_hadrian in HADRIAN")
     ghc_bindist_hadrian(
         name = "rules_haskell_ghc_{}".format(target),
         url = url,
@@ -246,6 +251,7 @@ def haskell_register_ghc_bindists_hadrian(
         _configure_python3_toolchain(name = local_python_repo_name)
 
 def _configure_python3_toolchain_impl(repository_ctx):
+    print("_configure_python3_toolchain_impl in HADRIAN")
     cpu = get_cpu_value(repository_ctx)
     python3_path = find_python(repository_ctx)
     if check_bazel_version("4.2.0")[0]:
@@ -335,6 +341,7 @@ def _configure_python3_toolchain(name):
     appropriate Python toolchain, so that build actions themselves can still be
     sandboxed.
     """
+    print("_configure_python3_toolchain in HADRIAN")
     _config_python3_toolchain(name = name)
     native.register_toolchains("@{}//:toolchain".format(name))
 

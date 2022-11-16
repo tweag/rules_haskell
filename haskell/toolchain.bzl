@@ -29,6 +29,7 @@ load(
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "runghc", "hpc"]
 
 def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = None, progress_message = None, input_manifests = None, extra_name = ""):
+    print("_run_ghc")
     args = hs.actions.args()
     extra_inputs = []
 
@@ -111,6 +112,7 @@ default_tools_config = struct(
 )
 
 def _lookup_binaries(names, files, version = ""):
+    print("_lookup_binaries")
     binaries = {}
     for tool in list(names):
         for file in files:
@@ -126,7 +128,7 @@ def _lookup_binaries(names, files, version = ""):
     return binaries
 
 def _haskell_toolchain_impl(ctx):
-    print("ENTERINF _HASK_TOOLCHAIN_IMP")
+    print("_haskell_toolchain_impl")
     numeric_version = [int(x) for x in ctx.attr.version.split(".")]
     if numeric_version == [8, 10, 1] or numeric_version == [8, 10, 2]:
         fail("GHC 8.10.1 and 8.10.2 not supported. Upgrade to 8.10.3 or later.")
@@ -361,7 +363,7 @@ _haskell_toolchain = rule(
 )
 
 def _hadrian_bindist_settings_impl(ctx):
-    print("HELLO\n\n")
+    print("_hadrian_bindist_settings_impl")
     cc = find_cc_toolchain(ctx)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
     settings_file = ctx.actions.declare_file("lib/settings")
@@ -594,6 +596,7 @@ def rules_haskell_toolchains(
       ghcopts: A collection of flags that will be passed to GHC on every invocation.
 
     """
+    print("rules_haskell_toolchains")
     haskell_register_ghc_bindists(
         version = version,
         compiler_flags = compiler_flags,
@@ -609,6 +612,7 @@ def rules_haskell_toolchains(
 # and control their configurations using the `cfg` field.
 
 def get_nodejs_toolchain_impl(ctx):
+    print("get_nodejs_toolchain_impl")
     return ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"]
 
 get_nodejs_toolchain = rule(
@@ -619,6 +623,7 @@ get_nodejs_toolchain = rule(
 )
 
 def get_posix_toolchain_impl(ctx):
+    print("get_posix_toolchain_impl")
     return ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
 get_posix_toolchain = rule(
@@ -629,6 +634,7 @@ get_posix_toolchain = rule(
 )
 
 def get_haskell_toolchain_impl(ctx):
+    print("get_haskell_toolchain_impl")
     return ctx.toolchains["@rules_haskell//haskell:toolchain"]
 
 get_haskell_toolchain = rule(
@@ -639,6 +645,7 @@ get_haskell_toolchain = rule(
 )
 
 def get_cc_toolchain_impl(ctx):
+    print("get_cc_toolchain_impl")
     return find_cc_toolchain(ctx)
 
 get_cc_toolchain = rule(

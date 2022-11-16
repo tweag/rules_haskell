@@ -62,6 +62,7 @@ GHC_BINDIST_DOCDIR = \
     }
 
 def _ghc_bindist_impl(ctx):
+    print("_ghc_bindist_impl outside HADRIAN")
     filepaths = resolve_labels(ctx, [
         "@rules_haskell//haskell:ghc.BUILD.tpl",
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
@@ -258,6 +259,7 @@ _ghc_bindist = repository_rule(
 )
 
 def _ghc_bindist_toolchain_impl(ctx):
+    print("_ghc_bindist_toolchain_impl outside HADRIAN")
     os, _, arch = ctx.attr.target.partition("_")
     os_constraint = {
         "darwin": "osx",
@@ -346,6 +348,7 @@ def ghc_bindist(
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
 
     """
+    print("ghc_bindist outside HADRIAN")
     ghcopts = check_deprecated_attribute_usage(
         old_attr_name = "compiler_flags",
         old_attr_value = compiler_flags,
@@ -428,6 +431,7 @@ def haskell_register_ghc_bindists(
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
     """
+    print("haskell_register_ghc_bindists outside HADRIAN")
     version = version or _GHC_DEFAULT_VERSION
     if not GHC_BINDIST.get(version):
         fail("Binary distribution of GHC {} not available.".format(version))
@@ -451,6 +455,7 @@ def haskell_register_ghc_bindists(
         _configure_python3_toolchain(name = local_python_repo_name)
 
 def _configure_python3_toolchain_impl(repository_ctx):
+    print("_configure_python3_toolchain_impl outside HADRIAN")
     cpu = get_cpu_value(repository_ctx)
     python3_path = find_python(repository_ctx)
     if check_bazel_version("4.2.0")[0]:
@@ -540,6 +545,7 @@ def _configure_python3_toolchain(name):
     appropriate Python toolchain, so that build actions themselves can still be
     sandboxed.
     """
+    print("_configure_python3_toolchain outside HADRIAN")
     _config_python3_toolchain(name = name)
     native.register_toolchains("@{}//:toolchain".format(name))
 
