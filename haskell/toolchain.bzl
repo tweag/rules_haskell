@@ -127,6 +127,7 @@ def _lookup_binaries(names, files, version = ""):
     return binaries
 
 def _haskell_toolchain_impl(ctx):
+    print("ENTERINF _HASK_TOOLCHAIN_IMP")
     numeric_version = [int(x) for x in ctx.attr.version.split(".")]
     if numeric_version == [8, 10, 1] or numeric_version == [8, 10, 2]:
         fail("GHC 8.10.1 and 8.10.2 not supported. Upgrade to 8.10.3 or later.")
