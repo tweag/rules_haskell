@@ -529,6 +529,24 @@ def haskell_toolchain(
         new_attr_value = ghcopts,
     )
 
+    if hadrian_bindist:
+        print("HADRIAN BINDIST\n\n")
+        _hadrian_bindist_settings(
+            name = "settings",
+            configure = "configure",
+            makefile = "Makefile",
+            srcs = [
+                "config.guess",
+                "config.sub",
+                "install-sh",
+                "mk/config.mk.in",
+                "mk/install.mk.in",
+                "mk/project.mk",
+            ],
+        )
+    else:
+        print("NOT HADRIAN BINDIST\n\n")
+
     toolchain_rule = _ahc_haskell_toolchain if asterius_binaries else _haskell_toolchain
     toolchain_rule(
         name = name,
@@ -559,24 +577,6 @@ def haskell_toolchain(
         asterius_binaries = asterius_binaries,
         **kwargs
     )
-
-    if hadrian_bindist:
-        print("HADRIAN BINDIST\n\n")
-        _hadrian_bindist_settings(
-            name = "settings",
-            configure = "configure",
-            makefile = "Makefile",
-            srcs = [
-                "config.guess",
-                "config.sub",
-                "install-sh",
-                "mk/config.mk.in",
-                "mk/install.mk.in",
-                "mk/project.mk",
-            ],
-        )
-    else:
-        print("NOT HADRIAN BINDIST\n\n")
 
 def rules_haskell_toolchains(
         version = None,
