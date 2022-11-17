@@ -48,6 +48,8 @@ VERSIONS = [
 ARCHES = [
     { "bazel": "linux_amd64",
       "upstream": ["x86_64-deb8-linux", "x86_64-deb9-linux", "x86_64-deb10-linux"], },
+    { "bazel": "linux_arm64",
+      "upstream": ["aarch64-deb10-linux"], },
     { "bazel": "darwin_amd64",
       "upstream": ["x86_64-apple-darwin"] },
     { "bazel": "darwin_arm64",
