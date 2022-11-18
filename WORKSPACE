@@ -271,17 +271,17 @@ load(
     "haskell_register_ghc_nixpkgs",
 )
 
-haskell_register_ghc_nixpkgs(
-    attribute_path = "",
-    cabalopts = test_cabalopts,
-    ghcopts = test_ghcopts,
-    haddock_flags = test_haddock_flags,
-    locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8107.ghc""",
-    repl_ghci_args = test_repl_ghci_args,
-    repository = "@nixpkgs_default",
-    version = test_ghc_version,
-)
+# haskell_register_ghc_nixpkgs(
+#     attribute_path = "",
+#     cabalopts = test_cabalopts,
+#     ghcopts = test_ghcopts,
+#     haddock_flags = test_haddock_flags,
+#     locale_archive = "@glibc_locales//:locale-archive",
+#     nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8107.ghc""",
+#     repl_ghci_args = test_repl_ghci_args,
+#     repository = "@nixpkgs_default",
+#     version = test_ghc_version,
+# )
 
 load(
     "//haskell/asterius:repositories.bzl",
