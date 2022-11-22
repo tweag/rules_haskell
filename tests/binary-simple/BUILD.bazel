@@ -11,7 +11,7 @@ haskell_test(
     expected_covered_expressions_percentage = 100,
     tags = ["coverage-compatible"],
     visibility = ["//visibility:public"],
-    deps = ["//tests/hackage:base"],
+    deps = ["//tests/hackage:base", "@rules_haskell_ghc_x86_64-unknown-linux//:settings"],
 )
 
 filegroup(

@@ -1,7 +1,5 @@
 """Workspace rules (GHC binary distributions)"""
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
 load(
@@ -12,12 +10,9 @@ load(":private/versions.bzl", "check_bazel_version")
 load(
     ":private/workspace_utils.bzl",
     "define_rule",
-    "execute_or_fail_loudly",
     "find_python",
     "resolve_labels",
 )
-load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
-load(":private/ghc_bindist_generated.bzl", "GHC_BINDIST")
 
 def _split_target(target):
     arch, _, os = target.split("-")
@@ -57,6 +52,14 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
     )])
     if result.return_code != 0:
         fail(result.stderr)
+
+    ctx.execute(["bash", "-c", """echo "bindist_dir is {bindist_dir}"""])
+
+    # copy_files(
+    #     name = "bindist",
+    #     srcs = glob(["**/*"]),
+    #     dest = outdir
+    # )
 
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
     locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
@@ -190,7 +193,6 @@ def ghc_bindist_hadrian(
         repl_ghci_args = None,
         cabalopts = None,
         locale = None):
-
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
 

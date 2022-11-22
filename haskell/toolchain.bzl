@@ -2,6 +2,7 @@
 
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//rules:copy_directory.bzl", "copy_directory")
 load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load(
     ":private/actions/compile.bzl",
@@ -369,6 +370,7 @@ def _hadrian_bindist_settings_impl(ctx):
         ctx.label.workspace_root,
         paths.dirname(ctx.build_file_path),
     ))
+    workspace_root = ctx.label.workspace_root
     args = ctx.actions.args()
     ctx.actions.run_shell(
         outputs = [settings_file],
@@ -386,13 +388,21 @@ export OBJDUMP={objdump}
 export CPP={cpp}
 export STRIP={strip}
 export PATH="${{LD%/*}}:$PATH"
+echo "SRCS are:"
 echo {srcs}
+echo "End of srcs"
+echo "OUTDIR is {outdir}"
+echo "WORKSPACE is {workspace_root}"
 mkdir -p {outdir}/mk
+echo "Directory created"
+ls -R
 cp {workspace_root}/mk/project.mk {outdir}/mk
+echo "File copied"
+ls -R
 (cd {outdir} && {configure} && {make} -f {makefile} lib/settings)
 """.format(
             outdir = outdir,
-            workspace_root = ctx.label.workspace_root,
+            workspace_root = workspace_root,
             configure = truly_relativize(ctx.file.configure.path, outdir),
             ar = cc.ar_executable,
             cc = cc.compiler_executable,
@@ -408,6 +418,7 @@ cp {workspace_root}/mk/project.mk {outdir}/mk
         ),
         progress_message = "Generating GHC settings file",
     )
+
     return [DefaultInfo(
         files = depset(direct = [settings_file]),
     )]
