@@ -14,6 +14,41 @@ load(
     "resolve_labels",
 )
 
+def _copy_filegroup_impl(ctx):
+    all_input_files = depset(ctx.files.srcs).to_list()
+
+    # print("ALL INPUTS {}".format(all_input_files))
+
+    all_outputs = []
+    for f in all_input_files:
+        output_path = f.path
+        if (f.short_path[:len(ctx.attr.strip_path)] == ctx.attr.strip_path):
+          output_path = f.short_path[len(ctx.attr.strip_path):]
+        else:
+          fail("Input {} did not exist underneath the strip prefix {}".format(f.short_path, ctx.attr.strip_path))
+        out = ctx.actions.declare_file(output_path)
+        all_outputs.append(out)
+        ctx.actions.run_shell(
+            outputs=[out],
+            inputs=depset([f]),
+            arguments=[f.path, out.path],
+            command="mkdir -p $(dirname $2) && cp $1 $2")
+
+    return [
+        DefaultInfo(
+            files=depset(all_outputs),
+            runfiles=ctx.runfiles(files=all_outputs))
+    ]
+
+
+copy_filegroups_to_this_package = rule(
+    implementation=_copy_filegroup_impl,
+    attrs={
+        "srcs": attr.label_list(),
+        "strip_path": attr.string()
+    },
+)
+
 def _split_target(target):
     print("_split_target in HADRIAN")
     arch, _, os = target.split("-")
@@ -28,6 +63,8 @@ def _ghc_bindist_hadrian_impl(ctx):
     _, os = _split_target(ctx.attr.target)
     unpack_dir = ""
 
+    print("PATH is {}".format(ctx.path(".")))
+
     ctx.download_and_extract(
         url = ctx.attr.url,
         output = unpack_dir,
@@ -36,6 +73,7 @@ def _ghc_bindist_hadrian_impl(ctx):
         stripPrefix = ctx.attr.strip_prefix,
     )
 
+    bindir = "bin"
     libdir = "lib"
     docdir = "docs"
 
@@ -53,24 +91,41 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
     if result.return_code != 0:
         fail(result.stderr)
 
-    ctx.execute(["bash", "-c", """echo "bindist_dir is {bindist_dir}"""])
+    outdir=""
 
-    # copy_files(
-    #     name = "bindist",
-    #     srcs = glob(["**/*"]),
-    #     dest = outdir
-    # )
+    generated_bin_filegroup = define_rule(
+        "copy_filegroups_to_this_package",
+        name = "generated_bin_filegroup",
+        srcs = [":bin"],
+        strip_path = "\"\"",
+    )
+
+    generated_lib_filegroup = define_rule(
+        "copy_filegroups_to_this_package",
+        name = "generated_lib_filegroup",
+        srcs = [":lib"],
+        strip_path = "\"\"",
+    )
+
+    generated_docdir_filegroup = define_rule(
+        "copy_filegroups_to_this_package",
+        name = "generated_docdir_filegroup",
+        srcs = [":{}".format(docdir)],
+        strip_path = "\"\"",
+    )
+
+    print("LibDirPath is {}".format(repr(libdir)))
 
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
     locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
     toolchain = define_rule(
         "haskell_toolchain",
         name = "toolchain-impl",
-        tools = [":bin"],
+        tools = [":generated_bin_filegroup"],
         libraries = "toolchain_libraries",
         # See Note [GHC toolchain files]
-        libdir = [":lib"],
-        docdir = [":{}".format(docdir)],
+        libdir = [":generated_lib_filegroup"],
+        docdir = [":generated_docdir_filegroup"],
         libdir_path = repr(libdir),
         docdir_path = repr(docdir),
         version = repr(ctx.attr.version),
@@ -90,6 +145,9 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
             "%{docdir}": docdir,
+            "%{generated_bin_filegroup}": generated_bin_filegroup,
+            "%{generated_lib_filegroup}": generated_lib_filegroup,
+            "%{generated_docdir_filegroup}": generated_docdir_filegroup,
         },
         executable = False,
     )

@@ -12,6 +12,10 @@ load(
     "haskell_import",
     "haskell_toolchain",
 )
+load(
+    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+    "copy_filegroups_to_this_package",
+)
 
 package(default_visibility = ["//visibility:public"])
 
@@ -33,6 +37,12 @@ filegroup(
     name = "%{docdir}",
     srcs = glob(["%{docdir}/**"]),
 )
+
+%{generated_bin_filegroup}
+
+%{generated_lib_filegroup}
+
+%{generated_docdir_filegroup}
 
 # Expose embedded MinGW toolchain when on Windows.
 
