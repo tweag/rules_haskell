@@ -212,18 +212,22 @@ def link_binary(
         args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
-    print("RUNNING GHC from link.bzl:216")
-    hs.toolchain.actions.run_ghc(
-        hs,
-        cc,
-        inputs = depset(transitive = [
+    inputs = depset(transitive = [
             depset(extra_srcs),
             dep_info.package_databases,
             dep_info.hs_libraries,
             depset(input_files, transitive = [extra_objects]),
             pkg_info_inputs,
             depset(static_libs + dynamic_libs),
-        ]),
+        ])
+
+    print("RUNNING GHC from link.bzl:216")
+    print("Inputs are {}".format(inputs))
+    print("hs is {}".format(hs))
+    hs.toolchain.actions.run_ghc(
+        hs,
+        cc,
+        inputs = inputs,
         outputs = [executable],
         mnemonic = "HaskellLinkBinary",
         arguments = args,
