@@ -59,12 +59,12 @@ haskell_library(
 # the shared `src_strip_prefix` between `:root` and `:final`. GHCi will prefer
 # to load modules from source if possible over loading them from compiled
 # packages.
-haskell_repl(
-    name = "repl",
-    collect_data = False,
-    experimental_from_source = [":final"],
-    deps = [":final"],
-)
+# haskell_repl(
+#     name = "repl",
+#     collect_data = False,
+#     experimental_from_source = [":final"],
+#     deps = [":final"],
+# )
 
 filegroup(
     name = "all_files",

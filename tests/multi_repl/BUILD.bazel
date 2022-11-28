@@ -3,22 +3,22 @@ load(
     "haskell_repl",
 )
 
-haskell_repl(
-    name = "c_only_repl",
-    # To only load :c by source.
-    experimental_from_source = ["//tests/multi_repl/bc:c"],
-    deps = ["//tests/multi_repl/bc:c"],
-)
+# haskell_repl(
+#     name = "c_only_repl",
+#     # To only load :c by source.
+#     experimental_from_source = ["//tests/multi_repl/bc:c"],
+#     deps = ["//tests/multi_repl/bc:c"],
+# )
 
-haskell_repl(
-    name = "c_multi_repl",
-    deps = ["//tests/multi_repl/bc:c"],
-)
+# haskell_repl(
+#     name = "c_multi_repl",
+#     deps = ["//tests/multi_repl/bc:c"],
+# )
 
-haskell_repl(
-    name = "core_package_dep",
-    deps = ["//tests/multi_repl/core_package_dep"],
-)
+# haskell_repl(
+#     name = "core_package_dep",
+#     deps = ["//tests/multi_repl/core_package_dep"],
+# )
 
 filegroup(
     name = "all_files",

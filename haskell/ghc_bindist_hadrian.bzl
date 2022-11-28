@@ -114,14 +114,13 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
         strip_path = "\"\"",
     )
 
-    print("LibDirPath is {}".format(repr(libdir)))
-
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
     locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
     toolchain = define_rule(
         "haskell_toolchain",
         name = "toolchain-impl",
         tools = [":generated_bin_filegroup"],
+        tools_path = repr(bindir),
         libraries = "toolchain_libraries",
         # See Note [GHC toolchain files]
         libdir = [":generated_lib_filegroup"],

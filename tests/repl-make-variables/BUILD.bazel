@@ -35,10 +35,10 @@ haskell_test(
 # Test that make variable expension is performed on `repl_ghci_args` forwarded
 # to the REPL. We need to set `collect_data = False` to avoid a build failure
 # on `test-repl-flags`.
-haskell_repl(
-    name = "repl-indirect-flags",
-    deps = [":test-repl-flags"],
-)
+# haskell_repl(
+#     name = "repl-indirect-flags",
+#     deps = [":test-repl-flags"],
+# )
 
 haskell_test(
     name = "test-no-flags",
@@ -52,12 +52,12 @@ haskell_test(
 )
 
 # Test that make variable expension is performed on `repl_ghci_args`.
-haskell_repl(
-    name = "repl-direct-flags",
-    data = ["data.txt"],
-    repl_ghci_args = ['-DDATA="$(rootpath data.txt)"'],
-    deps = [":test-no-flags"],
-)
+# haskell_repl(
+#     name = "repl-direct-flags",
+#     data = ["data.txt"],
+#     repl_ghci_args = ['-DDATA="$(rootpath data.txt)"'],
+#     deps = [":test-no-flags"],
+# )
 
 filegroup(
     name = "all_files",

@@ -10,49 +10,49 @@ haskell_test(
     deps = ["//tests/hackage:base"],
 )
 
-haskell_repl(
-    name = "hie-bios",
-    testonly = 1,
-    collect_data = True,
-    hie_bios_path_prefix = ["$magic_string"],
-    deps = [":binary-hie-bios-test"],
-)
+# haskell_repl(
+#     name = "hie-bios",
+#     testonly = 1,
+#     collect_data = True,
+#     hie_bios_path_prefix = ["$magic_string"],
+#     deps = [":binary-hie-bios-test"],
+# )
 
-haskell_repl(
-    name = "hie-bios-no-prefix",
-    testonly = 1,
-    collect_data = True,
-    deps = [":binary-hie-bios-test"],
-)
+# haskell_repl(
+#     name = "hie-bios-no-prefix",
+#     testonly = 1,
+#     collect_data = True,
+#     deps = [":binary-hie-bios-test"],
+# )
 
-filegroup(
-    name = "hie-bios-file",
-    testonly = 1,
-    srcs = [":hie-bios"],
-    output_group = "hie_bios",
-)
+# filegroup(
+#     name = "hie-bios-file",
+#     testonly = 1,
+#     srcs = [":hie-bios"],
+#     output_group = "hie_bios",
+# )
 
-filegroup(
-    name = "hie-bios-file-no-prefix",
-    testonly = 1,
-    srcs = [":hie-bios-no-prefix"],
-    output_group = "hie_bios",
-)
+# filegroup(
+#     name = "hie-bios-file-no-prefix",
+#     testonly = 1,
+#     srcs = [":hie-bios-no-prefix"],
+#     output_group = "hie_bios",
+# )
 
-sh_test(
-    name = "test-hie-bios",
-    size = "small",
-    srcs = ["test_hie_bios.sh"],
-    args = [
-        "$(rootpath :hie-bios-file)",
-        "$(rootpath :hie-bios-file-no-prefix)",
-    ],
-    data = [
-        ":hie-bios-file",
-        ":hie-bios-file-no-prefix",
-    ],
-    deps = ["@bazel_tools//tools/bash/runfiles"],
-)
+# sh_test(
+#     name = "test-hie-bios",
+#     size = "small",
+#     srcs = ["test_hie_bios.sh"],
+#     args = [
+#         "$(rootpath :hie-bios-file)",
+#         "$(rootpath :hie-bios-file-no-prefix)",
+#     ],
+#     data = [
+#         ":hie-bios-file",
+#         ":hie-bios-file-no-prefix",
+#     ],
+#     deps = ["@bazel_tools//tools/bash/runfiles"],
+# )
 
 filegroup(
     name = "all_files",
