@@ -232,7 +232,7 @@ def _haskell_toolchain_impl(ctx):
             name = ctx.label.name,
             tools = struct(**tools_struct_args),
             bindir = ctx.files.tools,
-            libdir = libdir,
+            libdir = libdir + [ctx.file.settings],
             libdir_path = libdir_path,
             docdir = docdir,
             docdir_path = docdir_path,
@@ -359,6 +359,7 @@ _haskell_toolchain = rule(
     _haskell_toolchain_impl,
     attrs = dict(
         common_attrs,
+        settings = attr.label(default = None, allow_single_file = True),
     ),
 )
 
@@ -556,6 +557,7 @@ def haskell_toolchain(
         tools = tools,
         libraries = libraries,
         ghcopts = ghcopts,
+        settings = ":settings", # TODO Only for Hadrian
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
         cabalopts = cabalopts,
