@@ -222,8 +222,6 @@ def link_binary(
         ])
 
     print("RUNNING GHC from link.bzl:216")
-    print("Inputs are {}".format(inputs))
-    print("hs is {}".format(hs))
     hs.toolchain.actions.run_ghc(
         hs,
         cc,

@@ -151,9 +151,11 @@ def ghc_pkg_recache(hs, posix, conf_file):
 
     cache_file = hs.actions.declare_file("package.cache", sibling = conf_file)
 
+    print("hs is {}".format(hs))
+
     # Make the call to ghc-pkg and use the package configuration file
     hs.actions.run(
-        inputs = depset(direct = [conf_file]),
+        inputs = depset(direct = [conf_file] + hs.toolchain.libdir),
         outputs = [cache_file],
         mnemonic = "HaskellRegisterPackage",
         progress_message = "HaskellRegisterPackage {}".format(conf_file.short_path),
