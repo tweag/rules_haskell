@@ -1,6 +1,7 @@
 """Helper functions on lists."""
 
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def _dedup_on(f, list_):
     """deduplicate `list_` by comparing the result of applying
@@ -12,12 +13,12 @@ def _dedup_on(f, list_):
     dedup_on(compare_x, [struct(x=3), struct(x=4), struct(x=3)])
     => [struct(x=3), struct(x=4)]
     """
-    seen = set.empty()
+    seen = sets.make()
     deduped = []
     for el in list_:
         by = f(el)
-        if not set.is_member(seen, by):
-            set.mutable_insert(seen, by)
+        if not sets.contains(seen, by):
+            sets.insert(seen, by)
             deduped.append(el)
     return deduped
 

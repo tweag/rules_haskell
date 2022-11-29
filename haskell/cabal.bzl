@@ -21,6 +21,7 @@ load(
     "truly_relativize",
 )
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/validate_attrs.bzl", "typecheck_stackage_extradeps")
 load(":haddock.bzl", "generate_unified_haddock_info")
 load(
@@ -582,11 +583,11 @@ def _haskell_cabal_library_impl(ctx):
     hs_info = HaskellInfo(
         package_databases = depset([package_database], transitive = [dep_info.package_databases]),
         empty_lib_package_databases = dep_info.empty_lib_package_databases,
-        version_macros = set.empty(),
+        version_macros = sets.make(),
         source_files = depset(),
         boot_files = depset(),
         extra_source_files = depset(),
-        import_dirs = set.empty(),
+        import_dirs = sets.make(),
         hs_libraries = depset(
             direct = [lib for lib in [vanilla_library, dynamic_library, profiling_library] if lib],
             transitive = [dep_info.hs_libraries],
@@ -881,11 +882,11 @@ def _haskell_cabal_binary_impl(ctx):
     hs_info = HaskellInfo(
         package_databases = dep_info.package_databases,
         empty_lib_package_databases = dep_info.empty_lib_package_databases,
-        version_macros = set.empty(),
+        version_macros = sets.make(),
         source_files = depset(),
         boot_files = depset(),
         extra_source_files = depset(),
-        import_dirs = set.empty(),
+        import_dirs = sets.make(),
         hs_libraries = dep_info.hs_libraries,
         deps_hs_libraries = dep_info.deps_hs_libraries,
         empty_hs_libraries = dep_info.empty_hs_libraries,
@@ -1933,7 +1934,7 @@ def _stack_snapshot_impl(repository_ctx):
         else:
             visibility = sorted(
                 # use set to de-duplicate
-                set.to_list(set.from_list([
+                sets.to_list(sets.make([
                     str(vendored_packages[rdep].relative(":__pkg__"))
                     for rdep in reverse_deps[name]
                     if rdep in vendored_packages

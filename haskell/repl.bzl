@@ -34,6 +34,7 @@ load(
 )
 load(":private/java.bzl", "java_interop_info")
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 
 HaskellReplLoadInfo = provider(
     doc = """Haskell REPL target information.

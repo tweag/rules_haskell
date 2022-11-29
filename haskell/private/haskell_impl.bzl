@@ -45,6 +45,7 @@ load(
 )
 load(":private/pkg_id.bzl", "pkg_id")
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/list.bzl", "list")
 load(":private/version_macros.bzl", "generate_version_macros")
 load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
@@ -285,7 +286,7 @@ def _haskell_binary_common_impl(ctx, is_test):
 
     hs_info = HaskellInfo(
         package_databases = all_deps_info.package_databases,
-        version_macros = set.empty(),
+        version_macros = sets.make(),
         source_files = depset(transitive = [c.source_files, module_outputs.repl_info.source_files]),
         boot_files = depset(transitive = [c.boot_files, module_outputs.repl_info.boot_files]),
         extra_source_files = c.extra_source_files,
@@ -531,13 +532,13 @@ def haskell_library_impl(ctx):
 
     # Validate that hidden modules appear as modules in src list or modules list, depending which appears:
     declared_modules = haskell_module_names if modules else module_map.keys()
-    hidden_minus_declared_modules = set.difference(set.from_list(ctx.attr.hidden_modules), set.from_list(declared_modules))
-    if not hidden_minus_declared_modules == set.empty():
-        fail("""Hidden modules must be a subset of all modules, found additional hidden modules {}""".format(set.to_list(hidden_minus_declared_modules)))
+    hidden_minus_declared_modules = sets.difference(sets.make(ctx.attr.hidden_modules), sets.make(declared_modules))
+    if not hidden_minus_declared_modules == sets.make():
+        fail("""Hidden modules must be a subset of all modules, found additional hidden modules {}""".format(sets.to_list(hidden_minus_declared_modules)))
 
-    exposed_modules = set.from_list(module_map.keys() + exposed_modules_reexports + haskell_module_names)
-    set.mutable_difference(exposed_modules, set.from_list(other_modules))
-    exposed_modules = set.to_list(exposed_modules)
+    exposed_modules = sets.make(module_map.keys() + exposed_modules_reexports + haskell_module_names)
+    exposed_modules = set.mutable_difference(exposed_modules, sets.make(other_modules))
+    exposed_modules = sets.to_list(exposed_modules)
 
     if non_empty:
         static_library = link_library_static(
@@ -598,14 +599,14 @@ def haskell_library_impl(ctx):
         transitive = [all_deps_info.interface_dirs, module_outputs.his, module_outputs.dyn_his],
     )
 
-    version_macros = set.empty()
+    version_macros = sets.make()
     if version:
         package_name = hs.name
         if hasattr(ctx.attr, "package_name") and ctx.attr.package_name:
             package_name = ctx.attr.package_name
-        version_macros = set.singleton(
+        version_macros = sets.make([
             generate_version_macros(ctx, package_name, version),
-        )
+        ])
 
     empty_libs = _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling, empty_libs_dir)
 
@@ -986,11 +987,11 @@ def haskell_import_impl(ctx):
         file
         for file in ctx.files.static_libraries + ctx.files.shared_libraries
     ]
-    version_macros = set.empty()
+    version_macros = sets.make()
     if ctx.attr.version != None:
-        version_macros = set.singleton(
+        version_macros = sets.make([
             generate_version_macros(ctx, ctx.label.name, ctx.attr.version),
-        )
+        ])
     hs_info = HaskellInfo(
         # XXX Empty set of conf and cache files only works for global db.
         package_databases = depset(),
@@ -999,7 +1000,7 @@ def haskell_import_impl(ctx):
         source_files = depset(),
         boot_files = depset(),
         extra_source_files = depset(),
-        import_dirs = set.empty(),
+        import_dirs = sets.make(),
         hs_libraries = depset(),
         deps_hs_libraries = depset(),
         empty_hs_libraries = depset(),

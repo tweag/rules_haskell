@@ -1,4 +1,5 @@
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def generate_version_macros(ctx, pkg_name, version):
     """Generate a version macros header file.
@@ -41,7 +42,7 @@ def version_macro_includes(hs_info):
     files = hs_info.version_macros
     flags = [
         f
-        for include in set.to_list(files)
+        for include in sets.to_list(files)
         for f in ["-include", include.path]
     ]
     return (files, flags)

@@ -4,6 +4,7 @@ load(
     "HaskellLibraryInfo",
 )
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def gather_dep_info(name, deps):
     """Collapse dependencies into a single `HaskellInfo`.
@@ -64,7 +65,7 @@ def gather_dep_info(name, deps):
         if HaskellInfo in dep
     ])
 
-    import_dirs = set.empty()
+    import_dirs = sets.make()
     for dep in deps:
         if HaskellInfo in dep:
             import_dirs = set.mutable_union(import_dirs, dep[HaskellInfo].import_dirs)
@@ -83,7 +84,7 @@ def gather_dep_info(name, deps):
     acc = HaskellInfo(
         package_databases = package_databases,
         empty_lib_package_databases = empty_lib_package_databases,
-        version_macros = set.empty(),
+        version_macros = sets.make(),
         hs_libraries = hs_libraries,
         deps_hs_libraries = deps_hs_libraries,
         empty_hs_libraries = empty_hs_libraries,
