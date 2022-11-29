@@ -415,7 +415,6 @@ def compile_binary(
             coverage_data.append(_coverage_datum(mix_file, info.src, hs.label))
 
     if srcs:
-        print("RUNNING GHC from compile.bzl:418")
         hs.toolchain.actions.run_ghc(
             hs,
             cc,
@@ -514,7 +513,6 @@ def compile_library(
             coverage_data.append(_coverage_datum(mix_file, info.src, hs.label))
 
     if srcs:
-        print("RUNNING GHC from compile.bzl:517")
         hs.toolchain.actions.run_ghc(
             hs,
             cc,

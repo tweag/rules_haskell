@@ -29,6 +29,11 @@ filegroup(
 )
 
 filegroup(
+    name = "include",
+    srcs = glob(["include/**"]),
+)
+
+filegroup(
     name = "lib",
     srcs = glob(["lib/**"]),
 )
@@ -41,6 +46,8 @@ filegroup(
 %{generated_bin_filegroup}
 
 %{generated_lib_filegroup}
+
+%{generated_include_filegroup}
 
 %{generated_docdir_filegroup}
 

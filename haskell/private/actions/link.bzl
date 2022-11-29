@@ -221,7 +221,6 @@ def link_binary(
             depset(static_libs + dynamic_libs),
         ])
 
-    print("RUNNING GHC from link.bzl:216")
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
@@ -388,7 +387,6 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
         args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
-    print("RUNNING GHC from link.bzl:388")
     hs.toolchain.actions.run_ghc(
         hs,
         cc,

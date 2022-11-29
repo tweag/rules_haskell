@@ -313,7 +313,6 @@ def _build_haskell_module(
         input_files.append(extra_ldflags_file)
 
     # Compile the module
-    print("RUNNING GHC from module.bzl:316")
     hs.toolchain.actions.run_ghc(
         hs,
         cc,
