@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load(
     "@rules_haskell//haskell:providers.bzl",
     "HaskellCcLibrariesInfo",
@@ -121,7 +122,7 @@ def _haskell_doctest_single(target, ctx):
 
     if ctx.attr.modules:
         inputs = ctx.attr.modules
-        args.add_all(set.to_list(hs_info.import_dirs), format_each = "-i%s")
+        args.add_all(sets.to_list(hs_info.import_dirs), format_each = "-i%s")
     else:
         inputs = [source.path for source in hs_info.source_files.to_list()]
 

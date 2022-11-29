@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load("//haskell:private/path_utils.bzl", "infer_main_module")
 load(
     "//haskell:private/dependencies.bzl",
@@ -840,7 +841,7 @@ def build_haskell_modules(
         repl_info = struct(
             source_files = depset(source_files),
             boot_files = depset(boot_files),
-            import_dirs = set.from_list(import_dirs),
+            import_dirs = sets.make(import_dirs),
             user_compile_flags = user_compile_flags,
         ),
     )

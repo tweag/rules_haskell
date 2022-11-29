@@ -25,6 +25,7 @@ load(
     "link_libraries",
 )
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load(
     ":private/actions/process_hsc_file.bzl",
@@ -161,7 +162,7 @@ def _compilation_defaults(
     # the two must both have the same root; i.e., both plain files,
     # both in bin_dir, or both in genfiles_dir.
 
-    import_dirs = set.from_list([
+    import_dirs = sets.make([
         hs.src_root,
         paths.join(hs.bin_dir.path, hs.src_root),
         paths.join(hs.genfiles_dir.path, hs.src_root),
@@ -176,7 +177,7 @@ def _compilation_defaults(
         elif s.extension == "hsc":
             s0, idir = process_hsc_file(hs, cc, hsc_flags, hsc_inputs, s)
             source_files.append(s0)
-            set.mutable_insert(import_dirs, idir)
+            sets.insert(import_dirs, idir)
         elif s.extension in ["hs-boot", "lhs-boot"]:
             boot_files.append(s)
         else:
@@ -184,7 +185,7 @@ def _compilation_defaults(
 
         if s in import_dir_map:
             idir = import_dir_map[s]
-            set.mutable_insert(import_dirs, idir)
+            sets.insert(import_dirs, idir)
 
     # Write the -optP flags to a parameter file because they can be very long on Windows
     # e.g. 27Kb for grpc-haskell

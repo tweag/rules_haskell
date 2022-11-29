@@ -18,6 +18,7 @@ load(
     "target_unique_name",
 )
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/version_macros.bzl", "version_macro_includes")
 
 def _c2hs_library_impl(ctx):
@@ -62,7 +63,7 @@ def _c2hs_library_impl(ctx):
     ]
     args.add_all(chi_includes)
 
-    version_macro_headers = set.empty()
+    version_macro_headers = sets.make()
     if ctx.attr.version:
         dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
         (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
