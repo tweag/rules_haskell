@@ -8,10 +8,9 @@ about: Steps to work through in order to publish a new release
 - [ ] Read through this process in its entirety so you understand it.
 - [ ] Create and checkout a new release preparation branch, named
       `release-<major>.<minor>`.
-- [ ] Update the minimal Bazel version in [the `start` script][start],
-      [`haskell/private/versions.bzl`][versions], and [the
-      `README`][readme]; add it to the [`CHANGELOG`][changelog] if it
-      changed.
+- [ ] If the minimal Bazel version has changed:
+  - [ ] update it in [the `start` script][start], in [`haskell/private/versions.bzl`][versions], and in [the `README`][readme]
+  - [ ] add a note about this change to the [`CHANGELOG`][changelog]
 - [ ] Remove any feature that is still too experimental to go into a
       release, by cherry-picking reverts (or by manually deleting the
       feature).
