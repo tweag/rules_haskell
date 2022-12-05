@@ -50,17 +50,16 @@ so bumping Bazel regularly is required.
       [`docs/haskell-use-cases`][usecases] to the current release
       preparation branch; comment out the checksum. (n.b., Search for
       `http_archive` in these files.)
-- [ ] Push and verify that the `release-<major>.<minor>` branch is
-      green in the CI.
+- [ ] Push the `release-<major>.<minor>` branch and open a **draft** PR
+      to verify CI is green.
 - [ ] Create a release tag (`v<major>.<minor>`) on the release
-      preparation branch.
-- [ ] Similar to above, set the revision in [the `start` script][start]
-      and [`docs/haskell-use-cases`][usecases] to the release tag and
-      update the checksum, uncommenting it out from previously. (See
-      [below](#generating-the-archive-checkum) to get the checksum.)
-- [ ] Push the above, including the release tag, and open a PR from the
-      release preparation branch; go through review and merge to
-      `master` upon success.
+      preparation branch and push the tag or use Github's UI.
+- [ ] Go to the [release page][releases]:
+      - [ ] Open the corresponding draft release and copy the workspace snippet.
+      - [ ] Insert the workspace snippet into [the `start` script][start]
+            and [`docs/haskell-use-cases`][usecases] replacing the existing snippet. 
+- [ ] Push the changes to the remote branch and mark the PR as ready;
+      go through review and merge to `master` upon success.
   - If any changes need to be made, upon review, you will need to delete
     the release tag (from local and origin) and repeat the previous four
     steps appropriately before requesting a follow-up review.
@@ -70,14 +69,8 @@ so bumping Bazel regularly is required.
     relevant commits from the release branch preparation branch. Open a
     pull request with that branch, go through review and push changes
     back to the release preparation branch.
-- [ ] Go to the [release page][releases] to create a new release:
-    - [ ] Click on "Draft a new release".
-    - [ ] Name "`v<major>.<minor>`".
-    - [ ] Select the tag you created previously (it should be in
-          GitHub's dropdown list).
-    - [ ] Copy the [CHANGELOG][changelog] section for this release into
-          the description. (You don't need to provide the source `.zip`
-          and `.tar.gz` archives; GitHub does this automatically.)
+- [ ] Go to the [release page][releases]:
+    - [ ] Open the draft release for the current version.
     - [ ] Release.
 - [ ] Merge `master` into the `release` branch and push to trigger
       deployment.
