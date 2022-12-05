@@ -72,10 +72,8 @@ so bumping Bazel regularly is required.
 - [ ] Go to the [release page][releases]:
     - [ ] Open the draft release for the current version.
     - [ ] Release.
-- [ ] Merge `master` into the `release` branch and push to trigger
-      deployment.
-  - [ ] Check whether https://haskell.build/start is now the latest
-        [`start` script][start] (Netlify sometimes has problems).
+- [ ] After "Publish" workflow is finished check whether https://haskell.build/start is 
+      now the latest [`start` script][start] (Netlify sometimes has problems).
 - [ ] Announce the new version on Twitter by asking someone with access.
 
 ### Generating the PR List for the CHANGELOG
