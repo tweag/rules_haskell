@@ -1,5 +1,5 @@
 let crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
-    haskellNix = import (builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/0d781c04c4ab9045a165bacf428b043995a167f6.tar.gz) {};
+    haskellNix = import (builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/b90fbaa272a6d17ddc21164ca3056e1618feafcd.tar.gz) {};
     pkgs = import haskellNix.sources.nixpkgs haskellNix.nixpkgsArgs;
     ghc-iserv = "${crossGHC}/lib/${crossGHC.targetPrefix}ghc-${crossGHC.version}/bin/ghc-iserv";
     crossNumactl = crossPkgs.numactl;
