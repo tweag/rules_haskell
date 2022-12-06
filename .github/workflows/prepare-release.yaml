@@ -1,0 +1,25 @@
+name: Prepare release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*.[0-9]*"
+
+jobs:
+  update-release-notes:
+    name: Update release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Prepare workspace snippet
+        run: .github/workflows/workspace_snippet.sh > release_notes.txt
+      - name: Generate changelog
+        run: |
+          printf '\n-----\n\n' >> release_notes.txt
+          awk -f .github/workflows/changelog.awk CHANGELOG.md >> release_notes.txt
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          body_path: release_notes.txt
