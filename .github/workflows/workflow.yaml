@@ -44,6 +44,10 @@ jobs:
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=$BUILD_CONFIG
+          build --build_metadata=REPO_URL=${GITHUB_REPOSITORY}
+          build --build_metadata=BRANCH_NAME=${GITHUB_REF_NAME}
+          build --build_metadata=COMMIT_SHA=${GITHUB_SHA}
+          build --build_metadata=ROLE=CI
           build --remote_header=x-buildbuddy-api-key="$BUILDBUDDY_API_KEY"
           EOF
           cat >~/.netrc <<EOF
@@ -96,6 +100,10 @@ jobs:
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=linux-nixpkgs
+          build --build_metadata=REPO_URL=${GITHUB_REPOSITORY}
+          build --build_metadata=BRANCH_NAME=${GITHUB_REF_NAME}
+          build --build_metadata=COMMIT_SHA=${GITHUB_SHA}
+          build --build_metadata=ROLE=CI
           build $cache_setting
           EOF
           ln -sr .bazelrc.local examples/arm/.bazelrc.local
@@ -159,6 +167,10 @@ jobs:
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=$BUILD_CONFIG
+          build --build_metadata=REPO_URL=${GITHUB_REPOSITORY}
+          build --build_metadata=BRANCH_NAME=${GITHUB_REF_NAME}
+          build --build_metadata=COMMIT_SHA=${GITHUB_SHA}
+          build --build_metadata=ROLE=CI
           build $cache_setting
           EOF
           cat >~/.netrc <<EOF
