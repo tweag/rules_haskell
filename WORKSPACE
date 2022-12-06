@@ -86,6 +86,21 @@ load("@rules_haskell_npm//:repositories.bzl", "npm_repositories")
 
 npm_repositories()
 
+load(
+    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+    "haskell_register_ghc_bindists_hadrian",
+)
+
+haskell_register_ghc_bindists_hadrian(
+    url = "file:///home/guillaume/ExternalPrograms/ghc/_build/bindist/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
+    sha256 = "e27724de38998dd6c3fb46ac5df4cf6818d779c1b749ea1afcd0b64e55b8217e",
+    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
+    version = "9.2.5",
+    target = "x86_64-unknown-linux",
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+)
+
 register_toolchains(
     "//tests:protobuf-toolchain",
     "//tests:protobuf-toolchain-osx_arm64",

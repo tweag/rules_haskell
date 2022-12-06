@@ -12,6 +12,10 @@ load(
     "haskell_import",
     "haskell_toolchain",
 )
+load(
+    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+    "copy_filegroups_to_this_package",
+)
 
 package(default_visibility = ["//visibility:public"])
 
@@ -25,6 +29,11 @@ filegroup(
 )
 
 filegroup(
+    name = "include",
+    srcs = glob(["include/**"]),
+)
+
+filegroup(
     name = "lib",
     srcs = glob(["lib/**"]),
 )
@@ -33,6 +42,18 @@ filegroup(
     name = "%{docdir}",
     srcs = glob(["%{docdir}/**"]),
 )
+
+# Since Bazel regular rules generate files in the "execroots" and GHC requires some files to be next to each other,
+# one has to move all the files coming from the GHC bindist tarball to an execroot.
+# These copied versions of the files are the 'generated_*_filegroup' targets.
+
+%{generated_bin_filegroup}
+
+%{generated_lib_filegroup}
+
+%{generated_include_filegroup}
+
+%{generated_docdir_filegroup}
 
 # Expose embedded MinGW toolchain when on Windows.
 

@@ -17,7 +17,7 @@ def _runghc_wrapper_impl(ctx):
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
 
     f = hs_toolchain.tools.runghc
-    runghc_runfile_path = paths.join(f.owner.workspace_name, f.owner.package, f.owner.name)
+    runghc_runfile_path = paths.join(f.owner.workspace_name, f.owner.package, hs_toolchain.tools_path, "runghc")
     runghc_wrapper_file = ctx.actions.declare_file(ctx.label.name)
     ctx.actions.write(
         output = runghc_wrapper_file,

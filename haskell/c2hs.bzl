@@ -80,6 +80,7 @@ def _c2hs_library_impl(ctx):
             depset(cc.files),
             depset(hs.toolchain.bindir),
             depset(hs.toolchain.libdir),
+            depset(hs.toolchain.includedir),
             set.to_depset(version_macro_headers),
             inputs,
         ]),

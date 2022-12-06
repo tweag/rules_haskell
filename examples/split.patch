@@ -7,7 +7,7 @@ index a60b284..1941c2f 100644
  Library
    ghc-options:       -Wall
 -  build-depends:     base <4.12
-+  build-depends:     base <5
++  build-depends:     base <6
    exposed-modules:   Data.List.Split, Data.List.Split.Internals
    default-language:  Haskell2010
    Hs-source-dirs:    src
