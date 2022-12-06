@@ -54,10 +54,10 @@ jobs:
             Linux) BUILD_CONFIG=ci-linux-bindist;;
             Windows) BUILD_CONFIG=ci-windows-bindist;;
           esac
+          .github/workflows/bazelrc-config.sh >.bazelrc.ci
           cat >.bazelrc.local <<EOF
-          common --config=ci
           build --config=$BUILD_CONFIG
-          build --remote_header=x-buildbuddy-api-key="$BUILDBUDDY_API_KEY"
+          import %workspace%/.bazelrc.ci
           EOF
           cat >~/.netrc <<EOF
           machine api.github.com
