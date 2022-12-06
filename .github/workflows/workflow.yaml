@@ -29,7 +29,7 @@ jobs:
           nix_path: nixpkgs=./nixpkgs/default.nix
           extra_nix_config: |
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-            extra-substituters = https://hydra.iohk.io
+            extra-substituters = https://cache.iog.io
       - name: Configure
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
@@ -80,7 +80,7 @@ jobs:
           nix_path: nixpkgs=./nixpkgs/default.nix
           extra_nix_config: |
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-            extra-substituters = https://hydra.iohk.io
+            extra-substituters = https://cache.iog.io
       - name: Configure
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
