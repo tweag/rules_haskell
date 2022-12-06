@@ -28,9 +28,9 @@ rules_haskell. To use a released version, do the following::
 
   http_archive(
       name = "rules_haskell",
-      strip_prefix = "rules_haskell-0.15",
-      urls = ["https://github.com/tweag/rules_haskell/archive/v0.15.tar.gz"],
-      sha256 = "aba3c16015a2363b16e2f867bdc5c792fa71c68cb97d8fe95fddc41e409d6ba8",
+      sha256 = "f7a228ef21c7976e42f0949b927f40d3381305d65e19585625eb6ce2c59116e9",
+      strip_prefix = "rules_haskell-0.16",
+      url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.16.tar.gz",
   )
 
 Picking a compiler

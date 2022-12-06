@@ -4,9 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.16] 2022-12-06
 
-[Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.15...master
+[0.16]: https://github.com/tweag/rules_haskell/compare/v0.15...v0.16
+
+### Highlights
+
+* haskell_module: Avoid recompilation when ABI file did not change (see [#1771])
+* Improved support for aarch64 on Darwin and Linux (see [#1825])
 
 ### Added
 
@@ -27,11 +32,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Changed
 
 * Use node version 16 when compiling with asterius, and update `rules_nodejs` dependency to version 5.0.0 (see [#1810])
-* Improved support for arm64 on Darwin and Linux (see [#1825])
+* Validate hidden modules (see https://github.com/tweag/rules_haskell/pull/1796)
+* Use `-pgml-supports-no-pie` with GHC >= 9.4.1 (see https://github.com/tweag/rules_haskell/pull/1804)
+* Fail with an error if package is declard twice in `stack_snapshot` (see https://github.com/tweag/rules_haskell/pull/1815)
 
+[#1771]: https://github.com/tweag/rules_haskell/pull/1771
 [#1810]: https://github.com/tweag/rules_haskell/pull/1810
 [#1825]: https://github.com/tweag/rules_haskell/pull/1825
 
+### Fixed
+
+* Respect `main_function` when building a haskell module (see https://github.com/tweag/rules_haskell/pull/1740)
+* Validate hidden modules (see https://github.com/tweag/rules_haskell/pull/1796)
 
 ## [0.15] 2022-07-22
 
