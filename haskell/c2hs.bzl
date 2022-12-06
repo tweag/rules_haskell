@@ -80,6 +80,7 @@ def _c2hs_library_impl(ctx):
             depset(hs.toolchain.libdir),
             set.to_depset(version_macro_headers),
             inputs,
+            depset(ctx.toolchains["@rules_haskell//haskell:toolchain"].includedir),
         ]),
         input_manifests = input_manifests,
         tools = [hs.tools.ghc, c2hs_exe],

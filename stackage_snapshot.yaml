@@ -1,10 +1,16 @@
 # We drop the Win32 package from the stack snapshot so that stack considers it a toolchain library.
 # In this case we will use the Win32 provided by the compiler instead of recompiling it.
-# 
+#
 # Recompiling it should be fine for future versions of Win32,
 # but with versions <= 2.13.2.0 we encounter the following issue:
 # https://github.com/haskell/win32/issues/193
 
-resolver: lts-18.18
+resolver: lts-20.2
 drop-packages:
   - Win32
+
+packages:
+- git: https://github.com/tweag/cabal
+  commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
+  subdirs:
+  - Cabal

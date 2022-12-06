@@ -1,7 +1,7 @@
 module Plugin1 (plugin) where
 
 import Control.Monad (when)
-import GhcPlugins
+import GHC.Plugins
 import System.Process (readProcess)
 
 plugin :: Plugin

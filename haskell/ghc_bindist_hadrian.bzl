@@ -126,6 +126,7 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
         # See Note [GHC toolchain files]
         libdir = [":generated_lib_filegroup"],
         docdir = [":generated_docdir_filegroup"],
+        includedir = [":generated_include_filegroup"],
         libdir_path = repr(libdir),
         docdir_path = repr(docdir),
         version = repr(ctx.attr.version),

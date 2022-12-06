@@ -3,13 +3,14 @@ package integration_testing
 import (
 	"bytes"
 	"fmt"
-	"github.com/bazelbuild/rules_go/go/tools/bazel"
-	"github.com/bazelbuild/rules_go/go/tools/bazel_testing"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/bazelbuild/rules_go/go/tools/bazel"
+	"github.com/bazelbuild/rules_go/go/tools/bazel_testing"
 )
 
 func TestMain(m *testing.M, args bazel_testing.Args) {
@@ -36,6 +37,7 @@ var Context struct {
 
 func ParseArgs() error {
 	bazelPath := ""
+	fmt.Print("OSARGS are ", os.Args)
 	for _, arg := range os.Args {
 		if strings.HasPrefix(arg, "nixpkgs=") {
 			fmt.Sscanf(arg, "nixpkgs=%t", &Context.Nixpkgs)

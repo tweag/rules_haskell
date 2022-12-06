@@ -67,6 +67,7 @@ def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
             depset(cc.files),
             depset(hsc_inputs),
             depset(hs.toolchain.bindir),
+            depset(hs.toolchain.includedir),
         ]),
         input_manifests = cc.manifests,
         outputs = [hs_out],

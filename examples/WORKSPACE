@@ -111,7 +111,7 @@ stack_snapshot(
         "text",
         "text-show",
     ],
-    snapshot = "lts-18.0",
+    snapshot = "lts-20.2",
     # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
     # uncomment the following line.

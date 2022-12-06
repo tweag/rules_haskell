@@ -234,6 +234,7 @@ def _haskell_toolchain_impl(ctx):
             libdir_path = libdir_path,
             docdir = docdir,
             docdir_path = docdir_path,
+            includedir = ctx.files.includedir,
             ghcopts = ctx.attr.ghcopts,
             repl_ghci_args = ctx.attr.repl_ghci_args,
             haddock_flags = ctx.attr.haddock_flags,
@@ -291,6 +292,9 @@ common_attrs = {
     ),
     "docdir_path": attr.string(
         doc = "The absolute path to GHC's docdir. C.f. `GHC.Paths.docdir` from `ghc-paths`. Specify this if `docdir` is left empty. One of `docdir` or `docdir_path` is required.",
+    ),
+    "includedir": attr.label_list(
+        mandatory = False,
     ),
     "ghcopts": attr.string_list(),
     "repl_ghci_args": attr.string_list(),

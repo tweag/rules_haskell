@@ -89,7 +89,10 @@ stack_snapshot(
         "safe-exceptions",
         "temporary",
     ],
-    setup_deps = {"polysemy": ["cabal-doctest"]},
+    setup_deps = {
+        "polysemy": ["cabal-doctest"],
+        "alex": ["@stackage//:Cabal"],
+    },
     stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
     tools = [
         # This is not required, as `stack_snapshot` would build alex
