@@ -490,21 +490,6 @@ haskell_package_repository_dummy(
 )
 
 http_archive(
-    name = "io_bazel_rules_sass",
-    sha256 = "53b42e9dc1c12d18716518a3810780a0131cd513a6d5c828e1eb3fbd30cc0ba6",
-    strip_prefix = "rules_sass-1.44.0",
-    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.44.0.tar.gz"],
-)
-
-load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
-
-rules_sass_dependencies()
-
-load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
-
-sass_repositories()
-
-http_archive(
     name = "io_bazel_stardoc",
     sha256 = "c9794dcc8026a30ff67cf7cf91ebe245ca294b20b071845d12c192afe243ad72",
     urls = [
