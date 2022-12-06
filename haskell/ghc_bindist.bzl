@@ -25,41 +25,21 @@ _GHC_DEFAULT_VERSION = "8.10.7"
 
 GHC_BINDIST_STRIP_PREFIX = \
     {
-        "9.2.1": {
-            "darwin_amd64": "ghc-9.2.1-x86_64-apple-darwin",
-            "windows_amd64": "ghc-9.2.1-x86_64-unknown-mingw32",
-        },
-        "9.0.2": {
-            "windows_amd64": "ghc-9.0.2-x86_64-unknown-mingw32",
-            "darwin_amd64": "ghc-9.0.2-x86_64-apple-darwin",
-        },
-        "9.0.1": {
-            "windows_amd64": "ghc-9.0.1-x86_64-unknown-mingw32",
-        },
     }
 
 GHC_BINDIST_LIBDIR = \
     {
-        "9.2.1": {
-            "darwin_amd64": "lib/lib",
-        },
-        "9.0.2": {
-            "darwin_amd64": "lib/lib",
-        },
     }
 
 GHC_BINDIST_DOCDIR = \
     {
-        "9.2.1": {
-            "windows_amd64": "docs",
-        },
-        "9.0.2": {
-            "windows_amd64": "docs",
-        },
-        "9.0.1": {
-            "windows_amd64": "docs",
-        },
     }
+
+def _split_version(version):
+    vs = version.split(".")
+    if len(vs) != 3:
+        fail("GHC version should be a triple: {}".format(version))
+    return (int(vs[0]), int(vs[1]), int(vs[2]))
 
 def _ghc_bindist_impl(ctx):
     filepaths = resolve_labels(ctx, [
@@ -67,6 +47,7 @@ def _ghc_bindist_impl(ctx):
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
     ])
     version = ctx.attr.version
+    version_tuple = _split_version(version)
     target = ctx.attr.target
     os, _, arch = target.partition("_")
 
@@ -88,6 +69,13 @@ def _ghc_bindist_impl(ctx):
     stripPrefix = "ghc-" + version
     if GHC_BINDIST_STRIP_PREFIX.get(version) != None and GHC_BINDIST_STRIP_PREFIX[version].get(target) != None:
         stripPrefix = GHC_BINDIST_STRIP_PREFIX[version][target]
+    else:
+        arch_suffix = {"arm64": "aarch64", "amd64": "x86_64"}.get(arch)
+
+        if os == "windows" and version_tuple >= (9, 0, 1):
+            stripPrefix += "-{}-unknown-mingw32".format(arch_suffix)
+        elif os == "darwin" and version_tuple >= (9, 0, 2):
+            stripPrefix += "-{}-apple-darwin".format(arch_suffix)
 
     ctx.download_and_extract(
         url = url,
@@ -139,7 +127,7 @@ def _ghc_bindist_impl(ctx):
         if not make_loc:
             fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
 
-        if version == "9.2.1":
+        if version_tuple >= (9, 2, 1):
             # Necessary for deterministic builds on macOS. See
             # https://gitlab.haskell.org/ghc/ghc/-/issues/19963
             ctx.file("{}/mk/relpath.sh".format(unpack_dir), ctx.read(ctx.path(ctx.attr._relpath_script)), executable = False, legacy_utf8 = False)
@@ -180,10 +168,14 @@ rm -f
     libdir = "lib"
     if GHC_BINDIST_LIBDIR.get(version) != None and GHC_BINDIST_LIBDIR[version].get(target) != None:
         libdir = GHC_BINDIST_LIBDIR[version][target]
+    elif os == "darwin" and version_tuple >= (9, 0, 2):
+        libdir = "lib/lib"
 
     docdir = "doc"
     if GHC_BINDIST_DOCDIR.get(version) != None and GHC_BINDIST_DOCDIR[version].get(target) != None:
         docdir = GHC_BINDIST_DOCDIR[version][target]
+    elif os == "windows" and version_tuple >= (9, 0, 1):
+        docdir = "docs"
 
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
     locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
@@ -362,16 +354,14 @@ def ghc_bindist(
     patches = None
     if target == "windows_amd64":
         patches = {
-            "8.6.2": ["@rules_haskell//haskell:assets/ghc_8_6_2_win_base.patch"],
-            "8.6.4": ["@rules_haskell//haskell:assets/ghc_8_6_4_win_base.patch"],
             "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
-            "8.8.1": ["@rules_haskell//haskell:assets/ghc_8_8_1_win_base.patch"],
-            "8.8.2": ["@rules_haskell//haskell:assets/ghc_8_8_2_win_base.patch"],
-            "8.8.3": ["@rules_haskell//haskell:assets/ghc_8_8_3_win_base.patch"],
             "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
             "9.0.1": ["@rules_haskell//haskell:assets/ghc_9_0_1_win.patch"],
             "9.0.2": ["@rules_haskell//haskell:assets/ghc_9_0_2_win.patch"],
             "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_win.patch"],
+            "9.2.3": ["@rules_haskell//haskell:assets/ghc_9_2_3_win.patch"],
+            "9.2.4": ["@rules_haskell//haskell:assets/ghc_9_2_4_win.patch"],
+            "9.2.5": ["@rules_haskell//haskell:assets/ghc_9_2_5_win.patch"],
         }.get(version)
 
     if target == "darwin_amd64":

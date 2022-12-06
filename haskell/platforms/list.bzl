@@ -37,12 +37,14 @@ def declare_config_settings():
             native.config_setting(
                 name = os,
                 constraint_values = [constraint_value],
+                visibility = ["//visibility:public"],
             )
     for arch, constraint_value in ARCH.items():
         if constraint_value:
             native.config_setting(
                 name = arch,
                 constraint_values = [constraint_value],
+                visibility = ["//visibility:public"],
             )
 
 def os_of_constraints(constraints):

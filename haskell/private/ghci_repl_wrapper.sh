@@ -57,6 +57,6 @@ TOOL_LOCATION="$RULES_HASKELL_EXEC_ROOT/%{TOOL}"
 # shellcheck disable=SC1083
 ARGS=%{ARGS}
 
-# shellcheck disable=SC1083
+# shellcheck disable=SC1083,SC2288
 %{ENV}
 "$TOOL_LOCATION" "${ARGS[@]}" "$@"

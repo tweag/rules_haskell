@@ -16,6 +16,12 @@ from distutils.version import StrictVersion
 # `ignore_prefixes` is the prefix of files to ignore
 # `ignore_suffixes` is the suffix of files to ignore
 VERSIONS = [
+    { "version": "9.2.5",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.2.4",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.2.3",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": "9.2.1",
       "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": "9.0.2",
@@ -27,29 +33,13 @@ VERSIONS = [
       "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": "8.10.4" },
     { "version": "8.10.3" },
-    { "version": "8.10.2" },
-    { "version": "8.10.1",
-      "ignore_suffixes": [".lz"] },
     { "version": "8.8.4" },
-    { "version": "8.8.3",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "8.8.2" },
-    { "version": "8.8.1" },
     { "version": "8.6.5" },
-    { "version": "8.6.4" },
-    { "version": "8.6.3" },
-    { "version": "8.6.2" },
     { "version": "8.4.4" },
     { "version": "8.4.3" },
     { "version": "8.4.2" },
     { "version": "8.4.1" },
     { "version": "8.2.2" },
-    { "version": "8.0.2",
-      "ignore_suffixes": [".patch"] },
-    { "version": "7.10.3",
-      "distribution_version": "7.10.3b",
-      "ignore_prefixes": ["ghc-7.10.3-", "ghc-7.10.3a-"],
-      "ignore_suffixes": [".bz2", ".patch" ] }
 ]
 
 # All architectures we generate.
@@ -58,6 +48,8 @@ VERSIONS = [
 ARCHES = [
     { "bazel": "linux_amd64",
       "upstream": ["x86_64-deb8-linux", "x86_64-deb9-linux", "x86_64-deb10-linux"], },
+    { "bazel": "linux_arm64",
+      "upstream": ["aarch64-deb10-linux"], },
     { "bazel": "darwin_amd64",
       "upstream": ["x86_64-apple-darwin"] },
     { "bazel": "darwin_arm64",

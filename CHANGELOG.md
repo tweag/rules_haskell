@@ -4,9 +4,46 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.16] 2022-12-06
 
-[Unreleased]: https://github.com/tweag/rules_haskell/compare/v0.15...master
+[0.16]: https://github.com/tweag/rules_haskell/compare/v0.15...v0.16
+
+### Highlights
+
+* haskell_module: Avoid recompilation when ABI file did not change (see [#1771])
+* Improved support for aarch64 on Darwin and Linux (see [#1825])
+
+### Added
+
+* Add support for GHC 9.2.3 (see [#1791])
+* Add support for GHC 9.2.4 (see [#1814])
+* Add support for GHC 9.2.5 (see [#1831])
+
+[#1791]: https://github.com/tweag/rules_haskell/pull/1791
+[#1814]: https://github.com/tweag/rules_haskell/pull/1814
+[#1831]: https://github.com/tweag/rules_haskell/pull/1831
+
+### Removed
+
+* Remove support for bindists of GHC versions 7.10.3, 8.0.2, 8.6.2, 8.6.3, 8.6.4, 8.8.1, 8.8.2, 8.8.3, 8.10.1 and 8.10.2 (see [#1790])
+
+[#1790]: https://github.com/tweag/rules_haskell/pull/1790
+
+### Changed
+
+* Use node version 16 when compiling with asterius, and update `rules_nodejs` dependency to version 5.0.0 (see [#1810])
+* Validate hidden modules (see https://github.com/tweag/rules_haskell/pull/1796)
+* Use `-pgml-supports-no-pie` with GHC >= 9.4.1 (see https://github.com/tweag/rules_haskell/pull/1804)
+* Fail with an error if package is declard twice in `stack_snapshot` (see https://github.com/tweag/rules_haskell/pull/1815)
+
+[#1771]: https://github.com/tweag/rules_haskell/pull/1771
+[#1810]: https://github.com/tweag/rules_haskell/pull/1810
+[#1825]: https://github.com/tweag/rules_haskell/pull/1825
+
+### Fixed
+
+* Respect `main_function` when building a haskell module (see https://github.com/tweag/rules_haskell/pull/1740)
+* Validate hidden modules (see https://github.com/tweag/rules_haskell/pull/1796)
 
 ## [0.15] 2022-07-22
 
@@ -300,10 +337,10 @@ it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yam
 
 * Initial experimental Windows support for `cabal_binary/library` and
   `stack_snapshot`.
-  
+
 * [`start`](./start) script for setting up `rules_haskell` allows to set up a nixpkgs-based
   bazel workspace, for NixOS users, via the `--use-nix` option.
-  
+
 ### Added
 
 * Windows-support for cabal/stack.
@@ -312,7 +349,7 @@ it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yam
   overriding packages in a stack snapshot.
   There is an example in [./examples/WORKSPACE](./examples/WORKSPACE).
   See [#1060](https://github.com/tweag/rules_haskell/pull/1060).
-  
+
 ### Removed
 
 * The `haskell/haskell.bzl` entrypoint, which was deprecated in the
@@ -326,7 +363,7 @@ it can be droped from a custom stack snapshot as in the [./stackage_snapshot.yam
   to all packages, but instead a dictionary specifying additional dependencies
   to select packages. See `stack_snapshot` API docs for an example. See
   [#1068](https://github.com/tweag/rules_haskell/pull/1068).
-  
+
 ### Fixed
 
 * Unified the `cc_wrapper` on all OSes.

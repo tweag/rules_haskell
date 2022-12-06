@@ -14,6 +14,10 @@ load("//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
+load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")
+
+build_bazel_rules_nodejs_dependencies()
+
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()
@@ -337,14 +341,14 @@ nixpkgs_package(
 
 nixpkgs_package(
     name = "nixpkgs_lz4",
-    attribute_path = "lz4",
+    attribute_path = "lz4.out",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
   name = "nixpkgs_lz4",
-  srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"]),
+  srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"], allow_empty = True),
   includes = ["include"],
 )
     """,
@@ -484,21 +488,6 @@ load(
 haskell_package_repository_dummy(
     name = "haskell_package_repository_dummy",
 )
-
-http_archive(
-    name = "io_bazel_rules_sass",
-    sha256 = "53b42e9dc1c12d18716518a3810780a0131cd513a6d5c828e1eb3fbd30cc0ba6",
-    strip_prefix = "rules_sass-1.44.0",
-    urls = ["https://github.com/bazelbuild/rules_sass/archive/1.44.0.tar.gz"],
-)
-
-load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
-
-rules_sass_dependencies()
-
-load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
-
-sass_repositories()
 
 http_archive(
     name = "io_bazel_stardoc",

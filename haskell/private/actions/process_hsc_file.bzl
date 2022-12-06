@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/version_macros.bzl", "version_macro_includes")
 load(":private/path_utils.bzl", "declare_compiled")
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     """Process a single hsc file.
@@ -108,6 +109,6 @@ def preprocess_hsc_flags_and_inputs(dep_info, user_compile_flags, version):
     if version:
         (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
         hsc_flags += ["--cflag=" + x for x in version_macro_flags]
-        hsc_inputs += set.to_list(version_macro_headers)
+        hsc_inputs += sets.to_list(version_macro_headers)
 
     return hsc_flags, hsc_inputs

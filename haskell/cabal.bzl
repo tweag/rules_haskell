@@ -21,6 +21,7 @@ load(
     "truly_relativize",
 )
 load(":private/set.bzl", "set")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/validate_attrs.bzl", "typecheck_stackage_extradeps")
 load(":haddock.bzl", "generate_unified_haddock_info")
 load(
@@ -582,11 +583,11 @@ def _haskell_cabal_library_impl(ctx):
     hs_info = HaskellInfo(
         package_databases = depset([package_database], transitive = [dep_info.package_databases]),
         empty_lib_package_databases = dep_info.empty_lib_package_databases,
-        version_macros = set.empty(),
+        version_macros = sets.make(),
         source_files = depset(),
         boot_files = depset(),
         extra_source_files = depset(),
-        import_dirs = set.empty(),
+        import_dirs = sets.make(),
         hs_libraries = depset(
             direct = [lib for lib in [vanilla_library, dynamic_library, profiling_library] if lib],
             transitive = [dep_info.hs_libraries],
@@ -881,11 +882,11 @@ def _haskell_cabal_binary_impl(ctx):
     hs_info = HaskellInfo(
         package_databases = dep_info.package_databases,
         empty_lib_package_databases = dep_info.empty_lib_package_databases,
-        version_macros = set.empty(),
+        version_macros = sets.make(),
         source_files = depset(),
         boot_files = depset(),
         extra_source_files = depset(),
-        import_dirs = set.empty(),
+        import_dirs = sets.make(),
         hs_libraries = dep_info.hs_libraries,
         deps_hs_libraries = dep_info.deps_hs_libraries,
         empty_hs_libraries = dep_info.empty_hs_libraries,
@@ -1015,9 +1016,20 @@ _STACK_BINDISTS = \
                 "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-linux-x86_64-static.tar.gz",
                 "2a02fefefcc1758033d0aea566a521a290e3c68739ce9894bd6492a346af79c5",
             ),
+            "linux-aarch64": (
+                # GHCup provides unofficial aarch64 linux binaries
+                # FIXME: use the official ones after upgrading to 2.9.1
+                "https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-aarch64.tar.gz",
+                "f362fa4786b17252004b2619ec96b9687e561dc4e55c2612c53d60be767cabba",
+            ),
             "osx-x86_64": (
                 "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-osx-x86_64.tar.gz",
                 "94176b71425d76b94b088515103316ae1ff96d123344b1f4609c103d0d5bdcc4",
+            ),
+            "osx-aarch64": (
+                # GHCup provides unofficial aarch64 macOS binaries
+                "https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-osx-aarch64.tar.gz",
+                "cea34367981ed6f5629d23d17957920b1a06cc0a00580ba62e960a64087f25fe",
             ),
             "windows-x86_64": (
                 "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-windows-x86_64.tar.gz",
@@ -1613,6 +1625,8 @@ def _parse_packages_list(packages, vendored_packages):
         unversioned = _chop_version(package) if has_version else package
         if unversioned in vendored_packages:
             fail("Duplicate package '{}'. Packages may not be listed in both 'packages' and 'vendored_packages'.".format(package))
+        if unversioned in all_packages:
+            fail("Duplicate package '{}'. Packages should be declared only once in 'packages'.".format(package))
         all_packages.append(unversioned)
         if has_version:
             versioned_packages.append(package)
@@ -1922,7 +1936,7 @@ def _stack_snapshot_impl(repository_ctx):
         else:
             visibility = sorted(
                 # use set to de-duplicate
-                set.to_list(set.from_list([
+                sets.to_list(sets.make([
                     str(vendored_packages[rdep].relative(":__pkg__"))
                     for rdep in reverse_deps[name]
                     if rdep in vendored_packages
@@ -2329,7 +2343,7 @@ def _get_platform(repository_ctx):
         result = repository_ctx.execute(["uname", "-m"])
         if result.stdout.strip() in ["arm", "armv7l"]:
             arch = "arm"
-        elif result.stdout.strip() in ["aarch64"]:
+        elif result.stdout.strip() in ["aarch64", "arm64"]:
             arch = "aarch64"
         elif result.stdout.strip() in ["amd64", "x86_64", "x64"]:
             arch = "x86_64"
@@ -2352,20 +2366,33 @@ def _fetch_stack_impl(repository_ctx):
     (os, arch) = _get_platform(repository_ctx)
     version = _STACK_DEFAULT_VERSION
     (url, sha256) = _STACK_BINDISTS[version]["{}-{}".format(os, arch)]
-    prefix = paths.basename(url)[:-len(".tar.gz")]
+    if "unofficial" in url:
+        # the unofficial stack bindists from GHCup do not use a prefix directory
+        prefix = ""
+    else:
+        prefix = paths.basename(url)[:-len(".tar.gz")]
     repository_ctx.download_and_extract(url = url, sha256 = sha256)
     stack_cmd = repository_ctx.path(prefix).get_child("stack.exe" if os == "windows" else "stack")
+    if "unofficial" in url:
+        # the stack binary from the unofficial bindists from GHCup lacks the executable bit
+        _execute_or_fail_loudly(repository_ctx, ["chmod", "+x", stack_cmd])
     exec_result = repository_ctx.execute([stack_cmd, "--version"], quiet = True)
     if exec_result.return_code != 0:
-        error_message = exec_result.stdout
-        error_message.append("A Stack binary for your platform exists,")
-        error_message.append("but it failed to execute (exit status {}).".format(exec_result.return_code))
+        error_message = [
+            "A Stack binary for your platform exists, but it failed to execute (exit status {}).".format(exec_result.return_code),
+            "stdout:",
+            exec_result.stdout,
+            "stderr:",
+            exec_result.stderr,
+        ]
         if os == "linux":
             error_message.append("HINT: If you are on NixOS,")
             error_message.append("* make Stack available on the PATH, or")
             error_message.append("* specify a Stack binary using the stack attribute.")
         fail("\n".join(error_message))
-    repository_ctx.symlink(stack_cmd, "stack")
+    if not "unofficial" in url:
+        # only needed for the official bindists
+        repository_ctx.symlink(stack_cmd, "stack")
 
 _fetch_stack = repository_rule(
     _fetch_stack_impl,

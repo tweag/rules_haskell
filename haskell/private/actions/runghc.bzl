@@ -17,6 +17,7 @@ load(
     "link_libraries",
 )
 load("@bazel_skylib//lib:shell.bzl", "shell")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def build_haskell_runghc(
         hs,
@@ -56,7 +57,7 @@ def build_haskell_runghc(
     )
 
     if lib_info != None:
-        for idir in set.to_list(hs_info.import_dirs):
+        for idir in sets.to_list(hs_info.import_dirs):
             args += ["-i{0}".format(idir)]
 
     link_libraries(

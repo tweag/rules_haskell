@@ -27,7 +27,21 @@ load(
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
 
-def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = None, progress_message = None, input_manifests = None, extra_name = ""):
+def _run_ghc(
+        hs,
+        cc,
+        inputs,
+        outputs,
+        mnemonic,
+        arguments,
+        env,
+        params_file = None,
+        progress_message = None,
+        input_manifests = None,
+        interface_inputs = [],
+        extra_name = "",
+        hi_file = None,
+        abi_file = None):
     args = hs.actions.args()
     extra_inputs = []
 
@@ -55,6 +69,41 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
     arguments.set_param_file_format("multiline")
     hs.actions.write(compile_flags_file, args)
     hs.actions.write(extra_args_file, arguments)
+
+    if abi_file != None:
+        # We declare the file containing informations about the call to GHC with --show-iface.
+        show_iface_file = hs.actions.declare_file("show_iface_%s_%s" % (hs.name, extra_name))
+        show_iface_args = hs.actions.args()
+        show_iface_args.set_param_file_format("multiline")
+        show_iface_args.add(hs.tools.ghc.path)
+        show_iface_args.add("--show-iface ")
+        show_iface_args.add(hi_file.path)
+        hs.actions.write(show_iface_file, show_iface_args)
+
+        # We create a file containing the name of all the interface files which should not be considered
+        # by the caching mechanism to know if recompilation should be triggered.
+        # This behaivour is extensively described in the Note [On the ABI hash] in haskell/experimaental/private/module.bzl
+        interface_with_abis_list = hs.actions.declare_file("interfaces_%s_%s" % (hs.name, extra_name))
+        interface_with_abis_args = hs.actions.args()
+        interface_with_abis_args.set_param_file_format("multiline")
+        interface_with_abis_args.add_all(interface_inputs)
+        hs.actions.write(interface_with_abis_list, interface_with_abis_args)
+
+        # The interface_with_abis_list should be used as unused_inputs_list.
+        # However, since it is more traditional to generate the unused_inputs_list within the action itself,
+        # and this proposition is already quite hackish, we wanted to stick to the usage,
+        # expecting it to offer us a stronger reliability, even with the future evolution of Bazel.
+        unused_inputs_list = hs.actions.declare_file("unused_%s_%s" % (hs.name, extra_name))
+
+        extra_inputs += [show_iface_file, interface_with_abis_list]
+        outputs += [unused_inputs_list]
+        env.update({"MUST_EXTRACT_ABI": "true"})
+
+        new_args = [show_iface_file.path, abi_file.path, interface_with_abis_list.path, unused_inputs_list.path]
+    else:
+        env.update({"MUST_EXTRACT_ABI": "false"})
+        new_args = []
+        unused_inputs_list = None
 
     extra_inputs += [
         compile_flags_file,
@@ -91,8 +140,9 @@ def _run_ghc(hs, cc, inputs, outputs, mnemonic, arguments, env, params_file = No
         mnemonic = mnemonic,
         progress_message = progress_message,
         env = env,
-        arguments = [compile_flags_file.path, flagsfile_prefix + flagsfile.path],
+        arguments = [compile_flags_file.path, flagsfile_prefix + flagsfile.path] + new_args,
         execution_requirements = execution_requirements,
+        unused_inputs_list = unused_inputs_list,
     )
 
     return args
@@ -221,7 +271,14 @@ def _haskell_toolchain_impl(ctx):
             tools_for_ghc_pkg = ctx.files.tools,
         )
     else:
-        tools_config = default_tools_config
+        tools_config = struct(
+            path_for_run_ghc = default_tools_config.path_for_run_ghc + ctx.attr._exec_posix_toolchain[platform_common.ToolchainInfo].paths,
+            tools_for_ghc = default_tools_config.tools_for_ghc,
+            path_for_cabal = default_tools_config.path_for_cabal,
+            tools_for_ghc_pkg = default_tools_config.tools_for_ghc_pkg,
+            maybe_exec_cc_toolchain = default_tools_config.maybe_exec_cc_toolchain,
+            supports_haddock = default_tools_config.supports_haddock,
+        )
 
     return [
         platform_common.ToolchainInfo(
@@ -326,6 +383,10 @@ common_attrs = {
         allow_single_file = True,
         default = Label("@rules_haskell//rule_info:rule_info_proto"),
     ),
+    "_exec_posix_toolchain": attr.label(
+        default = Label("@rules_haskell//haskell:current_posix_toolchain"),
+        cfg = "exec",
+    ),
 }
 
 _ahc_haskell_toolchain = rule(
@@ -342,10 +403,6 @@ _ahc_haskell_toolchain = rule(
         ),
         _exec_cc_toolchain = attr.label(
             default = Label("@rules_haskell//haskell:current_cc_toolchain"),
-            cfg = "exec",
-        ),
-        _exec_posix_toolchain = attr.label(
-            default = Label("@rules_haskell//haskell:current_posix_toolchain"),
             cfg = "exec",
         ),
     ),
@@ -511,12 +568,12 @@ def rules_haskell_toolchains(
 # and control their configurations using the `cfg` field.
 
 def get_nodejs_toolchain_impl(ctx):
-    return ctx.toolchains["@build_bazel_rules_nodejs//toolchains/node:toolchain_type"]
+    return ctx.toolchains["@rules_nodejs//nodejs:toolchain_type"]
 
 get_nodejs_toolchain = rule(
     get_nodejs_toolchain_impl,
     toolchains = [
-        "@build_bazel_rules_nodejs//toolchains/node:toolchain_type",
+        "@rules_nodejs//nodejs:toolchain_type",
     ],
 )
 

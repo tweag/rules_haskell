@@ -30,8 +30,8 @@ AHC_BINDIST = \
     {
         "0.0.1": {
             "linux_amd64": (
-                "https://github.com/tweag/asterius_bundles_for_bazel/releases/download/0.0.1/asterius_bundle.tar.gz",
-                "747cb0d3f0205a5221c4476589374707496e29649f4690de4ff287acdddc1bb4",
+                "https://github.com/tweag/asterius_bundles_for_bazel/releases/download/0.0.2/asterius_bundle.tar.gz",
+                "bb051b73547e5b35e77ececbbca59a551cb45bca34c87ad1f09e166ccf1210e6",
             ),
         },
     }
@@ -344,7 +344,7 @@ def asterius_dependencies_nix(**kwargs):
       nixpkgs_package_rule: The `nixpkgs_package` rule from `rules_nixpkgs`.
       package_json: The package.json file that will be passed to [yarn_install](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#yarn_install)
       yarn_lock: The yarn.lock file that will be passed to [yarn_install](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#yarn_install)
-      nixpkgs_nodejs: The name for the nodejs that will be installed with `nixpkgs_package`.
+      nixpkgs_nodejs: The prefix for the repository containing node that will be installed with `nixpkgs_package`.
     """
     _asterius_dependencies_nix(**kwargs)
 

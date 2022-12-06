@@ -1,4 +1,6 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", "sets")
+load("//haskell:private/path_utils.bzl", "infer_main_module")
 load(
     "//haskell:private/dependencies.bzl",
     "gather_dep_info",
@@ -106,6 +108,7 @@ def _build_haskell_module(
         odir,
         module_outputs,
         interface_inputs,
+        abi_inputs,
         object_inputs,
         narrowed_objects,
         extra_ldflags_file,
@@ -182,6 +185,20 @@ def _build_haskell_module(
     # Construct compiler arguments
 
     args = ctx.actions.args()
+
+    main_function = getattr(ctx.attr, "main_function", None)
+
+    if main_function:
+        if moduleAttr.module_name:
+            guess_module_name = moduleAttr.module_name
+        else:
+            guess_module_name = get_module_path_from_target(module).replace("/", ".")
+
+        main_file = getattr(ctx.attr, "main_file", None)
+        main_function_module = infer_main_module(main_function)
+        if (moduleAttr.src == main_file or main_function_module == guess_module_name):
+            args.add_all(["-main-is", ctx.attr.main_function])
+
     args.add_all([
         "-c",
         "-odir",
@@ -297,7 +314,7 @@ def _build_haskell_module(
     if enable_th:
         args.add_all(narrowed_objects)
 
-    outputs = [module_outputs.hi]
+    outputs = [module_outputs.hi, module_outputs.abi]
     if module_outputs.o:
         outputs += [module_outputs.o]
     if with_shared:
@@ -328,6 +345,7 @@ def _build_haskell_module(
                 plugin_tool_inputs,
                 preprocessors_inputs,
                 interface_inputs,
+                abi_inputs,
             ] + [
                 files
                 for files in [
@@ -347,10 +365,14 @@ def _build_haskell_module(
         progress_message = "HaskellBuildObject {} {}".format(hs.label, module.label),
         env = hs.env,
         arguments = args,
+        interface_inputs = interface_inputs,
         extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
+        hi_file = module_outputs.hi,
+        abi_file = module_outputs.abi,
     )
 
     is_boot = _is_boot(src.path)
+
     return struct(
         source_file = None if is_boot else src,
         boot_file = src if is_boot else None,
@@ -390,6 +412,7 @@ def _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, module
     extension_template = module_path + "." + extension_template
 
     hi = hs.actions.declare_file(paths.join(hidir, extension_template % "hi"))
+    abi = hs.actions.declare_file(paths.join(hidir, extension_template % "abi"))
     o = None if hs_boot else hs.actions.declare_file(paths.join(odir, extension_template % "o"))
     if with_shared:
         dyn_o = None if hs_boot else hs.actions.declare_file(paths.join(odir, extension_template % "dyn_o"))
@@ -397,11 +420,16 @@ def _declare_module_outputs(hs, with_profiling, with_shared, hidir, odir, module
     else:
         dyn_hi = None
         dyn_o = None
-    return struct(hi = hi, dyn_hi = dyn_hi, o = o, dyn_o = dyn_o)
+    return struct(hi = hi, dyn_hi = dyn_hi, o = o, dyn_o = dyn_o, abi = abi)
 
 def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
     his = [
         module_outputs[m.label].hi
+        for m in dep[HaskellModuleInfo].direct_module_deps
+        if m.label in module_outputs
+    ]
+    abis = [
+        module_outputs[m.label].abi
         for m in dep[HaskellModuleInfo].direct_module_deps
         if m.label in module_outputs
     ]
@@ -427,7 +455,7 @@ def _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep):
         ]
     else:
         dyn_os = []
-    return his, os, dyn_os
+    return his, abis, os, dyn_os
 
 def _collect_module_inputs(module_input_map, extra_inputs, directs, dep):
     """ Put together inputs coming from direct and transitive dependencies.
@@ -469,6 +497,23 @@ def _collect_narrowed_deps_module_files(ctx_label, per_module_transitive_files, 
 
     return depset(transitive = transitives)
 
+def _collect_narrowed_direct_deps(ctx_label, per_module_file, dep):
+    direct_cross_library_deps = dep[HaskellModuleInfo].direct_cross_library_deps
+    direct_deps = [
+        per_module_file[m.label]
+        for m in direct_cross_library_deps
+        if m.label in per_module_file
+    ]
+    if len(direct_deps) < len(direct_cross_library_deps):
+        missing = [str(m.label) for m in direct_cross_library_deps if not m.label in per_module_file]
+        fail("The following dependencies of {} can't be found in 'narrowed_deps' of {}: {}".format(
+            dep.label,
+            ctx_label,
+            ", ".join(missing),
+        ))
+
+    return direct_deps
+
 def _reorder_module_deps_to_postorder(label, modules):
     """ Reorders modules to a postorder traversal of the dependency dag.
 
@@ -509,7 +554,8 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
       narrowed_deps: The contents of the narrowed_deps attribute
 
     Returns:
-      struct(transitive_interfaces, transitive_objects, transitive_dyn_objects):
+      struct(abis, transitive_interfaces, transitive_objects, transitive_dyn_objects):
+        abis: dict of module labels to their abi files.
         transitive_interfaces: dict of module labels to their
            interfaces and the interfaces of their transitive module dependencies
         transitive_objects: dict of module labels to their
@@ -517,6 +563,7 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
            dependencies
         transitive_dyn_objects: like per_module_transitive_objects but for dyn_o files
     """
+    abis = {}
     transitive_interfaces = {}
     transitive_objects = {}
     transitive_dyn_objects = {}
@@ -532,10 +579,12 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
                 str(rule_label),
                 str(dep.label),
             ))
+        abis.update(lib_info.per_module_abi)
         _merge_depset_dicts(transitive_interfaces, lib_info.per_module_transitive_interfaces)
         _merge_depset_dicts(transitive_objects, lib_info.per_module_transitive_objects)
         _merge_depset_dicts(transitive_dyn_objects, lib_info.per_module_transitive_dyn_objects)
     return struct(
+        abis = abis,
         transitive_interfaces = transitive_interfaces,
         transitive_objects = transitive_objects,
         transitive_dyn_objects = transitive_dyn_objects,
@@ -546,6 +595,59 @@ def interfaces_as_list(with_shared, o):
         return [o.hi, o.dyn_hi]
     else:
         return [o.hi]
+
+# Note [On the ABI hash]
+#
+# The ABI hash is contained in the interface file and is the piece of
+# information used by GHC to know if recompilation is necessary. The
+# details on GHC recompilation avoidance can be found at:
+# https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/recompilation-avoidance
+#
+# Whenever one compiles a module, it produces an interface file which
+# contains a lot of information. It is modified often and it is
+# required to compile the files which depend on this module. The
+# interface file contains an ABI hash computed from the minimal
+# information required to know if recompilation is required and is
+# modified less often.
+#
+# We aim to recompile only when the ABI hash changes. So we set the
+# inputs of a module to signal this to bazel. The run_ghc action takes
+# as input not only the transitive closure of the interface files
+# required, but also the ABI files of the direct dependencies of the
+# module. Then, we use the unused_inputs_list to pretend that the
+# interface files are "unused", hence the caching mechanism of Bazel
+# will not rebuild on changes to the interface files that do not
+# affect the ABI hashes, thus saving us some useless compilation.
+#
+# On the other hand, when the ABI hash changes, bazel will rebuild
+# modules because they have been fed as inputs.
+#
+# WARNING: We realize this deviates from the intended use of
+# unused_inputs_list, but there doesn't seem to be another way to
+# signal to bazel which changes on an input are irrelevant and which
+# changes require recompilation.
+#
+# There are 3 cases of imports that build_haskell_modules handles:
+#  - When the module imports modules from the current library,
+#    their interface files are in interface_inputs, which is the
+#    unused_inputs_list passed to run_ghc, and the abi files are
+#    in abi_inputs, hence passed as inputs too.
+#  - When the module imports modules from other narrowed libraries,
+#    their interface files are in interface_inputs as well.
+#    In this case we should pass as inputs to the ghc_wrapper the
+#    abi files of the modules that it imports directly from those
+#    libraries. Those are the narrowed_abis which are also in
+#    abi_inputs.
+#  - When the module imports modules from other non-narrowed libraries
+#    (e.g. base, haskell_cabal_librarys, or haskell_librarys that
+#    don't use the modules attribute), there is no information
+#    available about which of these libraries provide which of the
+#    modules that aren't from the enclosing library or from narrowed
+#    libraries.
+#    In this scenario, we can't produce abi files for these modules,
+#    but on the other hand their interface files are stored in dep_info_i,
+#    which is not passed to unused_inputs_list. The net effect is that
+#    modules are recompiled if any non-narrowed libraries are changed.
 
 def build_haskell_modules(
         ctx,
@@ -575,7 +677,7 @@ def build_haskell_modules(
       odir: The directory in which to output object files
 
     Returns:
-      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces, per_module_transitive_objects, per_module_transitive_dyn_objects, repl_info):
+      struct(his, dyn_his, os, dyn_os, per_module_transitive_interfaces, per_module_transitive_objects, per_module_transitive_dyn_objects, per_module_abi, repl_info):
         his: interface files of all modules in ctx.attr.modules
         dyn_his: dynamic interface files of all modules in ctx.attr.modules
         os: object files of all modules in ctx.attr.modules
@@ -587,6 +689,7 @@ def build_haskell_modules(
             object files and the object files of their transitive module
             dependencies. See Note [Narrowed Dependencies].
         per_module_transitive_dyn_objects: like per_module_transitive_objects but for dyn_o files
+        per_module_abi: dict of module labels to their abi files.
         repl_info: struct(source_files, boot_files, import_dirs, user_compile_flags):
           source_files: Depset of files that contain Haskell modules.
           boot_files: Depset of files that contain Haskell boot modules.
@@ -599,6 +702,8 @@ def build_haskell_modules(
     # files in dep_info are given as inputs to the build action, but the
     # modules files from narrowed_deps_info are only given when haskell_module
     # declares to depend on them.
+
+    # dep_info contains the dependency to non-narrowed external libraries.
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
     narrowed_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.narrowed_deps)
     all_deps_info = gather_dep_info(ctx.attr.name, ctx.attr.deps + ctx.attr.narrowed_deps)
@@ -619,6 +724,9 @@ def build_haskell_modules(
         # called in all cases to validate cross_library_deps, although the output
         # might be ignored when disabling narrowing
         narrowed_interfaces = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_interfaces, dep)
+
+        # See Note [On the ABI hash]
+        narrowed_abis = _collect_narrowed_direct_deps(ctx.label, per_module_maps.abis, dep)
         enable_th = dep[HaskellModuleInfo].attr.enable_th
 
         # Narrowing doesn't work when using the external interpreter so we disable it here
@@ -635,8 +743,17 @@ def build_haskell_modules(
             # other modules that import this one and that might use TH
             narrowed_objects = _collect_narrowed_deps_module_files(ctx.label, per_module_maps.transitive_objects, dep)
 
-        his, os, dyn_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
+        his, abis, os, dyn_os = _collect_module_outputs_of_direct_deps(with_shared, module_outputs, dep)
+
+        # interface_inputs contains the interface files of transitively imported
+        # modules from the enclosing library and from the narrowed dependencies.
         interface_inputs = _collect_module_inputs(module_interfaces, narrowed_interfaces, his, dep)
+
+        # Similarly abi_inputs contains the abi files of directly imported
+        # modules from the enclosing library and the narrowed dependencies.
+        # See Note [On the ABI hash]
+        abi_inputs = depset(direct = abis + narrowed_abis)
+
         object_inputs = depset(transitive = [
             _collect_module_inputs(module_objects, narrowed_objects, os, dep),
             _collect_module_inputs(module_dyn_objects, narrowed_objects, dyn_os, dep),
@@ -657,6 +774,7 @@ def build_haskell_modules(
             odir,
             module_outputs[dep.label],
             interface_inputs,
+            abi_inputs,
             object_inputs,
             narrowed_objects,
             extra_ldflags_file,
@@ -688,7 +806,6 @@ def build_haskell_modules(
         )
         for dep in transitive_module_deps
     }
-    _merge_depset_dicts(per_module_transitive_interfaces0, per_module_maps.transitive_interfaces)
     per_module_transitive_objects0 = {
         dep.label: depset(
             [module_outputs[dep.label].o],
@@ -703,8 +820,14 @@ def build_haskell_modules(
         )
         for dep in transitive_module_deps
     } if with_shared else {}
+    per_module_abi0 = {
+        dep.label: module_outputs[dep.label].abi
+        for dep in transitive_module_deps
+    }
+    _merge_depset_dicts(per_module_transitive_interfaces0, per_module_maps.transitive_interfaces)
     _merge_depset_dicts(per_module_transitive_objects0, per_module_maps.transitive_objects)
     _merge_depset_dicts(per_module_transitive_dyn_objects0, per_module_maps.transitive_dyn_objects)
+    _merge_depset_dicts(per_module_abi0, per_module_maps.abis)
 
     return struct(
         his = hi_set,
@@ -714,10 +837,11 @@ def build_haskell_modules(
         per_module_transitive_interfaces = per_module_transitive_interfaces0,
         per_module_transitive_objects = per_module_transitive_objects0,
         per_module_transitive_dyn_objects = per_module_transitive_dyn_objects0,
+        per_module_abi = per_module_abi0,
         repl_info = struct(
             source_files = depset(source_files),
             boot_files = depset(boot_files),
-            import_dirs = set.from_list(import_dirs),
+            import_dirs = sets.make(import_dirs),
             user_compile_flags = user_compile_flags,
         ),
     )
@@ -733,6 +857,7 @@ def haskell_module_impl(ctx):
         transitive = [dep[HaskellModuleInfo].transitive_module_dep_labels for dep in ctx.attr.deps],
         order = "postorder",
     )
+
     return [
         DefaultInfo(),
         HaskellModuleInfo(
