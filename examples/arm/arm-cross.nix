@@ -29,22 +29,22 @@ let
     ''
       mkdir -p $out/bin
       for tool in \
-        ghc-8.10.7 \
+        ghc-9.2.5 \
         ghc-pkg \
-        ghc-pkg-8.10.7 \
+        ghc-pkg-9.2.5 \
         ghci \
-        ghci-8.10.7 \
+        ghci-9.2.5 \
         hp2ps \
         hpc \
         hsc2hs \
         runghc \
-        runghc-8.10.7 \
+        runghc-9.2.5 \
         runhaskell
       do
           ln -s ${crossGHC}/bin/aarch64-unknown-linux-gnu-$tool $out/bin/$tool
       done;
       mkdir -p $out/lib
-      ln -s ${crossGHC}/lib/aarch64-unknown-linux-gnu-ghc-8.10.7 $out/lib/ghc-8.10.7
+      ln -s ${crossGHC}/lib/aarch64-unknown-linux-gnu-ghc-9.2.5 $out/lib/ghc-9.2.5
       ln -s ${crossGHCLLVMWrapper}/bin/ghc-llvm-wrapper $out/bin/ghc
       touch $out/bin/haddock
     '';

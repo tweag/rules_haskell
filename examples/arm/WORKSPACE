@@ -92,7 +92,7 @@ haskell_register_ghc_nixpkgs(
         "@platforms//cpu:aarch64",
         "@platforms//os:linux",
     ],
-    version = "8.10.7",
+    version = "9.2.5",
 )
 
 haskell_register_ghc_nixpkgs(
@@ -107,7 +107,7 @@ haskell_register_ghc_nixpkgs(
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
     ],
-    version = "8.10.7",
+    version = "9.2.5",
 )
 
 ############################
@@ -137,5 +137,5 @@ stack_snapshot(
     extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
     haddock = False,
     packages = ["zlib"],
-    snapshot = "lts-18.0",
+    snapshot = "lts-20.3",
 )

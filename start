@@ -6,8 +6,8 @@
 set -eu
 
 # If the environment variable `GHC_VERSION` is not set yet,
-# we use the default version (currently "8.10.7").
-GHC_VERSION=${GHC_VERSION:="8.10.7"}
+# we use the default version (currently "9.2.5").
+GHC_VERSION=${GHC_VERSION:="9.2.5"}
 
 readonly MIN_BAZEL_MAJOR=4
 readonly MIN_BAZEL_MINOR=0
@@ -233,8 +233,8 @@ stack_snapshot(
     extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
     packages = ["zlib"],
 
-    # LTS snapshot published for ghc-8.10.7 (default version used by rules_haskell)
-    snapshot = "lts-18.18",
+    # LTS snapshot published for ghc-9.2.5 (default version used by rules_haskell)
+    snapshot = "lts-20.3",
 
     # This uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run \`bazel run @stackage-unpinned//:pin\` and

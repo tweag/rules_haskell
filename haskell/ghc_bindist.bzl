@@ -21,7 +21,7 @@ load(":private/ghc_bindist_generated.bzl", "GHC_BINDIST")
 
 # If you change this, change stackage's version in the start script
 # (see stackage.org).
-_GHC_DEFAULT_VERSION = "8.10.7"
+_GHC_DEFAULT_VERSION = "9.2.5"
 
 GHC_BINDIST_STRIP_PREFIX = \
     {
