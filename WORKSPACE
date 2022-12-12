@@ -107,6 +107,27 @@ stack_snapshot(
     },
 )
 
+new_local_repository(
+    name = "system-libs",
+    # pkg-config --variable=libdir x11
+    path = "/usr/local/lib",
+    build_file_content = """
+cc_library(
+    name = "phonenumbers",
+    srcs = ["libphonenumber.so"],
+    visibility = ["//visibility:public"],
+)
+""",
+)
+
+stack_snapshot(
+    name = "stackage-phone-numbers",
+    extra_deps = {"phone-numbers": ["@system-libs//:phonenumbers"]},
+    local_snapshot = "//:stackage_snapshot.yaml",
+    packages = ["phone-numbers"]
+)
+
+
 # In a separate repo because not all platforms support zlib.
 stack_snapshot(
     name = "stackage-zlib",
