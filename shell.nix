@@ -23,7 +23,7 @@ mkShell {
     # For stack_install.
     stack
     # Needed for ghcide which expects ghc in PATH.
-    haskell.packages.ghc8107.ghc
+    haskell.packages.ghc925.ghc
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
     # Needed to get correct locale for tests with encoding

@@ -17,7 +17,7 @@ rules_haskell_dependencies()
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path = "haskell.compiler.ghc925",
     repository = "@rules_haskell//nixpkgs:default.nix",
     version = "9.2.5",
 )
@@ -106,31 +106,32 @@ cc_library(
     ],
 )
 
-http_archive(
-    name = "alex",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-haskell_cabal_binary(
-    name = "alex",
-    srcs = glob(["**"]),
-    verbose = False,
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "91aa08c1d3312125fbf4284815189299bbb0be34421ab963b1f2ae06eccc5410",
-    strip_prefix = "alex-3.2.6",
-    urls = ["http://hackage.haskell.org/package/alex-3.2.6/alex-3.2.6.tar.gz"],
-)
+# http_archive(
+#     name = "alex",
+#     build_file_content = """
+# load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+# haskell_cabal_binary(
+#     name = "alex",
+#     srcs = glob(["**"]),
+#     verbose = False,
+#     visibility = ["//visibility:public"],
+# )
+#     """,
+#     sha256 = "91aa08c1d3312125fbf4284815189299bbb0be34421ab963b1f2ae06eccc5410",
+#     strip_prefix = "alex-3.2.6",
+#     urls = ["http://hackage.haskell.org/package/alex-3.2.6/alex-3.2.6.tar.gz"],
+# )
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
-    components = {
-        "alex": [],
-    },
+    # components = {
+    #     "alex": [],
+    # },
     local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
     packages = [
+        "alex",
         "array",
         "base",
         "c2hs",
@@ -147,10 +148,13 @@ stack_snapshot(
         "temporary",
         "void",
     ],
+    setup_deps = {
+        "alex": ["@stackage//:Cabal"],
+    },
     stack_snapshot_json = "@rules_haskell//:stackage_snapshot.json" if not is_windows else None,
-    tools = [
-        "@alex",
-    ],
+    # tools = [
+    #     "@alex",
+    # ],
     vendored_packages = {
         "ghc-paths": "@rules_haskell//tools/ghc-paths",
     },

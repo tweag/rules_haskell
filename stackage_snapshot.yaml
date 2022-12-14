@@ -6,5 +6,12 @@
 # https://github.com/haskell/win32/issues/193
 
 resolver: lts-20.3
+
 drop-packages:
   - Win32
+
+packages:
+- git: https://github.com/tweag/cabal
+  commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
+  subdirs:
+  - Cabal

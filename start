@@ -281,8 +281,7 @@ case "${MODE}" in
 		# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
 		nixpkgs_git_repository(
 		    name = "nixpkgs",
-		    revision = "21.11",
-		    sha256 = "c77bb41cf5dd82f4718fa789d49363f512bb6fa6bc25f8d60902fe2d698ed7cc",
+		    revision = "22.11",
 		)
 
 		nixpkgs_cc_configure(
@@ -303,7 +302,7 @@ case "${MODE}" in
 		# https://api.haskell.build/haskell/nixpkgs.html#haskell_register_ghc_nixpkgs
 		haskell_register_ghc_nixpkgs(
 		    repository = "@nixpkgs",
-		    attribute_path = "ghc",
+		    attribute_path = "haskell.compiler.ghc925",
 		    version = "${GHC_VERSION}",
 		)
 

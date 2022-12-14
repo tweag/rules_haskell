@@ -24,21 +24,21 @@ bazel_skylib_workspace()
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-http_archive(
-    name = "alex",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-haskell_cabal_binary(
-    name = "alex",
-    srcs = glob(["**"]),
-    verbose = False,
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "91aa08c1d3312125fbf4284815189299bbb0be34421ab963b1f2ae06eccc5410",
-    strip_prefix = "alex-3.2.6",
-    urls = ["http://hackage.haskell.org/package/alex-3.2.6/alex-3.2.6.tar.gz"],
-)
+# http_archive(
+#     name = "alex",
+#     build_file_content = """
+# load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+# haskell_cabal_binary(
+#     name = "alex",
+#     srcs = glob(["**"]),
+#     verbose = False,
+#     visibility = ["//visibility:public"],
+# )
+#     """,
+#     sha256 = "91aa08c1d3312125fbf4284815189299bbb0be34421ab963b1f2ae06eccc5410",
+#     strip_prefix = "alex-3.2.6",
+#     urls = ["http://hackage.haskell.org/package/alex-3.2.6/alex-3.2.6.tar.gz"],
+# )
 
 load(
     "@rules_haskell//:constants.bzl",
@@ -50,7 +50,7 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 stack_snapshot(
     name = "stackage",
     components = {
-        "alex": [],
+        # "alex": [],
         "proto-lens-protoc": [
             "lib",
             "exe",
@@ -59,6 +59,7 @@ stack_snapshot(
     local_snapshot = "//:stackage_snapshot.yaml",
     packages = [
         # Core libraries
+        "alex",
         "array",
         "base",
         "bytestring",
@@ -93,15 +94,28 @@ stack_snapshot(
         "safe-exceptions",
         "temporary",
     ],
-    setup_deps = {"polysemy": ["cabal-doctest"]},
+    setup_deps = {
+        "polysemy": ["cabal-doctest"],
+        "HUnit": ["@stackage//:Cabal"],
+        "alex": ["@stackage//:Cabal"],
+        "call-stack": ["@stackage//:Cabal"],
+        "happy": ["@stackage//:Cabal"],
+        "hspec": ["@stackage//:Cabal"],
+        "hspec-core": ["@stackage//:Cabal"],
+        "hspec-discover": ["@stackage//:Cabal"],
+        "hspec-expectations": ["@stackage//:Cabal"],
+        "quickcheck-io": ["@stackage//:Cabal"],
+        "transformers-compat": ["@stackage//:Cabal"],
+        "unliftio-core": ["@stackage//:Cabal"],
+    },
     stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
-    tools = [
+    # tools = [
         # This is not required, as `stack_snapshot` would build alex
         # automatically, however it is used as a test for user provided
         # `tools`. We also override alex's components to avoid building it
         # twice.
-        "@alex",
-    ],
+        # "@alex",
+    # ],
     vendored_packages = {
         "ghc-paths": "@rules_haskell//tools/ghc-paths",
     },
@@ -203,7 +217,10 @@ stack_snapshot(
     packages = [
         "ghcide",
     ],
-    stack_snapshot_json = "//:ghcide-snapshot.json" if not is_windows else None,
+    setup_deps ={
+        "transformers-compat": ["@ghcide//:Cabal"],
+    },
+    stack_snapshot_json = "//:ghcide_snapshot.json" if not is_windows else None,
     vendored_packages = {
         "data-default-instances-containers": "@data-default-ic//:lib",
         "data-default-instances-old-locale": "@data-default-ol//:lib",
@@ -281,7 +298,7 @@ haskell_register_ghc_nixpkgs(
     ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8107.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,

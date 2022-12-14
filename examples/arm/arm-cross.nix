@@ -19,7 +19,7 @@ let
     PATH="${pkgs.llvm_9}/bin:''${PATH:-}" ${crossGHC}/bin/aarch64-unknown-linux-gnu-ghc -pgmi ${qemuIservWrapper}/bin/iserv-wrapper -fexternal-interpreter -optl-L${crossNumactl}/lib "$@"
   '';
 
-  crossGHC = crossPkgs.buildPackages.haskell-nix.compiler.ghc8107;
+  crossGHC = crossPkgs.buildPackages.haskell-nix.compiler.ghc925;
   crossGCC = crossPkgs.buildPackages.gcc;
   crossGCCUnwrapped = crossPkgs.buildPackages.gcc-unwrapped;
   crossBinutils = crossPkgs.buildPackages.binutils;

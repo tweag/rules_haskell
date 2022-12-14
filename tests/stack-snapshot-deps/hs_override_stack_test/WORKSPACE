@@ -10,7 +10,7 @@ rules_haskell_dependencies()
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path = "haskell.compiler.ghc925",
     repository = "@rules_haskell//nixpkgs:default.nix",
     version = "9.2.5",
 )

@@ -21,9 +21,11 @@ load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 def check_ghc_version(repository_ctx):
     ghc_name = "ghc-{}".format(repository_ctx.attr.version)
     result = repository_ctx.execute(["ls", "lib"])
+    print("RESULT is {}".format(result.stdout))
     bad_version = True
     if result.return_code == 0:
         for dir in result.stdout.splitlines():
+            print("DIR IS {}".format(dir))
             if dir.endswith(ghc_name):
                 bad_version = False
                 break
@@ -41,6 +43,7 @@ Available versions:
         )
 
 def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
+    print("REPOSITORY CONTEXT is {}".format(repository_ctx.attr))
     paths = resolve_labels(repository_ctx, [
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
     ])

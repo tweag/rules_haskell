@@ -97,7 +97,7 @@ haskell_register_ghc_nixpkgs(
 
 haskell_register_ghc_nixpkgs(
     name = "x86",
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path = "haskell.compiler.ghc925",
     exec_constraints = [
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
