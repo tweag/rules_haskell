@@ -5,7 +5,10 @@ module Plugin (plugin) where
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as Char8
-import GhcPlugins
+import GHC.Driver.Plugins
+import GHC.Core
+import GHC.Core.Opt.Monad
+import GHC.Unit.Module.ModGuts
 import System.Process (readProcess)
 
 

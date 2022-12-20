@@ -24,21 +24,73 @@ bazel_skylib_workspace()
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# http_archive(
-#     name = "alex",
-#     build_file_content = """
-# load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
-# haskell_cabal_binary(
-#     name = "alex",
-#     srcs = glob(["**"]),
-#     verbose = False,
-#     visibility = ["//visibility:public"],
-# )
-#     """,
-#     sha256 = "91aa08c1d3312125fbf4284815189299bbb0be34421ab963b1f2ae06eccc5410",
-#     strip_prefix = "alex-3.2.6",
-#     urls = ["http://hackage.haskell.org/package/alex-3.2.6/alex-3.2.6.tar.gz"],
-# )
+http_archive(
+    name = "Cabal",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+haskell_cabal_library(
+    name = "Cabal",
+    srcs = glob(["Cabal/**"]),
+    verbose = False,
+    version = "3.6.3.0",
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "f69b46cb897edab3aa8d5a4bd7b8690b76cd6f0b320521afd01ddd20601d1356",
+    strip_prefix = "cabal-gg-8220-with-3630",
+    urls = ["https://github.com/tweag/cabal/archive/refs/heads/gg/8220-with-3630.zip"],
+)
+
+http_archive(
+    name = "happy",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library", "haskell_cabal_binary")
+
+haskell_cabal_library(
+    name = "happy-lib",
+    setup_deps = ["@Cabal//:Cabal"],
+    srcs = glob(["**"]),
+    version = "1.20.0",
+    visibility = ["//visibility:public"],
+)
+
+haskell_cabal_binary(
+    name = "happy",
+    setup_deps = ["@Cabal//:Cabal"],
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "3b1d3a8f93a2723b554d9f07b2cd136be1a7b2fcab1855b12b7aab5cbac8868c",
+    strip_prefix = "happy-1.20.0",
+    urls = ["http://hackage.haskell.org/package/happy-1.20.0/happy-1.20.0.tar.gz"],
+)
+
+http_archive(
+    name = "alex",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library", "haskell_cabal_binary")
+
+haskell_cabal_library(
+    name = "alex-lib",
+    setup_deps = ["@Cabal//:Cabal"],
+    srcs = glob(["**"]),
+    version = "3.2.7.1",
+    visibility = ["//visibility:public"],
+)
+
+haskell_cabal_binary(
+    name = "alex",
+    setup_deps = ["@Cabal//:Cabal"],
+    srcs = glob(["**"]),
+    verbose = False,
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "9bd2f1a27e8f1b2ffdb5b2fbd3ed82b6f0e85191459a1b24ffcbef4e68a81bec",
+    strip_prefix = "alex-3.2.7.1",
+    urls = ["http://hackage.haskell.org/package/alex-3.2.7.1/alex-3.2.7.1.tar.gz"],
+)
 
 load(
     "@rules_haskell//:constants.bzl",
@@ -50,16 +102,16 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 stack_snapshot(
     name = "stackage",
     components = {
-        # "alex": [],
+        "alex": [],
         "proto-lens-protoc": [
             "lib",
             "exe",
         ],
+        "happy": [],
     },
     local_snapshot = "//:stackage_snapshot.yaml",
     packages = [
         # Core libraries
-        "alex",
         "array",
         "base",
         "bytestring",
@@ -96,28 +148,32 @@ stack_snapshot(
     ],
     setup_deps = {
         "polysemy": ["cabal-doctest"],
-        "HUnit": ["@stackage//:Cabal"],
-        "alex": ["@stackage//:Cabal"],
-        "call-stack": ["@stackage//:Cabal"],
-        "happy": ["@stackage//:Cabal"],
-        "hspec": ["@stackage//:Cabal"],
-        "hspec-core": ["@stackage//:Cabal"],
-        "hspec-discover": ["@stackage//:Cabal"],
-        "hspec-expectations": ["@stackage//:Cabal"],
-        "quickcheck-io": ["@stackage//:Cabal"],
-        "transformers-compat": ["@stackage//:Cabal"],
-        "unliftio-core": ["@stackage//:Cabal"],
+        "HUnit": ["@Cabal//:Cabal"],
+        "bifunctors": ["@Cabal//:Cabal"],
+        "call-stack": ["@Cabal//:Cabal"],
+        "doctest": ["@Cabal//:Cabal"],
+        "hspec": ["@Cabal//:Cabal"],
+        "hspec-core": ["@Cabal//:Cabal"],
+        "hspec-discover": ["@Cabal//:Cabal"],
+        "hspec-expectations": ["@Cabal//:Cabal"],
+        "quickcheck-io": ["@Cabal//:Cabal"],
+        "transformers-compat": ["@Cabal//:Cabal"],
+        "type-errors": ["@Cabal//:Cabal"],
+        "unliftio-core": ["@Cabal//:Cabal"],
     },
     stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
-    # tools = [
+    tools = [
         # This is not required, as `stack_snapshot` would build alex
         # automatically, however it is used as a test for user provided
         # `tools`. We also override alex's components to avoid building it
         # twice.
-        # "@alex",
-    # ],
+        "@alex",
+        "@happy",
+    ],
     vendored_packages = {
         "ghc-paths": "@rules_haskell//tools/ghc-paths",
+        "alex": "@alex//:alex-lib",
+        "happy": "@happy//:happy-lib",
     },
 )
 
@@ -218,7 +274,15 @@ stack_snapshot(
         "ghcide",
     ],
     setup_deps ={
+        "bifunctors": ["@ghcide//:Cabal"],
+        "call-stack": ["@ghcide//:Cabal"],
+        "js-dgtable": ["@ghcide//:Cabal"],
+        "js-flot": ["@ghcide//:Cabal"],
+        "js-jquery": ["@ghcide//:Cabal"],
+        "mono-traversable": ["@ghcide//:Cabal"],
+        "regex-base": ["@ghcide//:Cabal"],
         "transformers-compat": ["@ghcide//:Cabal"],
+        "unliftio-core": ["@ghcide//:Cabal"],
     },
     stack_snapshot_json = "//:ghcide_snapshot.json" if not is_windows else None,
     vendored_packages = {
