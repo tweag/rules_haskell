@@ -7,7 +7,12 @@ set -o errexit -o nounset -o pipefail
 TAG=${GITHUB_REF_NAME}
 REPO_NAME=${GITHUB_REPOSITORY#*/}
 PREFIX="${REPO_NAME}-${TAG:1}"
-SHA=$(git archive --format=tar --prefix=${PREFIX}/ ${TAG} | gzip | shasum -a 256 | awk '{print $1}')
+URL="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
+
+if ! SHA=$( curl -sfL "${URL}" | shasum -a 256 | awk '{print $1}'); then
+    echo "error: could not determine hash for ${URL}" >&2
+    exit 1
+fi
 
 cat << EOF
 WORKSPACE snippet:
@@ -17,7 +22,7 @@ http_archive(
     name = "${REPO_NAME}",
     sha256 = "${SHA}",
     strip_prefix = "${PREFIX}",
-    url = "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz",
+    url = "${URL}",
 )
 \`\`\`
 EOF
