@@ -59,7 +59,7 @@ The Git archive checksum can be calculated with:
 
 ```bash
 REV=0.x
-git archive --format=tar.gz --prefix=rules_haskell-${REV}/ v${REV} | sha256sum
+git archive --format=tar --prefix=rules_haskell-${REV}/ v${REV} | gzip | sha256sum
 ```
 
 **Note** The trailing slash on the prefix is important; don't forget it.

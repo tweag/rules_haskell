@@ -7,7 +7,7 @@ set -o errexit -o nounset -o pipefail
 TAG=${GITHUB_REF_NAME}
 REPO_NAME=${GITHUB_REPOSITORY#*/}
 PREFIX="${REPO_NAME}-${TAG:1}"
-SHA=$(git archive --format=tar.gz --prefix=${PREFIX}/ ${TAG} | shasum -a 256 | awk '{print $1}')
+SHA=$(git archive --format=tar --prefix=${PREFIX}/ ${TAG} | gzip | shasum -a 256 | awk '{print $1}')
 
 cat << EOF
 WORKSPACE snippet:
