@@ -125,6 +125,8 @@ jobs:
         run: |-
           sudo swapoff -a
           sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -yy libtinfo5
           sudo apt clean
           docker rmi $(docker images -q) -f
       - uses: actions/checkout@v3
