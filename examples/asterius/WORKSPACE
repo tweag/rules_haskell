@@ -1,0 +1,71 @@
+workspace(name = "asterius_example")
+
+# Rules_haskell is imported
+local_repository(
+    name = "rules_haskell",
+    path = "../..",
+)
+
+# We setup the dependencies related to rules_haskell.
+load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
+
+rules_haskell_dependencies()
+
+load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
+
+rules_haskell_toolchains(version = "8.10.7")
+
+# We setup the Asterius related dependencies.
+load(
+    "@rules_haskell//haskell/asterius:repositories.bzl",
+    "asterius_dependencies_bindist",
+    "rules_haskell_asterius_toolchains",
+    "asterius_dependencies_nix",
+)
+
+asterius_dependencies_bindist()
+
+rules_haskell_asterius_toolchains()
+
+# This example relies on Nixpkgs to get a lot of tools,
+# including GHC.
+load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+
+asterius_dependencies_nix(
+	nix_repository = "@nixpkgs",
+	nixpkgs_package_rule = nixpkgs_package,
+	nixpkgs_nodejs = "nodejs-16_x",
+)
+
+haskell_register_ghc_nixpkgs(
+    attribute_path = "haskell.compiler.ghc8107",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+    version = "8.10.7",
+)
+
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_cc_configure",
+    "nixpkgs_python_configure",
+)
+
+nixpkgs_cc_configure(
+    name = "nixpkgs_config_cc",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+nixpkgs_python_configure(
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+# Our small example uses libraries that we get via Stackage.
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+
+stack_snapshot(
+    name = "stackage",
+    packages = [
+        "base",
+        "transformers",
+    ],
+    snapshot = "lts-18.28",
+)

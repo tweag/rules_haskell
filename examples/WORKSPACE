@@ -110,8 +110,9 @@ stack_snapshot(
         "optparse-applicative",
         "text",
         "text-show",
+        "transformers",
     ],
-    snapshot = "lts-18.0",
+    snapshot = "lts-18.28",
     # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
     # uncomment the following line.
@@ -119,3 +120,14 @@ stack_snapshot(
     # stack_snapshot_json = "//:stackage_snapshot.json",
     vendored_packages = {"split": "@split//:split"},
 )
+
+# We setup the Asterius related dependencies.
+load(
+    "@rules_haskell//haskell/asterius:repositories.bzl",
+    "asterius_dependencies_bindist",
+    "rules_haskell_asterius_toolchains",
+)
+
+asterius_dependencies_bindist()
+
+rules_haskell_asterius_toolchains()

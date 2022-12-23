@@ -1,0 +1,43 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+)
+load(
+    "@rules_haskell//haskell/asterius:defs.bzl",
+    "ahc_dist",
+    "asterius_binary",
+    "asterius_webpack",
+)
+
+# We first define an Haskell binary.
+haskell_binary(
+    name = "main-bin",
+    srcs = [
+        "Main.hs",
+        "src/Lib.hs",
+    ],
+    main_file = "Main.hs",
+    src_strip_prefix = "src/",
+    deps = [
+        "@stackage//:base",
+        "@stackage//:transformers",
+    ],
+)
+
+# Then an Asterius rule depending of this Haskell binary.
+ahc_dist(
+    name = "asterius",
+    dep = ":main-bin",
+)
+
+# It is this Asterius rule which is then used to construct
+# the Asterius binary and Asterius bundle.
+asterius_binary(
+    name = "asterius_binary",
+    ahc_dist_dep = ":asterius",
+)
+
+asterius_webpack(
+    name = "asterius_bundle",
+    ahc_dist_dep = ":asterius",
+)
