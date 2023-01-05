@@ -20,6 +20,7 @@ haskell_cabal_library(
         "lib.cabal",
     ],
     generate_paths_module = False,
+    setup_deps = ["@Cabal//:Cabal"]
     tags = ["skip_profiling"],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],

@@ -100,14 +100,70 @@ load(
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
+    name = "forc2hs",
+    components = {
+        "alex": [],
+        "happy": [],
+    },
+    local_snapshot = "//:stackage_snapshot.yaml",
+    packages = [
+        "dlist",
+        "language-c",
+    ],
+    tools = [
+        "@alex",
+        "@happy",
+    ],
+)
+
+http_archive(
+    name = "c2hs",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library", "haskell_cabal_binary")
+
+haskell_cabal_library(
+    name = "c2hs-lib",
+    deps = [
+        "@forc2hs//:dlist",
+        "@forc2hs//:language-c",
+    ],
+    setup_deps = [
+        "@Cabal//:Cabal",
+    ],
+    srcs = glob(["**"]),
+    version = "0.28.8",
+    visibility = ["//visibility:public"],
+)
+
+haskell_cabal_binary(
+    name = "c2hs",
+    deps = [
+        "@forc2hs//:dlist",
+        "@forc2hs//:language-c",
+    ],
+    setup_deps = [
+        "@Cabal//:Cabal",
+    ],
+    srcs = glob(["**"]),
+    verbose = False,
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "390632cffc561c32483af474aac50168a68f0fa382096552e37749923617884c",
+    strip_prefix = "c2hs-0.28.8",
+    urls = ["http://hackage.haskell.org/package/c2hs-0.28.8/c2hs-0.28.8.tar.gz"],
+)
+
+stack_snapshot(
     name = "stackage",
     components = {
         "alex": [],
+        "c2hs": [],
+        "happy": [],
         "proto-lens-protoc": [
             "lib",
             "exe",
         ],
-        "happy": [],
     },
     local_snapshot = "//:stackage_snapshot.yaml",
     packages = [
@@ -125,7 +181,6 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
-        "c2hs",
         "cabal-doctest",
         "doctest",
         "polysemy",
@@ -138,10 +193,10 @@ stack_snapshot(
         "hspec-core",
         "lens-family-core",
         "data-default-class",
-        "profunctors-5.5.2",
-        "proto-lens-0.7.0.0",
-        "proto-lens-protoc-0.7.0.0",
-        "proto-lens-runtime-0.7.0.0",
+        "profunctors",
+        "proto-lens",
+        "proto-lens-protoc",
+        "proto-lens-runtime",
         "lens-family",
         "safe-exceptions",
         "temporary",
@@ -156,6 +211,8 @@ stack_snapshot(
         "hspec-core": ["@Cabal//:Cabal"],
         "hspec-discover": ["@Cabal//:Cabal"],
         "hspec-expectations": ["@Cabal//:Cabal"],
+        "proto-lens-protoc": ["@Cabal//:Cabal"],
+        "proto-lens-runtime": ["@Cabal//:Cabal"],
         "quickcheck-io": ["@Cabal//:Cabal"],
         "transformers-compat": ["@Cabal//:Cabal"],
         "type-errors": ["@Cabal//:Cabal"],
@@ -168,11 +225,13 @@ stack_snapshot(
         # `tools`. We also override alex's components to avoid building it
         # twice.
         "@alex",
+        "@c2hs",
         "@happy",
     ],
     vendored_packages = {
         "ghc-paths": "@rules_haskell//tools/ghc-paths",
         "alex": "@alex//:alex-lib",
+        "c2hs": "@c2hs//:c2hs-lib",
         "happy": "@happy//:happy-lib",
     },
 )
@@ -263,10 +322,19 @@ haskell_library(
 
 stack_snapshot(
     name = "ghcide",
-    components = {"ghcide": [
-        "lib",
-        "exe",
-    ]},
+    components = {
+        "ghcide": [
+                "lib",
+                "exe",
+            ],
+        "attoparsec": [
+                "lib",
+                "lib:attoparsec-internal",
+            ],
+    },
+    components_dependencies = {
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
     extra_deps = {"zlib": ["//tests:zlib"]},
     haddock = False,
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
@@ -276,13 +344,21 @@ stack_snapshot(
     setup_deps ={
         "bifunctors": ["@ghcide//:Cabal"],
         "call-stack": ["@ghcide//:Cabal"],
+        "hie-bios": ["@ghcide//:Cabal"],
+        "hls-graph": ["@ghcide//:Cabal"],
+        "invariant": ["@ghcide//:Cabal"],
         "js-dgtable": ["@ghcide//:Cabal"],
         "js-flot": ["@ghcide//:Cabal"],
         "js-jquery": ["@ghcide//:Cabal"],
+        "libyaml": ["@ghcide//:Cabal"],
         "mono-traversable": ["@ghcide//:Cabal"],
         "regex-base": ["@ghcide//:Cabal"],
+        "regex-tdfa": ["@ghcide//:Cabal"],
         "transformers-compat": ["@ghcide//:Cabal"],
+        "typed-process": ["@ghcide//:Cabal"],
+        "unliftio": ["@ghcide//:Cabal"],
         "unliftio-core": ["@ghcide//:Cabal"],
+        "yaml": ["@ghcide//:Cabal"],
     },
     stack_snapshot_json = "//:ghcide_snapshot.json" if not is_windows else None,
     vendored_packages = {

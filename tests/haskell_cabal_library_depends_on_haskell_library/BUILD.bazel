@@ -27,6 +27,7 @@ haskell_library(
     name = "other_lib",
     srcs = ["OtherLib.hs"],
     deps = [":base"],
+    version = "0",
 )
 
 filegroup(

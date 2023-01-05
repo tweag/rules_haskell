@@ -37,6 +37,7 @@ haskell_library(
         ":filepath",
         ":transformers",
     ],
+    version = "0",
 )
 
 haskell_test(
