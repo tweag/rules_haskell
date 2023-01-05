@@ -261,9 +261,9 @@ stack_snapshot(
         "hspec",
         "package1",
     ],
-    setup_deps = [
+    setup_deps = {
         "call-stack": ["@Cabal//:Cabal"],
-    ],
+    },
     stack_snapshot_json = "//:stackage-pinning-test_snapshot.json" if not is_windows else None,
 )
 
