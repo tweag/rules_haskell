@@ -11,10 +11,10 @@ import System.Exit
 
 import GHC
 import GHC.Paths ( libdir )
-import DynFlags ( defaultFatalMessager, defaultFlushOut, Option(..) )
-import DriverPhases
-import DriverPipeline ( compileFile, oneShot )
-import Util
+import GHC.Driver.Session ( defaultFatalMessager, defaultFlushOut, Option(..) )
+import GHC.Driver.Phases
+import GHC.Driver.Pipeline ( compileFile, oneShot )
+import GHC.Utils.Misc
 
 compile :: [String] -> IO ()
 compile flags =
