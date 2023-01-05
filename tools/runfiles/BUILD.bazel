@@ -30,6 +30,7 @@ haskell_library(
         "Bazel.Arg0",
     ],
     src_strip_prefix = "src",
+    version = "0",
     visibility = ["//visibility:public"],
     deps = [
         ":base",
@@ -37,7 +38,6 @@ haskell_library(
         ":filepath",
         ":transformers",
     ],
-    version = "0",
 )
 
 haskell_test(

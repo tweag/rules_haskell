@@ -29,9 +29,9 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
                 "vector",
             ],
             setup_deps = {
-                "bifunctors" : ["@Cabal//:Cabal"],
-                "proto-lens-runtime" : ["@Cabal//:Cabal"],
-                "transformers-compat" : ["@Cabal//:Cabal"],
+                "bifunctors": ["@Cabal//:Cabal"],
+                "proto-lens-runtime": ["@Cabal//:Cabal"],
+                "transformers-compat": ["@Cabal//:Cabal"],
             },
             **stack_kwargs
         )

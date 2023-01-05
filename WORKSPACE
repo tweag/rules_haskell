@@ -327,13 +327,13 @@ stack_snapshot(
     name = "ghcide",
     components = {
         "ghcide": [
-                "lib",
-                "exe",
-            ],
+            "lib",
+            "exe",
+        ],
         "attoparsec": [
-                "lib",
-                "lib:attoparsec-internal",
-            ],
+            "lib",
+            "lib:attoparsec-internal",
+        ],
     },
     components_dependencies = {
         "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
@@ -344,7 +344,7 @@ stack_snapshot(
     packages = [
         "ghcide",
     ],
-    setup_deps ={
+    setup_deps = {
         "bifunctors": ["@ghcide//:Cabal"],
         "call-stack": ["@ghcide//:Cabal"],
         "hie-bios": ["@ghcide//:Cabal"],
