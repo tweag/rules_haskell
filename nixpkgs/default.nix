@@ -1,8 +1,8 @@
 { ... }@args:
 let
-  # Release NixOS 22.11
-  sha256 = "sha256:11w3wn2yjhaa5pv20gbfbirvjq6i3m7pqrq2msf0g7cv44vijwgw";
-  rev = "22.11";
+  # 2023-01-03
+  sha256 = "1213j2gvsmzmhpyi2jyn729s9d0gbn56k3d873iknd5ilb2rvpcr";
+  rev = "73247c5ab2bc2037d7dd0d310f1fb43ed191edad";
 in
 import (fetchTarball {
   inherit sha256;
