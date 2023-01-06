@@ -347,6 +347,7 @@ stack_snapshot(
     setup_deps = {
         "bifunctors": ["@ghcide//:Cabal"],
         "call-stack": ["@ghcide//:Cabal"],
+        "ghcide": ["@ghcide//:Cabal"],
         "hie-bios": ["@ghcide//:Cabal"],
         "hls-graph": ["@ghcide//:Cabal"],
         "hspec-discover": ["@ghcide//:Cabal"],
