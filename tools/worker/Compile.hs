@@ -20,11 +20,11 @@ compile :: [String] -> IO ()
 compile flags =
     defaultErrorHandler defaultFatalMessager defaultFlushOut $ do
       runGhc (Just libdir) $ do
-
+        logger <- getLogger
         -- Parse flags
         dflags <- getSessionDynFlags
         (dflags2, fileish_args, _warns) <-
-          parseDynamicFlags dflags (map noLoc flags)
+          parseDynamicFlags logger dflags (map noLoc flags)
 
         -- Normilize paths
         let
