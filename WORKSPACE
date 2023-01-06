@@ -349,6 +349,7 @@ stack_snapshot(
         "call-stack": ["@ghcide//:Cabal"],
         "hie-bios": ["@ghcide//:Cabal"],
         "hls-graph": ["@ghcide//:Cabal"],
+        "hspec-discover": ["@ghcide//:Cabal"],
         "implicit-hie": ["@ghcide//:Cabal"],
         "implicit-hie-cradle": ["@ghcide//:Cabal"],
         "invariant": ["@ghcide//:Cabal"],
