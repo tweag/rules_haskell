@@ -116,6 +116,5 @@ stack_snapshot(
     # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
     # uncomment the following line.
     # And uncomment the following line.
-    stack_snapshot_json = "@rules_haskell//:stackage_snapshot.json",
     vendored_packages = {"split": "@split//:split"},
 )
