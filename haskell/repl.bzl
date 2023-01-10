@@ -484,6 +484,7 @@ def _create_repl(hs, cc, posix, ctx, repl_info, output):
         substitutions = {
             "%{ENV}": render_env(env),
             "%{TOOL}": hs.tools.ghci.path,
+            "%{OUTPUT}": paths.dirname(output.path),
             "%{ARGS}": "(" + " ".join(
                 args + [
                     shell.quote(a)
