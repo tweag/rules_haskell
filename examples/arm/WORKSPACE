@@ -30,7 +30,7 @@ load(
 
 nixpkgs_git_repository(
     name = "nixpkgs",
-    revision = "d17a56d90ecbd1b8fc908d49598fb854ef188461",
+    revision = "22.11",
 )
 
 nixpkgs_python_configure(
