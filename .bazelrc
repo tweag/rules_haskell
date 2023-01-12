@@ -107,7 +107,7 @@ build:macos-nixpkgs --incompatible_enable_cc_toolchain_resolution
 # Blocked by https://github.com/bazelbuild/buildtools/issues/757
 #build:ci --incompatible_load_proto_rules_from_bzl
 
-# This flag will become the default in bazel 5
+# This flag will become the default in bazel 6
 # https://github.com/tweag/rules_haskell/issues/1657
 build: --incompatible_override_toolchain_transition
 
