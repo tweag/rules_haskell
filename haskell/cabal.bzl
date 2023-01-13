@@ -95,7 +95,6 @@ def _chop_version(name):
 def _find_cabal(hs, srcs):
     """Check that a .cabal file exists. Choose the root one."""
     cabal = None
-    print("HS is {} and SRCS {}\n".format(hs, srcs))
     for f in srcs:
         if f.extension == "cabal":
             if not cabal or f.dirname < cabal.dirname:
