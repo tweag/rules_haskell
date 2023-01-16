@@ -44,6 +44,7 @@ HaskellReplLoadInfo = provider(
     fields = {
         "source_files": "Depset of files that contain Haskell modules.",
         "boot_files": "Depset of Haskell boot files.",
+        "module_names": "Depset of Haskell module names to load.",
         "import_dirs": "Depset of Haskell import directories.",
         "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of transitive C dependencies.",
@@ -121,6 +122,7 @@ def _data_runfiles(ctx, rule, attr):
 def _merge_HaskellReplLoadInfo(load_infos):
     source_files = depset()
     boot_files = depset()
+    module_names = depset()
     import_dirs = depset()
     cc_libraries_infos = []
     cc_infos = []
@@ -132,6 +134,7 @@ def _merge_HaskellReplLoadInfo(load_infos):
     for load_info in load_infos:
         source_files = depset(transitive = [source_files, load_info.source_files])
         boot_files = depset(transitive = [boot_files, load_info.boot_files])
+        module_names = depset(transitive = [module_names, load_info.module_names])
         import_dirs = depset(transitive = [import_dirs, load_info.import_dirs])
         cc_libraries_infos.append(load_info.cc_libraries_info)
         cc_infos.append(load_info.cc_info)
@@ -143,6 +146,7 @@ def _merge_HaskellReplLoadInfo(load_infos):
     return HaskellReplLoadInfo(
         source_files = source_files,
         boot_files = boot_files,
+        module_names = module_names,
         import_dirs = import_dirs,
         cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = cc_libraries_infos),
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
@@ -204,6 +208,7 @@ def _create_HaskellReplCollectInfo(target, ctx):
         load_infos[target.label] = HaskellReplLoadInfo(
             source_files = hs_info.source_files,
             boot_files = hs_info.boot_files,
+            module_names = hs_info.module_names,
             import_dirs = set.to_depset(hs_info.import_dirs),
             cc_libraries_info = deps_HaskellCcLibrariesInfo(ccInfoDeps),
             cc_info = cc_common.merge_cc_infos(cc_infos = [
@@ -426,6 +431,7 @@ def _create_repl(hs, cc, posix, ctx, repl_info, output):
         output = ghci_repl_script,
         substitutions = {
             "{ADD_SOURCES}": " ".join(add_sources),
+            "{MODULES}": " ".join(repl_info.load_info.module_names.to_list()),
             "{COMMANDS}": "\n".join(ctx.attr.repl_ghci_commands),
         },
     )
