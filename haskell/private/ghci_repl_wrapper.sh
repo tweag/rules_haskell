@@ -41,18 +41,11 @@ fi
 cd "$BUILD_WORKSPACE_DIRECTORY" || { echo "Cannot cd into $BUILD_WORKSPACE_DIRECTORY"; exit 1; }
 
 # This is a workaround for https://github.com/bazelbuild/bazel/issues/5506
-# and also for the fact that REPL script relies on so-called “convenience
-# links” and the names of those links are controlled by the --symlink_prefix
-# option, which can be set by the user to something unpredictable.
-#
-# It seems that we can't locate the files of interest/build outputs in
-# general. However, due to “internal issues” in Bazel mentioned e.g.
-# https://github.com/bazelbuild/bazel/issues/3796, the directory bazel-out
-# is always created under the workspace directory. We exploit this to get
-# location of exec root reliably and then prefix locations of various
-# components, such as shared libraries with that exec root.
-
-RULES_HASKELL_EXEC_ROOT=$(dirname "$(readlink "${BUILD_WORKSPACE_DIRECTORY}"/bazel-out)")
+# We recover the execution root by removing the relative path to this script from the absolute one.
+# shellcheck disable=SC1083
+SCRIPT_DIR_REL=%{OUTPUT}
+SCRIPT_DIR_ABS="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 || exit ; pwd -P )"
+RULES_HASKELL_EXEC_ROOT=${SCRIPT_DIR_ABS%"$SCRIPT_DIR_REL"}
 TOOL_LOCATION="$RULES_HASKELL_EXEC_ROOT/%{TOOL}"
 # shellcheck disable=SC1083
 ARGS=%{ARGS}

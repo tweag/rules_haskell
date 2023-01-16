@@ -18,7 +18,6 @@ mkShell {
     which
     perl
     python3
-    bazel_4
     jdk11
     # For stack_install.
     stack
@@ -37,6 +36,8 @@ mkShell {
     file
   ] ++ lib.optionals docTools [graphviz python39Packages.sphinx zip unzip];
 
+  packages = [ bazel_5 ];
+  
   shellHook = ''
     # Add nix config flags to .bazelrc.local.
     #
@@ -50,8 +51,5 @@ mkShell {
       echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
       echo "run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
     fi
-
-    # source bazel bash completion
-    source ${bazel_4}/share/bash-completion/completions/bazel.bash
   '';
 }
