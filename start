@@ -9,11 +9,11 @@ set -eu
 # we use the default version (currently "8.10.7").
 GHC_VERSION=${GHC_VERSION:="8.10.7"}
 
-readonly MIN_BAZEL_MAJOR=4
+readonly MIN_BAZEL_MAJOR=5
 readonly MIN_BAZEL_MINOR=0
 
-readonly MAX_BAZEL_MAJOR=5
-readonly MAX_BAZEL_MINOR=2
+readonly MAX_BAZEL_MAJOR=6
+readonly MAX_BAZEL_MINOR=0
 
 stderr () {
   >&2 echo "$*"
