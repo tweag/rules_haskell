@@ -23,7 +23,7 @@ The full reference documentation for rules is at https://haskell.build.
 
 ## Setup
 
-You'll need [Bazel >= 4.0][bazel-getting-started] installed.
+You'll need [Bazel >= 5.0][bazel-getting-started] installed.
 
 If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
 
