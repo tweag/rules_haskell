@@ -17,6 +17,7 @@ load(
     ":repl.bzl",
     _haskell_repl = "haskell_repl",
     _haskell_repl_aspect = "haskell_repl_aspect",
+    _hie_bios = "hie_bios",
 )
 load(":private/cc_libraries.bzl", "haskell_cc_libraries_aspect")
 
@@ -376,6 +377,13 @@ def haskell_binary(
         repl_ghci_args = [],
         **repl_kwargs
     )
+    hie_bios(
+        name = "%s@bios" % name,
+        deps = [name],
+        experimental_from_source = [":%s" % name],
+        repl_ghci_args = [],
+        **repl_kwargs
+    )
 
 def make_repl_kwargs(args_list, kwargs):
     """Create extra attributes for the auto-generated haskell_repl target.
@@ -537,6 +545,13 @@ def haskell_test(
         testonly = kwargs.get("testonly", True),
         **repl_kwargs
     )
+    hie_bios(
+        name = "%s@bios" % name,
+        deps = [name],
+        experimental_from_source = [":%s" % name],
+        repl_ghci_args = [],
+        **repl_kwargs
+    )
 
 def haskell_library(
         name,
@@ -669,6 +684,13 @@ def haskell_library(
         repl_ghci_args = [],
         **repl_kwargs
     )
+    hie_bios(
+        name = "%s@biiios" % name,
+        deps = [name],
+        experimental_from_source = [":%s" % name],
+        repl_ghci_args = [],
+        **repl_kwargs
+    )
 
 haskell_import = rule(
     _haskell_import_impl,
@@ -753,6 +775,8 @@ def haskell_register_toolchains(**kwargs):
     _haskell_register_toolchains(**kwargs)
 
 haskell_repl = _haskell_repl
+
+hie_bios = _hie_bios
 
 haskell_repl_aspect = _haskell_repl_aspect
 

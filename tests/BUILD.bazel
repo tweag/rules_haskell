@@ -12,6 +12,7 @@ load(
     "haskell_doc",
     "haskell_library",
     "haskell_repl",
+    "hie_bios",
 )
 load(
     "//haskell:doctest.bzl",
@@ -419,6 +420,15 @@ haskell_doc(
 
 haskell_repl(
     name = "hie-bios",
+    collect_data = False,
+    deps = [
+        "//tests:run-tests",
+        "//tests/binary-with-lib",
+    ],
+)
+
+hie_bios(
+    name = "hie-bios-test",
     collect_data = False,
     deps = [
         "//tests:run-tests",
