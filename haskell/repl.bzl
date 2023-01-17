@@ -743,3 +743,133 @@ information.
   ```
 """,
 )
+
+def _create_hie_bios_script(hs, cc, posix, ctx, repl_info):
+    """Build a hie-bios argument file.
+
+    Args:
+      hs: Haskell context.
+      cc: CcToolchainInfo.
+      posix: POSIX toolchain.
+      ctx: Rule context.
+      repl_info: HaskellReplInfo provider.
+
+    Returns:
+      List of providers:
+    """
+    path_prefix = "$RULES_HASKELL_EXEC_ROOT"
+
+    args, _ = _compiler_flags_and_inputs(hs, cc, repl_info, path_prefix = path_prefix, static = True)
+    cc_path = paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path)
+    ld_path = paths.join(path_prefix, cc.ld_executable)
+    args.extend(ghc_cc_program_args(hs, cc_path, ld_path))
+    args.extend(hs.toolchain.ghcopts)
+    args.extend(repl_info.load_info.compiler_flags)
+    for import_dir in repl_info.load_info.import_dirs.to_list():
+        args.append("-i" + (paths.join(path_prefix, import_dir) or "."))
+    args.extend([paths.join(path_prefix, f.path) for f in repl_info.load_info.source_files.to_list()])
+    args.extend([paths.join(path_prefix, f.path) for f in repl_info.load_info.boot_files.to_list()])
+
+    hie_bios_script = hs.actions.declare_file(
+        target_unique_name(hs, "hie-bios"),
+    )
+    hs.actions.expand_template(
+        template = ctx.file._hie_bios_wrapper,
+        output = hie_bios_script,
+        substitutions = {
+            "%{ARGS}": "\n".join(args),
+            "%{CURRENT_TARGET_DIR}": paths.dirname(hie_bios_script.path),
+        },
+    )
+    return [DefaultInfo(
+        executable = hie_bios_script,
+    )]
+
+def _hie_bios_impl(ctx):
+    collect_info = _merge_HaskellReplCollectInfo([
+        dep[HaskellReplCollectInfo]
+        for dep in ctx.attr.deps
+        if HaskellReplCollectInfo in dep
+    ])
+    from_source = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_from_source]
+    from_binary = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_from_binary]
+    repl_info = _create_HaskellReplInfo(from_source, from_binary, collect_info)
+    hs = haskell_context(ctx)
+    cc = find_cc_toolchain(ctx)
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+    return _create_hie_bios_script(hs, cc, posix, ctx, repl_info)
+
+hie_bios = rule(
+    implementation = _hie_bios_impl,
+    attrs = {
+        "_ghci_repl_wrapper": attr.label(
+            allow_single_file = True,
+            default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
+        ),
+        "_hie_bios_wrapper": attr.label(
+            allow_single_file = True,
+            default = Label("@rules_haskell//haskell:hie_bios_wrapper.sh"),
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label("@rules_cc//cc:current_cc_toolchain"),
+        ),
+        "_bash_runfiles": attr.label(
+            default = Label("@bazel_tools//tools/bash/runfiles"),
+        ),
+        "deps": attr.label_list(
+            aspects = [
+                haskell_cc_libraries_aspect,
+                haskell_repl_aspect,
+            ],
+            doc = "List of Haskell targets to load into the REPL",
+        ),
+        "data": attr.label_list(
+            allow_files = True,
+            doc = "See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data). Only available when `collect_data = True`.",
+        ),
+        "experimental_from_source": attr.string_list(
+            doc = """White-list of targets to load by source.
+
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
+            """,
+            default = ["//..."],
+        ),
+        "experimental_from_binary": attr.string_list(
+            doc = """Black-list of targets to not load by source but as packages.
+
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
+            """,
+            default = [],
+        ),
+        "repl_ghci_args": attr.string_list(
+            doc = "Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` (previously `compiler_flags`) and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
+            default = [],
+        ),
+        "repl_ghci_commands": attr.string_list(
+            doc = "Arbitrary extra commands to execute in GHCi.",
+            default = [],
+        ),
+        "collect_data": attr.bool(
+            doc = "Whether to collect the data runfiles from the dependencies in srcs, data and deps attributes.",
+            default = True,
+        ),
+    },
+    executable = True,
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+        "@rules_cc//cc:toolchain_type",
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
+    fragments = ["cpp"],
+    doc = "",
+)
