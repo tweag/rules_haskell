@@ -378,11 +378,17 @@ def haskell_binary(
         **repl_kwargs
     )
     hie_bios(
-        name = "%s@bios" % name,
+        name = "%s@bios_script" % name,
         deps = [name],
         experimental_from_source = [":%s" % name],
         repl_ghci_args = [],
         **repl_kwargs
+    )
+    native.sh_binary(
+        name = "%s@bios" % name,
+        srcs = [
+            "%s@bios_script" % name,
+        ],
     )
 
 def make_repl_kwargs(args_list, kwargs):

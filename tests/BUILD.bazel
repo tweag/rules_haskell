@@ -428,11 +428,18 @@ haskell_repl(
 )
 
 hie_bios(
-    name = "hie-bios-test",
+    name = "hie-bios-test-script",
     collect_data = False,
     deps = [
         "//tests:run-tests",
         "//tests/binary-with-lib",
+    ],
+)
+
+sh_binary(
+    name = "hie-bios-test",
+    srcs = [
+        ":hie-bios-test-script",
     ],
 )
 
