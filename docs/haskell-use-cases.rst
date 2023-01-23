@@ -201,18 +201,17 @@ details.
 We also disable building runtime dependencies using ``collect_data = False`` as
 they are not required for an IDE session.
 
-You can test if this provides the expected compiler flags by running the
-following Bazel command and taking a look at the generated file::
+You can test if this provides the expected compiler flags by running
+the following Bazel command:
 
-  bazel build //:hie-bios --output_groups=hie_bios
+  bazel run //:hie-bios@bios
 
 Next, we need to hook this up to `hie-bios`_ using the `bios cradle`_. To that
 end, define a small shell script named ``.hie-bios`` that looks as follows::
 
   #!/usr/bin/env bash
   set -euo pipefail
-  bazel build //:hie-bios --output_groups=hie_bios
-  cat bazel-bin/hie-bios@hie-bios >"$HIE_BIOS_OUTPUT"
+  bazel run //:hie-bios@bios
   # Make warnings non-fatal
   echo -Wwarn >>"$HIE_BIOS_OUTPUT"
 
