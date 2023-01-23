@@ -107,6 +107,7 @@ stack_snapshot(
     },
     local_snapshot = "//:stackage_snapshot.yaml",
     packages = [
+        "conduit-extra",
         "dlist",
         "language-c",
     ],
