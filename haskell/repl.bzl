@@ -297,7 +297,7 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
 def _concat(lists):
     return [item for l in lists for item in l]
 
-def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = ""):
+def _compiler_flags_and_inputs(hs, cc, repl_info, get_dirname = lambda x: x.dirname, static = False):
     """Collect compiler flags and inputs.
 
     Compiler flags:
@@ -318,7 +318,7 @@ def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = 
       repl_info: HaskellReplInfo.
       static: bool, Whether we're collecting libraries for static RTS.
         Contrary to GHCi, ghcide is built as a static executable using the static RTS.
-      path_prefix: string, optional, Prefix for package db paths.
+      get_dirname: File -> string, customize for package db paths.
 
     Returns:
       (args, inputs):
@@ -331,7 +331,7 @@ def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = 
     for package_id in repl_info.dep_info.package_ids:
         args.extend(["-package-id", package_id])
     for package_cache in repl_info.dep_info.package_databases.to_list():
-        args.extend(["-package-db", paths.join(path_prefix, package_cache.dirname)])
+        args.extend(["-package-db", get_dirname(package_cache)])
 
     # Load C library dependencies
     cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = [
@@ -348,7 +348,8 @@ def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = 
         cc_library_files = _concat(get_library_files(hs, cc_libraries_info, cc_libraries))
     else:
         cc_library_files = get_ghci_library_files(hs, cc_libraries_info, cc_libraries)
-    link_libraries(cc_library_files, args, path_prefix = path_prefix)
+
+    link_libraries(cc_library_files, args, get_dirname)
 
     if static:
         all_library_files = _concat(get_library_files(hs, cc_libraries_info, all_libraries, include_real_paths = True))
@@ -403,7 +404,7 @@ def _create_repl(hs, cc, posix, ctx, repl_info, output):
         hs,
         cc,
         repl_info,
-        path_prefix = "$RULES_HASKELL_EXEC_ROOT",
+        get_dirname = lambda f: paths.join("$RULES_HASKELL_EXEC_ROOT", f.dirname),
     )
     args.extend(compiler_flags)
     cc_path = paths.join(
