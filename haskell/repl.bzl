@@ -520,7 +520,7 @@ def _create_repl(hs, cc, posix, ctx, repl_info, output):
         runfiles = _merge_runfiles(runfiles),
     )]
 
-def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
+def _create_hie_bios(hs, cc, posix, ctx, repl_info):
     """Build a hie-bios argument file.
 
     Args:
@@ -529,16 +529,14 @@ def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
       posix: POSIX toolchain.
       ctx: Rule context.
       repl_info: HaskellReplInfo provider.
-      output: The output for the executable REPL script.
 
     Returns:
       List of providers:
         OutputGroupInfo provider for the hie-bios argument file.
     """
-    path_prefix = paths.join("", *path_prefix)
-    args, inputs = _compiler_flags_and_inputs(hs, cc, repl_info, path_prefix = path_prefix, static = True)
-    cc_path = paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path)
-    ld_path = paths.join(path_prefix, cc.ld_executable)
+    args, inputs = _compiler_flags_and_inputs(hs, cc, repl_info, static = True)
+    cc_path = hs.toolchain.cc_wrapper.executable.path
+    ld_path = cc.ld_executable
     args.extend(ghc_cc_program_args(hs, cc_path, ld_path))
     args.extend(hs.toolchain.ghcopts)
     args.extend(repl_info.load_info.compiler_flags)
@@ -547,10 +545,10 @@ def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
     # Note, src_strip_prefix is deprecated. However, for now ghcide depends on
     # `-i` flags to find source files to modules.
     for import_dir in repl_info.load_info.import_dirs.to_list():
-        args.append("-i" + (paths.join(path_prefix, import_dir) or "."))
+        args.append("-i" + (import_dir or "."))
 
     # List modules (Targets) covered by this cradle.
-    args.extend([paths.join(path_prefix, f.path) for f in repl_info.load_info.source_files.to_list()])
+    args.extend([f.path for f in repl_info.load_info.source_files.to_list()])
 
     # List boot files
     args.extend([f.path for f in repl_info.load_info.boot_files.to_list()])
@@ -611,7 +609,7 @@ def _haskell_repl_impl(ctx):
     cc = find_cc_toolchain(ctx)
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
     return _create_repl(hs, cc, posix, ctx, repl_info, ctx.outputs.repl) + \
-           _create_hie_bios(hs, cc, posix, ctx, repl_info, ctx.attr.hie_bios_path_prefix)
+           _create_hie_bios(hs, cc, posix, ctx, repl_info)
 
 haskell_repl = rule(
     implementation = _haskell_repl_impl,
@@ -673,11 +671,6 @@ haskell_repl = rule(
         "collect_data": attr.bool(
             doc = "Whether to collect the data runfiles from the dependencies in srcs, data and deps attributes.",
             default = True,
-        ),
-        "hie_bios_path_prefix": attr.string_list(
-            doc = """Path prefix for hie-bios paths. The elements of the list are joined together to build the path.
-                   See [IDE support](#ide-support-experimental).""",
-            default = [],
         ),
     },
     executable = True,
