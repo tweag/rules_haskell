@@ -373,6 +373,8 @@ haskell_binary(
     name = "run-tests",
     srcs = ["RunTests.hs"],
     deps = [
+        "//tests/generated-modules:BinModule",
+        "//tests/generated-modules:GenModule",
         "//tests/hackage:base",
         "//tests/hackage:directory",
         "//tests/hackage:filepath",
