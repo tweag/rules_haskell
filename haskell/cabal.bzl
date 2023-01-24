@@ -1926,6 +1926,7 @@ def _stack_snapshot_impl(repository_ctx):
     reverse_deps = {}
     for (name, spec) in resolved.items():
         for dep in spec["dependencies"]:
+            reverse_deps.setdefault(name, [])
             rdeps = reverse_deps.setdefault(dep, [])
             rdeps.append(name)
 
@@ -2012,6 +2013,7 @@ load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary", "haskell_cabal
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_library")
 """)
     for (name, spec) in resolved.items():
+        print("NAME is {}".format(name))
         version = spec["version"]
         package = "%s-%s" % (name, version)
         visibility = visibilities[name]
@@ -2068,6 +2070,7 @@ haskell_library(
                 _label_to_string(Label("@{}//:{}".format(repository_ctx.name, name)).relative(label))
                 for label in repository_ctx.attr.setup_deps.get(name, [])
             ]
+            print("SETUP DEPS is {}".format(setup_deps))
             if all_components[name].lib:
                 build_file_builder.append(
                     """

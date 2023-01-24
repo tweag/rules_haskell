@@ -150,6 +150,8 @@ stack_snapshot(
     ],
     setup_deps = {
         "alex": ["@stackage//:Cabal"],
+        "c2hs": ["@stackage//:Cabal"],
+        "happy": ["@stackage//:Cabal"],
     },
     stack_snapshot_json = "@rules_haskell//:stackage_snapshot.json" if not is_windows else None,
     # tools = [

@@ -42,31 +42,6 @@ haskell_cabal_library(
 )
 
 http_archive(
-    name = "happy",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library", "haskell_cabal_binary")
-
-haskell_cabal_library(
-    name = "happy-lib",
-    setup_deps = ["@Cabal//:Cabal"],
-    srcs = glob(["**"]),
-    version = "1.20.0",
-    visibility = ["//visibility:public"],
-)
-
-haskell_cabal_binary(
-    name = "happy",
-    setup_deps = ["@Cabal//:Cabal"],
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "3b1d3a8f93a2723b554d9f07b2cd136be1a7b2fcab1855b12b7aab5cbac8868c",
-    strip_prefix = "happy-1.20.0",
-    urls = ["http://hackage.haskell.org/package/happy-1.20.0/happy-1.20.0.tar.gz"],
-)
-
-http_archive(
     name = "alex",
     build_file_content = """
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library", "haskell_cabal_binary")
@@ -100,67 +75,9 @@ load(
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
-    name = "forc2hs",
-    components = {
-        "alex": [],
-        "happy": [],
-    },
-    local_snapshot = "//:stackage_snapshot.yaml",
-    packages = [
-        "conduit-extra",
-        "dlist",
-        "language-c",
-    ],
-    tools = [
-        "@alex",
-        "@happy",
-    ],
-)
-
-http_archive(
-    name = "c2hs",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library", "haskell_cabal_binary")
-
-haskell_cabal_library(
-    name = "c2hs-lib",
-    deps = [
-        "@forc2hs//:dlist",
-        "@forc2hs//:language-c",
-    ],
-    setup_deps = [
-        "@Cabal//:Cabal",
-    ],
-    srcs = glob(["**"]),
-    version = "0.28.8",
-    visibility = ["//visibility:public"],
-)
-
-haskell_cabal_binary(
-    name = "c2hs",
-    deps = [
-        "@forc2hs//:dlist",
-        "@forc2hs//:language-c",
-    ],
-    setup_deps = [
-        "@Cabal//:Cabal",
-    ],
-    srcs = glob(["**"]),
-    verbose = False,
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "390632cffc561c32483af474aac50168a68f0fa382096552e37749923617884c",
-    strip_prefix = "c2hs-0.28.8",
-    urls = ["http://hackage.haskell.org/package/c2hs-0.28.8/c2hs-0.28.8.tar.gz"],
-)
-
-stack_snapshot(
     name = "stackage",
     components = {
         "alex": [],
-        "c2hs": [],
-        "happy": [],
         "attoparsec": [
             "lib",
             "lib:attoparsec-internal",
@@ -176,9 +93,11 @@ stack_snapshot(
     local_snapshot = "//:stackage_snapshot.yaml",
     packages = [
         # Core libraries
+        "alex",
         "array",
         "base",
         "bytestring",
+        "c2hs",
         "conduit",
         "conduit-extra",
         "containers",
@@ -186,6 +105,7 @@ stack_snapshot(
         "directory",
         "filepath",
         "ghc-heap",
+        "happy",
         "mtl",
         "optparse-applicative",
         "process",
@@ -220,6 +140,7 @@ stack_snapshot(
         "call-stack": ["@Cabal//:Cabal"],
         "doctest": ["@Cabal//:Cabal"],
         "generic-deriving": ["@Cabal//:Cabal"],
+        "happy": ["@Cabal//:Cabal"],
         "hspec": ["@Cabal//:Cabal"],
         "hspec-core": ["@Cabal//:Cabal"],
         "hspec-discover": ["@Cabal//:Cabal"],
@@ -240,14 +161,9 @@ stack_snapshot(
         # `tools`. We also override alex's components to avoid building it
         # twice.
         "@alex",
-        "@c2hs",
-        "@happy",
     ],
     vendored_packages = {
         "ghc-paths": "@rules_haskell//tools/ghc-paths",
-        "alex": "@alex//:alex-lib",
-        "c2hs": "@c2hs//:c2hs-lib",
-        "happy": "@happy//:happy-lib",
     },
 )
 
