@@ -137,6 +137,7 @@ stack_snapshot(
         "polysemy": ["cabal-doctest"],
         "HUnit": ["@Cabal//:Cabal"],
         "bifunctors": ["@Cabal//:Cabal"],
+        "c2hs": ["@Cabal//:Cabal"],
         "call-stack": ["@Cabal//:Cabal"],
         "doctest": ["@Cabal//:Cabal"],
         "generic-deriving": ["@Cabal//:Cabal"],
