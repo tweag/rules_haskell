@@ -82,6 +82,10 @@ stack_snapshot(
             "lib",
             "lib:attoparsec-internal",
         ],
+        "c2hs": [
+            "lib",
+            "exe",
+        ],
         "proto-lens-protoc": [
             "lib",
             "exe",
