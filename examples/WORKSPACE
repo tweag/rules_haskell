@@ -93,6 +93,15 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
+    components = {
+        "attoparsec": [
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    },
+    components_dependencies = {
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
     extra_deps = {"zlib": ["@zlib.hs"]},
     flags = {
         # Sets the default explicitly to demonstrate the flags attribute.
