@@ -35,7 +35,7 @@ import GHC.IO     ( IO(..) )
 #else
 import GHC.IOBase ( IO(..) )
 #endif
-import GHC.Prim   ( unsafeCoerce# )
+import GHC.Exts   ( unsafeCoerce# )
 import GHC.ST     ( ST(..) )
 
 import Control.Monad.Trans.Class (lift)
