@@ -196,6 +196,11 @@ stack_snapshot(
     setup_deps = {
         "HUnit": ["@Cabal//:Cabal"],
         "call-stack": ["@Cabal//:Cabal"],
+        "hspec": ["@Cabal//:Cabal"],
+        "hspec-core": ["@Cabal//:Cabal"],
+        "hspec-discover": ["@Cabal//:Cabal"],
+        "hspec-expectations": ["@Cabal//:Cabal"],
+        "quickcheck-io": ["@Cabal//:Cabal"],
     },
     stack_snapshot_json = "//:stackage-pinning-test_snapshot.json" if not is_windows else None,
 )
