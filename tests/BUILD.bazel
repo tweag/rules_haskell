@@ -25,10 +25,6 @@ load(
     "//:constants.bzl",
     "test_ghc_version",
 )
-load(
-    "@io_bazel_rules_go//go:def.bzl",
-    "go_library",
-)
 
 exports_files(
     [
@@ -220,7 +216,7 @@ rule_test(
         "haddock/testsZShaddockZShaddock-lib-b",
         "haddock/testsZShaddockZShaddock-lib-deep",
     ] + [
-        "haddock/rts-1.0.2"
+        "haddock/rts-1.0.2",
     ] if is_windows else [],
     rule = "//tests/haddock",
 )
