@@ -219,8 +219,9 @@ rule_test(
         "haddock/testsZShaddockZShaddock-lib-a",
         "haddock/testsZShaddockZShaddock-lib-b",
         "haddock/testsZShaddockZShaddock-lib-deep",
-    ] +
-    ["haddock/rts-1.0.2"] if is_windows else [],
+    ] + [
+        "haddock/rts-1.0.2"
+    ] if is_windows else [],
     rule = "//tests/haddock",
 )
 
