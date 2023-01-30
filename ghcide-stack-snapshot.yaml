@@ -26,3 +26,7 @@ packages:
 # https://github.com/haskell/win32/issues/193
 drop-packages:
 - Win32
+
+flags:
+  ansi-terminal:
+    Win32-2-13-1: false
