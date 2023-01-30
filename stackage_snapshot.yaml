@@ -15,3 +15,7 @@ packages:
   commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
   subdirs:
   - Cabal
+
+flags:
+  ansi-terminal:
+    Win32-2-13-1: false
