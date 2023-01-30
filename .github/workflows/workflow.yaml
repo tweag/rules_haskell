@@ -128,6 +128,14 @@ jobs:
           sudo apt clean
           docker rmi $(docker images -q) -f
       - uses: actions/checkout@v3
+      - name: Setup SSH
+        if: ${{ matrix.os == 'macos-11' }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+          limit-access-to-actor: true
+          ## limits ssh access and adds the ssh public keys of the listed GitHub users
+          limit-access-to-users: GuillaumeGen
       - name: Mount Bazel cache
         uses: actions/cache@v3
         with:
