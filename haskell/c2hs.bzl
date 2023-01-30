@@ -97,6 +97,8 @@ def _c2hs_library_impl(ctx):
         # Include libdir in include path just like hsc2hs does.
         libdir=$({ghc} --print-libdir)
         echo "LIBDIR IS: $libdir"
+        find ../../../.. -name "ghcplatform.h"
+        echo "END OF FIND"
         # GHC >=9 on Windows stores the includes outside of libdir
         {c2hs} -C-I$libdir/include -C-I$libdir/../include "$@"
         """.format(
