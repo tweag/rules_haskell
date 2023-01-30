@@ -76,7 +76,7 @@ generateBazelRc dir = do
 \ build:macos-nixpkgs --incompatible_enable_cc_toolchain_resolution \n\
 \ build:linux-bindist --incompatible_enable_cc_toolchain_resolution \n\
 \ build:macos-bindist --incompatible_enable_cc_toolchain_resolution \n\
-\ build:windows-bindist --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain \n\
+\ build:windows-bindist --incompatible_enable_cc_toolchain_resolution \n\
 \ ")
 
 setupWorkspace :: IO (String, String)

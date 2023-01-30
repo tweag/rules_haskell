@@ -25,10 +25,6 @@ test --test_env=LANG=C.UTF-8 --test_env=LOCALE_ARCHIVE
 build:linux-nixpkgs --config=nixpkgs
 build:macos-nixpkgs --config=nixpkgs
 build:nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
-# Use this configuration when targeting Windows. Eventually this will
-# no longer be required:
-# https://bazel.build/roadmaps/platforms.html#replace---cpu-and---host_cpu-flags.
-build:windows-bindist --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain
 
 # Build and Test Filters
 # ----------------------
@@ -100,8 +96,8 @@ build:linux-bindist --incompatible_enable_cc_toolchain_resolution
 build:macos-bindist --incompatible_enable_cc_toolchain_resolution
 build:linux-nixpkgs --incompatible_enable_cc_toolchain_resolution
 build:macos-nixpkgs --incompatible_enable_cc_toolchain_resolution
-# Windows still uses --crosstool_top.
-#build:ci-windows-bindist --incompatible_enable_cc_toolchain_resolution
+build:windows-bindist --incompatible_enable_cc_toolchain_resolution
+
 # Blocked by https://github.com/bazelbuild/bazel/issues/11704
 #build:ci --incompatible_load_cc_rules_from_bzl
 
