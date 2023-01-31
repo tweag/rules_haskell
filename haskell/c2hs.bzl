@@ -96,11 +96,10 @@ def _c2hs_library_impl(ctx):
             """
         # Include libdir in include path just like hsc2hs does.
         libdir=$({ghc} --print-libdir)
-        echo "LIBDIR IS: $libdir"
-        find / -name "ghcplatform.h"
-        echo "END OF FIND"
+        external_name=$(basename $(dirname $(dirname $(dirname $libdir))))
+        rules_haskell_platform_name=$(basename $(dirname $(dirname $libdir)))
         # GHC >=9 on Windows stores the includes outside of libdir
-        {c2hs} -C-I$libdir/include -C-I$libdir/../include "$@"
+        {c2hs} -C-I$libdir/include -C-I$libdir/../include -C-I$libdir/../../../../../$external_name/$rules_haskell_platform_name/include "$@"
         """.format(
                 ghc = hs.tools.ghc.path,
                 c2hs = c2hs_exe.path,
