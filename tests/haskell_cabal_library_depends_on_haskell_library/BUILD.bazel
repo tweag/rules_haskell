@@ -26,7 +26,7 @@ haskell_cabal_library(
 haskell_library(
     name = "other_lib",
     srcs = ["OtherLib.hs"],
-    version = "0", # Having a version number for all the Haskell library is required, otherwise, despite the fact that the library is identified when running ghc-pkg, the library is not found in the library database.
+    version = "0",  # Having a version number for all the Haskell library is required, otherwise, despite the fact that the library is identified when running ghc-pkg, the library is not found in the library database.
     deps = [":base"],
 )
 
