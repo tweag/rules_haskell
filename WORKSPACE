@@ -79,6 +79,10 @@ stack_snapshot(
     components = {
         "alex": [],
         "attoparsec": [
+            # attoparsec contains an internal library which is not exposed publicly,
+            # but required to build the public library, hence the declaration of
+            # those 2 components, as well as the explicit declaration of the
+            # dependency between them.
             "lib",
             "lib:attoparsec-internal",
         ],
@@ -135,6 +139,12 @@ stack_snapshot(
     ],
     setup_deps = {
         "polysemy": ["cabal-doctest"],
+        # The current version of Cabal has an issue causing the generated Paths_ files
+        # to miss the definition of splitFileName and minusFileName.
+        # The has been a pull request to cabal ( https://github.com/haskell/cabal/pull/8220 ),
+        # merged but not integrated yet in the released version.
+        # Hence temporarily, we rely on the fixed version distributed with
+        # Tweag's fork of Cabal.
         "HUnit": ["@Cabal//:Cabal"],
         "bifunctors": ["@Cabal//:Cabal"],
         "c2hs": ["@Cabal//:Cabal"],
