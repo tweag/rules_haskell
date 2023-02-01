@@ -41,10 +41,10 @@ jobs:
             macOS) BUILD_CONFIG=ci-macos-nixpkgs;;
             Linux) BUILD_CONFIG=ci-linux-nixpkgs;;
           esac
+          .github/workflows/bazelrc-config.sh >.bazelrc.ci
           cat >.bazelrc.local <<EOF
-          common --config=ci
           build --config=$BUILD_CONFIG
-          build --remote_header=x-buildbuddy-api-key="$BUILDBUDDY_API_KEY"
+          import %workspace%/.bazelrc.ci
           EOF
           cat >~/.netrc <<EOF
           machine api.github.com
@@ -88,15 +88,10 @@ jobs:
           # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
           # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
           sudo sysctl -w net.ipv4.tcp_keepalive_time=60
-          if [ -z "$BUILDBUDDY_API_KEY" ]; then
-              cache_setting='--noremote_upload_local_results'
-          else
-              cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
-          fi
+          .github/workflows/bazelrc-config.sh >.bazelrc.ci
           cat >.bazelrc.local <<EOF
-          common --config=ci
           build --config=linux-nixpkgs
-          build $cache_setting
+          import %workspace%/.bazelrc.ci
           EOF
           ln -sr .bazelrc.local examples/arm/.bazelrc.local
           cat >~/.netrc <<EOF
@@ -153,15 +148,10 @@ jobs:
             Linux) BUILD_CONFIG=ci-linux-bindist;;
             Windows) BUILD_CONFIG=ci-windows-bindist;;
           esac
-          if [ -z "$BUILDBUDDY_API_KEY" ]; then
-              cache_setting='--noremote_upload_local_results'
-          else
-              cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
-          fi
+          .github/workflows/bazelrc-config.sh >.bazelrc.ci
           cat >.bazelrc.local <<EOF
-          common --config=ci
           build --config=$BUILD_CONFIG
-          build $cache_setting
+          import %workspace%/.bazelrc.ci
           EOF
           cat >~/.netrc <<EOF
           machine api.github.com

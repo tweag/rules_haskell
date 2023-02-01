@@ -34,6 +34,8 @@ case "$OSTYPE" in
     ;;
 esac
 
+cp "${pwd}/.bazelrc.ci" .bazelrc.local
+
 NIX_PATH=nixpkgs="$pwd/nixpkgs/default.nix" \
   bazel run \
   --config=ci "${OSCONFIG[@]}" \
