@@ -50,7 +50,7 @@ import sys
 import tempfile
 from generate_cabal_paths_module import generate_cabal_paths_module
 
-debug = False
+debug = True
 verbose = os.environ.get("CABAL_VERBOSE", "") == "True"
 with open(sys.argv.pop(1)) as json_file:
     json_args = json.load(json_file)
