@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # allows manual triggering
 env:
   # Bump this number to invalidate the GH actions cache
-  cache-version: 0
+  cache-version: 1
 
 jobs:
   test-bindist:
