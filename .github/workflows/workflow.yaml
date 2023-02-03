@@ -53,10 +53,16 @@ jobs:
           else
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
+          if [[ ${{ runner.os }} == Windows ]]; then
+              output_root_setting="startup --output_user_root=C:/_bzl"
+          else
+              output_root_setting=""
+          fi
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=$BUILD_CONFIG
           build $cache_setting
+          $output_root_setting
           EOF
           cat >~/.netrc <<EOF
           machine api.github.com
