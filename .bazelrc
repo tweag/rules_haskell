@@ -87,7 +87,7 @@ build:ci-windows-bindist --config=windows-bindist
 #   this rule is missing dependency declarations for the following files included by 'tests/runfiles/main.cc':
 #     '.../execroot/rules_haskell/external/rules_haskell_ghc_windows_amd64/mingw/include/c++/9.2.0/cstdlib'
 #     '.../execroot/rules_haskell/external/rules_haskell_ghc_windows_amd64/mingw/include/c++/9.2.0/x86_64-w64-mingw32/bits/c++config.h'
-build:ci-windows-bindist --remote_default_exec_properties=cache-silo-key=windows-v1
+build:ci-windows-bindist --remote_default_exec_properties=cache-silo-key=windows-v2
 
 # XXX: @com_google_protobuf sets `use_default_shell_env = True`, so we enable
 #   strict action env to avoid changes in `PATH` invalidating the cache.
