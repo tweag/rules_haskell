@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 * Add support for Bazel 6
+* The provided `cc_toolchain` used for windows can now be used with `--incompatible_enable_cc_toolchain_resolution` so using the `crosstool_top` option is no longer necessary.
 
 ### Removed
 
