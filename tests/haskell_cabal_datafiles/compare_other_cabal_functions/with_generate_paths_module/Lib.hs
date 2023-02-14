@@ -12,8 +12,8 @@ writeCabalPathsValues outputFileName = do
   libexecdir <- getLibexecDir 
   sysconfdir <- getSysconfDir 
   exePath <- getExecutablePath
-  let (dir,_) = splitFileName exePath
-  let paths = map (makeRelative dir) [bindir, libdir, dynlibdir, libexecdir, sysconfdir]
+  let dir = dropDrive.takeDirectory.normalise $ exePath
+  let paths = map ((makeRelative dir).dropDrive.normalise) [bindir, libdir, dynlibdir, libexecdir, sysconfdir]
   let v = version
   writeFile outputFileName $ intercalate "\n"
       (paths ++ [show v, ""])
