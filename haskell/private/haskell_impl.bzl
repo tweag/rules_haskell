@@ -289,6 +289,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         version_macros = sets.make(),
         source_files = depset(transitive = [c.source_files, module_outputs.repl_info.source_files]),
         boot_files = depset(transitive = [c.boot_files, module_outputs.repl_info.boot_files]),
+        module_names = depset(module_map.keys()),
         extra_source_files = c.extra_source_files,
         import_dirs = set.mutable_union(c.import_dirs, module_outputs.repl_info.import_dirs),
         hs_libraries = all_deps_info.hs_libraries,
@@ -627,6 +628,7 @@ def haskell_library_impl(ctx):
         version_macros = version_macros,
         source_files = depset(transitive = [c.source_files, module_outputs.repl_info.source_files]),
         boot_files = depset(transitive = [c.boot_files, module_outputs.repl_info.boot_files]),
+        module_names = depset(exposed_modules),
         extra_source_files = c.extra_source_files,
         import_dirs = set.mutable_union(c.import_dirs, set.mutable_union(export_infos.import_dirs, module_outputs.repl_info.import_dirs)),
         hs_libraries = depset(
@@ -999,6 +1001,7 @@ def haskell_import_impl(ctx):
         version_macros = version_macros,
         source_files = depset(),
         boot_files = depset(),
+        module_names = depset(),
         extra_source_files = depset(),
         import_dirs = sets.make(),
         hs_libraries = depset(),

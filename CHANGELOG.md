@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+* Add support for Bazel 6
+* The provided `cc_toolchain` used for windows can now be used with `--incompatible_enable_cc_toolchain_resolution` so using the `crosstool_top` option is no longer necessary.
+
+### Removed
+
+* Remove support for Bazel 4
+
+
 ## [0.16] 2022-12-06
 
 [0.16]: https://github.com/tweag/rules_haskell/compare/v0.15...v0.16

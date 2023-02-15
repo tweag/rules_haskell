@@ -584,6 +584,7 @@ def _haskell_cabal_library_impl(ctx):
         version_macros = sets.make(),
         source_files = depset(),
         boot_files = depset(),
+        module_names = depset(),
         extra_source_files = depset(),
         import_dirs = sets.make(),
         hs_libraries = depset(

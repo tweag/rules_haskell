@@ -9,11 +9,11 @@ set -eu
 # we use the default version (currently "9.2.5").
 GHC_VERSION=${GHC_VERSION:="9.2.5"}
 
-readonly MIN_BAZEL_MAJOR=4
+readonly MIN_BAZEL_MAJOR=5
 readonly MIN_BAZEL_MINOR=0
 
-readonly MAX_BAZEL_MAJOR=5
-readonly MAX_BAZEL_MINOR=2
+readonly MAX_BAZEL_MAJOR=6
+readonly MAX_BAZEL_MINOR=0
 
 stderr () {
   >&2 echo "$*"
@@ -205,7 +205,7 @@ load(
 # Download rules_haskell and make it accessible as "@rules_haskell".
 http_archive(
     name = "rules_haskell",
-    sha256 = "f7a228ef21c7976e42f0949b927f40d3381305d65e19585625eb6ce2c59116e9",
+    sha256 = "2a07b55c30e526c07138c717b0343a07649e27008a873f2508ffab3074f3d4f3",
     strip_prefix = "rules_haskell-0.16",
     url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.16.tar.gz",
 )
@@ -332,7 +332,9 @@ build:ci --jobs=2
 build:ci --verbose_failures
 common:ci --color=no
 test:ci --test_output=errors
-build:ci-windows --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain
+
+# Should become the default in bazel 7
+common --incompatible_enable_cc_toolchain_resolution
 
 EOF
 
