@@ -339,9 +339,6 @@ def _prepare_cabal_inputs(
         extra_args.append("--ghc-option=-optl-static")
 
     path_args = [
-        "--package-db=" + _dirname(db)
-        for db in package_databases.to_list()
-    ] + [
         "--extra-include-dirs=" + d
         for d in direct_include_dirs.to_list()
     ] + _uniquify(["--extra-lib-dirs=" + d for d in direct_lib_dirs])
@@ -369,6 +366,7 @@ def _prepare_cabal_inputs(
         cabal_basename = cabal.basename,
         cabal_dirname = cabal.dirname,
         extra_ldflags_file = extra_ldflags_file.path if extra_ldflags_file else None,
+        package_databases = [p.path for p in package_databases.to_list()],
     )
 
     ghc_files = hs.toolchain.bindir + hs.toolchain.libdir
