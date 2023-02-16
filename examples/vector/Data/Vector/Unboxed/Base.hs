@@ -476,7 +476,7 @@ instance inst_ctxt => G.Vector Vector (inst_head) where { \
 ; basicUnsafeSlice i n (con v)      = con $ G.basicUnsafeSlice i n v      \
 ; basicUnsafeIndexM (con v) i       = tyC `liftM` G.basicUnsafeIndexM v i \
 ; basicUnsafeCopy (mcon mv) (con v) = G.basicUnsafeCopy mv v              \
-; elemseq _ (tyC a)                 = G.elemseq (undefined :: Vector a) a \
+; elemseq _ (tyC a)                 = G.elemseq (undefined :: Vector w) a \
 }
 #define deriveNewtypeInstances(inst_ctxt,inst_head,rep,tyC,con,mcon) \
 newtype instance MVector s (inst_head) = mcon (MVector s (rep)) ;\
