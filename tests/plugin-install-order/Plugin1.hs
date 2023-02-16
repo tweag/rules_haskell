@@ -1,7 +1,11 @@
 module Plugin1 (plugin) where
 
 import Control.Monad (when)
-import GhcPlugins
+import GHC.Driver.Plugins
+import GHC.Core
+import GHC.Core.Opt.Monad
+import GHC.Types.Literal
+import GHC.Unit.Module.ModGuts
 import System.Process (readProcess)
 
 plugin :: Plugin
