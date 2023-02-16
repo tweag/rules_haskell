@@ -1924,6 +1924,7 @@ def _stack_snapshot_impl(repository_ctx):
 
     reverse_deps = {}
     for (name, spec) in resolved.items():
+        reverse_deps.setdefault(name, [])
         for dep in spec["dependencies"]:
             rdeps = reverse_deps.setdefault(dep, [])
             rdeps.append(name)
