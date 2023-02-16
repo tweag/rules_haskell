@@ -11,20 +11,20 @@ import System.Exit
 
 import GHC
 import GHC.Paths ( libdir )
-import DynFlags ( defaultFatalMessager, defaultFlushOut, Option(..) )
-import DriverPhases
-import DriverPipeline ( compileFile, oneShot )
-import Util
+import GHC.Driver.Session ( defaultFatalMessager, defaultFlushOut, Option(..) )
+import GHC.Driver.Phases
+import GHC.Driver.Pipeline ( compileFile, oneShot )
+import GHC.Utils.Misc
 
 compile :: [String] -> IO ()
 compile flags =
     defaultErrorHandler defaultFatalMessager defaultFlushOut $ do
       runGhc (Just libdir) $ do
-
+        logger <- getLogger
         -- Parse flags
         dflags <- getSessionDynFlags
         (dflags2, fileish_args, _warns) <-
-          parseDynamicFlags dflags (map noLoc flags)
+          parseDynamicFlags logger dflags (map noLoc flags)
 
         -- Normilize paths
         let

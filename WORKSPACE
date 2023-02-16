@@ -25,19 +25,46 @@ bazel_skylib_workspace()
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
+    name = "Cabal",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+haskell_cabal_library(
+    name = "Cabal",
+    srcs = glob(["Cabal/**"]),
+    verbose = False,
+    version = "3.6.3.0",
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "f69b46cb897edab3aa8d5a4bd7b8690b76cd6f0b320521afd01ddd20601d1356",
+    strip_prefix = "cabal-gg-8220-with-3630",
+    urls = ["https://github.com/tweag/cabal/archive/refs/heads/gg/8220-with-3630.zip"],
+)
+
+http_archive(
     name = "alex",
     build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library", "haskell_cabal_binary")
+
+haskell_cabal_library(
+    name = "alex-lib",
+    setup_deps = ["@Cabal//:Cabal"],
+    srcs = glob(["**"]),
+    version = "3.2.7.1",
+    visibility = ["//visibility:public"],
+)
+
 haskell_cabal_binary(
     name = "alex",
+    setup_deps = ["@Cabal//:Cabal"],
     srcs = glob(["**"]),
     verbose = False,
     visibility = ["//visibility:public"],
 )
     """,
-    sha256 = "91aa08c1d3312125fbf4284815189299bbb0be34421ab963b1f2ae06eccc5410",
-    strip_prefix = "alex-3.2.6",
-    urls = ["http://hackage.haskell.org/package/alex-3.2.6/alex-3.2.6.tar.gz"],
+    sha256 = "9bd2f1a27e8f1b2ffdb5b2fbd3ed82b6f0e85191459a1b24ffcbef4e68a81bec",
+    strip_prefix = "alex-3.2.7.1",
+    urls = ["http://hackage.haskell.org/package/alex-3.2.7.1/alex-3.2.7.1.tar.gz"],
 )
 
 load(
@@ -51,28 +78,45 @@ stack_snapshot(
     name = "stackage",
     components = {
         "alex": [],
+        "attoparsec": [
+            # attoparsec contains an internal library which is not exposed publicly,
+            # but required to build the public library, hence the declaration of
+            # those 2 components, as well as the explicit declaration of the
+            # dependency between them.
+            "lib",
+            "lib:attoparsec-internal",
+        ],
         "proto-lens-protoc": [
             "lib",
             "exe",
         ],
     },
+    components_dependencies = {
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
     local_snapshot = "//:stackage_snapshot.yaml",
     packages = [
         # Core libraries
+        "alex",
         "array",
         "base",
         "bytestring",
+        "c2hs",
+        "conduit",
+        "conduit-extra",
         "containers",
         "deepseq",
         "directory",
         "filepath",
         "ghc-heap",
+        "happy",
         "mtl",
+        "optparse-applicative",
         "process",
         "text",
+        "text-show",
         "vector",
         # For tests
-        "c2hs",
         "cabal-doctest",
         "doctest",
         "polysemy",
@@ -85,15 +129,42 @@ stack_snapshot(
         "hspec-core",
         "lens-family-core",
         "data-default-class",
-        "profunctors-5.5.2",
-        "proto-lens-0.7.0.0",
-        "proto-lens-protoc-0.7.0.0",
-        "proto-lens-runtime-0.7.0.0",
+        "profunctors",
+        "proto-lens",
+        "proto-lens-protoc",
+        "proto-lens-runtime",
         "lens-family",
         "safe-exceptions",
         "temporary",
     ],
-    setup_deps = {"polysemy": ["cabal-doctest"]},
+    setup_deps = {
+        "polysemy": ["cabal-doctest"],
+        # The current version of Cabal has an issue causing the generated Paths_ files
+        # to miss the definition of splitFileName and minusFileName.
+        # The has been a pull request to cabal ( https://github.com/haskell/cabal/pull/8220 ),
+        # merged but not integrated yet in the released version.
+        # Hence temporarily, we rely on the fixed version distributed with
+        # Tweag's fork of Cabal.
+        "HUnit": ["@Cabal//:Cabal"],
+        "bifunctors": ["@Cabal//:Cabal"],
+        "c2hs": ["@Cabal//:Cabal"],
+        "call-stack": ["@Cabal//:Cabal"],
+        "doctest": ["@Cabal//:Cabal"],
+        "generic-deriving": ["@Cabal//:Cabal"],
+        "happy": ["@Cabal//:Cabal"],
+        "hspec": ["@Cabal//:Cabal"],
+        "hspec-core": ["@Cabal//:Cabal"],
+        "hspec-discover": ["@Cabal//:Cabal"],
+        "hspec-expectations": ["@Cabal//:Cabal"],
+        "mono-traversable": ["@Cabal//:Cabal"],
+        "proto-lens-protoc": ["@Cabal//:Cabal"],
+        "proto-lens-runtime": ["@Cabal//:Cabal"],
+        "quickcheck-io": ["@Cabal//:Cabal"],
+        "transformers-compat": ["@Cabal//:Cabal"],
+        "type-errors": ["@Cabal//:Cabal"],
+        "typed-process": ["@Cabal//:Cabal"],
+        "unliftio-core": ["@Cabal//:Cabal"],
+    },
     stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
     tools = [
         # This is not required, as `stack_snapshot` would build alex
@@ -132,6 +203,15 @@ stack_snapshot(
         "hspec",
         "package1",
     ],
+    setup_deps = {
+        "HUnit": ["@Cabal//:Cabal"],
+        "call-stack": ["@Cabal//:Cabal"],
+        "hspec": ["@Cabal//:Cabal"],
+        "hspec-core": ["@Cabal//:Cabal"],
+        "hspec-discover": ["@Cabal//:Cabal"],
+        "hspec-expectations": ["@Cabal//:Cabal"],
+        "quickcheck-io": ["@Cabal//:Cabal"],
+    },
     stack_snapshot_json = "//:stackage-pinning-test_snapshot.json" if not is_windows else None,
 )
 
@@ -193,16 +273,48 @@ haskell_library(
 
 stack_snapshot(
     name = "ghcide",
-    components = {"ghcide": [
-        "lib",
-        "exe",
-    ]},
+    components = {
+        "ghcide": [
+            "lib",
+            "exe",
+        ],
+        "attoparsec": [
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    },
+    components_dependencies = {
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
     extra_deps = {"zlib": ["//tests:zlib"]},
     haddock = False,
     local_snapshot = "//:ghcide-stack-snapshot.yaml",
     packages = [
         "ghcide",
     ],
+    setup_deps = {
+        "bifunctors": ["@ghcide//:Cabal"],
+        "call-stack": ["@ghcide//:Cabal"],
+        "ghcide": ["@ghcide//:Cabal"],
+        "hie-bios": ["@ghcide//:Cabal"],
+        "hls-graph": ["@ghcide//:Cabal"],
+        "hspec-discover": ["@ghcide//:Cabal"],
+        "implicit-hie": ["@ghcide//:Cabal"],
+        "implicit-hie-cradle": ["@ghcide//:Cabal"],
+        "invariant": ["@ghcide//:Cabal"],
+        "js-dgtable": ["@ghcide//:Cabal"],
+        "js-flot": ["@ghcide//:Cabal"],
+        "js-jquery": ["@ghcide//:Cabal"],
+        "libyaml": ["@ghcide//:Cabal"],
+        "mono-traversable": ["@ghcide//:Cabal"],
+        "regex-base": ["@ghcide//:Cabal"],
+        "regex-tdfa": ["@ghcide//:Cabal"],
+        "transformers-compat": ["@ghcide//:Cabal"],
+        "typed-process": ["@ghcide//:Cabal"],
+        "unliftio": ["@ghcide//:Cabal"],
+        "unliftio-core": ["@ghcide//:Cabal"],
+        "yaml": ["@ghcide//:Cabal"],
+    },
     stack_snapshot_json = "//:ghcide-snapshot.json" if not is_windows else None,
     vendored_packages = {
         "data-default-instances-containers": "@data-default-ic//:lib",
@@ -281,7 +393,7 @@ haskell_register_ghc_nixpkgs(
     ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc8107.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
