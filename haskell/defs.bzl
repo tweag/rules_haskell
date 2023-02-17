@@ -623,7 +623,7 @@ def haskell_library(
         if the version attribute is defined, see version attribute
         documentation. Optional, defaults to target name.
       version: Library version. Not normally necessary unless to build a library
-        originally defined as a Cabal package. If this is specified, CPP version macro will be generated.
+        originally defined as a Cabal package, or which is a dependency of a Cabal package. If this is specified, CPP version macro will be generated.
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
     _haskell_worker_wrapper(

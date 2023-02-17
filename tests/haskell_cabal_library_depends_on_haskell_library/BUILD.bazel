@@ -26,6 +26,10 @@ haskell_cabal_library(
 haskell_library(
     name = "other_lib",
     srcs = ["OtherLib.hs"],
+    version = "0.1",
+    # Having a version number is necessary for libraries which are
+    # depencencies of a haskell_cabal_{library,binary}. Otherwise the
+    # library is not found in the library database.
     deps = [":base"],
 )
 
