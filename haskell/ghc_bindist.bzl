@@ -292,6 +292,31 @@ _ghc_bindist_toolchain = repository_rule(
     },
 )
 
+def _windows_cc_toolchain_impl(repository_ctx):
+    repository_ctx.file("BUILD.bazel", executable = False, content = """
+toolchain(
+    name = "windows_cc_toolchain",
+    exec_compatible_with = [
+      "@platforms//os:windows",
+      "@platforms//cpu:x86_64"
+    ],
+    target_compatible_with = [
+      "@platforms//os:windows",
+      "@platforms//cpu:x86_64"
+    ],
+    toolchain = "@{}//:cc-compiler-mingw64",
+    toolchain_type = "@rules_cc//cc:toolchain_type",
+)
+""".format(repository_ctx.attr.bindist_name))
+
+_windows_cc_toolchain = repository_rule(
+    _windows_cc_toolchain_impl,
+    local = False,
+    attrs = {
+        "bindist_name": attr.string(),
+    },
+)
+
 def ghc_bindist(
         name,
         version,
@@ -396,6 +421,10 @@ def ghc_bindist(
         target = target,
     )
     native.register_toolchains("@{}//:toolchain".format(toolchain_name))
+    if target == "windows_amd64":
+        cc_toolchain_repo_name = "{}_cc_toolchain".format(bindist_name)
+        _windows_cc_toolchain(name = cc_toolchain_repo_name, bindist_name = bindist_name)
+        native.register_toolchains("@{}//:windows_cc_toolchain".format(cc_toolchain_repo_name))
 
 def haskell_register_ghc_bindists(
         version = None,

@@ -333,7 +333,9 @@ build:ci --jobs=2
 build:ci --verbose_failures
 common:ci --color=no
 test:ci --test_output=errors
-build:ci-windows --crosstool_top=@rules_haskell_ghc_windows_amd64//:cc_toolchain
+
+# Should become the default in bazel 7
+common --incompatible_enable_cc_toolchain_resolution
 
 EOF
 
