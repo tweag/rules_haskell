@@ -35,6 +35,7 @@ exports_files(
         "private/cabal_wrapper.py",
         "private/coverage_wrapper.sh.tpl",
         "private/ghci_repl_wrapper.sh",
+        "private/hie_bios_wrapper.sh",
         "private/haddock_wrapper.sh.tpl",
         "private/cc_wrapper.py.tpl",
         "private/cc_wrapper_windows.sh.tpl",

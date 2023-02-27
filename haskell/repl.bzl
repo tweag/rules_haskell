@@ -9,7 +9,6 @@ load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/expansions.bzl", "expand_make_variables")
 load(
     ":private/path_utils.bzl",
-    "ln",
     "match_label",
     "parse_pattern",
     "target_unique_name",
@@ -297,7 +296,7 @@ def _create_HaskellReplInfo(from_source, from_binary, collect_info):
 def _concat(lists):
     return [item for l in lists for item in l]
 
-def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = ""):
+def _compiler_flags_and_inputs(hs, cc, repl_info, get_dirname, static = False):
     """Collect compiler flags and inputs.
 
     Compiler flags:
@@ -318,7 +317,7 @@ def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = 
       repl_info: HaskellReplInfo.
       static: bool, Whether we're collecting libraries for static RTS.
         Contrary to GHCi, ghcide is built as a static executable using the static RTS.
-      path_prefix: string, optional, Prefix for package db paths.
+      get_dirname: File -> string, customize the get_dirname function used for package db paths.
 
     Returns:
       (args, inputs):
@@ -331,7 +330,7 @@ def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = 
     for package_id in repl_info.dep_info.package_ids:
         args.extend(["-package-id", package_id])
     for package_cache in repl_info.dep_info.package_databases.to_list():
-        args.extend(["-package-db", paths.join(path_prefix, package_cache.dirname)])
+        args.extend(["-package-db", get_dirname(package_cache)])
 
     # Load C library dependencies
     cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = [
@@ -348,7 +347,8 @@ def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = 
         cc_library_files = _concat(get_library_files(hs, cc_libraries_info, cc_libraries))
     else:
         cc_library_files = get_ghci_library_files(hs, cc_libraries_info, cc_libraries)
-    link_libraries(cc_library_files, args, path_prefix = path_prefix)
+
+    link_libraries(cc_library_files, args, get_dirname)
 
     if static:
         all_library_files = _concat(get_library_files(hs, cc_libraries_info, all_libraries, include_real_paths = True))
@@ -366,22 +366,21 @@ def _compiler_flags_and_inputs(hs, cc, repl_info, static = False, path_prefix = 
     ])
     return (args, inputs)
 
-def _create_repl(hs, cc, posix, ctx, repl_info, output):
+def _haskell_repl_impl(ctx):
     """Build a multi target REPL.
 
     Args:
-      hs: Haskell context.
-      cc: CcToolchainInfo.
-      posix: POSIX toolchain.
       ctx: Rule context.
-      repl_info: HaskellReplInfo provider.
-      output: The output for the executable REPL script.
 
     Returns:
       List of providers:
         DefaultInfo provider for the executable REPL script.
 
     """
+    repl_info = _repl_info(ctx)
+    hs = haskell_context(ctx)
+    cc = find_cc_toolchain(ctx)
+    output = ctx.outputs.repl
 
     # The base and directory packages are necessary for the GHCi script we use
     # (loads source files and brings in scope the corresponding modules).
@@ -403,7 +402,7 @@ def _create_repl(hs, cc, posix, ctx, repl_info, output):
         hs,
         cc,
         repl_info,
-        path_prefix = "$RULES_HASKELL_EXEC_ROOT",
+        get_dirname = lambda f: paths.join("$RULES_HASKELL_EXEC_ROOT", f.dirname),
     )
     args.extend(compiler_flags)
     cc_path = paths.join(
@@ -520,25 +519,57 @@ def _create_repl(hs, cc, posix, ctx, repl_info, output):
         runfiles = _merge_runfiles(runfiles),
     )]
 
-def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
-    """Build a hie-bios argument file.
+def _rlocationpath_str(ctx, shortpath):
+    """ Format a shortpath in a way that is suitable for the runfiles libraries """
+    return paths.normalize(paths.join(ctx.workspace_name, shortpath))
+
+def _rlocationpath(ctx, file):
+    """ Outputs a path to `file` suitable for the runfiles libraries """
+    return _rlocationpath_str(ctx, file.short_path)
+
+def _rlocation(ctx, file):
+    """Outputs a bash expression computing the runtime path of a runfile using the bash runfiles library"""
+    return "$(rlocation {})".format(_rlocationpath(ctx, file))
+
+def _hie_bios_impl(ctx):
+    """Build a shell script that prints the hie-bios flags for ghcide using the bash runfiles library to recover absolute paths.
 
     Args:
-      hs: Haskell context.
-      cc: CcToolchainInfo.
-      posix: POSIX toolchain.
       ctx: Rule context.
-      repl_info: HaskellReplInfo provider.
-      output: The output for the executable REPL script.
 
     Returns:
       List of providers:
-        OutputGroupInfo provider for the hie-bios argument file.
-    """
-    path_prefix = paths.join("", *path_prefix)
-    args, inputs = _compiler_flags_and_inputs(hs, cc, repl_info, path_prefix = path_prefix, static = True)
-    cc_path = paths.join(path_prefix, hs.toolchain.cc_wrapper.executable.path)
-    ld_path = paths.join(path_prefix, cc.ld_executable)
+        DefaultInfo provider for the hie-bios script
+"""
+    repl_info = _repl_info(ctx)
+    hs = haskell_context(ctx)
+    cc = find_cc_toolchain(ctx)
+    args, inputs = _compiler_flags_and_inputs(
+        hs,
+        cc,
+        repl_info,
+        static = True,
+        get_dirname = lambda p: "$(dirname {})".format(_rlocation(ctx, p)),
+    )
+    runfiles_depset = depset(
+        direct = [hs.toolchain.cc_wrapper.executable],
+        transitive = [
+            repl_info.load_info.source_files,
+            repl_info.load_info.boot_files,
+            inputs,
+        ],
+    )
+    runfiles = ctx.runfiles(transitive_files = runfiles_depset).merge_all(
+        [
+            ctx.attr._bash_runfiles[DefaultInfo].default_runfiles,
+            hs.toolchain.cc_wrapper.runfiles,
+        ],
+    )
+    cc_path = _rlocation(ctx, hs.toolchain.cc_wrapper.executable)
+    ld_path = "$(rlocation {}{})".format(
+        _rlocationpath_str(ctx, cc.ld_executable),
+        ".exe" if hs.toolchain.is_windows else "",
+    )
     args.extend(ghc_cc_program_args(hs, cc_path, ld_path))
     args.extend(hs.toolchain.ghcopts)
     args.extend(repl_info.load_info.compiler_flags)
@@ -546,20 +577,33 @@ def _create_hie_bios(hs, cc, posix, ctx, repl_info, path_prefix):
     # Add import directories.
     # Note, src_strip_prefix is deprecated. However, for now ghcide depends on
     # `-i` flags to find source files to modules.
-    for import_dir in repl_info.load_info.import_dirs.to_list():
-        args.append("-i" + (paths.join(path_prefix, import_dir) or "."))
+    import_dirs = [paths.join("$RULES_HASKELL_EXEC_ROOT", dir) for dir in repl_info.load_info.import_dirs.to_list()]
+    for import_dir in import_dirs:
+        args.append("-i" + (import_dir or "."))
 
     # List modules (Targets) covered by this cradle.
-    args.extend([paths.join(path_prefix, f.path) for f in repl_info.load_info.source_files.to_list()])
+    args.extend([_rlocation(ctx, f) for f in repl_info.load_info.source_files.to_list()])
 
     # List boot files
-    args.extend([f.path for f in repl_info.load_info.boot_files.to_list()])
+    args.extend([_rlocation(ctx, f) for f in repl_info.load_info.boot_files.to_list()])
 
-    args_file = ctx.actions.declare_file(".%s.hie-bios" % ctx.label.name)
-    args_link = ctx.actions.declare_file("%s@hie-bios" % ctx.label.name)
-    ctx.actions.write(args_file, "\n".join(args) + "\n")
-    ln(hs, posix, args_file, args_link, extra_inputs = inputs)
-    return [OutputGroupInfo(hie_bios = [args_link])]
+    hie_bios_script = hs.actions.declare_file(
+        target_unique_name(hs, "hie-bios"),
+    )
+    hs.actions.expand_template(
+        template = ctx.file._hie_bios_wrapper,
+        is_executable = True,
+        output = hie_bios_script,
+        substitutions = {
+            "%{OUTPUT}": hie_bios_script.path,
+            "%{OUTPUT_RLOCATION_PATH}": _rlocationpath(ctx, hie_bios_script),
+            "%{ARGS}": "\n".join(args),
+        },
+    )
+    return [DefaultInfo(
+        executable = hie_bios_script,
+        runfiles = runfiles,
+    )]
 
 def _haskell_repl_aspect_impl(target, ctx):
     # TODO[GL]: try removing this and using required_providers, once we're on a newer version of bazel
@@ -598,7 +642,7 @@ by itself.
 """,
 )
 
-def _haskell_repl_impl(ctx):
+def _repl_info(ctx):
     collect_info = _merge_HaskellReplCollectInfo([
         dep[HaskellReplCollectInfo]
         for dep in ctx.attr.deps
@@ -606,80 +650,74 @@ def _haskell_repl_impl(ctx):
     ])
     from_source = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_from_source]
     from_binary = [parse_pattern(ctx, pat) for pat in ctx.attr.experimental_from_binary]
-    repl_info = _create_HaskellReplInfo(from_source, from_binary, collect_info)
-    hs = haskell_context(ctx)
-    cc = find_cc_toolchain(ctx)
-    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
-    return _create_repl(hs, cc, posix, ctx, repl_info, ctx.outputs.repl) + \
-           _create_hie_bios(hs, cc, posix, ctx, repl_info, ctx.attr.hie_bios_path_prefix)
+    return _create_HaskellReplInfo(from_source, from_binary, collect_info)
 
-haskell_repl = rule(
+_repl_hie_bios_common_attrs = {
+    "_cc_toolchain": attr.label(
+        default = Label("@rules_cc//cc:current_cc_toolchain"),
+    ),
+    "deps": attr.label_list(
+        aspects = [
+            haskell_cc_libraries_aspect,
+            haskell_repl_aspect,
+        ],
+        doc = "List of Haskell targets to load into the REPL",
+    ),
+    "data": attr.label_list(
+        allow_files = True,
+        doc = "See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data). Only available when `collect_data = True`.",
+    ),
+    "experimental_from_source": attr.string_list(
+        doc = """White-list of targets to load by source.
+
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
+            """,
+        default = ["//..."],
+    ),
+    "experimental_from_binary": attr.string_list(
+        doc = """Black-list of targets to not load by source but as packages.
+
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
+            """,
+        default = [],
+    ),
+    "repl_ghci_args": attr.string_list(
+        doc = "Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` (previously `compiler_flags`) and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
+        default = [],
+    ),
+    "repl_ghci_commands": attr.string_list(
+        doc = "Arbitrary extra commands to execute in GHCi.",
+        default = [],
+    ),
+    "collect_data": attr.bool(
+        doc = "Whether to collect the data runfiles from the dependencies in srcs, data and deps attributes.",
+        default = True,
+    ),
+}
+
+_haskell_repl = rule(
     implementation = _haskell_repl_impl,
-    attrs = {
-        "_ghci_repl_script": attr.label(
+    attrs = dict(
+        _repl_hie_bios_common_attrs,
+        _ghci_repl_script = attr.label(
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:assets/ghci_script"),
         ),
-        "_ghci_repl_wrapper": attr.label(
+        _ghci_repl_wrapper = attr.label(
             allow_single_file = True,
             default = Label("@rules_haskell//haskell:private/ghci_repl_wrapper.sh"),
         ),
-        "_cc_toolchain": attr.label(
-            default = Label("@rules_cc//cc:current_cc_toolchain"),
-        ),
-        "deps": attr.label_list(
-            aspects = [
-                haskell_cc_libraries_aspect,
-                haskell_repl_aspect,
-            ],
-            doc = "List of Haskell targets to load into the REPL",
-        ),
-        "data": attr.label_list(
-            allow_files = True,
-            doc = "See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data). Only available when `collect_data = True`.",
-        ),
-        "experimental_from_source": attr.string_list(
-            doc = """White-list of targets to load by source.
-
-            Wild-card targets such as //... or //:all are allowed.
-
-            The black-list takes precedence over the white-list.
-
-            Note, this attribute will change depending on the outcome of
-            https://github.com/bazelbuild/bazel/issues/7763.
-            """,
-            default = ["//..."],
-        ),
-        "experimental_from_binary": attr.string_list(
-            doc = """Black-list of targets to not load by source but as packages.
-
-            Wild-card targets such as //... or //:all are allowed.
-
-            The black-list takes precedence over the white-list.
-
-            Note, this attribute will change depending on the outcome of
-            https://github.com/bazelbuild/bazel/issues/7763.
-            """,
-            default = [],
-        ),
-        "repl_ghci_args": attr.string_list(
-            doc = "Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` (previously `compiler_flags`) and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.",
-            default = [],
-        ),
-        "repl_ghci_commands": attr.string_list(
-            doc = "Arbitrary extra commands to execute in GHCi.",
-            default = [],
-        ),
-        "collect_data": attr.bool(
-            doc = "Whether to collect the data runfiles from the dependencies in srcs, data and deps attributes.",
-            default = True,
-        ),
-        "hie_bios_path_prefix": attr.string_list(
-            doc = """Path prefix for hie-bios paths. The elements of the list are joined together to build the path.
-                   See [IDE support](#ide-support-experimental).""",
-            default = [],
-        ),
-    },
+    ),
     executable = True,
     outputs = {
         "repl": "%{name}@repl",
@@ -690,8 +728,43 @@ haskell_repl = rule(
         "@rules_sh//sh/posix:toolchain_type",
     ],
     fragments = ["cpp"],
-    doc = """\
-Build a REPL for multiple targets.
+    doc = """ Build a REPL for multiple targets. """,
+)
+
+_hie_bios = rule(
+    implementation = _hie_bios_impl,
+    attrs =
+        dict(
+            _repl_hie_bios_common_attrs,
+            _hie_bios_wrapper = attr.label(
+                allow_single_file = True,
+                default = Label("@rules_haskell//haskell:private/hie_bios_wrapper.sh"),
+            ),
+            _bash_runfiles = attr.label(
+                default = Label("@bazel_tools//tools/bash/runfiles"),
+            ),
+        ),
+    toolchains = [
+        "@rules_haskell//haskell:toolchain",
+        "@rules_cc//cc:toolchain_type",
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
+    fragments = ["cpp"],
+    doc = "Build an executable script that outputs flags for ide integration",
+    executable = True,
+)
+
+def haskell_repl(
+        name,
+        deps,
+        data = [],
+        experimental_from_source = ["//..."],
+        experimental_from_binary = [],
+        repl_ghci_args = [],
+        repl_ghci_commands = [],
+        collect_data = True,
+        **kwargs):
+    """Build a REPL for multiple targets.
 
 ### Examples
 
@@ -726,8 +799,8 @@ $ bazel run //:repl
 
 ### IDE Support (Experimental)
 
-`haskell_repl` targets provide the `hie_bios` output group to optionally
-generate GHCi flags for [hie-bios](https://github.com/mpickering/hie-bios)'s
+The `haskell_repl` macro also creates a runnable target `name@bios` that
+generates GHCi flags for [hie-bios](https://github.com/mpickering/hie-bios)'s
 `bios` cradle. You can use this for IDE support with
 [ghcide](https://github.com/digital-asset/ghcide).
 
@@ -738,8 +811,73 @@ information.
   ```shell
   #!/usr/bin/env bash
   set -euo pipefail
-  bazel build //:repl --output_groups=hie_bios
-  cat bazel-bin/repl@hie-bios >"$HIE_BIOS_OUTPUT"
+  bazel run //:repl@bios
   ```
-""",
-)
+
+    Args:
+      name: A unique name for this rule.
+      deps: List of Haskell targets to load into the REPL.
+      data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data). Only available when `collect_data = True`.
+      experimental_from_source: White-list of targets to load by source.
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
+      experimental_from_binary:
+            Black-list of targets to not load by source but as packages.
+
+            Wild-card targets such as //... or //:all are allowed.
+
+            The black-list takes precedence over the white-list.
+
+            Note, this attribute will change depending on the outcome of
+            https://github.com/bazelbuild/bazel/issues/7763.
+      repl_ghci_args:
+            Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` (previously `compiler_flags`) and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
+      repl_ghci_commands:
+            Arbitrary extra commands to execute in GHCi.
+      collect_data:
+            Whether to collect the data runfiles from the dependencies in srcs, data and deps attributes.
+
+    Deprecated:
+      hie_bios_path_prefix: Attribute has no effect (now that we output absolute paths).
+"""
+    if "hie_bios_path_prefix" in kwargs:
+        kwargs.pop("hie_bios_path_prefix")
+
+    _haskell_repl(
+        name = name,
+        deps = deps,
+        data = data,
+        experimental_from_source = experimental_from_source,
+        experimental_from_binary = experimental_from_binary,
+        repl_ghci_args = repl_ghci_args,
+        repl_ghci_commands = repl_ghci_commands,
+        collect_data = collect_data,
+        **kwargs
+    )
+
+    hie_bios_runnable_target_name = "{}@bios".format(name)
+    hie_bios_script_name = "{}-script".format(hie_bios_runnable_target_name)
+
+    _hie_bios(
+        name = hie_bios_script_name,
+        deps = deps,
+        data = data,
+        experimental_from_source = experimental_from_source,
+        experimental_from_binary = experimental_from_binary,
+        repl_ghci_args = repl_ghci_args,
+        repl_ghci_commands = repl_ghci_commands,
+        collect_data = collect_data,
+        **kwargs
+    )
+
+    native.sh_binary(
+        name = hie_bios_runnable_target_name,
+        srcs = [
+            hie_bios_script_name,
+        ],
+        **kwargs
+    )
