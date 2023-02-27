@@ -24,6 +24,8 @@ bazel_skylib_workspace()
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
+# See https://github.com/tweag/rules_haskell/issues/1871
 http_archive(
     name = "Cabal",
     build_file_content = """
@@ -139,12 +141,7 @@ stack_snapshot(
     ],
     setup_deps = {
         "polysemy": ["cabal-doctest"],
-        # The current version of Cabal has an issue causing the generated Paths_ files
-        # to miss the definition of splitFileName and minusFileName.
-        # The has been a pull request to cabal ( https://github.com/haskell/cabal/pull/8220 ),
-        # merged but not integrated yet in the released version.
-        # Hence temporarily, we rely on the fixed version distributed with
-        # Tweag's fork of Cabal.
+        # See https://github.com/tweag/rules_haskell/issues/1871
         "HUnit": ["@Cabal//:Cabal"],
         "bifunctors": ["@Cabal//:Cabal"],
         "c2hs": ["@Cabal//:Cabal"],
@@ -204,6 +201,7 @@ stack_snapshot(
         "package1",
     ],
     setup_deps = {
+        # See https://github.com/tweag/rules_haskell/issues/1871
         "HUnit": ["@Cabal//:Cabal"],
         "call-stack": ["@Cabal//:Cabal"],
         "hspec": ["@Cabal//:Cabal"],
