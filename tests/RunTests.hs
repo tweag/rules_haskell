@@ -15,6 +15,9 @@ import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
 import Test.Hspec (context, hspec, it, describe, runIO)
 
+import BinModule (b)
+import GenModule (a)
+
 import IntegrationTesting
 
 main :: IO ()
@@ -156,3 +159,8 @@ bazel args = Process.proc "bazel" args
 -- | Runs a bazel query and return the list of matching targets
 bazelQuery :: String -> SpecM a [String]
 bazelQuery q = lines <$> runIO (Process.readProcess "bazel" ["query", q] "")
+
+
+-- Generated dependencies for testing the ghcide support
+_ghciIDE :: Int
+_ghciIDE = a + b

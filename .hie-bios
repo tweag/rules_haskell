@@ -1,26 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 hie_bios_flags() {
-  local -x OUTPUT_PATH
-  OUTPUT_PATH=$( bazel info output_path )
-  bazel build //tests:hie-bios \
-    --output_groups=hie_bios \
-    --experimental_show_artifacts \
-    2>&1 \
-    | awk '
-      /^>>>/ {
-        while ((getline line < substr($1, 4)) > 0) {
-          sub(/^bazel-out\//, ENVIRON["OUTPUT_PATH"] "/", line)
-          sub(/\-ibazel-out\//, "-i" ENVIRON["OUTPUT_PATH"] "/", line)
-          sub(/\-Lbazel-out\//, "-L" ENVIRON["OUTPUT_PATH"] "/", line)
-          print line
-        }
-        next
-      }
-      {
-        print $0 > "/dev/stderr"
-      }
-    '
+  bazel run //tests:hie-bios@bios
   # Make warnings non-fatal
   echo -Wwarn
 }
