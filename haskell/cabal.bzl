@@ -470,6 +470,7 @@ def _haskell_cabal_library_impl(ctx):
         "_install/{}.conf.d/package.cache".format(package_id),
         sibling = cabal,
     )
+    print("package_database for {}: {}".format(package_name, package_database.root.path))
     interfaces_dir = hs.actions.declare_directory(
         "_install/{}_iface".format(package_id),
         sibling = cabal,

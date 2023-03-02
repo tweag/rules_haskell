@@ -52,7 +52,8 @@ cd "$BUILD_WORKSPACE_DIRECTORY" || { echo "Cannot cd into $BUILD_WORKSPACE_DIREC
 # location of exec root reliably and then prefix locations of various
 # components, such as shared libraries with that exec root.
 
-RULES_HASKELL_EXEC_ROOT=$(dirname "$(readlink "${BUILD_WORKSPACE_DIRECTORY}"/bazel-out)")
+RULES_HASKELL_EXEC_ROOT=$(dirname "$(readlink "${BUILD_WORKSPACE_DIRECTORY}/${SYMLINK_PREFIX:-bazelxxx}-out")")
+
 TOOL_LOCATION="$RULES_HASKELL_EXEC_ROOT/%{TOOL}"
 # shellcheck disable=SC1083
 ARGS=%{ARGS}

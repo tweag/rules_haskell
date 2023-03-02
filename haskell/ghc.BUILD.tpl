@@ -65,4 +65,12 @@ cc_toolchain(
     toolchain_identifier = "ghc_windows_mingw64",
 )
 
+toolchain(
+    name = "ghc_mingw",
+    toolchain = ":cc-compiler-mingw64",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+    exec_compatible_with = [ "@platforms//os:windows", "@platforms//cpu:x86_64" ],
+    target_compatible_with = [ "@platforms//os:windows", "@platforms//cpu:x86_64" ],
+)
+
 cc_toolchain_config(name = "ghc_windows_mingw64_config")
