@@ -24,7 +24,7 @@ module Control.Monad.Primitive (
 ) where
 
 import GHC.Exts   ( State#, RealWorld, noDuplicate#, touch# )
-import GHC.Base   ( unsafeCoerce#, realWorld# )
+import GHC.Base   ( realWorld# )
 #if MIN_VERSION_base(4,4,0)
 import GHC.Base   ( seq# )
 #else
@@ -35,6 +35,7 @@ import GHC.IO     ( IO(..) )
 #else
 import GHC.IOBase ( IO(..) )
 #endif
+import GHC.Exts   ( unsafeCoerce# )
 import GHC.ST     ( ST(..) )
 
 import Control.Monad.Trans.Class (lift)

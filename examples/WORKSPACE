@@ -18,14 +18,14 @@ rules_haskell_dependencies()
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path = "haskell.compiler.ghc925",
     repository = "@rules_haskell//nixpkgs:default.nix",
-    version = "8.10.7",
+    version = "9.2.5",
 )
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
-rules_haskell_toolchains(version = "8.10.7")
+rules_haskell_toolchains(version = "9.2.5")
 
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
@@ -93,6 +93,15 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
+    components = {
+        "attoparsec": [
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    },
+    components_dependencies = {
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
     extra_deps = {"zlib": ["@zlib.hs"]},
     flags = {
         # Sets the default explicitly to demonstrate the flags attribute.
@@ -101,6 +110,7 @@ stack_snapshot(
             "-pkg-config",
         ],
     },
+    local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
     packages = [
         "base",
         "bytestring",
@@ -111,11 +121,9 @@ stack_snapshot(
         "text",
         "text-show",
     ],
-    snapshot = "lts-18.0",
     # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
     # uncomment the following line.
     # And uncomment the following line.
-    # stack_snapshot_json = "//:stackage_snapshot.json",
     vendored_packages = {"split": "@split//:split"},
 )

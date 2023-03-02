@@ -581,11 +581,17 @@ def _hie_bios_impl(ctx):
     for import_dir in import_dirs:
         args.append("-i" + (import_dir or "."))
 
-    # List modules (Targets) covered by this cradle.
-    args.extend([_rlocation(ctx, f) for f in repl_info.load_info.source_files.to_list()])
-
-    # List boot files
-    args.extend([_rlocation(ctx, f) for f in repl_info.load_info.boot_files.to_list()])
+    # List modules (Targets) covered by this cradle and boot files
+    # We could also rely on the _rlocation function here but we do the same as for import_dirs because of the following issue:
+    # https://github.com/haskell/haskell-language-server/issues/3510
+    args.extend([
+        paths.join("$RULES_HASKELL_EXEC_ROOT", f.path)
+        for f in repl_info.load_info.source_files.to_list()
+    ])
+    args.extend([
+        paths.join("$RULES_HASKELL_EXEC_ROOT", f.path)
+        for f in repl_info.load_info.boot_files.to_list()
+    ])
 
     hie_bios_script = hs.actions.declare_file(
         target_unique_name(hs, "hie-bios"),

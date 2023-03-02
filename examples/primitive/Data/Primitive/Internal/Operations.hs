@@ -33,21 +33,21 @@ import Foreign.C.Types
 import GHC.Exts
 
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
-  setWord8Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word# -> IO ()
+  setWord8Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word8# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
-  setWord16Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word# -> IO ()
+  setWord16Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word16# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
-  setWord32Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word# -> IO ()
+  setWord32Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word32# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word64"
   setWord64Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word64_# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word"
   setWordArray# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
-  setInt8Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int# -> IO ()
+  setInt8Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int8# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
-  setInt16Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int# -> IO ()
+  setInt16Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int16# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
-  setInt32Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int# -> IO ()
+  setInt32Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int32# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word64"
   setInt64Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int64_# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word"
@@ -64,21 +64,21 @@ foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Char"
   setWideCharArray# :: MutableByteArray# s -> CPtrdiff -> CSize -> Char# -> IO ()
 
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
-  setWord8OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word# -> IO ()
+  setWord8OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word8# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
-  setWord16OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word# -> IO ()
+  setWord16OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word16# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
-  setWord32OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word# -> IO ()
+  setWord32OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word32# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word64"
   setWord64OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word64_# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word"
   setWordOffAddr# :: Addr# -> CPtrdiff -> CSize -> Word# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
-  setInt8OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int# -> IO ()
+  setInt8OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int8# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
-  setInt16OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int# -> IO ()
+  setInt16OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int16# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
-  setInt32OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int# -> IO ()
+  setInt32OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int32# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word64"
   setInt64OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int64_# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word"
@@ -93,4 +93,3 @@ foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Double"
   setDoubleOffAddr# :: Addr# -> CPtrdiff -> CSize -> Double# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Char"
   setWideCharOffAddr# :: Addr# -> CPtrdiff -> CSize -> Char# -> IO ()
-

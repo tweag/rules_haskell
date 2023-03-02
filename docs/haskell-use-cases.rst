@@ -323,11 +323,11 @@ package versions and dependencies based on a given Stackage snapshot. It also
 downloads the packages sources and generates Bazel build definitions for the
 individual Cabal packages.
 
-This is how you import the Stackage LTS 14.0 snapshot ::
+This is how you import the Stackage LTS 20.3 snapshot ::
 
   stack_snapshot(
       name = "stackage",
-      snapshot = "lts-14.0",
+      snapshot = "lts-20.3",
       packages = [
           "base",
           "optparse-applicative",
