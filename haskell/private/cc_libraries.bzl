@@ -134,7 +134,7 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
 
     return (static_libs, dynamic_libs)
 
-def link_libraries(libs, args, path_prefix = "", prefix_optl = False):
+def link_libraries(libs, args, get_dirname = get_dirname, prefix_optl = False):
     """Add linker flags to link against the given libraries.
 
     This function is intended for linking C library dependencies. Haskell
@@ -144,24 +144,22 @@ def link_libraries(libs, args, path_prefix = "", prefix_optl = False):
     Args:
       libs: Sequence of File, libraries to link.
       args: Args or List, append arguments to this object.
-      path_prefix: String, a prefix to apply to search directory arguments. A
-        trailing slash will automatically be added to this argument if provided
-        (you do not need to provide one).
+      get_dirname: File -> string, Optionally customize the get_dirname function (for instance to add a prefix to all directories).
       prefix_optl: Bool, whether to prefix linker flags by -optl
 
     """
     if prefix_optl:
         libfmt = "-optl-l%s"
-        dirfmt = "-optl-L" + paths.join(path_prefix, "%s")
+        dirfmt = "-optl-L%s"
     else:
         libfmt = "-l%s"
-        dirfmt = "-L" + paths.join(path_prefix, "%s")
+        dirfmt = "-L%s"
 
     if hasattr(args, "add_all"):
         args.add_all(libs, map_each = get_dirname, format_each = dirfmt, uniquify = True)
         args.add_all(libs, map_each = get_lib_name, format_each = libfmt)
     else:
-        args.extend([dirfmt % lib.dirname for lib in libs])
+        args.extend([dirfmt % get_dirname(lib) for lib in libs])
         args.extend([libfmt % get_lib_name(lib) for lib in libs])
 
 def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None, dirprefix = ""):

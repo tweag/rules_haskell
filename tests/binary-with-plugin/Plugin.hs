@@ -5,7 +5,11 @@ module Plugin (plugin) where
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as Char8
-import GhcPlugins
+import GHC.Types.Literal
+import GHC.Driver.Plugins
+import GHC.Core
+import GHC.Core.Opt.Monad
+import GHC.Unit.Module.ModGuts
 import System.Process (readProcess)
 
 
@@ -38,7 +42,7 @@ replaceInExpr bs = go
       Lam b e -> Lam b (go e)
       Let bnd e -> Let bnd (go e)
       Case e0 b t alts ->
-        let repInAlt (a, bs, e) = (a, bs, go e)
+        let repInAlt (Alt a bs e) = Alt a bs (go e)
             alts' = map repInAlt alts
          in (Case (go e0) b t alts')
       Cast e c -> Cast (go e) c

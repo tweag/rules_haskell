@@ -1,6 +1,6 @@
 module Plugin where
 
-import GhcPlugins
+import GHC.Driver.Plugins
 
 plugin :: Plugin
 plugin = defaultPlugin

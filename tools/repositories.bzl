@@ -13,6 +13,7 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
     if "rules_haskell_worker_dependencies" not in excludes:
         stack_snapshot(
             name = "rules_haskell_worker_dependencies",
+            local_snapshot = "//:stackage_snapshot.yaml",
             packages = [
                 "base",
                 "bytestring",
@@ -21,12 +22,16 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
                 "ghc-paths",
                 "microlens",
                 "process",
-                "profunctors-5.5.2",
-                "proto-lens-0.7.0.0",
-                "proto-lens-runtime-0.7.0.0",
+                "profunctors",
+                "proto-lens",
+                "proto-lens-runtime",
                 "text",
                 "vector",
             ],
-            snapshot = "lts-18.0",
+            setup_deps = {
+                "bifunctors": ["@Cabal//:Cabal"],
+                "proto-lens-runtime": ["@Cabal//:Cabal"],
+                "transformers-compat": ["@Cabal//:Cabal"],
+            },
             **stack_kwargs
         )

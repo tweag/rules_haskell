@@ -339,9 +339,6 @@ def _prepare_cabal_inputs(
         extra_args.append("--ghc-option=-optl-static")
 
     path_args = [
-        "--package-db=" + _dirname(db)
-        for db in package_databases.to_list()
-    ] + [
         "--extra-include-dirs=" + d
         for d in direct_include_dirs.to_list()
     ] + _uniquify(["--extra-lib-dirs=" + d for d in direct_lib_dirs])
@@ -369,6 +366,7 @@ def _prepare_cabal_inputs(
         cabal_basename = cabal.basename,
         cabal_dirname = cabal.dirname,
         extra_ldflags_file = extra_ldflags_file.path if extra_ldflags_file else None,
+        package_databases = [p.path for p in package_databases.to_list()],
     )
 
     ghc_files = hs.toolchain.bindir + hs.toolchain.libdir
@@ -1926,6 +1924,7 @@ def _stack_snapshot_impl(repository_ctx):
 
     reverse_deps = {}
     for (name, spec) in resolved.items():
+        reverse_deps.setdefault(name, [])
         for dep in spec["dependencies"]:
             rdeps = reverse_deps.setdefault(dep, [])
             rdeps.append(name)
@@ -2486,8 +2485,8 @@ def stack_snapshot(
       - visibility: The visibility of the given package.
 
     **NOTE:** Make sure your GHC version matches the version expected by the
-    snapshot. E.g. if you pass `snapshot = "lts-13.15"`, make sure you use
-    GHC 8.6.4 (e.g. by invoking `rules_haskell_toolchains(version="8.6.4")`).
+    snapshot. E.g. if you pass `snapshot = "lts-20.3"`, make sure you use
+    GHC 9.2.5 (e.g. by invoking `rules_haskell_toolchains(version="9.2.5")`).
     Sadly, rules_haskell cannot maintain this correspondence for you. You will
     need to manage it yourself. If you have a version mismatch, you will end up
     with versions of [core GHC packages][ghc-builtins] which do not match the
@@ -2507,7 +2506,7 @@ def stack_snapshot(
               "doctest": ["lib", "exe"],  # Optional since doctest is known to have an exe component.
               "happy": [],  # Override happy's default exe component.
           },
-          snapshot = "lts-13.15",
+          snapshot = "lts-20.3",
           extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       )
       ```
@@ -2536,7 +2535,7 @@ def stack_snapshot(
       `snapshot.yaml`, at the root of the repository with content
 
       ```yaml
-      resolver: lts-13.15
+      resolver: lts-20.3
 
       packages:
         - zlib-0.6.2

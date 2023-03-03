@@ -119,6 +119,7 @@ package_database = os.path.join(pkgroot, "{}.conf.d".format(name))
 haddockdir = os.path.join(pkgroot, "{}_haddock".format(name))
 htmldir = os.path.join(pkgroot, "{}_haddock_html".format(name))
 runghc_args = json_args["runghc_args"]
+deps_package_databases = json_args["package_databases"]
 
 runghc = find_exe(toolchain_info["runghc"])
 ghc = find_exe(toolchain_info["ghc"])
@@ -162,6 +163,32 @@ def mkdtemp(prefix):
     finally:
         shutil.rmtree(dirname, ignore_errors = True)
 
+@contextmanager
+def init_deps_db():
+    """ Optionally initialise a package_db in which to add dependencies.
+    In order to keep command lines shorter on windows.
+
+    This is a context manager that will create the directory on entry and
+    delete it on exit.
+    """
+    if is_windows and deps_package_databases:
+        deps_package_root = os.path.dirname(pkgroot)
+        deps_package_db = os.path.join(deps_package_root, "rules_haskell_deps_of_{}.conf.d".format(name))
+        candidates = (os.path.join(deps_package_root, "rules_haskell_deps_of_{}_{}".format(name, i)) for i in itertools.count(1))
+        for candidate in candidates:
+            try:
+                os.makedirs(candidate, mode=0o700, exist_ok=False)
+                run([ghc_pkg, "recache","--package-db={}".format(candidate)])
+                break
+            except FileExistsError:
+                pass
+        try:
+            yield candidate
+        finally:
+            shutil.rmtree(candidate, ignore_errors = True)
+    else:
+        yield None
+
 def distdir_prefix():
     # Build into a sibling path of the final binary output location.
     # This is to ensure that relative `RUNPATH`s are valid in the intermediate
@@ -190,7 +217,7 @@ def distdir_prefix():
 # path to this distdir enters into flags that are passed to GHC and thereby
 # into the 'flag hash' field of generated interface files. We try to use a
 # reproducible path for the distdir to keep interface files reproducible.
-with mkdtemp(distdir_prefix()) as distdir:
+with mkdtemp(distdir_prefix()) as distdir, init_deps_db() as deps_package_db:
     enable_relocatable_flags = ["--enable-relocatable"] \
             if not is_windows else []
 
@@ -211,6 +238,17 @@ with mkdtemp(distdir_prefix()) as distdir:
     cfg_execroot = rel_execroot if not is_windows else execroot
     cfg_pkgroot = os.path.join(cfg_execroot, rel_pkgroot)
 
+    if deps_package_db:
+        # We merge databases of dependencies together assuming that they each contain only one package
+        for db in deps_package_databases:
+            try:
+                ps = subprocess.Popen([ghc_pkg, "dump", "--expand-pkgroot", "-f", os.path.dirname(os.path.join(execroot,db))], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.check_output([ghc_pkg, "update", "-f", deps_package_db, "-"], stdin=ps.stdout, stderr=subprocess.PIPE)
+                ps.wait()
+            except subprocess.CalledProcessError as err:
+                sys.stdout.buffer.write(err.stdout)
+                sys.stderr.buffer.write(err.stderr)
+                raise
 
     # Create a Paths module that will be used instead of the cabal generated one.
     # https://cabal.readthedocs.io/en/3.4/cabal-package.html#accessing-data-files-from-package-code
@@ -253,6 +291,13 @@ with mkdtemp(distdir_prefix()) as distdir:
     if "RUNFILES_MANIFEST_FILE" in os.environ:
         del os.environ["RUNFILES_MANIFEST_FILE"]
     runghc_args = [arg.replace("./", execroot + "/") for arg in runghc_args]
+
+    if not deps_package_db:
+        path_args.extend(["--package-db=" + os.path.dirname(db) for db in deps_package_databases])
+    path_args = [ arg.replace("=", "=" + cfg_execroot + "/") for arg in path_args ]
+    if deps_package_db:
+        path_args.append("--package-db={}".format(deps_package_db))
+
     run([runghc] + runghc_args + [setup, "configure", \
         component, \
         "--verbose=0", \
@@ -294,7 +339,7 @@ with mkdtemp(distdir_prefix()) as distdir:
         "--package-db=global", \
         ] + \
         extra_args + \
-        [ arg.replace("=", "=" + cfg_execroot + "/") for arg in path_args ] + \
+        path_args +\
         [ "--package-db=" + package_database ], # This arg must come last.
         )
     run([runghc] + runghc_args + [setup, "build", "--verbose=0", "--builddir=" + distdir])
