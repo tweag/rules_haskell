@@ -69,16 +69,20 @@ haskell_test(
     ],
 )
 
+entry_point = "subfolder/ahc_dist_bin.mjs"
+
 ahc_dist(
     name = "ahc_dist_bin",
     testonly = 1,
     dep = ":bin",
+    entry_point = entry_point,
     tags = tags,
 )
 
 asterius_test(
     name = "asterius_bin",
     ahc_dist_dep = ":ahc_dist_bin",
+    entry_point = entry_point,
     tags = tags,
 )
 
@@ -86,5 +90,6 @@ asterius_webpack(
     name = "asterius_bundle",
     testonly = 1,
     ahc_dist_dep = ":ahc_dist_bin",
+    entry_point = entry_point,
     tags = tags,
 )
