@@ -40,6 +40,19 @@ def asterius_test_macro(
         tags = tags,
     )
 
+    # TODO the following `asterius_binary_from_genrule` rule is meant to test
+    # running a WebAssembly based js_binary as a build action.
+    # It is set to `manual` and left for future work as rules_haskell WebAssembly handling may
+    # need significant refactoring in the move from asterius to ghc's WebAssembly backend.
+    native.genrule(
+        name = "asterius_binary_from_genrule" + suffix,
+        outs = ["out" + suffix],
+        cmd = "BAZEL_BINDIR=$(BINDIR) $(location :asterius_binary{}) > \"$@\"".format(suffix),
+        exec_tools = [":asterius_binary" + suffix],
+        testonly = True,
+        tags = tags + ["manual"],
+    )
+
     asterius_webpack(
         name = "bundle" + suffix,
         ahc_dist_dep = "test_ahc_dist" + suffix,
