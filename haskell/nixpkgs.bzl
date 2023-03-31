@@ -214,7 +214,8 @@ def haskell_register_ghc_nixpkgs(
         repository = None,
         nix_file_content = None,
         exec_constraints = None,
-        target_constraints = None):
+        target_constraints = None,
+        register = True):
     """Register a package from Nixpkgs as a toolchain.
 
     Toolchains can be used to compile Haskell code. To have this
@@ -270,6 +271,7 @@ def haskell_register_ghc_nixpkgs(
       repository: Passed to [nixpkgs_package](https://github.com/tweag/rules_nixpkgs#nixpkgs_package-repository)
       sh_posix_attributes: List of attribute paths to extract standard Unix shell tools from.
         Passed to [nixpkgs_sh_posix_configure](https://github.com/tweag/rules_nixpkgs#nixpkgs_sh_posix_configure).
+      register: Whether to register the toolchain (must be set to False if bzlmod is enabled)
     """
     nixpkgs_ghc_repo_name = "{}_ghc_nixpkgs".format(name)
     nixpkgs_sh_posix_repo_name = "{}_sh_posix_nixpkgs".format(name)
@@ -329,7 +331,8 @@ def haskell_register_ghc_nixpkgs(
         target_constraints = target_constraints,
         haskell_toolchain_repo_name = haskell_toolchain_repo_name,
     )
-    native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
+    if register:
+        native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
 
     # Unix tools toolchain required for Cabal packages
     sh_posix_nixpkgs_kwargs = dict(
