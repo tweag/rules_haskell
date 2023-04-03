@@ -2,15 +2,15 @@ load("//haskell:private/dict.bzl", "find")
 
 OS = {
     "aix": None,
-    "darwin": "@platforms//os:osx",
+    "darwin": "osx",
     "dragonfly": None,
-    "freebsd": "@platforms//os:freebsd",
+    "freebsd": "freebsd",
     "haiku": None,
     "hpux": None,
-    "ios": "@platforms//os:ios",
-    "linux_android": "@platforms//os:android",
-    "linux": "@platforms//os:linux",
-    "mingw32": "@platforms//os:windows",
+    "ios": "ios",
+    "linux_android": "android",
+    "linux": "linux",
+    "mingw32": "windows",
     "netbsd": None,
     "openbsd": None,
     "solaris2": None,
@@ -19,16 +19,16 @@ OS = {
 ARCH = {
     "aarch64": None,
     "alpha": None,
-    "arm64": "@platforms//cpu:aarch64",
-    "arm": "@platforms//cpu:arm",
-    "i386": "@platforms//cpu:x86_32",
+    "arm64": "aarch64",
+    "arm": "arm",
+    "i386": "x86_32",
     "ia64": None,
     "powerpc64": None,
     "powerpc64le": None,
-    "powerpc": "@platforms//cpu:ppc",
+    "powerpc": "ppc",
     "rs6000": None,
     "sparc": None,
-    "x86_64": "@platforms//cpu:x86_64",
+    "x86_64": "x86_64",
 }
 
 def declare_config_settings():
@@ -36,14 +36,14 @@ def declare_config_settings():
         if constraint_value:
             native.config_setting(
                 name = os,
-                constraint_values = [constraint_value],
+                constraint_values = ["@platforms//os:{}".format(constraint_value)],
                 visibility = ["//visibility:public"],
             )
     for arch, constraint_value in ARCH.items():
         if constraint_value:
             native.config_setting(
                 name = arch,
-                constraint_values = [constraint_value],
+                constraint_values = ["@platforms//cpu:{}".format(constraint_value)],
                 visibility = ["//visibility:public"],
             )
 
@@ -53,7 +53,7 @@ def os_of_constraints(constraints):
     """
     for c in constraints:
         if c.package == "os":
-            return find(OS, str(c))
+            return find(OS, c.name)
 
 def arch_of_constraints(constraints):
     """ Returns the architecture corresponding to the first arch constraint.
@@ -61,7 +61,7 @@ def arch_of_constraints(constraints):
     """
     for c in constraints:
         if c.package == "cpu":
-            return find(ARCH, str(c))
+            return find(ARCH, c.name)
 
 def platform_of_constraints(constraints):
     os = os_of_constraints(constraints)

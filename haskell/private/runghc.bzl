@@ -26,7 +26,7 @@ def _runghc_wrapper_impl(ctx):
 
 import subprocess
 import sys
-from rules_python.python.runfiles import runfiles
+from python.runfiles import runfiles
 
 r = runfiles.Create()
 

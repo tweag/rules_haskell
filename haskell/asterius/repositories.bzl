@@ -225,8 +225,9 @@ def rules_haskell_asterius_toolchain(
         ghcopts = None,
         repl_ghci_args = None,
         cabalopts = None,
-        locale = None):
-    """ Define and registers asterius related toolchains.
+        locale = None,
+        register = True):
+    """ Define and (optionally) registers asterius related toolchains.
 
     Args:
       name: A unique name for the repository.
@@ -242,6 +243,7 @@ def rules_haskell_asterius_toolchain(
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
+      register: Whether to register the toolchains (must be set to False if bzlmod is activated)
     """
 
     _ahc(
@@ -266,18 +268,20 @@ def rules_haskell_asterius_toolchain(
         exec_constraints = exec_constraints,
         wasm_cc_toolchain = wasm_cc_toolchain,
     )
-    native.register_toolchains("@{}//:toolchain".format(toolchain_name))
-    native.register_toolchains("@{}//:asterius_toolchain".format(toolchain_name))
-    native.register_toolchains("@{}//:wasm_cc_toolchain".format(toolchain_name))
+    if register:
+        native.register_toolchains("@{}//:toolchain".format(toolchain_name))
+        native.register_toolchains("@{}//:asterius_toolchain".format(toolchain_name))
+        native.register_toolchains("@{}//:wasm_cc_toolchain".format(toolchain_name))
 
 def rules_haskell_asterius_toolchains(
         version = AHC_DEFAULT_VERSION,
         ghcopts = [],
         cabalopts = [],
         repl_ghci_args = [],
-        locale = None):
+        locale = None,
+        register = True):
     """
-    Register Asterius related toolchains for all platforms.
+    Create and (optionally) register Asterius related toolchains for all platforms.
 
     Args:
       version: Asterius version.
@@ -286,6 +290,8 @@ def rules_haskell_asterius_toolchains(
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
+      register: Whether to register the toolchains (must be set to False if bzlmod is activated)
+
     """
     if not AHC_BINDIST.get(version):
         fail("Binary distribution of Asterius {} not available.".format(version))
@@ -324,6 +330,7 @@ def rules_haskell_asterius_toolchains(
             ghcopts = ghcopts,
             cabalopts = cabalopts,
             locale = locale,
+            register = register,
         )
 
 def asterius_dependencies_bindist(**kwargs):

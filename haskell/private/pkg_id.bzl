@@ -9,7 +9,7 @@ def _zencode(s):
     Args:
       s: string
     """
-    return s.replace("Z", "ZZ").replace("_", "ZU").replace("/", "ZS")
+    return s.replace("Z", "ZZ").replace("_", "ZU").replace("/", "ZS").replace("~", "z7eU")
 
 def _to_string(my_pkg_id):
     """Get a globally unique package identifier.
