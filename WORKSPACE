@@ -66,11 +66,6 @@ haskell_cabal_binary(
     urls = ["http://hackage.haskell.org/package/alex-3.2.7.1/alex-3.2.7.1.tar.gz"],
 )
 
-load(
-    "@rules_haskell//:constants.bzl",
-    "test_asterius_version",
-    "test_ghc_version",
-)
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
@@ -318,14 +313,6 @@ stack_snapshot(
     },
 )
 
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-    "nixpkgs_cc_configure",
-    "nixpkgs_local_repository",
-    "nixpkgs_package",
-    "nixpkgs_python_configure",
-)
-
 http_archive(
     name = "rules_proto",
     sha256 = "36476f17a78a4c495b9a9e70bd92d182e6e78db476d90c74bac1f5f19f0d6d04",
@@ -339,197 +326,30 @@ rules_proto_dependencies()
 
 rules_proto_toolchains()
 
-nixpkgs_local_repository(
-    name = "nixpkgs_default",
-    nix_file = "//nixpkgs:default.nix",
+# For buildifier
+# starting from 0.29, rules_go requires bazel >= 4.2.0
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+    ],
 )
 
-test_ghcopts = [
-    "-XStandaloneDeriving",  # Flag used at compile time
-    "-threaded",  # Flag used at link time
+load("non_module_deps_1.bzl", repositories_1 = "repositories")
 
-    # Used by `tests/repl-flags`
-    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
-    # this is the default, so it does not harm other tests
-    "-XNoOverloadedStrings",
-]
-
-test_haddock_flags = ["-U"]
-
-test_repl_ghci_args = [
-    # The repl test will need this flag, but set by the local
-    # `repl_ghci_args`.
-    "-UTESTS_TOOLCHAIN_REPL_FLAGS",
-    # The repl test will need OverloadedString
-    "-XOverloadedStrings",
-]
-
-test_cabalopts = [
-    # Used by `tests/cabal-toolchain-flags`
-    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
-    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
-] + ([
-    # To avoid ghcide linking errors with heapsize on Windows of the form
-    #
-    #   unknown symbol `heap_view_closurePtrs'
-    #
-    # See https://github.com/haskell/ghcide/pull/954
-    "--disable-library-for-ghci",
-] if is_windows else [])
-
-load(
-    "@rules_haskell//haskell:nixpkgs.bzl",
-    "haskell_register_ghc_nixpkgs",
-)
-
-haskell_register_ghc_nixpkgs(
-    attribute_path = "",
-    cabalopts = test_cabalopts,
-    ghcopts = test_ghcopts,
-    haddock_flags = test_haddock_flags,
-    locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
-    repl_ghci_args = test_repl_ghci_args,
-    repository = "@nixpkgs_default",
-    version = test_ghc_version,
-)
-
-load(
-    "//haskell/asterius:repositories.bzl",
-    "asterius_dependencies_bindist",
-    "asterius_dependencies_nix",
-    "rules_haskell_asterius_toolchains",
-    "toolchain_libraries",
-)
-
-(asterius_dependencies_nix(
-    nix_repository = "@nixpkgs_default",
-    nixpkgs_package_rule = nixpkgs_package,
-) if is_nix_shell else asterius_dependencies_bindist())
+repositories_1(bzlmod = False)
 
 load("@rules_haskell_npm//:repositories.bzl", "npm_repositories")
 
 npm_repositories()
-
-rules_haskell_asterius_toolchains(
-    cabalopts = test_cabalopts,
-    ghcopts = test_ghcopts,
-    repl_ghci_args = test_repl_ghci_args,
-    version = test_asterius_version,
-)
-
-load(
-    "@rules_haskell//haskell:ghc_bindist.bzl",
-    "haskell_register_ghc_bindists",
-)
-
-haskell_register_ghc_bindists(
-    cabalopts = test_cabalopts,
-    ghcopts = test_ghcopts,
-    version = test_ghc_version,
-)
 
 register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
     "//tests:protobuf-toolchain-osx_arm64",
-)
-
-nixpkgs_cc_configure(
-    # Don't override the default cc toolchain needed for bindist mode.
-    name = "nixpkgs_config_cc",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_python_configure(repository = "@nixpkgs_default")
-
-nixpkgs_package(
-    name = "nixpkgs_zlib",
-    attribute_path = "zlib",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "nixpkgs_lz4",
-    attribute_path = "lz4.out",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-cc_library(
-  name = "nixpkgs_lz4",
-  srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"], allow_empty = True),
-  includes = ["include"],
-)
-    """,
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "python3",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "sphinx",
-    attribute_path = "python39Packages.sphinx",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "graphviz",
-    attribute_path = "graphviz",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "zip",
-    attribute_path = "zip",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "zlib.dev",
-    build_file_content = """
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-filegroup(
-    name = "include",
-    srcs = glob(["include/*.h"]),
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "zlib",
-    srcs = ["@nixpkgs_zlib//:lib"],
-    hdrs = [":include"],
-    strip_include_prefix = "include",
-    visibility = ["//visibility:public"],
-    # This rule only bundles headers and a library and doesn't compile or link by itself.
-    # We set linkstatic = 1 to quiet to quiet the following warning:
-    #
-    #   in linkstatic attribute of cc_library rule @zlib.dev//:zlib:
-    #   setting 'linkstatic=1' is recommended if there are no object files.
-    #
-    linkstatic = 1,
-)
-""",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "glibc_locales",
-    attribute_path = "glibcLocales",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "locale-archive",
-    srcs = ["lib/locale/locale-archive"],
-)
-""",
-    repository = "@nixpkgs_default",
 )
 
 load("@bazel_tools//tools/build_defs/repo:jvm.bzl", "jvm_maven_import_external")
@@ -546,32 +366,10 @@ load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
 
 stardoc_repositories()
 
-load(
-    "@rules_haskell//docs/pandoc:pandoc.bzl",
-    "import_pandoc_bindists",
-    "nixpkgs_pandoc_configure",
-)
-
-nixpkgs_pandoc_configure(repository = "@nixpkgs_default")
-
-import_pandoc_bindists()
-
 register_toolchains(
     "@rules_haskell//docs/pandoc:nixpkgs",
     "@rules_haskell//docs/pandoc:linux",
     "@rules_haskell//docs/pandoc:macos",
-)
-
-# For buildifier
-
-# starting from 0.29, rules_go requires bazel >= 4.2.0
-http_archive(
-    name = "io_bazel_rules_go",
-    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
-    ],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
@@ -614,14 +412,6 @@ bind(
     actual = "@com_google_protobuf//util/python:python_headers",
 )
 
-# Stack snapshot repository for testing non standard toolchains
-# The toolchain_libraries rule provide a default value for the toolchain_libraries
-# variable, so we can load it even if we are not on linux.
-
-toolchain_libraries(
-    name = "toolchains_libraries",
-    repository = "linux_amd64_asterius" if is_linux else "",
-)
 
 load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
 
@@ -634,10 +424,3 @@ stack_snapshot(
     stack_snapshot_json = "@rules_haskell//tests/asterius/stack_toolchain_libraries:snapshot.json",
     toolchain_libraries = toolchain_libraries,
 ) if is_linux else None
-
-load(
-    "//tests/integration_testing:dependencies.bzl",
-    "integration_testing_bazel_binaries",
-)
-
-integration_testing_bazel_binaries()
