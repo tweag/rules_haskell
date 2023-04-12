@@ -1,19 +1,16 @@
 workspace(name = "rules_haskell")
 
-# Subrepositories of rules_haskell
-
-# Some helpers for platform-dependent configuration
-load("//tools:os_info.bzl", "os_info")
-
-os_info(name = "os_info")
-
-load("@os_info//:os_info.bzl", "is_linux", "is_nix_shell", "is_windows")
-
-# bazel dependencies
 load("//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
+load("//:non_module_deps.bzl", "repositories")
+
+repositories(bzlmod = False)
+
+load("@os_info//:os_info.bzl", "is_linux", "is_nix_shell", "is_windows")
+
+# bazel dependencies
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
 rules_js_dependencies()
@@ -535,42 +532,6 @@ filegroup(
     repository = "@nixpkgs_default",
 )
 
-http_archive(
-    name = "zlib.hs",
-    build_file_content = """
-load("@os_info//:os_info.bzl", "is_darwin")
-load("@rules_cc//cc:defs.bzl", "cc_library")
-cc_library(
-    name = "zlib",
-    # Import `:z` as `srcs` to enforce the library name `libz.so`. Otherwise,
-    # Bazel would mangle the library name and e.g. Cabal wouldn't recognize it.
-    srcs = [":z"],
-    hdrs = glob(["*.h"]),
-    includes = ["."],
-    linkstatic = 1,
-    visibility = ["//visibility:public"],
-)
-cc_library(
-    name = "z",
-    srcs = glob(["*.c"]),
-    hdrs = glob(["*.h"]),
-    # Needed because XCode 12.0 Clang errors by default.
-    # See https://developer.apple.com/documentation/xcode-release-notes/xcode-12-release-notes.
-    copts = ["-Wno-error=implicit-function-declaration"],
-    # Cabal packages depending on dynamic C libraries fail on MacOS
-    # due to `-rpath` flags being forwarded indiscriminately.
-    # See https://github.com/tweag/rules_haskell/issues/1317
-    linkstatic = is_darwin,
-)
-""",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-    strip_prefix = "zlib-1.2.11",
-    urls = [
-        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
-        "http://zlib.net/zlib-1.2.11.tar.gz",
-    ],
-)
-
 load("@bazel_tools//tools/build_defs/repo:jvm.bzl", "jvm_maven_import_external")
 
 jvm_maven_import_external(
@@ -579,37 +540,6 @@ jvm_maven_import_external(
     artifact_sha256 = "28aad0602a5eea97e9cfed3a7c5f2934cd5afefdb7f7c1d871bb07985453ea6e",
     licenses = ["notice"],
     server_urls = ["https://repo.maven.apache.org/maven2"],
-)
-
-# c2hs rule in its own repository
-local_repository(
-    name = "c2hs_repo",
-    path = "tests/c2hs/repo",
-)
-
-# haskell_library rule in its own repository
-local_repository(
-    name = "library_repo",
-    path = "tests/library-external-workspace/repo",
-)
-
-load(
-    "@rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
-    "haskell_package_repository_dummy",
-)
-
-# dummy repo for the external haskell repo test
-haskell_package_repository_dummy(
-    name = "haskell_package_repository_dummy",
-)
-
-http_archive(
-    name = "io_bazel_stardoc",
-    sha256 = "3fd8fec4ddec3c670bd810904e2e33170bedfe12f90adf943508184be458c8bb",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
-        "https://github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
-    ],
 )
 
 load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
@@ -644,13 +574,6 @@ http_archive(
     ],
 )
 
-http_archive(
-    name = "com_github_bazelbuild_buildtools",
-    sha256 = "614c84128ddb86aab4e1f25ba2e027d32fd5c6da302ae30685b9d7973b13da1b",
-    strip_prefix = "buildtools-4.2.3",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/4.2.3.tar.gz"],
-)
-
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
 local_repository(
     name = "go_sdk_repo",
@@ -673,15 +596,6 @@ load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_depen
 
 buildifier_dependencies()
 
-http_archive(
-    name = "contrib_rules_bazel_integration_test",
-    sha256 = "f80c4052df80e9099ed0f2f27ef4084604333566a7b028f524ceae6e5569b429",
-    strip_prefix = "rules_bazel_integration_test-7ee995a20bbaa2f6540103c63ff4891166133c2f",
-    urls = [
-        "https://github.com/bazel-contrib/rules_bazel_integration_test/archive/7ee995a20bbaa2f6540103c63ff4891166133c2f.zip",
-    ],
-)
-
 load("@contrib_rules_bazel_integration_test//bazel_integration_test:deps.bzl", "bazel_integration_test_rules_dependencies")
 
 bazel_integration_test_rules_dependencies()
@@ -699,11 +613,6 @@ bind(
     name = "python_headers",
     actual = "@com_google_protobuf//util/python:python_headers",
 )
-
-# For persistent worker (tools/worker)
-load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
-
-rules_haskell_worker_dependencies()
 
 # Stack snapshot repository for testing non standard toolchains
 # The toolchain_libraries rule provide a default value for the toolchain_libraries
@@ -732,18 +641,3 @@ load(
 )
 
 integration_testing_bazel_binaries()
-
-local_repository(
-    name = "tutorial",
-    path = "tutorial",
-)
-
-local_repository(
-    name = "examples",
-    path = "examples",
-)
-
-local_repository(
-    name = "examples-arm",
-    path = "examples/arm",
-)
