@@ -8,8 +8,8 @@ load(
     "check_bazel_version_compatible",
 )
 
-_rules_nixpkgs_version = "v0.9.0"
-_rules_nixpkgs_sha256 = "b01f170580f646ee3cde1ea4c117d00e561afaf3c59eda604cf09194a824ff10"
+_rules_nixpkgs_version = "fb0e76e093c6ba7987ea4276027507a0d6dceb06"
+_rules_nixpkgs_sha256 = "a8f20854da16156bd4e0d53d13dfb0d3360ee43c5ce764f0dc60703ab2b910e5"
 
 _rules_sh_version = "v0.3.0"
 _rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
@@ -76,6 +76,13 @@ def rules_haskell_dependencies():
             sha256 = _rules_nixpkgs_sha256,
         )
 
+        # requiered by rules_nixpkgs
+        http_archive(
+            name = "rules_nodejs",
+            sha256 = "08337d4fffc78f7fe648a93be12ea2fc4e8eb9795a4e6aa48595b66b34555626",
+            urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.0/rules_nodejs-core-5.8.0.tar.gz"],
+        )
+
         http_archive(
             name = "rules_nixpkgs_core",
             strip_prefix = strip_prefix + "/core",
@@ -83,7 +90,7 @@ def rules_haskell_dependencies():
             sha256 = _rules_nixpkgs_sha256,
         )
 
-        for toolchain in ["cc", "java", "python", "go", "rust", "posix"]:
+        for toolchain in ["cc", "java", "python", "go", "rust", "posix", "nodejs"]:
             http_archive(
                 name = "rules_nixpkgs_" + toolchain,
                 strip_prefix = strip_prefix + "/toolchains/" + toolchain,
