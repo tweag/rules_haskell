@@ -2420,6 +2420,7 @@ def stack_snapshot(
         verbose = False,
         netrc = "",
         toolchain_libraries = None,
+        setup_stack = True,
         **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
@@ -2609,13 +2610,14 @@ def stack_snapshot(
             ...,
         )
         ```
+      setup_stack: Do not try to install stack if set to False (only usefull with bzlmod when only the first call to stack_snapshot must do the install).
 
     """
     typecheck_stackage_extradeps(extra_deps)
 
     # Allow overriding stack binary at workspace level by `use_stack()`.
     # Otherwise this is a no-op.
-    if native.existing_rule("rules_haskell_stack"):
+    if native.existing_rule("rules_haskell_stack") or not setup_stack:
         stack = Label("@rules_haskell_stack//:stack")
 
     if not stack:
@@ -2626,11 +2628,12 @@ def stack_snapshot(
     # This is to avoid multiple concurrent executions of stack update,
     # which may fail due to ~/.stack/pantry/hackage/hackage-security-lock.
     # See https://github.com/tweag/rules_haskell/issues/1090.
-    maybe(
-        _stack_update,
-        name = "rules_haskell_stack_update",
-        stack = stack,
-    )
+    if setup_stack:
+        maybe(
+            _stack_update,
+            name = "rules_haskell_stack_update",
+            stack = stack,
+        )
     _stack_snapshot_unpinned(
         name = name + "-unpinned",
         stack = stack,
