@@ -5,8 +5,9 @@
 # https://github.com/bazelbuild/stardoc/issues/93.
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary", "nodejs_test")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("@rules_haskell_asterius_webpack//:package_json.bzl", "bin")
 
 def _asterius_toolchain_impl(ctx):
     ahc_dist = None
@@ -116,7 +117,6 @@ _javascript_runtime_modules = [
 
 # Label of the template file to use for the webpack config.
 _TEMPLATE = "@rules_haskell//haskell/asterius:asterius_webpack_config.js.tpl"
-_SUBFOLDER_PREFIX = "asterius"
 
 def _ahc_dist_impl(ctx):
     asterius_toolchain = ctx.toolchains["@rules_haskell//haskell/asterius:toolchain_type"]
@@ -124,16 +124,15 @@ def _ahc_dist_impl(ctx):
     nodejs_toolchain = ctx.toolchains["@rules_nodejs//nodejs:toolchain_type"]
     node_toolfiles = nodejs_toolchain.nodeinfo.tool_files
 
-    subfolder_name = ctx.attr.subfolder_name or "{}_{}".format(_SUBFOLDER_PREFIX, ctx.label.name)
-    entry_point = ctx.attr.entry_point or "{}.mjs".format(ctx.label.name)
-    entry_point_file = ctx.actions.declare_file(paths.join(subfolder_name, entry_point))
-    all_output_files = [entry_point_file]
+    entrypoint_file = ctx.outputs.entry_point
+    subfolder_name = paths.relativize(paths.dirname(entrypoint_file.short_path), ctx.label.package)
+    all_output_files = []
 
     for m in _javascript_runtime_modules:
         f = ctx.actions.declare_file(paths.join(subfolder_name, m))
         all_output_files.append(f)
 
-    (output_prefix, _) = paths.split_extension(entry_point)
+    (output_prefix, _) = paths.split_extension(entrypoint_file.basename)
 
     for ext in [".wasm", ".wasm.mjs", ".req.mjs"]:
         f = ctx.actions.declare_file(paths.join(subfolder_name, output_prefix + ext))
@@ -148,13 +147,8 @@ def _ahc_dist_impl(ctx):
     # and we want to generate js files in the current configuration.
     # So we will copy it to the folder corresponding to the current platform.
 
-    file_copy_path = paths.join(entry_point_file.dirname, ctx.file.dep.basename)
+    file_copy_path = paths.join(entrypoint_file.dirname, ctx.file.dep.basename)
 
-    # custom entry point to the javascript/webassembly, because the
-    # asterius default one catches failures before they are detected
-    # by bazel tests.
-    entrypoint_path = paths.replace_extension(file_copy_path, ".mjs")
-    entrypoint_file = ctx.actions.declare_file(entrypoint_path)
     ctx.actions.write(
         entrypoint_file,
         """
@@ -179,7 +173,7 @@ module
         template = ctx.file._template,
         output = webpack_config,
         substitutions = {
-            "{ENTRY}": entry_point,
+            "{ENTRY}": entrypoint_file.basename,
         },
     )
 
@@ -204,7 +198,6 @@ module
         tools = asterius_toolchain.tools + node_toolfiles,
     )
 
-    all_output_files.append(entrypoint_file)
     all_output_files.append(webpack_config)
 
     runfiles = ctx.runfiles(files = all_output_files)
@@ -232,16 +225,12 @@ ahc_dist = rule(
             The label of a haskell_binary, haskell_test or haskell_cabal_binary target.
             """,
         ),
-        "entry_point": attr.string(
-            default = "",
+        "entry_point": attr.output(
+            mandatory = True,
             doc = "The name for the output file corresponding to the entrypoint. It must terminate by '.mjs'",
         ),
         "options": attr.string_list(
             doc = "Other options to pass to ahc-dist",
-        ),
-        "subfolder_name": attr.string(
-            doc = "Optional name to override the generated folder. The default one is based on the rule name.",
-            default = "",
         ),
         "_target": attr.label(default = "@rules_haskell_asterius_build_setting//:asterius_targets_browser"),
         "_allowlist_function_transition": attr.label(
@@ -260,62 +249,6 @@ ahc_dist = rule(
     doc = "This rule transforms a haskell binary target into an archive containing javascript files.",
 )
 
-def asterius_webpack_impl(ctx):
-    ahc_dist_info = ctx.attr.ahc_dist_dep[0][AhcDistInfo]
-    if not ahc_dist_info.targets_browser:
-        fail("{} was not built for the browser (with @rules_haskell_asterius_build_setting//:asterius_targets_browser set to True).".format(
-            ctx.attr.ahc_dist_dep[0].label,
-        ))
-
-    output_file = ctx.actions.declare_file("{}.mjs".format(ctx.label.name))
-    posix_toolchain = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
-    all_paths = posix_toolchain.paths + [paths.dirname(ctx.executable._webpack.path)]
-
-    webpack_config_path = ahc_dist_info.webpack_config.path
-    webpack_command = " ".join([
-        "webpack.sh",
-        "--nobazel_node_patches",  # https://github.com/bazelbuild/rules_nodejs/issues/2076
-        "--config",
-        webpack_config_path,
-        "-o .",
-        "--output-filename",
-        output_file.path,
-    ])
-    ctx.actions.run_shell(
-        inputs = ctx.files.ahc_dist_dep,
-        outputs = [output_file],
-        command = webpack_command,
-        env = {"PATH": ":".join(all_paths)},
-        arguments = [],
-        tools = ctx.files._webpack,
-    )
-    return [DefaultInfo(files = depset([output_file]))]
-
-asterius_webpack = rule(
-    asterius_webpack_impl,
-    attrs = {
-        "ahc_dist_dep": attr.label(
-            mandatory = True,
-            doc = """\
-The ahc_dist target (built with target="browser") from which we will create a bundle.
-                  """,
-            cfg = _set_ahc_dist_browser_target,
-        ),
-        "_webpack": attr.label(
-            default = "@rules_haskell_asterius_webpack//:webpack",
-            executable = True,
-            cfg = "exec",
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
-    },
-    toolchains = [
-        "@rules_sh//sh/posix:toolchain_type",
-    ],
-    doc = "Creates a bundle using webpack out of ahc_dist target build for the browser.",
-)
-
 # Copied from https://github.com/tweag/asterius/blob/9f2574d9c2b50aa83d105741799e2f65b05e2023/asterius/test/ghc-testsuite.hs
 # The node options required to execute outputs from asterius.
 
@@ -331,75 +264,101 @@ _node_options = [
     "--unhandled-rejections=strict",
 ]
 
-def _name_of_label(l):
-    return l.split(":")[-1]
-
-def _asterius_common_impl(is_asterius_test, name, ahc_dist_dep, entry_point = None, subfolder_name = None, data = [], **kwargs):
+def _asterius_common_impl(is_asterius_test, name, ahc_dist_dep, entry_point, data = [], **kwargs):
     """common implementation for asterius_test and asterius_binary"""
-    subfolder_name = subfolder_name or "_".join([_SUBFOLDER_PREFIX, _name_of_label(ahc_dist_dep)])
-    entry_point = entry_point or "{}.mjs".format(_name_of_label(ahc_dist_dep))
-    nodejs_rule = nodejs_test if is_asterius_test else nodejs_binary
+    nodejs_rule = js_test if is_asterius_test else js_binary
+    subfolder_name = paths.dirname(entry_point)
     nodejs_rule(
         name = name,
-        entry_point = paths.join(subfolder_name, entry_point),
-        templated_args =
-            ["--node_options={}".format(opt) for opt in _node_options] +
-            ["--nobazel_node_patches "],  # https://github.com/bazelbuild/rules_nodejs/issues/2076
+        entry_point = entry_point,
+        node_options = _node_options,
         chdir = native.package_name() + "/" + subfolder_name,
+        env = {
+            "RUNFILES_DIR": "../" * (native.package_name().count("/") + 3),
+        },
         data = data + [ahc_dist_dep],
         **kwargs
     )
 
 def asterius_test(**kwargs):
     """\
-    A wrapper around the [nodejs_test](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_binary) rule compatibe with asterius.
+    A wrapper around the [js_test](https://github.com/aspect-build/rules_js/blob/main/docs/js_binary.md#js_test) rule compatibe with asterius.
 
     Args:
         name: A unique name for this rule.
         ahc_dist_dep:
             The ahc_dist target (built with target="node") to be executed.
-        subfolder_name:
-            If the `subfolder_name` attribute was overriden in the `ahc_dist_dep` target,
-            we need to specify the same here.
         entry_point:
             If the `entry_point` attribute was overriden in the `ahc_dist_dep` target,
             we need to specify the same here.
-        configuration_env_vars:
-            [see nodejs_test](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_test-configuration_env_vars)
-        data:
-            [see nodejs_test](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_test-data)
-        default_env_vars:
-            [see nodejs_test](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_test-default_env_vars)
-        env:
-            [see nodejs_test](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_test-env)
-        link_workspace_root:
-            [see nodejs_test](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_test-link_workspace_root)
         """
     _asterius_common_impl(is_asterius_test = True, **kwargs)
 
 def asterius_binary(**kwargs):
     """\
-    A wrapper around the [nodejs_binary](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_binary) rule compatibe with asterius.
+    A wrapper around the [js_binary](https://github.com/aspect-build/rules_js/blob/main/docs/js_binary.md#js_binary) rule compatibe with asterius.
 
     Args:
         name: A unique name for this rule.
         ahc_dist_dep:
             The ahc_dist target (built with target="node") to be executed.
-        subfolder_name:
-            If the `subfolder_name` attribute was overriden in the `ahc_dist_dep` target,
-            we need to specify the same here.
         entry_point:
-            If the `entry_point` attribute was overriden in the `ahc_dist_dep` target,
-            we need to specify the same here.
-        configuration_env_vars:
-            [see nodejs_binary](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_binary-configuration_env_vars)
-        data:
-            [see nodejs_binary](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_binary-data)
-        default_env_vars:
-            [see nodejs_binary](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_binary-default_env_vars)
-        env:
-            [see nodejs_binary](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_binary-env)
-        link_workspace_root:
-            [see nodejs_binary](https://bazelbuild.github.io/rules_nodejs/Built-ins.html#nodejs_binary-link_workspace_root)
+            Must be equal to the `entry_point` attribute of the `ahc_dist_dep` target.
         """
     _asterius_common_impl(is_asterius_test = False, **kwargs)
+
+def _browser_transition_impl(ctx):
+    files = depset(transitive = [src.files for src in ctx.attr.srcs])
+    runfiles = ctx.runfiles(transitive_files = files)
+    for dep in ctx.attr.srcs:
+        runfiles = runfiles.merge(dep[DefaultInfo].default_runfiles)
+    return [
+        DefaultInfo(
+            files = files,
+            runfiles = runfiles,
+        ),
+    ]
+
+browser_transition = rule(
+    _browser_transition_impl,
+    attrs = {
+        "srcs": attr.label_list(
+            mandatory = True,
+            allow_files = True,
+            cfg = _set_ahc_dist_browser_target,
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+    },
+    doc = "Wrapper rule used to execute webpack and its ahc_dist dependency in a configuration where asterius targets the browser",
+)
+
+def _name_of_label(l):
+    return l.split(":")[-1]
+
+def asterius_webpack(name, ahc_dist_dep, entry_point, tags = [], srcs = [], **kwargs):
+    """
+    Wapper around webpack that switches to a configuration where asterius targets the browser.
+    """
+    subfolder_name = paths.dirname(entry_point)
+    webpack_cli_name = "{}-asterius-webpack-private".format(name)
+    bin.webpack_cli(
+        name = webpack_cli_name,
+        srcs = srcs + [ahc_dist_dep, entry_point],
+        tags = tags + ["manual"],
+        outs = [
+            "{}/main.js".format(subfolder_name),
+        ],
+        args = [
+            "--config {}.webpack.config.js".format(_name_of_label(ahc_dist_dep)),
+        ],
+        chdir = "{}/{}".format(native.package_name(), subfolder_name),
+        **kwargs
+    )
+    browser_transition(
+        name = name,
+        srcs = [webpack_cli_name],
+        testonly = True,
+        tags = tags,
+    )

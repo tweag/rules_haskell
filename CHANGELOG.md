@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 * IDE support : Output absolute paths in hie-bios flags (See https://github.com/tweag/rules_haskell/pull/1862)
   - `haskell_repl` now defines an extra runable target `name@bios` that outputs the hie-bios flags.
   - `hie_bios_path_prefix` attribute for `haskell_repl` is a no-op now that we use absolute paths.
+* `build_bazel_rules_nodejs` dependency is replaced by `rules_js` which induces some changes to the experimental Asterius support (See [#1884]).
 
 ### Added
 

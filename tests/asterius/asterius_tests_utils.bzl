@@ -13,11 +13,13 @@ def asterius_test_macro(
         suffix = "",
         test_subfolder_name = None,
         test_entry_point = None):
+    subfolder_name = test_subfolder_name or "asterius_test_ahc_dist_{}".format(suffix)
+    entry_point = "{}/{}".format(subfolder_name, test_entry_point or "test_ahc_dist.mjs")
+
     ahc_dist(
         name = "test_ahc_dist" + suffix,
         dep = dep_label,
-        entry_point = test_entry_point,
-        subfolder_name = test_subfolder_name,
+        entry_point = entry_point,
         testonly = True,
         tags = tags,
     )
@@ -25,34 +27,36 @@ def asterius_test_macro(
     asterius_test(
         name = "asterius_test" + suffix,
         ahc_dist_dep = ":test_ahc_dist" + suffix,
-        entry_point = test_entry_point,
+        entry_point = entry_point,
         testonly = True,
         tags = tags,
-        subfolder_name = test_subfolder_name,
     )
 
     asterius_binary(
         name = "asterius_binary" + suffix,
         ahc_dist_dep = ":test_ahc_dist" + suffix,
-        entry_point = test_entry_point,
+        entry_point = entry_point,
         testonly = True,
         tags = tags,
-        subfolder_name = test_subfolder_name,
+    )
+
+    # TODO the following `asterius_binary_from_genrule` rule is meant to test
+    # running a WebAssembly based js_binary as a build action.
+    # It is set to `manual` and left for future work as rules_haskell WebAssembly handling may
+    # need significant refactoring in the move from asterius to ghc's WebAssembly backend.
+    native.genrule(
+        name = "asterius_binary_from_genrule" + suffix,
+        outs = ["out" + suffix],
+        cmd = "BAZEL_BINDIR=$(BINDIR) $(location :asterius_binary{}) > \"$@\"".format(suffix),
+        exec_tools = [":asterius_binary" + suffix],
+        testonly = True,
+        tags = tags + ["manual"],
     )
 
     asterius_webpack(
-        name = "asterius_bundle" + suffix,
-        ahc_dist_dep = ":test_ahc_dist" + suffix,
-        testonly = True,
-        tags = tags,
-    )
-
-    native.genrule(
-        name = "asterius_binary_from_genrule" + suffix,
-        srcs = [],
-        outs = ["out" + suffix],
-        cmd = "./$(location :asterius_binary{}) > \"$@\"".format(suffix),
-        exec_tools = [":asterius_binary" + suffix],
+        name = "bundle" + suffix,
+        ahc_dist_dep = "test_ahc_dist" + suffix,
+        entry_point = entry_point,
         testonly = True,
         tags = tags,
     )

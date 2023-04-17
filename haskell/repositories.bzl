@@ -123,9 +123,10 @@ def rules_haskell_dependencies():
 
     maybe(
         http_archive,
-        name = "build_bazel_rules_nodejs",
-        sha256 = "6b951612ce13738516398a8057899394e2b7a779be91e1a68f75f25c0a938864",
-        urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.0.0/rules_nodejs-5.0.0.tar.gz"],
+        name = "aspect_rules_js",
+        sha256 = "2a1e5d4400e2b49f6d36785aa894412670a0babfe7054e733b6a8f23c1b41e26",
+        strip_prefix = "rules_js-1.23.1",
+        url = "https://github.com/aspect-build/rules_js/releases/download/v1.23.1/rules_js-v1.23.1.tar.gz",
     )
 
 def haskell_repositories():

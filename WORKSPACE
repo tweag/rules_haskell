@@ -14,9 +14,9 @@ load("//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
-load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")
+load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
-build_bazel_rules_nodejs_dependencies()
+rules_js_dependencies()
 
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
@@ -409,6 +409,10 @@ load(
     nix_repository = "@nixpkgs_default",
     nixpkgs_package_rule = nixpkgs_package,
 ) if is_nix_shell else asterius_dependencies_bindist())
+
+load("@rules_haskell_npm//:repositories.bzl", "npm_repositories")
+
+npm_repositories()
 
 rules_haskell_asterius_toolchains(
     cabalopts = test_cabalopts,
