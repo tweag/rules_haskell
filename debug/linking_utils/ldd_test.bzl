@@ -14,7 +14,7 @@ def ldd_test(name, elf_binary, script, current_workspace = None, tags = []):
         data = [elf_binary],
         args = ["{}/$(rootpath {})".format(current_workspace, elf_binary)] if current_workspace else ["$(rootpath {})".format(elf_binary)],
         script = """
-from rules_haskell.debug.linking_utils.ldd import \\
+from debug.linking_utils.ldd import \\
         dict_remove_empty, identity, const, \\
         LDD_MISSING, LDD_UNKNOWN, LDD_ERRORS, \\
         ldd, \\
