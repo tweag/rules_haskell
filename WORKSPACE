@@ -1,19 +1,16 @@
 workspace(name = "rules_haskell")
 
-# Subrepositories of rules_haskell
-
-# Some helpers for platform-dependent configuration
-load("//tools:os_info.bzl", "os_info")
-
-os_info(name = "os_info")
-
-load("@os_info//:os_info.bzl", "is_linux", "is_nix_shell", "is_windows")
-
-# bazel dependencies
 load("//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
+load("//:non_module_deps.bzl", "repositories")
+
+repositories(bzlmod = False)
+
+load("@os_info//:os_info.bzl", "is_linux", "is_nix_shell", "is_windows")
+
+# bazel dependencies
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
 rules_js_dependencies()
@@ -23,311 +20,7 @@ load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
-# See https://github.com/tweag/rules_haskell/issues/1871
-http_archive(
-    name = "Cabal",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
-haskell_cabal_library(
-    name = "Cabal",
-    srcs = glob(["Cabal/**"]),
-    verbose = False,
-    version = "3.6.3.0",
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "f69b46cb897edab3aa8d5a4bd7b8690b76cd6f0b320521afd01ddd20601d1356",
-    strip_prefix = "cabal-gg-8220-with-3630",
-    urls = ["https://github.com/tweag/cabal/archive/refs/heads/gg/8220-with-3630.zip"],
-)
-
-http_archive(
-    name = "alex",
-    build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library", "haskell_cabal_binary")
-
-haskell_cabal_library(
-    name = "alex-lib",
-    setup_deps = ["@Cabal//:Cabal"],
-    srcs = glob(["**"]),
-    version = "3.2.7.1",
-    visibility = ["//visibility:public"],
-)
-
-haskell_cabal_binary(
-    name = "alex",
-    setup_deps = ["@Cabal//:Cabal"],
-    srcs = glob(["**"]),
-    verbose = False,
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "9bd2f1a27e8f1b2ffdb5b2fbd3ed82b6f0e85191459a1b24ffcbef4e68a81bec",
-    strip_prefix = "alex-3.2.7.1",
-    urls = ["http://hackage.haskell.org/package/alex-3.2.7.1/alex-3.2.7.1.tar.gz"],
-)
-
-load(
-    "@rules_haskell//:constants.bzl",
-    "test_asterius_version",
-    "test_ghc_version",
-)
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
-
-stack_snapshot(
-    name = "stackage",
-    components = {
-        "alex": [],
-        "attoparsec": [
-            # attoparsec contains an internal library which is not exposed publicly,
-            # but required to build the public library, hence the declaration of
-            # those 2 components, as well as the explicit declaration of the
-            # dependency between them.
-            "lib",
-            "lib:attoparsec-internal",
-        ],
-        "proto-lens-protoc": [
-            "lib",
-            "exe",
-        ],
-    },
-    components_dependencies = {
-        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
-    },
-    local_snapshot = "//:stackage_snapshot.yaml",
-    packages = [
-        # Core libraries
-        "alex",
-        "array",
-        "base",
-        "bytestring",
-        "c2hs",
-        "conduit",
-        "conduit-extra",
-        "containers",
-        "deepseq",
-        "directory",
-        "filepath",
-        "ghc-heap",
-        "happy",
-        "mtl",
-        "optparse-applicative",
-        "process",
-        "text",
-        "text-show",
-        "vector",
-        # For tests
-        "cabal-doctest",
-        "doctest",
-        "polysemy",
-        "network",
-        "language-c",
-        "streaming",
-        "void",
-        "ghc-check",
-        "hspec",
-        "hspec-core",
-        "lens-family-core",
-        "data-default-class",
-        "profunctors",
-        "proto-lens",
-        "proto-lens-protoc",
-        "proto-lens-runtime",
-        "lens-family",
-        "safe-exceptions",
-        "temporary",
-    ],
-    setup_deps = {
-        "polysemy": ["cabal-doctest"],
-        # See https://github.com/tweag/rules_haskell/issues/1871
-        "HUnit": ["@Cabal//:Cabal"],
-        "bifunctors": ["@Cabal//:Cabal"],
-        "c2hs": ["@Cabal//:Cabal"],
-        "call-stack": ["@Cabal//:Cabal"],
-        "doctest": ["@Cabal//:Cabal"],
-        "generic-deriving": ["@Cabal//:Cabal"],
-        "happy": ["@Cabal//:Cabal"],
-        "hspec": ["@Cabal//:Cabal"],
-        "hspec-core": ["@Cabal//:Cabal"],
-        "hspec-discover": ["@Cabal//:Cabal"],
-        "hspec-expectations": ["@Cabal//:Cabal"],
-        "mono-traversable": ["@Cabal//:Cabal"],
-        "proto-lens-protoc": ["@Cabal//:Cabal"],
-        "proto-lens-runtime": ["@Cabal//:Cabal"],
-        "quickcheck-io": ["@Cabal//:Cabal"],
-        "transformers-compat": ["@Cabal//:Cabal"],
-        "type-errors": ["@Cabal//:Cabal"],
-        "typed-process": ["@Cabal//:Cabal"],
-        "unliftio-core": ["@Cabal//:Cabal"],
-    },
-    stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
-    tools = [
-        # This is not required, as `stack_snapshot` would build alex
-        # automatically, however it is used as a test for user provided
-        # `tools`. We also override alex's components to avoid building it
-        # twice.
-        "@alex",
-    ],
-    vendored_packages = {
-        "ghc-paths": "@rules_haskell//tools/ghc-paths",
-    },
-)
-
-# In a separate repo because not all platforms support zlib.
-stack_snapshot(
-    name = "stackage-zlib",
-    extra_deps = {"zlib": ["//tests:zlib"]},
-    local_snapshot = "//:stackage_snapshot.yaml",
-    packages = ["zlib"],
-    stack_snapshot_json = "//:stackage-zlib-snapshot.json" if not is_windows else None,
-)
-
-stack_snapshot(
-    name = "stackage-pinning-test",
-    components = {
-        "package1": [
-            "lib:package1",
-            "lib:sublib",
-        ],
-    },
-    components_dependencies = {
-        "package1": """{"lib:package1": ["lib:sublib"]}""",
-    },
-    local_snapshot = "//:stackage-pinning-test.yaml",
-    packages = [
-        "hspec",
-        "package1",
-    ],
-    setup_deps = {
-        # See https://github.com/tweag/rules_haskell/issues/1871
-        "HUnit": ["@Cabal//:Cabal"],
-        "call-stack": ["@Cabal//:Cabal"],
-        "hspec": ["@Cabal//:Cabal"],
-        "hspec-core": ["@Cabal//:Cabal"],
-        "hspec-discover": ["@Cabal//:Cabal"],
-        "hspec-expectations": ["@Cabal//:Cabal"],
-        "quickcheck-io": ["@Cabal//:Cabal"],
-    },
-    stack_snapshot_json = "//:stackage-pinning-test_snapshot.json" if not is_windows else None,
-)
-
-# Vendor data-default-instances-containers and data-default-instances-old-local
-# to work around build failures due to file paths exceeding `MAX_PATH` on
-# Windows.
-#
-#   ghc.exe: loadObj: C:\Users\runneradmin\_bazel_runneradmin\minshlu6\execroot\rules_haskell\bazel-out\x64_windows-fastbuild\bin\external\ghcide\data-default-instances-containers-0.0.1\_install\data-default-instances-containers-0.0.1_iface\HSdata-default-instances-containers-0.0.1.o: file doesn't exist
-#
-# Recent versions of GHC fix many `MAX_PATH` issues on Windows. However, GHC's
-# loader still exposes such an issue. A fix has been merged in GHC HEAD, but is
-# not included in GHC 8.10.4 or 9.0.1.
-# See https://gitlab.haskell.org/ghc/ghc/-/issues/19541
-http_archive(
-    name = "data-default-ic",
-    build_file_content = """
-load("@rules_haskell//haskell:defs.bzl", "haskell_library")
-load("@ghcide//:packages.bzl", "packages")
-package_name = "data-default-instances-containers"
-haskell_library(
-    name = "lib",
-    package_name = package_name,
-    version = packages[package_name].version,
-    srcs = glob(["**/*.hs"]),
-    deps = packages[package_name].deps,
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "a55e07af005c9815d82f3fc95e125db82994377c9f4a769428878701d4ec081a",
-    strip_prefix = "data-default-instances-containers-0.0.1",
-    urls = [
-        "https://hackage.haskell.org/package/data-default-instances-containers-0.0.1/data-default-instances-containers-0.0.1.tar.gz",
-        "https://s3.amazonaws.com/hackage.fpcomplete.com/package/data-default-instances-containers-0.0.1.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "data-default-ol",
-    build_file_content = """
-load("@rules_haskell//haskell:defs.bzl", "haskell_library")
-load("@ghcide//:packages.bzl", "packages")
-package_name = "data-default-instances-old-locale"
-haskell_library(
-    name = "lib",
-    package_name = package_name,
-    version = packages[package_name].version,
-    srcs = glob(["**/*.hs"]),
-    deps = packages[package_name].deps,
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "60d3b02922958c4908d7bf2b24ddf61511665745f784227d206745784b0c0802",
-    strip_prefix = "data-default-instances-old-locale-0.0.1",
-    urls = [
-        "https://hackage.haskell.org/package/data-default-instances-old-locale-0.0.1/data-default-instances-old-locale-0.0.1.tar.gz",
-        "https://s3.amazonaws.com/hackage.fpcomplete.com/package/data-default-instances-old-locale-0.0.1.tar.gz",
-    ],
-)
-
-stack_snapshot(
-    name = "ghcide",
-    components = {
-        "ghcide": [
-            "lib",
-            "exe",
-        ],
-        "attoparsec": [
-            "lib",
-            "lib:attoparsec-internal",
-        ],
-    },
-    components_dependencies = {
-        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
-    },
-    extra_deps = {"zlib": ["//tests:zlib"]},
-    haddock = False,
-    local_snapshot = "//:ghcide-stack-snapshot.yaml",
-    packages = [
-        "ghcide",
-    ],
-    setup_deps = {
-        "bifunctors": ["@ghcide//:Cabal"],
-        "call-stack": ["@ghcide//:Cabal"],
-        "ghcide": ["@ghcide//:Cabal"],
-        "hie-bios": ["@ghcide//:Cabal"],
-        "hls-graph": ["@ghcide//:Cabal"],
-        "hspec-discover": ["@ghcide//:Cabal"],
-        "implicit-hie": ["@ghcide//:Cabal"],
-        "implicit-hie-cradle": ["@ghcide//:Cabal"],
-        "invariant": ["@ghcide//:Cabal"],
-        "js-dgtable": ["@ghcide//:Cabal"],
-        "js-flot": ["@ghcide//:Cabal"],
-        "js-jquery": ["@ghcide//:Cabal"],
-        "libyaml": ["@ghcide//:Cabal"],
-        "mono-traversable": ["@ghcide//:Cabal"],
-        "regex-base": ["@ghcide//:Cabal"],
-        "regex-tdfa": ["@ghcide//:Cabal"],
-        "transformers-compat": ["@ghcide//:Cabal"],
-        "typed-process": ["@ghcide//:Cabal"],
-        "unliftio": ["@ghcide//:Cabal"],
-        "unliftio-core": ["@ghcide//:Cabal"],
-        "yaml": ["@ghcide//:Cabal"],
-    },
-    stack_snapshot_json = "//:ghcide-snapshot.json" if not is_windows else None,
-    vendored_packages = {
-        "data-default-instances-containers": "@data-default-ic//:lib",
-        "data-default-instances-old-locale": "@data-default-ol//:lib",
-        "ghc-paths": "@rules_haskell//tools/ghc-paths",
-    },
-)
-
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-    "nixpkgs_cc_configure",
-    "nixpkgs_local_repository",
-    "nixpkgs_package",
-    "nixpkgs_python_configure",
-)
 
 http_archive(
     name = "rules_proto",
@@ -342,233 +35,34 @@ rules_proto_dependencies()
 
 rules_proto_toolchains()
 
-nixpkgs_local_repository(
-    name = "nixpkgs_default",
-    nix_file = "//nixpkgs:default.nix",
+# For buildifier
+# starting from 0.29, rules_go requires bazel >= 4.2.0
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+    ],
 )
 
-test_ghcopts = [
-    "-XStandaloneDeriving",  # Flag used at compile time
-    "-threaded",  # Flag used at link time
+load("non_module_deps_1.bzl", repositories_1 = "repositories")
 
-    # Used by `tests/repl-flags`
-    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
-    # this is the default, so it does not harm other tests
-    "-XNoOverloadedStrings",
-]
+repositories_1(bzlmod = False)
 
-test_haddock_flags = ["-U"]
+load("non_module_deps_2.bzl", repositories_2 = "repositories")
 
-test_repl_ghci_args = [
-    # The repl test will need this flag, but set by the local
-    # `repl_ghci_args`.
-    "-UTESTS_TOOLCHAIN_REPL_FLAGS",
-    # The repl test will need OverloadedString
-    "-XOverloadedStrings",
-]
-
-test_cabalopts = [
-    # Used by `tests/cabal-toolchain-flags`
-    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
-    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
-] + ([
-    # To avoid ghcide linking errors with heapsize on Windows of the form
-    #
-    #   unknown symbol `heap_view_closurePtrs'
-    #
-    # See https://github.com/haskell/ghcide/pull/954
-    "--disable-library-for-ghci",
-] if is_windows else [])
-
-load(
-    "@rules_haskell//haskell:nixpkgs.bzl",
-    "haskell_register_ghc_nixpkgs",
-)
-
-haskell_register_ghc_nixpkgs(
-    attribute_path = "",
-    cabalopts = test_cabalopts,
-    ghcopts = test_ghcopts,
-    haddock_flags = test_haddock_flags,
-    locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
-    repl_ghci_args = test_repl_ghci_args,
-    repository = "@nixpkgs_default",
-    version = test_ghc_version,
-)
-
-load(
-    "//haskell/asterius:repositories.bzl",
-    "asterius_dependencies_bindist",
-    "asterius_dependencies_nix",
-    "rules_haskell_asterius_toolchains",
-    "toolchain_libraries",
-)
-
-(asterius_dependencies_nix(
-    nix_repository = "@nixpkgs_default",
-    nixpkgs_package_rule = nixpkgs_package,
-) if is_nix_shell else asterius_dependencies_bindist())
+repositories_2(bzlmod = False)
 
 load("@rules_haskell_npm//:repositories.bzl", "npm_repositories")
 
 npm_repositories()
-
-rules_haskell_asterius_toolchains(
-    cabalopts = test_cabalopts,
-    ghcopts = test_ghcopts,
-    repl_ghci_args = test_repl_ghci_args,
-    version = test_asterius_version,
-)
-
-load(
-    "@rules_haskell//haskell:ghc_bindist.bzl",
-    "haskell_register_ghc_bindists",
-)
-
-haskell_register_ghc_bindists(
-    cabalopts = test_cabalopts,
-    ghcopts = test_ghcopts,
-    version = test_ghc_version,
-)
 
 register_toolchains(
     "//tests:c2hs-toolchain",
     "//tests:doctest-toolchain",
     "//tests:protobuf-toolchain",
     "//tests:protobuf-toolchain-osx_arm64",
-)
-
-nixpkgs_cc_configure(
-    # Don't override the default cc toolchain needed for bindist mode.
-    name = "nixpkgs_config_cc",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_python_configure(repository = "@nixpkgs_default")
-
-nixpkgs_package(
-    name = "nixpkgs_zlib",
-    attribute_path = "zlib",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "nixpkgs_lz4",
-    attribute_path = "lz4.out",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-cc_library(
-  name = "nixpkgs_lz4",
-  srcs = glob(["lib/liblz4.dylib", "lib/liblz4.so*"], allow_empty = True),
-  includes = ["include"],
-)
-    """,
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "python3",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "sphinx",
-    attribute_path = "python39Packages.sphinx",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "graphviz",
-    attribute_path = "graphviz",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "zip",
-    attribute_path = "zip",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "zlib.dev",
-    build_file_content = """
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-filegroup(
-    name = "include",
-    srcs = glob(["include/*.h"]),
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "zlib",
-    srcs = ["@nixpkgs_zlib//:lib"],
-    hdrs = [":include"],
-    strip_include_prefix = "include",
-    visibility = ["//visibility:public"],
-    # This rule only bundles headers and a library and doesn't compile or link by itself.
-    # We set linkstatic = 1 to quiet to quiet the following warning:
-    #
-    #   in linkstatic attribute of cc_library rule @zlib.dev//:zlib:
-    #   setting 'linkstatic=1' is recommended if there are no object files.
-    #
-    linkstatic = 1,
-)
-""",
-    repository = "@nixpkgs_default",
-)
-
-nixpkgs_package(
-    name = "glibc_locales",
-    attribute_path = "glibcLocales",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "locale-archive",
-    srcs = ["lib/locale/locale-archive"],
-)
-""",
-    repository = "@nixpkgs_default",
-)
-
-http_archive(
-    name = "zlib.hs",
-    build_file_content = """
-load("@os_info//:os_info.bzl", "is_darwin")
-load("@rules_cc//cc:defs.bzl", "cc_library")
-cc_library(
-    name = "zlib",
-    # Import `:z` as `srcs` to enforce the library name `libz.so`. Otherwise,
-    # Bazel would mangle the library name and e.g. Cabal wouldn't recognize it.
-    srcs = [":z"],
-    hdrs = glob(["*.h"]),
-    includes = ["."],
-    linkstatic = 1,
-    visibility = ["//visibility:public"],
-)
-cc_library(
-    name = "z",
-    srcs = glob(["*.c"]),
-    hdrs = glob(["*.h"]),
-    # Needed because XCode 12.0 Clang errors by default.
-    # See https://developer.apple.com/documentation/xcode-release-notes/xcode-12-release-notes.
-    copts = ["-Wno-error=implicit-function-declaration"],
-    # Cabal packages depending on dynamic C libraries fail on MacOS
-    # due to `-rpath` flags being forwarded indiscriminately.
-    # See https://github.com/tweag/rules_haskell/issues/1317
-    linkstatic = is_darwin,
-)
-""",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-    strip_prefix = "zlib-1.2.11",
-    urls = [
-        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
-        "http://zlib.net/zlib-1.2.11.tar.gz",
-    ],
 )
 
 load("@bazel_tools//tools/build_defs/repo:jvm.bzl", "jvm_maven_import_external")
@@ -581,74 +75,14 @@ jvm_maven_import_external(
     server_urls = ["https://repo.maven.apache.org/maven2"],
 )
 
-# c2hs rule in its own repository
-local_repository(
-    name = "c2hs_repo",
-    path = "tests/c2hs/repo",
-)
-
-# haskell_library rule in its own repository
-local_repository(
-    name = "library_repo",
-    path = "tests/library-external-workspace/repo",
-)
-
-load(
-    "@rules_haskell//tests/external-haskell-repository:workspace_dummy.bzl",
-    "haskell_package_repository_dummy",
-)
-
-# dummy repo for the external haskell repo test
-haskell_package_repository_dummy(
-    name = "haskell_package_repository_dummy",
-)
-
-http_archive(
-    name = "io_bazel_stardoc",
-    sha256 = "3fd8fec4ddec3c670bd810904e2e33170bedfe12f90adf943508184be458c8bb",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
-        "https://github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
-    ],
-)
-
 load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
 
 stardoc_repositories()
-
-load(
-    "@rules_haskell//docs/pandoc:pandoc.bzl",
-    "import_pandoc_bindists",
-    "nixpkgs_pandoc_configure",
-)
-
-nixpkgs_pandoc_configure(repository = "@nixpkgs_default")
-
-import_pandoc_bindists()
 
 register_toolchains(
     "@rules_haskell//docs/pandoc:nixpkgs",
     "@rules_haskell//docs/pandoc:linux",
     "@rules_haskell//docs/pandoc:macos",
-)
-
-# For buildifier
-
-# starting from 0.29, rules_go requires bazel >= 4.2.0
-http_archive(
-    name = "io_bazel_rules_go",
-    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
-    ],
-)
-
-http_archive(
-    name = "com_github_bazelbuild_buildtools",
-    sha256 = "614c84128ddb86aab4e1f25ba2e027d32fd5c6da302ae30685b9d7973b13da1b",
-    strip_prefix = "buildtools-4.2.3",
-    urls = ["https://github.com/bazelbuild/buildtools/archive/4.2.3.tar.gz"],
 )
 
 # A repository that generates the Go SDK imports, see ./tools/go_sdk/README
@@ -673,15 +107,6 @@ load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_depen
 
 buildifier_dependencies()
 
-http_archive(
-    name = "contrib_rules_bazel_integration_test",
-    sha256 = "f80c4052df80e9099ed0f2f27ef4084604333566a7b028f524ceae6e5569b429",
-    strip_prefix = "rules_bazel_integration_test-7ee995a20bbaa2f6540103c63ff4891166133c2f",
-    urls = [
-        "https://github.com/bazel-contrib/rules_bazel_integration_test/archive/7ee995a20bbaa2f6540103c63ff4891166133c2f.zip",
-    ],
-)
-
 load("@contrib_rules_bazel_integration_test//bazel_integration_test:deps.bzl", "bazel_integration_test_rules_dependencies")
 
 bazel_integration_test_rules_dependencies()
@@ -698,52 +123,4 @@ bazel_starlib_dependencies()
 bind(
     name = "python_headers",
     actual = "@com_google_protobuf//util/python:python_headers",
-)
-
-# For persistent worker (tools/worker)
-load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
-
-rules_haskell_worker_dependencies()
-
-# Stack snapshot repository for testing non standard toolchains
-# The toolchain_libraries rule provide a default value for the toolchain_libraries
-# variable, so we can load it even if we are not on linux.
-
-toolchain_libraries(
-    name = "toolchains_libraries",
-    repository = "linux_amd64_asterius" if is_linux else "",
-)
-
-load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
-
-stack_snapshot(
-    name = "stackage_asterius",
-    local_snapshot = "@rules_haskell//tests/asterius/stack_toolchain_libraries:snapshot.yaml",
-    packages = [
-        "xhtml",
-    ],
-    stack_snapshot_json = "@rules_haskell//tests/asterius/stack_toolchain_libraries:snapshot.json",
-    toolchain_libraries = toolchain_libraries,
-) if is_linux else None
-
-load(
-    "//tests/integration_testing:dependencies.bzl",
-    "integration_testing_bazel_binaries",
-)
-
-integration_testing_bazel_binaries()
-
-local_repository(
-    name = "tutorial",
-    path = "tutorial",
-)
-
-local_repository(
-    name = "examples",
-    path = "examples",
-)
-
-local_repository(
-    name = "examples-arm",
-    path = "examples/arm",
 )

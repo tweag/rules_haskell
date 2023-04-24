@@ -34,7 +34,8 @@ def _nixpkgs_nodejs(name, nix_repository, nixpkgs_package_rule):
         fail_not_supported = False,
     )
 
-def asterius_dependencies_bindist():
+def asterius_dependencies_bindist(
+        register = True):
     """ Install asterius dependencies for bindists.
 
 A `rules_haskell_npm` repository is created that needs to be used as follow in the WORKSPACE file:
@@ -43,18 +44,22 @@ A `rules_haskell_npm` repository is created that needs to be used as follow in t
 load("@rules_haskell_npm//:repositories.bzl", "npm_repositories")
 npm_repositories()
 ```
+
+    Args:
+      register: Whether to register the asterius toolchain (must be set to False if bzlmod is activated)
     """
-    nodejs_register_toolchains(
-        name = "nodejs",
-        node_version = "16.19.0",
-    )
     _ahc_target_build_setting(name = "rules_haskell_asterius_build_setting")
-    npm_translate_lock(
-        name = "rules_haskell_npm",
-        pnpm_lock = DEFAULT_PNPM_LOCK,
-        verify_node_modules_ignored = "//:.bazelignore",
-        link_workspace = "rules_haskell",
-    )
+    if register:
+        nodejs_register_toolchains(
+            name = "nodejs",
+            node_version = "16.19.0",
+        )
+        npm_translate_lock(
+            name = "rules_haskell_npm",
+            pnpm_lock = DEFAULT_PNPM_LOCK,
+            verify_node_modules_ignored = "//:.bazelignore",
+            link_workspace = "rules_haskell",
+        )
     _declare_webpack(
         name = "rules_haskell_asterius_webpack",
     )
@@ -62,7 +67,8 @@ npm_repositories()
 def asterius_dependencies_nix(
         nix_repository,
         nixpkgs_package_rule,
-        nixpkgs_nodejs = DEFAULT_NIXPKGS_NODEJS):
+        nixpkgs_nodejs = DEFAULT_NIXPKGS_NODEJS,
+        register = True):
     """Install asterius dependencies based on nix.
 
 A `rules_haskell_npm` repository is created that needs to be used as follow in the WORKSPACE file:
@@ -76,6 +82,7 @@ npm_repositories()
       nix_repository: The nix repository from which we try to install node.
       nixpkgs_package_rule: The `nixpkgs_package` rule from `rules_nixpkgs`.
       nixpkgs_nodejs: The prefix for the for the nodejs repositories that will be installed with `nixpkgs_package`.
+      register: Whether to register the asterius toolchain (must be set to False if bzlmod is activated)
     """
 
     _nixpkgs_nodejs(nixpkgs_nodejs, nix_repository, nixpkgs_package_rule)
@@ -84,14 +91,14 @@ npm_repositories()
         name = "rules_haskell_nix_node_toolchain",
         nixpkgs_nodejs = nixpkgs_nodejs,
     )
-    native.register_toolchains("@rules_haskell_nix_node_toolchain//:node_nixpkgs_toolchain")
-
-    npm_translate_lock(
-        name = "rules_haskell_npm",
-        pnpm_lock = DEFAULT_PNPM_LOCK,
-        verify_node_modules_ignored = "//:.bazelignore",
-        link_workspace = "rules_haskell",
-    )
+    if register:
+        native.register_toolchains("@rules_haskell_nix_node_toolchain//:node_nixpkgs_toolchain")
+        npm_translate_lock(
+            name = "rules_haskell_npm",
+            pnpm_lock = DEFAULT_PNPM_LOCK,
+            verify_node_modules_ignored = "//:.bazelignore",
+            link_workspace = "rules_haskell",
+        )
     _ahc_target_build_setting(name = "rules_haskell_asterius_build_setting")
 
     _declare_webpack(

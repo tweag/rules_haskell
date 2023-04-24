@@ -326,7 +326,8 @@ def ghc_bindist(
         haddock_flags = None,
         repl_ghci_args = None,
         cabalopts = None,
-        locale = None):
+        locale = None,
+        register = True):
     """Create a new repository from binary distributions of GHC.
 
     The repository exports two targets:
@@ -361,7 +362,7 @@ def ghc_bindist(
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
-
+      register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
     """
     ghcopts = check_deprecated_attribute_usage(
         old_attr_name = "compiler_flags",
@@ -420,11 +421,13 @@ def ghc_bindist(
         bindist_name = bindist_name,
         target = target,
     )
-    native.register_toolchains("@{}//:toolchain".format(toolchain_name))
+    if register:
+        native.register_toolchains("@{}//:toolchain".format(toolchain_name))
     if target == "windows_amd64":
         cc_toolchain_repo_name = "{}_cc_toolchain".format(bindist_name)
         _windows_cc_toolchain(name = cc_toolchain_repo_name, bindist_name = bindist_name)
-        native.register_toolchains("@{}//:windows_cc_toolchain".format(cc_toolchain_repo_name))
+        if register:
+            native.register_toolchains("@{}//:windows_cc_toolchain".format(cc_toolchain_repo_name))
 
 def haskell_register_ghc_bindists(
         version = None,
@@ -433,7 +436,8 @@ def haskell_register_ghc_bindists(
         haddock_flags = None,
         repl_ghci_args = None,
         cabalopts = None,
-        locale = None):
+        locale = None,
+        register = True):
     """ Register GHC binary distributions for all platforms as toolchains.
 
     See [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains).
@@ -446,6 +450,7 @@ def haskell_register_ghc_bindists(
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
+      register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
     """
     version = version or _GHC_DEFAULT_VERSION
     if not GHC_BINDIST.get(version):
@@ -461,13 +466,17 @@ def haskell_register_ghc_bindists(
             repl_ghci_args = repl_ghci_args,
             cabalopts = cabalopts,
             locale = locale,
+            register = register,
         )
     local_sh_posix_repo_name = "rules_haskell_sh_posix_local"
     if local_sh_posix_repo_name not in native.existing_rules():
-        sh_posix_configure(name = local_sh_posix_repo_name)
+        sh_posix_configure(
+            name = local_sh_posix_repo_name,
+            register = register,
+        )
     local_python_repo_name = "rules_haskell_python_local"
     if local_python_repo_name not in native.existing_rules():
-        _configure_python3_toolchain(name = local_python_repo_name)
+        _configure_python3_toolchain(name = local_python_repo_name, register = register)
 
 def _configure_python3_toolchain_impl(repository_ctx):
     cpu = get_cpu_value(repository_ctx)
@@ -521,7 +530,7 @@ _config_python3_toolchain = repository_rule(
     environ = ["PATH"],
 )
 
-def _configure_python3_toolchain(name):
+def _configure_python3_toolchain(name, register = True):
     """Autoconfigure python3 toolchain for GHC bindist
 
     `rules_haskell` requires Python 3 to build Haskell targets. Under Nix we
@@ -558,9 +567,14 @@ def _configure_python3_toolchain(name):
     does not restrict the visible installation paths. It then registers an
     appropriate Python toolchain, so that build actions themselves can still be
     sandboxed.
+
+    Args:
+      name: A unique name for the repository.
+      register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
     """
     _config_python3_toolchain(name = name)
-    native.register_toolchains("@{}//:toolchain".format(name))
+    if register:
+        native.register_toolchains("@{}//:toolchain".format(name))
 
 # Note [GHC toolchain files]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
