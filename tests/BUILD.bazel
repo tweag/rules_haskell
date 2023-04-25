@@ -39,7 +39,7 @@ package(default_testonly = 1)
 config_setting(
     name = "nix",
     constraint_values = [
-        "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
+        "@rules_nixpkgs_core//constraints:support_nix",
     ],
 )
 

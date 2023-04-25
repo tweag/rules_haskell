@@ -130,10 +130,10 @@ node_toolchain(
 toolchain(
     name = "node_nixpkgs_toolchain",
     exec_compatible_with = [
-        "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
+        "@rules_nixpkgs_core//constraints:support_nix"
     ],
     target_compatible_with = [
-        "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
+        "@rules_nixpkgs_core//constraints:support_nix"
     ],
     toolchain = ":node_nixpkgs",
     toolchain_type = "@rules_nodejs//nodejs:toolchain_type",

@@ -1,4 +1,4 @@
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
+load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_package")
 load("@contrib_rules_bazel_integration_test//bazel_integration_test:defs.bzl", "bazel_binaries")
 load(
     "//haskell:private/versions.bzl",

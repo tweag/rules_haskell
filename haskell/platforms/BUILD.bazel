@@ -13,20 +13,20 @@ declare_config_settings()
 
 alias(
     name = "nixpkgs",
-    actual = "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
+    actual = "@rules_nixpkgs_core//constraints:support_nix",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "linux_x86_64_nixpkgs",
-    actual = "@io_tweag_rules_nixpkgs//nixpkgs/platforms:host",
+    actual = "@rules_nixpkgs_core//platforms:host",
     deprecation = "Use @io_tweag_rules_nixpkgs//nixpkgs/platforms:host instead.",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "darwin_x86_64_nixpkgs",
-    actual = "@io_tweag_rules_nixpkgs//nixpkgs/platforms:host",
+    actual = "@rules_nixpkgs_core//platforms:host",
     deprecation = "Use @io_tweag_rules_nixpkgs//nixpkgs/platforms:host instead.",
     visibility = ["//visibility:public"],
 )

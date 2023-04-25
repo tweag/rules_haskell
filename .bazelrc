@@ -24,7 +24,7 @@ test --test_env=LANG=C.UTF-8 --test_env=LOCALE_ARCHIVE
 # ------------------------------
 build:linux-nixpkgs --config=nixpkgs
 build:macos-nixpkgs --config=nixpkgs
-build:nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+build:nixpkgs --host_platform=@rules_nixpkgs_core//platforms:host
 
 # Build and Test Filters
 # ----------------------

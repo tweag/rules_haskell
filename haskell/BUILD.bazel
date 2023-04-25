@@ -97,7 +97,8 @@ bzl_library(
         "@bazel_skylib//lib:paths",
         "@bazel_skylib//lib:shell",
         "@bazel_skylib//lib:versions",
-        "@io_tweag_rules_nixpkgs//nixpkgs",
+        "@rules_nixpkgs_core//:nixpkgs",
+        "@rules_nixpkgs_posix//:posix",
         "@rules_sh//sh:posix",
     ],
 )
