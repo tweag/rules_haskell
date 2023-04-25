@@ -348,6 +348,7 @@ def haskell_register_ghc_nixpkgs(
         sh_posix_nixpkgs_kwargs["packages"] = sh_posix_attributes
     nixpkgs_sh_posix_configure(
         name = nixpkgs_sh_posix_repo_name,
+        register = register,
         **sh_posix_nixpkgs_kwargs
     )
 
