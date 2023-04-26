@@ -42,6 +42,7 @@ load(
     "get_library_files",
     "haskell_cc_libraries_aspect",
 )
+load(":private/versions.bzl", "check_bazel_version")
 
 def _get_auth(ctx, urls):
     """Find the .netrc file and obtain the auth dict for the required URLs.
@@ -1586,7 +1587,11 @@ def _to_string_keyed_label_list_dict(d):
     return out
 
 def _label_to_string(label):
-    return "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
+    if check_bazel_version("6.0.0")[0]:
+        # `str` serializes the label to its canonical name starting from bazel 6
+        return str(label)
+    else:
+        return "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
 
 def _parse_stack_snapshot(repository_ctx, snapshot, local_snapshot):
     if snapshot and local_snapshot:
@@ -1857,7 +1862,7 @@ def _stack_snapshot_unpinned_impl(repository_ctx):
 
     _write_snapshot_json(repository_ctx, all_cabal_hashes, resolved)
 
-    repository_name = repository_ctx.name[:-len("-unpinned")]
+    repository_name = repository_ctx.attr.unmangled_repo_name
 
     if repository_ctx.attr.stack_snapshot_json:
         stack_snapshot_location = paths.join(
@@ -1981,12 +1986,12 @@ packages = {
                 executables = all_components[name].exe,
                 sublibs = all_components[name].sublibs,
                 deps = [
-                    Label("@{}//:{}".format(repository_ctx.name, dep))
+                    str(Label("@{}//:{}".format(repository_ctx.attr.unmangled_repo_name, dep)))
                     for dep in spec["dependencies"]
                     if all_components[dep].lib
                 ],
                 tools = [
-                    Label("@{}-exe//{}:{}".format(repository_ctx.name, dep, exe))
+                    str(Label("@{}-exe//{}:{}".format(repository_ctx.attr.unmangled_repo_name, dep, exe)))
                     for dep in spec["dependencies"]
                     for exe in all_components[dep].exe
                 ],
@@ -2065,7 +2070,7 @@ haskell_library(
                 for exe in all_components[dep].exe
             ] + tools
             setup_deps = [
-                _label_to_string(Label("@{}//:{}".format(repository_ctx.name, name)).relative(label))
+                _label_to_string(Label("@{}//:{}".format(repository_ctx.attr.unmangled_repo_name, name)).relative(label))
                 for label in repository_ctx.attr.setup_deps.get(name, [])
             ]
             if all_components[name].lib:
@@ -2126,7 +2131,7 @@ haskell_cabal_binary(
     verbose = {verbose},
 )
 """.format(
-                        workspace = repository_ctx.name,
+                        workspace = repository_ctx.attr.unmangled_repo_name,
                         name = name,
                         exe = exe,
                         flags = repository_ctx.attr.flags.get(name, []),
@@ -2160,7 +2165,6 @@ haskell_cabal_library(
     verbose = {verbose},
 )
 """.format(
-                        workspace = repository_ctx.name,
                         name = name,
                         version = version,
                         haddock = repr(repository_ctx.attr.haddock),
@@ -2183,6 +2187,9 @@ haskell_cabal_library(
 _stack_snapshot_unpinned = repository_rule(
     _stack_snapshot_unpinned_impl,
     attrs = {
+        "unmangled_repo_name": attr.string(
+            doc = "The name passed to the stack_snapshot call",
+        ),
         "stack_snapshot_json": attr.label(allow_single_file = True),
         "snapshot": attr.string(),
         "local_snapshot": attr.label(allow_single_file = True),
@@ -2200,6 +2207,9 @@ _stack_snapshot_unpinned = repository_rule(
 _stack_snapshot = repository_rule(
     _stack_snapshot_impl,
     attrs = {
+        "unmangled_repo_name": attr.string(
+            doc = "Apparent repository name (repository_ctx.name is the canonical name with bzlmod)",
+        ),
         "stack_snapshot_json": attr.label(allow_single_file = True),
         "snapshot": attr.string(),
         "local_snapshot": attr.label(allow_single_file = True),
@@ -2221,7 +2231,7 @@ _stack_snapshot = repository_rule(
 )
 
 def _stack_sublibraries(repository_ctx, all_components):
-    workspace = repository_ctx.name
+    workspace = repository_ctx.attr.unmangled_repo_name
     for (package, components) in all_components.items():
         main_lib_str = ""
         sublibraries_str = ""
@@ -2266,7 +2276,7 @@ load("@{workspace}//:packages.bzl", "packages")
             )
 
 def _stack_executables_impl(repository_ctx):
-    workspace = repository_ctx.name[:-len("-exe")]
+    workspace = repository_ctx.attr.unmangled_repo_name
     all_components = json.decode(repository_ctx.read(repository_ctx.attr.components_json))
     for (package, components) in all_components.items():
         if not components["exe"]:
@@ -2290,6 +2300,9 @@ _stack_executables = repository_rule(
     _stack_executables_impl,
     attrs = {
         "components_json": attr.label(),
+        "unmangled_repo_name": attr.string(
+            doc = "The name passed to the stack_snapshot call",
+        ),
     },
 )
 
@@ -2636,6 +2649,7 @@ def stack_snapshot(
         )
     _stack_snapshot_unpinned(
         name = name + "-unpinned",
+        unmangled_repo_name = name,
         stack = stack,
         # Dependency for ordered execution, stack update before stack unpack.
         stack_update = "@rules_haskell_stack_update//:stack_update",
@@ -2651,6 +2665,7 @@ def stack_snapshot(
     )
     _stack_snapshot(
         name = name,
+        unmangled_repo_name = name,
         stack = stack,
         # Dependency for ordered execution, stack update before stack unpack.
         stack_update = None if stack_snapshot_json else "@rules_haskell_stack_update//:stack_update",
@@ -2677,6 +2692,7 @@ def stack_snapshot(
     )
     _stack_executables(
         name = name + "-exe",
+        unmangled_repo_name = name,
         components_json = "@{}//:components.json".format(name),
     )
 
