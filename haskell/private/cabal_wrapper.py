@@ -389,7 +389,7 @@ def make_relocatable_paths(line):
     # These paths are invalid in the package configuration.
     #
     # Replace each ocurrence of either kind of path by one relative to ${pkgroot}.
-    line = re.sub(re.escape(cfg_execroot) + '\S*', make_relative_to_pkgroot, line)
+    line = re.sub(re.escape(cfg_execroot) + r'\S*', make_relative_to_pkgroot, line)
     return line
 
 if libraries != [] and os.path.isfile(package_conf_file):
