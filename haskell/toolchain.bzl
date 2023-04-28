@@ -504,6 +504,11 @@ _hadrian_bindist_settings = rule(
         "srcs": attr.label_list(
             allow_files = True,
         ),
+        "_cc_toolchain": attr.label(
+            default = Label(
+                "@rules_cc//cc:current_cc_toolchain",
+            ),
+        ),
     },
     fragments = ["cpp"],
     toolchains = [

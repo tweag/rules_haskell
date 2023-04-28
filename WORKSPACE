@@ -91,11 +91,14 @@ load(
     "haskell_register_ghc_bindists_hadrian",
 )
 
+load(
+    "non_module_deps_1.bzl", "test_cabalopts", "test_ghcopts"
+)
 haskell_register_ghc_bindists_hadrian(
-    url = "file:///home/guillaume/ExternalPrograms/ghc/_build/bindist/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
-    sha256 = "e27724de38998dd6c3fb46ac5df4cf6818d779c1b749ea1afcd0b64e55b8217e",
-    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
-    version = "9.2.5",
+    url = "https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-deb9-linux.tar.xz",
+    sha256 = "3c727e93a82ff039fbedd6645518859849130a0fc93b7181cd69a41800aa639c",
+    strip_prefix = "ghc-9.6.1-x86_64-unknown-linux",
+    version = "9.6.1",
     target = "x86_64-unknown-linux",
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
