@@ -3,6 +3,7 @@ on:
   push:
     paths:
     - 'haskell/ghc_bindist.bzl'
+    - 'haskell/private/ghc_bindist_generated.bzl'
     - 'haskell/assets/**'
   workflow_dispatch:
 env:
