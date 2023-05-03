@@ -1,6 +1,6 @@
 import os
 import ctypes
-from bazel_tools.tools.python.runfiles import runfiles
+from python.runfiles import runfiles
 import subprocess
 
 r = runfiles.Create()

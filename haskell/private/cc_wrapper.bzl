@@ -110,7 +110,7 @@ def cc_wrapper(name, **kwargs):
         python_version = "PY3",
         main = name + ".py",
         deps = [
-            "@bazel_tools//tools/python/runfiles",
+            "@rules_python//python/runfiles",
         ],
         **kwargs
     )

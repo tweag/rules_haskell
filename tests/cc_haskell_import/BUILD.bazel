@@ -72,7 +72,9 @@ py_binary(
         "requires_threaded_rts",
     ],
     visibility = ["//tests:__subpackages__"],
-    deps = ["@bazel_tools//tools/python/runfiles"],
+    deps = [
+        "@rules_python//python/runfiles",
+    ],
 )
 
 filegroup(

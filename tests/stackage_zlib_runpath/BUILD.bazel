@@ -77,7 +77,7 @@ py_inline_test(
         ":libz_soname",
     ],
     script = """\
-from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
+from python.runfiles import runfiles as bazel_runfiles
 import itertools
 import os
 import platform
