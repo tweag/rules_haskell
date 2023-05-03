@@ -76,6 +76,8 @@ def _ghc_bindist_impl(ctx):
             stripPrefix += "-{}-unknown-mingw32".format(arch_suffix)
         elif os == "darwin" and version_tuple >= (9, 0, 2):
             stripPrefix += "-{}-apple-darwin".format(arch_suffix)
+        elif os == "linux" and version_tuple >= (9, 4, 1):
+            stripPrefix += "-{}-unknown-linux".format(arch_suffix)
 
     ctx.download_and_extract(
         url = url,
