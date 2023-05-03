@@ -2,7 +2,6 @@ load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_test",
 )
-load("@io_bazel_rules_go//go/tools/bazel_testing:def.bzl", "go_bazel_test")
 load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_haskell_integration_test")
 
 package(default_testonly = 1)
