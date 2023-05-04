@@ -215,6 +215,9 @@ rm -f
         cabalopts = ctx.attr.cabalopts,
         locale = repr(locale),
     )
+
+    is_clang = ctx.path(paths.join(unpack_dir, "mingw", "bin", "clang.exe")).exists
+
     ctx.template(
         "BUILD",
         filepaths["@rules_haskell//haskell:ghc.BUILD.tpl"],
@@ -222,6 +225,7 @@ rm -f
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
             "%{docdir}": docdir,
+            "%{is_clang}": str(is_clang),
         },
         executable = False,
     )
