@@ -407,6 +407,8 @@ def ghc_bindist(
             "9.2.3": ["@rules_haskell//haskell:assets/ghc_9_2_3_win.patch"],
             "9.2.4": ["@rules_haskell//haskell:assets/ghc_9_2_4_win.patch"],
             "9.2.5": ["@rules_haskell//haskell:assets/ghc_9_2_5_win.patch"],
+            "9.4.5": ["@rules_haskell//haskell:assets/ghc_9_4_5_win.patch"],
+            "9.6.1": ["@rules_haskell//haskell:assets/ghc_9_6_1_win.patch"],
         }.get(version)
 
     if target == "darwin_amd64":
