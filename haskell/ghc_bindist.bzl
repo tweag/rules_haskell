@@ -126,7 +126,10 @@ def _ghc_bindist_impl(ctx):
         # tools! This means that sed -i always takes an argument.
 
         if is_hadrian_dist:
-            make_args = ["-E", "RelocatableBuild := YES"]
+            ctx.file(paths.join(unpack_dir, "relocatable.mk"), content = """
+RelocatableBuild := YES
+include Makefile""")
+            make_args = ["-f", "relocatable.mk"]
         else:
             make_args = []
 
