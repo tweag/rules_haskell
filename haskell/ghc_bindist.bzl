@@ -193,7 +193,7 @@ rm -f
     docdir = "doc"
     if GHC_BINDIST_DOCDIR.get(version) != None and GHC_BINDIST_DOCDIR[version].get(target) != None:
         docdir = GHC_BINDIST_DOCDIR[version][target]
-    elif os == "windows" and version_tuple >= (9, 0, 1):
+    elif os == "windows" and version_tuple >= (9, 0, 1) and version_tuple < (9, 4, 1):
         docdir = "docs"
 
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
