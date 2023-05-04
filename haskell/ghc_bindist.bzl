@@ -118,13 +118,23 @@ def _ghc_bindist_impl(ctx):
         patch_args.extend(["-d", unpack_dir])
     patch(ctx, patch_args = patch_args)
 
+    is_hadrian_dist = ctx.path(unpack_dir).get_child("config.mk.in").exists
+
     # On Windows the bindist already contains the built executables
     if os != "windows":
         # IMPORTANT: all these scripts have to be compatible with BSD
         # tools! This means that sed -i always takes an argument.
-        execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
-        execute_or_fail_loudly(ctx, ["rm", "-f", "mk/config.mk.in.bak"], working_directory = unpack_dir)
+
+        if is_hadrian_dist:
+            make_args = ["-E", "RelocatableBuild := YES"]
+        else:
+            make_args = []
+
+            execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
+            execute_or_fail_loudly(ctx, ["rm", "-f", "mk/config.mk.in.bak"], working_directory = unpack_dir)
+
         execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath], working_directory = unpack_dir)
+
         make_loc = ctx.which("make")
         if not make_loc:
             fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
@@ -137,7 +147,7 @@ def _ghc_bindist_impl(ctx):
 
         execute_or_fail_loudly(
             ctx,
-            ["make", "install"],
+            ["make", "install"] + make_args,
             # Necessary for deterministic builds on macOS. See
             # https://blog.conan.io/2019/09/02/Deterministic-builds-with-C-C++.html.
             # The proper fix is for the GHC bindist to always use ar
@@ -148,7 +158,9 @@ def _ghc_bindist_impl(ctx):
             environment = {"ZERO_AR_DATE": "1"},
             working_directory = unpack_dir,
         )
-        ctx.file(paths.join(unpack_dir, "patch_bins"), executable = True, content = r"""#!/usr/bin/env bash
+
+        if not is_hadrian_dist:
+            ctx.file(paths.join(unpack_dir, "patch_bins"), executable = True, content = r"""#!/usr/bin/env bash
 find bin -type f -print0 | xargs -0 \
 grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
     sed -i.bak \
@@ -159,9 +171,9 @@ find bin -type f -print0 | xargs -0 \
 grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
 rm -f
 """.format(
-            bindist_dir = bindist_dir.realpath,
-        ))
-        execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
+                bindist_dir = bindist_dir.realpath,
+            ))
+            execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
 
     # As the patches may touch the package DB we regenerate the cache.
     if len(ctx.attr.patches) > 0:
@@ -171,6 +183,8 @@ rm -f
     if GHC_BINDIST_LIBDIR.get(version) != None and GHC_BINDIST_LIBDIR[version].get(target) != None:
         libdir = GHC_BINDIST_LIBDIR[version][target]
     elif os == "darwin" and version_tuple >= (9, 0, 2):
+        libdir = "lib/lib"
+    elif os == "linux" and version_tuple >= (9, 4, 1):
         libdir = "lib/lib"
 
     docdir = "doc"
