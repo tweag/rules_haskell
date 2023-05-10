@@ -76,6 +76,8 @@ def _ghc_bindist_impl(ctx):
             stripPrefix += "-{}-unknown-mingw32".format(arch_suffix)
         elif os == "darwin" and version_tuple >= (9, 0, 2):
             stripPrefix += "-{}-apple-darwin".format(arch_suffix)
+        elif os == "linux" and version_tuple >= (9, 4, 1):
+            stripPrefix += "-{}-unknown-linux".format(arch_suffix)
 
     ctx.download_and_extract(
         url = url,
@@ -116,13 +118,26 @@ def _ghc_bindist_impl(ctx):
         patch_args.extend(["-d", unpack_dir])
     patch(ctx, patch_args = patch_args)
 
+    is_hadrian_dist = ctx.path(unpack_dir).get_child("config.mk.in").exists
+
     # On Windows the bindist already contains the built executables
     if os != "windows":
         # IMPORTANT: all these scripts have to be compatible with BSD
         # tools! This means that sed -i always takes an argument.
-        execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
-        execute_or_fail_loudly(ctx, ["rm", "-f", "mk/config.mk.in.bak"], working_directory = unpack_dir)
+
+        if is_hadrian_dist:
+            ctx.file(paths.join(unpack_dir, "relocatable.mk"), content = """
+RelocatableBuild := YES
+include Makefile""")
+            make_args = ["-f", "relocatable.mk"]
+        else:
+            make_args = []
+
+            execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
+            execute_or_fail_loudly(ctx, ["rm", "-f", "mk/config.mk.in.bak"], working_directory = unpack_dir)
+
         execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath], working_directory = unpack_dir)
+
         make_loc = ctx.which("make")
         if not make_loc:
             fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
@@ -135,7 +150,7 @@ def _ghc_bindist_impl(ctx):
 
         execute_or_fail_loudly(
             ctx,
-            ["make", "install"],
+            ["make", "install"] + make_args,
             # Necessary for deterministic builds on macOS. See
             # https://blog.conan.io/2019/09/02/Deterministic-builds-with-C-C++.html.
             # The proper fix is for the GHC bindist to always use ar
@@ -146,7 +161,9 @@ def _ghc_bindist_impl(ctx):
             environment = {"ZERO_AR_DATE": "1"},
             working_directory = unpack_dir,
         )
-        ctx.file(paths.join(unpack_dir, "patch_bins"), executable = True, content = r"""#!/usr/bin/env bash
+
+        if not is_hadrian_dist:
+            ctx.file(paths.join(unpack_dir, "patch_bins"), executable = True, content = r"""#!/usr/bin/env bash
 find bin -type f -print0 | xargs -0 \
 grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
     sed -i.bak \
@@ -157,9 +174,9 @@ find bin -type f -print0 | xargs -0 \
 grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
 rm -f
 """.format(
-            bindist_dir = bindist_dir.realpath,
-        ))
-        execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
+                bindist_dir = bindist_dir.realpath,
+            ))
+            execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
 
     # As the patches may touch the package DB we regenerate the cache.
     if len(ctx.attr.patches) > 0:
@@ -170,11 +187,13 @@ rm -f
         libdir = GHC_BINDIST_LIBDIR[version][target]
     elif os == "darwin" and version_tuple >= (9, 0, 2):
         libdir = "lib/lib"
+    elif os == "linux" and version_tuple >= (9, 4, 1):
+        libdir = "lib/lib"
 
     docdir = "doc"
     if GHC_BINDIST_DOCDIR.get(version) != None and GHC_BINDIST_DOCDIR[version].get(target) != None:
         docdir = GHC_BINDIST_DOCDIR[version][target]
-    elif os == "windows" and version_tuple >= (9, 0, 1):
+    elif os == "windows" and version_tuple >= (9, 0, 1) and version_tuple < (9, 4, 1):
         docdir = "docs"
 
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
@@ -196,6 +215,9 @@ rm -f
         cabalopts = ctx.attr.cabalopts,
         locale = repr(locale),
     )
+
+    is_clang = ctx.path(paths.join(unpack_dir, "mingw", "bin", "clang.exe")).exists
+
     ctx.template(
         "BUILD",
         filepaths["@rules_haskell//haskell:ghc.BUILD.tpl"],
@@ -203,6 +225,7 @@ rm -f
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
             "%{docdir}": docdir,
+            "%{is_clang}": str(is_clang),
         },
         executable = False,
     )
@@ -388,6 +411,8 @@ def ghc_bindist(
             "9.2.3": ["@rules_haskell//haskell:assets/ghc_9_2_3_win.patch"],
             "9.2.4": ["@rules_haskell//haskell:assets/ghc_9_2_4_win.patch"],
             "9.2.5": ["@rules_haskell//haskell:assets/ghc_9_2_5_win.patch"],
+            "9.4.5": ["@rules_haskell//haskell:assets/ghc_9_4_5_win.patch"],
+            "9.6.1": ["@rules_haskell//haskell:assets/ghc_9_6_1_win.patch"],
         }.get(version)
 
     if target == "darwin_amd64":

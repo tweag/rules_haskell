@@ -3,6 +3,7 @@ on:
   push:
     paths:
     - 'haskell/ghc_bindist.bzl'
+    - 'haskell/private/ghc_bindist_generated.bzl'
     - 'haskell/assets/**'
   workflow_dispatch:
 env:
@@ -28,6 +29,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-11, windows-latest]
         ghc-version: ${{ fromJSON(needs.find-ghc-version.outputs.ghc-matrix) }}
+        exclude:
+          # skip GHC 9.4.5 on windows, see https://github.com/tweag/rules_haskell/issues/1892
+          - os: windows-latest
+            ghc-version: '9.4.5'
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install required packages

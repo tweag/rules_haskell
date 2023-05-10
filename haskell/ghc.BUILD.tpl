@@ -65,4 +65,4 @@ cc_toolchain(
     toolchain_identifier = "ghc_windows_mingw64",
 )
 
-cc_toolchain_config(name = "ghc_windows_mingw64_config")
+cc_toolchain_config(name = "ghc_windows_mingw64_config", is_clang=%{is_clang})
