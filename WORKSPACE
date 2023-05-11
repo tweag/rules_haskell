@@ -20,7 +20,6 @@ load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 http_archive(
     name = "rules_proto",

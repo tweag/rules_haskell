@@ -10,6 +10,7 @@ haskell_library(
         "//tests/hackage:filepath",
         "//tests/hackage:process",
         "//tests/hackage:text",
+        "@rules_haskell//tools/runfiles",
         "@stackage//:hspec",
         "@stackage//:hspec-core",
     ],

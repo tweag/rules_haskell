@@ -1,5 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_package")
+load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_package")
 
 def _pandoc_toolchain_impl(ctx):
     return [platform_common.ToolchainInfo(

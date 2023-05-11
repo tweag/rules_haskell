@@ -19,6 +19,7 @@ import Data.Text.IO (readFile, writeFile)
 import System.Exit (ExitCode(..))
 import Control.Monad (when, unless, forM_)
 import Test.Hspec (shouldSatisfy, expectationFailure)
+import qualified Bazel.Runfiles as Runfiles
 
 bazelCmd :: String -> String -> IO ([String] -> Process.CreateProcess)
 bazelCmd workspaceDir outputUserRoot = do
@@ -81,10 +82,10 @@ generateBazelRc dir = do
 
 setupWorkspace :: IO (String, String)
 setupWorkspace = do
+    runfiles <- Runfiles.create
     workspaceDir <- getEnv "BIT_WORKSPACE_DIR"
     bazelBinId <- getEnv "BIT_BAZEL_BIN_ID"
     outputBase <- outputBaseDir
-    runfilesDir <- getEnv "RUNFILES_DIR"
     let execDir = outputBase </> "bazel_testing"
     createDirIfNotExist execDir
     let newWorkspaceDir = execDir </> bazelBinId
@@ -93,7 +94,7 @@ setupWorkspace = do
     copyDirectoryRecursive workspaceDir newWorkspaceDir
     generateBazelRc newWorkspaceDir
     removeDirIfExist (execDir </> "rules_haskell")
-    copyDirectoryRecursive (runfilesDir </> "rules_haskell") (execDir </> "rules_haskell")
+    copyDirectoryRecursive (Runfiles.rlocation runfiles "rules_haskell") (execDir </> "rules_haskell")
     replaceInFile (newWorkspaceDir </> "WORKSPACE") "%RULES_HASKELL_PATH%" "../rules_haskell"
     return (newWorkspaceDir, outputUserRoot)
 

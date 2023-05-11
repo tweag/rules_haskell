@@ -1,8 +1,11 @@
 """Workspace rules (Nixpkgs)"""
 
 load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_package",
+)
+load(
+    "@rules_nixpkgs_posix//:posix.bzl",
     "nixpkgs_sh_posix_configure",
 )
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
@@ -160,7 +163,7 @@ def _ghc_nixpkgs_toolchain_impl(repository_ctx):
         target_constraints = repository_ctx.attr.target_constraints
         exec_constraints = list(repository_ctx.attr.exec_constraints)
 
-    exec_constraints.append("@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix")
+    exec_constraints.append("@rules_nixpkgs_core//constraints:support_nix")
 
     repository_ctx.file(
         "BUILD",
@@ -345,6 +348,7 @@ def haskell_register_ghc_nixpkgs(
         sh_posix_nixpkgs_kwargs["packages"] = sh_posix_attributes
     nixpkgs_sh_posix_configure(
         name = nixpkgs_sh_posix_repo_name,
+        register = register,
         **sh_posix_nixpkgs_kwargs
     )
 

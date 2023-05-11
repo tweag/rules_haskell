@@ -65,7 +65,7 @@ def sh_inline_test(name, script, **kwargs):
     )
 
 python_runfiles_boilerplate = """
-from bazel_tools.tools.python.runfiles import runfiles
+from python.runfiles import runfiles
 r = runfiles.Create()
 """
 
@@ -86,6 +86,6 @@ def py_inline_test(name, script, **kwargs):
         name = name,
         srcs = [script_name] + srcs,
         main = script_name,
-        deps = ["@bazel_tools//tools/python/runfiles"] + deps,
+        deps = ["@rules_python//python/runfiles"] + deps,
         **kwargs
     )
