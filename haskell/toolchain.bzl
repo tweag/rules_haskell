@@ -609,9 +609,9 @@ def haskell_toolchain(
                 "config.guess",
                 "config.sub",
                 "install-sh",
-                "mk/config.mk.in",
-                "mk/install.mk.in",
+                "config.mk.in",
                 "mk/project.mk",
+                "mk/system-cxx-std-lib-1.0.conf.in",
             ],
         )
 
