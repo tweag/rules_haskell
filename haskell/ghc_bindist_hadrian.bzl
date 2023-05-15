@@ -71,7 +71,7 @@ def _ghc_bindist_hadrian_impl(ctx):
 
     bindir = "bin"
     libdir = "lib"
-    docdir = "docs"
+    docdir = "doc"
 
     # The bindist requires patching invalid haddock paths. See Makefile of GHC:
     # https://gitlab.haskell.org/ghc/ghc/-/blob/ghc-9.2.3-release/hadrian/bindist/Makefile#L54-74
@@ -151,6 +151,7 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
             "%{generated_lib_filegroup}": generated_lib_filegroup,
             "%{generated_docdir_filegroup}": generated_docdir_filegroup,
             "%{generated_include_filegroup}": generated_include_filegroup,
+            "%{is_clang}": str(False),
         },
         executable = False,
     )
