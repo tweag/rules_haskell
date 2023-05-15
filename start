@@ -238,6 +238,14 @@ load(
 # Setup all Bazel dependencies required by rules_haskell.
 rules_haskell_dependencies()
 
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+    ],
+)
 load(
     "@rules_haskell//haskell:toolchain.bzl",
     "rules_haskell_toolchains",
@@ -267,11 +275,33 @@ EOF
 # Append toolchain and zlib rules
 case "${MODE}" in
     "bindists") cat <<-EOF
-		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
-		rules_haskell_toolchains(
-		    version = "${GHC_VERSION}",
+		load(
+		    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+		    "haskell_register_ghc_bindists_hadrian",
 		)
-
+		test_ghcopts = [
+		    "-XStandaloneDeriving",  # Flag used at compile time
+		    "-threaded",  # Flag used at link time
+		    # Used by `tests/repl-flags`
+		    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+		    # this is the default, so it does not harm other tests
+		    "-XNoOverloadedStrings",
+		]
+		test_cabalopts = [
+		    # Used by `tests/cabal-toolchain-flags`
+		    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
+		    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
+		]
+		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
+		haskell_register_ghc_bindists_hadrian(
+		    url = "https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-deb9-linux.tar.xz",
+		    sha256 = "3c727e93a82ff039fbedd6645518859849130a0fc93b7181cd69a41800aa639c",
+		    strip_prefix = "ghc-9.6.1-x86_64-unknown-linux",
+		    version = "9.6.1",
+		    target = "x86_64-unknown-linux",
+		    cabalopts = test_cabalopts,
+		    ghcopts = test_ghcopts,
+		)
 		http_archive(
 		    name = "zlib.dev",
 		    build_file = "//:${ZLIB_BUILD_FILE}",
