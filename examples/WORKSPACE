@@ -15,12 +15,56 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
-load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+load(
+    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+    "haskell_register_ghc_bindists_hadrian",
+)
 
-haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc925",
-    repository = "@rules_haskell//nixpkgs:default.nix",
-    version = "9.2.5",
+# FIXME copied from non_module_deps_1.bzl
+test_ghcopts = [
+    "-XStandaloneDeriving",  # Flag used at compile time
+    "-threaded",  # Flag used at link time
+    # Used by `tests/repl-flags`
+    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+    # this is the default, so it does not harm other tests
+    "-XNoOverloadedStrings",
+]
+
+test_haddock_flags = ["-U"]
+
+test_repl_ghci_args = [
+    # The repl test will need this flag, but set by the local
+    # `repl_ghci_args`.
+    "-UTESTS_TOOLCHAIN_REPL_FLAGS",
+    # The repl test will need OverloadedString
+    "-XOverloadedStrings",
+]
+
+test_cabalopts = [
+    # Used by `tests/cabal-toolchain-flags`
+    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
+    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
+] + ([
+    # To avoid ghcide linking errors with heapsize on Windows of the form
+    #
+    #   unknown symbol `heap_view_closurePtrs'
+    #
+    # See https://github.com/haskell/ghcide/pull/954
+    "--disable-library-for-ghci",
+] if False else [])
+
+# load(
+#     "@rules_haskell//:non_module_deps_1.bzl", "test_cabalopts", "test_ghcopts"
+# )
+
+haskell_register_ghc_bindists_hadrian(
+    url = "https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-deb9-linux.tar.xz",
+    sha256 = "3c727e93a82ff039fbedd6645518859849130a0fc93b7181cd69a41800aa639c",
+    strip_prefix = "ghc-9.6.1-x86_64-unknown-linux",
+    version = "9.6.1",
+    target = "x86_64-unknown-linux",
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
 )
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
@@ -65,7 +109,8 @@ stack_snapshot(
             "-pkg-config",
         ],
     },
-    local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
+    #local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
+    snapshot = "nightly-2023-05-12",
     packages = [
         "base",
         "bytestring",
