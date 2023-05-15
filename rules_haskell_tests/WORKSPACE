@@ -106,11 +106,11 @@ load(
     "haskell_register_ghc_bindists",
 )
 
-haskell_register_ghc_bindists(
-    cabalopts = test_cabalopts,
-    ghcopts = test_ghcopts,
-    version = GHC_VERSION,
-)
+# haskell_register_ghc_bindists(
+#     cabalopts = test_cabalopts,
+#     ghcopts = test_ghcopts,
+#     version = GHC_VERSION,
+# )
 
 load("non_module_deps_1.bzl", repositories_1 = "repositories")
 
