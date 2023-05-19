@@ -113,7 +113,7 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
     generated_include_filegroup = define_rule(
         "copy_filegroups_to_this_package",
         name = "generated_include_filegroup",
-        srcs = [":{}".format(docdir)],
+        srcs = [":include"],
     )
 
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
