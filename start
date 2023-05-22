@@ -294,10 +294,10 @@ case "${MODE}" in
 		]
 		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
 		haskell_register_ghc_bindists_hadrian(
-		    url = "https://downloads.haskell.org/~ghc/9.6.1/ghc-9.6.1-x86_64-deb9-linux.tar.xz",
-		    sha256 = "3c727e93a82ff039fbedd6645518859849130a0fc93b7181cd69a41800aa639c",
-		    strip_prefix = "ghc-9.6.1-x86_64-unknown-linux",
-		    version = "9.6.1",
+		    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
+		    sha256 = "9dea9123cd53c0d48e72de68480492eaacc2e0bf487a3cd3dfa3ce18729aa3e4",
+		    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
+		    version = "9.2.5",
 		    target = "x86_64-unknown-linux",
 		    cabalopts = test_cabalopts,
 		    ghcopts = test_ghcopts,
