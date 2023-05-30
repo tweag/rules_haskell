@@ -1,9 +1,9 @@
 load(
-    "//tests:inline_tests.bzl",
+    "@rules_haskell//tests:inline_tests.bzl",
     "py_inline_test",
 )
 
-#
+# test the ldd debug library on the output of `//tests/binary-indirect-cbits`
 def ldd_test(name, elf_binary, script, current_workspace = None, tags = []):
     """Test with imported linking_utils.ldd library.
     The path to the `elf_binary` is passed in sys.argv[1].
