@@ -2,7 +2,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
-load("@rules_haskell//tests:failing-repros/should_fail.bzl", "should_fail")
+load("@rules_haskell_tests//tests:failing-repros/should_fail.bzl", "should_fail")
 
 cc_library(
     name = "cbits",

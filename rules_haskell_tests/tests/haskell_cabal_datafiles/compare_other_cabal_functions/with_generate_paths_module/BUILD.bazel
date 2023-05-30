@@ -22,7 +22,7 @@ haskell_cabal_library(
     generate_paths_module = True,
     tags = ["skip_profiling"],
     version = "0.1.0.0",
-    deps = ["//tools/runfiles"],
+    deps = ["@rules_haskell//tools/runfiles"],
 )
 
 haskell_binary(

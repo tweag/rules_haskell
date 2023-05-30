@@ -32,7 +32,7 @@ haskell_cabal_library(
     tags = ["skip_profiling"],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
-    deps = ["//tools/runfiles"],
+    deps = ["@rules_haskell//tools/runfiles"],
 )
 
 haskell_test(

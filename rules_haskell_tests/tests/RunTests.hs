@@ -35,7 +35,7 @@ main = hspec $ do
     assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tag_filters", tagFilter, "--test_tag_filters", tagFilter])
 
   it "bazel build worker" $ do
-    assertSuccess (bazel ["build", "//tools/worker:bin"])
+    assertSuccess (bazel ["build", "@rules_haskell//tools/worker:bin"])
 
   describe "stack_snapshot pinning" $
     it "handles packages in subdirectories correctly" $ do
@@ -142,12 +142,12 @@ main = hspec $ do
         (bazel ["run", "//tests/multi_repl:c_only_repl", "--disk_cache=" <> tmp_disk_cache, "--remote_download_toplevel"])
 
   it "bazel test examples" $ do
-    assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "./examples" }
-    assertSuccess $ (bazel ["test", "//..."]) { Process.cwd = Just "./examples" }
+    assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "../examples" }
+    assertSuccess $ (bazel ["test", "//..."]) { Process.cwd = Just "../examples" }
 
   it "bazel test tutorial" $ do
-    assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "./tutorial" }
-    assertSuccess (bazel ["test", "//..."]) { Process.cwd = Just "./tutorial" }
+    assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "../tutorial" }
+    assertSuccess (bazel ["test", "//..."]) { Process.cwd = Just "../tutorial" }
 
 -- * Bazel commands
 

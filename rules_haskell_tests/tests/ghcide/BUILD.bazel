@@ -1,9 +1,9 @@
 load("@os_info//:os_info.bzl", "is_windows")
-load("//tools/ghc-paths:defs.bzl", "add_data")
+load("@rules_haskell//tools/ghc-paths:defs.bzl", "add_data")
 
 add_data(
     name = "ghcide",
-    data = ["//tools/ghc-paths:libdir"],
+    data = ["@rules_haskell//tools/ghc-paths:libdir"],
     executable = "@ghcide-exe//ghcide",
     tags = [
         # Building ghcide fails in profiling mode with:

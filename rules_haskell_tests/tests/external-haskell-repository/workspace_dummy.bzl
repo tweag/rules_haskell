@@ -13,7 +13,7 @@ def _haskell_package_repository_dummy_impl(rep_ctx):
 repository(name={name})
 
 register_toolchains(
-  "@rules_haskell//tests/:ghc"
+  "@rules_haskell_tests//tests/:ghc"
 )
 """.format(name = rep_ctx.name),
     )
@@ -38,8 +38,8 @@ haskell_library(
   name = "library-with-cbits",
   srcs = ["AddOne.hs"],
   deps = [
-      "@rules_haskell//tests/data:ourclibrary",
-      "@rules_haskell//tests/hackage:base",
+      "@rules_haskell_tests//tests/data:ourclibrary",
+      "@rules_haskell_tests//tests/hackage:base",
   ],
 
   linkstatic = False,

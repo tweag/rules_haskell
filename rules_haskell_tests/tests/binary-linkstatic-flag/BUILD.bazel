@@ -8,7 +8,7 @@ load(
     "//tests:analysis_tests.bzl",
     "dynamic_libraries_in_runfiles_test",
 )
-load("//tests:inline_tests.bzl", "sh_inline_test")
+load("@rules_haskell//tests:inline_tests.bzl", "sh_inline_test")
 
 # test whether `linkstatic` works as expected
 package(default_testonly = 1)

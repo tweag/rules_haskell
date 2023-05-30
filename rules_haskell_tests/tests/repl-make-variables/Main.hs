@@ -18,6 +18,6 @@ import System.FilePath ((</>))
 main :: IO ()
 main = do
   runfiles <- Bazel.Runfiles.create
-  content <- readFile (Bazel.Runfiles.rlocation runfiles $ "rules_haskell" </> DATA)
+  content <- readFile (Bazel.Runfiles.rlocation runfiles $ "rules_haskell_tests" </> DATA)
   unless (content == "42\n") $
     fail "Unexpected content"

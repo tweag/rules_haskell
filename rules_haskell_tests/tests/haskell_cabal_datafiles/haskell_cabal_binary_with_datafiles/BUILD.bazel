@@ -31,7 +31,7 @@ haskell_cabal_binary(
     visibility = ["//tests/haskell_cabal_datafiles/other_script/src:__pkg__"],
     deps = [
         ":base",
-        "//tools/runfiles",
+        "@rules_haskell//tools/runfiles",
     ],
 )
 

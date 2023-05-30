@@ -3,7 +3,7 @@ load(
     "haskell_cabal_binary",
 )
 load(
-    "//tests:inline_tests.bzl",
+    "@rules_haskell//tests:inline_tests.bzl",
     "py_inline_test",
 )
 load("dynamic_libraries.bzl", "dynamic_libraries")

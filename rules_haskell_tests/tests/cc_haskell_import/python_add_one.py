@@ -5,7 +5,7 @@ import subprocess
 
 r = runfiles.Create()
 
-path = r.Rlocation('rules_haskell/tests/cc_haskell_import/hs-lib-b-wrapped.so')
+path = r.Rlocation('rules_haskell_tests/tests/cc_haskell_import/hs-lib-b-wrapped.so')
 
 foreignlib = ctypes.cdll.LoadLibrary(path)
 foreignlib.hs_init.restype = ctypes.c_int

@@ -2,9 +2,9 @@
 Minimal reproduction of https://github.com/tweag/rules_haskell/issues/1111
 """
 
-load("//haskell:defs.bzl", "haskell_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
 load(
-    "//haskell:protobuf.bzl",
+    "@rules_haskell//haskell:protobuf.bzl",
     "haskell_proto_library",
     "haskell_proto_toolchain",
 )

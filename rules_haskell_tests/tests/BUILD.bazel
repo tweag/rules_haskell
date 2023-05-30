@@ -1,28 +1,28 @@
-load(":inline_tests.bzl", "sh_inline_test")
+load("@rules_haskell//tests:inline_tests.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("@os_info//:os_info.bzl", "is_windows")
 load("//tests:rule_test_exe.bzl", "rule_test_exe")
 load(
-    "//haskell:c2hs.bzl",
+    "@rules_haskell//haskell:c2hs.bzl",
     "c2hs_toolchain",
 )
 load(
-    "//haskell:defs.bzl",
+    "@rules_haskell//haskell:defs.bzl",
     "haskell_binary",
     "haskell_doc",
     "haskell_library",
     "haskell_repl",
 )
 load(
-    "//haskell:doctest.bzl",
+    "@rules_haskell//haskell:doctest.bzl",
     "haskell_doctest_toolchain",
 )
 load(
-    "//haskell:protobuf.bzl",
+    "@rules_haskell//haskell:protobuf.bzl",
     "haskell_proto_toolchain",
 )
 load(
-    "//:constants.bzl",
+    "@rules_haskell//:constants.bzl",
     "test_ghc_version",
 )
 
@@ -496,7 +496,6 @@ filegroup(
         "//tests/library-with-sysdeps:all_files",
         "//tests/library-with-sysincludes:all_files",
         "//tests/multi_repl:all_files",
-        "//tests/package_configuration:all_files",
         "//tests/package-id-clash:all_files",
         "//tests/package-id-clash-binary:all_files",
         "//tests/package-name:all_files",

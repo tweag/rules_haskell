@@ -4,7 +4,7 @@ load(
     "integration_test_utils",
 )
 load(
-    "//haskell:private/versions.bzl",
+    "@rules_haskell//haskell:private/versions.bzl",
     "SUPPORTED_BAZEL_VERSIONS",
     "SUPPORTED_NIXPKGS_BAZEL_PACKAGES",
 )
@@ -38,7 +38,7 @@ def rules_haskell_integration_test(
             },
             bazel_binaries = nixpkgs_bazel_binaries,
             workspace_path = workspace_path,
-            rule_files = ["//:distribution"],
+            rule_files = ["@rules_haskell//:distribution"],
             target_compatible_with = select({
                 "//tests:nix": [],
                 "//conditions:default": ["@platforms//:incompatible"],
@@ -53,7 +53,7 @@ def rules_haskell_integration_test(
             deps = deps,
             bazel_binaries = bindist_bazel_binaries,
             workspace_path = workspace_path,
-            rule_files = ["//:distribution"],
+            rule_files = ["@rules_haskell//:distribution"],
             target_compatible_with = select({
                 "//tests:nix": ["@platforms//:incompatible"],
                 "//conditions:default": [],
