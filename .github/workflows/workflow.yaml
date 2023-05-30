@@ -165,10 +165,11 @@ jobs:
           # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
           # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
           [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
-          case ${{ runner.os }} in
-            macOS) BUILD_CONFIG=ci-macos-bindist;;
-            Linux) BUILD_CONFIG=ci-linux-bindist;;
-            Windows) BUILD_CONFIG=ci-windows-bindist;;
+          case "${{ runner.os }},${{ matrix.module }}" in
+            macOS,*) BUILD_CONFIG=ci-macos-bindist;;
+            Linux,*) BUILD_CONFIG=ci-linux-bindist;;
+            Windows,rules_haskell) BUILD_CONFIG=ci-windows-bindist-rules-haskell;;
+            Windows,rules_haskell_tests) BUILD_CONFIG=ci-windows-bindist-rules-haskell-tests;;
           esac
           if [ -z "$BUILDBUDDY_API_KEY" ]; then
               cache_setting='--noremote_upload_local_results'

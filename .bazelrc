@@ -74,16 +74,20 @@ build:ci-linux-nixpkgs --config=linux-nixpkgs
 build:ci-macos-bindist --config=macos-bindist
 build:ci-macos-nixpkgs --config=macos-nixpkgs
 build:ci-windows-bindist --config=windows-bindist
+build:ci-windows-bindist-rules-haskell --config=ci-windows-bindist
+build:ci-windows-bindist-rules-haskell-tests --config=ci-windows-bindist
 
 # Windows is prone to leaking absolute paths into the remote cache which can
-# poison the cache. Increment this number to use a fresh cache. Errors of the
-# following form might indicate such an issue:
+# poison the cache, so we do not share the cache between different modules.
+# Increment these numbers to use a fresh cache.
+# Errors of the following form might indicate such an issue:
 #
 #   ERROR: D:/a/rules_haskell/rules_haskell/tests/runfiles/BUILD.bazel:20:10: Compiling tests/runfiles/main.cc failed: undeclared inclusion(s) in rule '//tests/runfiles:cc-runner':
 #   this rule is missing dependency declarations for the following files included by 'tests/runfiles/main.cc':
 #     '.../execroot/rules_haskell/external/rules_haskell_ghc_windows_amd64/mingw/include/c++/9.2.0/cstdlib'
 #     '.../execroot/rules_haskell/external/rules_haskell_ghc_windows_amd64/mingw/include/c++/9.2.0/x86_64-w64-mingw32/bits/c++config.h'
-build:ci-windows-bindist --remote_default_exec_properties=cache-silo-key=windows-v2
+build:ci-windows-bindist-rules-haskell --remote_default_exec_properties=cache-silo-key=windows-rules-haskell-v0
+build:ci-windows-bindist-rules-haskell-tests --remote_default_exec_properties=cache-silo-key=windows-rules-haskell-tests-v0
 
 # XXX: @com_google_protobuf sets `use_default_shell_env = True`, so we enable
 #   strict action env to avoid changes in `PATH` invalidating the cache.
