@@ -1,22 +1,32 @@
 queue_rules:
   - name: default
     conditions:
-      - 'status-success~=Build & Test - Nixpkgs \(ubuntu-.*\).*'
-      - 'status-success~=Build & Test - Nixpkgs \(macos-.*\).*'
-      - 'status-success~=Build & Test - bindist \(ubuntu-.*\).*'
-      - 'status-success~=Build & Test - bindist \(macos-.*\).*'
-      - 'status-success~=Build & Test - bindist \(windows-.*\).*'
+      - 'status-success~=Build & Test - Nixpkgs \(ubuntu-.*, rules_haskell\).*'
+      - 'status-success~=Build & Test - Nixpkgs \(ubuntu-.*, rules_haskell_tests\).*'
+      - 'status-success~=Build & Test - Nixpkgs \(macos-.*, rules_haskell\).*'
+      - 'status-success~=Build & Test - Nixpkgs \(macos-.*, rules_haskell_tests\).*'
+      - 'status-success~=Build & Test - bindist \(ubuntu-.*, rules_haskell\).*'
+      - 'status-success~=Build & Test - bindist \(ubuntu-.*, rules_haskell_tests\).*'
+      - 'status-success~=Build & Test - bindist \(macos-.*, rules_haskel\).*'
+      - 'status-success~=Build & Test - bindist \(macos-.*, rules_haskell_tests\).*'
+      - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell\).*'
+      - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell_tests\).*'
       - 'status-success~=Build & Test - Cross.*'
       - "status-success=deploy/netlify"
 
 pull_request_rules:
   - name: automatic merge
     conditions:
-      - 'status-success~=Build & Test - Nixpkgs \(ubuntu-.*\).*'
-      - 'status-success~=Build & Test - Nixpkgs \(macos-.*\).*'
-      - 'status-success~=Build & Test - bindist \(ubuntu-.*\).*'
-      - 'status-success~=Build & Test - bindist \(macos-.*\).*'
-      - 'status-success~=Build & Test - bindist \(windows-.*\).*'
+      - 'status-success~=Build & Test - Nixpkgs \(ubuntu-.*, rules_haskell\).*'
+      - 'status-success~=Build & Test - Nixpkgs \(ubuntu-.*, rules_haskell_tests\).*'
+      - 'status-success~=Build & Test - Nixpkgs \(macos-.*, rules_haskell\).*'
+      - 'status-success~=Build & Test - Nixpkgs \(macos-.*, rules_haskell_tests\).*'
+      - 'status-success~=Build & Test - bindist \(ubuntu-.*, rules_haskell\).*'
+      - 'status-success~=Build & Test - bindist \(ubuntu-.*, rules_haskell_tests\).*'
+      - 'status-success~=Build & Test - bindist \(macos-.*, rules_haskel\).*'
+      - 'status-success~=Build & Test - bindist \(macos-.*, rules_haskell_tests\).*'
+      - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell\).*'
+      - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell_tests\).*'
       - 'status-success~=Build & Test - Cross.*'
       - "status-success=deploy/netlify"
       - "#approved-reviews-by>=1"
