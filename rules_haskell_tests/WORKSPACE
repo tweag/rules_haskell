@@ -96,6 +96,21 @@ load("non_module_deps_2.bzl", repositories_2 = "repositories")
 
 repositories_2(bzlmod = False)
 
+load(
+    "@rules_haskell//haskell/asterius:repositories.bzl",
+    "asterius_dependencies_bindist",
+    "asterius_dependencies_nix",
+)
+load(
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
+    "nixpkgs_package",
+)
+
+asterius_dependencies_nix(
+    nix_repository = "@nixpkgs_default",
+    nixpkgs_package_rule = nixpkgs_package,
+) if is_nix_shell else asterius_dependencies_bindist()
+
 load("@rules_haskell_npm//:repositories.bzl", "npm_repositories")
 
 npm_repositories()
@@ -115,6 +130,15 @@ jvm_maven_import_external(
     artifact_sha256 = "28aad0602a5eea97e9cfed3a7c5f2934cd5afefdb7f7c1d871bb07985453ea6e",
     licenses = ["notice"],
     server_urls = ["https://repo.maven.apache.org/maven2"],
+)
+
+http_archive(
+    name = "io_bazel_stardoc",
+    sha256 = "3fd8fec4ddec3c670bd810904e2e33170bedfe12f90adf943508184be458c8bb",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
+        "https://github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
+    ],
 )
 
 load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
@@ -166,3 +190,4 @@ bind(
     name = "python_headers",
     actual = "@com_google_protobuf//util/python:python_headers",
 )
+

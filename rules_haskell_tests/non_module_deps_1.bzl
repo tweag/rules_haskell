@@ -8,11 +8,9 @@ load(
 load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
 load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
 load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
-load("@os_info//:os_info.bzl", "is_linux", "is_nix_shell", "is_windows")
+load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 load(
     "@rules_haskell//haskell/asterius:repositories.bzl",
-    "asterius_dependencies_bindist",
-    "asterius_dependencies_nix",
     "rules_haskell_asterius_toolchains",
     "toolchain_libraries",
 )
@@ -104,12 +102,6 @@ filegroup(
         repository = "@nixpkgs_default",
         register = not bzlmod,
     )
-
-    asterius_dependencies_nix(
-        nix_repository = "@nixpkgs_default",
-        nixpkgs_package_rule = nixpkgs_package,
-        register = not bzlmod,
-    ) if is_nix_shell else asterius_dependencies_bindist(register = not bzlmod)
 
     rules_haskell_asterius_toolchains(
         cabalopts = test_cabalopts,
