@@ -1,5 +1,3 @@
-load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
-
 exports_files(["start"])
 
 exports_files(
@@ -11,9 +9,14 @@ exports_files(
     visibility = ["//tests/shellcheck:__pkg__"],
 )
 
-buildifier_exclude_patterns = [
-    "./vendor/**",
-]
+exports_files(
+    [
+        "BUILD.bazel",
+        "WORKSPACE",
+        "constants.bzl",
+    ],
+    visibility = ["//buildifier:__pkg__"],
+)
 
 filegroup(
     name = "distribution",
@@ -35,40 +38,4 @@ filegroup(
         "//vendor/bazel_json/lib:all_files",
     ],
     visibility = ["//visibility:public"],
-)
-
-# Run this to check for errors in BUILD files.
-buildifier(
-    name = "buildifier",
-    exclude_patterns = buildifier_exclude_patterns,
-    mode = "check",
-)
-
-# Run this to fix the errors in BUILD files.
-buildifier(
-    name = "buildifier-fix",
-    exclude_patterns = buildifier_exclude_patterns,
-    mode = "fix",
-    verbose = True,
-)
-
-buildifier_test(
-    name = "buildifier_test",
-    srcs = [
-        "BUILD.bazel",
-        "WORKSPACE",
-        "constants.bzl",
-        "//debug/linking_utils:all_files",
-        "//docs:all_files",
-        "//haskell:all_files",
-        "//nixpkgs:all_files",
-        "//rule_info:all_files",
-        "//tests:all_files",
-        "//tools:all_files",
-        "@examples-arm//:all_files",
-        "@examples//:all_files",
-        "@tutorial//:all_files",
-    ],
-    mode = "diff",
-    tags = ["dont_test_on_windows"],
 )
