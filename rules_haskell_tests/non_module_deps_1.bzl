@@ -8,10 +8,6 @@ load(
 load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
 load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
 load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
-load(
-    "@rules_haskell//haskell:nixpkgs.bzl",
-    "haskell_register_ghc_nixpkgs",
-)
 load("@os_info//:os_info.bzl", "is_linux", "is_nix_shell", "is_windows")
 load(
     "@rules_haskell//haskell/asterius:repositories.bzl",
@@ -23,11 +19,6 @@ load(
 load(
     "@rules_haskell//haskell:ghc_bindist.bzl",
     "haskell_register_ghc_bindists",
-)
-load(
-    "@rules_haskell//docs/pandoc:pandoc.bzl",
-    "import_pandoc_bindists",
-    "nixpkgs_pandoc_configure",
 )
 load("//tests/integration_testing:dependencies.bzl", "integration_testing_bazel_binaries")
 load(
@@ -86,19 +77,6 @@ filegroup(
 )
 """,
         repository = "@nixpkgs_default",
-    )
-
-    haskell_register_ghc_nixpkgs(
-        attribute_path = "",
-        cabalopts = test_cabalopts,
-        ghcopts = test_ghcopts,
-        haddock_flags = test_haddock_flags,
-        locale_archive = "@glibc_locales//:locale-archive",
-        nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
-        repl_ghci_args = test_repl_ghci_args,
-        repository = "@nixpkgs_default",
-        version = test_ghc_version,
-        register = not bzlmod,
     )
 
     haskell_register_ghc_bindists(
@@ -191,33 +169,6 @@ includes = ["include"],
     """,
         repository = "@nixpkgs_default",
     )
-
-    nixpkgs_package(
-        name = "zip",
-        attribute_path = "zip",
-        repository = "@nixpkgs_default",
-    )
-
-    nixpkgs_package(
-        name = "graphviz",
-        attribute_path = "graphviz",
-        repository = "@nixpkgs_default",
-    )
-
-    nixpkgs_package(
-        name = "sphinx",
-        attribute_path = "python39Packages.sphinx",
-        repository = "@nixpkgs_default",
-    )
-
-    nixpkgs_package(
-        name = "python3",
-        repository = "@nixpkgs_default",
-    )
-
-    nixpkgs_pandoc_configure(repository = "@nixpkgs_default")
-
-    import_pandoc_bindists()
 
     integration_testing_bazel_binaries()
 

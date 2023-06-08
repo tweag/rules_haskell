@@ -50,21 +50,6 @@ def repositories(*, bzlmod):
         ],
     )
 
-    starlarkified_local_repository(
-        name = "tutorial",
-        path = "tutorial",
-    )
-
-    starlarkified_local_repository(
-        name = "examples",
-        path = "examples",
-    )
-
-    starlarkified_local_repository(
-        name = "examples-arm",
-        path = "examples/arm",
-    )
-
     # c2hs rule in its own repository
     starlarkified_local_repository(
         name = "c2hs_repo",
