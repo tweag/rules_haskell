@@ -37,13 +37,12 @@ rules_proto_dependencies()
 rules_proto_toolchains()
 
 # For buildifier
-# starting from 0.29, rules_go requires bazel >= 4.2.0
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
+    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
     ],
 )
 
@@ -106,7 +105,7 @@ go_rules_dependencies()
 
 # If in nix-shell, use the Go SDK provided by Nix.
 # Otherwise, ask Bazel to download a Go SDK.
-go_register_toolchains(version = "1.16.2")
+go_register_toolchains(version = "1.20.2")
 
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
