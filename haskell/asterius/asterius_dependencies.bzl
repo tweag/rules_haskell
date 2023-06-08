@@ -19,7 +19,7 @@ def _nixpkgs_nodejs(name, nix_repository, nixpkgs_package_rule):
         # https://github.com/bazelbuild/bazel/issues/2927.
         nix_file_content = """
         with import <nixpkgs> {{ config = {{}}; overlays = []; }};
-        runCommand "nodejs-rules_haskell" {{ buildInputs = [ nodejs-16_x ]; }} ''
+        runCommand "nodejs-rules_haskell" {{ buildInputs = [ nodejs-18_x ]; }} ''
         mkdir -p $out
         cd $out
         for i in ${{nodejs}}/*; do ln -s $i; done
