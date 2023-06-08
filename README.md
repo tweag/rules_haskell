@@ -342,20 +342,20 @@ on every development system (`python`, `ghc`, `go`, …).
 To build and run tests locally, execute:
 
 ```
-$ bazel test //...
+$ bazel test //... && cd rules_haskell_tests && bazel test //...
 ```
 
 Starlark code in this project is formatted according to the output of
 [buildifier]. You can check that the formatting is correct using:
 
 ```
-$ bazel run //:buildifier
+$ bazel run //buildifier && cd rules_haskell_tests && bazel run //buildifier
 ```
 
 If tests fail then run the following to fix the formatting:
 
 ```
-$ git rebase --exec "bazel run //:buildifier-fix" <first commit>
+$ git rebase --exec "bazel run //buildifier:buildifier-fix && cd rules_haskell_tests && bazel run //buildifier:buildifier-fix" <first commit>
 ```
 
 where `<first commit>` is the first commit in your pull request.
