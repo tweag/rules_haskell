@@ -8,6 +8,8 @@ module Bazel.Runfiles
     ( Runfiles
     , create
     , createFromProgramPath
+    , createFromCurrentFile
+    , createFromProgramPathAndCurrentFile
     , rlocation
     , env
     ) where
@@ -24,26 +26,47 @@ import GHC.Stack
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory, makeAbsolute)
 import System.Environment (lookupEnv)
 import qualified System.FilePath
-import System.FilePath ((</>), (<.>), addTrailingPathSeparator, takeFileName)
+import System.FilePath ((</>), (<.>), addTrailingPathSeparator, takeFileName, replaceFileName, splitDirectories, joinPath, isAbsolute)
 import System.Info (os)
+import Control.Exception (catch)
+
+-- | Bazel repository mapping for bzlmod
+-- See https://github.com/bazelbuild/proposals/blob/7c8da4a931d83db5c25abf85f6c486ad22d330e3/designs/2022-07-21-locating-runfiles-with-bzlmod.md
+type RepoMapping = [((String, String), String)]
 
 -- | Reference to Bazel runfiles, runfiles root or manifest file.
-data Runfiles
-  = RunfilesRoot !FilePath
-    -- ^ The runfiles root directory.
-  | RunfilesManifest !FilePath ![(FilePath, FilePath)]
-    -- ^ The runfiles manifest file and its content.
+data Runfiles =
+  RunfilesRoot
+      !FilePath -- ^ The runfiles root directory
+      RepoMapping -- ^ The repository mapping
+      String -- ^ The current repository
+  | RunfilesManifest 
+      !FilePath -- ^ The runfiles manifest file
+      ![(FilePath, FilePath)] -- ^ The runfiles manifest content
+      RepoMapping -- ^ The repository mapping
+      String -- ^ The current repository
   deriving Show
 
+
+-- | Apply the repository mapping to replace the first component of a path
+applyRepoMapping :: RepoMapping -> String -> FilePath -> FilePath
+applyRepoMapping repoMapping currentRepo path =
+  case splitDirectories path of 
+    apparentRepo:rest ->
+      let resolvedRepo = fromMaybe apparentRepo $ lookup (currentRepo, apparentRepo) repoMapping in
+      joinPath (resolvedRepo:rest)
+    _ -> path
 
 -- | Construct a path to a data dependency within the given runfiles.
 --
 -- For example: @rlocation \"myworkspace\/mypackage\/myfile.txt\"@
 rlocation :: Runfiles -> FilePath -> FilePath
-rlocation (RunfilesRoot f) g = f </> normalize g
-rlocation (RunfilesManifest _ m) g = fromMaybe g' $ asum [lookup g' m, lookupDir g' m]
+rlocation (RunfilesRoot f repoMapping currentRepo) g =
+  let resolved_g = applyRepoMapping repoMapping currentRepo $ normalize g in
+   f </> resolved_g
+rlocation (RunfilesManifest _ m repoMapping currentRepo) g = fromMaybe g' $ asum [lookup g' m, lookupDir g' m]
   where
-    g' = normalize g
+    g' = applyRepoMapping repoMapping currentRepo $ normalize g
 
 -- | Lookup a directory in the manifest file.
 --
@@ -84,8 +107,8 @@ normalizeWindows = map (toLower . normalizeSlash) . System.FilePath.normalise
 -- during "bazel run"; thus, non-test binaries should set the
 -- environment manually for processes that they call.
 env :: Runfiles -> [(String, String)]
-env (RunfilesRoot f) = [(runfilesDirEnv, f)]
-env (RunfilesManifest f _) = [(manifestFileEnv, f), (manifestOnlyEnv, "1")]
+env (RunfilesRoot f _ _) = [(runfilesDirEnv, f)]
+env (RunfilesManifest f _ _ _) = [(manifestFileEnv, f), (manifestOnlyEnv, "1")]
 
 runfilesDirEnv :: String
 runfilesDirEnv = "RUNFILES_DIR"
@@ -123,7 +146,23 @@ create = createFromProgramPath =<< getArg0
 -- Identical to 'create' except that it accepts the path to the current program
 -- as an argument rather than reading it from `argv[0]`.
 createFromProgramPath :: HasCallStack => FilePath -> IO Runfiles
-createFromProgramPath exePath = do
+createFromProgramPath exePath = createFromProgramPathAndCurrentFile Nothing exePath
+
+
+-- | Locate the runfiles directory or manifest for the current binary.
+--
+-- Identical to 'create' except that it accepts the path to the current file
+-- as an argument. Usefull when a library is used by another bazel module.
+createFromCurrentFile:: HasCallStack => String -> IO Runfiles
+createFromCurrentFile currentFile = createFromProgramPathAndCurrentFile (Just currentFile) =<< getArg0
+
+-- | Locate the runfiles directory or manifest for the current binary.
+--
+-- Identical to 'create' except that it accepts the path to the current file
+-- and program as arguments.
+createFromProgramPathAndCurrentFile :: HasCallStack => Maybe String -> FilePath -> IO Runfiles
+createFromProgramPathAndCurrentFile currentFile exePath = do
+    let currentRepo = parseCurrentRepo (fromMaybe exePath currentFile)
     mbRunfiles <- runMaybeT $ asum
       [ do
         -- Bazel sets RUNFILES_MANIFEST_ONLY=1 if the manifest file should be
@@ -150,7 +189,8 @@ createFromProgramPath exePath = do
         -- directory.
         containsData <- liftIO $ containsOneDataFile runfilesRoot
         guard containsData
-        pure $! RunfilesRoot runfilesRoot
+        repoMapping <- liftIO $ getRepoMapping (runfilesRoot </> "_repo_mapping")
+        pure $! RunfilesRoot runfilesRoot repoMapping currentRepo
       , do
         -- Locate manifest file relative to executable or by environment.
         let tryManifest file = do
@@ -168,7 +208,8 @@ createFromProgramPath exePath = do
           ]
         content <- liftIO $ readFile manifestPath
         let mapping = parseManifest content
-        pure $! RunfilesManifest manifestPath mapping
+        repoMapping <- liftIO $ getRepoMapping (replaceFileName manifestPath "_repo_mapping")
+        pure $! RunfilesManifest manifestPath mapping repoMapping currentRepo
       ]
 
     case mbRunfiles of
@@ -215,3 +256,39 @@ parseManifest = map parseLine . lines
     parseLine l =
         let (key, value) = span (/= ' ') l in
         (normalize key, normalize $ dropWhile (== ' ') value)
+
+-- | Parse Bazel _repo_mapping file.
+-- 
+-- See https://github.com/bazelbuild/proposals/blob/main/designs/2022-07-21-locating-runfiles-with-bzlmod.md
+parseRepoMapping :: String -> RepoMapping
+parseRepoMapping = map parseLine . lines
+  where
+    parseLine l =
+        let (context, rest) = span (/= ',') l in
+        let (apparent, resolved) = span (/= ',') (tail rest) in
+        ((context, apparent), tail resolved)
+
+getRepoMapping :: FilePath -> IO RepoMapping
+getRepoMapping repoMappingPath = do
+    content <- catch (readFile repoMappingPath) ((\_e -> return "") :: IOError -> IO String)
+    let mapping = parseRepoMapping content
+    print mapping
+    return mapping
+
+-- | Parses the current repository out of a path.
+parseCurrentRepo :: FilePath -> String
+parseCurrentRepo path | isAbsolute path =
+  -- exePath is absolute when using `bazel run`
+  -- In this case we detect the first occurence of bazel-out/*/bin/external/currentRepo in the PATH
+  -- if there is none, we return the empty string which is the id of the main module.
+  parseAbsolutePath (splitDirectories path)
+  where
+    parseAbsolutePath ("bazel-out":_:"bin":"external":currentRepo:_) = currentRepo
+    parseAbsolutePath (_:xs) = parseAbsolutePath xs
+    parseAbsolutePath [] = ""
+
+parseCurrentRepo path =
+  case splitDirectories path of
+    "bazel-out":_:"bin":"external":currentRepo:_ -> currentRepo
+    "external":currentRepo:_ -> currentRepo
+    _ -> ""

@@ -1,1 +1,2 @@
-import %workspace%/../.bazelrc
+import %workspace%/../.bazelrc.common
+import %workspace%/.bazelrc.bzlmod

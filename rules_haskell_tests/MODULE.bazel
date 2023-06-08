@@ -1,0 +1,576 @@
+module(
+    name = "rules_haskell_tests",
+    version = "0.16",
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_core",
+    version = "0.9.0",
+)
+
+bazel_dep(
+    name = "rules_haskell",
+    version = "0.16",
+)
+
+bazel_dep(
+    name = "rules_haskell_nix",
+    version = "0.16",
+)
+
+# local_path_override(
+#     module_name = "rules_nixpkgs_core",
+#     path = "/home/stan/tools/rules_nixpkgs/core",
+# )
+
+bazel_dep(
+    name = "rules_nixpkgs_cc",
+    version = "0.9.0",
+)
+
+# Are all these actually needed ?
+# bazel_dep(
+#     name = "rules_nixpkgs_java",
+#     version = "0.9.0",
+# )
+
+bazel_dep(
+    name = "rules_nixpkgs_python",
+    version = "0.9.0",
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_go",
+    version = "0.9.0",
+)
+
+# local_path_override(
+#     module_name = "rules_nixpkgs_go",
+#     path = "/home/stan/tools/rules_nixpkgs/toolchains/go",
+# )
+
+# bazel_dep(
+#     name = "rules_nixpkgs_rust",
+#     version = "0.9.0",
+# )
+
+bazel_dep(
+    name = "rules_nixpkgs_posix",
+    version = "0.9.0",
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_nodejs",
+    version = "0.9.0",
+)
+
+# bazel_dep(
+#     name = "rules_nixpkgs_python",
+#     version = "0.9.0",
+# )
+
+bazel_dep(
+    name = "platforms",
+    version = "0.0.6",
+)
+
+# TODO: maybe not necessary
+bazel_dep(
+    name = "protobuf",
+    version = "21.7",
+    repo_name = "com_google_protobuf",
+)
+
+non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
+
+# use_repo(non_module_deps, "rules_nixpkgs_python")
+
+# use_repo(non_module_deps, "rules_nixpkgs_nodejs")
+
+# use_repo(non_module_deps, "rules_nixpkgs_core")
+
+# use_repo(non_module_deps, "io_bazel_rules_go")
+
+# use_repo(non_module_deps, "rules_cc")
+
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.6",
+)
+
+use_repo(non_module_deps, "os_info")
+
+# use_repo(non_module_deps, "io_bazel_stardoc")
+
+bazel_dep(
+    name = "stardoc",
+    version = "0.5.4",
+    repo_name = "io_bazel_stardoc",
+)
+
+use_repo(non_module_deps, "zlib.hs")
+
+use_repo(non_module_deps, "contrib_rules_bazel_integration_test")
+
+# dependency: cgrindel_bazel_starlib@0.14.9 requires (bazel_compatibility: [>=6.1.0])
+# bazel_dep(
+#     name = "rules_bazel_integration_test",
+#     version = "0.12.0",
+#     repo_name = "contrib_rules_bazel_integration_test",
+# )
+
+# use_repo(non_module_deps, "tutorial")
+
+# use_repo(non_module_deps, "examples")
+
+# use_repo(non_module_deps, "examples-arm")
+
+use_repo(non_module_deps, "c2hs_repo")
+
+use_repo(non_module_deps, "library_repo")
+
+# use_repo(non_module_deps, "rules_haskell_ghc_nixpkgs_toolchain")
+
+# use_repo(non_module_deps, "rules_haskell_ghc_nixpkgs")
+
+non_modules_deps_bzlmod = use_extension("//:non_module_deps_bzlmod.bzl", "non_module_deps_bzlmod")
+
+use_repo(non_modules_deps_bzlmod, "rules_haskell_ghc_nixpkgs_toolchain")
+
+use_repo(non_modules_deps_bzlmod, "rules_haskell_ghc_nixpkgs")
+
+# use_repo(non_modules_deps_bzlmod, "zlib")
+
+# use_repo(non_modules_deps_rules_haskell_nix, "rules_haskell_asterius_webpack")
+
+# use_repo(non_modules_deps_rules_haskell_nix, "rules_haskell_asterius_build_setting")
+
+non_modules_deps_1 = use_extension("//:non_module_deps_1.bzl", "non_module_deps_1")
+
+use_repo(non_modules_deps_1, "nixpkgs_default")
+
+use_repo(non_modules_deps_1, "glibc_locales")
+
+register_toolchains("@rules_haskell_ghc_nixpkgs_toolchain//:toolchain")
+
+use_repo(non_modules_deps_1, "rules_haskell_ghc_darwin_amd64-toolchain")
+
+use_repo(non_modules_deps_1, "rules_haskell_ghc_darwin_arm64-toolchain")
+
+use_repo(non_modules_deps_1, "rules_haskell_ghc_linux_amd64-toolchain")
+
+use_repo(non_modules_deps_1, "rules_haskell_ghc_windows_amd64-toolchain")
+
+register_toolchains("@rules_haskell_ghc_darwin_amd64-toolchain//:toolchain")
+
+register_toolchains("@rules_haskell_ghc_darwin_arm64-toolchain//:toolchain")
+
+register_toolchains("@rules_haskell_ghc_linux_amd64-toolchain//:toolchain")
+
+register_toolchains("@rules_haskell_ghc_windows_amd64-toolchain//:toolchain")
+
+use_repo(non_modules_deps_1, "rules_haskell_python_local")
+
+register_toolchains("@rules_haskell_python_local//:toolchain")
+
+use_repo(non_modules_deps_1, "nixpkgs_python_toolchain")
+
+bazel_dep(
+    name = "rules_nodejs",
+    # version = "5.5.3",
+    # version = "5.5.0",
+    version = "5.8.0",
+)
+
+# use_repo(non_module_deps, "rules_nodejs")
+
+# use_repo(non_module_deps, "build_bazel_rules_nodejs")
+
+# use_repo(non_modules_deps_1, "rules_haskell_nix_node_toolchain")
+
+# use_repo(non_modules_deps_1, "nixpkgs_nodejs_linux_amd64")
+
+[
+    (
+        use_repo(
+            non_modules_deps_bzlmod,
+            "nixpkgs_nodejs_{}_{}_toolchain".format(os, arch),
+        ),
+        register_toolchains("@nixpkgs_nodejs_{}_{}_toolchain//:all".format(os, arch)),
+    )
+    for os in [
+        "linux",
+        "darwin",
+    ]
+    for arch in [
+        "amd64",
+        "arm64",
+    ]
+]
+
+# tests with nixos platform
+# use_repo(non_modules_deps_1, "nixpkgs_config_cc")
+# use_repo(non_modules_deps_1, "nixpkgs_config_cc_info")
+
+# register_toolchains("@nixpkgs_config_cc//:all")
+# register_toolchains("@nixpkgs_config_cc//:toolchain")
+# register_toolchains("@nixpkgs_config_cc_info//:all")
+
+# register_toolchains("@rules_haskell_nix_node_toolchain//:node_nixpkgs_toolchain")
+
+register_toolchains("@nixpkgs_python_toolchain//:toolchain")
+
+# use_repo(non_modules_deps_1, "rules_haskell_asterius_webpack")
+
+# use_repo(non_modules_deps_1, "rules_haskell_asterius_build_setting")
+
+use_repo(non_modules_deps_1, "nixpkgs_go_sdk_toolchains")
+
+use_repo(non_modules_deps_1, "nixpkgs_go_sdk")
+
+register_toolchains("@nixpkgs_go_sdk_toolchains//:all")
+# register_toolchains("@nixpkgs_go_sdk_2_toolchains//:toolchain_go_linux_amd64")
+
+use_repo(non_module_deps, "cgrindel_bazel_starlib")
+
+use_repo(non_modules_deps_1, "zlib.dev")
+
+# use_repo(non_modules_deps_1, "zip")
+
+# use_repo(non_modules_deps_1, "graphviz")
+
+# use_repo(non_modules_deps_1, "sphinx")
+
+use_repo(non_modules_deps_1, "nixpkgs_lz4")
+
+use_repo(non_modules_deps_1, "linux_amd64_asterius-toolchain")
+
+use_repo(non_modules_deps_1, "asterius_bundle_linux_amd64")
+
+use_repo(non_modules_deps_1, "toolchains_libraries")
+
+register_toolchains(
+    "@linux_amd64_asterius-toolchain//:toolchain",
+    "@linux_amd64_asterius-toolchain//:asterius_toolchain",
+    "@linux_amd64_asterius-toolchain//:wasm_cc_toolchain",
+)
+
+non_module_deps_2 = use_extension("//:non_module_deps_2.bzl", "non_module_deps_2")
+
+# TODO
+# use_repo(non_module_deps, "org_apache_spark_spark_core_2_10")
+
+use_repo(non_module_deps, "haskell_package_repository_dummy")
+
+# use_repo(non_module_deps_2, "io_bazel_rules_go_name_hack")
+
+#needed ?
+# use_repo(non_module_deps_2, "bindist_go")
+
+# use_repo(non_module_deps_2, "bindist_go_toolchains")
+
+# use_repo(non_module_deps_2, "io_bazel_rules_nogo")
+
+# register_toolchains("@bindist_go_toolchains//:all")
+# register_toolchains("@bindist_go_toolchains//:go_linux_amd64")
+
+use_repo(non_module_deps_2, "data-default-ic")
+
+use_repo(non_module_deps_2, "data-default-ol")
+
+use_repo(non_module_deps_2, "ghcide")
+
+use_repo(non_module_deps_2, "stackage-zlib")
+
+use_repo(non_module_deps_2, "stackage-zlib-unpinned")
+
+use_repo(non_module_deps_2, "ghcide-exe")
+
+use_repo(non_modules_deps_1, "bazel_5")
+
+use_repo(non_modules_deps_1, "build_bazel_bazel_5_0_0")
+
+use_repo(non_modules_deps_1, "build_bazel_bazel_5_2_0")
+
+use_repo(non_modules_deps_1, "build_bazel_bazel_6_0_0")
+
+use_repo(non_modules_deps_1, "bazel_6")
+
+use_repo(non_module_deps, "rules_haskell_worker_dependencies")
+
+# use_repo(non_module_deps_2, "com_google_golang_protobuf")
+
+use_repo(non_module_deps, "com_github_bazelbuild_buildtools")
+
+# use_repo(non_module_deps_2, "alex")
+
+use_repo(non_module_deps_2, "Cabal")
+
+use_repo(non_module_deps_2, "stackage-pinning-test")
+
+use_repo(non_module_deps_2, "stackage-pinning-test-unpinned")
+# use_repo(non_module_deps_2, "org_golang_x_tools")
+# use_repo(non_module_deps_2, "org_golang_google_protobuf")
+# use_repo(non_module_deps_2, "com_github_golang_protobuf")
+
+use_repo(non_module_deps_2, "alex")
+
+use_repo(non_module_deps_2, "stackage")
+
+use_repo(non_module_deps_2, "stackage-unpinned")
+
+use_repo(non_module_deps_2, "stackage-exe")
+
+# needed ?
+use_repo(non_module_deps_2, "rules_haskell_stack_update")
+
+use_repo(non_module_deps_2, "rules_haskell_stack")
+
+use_repo(non_module_deps_2, "stackage_asterius")
+
+use_repo(non_module_deps_2, "stackage_asterius-unpinned")
+
+# archive_override(
+#     # integrity = "352ac6bdb86ea077beac5f43c0a2e85cd1ddb7b13ce95eeedd41fda234b8e281",
+#     module_name = "rules_sh",
+#     strip_prefix = "rules_sh-ea2c11f0a8360fedb4c5857fd10b58f46d6be281",
+#     urls = ["https://github.com/tweag/rules_sh/archive/ea2c11f0a8360fedb4c5857fd10b58f46d6be281.tar.gz"],
+# )
+
+bazel_dep(
+    name = "rules_python",
+    version = "0.21.0",
+    # version = "0.16.2",
+)
+
+# needed ?
+# pip = use_extension("@rules_python//python:extensions.bzl", "pip")
+# use_repo(pip, "pip")
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.0.3",
+)
+
+register_toolchains(
+    "//tests:c2hs-toolchain",
+    "//tests:doctest-toolchain",
+    "//tests:protobuf-toolchain",
+    "//tests:protobuf-toolchain-osx_arm64",
+)
+
+bazel_dep(
+    name = "rules_proto",
+    version = "4.0.0",
+)
+
+bazel_dep(
+    name = "aspect_rules_js",
+    version = "1.23.0",
+)
+
+####### Node.js version #########
+# By default you get the node version from DEFAULT_NODE_VERSION in @rules_nodejs//nodejs:repositories.bzl
+# Optionally you can pin a different node version:
+# bazel_dep(
+#     name = "rules_nodejs",
+#     version = "5.8.2",
+# )
+
+# node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+
+# node.toolchain(node_version = "16.9.0")
+#################################
+
+# npm = use_extension(
+#     "@aspect_rules_js//npm:extensions.bzl",
+#     "npm",
+#     # dev_dependency = True,
+# )
+
+# npm.npm_translate_lock(
+#     name = "npm",
+#     pnpm_lock = "//haskell/asterius:pnpm-lock.yaml",
+#     # yarn_lock = "//haskell/asterius:yarn.lock",
+# )
+
+# use_repo(npm, "npm")
+
+bazel_dep(
+    name = "aspect_bazel_lib",
+    version = "1.30.2",
+)
+
+bazel_dep(
+    name = "other_module",
+    version = "0.0.1",
+    # repo_name = "other_module_remapped",
+)
+
+local_path_override(
+    module_name = "other_module",
+    path = "tests/bzlmod_runfiles/other_module",
+)
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+
+node.toolchain(node_version = "16.9.0")
+
+# npm = use_extension(
+#     "@aspect_rules_js//npm:extensions.bzl",
+#     "npm",
+# )
+
+# npm.npm_translate_lock(
+#     name = "rules_haskell_npm",
+#     link_workspace = "rules_haskell_tests",
+#     pnpm_lock = "//npm:pnpm-lock.yaml",
+#     # verify_node_modules_iGnored = None,
+# )
+
+# use_repo(npm, "rules_haskell_npm")
+
+bazel_dep(
+    name = "rules_sh",
+    version = "0.3.0",
+)
+
+bazel_dep(
+    name = "rules_go",
+    version = "0.39.1",
+    repo_name = "io_bazel_rules_go",
+)
+
+# local_path_override(
+#     module_name = "rules_go",
+#     path = "/home/stan/src/rules_go/",
+# )
+
+# local_path_override(
+#     module_name = "gazelle",
+#     path = "/home/stan/src/bazel-gazelle/",
+# )
+
+# The following registers the host (nix-shell provided) go binary as a toolchain.
+# However because of the following issue it is not the one used by gazelle.
+# So using buildifier will fail on NixOS with bzlmod
+# https://github.com/bazelbuild/bazel-gazelle/issues/1469
+
+# It also fails if there is no go host toolchain, so it should only be done if in_nix_shell.
+# I do not think it is possible
+#
+go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+
+# go_sdk.manual(override = "@nixpkgs_go_sdk//:ROOT")
+rules_go_toolchain_override = use_extension(":go_toolchains_override.bzl", "rules_go_toolchain_override")
+
+use_repo(rules_go_toolchain_override, "rules_go_toolchain_override")
+
+# go_sdk.manual(override = "//tests:rules_go_override")
+
+go_sdk.download(
+    # name = "test_download_sdk",
+    # goarch = "amd64",
+    # goos = "linux",
+    version = "1.19.7",
+)
+
+# go_sdk.custom(custom_toolchain_bzl_file = "@rules_go_toolchain_override//:go_toolchain.bzl")
+
+# go_sdk.host(name = "host_toolchain", version = "1.19.6")
+# (use_repo(go_sdk, "host_toolchain") if True else ())
+# (register_toolchains("@host_toolchain//:all") if True else ())
+
+bazel_dep(
+    name = "rules_java",
+    version = "6.1.0",
+)
+
+# See https://github.com/bazelbuild/rules_java/issues/105
+# TODO: declare in registry ?
+# archive_override(
+#     module_name = "rules_java",
+#     integrity = "sha256-vPq/tAfLDIggFBMQ+qEC9/uSzIBrDw4mpiUZYQGwtX4=",
+#     patch_strip = 0,
+#     patches = ["//tools:rules_java_5_5_0.patch"],
+#     urls = "https://github.com/bazelbuild/rules_java/releases/download/5.5.0/rules_java-5.5.0.tar.gz",
+# )
+
+bazel_dep(
+    name = "gazelle",
+    version = "0.30.0",
+)
+
+go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
+
+# go_deps.from_file(go_mod = "//:go.mod")
+go_deps.module(
+    path = "github.com/gogo/protobuf",
+    sum = "h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=",
+    version = "v1.3.2",
+)
+
+use_repo(
+    go_deps,
+    "com_github_gogo_protobuf",
+    "com_github_golang_mock",
+    "com_github_golang_protobuf",
+    "org_golang_google_genproto",
+    "org_golang_google_grpc",
+    "org_golang_google_protobuf",
+    "org_golang_x_net",
+    "org_golang_x_tools",
+)
+
+bazel_dep(
+    name = "rules_license",
+    version = "0.0.4",
+)
+
+# use_repo(non_modules_deps_1, "linux_pandoc")
+
+# use_repo(non_modules_deps_1, "nixpkgs_pandoc")
+
+# use_repo(non_modules_deps_1, "macos_pandoc")
+
+# # Is it needed here ?
+# register_toolchains(
+#     "@rules_haskell_nix//docs/pandoc:nixpkgs",
+#     "@rules_haskell//docs/pandoc:linux",
+#     "@rules_haskell//docs/pandoc:macos",
+# )
+
+# For java_classpath test
+bazel_dep(
+    name = "rules_jvm_external",
+    version = "5.1",
+)
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+
+maven.install(
+    name = "rules_haskell_tests_maven",
+    artifacts = ["org.apache.spark:spark-core_2.10:1.6.0"],
+)
+
+use_repo(maven, "rules_haskell_tests_maven")
+
+# Declare custom asterius toolchain
+
+asterius = use_extension("@rules_haskell//haskell/asterius:extension.bzl", "rules_haskell_asterius")
+
+# asterius.custom(custom = "@rules_haskell_asterius_webpack//:package_json.bzl")
+# asterius.custom(custom = "@rules_haskell_npm//npm:webpack-cli/package_json.bzl")
+
+use_repo(
+    asterius,
+    "rules_haskell_asterius_webpack",
+    "rules_haskell_asterius_build_setting",
+)
+
+rules_haskell_dependencies = use_extension("@rules_haskell//extensions:rules_haskell_dependencies.bzl", "rules_haskell_dependencies")
+
+use_repo(
+    rules_haskell_dependencies,
+    "zlib",
+)

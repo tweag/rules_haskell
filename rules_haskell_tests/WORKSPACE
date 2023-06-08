@@ -190,3 +190,7 @@ bind(
     actual = "@com_google_protobuf//util/python:python_headers",
 )
 
+local_repository(
+    name = "other_module",
+    path = "tests/bzlmod_runfiles/other_module",
+)
