@@ -68,7 +68,7 @@ The first thing to do is to::
 
 If you use the ``NixOS`` distribution, also run the following command::
 
-  $ echo 'build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host' >> .bazelrc.local
+  $ echo 'build --host_platform=@rules_nixpkgs_core//platforms:host' >> .bazelrc.local
 
 Build with Bazel
 ----------------
