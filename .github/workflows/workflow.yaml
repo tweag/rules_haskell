@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-11]
-        module: [rules_haskell]
+        module: [rules_haskell, rules_haskell_tests]
         bzlmod: [bzlmod, workspace]
     runs-on: ${{ matrix.os }}
     steps:
