@@ -17,6 +17,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-11]
         module: [rules_haskell, rules_haskell_tests]
+        bzlmod: [bzlmod, workspace]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -47,10 +48,16 @@ jobs:
           else
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
+          if [ ${{ matrix.bzlmod }} == bzlmod ]; then
+              bzlmod_setting='common --config bzlmod'
+          else
+              bzlmod_setting=''
+          fi
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=$BUILD_CONFIG
           build $cache_setting
+          $bzlmod_setting
           EOF
           cp .bazelrc.local rules_haskell_tests
           cat >~/.netrc <<EOF
@@ -136,6 +143,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-11, windows-latest]
         module: [rules_haskell, rules_haskell_tests]
+        bzlmod: [bzlmod, workspace]
     runs-on: ${{ matrix.os }}
     steps:
       - if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -176,16 +184,25 @@ jobs:
           else
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
+          if [ ${{ matrix.bzlmod }} == bzlmod]; then
+              bzlmod_setting='common --config bzlmod'
+          else
+              bzlmod_setting=''
+          fi
           if [[ ${{ runner.os }} == Windows ]]; then
               output_root_setting="startup --output_user_root=C:/_bzl"
+              bzlmod_cache_silo_key="build --remote_default_exec_properties=bzlmod-cache-silo-key=${{ matrix.bzlmod }}"
           else
               output_root_setting=""
+              bzlmod_cache_silo_key=""
           fi
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=$BUILD_CONFIG
           build $cache_setting
           $output_root_setting
+          $bzlmod_cache_silo_key
+          $bzlmod_setting
           EOF
           cp .bazelrc.local rules_haskell_tests
           cat >~/.netrc <<EOF
