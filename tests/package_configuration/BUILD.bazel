@@ -3,7 +3,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 py_test(
     name = "package_configuration_test",
     srcs = ["package_configuration_test.py"],
-    deps = ["//haskell:package_configuration"],
+    deps = ["@rules_haskell//haskell:package_configuration"],
 )
 
 filegroup(

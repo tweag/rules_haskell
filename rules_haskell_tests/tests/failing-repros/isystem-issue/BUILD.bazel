@@ -1,0 +1,38 @@
+# https://github.com/tweag/rules_haskell/issues/1010
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+load("@rules_haskell_tests//tests:failing-repros/should_fail.bzl", "should_fail")
+
+cc_library(
+    name = "cbits",
+    hdrs = ["include/ghcautoconf.h"],
+    includes = ["include"],
+)
+
+haskell_binary(
+    name = "bin",
+    srcs = ["Main.hs"],
+    ghcopts = ["-Itests/isystem-issue/include"],
+    deps = [
+        ":cbits",
+        "//tests/hackage:base",
+    ],
+)
+
+should_fail(
+    name = "isystem-issue",
+    exitcode = 1,
+    tags = [
+        # On Windows this needs to use rlocation to determine the runtime location of the binary.
+        "dont_test_on_windows",
+    ],
+    target = ":bin",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -57,7 +57,7 @@ npm_repositories()
         npm_translate_lock(
             name = "rules_haskell_npm",
             pnpm_lock = DEFAULT_PNPM_LOCK,
-            verify_node_modules_ignored = "//:.bazelignore",
+            verify_node_modules_ignored = "@rules_haskell//:.bazelignore",
             link_workspace = "rules_haskell",
         )
     _declare_webpack(
@@ -96,7 +96,7 @@ npm_repositories()
         npm_translate_lock(
             name = "rules_haskell_npm",
             pnpm_lock = DEFAULT_PNPM_LOCK,
-            verify_node_modules_ignored = "//:.bazelignore",
+            verify_node_modules_ignored = "@rules_haskell//:.bazelignore",
             link_workspace = "rules_haskell",
         )
     _ahc_target_build_setting(name = "rules_haskell_asterius_build_setting")
