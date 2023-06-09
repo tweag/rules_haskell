@@ -47,7 +47,6 @@ def package(
         hs,
         cc,
         posix,
-        dep_info,
         with_shared,
         exposed_modules,
         other_modules,

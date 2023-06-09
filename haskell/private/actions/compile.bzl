@@ -37,7 +37,6 @@ def _compilation_defaults(
         hs,
         cc,
         java,
-        posix,
         dep_info,
         plugin_dep_info,
         srcs,

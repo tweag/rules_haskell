@@ -97,7 +97,7 @@ def _build_haskell_module(
         ctx,
         hs,
         cc,
-        posix,
+        posix,  # @unused
         dep_info,
         narrowed_deps_info,
         package_name,

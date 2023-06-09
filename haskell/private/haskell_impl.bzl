@@ -101,7 +101,7 @@ def haskell_test_impl(ctx):
 def haskell_binary_impl(ctx):
     return _haskell_binary_common_impl(ctx, is_test = False)
 
-def _should_inspect_coverage(ctx, hs, is_test):
+def _should_inspect_coverage(_ctx, hs, is_test):
     return hs.coverage_enabled and is_test
 
 def _coverage_enabled_for_target(coverage_source_patterns, label):
@@ -573,7 +573,7 @@ def haskell_library_impl(ctx):
     else:
         dynamic_library = None
 
-    conf_file, cache_file = package(
+    _, cache_file = package(
         hs,
         cc,
         posix,
@@ -586,7 +586,7 @@ def haskell_library_impl(ctx):
     )
 
     empty_libs_dir = "empty_libs"
-    conf_file_empty, cache_file_empty = package(
+    _, cache_file_empty = package(
         hs,
         cc,
         posix,
@@ -858,7 +858,6 @@ def haskell_toolchain_libraries_impl(ctx):
         target = libraries[package]
 
         # Construct CcInfo
-        additional_link_inputs = []
         if with_profiling:
             # GHC does not provide dynamic profiling mode libraries. The dynamic
             # libraries that are available are missing profiling symbols, that

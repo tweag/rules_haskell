@@ -279,7 +279,7 @@ def rules_haskell_asterius_toolchains(
         version = AHC_DEFAULT_VERSION,
         ghcopts = [],
         cabalopts = [],
-        repl_ghci_args = [],
+        repl_ghci_args = [],  # @unused
         locale = None,
         register = True):
     """

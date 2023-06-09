@@ -87,7 +87,6 @@ def _haskell_doctest_single(target, ctx):
         return []
 
     hs = haskell_context(ctx, ctx.attr)
-    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     hs_info = target[HaskellInfo]
     cc_info = target[CcInfo]

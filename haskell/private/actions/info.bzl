@@ -58,7 +58,7 @@ def _filter_package_env(flags):
     # groups will be responsible for setting the right GHC flags themselves,
     # based on the fields of haskell.LibraryInfo.
     result = []
-    for i in flags:
+    for _i in flags:
         if not flags:
             break
         if flags[0] == "-package-env":
@@ -146,7 +146,7 @@ def compile_info_output_groups(
         hs,
         cc,
         c,
-        posix,
+        _posix,
         runfiles):
     """Output groups for compiling a Haskell target.
 

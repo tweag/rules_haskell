@@ -65,7 +65,7 @@ def haskell_module(
         ghcopts = [],
         plugins = [],
         tools = [],
-        worker = None,
+        worker = None,  # @unused
         **kwargs):
     """Declare a module and its dependencies on other modules.
 

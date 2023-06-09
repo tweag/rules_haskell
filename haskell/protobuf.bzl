@@ -217,7 +217,7 @@ def _haskell_proto_aspect_impl(target, ctx):
     # TODO this pattern match is very brittle. Let's not do this. The
     # order should match the order in the return value expression in
     # haskell_library_impl().
-    [hs_info, cc_info, coverage_info, default_info, library_info, output_groups] = _haskell_library_impl(patched_ctx)
+    [hs_info, cc_info, _coverage_info, default_info, library_info, output_groups] = _haskell_library_impl(patched_ctx)
 
     # Build haddock informations
     transitive_html = {}
@@ -236,8 +236,8 @@ def _haskell_proto_aspect_impl(target, ctx):
     # See bug https://github.com/tweag/rules_haskell/issues/1030
     # We instead declare empty documentation directories / file
     haddock_files = []
-    html_dir = None
 
+    #html_dir = None
     #transitive_html.update({package_id: html_dir})
     transitive_haddocks.update({package_id: haddock_files})
 

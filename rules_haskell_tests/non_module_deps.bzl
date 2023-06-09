@@ -24,7 +24,7 @@ starlarkified_local_repository = repository_rule(
     },
 )
 
-def repositories(*, bzlmod):
+def repositories(*, bzlmod):  # @unused
     # Some helpers for platform-dependent configuration
     os_info(name = "os_info")
 

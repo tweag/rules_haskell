@@ -22,7 +22,7 @@ _empty_repo = repository_rule(
     },
 )
 
-def repositories(*, bzlmod):
+def repositories(*, bzlmod):  # @unused
     # In a separate repo because not all platforms support zlib.
     stack_snapshot(
         name = "stackage-zlib",
@@ -217,7 +217,7 @@ haskell_cabal_library(
             error_msg = "The stackage_asterius-unpinned repository should only be used on linux",
         )
 
-def _non_module_deps_2_impl(ctx):
+def _non_module_deps_2_impl(_ctx):
     repositories(bzlmod = True)
 
 non_module_deps_2 = module_extension(
