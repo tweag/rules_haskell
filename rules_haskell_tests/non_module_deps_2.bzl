@@ -7,6 +7,20 @@ load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
 
 label_builder = lambda x: Label(x)
 
+def _empty_repo_impl(rctx):
+    fail(rctx.attrs.error_msg)
+
+_empty_repo = repository_rule(
+    implementation = _empty_repo_impl,
+    doc = """A dummy repository that can be loaded from the MODULE.bazel file but not fetched.""",
+    attrs = {
+        "error_msg": attr.string(
+            doc = "The error message displayed if the repository is fetched",
+            mandatory = True,
+        ),
+    },
+)
+
 def repositories(*, bzlmod):
     # In a separate repo because not all platforms support zlib.
     stack_snapshot(
@@ -304,17 +318,27 @@ haskell_cabal_library(
         label_builder = label_builder,
     )
 
-    stack_snapshot(
-        name = "stackage_asterius",
-        setup_stack = False,
-        local_snapshot = "//tests/asterius/stack_toolchain_libraries:snapshot.yaml",
-        packages = [
-            "xhtml",
-        ],
-        stack_snapshot_json = "//tests/asterius/stack_toolchain_libraries:snapshot.json",
-        toolchain_libraries = toolchain_libraries,
-        label_builder = label_builder,
-    ) if is_linux else None
+    if is_linux:
+        stack_snapshot(
+            name = "stackage_asterius",
+            setup_stack = False,
+            local_snapshot = "//tests/asterius/stack_toolchain_libraries:snapshot.yaml",
+            packages = [
+                "xhtml",
+            ],
+            stack_snapshot_json = "//tests/asterius/stack_toolchain_libraries:snapshot.json",
+            toolchain_libraries = toolchain_libraries,
+            label_builder = label_builder,
+        )
+    else:
+        _empty_repo(
+            name = "stackage_asterius",
+            error_msg = "The stackage_asterius repository should only be used on linux",
+        )
+        _empty_repo(
+            name = "stackage_asterius-unpinned",
+            error_msg = "The stackage_asterius-unpinned repository should only be used on linux",
+        )
 
 def _non_module_deps_2_impl(ctx):
     repositories(bzlmod = True)
