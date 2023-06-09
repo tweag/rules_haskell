@@ -208,21 +208,16 @@ bazel_dep(
     ]
 ]
 
-# tests with nixos platform
-# use_repo(non_modules_deps_1, "nixpkgs_config_cc")
-# use_repo(non_modules_deps_1, "nixpkgs_config_cc_info")
+use_repo(
+    non_modules_deps_1,
+    "nixpkgs_config_cc",
+    "nixpkgs_config_cc_info",
+    "nixpkgs_config_cc_toolchains",
+)
 
-# register_toolchains("@nixpkgs_config_cc//:all")
-# register_toolchains("@nixpkgs_config_cc//:toolchain")
-# register_toolchains("@nixpkgs_config_cc_info//:all")
-
-# register_toolchains("@rules_haskell_nix_node_toolchain//:node_nixpkgs_toolchain")
+register_toolchains("@nixpkgs_config_cc_toolchains//:all")
 
 register_toolchains("@nixpkgs_python_toolchain//:toolchain")
-
-# use_repo(non_modules_deps_1, "rules_haskell_asterius_webpack")
-
-# use_repo(non_modules_deps_1, "rules_haskell_asterius_build_setting")
 
 use_repo(non_modules_deps_1, "nixpkgs_go_sdk_toolchains")
 

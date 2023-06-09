@@ -149,31 +149,29 @@ bazel_dep(
     repo_name = "io_bazel_stardoc",
 )
 
-use_repo(non_module_dev_deps, "tutorial")
+use_repo(
+    non_module_dev_deps,
+    "tutorial",
+    "examples",
+    "examples-arm",
+)
 
-use_repo(non_module_dev_deps, "examples")
+use_repo(
+    non_module_dev_deps,
+    "rules_haskell_ghc_nixpkgs",
+    "nixpkgs_default",
+    "rules_haskell_ghc_nixpkgs_toolchain",
+    "rules_haskell_ghc_darwin_amd64-toolchain",
+    "rules_haskell_ghc_darwin_arm64-toolchain",
+    "rules_haskell_ghc_linux_amd64-toolchain",
+    "rules_haskell_ghc_windows_amd64-toolchain",
+)
 
-use_repo(non_module_dev_deps, "examples-arm")
-
-use_repo(non_module_dev_deps, "rules_haskell_ghc_nixpkgs")
-
-use_repo(non_module_dev_deps, "nixpkgs_default")
-
-use_repo(non_module_dev_deps, "rules_haskell_ghc_nixpkgs_toolchain")
-
-# Needs baazel 6.2.0 to be able to register the toolchain with dev_dependency = True
+# Needs bazel 6.2.0 to be able to register the toolchain with dev_dependency = True
 register_toolchains(
     "@rules_haskell_ghc_nixpkgs_toolchain//:toolchain",
     dev_dependency = True,
 )
-
-use_repo(non_module_dev_deps, "rules_haskell_ghc_darwin_amd64-toolchain")
-
-use_repo(non_module_dev_deps, "rules_haskell_ghc_darwin_arm64-toolchain")
-
-use_repo(non_module_dev_deps, "rules_haskell_ghc_linux_amd64-toolchain")
-
-use_repo(non_module_dev_deps, "rules_haskell_ghc_windows_amd64-toolchain")
 
 use_repo(non_module_dev_deps, "nixpkgs_python_toolchain")
 
@@ -184,22 +182,17 @@ register_toolchains(
     dev_dependency = True,
 )
 
-use_repo(non_module_dev_deps, "zip")
-
-use_repo(non_module_dev_deps, "graphviz")
-
-use_repo(non_module_dev_deps, "sphinx")
-
-use_repo(non_module_dev_deps, "rules_haskell_worker_dependencies")
-
-use_repo(non_module_dev_deps, "rules_haskell_stack_update")
-
-use_repo(non_module_dev_deps, "rules_haskell_stack")
-
-use_repo(non_module_dev_deps, "Cabal")
-
-# Needed for buildifier
-use_repo(non_module_dev_deps, "com_github_bazelbuild_buildtools")
+use_repo(
+    non_module_dev_deps,
+    "zip",
+    "graphviz",
+    "sphinx",
+    "rules_haskell_worker_dependencies",
+    "rules_haskell_stack_update",
+    "rules_haskell_stack",
+    "Cabal",
+    "com_github_bazelbuild_buildtools",  # For buildifier
+)
 
 non_module_dev_deps_2 = use_extension(
     "//:non_module_dev_deps_2.bzl",
@@ -207,9 +200,11 @@ non_module_dev_deps_2 = use_extension(
     dev_dependency = True,
 )
 
-use_repo(non_module_dev_deps_2, "stackage")
-
-use_repo(non_module_dev_deps_2, "stackage-exe")
+use_repo(
+    non_module_dev_deps_2,
+    "stackage",
+    "stackage-exe",
+)
 
 bazel_dep(
     name = "rules_go",
@@ -289,5 +284,17 @@ register_toolchains(
     "@rules_haskell//docs/pandoc:macos",
     "@rules_haskell//tests:protobuf-toolchain",
     "@rules_haskell//tests:protobuf-toolchain-osx_arm64",
+    dev_dependency = True,
+)
+
+use_repo(
+    non_module_dev_deps,
+    "nixpkgs_config_cc",
+    "nixpkgs_config_cc_info",
+    "nixpkgs_config_cc_toolchains",
+)
+
+register_toolchains(
+    "@nixpkgs_config_cc_toolchains//:all",
     dev_dependency = True,
 )
