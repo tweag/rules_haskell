@@ -1536,8 +1536,7 @@ def _download_packages(repository_ctx, snapshot, pinned):
 
     if stack_unpack:
         # Enforce dependency on stack_update.
-        # Hard-coded label since `stack_update` is `None` in this case.
-        repository_ctx.read(Label("@rules_haskell_stack_update//:stack_update"))
+        repository_ctx.read(repository_ctx.path(Label(repository_ctx.attr.stack_update)))
         _download_packages_unpinned(repository_ctx, snapshot, stack_unpack)
 
 def _download_packages_unpinned(repository_ctx, snapshot, resolved):
@@ -1585,6 +1584,9 @@ def _to_string_keyed_label_list_dict(d):
         for string_key in string_key_list.split(" "):
             out.setdefault(string_key, []).append(label)
     return out
+
+def _is_bzlmod_enabled():
+    return str(Label("@rules_haskell//:BUILD.bazel")).startswith("@@")
 
 def _label_to_string(label):
     if check_bazel_version("6.0.0")[0]:
@@ -1913,7 +1915,7 @@ def _stack_snapshot_impl(repository_ctx):
     # Resolve and fetch packages
     if repository_ctx.attr.stack_snapshot_json == None:
         # Enforce dependency on stack_update
-        repository_ctx.read(repository_ctx.attr.stack_update)
+        repository_ctx.read(repository_ctx.path(Label(repository_ctx.attr.stack_update)))
         resolved = _resolve_packages(
             repository_ctx,
             snapshot,
@@ -1986,7 +1988,7 @@ packages = {
                 executables = all_components[name].exe,
                 sublibs = all_components[name].sublibs,
                 deps = [
-                    str(Label("@{}//:{}".format(repository_ctx.attr.unmangled_repo_name, dep)))
+                    "@{}//:{}".format(repository_ctx.attr.unmangled_repo_name, dep)
                     for dep in spec["dependencies"]
                     if all_components[dep].lib
                 ],
@@ -2069,8 +2071,13 @@ haskell_library(
                 for dep in spec["dependencies"]
                 for exe in all_components[dep].exe
             ] + tools
+
             setup_deps = [
-                _label_to_string(Label("@{}//:{}".format(repository_ctx.attr.unmangled_repo_name, name)).relative(label))
+                _label_to_string(Label("{}{}//:{}".format(
+                    "@@" if _is_bzlmod_enabled() else "@",
+                    repository_ctx.attr.name,
+                    name,
+                )).relative(label))
                 for label in repository_ctx.attr.setup_deps.get(name, [])
             ]
             if all_components[name].lib:
@@ -2223,7 +2230,7 @@ _stack_snapshot = repository_rule(
         "components": attr.string_list_dict(),
         "components_dependencies": attr.string_dict(),
         "stack": attr.label(),
-        "stack_update": attr.label(),
+        "stack_update": attr.string(),
         "verbose": attr.bool(default = False),
         "custom_toolchain_libraries": attr.string_list(default = []),
         "enable_custom_toolchain_libraries": attr.bool(default = False),
@@ -2434,6 +2441,7 @@ def stack_snapshot(
         netrc = "",
         toolchain_libraries = None,
         setup_stack = True,
+        label_builder = lambda l: Label(l),
         **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
@@ -2624,18 +2632,18 @@ def stack_snapshot(
         )
         ```
       setup_stack: Do not try to install stack if set to False (only usefull with bzlmod when only the first call to stack_snapshot must do the install).
-
+      label_builder: A function to build a Label from the context of the caller module extension (only useful with bzlmod until we provide our own module extension).
     """
     typecheck_stackage_extradeps(extra_deps)
 
     # Allow overriding stack binary at workspace level by `use_stack()`.
     # Otherwise this is a no-op.
     if native.existing_rule("rules_haskell_stack") or not setup_stack:
-        stack = Label("@rules_haskell_stack//:stack")
+        stack = label_builder("@rules_haskell_stack//:stack")
 
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
-        stack = Label("@rules_haskell_stack//:stack")
+        stack = label_builder("@rules_haskell_stack//:stack")
 
     # Execute stack update once before executing _stack_snapshot.
     # This is to avoid multiple concurrent executions of stack update,
@@ -2663,12 +2671,19 @@ def stack_snapshot(
         custom_toolchain_libraries = toolchain_libraries,
         enable_custom_toolchain_libraries = toolchain_libraries != None,
     )
+    canonical_setup_deps = {
+        k: [
+            str(label_builder(label)) if label.startswith("@") else label
+            for label in labels
+        ]
+        for (k, labels) in setup_deps.items()
+    }
     _stack_snapshot(
         name = name,
         unmangled_repo_name = name,
         stack = stack,
         # Dependency for ordered execution, stack update before stack unpack.
-        stack_update = None if stack_snapshot_json else "@rules_haskell_stack_update//:stack_update",
+        stack_update = str(label_builder("@rules_haskell_stack_update//:stack_update")),
         # TODO Remove _from_string_keyed_label_list_dict once following issue
         # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
         extra_deps = _from_string_keyed_label_list_dict(extra_deps),
@@ -2681,7 +2696,7 @@ def stack_snapshot(
         packages = packages,
         flags = flags,
         haddock = haddock,
-        setup_deps = setup_deps,
+        setup_deps = canonical_setup_deps,
         tools = tools,
         components = components,
         components_dependencies = components_dependencies,
