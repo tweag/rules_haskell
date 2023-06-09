@@ -292,7 +292,7 @@ use_repo(non_modules_deps_1, "build_bazel_bazel_5_0_0")
 
 use_repo(non_modules_deps_1, "build_bazel_bazel_5_2_0")
 
-use_repo(non_modules_deps_1, "build_bazel_bazel_6_0_0")
+use_repo(non_modules_deps_1, "build_bazel_bazel_6_2_0")
 
 use_repo(non_modules_deps_1, "bazel_6")
 
