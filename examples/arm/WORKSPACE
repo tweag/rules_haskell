@@ -21,7 +21,7 @@ load(
     "stack_snapshot",
 )
 load(
-    "@rules_nixpkgs_core//nixpkgs:nixpkgs.bzl",
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_git_repository",
     "nixpkgs_package",
 )
