@@ -5,6 +5,8 @@ load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
 
+label_builder = lambda x: Label(x)
+
 def repositories(*, bzlmod):
     # In a separate repo because not all platforms support zlib.
     stack_snapshot(
@@ -13,6 +15,7 @@ def repositories(*, bzlmod):
         local_snapshot = "//:stackage_snapshot.yaml",
         packages = ["zlib"],
         stack_snapshot_json = "//:stackage-zlib-snapshot.json" if not is_windows else None,
+        label_builder = label_builder,
     )
 
     # Vendor data-default-instances-containers and data-default-instances-old-local
@@ -121,6 +124,7 @@ haskell_library(
             "data-default-instances-old-locale": "@data-default-ol//:lib",
             "ghc-paths": "@rules_haskell//tools/ghc-paths",
         },
+        label_builder = label_builder,
     )
 
     http_archive(
@@ -196,6 +200,7 @@ haskell_cabal_library(
             "quickcheck-io": ["@Cabal//:Cabal"],
         },
         stack_snapshot_json = "//:stackage-pinning-test_snapshot.json" if not is_windows else None,
+        label_builder = label_builder,
     )
 
     stack_snapshot(
@@ -296,6 +301,7 @@ haskell_cabal_library(
         vendored_packages = {
             "ghc-paths": "@rules_haskell//tools/ghc-paths",
         },
+        label_builder = label_builder,
     )
 
     stack_snapshot(
@@ -307,6 +313,7 @@ haskell_cabal_library(
         ],
         stack_snapshot_json = "//tests/asterius/stack_toolchain_libraries:snapshot.json",
         toolchain_libraries = toolchain_libraries,
+        label_builder = label_builder,
     ) if is_linux else None
 
 def _non_module_deps_2_impl(ctx):
