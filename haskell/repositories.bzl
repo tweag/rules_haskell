@@ -14,6 +14,29 @@ _rules_nixpkgs_sha256 = "a8f20854da16156bd4e0d53d13dfb0d3360ee43c5ce764f0dc60703
 _rules_sh_version = "v0.3.0"
 _rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
 
+def rules_haskell_dependencies_bzlmod():
+    """Provide rules_haskell dependencies which are not available as bzlmod modules."""
+
+    # Dependency of com_google_protobuf.
+    # TODO(judahjacobson): this is a bit of a hack.
+    # We can't call that repository's protobuf_deps() function
+    # from here, because load()ing it from this .bzl file would lead
+    # to a cycle:
+    # https://github.com/bazelbuild/bazel/issues/1550
+    # https://github.com/bazelbuild/bazel/issues/1943
+    # For now, just hard-code the subset that's needed to use `protoc`.
+    # Alternately, consider adding another function from another
+    # .bzl file that needs to be called from WORKSPACE, similar to:
+    # https://github.com/grpc/grpc/blob/8c9dcf7c35e489c2072a9ad86635dbc4e28f88ea/bazel/grpc_extra_deps.bzl#L10
+    maybe(
+        http_archive,
+        name = "zlib",
+        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+        sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
+        strip_prefix = "zlib-1.2.11",
+        urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
+    )
+
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
     if "bazel_version" in dir(native):
@@ -108,26 +131,6 @@ def rules_haskell_dependencies():
         ],
     )
 
-    # Dependency of com_google_protobuf.
-    # TODO(judahjacobson): this is a bit of a hack.
-    # We can't call that repository's protobuf_deps() function
-    # from here, because load()ing it from this .bzl file would lead
-    # to a cycle:
-    # https://github.com/bazelbuild/bazel/issues/1550
-    # https://github.com/bazelbuild/bazel/issues/1943
-    # For now, just hard-code the subset that's needed to use `protoc`.
-    # Alternately, consider adding another function from another
-    # .bzl file that needs to be called from WORKSPACE, similar to:
-    # https://github.com/grpc/grpc/blob/8c9dcf7c35e489c2072a9ad86635dbc4e28f88ea/bazel/grpc_extra_deps.bzl#L10
-    maybe(
-        http_archive,
-        name = "zlib",
-        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-        sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
-        strip_prefix = "zlib-1.2.11",
-        urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
-    )
-
     maybe(
         http_archive,
         name = "aspect_rules_js",
@@ -135,6 +138,8 @@ def rules_haskell_dependencies():
         strip_prefix = "rules_js-1.23.1",
         url = "https://github.com/aspect-build/rules_js/releases/download/v1.23.1/rules_js-v1.23.1.tar.gz",
     )
+
+    rules_haskell_dependencies_bzlmod()
 
 def haskell_repositories():
     """Alias for rules_haskell_dependencies

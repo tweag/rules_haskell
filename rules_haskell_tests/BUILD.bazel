@@ -1,25 +1,10 @@
-load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
-
-# Run this to check for errors in BUILD files.
-buildifier(
-    name = "buildifier",
-    mode = "check",
-)
-
-# Run this to fix the errors in BUILD files.
-buildifier(
-    name = "buildifier-fix",
-    mode = "fix",
-    verbose = True,
-)
-
-buildifier_test(
-    name = "buildifier_test",
-    srcs = [
+exports_files(
+    [
         "BUILD.bazel",
         "WORKSPACE",
-        "//tests:all_files",
+        "non_module_deps.bzl",
+        "non_module_deps_1.bzl",
+        "non_module_deps_2.bzl",
     ],
-    mode = "diff",
-    tags = ["dont_test_on_windows"],
+    visibility = ["//buildifier:__pkg__"],
 )
