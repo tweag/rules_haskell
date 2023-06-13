@@ -72,8 +72,7 @@ def main():
 
     print('extracting...', file=sys.stderr)
 
-    with tarfile.open(file_path, "r:xz") as tar:
-        temp_dir = tempfile.mkdtemp()
+    with tarfile.open(file_path, "r:xz") as tar, tempfile.TemporaryDirectory() as temp_dir:
 
         for member in tar.getmembers():
             member_path = PurePosixPath(member.name)
