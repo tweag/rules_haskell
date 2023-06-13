@@ -397,23 +397,23 @@ def ghc_bindist(
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
 
-    # Recent GHC versions on Windows contain a bug:
-    # https://gitlab.haskell.org/ghc/ghc/issues/16466
-    # We work around this by patching the base configuration.
+    version_tuple = _split_version(version)
+
     patches = None
     if target == "windows_amd64":
+        # Older GHC versions on Windows contain a bug:
+        # https://gitlab.haskell.org/ghc/ghc/issues/16466
+        # We work around this by patching the base configuration.
         patches = {
             "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
             "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
-            "9.0.1": ["@rules_haskell//haskell:assets/ghc_9_0_1_win.patch"],
-            "9.0.2": ["@rules_haskell//haskell:assets/ghc_9_0_2_win.patch"],
-            "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_win.patch"],
-            "9.2.3": ["@rules_haskell//haskell:assets/ghc_9_2_3_win.patch"],
-            "9.2.4": ["@rules_haskell//haskell:assets/ghc_9_2_4_win.patch"],
-            "9.2.5": ["@rules_haskell//haskell:assets/ghc_9_2_5_win.patch"],
-            "9.4.5": ["@rules_haskell//haskell:assets/ghc_9_4_5_win.patch"],
-            "9.6.1": ["@rules_haskell//haskell:assets/ghc_9_6_1_win.patch"],
         }.get(version)
+
+        # More recent GHC versions just need a patch to fix the docs
+        # folder location:
+        if version_tuple >= (9, 0, 1):
+            dashed_version = version.replace(".", "_")
+            patches = ["@rules_haskell//haskell:assets/ghc_{}_win.patch".format(dashed_version)]
 
     if target == "darwin_amd64":
         patches = {
