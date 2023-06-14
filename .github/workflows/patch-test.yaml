@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v3
       - id: set-ghc-versions
         name: Extract from gen_ghc_bindist
-        run: python tests/extract_from_ghc_bindist.py
+        run: python .github/extract_from_ghc_bindist.py
   test-ghc-patches:
     name: Test GHC patches
     needs: find-ghc-version
@@ -80,4 +80,5 @@ jobs:
           export PATH=$HOME/bazel:$PATH
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           export GHC_VERSION=${{ matrix.ghc-version }}
+          cd rules_haskell_tests
           ./tests/run-start-script.sh --use-bindists
