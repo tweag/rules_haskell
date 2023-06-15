@@ -610,6 +610,7 @@ def haskell_toolchain(
                 "config.sub",
                 "install-sh",
                 "mk/config.mk.in",
+                "mk/install.mk.in",
                 "mk/project.mk",
                 #"mk/system-cxx-std-lib-1.0.conf.in",
             ],
