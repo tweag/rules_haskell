@@ -58,13 +58,13 @@ test_cabalopts = [
 # )
 
 haskell_register_ghc_bindists_hadrian(
-    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
-    sha256 = "9dea9123cd53c0d48e72de68480492eaacc2e0bf487a3cd3dfa3ce18729aa3e4",
-    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
-    version = "9.2.5",
-    target = "x86_64-unknown-linux",
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
+    sha256 = "9dea9123cd53c0d48e72de68480492eaacc2e0bf487a3cd3dfa3ce18729aa3e4",
+    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
+    target = "x86_64-unknown-linux",
+    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
+    version = "9.2.5",
 )
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
@@ -109,8 +109,6 @@ stack_snapshot(
             "-pkg-config",
         ],
     },
-    #local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
-    snapshot = "nightly-2023-05-12",
     packages = [
         "base",
         "bytestring",
@@ -121,6 +119,8 @@ stack_snapshot(
         "text",
         "text-show",
     ],
+    #local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
+    snapshot = "nightly-2023-05-12",
     # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
     # uncomment the following line.

@@ -90,18 +90,20 @@ load(
     "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
     "haskell_register_ghc_bindists_hadrian",
 )
-
 load(
-    "non_module_deps_1.bzl", "test_cabalopts", "test_ghcopts"
+    "non_module_deps_1.bzl",
+    "test_cabalopts",
+    "test_ghcopts",
 )
+
 haskell_register_ghc_bindists_hadrian(
-    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
-    sha256 = "9dea9123cd53c0d48e72de68480492eaacc2e0bf487a3cd3dfa3ce18729aa3e4",
-    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
-    version = "9.2.5",
-    target = "x86_64-unknown-linux",
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
+    sha256 = "9dea9123cd53c0d48e72de68480492eaacc2e0bf487a3cd3dfa3ce18729aa3e4",
+    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
+    target = "x86_64-unknown-linux",
+    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
+    version = "9.2.5",
 )
 
 register_toolchains(

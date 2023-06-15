@@ -27,21 +27,22 @@ def _copy_filegroup_impl(ctx):
         out = ctx.actions.declare_file(output_path)
         all_outputs.append(out)
         ctx.actions.run_shell(
-            outputs=[out],
-            inputs=depset([f]),
-            arguments=[f.path, out.path],
-            command="mkdir -p $(dirname $2) && cp $1 $2")
+            outputs = [out],
+            inputs = depset([f]),
+            arguments = [f.path, out.path],
+            command = "mkdir -p $(dirname $2) && cp $1 $2",
+        )
 
     return [
         DefaultInfo(
-            files=depset(all_outputs),
-            runfiles=ctx.runfiles(files=all_outputs))
+            files = depset(all_outputs),
+            runfiles = ctx.runfiles(files = all_outputs),
+        ),
     ]
 
-
 copy_filegroups_to_this_package = rule(
-    implementation=_copy_filegroup_impl,
-    attrs={
+    implementation = _copy_filegroup_impl,
+    attrs = {
         "srcs": attr.label_list(),
     },
 )
@@ -71,7 +72,7 @@ def _ghc_bindist_hadrian_impl(ctx):
 
     bindir = "bin"
     libdir = "lib"
-    docdir = "docs" # is "doc" for more recent GHC
+    docdir = "docs"  # is "doc" for more recent GHC
 
     # The bindist requires patching invalid haddock paths. See Makefile of GHC:
     # https://gitlab.haskell.org/ghc/ghc/-/blob/ghc-9.2.3-release/hadrian/bindist/Makefile#L54-74
@@ -90,7 +91,6 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
     # Since Bazel regular rules generate files in the "execroots" and GHC requires some files to be next to eachothers,
     # one has to move all the files coming from the GHC bindist tarball (which is unpacked by a repository rule) to an execroot.
     # These copied versions of the files are the 'generated_*_filegroup' targets.
-
 
     generated_bin_filegroup = define_rule(
         "copy_filegroups_to_this_package",
@@ -255,7 +255,6 @@ def ghc_bindist_hadrian(
         repl_ghci_args = None,
         cabalopts = None,
         locale = None):
-
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
 

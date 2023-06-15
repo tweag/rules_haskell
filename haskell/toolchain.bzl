@@ -616,7 +616,6 @@ def haskell_toolchain(
             ],
         )
 
-
     toolchain_rule = _ahc_haskell_toolchain if asterius_binaries else _haskell_toolchain
     toolchain_rule(
         name = name,
