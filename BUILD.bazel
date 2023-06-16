@@ -16,6 +16,7 @@ exports_files(
         "constants.bzl",
         "non_module_dev_deps.bzl",
         "non_module_dev_deps_2.bzl",
+        "non_module_deps.bzl",
     ],
     visibility = ["//buildifier:__pkg__"],
 )

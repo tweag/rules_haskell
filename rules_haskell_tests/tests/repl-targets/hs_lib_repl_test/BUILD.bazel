@@ -49,6 +49,7 @@ cc_library(
 config_setting(
     name = "nix",
     constraint_values = [
+        # "@rules_nixpkgs_core//constraints:support_nix",
         "@io_tweag_rules_nixpkgs//nixpkgs/constraints:support_nix",
     ],
 )

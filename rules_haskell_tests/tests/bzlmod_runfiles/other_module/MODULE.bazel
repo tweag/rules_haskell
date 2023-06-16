@@ -1,0 +1,72 @@
+module(
+    name = "other_module",
+    version = "0.0.1",
+)
+
+bazel_dep(
+    name = "rules_haskell",
+    version = "0.16",
+)
+
+bazel_dep(
+    name = "rules_haskell_nix",
+    version = "0.16",
+)
+
+# local_path_override(
+#     module_name = "rules_haskell",
+#     path = "/home/stan/tools/rules_haskell/core",
+# )
+
+bazel_dep(
+    name = "rules_nixpkgs_core",
+    version = "0.9.0",
+)
+
+bazel_dep(
+    name = "rules_nodejs",
+    # version = "5.5.3",
+    # version = "5.5.0",
+    version = "5.8.0",
+)
+
+bazel_dep(
+    name = "platforms",
+    version = "0.0.5",
+)
+
+# non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
+
+# use_repo(non_module_deps, "io_tweag_rules_nixpkgs")
+
+# use_repo(non_module_deps, "rules_nixpkgs_python")
+
+# use_repo(non_module_deps, "rules_nixpkgs_core")
+
+# use_repo(non_module_deps, "io_bazel_rules_go")
+
+#use_repo(non_module_deps, "os_info")
+
+#use_repo(non_module_deps, "contrib_rules_bazel_integration_test")
+
+# use_repo(non_module_deps, "haskell_package_repository_dummy")
+
+# use_repo(non_module_deps, "rules_haskell_ghc_nixpkgs_toolchain")
+
+# use_repo(non_module_deps, "rules_haskell_ghc_nixpkgs")
+
+non_module_deps_1 = use_extension("//:non_module_deps_1.bzl", "non_module_deps_1")
+
+# use_repo(non_module_deps_1, "rules_nixpkgs_nodejs")
+
+# use_repo(non_module_deps_1, "rules_cc")
+
+use_repo(non_module_deps_1, "rules_haskell_ghc_nixpkgs")
+
+use_repo(non_module_deps_1, "nixpkgs_default")
+
+# use_repo(non_module_deps_1, "glibc_locales")
+
+use_repo(non_module_deps_1, "rules_haskell_ghc_nixpkgs_toolchain")
+
+register_toolchains("@rules_haskell_ghc_nixpkgs_toolchain//:toolchain")

@@ -1,0 +1,316 @@
+module(
+    name = "rules_haskell",
+    version = "0.16",
+)
+
+bazel_dep(
+    name = "platforms",
+    version = "0.0.6",
+)
+
+bazel_dep(
+    name = "rules_java",
+    version = "6.1.0",
+)
+
+bazel_dep(
+    name = "protobuf",
+    version = "3.19.0",
+    repo_name = "com_google_protobuf",
+)
+
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.6",
+)
+
+bazel_dep(
+    name = "rules_nodejs",
+    version = "5.8.0",
+)
+
+non_module_deps = use_extension(
+    "//:non_module_deps.bzl",
+    "non_module_deps",
+)
+
+use_repo(
+    non_module_deps,
+    "rules_haskell_python_local",
+    "rules_haskell_worker_dependencies",
+    "rules_haskell_stack_update",
+    "rules_haskell_stack",
+    "Cabal",
+)
+
+register_toolchains("@rules_haskell_python_local//:toolchain")
+
+bazel_dep(
+    name = "rules_python",
+    version = "0.21.0",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.0.3",
+)
+
+bazel_dep(
+    name = "rules_proto",
+    version = "4.0.0",
+)
+
+bazel_dep(
+    name = "aspect_rules_js",
+    version = "1.27.1",
+)
+
+bazel_dep(
+    name = "rules_sh",
+    version = "0.3.0",
+)
+
+asterius = use_extension("@rules_haskell//haskell/asterius:extension.bzl", "rules_haskell_asterius")
+
+use_repo(
+    asterius,
+    "rules_haskell_asterius_webpack",
+    "rules_haskell_asterius_build_setting",
+)
+
+#### Development dependencies ####
+
+# bazel_dep(
+#     name = "aspect_bazel_lib",
+#     version = "1.30.2",
+#     dev_dependency = True,
+# )
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+
+node.toolchain(node_version = "16.9.0")
+
+npm = use_extension(
+    "@aspect_rules_js//npm:extensions.bzl",
+    "npm",
+    # dev_dependency = True,
+)
+
+npm.npm_translate_lock(
+    name = "rules_haskell_npm",
+    link_workspace = "rules_haskell",
+    pnpm_lock = "//haskell/asterius/npm:pnpm-lock.yaml",
+    verify_node_modules_ignored = "@rules_haskell//:.bazelignore",
+)
+
+use_repo(npm, "rules_haskell_npm")
+
+bazel_dep(
+    name = "rules_nixpkgs_core",
+    version = "0.9.0",
+    dev_dependency = True,
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_cc",
+    version = "0.9.0",
+    dev_dependency = True,
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_python",
+    version = "0.9.0",
+    dev_dependency = True,
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_go",
+    version = "0.9.0",
+    dev_dependency = True,
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_posix",
+    version = "0.9.0",
+    dev_dependency = True,
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_nodejs",
+    version = "0.9.0",
+    dev_dependency = True,
+)
+
+non_module_dev_deps = use_extension(
+    "//:non_module_dev_deps.bzl",
+    "non_module_dev_deps",
+    dev_dependency = True,
+)
+
+use_repo(non_module_dev_deps, "os_info")
+
+bazel_dep(
+    name = "stardoc",
+    version = "0.5.4",
+    dev_dependency = True,
+    repo_name = "io_bazel_stardoc",
+)
+
+use_repo(
+    non_module_dev_deps,
+    "tutorial",
+    "examples",
+    "examples-arm",
+)
+
+use_repo(
+    non_module_dev_deps,
+    "rules_haskell_ghc_nixpkgs",
+    "nixpkgs_default",
+    "rules_haskell_ghc_nixpkgs_toolchain",
+    "rules_haskell_ghc_darwin_amd64-toolchain",
+    "rules_haskell_ghc_darwin_arm64-toolchain",
+    "rules_haskell_ghc_linux_amd64-toolchain",
+    "rules_haskell_ghc_windows_amd64-toolchain",
+    "rules_haskell_ghc_linux_arm64-toolchain",
+    "rules_haskell_ghc_windows_amd64_cc_toolchain",
+)
+
+# Needs bazel 6.2.0 to be able to register the toolchain with dev_dependency = True
+register_toolchains(
+    "@rules_haskell_ghc_nixpkgs_toolchain//:toolchain",
+    dev_dependency = True,
+)
+
+register_toolchains(
+    "@rules_haskell_ghc_darwin_amd64-toolchain//:toolchain",
+    "@rules_haskell_ghc_darwin_arm64-toolchain//:toolchain",
+    "@rules_haskell_ghc_linux_amd64-toolchain//:toolchain",
+    "@rules_haskell_ghc_linux_arm64-toolchain//:toolchain",
+    "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
+    "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
+    "@rules_haskell_ghc_windows_amd64_cc_toolchain//:windows_cc_toolchain",
+    dev_dependency = True,
+)
+
+use_repo(non_module_dev_deps, "nixpkgs_python_toolchain")
+
+use_repo(non_module_dev_deps, "nixpkgs_go_sdk_toolchains")
+
+register_toolchains(
+    "@nixpkgs_go_sdk_toolchains//:all",
+    dev_dependency = True,
+)
+
+use_repo(
+    non_module_dev_deps,
+    "zip",
+    "graphviz",
+    "sphinx",
+    "com_github_bazelbuild_buildtools",  # For buildifier
+)
+
+non_module_dev_deps_2 = use_extension(
+    "//:non_module_dev_deps_2.bzl",
+    "non_module_dev_deps_2",
+    dev_dependency = True,
+)
+
+use_repo(
+    non_module_dev_deps_2,
+    "stackage",
+    "stackage-exe",
+)
+
+bazel_dep(
+    name = "rules_go",
+    version = "0.39.0",
+    repo_name = "io_bazel_rules_go",
+)
+
+# local_path_override(
+#     module_name = "rules_go",
+#     path = "/home/stan/src/rules_go/",
+# )
+
+# local_path_override(
+#     module_name = "gazelle",
+#     path = "/home/stan/src/bazel-gazelle/",
+# )
+
+# Using buildifier will fail on NixOS with bzlmod
+# https://github.com/bazelbuild/bazel-gazelle/issues/1469
+
+go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+
+go_sdk.download(
+    version = "1.19.7",
+)
+
+# use_repo(non_module_dev_deps, "nixpkgs_go_sdk")
+
+# rules_go_toolchain_override = use_extension("go_toolchains_override.bzl", "rules_go_toolchain_override")
+
+# use_repo(
+#     rules_go_toolchain_override,
+#     "rules_go_toolchain_override",
+# )
+
+# go_sdk.custom(custom_toolchain_bzl_file = "@rules_go_toolchain_override//:go_toolchain.bzl")
+
+bazel_dep(
+    name = "gazelle",
+    version = "0.30.0",
+    dev_dependency = True,
+)
+
+go_deps = use_extension(
+    "@gazelle//:extensions.bzl",
+    "go_deps",
+    dev_dependency = True,
+)
+
+go_deps.module(
+    path = "github.com/gogo/protobuf",
+    sum = "h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=",
+    version = "v1.3.2",
+)
+
+use_repo(
+    go_deps,
+    "com_github_gogo_protobuf",
+    "com_github_golang_mock",
+    "com_github_golang_protobuf",
+    "org_golang_google_genproto",
+    "org_golang_google_grpc",
+    "org_golang_google_protobuf",
+    "org_golang_x_net",
+    "org_golang_x_tools",
+)
+
+use_repo(non_module_dev_deps, "linux_pandoc")
+
+use_repo(non_module_dev_deps, "nixpkgs_pandoc")
+
+use_repo(non_module_dev_deps, "macos_pandoc")
+
+register_toolchains(
+    "@rules_haskell//docs/pandoc:nixpkgs",
+    "@rules_haskell//docs/pandoc:linux",
+    "@rules_haskell//docs/pandoc:macos",
+    "@rules_haskell//tests:protobuf-toolchain",
+    "@rules_haskell//tests:protobuf-toolchain-osx_arm64",
+    dev_dependency = True,
+)
+
+use_repo(
+    non_module_dev_deps,
+    "nixpkgs_config_cc",
+    "nixpkgs_config_cc_info",
+    "nixpkgs_config_cc_toolchains",
+)
+
+register_toolchains(
+    "@nixpkgs_config_cc_toolchains//:all",
+    dev_dependency = True,
+)

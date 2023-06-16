@@ -1,0 +1,29 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base")
+
+# When depending on a library, the binary is run from the calling module.
+# So we do not know the path
+haskell_binary(
+    name = "bin",
+    srcs = [":Main.hs"],
+    deps = [
+        ":base",
+        # "@test_rules_haskell_bzlmod//tests/bzlmod_runfiles/other_module:lib",
+        "@other_module//:lib",
+    ],
+)
+
+genrule(
+    name = "gen",
+    srcs = [],
+    outs = ["out"],
+    cmd = """$(location @other_module//:bin) > $@""",
+    tools = [
+        "@other_module//:bin",
+    ],
+)

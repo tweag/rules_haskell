@@ -1,0 +1,31 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_library",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base")
+
+haskell_library(
+    name = "lib",
+    srcs = [":Lib.hs"],
+    data = [
+        "datafile",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":base",
+        "@rules_haskell//tools/runfiles",
+    ],
+)
+
+haskell_binary(
+    name = "bin",
+    srcs = [":Main.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)

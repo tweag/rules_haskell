@@ -1,4 +1,9 @@
 examples
 tutorial
 haskell/asterius/npm/node_modules
+registry
+tests/bzlmod_runfiles/other_module
+tests/asterius
+tests/bzlmod_runfiles
 rules_haskell_tests
+rules_haskell_nix
