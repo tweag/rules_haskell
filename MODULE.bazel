@@ -314,3 +314,9 @@ register_toolchains(
     "@nixpkgs_config_cc_toolchains//:all",
     dev_dependency = True,
 )
+
+bazel_dep(
+    name = "bazel_features",
+    version = "0.0.1",
+    dev_dependency = True,
+)

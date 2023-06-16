@@ -133,3 +133,14 @@ bind(
     name = "python_headers",
     actual = "@com_google_protobuf//util/python:python_headers",
 )
+
+http_archive(
+    name = "bazel_features",
+    sha256 = "5836c7e7b23cd20bcaef703838ee320580fe535d0337b981fb2c8367ec2a070b",
+    strip_prefix = "bazel_features-0.0.1",
+    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v0.0.1/bazel_features-v0.0.1.tar.gz",
+)
+
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
+
+bazel_features_deps()
