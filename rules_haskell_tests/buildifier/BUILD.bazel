@@ -1,17 +1,22 @@
 load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
+load("@os_info//:os_info.bzl", "is_nixos")
+
+# Buildifier does not work yet with bzlmod+nixos
+# See https://github.com/bazelbuild/bazel-gazelle/issues/1469
+manual_on_nixos = ["manual"] if is_nixos else []
 
 # Run this to check for errors in BUILD files.
 buildifier(
     name = "buildifier",
     mode = "check",
-    tags = ["manual"],
+    tags = manual_on_nixos,
 )
 
 # Run this to fix the errors in BUILD files.
 buildifier(
     name = "buildifier-fix",
     mode = "fix",
-    tags = ["manual"],
+    tags = manual_on_nixos,
     verbose = True,
 )
 
@@ -27,10 +32,7 @@ buildifier_test(
         "//tests:all_files",
     ],
     mode = "diff",
-    tags = [
-        "dont_test_on_windows",
-        "manual",
-    ],
+    tags = ["dont_test_on_windows"] + manual_on_nixos,
 )
 
 filegroup(

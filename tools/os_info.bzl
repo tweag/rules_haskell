@@ -8,6 +8,7 @@ is_linux = cpu_value == "k8" or cpu_value == "aarch64"
 is_windows = cpu_value == "x64_windows"
 nix_shell = {NIX_SHELL}
 is_nix_shell = nix_shell != None
+is_nixos = {IS_NIXOS}
 """
 
 def _os_info_impl(repository_ctx):
@@ -22,9 +23,11 @@ def _os_info_impl(repository_ctx):
     if cpu not in known_cpu_values:
         fail("Unknown OS type {}, expected one of {}".format(cpu, ", ".join(known_cpu_values)))
     nix_shell = repository_ctx.os.environ.get("IN_NIX_SHELL")
+    is_nixos = repository_ctx.execute(["test", "-e", "/etc/NIXOS"]).return_code == 0
     os_info_substitutions = {
         "CPU_VALUE": cpu,
         "NIX_SHELL": repr(nix_shell),
+        "IS_NIXOS": is_nixos,
     }
     repository_ctx.file(
         "os_info.bzl",
