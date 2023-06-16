@@ -490,7 +490,7 @@ def _haskell_repl_impl(ctx):
             "%{ENV}": render_env(env),
             "%{TOOL}": hs.tools.ghc.path,
             "%{OUTPUT}": paths.dirname(output.path),
-            "%{ARGS}": "--interactive (" + " ".join(
+            "%{ARGS}": "(--interactive " + " ".join(
                 args + [
                     shell.quote(a)
                     for a in quote_args
