@@ -88,34 +88,6 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
     if result.return_code != 0:
         fail(result.stderr)
 
-    # Since Bazel regular rules generate files in the "execroots" and GHC requires some files to be next to eachothers,
-    # one has to move all the files coming from the GHC bindist tarball (which is unpacked by a repository rule) to an execroot.
-    # These copied versions of the files are the 'generated_*_filegroup' targets.
-
-    generated_bin_filegroup = define_rule(
-        "copy_filegroups_to_this_package",
-        name = "generated_bin_filegroup",
-        srcs = [":bin"],
-    )
-
-    generated_lib_filegroup = define_rule(
-        "copy_filegroups_to_this_package",
-        name = "generated_lib_filegroup",
-        srcs = [":lib"],
-    )
-
-    generated_docdir_filegroup = define_rule(
-        "copy_filegroups_to_this_package",
-        name = "generated_docdir_filegroup",
-        srcs = [":{}".format(docdir)],
-    )
-
-    generated_include_filegroup = define_rule(
-        "copy_filegroups_to_this_package",
-        name = "generated_include_filegroup",
-        srcs = [":include"],
-    )
-
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
     locale = ctx.attr.locale or ("en_US.UTF-8" if os == "darwin" else "C.UTF-8")
     toolchain = define_rule(
@@ -147,10 +119,6 @@ find {lib}/package.conf.d -name "rts-*.conf" -print0 | \\
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
             "%{docdir}": docdir,
-            "%{generated_bin_filegroup}": generated_bin_filegroup,
-            "%{generated_lib_filegroup}": generated_lib_filegroup,
-            "%{generated_docdir_filegroup}": generated_docdir_filegroup,
-            "%{generated_include_filegroup}": generated_include_filegroup,
             "%{is_clang}": str(False),
         },
         executable = False,

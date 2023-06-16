@@ -26,6 +26,10 @@ load(
     "ASTERIUS_BINARIES",
     "asterius_tools_config",
 )
+load(
+    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+    "copy_filegroups_to_this_package",
+)
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "runghc", "hpc"]
 
@@ -532,6 +536,8 @@ def haskell_toolchain(
         haddock_flags = [],
         cabalopts = [],
         locale_archive = None,
+        docdir = None,
+        docdir_path = None,
         **kwargs):
     """Declare a compiler toolchain.
 
@@ -600,6 +606,27 @@ def haskell_toolchain(
         new_attr_value = ghcopts,
     )
 
+    # if docdir_path:
+    #     print("path:", docdir_path)
+    # elif docdir:
+    #     docdir_path = None
+
+    #     # Find a file matching `html/libraries/base-*.*.*.*/*` and infer `docdir` from its path.
+    #     # `GHC.Paths.docdir` reports paths such as `.../doc/html/libraries/base-4.13.0.0`.
+    #     for f in docdir:
+    #         html_start = f.path.find("html/libraries/base")
+    #         if html_start != -1:
+    #             base_end = f.path.find("/", html_start + len("html/libraries/base"))
+    #             if base_end != -1:
+    #                 docdir_path = f.path[:base_end]
+    #                 break
+    #     if docdir_path == None:
+    #         fail("Could not infer `docdir_path` from provided `docdir` attribute. Missing `lib/settings` file.", "docdir")
+    # else:
+    #     fail("One of `docdir` and `docdir_path` is required.")
+
+    # fail("docdir: " + ", ".join(docdir))
+
     if hadrian_bindist:
         _hadrian_bindist_settings(
             name = "settings",
@@ -614,6 +641,28 @@ def haskell_toolchain(
                 "mk/project.mk",
                 #"mk/system-cxx-std-lib-1.0.conf.in",
             ],
+        )
+        # Since Bazel regular rules generate files in the "execroots" and GHC requires some files to be next to each other,
+        # one has to move all the files coming from the GHC bindist tarball to an execroot.
+        # These copied versions of the files are the 'generated_*_filegroup' targets.
+
+        # These copied versions of the files are the 'generated_*_filegroup' targets.
+
+        copy_filegroups_to_this_package(
+            name = "generated_bin_filegroup",
+            srcs = [":bin"],
+        )
+        copy_filegroups_to_this_package(
+            name = "generated_lib_filegroup",
+            srcs = [":lib"],
+        )
+        copy_filegroups_to_this_package(
+            name = "generated_docdir_filegroup",
+            srcs = [":{}".format(docdir_path)],
+        )
+        copy_filegroups_to_this_package(
+            name = "generated_include_filegroup",
+            srcs = [":include"],
         )
 
     toolchain_rule = _ahc_haskell_toolchain if asterius_binaries else _haskell_toolchain
@@ -645,6 +694,8 @@ def haskell_toolchain(
             "//conditions:default": None,
         }),
         asterius_binaries = asterius_binaries,
+        docdir = docdir,
+        docdir_path = docdir_path,
         **kwargs
     )
 
