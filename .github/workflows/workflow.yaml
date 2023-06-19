@@ -25,7 +25,7 @@ jobs:
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v21
+      - uses: cachix/install-nix-action@v22
         with:
           nix_path: nixpkgs=./nixpkgs/default.nix
           extra_nix_config: |
@@ -91,7 +91,7 @@ jobs:
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v21
+      - uses: cachix/install-nix-action@v22
         with:
           nix_path: nixpkgs=./nixpkgs/default.nix
           extra_nix_config: |
