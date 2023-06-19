@@ -13,7 +13,7 @@ mkShell {
   LANG="C.UTF-8";
 
   buildInputs = [
-    go
+    go_1_19
     nix
     which
     perl
