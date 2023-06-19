@@ -103,9 +103,7 @@ load(
 
 go_rules_dependencies()
 
-# If in nix-shell, use the Go SDK provided by Nix.
-# Otherwise, ask Bazel to download a Go SDK.
-go_register_toolchains(version = "1.16.2")
+go_register_toolchains(version = "1.20.2")
 
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
