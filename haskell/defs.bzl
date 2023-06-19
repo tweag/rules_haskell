@@ -76,7 +76,7 @@ _haskell_common_attrs = {
         aspects = [haskell_cc_libraries_aspect],
     ),
     "tools": attr.label_list(
-        cfg = "host",
+        cfg = "exec",
         allow_files = True,
     ),
     "_ghci_script": attr.label(
@@ -89,7 +89,7 @@ _haskell_common_attrs = {
     ),
     "_version_macros": attr.label(
         executable = True,
-        cfg = "host",
+        cfg = "exec",
         default = Label("@rules_haskell//haskell:version_macros"),
     ),
     "_cc_toolchain": attr.label(
@@ -97,13 +97,13 @@ _haskell_common_attrs = {
     ),
     "_ghc_wrapper": attr.label(
         executable = True,
-        cfg = "host",
+        cfg = "exec",
         default = Label("@rules_haskell//haskell:ghc_wrapper"),
     ),
     "worker": attr.label(
         default = None,
         executable = True,
-        cfg = "host",
+        cfg = "exec",
     ),
 }
 
@@ -686,7 +686,7 @@ haskell_import = rule(
         "haddock_html": attr.label(allow_single_file = True),
         "_version_macros": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:version_macros"),
         ),
     },

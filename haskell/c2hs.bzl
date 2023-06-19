@@ -175,7 +175,7 @@ _c2hs_toolchain = rule(
             mandatory = True,
             allow_single_file = True,
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
     },
 )

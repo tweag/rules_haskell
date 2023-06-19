@@ -285,7 +285,7 @@ _haskell_proto_aspect = aspect(
         ),
         "_ghc_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
     },
@@ -367,13 +367,13 @@ _protobuf_toolchain = rule(
     attrs = {
         "protoc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             allow_single_file = True,
             mandatory = True,
         ),
         "plugin": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             allow_single_file = True,
             mandatory = True,
         ),

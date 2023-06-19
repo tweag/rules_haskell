@@ -370,13 +370,13 @@ common_attrs = {
     ),
     "asterius_binaries": attr.label(),
     "_cc_wrapper": attr.label(
-        cfg = "host",
+        cfg = "exec",
         default = Label("@rules_haskell//haskell:cc_wrapper"),
         executable = True,
     ),
     "_protoc": attr.label(
         executable = True,
-        cfg = "host",
+        cfg = "exec",
         default = Label("@com_google_protobuf//:protoc"),
     ),
     "_rule_info_proto": attr.label(
