@@ -113,6 +113,9 @@ build:ci --incompatible_load_proto_rules_from_bzl
 # https://github.com/tweag/rules_haskell/issues/1657
 build: --incompatible_override_toolchain_transition
 
+# This flag will become the default in bazel 7
+build --incompatible_disable_starlark_host_transitions
+
 coverage --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
 
 # To update these lines, execute
