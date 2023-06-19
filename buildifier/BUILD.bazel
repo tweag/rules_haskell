@@ -5,32 +5,20 @@ buildifier_exclude_patterns = [
     "./vendor/**",
 ]
 
-# Buildifier does not work yet with bzlmod+nixos
-# See https://github.com/bazelbuild/bazel-gazelle/issues/1469
-manual_on_nixos = ["manual"] if is_nixos else []
-
-print("manual1", manual_on_nixos)
-
 # Run this to check for errors in BUILD files.
 buildifier(
     name = "buildifier",
     exclude_patterns = buildifier_exclude_patterns,
     mode = "check",
-    tags = manual_on_nixos,
 )
-
-print("manual2", manual_on_nixos)
 
 # Run this to fix the errors in BUILD files.
 buildifier(
     name = "buildifier-fix",
     exclude_patterns = buildifier_exclude_patterns,
     mode = "fix",
-    tags = manual_on_nixos,
     verbose = True,
 )
-
-print("manual3", manual_on_nixos)
 
 buildifier_test(
     name = "buildifier_test",
@@ -54,12 +42,12 @@ buildifier_test(
         "@tutorial//:all_files",
     ],
     mode = "diff",
+    # Buildifier does not work yet with bzlmod+nixos
+    # See https://github.com/bazelbuild/bazel-gazelle/issues/1469
     tags = [
         "dont_test_on_windows",
-    ] + manual_on_nixos,
+    ] + (["manual"] if is_nixos else []),
 )
-
-print("manual4", manual_on_nixos)
 
 filegroup(
     name = "all_files",

@@ -8,6 +8,12 @@ bazel_dep(
     version = "0.0.6",
 )
 
+# --incompatible_disable_starlark_host_transitions
+bazel_dep(
+    name = "rules_license",
+    version = "0.0.7",
+)
+
 bazel_dep(
     name = "rules_java",
     version = "6.1.0",
