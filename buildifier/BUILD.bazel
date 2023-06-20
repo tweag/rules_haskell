@@ -9,7 +9,6 @@ buildifier(
     name = "buildifier",
     exclude_patterns = buildifier_exclude_patterns,
     mode = "check",
-    tags = ["manual"],
 )
 
 # Run this to fix the errors in BUILD files.
@@ -17,7 +16,6 @@ buildifier(
     name = "buildifier-fix",
     exclude_patterns = buildifier_exclude_patterns,
     mode = "fix",
-    tags = ["manual"],
     verbose = True,
 )
 
@@ -27,13 +25,11 @@ buildifier_test(
         "//:BUILD.bazel",
         "//:WORKSPACE",
         "//:constants.bzl",
-        "//:non_module_deps.bzl",
         "//:non_module_dev_deps.bzl",
         "//:non_module_dev_deps_2.bzl",
         "//buildifier:all_files",
         "//debug/linking_utils:all_files",
         "//docs:all_files",
-        "//extensions:all_files",
         "//haskell:all_files",
         "//nixpkgs:all_files",
         "//rule_info:all_files",
@@ -46,7 +42,6 @@ buildifier_test(
     mode = "diff",
     tags = [
         "dont_test_on_windows",
-        "manual",
     ],
 )
 

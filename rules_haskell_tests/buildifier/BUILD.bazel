@@ -4,14 +4,12 @@ load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "bui
 buildifier(
     name = "buildifier",
     mode = "check",
-    tags = ["manual"],
 )
 
 # Run this to fix the errors in BUILD files.
 buildifier(
     name = "buildifier-fix",
     mode = "fix",
-    tags = ["manual"],
     verbose = True,
 )
 
@@ -29,7 +27,6 @@ buildifier_test(
     mode = "diff",
     tags = [
         "dont_test_on_windows",
-        "manual",
     ],
 )
 
