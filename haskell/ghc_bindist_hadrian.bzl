@@ -72,7 +72,12 @@ def _ghc_bindist_hadrian_impl(ctx):
 
     bindir = "bin"
     libdir = "lib"
-    docdir = "docs"  # is "doc" for more recent GHC
+    docdir = None
+    for d in ["doc", "docs", "docs/html"]:
+        if ctx.path(d).exists:
+            if ctx.path(d).get_child("index.html").exists:
+                docdir = d
+                break
 
     # The bindist requires patching invalid haddock paths. See Makefile of GHC:
     # https://gitlab.haskell.org/ghc/ghc/-/blob/ghc-9.2.3-release/hadrian/bindist/Makefile#L54-74
