@@ -452,11 +452,6 @@ def ghc_bindist(
         locale = locale,
         **extra_attrs
     )
-    ghc_bindist_toolchain_kwargs = {
-        "name": toolchain_name,
-        "bindist_name": bindist_name,
-        "target": target,
-    }
     if toolchain_declarations == None:
         _ghc_bindist_toolchain(
             name = toolchain_name,

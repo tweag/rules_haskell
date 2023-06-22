@@ -1,16 +1,50 @@
 load(
-    "@rules_haskell_nix//:nixpkgs.bzl",
-    "haskell_register_ghc_nixpkgs",
-)
-load(
     "@rules_nixpkgs_posix//:posix.bzl",
     "nixpkgs_sh_posix_configure",
+)
+load(
+    "@rules_nixpkgs_core//:util.bzl",
+    "default_constraints",
+    "ensure_constraints_pure",
 )
 load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_package",
 )
 
+# Based on _nixpkgs_sh_posix_toolchain from
+# https://github.com/tweag/rules_nixpkgs/blob/420370f64f03ed9c1ff9b5e2994d06c0439cb1f2/toolchains/posix/posix.bzl#LL109C1-L128C1
+# Until the api is modified to register posix toolchains another way (maybe direcly via a module extension from rules_nixpkgs)
+# or we can register the toolchains via an alias (https://github.com/bazelbuild/bazel/issues/16298)
+def _nixpkgs_sh_posix_toolchain_str(mctx, name, workspace, exec_constraints = []):
+    exec_constraints, _ = ensure_constraints_pure(
+        default_constraints = default_constraints(mctx),
+        exec_constraints = exec_constraints,
+    )
+    return """
+toolchain(
+    name = "{name}",
+    toolchain = "@{workspace}//:nixpkgs_sh_posix",
+    toolchain_type = "@rules_sh//sh/posix:toolchain_type",
+    exec_compatible_with = {exec_constraints},
+    target_compatible_with = [],
+)
+    """.format(
+        name = name,
+        workspace = workspace,
+        exec_constraints = exec_constraints,
+    )
+
+def _all_posix_toolchains_impl(rctx):
+    rctx.file("BUILD.bazel", content = "\n".join(rctx.attr.toolchains))
+
+_all_posix_toolchains = repository_rule(
+    implementation = _all_posix_toolchains_impl,
+    attrs = {
+        "toolchains": attr.string_list(),
+    },
+    doc = "repository containing `toolchain` declarations for associated posix tooolchains that need to be registered",
+)
 _config_tag = tag_class(
     attrs = {
         "version": attr.string(
@@ -49,90 +83,54 @@ _config_tag = tag_class(
     doc = "creates a new toolchain ",
 )
 
-# def _all_toolchains_impl(rctx):
-#     content = "\n".join(rctx.attr.toolchains)
-#     print("content=", content)
-#     rctx.file("BUILD.bazel", content = content)
-
-# _all_toolchains = repository_rule(
-#     implementation = _all_toolchains_impl,
-#     attrs = {
-#         "toolchains": attr.string_list(),
-#     },
-# )
-
 def _hub_impl(rctx):
     rctx.file("BUILD")
 
-    toolchain_items = ["{}:{}".format(k, json.decode(v)) for k, v in rctx.attr.toolchains.items()]
-
-    # print(toolchain_items)
-    ghc_labels_items = ["{}:{}".format(k, v) for k, v in rctx.attr.ghc_labels.items()]
     # The Label constructors need to be resolved in the hub repository which has visibility
+    ghc_labels_items = ["{}:{}".format(k, v) for k, v in rctx.attr.ghc_labels.items()]
 
     rctx.file(
         "nix_ghcs.bzl",
-        # content = "nix_ghcs = {{ {} }} ".format(",".join(items)),
         content = """
 ghc_labels = {{ {ghc_labels} }}
-toolchain_configs = {{ {toolchain_configs} }}
 toolchain_keys = {toolchain_keys}
 toolchains_2 = {toolchains_2}
 """.format(
-            # toolchain_configs = {k: json.decode(v) for k, v in rctx.attr.toolchains.items()},
-            toolchain_configs = ",".join(toolchain_items),
             ghc_labels = ",".join(ghc_labels_items),
-            ghc_labels_2 = rctx.attr.ghc_labels_2,
             toolchain_keys = rctx.attr.toolchain_keys,
             toolchains_2 = rctx.attr.toolchains_2,
         ),
     )
-    # repository_ctx.file(
-    #     "ghc_paths.bzl",
-    # )
 
 hub = repository_rule(
     implementation = _hub_impl,
     attrs = {
         "ghc_labels": attr.string_dict(),
-        "ghc_labels_2": attr.string(),
-        "toolchains": attr.string_dict(),
         "toolchains_2": attr.string(),
         "toolchain_keys": attr.string(),
     },
 )
 
 def _nix_haskell_toolchains_impl(mctx):
-    # Instead of creating one external repository for each `toolchain(...)` declaration,
-    # we recover them in a list and declare them all in the `all_bindist_toolchains` repository.
-    # In a way that respects
-    # bazel's iteration order over modules.
-    # toolchains declared by the root have priority
-
-    # an alternative would be to use aliases to the (to get rid of the toolchain_declarations parameter)
-    # if/once the following issue is resolved
-    # https://github.com/bazelbuild/bazel/issues/16298
-    toolchain_declarations = []
-    # for module_index, module in enumerate(mctx.modules):
-    #     for config_tag_index, config_tag in enumerate(module.tags.config):
-    #         name = "nix_toolchain_{}_{}_{}".format(module_index, config_tag_index, config_tag.name)
-    #         all_names.append(name)
-
     ghc_labels = {}
     toolchains = {}
     toolchain_keys = []  # to remember the order
-    for module_index, module in enumerate(mctx.modules):
-        for config_tag_index, config_tag in enumerate(module.tags.config):
+    posix_toolchains = []
+    for module in mctx.modules:
+        for config_tag in module.tags.config:
             if (module.name, module.version, config_tag.name) in toolchains:
-                fail("Same module is trying to define nix toolchains with the same name")
-
-            #name = "nix_toolchain_{}_{}_{}".format(module_index, config_tag_index, config_tag.name)
+                fail(
+                    """module "{module}~{version}" used the "config" tag twice with the "{tag_name}" name""".format(
+                        tag_name = config_tag.name,
+                        module = module.name,
+                        version = module.version,
+                    ),
+                )
             name = "nix_toolchain_{}_{}_{}".format(module.name, module.version, config_tag.name)
             nixpkgs_ghc_repo_name = "{}_ghc_nixpkgs".format(name)
             nixpkgs_sh_posix_repo_name = "{}_sh_posix_nixpkgs".format(name)
             haskell_toolchain_repo_name = "{}_ghc_nixpkgs_haskell_toolchain".format(name)
             toolchain_repo_name = "{}_ghc_nixpkgs_toolchain".format(name)
-            toolchain_declarations.append("# module:{} tag:config_{}".format(module.name, config_tag_index))
 
             nixpkgs_package(
                 name = nixpkgs_ghc_repo_name,
@@ -154,41 +152,27 @@ def _nix_haskell_toolchains_impl(mctx):
                 repositories = config_tag.repositories,
                 repository = config_tag.repository,
             )
-            if config_tag.sh_posix_attributes != None:
+            if config_tag.sh_posix_attributes != []:
                 sh_posix_nixpkgs_kwargs["packages"] = config_tag.sh_posix_attributes
 
-            # TODO: register posix toolchain.
             nixpkgs_sh_posix_configure(
                 name = nixpkgs_sh_posix_repo_name,
                 register = False,
                 **sh_posix_nixpkgs_kwargs
             )
 
-            # toolchains[(module.name, module.version, config_tag.name)] = struct(
-            #     version = config_tag.version,
-            #     name = name,
-            #     static_runtime = config_tag.static_runtime,
-            #     fully_static_link = config_tag.fully_static_link,
-            #     # build_file = config_tag.build_file,
-            #     # build_file_content = config_tag.build_file_content,
-            #     ghcopts = config_tag.ghcopts,
-            #     compiler_flags_select = config_tag.compiler_flags_select,
-            #     haddock_flags = config_tag.haddock_flags,
-            #     repl_ghci_args = config_tag.repl_ghci_args,
-            #     cabalopts = config_tag.cabalopts,
-            #     locale_archive = config_tag.locale_archive,
-            #     # attribute_path = config_tag.attribute_path,
-            #     sh_posix_attributes = config_tag.sh_posix_attributes,
-            #     # nix_file = config_tag.nix_file,
-            #     # nix_file_deps = config_tag.nix_file_deps,
-            #     # nixopts = config_tag.nixopts,
-            #     locale = config_tag.locale,
-            #     # repositories = config_tag.repositories,
-            #     # repository = config_tag.repository,
-            #     # nix_file_content = config_tag.nix_file_content,
-            #     exec_constraints = config_tag.exec_constraints,
-            #     target_constraints = config_tag.target_constraints,
-            # )
+            posix_toolchains.append(
+                _nixpkgs_sh_posix_toolchain_str(
+                    name = "{}_{}_{}_posix_toolchain".format(
+                        module.name,
+                        module.version,
+                        config_tag.name,
+                    ),
+                    mctx = mctx,
+                    workspace = nixpkgs_sh_posix_repo_name,
+                    exec_constraints = [],
+                ),
+            )
 
             # For convenience we only use one tag and propagate the
             # toolchain configuration to the `declare_toolchains`
@@ -201,23 +185,13 @@ def _nix_haskell_toolchains_impl(mctx):
                 "name": name,
                 "static_runtime": config_tag.static_runtime,
                 "fully_static_link": config_tag.fully_static_link,
-                # build_file = config_tag.build_file,
-                # build_file_content = config_tag.build_file_content,
                 "ghcopts": config_tag.ghcopts,
                 "compiler_flags_select": config_tag.compiler_flags_select,
                 "haddock_flags": config_tag.haddock_flags,
                 "repl_ghci_args": config_tag.repl_ghci_args,
                 "cabalopts": config_tag.cabalopts,
                 "locale_archive": config_tag.locale_archive,
-                # attribute_path : config_tag.attribute_path,
-                # "sh_posix_attributes": config_tag.sh_posix_attributes,
-                # nix_file : config_tag.nix_file,
-                # nix_file_deps : config_tag.nix_file_deps,
-                # nixopts : config_tag.nixopts,
                 "locale": config_tag.locale,
-                # repositories : config_tag.repositories,
-                # repository : config_tag.repository,
-                # nix_file_content : config_tag.nix_file_content,
                 "exec_constraints": config_tag.exec_constraints,
                 "target_constraints": config_tag.target_constraints,
             }
@@ -225,17 +199,14 @@ def _nix_haskell_toolchains_impl(mctx):
             toolchain_keys.append((module.name, module.version, config_tag.name))
     hub(
         name = "hub",
-        # ghc_labels = {repr(k): v for k, v in ghc_labels.items()},
         ghc_labels = {repr(k): v for k, v in ghc_labels.items()},
-        ghc_labels_2 = repr(ghc_labels),
-        toolchains = {repr(k): json.encode(v) for k, v in toolchains.items()},
         toolchains_2 = repr(toolchains),
         toolchain_keys = repr(toolchain_keys),
     )
-    # _all_toolchains(
-    #     name = "all_nix_toolchains",
-    #     toolchains = toolchain_declarations,
-    # )
+    _all_posix_toolchains(
+        name = "all_posix_toolchains",
+        toolchains = posix_toolchains,
+    )
 
 nix_haskell_toolchains = module_extension(
     implementation = _nix_haskell_toolchains_impl,

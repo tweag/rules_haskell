@@ -9,6 +9,11 @@ bazel_dep(
 )
 
 bazel_dep(
+    name = "rules_sh",
+    version = "0.3.0",
+)
+
+bazel_dep(
     name = "rules_nixpkgs_core",
     version = "0.9.0",
 )
@@ -46,11 +51,8 @@ nix_haskell_toolchains.config(
 
 use_repo(
     nix_haskell_toolchains,
-    # "all_nix_toolchains",
-    # "nix_toolchain_0_0_name_ghc_nixpkgs",
-    # "nix_toolchain_1_0_name_ghc_nixpkgs",
-    # "nix_toolchain_0_0_nix_toolchain_from_tests_ghc_nixpkgs",
     "hub",
+    "all_posix_toolchains",
 )
 
 declare_nix_toolchains = use_extension(
@@ -58,8 +60,12 @@ declare_nix_toolchains = use_extension(
     "declare_nix_toolchains",
 )
 
-use_repo(declare_nix_toolchains, "all_nix_toolchains")
+use_repo(
+    declare_nix_toolchains,
+    "all_nix_toolchains",
+)
 
 register_toolchains(
     "@all_nix_toolchains//:all",
+    "@all_posix_toolchains//:all",
 )
