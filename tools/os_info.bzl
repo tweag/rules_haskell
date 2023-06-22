@@ -28,6 +28,7 @@ def _os_info_impl(repository_ctx):
         "CPU_VALUE": cpu,
         "NIX_SHELL": repr(nix_shell),
         "IS_NIXOS": is_nixos,
+        # "OS_NAME": repr(repository_ctx.os.name),
     }
     repository_ctx.file(
         "os_info.bzl",

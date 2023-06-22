@@ -274,8 +274,8 @@ _ghc_bindist = repository_rule(
     },
 )
 
-def _ghc_bindist_toolchain_impl(ctx):
-    os, _, arch = ctx.attr.target.partition("_")
+def _ghc_bindist_toolchain_str(target, bindist_name, toolchain_name):
+    os, _, arch = target.partition("_")
     os_constraint = {
         "darwin": "osx",
         "linux": "linux",
@@ -290,21 +290,29 @@ def _ghc_bindist_toolchain_impl(ctx):
         "@platforms//cpu:{}".format(cpu_constraint),
     ]
     target_constraints = exec_constraints
-    ctx.file(
-        "BUILD",
-        executable = False,
-        content = """
+    return """
 toolchain(
-    name = "toolchain",
+    name = "{toolchain_name}",
     toolchain_type = "@rules_haskell//haskell:toolchain",
     toolchain = "@{bindist_name}//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
-        """.format(
+""".format(
+        toolchain_name = toolchain_name,
+        bindist_name = bindist_name,
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints,
+    )
+
+def _ghc_bindist_toolchain_impl(ctx):
+    ctx.file(
+        "BUILD",
+        executable = False,
+        content = _ghc_bindist_toolchain_str(
+            target = ctx.attr.target,
             bindist_name = ctx.attr.bindist_name,
-            exec_constraints = exec_constraints,
-            target_constraints = target_constraints,
+            toolchain_name = "toolchain",
         ),
     )
 
@@ -318,7 +326,7 @@ _ghc_bindist_toolchain = repository_rule(
 )
 
 def _windows_cc_toolchain_impl(repository_ctx):
-    repository_ctx.file("BUILD.bazel", executable = False, content = """
+    repository_ctx.file("BUILD", executable = False, content = """
 toolchain(
     name = "windows_cc_toolchain",
     exec_compatible_with = [
@@ -352,7 +360,8 @@ def ghc_bindist(
         repl_ghci_args = None,
         cabalopts = None,
         locale = None,
-        register = True):
+        register = True,
+        toolchain_declarations = None):
     """Create a new repository from binary distributions of GHC.
 
     The repository exports two targets:
@@ -443,11 +452,26 @@ def ghc_bindist(
         locale = locale,
         **extra_attrs
     )
-    _ghc_bindist_toolchain(
-        name = toolchain_name,
-        bindist_name = bindist_name,
-        target = target,
-    )
+    ghc_bindist_toolchain_kwargs = {
+        "name": toolchain_name,
+        "bindist_name": bindist_name,
+        "target": target,
+    }
+    if toolchain_declarations == None:
+        _ghc_bindist_toolchain(
+            name = toolchain_name,
+            bindist_name = bindist_name,
+            target = target,
+        )
+    else:
+        suffix = len(toolchain_declarations)
+        toolchain_declarations.append(
+            _ghc_bindist_toolchain_str(
+                target = target,
+                bindist_name = bindist_name,
+                toolchain_name = "toolchain_{}".format(suffix),
+            ),
+        )
     if register:
         native.register_toolchains("@{}//:toolchain".format(toolchain_name))
     if target == "windows_amd64":
@@ -455,6 +479,8 @@ def ghc_bindist(
         _windows_cc_toolchain(name = cc_toolchain_repo_name, bindist_name = bindist_name)
         if register:
             native.register_toolchains("@{}//:windows_cc_toolchain".format(cc_toolchain_repo_name))
+
+    # return [ghc_bindist_toolchain_kwargs]
 
 def haskell_register_ghc_bindists(
         version = None,
@@ -464,7 +490,8 @@ def haskell_register_ghc_bindists(
         repl_ghci_args = None,
         cabalopts = None,
         locale = None,
-        register = True):
+        register = True,
+        toolchain_declarations = None):
     """ Register GHC binary distributions for all platforms as toolchains.
 
     See [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains).
@@ -494,6 +521,7 @@ def haskell_register_ghc_bindists(
             cabalopts = cabalopts,
             locale = locale,
             register = register,
+            toolchain_declarations = toolchain_declarations,
         )
     local_sh_posix_repo_name = "rules_haskell_sh_posix_local"
     if local_sh_posix_repo_name not in native.existing_rules():

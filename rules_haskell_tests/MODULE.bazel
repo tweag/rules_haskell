@@ -161,23 +161,23 @@ use_repo(
 )
 
 # Needs bazel 6.2.0 to be able to register the toolchain with dev_dependency = True
-register_toolchains(
-    "@rules_haskell_ghc_nixpkgs_toolchain//:toolchain",
-)
+# register_toolchains(
+#     "@rules_haskell_ghc_nixpkgs_toolchain//:toolchain",
+# )
 
-register_toolchains(
-    "@rules_haskell_ghc_darwin_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_darwin_arm64-toolchain//:toolchain",
-    "@rules_haskell_ghc_linux_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_linux_arm64-toolchain//:toolchain",
-    "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_windows_amd64_cc_toolchain//:windows_cc_toolchain",
-)
+# register_toolchains(
+#     "@rules_haskell_ghc_darwin_amd64-toolchain//:toolchain",
+#     "@rules_haskell_ghc_darwin_arm64-toolchain//:toolchain",
+#     "@rules_haskell_ghc_linux_amd64-toolchain//:toolchain",
+#     "@rules_haskell_ghc_linux_arm64-toolchain//:toolchain",
+#     "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
+#     "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
+#     "@rules_haskell_ghc_windows_amd64_cc_toolchain//:windows_cc_toolchain",
+# )
 
-use_repo(non_modules_deps_1, "rules_haskell_python_local")
+# use_repo(non_modules_deps_1, "rules_haskell_python_local")
 
-register_toolchains("@rules_haskell_python_local//:toolchain")
+# register_toolchains("@rules_haskell_python_local//:toolchain")
 
 use_repo(non_modules_deps_1, "nixpkgs_python_toolchain")
 
@@ -572,4 +572,75 @@ rules_haskell_dependencies = use_extension("@rules_haskell//extensions:rules_has
 use_repo(
     rules_haskell_dependencies,
     "zlib",
+)
+
+haskell_toolchains = use_extension(
+    "@rules_haskell//extensions:haskell_toolchains.bzl",
+    "haskell_toolchains",
+)
+
+test_ghcopts = [
+    "-XStandaloneDeriving",  # Flag used at compile time
+    "-threaded",  # Flag used at link time
+    # Used by `tests/repl-flags`
+    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+    # this is the default, so it does not harm other tests
+    "-XNoOverloadedStrings",
+]
+
+test_haddock_flags = ["-U"]
+
+test_repl_ghci_args = [
+    # The repl test will need this flag, but set by the local
+    # `repl_ghci_args`.
+    "-UTESTS_TOOLCHAIN_REPL_FLAGS",
+    # The repl test will need OverloadedString
+    "-XOverloadedStrings",
+]
+
+test_cabalopts = [
+    # Used by `tests/cabal-toolchain-flags`
+    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
+    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
+]
+
+# TODO customise toolchain for windows
+# + ([
+#     # To avoid ghcide linking errors with heapsize on Windows of the form
+#     #
+#     #   unknown symbol `heap_view_closurePtrs'
+#     #
+#     # See https://github.com/haskell/ghcide/pull/954
+#     "--disable-library-for-ghci",
+# ] if is_windows else [])
+haskell_toolchains.bindists(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    haddock_flags = test_haddock_flags,
+    repl_ghci_args = test_repl_ghci_args,
+)
+
+# haskell_toolchains.bindist(
+#     name = "cusom_bindist",
+#     ghcopts = ["asdasdasda"],
+#     target = "linux_amd64",
+#     version = "9.2.5",
+# )
+
+nix_haskell_toolchains = use_extension(
+    "@rules_haskell_nix//extensions:nix_haskell_toolchains.bzl",
+    "nix_haskell_toolchains",
+)
+
+nix_haskell_toolchains.config(
+    name = "nix_toolchain_from_tests",
+    attribute_path = "",
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    haddock_flags = test_haddock_flags,
+    # cabalopts = ["ashjads"],
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
+    repl_ghci_args = test_repl_ghci_args,
+    repository = "@nixpkgs_default",
+    version = "9.2.5",
 )

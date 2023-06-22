@@ -8,7 +8,6 @@ bazel_dep(
     version = "0.0.6",
 )
 
-# --incompatible_disable_starlark_host_transitions
 bazel_dep(
     name = "rules_license",
     version = "0.0.7",
@@ -42,14 +41,14 @@ non_module_deps = use_extension(
 
 use_repo(
     non_module_deps,
-    "rules_haskell_python_local",
+    # "rules_haskell_python_local",
     "rules_haskell_worker_dependencies",
     "rules_haskell_stack_update",
     "rules_haskell_stack",
     "Cabal",
 )
 
-register_toolchains("@rules_haskell_python_local//:toolchain")
+# register_toolchains("@rules_haskell_python_local//:toolchain")
 
 bazel_dep(
     name = "rules_python",
@@ -84,6 +83,33 @@ use_repo(
     "rules_haskell_asterius_build_setting",
 )
 
+haskell_toolchains = use_extension(
+    "@rules_haskell//extensions:haskell_toolchains.bzl",
+    "haskell_toolchains",
+)
+
+haskell_toolchains.bindists()
+
+use_repo(
+    haskell_toolchains,
+    "all_bindist_toolchains",
+    "rules_haskell_python_local",
+    "rules_haskell_sh_posix_local",
+)
+
+# We need to register the nix toolchain before so it take precedence
+# when we use the nixpkgs config.
+register_toolchains(
+    "@rules_haskell_ghc_nixpkgs_toolchain//:toolchain",
+    dev_dependency = True,
+)
+
+register_toolchains(
+    "@all_bindist_toolchains//:all",
+    # can rules_sh register the toolchain instead ?
+    "@rules_haskell_python_local//:toolchain",
+    "@rules_haskell_sh_posix_local//:all",
+)
 #### Development dependencies ####
 
 # bazel_dep(
@@ -182,26 +208,15 @@ use_repo(
     "rules_haskell_ghc_windows_amd64_cc_toolchain",
 )
 
-# Needs bazel 6.2.0 to be able to register the toolchain with dev_dependency = True
-register_toolchains(
-    "@rules_haskell_ghc_nixpkgs_toolchain//:toolchain",
-    dev_dependency = True,
+# We cannot depend on rules_haskell_nix so we use a custom extension
+# for the dev_dependency nix toolchain.
+
+# needed ?
+use_repo(
+    non_module_dev_deps,
+    # "nixpkgs_python_toolchain",
+    "nixpkgs_go_sdk_toolchains",
 )
-
-register_toolchains(
-    "@rules_haskell_ghc_darwin_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_darwin_arm64-toolchain//:toolchain",
-    "@rules_haskell_ghc_linux_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_linux_arm64-toolchain//:toolchain",
-    "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_windows_amd64_cc_toolchain//:windows_cc_toolchain",
-    dev_dependency = True,
-)
-
-use_repo(non_module_dev_deps, "nixpkgs_python_toolchain")
-
-use_repo(non_module_dev_deps, "nixpkgs_go_sdk_toolchains")
 
 register_toolchains(
     "@nixpkgs_go_sdk_toolchains//:all",
@@ -228,41 +243,23 @@ use_repo(
     "stackage-exe",
 )
 
+# Go setup for compiling gazelle/buildifier
 bazel_dep(
     name = "rules_go",
     version = "0.39.0",
+    dev_dependency = True,
     repo_name = "io_bazel_rules_go",
 )
 
-# local_path_override(
-#     module_name = "rules_go",
-#     path = "/home/stan/src/rules_go/",
-# )
-
-# local_path_override(
-#     module_name = "gazelle",
-#     path = "/home/stan/src/bazel-gazelle/",
-# )
-
-# Using buildifier will fail on NixOS with bzlmod
-# https://github.com/bazelbuild/bazel-gazelle/issues/1469
-
-go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+go_sdk = use_extension(
+    "@io_bazel_rules_go//go:extensions.bzl",
+    "go_sdk",
+    dev_dependency = True,
+)
 
 go_sdk.download(
     version = "1.19.7",
 )
-
-# use_repo(non_module_dev_deps, "nixpkgs_go_sdk")
-
-# rules_go_toolchain_override = use_extension("go_toolchains_override.bzl", "rules_go_toolchain_override")
-
-# use_repo(
-#     rules_go_toolchain_override,
-#     "rules_go_toolchain_override",
-# )
-
-# go_sdk.custom(custom_toolchain_bzl_file = "@rules_go_toolchain_override//:go_toolchain.bzl")
 
 bazel_dep(
     name = "gazelle",
@@ -294,11 +291,12 @@ use_repo(
     "org_golang_x_tools",
 )
 
-use_repo(non_module_dev_deps, "linux_pandoc")
-
-use_repo(non_module_dev_deps, "nixpkgs_pandoc")
-
-use_repo(non_module_dev_deps, "macos_pandoc")
+use_repo(
+    non_module_dev_deps,
+    "linux_pandoc",
+    "nixpkgs_pandoc",
+    "macos_pandoc",
+)
 
 register_toolchains(
     "@rules_haskell//docs/pandoc:nixpkgs",

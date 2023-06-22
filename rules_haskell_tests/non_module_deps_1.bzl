@@ -24,6 +24,7 @@ load(
     "test_asterius_version",
     "test_ghc_version",
 )
+load("@rules_nixpkgs_nodejs//:nodejs.bzl", "nixpkgs_nodejs_configure_platforms")
 
 test_ghcopts = [
     "-XStandaloneDeriving",  # Flag used at compile time

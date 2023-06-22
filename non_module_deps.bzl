@@ -7,6 +7,7 @@ load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencie
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def repositories(*, bzlmod):
+    # is this needed in bzlmod ?
     if LOCAL_PYTHON_REPO_NAME not in native.existing_rules():
         configure_python3_toolchain(name = LOCAL_PYTHON_REPO_NAME, register = not bzlmod)
 
