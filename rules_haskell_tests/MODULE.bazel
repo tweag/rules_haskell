@@ -314,11 +314,11 @@ use_repo(non_module_deps_2, "stackage-pinning-test-unpinned")
 
 use_repo(non_module_deps_2, "alex")
 
-use_repo(non_module_deps_2, "stackage")
+# use_repo(non_module_deps_2, "stackage")
 
-use_repo(non_module_deps_2, "stackage-unpinned")
+# use_repo(non_module_deps_2, "stackage-unpinned")
 
-use_repo(non_module_deps_2, "stackage-exe")
+# use_repo(non_module_deps_2, "stackage-exe")
 
 # needed ?
 use_repo(non_module_deps_2, "rules_haskell_stack_update")
@@ -690,10 +690,141 @@ stack_snapshots.config(
 
 use_repo(
     stack_snapshots,
-    "stackage_from_tests",
+    # "stackage_from_tests",
     "test_stackage",
+    "stackage",
+    "stackage-exe",
+    "stackage-unpinned",
+    # "stackage-deps",
     # "test_stackage",
     # "all_bindist_toolchains",
     # "rules_haskell_python_local",
     # "rules_haskell_sh_posix_local",
+)
+
+stack_snapshots.package(
+    name = "proto-lens-protoc",
+    components = [
+        "lib",
+        "exe",
+    ],
+    setup_deps = ["@Cabal//:Cadbal"],
+    snapshot_name = "test_stackage",
+)
+
+# stack_snapshots.package(
+#     name = "proto-lens-protoc",
+#     snapshot_name = "test_stackage",
+# )
+
+# We make use of the "stackage" stack snapshot declared by the rules_haskell module.
+# We declare the necessary packages and configure them.
+stackage = "stackage"
+
+[
+    stack_snapshots.package(
+        name = package,
+        snapshot_name = stackage,
+    )
+    for package in [
+        # "alex",
+        "array",
+        # "base",
+        # "bytestring",
+        "conduit",
+        "conduit-extra",
+        # "containers",
+        # "deepseq",
+        "directory",
+        "filepath",
+        "ghc-heap",
+        "mtl",
+        "optparse-applicative",
+        "process",
+        "text",
+        "text-show",
+        "vector",
+        # For tests
+        "cabal-doctest",
+        "network",
+        "language-c",
+        "streaming",
+        "void",
+        "ghc-check",
+        # "lens-family-core",
+        # "data-default-class",
+        "profunctors",
+        "proto-lens",
+        # "lens-family",
+        "safe-exceptions",
+        "temporary",
+    ]
+]
+
+stack_snapshots.package(
+    name = "polysemy",
+    setup_deps = ["@stackage//:cabal-doctest"],
+    snapshot_name = stackage,
+)
+
+[
+    stack_snapshots.package(
+        name = package,
+        # See https://github.com/tweag/rules_haskell/issues/1871
+        setup_deps = ["@Cabal//:Cabal"],
+        snapshot_name = stackage,
+    )
+    for package in [
+        # "HUnit",
+        # "bifunctors",
+        "c2hs",
+        # "call-stack",
+        "doctest",
+        # "generic-deriving",
+        "happy",
+        "hspec",
+        "hspec-core",
+        "hspec-discover",
+        "hspec-expectations",
+        # "mono-traversable",
+        "proto-lens-protoc",
+        # "proto-lens-runtime",
+        # "quickcheck-io",
+        # "transformers-compat",
+        # "type-errors",
+        # "typed-process",
+        # "unliftio-core",
+    ]
+]
+
+stack_snapshots.package(
+    name = "attoparsec",
+    components =
+        [
+            # attoparsec contains an internal library which is not exposed publicly,
+            # but required to build the public library, hence the declaration of
+            # those 2 components, as well as the explicit declaration of the
+            # dependency between them.
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    components_dependencies = {
+        "lib:attoparsec": ["lib:attoparsec-internal"],
+    },
+    snapshot_name = stackage,
+)
+
+stack_snapshots.package(
+    name = "alex",
+    components = [],
+    snapshot_name = stackage,
+)
+
+# This is not required, as `stack_snapshot` would build alex
+# automatically, however it is used as a test for user provided
+# `tools`. We also override alex's components to avoid building it
+# twice.
+stack_snapshots.update_tools(
+    snapshot_name = stackage,
+    tools = ["@alex"],
 )

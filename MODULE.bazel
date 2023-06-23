@@ -239,8 +239,8 @@ non_module_dev_deps_2 = use_extension(
 
 use_repo(
     non_module_dev_deps_2,
-    "stackage",
-    "stackage-exe",
+    # "stackage",
+    # "stackage-exe",
 )
 
 # Go setup for compiling gazelle/buildifier
@@ -330,15 +330,101 @@ stack_snapshots = use_extension(
     "stack_snapshots",
 )
 
+test_snapshot_name = "test_stackage"
+
 stack_snapshots.config(
-    name = "test_stackage",
+    name = test_snapshot_name,
     local_snapshot = "//:stackage_snapshot.yaml",
+)
+
+stack_snapshots.package(
+    name = "HUnit",
+    setup_deps = ["@Cabal//:Cabal"],
+    snapshot_name = test_snapshot_name,
+)
+
+stack_snapshots.package(
+    name = "proto-lens-protoc",
+    components = [
+        "lib",
+        "exe",
+    ],
+    setup_deps = ["@Cabal//:Cabal"],
+    snapshot_name = test_snapshot_name,
 )
 
 use_repo(
     stack_snapshots,
     "test_stackage",
+    "stackage",
+    "stackage-exe",
+    "stackage-unpinned",
     # "all_bindist_toolchains",
     # "rules_haskell_python_local",
     # "rules_haskell_sh_posix_local",
 )
+
+stack_snapshots.config(
+    name = "stackage",
+    local_snapshot = "//:stackage_snapshot.yaml",
+    packages = [
+        # Core libraries
+        "base",
+        "bytestring",
+        "containers",
+        "deepseq",
+        "mtl",
+        "text",
+        "vector",
+        # For tests
+        "lens-family-core",
+        "data-default-class",
+        "proto-lens",
+        "proto-lens-protoc",
+        # "proto-lens-runtime",
+        "lens-family",
+    ],
+    # stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
+    stack_snapshot_json = "//:stackage_snapshot.json",
+    # vendored_packages = {
+    #     "ghc-paths": "@rules_haskell//tools/ghc-paths",
+    # },
+)
+
+stack_snapshots.package(
+    name = "ghc-paths",
+    snapshot_name = "stackage",
+    vendored = "@rules_haskell//tools/ghc-paths",
+)
+
+stack_snapshots.package(
+    name = "proto-lens-protoc",
+    components = [
+        "lib",
+        "exe",
+    ],
+    setup_deps = ["@Cabal//:Cabal"],
+    snapshot_name = "stackage",
+)
+
+[
+    # See https://github.com/tweag/rules_haskell/issues/1871
+    stack_snapshots.package(
+        name = package,
+        setup_deps = ["@Cabal//:Cabal"],
+        snapshot_name = "stackage",
+    )
+    for package in [
+        "HUnit",
+        "bifunctors",
+        "call-stack",
+        "generic-deriving",
+        "mono-traversable",
+        "proto-lens-runtime",
+        "quickcheck-io",
+        "transformers-compat",
+        "type-errors",
+        "typed-process",
+        "unliftio-core",
+    ]
+]
