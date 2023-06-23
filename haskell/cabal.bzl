@@ -701,7 +701,7 @@ haskell_cabal_library = rule(
             Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
         "tools": attr.label_list(
-            cfg = "host",
+            cfg = "exec",
             allow_files = True,
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
@@ -719,12 +719,12 @@ haskell_cabal_library = rule(
         ),
         "_cabal_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
         "_runghc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:runghc"),
         ),
         "_cc_toolchain": attr.label(
@@ -940,7 +940,7 @@ haskell_cabal_binary = rule(
             Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
         "tools": attr.label_list(
-            cfg = "host",
+            cfg = "exec",
             allow_files = True,
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
@@ -958,12 +958,12 @@ haskell_cabal_binary = rule(
         ),
         "_cabal_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
         "_runghc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:runghc"),
         ),
         "_cc_toolchain": attr.label(

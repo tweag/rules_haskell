@@ -141,6 +141,19 @@ def rules_haskell_dependencies():
 
     rules_haskell_dependencies_bzlmod()
 
+    # For --incompatible_disable_starlark_host_transitions support (default in bazel 7)
+    # Temporarily overrides the rules_licence that comes with bazel to workaround
+    # https://github.com/bazelbuild/bazel/issues/17032#issuecomment-1548459728
+    maybe(
+        http_archive,
+        name = "rules_license",
+        sha256 = "4531deccb913639c30e5c7512a054d5d875698daeb75d8cf90f284375fe7c360",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_license/releases/download/0.0.7/rules_license-0.0.7.tar.gz",
+            "https://github.com/bazelbuild/rules_license/releases/download/0.0.7/rules_license-0.0.7.tar.gz",
+        ],
+    )
+
 def haskell_repositories():
     """Alias for rules_haskell_dependencies
 

@@ -33,7 +33,7 @@ _haskell_module = rule(
             aspects = [haskell_cc_libraries_aspect],
         ),
         "tools": attr.label_list(
-            cfg = "host",
+            cfg = "exec",
             allow_files = True,
         ),
         "_cc_toolchain": attr.label(
@@ -41,7 +41,7 @@ _haskell_module = rule(
         ),
         "_ghc_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
         # TODO[AH] Suppport worker

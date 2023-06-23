@@ -28,7 +28,7 @@ _doctest_toolchain = rule(
     attrs = {
         "doctest": attr.label(
             doc = "Doctest executable",
-            cfg = "host",
+            cfg = "exec",
             executable = True,
             allow_single_file = True,
             mandatory = True,

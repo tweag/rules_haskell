@@ -90,9 +90,9 @@ haskell_cabal_library(
     # no modules are provided at the moment for buildifier
     http_archive(
         name = "com_github_bazelbuild_buildtools",
-        sha256 = "614c84128ddb86aab4e1f25ba2e027d32fd5c6da302ae30685b9d7973b13da1b",
-        strip_prefix = "buildtools-4.2.3",
-        urls = ["https://github.com/bazelbuild/buildtools/archive/4.2.3.tar.gz"],
+        sha256 = "977a0bd4593c8d4c8f45e056d181c35e48aa01ad4f8090bdb84f78dca42f47dc",
+        strip_prefix = "buildtools-6.1.2",
+        urls = ["https://github.com/bazelbuild/buildtools/archive/v6.1.2.tar.gz"],
     )
 
     nixpkgs_local_repository(
