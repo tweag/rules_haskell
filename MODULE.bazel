@@ -324,3 +324,21 @@ bazel_dep(
     version = "0.0.1",
     dev_dependency = True,
 )
+
+stack_snapshots = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshots",
+)
+
+stack_snapshots.config(
+    name = "test_stackage",
+    local_snapshot = "//:stackage_snapshot.yaml",
+)
+
+use_repo(
+    stack_snapshots,
+    "test_stackage",
+    # "all_bindist_toolchains",
+    # "rules_haskell_python_local",
+    # "rules_haskell_sh_posix_local",
+)

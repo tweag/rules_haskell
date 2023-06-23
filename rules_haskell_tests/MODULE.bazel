@@ -658,3 +658,42 @@ nix_haskell_toolchains.config(
     repository = "@nixpkgs_default",
     version = "9.2.5",
 )
+
+stack_snapshots = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshots",
+)
+
+stack_snapshots.config(
+    name = "stackage_from_tests",
+    packages = ["base"],
+    snapshot = "lts-20.3",
+    # setup_deps = {
+    #     "@Cabal//:Cabal": """
+    #       [
+    #         "HUnit",
+    #         "bifunctors",
+    #         "call-stack",
+    #         "generic-deriving",
+    #         "mono-traversable",
+    #         "proto-lens-protoc",
+    #         "proto-lens-runtime",
+    #         "quickcheck-io",
+    #         "transformers-compat",
+    #         "type-errors",
+    #         "typed-process",
+    #         "unliftio-core"
+    #       ]
+    #     """,
+    # },
+)
+
+use_repo(
+    stack_snapshots,
+    "stackage_from_tests",
+    "test_stackage",
+    # "test_stackage",
+    # "all_bindist_toolchains",
+    # "rules_haskell_python_local",
+    # "rules_haskell_sh_posix_local",
+)

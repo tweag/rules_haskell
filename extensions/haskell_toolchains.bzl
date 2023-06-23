@@ -62,8 +62,8 @@ def _haskell_toolchains_impl(mctx):
     toolchain_names = []
     found_bindists = False
 
-    for module_index, module in enumerate(mctx.modules):
-        for bindist_tag_index, bindist_tag in enumerate(module.tags.bindist):
+    for module in mctx.modules:
+        for bindist_tag in module.tags.bindist:
             name = "bindist_{}_{}_{}".format(module.name, module.version, bindist_tag.name)
             if name in toolchain_names:
                 fail(
@@ -114,8 +114,5 @@ haskell_toolchains = module_extension(
     tag_classes = {
         "bindist": _bindist_tag,
         "bindists": _bindists_tag,
-        # "bindists": _bindists_tag,
-        # "override_existing":
-        # ask for own toolchain:
     },
 )
