@@ -61,6 +61,7 @@ build:ci-common --verbose_failures
 build:ci-common --symlink_prefix=bazel-ci-
 build:ci-common --repository_cache=~/repo-cache/
 build:ci-common --experimental_repository_cache_hardlinks
+build:ci-common --test_verbose_timeout_warnings
 
 # Use a remote cache during CI
 build:ci-windows-bindist --bes_upload_mode=wait_for_upload_complete --bes_timeout=600s
