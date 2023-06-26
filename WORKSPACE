@@ -106,6 +106,16 @@ haskell_register_ghc_bindists_hadrian(
     version = "9.2.5",
 )
 
+haskell_register_ghc_bindists_hadrian(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    sha256 = "55c6a09d00aac69efd03112bd5fcf9a50f87060b1feb6c81f8698752bf164536",
+    strip_prefix = "ghc-9.2.5-x86_64-apple-darwin",
+    target = "x86_64-apple-darwin",
+    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-apple-darwin.tar.xz",
+    version = "9.2.5",
+)
+
 register_toolchains(
     "//tests:protobuf-toolchain",
     "//tests:protobuf-toolchain-osx_arm64",
