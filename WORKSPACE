@@ -54,6 +54,10 @@ load("//:non_module_dev_deps_2.bzl", _repositories_2 = "repositories")
 
 _repositories_2(bzlmod = False)
 
+load("//extensions:rules_haskell_dependencies.bzl", _repositories_3 = "repositories")
+
+_repositories_3(bzlmod = False)
+
 load(
     "@rules_haskell//haskell/asterius:repositories.bzl",
     "asterius_dependencies_bindist",

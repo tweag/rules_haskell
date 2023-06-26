@@ -35,6 +35,8 @@ GHC_BINDIST_DOCDIR = \
     {
     }
 
+LOCAL_PYTHON_REPO_NAME = "rules_haskell_python_local"
+
 def _split_version(version):
     vs = version.split(".")
     if len(vs) != 3:
@@ -499,9 +501,8 @@ def haskell_register_ghc_bindists(
             name = local_sh_posix_repo_name,
             register = register,
         )
-    local_python_repo_name = "rules_haskell_python_local"
-    if local_python_repo_name not in native.existing_rules():
-        _configure_python3_toolchain(name = local_python_repo_name, register = register)
+    if LOCAL_PYTHON_REPO_NAME not in native.existing_rules():
+        configure_python3_toolchain(name = LOCAL_PYTHON_REPO_NAME, register = register)
 
 def _configure_python3_toolchain_impl(repository_ctx):
     cpu = get_cpu_value(repository_ctx)
@@ -555,7 +556,7 @@ _config_python3_toolchain = repository_rule(
     environ = ["PATH"],
 )
 
-def _configure_python3_toolchain(name, register = True):
+def configure_python3_toolchain(name, register = True):
     """Autoconfigure python3 toolchain for GHC bindist
 
     `rules_haskell` requires Python 3 to build Haskell targets. Under Nix we

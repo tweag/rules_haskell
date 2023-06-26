@@ -2,7 +2,6 @@
 
 load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_local_repository",
@@ -49,28 +48,6 @@ starlarkified_local_repository = repository_rule(
 def repositories(*, bzlmod):
     # Some helpers for platform-dependent configuration
     os_info(name = "os_info")
-
-    # For persistent worker (tools/worker)
-    rules_haskell_worker_dependencies()
-
-    # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
-    # See https://github.com/tweag/rules_haskell/issues/1871
-    http_archive(
-        name = "Cabal",
-        build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
-haskell_cabal_library(
-    name = "Cabal",
-    srcs = glob(["Cabal/**"]),
-    verbose = False,
-    version = "3.6.3.0",
-    visibility = ["//visibility:public"],
-)
-""",
-        sha256 = "f69b46cb897edab3aa8d5a4bd7b8690b76cd6f0b320521afd01ddd20601d1356",
-        strip_prefix = "cabal-gg-8220-with-3630",
-        urls = ["https://github.com/tweag/cabal/archive/refs/heads/gg/8220-with-3630.zip"],
-    )
 
     starlarkified_local_repository(
         name = "tutorial",
