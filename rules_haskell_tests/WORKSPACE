@@ -92,6 +92,17 @@ haskell_register_ghc_nixpkgs(
     version = test_ghc_version,
 )
 
+load(
+    "@rules_haskell//haskell:ghc_bindist.bzl",
+    "haskell_register_ghc_bindists",
+)
+
+haskell_register_ghc_bindists(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    version = test_ghc_version,
+)
+
 load("non_module_deps_1.bzl", repositories_1 = "repositories")
 
 repositories_1(bzlmod = False)

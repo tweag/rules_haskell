@@ -59,6 +59,13 @@ load("//extensions:rules_haskell_dependencies.bzl", _repositories_3 = "repositor
 _repositories_3(bzlmod = False)
 
 load(
+    "@rules_haskell//haskell:ghc_bindist.bzl",
+    "haskell_register_ghc_bindists",
+)
+
+haskell_register_ghc_bindists()
+
+load(
     "@rules_haskell//haskell/asterius:repositories.bzl",
     "asterius_dependencies_bindist",
     "asterius_dependencies_nix",
