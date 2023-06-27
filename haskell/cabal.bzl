@@ -1307,10 +1307,12 @@ library
         ],
         "extra-deps": versioned_packages,
         "flags": {
-            pkg: {
-                flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
+            pkg: dict([
+                (flag[1:], True) if flag.startswith('+') else
+                (flag[1:], False) if flag.startswith('-') else
+                (flag, True)
                 for flag in flags
-            }
+            ])
             for (pkg, flags) in repository_ctx.attr.flags.items()
         },
     }).to_json()
