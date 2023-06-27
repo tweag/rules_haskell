@@ -396,6 +396,8 @@ test:ci --test_output=errors
 # Should become the default in bazel 7
 build --incompatible_enable_cc_toolchain_resolution
 
+common --toolchain_resolution_debug='.*'
+
 EOF
 
 if [ "${MODE}" = "nix" ]; then
