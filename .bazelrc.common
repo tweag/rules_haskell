@@ -103,6 +103,8 @@ build:linux-bindist --experimental_strict_action_env
 build:macos-bindist --experimental_strict_action_env
 build:windows-bindist --experimental_strict_action_env
 
+build:macos-bindist --toolchain_resolution_debug='.*'
+
 # Note [backward compatible options]
 build:linux-bindist --incompatible_enable_cc_toolchain_resolution
 build:macos-bindist --incompatible_enable_cc_toolchain_resolution
