@@ -28,10 +28,15 @@ import System.Environment (lookupEnv)
 import qualified System.FilePath
 import System.FilePath ((</>), (<.>), addTrailingPathSeparator, takeFileName, splitDirectories, isAbsolute)
 import System.Info (os)
+import qualified Data.Map.Strict as Map
+
 
 -- | Bazel repository mapping for bzlmod
 -- See https://github.com/bazelbuild/proposals/blob/7c8da4a931d83db5c25abf85f6c486ad22d330e3/designs/2022-07-21-locating-runfiles-with-bzlmod.md
-type RepoMapping = [((String, String), String)]
+type RepoMapping = Map.Map (String, String) String
+
+-- | Mapping from the manifest file
+type Manifest = Map.Map FilePath FilePath
 
 -- | Reference to Bazel runfiles, runfiles root or manifest file.
 data Runfiles =
@@ -41,7 +46,7 @@ data Runfiles =
       String -- ^ The current repository
   | RunfilesManifest
       !FilePath -- ^ The runfiles manifest file
-      ![(FilePath, FilePath)] -- ^ The runfiles manifest content
+      !Manifest -- ^ The runfiles manifest content
       RepoMapping -- ^ The repository mapping
       String -- ^ The current repository
   deriving Show
@@ -51,7 +56,7 @@ data Runfiles =
 applyRepoMapping :: RepoMapping -> String -> FilePath -> FilePath
 applyRepoMapping repoMapping currentRepo path =
     let (apparentRepo, rest) = break (== '/') path in
-    let resolvedRepo = fromMaybe apparentRepo $ lookup (currentRepo, apparentRepo) repoMapping in
+    let resolvedRepo = fromMaybe apparentRepo $ Map.lookup (currentRepo, apparentRepo) repoMapping in
     resolvedRepo <> rest
 
 -- | Construct a path to a data dependency within the given runfiles.
@@ -61,7 +66,7 @@ rlocation :: Runfiles -> FilePath -> FilePath
 rlocation (RunfilesRoot f repoMapping currentRepo) g =
   let resolved_g = applyRepoMapping repoMapping currentRepo $ normalize g in
    f </> resolved_g
-rlocation (RunfilesManifest _ m repoMapping currentRepo) g = fromMaybe g' $ asum [lookup g' m, lookupDir g' m]
+rlocation (RunfilesManifest _ m repoMapping currentRepo) g = fromMaybe g' $ asum [Map.lookup g' m, lookupDir g' m]
   where
     g' = applyRepoMapping repoMapping currentRepo $ normalize g
 
@@ -71,8 +76,8 @@ rlocation (RunfilesManifest _ m repoMapping currentRepo) g = fromMaybe g' $ asum
 -- supports looking up directories. This function allows to lookup a directory
 -- in a manifest file, by looking for the first entry with a matching prefix
 -- and then stripping the superfluous suffix.
-lookupDir :: FilePath -> [(FilePath, FilePath)] -> Maybe FilePath
-lookupDir p = fmap stripSuffix . find match
+lookupDir :: FilePath -> Manifest -> Maybe FilePath
+lookupDir p manifest = fmap stripSuffix $ find match (Map.toList manifest)
   where
     p' = normalize $ addTrailingPathSeparator p
     match (key, value) = p' `isPrefixOf` key && drop (length p') key `isSuffixOf` value
@@ -148,7 +153,7 @@ createFromProgramPath exePath = createFromProgramPathAndCurrentFile Nothing exeP
 -- | Locate the runfiles directory or manifest for the current binary.
 --
 -- Identical to 'create' except that it accepts the path to the current file
--- as an argument. Usefull when a library is used by another bazel module.
+-- as an argument. Useful when a library is used by another bazel module.
 createFromCurrentFile:: HasCallStack => String -> IO Runfiles
 createFromCurrentFile currentFile = createFromProgramPathAndCurrentFile (Just currentFile) =<< getArg0
 
@@ -191,7 +196,7 @@ createFromProgramPathAndCurrentFile currentFile exePath = do
             , do
               guard (os == "mingw32")
               tryRepoMapping $ exePath <.> "exe" <.>"repo_mapping"
-            , return []
+            , return Map.empty
           ]
         pure $! RunfilesRoot runfilesRoot repoMapping currentRepo
       , do
@@ -213,9 +218,9 @@ createFromProgramPathAndCurrentFile currentFile exePath = do
         let mapping = parseManifest content
         repoMapping <- asum
           [ do
-              repoMappingPath <- MaybeT (pure $ lookup "_repo_mapping" mapping)
+              repoMappingPath <- MaybeT (pure $ Map.lookup "_repo_mapping" mapping)
               tryRepoMapping repoMappingPath,
-            return []
+            return Map.empty
           ]
         pure $! RunfilesManifest manifestPath mapping repoMapping currentRepo
       ]
@@ -258,8 +263,8 @@ anyM predicate = loop
 -- | Parse Bazel's manifest file content.
 --
 -- The manifest file holds lines of keys and values separted by a space.
-parseManifest :: String -> [(FilePath, FilePath)]
-parseManifest = map parseLine . lines
+parseManifest :: String -> Manifest
+parseManifest = Map.fromList . map parseLine . lines
   where
     parseLine l =
         let (key, value) = span (/= ' ') l in
@@ -269,7 +274,7 @@ parseManifest = map parseLine . lines
 --
 -- See https://github.com/bazelbuild/proposals/blob/main/designs/2022-07-21-locating-runfiles-with-bzlmod.md
 parseRepoMapping :: String -> RepoMapping
-parseRepoMapping = map parseLine . lines
+parseRepoMapping = Map.fromList . map parseLine . lines
   where
     parseLine l =
         let (context, rest) = span (/= ',') l in

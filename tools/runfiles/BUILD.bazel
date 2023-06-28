@@ -11,6 +11,8 @@ haskell_toolchain_library(
     visibility = ["//visibility:public"],
 )
 
+haskell_toolchain_library(name = "containers")
+
 haskell_toolchain_library(name = "directory")
 
 haskell_toolchain_library(name = "filepath")
@@ -38,6 +40,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":base",
+        ":containers",
         ":directory",
         ":filepath",
         ":transformers",
