@@ -13,6 +13,11 @@ load("//:non_module_deps.bzl", "repositories")
 
 repositories(bzlmod = False)
 
+load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
+
+# For persistent worker (tools/worker)
+rules_haskell_worker_dependencies()
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # For testing if bzlmod is enabled

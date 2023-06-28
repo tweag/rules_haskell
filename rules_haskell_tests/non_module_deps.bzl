@@ -6,7 +6,6 @@ load(
     "//tests/external-haskell-repository:workspace_dummy.bzl",
     "haskell_package_repository_dummy",
 )
-load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 
 # Replaces local_repository in bzlmod
 # See https://groups.google.com/g/bazel-discuss/c/xpsg3mWQPZg
@@ -28,9 +27,6 @@ starlarkified_local_repository = repository_rule(
 def repositories(*, bzlmod):
     # Some helpers for platform-dependent configuration
     os_info(name = "os_info")
-
-    # For persistent worker (tools/worker)
-    rules_haskell_worker_dependencies()
 
     # module rules_bazel_integration_test requires bazel >= 6.1.0
     http_archive(
