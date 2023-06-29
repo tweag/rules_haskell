@@ -66,14 +66,11 @@ rules_haskell_dependencies = use_extension(
 
 use_repo(
     rules_haskell_dependencies,
-    "rules_haskell_python_local",
     "rules_haskell_worker_dependencies",
     "rules_haskell_stack_update",
     "rules_haskell_stack",
     "Cabal",
 )
-
-register_toolchains("@rules_haskell_python_local//:toolchain")
 
 asterius = use_extension("@rules_haskell//haskell/asterius:extension.bzl", "rules_haskell_asterius")
 
@@ -81,6 +78,33 @@ use_repo(
     asterius,
     "rules_haskell_asterius_webpack",
     "rules_haskell_asterius_build_setting",
+)
+
+haskell_toolchains = use_extension(
+    "@rules_haskell//extensions:haskell_toolchains.bzl",
+    "haskell_toolchains",
+)
+
+haskell_toolchains.bindists()
+
+use_repo(
+    haskell_toolchains,
+    "all_bindist_toolchains",
+    "rules_haskell_python_local",
+    "rules_haskell_sh_posix_local",
+)
+
+# We need to register the nix toolchain before the bindist ones so it
+# take precedence when we use the nixpkgs config.
+register_toolchains(
+    "@rules_haskell_ghc_nixpkgs_toolchain//:toolchain",
+    dev_dependency = True,
+)
+
+register_toolchains(
+    "@all_bindist_toolchains//:all",
+    "@rules_haskell_python_local//:toolchain",
+    "@rules_haskell_sh_posix_local//:all",
 )
 
 # Setup node toolchain and install webpack for asterius.
@@ -165,24 +189,6 @@ use_repo(
     "rules_haskell_ghc_nixpkgs",
     "nixpkgs_default",
     "rules_haskell_ghc_nixpkgs_toolchain",
-    "rules_haskell_ghc_darwin_amd64-toolchain",
-    "rules_haskell_ghc_darwin_arm64-toolchain",
-    "rules_haskell_ghc_linux_amd64-toolchain",
-    "rules_haskell_ghc_windows_amd64-toolchain",
-    "rules_haskell_ghc_linux_arm64-toolchain",
-    "rules_haskell_ghc_windows_amd64_cc_toolchain",
-)
-
-register_toolchains(
-    "@rules_haskell_ghc_nixpkgs_toolchain//:toolchain",
-    "@rules_haskell_ghc_darwin_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_darwin_arm64-toolchain//:toolchain",
-    "@rules_haskell_ghc_linux_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_linux_arm64-toolchain//:toolchain",
-    "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_windows_amd64-toolchain//:toolchain",
-    "@rules_haskell_ghc_windows_amd64_cc_toolchain//:windows_cc_toolchain",
-    dev_dependency = True,
 )
 
 use_repo(
