@@ -15,10 +15,6 @@ load(
     "haskell_register_ghc_nixpkgs",
 )
 load(
-    "@rules_haskell//haskell:ghc_bindist.bzl",
-    "haskell_register_ghc_bindists",
-)
-load(
     "@rules_haskell//docs/pandoc:pandoc.bzl",
     "import_pandoc_bindists",
     "nixpkgs_pandoc_configure",
@@ -82,10 +78,6 @@ def repositories(*, bzlmod):
         nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
         repository = "@nixpkgs_default",
         version = test_ghc_version,
-        register = not bzlmod,
-    )
-
-    haskell_register_ghc_bindists(
         register = not bzlmod,
     )
 

@@ -12,9 +12,6 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 def repositories(*, bzlmod):
     rules_haskell_dependencies_bzlmod()
 
-    if LOCAL_PYTHON_REPO_NAME not in native.existing_rules():
-        configure_python3_toolchain(name = LOCAL_PYTHON_REPO_NAME, register = not bzlmod)
-
     # For persistent worker (tools/worker)
     # TODO: make this customizable via a module extension so that users
     # of persistant workers can use dependencies compatible with the
