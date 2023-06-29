@@ -30,6 +30,7 @@ buildifier_test(
         "//buildifier:all_files",
         "//debug/linking_utils:all_files",
         "//docs:all_files",
+        "//extensions:all_files",
         "//haskell:all_files",
         "//nixpkgs:all_files",
         "//rule_info:all_files",

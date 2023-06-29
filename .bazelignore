@@ -1,4 +1,6 @@
 examples
 tutorial
 haskell/asterius/npm/node_modules
+registry
 rules_haskell_tests
+rules_haskell_nix

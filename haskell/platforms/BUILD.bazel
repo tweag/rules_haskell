@@ -20,14 +20,14 @@ alias(
 alias(
     name = "linux_x86_64_nixpkgs",
     actual = "@rules_nixpkgs_core//platforms:host",
-    deprecation = "Use @io_tweag_rules_nixpkgs//nixpkgs/platforms:host instead.",
+    deprecation = "Use @rules_nixpkgs_core//platforms:host instead.",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "darwin_x86_64_nixpkgs",
     actual = "@rules_nixpkgs_core//platforms:host",
-    deprecation = "Use @io_tweag_rules_nixpkgs//nixpkgs/platforms:host instead.",
+    deprecation = "Use @rules_nixpkgs_core//platforms:host instead.",
     visibility = ["//visibility:public"],
 )
 

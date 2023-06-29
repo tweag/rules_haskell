@@ -5,7 +5,13 @@ load(
     "haskell_toolchain_library",
 )
 
-haskell_toolchain_library(name = "base")
+haskell_toolchain_library(
+    name = "base",
+    # This may be dependency of the `haskell_runfiles` rule.
+    visibility = ["//visibility:public"],
+)
+
+haskell_toolchain_library(name = "containers")
 
 haskell_toolchain_library(name = "directory")
 
@@ -34,6 +40,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":base",
+        ":containers",
         ":directory",
         ":filepath",
         ":transformers",

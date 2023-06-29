@@ -27,11 +27,8 @@ load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
 rules_haskell_toolchains(version = "9.2.5")
 
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-    "nixpkgs_cc_configure",
-    "nixpkgs_python_configure",
-)
+load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
+load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
 
 nixpkgs_cc_configure(
     # Don't override the default cc toolchain needed for bindist mode.

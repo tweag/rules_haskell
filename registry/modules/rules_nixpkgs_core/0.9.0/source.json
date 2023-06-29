@@ -1,0 +1,6 @@
+{
+    "integrity" : "sha256-njiYozxfIfY0qp4tRWIOfEttVNFtRzVxqJEZO71HJco",
+    "strip_prefix" : "rules_nixpkgs-0c1f8f5470c7f292b7620762e224f53d837929d3/core",
+    "url": "https://github.com/tweag/rules_nixpkgs/archive/0c1f8f5470c7f292b7620762e224f53d837929d3.tar.gz"
+}
+
