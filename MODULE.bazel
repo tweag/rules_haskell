@@ -91,7 +91,6 @@ use_repo(
     haskell_toolchains,
     "all_bindist_toolchains",
     "rules_haskell_python_local",
-    "rules_haskell_sh_posix_local",
 )
 
 # We need to register the nix toolchain before the bindist ones so it
@@ -104,7 +103,6 @@ register_toolchains(
 register_toolchains(
     "@all_bindist_toolchains//:all",
     "@rules_haskell_python_local//:toolchain",
-    "@rules_haskell_sh_posix_local//:all",
 )
 
 # Setup node toolchain and install webpack for asterius.
