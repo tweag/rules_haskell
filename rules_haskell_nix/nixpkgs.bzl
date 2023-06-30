@@ -43,6 +43,9 @@ Available versions:
 """.format(wanted = ghc_name, actual = result.stdout),
         )
 
+def _is_bzlmod_enabled():
+    return str(Label("@rules_haskell//:BUILD.bazel")).startswith("@@")
+
 def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
     paths = resolve_labels(repository_ctx, [
         "@rules_haskell//haskell:private/pkgdb_to_bzl.py",
@@ -75,7 +78,10 @@ def _ghc_nixpkgs_haskell_toolchain_impl(repository_ctx):
         # See Note [GHC toolchain files] in haskell/ghc_bindist.bzl
         libdir_path = repr(libdir_path),
         docdir_path = repr(docdir_path),
-        tools = ["@{}//:bin".format(repository_ctx.attr.nixpkgs_ghc_repo_name)],
+        tools = ["{}{}//:bin".format(
+            "@@" if _is_bzlmod_enabled() else "@",
+            repository_ctx.attr.nixpkgs_ghc.workspace_name,
+        )],
         version = repr(repository_ctx.attr.version),
         static_runtime = repository_ctx.attr.static_runtime,
         fully_static_link = repository_ctx.attr.fully_static_link,
@@ -143,43 +149,60 @@ _ghc_nixpkgs_haskell_toolchain = repository_rule(
     },
 )
 
-def _ghc_nixpkgs_toolchain_impl(repository_ctx):
+# This function is public so that the `declare_toolchains` extension
+# can build toolchain declarations
+def ghc_nixpkgs_toolchain_declaration(
+        target_constraints,
+        exec_constraints,
+        cpu_value,
+        os_name,
+        haskell_toolchain_repo_name,
+        toolchain_name):
     # These constraints might look tautological, because they always
     # match the host platform if it is the same as the target
     # platform. But they are important to state because Bazel
     # toolchain resolution prefers other toolchains with more specific
     # constraints otherwise.
-    if repository_ctx.attr.target_constraints == [] and repository_ctx.attr.exec_constraints == []:
-        cpu_value = get_cpu_value(repository_ctx)
+    if target_constraints == [] and exec_constraints == []:
         target_constraints = ["@platforms//cpu:{}".format(
             "arm64" if ("arm64" in cpu_value or "aarch64" in cpu_value) else "x86_64",
         )]
-        if repository_ctx.os.name == "linux":
+        if os_name == "linux":
             target_constraints.append("@platforms//os:linux")
-        elif repository_ctx.os.name == "mac os x":
+        elif os_name == "mac os x":
             target_constraints.append("@platforms//os:osx")
         exec_constraints = list(target_constraints)
     else:
-        target_constraints = repository_ctx.attr.target_constraints
-        exec_constraints = list(repository_ctx.attr.exec_constraints)
+        target_constraints = target_constraints
+        exec_constraints = list(exec_constraints)
 
     exec_constraints.append("@rules_nixpkgs_core//constraints:support_nix")
-
-    repository_ctx.file(
-        "BUILD",
-        executable = False,
-        content = """
+    return """
 toolchain(
-    name = "toolchain",
+    name = "{toolchain_name}",
     toolchain_type = "@rules_haskell//haskell:toolchain",
     toolchain = "@{haskell_toolchain}//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
-        """.format(
-            exec_constraints = exec_constraints,
-            target_constraints = target_constraints,
-            haskell_toolchain = repository_ctx.attr.haskell_toolchain_repo_name,
+""".format(
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints,
+        haskell_toolchain = haskell_toolchain_repo_name,
+        toolchain_name = toolchain_name,
+    )
+
+def _ghc_nixpkgs_toolchain_impl(repository_ctx):
+    repository_ctx.file(
+        "BUILD",
+        executable = False,
+        content = ghc_nixpkgs_toolchain_declaration(
+            target_constraints = repository_ctx.attr.target_constraints,
+            exec_constraints = repository_ctx.attr.exec_constraints,
+            cpu_value = get_cpu_value(repository_ctx),
+            os_name = repository_ctx.os.name,
+            haskell_toolchain_repo_name = repository_ctx.attr.haskell_toolchain_repo_name,
+            toolchain_name = "toolchain",
         ),
     )
 
@@ -191,6 +214,89 @@ _ghc_nixpkgs_toolchain = repository_rule(
         "haskell_toolchain_repo_name": attr.string(),
     },
 )
+
+# Public so that the `nix_haskell_toolchain` extension can predict the repo name
+# and register the toolchain
+HASKELL_TOOLCHAIN_REPO_NAME_SUFFIX = "_ghc_nixpkgs_haskell_toolchain"
+
+def register_ghc_from_nixpkgs_package(
+        version,
+        nixpkgs_ghc,
+        name,
+        is_static = None,  # DEPRECATED. See _check_static_attributes_compatibility.
+        static_runtime = None,
+        fully_static_link = None,
+        ghcopts = None,
+        compiler_flags_select = None,
+        haddock_flags = None,
+        repl_ghci_args = None,
+        cabalopts = None,
+        locale_archive = None,
+        locale = None,
+        exec_constraints = [],
+        target_constraints = [],
+        register = True):
+    """Register a pre-existing package from Nixpkgs as a toolchain.
+
+    This rule is similar [haskell_register_ghc_nixpkgs](nixpkgs.html#haskell_register_ghc_nixpkgs), but it does not setup any nix package itself.
+
+    Args:
+      version: The version of the provided ghc.
+      name: The name for this toolchain.
+      nixpkgs_ghc: The label of a nix-installed ghc_binary
+      is_static: Deprecated. The functionality it previously gated
+        (supporting GHC versions with static runtime systems) now sits under
+        static_runtime, a name chosen to avoid confusion with the new flag
+        fully_static_link, which controls support for fully-statically-linked
+        binaries. During the deprecation period, we rewrite is_static to
+        static_runtime in this macro as long as the new attributes aren't also
+        used. This argument and supporting code should be removed in a future release.
+      static_runtime: True if and only if a static GHC runtime is to be used. This is
+        required in order to use statically-linked Haskell libraries with GHCi
+        and Template Haskell.
+      fully_static_link: True if and only if fully-statically-linked binaries are to be built.
+      ghcopts: A collection of flags that will be passed to GHC
+      compiler_flags_select: temporary workaround to pass conditional arguments.
+        See https://github.com/bazelbuild/bazel/issues/9199 for details.
+      register: Whether to register the toolchain (must be set to False if bzlmod is enabled)
+    """
+    nixpkgs_ghc_repo_name = "{}_ghc_nixpkgs".format(name)
+    haskell_toolchain_repo_name = "{}{}".format(name, HASKELL_TOOLCHAIN_REPO_NAME_SUFFIX)
+    toolchain_repo_name = "{}_ghc_nixpkgs_toolchain".format(name)
+
+    static_runtime, fully_static_link = _check_static_attributes_compatibility(
+        is_static = is_static,
+        static_runtime = static_runtime,
+        fully_static_link = fully_static_link,
+    )
+
+    _ghc_nixpkgs_haskell_toolchain(
+        name = haskell_toolchain_repo_name,
+        version = version,
+        static_runtime = static_runtime,
+        fully_static_link = fully_static_link,
+        ghcopts = ghcopts,
+        compiler_flags_select = compiler_flags_select,
+        haddock_flags = haddock_flags,
+        cabalopts = cabalopts,
+        repl_ghci_args = repl_ghci_args,
+        locale_archive = locale_archive,
+        locale = locale,
+        nixpkgs_ghc_repo_name = nixpkgs_ghc_repo_name,
+        nixpkgs_ghc = nixpkgs_ghc,
+    )
+
+    # toolchain definition.
+    if (exec_constraints == []) != (target_constraints == []):
+        fail("Both exec_constraints and target_constraints need to be provided or none of them.")
+    _ghc_nixpkgs_toolchain(
+        name = toolchain_repo_name,
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints,
+        haskell_toolchain_repo_name = haskell_toolchain_repo_name,
+    )
+    if register:
+        native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
 
 def haskell_register_ghc_nixpkgs(
         version,
@@ -216,8 +322,8 @@ def haskell_register_ghc_nixpkgs(
         repositories = {},
         repository = None,
         nix_file_content = None,
-        exec_constraints = None,
-        target_constraints = None,
+        exec_constraints = [],
+        target_constraints = [],
         register = True):
     """Register a package from Nixpkgs as a toolchain.
 
@@ -278,14 +384,6 @@ def haskell_register_ghc_nixpkgs(
     """
     nixpkgs_ghc_repo_name = "{}_ghc_nixpkgs".format(name)
     nixpkgs_sh_posix_repo_name = "{}_sh_posix_nixpkgs".format(name)
-    haskell_toolchain_repo_name = "{}_ghc_nixpkgs_haskell_toolchain".format(name)
-    toolchain_repo_name = "{}_ghc_nixpkgs_toolchain".format(name)
-
-    static_runtime, fully_static_link = _check_static_attributes_compatibility(
-        is_static = is_static,
-        static_runtime = static_runtime,
-        fully_static_link = fully_static_link,
-    )
 
     # The package from the system.
     nixpkgs_package(
@@ -301,42 +399,6 @@ def haskell_register_ghc_nixpkgs(
         repository = repository,
     )
 
-    # haskell_toolchain + haskell_import definitions.
-    ghcopts = check_deprecated_attribute_usage(
-        old_attr_name = "compiler_flags",
-        old_attr_value = compiler_flags,
-        new_attr_name = "ghcopts",
-        new_attr_value = ghcopts,
-    )
-
-    _ghc_nixpkgs_haskell_toolchain(
-        name = haskell_toolchain_repo_name,
-        version = version,
-        static_runtime = static_runtime,
-        fully_static_link = fully_static_link,
-        ghcopts = ghcopts,
-        compiler_flags_select = compiler_flags_select,
-        haddock_flags = haddock_flags,
-        cabalopts = cabalopts,
-        repl_ghci_args = repl_ghci_args,
-        locale_archive = locale_archive,
-        locale = locale,
-        nixpkgs_ghc_repo_name = nixpkgs_ghc_repo_name,
-        nixpkgs_ghc = "@{}//:bin/ghc".format(nixpkgs_ghc_repo_name),
-    )
-
-    # toolchain definition.
-    if (exec_constraints == None) != (target_constraints == None):
-        fail("Both exec_constraints and target_constraints need to be provided or none of them.")
-    _ghc_nixpkgs_toolchain(
-        name = toolchain_repo_name,
-        exec_constraints = exec_constraints,
-        target_constraints = target_constraints,
-        haskell_toolchain_repo_name = haskell_toolchain_repo_name,
-    )
-    if register:
-        native.register_toolchains("@{}//:toolchain".format(toolchain_repo_name))
-
     # Unix tools toolchain required for Cabal packages
     sh_posix_nixpkgs_kwargs = dict(
         nix_file_deps = nix_file_deps,
@@ -350,6 +412,32 @@ def haskell_register_ghc_nixpkgs(
         name = nixpkgs_sh_posix_repo_name,
         register = register,
         **sh_posix_nixpkgs_kwargs
+    )
+
+    ghcopts = check_deprecated_attribute_usage(
+        old_attr_name = "compiler_flags",
+        old_attr_value = compiler_flags,
+        new_attr_name = "ghcopts",
+        new_attr_value = ghcopts,
+    )
+
+    register_ghc_from_nixpkgs_package(
+        version = version,
+        nixpkgs_ghc = "@{}//:bin/ghc".format(nixpkgs_ghc_repo_name),
+        name = name,
+        is_static = is_static,
+        static_runtime = static_runtime,
+        fully_static_link = fully_static_link,
+        ghcopts = ghcopts,
+        compiler_flags_select = compiler_flags_select,
+        haddock_flags = haddock_flags,
+        cabalopts = cabalopts,
+        repl_ghci_args = repl_ghci_args,
+        locale_archive = locale_archive,
+        locale = locale,
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints,
+        register = register,
     )
 
 def _check_static_attributes_compatibility(is_static, static_runtime, fully_static_link):
