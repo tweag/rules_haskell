@@ -282,14 +282,76 @@ register_toolchains(
     dev_dependency = True,
 )
 
-non_module_dev_deps_2 = use_extension(
-    "//:non_module_dev_deps_2.bzl",
-    "non_module_dev_deps_2",
-    dev_dependency = True,
+stack_snapshots = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshot",
+)
+
+[
+    stack_snapshots.package(
+        name = package,
+    )
+    for package in [
+        # Core libraries
+        "base",
+        "bytestring",
+        "containers",
+        "deepseq",
+        "mtl",
+        "text",
+        "vector",
+        # For tests
+        "lens-family-core",
+        "data-default-class",
+        "proto-lens",
+        "lens-family",
+    ]
+]
+
+stack_snapshots.package(
+    name = "ghc-paths",
+    vendored = "@rules_haskell//tools/ghc-paths",
+)
+
+stack_snapshots.package(
+    name = "proto-lens-protoc",
+    components = [
+        "lib",
+        "exe",
+    ],
+    setup_deps = ["@Cabal//:Cabal"],
+)
+
+[
+    # See https://github.com/tweag/rules_haskell/issues/1871
+    stack_snapshots.package(
+        name = package,
+        setup_deps = ["@Cabal//:Cabal"],
+    )
+    for package in [
+        "HUnit",
+        "bifunctors",
+        "call-stack",
+        "generic-deriving",
+        "mono-traversable",
+        "proto-lens-runtime",
+        "quickcheck-io",
+        "transformers-compat",
+        "type-errors",
+        "typed-process",
+        "unliftio-core",
+    ]
+]
+
+stack_snapshots.stack_snapshot_json(label = "@rules_haskell//:stackage_snapshot.json")
+
+stack_snapshots.snapshot(
+    local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
 )
 
 use_repo(
-    non_module_dev_deps_2,
+    stack_snapshots,
     "stackage",
     "stackage-exe",
+    "stackage-unpinned",
 )
