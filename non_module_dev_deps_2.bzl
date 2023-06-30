@@ -1,4 +1,3 @@
-load("@os_info//:os_info.bzl", "is_windows")
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 def repositories(*, bzlmod):
