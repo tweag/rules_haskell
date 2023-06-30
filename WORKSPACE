@@ -50,10 +50,6 @@ load("//:non_module_dev_deps.bzl", "repositories")
 
 repositories(bzlmod = False)
 
-load("//:non_module_dev_deps_2.bzl", _repositories_2 = "repositories")
-
-_repositories_2(bzlmod = False)
-
 load("//extensions:rules_haskell_dependencies.bzl", _repositories_3 = "repositories")
 
 _repositories_3(bzlmod = False)
@@ -74,7 +70,7 @@ load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_package",
 )
-load("@os_info//:os_info.bzl", "is_nix_shell")
+load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 
 asterius_dependencies_nix(
     nix_repository = "@nixpkgs_default",
@@ -139,4 +135,55 @@ bazel_starlib_dependencies()
 bind(
     name = "python_headers",
     actual = "@com_google_protobuf//util/python:python_headers",
+)
+
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+
+# Needed for //tests:protobuf-toolchain which is required by //rule_info:rule_info_haskell_proto.
+# rules_info_haskell_proto was not moved to rules_haskell_tests because it is in particular used by https://github.com/google/hrepl.
+stack_snapshot(
+    name = "stackage",
+    components = {
+        "proto-lens-protoc": [
+            "lib",
+            "exe",
+        ],
+    },
+    local_snapshot = "//:stackage_snapshot.yaml",
+    packages = [
+        # Core libraries
+        "base",
+        "bytestring",
+        "containers",
+        "deepseq",
+        "mtl",
+        "text",
+        "vector",
+        # For tests
+        "lens-family-core",
+        "data-default-class",
+        "proto-lens",
+        "proto-lens-protoc",
+        "proto-lens-runtime",
+        "lens-family",
+    ],
+    setup_deps = {
+        # See https://github.com/tweag/rules_haskell/issues/1871
+        "HUnit": ["@Cabal//:Cabal"],
+        "bifunctors": ["@Cabal//:Cabal"],
+        "call-stack": ["@Cabal//:Cabal"],
+        "generic-deriving": ["@Cabal//:Cabal"],
+        "mono-traversable": ["@Cabal//:Cabal"],
+        "proto-lens-protoc": ["@Cabal//:Cabal"],
+        "proto-lens-runtime": ["@Cabal//:Cabal"],
+        "quickcheck-io": ["@Cabal//:Cabal"],
+        "transformers-compat": ["@Cabal//:Cabal"],
+        "type-errors": ["@Cabal//:Cabal"],
+        "typed-process": ["@Cabal//:Cabal"],
+        "unliftio-core": ["@Cabal//:Cabal"],
+    },
+    stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
+    vendored_packages = {
+        "ghc-paths": "@rules_haskell//tools/ghc-paths",
+    },
 )
