@@ -28,7 +28,7 @@ http_archive(
     url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.30.2/bazel-lib-v1.30.2.tar.gz",
 )
 
-load("@os_info//:os_info.bzl", "is_nix_shell")
+load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 
 # bazel dependencies
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
@@ -89,6 +89,17 @@ haskell_register_ghc_nixpkgs(
     nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
+    version = test_ghc_version,
+)
+
+load(
+    "@rules_haskell//haskell:ghc_bindist.bzl",
+    "haskell_register_ghc_bindists",
+)
+
+haskell_register_ghc_bindists(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
     version = test_ghc_version,
 )
 
@@ -183,4 +194,105 @@ bind(
 local_repository(
     name = "other_module",
     path = "tests/bzlmod_runfiles/other_module",
+)
+
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+
+stack_snapshot(
+    name = "stackage",
+    components = {
+        "alex": [],
+        "attoparsec": [
+            # attoparsec contains an internal library which is not exposed publicly,
+            # but required to build the public library, hence the declaration of
+            # those 2 components, as well as the explicit declaration of the
+            # dependency between them.
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+        "proto-lens-protoc": [
+            "lib",
+            "exe",
+        ],
+    },
+    components_dependencies = {
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
+    local_snapshot = "//:stackage_snapshot.yaml",
+    packages = [
+        # Core libraries
+        "alex",
+        "array",
+        "base",
+        "bytestring",
+        "c2hs",
+        "conduit",
+        "conduit-extra",
+        "containers",
+        "deepseq",
+        "directory",
+        "filepath",
+        "ghc-heap",
+        "happy",
+        "mtl",
+        "optparse-applicative",
+        "process",
+        "text",
+        "text-show",
+        "vector",
+        # For tests
+        "cabal-doctest",
+        "doctest",
+        "polysemy",
+        "network",
+        "language-c",
+        "streaming",
+        "void",
+        "ghc-check",
+        "hspec",
+        "hspec-core",
+        "lens-family-core",
+        "data-default-class",
+        "profunctors",
+        "proto-lens",
+        "proto-lens-protoc",
+        "proto-lens-runtime",
+        "lens-family",
+        "safe-exceptions",
+        "temporary",
+    ],
+    setup_deps = {
+        "polysemy": ["cabal-doctest"],
+        # See https://github.com/tweag/rules_haskell/issues/1871
+        "HUnit": ["@Cabal//:Cabal"],
+        "bifunctors": ["@Cabal//:Cabal"],
+        "c2hs": ["@Cabal//:Cabal"],
+        "call-stack": ["@Cabal//:Cabal"],
+        "doctest": ["@Cabal//:Cabal"],
+        "generic-deriving": ["@Cabal//:Cabal"],
+        "happy": ["@Cabal//:Cabal"],
+        "hspec": ["@Cabal//:Cabal"],
+        "hspec-core": ["@Cabal//:Cabal"],
+        "hspec-discover": ["@Cabal//:Cabal"],
+        "hspec-expectations": ["@Cabal//:Cabal"],
+        "mono-traversable": ["@Cabal//:Cabal"],
+        "proto-lens-protoc": ["@Cabal//:Cabal"],
+        "proto-lens-runtime": ["@Cabal//:Cabal"],
+        "quickcheck-io": ["@Cabal//:Cabal"],
+        "transformers-compat": ["@Cabal//:Cabal"],
+        "type-errors": ["@Cabal//:Cabal"],
+        "typed-process": ["@Cabal//:Cabal"],
+        "unliftio-core": ["@Cabal//:Cabal"],
+    },
+    stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
+    tools = [
+        # This is not required, as `stack_snapshot` would build alex
+        # automatically, however it is used as a test for user provided
+        # `tools`. We also override alex's components to avoid building it
+        # twice.
+        "@alex",
+    ],
+    vendored_packages = {
+        "ghc-paths": "@rules_haskell//tools/ghc-paths",
+    },
 )

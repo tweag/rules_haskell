@@ -274,8 +274,8 @@ _ghc_bindist = repository_rule(
     },
 )
 
-def _ghc_bindist_toolchain_impl(ctx):
-    os, _, arch = ctx.attr.target.partition("_")
+def ghc_bindist_toolchain_declaration(target, bindist_name, toolchain_name):
+    os, _, arch = target.partition("_")
     os_constraint = {
         "darwin": "osx",
         "linux": "linux",
@@ -290,21 +290,29 @@ def _ghc_bindist_toolchain_impl(ctx):
         "@platforms//cpu:{}".format(cpu_constraint),
     ]
     target_constraints = exec_constraints
-    ctx.file(
-        "BUILD",
-        executable = False,
-        content = """
+    return """
 toolchain(
-    name = "toolchain",
+    name = "{toolchain_name}",
     toolchain_type = "@rules_haskell//haskell:toolchain",
     toolchain = "@{bindist_name}//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
-        """.format(
+""".format(
+        toolchain_name = toolchain_name,
+        bindist_name = bindist_name,
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints,
+    )
+
+def _ghc_bindist_toolchain_impl(ctx):
+    ctx.file(
+        "BUILD",
+        executable = False,
+        content = ghc_bindist_toolchain_declaration(
+            target = ctx.attr.target,
             bindist_name = ctx.attr.bindist_name,
-            exec_constraints = exec_constraints,
-            target_constraints = target_constraints,
+            toolchain_name = "toolchain",
         ),
     )
 
@@ -341,6 +349,21 @@ _windows_cc_toolchain = repository_rule(
         "bindist_name": attr.string(),
     },
 )
+
+# Toolchains declarations for bindists used by the `haskell_toolchains` module
+# extension to register all the haskell toolchains in the same BUILD file
+def ghc_bindists_toolchain_declarations(version):
+    version = version or _GHC_DEFAULT_VERSION
+    if not GHC_BINDIST.get(version):
+        fail("Binary distribution of GHC {} not available.".format(version))
+    return [
+        ghc_bindist_toolchain_declaration(
+            target = target,
+            bindist_name = "rules_haskell_ghc_{}".format(target),
+            toolchain_name = "rules_haskell_ghc_{}".format(target),
+        )
+        for target in GHC_BINDIST[version]
+    ]
 
 def ghc_bindist(
         name,

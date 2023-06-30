@@ -1,19 +1,19 @@
 """ This module extension contains rules_haskell dependencies that are not available as modules """
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies_bzlmod")
-load(
-    "@rules_haskell//haskell:ghc_bindist.bzl",
-    "LOCAL_PYTHON_REPO_NAME",
-    "configure_python3_toolchain",
-)
 load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@rules_haskell//tools:os_info.bzl", "os_info")
 
 def repositories(*, bzlmod):
     rules_haskell_dependencies_bzlmod()
 
-    if LOCAL_PYTHON_REPO_NAME not in native.existing_rules():
-        configure_python3_toolchain(name = LOCAL_PYTHON_REPO_NAME, register = not bzlmod)
+    # Some helpers for platform-dependent configuration
+    maybe(
+        os_info,
+        name = "os_info",
+    )
 
     # For persistent worker (tools/worker)
     # TODO: make this customizable via a module extension so that users
