@@ -26,7 +26,6 @@ buildifier_test(
         "//:WORKSPACE",
         "//:constants.bzl",
         "//:non_module_dev_deps.bzl",
-        "//:non_module_dev_deps_2.bzl",
         "//buildifier:all_files",
         "//debug/linking_utils:all_files",
         "//docs:all_files",
