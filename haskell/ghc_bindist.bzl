@@ -360,7 +360,7 @@ def ghc_bindists_toolchain_declarations(version):
         ghc_bindist_toolchain_declaration(
             target = target,
             bindist_name = "rules_haskell_ghc_{}".format(target),
-            toolchain_name = "rules_haskell_ghc_{}".format(target),
+            toolchain_name = "{}",
         )
         for target in GHC_BINDIST[version]
     ]
