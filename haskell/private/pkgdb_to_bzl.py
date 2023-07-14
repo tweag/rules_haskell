@@ -21,6 +21,14 @@ import package_configuration
 if len(sys.argv) == 3:
     repo_dir = "external/" + sys.argv[1]
     topdir = sys.argv[2]
+
+    if os.path.exists(os.path.join(topdir, 'package.conf.d')):
+        package_conf_dir = os.path.join(topdir, 'package.conf.d')
+    elif os.path.exists(os.path.join(topdir, 'lib', 'package.conf.d')):
+        topdir = os.path.join(topdir, 'lib')
+        package_conf_dir = os.path.join(topdir, 'package.conf.d')
+    else:
+        sys.exit("could not find package.conf.d directory at {}".format(topdir))
 else:
     sys.exit("Usage: pkgdb_to_bzl.py <REPO_NAME> <TOPDIR>")
 
@@ -79,7 +87,8 @@ output = []
 
 # Accumulate package id to package name mappings.
 pkg_id_map = []
-for conf in glob.glob(os.path.join(topdir, "package.conf.d", "*.conf")):
+
+for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
     with open(conf, 'r') as f:
         pkg = package_configuration.parse_package_configuration(f)
 
