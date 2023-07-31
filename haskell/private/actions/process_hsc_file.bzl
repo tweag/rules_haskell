@@ -80,8 +80,8 @@ def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
 
             # Include libdir in include path just like hsc2hs does.
             libdir=$({ghc} --print-libdir)
+            includes=$(for f in $(find "$libdir" -name include -type d); do echo "-C-I\"$f\""; done)
             # GHC >=9 on Windows stores the includes outside of libdir
-            includes=$(for f in $(find "$(ghc --print-libdir)" -name include -type d); do echo "-C-I\"$f\""; done)
             {hsc2hs} $includes -C-I$libdir/../include "$@"
             """.format(
                 mingw_bin = paths.dirname(cc.tools.cc) if hs.toolchain.is_windows else "",
