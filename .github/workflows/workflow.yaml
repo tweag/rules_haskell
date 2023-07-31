@@ -101,6 +101,11 @@ jobs:
         os: [ubuntu-latest, macos-11, windows-latest]
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [bzlmod, workspace]
+        ghc:
+          - 9.2.5
+          - 9.4.5
+    env:
+      GHC_VERSION: ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     steps:
       - if: ${{ matrix.os == 'ubuntu-latest' }}
