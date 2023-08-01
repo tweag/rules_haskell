@@ -46,6 +46,10 @@ http_archive(
     ],
 )
 
+load("//haskell:private/ghc_ci.bzl", "ghc_version")
+
+ghc_version(name = "rules_haskell_ghc_version")
+
 load("//:non_module_dev_deps.bzl", "repositories")
 
 repositories(bzlmod = False)
@@ -53,10 +57,6 @@ repositories(bzlmod = False)
 load("//extensions:rules_haskell_dependencies.bzl", _repositories_3 = "repositories")
 
 _repositories_3(bzlmod = False)
-
-load("//haskell:private/ghc_ci.bzl", "ghc_version")
-
-ghc_version(name = "rules_haskell_ghc_version")
 
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
