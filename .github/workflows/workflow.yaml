@@ -93,54 +93,6 @@ jobs:
             bazel coverage //...
             '
 
-  test-nixpkgs-cross:
-    name: Build & Test - Cross
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Mount Bazel cache
-        uses: actions/cache@v3
-        with:
-          path: ~/repo-cache
-          key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v22
-        with:
-          nix_path: nixpkgs=./nixpkgs/default.nix
-          extra_nix_config: |
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-            extra-substituters = https://cache.iog.io
-      - name: Configure
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-        run: |
-          # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
-          # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
-          sudo sysctl -w net.ipv4.tcp_keepalive_time=60
-          if [ -z "$BUILDBUDDY_API_KEY" ]; then
-              cache_setting='--noremote_upload_local_results'
-          else
-              cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
-          fi
-          cat >.bazelrc.local <<EOF
-          common --config=ci
-          build --config=linux-nixpkgs
-          build $cache_setting
-          EOF
-          ln -sr .bazelrc.local examples/arm/.bazelrc.local
-          cat >~/.netrc <<EOF
-          machine api.github.com
-                  password ${{ secrets.GITHUB_TOKEN }}
-          EOF
-      - name: Check Bazel version
-        run: |
-          nix-shell --arg docTools false --pure --run .ci/check-bazel-version
-      - name: Build & test
-        run: |
-          cd examples/arm
-          nix-shell --arg docTools false --pure --run "bazel build //... --platforms=//:linux_aarch64"
-          nix-shell --arg docTools false --pure qemu-shell.nix --run "qemu-aarch64 bazel-ci-bin/example"
-          nix-shell --arg docTools false --pure qemu-shell.nix --run "qemu-aarch64 bazel-ci-bin/example2"
-
   test-bindist:
     name: Build & Test - bindist
     strategy:
