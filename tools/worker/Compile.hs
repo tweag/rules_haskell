@@ -18,8 +18,10 @@ import GHC.Driver.Pipeline ( compileFile, oneShot )
 import GHC.Utils.Misc
 
 #if MIN_VERSION_GLASGOW_HASKELL(9,4,1,0)
+noStopPhase :: StopPhase
 noStopPhase = NoStop
 #else
+noStopPhase :: Phase
 noStopPhase = StopLn
 #endif
 
