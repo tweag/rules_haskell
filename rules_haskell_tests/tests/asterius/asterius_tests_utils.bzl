@@ -48,7 +48,7 @@ def asterius_test_macro(
         name = "asterius_binary_from_genrule" + suffix,
         outs = ["out" + suffix],
         cmd = "BAZEL_BINDIR=$(BINDIR) $(location :asterius_binary{}) > \"$@\"".format(suffix),
-        exec_tools = [":asterius_binary" + suffix],
+        tools = [":asterius_binary" + suffix],
         testonly = True,
         tags = tags + ["manual"],
     )
