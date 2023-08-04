@@ -34,9 +34,11 @@ else:
     sys.exit("Usage: pkgdb_to_bzl.py <REPO_NAME> <TOPDIR>")
 
 def resolve(path, pkgroot):
-    """Resolve references to ${pkgroot} with the given value"""
+    """Resolve references to ${pkgroot} with the given value, resolve $topdir with `topdir`"""
     if path.find("${pkgroot}") != -1:
         return path.strip("\"").replace("${pkgroot}", pkgroot)
+    elif path.startswith("$topdir"):
+        return os.path.normpath(path.replace("$topdir", topdir)).replace('\\', '/')
     else:
         return path
 
