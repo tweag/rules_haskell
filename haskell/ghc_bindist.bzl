@@ -436,9 +436,9 @@ def ghc_bindist(
 
         # More recent GHC versions just need a patch to fix the docs
         # folder location:
-        if version_tuple >= (9, 0, 1):
-            dashed_version = version.replace(".", "_")
-            patches = ["@rules_haskell//haskell:assets/ghc_{}_win.patch".format(dashed_version)]
+        #if version_tuple >= (9, 0, 1):
+        #    dashed_version = version.replace(".", "_")
+        #    patches = ["@rules_haskell//haskell:assets/ghc_{}_win.patch".format(dashed_version)]
 
     if target == "darwin_amd64":
         patches = {
