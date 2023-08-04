@@ -134,6 +134,11 @@ for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
         # generate the database entry even if no haddock was generated.
         resolved_haddock_html = resolve(pkg.haddock_html, pkgroot)
 
+        if not os.path.exists(resolved_haddock_html):
+            # try to resolve relative to the package.conf.d dir
+            # see https://gitlab.haskell.org/ghc/ghc/-/issues/23476
+            resolved_haddock_html = resolve(pkg.haddock_html, package_conf_dir)
+
         if os.path.exists(resolved_haddock_html):
             haddock_html = path_to_label(pkg.haddock_html, pkgroot)
             if not haddock_html:
@@ -145,6 +150,11 @@ for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
     haddock_interfaces = []
     for interface_path in pkg.haddock_interfaces:
         resolved_path = resolve(interface_path, pkgroot).replace('\\', '/')
+
+        if not os.path.exists(resolved_path):
+            # try to resolve relative to the package.conf.d dir
+            # see https://gitlab.haskell.org/ghc/ghc/-/issues/23476
+            resolved_path = resolve(interface_path, package_conf_dir)
 
         # We check if the file exists because cabal will unconditionally
         # generate the database entry even if no haddock was generated.
