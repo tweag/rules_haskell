@@ -17,6 +17,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-11]
         module: [rules_haskell, rules_haskell_tests]
+        bzlmod: [bzlmod, workspace]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -25,7 +26,7 @@ jobs:
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v20
+      - uses: cachix/install-nix-action@v22
         with:
           nix_path: nixpkgs=./nixpkgs/default.nix
           extra_nix_config: |
@@ -47,10 +48,16 @@ jobs:
           else
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
+          if [ ${{ matrix.bzlmod }} == bzlmod ]; then
+              bzlmod_setting='common --config bzlmod'
+          else
+              bzlmod_setting=''
+          fi
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=$BUILD_CONFIG
           build $cache_setting
+          $bzlmod_setting
           EOF
           cp .bazelrc.local rules_haskell_tests
           cat >~/.netrc <<EOF
@@ -77,7 +84,12 @@ jobs:
             cd rules_haskell_tests
             ./tests/run-start-script.sh --use-nix
             bazel build //tests:run-tests
-            ./bazel-ci-bin/tests/run-tests
+            if [ ${{ matrix.bzlmod }} == bzlmod ]; then
+                # TODO setup MODULE.bazel files for examples and tutorial folders
+                ./bazel-ci-bin/tests/run-tests --skip="bazel test examples" --skip="bazel test tutorial"
+            else
+                ./bazel-ci-bin/tests/run-tests
+            fi
             bazel coverage //...
             '
 
@@ -91,7 +103,7 @@ jobs:
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v20
+      - uses: cachix/install-nix-action@v22
         with:
           nix_path: nixpkgs=./nixpkgs/default.nix
           extra_nix_config: |
@@ -136,6 +148,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-11, windows-latest]
         module: [rules_haskell, rules_haskell_tests]
+        bzlmod: [bzlmod, workspace]
     runs-on: ${{ matrix.os }}
     steps:
       - if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -176,16 +189,27 @@ jobs:
           else
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
+          if [ ${{ matrix.bzlmod }} == bzlmod]; then
+              bzlmod_setting='common --config bzlmod'
+          else
+              bzlmod_setting=''
+          fi
           if [[ ${{ runner.os }} == Windows ]]; then
               output_root_setting="startup --output_user_root=C:/_bzl"
+              # On windows, we use a separate remote cache for bzlmod,
+              # because the c dependency analysis is leaking absolute paths which are different
+              bzlmod_cache_silo_key="build --remote_default_exec_properties=bzlmod-cache-silo-key=${{ matrix.bzlmod }}"
           else
               output_root_setting=""
+              bzlmod_cache_silo_key=""
           fi
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=$BUILD_CONFIG
           build $cache_setting
           $output_root_setting
+          $bzlmod_cache_silo_key
+          $bzlmod_setting
           EOF
           cp .bazelrc.local rules_haskell_tests
           cat >~/.netrc <<EOF

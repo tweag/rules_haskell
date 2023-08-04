@@ -13,6 +13,11 @@ load("//:non_module_deps.bzl", "repositories")
 
 repositories(bzlmod = False)
 
+load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
+
+# For persistent worker (tools/worker)
+rules_haskell_worker_dependencies()
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # For testing if bzlmod is enabled
@@ -23,7 +28,7 @@ http_archive(
     url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.30.2/bazel-lib-v1.30.2.tar.gz",
 )
 
-load("@os_info//:os_info.bzl", "is_nix_shell")
+load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 
 # bazel dependencies
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
@@ -48,13 +53,12 @@ rules_proto_dependencies()
 rules_proto_toolchains()
 
 # For buildifier
-# starting from 0.29, rules_go requires bazel >= 4.2.0
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
+    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
     ],
 )
 
@@ -85,6 +89,17 @@ haskell_register_ghc_nixpkgs(
     nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
+    version = test_ghc_version,
+)
+
+load(
+    "@rules_haskell//haskell:ghc_bindist.bzl",
+    "haskell_register_ghc_bindists",
+)
+
+haskell_register_ghc_bindists(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
     version = test_ghc_version,
 )
 
@@ -132,19 +147,6 @@ jvm_maven_import_external(
     server_urls = ["https://repo.maven.apache.org/maven2"],
 )
 
-http_archive(
-    name = "io_bazel_stardoc",
-    sha256 = "3fd8fec4ddec3c670bd810904e2e33170bedfe12f90adf943508184be458c8bb",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
-        "https://github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
-    ],
-)
-
-load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
-
-stardoc_repositories()
-
 register_toolchains(
     "@rules_haskell//docs/pandoc:nixpkgs",
     "@rules_haskell//docs/pandoc:linux",
@@ -165,9 +167,7 @@ load(
 
 go_rules_dependencies()
 
-# If in nix-shell, use the Go SDK provided by Nix.
-# Otherwise, ask Bazel to download a Go SDK.
-go_register_toolchains(version = "host") if is_nix_shell else go_register_toolchains(version = "1.16.2")
+go_register_toolchains(version = "1.20.2")
 
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
@@ -191,3 +191,108 @@ bind(
     actual = "@com_google_protobuf//util/python:python_headers",
 )
 
+local_repository(
+    name = "other_module",
+    path = "tests/bzlmod_runfiles/other_module",
+)
+
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+
+stack_snapshot(
+    name = "stackage",
+    components = {
+        "alex": [],
+        "attoparsec": [
+            # attoparsec contains an internal library which is not exposed publicly,
+            # but required to build the public library, hence the declaration of
+            # those 2 components, as well as the explicit declaration of the
+            # dependency between them.
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+        "proto-lens-protoc": [
+            "lib",
+            "exe",
+        ],
+    },
+    components_dependencies = {
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
+    local_snapshot = "//:stackage_snapshot.yaml",
+    packages = [
+        # Core libraries
+        "alex",
+        "array",
+        "base",
+        "bytestring",
+        "c2hs",
+        "conduit",
+        "conduit-extra",
+        "containers",
+        "deepseq",
+        "directory",
+        "filepath",
+        "ghc-heap",
+        "happy",
+        "mtl",
+        "optparse-applicative",
+        "process",
+        "text",
+        "text-show",
+        "vector",
+        # For tests
+        "cabal-doctest",
+        "doctest",
+        "polysemy",
+        "network",
+        "language-c",
+        "streaming",
+        "void",
+        "ghc-check",
+        "hspec",
+        "hspec-core",
+        "lens-family-core",
+        "data-default-class",
+        "profunctors",
+        "proto-lens",
+        "proto-lens-protoc",
+        "proto-lens-runtime",
+        "lens-family",
+        "safe-exceptions",
+        "temporary",
+    ],
+    setup_deps = {
+        "polysemy": ["cabal-doctest"],
+        # See https://github.com/tweag/rules_haskell/issues/1871
+        "HUnit": ["@Cabal//:Cabal"],
+        "bifunctors": ["@Cabal//:Cabal"],
+        "c2hs": ["@Cabal//:Cabal"],
+        "call-stack": ["@Cabal//:Cabal"],
+        "doctest": ["@Cabal//:Cabal"],
+        "generic-deriving": ["@Cabal//:Cabal"],
+        "happy": ["@Cabal//:Cabal"],
+        "hspec": ["@Cabal//:Cabal"],
+        "hspec-core": ["@Cabal//:Cabal"],
+        "hspec-discover": ["@Cabal//:Cabal"],
+        "hspec-expectations": ["@Cabal//:Cabal"],
+        "mono-traversable": ["@Cabal//:Cabal"],
+        "proto-lens-protoc": ["@Cabal//:Cabal"],
+        "proto-lens-runtime": ["@Cabal//:Cabal"],
+        "quickcheck-io": ["@Cabal//:Cabal"],
+        "transformers-compat": ["@Cabal//:Cabal"],
+        "type-errors": ["@Cabal//:Cabal"],
+        "typed-process": ["@Cabal//:Cabal"],
+        "unliftio-core": ["@Cabal//:Cabal"],
+    },
+    stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
+    tools = [
+        # This is not required, as `stack_snapshot` would build alex
+        # automatically, however it is used as a test for user provided
+        # `tools`. We also override alex's components to avoid building it
+        # twice.
+        "@alex",
+    ],
+    vendored_packages = {
+        "ghc-paths": "@rules_haskell//tools/ghc-paths",
+    },
+)

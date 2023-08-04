@@ -42,6 +42,7 @@ load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 
 # NOTE: Documentation needs to be added to the wrapper macros below.
 #   Currently it is not possible to automatically inherit rule documentation in
@@ -76,7 +77,7 @@ _haskell_common_attrs = {
         aspects = [haskell_cc_libraries_aspect],
     ),
     "tools": attr.label_list(
-        cfg = "host",
+        cfg = "exec",
         allow_files = True,
     ),
     "_ghci_script": attr.label(
@@ -89,7 +90,7 @@ _haskell_common_attrs = {
     ),
     "_version_macros": attr.label(
         executable = True,
-        cfg = "host",
+        cfg = "exec",
         default = Label("@rules_haskell//haskell:version_macros"),
     ),
     "_cc_toolchain": attr.label(
@@ -97,13 +98,13 @@ _haskell_common_attrs = {
     ),
     "_ghc_wrapper": attr.label(
         executable = True,
-        cfg = "host",
+        cfg = "exec",
         default = Label("@rules_haskell//haskell:ghc_wrapper"),
     ),
     "worker": attr.label(
         default = None,
         executable = True,
-        cfg = "host",
+        cfg = "exec",
     ),
 }
 
@@ -686,7 +687,7 @@ haskell_import = rule(
         "haddock_html": attr.label(allow_single_file = True),
         "_version_macros": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:version_macros"),
         ),
     },
@@ -759,3 +760,52 @@ haskell_repl_aspect = _haskell_repl_aspect
 haskell_toolchain = _haskell_toolchain
 
 ghc_plugin = _ghc_plugin
+
+def haskell_runfiles(
+        name = "haskell_runfiles",
+        module_name = "Runfiles",
+        base = "@rules_haskell//tools/runfiles:base"):
+    """ Convenience wrapper around rules_haskell runfiles library.
+
+    This wrapper is especially usefull with bzlmod, when a haskell library with runfiles is used from another module
+    (see [runfiles](https://github.com/tweag/rules_haskell/blob/master/tools/runfiles/README.md)).
+
+    ### Usage
+
+    The `haskell_runfiles` rule is called in a `BUILD` file as follows, in order to generate the `haskell_runfiles` library
+    (this default name can be customized).
+
+      ```bzl
+      haskell_runfiles()
+      haskell_library(
+        ...
+        deps = [":haskell_runfiles"],
+      )
+      ```
+
+      The library can then be used similarly to the runfiles library:
+
+      ```
+      import Runfiles
+      r <- Runfiles.create
+      let location = Runfiles.rlocation r "module_name/path/to/datafile"
+      ```
+
+    Args:
+      name: A unique name for this rule.
+      module_name: The name of the generated haskell module
+      base: The label of the `base` library to depend on.
+    """
+    expand_template(
+        name = "{}_generated".format(module_name),
+        out = "{}.hs".format(module_name),
+        template = "@rules_haskell//haskell:private/haskell_runfiles.tpl",
+        substitutions = {
+            "%{module_name}": module_name,
+        },
+    )
+    haskell_library(
+        name = name,
+        srcs = ["{}.hs".format(module_name)],
+        deps = ["@rules_haskell//tools/runfiles", base],
+    )

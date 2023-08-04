@@ -14,6 +14,8 @@ exports_files(
         "BUILD.bazel",
         "WORKSPACE",
         "constants.bzl",
+        "non_module_dev_deps.bzl",
+        "non_module_dev_deps_2.bzl",
     ],
     visibility = ["//buildifier:__pkg__"],
 )
@@ -29,7 +31,6 @@ filegroup(
         "stackage_snapshot.json",
         "stackage_snapshot.yaml",
         "//debug/linking_utils:all_files",
-        "//docs:all_files",
         "//haskell:all_files",
         "//nixpkgs:all_files",
         "//protobuf:all_files",

@@ -6,7 +6,6 @@ load(
     "//tests/external-haskell-repository:workspace_dummy.bzl",
     "haskell_package_repository_dummy",
 )
-load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 
 # Replaces local_repository in bzlmod
 # See https://groups.google.com/g/bazel-discuss/c/xpsg3mWQPZg
@@ -28,9 +27,6 @@ starlarkified_local_repository = repository_rule(
 def repositories(*, bzlmod):
     # Some helpers for platform-dependent configuration
     os_info(name = "os_info")
-
-    # For persistent worker (tools/worker)
-    rules_haskell_worker_dependencies()
 
     # module rules_bazel_integration_test requires bazel >= 6.1.0
     http_archive(
@@ -70,9 +66,9 @@ def repositories(*, bzlmod):
     # no modules are provided at the moment for buildifier
     http_archive(
         name = "com_github_bazelbuild_buildtools",
-        sha256 = "614c84128ddb86aab4e1f25ba2e027d32fd5c6da302ae30685b9d7973b13da1b",
-        strip_prefix = "buildtools-4.2.3",
-        urls = ["https://github.com/bazelbuild/buildtools/archive/4.2.3.tar.gz"],
+        sha256 = "977a0bd4593c8d4c8f45e056d181c35e48aa01ad4f8090bdb84f78dca42f47dc",
+        strip_prefix = "buildtools-6.1.2",
+        urls = ["https://github.com/bazelbuild/buildtools/archive/v6.1.2.tar.gz"],
     )
 
     http_archive(

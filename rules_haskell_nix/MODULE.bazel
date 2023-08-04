@@ -1,0 +1,28 @@
+module(
+    name = "rules_haskell_nix",
+    version = "0.16",
+)
+
+bazel_dep(
+    name = "rules_haskell",
+    version = "0.16",
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_core",
+    version = "0.9.0",
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_posix",
+    version = "0.9.0",
+)
+
+bazel_dep(
+    name = "platforms",
+    version = "0.0.6",
+)
+
+non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
+
+use_repo(non_module_deps, "os_info")

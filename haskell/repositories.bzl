@@ -8,8 +8,8 @@ load(
     "check_bazel_version_compatible",
 )
 
-_rules_nixpkgs_version = "fb0e76e093c6ba7987ea4276027507a0d6dceb06"
-_rules_nixpkgs_sha256 = "a8f20854da16156bd4e0d53d13dfb0d3360ee43c5ce764f0dc60703ab2b910e5"
+_rules_nixpkgs_version = "0c1f8f5470c7f292b7620762e224f53d837929d3"
+_rules_nixpkgs_sha256 = "9e3898a33c5f21f634aa9e2d45620e7c4b6d54d16d473571a891193bbd4725ca"
 
 _rules_sh_version = "v0.3.0"
 _rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
@@ -56,10 +56,10 @@ def rules_haskell_dependencies():
         http_archive,
         name = "bazel_skylib",
         urls = [
-            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
-            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
+            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
         ],
-        sha256 = "c6966ec828da198c5d9adbaa94c05e3a1c7f21bd012a0b29ba8ddbccb2c93b0d",
+        sha256 = "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
     )
 
     maybe(
@@ -140,6 +140,19 @@ def rules_haskell_dependencies():
     )
 
     rules_haskell_dependencies_bzlmod()
+
+    # For --incompatible_disable_starlark_host_transitions support (default in bazel 7)
+    # Temporarily overrides the rules_licence that comes with bazel to workaround
+    # https://github.com/bazelbuild/bazel/issues/17032#issuecomment-1548459728
+    maybe(
+        http_archive,
+        name = "rules_license",
+        sha256 = "4531deccb913639c30e5c7512a054d5d875698daeb75d8cf90f284375fe7c360",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_license/releases/download/0.0.7/rules_license-0.0.7.tar.gz",
+            "https://github.com/bazelbuild/rules_license/releases/download/0.0.7/rules_license-0.0.7.tar.gz",
+        ],
+    )
 
 def haskell_repositories():
     """Alias for rules_haskell_dependencies

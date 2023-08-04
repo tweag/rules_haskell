@@ -2,7 +2,6 @@
 
 load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_local_repository",
@@ -14,10 +13,6 @@ load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
 load(
     "@rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
-)
-load(
-    "@rules_haskell//haskell:ghc_bindist.bzl",
-    "haskell_register_ghc_bindists",
 )
 load(
     "@rules_haskell//docs/pandoc:pandoc.bzl",
@@ -50,28 +45,6 @@ def repositories(*, bzlmod):
     # Some helpers for platform-dependent configuration
     os_info(name = "os_info")
 
-    # For persistent worker (tools/worker)
-    rules_haskell_worker_dependencies()
-
-    # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
-    # See https://github.com/tweag/rules_haskell/issues/1871
-    http_archive(
-        name = "Cabal",
-        build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
-haskell_cabal_library(
-    name = "Cabal",
-    srcs = glob(["Cabal/**"]),
-    verbose = False,
-    version = "3.6.3.0",
-    visibility = ["//visibility:public"],
-)
-""",
-        sha256 = "f69b46cb897edab3aa8d5a4bd7b8690b76cd6f0b320521afd01ddd20601d1356",
-        strip_prefix = "cabal-gg-8220-with-3630",
-        urls = ["https://github.com/tweag/cabal/archive/refs/heads/gg/8220-with-3630.zip"],
-    )
-
     starlarkified_local_repository(
         name = "tutorial",
         path = "tutorial",
@@ -90,9 +63,9 @@ haskell_cabal_library(
     # no modules are provided at the moment for buildifier
     http_archive(
         name = "com_github_bazelbuild_buildtools",
-        sha256 = "614c84128ddb86aab4e1f25ba2e027d32fd5c6da302ae30685b9d7973b13da1b",
-        strip_prefix = "buildtools-4.2.3",
-        urls = ["https://github.com/bazelbuild/buildtools/archive/4.2.3.tar.gz"],
+        sha256 = "977a0bd4593c8d4c8f45e056d181c35e48aa01ad4f8090bdb84f78dca42f47dc",
+        strip_prefix = "buildtools-6.1.2",
+        urls = ["https://github.com/bazelbuild/buildtools/archive/v6.1.2.tar.gz"],
     )
 
     nixpkgs_local_repository(
@@ -105,10 +78,6 @@ haskell_cabal_library(
         nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
         repository = "@nixpkgs_default",
         version = test_ghc_version,
-        register = not bzlmod,
-    )
-
-    haskell_register_ghc_bindists(
         register = not bzlmod,
     )
 

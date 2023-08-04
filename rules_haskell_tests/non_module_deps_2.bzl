@@ -7,6 +7,20 @@ load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
 
 label_builder = lambda x: Label(x)
 
+def _empty_repo_impl(rctx):
+    fail(rctx.attrs.error_msg)
+
+_empty_repo = repository_rule(
+    implementation = _empty_repo_impl,
+    doc = """A dummy repository that can be loaded from the MODULE.bazel file but not fetched.""",
+    attrs = {
+        "error_msg": attr.string(
+            doc = "The error message displayed if the repository is fetched",
+            mandatory = True,
+        ),
+    },
+)
+
 def repositories(*, bzlmod):
     # In a separate repo because not all platforms support zlib.
     stack_snapshot(
@@ -203,118 +217,28 @@ haskell_cabal_library(
         label_builder = label_builder,
     )
 
-    stack_snapshot(
-        name = "stackage",
-        setup_stack = False,
-        components = {
-            "alex": [],
-            "attoparsec": [
-                # attoparsec contains an internal library which is not exposed publicly,
-                # but required to build the public library, hence the declaration of
-                # those 2 components, as well as the explicit declaration of the
-                # dependency between them.
-                "lib",
-                "lib:attoparsec-internal",
+    if is_linux:
+        stack_snapshot(
+            name = "stackage_asterius",
+            setup_stack = False,
+            local_snapshot = "//tests/asterius/stack_toolchain_libraries:snapshot.yaml",
+            packages = [
+                "xhtml",
             ],
-            "proto-lens-protoc": [
-                "lib",
-                "exe",
-            ],
-        },
-        components_dependencies = {
-            "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
-        },
-        local_snapshot = "//:stackage_snapshot.yaml",
-        packages = [
-            # Core libraries
-            "alex",
-            "array",
-            "base",
-            "bytestring",
-            "c2hs",
-            "conduit",
-            "conduit-extra",
-            "containers",
-            "deepseq",
-            "directory",
-            "filepath",
-            "ghc-heap",
-            "happy",
-            "mtl",
-            "optparse-applicative",
-            "process",
-            "text",
-            "text-show",
-            "vector",
-            # For tests
-            "cabal-doctest",
-            "doctest",
-            "polysemy",
-            "network",
-            "language-c",
-            "streaming",
-            "void",
-            "ghc-check",
-            "hspec",
-            "hspec-core",
-            "lens-family-core",
-            "data-default-class",
-            "profunctors",
-            "proto-lens",
-            "proto-lens-protoc",
-            "proto-lens-runtime",
-            "lens-family",
-            "safe-exceptions",
-            "temporary",
-        ],
-        setup_deps = {
-            "polysemy": ["cabal-doctest"],
-            # See https://github.com/tweag/rules_haskell/issues/1871
-            "HUnit": ["@Cabal//:Cabal"],
-            "bifunctors": ["@Cabal//:Cabal"],
-            "c2hs": ["@Cabal//:Cabal"],
-            "call-stack": ["@Cabal//:Cabal"],
-            "doctest": ["@Cabal//:Cabal"],
-            "generic-deriving": ["@Cabal//:Cabal"],
-            "happy": ["@Cabal//:Cabal"],
-            "hspec": ["@Cabal//:Cabal"],
-            "hspec-core": ["@Cabal//:Cabal"],
-            "hspec-discover": ["@Cabal//:Cabal"],
-            "hspec-expectations": ["@Cabal//:Cabal"],
-            "mono-traversable": ["@Cabal//:Cabal"],
-            "proto-lens-protoc": ["@Cabal//:Cabal"],
-            "proto-lens-runtime": ["@Cabal//:Cabal"],
-            "quickcheck-io": ["@Cabal//:Cabal"],
-            "transformers-compat": ["@Cabal//:Cabal"],
-            "type-errors": ["@Cabal//:Cabal"],
-            "typed-process": ["@Cabal//:Cabal"],
-            "unliftio-core": ["@Cabal//:Cabal"],
-        },
-        stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
-        tools = [
-            # This is not required, as `stack_snapshot` would build alex
-            # automatically, however it is used as a test for user provided
-            # `tools`. We also override alex's components to avoid building it
-            # twice.
-            "@alex",
-        ],
-        vendored_packages = {
-            "ghc-paths": "@rules_haskell//tools/ghc-paths",
-        },
-        label_builder = label_builder,
-    )
-
-    stack_snapshot(
-        name = "stackage_asterius",
-        setup_stack = False,
-        local_snapshot = "//tests/asterius/stack_toolchain_libraries:snapshot.yaml",
-        packages = [
-            "xhtml",
-        ],
-        stack_snapshot_json = "//tests/asterius/stack_toolchain_libraries:snapshot.json",
-        toolchain_libraries = toolchain_libraries,
-        label_builder = label_builder,
-    ) if is_linux else None
+            stack_snapshot_json = "//tests/asterius/stack_toolchain_libraries:snapshot.json",
+            toolchain_libraries = toolchain_libraries,
+            label_builder = label_builder,
+        )
+    else:
+        # On non linux, we still need a dummy repository to call `use_repo` in the `MODULE.bazel` file.
+        _empty_repo(
+            name = "stackage_asterius",
+            error_msg = "The stackage_asterius repository should only be used on linux",
+        )
+        _empty_repo(
+            name = "stackage_asterius-unpinned",
+            error_msg = "The stackage_asterius-unpinned repository should only be used on linux",
+        )
 
 def _non_module_deps_2_impl(ctx):
     repositories(bzlmod = True)

@@ -1,5 +1,6 @@
 /bazel-*
 /rules_haskell_tests/bazel-*
+/rules_haskell_nix/bazel-*
 .bazelrc.local
 *.swp
 *.swo

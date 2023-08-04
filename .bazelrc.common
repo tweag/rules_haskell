@@ -1,0 +1,132 @@
+# See https://docs.bazel.build/versions/master/user-manual.html#bazelrc.
+
+# Global Configuration
+# --------------------
+
+# Force TLS 1.2. With TLS 1.3, we run into the following error on Darwin.
+# > No subject alternative DNS name matching github-releases.githubusercontent.com found.
+# It looks like this is a result of SNI being broken on TLS 1.3 which results
+# in us getting a certificate for githubassets.com instead.
+#
+# Taken from https://github.com/digital-asset/daml/pull/8697.
+startup --host_jvm_args=-Djdk.tls.client.protocols=TLSv1.2
+
+common --incompatible_require_linker_input_cc_api
+
+common --incompatible_disallow_empty_glob=true
+
+# test environment does not propagate locales by default some tests reads files
+# written in UTF8, we need to propagate the correct environment variables, such
+# as LOCALE_ARCHIVE We also need to setup an utf8 locale
+test --test_env=LANG=C.UTF-8 --test_env=LOCALE_ARCHIVE
+
+# Platform / Toolchain Selection
+# ------------------------------
+build:linux-nixpkgs --config=nixpkgs
+build:macos-nixpkgs --config=nixpkgs
+build:nixpkgs --host_platform=@rules_nixpkgs_core//platforms:host
+
+# Build and Test Filters
+# ----------------------
+# Note tag filters do not compose. If you wish to augment these filters on the
+# command-line you have to repeat the full list.
+build:linux-bindist --build_tag_filters -requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:linux-bindist --test_tag_filters  -requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+
+build:macos-nixpkgs --build_tag_filters -dont_test_on_darwin
+build:macos-nixpkgs --test_tag_filters  -dont_test_on_darwin
+
+build:macos-bindist --build_tag_filters -requires_nix,-dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:macos-bindist --test_tag_filters  -requires_nix,-dont_test_on_darwin,-dont_test_on_darwin_with_bindist,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+
+build:windows-bindist --build_tag_filters -requires_nix,-dont_test_on_windows,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+build:windows-bindist --test_tag_filters -requires_nix,-dont_test_on_windows,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist
+
+# CI Configuration
+# ----------------
+common:ci --config=ci-common
+build:ci --config=remote-cache
+build:ci --bes_results_url=https://app.buildbuddy.io/invocation/
+build:ci --bes_backend=grpcs://remote.buildbuddy.io
+
+common:ci-common --color=no
+
+build:ci-common --loading_phase_threads=1
+build:ci-common --verbose_failures
+# Make sure we don't rely on the names of convenience symlinks because those
+# can be changed by user.
+build:ci-common --symlink_prefix=bazel-ci-
+build:ci-common --repository_cache=~/repo-cache/
+build:ci-common --experimental_repository_cache_hardlinks
+
+# Use a remote cache during CI
+build:ci-windows-bindist --bes_upload_mode=wait_for_upload_complete --bes_timeout=60s
+build:remote-cache --remote_cache=grpcs://remote.buildbuddy.io
+build:ci-common --remote_timeout=3600
+# Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
+# See https://github.com/tweag/rules_haskell/issues/1498.
+build:ci-common --keep_backend_build_event_connections_alive=false
+
+test:ci-common --test_output=errors
+
+build:ci-linux-bindist --config=linux-bindist
+build:ci-linux-nixpkgs --config=linux-nixpkgs
+build:ci-macos-bindist --config=macos-bindist
+build:ci-macos-nixpkgs --config=macos-nixpkgs
+build:ci-windows-bindist --config=windows-bindist
+build:ci-windows-bindist-rules-haskell --config=ci-windows-bindist
+build:ci-windows-bindist-rules-haskell-tests --config=ci-windows-bindist
+
+# Windows is prone to leaking absolute paths into the remote cache which can
+# poison the cache, so we do not share the cache between different modules.
+# Increment these numbers to use a fresh cache.
+# Errors of the following form might indicate such an issue:
+#
+#   ERROR: D:/a/rules_haskell/rules_haskell/tests/runfiles/BUILD.bazel:20:10: Compiling tests/runfiles/main.cc failed: undeclared inclusion(s) in rule '//tests/runfiles:cc-runner':
+#   this rule is missing dependency declarations for the following files included by 'tests/runfiles/main.cc':
+#     '.../execroot/rules_haskell/external/rules_haskell_ghc_windows_amd64/mingw/include/c++/9.2.0/cstdlib'
+#     '.../execroot/rules_haskell/external/rules_haskell_ghc_windows_amd64/mingw/include/c++/9.2.0/x86_64-w64-mingw32/bits/c++config.h'
+build:ci-windows-bindist-rules-haskell --remote_default_exec_properties=cache-silo-key=windows-rules-haskell-v0
+build:ci-windows-bindist-rules-haskell-tests --remote_default_exec_properties=cache-silo-key=windows-rules-haskell-tests-v0
+
+# XXX: @com_google_protobuf sets `use_default_shell_env = True`, so we enable
+#   strict action env to avoid changes in `PATH` invalidating the cache.
+build:linux-bindist --experimental_strict_action_env
+build:macos-bindist --experimental_strict_action_env
+build:windows-bindist --experimental_strict_action_env
+
+# Note [backward compatible options]
+build:linux-bindist --incompatible_enable_cc_toolchain_resolution
+build:macos-bindist --incompatible_enable_cc_toolchain_resolution
+build:linux-nixpkgs --incompatible_enable_cc_toolchain_resolution
+build:macos-nixpkgs --incompatible_enable_cc_toolchain_resolution
+build:windows-bindist --incompatible_enable_cc_toolchain_resolution
+
+# Blocked by https://github.com/bazelbuild/bazel/issues/11704
+#build:ci --incompatible_load_cc_rules_from_bzl
+
+# This flag will become the default in a later version of bazel
+# See https://github.com/bazelbuild/bazel/issues/8922
+build:ci --incompatible_load_proto_rules_from_bzl
+
+# This flag will become the default in bazel 6
+# https://github.com/tweag/rules_haskell/issues/1657
+build: --incompatible_override_toolchain_transition
+
+coverage --build_tag_filters "coverage-compatible" --test_tag_filters "coverage-compatible" --test_output=all
+
+# To update these lines, execute
+# `bazel run @contrib_rules_bazel_integration_test//tools:update_deleted_packages`
+build --deleted_packages=examples,examples/arm,examples/cat_hs,examples/cat_hs/exec/cat_hs,examples/cat_hs/lib/args,examples/cat_hs/lib/cat,examples/primitive,examples/rts,examples/transformers,examples/vector,tests/c2hs/repo,tests/haskell_module/repl/haskell_module_repl_cross_library_deps_test/package-a,tests/haskell_module/repl/haskell_module_repl_cross_library_deps_test/package-b,tests/haskell_module/repl/haskell_module_repl_test,tests/library-external-workspace/repo,tests/repl-targets/hs_bin_repl_test,tests/repl-targets/hs_lib_repl_test,tests/stack-snapshot-deps/hs_override_stack_test,tutorial,tutorial/lib,tutorial/main,tutorial/tools/build_rules
+query --deleted_packages=examples,examples/arm,examples/cat_hs,examples/cat_hs/exec/cat_hs,examples/cat_hs/lib/args,examples/cat_hs/lib/cat,examples/primitive,examples/rts,examples/transformers,examples/vector,tests/c2hs/repo,tests/haskell_module/repl/haskell_module_repl_cross_library_deps_test/package-a,tests/haskell_module/repl/haskell_module_repl_cross_library_deps_test/package-b,tests/haskell_module/repl/haskell_module_repl_test,tests/library-external-workspace/repo,tests/repl-targets/hs_bin_repl_test,tests/repl-targets/hs_lib_repl_test,tests/stack-snapshot-deps/hs_override_stack_test,tutorial,tutorial/lib,tutorial/main,tutorial/tools/build_rules
+
+# Needed to build @rules_jvm_external//private/tools/java/com/github/bazelbuild/rules_jvm_external/zip (used by //tests/java_classpath)
+build:macos-nixpkgs --tool_java_language_version=11
+
+# This flag will become the default in bazel 7
+# https://github.com/bazelbuild/bazel/issues/17032
+build --incompatible_disable_starlark_host_transitions
+
+# User Configuration
+# ------------------
+try-import %workspace%/.bazelrc.local

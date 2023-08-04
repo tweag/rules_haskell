@@ -701,7 +701,7 @@ haskell_cabal_library = rule(
             Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
         "tools": attr.label_list(
-            cfg = "host",
+            cfg = "exec",
             allow_files = True,
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
@@ -719,12 +719,12 @@ haskell_cabal_library = rule(
         ),
         "_cabal_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
         "_runghc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:runghc"),
         ),
         "_cc_toolchain": attr.label(
@@ -940,7 +940,7 @@ haskell_cabal_binary = rule(
             Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
         "tools": attr.label_list(
-            cfg = "host",
+            cfg = "exec",
             allow_files = True,
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
@@ -958,12 +958,12 @@ haskell_cabal_binary = rule(
         ),
         "_cabal_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
         "_runghc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:runghc"),
         ),
         "_cc_toolchain": attr.label(
@@ -1307,10 +1307,12 @@ library
         ],
         "extra-deps": versioned_packages,
         "flags": {
-            pkg: {
-                flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
+            pkg: dict([
+                (flag[1:], True) if flag.startswith('+') else
+                (flag[1:], False) if flag.startswith('-') else
+                (flag, True)
                 for flag in flags
-            }
+            ])
             for (pkg, flags) in repository_ctx.attr.flags.items()
         },
     }).to_json()

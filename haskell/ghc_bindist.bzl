@@ -35,6 +35,8 @@ GHC_BINDIST_DOCDIR = \
     {
     }
 
+LOCAL_PYTHON_REPO_NAME = "rules_haskell_python_local"
+
 def _split_version(version):
     vs = version.split(".")
     if len(vs) != 3:
@@ -272,8 +274,8 @@ _ghc_bindist = repository_rule(
     },
 )
 
-def _ghc_bindist_toolchain_impl(ctx):
-    os, _, arch = ctx.attr.target.partition("_")
+def ghc_bindist_toolchain_declaration(target, bindist_name, toolchain_name):
+    os, _, arch = target.partition("_")
     os_constraint = {
         "darwin": "osx",
         "linux": "linux",
@@ -288,21 +290,29 @@ def _ghc_bindist_toolchain_impl(ctx):
         "@platforms//cpu:{}".format(cpu_constraint),
     ]
     target_constraints = exec_constraints
-    ctx.file(
-        "BUILD",
-        executable = False,
-        content = """
+    return """
 toolchain(
-    name = "toolchain",
+    name = "{toolchain_name}",
     toolchain_type = "@rules_haskell//haskell:toolchain",
     toolchain = "@{bindist_name}//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
-        """.format(
+""".format(
+        toolchain_name = toolchain_name,
+        bindist_name = bindist_name,
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints,
+    )
+
+def _ghc_bindist_toolchain_impl(ctx):
+    ctx.file(
+        "BUILD",
+        executable = False,
+        content = ghc_bindist_toolchain_declaration(
+            target = ctx.attr.target,
             bindist_name = ctx.attr.bindist_name,
-            exec_constraints = exec_constraints,
-            target_constraints = target_constraints,
+            toolchain_name = "toolchain",
         ),
     )
 
@@ -339,6 +349,21 @@ _windows_cc_toolchain = repository_rule(
         "bindist_name": attr.string(),
     },
 )
+
+# Toolchains declarations for bindists used by the `haskell_toolchains` module
+# extension to register all the haskell toolchains in the same BUILD file
+def ghc_bindists_toolchain_declarations(version):
+    version = version or _GHC_DEFAULT_VERSION
+    if not GHC_BINDIST.get(version):
+        fail("Binary distribution of GHC {} not available.".format(version))
+    return [
+        ghc_bindist_toolchain_declaration(
+            target = target,
+            bindist_name = "rules_haskell_ghc_{}".format(target),
+            toolchain_name = "rules_haskell_ghc_{}".format(target),
+        )
+        for target in GHC_BINDIST[version]
+    ]
 
 def ghc_bindist(
         name,
@@ -499,9 +524,8 @@ def haskell_register_ghc_bindists(
             name = local_sh_posix_repo_name,
             register = register,
         )
-    local_python_repo_name = "rules_haskell_python_local"
-    if local_python_repo_name not in native.existing_rules():
-        _configure_python3_toolchain(name = local_python_repo_name, register = register)
+    if LOCAL_PYTHON_REPO_NAME not in native.existing_rules():
+        configure_python3_toolchain(name = LOCAL_PYTHON_REPO_NAME, register = register)
 
 def _configure_python3_toolchain_impl(repository_ctx):
     cpu = get_cpu_value(repository_ctx)
@@ -555,7 +579,7 @@ _config_python3_toolchain = repository_rule(
     environ = ["PATH"],
 )
 
-def _configure_python3_toolchain(name, register = True):
+def configure_python3_toolchain(name, register = True):
     """Autoconfigure python3 toolchain for GHC bindist
 
     `rules_haskell` requires Python 3 to build Haskell targets. Under Nix we

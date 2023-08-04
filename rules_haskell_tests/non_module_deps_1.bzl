@@ -14,15 +14,10 @@ load(
     "rules_haskell_asterius_toolchains",
     "toolchain_libraries",
 )
-load(
-    "@rules_haskell//haskell:ghc_bindist.bzl",
-    "haskell_register_ghc_bindists",
-)
 load("//tests/integration_testing:dependencies.bzl", "integration_testing_bazel_binaries")
 load(
     "@rules_haskell//:constants.bzl",
     "test_asterius_version",
-    "test_ghc_version",
 )
 
 test_ghcopts = [
@@ -75,13 +70,6 @@ filegroup(
 )
 """,
         repository = "@nixpkgs_default",
-    )
-
-    haskell_register_ghc_bindists(
-        cabalopts = test_cabalopts,
-        ghcopts = test_ghcopts,
-        version = test_ghc_version,
-        register = not bzlmod,
     )
 
     nixpkgs_python_configure(
