@@ -143,7 +143,7 @@ for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
             haddock_html = path_to_label(pkg.haddock_html, pkgroot)
             if not haddock_html:
                 haddock_html = os.path.join("haddock", "html", pkg.name)
-                output.append("#SYMLINK: {} {}".format(resolved_haddock_html, haddock_html))
+                output.append("#SYMLINK: {} {}".format(resolved_haddock_html.replace('\\', '/'), haddock_html))
 
     # If there is many interfaces, we give them a number
     interface_id = 0
