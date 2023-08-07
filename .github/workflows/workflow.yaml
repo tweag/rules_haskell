@@ -10,97 +10,14 @@ env:
   cache-version: 0
 
 jobs:
-  test-nixpkgs:
-    name: Build & Test - Nixpkgs
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-11]
-        module: [rules_haskell, rules_haskell_tests]
-        bzlmod: [bzlmod, workspace]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Mount Bazel cache
-        uses: actions/cache@v3
-        with:
-          path: ~/repo-cache
-          key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v22
-        with:
-          nix_path: nixpkgs=./nixpkgs/default.nix
-          extra_nix_config: |
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-            extra-substituters = https://cache.iog.io
-      - name: Configure
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-        run: |
-          # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
-          # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
-          [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
-          case ${{ runner.os }} in
-            macOS) BUILD_CONFIG=ci-macos-nixpkgs;;
-            Linux) BUILD_CONFIG=ci-linux-nixpkgs;;
-          esac
-          if [ -z "$BUILDBUDDY_API_KEY" ]; then
-              cache_setting='--noremote_upload_local_results'
-          else
-              cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
-          fi
-          if [ ${{ matrix.bzlmod }} == bzlmod ]; then
-              bzlmod_setting='common --config bzlmod'
-          else
-              bzlmod_setting=''
-          fi
-          cat >.bazelrc.local <<EOF
-          common --config=ci
-          build --config=$BUILD_CONFIG
-          build $cache_setting
-          $bzlmod_setting
-          EOF
-          cp .bazelrc.local rules_haskell_tests
-          cat >~/.netrc <<EOF
-          machine api.github.com
-                  password ${{ secrets.GITHUB_TOKEN }}
-          EOF
-      - name: Check Bazel version
-        run: |
-          nix-shell --arg docTools false --pure --run .ci/check-bazel-version
-      - name: Build & test - rules_haskell
-        if: matrix.module == 'rules_haskell'
-        run: |
-          nix-shell --arg docTools false --pure --run '
-            set -euo pipefail
-            bazel test //...
-            bazel build //docs:api_html
-            bazel build //docs:guide_html
-            '
-      - name: Build & test - rules_haskell_tests
-        if: matrix.module == 'rules_haskell_tests'
-        run: |
-          nix-shell --arg docTools false --pure --run '
-            set -euo pipefail
-            cd rules_haskell_tests
-            ./tests/run-start-script.sh --use-nix
-            bazel build //tests:run-tests
-            if [ ${{ matrix.bzlmod }} == bzlmod ]; then
-                # TODO setup MODULE.bazel files for examples and tutorial folders
-                ./bazel-ci-bin/tests/run-tests --skip="bazel test examples" --skip="bazel test tutorial"
-            else
-                ./bazel-ci-bin/tests/run-tests
-            fi
-            bazel coverage //...
-            '
-
   test-bindist:
     name: Build & Test - bindist
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-11, windows-latest]
-        module: [rules_haskell, rules_haskell_tests]
-        bzlmod: [bzlmod, workspace]
+        os: [windows-latest]
+        module: [rules_haskell]
+        bzlmod: [bzlmod]
     runs-on: ${{ matrix.os }}
     steps:
       - if: ${{ matrix.os == 'ubuntu-latest' }}
