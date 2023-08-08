@@ -1,5 +1,9 @@
 workspace(name = "rules_haskell")
 
+load("//haskell:private/ghc_ci.bzl", "ghc_version")
+
+ghc_version(name = "rules_haskell_ghc_version")
+
 load("//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
@@ -45,10 +49,6 @@ http_archive(
         "https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
     ],
 )
-
-load("//haskell:private/ghc_ci.bzl", "ghc_version")
-
-ghc_version(name = "rules_haskell_ghc_version")
 
 load("//:non_module_dev_deps.bzl", "repositories")
 
