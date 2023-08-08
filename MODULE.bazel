@@ -67,6 +67,7 @@ rules_haskell_dependencies = use_extension(
 use_repo(
     rules_haskell_dependencies,
     "os_info",
+    "rules_haskell_ghc_version",
     "rules_haskell_worker_dependencies",
     "rules_haskell_stack_update",
     "rules_haskell_stack",
