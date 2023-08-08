@@ -104,7 +104,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - if: ${{ matrix.os == 'windows-latest' }}
-        run: reg query HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
+        run: |
+          reg query HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
+          reg add HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters /v KeepAliveTime /t REG_DWORD /d 300000
+          reg query HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |-
           sudo swapoff -a
@@ -219,7 +222,7 @@ jobs:
           export PATH=$HOME/bazel:$PATH
           cd rules_haskell_tests
           base=$( bazel info output_base )
-          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0r cp -t logs
+          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0r cp -t ../logs
 
       - name: Upload logs
         if: always()
