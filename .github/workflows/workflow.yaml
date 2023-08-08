@@ -103,6 +103,8 @@ jobs:
         bzlmod: [bzlmod, workspace]
     runs-on: ${{ matrix.os }}
     steps:
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: reg query HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |-
           sudo swapoff -a
@@ -207,7 +209,7 @@ jobs:
           mkdir -p logs
           export PATH=$HOME/bazel:$PATH
           base=$( bazel info output_base )
-          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0r cp -T logs
+          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0r cp -t logs
 
       - name: Collect logs
         if: always()
@@ -217,7 +219,7 @@ jobs:
           export PATH=$HOME/bazel:$PATH
           cd rules_haskell_tests
           base=$( bazel info output_base )
-          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0r cp -T logs
+          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0r cp -t logs
 
       - name: Upload logs
         if: always()
