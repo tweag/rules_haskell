@@ -17,10 +17,9 @@ load(
     "resolve_labels",
 )
 load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
+load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
 
-# If you change this, change stackage's version in the start script
-# (see stackage.org).
-_GHC_DEFAULT_VERSION = "9.2.5"
+_GHC_DEFAULT_VERSION = DEFAULT_GHC_VERSION
 
 GHC_BINDIST_STRIP_PREFIX = \
     {
