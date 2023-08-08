@@ -59,6 +59,13 @@ bazel_dep(
     version = "0.3.0",
 )
 
+ghc_version = use_extension("//extensions:ghc_version.bzl", "ghc_version", dev_dependency=True)
+
+use_repo(
+    ghc_version,
+    "rules_haskell_ghc_version",
+)
+
 rules_haskell_dependencies = use_extension(
     "//extensions:rules_haskell_dependencies.bzl",
     "rules_haskell_dependencies",
@@ -342,13 +349,6 @@ stack_snapshots.package(
         "unliftio-core",
     ]
 ]
-
-ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_version", dev_dependency=True)
-
-use_repo(
-    ghc_version,
-    "rules_haskell_ghc_version",
-)
 
 stack_snapshots.stack_snapshot_json(label = "@rules_haskell//:stackage_snapshot.json")
 
