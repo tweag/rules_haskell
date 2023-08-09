@@ -12,7 +12,7 @@ drop-packages:
 
 packages:
 - git: https://github.com/tweag/cabal
-  commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
+  commit: 4f8c4ab8274320c1a00992c9aa7c6559ff190fa9
   subdirs:
   - Cabal
 
