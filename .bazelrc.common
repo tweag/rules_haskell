@@ -63,7 +63,7 @@ build:ci-common --repository_cache=~/repo-cache/
 build:ci-common --experimental_repository_cache_hardlinks
 
 # Use a remote cache during CI
-build:ci-windows-bindist --bes_upload_mode=wait_for_upload_complete --bes_timeout=60s
+build:ci-windows-bindist --bes_upload_mode=wait_for_upload_complete --bes_timeout=600s
 # On Github CI for Windows, we see intermittent connection failures to BuildBuddy
 # (see https://github.com/buildbuddy-io/buildbuddy/issues/4467)
 # increase the retries as a workaround.
