@@ -59,7 +59,7 @@ bazel_dep(
     version = "0.3.0",
 )
 
-ghc_version = use_extension("//extensions:ghc_version.bzl", "ghc_version", dev_dependency=True)
+ghc_version = use_extension("//extensions:ghc_version.bzl", "ghc_default_version")
 
 use_repo(
     ghc_version,

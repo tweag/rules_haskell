@@ -104,13 +104,6 @@ bazel_dep(
     repo_name = "com_google_protobuf",
 )
 
-ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_version", dev_dependency=True)
-
-use_repo(
-    ghc_version,
-    "rules_haskell_ghc_version",
-)
-
 non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
 
 use_repo(
