@@ -79,12 +79,14 @@ def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
             export PATH=$PATH:{mingw_bin}
 
             # Include libdir in include path just like hsc2hs does.
-            libdir=$({ghc} --print-libdir)
             # GHC >=9 on Windows stores the includes outside of libdir
-            {hsc2hs} -C-I$libdir/include -C-I$libdir/../include "$@"
+            # See: https://gitlab.haskell.org/ghc/ghc/-/issues/21609#note_435800
+            include_dirs=($({ghc_pkg} field rts include-dirs  --simple-output))
+            include_dirs_args=( "${{include_dirs[@]/#/-C-I}}" )
+            {hsc2hs} "${{include_dirs_args[@]}}" "$@"
             """.format(
                 mingw_bin = paths.dirname(cc.tools.cc) if hs.toolchain.is_windows else "",
-                ghc = hs.tools.ghc.path,
+                ghc_pkg = hs.tools.ghc_pkg.path,
                 hsc2hs = hs.tools.hsc2hs.path,
             ),
         arguments = [args],
