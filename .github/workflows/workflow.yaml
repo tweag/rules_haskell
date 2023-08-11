@@ -85,8 +85,8 @@ jobs:
             ./tests/run-start-script.sh --use-nix
             bazel build //tests:run-tests
             if [ ${{ matrix.bzlmod }} == bzlmod ]; then
-                # TODO setup MODULE.bazel files for examples and tutorial folders
-                ./bazel-ci-bin/tests/run-tests --skip="bazel test examples" --skip="bazel test tutorial"
+                # TODO setup MODULE.bazel files for examples folder
+                ./bazel-ci-bin/tests/run-tests --skip="bazel test examples"
             else
                 ./bazel-ci-bin/tests/run-tests
             fi

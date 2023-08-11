@@ -63,11 +63,23 @@ _bindist_tag = tag_class(
     doc = "Declares and configure a bindist haskell toolchain. See [ghc_bindist](ghc_bindist.html#ghc_bindist).",
 )
 
+def _left_pad_zero(index, length):
+    if index < 0:
+        fail("index must be non-negative")
+    return ("0" * length + str(index))[-length:]
+
 def _all_toolchains_impl(rctx):
-    content = "\n".join(rctx.attr.toolchains)
+    # In the same BUILD file, toolchain are registered in alphabetical order, so we use a padded index in the toolchain name.
+    # https://github.com/bazelbuild/rules_go/blob/e116651f92a15f4e5dd63ea09dd9ae2b2dd8e2f3/go/private/extensions.bzl#L135-L139
+    pad_size = len(str(len(rctx.attr.toolchains)))
+    toolchains = [
+        f.format("toolchain_{}".format(_left_pad_zero(i, pad_size)))
+        for i, f in enumerate(rctx.attr.toolchains)
+    ]
+    content = "\n".join(toolchains)
     rctx.file("BUILD.bazel", content = content)
 
-_all_toolchains = repository_rule(
+all_toolchains = repository_rule(
     implementation = _all_toolchains_impl,
     attrs = {
         "toolchains": attr.string_list(
@@ -118,7 +130,7 @@ def _haskell_toolchains_impl(mctx):
                 ghc_bindist_toolchain_declaration(
                     target = bindist_tag.target,
                     bindist_name = name,
-                    toolchain_name = name,
+                    toolchain_name = "{}",  # We wait before chosing the toolchain name in the all_toolchain rule.
                 ),
             )
 
@@ -148,7 +160,7 @@ def _haskell_toolchains_impl(mctx):
                 ghc_bindists_toolchain_declarations(bindists_tag.version),
             )
 
-    _all_toolchains(
+    all_toolchains(
         name = "all_bindist_toolchains",
         toolchains = toolchain_declarations,
     )

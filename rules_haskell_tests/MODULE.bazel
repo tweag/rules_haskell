@@ -174,16 +174,6 @@ non_modules_deps_bzlmod = use_extension(
     "non_module_deps_bzlmod",
 )
 
-use_repo(
-    non_modules_deps_bzlmod,
-    "rules_haskell_ghc_nixpkgs_toolchain",
-    "rules_haskell_ghc_nixpkgs",
-)
-
-register_toolchains(
-    "@rules_haskell_ghc_nixpkgs_toolchain//:toolchain",
-)
-
 [
     (
         use_repo(
@@ -362,7 +352,6 @@ nix_haskell_toolchains = use_extension(
 )
 
 nix_haskell_toolchains.new(
-    name = "nix_toolchain_from_tests",
     attribute_path = "",
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
