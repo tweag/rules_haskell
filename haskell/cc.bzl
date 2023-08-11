@@ -223,7 +223,10 @@ def ghc_cc_program_args(hs, cc, ld):
         args.append("-pgml-supports-no-pie")
     elif hs.toolchain.numeric_version >= [8, 10, 3]:
         args.append("-pgmc-supports-no-pie")
-    if hs.toolchain.numeric_version >= [9, 0, 1]:
+
+    if hs.toolchain.is_windows and hs.toolchain.numeric_version >= [9, 4, 1]:
+        pass
+    elif hs.toolchain.numeric_version >= [9, 0, 1]:
         args.extend([
             "-pgmlm",
             ld,
