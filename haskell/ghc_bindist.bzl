@@ -114,6 +114,27 @@ def _ghc_bindist_impl(ctx):
             for path in result.stdout.splitlines():
                 ctx.execute(["cmd", "/c", "del", path.strip()], working_directory = unpack_dir)
 
+        # Recent GHC versions need to be patched to
+        # work around https://gitlab.haskell.org/ghc/ghc/-/issues/23476 where ghc-pkg resolves
+        # haddock-html and haddock-interfaces to non-existing paths, because the ${pkgroot}
+        # relative path refers to a directory in the parent directory of the distribution.
+        if version_tuple >= (9, 0, 1):
+            ctx.report_progress("fixing package-db paths")
+            pkgdb = execute_or_fail_loudly(ctx, [paths.join("bin", "ghc"), "--print-global-package-db"]).stdout.splitlines()[0]
+
+            config_files = execute_or_fail_loudly(ctx, ["where", "/r", pkgdb.strip(), "*.conf"]).stdout
+
+            repo_root = str(ctx.path("."))
+
+            for conf in config_files.splitlines():
+                # `conf` is always absolute, relativize it to the repo_root
+                conf_path = str(ctx.path(conf.strip()))
+                conf_path = conf_path[len(repo_root) + 1:]
+
+                config = ctx.read(conf_path)
+                if "${pkgroot}/../../" in config:
+                    ctx.file(conf_path, content=config.replace("${pkgroot}/../../", "${pkgroot}/../"))
+
     # We apply some patches, if needed.
     patch_args = list(ctx.attr.patch_args)
     if unpack_dir:
@@ -433,12 +454,6 @@ def ghc_bindist(
             "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
             "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
         }.get(version)
-
-        # More recent GHC versions just need a patch to fix the docs
-        # folder location:
-        if version_tuple >= (9, 0, 1):
-            dashed_version = version.replace(".", "_")
-            patches = ["@rules_haskell//haskell:assets/ghc_{}_win.patch".format(dashed_version)]
 
     if target == "darwin_amd64":
         patches = {
