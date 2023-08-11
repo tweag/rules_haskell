@@ -21,7 +21,6 @@ queue_rules:
       - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell, bzlmod\).*'
       - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell_tests, workspace\).*'
       - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell_tests, bzlmod\).*'
-      - 'status-success~=Build & Test - Cross.*'
       - "status-success=deploy/netlify"
 
 pull_request_rules:
@@ -47,7 +46,6 @@ pull_request_rules:
       - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell, bzlmod\).*'
       - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell_tests, workspace\).*'
       - 'status-success~=Build & Test - bindist \(windows-.*, rules_haskell_tests, bzlmod\).*'
-      - 'status-success~=Build & Test - Cross.*'
       - "status-success=deploy/netlify"
       - "#approved-reviews-by>=1"
       - "label=merge-queue"
