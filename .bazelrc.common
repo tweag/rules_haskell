@@ -51,6 +51,9 @@ build:ci --bes_backend=grpcs://remote.buildbuddy.io
 
 common:ci-common --color=no
 
+common:ci-common --nolegacy_important_outputs
+build:ci-common --experimental_remote_cache_compression
+
 build:ci-common --loading_phase_threads=1
 build:ci-common --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
