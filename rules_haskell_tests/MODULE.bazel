@@ -155,8 +155,6 @@ non_module_deps_2 = use_extension("//:non_module_deps_2.bzl", "non_module_deps_2
 
 use_repo(
     non_module_deps_2,
-    "data-default-ic",
-    "data-default-ol",
     "ghcide",
     "stackage-zlib",
     "stackage-zlib-unpinned",
