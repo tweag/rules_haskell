@@ -199,3 +199,21 @@ jobs:
           # NOTE keep in sync with tests/RunTests.hs
           bazel run @stackage-pinning-test-unpinned//:pin
           bazel build @stackage-pinning-test//:hspec
+
+      - name: Collect Logs
+        id: collect_logs
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p logs
+          [[ ${{ matrix.module }} == 'rules_haskell_tests' ]] && cd rules_haskell_tests
+          export PATH=$HOME/bazel:$PATH
+          base=$( bazel info output_base )
+          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0rI % cp % logs/
+
+      - name: Upload Logs
+        if: steps.collect_logs.conclusion == 'success'
+        uses: actions/upload-artifact@v3
+        with:
+          name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
+          path: logs
