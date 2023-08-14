@@ -2,6 +2,15 @@ load(
     "@rules_haskell//haskell:protobuf.bzl",
     "haskell_proto_toolchain",
 )
+load(
+    "protoc.bzl",
+    "protoc_wrapper",
+)
+
+# This call creates a wrapper for the protoc executable which is needed on
+# Windows when protoc.exe is compiled with clang since the executable depends on
+# runtime DLLs from the mingw\bin folder.
+protoc_wrapper("protoc")
 
 # This toolchain is morally testonly. However, that would break our
 # tests of haskell_library_rules: aspects of non-testonly
@@ -12,7 +21,10 @@ haskell_proto_toolchain(
     name = "protobuf-toolchain",
     testonly = 0,
     plugin = "@stackage-exe//proto-lens-protoc",
-    protoc = "@com_google_protobuf//:protoc",
+    protoc = select({
+        "@platforms//os:windows": ":protoc.cmd",
+        "//conditions:default": "@com_google_protobuf//:protoc",
+    }),
     deps = [
         "@stackage//:base",
         "@stackage//:bytestring",
