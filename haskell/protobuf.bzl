@@ -368,13 +368,11 @@ _protobuf_toolchain = rule(
         "protoc": attr.label(
             executable = True,
             cfg = "exec",
-            allow_single_file = True,
             mandatory = True,
         ),
         "plugin": attr.label(
             executable = True,
             cfg = "exec",
-            allow_single_file = True,
             mandatory = True,
         ),
         "deps": attr.label_list(
