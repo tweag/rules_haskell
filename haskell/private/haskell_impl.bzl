@@ -180,7 +180,10 @@ def _haskell_binary_common_impl(ctx, is_test):
         fail("""The attribute "narrowed_deps" can only be used if "modules" is specified in {}""".format(ctx.label))
 
     # Note [Plugin order]
-    plugin_decl = reversed(ctx.attr.plugins)
+    plugins = ctx.attr.plugins
+
+    plugin_decl = reversed(plugins) if hs.toolchain.numeric_version < [9, 4, 1] else plugins
+
     non_default_plugin_decl = reversed(ctx.attr.non_default_plugins)
     all_plugin_decls = plugin_decl + non_default_plugin_decl
 
