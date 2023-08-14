@@ -206,9 +206,13 @@ jobs:
         shell: bash
         run: |
           mkdir -p logs
-          [[ ${{ matrix.module }} == 'rules_haskell_tests' ]] && cd rules_haskell_tests
+          if [[ ${{ matrix.module }} == 'rules_haskell_tests' ]]; then
+             dir=rules_haskell_tests
+          else
+             dir=.
+          fi
           export PATH=$HOME/bazel:$PATH
-          base=$( bazel info output_base )
+          base=$( cd "$dir" ; bazel info output_base )
           find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0rI % cp % logs/
 
       - name: Upload Logs
