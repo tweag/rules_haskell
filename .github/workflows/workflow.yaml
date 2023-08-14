@@ -218,7 +218,7 @@ jobs:
           find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0rI % cp % logs/
 
       - name: Upload Logs
-        if: steps.collect_logs.conclusion == 'success'
+        if: ${{ failure() && steps.collect_logs.conclusion == 'success' }}
         uses: actions/upload-artifact@v3
         with:
           name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
