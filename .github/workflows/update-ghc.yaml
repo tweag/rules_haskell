@@ -22,6 +22,16 @@ jobs:
         with:
           nix_path: nixpkgs=nixpkgs/default.nix
       - name: Fetch updates
+        id: ghc_update
         run: nix shell 'nixpkgs#bazel-buildtools' 'nixpkgs#python3' --command python .github/update-ghc.py ${{ matrix.ghc }}
-      - run: git diff
+      - name: Create Pull Request
+        if: steps.ghc_update.outputs.latest != ''
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "[automation] Add GHC version "
+          title: "[update] GHC ${{ steps.ghc_update.latest }}"
+          branch: "automation/update-ghc-${{ matrix.ghc }}"
+          base: master
+          # TODO: needs a token so that workflows for the PR get triggered
+          #token: "${{ secrets.PR_TOKEN }}"
 

@@ -102,6 +102,10 @@ def main():
             with open('haskell/private/ghc_bindist_generated.bzl', 'r+') as generated:
                 run(['buildifier'], check=True, input=bzl, stdout=generated)
                 generated.truncate()
+
+            if 'GITHUB_OUTPUT' in os.environ:
+                with open(os.environ["GITHUB_OUTPUT"], 'a') as output:
+                    print(f"latest={ latest_release }", file=output)
     else:
         print("no tags found for prefix", prefix, file=sys.stderr)
 
