@@ -188,6 +188,26 @@ case "${MODE}" in
         ;;
 esac > "${ZLIB_BUILD_FILE}"
 
+SNAPSHOT=lts-20.3
+
+case "$GHC_VERSION" in
+    8.10.*)
+        SNAPSHOT=lts-18.28
+        ;;
+    9.0.*)
+        SNAPSHOT=lts-19.33
+        ;;
+    9.2.*)
+        SNAPSHOT=lts-20.3
+        ;;
+    9.4.*)
+        SNAPSHOT=lts-21.5
+        ;;
+    *)
+        stderr "warning: unsupported GHC version: ${GHC_VERSION}, using stack resolver ${SNAPSHOT}"
+esac
+
+
 ## Write WORKSPACE File ################################################
 
 stderr "Creating WORKSPACE"
@@ -233,8 +253,8 @@ stack_snapshot(
     extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
     packages = ["zlib"],
 
-    # LTS snapshot published for ghc-9.2.5 (default version used by rules_haskell)
-    snapshot = "lts-20.3",
+    # LTS snapshot published for ghc-${GHC_VERSION} (default version used by rules_haskell)
+    snapshot = "$SNAPSHOT",
 
     # This uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run \`bazel run @stackage-unpinned//:pin\` and
