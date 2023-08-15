@@ -1,0 +1,27 @@
+name: Update GHC
+on:
+  schedule:
+    # run weekly on Thursday
+    - cron:  '0 15 * * THU'
+  workflow_dispatch: # allows manual triggering
+
+jobs:
+  update_ghc:
+    name: GHC ${{ matrix.ghc }} Update
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ghc:
+          - '9.2'
+          - '9.4'
+          - '9.6'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v22
+        with:
+          nix_path: nixpkgs=nixpkgs/default.nix
+      - name: Fetch updates
+        run: nix shell 'nixpkgs#bazel-buildtools' 'nixpkgs#python3' --command python .github/update-ghc.py ${{ matrix.ghc }}
+      - run: git diff
+
