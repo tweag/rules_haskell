@@ -112,6 +112,11 @@ jobs:
           sudo apt clean
           docker rmi $(docker images -q) -f
       - uses: actions/checkout@v3
+      - name: Add disk cache
+        uses: actions/cache@v3
+        with:
+          path: .bazel-cache/disk
+          key: disk-cache-${{ runner.os }}-${{ hashFiles('stackage_snapshot.yaml') }}
       - name: Mount Bazel cache
         uses: actions/cache@v3
         with:
