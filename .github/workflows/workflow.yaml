@@ -103,6 +103,11 @@ jobs:
         bzlmod: [bzlmod, workspace]
     runs-on: ${{ matrix.os }}
     steps:
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          reg query HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
+          reg add HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters /v KeepAliveTime /t REG_DWORD /d 300000
+          reg query HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |-
           sudo swapoff -a
@@ -199,3 +204,29 @@ jobs:
           # NOTE keep in sync with tests/RunTests.hs
           bazel run @stackage-pinning-test-unpinned//:pin
           bazel build @stackage-pinning-test//:hspec
+
+      - name: Collect logs
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p logs
+          export PATH=$HOME/bazel:$PATH
+          base=$( bazel info output_base )
+          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0r cp -t logs
+
+      - name: Collect logs
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p logs
+          export PATH=$HOME/bazel:$PATH
+          cd rules_haskell_tests
+          base=$( bazel info output_base )
+          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0r cp -t ../logs
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
+          path: logs
