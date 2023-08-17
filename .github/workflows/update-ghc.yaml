@@ -32,6 +32,5 @@ jobs:
           title: "[update] GHC ${{ steps.ghc_update.latest }}"
           branch: "automation/update-ghc-${{ matrix.ghc }}"
           base: master
-          # TODO: needs a token so that workflows for the PR get triggered
-          #token: "${{ secrets.PR_TOKEN }}"
+          token: "${{ secrets.PR_TRIGGER_TOKEN }}"
 
