@@ -8,11 +8,12 @@ from pprint import pprint
 from urllib.parse import quote
 from subprocess import check_call, run
 
-GHC_GITLAB_SERVER="gitlab.haskell.org"
+GHC_GITLAB_SERVER = "gitlab.haskell.org"
+
 
 def get_gitlab_tags_with_prefix(project_id, prefix):
     connection = http.client.HTTPSConnection(GHC_GITLAB_SERVER)
-    encoded_project_id = encoded_project_id = quote(project_id, safe='')
+    encoded_project_id = encoded_project_id = quote(project_id, safe="")
     endpoint = f"/api/v4/projects/{encoded_project_id}/repository/tags?search=^{prefix}&order-by=version"
 
     connection.request("GET", endpoint)
@@ -26,13 +27,16 @@ def get_gitlab_tags_with_prefix(project_id, prefix):
         print(f"Error: {response.status} - {response.reason}")
         return None
 
+
 project_id = "ghc/ghc"
 
 # matches GHC release versions
 version_re = re.compile("ghc-(?P<version>.*)-release")
 
+
 def parse_version(s):
     return tuple(map(int, s.split(".")))
+
 
 def main():
     SCRIPT_PATH = Path(__file__)
@@ -50,12 +54,21 @@ def main():
         print("no tags found for prefix", prefix, file=sys.stderr)
         sys.exit(0)
 
-    with open(SCRIPT_PATH.parent.parent.joinpath('haskell/private/ghc_bindist_generated.json'), "r+") as bindist_json:
+    with open(
+        SCRIPT_PATH.parent.parent.joinpath(
+            "haskell/private/ghc_bindist_generated.json"
+        ),
+        "r+",
+    ) as bindist_json:
         bindists = json.load(bindist_json)
 
-        versions = [ version for version in bindists if version.startswith(GHC_MAJOR_MINOR) ]
+        versions = [
+            version for version in bindists if version.startswith(GHC_MAJOR_MINOR)
+        ]
 
-        releases = [ m.group("version") for tag in tags if (m := version_re.match(tag["name"])) ]
+        releases = [
+            m.group("version") for tag in tags if (m := version_re.match(tag["name"]))
+        ]
 
         latest_release = releases[0]
 
@@ -65,21 +78,32 @@ def main():
 
         print("found update:", latest_release, file=sys.stderr)
 
-        replace = re.compile(r'^(?P<indent>\s+)\{\s*"version"\s*:\s*"' + re.escape(GHC_MAJOR_MINOR + '.'), re.MULTILINE)
+        replace = re.compile(
+            r'^(?P<indent>\s+)\{\s*"version"\s*:\s*"'
+            + re.escape(GHC_MAJOR_MINOR + "."),
+            re.MULTILINE,
+        )
 
         print(" 1. modify haskell/gen_ghc_bindist.py", file=sys.stderr)
 
-        gen_script_path = SCRIPT_PATH.parent.parent.joinpath('haskell/gen_ghc_bindist.py')
-        with open(gen_script_path, 'r+') as gen:
+        gen_script_path = SCRIPT_PATH.parent.parent.joinpath(
+            "haskell/gen_ghc_bindist.py"
+        )
+        with open(gen_script_path, "r+") as gen:
             gen_script = gen.read()
 
-
-            added_version = replace.sub(fr'''\g<indent>{{ "version": { repr(latest_release) },
+            added_version = replace.sub(
+                rf"""\g<indent>{{ "version": { repr(latest_release) },
 \g<indent>  "ignore_suffixes": [".bz2", ".lz", ".zip"] }},
-\g<0>''', gen_script, count=1)
+\g<0>""",
+                gen_script,
+                count=1,
+            )
 
             if added_version is gen_script:
-                sys.exit(f"could not add new version {latest_release} using regex {replace}")
+                sys.exit(
+                    f"could not add new version {latest_release} using regex {replace}"
+                )
 
             gen.truncate(0)
             gen.seek(0)
@@ -87,12 +111,12 @@ def main():
 
         print(" 2. call haskell/gen_ghc_bindist.py", file=sys.stderr)
 
-        check_call([sys.executable, 'haskell/gen_ghc_bindist.py'])
+        check_call([sys.executable, "haskell/gen_ghc_bindist.py"])
 
-        if 'GITHUB_OUTPUT' in os.environ:
-            with open(os.environ["GITHUB_OUTPUT"], 'a') as output:
+        if "GITHUB_OUTPUT" in os.environ:
+            with open(os.environ["GITHUB_OUTPUT"], "a") as output:
                 print(f"latest={ latest_release }", file=output)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
