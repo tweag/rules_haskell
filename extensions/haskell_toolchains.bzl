@@ -42,7 +42,7 @@ _bindist_tag = tag_class(
         ),
         "target": attr.string(
             mandatory = True,
-            doc = "The desired architecture (See [ghc_bindist_generated.bzl](https://github.com/tweag/rules_haskell/blob/master/haskell/private/ghc_bindist_generated.bzl))",
+            doc = "The desired architecture (See [ghc_bindist_generated.json](https://github.com/tweag/rules_haskell/blob/master/haskell/private/ghc_bindist_generated.json))",
         ),
         "ghcopts": attr.string_list(
             doc = "[see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-ghcopts)",
@@ -157,7 +157,7 @@ def _haskell_toolchains_impl(mctx):
                 register = False,
             )
             toolchain_declarations.extend(
-                ghc_bindists_toolchain_declarations(bindists_tag.version),
+                ghc_bindists_toolchain_declarations(mctx, bindists_tag.version),
             )
 
     all_toolchains(

@@ -17,7 +17,6 @@ load(
     "resolve_labels",
 )
 load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
-load(":private/ghc_bindist_generated.bzl", "GHC_BINDIST")
 
 # If you change this, change stackage's version in the start script
 # (see stackage.org).
@@ -43,6 +42,10 @@ def _split_version(version):
         fail("GHC version should be a triple: {}".format(version))
     return (int(vs[0]), int(vs[1]), int(vs[2]))
 
+def _load_bindists(mctx):
+    bindist_json = mctx.read(Label("@rules_haskell//haskell:private/ghc_bindist_generated.json"))
+    return json.decode(bindist_json)
+
 def _ghc_bindist_impl(ctx):
     filepaths = resolve_labels(ctx, [
         "@rules_haskell//haskell:ghc.BUILD.tpl",
@@ -52,6 +55,8 @@ def _ghc_bindist_impl(ctx):
     version_tuple = _split_version(version)
     target = ctx.attr.target
     os, _, arch = target.partition("_")
+
+    GHC_BINDIST = _load_bindists(ctx)
 
     if GHC_BINDIST[version].get(target) == None:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
@@ -259,7 +264,6 @@ _ghc_bindist = repository_rule(
     attrs = {
         "version": attr.string(
             default = _GHC_DEFAULT_VERSION,
-            values = GHC_BINDIST.keys(),
             doc = "The desired GHC version",
         ),
         "target": attr.string(),
@@ -373,8 +377,11 @@ _windows_cc_toolchain = repository_rule(
 
 # Toolchains declarations for bindists used by the `haskell_toolchains` module
 # extension to register all the haskell toolchains in the same BUILD file
-def ghc_bindists_toolchain_declarations(version):
+def ghc_bindists_toolchain_declarations(mctx, version):
     version = version or _GHC_DEFAULT_VERSION
+
+    GHC_BINDIST = _load_bindists(mctx)
+
     if not GHC_BINDIST.get(version):
         fail("Binary distribution of GHC {} not available.".format(version))
     return [
@@ -494,6 +501,15 @@ def ghc_bindist(
         if register:
             native.register_toolchains("@{}//:windows_cc_toolchain".format(cc_toolchain_repo_name))
 
+
+_GHC_AVAILABLE_TARGETS = [
+    "darwin_amd64",
+    "darwin_arm64",
+    "linux_amd64",
+    "linux_arm64",
+    "windows_amd64",
+]
+
 def haskell_register_ghc_bindists(
         version = None,
         compiler_flags = None,
@@ -518,9 +534,8 @@ def haskell_register_ghc_bindists(
       register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
     """
     version = version or _GHC_DEFAULT_VERSION
-    if not GHC_BINDIST.get(version):
-        fail("Binary distribution of GHC {} not available.".format(version))
-    for target in GHC_BINDIST[version]:
+
+    for target in _GHC_AVAILABLE_TARGETS:
         ghc_bindist(
             name = "rules_haskell_ghc_{}".format(target),
             target = target,
