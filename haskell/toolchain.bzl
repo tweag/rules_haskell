@@ -377,7 +377,8 @@ common_attrs = {
     "_protoc": attr.label(
         executable = True,
         cfg = "exec",
-        default = Label("@com_google_protobuf//:protoc"),
+        # N.B. can be overridden by `--proto_compiler` flag
+        default = configuration_field("proto", "proto_compiler"),
     ),
     "_rule_info_proto": attr.label(
         allow_single_file = True,
