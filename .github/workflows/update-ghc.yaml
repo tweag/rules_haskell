@@ -28,8 +28,8 @@ jobs:
         if: steps.ghc_update.outputs.latest != ''
         uses: peter-evans/create-pull-request@v5
         with:
-          commit-message: "[automation] Add GHC version "
-          title: "[update] GHC ${{ steps.ghc_update.latest }}"
+          commit-message: "Add GHC bindist version ${{ steps.ghc_update.outputs.latest }}"
+          title: "[update] GHC ${{ matrix.ghc }}"
           branch: "automation/update-ghc-${{ matrix.ghc }}"
           base: master
           token: "${{ secrets.PR_TRIGGER_TOKEN }}"
