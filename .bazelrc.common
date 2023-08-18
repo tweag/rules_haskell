@@ -130,6 +130,9 @@ query --deleted_packages=examples,examples/arm,examples/cat_hs,examples/cat_hs/e
 # Needed to build @rules_jvm_external//private/tools/java/com/github/bazelbuild/rules_jvm_external/zip (used by //tests/java_classpath)
 build:macos-nixpkgs --tool_java_language_version=11
 
+# Needed to run protoc compiled with libc++ / clang on Windows
+build:windows-bindist --proto_compiler @rules_haskell//tests:protoc.cmd
+
 # This flag will become the default in bazel 7
 # https://github.com/bazelbuild/bazel/issues/17032
 build --incompatible_disable_starlark_host_transitions
