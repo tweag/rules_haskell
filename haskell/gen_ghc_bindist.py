@@ -21,6 +21,8 @@ VERSIONS = [
       "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": "9.6.1",
       "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": '9.4.6',
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": "9.4.5",
       "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": '9.2.8',
