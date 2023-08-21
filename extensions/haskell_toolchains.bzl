@@ -2,6 +2,7 @@
 
 load(
     "@rules_haskell//haskell:ghc_bindist.bzl",
+    "bindist_info_for_version",
     "ghc_bindist",
     "ghc_bindist_toolchain_declaration",
     "ghc_bindists_toolchain_declarations",
@@ -42,7 +43,7 @@ _bindist_tag = tag_class(
         ),
         "target": attr.string(
             mandatory = True,
-            doc = "The desired architecture (See [ghc_bindist_generated.bzl](https://github.com/tweag/rules_haskell/blob/master/haskell/private/ghc_bindist_generated.bzl))",
+            doc = "The desired architecture (See [ghc_bindist_generated.json](https://github.com/tweag/rules_haskell/blob/master/haskell/private/ghc_bindist_generated.json))",
         ),
         "ghcopts": attr.string_list(
             doc = "[see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-ghcopts)",
@@ -147,6 +148,9 @@ def _haskell_toolchains_impl(mctx):
             # ones would have the same constraints and lower priority.
             found_bindists = True
             bindists_tag = module.tags.bindists[0]
+
+            targets = bindist_info_for_version(mctx, bindists_tag.version).keys()
+
             haskell_register_ghc_bindists(
                 version = bindists_tag.version,
                 ghcopts = bindists_tag.ghcopts,
@@ -155,9 +159,10 @@ def _haskell_toolchains_impl(mctx):
                 cabalopts = bindists_tag.cabalopts,
                 locale = bindists_tag.locale,
                 register = False,
+                targets = targets,
             )
             toolchain_declarations.extend(
-                ghc_bindists_toolchain_declarations(bindists_tag.version),
+                ghc_bindists_toolchain_declarations(mctx, bindists_tag.version),
             )
 
     all_toolchains(

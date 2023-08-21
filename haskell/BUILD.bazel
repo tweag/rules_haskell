@@ -146,7 +146,7 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
-# generate the _GHC_BINDISTS dict
+# generate the GHC bindist JSON file
 py_binary(
     name = "gen-ghc-bindist",
     srcs = [":gen_ghc_bindist.py"],
