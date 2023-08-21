@@ -46,6 +46,16 @@ def _load_bindists(mctx):
     bindist_json = mctx.read(Label("@rules_haskell//haskell:private/ghc_bindist_generated.json"))
     return json.decode(bindist_json)
 
+def bindist_info_for_version(ctx, version):
+    GHC_BINDIST = _load_bindists(ctx)
+
+    bindist = GHC_BINDIST.get(version or _GHC_DEFAULT_VERSION)
+
+    if bindist == None:
+        fail("Binary distribution of GHC {} not available.".format(version))
+
+    return bindist
+
 def _ghc_bindist_impl(ctx):
     filepaths = resolve_labels(ctx, [
         "@rules_haskell//haskell:ghc.BUILD.tpl",
@@ -56,12 +66,12 @@ def _ghc_bindist_impl(ctx):
     target = ctx.attr.target
     os, _, arch = target.partition("_")
 
-    GHC_BINDIST = _load_bindists(ctx)
+    bindist = bindist_info_for_version(ctx, version)
 
-    if GHC_BINDIST[version].get(target) == None:
+    if target not in bindist:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
     else:
-        url, sha256 = GHC_BINDIST[version][target]
+        url, sha256 = bindist[target]
 
     bindist_dir = ctx.path(".")  # repo path
 
@@ -380,17 +390,15 @@ _windows_cc_toolchain = repository_rule(
 def ghc_bindists_toolchain_declarations(mctx, version):
     version = version or _GHC_DEFAULT_VERSION
 
-    GHC_BINDIST = _load_bindists(mctx)
+    bindist = bindist_info_for_version(mctx, version)
 
-    if not GHC_BINDIST.get(version):
-        fail("Binary distribution of GHC {} not available.".format(version))
     return [
         ghc_bindist_toolchain_declaration(
             target = target,
             bindist_name = "rules_haskell_ghc_{}".format(target),
             toolchain_name = "{}",
         )
-        for target in GHC_BINDIST[version]
+        for target in bindist
     ]
 
 def ghc_bindist(
@@ -518,7 +526,8 @@ def haskell_register_ghc_bindists(
         repl_ghci_args = None,
         cabalopts = None,
         locale = None,
-        register = True):
+        register = True,
+        targets = _GHC_AVAILABLE_TARGETS):
     """ Register GHC binary distributions for all platforms as toolchains.
 
     See [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains).
@@ -532,10 +541,11 @@ def haskell_register_ghc_bindists(
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
       register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
+      targets: A list of target platforms to generate bindists for, e.g. `["linux_amd64", "windows_amd64"]` (default: all)
     """
     version = version or _GHC_DEFAULT_VERSION
 
-    for target in _GHC_AVAILABLE_TARGETS:
+    for target in targets:
         ghc_bindist(
             name = "rules_haskell_ghc_{}".format(target),
             target = target,

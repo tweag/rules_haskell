@@ -2,6 +2,7 @@
 
 load(
     "@rules_haskell//haskell:ghc_bindist.bzl",
+    "bindist_info_for_version",
     "ghc_bindist",
     "ghc_bindist_toolchain_declaration",
     "ghc_bindists_toolchain_declarations",
@@ -147,6 +148,9 @@ def _haskell_toolchains_impl(mctx):
             # ones would have the same constraints and lower priority.
             found_bindists = True
             bindists_tag = module.tags.bindists[0]
+
+            targets = bindist_info_for_version(mctx, bindists_tag.version).keys()
+
             haskell_register_ghc_bindists(
                 version = bindists_tag.version,
                 ghcopts = bindists_tag.ghcopts,
@@ -155,6 +159,7 @@ def _haskell_toolchains_impl(mctx):
                 cabalopts = bindists_tag.cabalopts,
                 locale = bindists_tag.locale,
                 register = False,
+                targets = targets,
             )
             toolchain_declarations.extend(
                 ghc_bindists_toolchain_declarations(mctx, bindists_tag.version),
