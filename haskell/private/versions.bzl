@@ -14,8 +14,8 @@
 # because every bazel version tested requires a lot of space on CI
 # See https://github.com/tweag/rules_haskell/pull/1781#issuecomment-1187640454
 SUPPORTED_BAZEL_VERSIONS = [
-    "5.0.0",
     "5.2.0",
+    "5.4.1",
     "6.2.0",
 ]
 
