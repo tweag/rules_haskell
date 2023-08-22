@@ -60,7 +60,7 @@ bazel_dep(
 
 bazel_dep(
     name = "rules_cc",
-    version = "0.0.6",
+    version = "0.0.8",
 )
 
 bazel_dep(
@@ -85,7 +85,7 @@ bazel_dep(
 
 bazel_dep(
     name = "aspect_rules_js",
-    version = "1.23.0",
+    version = "1.31.0",
 )
 
 bazel_dep(
@@ -136,8 +136,8 @@ use_repo(
     "toolchains_libraries",
     "zlib.dev",
     "bazel_5",
-    "build_bazel_bazel_5_0_0",
     "build_bazel_bazel_5_2_0",
+    "build_bazel_bazel_5_4_1",
     "build_bazel_bazel_6_2_0",
     "bazel_6",
 )

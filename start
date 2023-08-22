@@ -10,7 +10,7 @@ set -eu
 GHC_VERSION=${GHC_VERSION:="9.2.5"}
 
 readonly MIN_BAZEL_MAJOR=5
-readonly MIN_BAZEL_MINOR=0
+readonly MIN_BAZEL_MINOR=2
 
 readonly MAX_BAZEL_MAJOR=6
 readonly MAX_BAZEL_MINOR=2
