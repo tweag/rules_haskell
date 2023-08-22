@@ -91,7 +91,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         ctx.label.package,
     )
 
-    args.add("--plugin=protoc-gen-haskell=" + pb.plugin.path)
+    args.add("--plugin=protoc-gen-haskell=" + pb.plugin.executable.path)
 
     hs_files = []
     inputs = []
@@ -149,11 +149,13 @@ def _haskell_proto_aspect_impl(target, ctx):
     ])
 
     ctx.actions.run(
-        inputs = depset([pb.protoc, pb.plugin] + inputs),
+        inputs = depset(inputs, transitive = [pb.plugin.inputs, pb.protoc.inputs]),
+        input_manifests = pb.protoc.input_manifests + pb.plugin.input_manifests,
         outputs = hs_files,
         mnemonic = "HaskellProtoc",
-        executable = pb.protoc,
+        executable = pb.protoc.executable,
         arguments = [args],
+        tools = [pb.plugin.executable],
         env = {
             "RULES_HASKELL_GHC_PATH": hs.tools.ghc.path,
             "RULES_HASKELL_GHC_PKG_PATH": hs.tools.ghc_pkg.path,
@@ -350,13 +352,21 @@ registered.
 """,
 )
 
+def _wrap_tool(ctx, exe, tool):
+    inputs, input_manifests = ctx.resolve_tools(tools = [tool])
+    return struct(
+        executable = exe,
+        inputs = inputs,
+        input_manifests = input_manifests
+    )
+
 def _protobuf_toolchain_impl(ctx):
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,
             tools = struct(
-                plugin = ctx.executable.plugin,
-                protoc = ctx.executable.protoc,
+                plugin = _wrap_tool(ctx, ctx.executable.plugin, ctx.attr.plugin),
+                protoc = _wrap_tool(ctx, ctx.executable.protoc, ctx.attr.protoc),
             ),
             deps = ctx.attr.deps,
         ),

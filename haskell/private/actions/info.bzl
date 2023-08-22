@@ -38,8 +38,8 @@ def write_proto_file(hs, output_name, proto_type, content):
 
     hs.actions.run_shell(
         outputs = [proto_pb],
-        inputs = depset([proto_txt] + rule_info_protos + protoc.inputs.to_list()),
-        input_manifests = protoc.input_manifests, 
+        inputs = depset([proto_txt] + rule_info_protos, transitive = [protoc.inputs]),
+        input_manifests = protoc.input_manifests,
         tools = [protoc.executable],
         command =
             "{protoc} {rule_info_proto} --encode {proto_type} < {proto_txt} > {proto_pb}"
