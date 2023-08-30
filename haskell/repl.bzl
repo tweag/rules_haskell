@@ -544,13 +544,17 @@ def _hie_bios_impl(ctx):
     repl_info = _repl_info(ctx)
     hs = haskell_context(ctx)
     cc = find_cc_toolchain(ctx)
-    args, inputs = _compiler_flags_and_inputs(
+
+    args = ["-hide-all-packages"]
+
+    more_args, inputs = _compiler_flags_and_inputs(
         hs,
         cc,
         repl_info,
         static = True,
         get_dirname = lambda p: "$(dirname {})".format(_rlocation(ctx, p)),
     )
+    args.extend(more_args)
     runfiles_depset = depset(
         direct = [hs.toolchain.cc_wrapper.executable],
         transitive = [
@@ -573,6 +577,7 @@ def _hie_bios_impl(ctx):
     args.extend(ghc_cc_program_args(hs, cc_path, ld_path))
     args.extend(hs.toolchain.ghcopts)
     args.extend(repl_info.load_info.compiler_flags)
+    args.extend(['-no-user-package-db'])
 
     # Add import directories.
     # Note, src_strip_prefix is deprecated. However, for now ghcide depends on
