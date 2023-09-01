@@ -7,9 +7,9 @@ load(
 )
 
 def _ghc_default_version_impl(mctx):
-    root_module = [ module.name for module in mctx.modules if module.is_root ]
+    root_module = mctx.modules[0].name
 
-    if root_module and root_module[0] in ['rules_haskell', 'rules_haskell_tests']:
+    if root_module in ['rules_haskell', 'rules_haskell_tests']:
         _ghc_version(name = "rules_haskell_ghc_version")
     else:
         _ghc_default_version(name = "rules_haskell_ghc_version")
