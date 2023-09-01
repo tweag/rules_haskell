@@ -7,6 +7,7 @@ load(
     ":private/versions.bzl",
     "check_bazel_version_compatible",
 )
+load(":private/ghc_ci.bzl", "ghc_default_version")
 
 _rules_nixpkgs_version = "0c1f8f5470c7f292b7620762e224f53d837929d3"
 _rules_nixpkgs_sha256 = "9e3898a33c5f21f634aa9e2d45620e7c4b6d54d16d473571a891193bbd4725ca"
@@ -16,6 +17,11 @@ _rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5
 
 def rules_haskell_dependencies_bzlmod():
     """Provide rules_haskell dependencies which are not available as bzlmod modules."""
+
+    maybe(
+        ghc_default_version,
+        name = "rules_haskell_ghc_version"
+    )
 
     # Dependency of com_google_protobuf.
     # TODO(judahjacobson): this is a bit of a hack.

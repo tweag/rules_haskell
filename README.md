@@ -262,6 +262,20 @@ This could be caused by a dependency on the `ghc-paths` package which bakes the 
 
 You can use `@rules_haskell//tools/ghc-paths` as a drop-in replacement to work around this issue. See `tools/ghc-paths/README.md` for further details.
 
+### Windows: protoc.exe exits with an error
+
+If you see
+```
+protoc.exe: error while loading shared libraries: api-ms-win-crt-filesystem-l1-1-0.dll: cannot open shared object file: No such file or directory
+```
+or
+```
+Process finished with exit code -1073741515 (0xC0000135)
+```
+this usually means the executable cannot find a DLL it depends on (not necessarily the DLL that is mentioned in the error message).
+
+Newer Windows GHC distributions (>= 9.4), come with clang as the C/C++ compiler, and executables produced using that toolchain depend on the libc++ DLL, which is found in the `mingw\bin` directory of the bindist. You can pass `--proto_compiler @rules_haskell//tests:protoc` as a build flag to bazel as a workaround (see [tests/protoc.bzl]).
+
 ## For `rules_haskell` developers
 
 ### Configuring your platform

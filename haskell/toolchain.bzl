@@ -280,6 +280,8 @@ def _haskell_toolchain_impl(ctx):
             supports_haddock = default_tools_config.supports_haddock,
         )
 
+    (protoc_inputs, protoc_input_manifests) = ctx.resolve_tools(tools = [ctx.attr._protoc])
+
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,
@@ -319,7 +321,11 @@ def _haskell_toolchain_impl(ctx):
             version = ctx.attr.version,
             numeric_version = numeric_version,
             global_pkg_db = pkgdb_file,
-            protoc = ctx.executable._protoc,
+            protoc = struct(
+                executable = ctx.executable._protoc,
+                inputs = protoc_inputs,
+                input_manifests = protoc_input_manifests,
+            ),
             rule_info_proto = ctx.attr._rule_info_proto,
             tools_config = tools_config,
         ),
@@ -377,7 +383,8 @@ common_attrs = {
     "_protoc": attr.label(
         executable = True,
         cfg = "exec",
-        default = Label("@com_google_protobuf//:protoc"),
+        # N.B. can be overridden by `--proto_compiler` flag
+        default = configuration_field("proto", "proto_compiler"),
     ),
     "_rule_info_proto": attr.label(
         allow_single_file = True,
