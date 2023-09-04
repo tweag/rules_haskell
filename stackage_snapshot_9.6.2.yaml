@@ -1,0 +1,10 @@
+resolver: nightly-2023-09-03
+
+packages:
+# See https://github.com/avdv/proto-lens#readme
+- git: https://github.com/avdv/proto-lens
+  commit: 2ab0a8d1ec1f54f3d1a0ecd1a257311389126490
+
+# support GHC 9.4 (see https://github.com/google/ghc-source-gen/pull/102)
+- git: https://github.com/circuithub/ghc-source-gen
+  commit: 7a6aac047b706508e85ba2054b5bedbecfd7eb7a
