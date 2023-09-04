@@ -124,10 +124,13 @@ jobs:
         ghc:
           - 9.2.8
           - 9.4.6
+          - 9.6.2
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
           - ghc: 9.4.6
+            bzlmod: true
+          - ghc: 9.6.2
             bzlmod: true
     env:
       GHC_VERSION: ${{ matrix.ghc }}
