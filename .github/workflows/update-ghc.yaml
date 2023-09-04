@@ -27,6 +27,8 @@ jobs:
       - name: Fetch updates
         id: ghc_update
         run: nix shell 'nixpkgs#bazel-buildtools' 'nixpkgs#python3' --command python .github/update-ghc.py ${{ matrix.ghc }}
+      - run: echo >> README.md
+        if: steps.ghc_update.outputs.latest != ''
       - name: Create Pull Request
         if: steps.ghc_update.outputs.latest != ''
         uses: peter-evans/create-pull-request@v5
@@ -35,18 +37,15 @@ jobs:
           title: "[update] Add GHC ${{ steps.ghc_update.outputs.latest }}"
           branch: "automation/update-ghc-${{ matrix.ghc }}"
           base: master
-      - uses: actions/checkout@v3
+      - run: git restore README.md
         if: steps.ghc_update.outputs.latest != ''
+      - name: Create Pull Request
+        if: steps.ghc_update.outputs.latest != ''
+        uses: peter-evans/create-pull-request@v5
         with:
-          ref: "automation/update-ghc-${{ matrix.ghc }}"
-          persist-credentials: false      
-      - run: git -c user.email='noreply@github.com' -c user.name='GitHub' commit --amend --no-edit
-        if: steps.ghc_update.outputs.latest != ''
-      - name: Push changes
-        if: steps.ghc_update.outputs.latest != ''
-        uses: ad-m/github-push-action@v0.6.0
-        with:
-          github_token: ${{ secrets.PR_TRIGGER_TOKEN }}
+          commit-message: "Add GHC bindist version ${{ steps.ghc_update.outputs.latest }}"
+          title: "[update] Add GHC ${{ steps.ghc_update.outputs.latest }}"
           branch: "automation/update-ghc-${{ matrix.ghc }}"
-          force: true
+          base: master
+          token: "${{ secrets.PR_TRIGGER_TOKEN }}"
 
