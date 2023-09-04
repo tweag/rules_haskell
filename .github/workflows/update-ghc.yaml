@@ -32,5 +32,13 @@ jobs:
           title: "[update] GHC ${{ matrix.ghc }}"
           branch: "automation/update-ghc-${{ matrix.ghc }}"
           base: master
-          token: "${{ secrets.PR_TRIGGER_TOKEN }}"
+      - run: git -c user.email='noreply@github.com' -c user.name='GitHub' commit --amend --no-edit
+        if: steps.ghc_update.outputs.latest != ''
+      - name: Push changes
+        if: steps.ghc_update.outputs.latest != ''
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ secrets.PR_TRIGGER_TOKEN }}
+          branch: "automation/update-ghc-${{ matrix.ghc }}"
+          force: true
 
