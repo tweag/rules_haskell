@@ -35,6 +35,11 @@ jobs:
           title: "[update] Add GHC ${{ steps.ghc_update.outputs.latest }}"
           branch: "automation/update-ghc-${{ matrix.ghc }}"
           base: master
+      - uses: actions/checkout@v3
+        if: steps.ghc_update.outputs.latest != ''
+        with:
+          ref: "automation/update-ghc-${{ matrix.ghc }}"
+          persist-credentials: false      
       - run: git -c user.email='noreply@github.com' -c user.name='GitHub' commit --amend --no-edit
         if: steps.ghc_update.outputs.latest != ''
       - name: Push changes
