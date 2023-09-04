@@ -76,6 +76,14 @@ jobs:
             bazel build //docs:api_html
             bazel build //docs:guide_html
             '
+      - name: Build & test - rules_haskell_nix
+        if: matrix.module == 'rules_haskell'
+        run: |
+          nix-shell --arg docTools false --pure --run '
+            set -euo pipefail
+            cd rules_haskell_nix
+            bazel test //...
+            '
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
         run: |
