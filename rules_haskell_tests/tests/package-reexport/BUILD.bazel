@@ -1,0 +1,43 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "transitive-dep",
+    srcs = ["TransitiveDep.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "dep",
+    srcs = ["Dep.hs"],
+    visibility = ["//visibility:public"],
+    exports = [":transitive-dep"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "final",
+    srcs = ["Final.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":dep",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

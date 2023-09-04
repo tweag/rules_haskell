@@ -1,0 +1,10 @@
+load("//tests/ghc:ghc.bzl", "ghc_help")
+
+ghc_help(name = "ghc_help")
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

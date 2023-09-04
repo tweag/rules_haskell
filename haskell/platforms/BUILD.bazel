@@ -1,0 +1,48 @@
+# This file declares constraint values for each platform supported by
+# GHC. These rules follow the GHC naming convention, for example,
+# //haskell/platform:linux and //haskell/platform:x86_64. See the
+# config.guess in any GHC source distribution for possible platforms.
+#
+# These can be used in select expressions to choose platform-specifc
+# sources and dependencies.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":list.bzl", "declare_config_settings")
+
+declare_config_settings()
+
+alias(
+    name = "nixpkgs",
+    actual = "@rules_nixpkgs_core//constraints:support_nix",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "linux_x86_64_nixpkgs",
+    actual = "@rules_nixpkgs_core//platforms:host",
+    deprecation = "Use @rules_nixpkgs_core//platforms:host instead.",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "darwin_x86_64_nixpkgs",
+    actual = "@rules_nixpkgs_core//platforms:host",
+    deprecation = "Use @rules_nixpkgs_core//platforms:host instead.",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "platforms",
+    srcs = ["list.bzl"],
+    visibility = [
+        "//haskell:__pkg__",
+        "//haskell/asterius:__pkg__",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

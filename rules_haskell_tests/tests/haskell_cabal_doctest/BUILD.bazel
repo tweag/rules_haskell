@@ -1,0 +1,24 @@
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_toolchain_library")
+
+haskell_toolchain_library(name = "base")
+
+haskell_cabal_library(
+    name = "uses-doctest",
+    package_name = "lib",
+    srcs = [
+        "Lib.hs",
+        "Setup.hs",
+        "lib.cabal",
+    ],
+    setup_deps = ["@stackage//:cabal-doctest"],
+    version = "0.1.0.0",
+    deps = [":base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

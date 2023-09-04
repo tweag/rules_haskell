@@ -1,0 +1,11 @@
+# for bzl_library() in //haskell:BUILD.bazel
+exports_files([
+    "module.bzl",
+])
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

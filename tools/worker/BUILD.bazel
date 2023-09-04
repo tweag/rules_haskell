@@ -1,0 +1,27 @@
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+
+haskell_cabal_binary(
+    name = "bin",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_haskell_worker_dependencies//:base",
+        "@rules_haskell_worker_dependencies//:bytestring",
+        "@rules_haskell_worker_dependencies//:filepath",
+        "@rules_haskell_worker_dependencies//:ghc",
+        "@rules_haskell_worker_dependencies//:ghc-paths",
+        "@rules_haskell_worker_dependencies//:microlens",
+        "@rules_haskell_worker_dependencies//:process",
+        "@rules_haskell_worker_dependencies//:proto-lens",
+        "@rules_haskell_worker_dependencies//:proto-lens-runtime",
+        "@rules_haskell_worker_dependencies//:text",
+        "@rules_haskell_worker_dependencies//:vector",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

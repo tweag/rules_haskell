@@ -1,0 +1,20 @@
+load(":solib_test.bzl", "solib_test")
+
+# See rule docstring in solib_test.bzl for details.
+solib_test(
+    name = "solib_dir",
+    is_windows = select({
+        "@rules_haskell//haskell/platforms:mingw32": True,
+        "//conditions:default": False,
+    }),
+    # Shell scripts as `DefaultInfo.executable` no longer work on Windows.
+    # Convert this test case to an analysis test.
+    tags = ["dont_test_on_windows"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

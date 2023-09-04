@@ -1,0 +1,24 @@
+# Generic data files and targets that are used by multiple tests
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "ourclibrary",
+    srcs = [":ourclibrary.c"],
+    linkstatic = False,
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "ourclibrary-static",
+    srcs = [":ourclibrary.c"],
+    linkstatic = True,
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

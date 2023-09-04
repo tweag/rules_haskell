@@ -1,0 +1,3 @@
+# Prevent git from automatically introducing \r characters in .sha256 files.
+# Otherwise msys sha256sum fails.
+*.sha256 binary

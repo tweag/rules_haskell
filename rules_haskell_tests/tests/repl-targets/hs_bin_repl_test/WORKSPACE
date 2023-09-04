@@ -1,0 +1,36 @@
+local_repository(
+    name = "rules_haskell",
+    path = "%RULES_HASKELL_PATH%",
+)
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
+
+rules_haskell_dependencies()
+
+load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+
+haskell_register_ghc_nixpkgs(
+    attribute_path = "haskell.compiler.ghc925",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+    version = "9.2.5",
+)
+
+load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
+
+rules_haskell_toolchains(version = "9.2.5")
+
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_cc_configure",
+    "nixpkgs_python_configure",
+)
+
+nixpkgs_cc_configure(
+    name = "nixpkgs_config_cc",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+nixpkgs_python_configure(
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)

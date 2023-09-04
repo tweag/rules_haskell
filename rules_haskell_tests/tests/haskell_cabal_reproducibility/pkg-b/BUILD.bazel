@@ -1,0 +1,14 @@
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary")
+
+# TODO Define an integration test to confirm that the build of pkg-a is
+# deterministic, i.e. that the generated artifacts are bit-reproducible.
+# Pending on https://github.com/tweag/rules_haskell/pull/1645
+
+haskell_cabal_binary(
+    name = "pkg-b",
+    srcs = [
+        "exe/Main.hs",
+        "pkg-b.cabal",
+    ],
+    deps = ["//tests/haskell_cabal_reproducibility/pkg-a"],
+)

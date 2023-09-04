@@ -1,0 +1,37 @@
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+)
+
+haskell_library(
+    name = "b",
+    srcs = [
+        "src/BC/B.hs",
+    ],
+    src_strip_prefix = "src",
+    deps = [
+        "//tests/hackage:base",
+        "//tests/multi_repl/a",
+    ],
+)
+
+haskell_library(
+    name = "c",
+    srcs = [
+        "src/BC/C.hs",
+    ],
+    src_strip_prefix = "src",
+    deps = [
+        ":b",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,218 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+load(
+    "@rules_haskell//haskell:private/haskell_impl.bzl",
+    "haskell_toolchain_libraries",
+)
+load(
+    "@rules_haskell//haskell:private/cc_wrapper.bzl",
+    "cc_wrapper",
+)
+load(
+    "@rules_haskell//haskell:cabal_wrapper.bzl",
+    "cabal_wrapper",
+)
+load(
+    "@rules_haskell//haskell:private/runghc.bzl",
+    "runghc",
+)
+load(
+    "@rules_haskell//haskell:toolchain_info.bzl",
+    "haskell_toolchain_info",
+)
+load(
+    "@rules_haskell//haskell:toolchain.bzl",
+    "get_cc_toolchain",
+    "get_haskell_toolchain",
+    "get_nodejs_toolchain",
+    "get_posix_toolchain",
+)
+
+exports_files(
+    glob(["*.bzl"]) + [
+        "assets/ghci_script",
+        "private/cabal_wrapper.sh.tpl",
+        "private/cabal_wrapper.py",
+        "private/coverage_wrapper.sh.tpl",
+        "private/ghci_repl_wrapper.sh",
+        "private/hie_bios_wrapper.sh",
+        "private/haddock_wrapper.sh.tpl",
+        "private/cc_wrapper.py.tpl",
+        "private/cc_wrapper_windows.sh.tpl",
+        "private/pkgdb_to_bzl.py",
+        "private/haskell_runfiles.tpl",
+    ],
+)
+
+# to make functions visible to unit tests
+exports_files(
+    ["private/actions/link.bzl"],
+    visibility = ["//tests/unit-tests:__pkg__"],
+)
+
+exports_files(
+    ["private/ghc_wrapper.sh"],
+    visibility = ["//tests/shellcheck:__pkg__"],
+)
+
+bzl_library(
+    name = "bazel_json",
+    srcs = [
+        "//vendor/bazel_json/lib:json_parser.bzl",
+    ],
+)
+
+# @bazel_tools//tools does not define a bzl_library itself, instead we are
+# supposed to define our own using the @bazel_tools//tools:bzl_srcs filegroup.
+# See https://github.com/bazelbuild/skydoc/issues/166
+bzl_library(
+    name = "bazel_tools",
+    srcs = [
+        "@bazel_tools//tools:bzl_srcs",
+    ],
+)
+
+# @rules_cc//cc does not define a bzl_library itself, instead we  define our
+# own using the @rules_cc//cc:srcs filegroup.
+bzl_library(
+    name = "rules_cc",
+    srcs = [
+        "@rules_cc//cc:srcs",
+    ],
+)
+
+bzl_library(
+    name = "haskell",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":bazel_json",
+        ":bazel_tools",
+        ":rules_cc",
+        "//haskell/asterius:asterius_bzl",
+        "//haskell/experimental:defs.bzl",
+        "//haskell/experimental:providers.bzl",
+        "//haskell/experimental/private:module.bzl",
+        "@bazel_skylib//lib:collections",
+        "@bazel_skylib//lib:dicts",
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//lib:sets",
+        "@bazel_skylib//lib:shell",
+        "@bazel_skylib//lib:versions",
+        "@bazel_skylib//rules:expand_template",
+        "@rules_nixpkgs_core//:nixpkgs",
+        "@rules_nixpkgs_posix//:posix",
+        "@rules_sh//sh:posix",
+    ],
+)
+
+cc_wrapper(
+    name = "cc_wrapper",
+    visibility = ["//visibility:public"],
+)
+
+cabal_wrapper(
+    name = "cabal_wrapper",
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "pkgdb_to_bzl",
+    srcs = ["private/pkgdb_to_bzl.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "package_configuration",
+    srcs = ["private/package_configuration.py"],
+    imports = ["private"],
+    visibility = ["//tests/package_configuration:__subpackages__"],
+)
+
+runghc(
+    name = "runghc",
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "ghc_wrapper",
+    srcs = ["private/ghc_wrapper.sh"],
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "version_macros",
+    srcs = ["private/version_macros.py"],
+    visibility = ["//visibility:public"],
+)
+
+# generate the GHC bindist JSON file
+py_binary(
+    name = "gen-ghc-bindist",
+    srcs = [":gen_ghc_bindist.py"],
+    main = ":gen_ghc_bindist.py",
+    visibility = ["//visibility:public"],
+)
+
+# toolchains must have a valid toolchain_type from bazel 0.21
+toolchain_type(
+    name = "toolchain",
+    visibility = ["//visibility:public"],
+)
+
+toolchain_type(
+    name = "doctest-toolchain",
+    visibility = ["//visibility:public"],
+)
+
+# XXX: This target is a work-around for toolchain transitions not being
+# implemented, yet. See
+# https://github.com/bazelbuild/proposals/blob/master/designs/2019-02-12-toolchain-transitions.md
+# This will need to be revisited once that proposal is implemented.
+haskell_toolchain_libraries(
+    name = "toolchain-libraries",
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "use_worker",
+    define_values = {
+        "use_worker": "True",
+    },
+)
+
+haskell_toolchain_info(
+    name = "toolchain_info",
+)
+
+get_nodejs_toolchain(
+    name = "current_nodejs_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_posix_toolchain(
+    name = "current_posix_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_haskell_toolchain(
+    name = "current_haskell_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+get_cc_toolchain(
+    name = "current_cc_toolchain",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//haskell/asterius:all_files",
+        "//haskell/c2hs:all_files",
+        "//haskell/experimental:all_files",
+        "//haskell/platforms:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

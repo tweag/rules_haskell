@@ -1,0 +1,15 @@
+cc_library(
+    name = "myclib",
+    srcs = ["add.c"],
+    hdrs = ["myclib.h"],
+    includes = ["."],
+)
+
+cc_library(
+    name = "libmyclib",
+    srcs = [":myclib"],
+    hdrs = ["myclib.h"],
+    includes = ["."],
+    linkstatic = True,
+    visibility = ["//tests/haskell_cabal_reproducibility:__subpackages__"],
+)

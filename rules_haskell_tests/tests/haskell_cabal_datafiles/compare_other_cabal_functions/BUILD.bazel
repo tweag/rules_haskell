@@ -1,0 +1,45 @@
+# The generate_paths_module option generates a Paths_libname file instead of cabal
+# so we can override getDataFileName and getDataDir functions and use bazel's runfile library.
+#
+# We test here that the other functions of the module (that we had to reimplement)
+# have the same behavior as cabal's one.
+#
+
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_binary",
+    "haskell_cabal_library",
+)
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+load("@os_info//:os_info.bzl", "is_windows")
+
+sh_test(
+    name = "same_other_functions{}".format(".exe" if is_windows else ""),
+    size = "small",
+    srcs = ["compare_files.sh"],
+    args = [
+        "$(rootpath //tests/haskell_cabal_datafiles/compare_other_cabal_functions/with_generate_paths_module:write_values)",
+        "$(rootpath //tests/haskell_cabal_datafiles/compare_other_cabal_functions/without_generate_paths_module:write_values)",
+    ],
+    data = [
+        "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/with_generate_paths_module:write_values",
+        "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/without_generate_paths_module:write_values",
+    ],
+    tags = ["skip_profiling"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/with_generate_paths_module:all_files",
+        "//tests/haskell_cabal_datafiles/compare_other_cabal_functions/without_generate_paths_module:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

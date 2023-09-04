@@ -1,0 +1,44 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "ghc_plugin",
+    "haskell_doc",
+    "haskell_library",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "plugin_library",
+    srcs = ["Plugin.hs"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:ghc",
+    ],
+)
+
+ghc_plugin(
+    name = "plugin",
+    module = "Plugin",
+    deps = [":plugin_library"],
+)
+
+haskell_library(
+    name = "library",
+    srcs = ["Lib.hs"],
+    plugins = [":plugin"],
+    tags = ["skip_profiling"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_doc(
+    name = "haddock-with-plugin",
+    tags = ["manual"],
+    deps = [":library"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

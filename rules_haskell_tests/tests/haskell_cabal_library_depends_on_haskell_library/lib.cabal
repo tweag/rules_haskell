@@ -1,0 +1,9 @@
+cabal-version: >=1.10
+name: lib
+version: 0.1.0.0
+build-type: Simple
+
+library
+  build-depends: base, other-lib
+  default-language: Haskell2010
+  exposed-modules: Lib

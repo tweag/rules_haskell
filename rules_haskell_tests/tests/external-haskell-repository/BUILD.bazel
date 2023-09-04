@@ -1,0 +1,24 @@
+# Tests correct linking of haskell packages that were created
+# in a different bazel repository.
+
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+)
+
+haskell_test(
+    name = "external-haskell-repository",
+    srcs = ["Main.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+        "@haskell_package_repository_dummy//:library-with-cbits",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

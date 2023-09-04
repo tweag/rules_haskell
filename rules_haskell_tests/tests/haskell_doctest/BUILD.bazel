@@ -1,0 +1,75 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
+load("@rules_haskell//haskell:doctest.bzl", "haskell_doctest")
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "lib-a",
+    srcs = ["Foo.hs"],
+    deps = [
+        "//tests:zlib",
+        "//tests/data:ourclibrary",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "lib-b",
+    srcs = [
+        "Bar.hs",
+        "Baz.hs",
+        "Quux.hsc",
+    ],
+    deps = [
+        ":lib-a",
+        "//tests/hackage:base",
+        "//tests/hackage:transformers",
+        "@stackage//:data-default-class",
+    ],
+)
+
+haskell_doctest(
+    name = "doctest-lib-all-fail",
+    tags = ["manual"],  # must FAIL
+    visibility = ["//visibility:public"],
+    deps = [":lib-b"],
+)
+
+haskell_doctest(
+    name = "doctest-lib-all-success",
+    doctest_flags = ["-DMAGIC_DOCTEST_THING"],
+    tags = ["requires_dynamic"],
+    visibility = ["//visibility:public"],
+    deps = [":lib-b"],
+)
+
+haskell_doctest(
+    name = "doctest-lib",
+    modules = ["Bar"],  # exclude Baz and succeed
+    tags = ["requires_dynamic"],
+    visibility = ["//visibility:public"],
+    deps = [":lib-b"],
+)
+
+haskell_test(
+    name = "bin",
+    srcs = ["Main.hs"],
+    deps = [
+        ":lib-a",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_doctest(
+    name = "doctest-bin",
+    tags = ["requires_dynamic"],
+    visibility = ["//visibility:public"],
+    deps = [":bin"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

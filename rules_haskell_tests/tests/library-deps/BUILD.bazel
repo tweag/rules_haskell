@@ -1,0 +1,39 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "library-deps",
+    srcs = ["TestLib.hs"],
+    tags = ["requires_dynamic"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/library-deps/sublib",
+    ],
+)
+
+haskell_test(
+    name = "bin-deps",
+    size = "small",
+    srcs = ["Bin.hs"],
+    tags = ["requires_dynamic"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/library-deps/sublib",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/library-deps/sublib:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

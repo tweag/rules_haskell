@@ -1,0 +1,35 @@
+<hr>
+
+#[[##]]# ${funcInfo.functionName} {#[[#]]#${funcInfo.functionName}}
+
+<pre>
+${util.funcSummary($funcInfo)}
+</pre>
+
+${funcInfo.docString}
+
+#[[###]]# Attributes {#[[#]]#${funcInfo.functionName}_args}
+
+#if (!$funcInfo.getParameterList().isEmpty())
+<table class="params-table">
+  <colgroup>
+    <col class="col-param" />
+    <col class="col-description" />
+  </colgroup>
+  <tbody>
+#foreach ($param in $funcInfo.getParameterList())
+    <tr id="${funcInfo.functionName}-${param.name}">
+      <td>`${param.name}`</td>
+      <td>
+        ${util.mandatoryString($param)}#if (!$param.defaultValue.isEmpty()); default is `$param.defaultValue`#end
+#if (!$param.docString.isEmpty())
+        <p>
+          ${param.docString}
+        </p>
+#end
+      </td>
+    </tr>
+#end
+  </tbody>
+</table>
+#end

@@ -1,0 +1,61 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "extra-source-files",
+    srcs = [
+        "Foo.hs",
+        "FooTH.hs",
+    ],
+    extra_srcs = [
+        "file.txt",
+        "ld-options.txt",
+    ],
+    # Test that the linker can also see the extra_srcs.
+    ghcopts = ["-optl-Wl,@tests/extra-source-files/ld-options.txt"],
+    tags = [
+        # ld on darwin does not support response files.
+        "dont_test_on_darwin_with_bindist",
+    ],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+    ],
+)
+
+haskell_test(
+    name = "extra-source-files-bin",
+    srcs = [
+        "Foo.hs",
+        "FooTH.hs",
+        "Main.hs",
+    ],
+    # Test that the linker can also see the extra_srcs.
+    compiler_flags = ["-optl-Wl,@tests/extra-source-files/ld-options.txt"],
+    extra_srcs = [
+        "file.txt",
+        "Foo.hs",  # Test "Multiple entries with same key" in expand_location
+        "ld-options.txt",
+    ],
+    tags = [
+        # ld on darwin does not support response files.
+        "dont_test_on_darwin_with_bindist",
+    ],
+    visibility = ["//tests/asterius/extra-source-files:__pkg__"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

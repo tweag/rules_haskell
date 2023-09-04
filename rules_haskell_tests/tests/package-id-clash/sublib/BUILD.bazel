@@ -1,0 +1,20 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "sublib",
+    srcs = ["Bar.hs"],
+    visibility = ["//visibility:public"],
+    deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,25 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+)
+load("@aspect_bazel_lib//lib:utils.bzl", "is_bzlmod_enabled")
+
+package(default_testonly = 1)
+
+haskell_test(
+    name = "java_classpath",
+    srcs = ["Main.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+        ("@rules_haskell_tests_maven//:org_apache_spark_spark_core_2_10" if is_bzlmod_enabled() else "@org_apache_spark_spark_core_2_10//jar"),
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,29 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "sublib",
+    srcs = ["TestSubLib.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":sublib-c",
+        "//tests/hackage:base",
+    ],
+)
+
+cc_library(
+    name = "sublib-c",
+    srcs = ["sublib-c.c"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

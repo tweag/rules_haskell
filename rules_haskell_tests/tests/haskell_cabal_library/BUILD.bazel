@@ -1,0 +1,80 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base")
+
+cc_library(
+    name = "c-lib",
+    srcs = ["c-lib.c"],
+    hdrs = ["c-lib.h"],
+)
+
+haskell_cabal_library(
+    name = "first-lib",
+    package_name = "lib",
+    srcs = [
+        "Lib.hs",
+        "lib.cabal",
+    ],
+    cabalopts = [
+        "--ghc-option=-DONE=1",
+        "--haddock-option=--optghc=-DONE=1",
+    ],
+    flags = [
+        "use-base",
+        "expose-lib",
+    ],
+    tags = [
+        # Windows builds are not sandboxed, so both cabal files are visible to
+        # the build action and it fails with:
+        #
+        #   Setup.hs: Multiple cabal files found.
+        #   Please use only one of: .\second-lib.cabal, .\lib.cabal
+        "dont_test_on_windows",
+    ],
+    version = "0.1.0.0",
+    deps = [":c-lib"],
+)
+
+haskell_cabal_library(
+    name = "second-lib",
+    srcs = [
+        "SecondLib.hs",
+        "second-lib.cabal",
+    ],
+    haddock = False,
+    tags = [
+        # Windows builds are not sandboxed, so both cabal files are visible to
+        # the build action and it fails with:
+        #
+        #   Setup.hs: Multiple cabal files found.
+        #   Please use only one of: .\second-lib.cabal, .\lib.cabal
+        "dont_test_on_windows",
+    ],
+    version = "0.1.0.0",
+)
+
+haskell_test(
+    name = "haskell_cabal_library",
+    srcs = ["Main.hs"],
+    tags = [
+        "dont_test_on_windows",
+    ],
+    deps = [
+        ":base",
+        ":first-lib",
+        ":second-lib",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

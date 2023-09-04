@@ -1,0 +1,128 @@
+load("@rules_haskell//haskell:c2hs.bzl", "c2hs_library")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_library",
+    "haskell_test",
+)
+load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_haskell_integration_test")
+
+package(default_testonly = 1)
+
+genrule(
+    name = "codegen",
+    outs = [
+        "Gen.hs",
+    ],
+    cmd = """
+  echo "module Gen (gen) where" >> $(location :Gen.hs)
+  echo "gen :: String" >> $(location :Gen.hs)
+  echo "gen = \\"gen\\"" >> $(location :Gen.hs)
+""",
+)
+
+c2hs_library(
+    name = "chs",
+    srcs = ["Chs.chs"],
+)
+
+haskell_library(
+    name = "hs-lib",
+    srcs = [
+        "Foo.hs",
+        "Hsc.hsc",
+        ":chs",
+        ":codegen",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests:zlib",
+        "//tests/data:ourclibrary",
+        "//tests/hackage:array",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "hs-lib-bad",
+    srcs = [
+        "Bad.hs",
+    ],
+    tags = [
+        "manual",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests:zlib",
+        "//tests/data:ourclibrary",
+        "//tests/hackage:base",
+        "@stackage//:array",
+    ],
+)
+
+haskell_test(
+    name = "hs-test-bad",
+    srcs = [
+        "Bad.hs",
+    ],
+    tags = [
+        "manual",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests:zlib",
+        "//tests/data:ourclibrary",
+        "//tests/hackage:base",
+        "@stackage//:array",
+    ],
+)
+
+haskell_library(
+    name = "QuuxLib",
+    srcs = ["QuuxLib.hs"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_test(
+    name = "hs-bin",
+    srcs = ["Quux.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":QuuxLib",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "rebindable-syntax",
+    srcs = ["RebindableSyntax.hs"],
+    ghcopts = [
+        "-XRebindableSyntax",
+        "-Wname-shadowing",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["//tests/hackage:base"],
+)
+
+rules_haskell_integration_test(
+    name = "hs_bin_repl_test",
+    srcs = ["HsBinReplTest.hs"],
+    workspace_path = "hs_bin_repl_test",
+)
+
+rules_haskell_integration_test(
+    name = "hs_lib_repl_test",
+    srcs = ["HsLibReplTest.hs"],
+    tags = [
+        # See https://github.com/tweag/rules_haskell/issues/1779
+        "dont_test_on_darwin_with_bindist",
+    ],
+    workspace_path = "hs_lib_repl_test",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

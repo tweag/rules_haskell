@@ -1,0 +1,442 @@
+#!/usr/bin/env sh
+#
+# Checks the version of Bazel found in the PATH, and then initializes
+# a new Bazel workspace with dummy Haskell build targets.
+
+set -eu
+
+# If the environment variable `GHC_VERSION` is not set yet,
+# we use the default version (currently "9.2.5").
+GHC_VERSION=${GHC_VERSION:="9.2.5"}
+
+readonly MIN_BAZEL_MAJOR=5
+readonly MIN_BAZEL_MINOR=3
+
+readonly MAX_BAZEL_MAJOR=6
+readonly MAX_BAZEL_MINOR=2
+
+stderr () {
+  >&2 echo "$*"
+}
+
+usage () {
+    exit_code="$1"
+
+    cat >&2 <<-"EOF"
+	start [--use-bindists|--use-nix|--help]
+
+	Set up a minimal rules_haskell bazel configuration.
+
+	--use-bindists: The project is set up to provision GHC from binary distributions. This does not require nix to build.
+	--use-nix: The project is set up to provision GHC from nixpkgs. This requires nix to build.
+
+	If no argument is given, `--use-bindists` is assumed
+	and a helpful message is printed that `--use-nix` also exists.
+
+	For more information visit https://haskell.build/
+	EOF
+
+    exit "${exit_code}"
+}
+
+# either bindists or nix
+MODE=
+PRINT_NIX_USAGE=
+
+parse_args () {
+    # Defaults, if no arguments provided
+    if [ "$#" -eq 0 ]; then
+        MODE="bindists"
+        PRINT_NIX_USAGE=1
+        return
+    fi
+
+    case "$1" in
+        "--help")         usage 0 ;;
+        "--use-bindists") MODE="bindists" ;;
+        "--use-nix")      MODE="nix" ;;
+        *)                usage 1 ;;
+    esac
+}
+
+check_dir () {
+    path="$1"
+
+    # we can't write a file when a directory of that name exists
+    if [ -d "${path}" ]; then
+        stderr "STOP: There's a directory named ${path} but we want to write a file with the same name. Please delete or rename the ${path} directory."
+        exit 1
+    fi
+}
+
+check_alt () {
+    path="$1"
+    alternative="$2"
+
+    check_dir "${alternative}"
+    if [ -f "${path}" ]; then
+        stderr "STOP: There's a ${path} file but we intend to write a ${alternative} file. When both exist, bazel will pick the one with the .bazel extension, ignoring the other one. Please delete the ${path} file."
+        exit 1
+    fi
+}
+
+check_clash () {
+    path="$1"
+
+    check_dir "${path}"
+    if [ -e "${path}" ]; then
+        stderr "STOP: The current directory already has a ${path} file and we don't want to overwrite it."
+        exit 1
+    fi
+}
+
+check_files_dont_exist () {
+    # A BUILD.bazel file takes precedence over a BUILD file and likewise
+    # a WORKSPACE.bazel file takes precedence over a WORKSPACE file. We write
+    # BUILD.bazel and WORKSPACE files.
+    # Some Bazel tooling may fail on WORKSPACE.bazel files,
+    # e.g. https://github.com/bazelbuild/bazel-gazelle/issues/678
+    check_alt WORKSPACE.bazel WORKSPACE
+    check_alt BUILD BUILD.bazel
+
+    for clash in .bazelrc WORKSPACE BUILD.bazel zlib.BUILD.bazel Example.hs; do
+        check_clash "${clash}"
+    done
+}
+
+check_bazel_version () {
+    actual_raw=$(bazel version | grep -E '^Build label:' | grep -Eo '[0-9.]+')
+
+    # shellcheck disable=SC2034
+    IFS=. read -r actual_major actual_minor actual_patch <<-EOF
+	${actual_raw}
+	EOF
+
+    expected_min="${MIN_BAZEL_MAJOR}.${MIN_BAZEL_MINOR}.0"
+    expected_max="${MAX_BAZEL_MAJOR}.${MAX_BAZEL_MINOR}.x"
+
+    if [ "${actual_major}" -gt "${MAX_BAZEL_MAJOR}" ] || \
+       { [ "${actual_major}" -eq "${MAX_BAZEL_MAJOR}" ] && [ "${actual_minor}" -gt "${MAX_BAZEL_MINOR}" ]; }
+    then
+        stderr "Warning: a too new version of Bazel detected: v${actual_raw}."
+        stderr "         Recommended versions are from v${expected_min} to v${expected_max}."
+
+    elif [ "${actual_major}" -lt "${MIN_BAZEL_MAJOR}" ] || \
+         { [ "${actual_major}" -eq "${MIN_BAZEL_MAJOR}" ] && [ "${actual_minor}" -lt "${MIN_BAZEL_MINOR}" ]; }
+    then
+        stderr "Error: Need at least Bazel v${expected_min} but v${actual_raw} detected."
+        exit 1
+    fi
+}
+
+## Parse Arguments and Preflight Checks ################################
+
+parse_args "$@"
+
+if [ "${PRINT_NIX_USAGE}" ]; then
+    # shellcheck disable=SC2016
+    stderr 'INFO: Creating a WORKSPACE file based on GHC bindists. If you want to use a nix-based setup (e.g. on NixOS), call with `--use-nix`. See `--help` for more info.'
+fi
+
+check_files_dont_exist
+check_bazel_version
+
+## Write zlib Build File ###############################################
+
+readonly ZLIB_BUILD_FILE="zlib.BUILD.bazel"
+
+stderr "Creating ${ZLIB_BUILD_FILE}"
+
+case "${MODE}" in
+    "bindists") cat <<-EOF
+		load("@rules_cc//cc:defs.bzl", "cc_library")
+
+		cc_library(
+		    name = "zlib",
+		    # Import ':z' as 'srcs' to enforce the library name 'libz.so'. Otherwise,
+		    # Bazel would mangle the library name and e.g. Cabal wouldn't recognize it.
+		    srcs = [":z"],
+		    hdrs = glob(["*.h"]),
+		    includes = ["."],
+		    visibility = ["//visibility:public"],
+		)
+		cc_library(
+		    name = "z",
+		    srcs = glob(["*.c"]),
+		    hdrs = glob(["*.h"]),
+		    copts = ["-Wno-implicit-function-declaration"],
+		)
+		EOF
+        ;;
+
+    "nix") cat <<-EOF
+		load("@rules_cc//cc:defs.bzl", "cc_library")
+
+		filegroup(
+		    name = "include",
+		    srcs = glob(["include/*.h"]),
+		    visibility = ["//visibility:public"],
+		)
+		cc_library(
+		    name = "zlib",
+		    srcs = ["@nixpkgs_zlib//:lib"],
+		    hdrs = [":include"],
+		    strip_include_prefix = "include",
+		    visibility = ["//visibility:public"],
+		)
+		EOF
+        ;;
+esac > "${ZLIB_BUILD_FILE}"
+
+SNAPSHOT=lts-20.3
+
+case "$GHC_VERSION" in
+    8.10.*)
+        SNAPSHOT=lts-18.28
+        ;;
+    9.0.*)
+        SNAPSHOT=lts-19.33
+        ;;
+    9.2.*)
+        SNAPSHOT=lts-20.3
+        ;;
+    9.4.*)
+        SNAPSHOT=lts-21.5
+        ;;
+    *)
+        stderr "warning: unsupported GHC version: ${GHC_VERSION}, using stack resolver ${SNAPSHOT}"
+esac
+
+
+## Write WORKSPACE File ################################################
+
+stderr "Creating WORKSPACE"
+
+cat > WORKSPACE <<EOF
+# Give your project a name. :)
+workspace(name = "YOUR_PROJECT_NAME_HERE")
+
+# Load the repository rule to download an http archive.
+load(
+    "@bazel_tools//tools/build_defs/repo:http.bzl",
+    "http_archive"
+)
+
+# Download rules_haskell and make it accessible as "@rules_haskell".
+http_archive(
+    name = "rules_haskell",
+    sha256 = "2a07b55c30e526c07138c717b0343a07649e27008a873f2508ffab3074f3d4f3",
+    strip_prefix = "rules_haskell-0.16",
+    url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.16.tar.gz",
+)
+
+load(
+    "@rules_haskell//haskell:repositories.bzl",
+    "rules_haskell_dependencies",
+)
+
+# Setup all Bazel dependencies required by rules_haskell.
+rules_haskell_dependencies()
+
+load(
+    "@rules_haskell//haskell:toolchain.bzl",
+    "rules_haskell_toolchains",
+)
+
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "stack_snapshot"
+)
+
+stack_snapshot(
+    name = "stackage",
+    extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
+    packages = ["zlib"],
+
+    # LTS snapshot published for ghc-${GHC_VERSION} (default version used by rules_haskell)
+    snapshot = "$SNAPSHOT",
+
+    # This uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
+    # To switch to pinned stackage dependencies, run \`bazel run @stackage-unpinned//:pin\` and
+    # uncomment the following line.
+    # stack_snapshot_json = "//:stackage_snapshot.json",
+)
+
+EOF
+
+# Append toolchain and zlib rules
+case "${MODE}" in
+    "bindists") cat <<-EOF
+		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
+		rules_haskell_toolchains(
+		    version = "${GHC_VERSION}",
+		)
+
+		http_archive(
+		    name = "zlib.dev",
+		    build_file = "//:${ZLIB_BUILD_FILE}",
+		    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+		    strip_prefix = "zlib-1.2.11",
+		    urls = [
+		        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
+		        "http://zlib.net/zlib-1.2.11.tar.gz",
+		    ],
+		)
+		EOF
+        ;;
+
+    "nix") cat <<-EOF
+		# Load nixpkgs_git_repository from rules_nixpkgs,
+		# which was already initialized by rules_haskell_dependencies above.
+		load(
+		    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+		    "nixpkgs_cc_configure",
+		    "nixpkgs_git_repository",
+		    "nixpkgs_package",
+		    "nixpkgs_python_configure",
+		)
+
+		# Fetch a version of nixpkgs from GitHub.
+		# For more information see the documentation of rules_nixpkgs at
+		# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
+		nixpkgs_git_repository(
+		    name = "nixpkgs",
+		    revision = "22.11",
+		)
+
+		nixpkgs_cc_configure(
+		    repository = "@nixpkgs",
+		)
+
+		nixpkgs_python_configure(
+		    repository = "@nixpkgs",
+		)
+
+		load(
+		    "@rules_haskell//haskell:nixpkgs.bzl",
+		    "haskell_register_ghc_nixpkgs",
+		)
+
+		# Fetch a GHC binary distribution from nixpkgs and register it as a toolchain.
+		# For more information:
+		# https://api.haskell.build/haskell/nixpkgs.html#haskell_register_ghc_nixpkgs
+		haskell_register_ghc_nixpkgs(
+		    repository = "@nixpkgs",
+		    attribute_path = "haskell.compiler.ghc925",
+		    version = "${GHC_VERSION}",
+		)
+
+		# For ${ZLIB_BUILD_FILE}
+		nixpkgs_package(
+		    name = "nixpkgs_zlib",
+		    attribute_path = "zlib",
+		    repository = "@nixpkgs",
+		)
+
+		nixpkgs_package(
+		    name = "zlib.dev",
+		    build_file = "//:${ZLIB_BUILD_FILE}",
+		    repository = "@nixpkgs",
+		)
+		EOF
+        ;;
+esac >> WORKSPACE
+
+## Write .bazelrc File #################################################
+
+stderr "Creating .bazelrc"
+
+cat > .bazelrc <<EOF
+build:ci --loading_phase_threads=1
+build:ci --jobs=2
+build:ci --verbose_failures
+common:ci --color=no
+test:ci --test_output=errors
+
+# Should become the default in bazel 7
+build --incompatible_enable_cc_toolchain_resolution
+
+EOF
+
+if [ "${MODE}" = "nix" ]; then
+    cat >> .bazelrc <<-EOF
+	# This project uses a GHC provisioned via nix.
+	# We need to use the rules_haskell nix toolchain accordingly:
+	build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+	run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+
+	EOF
+fi
+
+cat >> .bazelrc <<EOF
+# test environment does not propagate locales by default
+# some tests reads files written in UTF8, we need to propagate the correct
+# environment variables, such as LOCALE_ARCHIVE
+# We also need to setup an utf8 locale
+test --test_env=LANG=en_US.utf8 --test_env=LOCALE_ARCHIVE
+
+try-import .bazelrc.local
+EOF
+
+## Write BUILD.bazel File ##############################################
+
+stderr "Creating BUILD.bazel"
+
+cat > BUILD.bazel <<EOF
+# Set all target’s visibility in this package to "public".
+package(default_visibility = ["//visibility:public"])
+
+# Load rules_haskell rules.
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_toolchain_library",
+    "haskell_library",
+    "haskell_binary",
+)
+
+# haskell_toolchain_library can access builtin GHC packages
+# and assign them a bazel target name, so that they
+# can be referenced as dependencies.
+haskell_toolchain_library(name = "base")
+
+# You can add your own libraries with haskell_library.
+# haskell_library(
+#     name = "MY_LIBRARY_NAME",
+#     src_strip_prefix = "src",
+#     srcs = glob(['src/**/*.hs']),
+#     deps = [
+#         "base_pkg"
+#     ],
+# )
+
+# An example binary using the Prelude module from the
+# GHC base package, and zlib from stackage, to print the hello world.
+haskell_binary(
+    name = "example",
+    srcs = [":Example.hs"],
+    deps = [":base", "@stackage//:zlib"],
+)
+EOF
+
+## Write Example.hs File ###############################################
+
+stderr "Creating Example.hs"
+
+cat > Example.hs <<EOF
+module Main where
+
+import Codec.Compression.Zlib (compress, decompress)
+import Prelude ((.), putStrLn)
+
+main = putStrLn "Hello from rules_haskell!"
+
+slowId = decompress . compress
+EOF
+
+## Finish Up ###########################################################
+
+cat >&2 <<EOF
+WORKSPACE and initial BUILD files created. To run Bazel and build the example:
+
+    $ bazel run //:example
+EOF

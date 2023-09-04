@@ -1,0 +1,190 @@
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_binary",
+)
+load(
+    "@rules_haskell//tests:inline_tests.bzl",
+    "py_inline_test",
+)
+load("dynamic_libraries.bzl", "dynamic_libraries")
+
+dynamic_libraries(
+    name = "libz",
+    srcs = ["@zlib.dev//:zlib"],
+    filter = "libz",
+    solib_names = "libz_soname",
+    # Only the Nix provided zlib is dynamically linked.
+    tags = ["requires_nix"],
+)
+
+dynamic_libraries(
+    name = "libHSzlib",
+    srcs = ["@stackage-zlib//:zlib"],
+    filter = "libHSz",
+    tags = ["requires_nix"],
+)
+
+haskell_cabal_binary(
+    name = "cabal-binary",
+    srcs = glob(["cabal-binary/**"]),
+    tags = ["requires_nix"],
+    visibility = ["//tests/asterius/stackage_zlib_runpath:__pkg__"],
+    deps = [
+        "//tests/hackage:base",
+        # Depend transitively on libz.
+        "@stackage-zlib//:zlib",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
+
+# Tests that haskell_cabal_library|binary will generate a relative RUNPATH
+# entry for the dependency on the nixpkgs provided libz. Relative meaning an
+# entry that starts with $ORIGIN (Linux) or @loader_path (MacOS). The
+# alternative is an absolute path, which would be wrong for the nixpkgs
+# provided libz, as we want the RUNPATH entry to point to Bazel's _solib_<cpu>
+# directory and its absolute path depends on the output root or execroot.
+#
+# It uses :libz_soname generated above to determine the expected RUNPATH entry
+# for the libz dependency. The :libz_soname file will contain the file names of
+# the libz library files underneath the `_solib_<cpu>` directory.
+#
+# It uses :libHSzlib to access the dynamic library output of
+# haskell_cabal_library and read the RUNPATH entries.
+#
+# It uses :cabal-binary to access a binary that transitively depends on libz.
+#
+# Note, ideally we would test that haskell_cabal_library|binary _only_
+# generates a relative RUNPATH entry and no absolute entries that leak the
+# execroot into the cache. Unfortunately, haskell_cabal_library|binary
+# generates such an entry at the moment. See
+# https://github.com/tweag/rules_haskell/issues/1130.
+py_inline_test(
+    name = "stackage_zlib_runpath",
+    args = [
+        "$(rootpath :libz_soname)",
+        "$(rootpath :libHSzlib)",
+        "$(rootpath :cabal-binary)",
+    ],
+    data = [
+        ":cabal-binary",
+        ":libHSzlib",
+        ":libz_soname",
+    ],
+    script = """\
+from python.runfiles import runfiles as bazel_runfiles
+import itertools
+import os
+import platform
+import subprocess
+import sys
+r = bazel_runfiles.Create()
+
+# Determine libz solib directory
+libz_soname = r.Rlocation(os.path.join(
+    os.environ["TEST_WORKSPACE"],
+    sys.argv[1],
+))
+with open(libz_soname) as fh:
+    if platform.system() == "Darwin":
+        sofile = fh.read().splitlines()[2]
+    else:
+        sofile = fh.read().splitlines()[1]
+    (sodir, sobase) = os.path.split(sofile)
+
+# Locate test artifacts.
+libHSzlib = r.Rlocation(os.path.join(
+    os.environ["TEST_WORKSPACE"],
+    sys.argv[2],
+))
+cabal_binary = r.Rlocation(os.path.join(
+    os.environ["TEST_WORKSPACE"],
+    sys.argv[3],
+))
+
+def read_runpaths(binary, sobase):
+    if platform.system() == "Darwin":
+        lc_rpaths = []
+        lc_load_dylibs = []
+        dynamic_section = iter(subprocess.check_output(["otool", "-l", binary]).decode().splitlines())
+        # otool produces lines of the form
+        #
+        #   Load command ...
+        #             cmd LC_LOAD_DYLIB
+        #         cmdsize ...
+        #            name ...
+        #         ...
+        #             cmd LC_RPATH
+        #         cmdsize ...
+        #            path ...
+        #
+        # Load commands can refer to names like
+        # `@rpath/some/path/libfoo.dylib`. In that case we want to extract
+        # `some/path` and consider `RUNPATH/some/path` part of the `RUNPATH`s.
+        for line in dynamic_section:
+            # Find load command
+            if line.find("cmd LC_") == -1:
+                continue
+            if line.find("cmd LC_RPATH") != -1:
+                # Skip until path field
+                for line in dynamic_section:
+                    if line.strip().startswith("path"):
+                        break
+                lc_rpaths.append(line.split()[1])
+            elif line.find("cmd LC_LOAD_DYLIB") != -1:
+                # Skip until name field
+                for line in dynamic_section:
+                    if line.strip().startswith("name"):
+                        break
+                lc_load_dylib = line.split()[1]
+                if lc_load_dylib.endswith(sobase) and lc_load_dylib.startswith("@rpath"):
+                    lc_load_dylibs.append("/".join(lc_load_dylib.split("/")[1:-1]))
+        runpaths = [
+            os.path.join(rpath, libdir)
+            for rpath in lc_rpaths
+            for libdir in lc_load_dylibs
+        ]
+    else:
+        runpaths = []
+        dynamic_section = subprocess.check_output(["objdump", "--private-headers", binary]).decode().splitlines()
+        # objdump produces lines of the form
+        #
+        #   Dynamic Section:
+        #     ...
+        #     RUNPATH              ...
+        #     ...
+        for line in dynamic_section:
+            if not line.strip().startswith("RUNPATH"):
+                continue
+            runpaths.extend(line.split()[1].split(":"))
+
+    return runpaths
+
+def test_binary(binary, sodir):
+    runpaths = read_runpaths(binary, sobase)
+    # Check that the binary contains a relative RUNPATH for sodir.
+    found = False
+    for runpath in runpaths:
+        if runpath.find(sodir) == -1:
+            continue
+        if runpath.startswith("$ORIGIN") or runpath.startswith("@loader_path"):
+            found = True
+        if os.path.isabs(runpath):
+            print("Absolute RUNPATH entry discovered for %s: %s" % (sodir, runpath))
+            sys.exit(1)
+
+    if not found:
+        print("Did not find a relative RUNPATH entry for %s among %s." % (sodir, runpaths))
+
+    return found
+
+if not all(test_binary(binary, sodir) for binary in [libHSzlib, cabal_binary]):
+    sys.exit(1)
+""",
+    tags = ["requires_nix"],
+)

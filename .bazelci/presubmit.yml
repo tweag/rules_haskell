@@ -1,0 +1,23 @@
+---
+matrix:
+  workdir: [".", "rules_haskell_tests"]
+
+tasks:
+  ubuntu1804:
+    working_directory: ${{ workdir }}
+    platform: "ubuntu1804"
+    environment:
+      # haskell base uses the environment locale to decode sockets
+      LANG: "C.UTF-8"
+    shell_commands:
+      - "sudo apt -y update && sudo apt -y install libgmp-dev"
+    build_flags:
+      - "--config=ci-common"
+      - "--build_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci,-integration"
+    build_targets:
+      - "//tests/..."
+    test_flags:
+      - "--config=ci-common"
+      - "--test_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci,-integration"
+    test_targets:
+      - "//tests/..."

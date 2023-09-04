@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+TOP="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
+
+usage() {
+  cat >&2 <<EOF
+USAGE: update-bazel-version VERSION
+Updates .ci/bazelversion and .ci/bazel-*.sha256
+EOF
+}
+trap usage ERR
+
+if [[ $# -ne 1 ]]; then
+  usage
+  exit 1
+fi
+
+VERSION="$1"
+mkdir -p "$TOP/.ci"
+echo "$VERSION" >"$TOP/.ci/bazelversion"
+rm -f "$TOP"/.ci/bazel-*.sha256
+for OSEXT in windows-x86_64.exe linux-x86_64 darwin-x86_64; do
+  URL="https://github.com/bazelbuild/bazel/releases/download/$VERSION/bazel-$VERSION-$OSEXT.sha256"
+  (cd "$TOP/.ci" && curl -LO "$URL")
+done

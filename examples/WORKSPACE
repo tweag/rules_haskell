@@ -1,0 +1,126 @@
+workspace(name = "rules_haskell_examples")
+
+local_repository(
+    name = "rules_haskell",
+    path = "..",
+)
+
+local_repository(
+    name = "arm",
+    path = "arm",
+)
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
+
+rules_haskell_dependencies()
+
+load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+
+haskell_register_ghc_nixpkgs(
+    attribute_path = "haskell.compiler.ghc925",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+    version = "9.2.5",
+)
+
+load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
+
+rules_haskell_toolchains(version = "9.2.5")
+
+load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
+load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
+
+nixpkgs_cc_configure(
+    # Don't override the default cc toolchain needed for bindist mode.
+    name = "nixpkgs_config_cc",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+nixpkgs_python_configure(
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
+
+# For the cat_hs example.
+
+http_archive(
+    name = "zlib.hs",
+    build_file_content = """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+cc_library(
+    name = "zlib.hs",
+    # Import `:z` as `srcs` to enforce the library name `libz.so`. Otherwise,
+    # Bazel would mangle the library name and e.g. Cabal wouldn't recognize it.
+    srcs = [":z"],
+    hdrs = glob(["*.h"]),
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+""",
+    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+    strip_prefix = "zlib-1.2.11",
+    urls = [
+        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
+        "http://zlib.net/zlib-1.2.11.tar.gz",
+    ],
+)
+
+# Demonstrates a vendored Stackage package to bump a version bound.
+http_archive(
+    name = "split",
+    build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load("@stackage//:packages.bzl", "packages")
+haskell_cabal_library(
+    name = "split",
+    version = packages["split"].version,
+    srcs = glob(["**"]),
+    deps = packages["split"].deps,
+    visibility = ["//visibility:public"],
+)
+    """,
+    patch_args = ["-p1"],
+    patches = ["@rules_haskell_examples//:split.patch"],
+    sha256 = "1dcd674f7c5f276f33300f5fd59e49d1ac6fc92ae949fd06a0f6d3e9d9ac1413",
+    strip_prefix = "split-0.2.3.3",
+    urls = ["http://hackage.haskell.org/package/split-0.2.3.3/split-0.2.3.3.tar.gz"],
+)
+
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+
+stack_snapshot(
+    name = "stackage",
+    components = {
+        "attoparsec": [
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    },
+    components_dependencies = {
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
+    extra_deps = {"zlib": ["@zlib.hs"]},
+    flags = {
+        # Sets the default explicitly to demonstrate the flags attribute.
+        "zlib": [
+            "-non-blocking-ffi",
+            "-pkg-config",
+        ],
+    },
+    local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
+    packages = [
+        "base",
+        "bytestring",
+        "conduit",
+        "conduit-extra",
+        "hspec",
+        "optparse-applicative",
+        "text",
+        "text-show",
+    ],
+    # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
+    # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
+    # uncomment the following line.
+    # And uncomment the following line.
+    vendored_packages = {"split": "@split//:split"},
+)
