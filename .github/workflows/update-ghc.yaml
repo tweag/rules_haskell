@@ -29,7 +29,7 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           commit-message: "Add GHC bindist version ${{ steps.ghc_update.outputs.latest }}"
-          title: "[update] GHC ${{ matrix.ghc }}"
+          title: "[update] Add GHC ${{ steps.ghc_update.outputs.latest }}"
           branch: "automation/update-ghc-${{ matrix.ghc }}"
           base: master
       - run: git -c user.email='noreply@github.com' -c user.name='GitHub' commit --amend --no-edit
