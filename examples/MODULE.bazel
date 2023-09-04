@@ -62,6 +62,17 @@ use_repo(
     "stackage",
 )
 
+stack_snapshot.package(
+    name = "zlib",
+    extra_deps = ["@zlib.hs"],
+    flags =
+    # Sets the default explicitly to demonstrate the flags attribute.
+        [
+            "-non-blocking-ffi",
+            "-pkg-config",
+        ],
+)
+
 [
     stack_snapshot.package(
         name = pkg,  # See https://github.com/tweag/rules_haskell/issues/1871
