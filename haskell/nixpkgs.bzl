@@ -1,0 +1,1 @@
+../rules_haskell_nix/nixpkgs.bzl

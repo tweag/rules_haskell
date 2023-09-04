@@ -1,0 +1,10 @@
+cabal-version: >=1.10
+name: cabal-toolchain-flags
+version: 0.1.0.0
+build-type: Simple
+
+executable cabal-toolchain-flags
+  build-depends: base, bytestring
+  default-language: Haskell2010
+  extensions: OverloadedStrings
+  main-is: Main.hs

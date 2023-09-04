@@ -1,0 +1,38 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+# Test that rules_haskell handles allowed characters in target names.
+#
+# The documentation specifies:
+# Target names must be composed entirely of characters drawn from
+# the set a–z, A–Z, 0–9, and the punctuation symbols _/.+-=,@~
+#
+# Currently, rules_haskell does not support the full set.
+
+haskell_library(
+    name = "lib0-a_Aa",
+    srcs = ["Lib.hs"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_test(
+    name = "bin0-a_A@a",
+    srcs = ["Main.hs"],
+    visibility = ["//tests/asterius/target-name:__pkg__"],
+    deps = [
+        ":lib0-a_Aa",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

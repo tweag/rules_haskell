@@ -1,0 +1,24 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+)
+
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
+)
+
+haskell_test(
+    name = "binary-with-link-flags",
+    srcs = ["Main.hs"],
+    ghcopts = ["-threaded"],
+    visibility = ["//visibility:public"],
+    deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

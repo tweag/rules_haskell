@@ -1,0 +1,40 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+haskell_library(
+    name = "cat",
+    srcs = glob(["src/**/*.hs"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cat_hs/lib/args",
+        "@stackage//:base",
+        "@stackage//:bytestring",
+        "@stackage//:conduit",
+        "@stackage//:conduit-extra",
+        "@stackage//:text",
+        "@stackage//:text-show",
+    ],
+)
+
+haskell_test(
+    name = "unit",
+    srcs = glob(["test/**/*.hs"]),
+    deps = [
+        ":cat",
+        "//cat_hs/lib/args",
+        "@stackage//:base",
+        "@stackage//:conduit",
+        "@stackage//:hspec",
+        "@stackage//:text",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

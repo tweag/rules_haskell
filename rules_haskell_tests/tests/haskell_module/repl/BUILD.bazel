@@ -1,0 +1,24 @@
+load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_haskell_integration_test")
+
+package(default_testonly = 1)
+
+rules_haskell_integration_test(
+    name = "haskell_module_repl_test",
+    size = "small",
+    srcs = ["HaskellModuleReplTest.hs"],
+    workspace_path = "haskell_module_repl_test",
+)
+
+rules_haskell_integration_test(
+    name = "haskell_module_repl_cross_library_deps_test",
+    size = "small",
+    srcs = ["HaskellModuleReplCrossLibraryDepsTest.hs"],
+    workspace_path = "haskell_module_repl_cross_library_deps_test",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

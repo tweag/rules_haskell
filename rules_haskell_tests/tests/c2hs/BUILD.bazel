@@ -1,0 +1,37 @@
+load("@rules_haskell//haskell:c2hs.bzl", "c2hs_library")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+)
+
+package(default_testonly = 1)
+
+c2hs_library(
+    name = "foo",
+    srcs = ["src/Foo/Foo.chs"],
+    src_strip_prefix = "src",
+    deps = ["//tests:zlib"],
+)
+
+c2hs_library(
+    name = "bar",
+    srcs = ["Bar.chs"],
+    deps = [":foo"],
+)
+
+haskell_library(
+    name = "c2hs",
+    srcs = [
+        ":bar",
+        ":foo",
+        "@c2hs_repo//:baz",
+    ],
+    deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,23 @@
+load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "rule_info_proto",
+    srcs = ["rule_info.proto"],
+    strip_import_prefix = "",
+    visibility = ["//visibility:public"],
+)
+
+haskell_proto_library(
+    name = "rule_info_haskell_proto",
+    tags = ["requires_dynamic"],
+    visibility = ["//visibility:public"],
+    deps = [":rule_info_proto"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

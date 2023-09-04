@@ -1,0 +1,249 @@
+load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_haskell//docs/pandoc:pandoc.bzl", "set_site_end_location")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+bool_flag(
+    name = "render_dev_website",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "dev_website_config",
+    flag_values = {
+        "render_dev_website": "True",
+    },
+)
+
+set_site_end_location(
+    name = "set_site_end_location",
+    site_end_location = select({
+        ":dev_website_config": "/api",
+        "//conditions:default": "",
+    }),
+)
+
+libraries = [
+    "defs",
+    "toolchain",
+    "cabal",
+    "repositories",
+    "ghc_bindist",
+    "nixpkgs",
+    "protobuf",
+    "c2hs",
+]
+
+[
+    (
+        # Extract API documentation metadata to generate navigation and index.
+        stardoc(
+            name = "%s_metadata" % lib,
+            out = "haskell/%s.metadata" % lib,
+            aspect_template = ":templates/metadata/aspect.vm",
+            func_template = ":templates/metadata/func.vm",
+            header_template = ":templates/metadata/header.vm",
+            input = "//haskell:%s.bzl" % lib,
+            provider_template = ":templates/metadata/provider.vm",
+            rule_template = ":templates/metadata/rule.vm",
+            tags = ["dont_test_on_windows"],
+            deps = ["//haskell"],
+        ),
+        # Generate markdown API documentation.
+        stardoc(
+            name = "%s_md" % lib,
+            out = "haskell/%s.md" % lib,
+            aspect_template = ":templates/markdown/aspect.vm",
+            func_template = ":templates/markdown/func.vm",
+            header_template = ":templates/markdown/header.vm",
+            input = "//haskell:%s.bzl" % lib,
+            provider_template = ":templates/markdown/provider.vm",
+            rule_template = ":templates/markdown/rule.vm",
+            tags = ["dont_test_on_windows"],
+            deps = ["//haskell"],
+        ),
+        # Convert markdown to html.
+        genrule(
+            name = "%s_html" % lib,
+            srcs = [
+                ":%s_md" % lib,
+                ":templates/main.html",
+                ":nav_html",
+            ],
+            outs = ["haskell/%s.html" % lib],
+            cmd = """\
+$(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
+  -f markdown \
+  -t html \
+  -s \
+  --template=$(execpath :templates/main.html) \
+  -B $(execpath :nav_html) \
+  --toc \
+  --toc-depth=2 \
+  -o $(OUTS) \
+  $(execpath :{}_md)
+""".format(lib),
+            tags = ["dont_test_on_windows"],
+            toolchains = [":set_site_end_location"],
+            tools = ["//docs/pandoc"],
+        ),
+    )
+    for lib in libraries
+]
+
+# Combine all API documentation metadata.
+genrule(
+    name = "metadata",
+    srcs = [":%s_metadata" % lib for lib in libraries],
+    outs = ["metadata.yaml"],
+    cmd = """\
+echo 'module:' >$(OUTS)
+for file in $(SRCS); do
+  base=$$(basename $$file)
+  echo "- name: $${base%.*}" >>$(OUTS)
+  cat $$file >>$(OUTS)
+done
+""",
+    tags = ["dont_test_on_windows"],
+)
+
+# Generate top-level API documentation navigation sidebar.
+genrule(
+    name = "nav_html",
+    srcs = [
+        "templates/nav.html",
+        ":metadata",
+    ],
+    outs = ["nav.html"],
+    cmd = """\
+$(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
+  -f markdown \
+  -t html \
+  -s \
+  --template=$(execpath :templates/nav.html) \
+  --metadata title:"Overview" \
+  -o $(execpath nav.html) \
+  --metadata-file=$(execpath :metadata) \
+  <<<""
+""",
+    tags = ["dont_test_on_windows"],
+    toolchains = [":set_site_end_location"],
+    tools = ["//docs/pandoc"],
+)
+
+# Generate API documentation overview page.
+genrule(
+    name = "index_html",
+    srcs = [
+        "templates/index.html",
+        "templates/main.html",
+        "nav_html",
+        ":metadata",
+    ],
+    outs = ["index.html"],
+    cmd = """\
+# Render overview page body.
+$(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
+  -f markdown \
+  -t html \
+  -s \
+  --template=$(execpath :templates/index.html) \
+  --metadata title:"Overview" \
+  -o index_body.html \
+  --metadata-file=$(execpath :metadata) \
+  <<<""
+# Render full overview page including navigation sidebar.
+$(execpath //docs/pandoc) \
+  -V path_prefix=$(SITE_END_LOCATION)\
+  -f html \
+  -t html \
+  -s \
+  --template=$(execpath :templates/main.html) \
+  -B $(execpath :nav_html) \
+  --toc \
+  --toc-depth=2 \
+  --metadata title:"Overview" \
+  -o $(execpath index.html) \
+  --metadata-file=$(execpath :metadata) \
+  index_body.html
+""",
+    tags = ["dont_test_on_windows"],
+    toolchains = [":set_site_end_location"],
+    tools = ["//docs/pandoc"],
+)
+
+# Create API documentation ZIP bundle.
+genrule(
+    name = "api_html",
+    srcs = [
+        "main.css",
+        ":index_html",
+    ] + [":%s_html" % lib for lib in libraries],
+    outs = ["api_html-stardoc.zip"],
+    cmd = """\
+# Strip the docs/ prefix so that index.html appears at the top-level.
+strip_prefix() { echo $${1#*/}; }
+$(location @bazel_tools//tools/zip:zipper) c $@ %s
+""" % " ".join([
+        # Use rootpath within the ZIP archive, so that paths don't start with
+        # bazel-out/<cpu>-fastbuild/bin.
+        "$$(strip_prefix $(rootpath {0}))=$(execpath {0})".format(f)
+        for f in [
+            ":main.css",
+            ":index_html",
+        ] + [":%s_html" % lib for lib in libraries]
+    ]),
+    tags = ["dont_test_on_windows"],
+    tools = ["@bazel_tools//tools/zip:zipper"],
+)
+
+# Serve the API documentation locally.
+py_binary(
+    name = "serve",
+    srcs = ["serve.py"],
+    args = ["$(rootpath :api_html)"],
+    data = [":api_html"],
+    tags = ["dont_test_on_windows"],
+)
+
+genrule(
+    name = "guide_html",
+    srcs = ["conf.py"] + glob(["*.rst"]),
+    outs = ["guide_html.zip"],
+    cmd = """
+    set -euo pipefail
+    # Nixpkgs_rules are pointing to every bins individually. Here
+    # we are extracting the /bin dir path to append it to the $$PATH.
+    CWD=`pwd`
+    sphinxBinDir=$${CWD}/$$(echo $(locations @sphinx//:bin) | cut -d ' ' -f 1 | xargs dirname)
+    dotBinDir=$${CWD}/$$(echo $(locations @graphviz//:bin) | cut -d ' ' -f 1 | xargs dirname)
+    zipBinDir=$${CWD}/$$(echo $(locations @zip//:bin) | cut -d ' ' -f 1 | xargs dirname)
+    PATH=$${PATH}:$${sphinxBinDir}:$${dotBinDir}:$${zipBinDir}
+    sourcedir=$$(dirname $(location conf.py))
+    builddir=$$(mktemp -d rules_haskell_docs.XXXX)
+    sphinx-build -M html $$sourcedir $$builddir -W -N -q
+    (cd $$builddir/html && zip -q -r $$CWD/$@ .)
+    rm -rf $$builddir
+    """,
+    tags = [
+        "dont_test_on_windows",
+        "requires_nix",
+    ],
+    tools = [
+        "@graphviz//:bin",
+        "@sphinx//:bin",
+        "@zip//:bin",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//docs/pandoc:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

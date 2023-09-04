@@ -1,0 +1,113 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_doc",
+    "haskell_library",
+)
+
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
+)
+
+haskell_library(
+    name = "haddock-lib-deep",
+    srcs = ["Deep.hsc"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_library(
+    name = "haddock-lib-a",
+    srcs = [
+        "LibA.hs",
+        "LibA/A.hs",
+        "header.h",
+    ],
+    compiler_flags = ["-I."],
+    tags = ["requires_dynamic"],
+    deps = [
+        ":haddock-lib-deep",
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+    ],
+)
+
+haskell_library(
+    name = "haddock-lib-b",
+    srcs = [
+        "LibB.hs",
+        "TH.hs",
+    ],
+    extra_srcs = [
+        "unicode.txt",
+    ],
+    tags = [
+        # Requires a dynamic `libz` library to load for template Haskell.
+        # This is missing on darwin with bindist due to
+        # https://github.com/tweag/rules_haskell/issues/1317.
+        "dont_test_on_darwin_with_bindist",
+        "requires_dynamic",
+    ],
+    deps = [
+        ":haddock-lib-a",
+        "//tests:zlib",
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+    ],
+)
+
+haskell_doc(
+    name = "haddock",
+    index_transitive_deps = False,
+    tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+        "requires_dynamic",
+    ],
+    deps = [":haddock-lib-b"],
+)
+
+sh_test(
+    name = "data-dependency",
+    srcs = ["data_dependency.sh"],
+    args = ["$(rootpaths :haddock)"],
+    data = [":haddock"],
+    tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+        # Fails in profiling mode due to missing haddocks for Deep.
+        "requires_dynamic",
+    ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+haskell_doc(
+    name = "haddock-transitive",
+    index_transitive_deps = True,
+    tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+        "requires_dynamic",
+    ],
+    deps = [":haddock-lib-b"],
+)
+
+sh_test(
+    name = "data-dependency-transitive",
+    srcs = ["data_dependency.sh"],
+    args = ["$(rootpaths :haddock-transitive)"],
+    data = [":haddock-transitive"],
+    tags = [
+        "dont_test_on_darwin_with_bindist",
+        "dont_test_on_windows",
+        # Fails in profiling mode due to missing haddocks for Deep.
+        "requires_dynamic",
+    ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

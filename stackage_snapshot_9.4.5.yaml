@@ -1,0 +1,30 @@
+# We drop the Win32 package from the stack snapshot so that stack considers it a toolchain library.
+# In this case we will use the Win32 provided by the compiler instead of recompiling it.
+#
+# Recompiling it should be fine for future versions of Win32,
+# but with versions <= 2.13.2.0 we encounter the following issue:
+# https://github.com/haskell/win32/issues/193
+
+resolver: lts-21.5
+
+drop-packages:
+  - Win32
+
+packages:
+- git: https://github.com/tweag/cabal
+  commit: 4f8c4ab8274320c1a00992c9aa7c6559ff190fa9
+  subdirs:
+  - Cabal
+
+# See https://github.com/avdv/proto-lens#readme
+- git: https://github.com/avdv/proto-lens
+  commit: 2ab0a8d1ec1f54f3d1a0ecd1a257311389126490
+
+# support GHC 9.4 (see https://github.com/google/ghc-source-gen/pull/102)
+- git: https://github.com/circuithub/ghc-source-gen
+  commit: 7a6aac047b706508e85ba2054b5bedbecfd7eb7a
+
+# stackage lts-21.5/ghc 9.4.5 only contain Win32-2.12.0.1
+flags:
+  ansi-terminal:
+    Win32-2-13-1: false

@@ -1,0 +1,14 @@
+cabal-version: >=1.10
+name: generate-paths-module-binary
+version: 0.1.0.0
+build-type: Simple
+
+data-files:
+  datafile
+
+executable inside
+  build-depends: base, runfiles
+  default-language: Haskell2010
+  main-is: Main.hs
+  other-modules: Paths_generate_paths_module_binary
+  autogen-modules: Paths_generate_paths_module_binary

@@ -1,0 +1,101 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+load(
+    "@rules_haskell//haskell:c2hs.bzl",
+    "c2hs_library",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "versioned-lib",
+    srcs = ["VersionedLib.hs"],
+    version = "1.2.3.4",
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_test(
+    name = "version_macros",
+    size = "small",
+    srcs = [
+        "HsLib.hs",
+        "HscLib.hsc",
+        "Main.hs",
+    ],
+    version = "3.4.5.6",
+    deps = [
+        ":versioned-lib",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "version_macros_haskell_module",
+    size = "small",
+    modules = [
+        ":HsLib",
+        ":HscLib",
+        ":Main",
+    ],
+    version = "3.4.5.6",
+    deps = [
+        ":versioned-lib",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "Main",
+    src = "Main.hs",
+    deps = [
+        ":HsLib",
+        ":HscLib",
+    ],
+)
+
+haskell_module(
+    name = "HscLib",
+    src = "HscLib.hsc",
+)
+
+haskell_module(
+    name = "HsLib",
+    src = "HsLib.hs",
+)
+
+c2hs_library(
+    name = "c2hs-lib",
+    srcs = ["C2hsLib.chs"],
+    version = "4.5.6.7",
+    deps = [
+        ":versioned-lib",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "version_macros_c2hs",
+    size = "small",
+    srcs = [
+        "MainC2hs.hs",
+        ":c2hs-lib",
+    ],
+    main_file = "MainC2hs.hs",
+    version = "4.5.6.7",
+    visibility = ["//tests/asterius/version-macros:__pkg__"],
+    deps = [
+        ":versioned-lib",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,34 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "TestLib",
+    modules = [
+        ":TestLibModule",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "base",
+    ],
+)
+
+haskell_toolchain_library(name = "base")
+
+haskell_module(
+    name = "TestLibModule",
+    src = "TestLib.hs",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

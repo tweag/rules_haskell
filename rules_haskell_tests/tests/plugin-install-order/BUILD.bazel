@@ -1,0 +1,93 @@
+"""
+Tests that GHC plugins are applied in the order declared in the BUILD file.
+
+Note [Plugin order]
+~~~~~~~~~~~~~~~~~~~
+
+We reverse the (counter-intuitive) order used by GHC. This test is
+to detect when the issue is fixed upstream so that we can stop
+reversing the argument order in rules_haskell. Search for the above
+note to find relevant locations in the rules.
+
+  - https://github.com/tweag/rules_haskell/issues/1255
+
+  - https://gitlab.haskell.org/ghc/ghc/issues/17884
+"""
+
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "ghc_plugin",
+    "haskell_library",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+
+package(default_testonly = 1)
+
+config_setting(
+    name = "debug_build",
+    values = {
+        "compilation_mode": "dbg",
+    },
+)
+
+haskell_toolchain_library(name = "base")
+
+haskell_toolchain_library(name = "ghc")
+
+haskell_toolchain_library(name = "process")
+
+haskell_library(
+    name = "plugin-lib1",
+    srcs = ["Plugin1.hs"],
+    deps = [
+        ":base",
+        ":ghc",
+        ":process",
+    ],
+)
+
+haskell_library(
+    name = "plugin-lib2",
+    srcs = ["Plugin2.hs"],
+    deps = [
+        ":base",
+        ":ghc",
+        ":process",
+    ],
+)
+
+ghc_plugin(
+    name = "plugin1",
+    module = "Plugin1",
+    deps = [":plugin-lib1"],
+)
+
+ghc_plugin(
+    name = "plugin2",
+    module = "Plugin2",
+    deps = [":plugin-lib2"],
+)
+
+haskell_test(
+    name = "binary-with-plugin",
+    srcs = ["Main.hs"],
+    plugins = select({
+        # XXX If profiling is enabled, ignore the plugin because of
+        # https://gitlab.haskell.org/ghc/ghc/issues/14335.
+        ":debug_build": [],
+        "//conditions:default": [
+            ":plugin1",
+            ":plugin2",
+        ],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [":base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

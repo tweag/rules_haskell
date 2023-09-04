@@ -1,0 +1,74 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_repl",
+)
+
+haskell_library(
+    name = "root",
+    srcs = ["src/Root.hs"],
+    src_strip_prefix = "src",
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_library(
+    name = "intermediate",
+    srcs = ["intermediate/Intermediate.hs"],
+    src_strip_prefix = "intermediate",
+    deps = [
+        ":root",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "final",
+    srcs = ["src/Final.hs"],
+    src_strip_prefix = "src",
+    deps = [
+        ":intermediate",
+        ":root",
+        "//tests/hackage:base",
+    ],
+)
+
+# The REPL final@repl should only load `src/Final.hs` from source and all other
+# modules should be loaded from binary. If `src/Root.hs` is also loaded from
+# source erroneously, then the REPL will fail with a multiple definitions
+# error:
+#
+#   tests/repl-multiple-definition/src/Final.hs:7:23: error:
+#       • Couldn't match expected type ‘root:Root.Root’
+#                     with actual type ‘Root’
+#         NB: ‘Root’ is defined at
+#               tests/repl-multiple-definition/src/Root.hs:3:1-19
+#             ‘root:Root.Root’ is defined in ‘Root’ in package ‘root’
+#       • In the first argument of ‘intermediate’, namely ‘(Root ())’
+#         In the expression: intermediate (Root ())
+#         In an equation for ‘final’: final = intermediate (Root ())
+#     |
+#   7 | final = intermediate (Root ())
+#     |                       ^^^^^^^
+#
+# This is because `:intermediate` will use the `Root` type from the compiled
+# `:root` package. However, if `src/Root.hs` is also loaded from source, then
+# GHCi will have a separate definition of `data Root` in scope from the
+# interpreted `Root` module.
+#
+# This error is triggered when `haskell_repl` passes `-isrc` to `ghci` due to
+# the shared `src_strip_prefix` between `:root` and `:final`. GHCi will prefer
+# to load modules from source if possible over loading them from compiled
+# packages.
+haskell_repl(
+    name = "repl",
+    collect_data = False,
+    experimental_from_source = [":final"],
+    deps = [":final"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

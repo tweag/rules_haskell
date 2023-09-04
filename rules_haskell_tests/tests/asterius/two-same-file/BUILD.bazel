@@ -1,0 +1,11 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+
+asterius_test_macro(
+    "//tests/two-same-file:one",
+    suffix = "_one",
+)
+
+asterius_test_macro(
+    "//tests/two-same-file:two",
+    suffix = "_two",
+)

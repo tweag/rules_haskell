@@ -1,0 +1,3 @@
+  - name: ${providerName}
+    type: provider
+    summary: ${providerInfo.docString.split("\n").get(0)}

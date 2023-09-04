@@ -1,0 +1,11 @@
+load("//tests:asterius/asterius_tests_utils.bzl", "asterius_test_macro")
+
+asterius_test_macro(
+    "//tests/repl-flags:compiler_flags",
+    suffix = "_compiler",
+)
+
+asterius_test_macro(
+    "//tests/repl-flags:repl_flags",
+    suffix = "_repl",
+)

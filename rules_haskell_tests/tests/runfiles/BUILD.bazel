@@ -1,0 +1,103 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+load("@os_info//:os_info.bzl", "is_windows")
+
+package(default_testonly = 1)
+
+# Bazel runfiles libraries are expected to follow the following specification:
+# https://docs.google.com/document/d/e/2PACX-1vSDIrFnFvEYhKsCMdGdD40wZRBX3m3aZ5HhVj4CtHPmiXKDCxioTUbYsDydjKtFDAzER5eg7OjJWs3V/pub
+#
+# In particular, binaries should look for `.runfiles_manifest` or `.runfiles`
+# based on `argv[0]`, or use the environment variables `$RUNFILES_DIR` or
+# `$RUNFILES_MANIFEST_FILE`, such that the runfiles tree can be extended by
+# later targets.
+#
+# The following C++ test-cases serve as a reference for this. The `cc-runner`
+# binary will try to load a runfiles file passed in `argv[2]` using
+# `Rlocation`. The following `sh_test` targets `cc-foo` and `cc-bar` specify
+# different runfiles to look up on the command line and include them in their
+# own `data` attribute.
+cc_binary(
+    name = "cc-runner",
+    srcs = ["main.cc"],
+    deps = ["@bazel_tools//tools/cpp/runfiles"],
+)
+
+exe = ".exe" if is_windows else ""
+
+sh_test(
+    name = "cc-foo{}".format(exe),
+    srcs = ["cc-runner"],
+    args = [
+        "foo",
+        "$(rootpath foo.txt)",
+    ],
+    data = ["foo.txt"],
+)
+
+sh_test(
+    name = "cc-bar{}".format(exe),
+    srcs = ["cc-runner"],
+    args = [
+        "bar",
+        "$(rootpath bar.txt)",
+    ],
+    data = ["bar.txt"],
+)
+
+# The Haskell runfiles library should follow the same pattern, which is
+# tested by `hs-foo` and `hs-bar`.
+haskell_binary(
+    name = "hs-runner",
+    srcs = ["Main.hs"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:filepath",
+        "@rules_haskell//tools/runfiles",
+    ],
+)
+
+sh_test(
+    name = "hs-foo{}".format(exe),
+    srcs = ["hs-runner"],
+    args = [
+        "foo",
+        "$(rootpath foo.txt)",
+    ],
+    data = ["foo.txt"],
+)
+
+sh_test(
+    name = "hs-bar{}".format(exe),
+    srcs = ["hs-runner"],
+    args = [
+        "bar",
+        "$(rootpath bar.txt)",
+    ],
+    data = ["bar.txt"],
+)
+
+# The runfiles tree should be looked up based on `argv[0]`, not the actual
+# binary name. This test-case constructs a fresh runfiles tree next to the
+# `hs-runner` and tests that this runfiles tree is found.
+sh_test(
+    name = "runfiles-tree{}".format(exe),
+    srcs = ["runfiles-tree.sh"],
+    args = ["$(rootpath hs-runner)"],
+    data = ["hs-runner"],
+    tags = [
+        # TODO extend to use RUNFILES_MANIFEST_FILE on Windows.
+        "dont_test_on_windows",
+    ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+# Bundles all test-cases above for `bazel test //tests/runfiles`.
+test_suite(name = "runfiles")
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

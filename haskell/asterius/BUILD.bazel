@@ -1,0 +1,44 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+bzl_library(
+    name = "asterius_bzl",
+    srcs = [
+        "asterius_config.bzl",
+        "repositories.bzl",
+    ],
+    visibility = ["//haskell:__pkg__"],
+    deps = [
+        "//haskell/platforms",
+    ],
+)
+
+exports_files(["asterius_webpack_config.js.tpl"])
+
+platform(
+    name = "asterius_platform",
+    constraint_values = [
+        "@platforms//cpu:wasm32",
+    ],
+)
+
+config_setting(
+    name = "asterius",
+    constraint_values = [
+        "@platforms//cpu:wasm32",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Toolchain type for asterius specific tools such as ahc-dist,
+# which are not part of the regular haskell toolchain.
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,28 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_library(name = "empty_lib")
+
+haskell_test(
+    name = "library-empty",
+    size = "small",
+    srcs = ["Main.hs"],
+    linkstatic = 0,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":empty_lib",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

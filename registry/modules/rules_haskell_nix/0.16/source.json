@@ -1,0 +1,4 @@
+{
+  "type": "local_path",
+  "path": "rules_haskell_nix"
+}

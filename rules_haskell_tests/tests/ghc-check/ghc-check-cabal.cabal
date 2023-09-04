@@ -1,0 +1,9 @@
+cabal-version: >=1.10
+name: ghc-check-cabal
+version: 0.1.0.0
+build-type: Simple
+
+executable ghc-check-cabal
+  build-depends: base, ghc-check, ghc-paths
+  default-language: Haskell2010
+  main-is: Main.hs

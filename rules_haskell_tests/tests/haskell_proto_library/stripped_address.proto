@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package demo; // Required to generate valid code.
+
+import "stripped_zip_code.proto";
+
+message StrippedAddress {
+  string city = 1;
+  StrippedZipCode zip_code = 2;
+}

@@ -1,0 +1,43 @@
+"""
+    Fetches GHC boot packages from GHC directly rather than from Nixpkgs
+    for better bindist support.
+"""
+
+package(default_visibility = [
+    "//tests:__subpackages__",
+    "@haskell_package_repository_dummy//:__subpackages__",
+])
+
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_toolchain_library",
+)
+
+[
+    haskell_toolchain_library(name = name)
+    for name in [
+        "array",
+        "base",
+        "binary",
+        "bytestring",
+        "containers",
+        "deepseq",
+        "directory",
+        "filepath",
+        "ghc",
+        "mtl",
+        "template-haskell",
+        "transformers",
+        "ghc-prim",
+        "process",
+        "rts",
+        "text",
+    ]
+]
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

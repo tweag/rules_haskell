@@ -1,0 +1,42 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "hsc-lib",
+    srcs = [
+        "Bar.hsc",
+        "Bar/Baz.hsc",
+        "Flags.hsc",
+        "Foo.hsc",
+    ],
+    ghcopts = [
+        "-DTHIS_IS_TRUE",
+        "-optP-DTHIS_TOO_IS_TRUE",
+    ],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_test(
+    name = "hsc",
+    srcs = [
+        "BinHsc.hsc",
+        "Main.hs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":hsc-lib",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

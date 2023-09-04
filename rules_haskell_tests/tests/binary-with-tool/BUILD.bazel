@@ -1,0 +1,29 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_test",
+)
+
+package(default_testonly = 1)
+
+haskell_binary(
+    name = "cat",
+    srcs = ["Cat.hs"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_test(
+    name = "binary-with-tool",
+    srcs = ["Main.hs"],
+    ghcopts = ["-DCAT=$(location :cat)"],
+    tools = [":cat"],
+    visibility = ["//visibility:public"],
+    deps = ["//tests/hackage:base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

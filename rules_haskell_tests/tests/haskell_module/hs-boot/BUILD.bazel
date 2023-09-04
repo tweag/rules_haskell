@@ -1,0 +1,59 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+package(default_testonly = 1)
+
+haskell_module(
+    name = "lib-A-boot",
+    src = "src/A.hs-boot",
+    src_strip_prefix = "src",
+)
+
+haskell_module(
+    name = "lib-B",
+    src = "src/B.hs",
+    src_strip_prefix = "src",
+    deps = [
+        ":lib-A-boot",
+    ],
+)
+
+haskell_module(
+    name = "lib-A",
+    src = "src/A.hs",
+    src_strip_prefix = "src",
+    deps = [
+        ":lib-B",
+    ],
+)
+
+haskell_library(
+    name = "hs-boot-lib",
+    modules = [
+        ":lib-B",
+        ":lib-A",
+        ":lib-A-boot",
+    ],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_test(
+    name = "hs-boot",
+    srcs = ["Main.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":hs-boot-lib",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

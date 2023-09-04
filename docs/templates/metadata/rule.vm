@@ -1,0 +1,3 @@
+  - name: ${ruleName}
+    type: rule
+    summary: ${ruleInfo.docString.split("\n").get(0)}

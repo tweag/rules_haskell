@@ -1,0 +1,21 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+)
+
+haskell_binary(
+    name = "cat_hs",
+    srcs = glob(["src/**/*.hs"]),
+    deps = [
+        "//cat_hs/lib/args",
+        "//cat_hs/lib/cat",
+        "@stackage//:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

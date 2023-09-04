@@ -1,0 +1,22 @@
+load("@rules_haskell//tests/shellcheck:shellcheck.bzl", "shellcheck")
+
+shellcheck(
+    name = "run-start-script",
+    args = ["$(location //tests:run-start-script.sh)"],
+    data = ["//tests:run-start-script.sh"],
+    sh_flavor = "bash",
+)
+
+shellcheck(
+    name = "tests/scripts/exec.sh",
+    args = ["$(location //tests:scripts/exec.sh)"],
+    data = ["//tests:scripts/exec.sh"],
+    sh_flavor = "bash",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

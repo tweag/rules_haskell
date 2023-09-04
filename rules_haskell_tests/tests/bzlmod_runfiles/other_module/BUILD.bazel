@@ -1,0 +1,38 @@
+""" This file tests the `haskell_runfiles` wrapper rule. This is
+needed here because :lib has runfiles and is used from another module.
+"""
+
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_library",
+    "haskell_runfiles",
+    "haskell_toolchain_library",
+)
+
+haskell_runfiles()
+
+haskell_toolchain_library(name = "base")
+
+haskell_library(
+    name = "lib",
+    srcs = [":Lib.hs"],
+    data = [
+        "datafile",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":base",
+        ":haskell_runfiles",
+    ],
+)
+
+haskell_binary(
+    name = "bin",
+    srcs = [":Main.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)

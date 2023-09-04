@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+TOP="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
+
+case "$OSTYPE" in
+  linux-gnu) OS=linux-x86_64; EXT=;;
+  darwin*) OS=darwin-x86_64; EXT=;;
+  cygwin|msys|win32) OS=windows-x86_64; EXT=.exe;;
+  **) echo "Unknown operating system" >&2; exit 1;;
+esac
+VERSION=$(cat "$TOP/.ci/bazelversion")
+INSTALL="$(mktemp -d)"
+(cd "$INSTALL" && curl -LO "https://github.com/bazelbuild/bazel/releases/download/$VERSION/bazel-$VERSION-$OS$EXT" >&2)
+if command -v sha256sum &>/dev/null; then
+  (cd "$INSTALL" && sha256sum --quiet -c "$TOP/.ci/bazel-$VERSION-$OS$EXT.sha256") >&2
+elif command -v openssl &>/dev/null; then
+  # macOS typically doesn't have sha256sum (coreutils) installed.
+  IFS=' ' read -r EXPECTED_HASH FILE <"$TOP/.ci/bazel-$VERSION-$OS$EXT.sha256"
+  ACTUAL_HASH=$(openssl dgst -sha256 "$INSTALL/$FILE" | cut -d\  -f2)
+  if [[ $ACTUAL_HASH != $EXPECTED_HASH ]]; then
+    echo "sha256 mismatch, wanted '$EXPECTED_HASH', got '$ACTUAL_HASH'." >&2
+    exit 1
+  fi
+else
+  echo "sha256sum or openssl command required." >&2
+  exit 1
+fi
+mv "$INSTALL/bazel-$VERSION-$OS$EXT" "$INSTALL/bazel$EXT"
+chmod +x "$INSTALL/bazel$EXT"
+echo -n "$INSTALL"

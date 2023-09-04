@@ -1,0 +1,33 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "sublib",
+    srcs = ["Foo.hs"],
+    visibility = ["//visibility:public"],
+    deps = ["//tests/hackage:base"],
+)
+
+haskell_library(
+    name = "lib",
+    srcs = ["Baz.hs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":sublib",
+        "//tests/hackage:base",
+        "//tests/package-id-clash/sublib",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/package-id-clash/sublib:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

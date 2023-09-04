@@ -1,0 +1,43 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base")
+
+haskell_library(
+    name = "add-one",
+    srcs = ["One.hs"],
+    deps = [":base"],
+)
+
+cc_test(
+    name = "haskell_import",
+    srcs = ["main.c"],
+    # mismatch between Ubuntu libffi (.6) and the one GHC requires (.7)
+    # see https://github.com/tweag/rules_haskell/issues/481
+    # see https://github.com/libffi/libffi/issues/296
+    # exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+    # Executing tests from //tests/haskell_import:haskell_import
+    # -----------------------------------------------------------------------------
+    # /var/lib/buildkite-agent/.cache/bazel/_bazel_buildkite-agent/ec321eb2cc2d0f8f91b676b6d4c66c29/sandbox/linux-sandbox/1293/execroot/rules_haskell/bazel-out/k8-fastbuild/bin/tests/haskell_import/haskell_import.runfiles/rules_haskell/tests/haskell_import/haskell_import: error while loading shared libraries: libffi.so.7: cannot open shared object file: No such file or directory
+    tags = [
+        "dont_test_on_bazelci",
+        # Undefined references to libffi symbols.
+        "dont_test_on_windows",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":add-one",
+        ":base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

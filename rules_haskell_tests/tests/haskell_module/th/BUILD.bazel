@@ -1,0 +1,57 @@
+"""Test compilation of a multiple interdependent Haskell modules with only core-package dependencies."""
+
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+haskell_module(
+    name = "root",
+    src = "Root.hs",
+)
+
+haskell_module(
+    name = "branch_left",
+    src = "BranchLeft.hs",
+    deps = [
+        ":root",
+    ],
+)
+
+haskell_module(
+    name = "branch_right",
+    src = "BranchRight.hs",
+    deps = [
+        ":root",
+    ],
+)
+
+haskell_module(
+    name = "leaf",
+    src = "Leaf.hs",
+    enable_th = True,
+    deps = [
+        ":branch_left",
+        ":branch_right",
+    ],
+)
+
+haskell_library(
+    name = "lib",
+    modules = [
+        ":root",
+        ":branch_left",
+        ":branch_right",
+        ":leaf",
+    ],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:template-haskell",
+        "@stackage//:vector",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,42 @@
+exports_files(["start"])
+
+exports_files(
+    [
+        ".netlify/build.sh",
+        ".netlify/install.sh",
+        "serve-docs.sh",
+    ],
+    visibility = ["//tests/shellcheck:__pkg__"],
+)
+
+exports_files(
+    [
+        "BUILD.bazel",
+        "WORKSPACE",
+        "constants.bzl",
+        "non_module_dev_deps.bzl",
+        "non_module_dev_deps_2.bzl",
+    ],
+    visibility = ["//buildifier:__pkg__"],
+)
+
+filegroup(
+    name = "distribution",
+    testonly = True,
+    srcs = [
+        ".bazelrc",
+        "BUILD.bazel",
+        "WORKSPACE",
+        "constants.bzl",
+        "stackage_snapshot.json",
+        "stackage_snapshot.yaml",
+        "//debug/linking_utils:all_files",
+        "//haskell:all_files",
+        "//nixpkgs:all_files",
+        "//protobuf:all_files",
+        "//rule_info:all_files",
+        "//tools:all_files",
+        "//vendor/bazel_json/lib:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

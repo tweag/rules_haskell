@@ -1,0 +1,34 @@
+name:                bazel-coverage-report-renderer
+version:             0.1.0
+github:              "tweag/rules_haskell"
+license:             Apache-2.0
+author:              "Tweag I/O Limited"
+maintainer:          "m@tweag.io"
+copyright:           "2019 Tweag I/O Limited"
+
+extra-source-files:
+- LICENSE
+- package.yaml
+- README.md
+- stack.yaml
+
+synopsis:            HTML Coverage Reports for Rules_Haskell
+category:            Build Tool
+
+description:         Generate coverage reports from Rules_Haskell Bazel coverage output
+
+ghc-options: -Wall
+
+executables:
+  bazel-coverage-report-renderer:
+    source-dirs: executable
+    main: Main.hs
+    dependencies:
+    - base
+    - MissingH
+    - cmdargs
+    - directory
+    - filepath
+    - hxt
+    - hxt-xpath
+    - listsafe

@@ -1,0 +1,49 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base")
+
+haskell_toolchain_library(name = "deepseq")
+
+haskell_toolchain_library(name = "ghc-prim")
+
+cc_library(
+    name = "vector.h",
+    testonly = 1,
+    hdrs = ["include/vector.h"],
+    strip_include_prefix = "include",
+)
+
+cc_library(
+    name = "unbox-tuple-instances",
+    testonly = 1,
+    hdrs = ["internal/unbox-tuple-instances"],
+    strip_include_prefix = "internal",
+)
+
+haskell_library(
+    name = "vector",
+    testonly = 1,
+    srcs = glob(["Data/**/*.*hs"]),
+    version = "0",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":base",
+        ":deepseq",
+        ":ghc-prim",
+        ":unbox-tuple-instances",
+        ":vector.h",
+        "//primitive",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

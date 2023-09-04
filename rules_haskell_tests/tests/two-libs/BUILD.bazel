@@ -1,0 +1,49 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+)
+
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
+)
+
+haskell_library(
+    name = "one",
+    srcs = ["One.hs"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_library(
+    name = "two",
+    srcs = ["Two.hs"],
+    deps = [
+        ":one",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "two-libs",
+    srcs = ["Main.hs"],
+    coverage_report_format = "html",
+    expected_covered_expressions_percentage = 55,
+    expected_uncovered_expression_count = 4,
+    experimental_coverage_source_patterns = [":two"],
+    strict_coverage_analysis = True,
+    tags = ["coverage-compatible"],
+    deps = [
+        ":two",
+        "//tests/hackage:base",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

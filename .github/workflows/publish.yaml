@@ -1,0 +1,25 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: # allows manual triggering
+
+jobs:
+  webpage:
+    name: Update webpage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: release
+      - name: Configure git
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+      - name: Merge master into release
+        run: git merge --no-edit origin/master
+      - name: Push
+        run: git push

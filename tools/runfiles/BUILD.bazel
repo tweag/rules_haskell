@@ -1,0 +1,84 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(
+    name = "base",
+    # This may be dependency of the `haskell_runfiles` rule.
+    visibility = ["//visibility:public"],
+)
+
+haskell_toolchain_library(name = "containers")
+
+haskell_toolchain_library(name = "directory")
+
+haskell_toolchain_library(name = "filepath")
+
+haskell_toolchain_library(name = "process")
+
+haskell_toolchain_library(name = "transformers")
+
+haskell_library(
+    name = "runfiles",
+    srcs = [
+        "src/Bazel/Arg0.hs",
+        "src/Bazel/Runfiles.hs",
+    ],
+    ghcopts = [
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+    ],
+    hidden_modules = [
+        "Bazel.Arg0",
+    ],
+    src_strip_prefix = "src",
+    version = "0.12",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":base",
+        ":containers",
+        ":directory",
+        ":filepath",
+        ":transformers",
+    ],
+)
+
+haskell_test(
+    name = "bin",
+    testonly = 1,
+    srcs = ["bin/Bin.hs"],
+    data = ["bin-data.txt"],
+    src_strip_prefix = "bin",
+    deps = [
+        ":base",
+        ":filepath",
+        ":runfiles",
+    ],
+)
+
+haskell_test(
+    name = "test",
+    srcs = ["test/Test.hs"],
+    data = [
+        "test-data.txt",
+        ":bin",
+    ],
+    src_strip_prefix = "test",
+    deps = [
+        ":base",
+        ":filepath",
+        ":process",
+        ":runfiles",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

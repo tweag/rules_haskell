@@ -1,0 +1,73 @@
+module(
+    name = "rules_haskell_nix",
+    version = "0.16",
+)
+
+bazel_dep(
+    name = "rules_haskell",
+    version = "0.16",
+)
+
+bazel_dep(
+    name = "rules_sh",
+    version = "0.3.0",
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_core",
+    version = "0.9.0",
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_posix",
+    version = "0.9.0",
+)
+
+bazel_dep(
+    name = "platforms",
+    version = "0.0.6",
+)
+
+non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
+
+use_repo(
+    non_module_deps,
+    "os_info",
+    "nixpkgs_default",
+)
+
+nix_haskell_toolchains = use_extension(
+    "//extensions:nix_haskell_toolchains.bzl",
+    "nix_haskell_toolchains",
+)
+
+# Declare a default nix-based toolchain
+nix_haskell_toolchains.new(
+    attribute_path = "",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
+    repository = "@nixpkgs_default",
+    version = "9.2.5",
+)
+
+use_repo(
+    nix_haskell_toolchains,
+    "nix_haskell_toolchains_configurations",
+    # Once toochains can be registered directly via the rules_nixpkgs_posix module,
+    # This repository could be removed from the nix_haskell_toolchains extension.
+    "all_posix_toolchains",
+)
+
+declare_nix_toolchains = use_extension(
+    "//private:declare_toolchains.bzl",
+    "declare_nix_toolchains",
+)
+
+use_repo(
+    declare_nix_toolchains,
+    "all_nix_toolchains",
+)
+
+register_toolchains(
+    "@all_nix_toolchains//:all",
+    "@all_posix_toolchains//:all",
+)

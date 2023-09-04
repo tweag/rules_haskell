@@ -1,0 +1,85 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_doc", "haskell_library")
+load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_library")
+
+package(default_testonly = 1)
+
+proto_library(
+    name = "zip_code_proto",
+    srcs = ["zip_code.proto"],
+)
+
+proto_library(
+    name = "address_proto",
+    srcs = ["address.proto"],
+    deps = [":zip_code_proto"],
+)
+
+proto_library(
+    name = "person_proto",
+    srcs = ["person.proto"],
+    deps = [
+        ":address_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+proto_library(
+    name = "stripped_zip_code_proto",
+    srcs = ["stripped_zip_code.proto"],
+    strip_import_prefix = "/tests/haskell_proto_library/",
+)
+
+proto_library(
+    name = "stripped_address_proto",
+    srcs = ["stripped_address.proto"],
+    strip_import_prefix = "/tests/haskell_proto_library/",
+    deps = [":stripped_zip_code_proto"],
+)
+
+haskell_proto_library(
+    name = "address_haskell_proto",
+    tags = ["requires_dynamic"],
+    deps = [":address_proto"],
+)
+
+haskell_proto_library(
+    name = "stripped_address_haskell_proto",
+    tags = ["requires_dynamic"],
+    deps = [":stripped_address_proto"],
+)
+
+haskell_proto_library(
+    name = "person_haskell_proto",
+    tags = ["requires_dynamic"],
+    deps = [":person_proto"],
+)
+
+haskell_library(
+    name = "hs-lib",
+    srcs = ["Bar.hs"],
+    tags = ["requires_dynamic"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":address_haskell_proto",
+        ":person_haskell_proto",
+        ":stripped_address_haskell_proto",
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_doc(
+    name = "docs",
+    tags = [
+        "dont_test_on_windows",
+        "requires_dynamic",
+    ],
+    deps = [":hs-lib"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

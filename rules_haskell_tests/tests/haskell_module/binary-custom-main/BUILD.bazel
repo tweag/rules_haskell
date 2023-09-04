@@ -1,0 +1,66 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_test",
+)
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+
+package(default_testonly = 1)
+
+haskell_test(
+    name = "Test",
+    main_function = "TestBin.custom_main",
+    modules = [":TestBinModule"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_test(
+    name = "TestNoModuleNameCustomMainFunction",
+    main_function = "TestBin.custom_main",
+    modules = [":TestBinNoModuleName"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_binary(
+    name = "Bin",
+    main_function = "TestBin.custom_main",
+    modules = [":TestBinModule"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_binary(
+    name = "BinNoModuleNameCustomMainFunction",
+    main_function = "TestBin.custom_main",
+    modules = [":TestBinNoModuleName"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+    ],
+)
+
+haskell_module(
+    name = "TestBinModule",
+    src = "TestBin.hs",
+    module_name = "TestBin",
+)
+
+haskell_module(
+    name = "TestBinNoModuleName",
+    src = "TestBin.hs",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
