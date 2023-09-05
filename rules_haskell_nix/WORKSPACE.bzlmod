@@ -15,7 +15,7 @@ http_archive(
     name = "com_github_bazelbuild_buildtools",
     patch_args = ["-p1"],
     # fix runner.bash.template always returning success, format MODULE.bazel and WORKSPACE.bzlmod too
-    patches = ["@@//:buildifier_test-workspace.patch"],
+    patches = ["@rules_haskell//buildifier:buildifier_test-workspace.patch"],
     sha256 = "42968f9134ba2c75c03bb271bd7bb062afb7da449f9b913c96e5be4ce890030a",
     strip_prefix = "buildtools-6.3.3",
     urls = [
