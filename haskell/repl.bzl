@@ -577,7 +577,7 @@ def _hie_bios_impl(ctx):
     args.extend(ghc_cc_program_args(hs, cc_path, ld_path))
     args.extend(hs.toolchain.ghcopts)
     args.extend(repl_info.load_info.compiler_flags)
-    args.extend(['-no-user-package-db'])
+    args.extend(["-no-user-package-db"])
 
     # Add import directories.
     # Note, src_strip_prefix is deprecated. However, for now ghcide depends on

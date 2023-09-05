@@ -7,12 +7,10 @@ bazel_dep(
     name = "rules_nixpkgs_core",
     version = "0.9.0",
 )
-
 bazel_dep(
     name = "rules_haskell_nix",
     version = "0.16",
 )
-
 bazel_dep(
     name = "rules_haskell",
     version = "0.16",
@@ -31,19 +29,16 @@ bazel_dep(
     name = "rules_cc",
     version = "0.0.8",
 )
-
 bazel_dep(
     name = "rules_sh",
     version = "0.3.0",
 )
-
 bazel_dep(
     name = "bazel_skylib",
     version = "1.4.2",
 )
 
 non_module_deps = use_extension(":non_module_deps.bzl", "non_module_deps")
-
 use_repo(
     non_module_deps,
     "Cabal",
@@ -56,17 +51,15 @@ stack_snapshot = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",
     "stack_snapshot",
 )
-
 use_repo(
     stack_snapshot,
     "stackage",
 )
-
 stack_snapshot.package(
     name = "zlib",
     extra_deps = ["@zlib.hs"],
     flags =
-    # Sets the default explicitly to demonstrate the flags attribute.
+        # Sets the default explicitly to demonstrate the flags attribute.
         [
             "-non-blocking-ffi",
             "-pkg-config",
@@ -97,11 +90,10 @@ stack_snapshot.package(
 # example for a vendored package
 stack_snapshot.package(
     name = "split",
-    vendored = "@split//:split",
     # See https://github.com/tweag/rules_haskell/issues/1871
     setup_deps = ["@Cabal//:Cabal"],
+    vendored = "@split//:split",
 )
-
 stack_snapshot.package(
     name = "attoparsec",
     components =

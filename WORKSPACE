@@ -59,7 +59,6 @@ load("//extensions:rules_haskell_dependencies.bzl", _repositories_3 = "repositor
 _repositories_3(bzlmod = False)
 
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
-
 load(
     "@rules_haskell//haskell:ghc_bindist.bzl",
     "haskell_register_ghc_bindists",
@@ -156,7 +155,7 @@ stack_snapshot(
         ],
     },
     local_snapshot = "//:stackage_snapshot{}.yaml".format(
-        "_" + str(GHC_VERSION) if GHC_VERSION else ""
+        "_" + str(GHC_VERSION) if GHC_VERSION else "",
     ),
     packages = [
         # Core libraries
@@ -190,9 +189,9 @@ stack_snapshot(
         "typed-process": ["@Cabal//:Cabal"],
         "unliftio-core": ["@Cabal//:Cabal"],
     },
-    stack_snapshot_json = ("//:stackage_snapshot{}.json".format(
-        "_" + str(GHC_VERSION) if GHC_VERSION else ""
-    )) if not is_windows else None,
+    stack_snapshot_json = "//:stackage_snapshot{}.json".format(
+        "_" + str(GHC_VERSION) if GHC_VERSION else "",
+    ) if not is_windows else None,
     vendored_packages = {
         "ghc-paths": "@rules_haskell//tools/ghc-paths",
     },

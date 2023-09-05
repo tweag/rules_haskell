@@ -1308,9 +1308,7 @@ library
         "extra-deps": versioned_packages,
         "flags": {
             pkg: dict([
-                (flag[1:], True) if flag.startswith('+') else
-                (flag[1:], False) if flag.startswith('-') else
-                (flag, True)
+                (flag[1:], True) if flag.startswith("+") else (flag[1:], False) if flag.startswith("-") else (flag, True)
                 for flag in flags
             ])
             for (pkg, flags) in repository_ctx.attr.flags.items()

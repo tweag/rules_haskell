@@ -147,7 +147,7 @@ def _ghc_bindist_impl(ctx):
 
                 config = ctx.read(conf_path)
                 if "${pkgroot}/../../" in config:
-                    ctx.file(conf_path, content=config.replace("${pkgroot}/../../", "${pkgroot}/../"))
+                    ctx.file(conf_path, content = config.replace("${pkgroot}/../../", "${pkgroot}/../"))
 
     # We apply some patches, if needed.
     patch_args = list(ctx.attr.patch_args)
@@ -507,7 +507,6 @@ def ghc_bindist(
         _windows_cc_toolchain(name = cc_toolchain_repo_name, bindist_name = bindist_name)
         if register:
             native.register_toolchains("@{}//:windows_cc_toolchain".format(cc_toolchain_repo_name))
-
 
 _GHC_AVAILABLE_TARGETS = [
     "darwin_amd64",

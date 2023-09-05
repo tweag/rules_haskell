@@ -7,97 +7,78 @@ bazel_dep(
     name = "rules_nixpkgs_core",
     version = "0.9.0",
 )
-
 bazel_dep(
     name = "rules_haskell_nix",
     version = "0.16",
 )
-
 bazel_dep(
     name = "rules_haskell",
     version = "0.16",
 )
-
 bazel_dep(
     name = "rules_license",
     version = "0.0.7",
 )
-
 bazel_dep(
     name = "rules_nixpkgs_cc",
     version = "0.9.0",
 )
-
 bazel_dep(
     name = "rules_nixpkgs_python",
     version = "0.9.0",
 )
-
 bazel_dep(
     name = "rules_python",
     version = "0.21.0",
 )
-
 bazel_dep(
     name = "rules_nixpkgs_go",
     version = "0.9.0",
 )
-
 bazel_dep(
     name = "rules_nixpkgs_posix",
     version = "0.9.0",
 )
-
 bazel_dep(
     name = "rules_nixpkgs_nodejs",
     version = "0.9.0",
 )
-
 bazel_dep(
     name = "platforms",
     version = "0.0.6",
 )
-
 bazel_dep(
     name = "rules_cc",
     version = "0.0.8",
 )
-
 bazel_dep(
     name = "rules_sh",
     version = "0.3.0",
 )
-
 bazel_dep(
     name = "bazel_skylib",
     version = "1.4.2",
 )
-
 bazel_dep(
     name = "rules_java",
     version = "6.1.0",
 )
-
 bazel_dep(
     name = "rules_nodejs",
     version = "5.8.2",
 )
-
 bazel_dep(
     name = "aspect_rules_js",
     version = "1.31.0",
 )
-
 bazel_dep(
     name = "aspect_bazel_lib",
     version = "1.31.2",
 )
-
 bazel_dep(
     name = "rules_proto",
     version = "5.3.0-21.7",
 )
-
 bazel_dep(
     name = "protobuf",
     version = "21.7",
@@ -105,41 +86,39 @@ bazel_dep(
 )
 
 non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
-
 use_repo(
     non_module_deps,
+    "c2hs_repo",
+    "cgrindel_bazel_starlib",
+    "com_github_bazelbuild_buildtools",
+    "contrib_rules_bazel_integration_test",
+    "haskell_package_repository_dummy",
+    "library_repo",
     "os_info",
     "zlib.hs",
-    "contrib_rules_bazel_integration_test",
-    "c2hs_repo",
-    "library_repo",
-    "haskell_package_repository_dummy",
-    "com_github_bazelbuild_buildtools",
-    "cgrindel_bazel_starlib",
 )
 
 non_modules_deps_1 = use_extension("//:non_module_deps_1.bzl", "non_module_deps_1")
-
 use_repo(
     non_modules_deps_1,
-    "glibc_locales",
-    "nixpkgs_default",
-    "nixpkgs_python_toolchain",
-    "nixpkgs_config_cc",
-    "nixpkgs_config_cc_info",
-    "nixpkgs_config_cc_toolchains",
-    "nixpkgs_go_sdk_toolchains",
-    "nixpkgs_go_sdk",
-    "nixpkgs_lz4",
-    "linux_amd64_asterius-toolchain",
     "asterius_bundle_linux_amd64",
-    "toolchains_libraries",
-    "zlib.dev",
     "bazel_5",
+    "bazel_6",
     "build_bazel_bazel_5_3_0",
     "build_bazel_bazel_5_4_1",
     "build_bazel_bazel_6_2_0",
-    "bazel_6",
+    "glibc_locales",
+    "linux_amd64_asterius-toolchain",
+    "nixpkgs_config_cc",
+    "nixpkgs_config_cc_info",
+    "nixpkgs_config_cc_toolchains",
+    "nixpkgs_default",
+    "nixpkgs_go_sdk",
+    "nixpkgs_go_sdk_toolchains",
+    "nixpkgs_lz4",
+    "nixpkgs_python_toolchain",
+    "toolchains_libraries",
+    "zlib.dev",
 )
 
 register_toolchains(
@@ -152,19 +131,18 @@ register_toolchains(
 )
 
 non_module_deps_2 = use_extension("//:non_module_deps_2.bzl", "non_module_deps_2")
-
 use_repo(
     non_module_deps_2,
-    "ghcide",
-    "stackage-zlib",
-    "stackage-zlib-unpinned",
-    "ghcide-exe",
     "Cabal",
+    "alex",
+    "ghcide",
+    "ghcide-exe",
+    "rules_haskell_stack",
+    "rules_haskell_stack_update",
     "stackage-pinning-test",
     "stackage-pinning-test-unpinned",
-    "alex",
-    "rules_haskell_stack_update",
-    "rules_haskell_stack",
+    "stackage-zlib",
+    "stackage-zlib-unpinned",
     "stackage_asterius",
     "stackage_asterius-unpinned",
 )
@@ -204,7 +182,6 @@ bazel_dep(
     name = "other_module",
     version = "0.0.1",
 )
-
 local_path_override(
     module_name = "other_module",
     path = "tests/bzlmod_runfiles/other_module",
@@ -218,7 +195,6 @@ bazel_dep(
 )
 
 go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
-
 go_sdk.download(
     version = "1.19.7",
 )
@@ -229,13 +205,11 @@ bazel_dep(
 )
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
-
 go_deps.module(
     path = "github.com/gogo/protobuf",
     sum = "h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=",
     version = "v1.3.2",
 )
-
 use_repo(
     go_deps,
     "com_github_gogo_protobuf",
@@ -255,25 +229,21 @@ bazel_dep(
 )
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
-
 maven.install(
     name = "rules_haskell_tests_maven",
     artifacts = ["org.apache.spark:spark-core_2.10:1.6.0"],
 )
-
 use_repo(maven, "rules_haskell_tests_maven")
 
 # Bring some dependencies declared by rules_haskell module extensions into scope
 asterius = use_extension("@rules_haskell//haskell/asterius:extension.bzl", "rules_haskell_asterius")
-
 use_repo(
     asterius,
-    "rules_haskell_asterius_webpack",
     "rules_haskell_asterius_build_setting",
+    "rules_haskell_asterius_webpack",
 )
 
 rules_haskell_dependencies = use_extension("@rules_haskell//extensions:rules_haskell_dependencies.bzl", "rules_haskell_dependencies")
-
 use_repo(
     rules_haskell_dependencies,
     "zlib",
@@ -350,7 +320,6 @@ nix_haskell_toolchains = use_extension(
     "@rules_haskell_nix//extensions:nix_haskell_toolchains.bzl",
     "nix_haskell_toolchains",
 )
-
 nix_haskell_toolchains.new(
     attribute_path = "",
     cabalopts = test_cabalopts,
@@ -368,14 +337,12 @@ stack_snapshot = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",
     "stack_snapshot",
 )
-
 use_repo(
     stack_snapshot,
     "stackage",
     "stackage-exe",
     "stackage-unpinned",
 )
-
 stack_snapshot.package(
     name = "proto-lens-protoc",
     components = [
@@ -461,12 +428,10 @@ stack_snapshot.package(
 stack_snapshot.tools(
     labels = ["@alex"],
 )
-
 stack_snapshot.package(
     name = "alex",
     components = [],
 )
-
 stack_snapshot.stack_snapshot_json(
     label = "//:stackage_snapshot.json",
     os = [
