@@ -3,7 +3,9 @@ filegroup(
     testonly = True,
     srcs = [
         "BUILD.bazel",
+        "MODULE.bazel",
         "WORKSPACE",
+        "WORKSPACE.bzlmod",
         "//cat_hs:all_files",
         "//primitive:all_files",
         "//rts:all_files",

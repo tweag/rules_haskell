@@ -84,12 +84,7 @@ jobs:
             cd rules_haskell_tests
             ./tests/run-start-script.sh --use-nix
             bazel build //tests:run-tests
-            if [ ${{ matrix.bzlmod }} == bzlmod ]; then
-                # TODO setup MODULE.bazel files for examples folder
-                ./bazel-ci-bin/tests/run-tests --skip="bazel test examples"
-            else
-                ./bazel-ci-bin/tests/run-tests
-            fi
+            ./bazel-ci-bin/tests/run-tests
             bazel coverage //...
             '
 
