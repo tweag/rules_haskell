@@ -5,9 +5,6 @@ on:
   pull_request:
     branches: master
   workflow_dispatch: # allows manual triggering
-env:
-  # Bump this number to invalidate the GH actions cache
-  cache-version: 0
 
 jobs:
   test-nixpkgs:
@@ -21,11 +18,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Mount Bazel cache
-        uses: actions/cache@v3
-        with:
-          path: ~/repo-cache
-          key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
       - uses: cachix/install-nix-action@v22
         with:
           nix_path: nixpkgs=./nixpkgs/default.nix
@@ -112,11 +104,6 @@ jobs:
           sudo apt clean
           docker rmi $(docker images -q) -f
       - uses: actions/checkout@v3
-      - name: Mount Bazel cache
-        uses: actions/cache@v3
-        with:
-          path: ~/repo-cache
-          key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
       - name: Install Bazel
         shell: bash
         run: |
