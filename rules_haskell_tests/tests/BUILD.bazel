@@ -21,10 +21,14 @@ load(
     "@rules_haskell//haskell:protobuf.bzl",
     "haskell_proto_toolchain",
 )
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 load(
     "@rules_haskell//:constants.bzl",
-    "test_ghc_version",
+    DEFAULT_TEST_GHC_VERSION = "test_ghc_version",
 )
+
+# prefer the GHC version set by rules_haskell, use the default test GHC version otherwise
+TEST_GHC_VERSION = GHC_VERSION or DEFAULT_TEST_GHC_VERSION
 
 exports_files(
     [
@@ -178,14 +182,14 @@ rule_test(
             "libHStestsZSlibrary-depsZSlibrary-deps_p.a",
         ],
         ":fastbuild_darwin": [
-            "libHStestsZSlibrary-depsZSlibrary-deps-ghc{}.dylib".format(test_ghc_version),
+            "libHStestsZSlibrary-depsZSlibrary-deps-ghc{}.dylib".format(TEST_GHC_VERSION),
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
         ],
         ":fastbuild_windows": [
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
         ],
         "//conditions:default": [
-            "libHStestsZSlibrary-depsZSlibrary-deps-ghc{}.so".format(test_ghc_version),
+            "libHStestsZSlibrary-depsZSlibrary-deps-ghc{}.so".format(TEST_GHC_VERSION),
             "libHStestsZSlibrary-depsZSlibrary-deps.a",
         ],
     }),
@@ -207,7 +211,7 @@ rule_test(
         "haddock/base-4.16.4.0",
         "haddock/deepseq-1.4.6.1",
         "haddock/ghc-bignum-1.2",
-        "haddock/ghc-boot-th-9.2.5",
+        "haddock/ghc-boot-th-{}".format(TEST_GHC_VERSION),
         "haddock/ghc-prim-0.8.0",
         "haddock/index",
         "haddock/pretty-1.1.3.6",

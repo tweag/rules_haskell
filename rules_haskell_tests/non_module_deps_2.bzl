@@ -4,6 +4,7 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 label_builder = lambda x: Label(x)
 
@@ -26,9 +27,13 @@ def repositories(*, bzlmod):
     stack_snapshot(
         name = "stackage-zlib",
         extra_deps = {"zlib": ["//tests:zlib"]},
-        local_snapshot = "//:stackage_snapshot.yaml",
+        local_snapshot = "//:stackage_snapshot{}.yaml".format(
+            "_" + str(GHC_VERSION) if GHC_VERSION else "",
+        ),
         packages = ["zlib"],
-        stack_snapshot_json = "//:stackage-zlib-snapshot.json" if not is_windows else None,
+        stack_snapshot_json = ("//:stackage-zlib-snapshot{}.json".format(
+            "_" + str(GHC_VERSION) if GHC_VERSION else "",
+        )) if not is_windows else None,
         label_builder = label_builder,
     )
 
@@ -50,7 +55,9 @@ def repositories(*, bzlmod):
         },
         extra_deps = {"zlib": ["//tests:zlib"]},
         haddock = False,
-        local_snapshot = "//:ghcide-stack-snapshot.yaml",
+        local_snapshot = "//:ghcide-stack-snapshot{}.yaml".format(
+            "_" + str(GHC_VERSION) if GHC_VERSION else "",
+        ),
         packages = [
             "ghcide",
         ],
@@ -77,7 +84,9 @@ def repositories(*, bzlmod):
             "unliftio-core": ["@ghcide//:Cabal"],
             "yaml": ["@ghcide//:Cabal"],
         },
-        stack_snapshot_json = "//:ghcide-snapshot.json" if not is_windows else None,
+        stack_snapshot_json = ("//:ghcide-snapshot{}.json".format(
+            "_" + str(GHC_VERSION) if GHC_VERSION else "",
+        )) if not is_windows else None,
         vendored_packages = {
             "ghc-paths": "@rules_haskell//tools/ghc-paths",
         },
@@ -141,7 +150,9 @@ haskell_cabal_library(
         components_dependencies = {
             "package1": """{"lib:package1": ["lib:sublib"]}""",
         },
-        local_snapshot = "//:stackage-pinning-test.yaml",
+        local_snapshot = "//:stackage-pinning-test{}.yaml".format(
+            "_" + str(GHC_VERSION) if GHC_VERSION else "",
+        ),
         packages = [
             "hspec",
             "package1",
@@ -156,7 +167,9 @@ haskell_cabal_library(
             "hspec-expectations": ["@Cabal//:Cabal"],
             "quickcheck-io": ["@Cabal//:Cabal"],
         },
-        stack_snapshot_json = "//:stackage-pinning-test_snapshot.json" if not is_windows else None,
+        stack_snapshot_json = ("//:stackage-pinning-test_snapshot{}.json".format(
+            "_" + str(GHC_VERSION) if GHC_VERSION else "",
+        )) if not is_windows else None,
         label_builder = label_builder,
     )
 
