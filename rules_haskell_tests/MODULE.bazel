@@ -90,6 +90,7 @@ bazel_dep(
 )
 
 ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_default_version")
+
 use_repo(
     ghc_version,
     "rules_haskell_ghc_version",
