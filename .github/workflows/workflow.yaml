@@ -16,10 +16,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-11]
-        module: [rules_haskell, rules_haskell_tests]
+        module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [bzlmod, workspace]
+        exclude:
+          - module: rules_haskell_nix
+            bzlmod: workspace
     runs-on: ${{ matrix.os }}
     steps:
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |-
+          sudo swapoff -a
+          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          docker rmi $(docker images -q) -f
       - uses: actions/checkout@v3
       - name: Mount Bazel cache
         uses: actions/cache@v3
@@ -59,6 +67,7 @@ jobs:
           build $cache_setting
           $bzlmod_setting
           EOF
+          cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
           cat >~/.netrc <<EOF
           machine api.github.com
@@ -75,6 +84,14 @@ jobs:
             bazel test //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
+            '
+      - name: Build & test - rules_haskell_nix
+        if: matrix.module == 'rules_haskell_nix'
+        run: |
+          nix-shell --arg docTools false --pure --run '
+            set -euo pipefail
+            cd rules_haskell_nix
+            bazel test //...
             '
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
@@ -122,6 +139,7 @@ jobs:
         run: |
           BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
           mv $BAZEL_DIR $HOME/bazel
+          echo "$HOME/bazel" >> "$GITHUB_PATH"
       - name: Configure
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
@@ -172,7 +190,6 @@ jobs:
         if: matrix.module == 'rules_haskell'
         shell: bash
         run: |
-          export PATH=$HOME/bazel:$PATH
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           if [[ ${{ runner.os }} == Windows ]]; then
             # On Windows `//...` expands to `/...`.
@@ -186,7 +203,6 @@ jobs:
         shell: bash
         run: |
           cd rules_haskell_tests
-          export PATH=$HOME/bazel:$PATH
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           ./tests/run-start-script.sh --use-bindists
           if [[ ${{ runner.os }} == Windows ]]; then
@@ -211,7 +227,6 @@ jobs:
           else
              dir=.
           fi
-          export PATH=$HOME/bazel:$PATH
           base=$( cd "$dir" ; bazel info output_base )
           find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0rI % cp % logs/
 

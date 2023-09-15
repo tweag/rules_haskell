@@ -1,4 +1,3 @@
-
 # If you change this, change stackage's version in the start script
 # (see stackage.org).
 

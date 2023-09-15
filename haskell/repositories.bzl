@@ -20,7 +20,7 @@ def rules_haskell_dependencies_bzlmod():
 
     maybe(
         ghc_default_version,
-        name = "rules_haskell_ghc_version"
+        name = "rules_haskell_ghc_version",
     )
 
     # Dependency of com_google_protobuf.

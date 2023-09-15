@@ -9,14 +9,14 @@ default GHC version is given by the `DEFAULT_GHC_VERSION` constant (see [`//hask
 
 load(
     "@rules_haskell//haskell:private/ghc_ci.bzl",
-    _ghc_version = "ghc_version",
     _ghc_default_version = "ghc_default_version",
+    _ghc_version = "ghc_version",
 )
 
 def _ghc_default_version_impl(mctx):
     root_module = mctx.modules[0].name
 
-    if root_module in ['rules_haskell', 'rules_haskell_tests']:
+    if root_module in ["rules_haskell", "rules_haskell_tests"]:
         _ghc_version(name = "rules_haskell_ghc_version")
     else:
         _ghc_default_version(name = "rules_haskell_ghc_version")

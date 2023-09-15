@@ -18,7 +18,6 @@ ghc_version = repository_rule(
     configure = True,
 )
 
-
 def _ghc_default_version_impl(repository_ctx):
     _init_ghc_version_repository(repository_ctx, DEFAULT_GHC_VERSION)
 

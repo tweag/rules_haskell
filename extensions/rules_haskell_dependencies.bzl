@@ -57,7 +57,7 @@ haskell_cabal_library(
             sha256 = "f69b46cb897edab3aa8d5a4bd7b8690b76cd6f0b320521afd01ddd20601d1356",
             strip_prefix = "cabal-gg-8220-with-3630",
             urls = ["https://github.com/tweag/cabal/archive/refs/heads/gg/8220-with-3630.zip"],
-    )
+        )
 
 def _rules_haskell_dependencies_impl(_mctx):
     repositories(bzlmod = True)

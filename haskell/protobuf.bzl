@@ -357,7 +357,7 @@ def _wrap_tool(ctx, exe, tool):
     return struct(
         executable = exe,
         inputs = inputs,
-        input_manifests = input_manifests
+        input_manifests = input_manifests,
     )
 
 def _protobuf_toolchain_impl(ctx):

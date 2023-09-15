@@ -64,6 +64,9 @@ def repositories(*, bzlmod):
     http_archive(
         name = "com_github_bazelbuild_buildtools",
         sha256 = "977a0bd4593c8d4c8f45e056d181c35e48aa01ad4f8090bdb84f78dca42f47dc",
+        # fix runner.bash.template always returning success, format MODULE.bazel and WORKSPACE.bzlmod too
+        patches = ["@rules_haskell//buildifier:buildifier_test-workspace.patch"],
+        patch_args = ["-p1"],
         strip_prefix = "buildtools-6.1.2",
         urls = ["https://github.com/bazelbuild/buildtools/archive/v6.1.2.tar.gz"],
     )
