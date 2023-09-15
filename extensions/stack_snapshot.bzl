@@ -14,14 +14,21 @@ load("@rules_haskell//haskell:cabal.bzl", _stack_snapshot = "stack_snapshot")
 load("@bazel_skylib//lib:new_sets.bzl", "sets")
 load("@os_info//:os_info.bzl", "cpu_value", "is_darwin", "is_linux", "is_windows")
 
+DEFAULT_NAME = "stackage"
+
 _snapshot_tag = tag_class(
     doc = "The stack snapshot to use.",
     attrs = {
         "name": attr.string(
+            default = DEFAULT_NAME,
+            doc = """The name of the snapshot, creates @<name>, @<name>-exe and @<name>-unpinned repositories
+            (the latter is only created if a snapshot json file is configured).""",
+        ),
+        "snapshot": attr.string(
             doc = """The name of a Stackage snapshot. Incompatible with local_snapshot.""",
         ),
         "local_snapshot": attr.label(
-            doc = """ A custom Stack snapshot file, as per the Stack documentation.
+            doc = """A custom Stack snapshot file, as per the Stack documentation.
             Incompatible with snapshot.
             """,
         ),
@@ -31,6 +38,7 @@ _snapshot_tag = tag_class(
 _stack_snapshot_json_tag = tag_class(
     doc = """ Specify this to use pinned artifacts for generating build targets.""",
     attrs = {
+        "snapshot": attr.string(default = DEFAULT_NAME),
         "label": attr.label(
             doc = " A label to a `stack_snapshot.json` file, e.g. `//:stack_snapshot.json`.",
         ),
@@ -43,6 +51,7 @@ _stack_snapshot_json_tag = tag_class(
 _verbose_tag = tag_class(
     doc = "Whether to show the output of the build.",
     attrs = {
+        "snapshot": attr.string(default = DEFAULT_NAME),
         "value": attr.bool(default = True),
     },
 )
@@ -52,6 +61,7 @@ _netrc_tag = tag_class(
         Defaults to `~/.netrc` if present.
     """,
     attrs = {
+        "snapshot": attr.string(default = DEFAULT_NAME),
         "location": attr.string(),
     },
 )
@@ -59,6 +69,7 @@ _netrc_tag = tag_class(
 _tools_tag = tag_class(
     doc = """Tool dependencies.""",
     attrs = {
+        "snapshot": attr.string(default = DEFAULT_NAME),
         "labels": attr.label_list(),
     },
 )
@@ -66,6 +77,7 @@ _tools_tag = tag_class(
 _stack_tag = tag_class(
     doc = """The stack binary to use to enumerate package dependencies.""",
     attrs = {
+        "snapshot": attr.string(default = DEFAULT_NAME),
         "label": attr.label(),
     },
 )
@@ -73,6 +85,7 @@ _stack_tag = tag_class(
 _haddock_tag = tag_class(
     doc = "Whether to generate haddock documentation.",
     attrs = {
+        "snapshot": attr.string(default = DEFAULT_NAME),
         "value": attr.bool(default = True),
     },
 )
@@ -84,6 +97,7 @@ _package_tag = tag_class(
             mandatory = True,
             doc = "The name of the package to add/configure",
         ),
+        "snapshot": attr.string(default = DEFAULT_NAME),
         "setup_deps": attr.label_list(
             doc = """ Setup dependencies the package, e.g. `cabal-doctest`.
             Only usable by the root module (or rules_haskell itself).
@@ -142,10 +156,24 @@ def _assert_unique_tag(tags, tag_name, module):
             ),
         )
 
-def _add_packages(conf, module, root_or_rules_haskell):
+def _assert_unique_snapshots(snapshot_name, snapshot_tags, module):
+    """ Errors if the module used the named `snapshot` tag more than once"""
+    if len(snapshot_tags) > 1:
+        fail(
+            """Module "{module_name}~{module_version}" used configuration tag "snapshot" named {name} more than once""".format(
+                module_name = module.name,
+                module_version = module.version,
+                name = snapshot_name,
+            ),
+        )
+
+def _add_packages(conf, module, snapshot_name, root_or_rules_haskell):
     """Read the `package` tags from `module` and add the configuration to `conf`"""
     packages_in_module = sets.make()
     for package_tag in module.tags.package:
+        if package_tag.snapshot != snapshot_name:
+            continue
+
         package_name = package_tag.name
 
         # Check that a package is configure at most one time per module
@@ -188,24 +216,49 @@ def _add_packages(conf, module, root_or_rules_haskell):
 def _stack_snapshot_impl(mctx):
     root_module = None
     rules_haskell_modules = []
-    kwargs = {}
+    snapshots = {DEFAULT_NAME: {}}
     for module in mctx.modules:
         if module.is_root:
             root_module = module
         if module.name == "rules_haskell":
             rules_haskell_modules.append(module)
-        if module in [root_module] + rules_haskell_modules:
-            # Most modules can only add the packages they want to use to the snapshot,
-            # but only the root module can configure all the settings.
-            # rules_haskell can also set the snapshot to be used as a default.
-            if module.tags.snapshot:
-                _assert_unique_tag(module.tags.snapshot, "snapshot", module)
-                snapshot_tag = module.tags.snapshot[0]
-                if "snapshot" not in kwargs and "local_snapshot" not in kwargs:
-                    if snapshot_tag.local_snapshot:
-                        kwargs["local_snapshot"] = snapshot_tag.local_snapshot
-                    if snapshot_tag.name:
-                        kwargs["snapshot_tag"] = snapshot_tag.name
+
+        # Most modules can only add the packages they want to use to to the
+        # default "stackage" snapshot, but only the root module can configure
+        # all the settings. rules_haskell can also set the snapshot to be used
+        # as a default. Otherwise, all module are free to create snapshots with
+        # different names.
+        if module.tags.snapshot:
+            snapshots_per_name = {}
+            for snapshot_tag in module.tags.snapshot:
+                s = snapshots_per_name.get(snapshot_tag.name, [])
+
+                snapshots_per_name[snapshot_tag.name] = s + [snapshot_tag]
+
+            for snapshot_name, snapshot_tags in snapshots_per_name.items():
+                _assert_unique_snapshots(snapshot_name, snapshot_tags, module)
+
+                if snapshot_name != DEFAULT_NAME or module in [root_module] + rules_haskell_modules:
+                    kwargs = snapshots.get(snapshot_name, {})
+
+                    snapshot_tag = snapshot_tags[0]
+
+                    if "snapshot" not in kwargs and "local_snapshot" not in kwargs:
+                        if snapshot_tag.local_snapshot:
+                            kwargs["local_snapshot"] = snapshot_tag.local_snapshot
+                        if snapshot_tag.name:
+                            kwargs["snapshot"] = snapshot_tag.snapshot
+                    elif snapshot_name != DEFAULT_NAME:
+                        fail(
+                            """Module "{module_name}~{module_version}" tried to configure a snapshot called {name}
+                            but this was already defined.""".format(
+                                module_name = module.name,
+                                module_version = module.version,
+                                name = snapshot_name,
+                            ),
+                        )
+
+                    snapshots[snapshot_name] = kwargs
         if module == root_module:
             for stack_snapshot_json_tag in module.tags.stack_snapshot_json:
                 # If the os list is empty (the default value), the file is compatible with all OSs.
@@ -220,65 +273,73 @@ def _stack_snapshot_impl(mctx):
                         cpu_value in os_list,
                     ])
                 ):
-                    kwargs["stack_snapshot_json"] = stack_snapshot_json_tag.label
-                    break
+                    snapshots[stack_snapshot_json_tag.snapshot]["stack_snapshot_json"] = stack_snapshot_json_tag.label
 
             if module.tags.verbose:
                 _assert_unique_tag(module.tags.verbose, "verbose", module)
                 verbose_tag = module.tags.verbose[0]
-                kwargs["verbose"] = verbose_tag.value
+                snapshots[verbose_tag.snapshot]["verbose"] = verbose_tag.value
             if module.tags.netrc:
                 _assert_unique_tag(module.tags.netrc, "netrc", module)
                 netrc_tag = module.tags.netrc[0]
-                kwargs["netrc"] = netrc_tag.location
+                snapshots[netrc_tag.snapshot]["netrc"] = netrc_tag.location
             if module.tags.tools:
                 _assert_unique_tag(module.tags.tools, "tools", module)
                 tools_tag = module.tags.tools[0]
-                kwargs["tools"] = tools_tag.labels
+                snapshots[tools_tag.snapshot]["tools"] = tools_tag.labels
             if module.tags.stack:
                 _assert_unique_tag(module.tags.stack, "stack", module)
                 stack_tag = module.tags.stack[0]
-                kwargs["stack"] = stack_tag.label
+                snapshots[stack_tag.snapshot]["stack"] = stack_tag.label
             if module.tags.haddock:
                 _assert_unique_tag(module.tags.haddock, "haddock", module)
                 haddock_tag = module.tags.haddock[0]
-                kwargs["haddock"] = haddock_tag.label
+                snapshots[haddock_tag.snapshot]["haddock"] = haddock_tag.label
 
-    packages_conf = struct(
-        configured_packages = sets.make(),
-        packages = sets.make(),  # "packages" argument of stack_snapshot, must not contain hidden and vendored packages.
-        setup_deps = {},
-        flags = {},
-        extra_deps = {},
-        components = {},
-        components_dependencies = {},
-        vendored_packages = {},
-    )
+    installed_stack = False
+    for snapshot_name, kwargs in snapshots.items():
+        packages_conf = struct(
+            configured_packages = sets.make(),
+            packages = sets.make(),  # "packages" argument of stack_snapshot, must not contain hidden and vendored packages.
+            setup_deps = {},
+            flags = {},
+            extra_deps = {},
+            components = {},
+            components_dependencies = {},
+            vendored_packages = {},
+        )
 
-    # For the the configuration of packages, the root module takes
-    # precedence, then rules_haskell modules, then the other modules (with
-    # lower privilege).
-    if root_module:
-        _add_packages(packages_conf, root_module, root_or_rules_haskell = True)
-    for module in rules_haskell_modules:
-        if module != root_module:
-            _add_packages(packages_conf, module, root_or_rules_haskell = True)
-    for module in mctx.modules:
-        if module != root_module and module not in rules_haskell_modules:
-            _add_packages(packages_conf, module, root_or_rules_haskell = False)
+        # For the the configuration of packages, the root module takes
+        # precedence, then rules_haskell modules, then the other modules (with
+        # lower privilege).
+        if root_module:
+            _add_packages(packages_conf, root_module, snapshot_name, root_or_rules_haskell = True)
+        for module in rules_haskell_modules:
+            if module != root_module:
+                _add_packages(packages_conf, module, snapshot_name, root_or_rules_haskell = True)
+        for module in mctx.modules:
+            if module != root_module and module not in rules_haskell_modules:
+                _add_packages(packages_conf, module, snapshot_name, root_or_rules_haskell = False)
 
-    kwargs["packages"] = sets.to_list(packages_conf.packages)
-    kwargs["setup_deps"] = {
-        package: [str(label) for label in labels]
-        for package, labels in packages_conf.setup_deps.items()
-    }
-    kwargs["flags"] = packages_conf.flags
-    kwargs["components"] = packages_conf.components
-    kwargs["components_dependencies"] = packages_conf.components_dependencies
-    kwargs["extra_deps"] = packages_conf.extra_deps
-    kwargs["vendored_packages"] = packages_conf.vendored_packages
-    kwargs["name"] = "stackage"
-    _stack_snapshot(**kwargs)
+        kwargs["packages"] = sets.to_list(packages_conf.packages)
+        kwargs["setup_deps"] = {
+            package: [str(label) for label in labels]
+            for package, labels in packages_conf.setup_deps.items()
+        }
+
+        # only try to install stack once
+        if installed_stack:
+            kwargs["setup_stack"] = False
+        else:
+            installed_stack = True
+        kwargs["flags"] = packages_conf.flags
+        kwargs["components"] = packages_conf.components
+        kwargs["components_dependencies"] = packages_conf.components_dependencies
+        kwargs["extra_deps"] = packages_conf.extra_deps
+        kwargs["vendored_packages"] = packages_conf.vendored_packages
+        kwargs["name"] = snapshot_name
+        print(kwargs)
+        _stack_snapshot(**kwargs)
 
 stack_snapshot = module_extension(
     implementation = _stack_snapshot_impl,
