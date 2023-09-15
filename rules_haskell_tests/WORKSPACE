@@ -296,3 +296,12 @@ stack_snapshot(
         "ghc-paths": "@rules_haskell//tools/ghc-paths",
     },
 )
+
+# In a separate repo because not all platforms support zlib.
+stack_snapshot(
+    name = "stackage-zlib",
+    extra_deps = {"zlib": ["//tests:zlib"]},
+    local_snapshot = "//:stackage_snapshot.yaml",
+    packages = ["zlib"],
+    stack_snapshot_json = "//:stackage-zlib-snapshot.json" if not is_windows else None,
+)

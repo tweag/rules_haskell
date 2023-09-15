@@ -22,16 +22,6 @@ _empty_repo = repository_rule(
 )
 
 def repositories(*, bzlmod):
-    # In a separate repo because not all platforms support zlib.
-    stack_snapshot(
-        name = "stackage-zlib",
-        extra_deps = {"zlib": ["//tests:zlib"]},
-        local_snapshot = "//:stackage_snapshot.yaml",
-        packages = ["zlib"],
-        stack_snapshot_json = "//:stackage-zlib-snapshot.json" if not is_windows else None,
-        label_builder = label_builder,
-    )
-
     stack_snapshot(
         name = "ghcide",
         setup_stack = False,

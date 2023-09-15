@@ -137,12 +137,8 @@ use_repo(
     "alex",
     "ghcide",
     "ghcide-exe",
-    "rules_haskell_stack",
-    "rules_haskell_stack_update",
     "stackage-pinning-test",
     "stackage-pinning-test-unpinned",
-    "stackage-zlib",
-    "stackage-zlib-unpinned",
     "stackage_asterius",
     "stackage_asterius-unpinned",
 )
@@ -339,9 +335,13 @@ stack_snapshot = use_extension(
 )
 use_repo(
     stack_snapshot,
+    "rules_haskell_stack",
+    "rules_haskell_stack_update",
     "stackage",
     "stackage-exe",
     "stackage-unpinned",
+    "stackage-zlib",
+    "stackage-zlib-unpinned",
 )
 stack_snapshot.package(
     name = "proto-lens-protoc",
@@ -434,6 +434,25 @@ stack_snapshot.package(
 )
 stack_snapshot.stack_snapshot_json(
     label = "//:stackage_snapshot.json",
+    os = [
+        "linux",
+        "mac",
+    ],
+)
+
+# In a separate repo because not all platforms support zlib.
+stack_snapshot.snapshot(
+    name = "stackage-zlib",
+    local_snapshot = "//:stackage_snapshot.yaml",
+)
+stack_snapshot.package(
+    name = "zlib",
+    snapshot = "stackage-zlib",
+    extra_deps = ["//tests:zlib"],
+)
+stack_snapshot.stack_snapshot_json(
+    label = "//:stackage-zlib-snapshot.json",
+    snapshot = "stackage-zlib",
     os = [
         "linux",
         "mac",
