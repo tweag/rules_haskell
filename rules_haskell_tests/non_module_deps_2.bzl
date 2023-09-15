@@ -8,7 +8,7 @@ load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
 label_builder = lambda x: Label(x)
 
 def _empty_repo_impl(rctx):
-    fail(rctx.attrs.error_msg)
+    fail(rctx.attr.error_msg)
 
 _empty_repo = repository_rule(
     implementation = _empty_repo_impl,
