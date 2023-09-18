@@ -123,7 +123,14 @@ haskell_cabal_binary(
         urls = ["http://hackage.haskell.org/package/alex-3.2.7.1/alex-3.2.7.1.tar.gz"],
     )
 
-    if GHC_VERSION and GHC_VERSION.startswith("9.4."):
+    # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
+    # See https://github.com/tweag/rules_haskell/issues/1871
+    if GHC_VERSION and GHC_VERSION.startswith("9.6."):
+        _empty_repo(
+            name = "Cabal",
+            error_msg = "When using GHC 9.6, do not depend on @Cabal, as https://github.com/tweag/rules_haskell/issues/1871 is fixed.",
+        )
+    elif GHC_VERSION and GHC_VERSION.startswith("9.4."):
         # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
         # See https://github.com/tweag/rules_haskell/issues/1871
         http_archive(
