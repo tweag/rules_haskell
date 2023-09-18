@@ -135,6 +135,9 @@ jobs:
             bzlmod: true
           - ghc: 9.6.2
             bzlmod: true
+          # currently proto-lens-protoc fails with an access violation on Windows
+          - ghc: 9.6.2
+            os: windows-latest
     env:
       # prevent auto-detection of system compilers on Windows
       BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN: ${{ matrix.os == 'windows-latest' && 1 || 0 }}
