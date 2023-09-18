@@ -119,11 +119,31 @@ haskell_cabal_binary(
         urls = ["http://hackage.haskell.org/package/alex-3.2.7.1/alex-3.2.7.1.tar.gz"],
     )
 
-    # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
-    # See https://github.com/tweag/rules_haskell/issues/1871
-    http_archive(
-        name = "Cabal",
-        build_file_content = """
+    if GHC_VERSION and GHC_VERSION.startswith("9.4."):
+        # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
+        # See https://github.com/tweag/rules_haskell/issues/1871
+        http_archive(
+            name = "Cabal",
+            build_file_content = """
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+haskell_cabal_library(
+    name = "Cabal",
+    srcs = glob(["Cabal/**"]),
+    verbose = False,
+    version = "3.8.1.0",
+    visibility = ["//visibility:public"],
+)
+""",
+            sha256 = "b697b558558f351d2704e520e7dcb1f300cd77fea5677d4b2ee71d0b965a4fe9",
+            strip_prefix = "cabal-ghc-9.4-paths-module-relocatable",
+            urls = ["https://github.com/tweag/cabal/archive/refs/heads/ghc-9.4-paths-module-relocatable.zip"],
+        )
+    else:
+        # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
+        # See https://github.com/tweag/rules_haskell/issues/1871
+        http_archive(
+            name = "Cabal",
+            build_file_content = """
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
 haskell_cabal_library(
     name = "Cabal",
@@ -133,10 +153,10 @@ haskell_cabal_library(
     visibility = ["//visibility:public"],
 )
 """,
-        sha256 = "f69b46cb897edab3aa8d5a4bd7b8690b76cd6f0b320521afd01ddd20601d1356",
-        strip_prefix = "cabal-gg-8220-with-3630",
-        urls = ["https://github.com/tweag/cabal/archive/refs/heads/gg/8220-with-3630.zip"],
-    )
+            sha256 = "f69b46cb897edab3aa8d5a4bd7b8690b76cd6f0b320521afd01ddd20601d1356",
+            strip_prefix = "cabal-gg-8220-with-3630",
+            urls = ["https://github.com/tweag/cabal/archive/refs/heads/gg/8220-with-3630.zip"],
+        )
 
     stack_snapshot(
         name = "stackage-pinning-test",
