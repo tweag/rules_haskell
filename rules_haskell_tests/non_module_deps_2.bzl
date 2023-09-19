@@ -142,8 +142,6 @@ haskell_cabal_library(
             urls = ["https://github.com/tweag/cabal/archive/refs/heads/ghc-9.4-paths-module-relocatable.zip"],
         )
     else:
-        # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
-        # See https://github.com/tweag/rules_haskell/issues/1871
         http_archive(
             name = "Cabal",
             build_file_content = """

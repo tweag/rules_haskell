@@ -30,7 +30,7 @@ drop-packages:
 - Win32
 
 
-# stackage lts-20.3/ghc 9.2.5 only contains Win32-2.12.0.1
+# stackage lts-21.5/ghc 9.4.5 only contains Win32-2.12.0.1
 flags:
   ansi-terminal:
     Win32-2-13-1: false

@@ -1,9 +1,9 @@
-resolver: "lts-20.3"
+resolver: "lts-21.5"
 packages:
   - github: hspec/hspec
     # NOTE Keep in sync with resolver version
-    commit: "4a4b27cb1d5284c94228c9c76c5fe79215597fb7"
-    sha256: "fb96ed7dd3e2b792300f3bc8bd2affc6bf78093289815f76ec785fea6d91be68"
+    commit: "4901e84e8c955c59b1638e0e12dff66768ced21f"
+    sha256: "4f8eba22dfb5f3e3be5bedf30f268172a5bef721a59d8259a1ed4231e5947232"
     subdirs:
       - .
       - hspec-contrib
@@ -13,7 +13,7 @@ packages:
   - archive: https://github.com/tweag/rules_haskell/raw/e4e74f17f743488f564bd0d69c580106d5b910a5/tests/haskell_cabal_library_sublibrary_name/package1.tar
     sha256: "302d8ddda8330c825da61fe0a2315c899ab083e641c7716ebdacb5c951682445"
   - git: https://github.com/tweag/cabal
-    commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
+    commit: 4f8c4ab8274320c1a00992c9aa7c6559ff190fa9
     subdirs:
     - Cabal
 
@@ -26,7 +26,7 @@ packages:
 drop-packages:
   - Win32
 
-# stackage lts-20.3/ghc 9.2.5 only contains Win32-2.12.0.1
+# stackage lts-21.5/ghc 9.4.5 only contains Win32-2.12.0.1
 flags:
   ansi-terminal:
     Win32-2-13-1: false
