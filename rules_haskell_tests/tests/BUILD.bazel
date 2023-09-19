@@ -72,7 +72,10 @@ haskell_proto_toolchain(
     name = "protobuf-toolchain",
     testonly = 0,
     plugin = "@stackage-exe//proto-lens-protoc",
-    protoc = "@com_google_protobuf//:protoc",
+    protoc = select({
+        "@platforms//os:windows": "@rules_haskell//tests:protoc.cmd",
+        "//conditions:default": "@com_google_protobuf//:protoc",
+    }),
     deps = [
         "@stackage//:base",
         "@stackage//:bytestring",
