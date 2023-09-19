@@ -50,4 +50,5 @@ def protoc_wrapper(name):
         name = name + ".cmd",
         srcs = [name + "wrapper.cmd"],
         target_compatible_with = ["@platforms//os:windows"],
+        visibility = ["//visibility:public"],
     )
