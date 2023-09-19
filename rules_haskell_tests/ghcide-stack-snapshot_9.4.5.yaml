@@ -1,20 +1,22 @@
-resolver: lts-20.3
+resolver: lts-21.5
 packages:
+- algebraic-graphs-0.6
 - co-log-core-0.3.2.0
-- ghcide-1.8.0.0
+- ghcide-1.10.0.0
 - heapsize-0.3.0.1
-- hie-bios-0.11.0
+- hie-bios-0.12.0
 - hie-compat-0.3.0.0
-- hiedb-0.4.2.0
-- hls-graph-1.8.0.0
-- hls-plugin-api-1.5.0.0
-- implicit-hie-0.1.4.0
+- hiedb-0.4.3.0
+- hls-graph-1.9.0.0
+- hls-plugin-api-1.6.0.0
+- implicit-hie-0.1.2.7
 - implicit-hie-cradle-0.5.0.0
 - lsp-1.6.0.0
+- lsp-types-1.6.0.0
 - lsp-test-0.14.1.0
 - retrie-1.2.1.1
 - git: https://github.com/tweag/cabal
-  commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
+  commit: 4f8c4ab8274320c1a00992c9aa7c6559ff190fa9
   subdirs:
   - Cabal
 
