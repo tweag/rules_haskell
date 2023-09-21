@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE")
 load(
     ":private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
@@ -371,10 +372,13 @@ toolchain(
       "@platforms//os:windows",
       "@platforms//cpu:x86_64"
     ],
-    toolchain = "@{}//:cc-compiler-mingw64",
-    toolchain_type = "@rules_cc//cc:toolchain_type",
+    toolchain = "@{name}//:cc-compiler-mingw64",
+    toolchain_type = "{cc_toolchain}",
 )
-""".format(repository_ctx.attr.bindist_name))
+""".format(
+        name = repository_ctx.attr.bindist_name,
+        cc_toolchain = CC_TOOLCHAIN_TYPE,
+    ))
 
 _windows_cc_toolchain = repository_rule(
     _windows_cc_toolchain_impl,

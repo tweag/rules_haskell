@@ -1,6 +1,7 @@
 """Implementation of core Haskell rules"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     ":providers.bzl",
     "C2hsLibraryInfo",
@@ -959,8 +960,7 @@ haskell_toolchain_libraries = rule(
             default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
     ],
     fragments = ["cpp"],

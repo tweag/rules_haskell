@@ -2,6 +2,7 @@
 
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load(
     ":private/actions/compile.bzl",
@@ -609,9 +610,7 @@ def get_cc_toolchain_impl(ctx):
 
 get_cc_toolchain = rule(
     get_cc_toolchain_impl,
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
-    ],
+    toolchains = use_cc_toolchain(),
     attrs = {
         "_cc_toolchain": attr.label(
             default = Label(
