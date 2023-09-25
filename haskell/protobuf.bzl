@@ -13,7 +13,7 @@ load(
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
 )
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load(":private/pkg_id.bzl", "pkg_id")
 load(
     ":private/cc_libraries.bzl",
@@ -292,8 +292,7 @@ _haskell_proto_aspect = aspect(
         ),
     },
     provides = [HaskellProtobufInfo],
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//protobuf:toolchain",
         "@rules_sh//sh/posix:toolchain_type",

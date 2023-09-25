@@ -1,5 +1,6 @@
 """Core Haskell rules"""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     ":haddock.bzl",
     _haskell_doc = "haskell_doc",
@@ -181,8 +182,7 @@ def _mk_binary_rule(**kwargs):
         outputs = {
             "runghc": "%{name}@runghc",
         },
-        toolchains = [
-            "@rules_cc//cc:toolchain_type",
+        toolchains = use_cc_toolchain() + [
             "@rules_haskell//haskell:toolchain",
             "@rules_sh//sh/posix:toolchain_type",
         ],
@@ -216,8 +216,7 @@ _haskell_library = rule(
     outputs = {
         "runghc": "%{name}@runghc",
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],

@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load(":cc.bzl", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -733,9 +733,8 @@ _haskell_repl = rule(
     outputs = {
         "repl": "%{name}@repl",
     },
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
-        "@rules_cc//cc:toolchain_type",
         "@rules_sh//sh/posix:toolchain_type",
     ],
     fragments = ["cpp"],
@@ -755,9 +754,8 @@ _hie_bios = rule(
                 default = Label("@bazel_tools//tools/bash/runfiles"),
             ),
         ),
-    toolchains = [
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
-        "@rules_cc//cc:toolchain_type",
         "@rules_sh//sh/posix:toolchain_type",
     ],
     fragments = ["cpp"],
