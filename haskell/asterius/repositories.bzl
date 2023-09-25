@@ -23,6 +23,7 @@ load(
     _asterius_dependencies_custom = "asterius_dependencies_custom",
     _asterius_dependencies_nix = "asterius_dependencies_nix",
 )
+load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE")
 
 # For now the asterius bundle is built and uploaded manually for linux.
 # When the asterius build works inside the ci we will be able to download the artifacts from there.
@@ -103,7 +104,7 @@ toolchain(
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
     toolchain = "{wasm_cc_toolchain}",
-    toolchain_type = "@rules_cc//cc:toolchain_type",
+    toolchain_type = "{cc_toolchain}",
 )
         """.format(
             bindist_name = ctx.attr.bindist_name,
@@ -111,6 +112,7 @@ toolchain(
             target_constraints = target_constraints,
             exec_platform = exec_platform,
             wasm_cc_toolchain = ctx.attr.wasm_cc_toolchain,
+            cc_toolchain = CC_TOOLCHAIN_TYPE,
         ),
     )
 

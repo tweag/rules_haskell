@@ -1,4 +1,4 @@
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 
 _test_script_template = """#!/usr/bin/env bash
 library_path={library_path}
@@ -60,7 +60,7 @@ solib_test = rule(
     },
     executable = True,
     fragments = ["cpp"],
-    toolchains = ["@rules_cc//cc:toolchain_type"],
+    toolchains = use_cc_toolchain(),
     test = True,
 )
 """Test that Bazel's solib directory matches our expectations.

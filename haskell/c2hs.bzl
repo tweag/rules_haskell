@@ -1,6 +1,7 @@
 """Support for c2hs"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     ":providers.bzl",
     "C2hsLibraryInfo",
@@ -144,8 +145,7 @@ c2hs_library = rule(
             default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell/c2hs:toolchain",
     ],

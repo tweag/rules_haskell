@@ -5,7 +5,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe", "read_netrc", "use_netrc")
 load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/actions/info.bzl", "library_info_output_groups")
 load(":private/actions/link.bzl", "darwin_flags_for_linking_indirect_cc_deps")
@@ -743,8 +743,7 @@ haskell_cabal_library = rule(
             avoid exceeding the MACH-O header size limit on MacOS.""",
         ),
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -974,8 +973,7 @@ haskell_cabal_binary = rule(
             doc = "Whether to show the output of the build",
         ),
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],

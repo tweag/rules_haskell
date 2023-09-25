@@ -1,5 +1,5 @@
 load("@rules_python//python:py_binary.bzl", "py_binary")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 
 def _protoc_wrapper_impl(ctx):
     """
@@ -36,7 +36,7 @@ _protoc_wrapper = rule(
     attrs = {
         "_protoc": attr.label(executable = True, cfg = "exec", default = "@com_google_protobuf//:protoc"),
     },
-    toolchains = ["@rules_cc//cc:toolchain_type"],
+    toolchains = use_cc_toolchain(),
 )
 
 def protoc_wrapper(name):

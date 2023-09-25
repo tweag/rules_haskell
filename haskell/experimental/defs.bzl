@@ -1,5 +1,6 @@
 """Experimental Haskell rules"""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load(
     "//haskell/experimental/private:module.bzl",
@@ -46,8 +47,7 @@ _haskell_module = rule(
         ),
         # TODO[AH] Suppport worker
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
