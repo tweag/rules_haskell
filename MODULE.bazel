@@ -259,6 +259,23 @@ register_toolchains(
     dev_dependency = True,
 )
 
+stack_snapshot = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshot",
+)
+
+# The @stackage workspace is referenced in the `stack_snapshot` macro to
+# forward the generated `components.json` file to the `_stack_executables`
+# repository rule which generates the `@stackage-exe` workspace. This reference
+# is resolved within the scope of rules_haskell and therefore requires
+# `@stackage` to be imported.
+# See https://github.com/tweag/rules_haskell/blob/e31617dcd76264f00a833625f70e1e46e91fbc57/haskell/cabal.bzl#L2709
+# TODO[AH] Find a way to not require an import of `@stackage` into rules_haskell.
+use_repo(
+    stack_snapshot,
+    "stackage",
+)
+
 stack_snapshot_dev = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",
     "stack_snapshot",
@@ -326,7 +343,6 @@ stack_snapshot_dev.snapshot(
 )
 use_repo(
     stack_snapshot_dev,
-    "stackage",
     "stackage-exe",
     "stackage-unpinned",
 )
