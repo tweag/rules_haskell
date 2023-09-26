@@ -9,8 +9,8 @@ load(
 )
 load(":private/ghc_ci.bzl", "ghc_default_version")
 
-_rules_nixpkgs_version = "0c1f8f5470c7f292b7620762e224f53d837929d3"
-_rules_nixpkgs_sha256 = "9e3898a33c5f21f634aa9e2d45620e7c4b6d54d16d473571a891193bbd4725ca"
+_rules_nixpkgs_version = "7e627d76ba65d6c42586fc265e46bd370672b4eb"
+_rules_nixpkgs_sha256 = "714a0bec45d23bfc23604de5d292a68f6e12272b303fb7bf33567d2878f52612"
 
 _rules_sh_version = "v0.3.0"
 _rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
@@ -106,7 +106,7 @@ def rules_haskell_dependencies():
             sha256 = _rules_nixpkgs_sha256,
         )
 
-        # requiered by rules_nixpkgs
+        # required by rules_nixpkgs
         http_archive(
             name = "rules_nodejs",
             sha256 = "08337d4fffc78f7fe648a93be12ea2fc4e8eb9795a4e6aa48595b66b34555626",
