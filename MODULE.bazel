@@ -259,13 +259,14 @@ register_toolchains(
     dev_dependency = True,
 )
 
-stack_snapshots = use_extension(
+stack_snapshot_dev = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",
     "stack_snapshot",
+    dev_dependency = True,
 )
 
 [
-    stack_snapshots.package(
+    stack_snapshot_dev.package(
         name = package,
     )
     for package in [
@@ -285,11 +286,11 @@ stack_snapshots = use_extension(
     ]
 ]
 
-stack_snapshots.package(
+stack_snapshot_dev.package(
     name = "ghc-paths",
     vendored = "@rules_haskell//tools/ghc-paths",
 )
-stack_snapshots.package(
+stack_snapshot_dev.package(
     name = "proto-lens-protoc",
     components = [
         "lib",
@@ -300,7 +301,7 @@ stack_snapshots.package(
 
 [
     # See https://github.com/tweag/rules_haskell/issues/1871
-    stack_snapshots.package(
+    stack_snapshot_dev.package(
         name = package,
         setup_deps = ["@Cabal//:Cabal"],
     )
@@ -319,12 +320,12 @@ stack_snapshots.package(
     ]
 ]
 
-stack_snapshots.stack_snapshot_json(label = "@rules_haskell//:stackage_snapshot.json")
-stack_snapshots.snapshot(
+stack_snapshot_dev.stack_snapshot_json(label = "@rules_haskell//:stackage_snapshot.json")
+stack_snapshot_dev.snapshot(
     local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
 )
 use_repo(
-    stack_snapshots,
+    stack_snapshot_dev,
     "stackage",
     "stackage-exe",
     "stackage-unpinned",
