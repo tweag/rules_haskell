@@ -35,6 +35,11 @@ _protoc_wrapper = rule(
     implementation = _protoc_wrapper_impl,
     attrs = {
         "_protoc": attr.label(executable = True, cfg = "exec", default = "@com_google_protobuf//:protoc"),
+        "_cc_toolchain": attr.label(
+            default = Label(
+                "@rules_cc//cc:current_cc_toolchain",
+            ),
+        ),
     },
     toolchains = use_cc_toolchain(),
 )
