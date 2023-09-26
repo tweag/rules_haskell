@@ -1,6 +1,6 @@
 {
-    "integrity" : "sha256-njiYozxfIfY0qp4tRWIOfEttVNFtRzVxqJEZO71HJco",
-    "strip_prefix" : "rules_nixpkgs-0c1f8f5470c7f292b7620762e224f53d837929d3/toolchains/python",
-    "url": "https://github.com/tweag/rules_nixpkgs/archive/0c1f8f5470c7f292b7620762e224f53d837929d3.tar.gz"
+    "integrity" : "sha256-cUoL7EXSO/wjYE3l0pKmj24SJyswP7e/M1Z9KHj1JhI=",
+    "strip_prefix" : "rules_nixpkgs-7e627d76ba65d6c42586fc265e46bd370672b4eb/toolchains/python",
+    "url": "https://github.com/tweag/rules_nixpkgs/archive/7e627d76ba65d6c42586fc265e46bd370672b4eb.tar.gz"
 }
 
