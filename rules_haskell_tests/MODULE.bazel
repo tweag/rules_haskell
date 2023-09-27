@@ -330,8 +330,6 @@ nix_haskell_toolchains.new(
     version = test_ghc_version,
 )
 
-# We configure and add packages to the `stackage` snapshot which is
-# shared with `rules_haskell`.
 stack_snapshot = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",
     "stack_snapshot",
@@ -341,6 +339,11 @@ use_repo(
     "stackage",
     "stackage-exe",
     "stackage-unpinned",
+)
+stack_snapshot.snapshot(local_snapshot = "//:stackage_snapshot.yaml")
+stack_snapshot.package(
+    name = "ghc-paths",
+    vendored = "@rules_haskell//tools/ghc-paths",
 )
 stack_snapshot.package(
     name = "proto-lens-protoc",
@@ -357,8 +360,12 @@ stack_snapshot.package(
     )
     for package in [
         "array",
+        "base",
+        "bytestring",
         "conduit",
         "conduit-extra",
+        "containers",
+        "deepseq",
         "directory",
         "filepath",
         "ghc-heap",
@@ -370,13 +377,17 @@ stack_snapshot.package(
         "vector",
         # For tests
         "cabal-doctest",
+        "data-default-class",
         "network",
         "language-c",
+        "lens-family",
+        "lens-family-core",
         "streaming",
         "void",
         "ghc-check",
         "profunctors",
         "proto-lens",
+        "proto-lens-runtime",
         "safe-exceptions",
         "temporary",
     ]
