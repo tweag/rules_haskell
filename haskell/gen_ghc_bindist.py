@@ -17,6 +17,8 @@ from distutils.version import StrictVersion
 # `ignore_prefixes` is the prefix of files to ignore
 # `ignore_suffixes` is the suffix of files to ignore
 VERSIONS = [
+    { "version": '9.6.3',
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": "9.6.2",
       "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": "9.6.1",
