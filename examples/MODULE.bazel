@@ -55,6 +55,7 @@ use_repo(
     stack_snapshot,
     "stackage",
 )
+stack_snapshot.snapshot(local_snapshot = "@rules_haskell//:stackage_snapshot.yaml")
 stack_snapshot.package(
     name = "zlib",
     extra_deps = ["@zlib.hs"],

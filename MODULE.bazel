@@ -259,13 +259,31 @@ register_toolchains(
     dev_dependency = True,
 )
 
-stack_snapshots = use_extension(
+stack_snapshot = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",
     "stack_snapshot",
 )
 
+# The @stackage workspace is referenced in the `stack_snapshot` macro to
+# forward the generated `components.json` file to the `_stack_executables`
+# repository rule which generates the `@stackage-exe` workspace. This reference
+# is resolved within the scope of rules_haskell and therefore requires
+# `@stackage` to be imported.
+# See https://github.com/tweag/rules_haskell/blob/e31617dcd76264f00a833625f70e1e46e91fbc57/haskell/cabal.bzl#L2709
+# TODO[AH] Find a way to not require an import of `@stackage` into rules_haskell.
+use_repo(
+    stack_snapshot,
+    "stackage",
+)
+
+stack_snapshot_dev = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshot",
+    dev_dependency = True,
+)
+
 [
-    stack_snapshots.package(
+    stack_snapshot_dev.package(
         name = package,
     )
     for package in [
@@ -285,11 +303,11 @@ stack_snapshots = use_extension(
     ]
 ]
 
-stack_snapshots.package(
+stack_snapshot_dev.package(
     name = "ghc-paths",
     vendored = "@rules_haskell//tools/ghc-paths",
 )
-stack_snapshots.package(
+stack_snapshot_dev.package(
     name = "proto-lens-protoc",
     components = [
         "lib",
@@ -300,7 +318,7 @@ stack_snapshots.package(
 
 [
     # See https://github.com/tweag/rules_haskell/issues/1871
-    stack_snapshots.package(
+    stack_snapshot_dev.package(
         name = package,
         setup_deps = ["@Cabal//:Cabal"],
     )
@@ -319,13 +337,12 @@ stack_snapshots.package(
     ]
 ]
 
-stack_snapshots.stack_snapshot_json(label = "@rules_haskell//:stackage_snapshot.json")
-stack_snapshots.snapshot(
+stack_snapshot_dev.stack_snapshot_json(label = "@rules_haskell//:stackage_snapshot.json")
+stack_snapshot_dev.snapshot(
     local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
 )
 use_repo(
-    stack_snapshots,
-    "stackage",
+    stack_snapshot_dev,
     "stackage-exe",
     "stackage-unpinned",
 )
