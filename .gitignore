@@ -7,3 +7,4 @@
 __pycache__
 /.direnv
 /.envrc
+tests/recompilation/logfile.json

@@ -1,6 +1,6 @@
 load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
 load(
-    "@contrib_rules_bazel_integration_test//bazel_integration_test:defs.bzl",
+    "@rules_bazel_integration_test//bazel_integration_test:defs.bzl",
     "bazel_integration_test",
     "integration_test_utils",
 )
@@ -39,6 +39,7 @@ def haskell_bazel_integration_test(
         name = runner_name,
         binary = binary_name,
         arguments = args,
+        testonly = True,
     )
 
     for bazel_id, bazel_binary in bazel_binaries.items():

@@ -30,19 +30,18 @@ def repositories(*, bzlmod):
 
     # module rules_bazel_integration_test requires bazel >= 6.1.0
     http_archive(
-        name = "contrib_rules_bazel_integration_test",
-        sha256 = "f80c4052df80e9099ed0f2f27ef4084604333566a7b028f524ceae6e5569b429",
-        strip_prefix = "rules_bazel_integration_test-7ee995a20bbaa2f6540103c63ff4891166133c2f",
+        name = "rules_bazel_integration_test",
+        sha256 = "567ef30550a90c0dc22a9076743b2b2715b4d7148b4d573bdcc61aaa5d0177b3",
         urls = [
-            "https://github.com/bazel-contrib/rules_bazel_integration_test/archive/7ee995a20bbaa2f6540103c63ff4891166133c2f.zip",
+            "https://github.com/bazel-contrib/rules_bazel_integration_test/releases/download/v0.18.0/rules_bazel_integration_test.v0.18.0.tar.gz",
         ],
     )
 
     http_archive(
         name = "cgrindel_bazel_starlib",
-        sha256 = "ee0033d029b5eaddc21836b2944cf37c95eb5f214eb39834136a316dbc252a73",
+        sha256 = "dfa423dbf5aac0a5217d3780b295abd3ea1c633d5f9198712b23f0f14f2e8d92",
         urls = [
-            "https://github.com/cgrindel/bazel-starlib/releases/download/v0.16.0/bazel-starlib.v0.16.0.tar.gz",
+            "https://github.com/cgrindel/bazel-starlib/releases/download/v0.18.0/bazel-starlib.v0.18.0.tar.gz",
         ],
     )
 

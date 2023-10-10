@@ -1,0 +1,10 @@
+diff --git a/src/A.hs b/src/A.hs
+index 3da440be..a63b1242 100644
+--- a/src/A.hs
++++ b/src/A.hs
+@@ -1,4 +1,4 @@
+-module A (f, g, T, a) where
++module A (f, g, T) where
+
+ data T = T0 | T1
+

@@ -1,0 +1,10 @@
+load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_haskell_integration_test")
+
+rules_haskell_integration_test(
+    name = "recompilation_test",
+    srcs = ["SomeTest.hs"],
+    workspace_path = "recompilation_workspace",
+    deps = [
+        "//tests/hackage:process",
+    ],
+)
