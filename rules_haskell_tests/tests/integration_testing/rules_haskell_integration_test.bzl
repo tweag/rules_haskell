@@ -1,6 +1,6 @@
 load(":haskell_bazel_integration_test.bzl", "haskell_bazel_integration_test")
 load(
-    "@contrib_rules_bazel_integration_test//bazel_integration_test:defs.bzl",
+    "@rules_bazel_integration_test//bazel_integration_test:defs.bzl",
     "integration_test_utils",
 )
 load(

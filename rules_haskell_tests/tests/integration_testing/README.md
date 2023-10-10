@@ -83,7 +83,7 @@ By default it will create a test for every bazel version specified in the `SUPPO
 
 Since test workspaces contains `WORKSPACE` files it should be ignored by bazel. In order to achieve that one should run
 ```
-bazel run @contrib_rules_bazel_integration_test//tools:update_deleted_packages
+bazel run @rules_bazel_integration_test//tools:update_deleted_packages
 ```
 which will update `.bazelrc` with new `deleted_packages` flags. One should push these `.bazelrc` changes with the test. Otherwise, the new test will fail with something like
 ```

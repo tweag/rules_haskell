@@ -6,7 +6,5 @@ rules_haskell_integration_test(
     workspace_path = "recompilation_workspace",
     deps = [
         "//tests/hackage:process",
-    ]
+    ],
 )
-
-package(default_testonly = 1)
