@@ -196,6 +196,32 @@ def _add_packages(conf, module, root_or_rules_haskell):
         else:
             _assert_no_root_package_attrs(module, package_tag)
 
+def _assert_non_rules_haskell_tags(module):
+    msg = """Non-root module "{module_name}~{module_version}" tried to use the "{tag}" tag which is only valid for root modules (and rules_haskell)."""
+
+    if module.tags.snapshot:
+        fail(msg.format(module_name = module.name, module_version = module.version, tag = "snapshot"))
+
+def _assert_no_root_tags(module):
+    msg = """Non-root module "{module_name}~{module_version}" tried to use the "{tag}" tag which is only valid for root modules."""
+
+    if module.tags.stack_snapshot_json:
+        fail(msg.format(module_name = module.name, module_version = module.version, tag = "stack_snapshot_json"))
+
+    if module.tags.verbose:
+        fail(msg.format(module_name = module.name, module_version = module.version, tag = "verbose"))
+
+    if module.tags.netrc:
+        fail(msg.format(module_name = module.name, module_version = module.version, tag = "netrc"))
+
+    if module.tags.tools:
+        fail(msg.format(module_name = module.name, module_version = module.version, tag = "tools"))
+
+    if module.tags.stack:
+        fail(msg.format(module_name = module.name, module_version = module.version, tag = "stack"))
+
+    if module.tags.haddock:
+        fail(msg.format(module_name = module.name, module_version = module.version, tag = "haddock"))
 
 def _stack_snapshot_impl(mctx):
     root_module = None
@@ -218,6 +244,8 @@ def _stack_snapshot_impl(mctx):
                         kwargs["local_snapshot"] = snapshot_tag.local_snapshot
                     if snapshot_tag.name:
                         kwargs["snapshot_tag"] = snapshot_tag.name
+        else:
+            _assert_non_rules_haskell_tags(module)
         if module == root_module:
             for stack_snapshot_json_tag in module.tags.stack_snapshot_json:
                 # If the os list is empty (the default value), the file is compatible with all OSs.
@@ -255,6 +283,8 @@ def _stack_snapshot_impl(mctx):
                 _assert_unique_tag(module.tags.haddock, "haddock", module)
                 haddock_tag = module.tags.haddock[0]
                 kwargs["haddock"] = haddock_tag.label
+        else:
+            _assert_no_root_tags(module)
 
     packages_conf = struct(
         configured_packages = sets.make(),
