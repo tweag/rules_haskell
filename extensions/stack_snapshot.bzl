@@ -142,6 +142,15 @@ def _assert_unique_tag(tags, tag_name, module):
             ),
         )
 
+def _assert_no_root_package_attrs(module, package_tag):
+    msg = """Non-root module "{module_name}~{module_version}" tried to use attr "{attr}" which is only valid for root modules."""
+    if package_tag.setup_deps:
+        fail(msg.format(module_name = module.name, module_version = module.version, attr = "setup_deps"))
+    if package_tag.flags:
+        fail(msg.format(module_name = module.name, module_version = module.version, attr = "flags"))
+    if package_tag.vendored:
+        fail(msg.format(module_name = module.name, module_version = module.version, attr = "vendored"))
+
 def _add_packages(conf, module, root_or_rules_haskell):
     """Read the `package` tags from `module` and add the configuration to `conf`"""
     packages_in_module = sets.make()
@@ -184,6 +193,9 @@ def _add_packages(conf, module, root_or_rules_haskell):
                 conf.flags[package_name] = package_tag.flags
             if package_tag.vendored:
                 conf.vendored_packages[package_name] = package_tag.vendored
+        else:
+            _assert_no_root_package_attrs(module, package_tag)
+
 
 def _stack_snapshot_impl(mctx):
     root_module = None
