@@ -122,6 +122,9 @@ def _ghc_bindist_impl(ctx):
         # on //tests/haddock:haddock-lib-b.
         dll_a_libs.append("libz.dll.a")
 
+        # Similarly causes loading issues when using libc++ with clang on GHC >= 9.4
+        dll_a_libs.append("libc++.dll.a")
+
         # It's hard to guesss the paths of these libraries, so we have to use
         # dir to recursively find them.
         for lib in dll_a_libs:
