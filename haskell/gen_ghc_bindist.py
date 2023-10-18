@@ -11,34 +11,35 @@ from urllib.request import urlopen
 from distutils.version import StrictVersion
 
 # All GHC versions we generate.
-# `version` is the version number
-# `distribution_version` is a corrected name
-# (sometimes bindists have errors and are updated by new bindists)
 VERSIONS = [
-    { "version": "9.6.3" },
-    { "version": "9.6.2" },
-    { "version": "9.6.1" },
-    { "version": "9.4.7" },
-    { "version": "9.4.6" },
-    { "version": "9.4.5" },
-    { "version": "9.2.8" },
-    { "version": "9.2.5" },
-    { "version": "9.2.4" },
-    { "version": "9.2.3" },
-    { "version": "9.2.1" },
-    { "version": "9.0.2" },
-    { "version": "9.0.1" },
-    { "version": "8.10.7" },
-    { "version": "8.10.4" },
-    { "version": "8.10.3" },
-    { "version": "8.8.4" },
-    { "version": "8.6.5" },
-    { "version": "8.4.4" },
-    { "version": "8.4.3" },
-    { "version": "8.4.2" },
-    { "version": "8.4.1" },
-    { "version": "8.2.2" },
+    "9.6.3",
+    "9.6.2",
+    "9.6.1",
+    "9.4.7",
+    "9.4.6",
+    "9.4.5",
+    "9.2.8",
+    "9.2.5",
+    "9.2.4",
+    "9.2.3",
+    "9.2.1",
+    "9.0.2",
+    "9.0.1",
+    "8.10.7",
+    "8.10.4",
+    "8.10.3",
+    "8.8.4",
+    "8.6.5",
+    "8.4.4",
+    "8.4.3",
+    "8.4.2",
+    "8.4.1",
+    "8.2.2",
 ]
+
+# Sometimes bindists have errors and are updated by new bindists.
+# This dict is used to keep a version -> corrected_version mapping.
+VERSIONS_CORRECTED = {}
 
 # All architectures we generate.
 # bazel: bazel name
@@ -75,7 +76,7 @@ def link_for_sha256_file(version):
 def parse_sha256_file(content, version, url):
     res = {}
 
-    prefix = "ghc-{ver}-".format(ver = version.get("distribution_version", version['version']))
+    prefix = "ghc-{ver}-".format(ver=VERSIONS_CORRECTED.get(version, version))
     suffix = ".tar.xz"
 
     for line in content:
@@ -108,14 +109,14 @@ if __name__ == "__main__":
     # grab : { version: { arch: sha256 } }
     grab = {}
     for ver in VERSIONS:
-        eprint("fetching " + ver['version'])
-        url = link_for_sha256_file(ver['version'])
+        eprint("fetching " + ver)
+        url = link_for_sha256_file(ver)
         res = urlopen(url)
         if res.getcode() != 200:
             eprint("download of {} failed with status {}".format(url, res.getcode()))
             sys.exit(1)
         else:
-            grab[ver['version']] = parse_sha256_file(res, ver, url)
+            grab[ver] = parse_sha256_file(res, ver, url)
 
     # check whether any version is missing arches we need
     # errs : { version: set(missing_arches) }
