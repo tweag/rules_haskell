@@ -93,8 +93,7 @@ def main():
             gen_script = gen.read()
 
             added_version = replace.sub(
-                rf"""\g<indent>{{ "version": { repr(latest_release) },
-\g<indent>  "ignore_suffixes": [".bz2", ".lz", ".zip"] }},
+                rf"""\g<indent>{{ "version": "{ latest_release }" }},
 \g<0>""",
                 gen_script,
                 count=1,

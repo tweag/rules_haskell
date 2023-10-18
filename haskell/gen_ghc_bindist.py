@@ -14,38 +14,21 @@ from distutils.version import StrictVersion
 # `version` is the version number
 # `distribution_version` is a corrected name
 # (sometimes bindists have errors and are updated by new bindists)
-# `ignore_prefixes` is the prefix of files to ignore
-# `ignore_suffixes` is the suffix of files to ignore
 VERSIONS = [
-    { "version": '9.6.3',
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "9.6.2",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "9.6.1",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": '9.4.6',
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": '9.4.7',
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "9.4.5",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": '9.2.8',
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "9.2.5",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "9.2.4",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "9.2.3",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "9.2.1",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "9.0.2",
-      "ignore_prefixes": ["ghc-9.0.2a"],
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "9.0.1",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
-    { "version": "8.10.7",
-      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.6.3" },
+    { "version": "9.6.2" },
+    { "version": "9.6.1" },
+    { "version": "9.4.7" },
+    { "version": "9.4.6" },
+    { "version": "9.4.5" },
+    { "version": "9.2.8" },
+    { "version": "9.2.5" },
+    { "version": "9.2.4" },
+    { "version": "9.2.3" },
+    { "version": "9.2.1" },
+    { "version": "9.0.2" },
+    { "version": "9.0.1" },
+    { "version": "8.10.7" },
     { "version": "8.10.4" },
     { "version": "8.10.3" },
     { "version": "8.8.4" },
@@ -91,30 +74,21 @@ def link_for_sha256_file(version):
 # Parses the tarball hashsum file for a distribution version.
 def parse_sha256_file(content, version, url):
     res = {}
-    errs = []
+
+    prefix = "ghc-{ver}-".format(ver = version.get("distribution_version", version['version']))
+    suffix = ".tar.xz"
+
     for line in content:
         # f5763983a26dedd88b65a0b17267359a3981b83a642569b26334423f684f8b8c  ./ghc-8.4.3-i386-deb8-linux.tar.xz
         (hash, file_) = line.decode().strip().split("  ./")
-        prefix = "ghc-{ver}-".format(ver = version.get("distribution_version", version['version']))
-        suffix = ".tar.xz"
-
-        # filter ignored files
-        if   any([file_.startswith(p) for p in version.get("ignore_prefixes", [])]) \
-          or any([file_.endswith(s)   for s in version.get("ignore_suffixes", [])]):
-            continue
 
         if file_.startswith(prefix) and file_.endswith(suffix):
             # i386-deb8-linux
             name = file_[len(prefix):-len(suffix)]
             res[name] = hash
-        else:
-            errs.append("Can't parse the sha256 field for {ver}: {entry}".format(
-                ver = version['version'], entry = line.strip()))
 
-    if errs:
-        eprint("Errors parsing file at " + url + ". Either fix or ignore the lines (ignore_suffixes/ignore_prefixes).")
-        for e in errs:
-            eprint(e)
+    if not res:
+        eprint(f"Errors parsing file at {url}. Could not find entries for {prefix}…{suffix}")
         exit(1)
 
     return res
