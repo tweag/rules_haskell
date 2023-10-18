@@ -5,6 +5,10 @@ local_repository(
     path = "..",
 )
 
+load("@rules_haskell//haskell:private/ghc_ci.bzl", "ghc_version")
+
+ghc_version(name = "rules_haskell_ghc_version")
+
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
@@ -96,11 +100,12 @@ load(
     "@rules_haskell//haskell:ghc_bindist.bzl",
     "haskell_register_ghc_bindists",
 )
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 haskell_register_ghc_bindists(
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
-    version = test_ghc_version,
+    version = GHC_VERSION,
 )
 
 load("non_module_deps_1.bzl", repositories_1 = "repositories")
@@ -218,7 +223,9 @@ stack_snapshot(
     components_dependencies = {
         "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
     },
-    local_snapshot = "//:stackage_snapshot.yaml",
+    local_snapshot = "//:stackage_snapshot{}.yaml".format(
+        "_" + str(GHC_VERSION) if GHC_VERSION else "",
+    ),
     packages = [
         # Core libraries
         "alex",
@@ -284,7 +291,9 @@ stack_snapshot(
         "typed-process": ["@Cabal//:Cabal"],
         "unliftio-core": ["@Cabal//:Cabal"],
     },
-    stack_snapshot_json = "//:stackage_snapshot.json" if not is_windows else None,
+    stack_snapshot_json = "//:stackage_snapshot{}.json".format(
+        "_" + str(GHC_VERSION) if GHC_VERSION else "",
+    ) if not is_windows else None,
     tools = [
         # This is not required, as `stack_snapshot` would build alex
         # automatically, however it is used as a test for user provided
