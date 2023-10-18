@@ -4,18 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.17] 2023-10-19
+
+[0.17]: https://github.com/tweag/rules_haskell/compare/v0.16...v0.17
+
+### Highlights
+
+* Support Bazel's new "bzlmod" dependency system
+* Support GHC 9.2.x and 9.4.x
 
 ### Changed
 
+* The minimum supported Bazel version is now 6.0.
 * IDE support : Output absolute paths in hie-bios flags (See https://github.com/tweag/rules_haskell/pull/1862)
   - `haskell_repl` now defines an extra runable target `name@bios` that outputs the hie-bios flags.
   - `hie_bios_path_prefix` attribute for `haskell_repl` is a no-op now that we use absolute paths.
 * `build_bazel_rules_nodejs` dependency is replaced by `rules_js` which induces some changes to the experimental Asterius support (See [#1884]).
+* Replace use of `exec_tools` with semantically-identical `tools` (see https://github.com/tweag/rules_haskell/pull/1925)
+* GHC 9.2 and 9.4 are supported and tested, older GHC releases only supported on a best effort basis (see [#1878])
+
+[#1878]: https://github.com/tweag/rules_haskell/issues/1878
+
+### Fixed
+
+* Make the flags passed to Stack match Cabal (see https://github.com/tweag/rules_haskell/pull/1913)
+* Fix include directories passed to hsc2hs (see https://github.com/tweag/rules_haskell/pull/1922)
 
 ### Added
 
 * Add support for Bazel 6
+* Add support for bzlmod (see https://github.com/tweag/rules_haskell/issues/1864)
 * The provided `cc_toolchain` used for windows can now be used with `--incompatible_enable_cc_toolchain_resolution` so using the `crosstool_top` option is no longer necessary.
 * Add support for GHC 9.2.5 (see [#1869])
 * Add support for GHC 9.4.5 (linux, macOS) and GHC 9.6.1 (see [#1890])
@@ -25,7 +43,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Removed
 
 * Remove support for Bazel 4
-
 
 ## [0.16] 2022-12-06
 
