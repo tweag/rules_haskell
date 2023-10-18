@@ -12,7 +12,9 @@ exports_files(
 exports_files(
     [
         "BUILD.bazel",
+        "MODULE.bazel",
         "WORKSPACE",
+        "WORKSPACE.bzlmod",
         "constants.bzl",
         "non_module_dev_deps.bzl",
         "non_module_dev_deps_2.bzl",

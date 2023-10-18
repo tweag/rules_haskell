@@ -15,7 +15,9 @@ buildifier_test(
     name = "buildifier_test",
     srcs = [
         "//:BUILD.bazel",
+        "//:MODULE.bazel",
         "//:WORKSPACE",
+        "//:WORKSPACE.bzlmod",
         "//:constants.bzl",
         "//:non_module_dev_deps.bzl",
         "//buildifier:all_files",
