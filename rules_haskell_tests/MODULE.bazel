@@ -97,10 +97,10 @@ use_repo(
     "c2hs_repo",
     "cgrindel_bazel_starlib",
     "com_github_bazelbuild_buildtools",
-    "rules_bazel_integration_test",
     "haskell_package_repository_dummy",
     "library_repo",
     "os_info",
+    "rules_bazel_integration_test",
     "zlib.hs",
 )
 
