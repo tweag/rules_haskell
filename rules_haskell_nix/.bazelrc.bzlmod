@@ -1,2 +1,2 @@
-common:bzlmod --experimental_enable_bzlmod
+common:bzlmod --enable_bzlmod
 common:bzlmod --registry=file://%workspace%/../registry --registry=https://bcr.bazel.build

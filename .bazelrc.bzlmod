@@ -1,2 +1,5 @@
-common:bzlmod --experimental_enable_bzlmod
+# Disable bzlmod explicitly by default, see https://github.com/tweag/rules_haskell/issues/1977
+common --noenable_bzlmod
+
+common:bzlmod --enable_bzlmod
 common:bzlmod --registry=file:%workspace%/registry --registry=https://bcr.bazel.build
