@@ -10,33 +10,6 @@ import sys
 from urllib.request import urlopen
 from distutils.version import StrictVersion
 
-# All GHC versions we generate.
-VERSIONS = [
-    "9.6.3",
-    "9.6.2",
-    "9.6.1",
-    "9.4.7",
-    "9.4.6",
-    "9.4.5",
-    "9.2.8",
-    "9.2.5",
-    "9.2.4",
-    "9.2.3",
-    "9.2.1",
-    "9.0.2",
-    "9.0.1",
-    "8.10.7",
-    "8.10.4",
-    "8.10.3",
-    "8.8.4",
-    "8.6.5",
-    "8.4.4",
-    "8.4.3",
-    "8.4.2",
-    "8.4.1",
-    "8.2.2",
-]
-
 # Sometimes bindists have errors and are updated by new bindists.
 # This dict is used to keep a version -> corrected_version mapping.
 VERSIONS_CORRECTED = {}
@@ -109,12 +82,11 @@ def select_one(xs, ys):
     return items[0] if items else xs[0]
 
 
-# Main.
-if __name__ == "__main__":
+def fetch_hashsums(versions):
     # Fetch all hashsum files
     # grab : { version: { arch: sha256 } }
     grab = {}
-    for ver in VERSIONS:
+    for ver in versions:
         eprint("fetching " + ver)
         url = link_for_sha256_file(ver)
         res = urlopen(url)
@@ -143,6 +115,10 @@ if __name__ == "__main__":
                 file=sys.stderr,
             )
 
+    return grab
+
+
+def fetch_bindists(grab):
     # fetch the arches we need and create the GHC_BINDISTS dict
     # ghc_bindists : { version: { bazel_arch: (tarball_url, sha256_hash) } }
     ghc_bindists = {}
@@ -159,17 +135,33 @@ if __name__ == "__main__":
                 )
         ghc_bindists[ver] = arch_dists
 
-    ghc_versions = {
-        version: ghc_bindists[version]
-        for version in sorted(ghc_bindists.keys(), key=StrictVersion)
-    }
+    return ghc_bindists
 
+
+# Main.
+if __name__ == "__main__":
     working_directory = os.environ.get("BUILD_WORKING_DIRECTORY", ".")
 
     with open(
         os.path.join(working_directory, "haskell/private/ghc_bindist_generated.json"),
-        "w",
+        "r+",
         encoding="utf-8",
     ) as json_file:
+        ghc_versions = json.load(json_file)
+
+        # All GHC versions we generate.
+        versions = ghc_versions.keys()
+
+        grab = fetch_hashsums(versions)
+
+        ghc_bindists = fetch_bindists(grab)
+
+        ghc_versions = {
+            version: ghc_bindists[version]
+            for version in sorted(ghc_bindists.keys(), key=StrictVersion)
+        }
+
+        json_file.truncate(0)
+        json_file.seek(0)
         json.dump(ghc_versions, json_file, indent=4)
         json_file.write("\n")
