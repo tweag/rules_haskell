@@ -10,6 +10,7 @@ import GHC.Driver.Plugins
 import GHC.Core
 import GHC.Core.Opt.Monad
 import GHC.Unit.Module.ModGuts
+import GHC.Plugins
 import System.Process (readProcess)
 
 

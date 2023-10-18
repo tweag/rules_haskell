@@ -6,6 +6,7 @@ import GHC.Core
 import GHC.Core.Opt.Monad
 import GHC.Types.Literal
 import GHC.Unit.Module.ModGuts
+import GHC.Plugins
 import System.Process (readProcess)
 
 plugin :: Plugin
