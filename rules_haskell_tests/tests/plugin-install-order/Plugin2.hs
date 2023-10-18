@@ -3,6 +3,7 @@ module Plugin2 (plugin) where
 import Control.Monad (when)
 import GHC.Driver.Plugins
 import GHC.Core.Opt.Monad
+import GHC.Plugins
 import System.Process (readProcess)
 
 plugin :: Plugin

@@ -8,6 +8,7 @@ import qualified Data.ByteString.Char8 as Char8
 import GHC.Driver.Plugins
 import GHC.Core
 import GHC.Core.Opt.Monad
+import GHC.Plugins
 import GHC.Types.Literal
 import GHC.Unit.Module.ModGuts
 import System.Process (readProcess)
