@@ -1,6 +1,6 @@
 module(
     name = "rules_haskell_tests",
-    version = "0.16",
+    version = "0.17",
 )
 
 bazel_dep(
@@ -9,11 +9,11 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_haskell_nix",
-    version = "0.16",
+    version = "0.17",
 )
 bazel_dep(
     name = "rules_haskell",
-    version = "0.16",
+    version = "0.17",
 )
 bazel_dep(
     name = "rules_license",

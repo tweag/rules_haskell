@@ -225,9 +225,9 @@ load(
 # Download rules_haskell and make it accessible as "@rules_haskell".
 http_archive(
     name = "rules_haskell",
-    sha256 = "2a07b55c30e526c07138c717b0343a07649e27008a873f2508ffab3074f3d4f3",
-    strip_prefix = "rules_haskell-0.16",
-    url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.16.tar.gz",
+    sha256 = "298f6f0db23391274b4eca215daa01797d05699469048ef94540d5829b466377",
+    strip_prefix = "rules_haskell-0.17",
+    url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.17.tar.gz",
 )
 
 load(

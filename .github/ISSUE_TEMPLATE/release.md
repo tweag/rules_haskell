@@ -27,6 +27,7 @@ about: Steps to work through in order to publish a new release
       [`docs/haskell-use-cases`][usecases] to the current release
       preparation branch; comment out the checksum. (n.b., Search for
       `http_archive` in these files.)
+- [ ] Update the version of the modules in `MODULE.bazel` files
 - [ ] Push the `release-<major>.<minor>` branch and open a **draft** PR
       to verify CI is green.
 - [ ] Create a release tag (`v<major>.<minor>`) on the release
