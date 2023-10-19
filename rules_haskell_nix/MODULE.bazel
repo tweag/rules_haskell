@@ -21,7 +21,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.6",
+    version = "0.0.8",
 )
 bazel_dep(name = "bazel_skylib", version = "1.4.2")
 
