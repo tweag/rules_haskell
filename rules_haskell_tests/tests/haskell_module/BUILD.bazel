@@ -1,0 +1,22 @@
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/haskell_module/attr_merging:all_files",
+        "//tests/haskell_module/binary:all_files",
+        "//tests/haskell_module/binary-custom-main:all_files",
+        "//tests/haskell_module/dep-narrowing:all_files",
+        "//tests/haskell_module/dep-narrowing-th:all_files",
+        "//tests/haskell_module/hs-boot:all_files",
+        "//tests/haskell_module/hsc:all_files",
+        "//tests/haskell_module/library:all_files",
+        "//tests/haskell_module/library-dep:all_files",
+        "//tests/haskell_module/multiple:all_files",
+        "//tests/haskell_module/nested:all_files",
+        "//tests/haskell_module/plugin:all_files",
+        "//tests/haskell_module/repl:all_files",
+        "//tests/haskell_module/th:all_files",
+        "//tests/haskell_module/tools:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

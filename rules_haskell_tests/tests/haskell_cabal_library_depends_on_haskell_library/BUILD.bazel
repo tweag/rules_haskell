@@ -1,0 +1,41 @@
+# This is a test where a haskell_cabal_library depends on a regular haskell_library
+
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_toolchain_library",
+)
+
+package(default_testonly = 1)
+
+haskell_toolchain_library(name = "base")
+
+haskell_cabal_library(
+    name = "lib",
+    package_name = "lib",
+    srcs = [
+        "Lib.hs",
+        "lib.cabal",
+    ],
+    tags = ["skip_profiling"],  # This test fails with profiling at the moment as cabal seems to be looking for a non profiling version of :other_lib.
+    version = "0.1.0.0",
+    deps = [":other_lib"],
+)
+
+haskell_library(
+    name = "other_lib",
+    srcs = ["OtherLib.hs"],
+    version = "0.1",
+    # Having a version number is necessary for libraries which are
+    # depencencies of a haskell_cabal_{library,binary}. Otherwise the
+    # library is not found in the library database.
+    deps = [":base"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

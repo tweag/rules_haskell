@@ -3,6 +3,7 @@ on:
   push:
     paths:
     - 'haskell/ghc_bindist.bzl'
+    - 'haskell/private/ghc_bindist_generated.json'
     - 'haskell/assets/**'
   workflow_dispatch:
 env:
@@ -16,10 +17,10 @@ jobs:
     outputs:
       ghc-matrix: ${{ steps.set-ghc-versions.outputs.ghc-matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: set-ghc-versions
         name: Extract from gen_ghc_bindist
-        run: python tests/extract_from_ghc_bindist.py
+        run: python .github/extract_from_ghc_bindist.py
   test-ghc-patches:
     name: Test GHC patches
     needs: find-ghc-version
@@ -36,7 +37,7 @@ jobs:
           sudo apt-get install --no-install-recommends -yy libtinfo5
           sudo apt-get clean
         if: ${{ matrix.os == 'ubuntu-latest' }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Mount Bazel cache
         uses: actions/cache@v3
         with:
@@ -75,4 +76,5 @@ jobs:
           export PATH=$HOME/bazel:$PATH
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           export GHC_VERSION=${{ matrix.ghc-version }}
+          cd rules_haskell_tests
           ./tests/run-start-script.sh --use-bindists

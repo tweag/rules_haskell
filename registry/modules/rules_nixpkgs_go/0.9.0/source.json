@@ -1,0 +1,5 @@
+{
+    "integrity" : "sha256-cUoL7EXSO/wjYE3l0pKmj24SJyswP7e/M1Z9KHj1JhI=",
+    "strip_prefix" : "rules_nixpkgs-7e627d76ba65d6c42586fc265e46bd370672b4eb/toolchains/go",
+    "url": "https://github.com/tweag/rules_nixpkgs/archive/7e627d76ba65d6c42586fc265e46bd370672b4eb.tar.gz"
+}

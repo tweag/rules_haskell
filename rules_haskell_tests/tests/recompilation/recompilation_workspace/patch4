@@ -1,0 +1,11 @@
+diff --git a/src/B.hs b/src/B.hs
+index 1e79718d..181a011b 100644
+--- a/src/B.hs
++++ b/src/B.hs
+@@ -1,5 +1,5 @@
+ module B where
+-import qualified A (f, g, T)
++import qualified A (f, g, T, a)
+
+ f :: A.T -> A.T
+ f x = A.f (A.g x) x

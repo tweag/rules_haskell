@@ -1,0 +1,30 @@
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base")
+
+# This test uses a library from another module (which calls the runfiles library).
+# In this case this library must use the createFromCurrentFile
+# function or the `haskell_runfiles` wrapper rule.
+haskell_binary(
+    name = "bin",
+    srcs = [":Main.hs"],
+    deps = [
+        ":base",
+        "@other_module//:lib",
+    ],
+)
+
+# This test directly calls a binary from the other module
+genrule(
+    name = "gen",
+    srcs = [],
+    outs = ["out"],
+    cmd = """$(location @other_module//:bin) > $@""",
+    tools = [
+        "@other_module//:bin",
+    ],
+)

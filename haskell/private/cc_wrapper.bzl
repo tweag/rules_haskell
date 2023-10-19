@@ -1,4 +1,4 @@
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_python//python:defs.bzl", "py_binary")
 
@@ -82,7 +82,7 @@ _cc_wrapper = rule(
         ),
     },
     fragments = ["cpp"],
-    toolchains = ["@rules_cc//cc:toolchain_type"],
+    toolchains = use_cc_toolchain(),
 )
 
 def cc_wrapper(name, **kwargs):
@@ -110,7 +110,7 @@ def cc_wrapper(name, **kwargs):
         python_version = "PY3",
         main = name + ".py",
         deps = [
-            "@bazel_tools//tools/python/runfiles",
+            "@rules_python//python/runfiles",
         ],
         **kwargs
     )

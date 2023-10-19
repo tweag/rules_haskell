@@ -65,11 +65,11 @@ def generate_cabal_paths_module(component_name, ghc_version, is_windows, cabal_b
     package_version = None
     cabal_package_name = None
     for line in cabal_file_content:
-        m = re.match("version:\s*([\d.]+)", line, re.IGNORECASE)
+        m = re.match(r"version:\s*([\d.]+)", line, re.IGNORECASE)
         if m :
             package_version = m.group(1)
             continue
-        m = re.match("name:\s*([a-zA-Z0-9\-]+)", line, re.IGNORECASE)
+        m = re.match(r"name:\s*([a-zA-Z0-9\-]+)", line, re.IGNORECASE)
         if m :
             cabal_package_name = m.group(1)
 
@@ -109,7 +109,7 @@ getSysconfDir = return $ prefix `joinFileName` sysconfdir
     else:
         path_separator = '/'
         is_path_separator_definition = """isPathSeparator c = c == '/'"""
-        other_functions = """
+        other_functions = r"""
 getPrefixDirReloc :: FilePath -> IO FilePath
 getPrefixDirReloc dirRel = do
     exePath <- getExecutablePath
@@ -129,7 +129,7 @@ getSysconfDir = catchIO (getEnv $ packageName++"_sysconfdir") (\_ -> getPrefixDi
                                 if supports_rebindable_syntax else "")
     if supports_cpp:
         cpp_pragma = "{-# LANGUAGE CPP #-}"
-        catch_io_type = """
+        catch_io_type = r"""
 #if defined(VERSION_base)
 
 #if MIN_VERSION_base(4,0,0)
@@ -148,7 +148,7 @@ catchIO :: IO a -> (Exception.IOException -> IO a) -> IO a
 catchIO :: IO a -> (Exception.IOException -> IO a) -> IO a
     """
 
-    cabal_paths_file_content = """
+    cabal_paths_file_content = r"""
 -- Based on the Paths_pkg.template.hs file from cabal.
 -- We are only interested in the relocatable case.
 {cpp_pragma}

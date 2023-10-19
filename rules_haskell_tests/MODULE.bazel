@@ -1,0 +1,456 @@
+module(
+    name = "rules_haskell_tests",
+    version = "0.17",
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_core",
+    version = "0.9.0",
+)
+bazel_dep(
+    name = "rules_haskell_nix",
+    version = "0.17",
+)
+bazel_dep(
+    name = "rules_haskell",
+    version = "0.17",
+)
+bazel_dep(
+    name = "rules_license",
+    version = "0.0.7",
+)
+bazel_dep(
+    name = "rules_nixpkgs_cc",
+    version = "0.9.0",
+)
+bazel_dep(
+    name = "rules_nixpkgs_python",
+    version = "0.9.0",
+)
+bazel_dep(
+    name = "rules_python",
+    version = "0.21.0",
+)
+bazel_dep(
+    name = "rules_nixpkgs_go",
+    version = "0.9.0",
+)
+bazel_dep(
+    name = "rules_nixpkgs_posix",
+    version = "0.9.0",
+)
+bazel_dep(
+    name = "rules_nixpkgs_nodejs",
+    version = "0.9.0",
+)
+bazel_dep(
+    name = "platforms",
+    version = "0.0.6",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.8",
+)
+bazel_dep(
+    name = "rules_sh",
+    version = "0.3.0",
+)
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.4.2",
+)
+bazel_dep(
+    name = "rules_java",
+    version = "6.1.0",
+)
+bazel_dep(
+    name = "rules_nodejs",
+    version = "5.8.2",
+)
+bazel_dep(
+    name = "aspect_rules_js",
+    version = "1.31.0",
+)
+bazel_dep(
+    name = "aspect_bazel_lib",
+    version = "1.31.2",
+)
+bazel_dep(
+    name = "rules_proto",
+    version = "5.3.0-21.7",
+)
+bazel_dep(
+    name = "protobuf",
+    version = "21.7",
+    repo_name = "com_google_protobuf",
+)
+
+ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_default_version")
+use_repo(
+    ghc_version,
+    "rules_haskell_ghc_version",
+)
+
+non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
+use_repo(
+    non_module_deps,
+    "c2hs_repo",
+    "cgrindel_bazel_starlib",
+    "com_github_bazelbuild_buildtools",
+    "haskell_package_repository_dummy",
+    "library_repo",
+    "os_info",
+    "rules_bazel_integration_test",
+    "zlib.hs",
+)
+
+non_modules_deps_1 = use_extension("//:non_module_deps_1.bzl", "non_module_deps_1")
+use_repo(
+    non_modules_deps_1,
+    "asterius_bundle_linux_amd64",
+    "bazel_6",
+    "build_bazel_bazel_6_0_0",
+    "build_bazel_bazel_6_2_0",
+    "build_bazel_bazel_6_3_2",
+    "glibc_locales",
+    "linux_amd64_asterius-toolchain",
+    "nixpkgs_config_cc",
+    "nixpkgs_config_cc_info",
+    "nixpkgs_config_cc_toolchains",
+    "nixpkgs_default",
+    "nixpkgs_go_sdk",
+    "nixpkgs_go_sdk_toolchains",
+    "nixpkgs_lz4",
+    "nixpkgs_python_toolchain",
+    "toolchains_libraries",
+    "zlib.dev",
+)
+
+register_toolchains(
+    "@nixpkgs_config_cc_toolchains//:all",
+    "@nixpkgs_go_sdk_toolchains//:all",
+    "@linux_amd64_asterius-toolchain//:toolchain",
+    "@linux_amd64_asterius-toolchain//:asterius_toolchain",
+    "@linux_amd64_asterius-toolchain//:wasm_cc_toolchain",
+    "@nixpkgs_python_toolchain//:toolchain",
+)
+
+non_module_deps_2 = use_extension("//:non_module_deps_2.bzl", "non_module_deps_2")
+use_repo(
+    non_module_deps_2,
+    "Cabal",
+    "alex",
+    "ghcide",
+    "ghcide-exe",
+    "rules_haskell_stack",
+    "rules_haskell_stack_update",
+    "stackage-pinning-test",
+    "stackage-pinning-test-unpinned",
+    "stackage-zlib",
+    "stackage-zlib-unpinned",
+    "stackage_asterius",
+    "stackage_asterius-unpinned",
+)
+
+non_modules_deps_bzlmod = use_extension(
+    "//:non_module_deps_bzlmod.bzl",
+    "non_module_deps_bzlmod",
+)
+
+[
+    (
+        use_repo(
+            non_modules_deps_bzlmod,
+            "nixpkgs_nodejs_{}_{}_toolchain".format(os, arch),
+        ),
+        register_toolchains("@nixpkgs_nodejs_{}_{}_toolchain//:all".format(os, arch)),
+    )
+    for os in [
+        "linux",
+        "darwin",
+    ]
+    for arch in [
+        "amd64",
+        "arm64",
+    ]
+]
+
+register_toolchains(
+    "//tests:c2hs-toolchain",
+    "//tests:doctest-toolchain",
+    "//tests:protobuf-toolchain",
+    "//tests:protobuf-toolchain-osx_arm64",
+)
+
+# To test accessing runfiles with a library in another module
+bazel_dep(
+    name = "other_module",
+    version = "0.0.1",
+)
+local_path_override(
+    module_name = "other_module",
+    path = "tests/bzlmod_runfiles/other_module",
+)
+
+# Go setup for buildifieR
+bazel_dep(
+    name = "rules_go",
+    version = "0.39.1",
+    repo_name = "io_bazel_rules_go",
+)
+
+go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(
+    version = "1.19.7",
+)
+
+bazel_dep(
+    name = "gazelle",
+    version = "0.30.0",
+)
+
+go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
+go_deps.module(
+    path = "github.com/gogo/protobuf",
+    sum = "h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=",
+    version = "v1.3.2",
+)
+use_repo(
+    go_deps,
+    "com_github_gogo_protobuf",
+    "com_github_golang_mock",
+    "com_github_golang_protobuf",
+    "org_golang_google_genproto",
+    "org_golang_google_grpc",
+    "org_golang_google_protobuf",
+    "org_golang_x_net",
+    "org_golang_x_tools",
+)
+
+# Java dependencies for the //tests/java_classpath test
+bazel_dep(
+    name = "rules_jvm_external",
+    version = "5.1",
+)
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "rules_haskell_tests_maven",
+    artifacts = ["org.apache.spark:spark-core_2.10:1.6.0"],
+)
+use_repo(maven, "rules_haskell_tests_maven")
+
+# Bring some dependencies declared by rules_haskell module extensions into scope
+asterius = use_extension("@rules_haskell//haskell/asterius:extension.bzl", "rules_haskell_asterius")
+use_repo(
+    asterius,
+    "rules_haskell_asterius_build_setting",
+    "rules_haskell_asterius_webpack",
+)
+
+rules_haskell_dependencies = use_extension("@rules_haskell//extensions:rules_haskell_dependencies.bzl", "rules_haskell_dependencies")
+use_repo(
+    rules_haskell_dependencies,
+    "zlib",
+)
+
+haskell_toolchains = use_extension(
+    "@rules_haskell//extensions:haskell_toolchains.bzl",
+    "haskell_toolchains",
+)
+
+test_ghc_version = "9.2.5"
+
+test_ghcopts = [
+    "-XStandaloneDeriving",  # Flag used at compile time
+    "-threaded",  # Flag used at link time
+    # Used by `tests/repl-flags`
+    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+    # this is the default, so it does not harm other tests
+    "-XNoOverloadedStrings",
+]
+
+test_haddock_flags = ["-U"]
+
+test_repl_ghci_args = [
+    # The repl test will need this flag, but set by the local
+    # `repl_ghci_args`.
+    "-UTESTS_TOOLCHAIN_REPL_FLAGS",
+    # The repl test will need OverloadedString
+    "-XOverloadedStrings",
+]
+
+test_cabalopts = [
+    # Used by `tests/cabal-toolchain-flags`
+    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
+    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
+]
+
+cabalopts_windows = test_cabalopts + [
+    # To avoid ghcide linking errors with heapsize on Windows of the form
+    #
+    #   unknown symbol `heap_view_closurePtrs'
+    #
+    # See https://github.com/haskell/ghcide/pull/954
+    "--disable-library-for-ghci",
+]
+
+haskell_toolchains.bindists(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    haddock_flags = test_haddock_flags,
+    repl_ghci_args = test_repl_ghci_args,
+)
+
+# We cannot configure cabalopts depending on the platform before calling haskell_toolchains.bindists:
+# https://github.com/bazelbuild/bazel/issues/17880
+# So we add toolchains for windows separately, they take precedence over the one generated by
+# haskell_toolchains.bindists and use the `cabalopts_windows` variable.
+[
+    haskell_toolchains.bindist(
+        cabalopts = cabalopts_windows,
+        ghcopts = test_ghcopts,
+        haddock_flags = test_haddock_flags,
+        repl_ghci_args = test_repl_ghci_args,
+        target = target,
+        version = test_ghc_version,
+    )
+    for target in [
+        "windows_amd64",
+        "windows_arm64",
+    ]
+]
+
+nix_haskell_toolchains = use_extension(
+    "@rules_haskell_nix//extensions:nix_haskell_toolchains.bzl",
+    "nix_haskell_toolchains",
+)
+nix_haskell_toolchains.new(
+    attribute_path = "",
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    haddock_flags = test_haddock_flags,
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
+    repl_ghci_args = test_repl_ghci_args,
+    repository = "@nixpkgs_default",
+    version = test_ghc_version,
+)
+
+stack_snapshot = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshot",
+)
+use_repo(
+    stack_snapshot,
+    "stackage",
+    "stackage-exe",
+    "stackage-unpinned",
+)
+stack_snapshot.snapshot(local_snapshot = "//:stackage_snapshot.yaml")
+stack_snapshot.package(
+    name = "ghc-paths",
+    vendored = "@rules_haskell//tools/ghc-paths",
+)
+stack_snapshot.package(
+    name = "proto-lens-protoc",
+    components = [
+        "lib",
+        "exe",
+    ],
+    setup_deps = ["@Cabal//:Cabal"],
+)
+
+[
+    stack_snapshot.package(
+        name = package,
+    )
+    for package in [
+        "array",
+        "base",
+        "bytestring",
+        "cabal-doctest",
+        "conduit",
+        "conduit-extra",
+        "containers",
+        "data-default-class",
+        "deepseq",
+        "directory",
+        "filepath",
+        "ghc-check",
+        "ghc-heap",
+        "language-c",
+        "lens-family",
+        "lens-family-core",
+        "mtl",
+        "network",
+        "optparse-applicative",
+        "process",
+        "profunctors",
+        "proto-lens",
+        "proto-lens-runtime",
+        "safe-exceptions",
+        "streaming",
+        "temporary",
+        "text",
+        "text-show",
+        "vector",
+        "void",
+    ]
+]
+
+stack_snapshot.package(
+    name = "polysemy",
+    setup_deps = ["@stackage//:cabal-doctest"],
+)
+
+[
+    stack_snapshot.package(
+        name = package,
+        # See https://github.com/tweag/rules_haskell/issues/1871
+        setup_deps = ["@Cabal//:Cabal"],
+    )
+    for package in [
+        "c2hs",
+        "doctest",
+        "happy",
+        "hspec",
+        "hspec-core",
+        "hspec-discover",
+        "hspec-expectations",
+    ]
+]
+
+stack_snapshot.package(
+    name = "attoparsec",
+    components =
+        [
+            # attoparsec contains an internal library which is not exposed publicly,
+            # but required to build the public library, hence the declaration of
+            # those 2 components, as well as the explicit declaration of the
+            # dependency between them.
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    components_dependencies = {
+        "lib:attoparsec": ["lib:attoparsec-internal"],
+    },
+)
+
+# This is not required, as `stack_snapshot` would build alex
+# automatically, however it is used as a test for user provided
+# `tools`. We also override alex's components to avoid building it
+# twice.
+stack_snapshot.tools(
+    labels = ["@alex"],
+)
+stack_snapshot.package(
+    name = "alex",
+    components = [],
+)
+stack_snapshot.stack_snapshot_json(
+    label = "//:stackage_snapshot.json",
+    os = [
+        "linux",
+        "mac",
+    ],
+)

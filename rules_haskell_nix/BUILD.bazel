@@ -1,0 +1,22 @@
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
+
+buildifier(
+    name = "buildifier",
+    buildifier = "@buildifier//:buildifier",
+)
+
+buildifier_test(
+    name = "buildifier_test",
+    size = "small",
+    srcs = glob([
+        "**/*.bzl",
+        "**/*.bazel",
+        "WORKSPACE",
+        "WORKSPACE.bzlmod",
+    ]),
+    buildifier = "@buildifier//:buildifier",
+    tags = [
+        "dont_test_on_windows",
+    ],
+    verbose = True,
+)

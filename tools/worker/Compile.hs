@@ -6,27 +6,36 @@ module Compile (compile) where
 import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Data.List
+import Data.Maybe (catMaybes)
 import System.FilePath
 import System.Exit
 
 import GHC
 import GHC.Paths ( libdir )
-import DynFlags ( defaultFatalMessager, defaultFlushOut, Option(..) )
-import DriverPhases
-import DriverPipeline ( compileFile, oneShot )
-import Util
+import GHC.Driver.Session ( defaultFatalMessager, defaultFlushOut, Option(..) )
+import GHC.Driver.Phases
+import GHC.Driver.Pipeline ( compileFile, oneShot )
+import GHC.Utils.Misc
+
+#if MIN_VERSION_GLASGOW_HASKELL(9,4,1,0)
+noStopPhase :: StopPhase
+noStopPhase = NoStop
+#else
+noStopPhase :: Phase
+noStopPhase = StopLn
+#endif
 
 compile :: [String] -> IO ()
 compile flags =
     defaultErrorHandler defaultFatalMessager defaultFlushOut $ do
       runGhc (Just libdir) $ do
-
+        logger <- getLogger
         -- Parse flags
         dflags <- getSessionDynFlags
         (dflags2, fileish_args, _warns) <-
-          parseDynamicFlags dflags (map noLoc flags)
+          parseDynamicFlags logger dflags (map noLoc flags)
 
-        -- Normilize paths
+        -- Normalize paths
         let
           normalise_hyp fp
             | strt_dot_sl && "-" `isPrefixOf` nfp = cur_dir ++ nfp
@@ -61,17 +70,26 @@ doMake srcs  = do
     -- This means that "ghc Foo.o Bar.o -o baz" links the program as
     -- we expect.
     if (null hs_srcs)
-       then liftIO (oneShot hsc_env StopLn srcs)
+       then liftIO (oneShot hsc_env noStopPhase srcs)
        else do
 
-    o_files <- mapM (\x -> liftIO $ compileFile hsc_env StopLn x)
+    o_files <- mapM (\x -> liftIO $ compileFile hsc_env noStopPhase x)
                  non_hs_srcs
+#if MIN_VERSION_GLASGOW_HASKELL(9,4,1,0)
+    let o_files' = catMaybes o_files
+#else
+    let o_files' = o_files
+#endif
     dflags <- GHC.getSessionDynFlags
-    let dflags' = dflags { ldInputs = map (FileOption "") o_files
+
+    let dflags' = dflags { ldInputs = map (FileOption "") o_files'
                                       ++ ldInputs dflags }
     _ <- GHC.setSessionDynFlags dflags'
-
+#if MIN_VERSION_GLASGOW_HASKELL(9,4,1,0)
+    targets <- mapM (\(s, p) -> GHC.guessTarget s Nothing p) hs_srcs
+#else
     targets <- mapM (uncurry GHC.guessTarget) hs_srcs
+#endif
     GHC.setTargets targets
     ok_flag <- GHC.load LoadAllTargets
 

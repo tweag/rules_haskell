@@ -23,7 +23,7 @@ The full reference documentation for rules is at https://haskell.build.
 
 ## Setup
 
-You'll need [Bazel >= 4.0][bazel-getting-started] installed.
+You'll need [Bazel >= 5.0][bazel-getting-started] installed.
 
 If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
 
@@ -262,6 +262,20 @@ This could be caused by a dependency on the `ghc-paths` package which bakes the 
 
 You can use `@rules_haskell//tools/ghc-paths` as a drop-in replacement to work around this issue. See `tools/ghc-paths/README.md` for further details.
 
+### Windows: protoc.exe exits with an error
+
+If you see
+```
+protoc.exe: error while loading shared libraries: api-ms-win-crt-filesystem-l1-1-0.dll: cannot open shared object file: No such file or directory
+```
+or
+```
+Process finished with exit code -1073741515 (0xC0000135)
+```
+this usually means the executable cannot find a DLL it depends on (not necessarily the DLL that is mentioned in the error message).
+
+Newer Windows GHC distributions (>= 9.4), come with clang as the C/C++ compiler, and executables produced using that toolchain depend on the libc++ DLL, which is found in the `mingw\bin` directory of the bindist. You can pass `--proto_compiler @rules_haskell//tests:protoc` as a build flag to bazel as a workaround (see [tests/protoc.bzl]).
+
 ## For `rules_haskell` developers
 
 ### Configuring your platform
@@ -342,20 +356,20 @@ on every development system (`python`, `ghc`, `go`, …).
 To build and run tests locally, execute:
 
 ```
-$ bazel test //...
+$ bazel test //... && cd rules_haskell_tests && bazel test //...
 ```
 
 Starlark code in this project is formatted according to the output of
 [buildifier]. You can check that the formatting is correct using:
 
 ```
-$ bazel run //:buildifier
+$ bazel run //buildifier && cd rules_haskell_tests && bazel run //buildifier
 ```
 
 If tests fail then run the following to fix the formatting:
 
 ```
-$ git rebase --exec "bazel run //:buildifier-fix" <first commit>
+$ git rebase --exec "bazel run //buildifier:buildifier-fix && cd rules_haskell_tests && bazel run //buildifier:buildifier-fix" <first commit>
 ```
 
 where `<first commit>` is the first commit in your pull request.

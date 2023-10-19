@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE")
 load(
     ":private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
@@ -17,11 +18,9 @@ load(
     "resolve_labels",
 )
 load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
-load(":private/ghc_bindist_generated.bzl", "GHC_BINDIST")
+load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
 
-# If you change this, change stackage's version in the start script
-# (see stackage.org).
-_GHC_DEFAULT_VERSION = "8.10.7"
+_GHC_DEFAULT_VERSION = DEFAULT_GHC_VERSION
 
 GHC_BINDIST_STRIP_PREFIX = \
     {
@@ -35,11 +34,27 @@ GHC_BINDIST_DOCDIR = \
     {
     }
 
+LOCAL_PYTHON_REPO_NAME = "rules_haskell_python_local"
+
 def _split_version(version):
     vs = version.split(".")
     if len(vs) != 3:
         fail("GHC version should be a triple: {}".format(version))
     return (int(vs[0]), int(vs[1]), int(vs[2]))
+
+def _load_bindists(mctx):
+    bindist_json = mctx.read(Label("@rules_haskell//haskell:private/ghc_bindist_generated.json"))
+    return json.decode(bindist_json)
+
+def bindist_info_for_version(ctx, version):
+    GHC_BINDIST = _load_bindists(ctx)
+
+    bindist = GHC_BINDIST.get(version or _GHC_DEFAULT_VERSION)
+
+    if bindist == None:
+        fail("Binary distribution of GHC {} not available.".format(version))
+
+    return bindist
 
 def _ghc_bindist_impl(ctx):
     filepaths = resolve_labels(ctx, [
@@ -51,10 +66,12 @@ def _ghc_bindist_impl(ctx):
     target = ctx.attr.target
     os, _, arch = target.partition("_")
 
-    if GHC_BINDIST[version].get(target) == None:
+    bindist = bindist_info_for_version(ctx, version)
+
+    if target not in bindist:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
     else:
-        url, sha256 = GHC_BINDIST[version][target]
+        url, sha256 = bindist[target]
 
     bindist_dir = ctx.path(".")  # repo path
 
@@ -76,6 +93,8 @@ def _ghc_bindist_impl(ctx):
             stripPrefix += "-{}-unknown-mingw32".format(arch_suffix)
         elif os == "darwin" and version_tuple >= (9, 0, 2):
             stripPrefix += "-{}-apple-darwin".format(arch_suffix)
+        elif os == "linux" and version_tuple >= (9, 4, 1):
+            stripPrefix += "-{}-unknown-linux".format(arch_suffix)
 
     ctx.download_and_extract(
         url = url,
@@ -103,6 +122,9 @@ def _ghc_bindist_impl(ctx):
         # on //tests/haddock:haddock-lib-b.
         dll_a_libs.append("libz.dll.a")
 
+        # Similarly causes loading issues when using libc++ with clang on GHC >= 9.4
+        dll_a_libs.append("libc++.dll.a")
+
         # It's hard to guesss the paths of these libraries, so we have to use
         # dir to recursively find them.
         for lib in dll_a_libs:
@@ -110,19 +132,53 @@ def _ghc_bindist_impl(ctx):
             for path in result.stdout.splitlines():
                 ctx.execute(["cmd", "/c", "del", path.strip()], working_directory = unpack_dir)
 
+        # Recent GHC versions need to be patched to
+        # work around https://gitlab.haskell.org/ghc/ghc/-/issues/23476 where ghc-pkg resolves
+        # haddock-html and haddock-interfaces to non-existing paths, because the ${pkgroot}
+        # relative path refers to a directory in the parent directory of the distribution.
+        if version_tuple >= (9, 0, 1):
+            ctx.report_progress("fixing package-db paths")
+            pkgdb = execute_or_fail_loudly(ctx, [paths.join("bin", "ghc"), "--print-global-package-db"]).stdout.splitlines()[0]
+
+            config_files = execute_or_fail_loudly(ctx, ["where", "/r", pkgdb.strip(), "*.conf"]).stdout
+
+            repo_root = str(ctx.path("."))
+
+            for conf in config_files.splitlines():
+                # `conf` is always absolute, relativize it to the repo_root
+                conf_path = str(ctx.path(conf.strip()))
+                conf_path = conf_path[len(repo_root) + 1:]
+
+                config = ctx.read(conf_path)
+                if "${pkgroot}/../../" in config:
+                    ctx.file(conf_path, content = config.replace("${pkgroot}/../../", "${pkgroot}/../"))
+
     # We apply some patches, if needed.
     patch_args = list(ctx.attr.patch_args)
     if unpack_dir:
         patch_args.extend(["-d", unpack_dir])
     patch(ctx, patch_args = patch_args)
 
+    is_hadrian_dist = ctx.path(unpack_dir).get_child("config.mk.in").exists
+
     # On Windows the bindist already contains the built executables
     if os != "windows":
         # IMPORTANT: all these scripts have to be compatible with BSD
         # tools! This means that sed -i always takes an argument.
-        execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
-        execute_or_fail_loudly(ctx, ["rm", "-f", "mk/config.mk.in.bak"], working_directory = unpack_dir)
+
+        if is_hadrian_dist:
+            ctx.file(paths.join(unpack_dir, "relocatable.mk"), content = """
+RelocatableBuild := YES
+include Makefile""")
+            make_args = ["-f", "relocatable.mk"]
+        else:
+            make_args = []
+
+            execute_or_fail_loudly(ctx, ["sed", "-e", "s/RelocatableBuild = NO/RelocatableBuild = YES/", "-i.bak", "mk/config.mk.in"], working_directory = unpack_dir)
+            execute_or_fail_loudly(ctx, ["rm", "-f", "mk/config.mk.in.bak"], working_directory = unpack_dir)
+
         execute_or_fail_loudly(ctx, ["./configure", "--prefix", bindist_dir.realpath], working_directory = unpack_dir)
+
         make_loc = ctx.which("make")
         if not make_loc:
             fail("It looks like the build-essential package might be missing, because there is no make in PATH.  Are the required dependencies installed?  https://rules-haskell.readthedocs.io/en/latest/haskell.html#before-you-begin")
@@ -135,7 +191,7 @@ def _ghc_bindist_impl(ctx):
 
         execute_or_fail_loudly(
             ctx,
-            ["make", "install"],
+            ["make", "install"] + make_args,
             # Necessary for deterministic builds on macOS. See
             # https://blog.conan.io/2019/09/02/Deterministic-builds-with-C-C++.html.
             # The proper fix is for the GHC bindist to always use ar
@@ -146,7 +202,9 @@ def _ghc_bindist_impl(ctx):
             environment = {"ZERO_AR_DATE": "1"},
             working_directory = unpack_dir,
         )
-        ctx.file(paths.join(unpack_dir, "patch_bins"), executable = True, content = r"""#!/usr/bin/env bash
+
+        if not is_hadrian_dist:
+            ctx.file(paths.join(unpack_dir, "patch_bins"), executable = True, content = r"""#!/usr/bin/env bash
 find bin -type f -print0 | xargs -0 \
 grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
     sed -i.bak \
@@ -157,9 +215,9 @@ find bin -type f -print0 | xargs -0 \
 grep --files-with-matches --null {bindist_dir} | xargs -0 -n1 \
 rm -f
 """.format(
-            bindist_dir = bindist_dir.realpath,
-        ))
-        execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
+                bindist_dir = bindist_dir.realpath,
+            ))
+            execute_or_fail_loudly(ctx, [paths.join(".", unpack_dir, "patch_bins")])
 
     # As the patches may touch the package DB we regenerate the cache.
     if len(ctx.attr.patches) > 0:
@@ -170,11 +228,13 @@ rm -f
         libdir = GHC_BINDIST_LIBDIR[version][target]
     elif os == "darwin" and version_tuple >= (9, 0, 2):
         libdir = "lib/lib"
+    elif os == "linux" and version_tuple >= (9, 4, 1):
+        libdir = "lib/lib"
 
     docdir = "doc"
     if GHC_BINDIST_DOCDIR.get(version) != None and GHC_BINDIST_DOCDIR[version].get(target) != None:
         docdir = GHC_BINDIST_DOCDIR[version][target]
-    elif os == "windows" and version_tuple >= (9, 0, 1):
+    elif os == "windows" and version_tuple >= (9, 0, 1) and version_tuple < (9, 4, 1):
         docdir = "docs"
 
     toolchain_libraries = pkgdb_to_bzl(ctx, filepaths, libdir)["file_content"]
@@ -196,6 +256,9 @@ rm -f
         cabalopts = ctx.attr.cabalopts,
         locale = repr(locale),
     )
+
+    is_clang = ctx.path(paths.join(unpack_dir, "mingw", "bin", "clang.exe")).exists
+
     ctx.template(
         "BUILD",
         filepaths["@rules_haskell//haskell:ghc.BUILD.tpl"],
@@ -203,6 +266,7 @@ rm -f
             "%{toolchain_libraries}": toolchain_libraries,
             "%{toolchain}": toolchain,
             "%{docdir}": docdir,
+            "%{is_clang}": str(is_clang),
         },
         executable = False,
     )
@@ -213,7 +277,6 @@ _ghc_bindist = repository_rule(
     attrs = {
         "version": attr.string(
             default = _GHC_DEFAULT_VERSION,
-            values = GHC_BINDIST.keys(),
             doc = "The desired GHC version",
         ),
         "target": attr.string(),
@@ -249,8 +312,8 @@ _ghc_bindist = repository_rule(
     },
 )
 
-def _ghc_bindist_toolchain_impl(ctx):
-    os, _, arch = ctx.attr.target.partition("_")
+def ghc_bindist_toolchain_declaration(target, bindist_name, toolchain_name):
+    os, _, arch = target.partition("_")
     os_constraint = {
         "darwin": "osx",
         "linux": "linux",
@@ -265,21 +328,29 @@ def _ghc_bindist_toolchain_impl(ctx):
         "@platforms//cpu:{}".format(cpu_constraint),
     ]
     target_constraints = exec_constraints
-    ctx.file(
-        "BUILD",
-        executable = False,
-        content = """
+    return """
 toolchain(
-    name = "toolchain",
+    name = "{toolchain_name}",
     toolchain_type = "@rules_haskell//haskell:toolchain",
     toolchain = "@{bindist_name}//:toolchain-impl",
     exec_compatible_with = {exec_constraints},
     target_compatible_with = {target_constraints},
 )
-        """.format(
+""".format(
+        toolchain_name = toolchain_name,
+        bindist_name = bindist_name,
+        exec_constraints = exec_constraints,
+        target_constraints = target_constraints,
+    )
+
+def _ghc_bindist_toolchain_impl(ctx):
+    ctx.file(
+        "BUILD",
+        executable = False,
+        content = ghc_bindist_toolchain_declaration(
+            target = ctx.attr.target,
             bindist_name = ctx.attr.bindist_name,
-            exec_constraints = exec_constraints,
-            target_constraints = target_constraints,
+            toolchain_name = "toolchain",
         ),
     )
 
@@ -292,6 +363,50 @@ _ghc_bindist_toolchain = repository_rule(
     },
 )
 
+def _windows_cc_toolchain_impl(repository_ctx):
+    repository_ctx.file("BUILD.bazel", executable = False, content = """
+toolchain(
+    name = "windows_cc_toolchain",
+    exec_compatible_with = [
+      "@platforms//os:windows",
+      "@platforms//cpu:x86_64"
+    ],
+    target_compatible_with = [
+      "@platforms//os:windows",
+      "@platforms//cpu:x86_64"
+    ],
+    toolchain = "@{name}//:cc-compiler-mingw64",
+    toolchain_type = "{cc_toolchain}",
+)
+""".format(
+        name = repository_ctx.attr.bindist_name,
+        cc_toolchain = CC_TOOLCHAIN_TYPE,
+    ))
+
+_windows_cc_toolchain = repository_rule(
+    _windows_cc_toolchain_impl,
+    local = False,
+    attrs = {
+        "bindist_name": attr.string(),
+    },
+)
+
+# Toolchains declarations for bindists used by the `haskell_toolchains` module
+# extension to register all the haskell toolchains in the same BUILD file
+def ghc_bindists_toolchain_declarations(mctx, version):
+    version = version or _GHC_DEFAULT_VERSION
+
+    bindist = bindist_info_for_version(mctx, version)
+
+    return [
+        ghc_bindist_toolchain_declaration(
+            target = target,
+            bindist_name = "rules_haskell_ghc_{}".format(target),
+            toolchain_name = "{}",
+        )
+        for target in bindist
+    ]
+
 def ghc_bindist(
         name,
         version,
@@ -301,7 +416,8 @@ def ghc_bindist(
         haddock_flags = None,
         repl_ghci_args = None,
         cabalopts = None,
-        locale = None):
+        locale = None,
+        register = True):
     """Create a new repository from binary distributions of GHC.
 
     The repository exports two targets:
@@ -336,7 +452,7 @@ def ghc_bindist(
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
-
+      register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
     """
     ghcopts = check_deprecated_attribute_usage(
         old_attr_name = "compiler_flags",
@@ -348,20 +464,16 @@ def ghc_bindist(
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
 
-    # Recent GHC versions on Windows contain a bug:
-    # https://gitlab.haskell.org/ghc/ghc/issues/16466
-    # We work around this by patching the base configuration.
+    version_tuple = _split_version(version)
+
     patches = None
     if target == "windows_amd64":
+        # Older GHC versions on Windows contain a bug:
+        # https://gitlab.haskell.org/ghc/ghc/issues/16466
+        # We work around this by patching the base configuration.
         patches = {
             "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
             "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
-            "9.0.1": ["@rules_haskell//haskell:assets/ghc_9_0_1_win.patch"],
-            "9.0.2": ["@rules_haskell//haskell:assets/ghc_9_0_2_win.patch"],
-            "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_win.patch"],
-            "9.2.3": ["@rules_haskell//haskell:assets/ghc_9_2_3_win.patch"],
-            "9.2.4": ["@rules_haskell//haskell:assets/ghc_9_2_4_win.patch"],
-            "9.2.5": ["@rules_haskell//haskell:assets/ghc_9_2_5_win.patch"],
         }.get(version)
 
     if target == "darwin_amd64":
@@ -395,7 +507,21 @@ def ghc_bindist(
         bindist_name = bindist_name,
         target = target,
     )
-    native.register_toolchains("@{}//:toolchain".format(toolchain_name))
+    if register:
+        native.register_toolchains("@{}//:toolchain".format(toolchain_name))
+    if target == "windows_amd64":
+        cc_toolchain_repo_name = "{}_cc_toolchain".format(bindist_name)
+        _windows_cc_toolchain(name = cc_toolchain_repo_name, bindist_name = bindist_name)
+        if register:
+            native.register_toolchains("@{}//:windows_cc_toolchain".format(cc_toolchain_repo_name))
+
+_GHC_AVAILABLE_TARGETS = [
+    "darwin_amd64",
+    "darwin_arm64",
+    "linux_amd64",
+    "linux_arm64",
+    "windows_amd64",
+]
 
 def haskell_register_ghc_bindists(
         version = None,
@@ -404,7 +530,9 @@ def haskell_register_ghc_bindists(
         haddock_flags = None,
         repl_ghci_args = None,
         cabalopts = None,
-        locale = None):
+        locale = None,
+        register = True,
+        targets = _GHC_AVAILABLE_TARGETS):
     """ Register GHC binary distributions for all platforms as toolchains.
 
     See [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains).
@@ -417,11 +545,12 @@ def haskell_register_ghc_bindists(
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
       cabalopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-cabalopts)
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
+      register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
+      targets: A list of target platforms to generate bindists for, e.g. `["linux_amd64", "windows_amd64"]` (default: all)
     """
     version = version or _GHC_DEFAULT_VERSION
-    if not GHC_BINDIST.get(version):
-        fail("Binary distribution of GHC {} not available.".format(version))
-    for target in GHC_BINDIST[version]:
+
+    for target in targets:
         ghc_bindist(
             name = "rules_haskell_ghc_{}".format(target),
             target = target,
@@ -432,13 +561,16 @@ def haskell_register_ghc_bindists(
             repl_ghci_args = repl_ghci_args,
             cabalopts = cabalopts,
             locale = locale,
+            register = register,
         )
     local_sh_posix_repo_name = "rules_haskell_sh_posix_local"
     if local_sh_posix_repo_name not in native.existing_rules():
-        sh_posix_configure(name = local_sh_posix_repo_name)
-    local_python_repo_name = "rules_haskell_python_local"
-    if local_python_repo_name not in native.existing_rules():
-        _configure_python3_toolchain(name = local_python_repo_name)
+        sh_posix_configure(
+            name = local_sh_posix_repo_name,
+            register = register,
+        )
+    if LOCAL_PYTHON_REPO_NAME not in native.existing_rules():
+        configure_python3_toolchain(name = LOCAL_PYTHON_REPO_NAME, register = register)
 
 def _configure_python3_toolchain_impl(repository_ctx):
     cpu = get_cpu_value(repository_ctx)
@@ -492,7 +624,7 @@ _config_python3_toolchain = repository_rule(
     environ = ["PATH"],
 )
 
-def _configure_python3_toolchain(name):
+def configure_python3_toolchain(name, register = True):
     """Autoconfigure python3 toolchain for GHC bindist
 
     `rules_haskell` requires Python 3 to build Haskell targets. Under Nix we
@@ -529,9 +661,14 @@ def _configure_python3_toolchain(name):
     does not restrict the visible installation paths. It then registers an
     appropriate Python toolchain, so that build actions themselves can still be
     sandboxed.
+
+    Args:
+      name: A unique name for the repository.
+      register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
     """
     _config_python3_toolchain(name = name)
-    native.register_toolchains("@{}//:toolchain".format(name))
+    if register:
+        native.register_toolchains("@{}//:toolchain".format(name))
 
 # Note [GHC toolchain files]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~

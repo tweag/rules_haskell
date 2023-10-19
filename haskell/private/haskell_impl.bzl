@@ -1,6 +1,7 @@
 """Implementation of core Haskell rules"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     ":providers.bzl",
     "C2hsLibraryInfo",
@@ -180,7 +181,10 @@ def _haskell_binary_common_impl(ctx, is_test):
         fail("""The attribute "narrowed_deps" can only be used if "modules" is specified in {}""".format(ctx.label))
 
     # Note [Plugin order]
-    plugin_decl = reversed(ctx.attr.plugins)
+    plugins = ctx.attr.plugins
+
+    plugin_decl = reversed(plugins) if hs.toolchain.numeric_version < [9, 4, 1] else plugins
+
     non_default_plugin_decl = reversed(ctx.attr.non_default_plugins)
     all_plugin_decls = plugin_decl + non_default_plugin_decl
 
@@ -289,6 +293,7 @@ def _haskell_binary_common_impl(ctx, is_test):
         version_macros = sets.make(),
         source_files = depset(transitive = [c.source_files, module_outputs.repl_info.source_files]),
         boot_files = depset(transitive = [c.boot_files, module_outputs.repl_info.boot_files]),
+        module_names = depset(module_map.keys()),
         extra_source_files = c.extra_source_files,
         import_dirs = set.mutable_union(c.import_dirs, module_outputs.repl_info.import_dirs),
         hs_libraries = all_deps_info.hs_libraries,
@@ -627,6 +632,7 @@ def haskell_library_impl(ctx):
         version_macros = version_macros,
         source_files = depset(transitive = [c.source_files, module_outputs.repl_info.source_files]),
         boot_files = depset(transitive = [c.boot_files, module_outputs.repl_info.boot_files]),
+        module_names = depset(exposed_modules),
         extra_source_files = c.extra_source_files,
         import_dirs = set.mutable_union(c.import_dirs, set.mutable_union(export_infos.import_dirs, module_outputs.repl_info.import_dirs)),
         hs_libraries = depset(
@@ -954,8 +960,7 @@ haskell_toolchain_libraries = rule(
             default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
     ],
     fragments = ["cpp"],
@@ -999,6 +1004,7 @@ def haskell_import_impl(ctx):
         version_macros = version_macros,
         source_files = depset(),
         boot_files = depset(),
+        module_names = depset(),
         extra_source_files = depset(),
         import_dirs = sets.make(),
         hs_libraries = depset(),

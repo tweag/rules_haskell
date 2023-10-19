@@ -1,0 +1,62 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_doc",
+    "haskell_library",
+)
+load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_library")
+
+proto_library(
+    name = "hello_world_proto",
+    srcs = ["hello_world.proto"],
+)
+
+haskell_proto_library(
+    name = "hello_world_haskell_proto",
+    tags = ["requires_dynamic"],
+    deps = [
+        ":hello_world_proto",
+    ],
+)
+
+haskell_library(
+    name = "hello_world_haskell",
+    srcs = ["HelloWorld.hs"],  # Just imports the proto and does something trivial
+    tags = ["requires_dynamic"],
+    deps = [
+        ":hello_world_haskell_proto",
+        "@stackage//:base",
+    ],
+)
+
+# Haddocks version A: depend on just the haskell_library
+haskell_doc(
+    name = "haddocks_a",
+    tags = [
+        "dont_test_on_windows",
+        "requires_dynamic",
+    ],
+    deps = [
+        ":hello_world_haskell",
+    ],
+)
+
+# Haddocks version B: depend on both haskell_library and haskell_proto_library
+haskell_doc(
+    name = "haddocks_b",
+    tags = [
+        "dont_test_on_windows",
+        "requires_dynamic",
+    ],
+    deps = [
+        ":hello_world_haskell",
+        ":hello_world_haskell_proto",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

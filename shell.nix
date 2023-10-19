@@ -18,12 +18,11 @@ mkShell {
     which
     perl
     python3
-    bazel_4
     jdk11
     # For stack_install.
     stack
     # Needed for ghcide which expects ghc in PATH.
-    haskell.packages.ghc8107.ghc
+    haskell.packages.ghc925.ghc
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
     # Needed to get correct locale for tests with encoding
@@ -37,6 +36,8 @@ mkShell {
     file
   ] ++ lib.optionals docTools [graphviz python39Packages.sphinx zip unzip];
 
+  packages = [ bazel_6 ];
+  
   shellHook = ''
     # Add nix config flags to .bazelrc.local.
     #
@@ -47,11 +48,8 @@ mkShell {
       echo "In order to build this project, you need to add the two"
       echo "following host_platform entries to your .bazelrc.local file:"
       echo
-      echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
-      echo "run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
+      echo "build --host_platform=@rules_nixpkgs_core//platforms:host"
+      echo "run --host_platform=@rules_nixpkgs_core//platforms:host"
     fi
-
-    # source bazel bash completion
-    source ${bazel_4}/share/bash-completion/completions/bazel.bash
   '';
 }

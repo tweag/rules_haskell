@@ -28,9 +28,9 @@ rules_haskell. To use a released version, do the following::
 
   http_archive(
       name = "rules_haskell",
-      sha256 = "f7a228ef21c7976e42f0949b927f40d3381305d65e19585625eb6ce2c59116e9",
-      strip_prefix = "rules_haskell-0.16",
-      url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.16.tar.gz",
+      sha256 = "298f6f0db23391274b4eca215daa01797d05699469048ef94540d5829b466377",
+      strip_prefix = "rules_haskell-0.17",
+      url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.17.tar.gz",
   )
 
 Picking a compiler
@@ -201,18 +201,17 @@ details.
 We also disable building runtime dependencies using ``collect_data = False`` as
 they are not required for an IDE session.
 
-You can test if this provides the expected compiler flags by running the
-following Bazel command and taking a look at the generated file::
+You can test if this provides the expected compiler flags by running
+the following Bazel command:
 
-  bazel build //:hie-bios --output_groups=hie_bios
+  bazel run //:hie-bios@bios
 
 Next, we need to hook this up to `hie-bios`_ using the `bios cradle`_. To that
 end, define a small shell script named ``.hie-bios`` that looks as follows::
 
   #!/usr/bin/env bash
   set -euo pipefail
-  bazel build //:hie-bios --output_groups=hie_bios
-  cat bazel-bin/hie-bios@hie-bios >"$HIE_BIOS_OUTPUT"
+  bazel run //:hie-bios@bios
   # Make warnings non-fatal
   echo -Wwarn >>"$HIE_BIOS_OUTPUT"
 
@@ -324,11 +323,11 @@ package versions and dependencies based on a given Stackage snapshot. It also
 downloads the packages sources and generates Bazel build definitions for the
 individual Cabal packages.
 
-This is how you import the Stackage LTS 14.0 snapshot ::
+This is how you import the Stackage LTS 20.3 snapshot ::
 
   stack_snapshot(
       name = "stackage",
-      snapshot = "lts-14.0",
+      snapshot = "lts-20.3",
       packages = [
           "base",
           "optparse-applicative",

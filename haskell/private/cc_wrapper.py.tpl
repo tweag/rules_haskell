@@ -68,7 +68,7 @@ used to avoid command line length limitations.
 
 """
 
-from bazel_tools.tools.python.runfiles import runfiles as bazel_runfiles
+from python.runfiles import runfiles as bazel_runfiles
 from contextlib import contextmanager
 from collections import deque
 import glob

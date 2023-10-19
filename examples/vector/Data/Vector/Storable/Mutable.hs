@@ -278,12 +278,12 @@ mallocVector =
 -- ------------------
 
 -- | Length of the mutable vector.
-length :: Storable a => MVector s a -> Int
+length :: forall a (s :: *). Storable a => MVector s a -> Int
 {-# INLINE length #-}
 length = G.length
 
 -- | Check whether the vector is empty
-null :: Storable a => MVector s a -> Bool
+null :: forall a (s :: *). Storable a => MVector s a -> Bool
 {-# INLINE null #-}
 null = G.null
 
@@ -292,7 +292,7 @@ null = G.null
 
 -- | Yield a part of the mutable vector without copying it. The vector must
 -- contain at least @i+n@ elements.
-slice :: Storable a
+slice :: forall a (s :: *). Storable a
       => Int  -- ^ @i@ starting index
       -> Int  -- ^ @n@ length
       -> MVector s a
@@ -300,29 +300,29 @@ slice :: Storable a
 {-# INLINE slice #-}
 slice = G.slice
 
-take :: Storable a => Int -> MVector s a -> MVector s a
+take :: forall a (s :: *). Storable a => Int -> MVector s a -> MVector s a
 {-# INLINE take #-}
 take = G.take
 
-drop :: Storable a => Int -> MVector s a -> MVector s a
+drop :: forall a (s :: *). Storable a => Int -> MVector s a -> MVector s a
 {-# INLINE drop #-}
 drop = G.drop
 
-splitAt :: Storable a => Int -> MVector s a -> (MVector s a, MVector s a)
+splitAt :: forall a (s :: *). Storable a => Int -> MVector s a -> (MVector s a, MVector s a)
 {-# INLINE splitAt #-}
 splitAt = G.splitAt
 
-init :: Storable a => MVector s a -> MVector s a
+init :: forall a (s :: *). Storable a => MVector s a -> MVector s a
 {-# INLINE init #-}
 init = G.init
 
-tail :: Storable a => MVector s a -> MVector s a
+tail :: forall a (s :: *). Storable a => MVector s a -> MVector s a
 {-# INLINE tail #-}
 tail = G.tail
 
 -- | Yield a part of the mutable vector without copying it. No bounds checks
 -- are performed.
-unsafeSlice :: Storable a
+unsafeSlice :: forall a (s :: *). Storable a
             => Int  -- ^ starting index
             -> Int  -- ^ length of the slice
             -> MVector s a
@@ -330,19 +330,19 @@ unsafeSlice :: Storable a
 {-# INLINE unsafeSlice #-}
 unsafeSlice = G.unsafeSlice
 
-unsafeTake :: Storable a => Int -> MVector s a -> MVector s a
+unsafeTake :: forall a (s :: *). Storable a => Int -> MVector s a -> MVector s a
 {-# INLINE unsafeTake #-}
 unsafeTake = G.unsafeTake
 
-unsafeDrop :: Storable a => Int -> MVector s a -> MVector s a
+unsafeDrop :: forall a (s :: *). Storable a => Int -> MVector s a -> MVector s a
 {-# INLINE unsafeDrop #-}
 unsafeDrop = G.unsafeDrop
 
-unsafeInit :: Storable a => MVector s a -> MVector s a
+unsafeInit :: forall a (s :: *). Storable a => MVector s a -> MVector s a
 {-# INLINE unsafeInit #-}
 unsafeInit = G.unsafeInit
 
-unsafeTail :: Storable a => MVector s a -> MVector s a
+unsafeTail :: forall a (s :: *). Storable a => MVector s a -> MVector s a
 {-# INLINE unsafeTail #-}
 unsafeTail = G.unsafeTail
 
@@ -350,7 +350,7 @@ unsafeTail = G.unsafeTail
 -- -----------
 
 -- | Check whether two vectors overlap.
-overlaps :: Storable a => MVector s a -> MVector s a -> Bool
+overlaps :: forall a (s :: *). Storable a => MVector s a -> MVector s a -> Bool
 {-# INLINE overlaps #-}
 overlaps = G.overlaps
 

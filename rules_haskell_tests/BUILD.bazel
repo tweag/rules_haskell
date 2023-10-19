@@ -1,0 +1,13 @@
+exports_files(
+    [
+        "BUILD.bazel",
+        "MODULE.bazel",
+        "WORKSPACE",
+        "WORKSPACE.bzlmod",
+        "non_module_deps.bzl",
+        "non_module_deps_1.bzl",
+        "non_module_deps_2.bzl",
+        "non_module_deps_bzlmod.bzl",
+    ],
+    visibility = ["//buildifier:__pkg__"],
+)

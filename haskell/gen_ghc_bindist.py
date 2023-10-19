@@ -4,7 +4,8 @@
 # download paths and hashes, for maintainers.
 # It uses the hashes provided by download.haskell.org.
 
-import pprint
+import os
+import json
 import sys
 from urllib.request import urlopen
 from distutils.version import StrictVersion
@@ -16,6 +17,20 @@ from distutils.version import StrictVersion
 # `ignore_prefixes` is the prefix of files to ignore
 # `ignore_suffixes` is the suffix of files to ignore
 VERSIONS = [
+    { "version": '9.6.3',
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.6.2",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.6.1",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": '9.4.6',
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": '9.4.7',
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": "9.4.5",
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
+    { "version": '9.2.8',
+      "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": "9.2.5",
       "ignore_suffixes": [".bz2", ".lz", ".zip"] },
     { "version": "9.2.4",
@@ -163,16 +178,12 @@ if __name__ == "__main__":
                 )
         ghc_bindists[ver] = arch_dists
 
-    # Print to stdout. Be aware that you can't `> foo.bzl`,
-    # because that truncates the source file which is needed
-    # for bazel to run in the first place.
-    print("""\
-# Generated with `bazel run @rules_haskell//haskell:gen-ghc-bindist`
-# To add a version or architecture, edit the constants in haskell/gen_ghc_bindist.py,
-# regenerate the dict and copy it here.
-GHC_BINDIST = \\""")
-    print("{")
-    for version in sorted(ghc_bindists.keys(), key=StrictVersion):
-       print('    ', repr(version), end=': ')
-       print(pprint.pformat(ghc_bindists[version], indent=8), end=',\n')
-    print("}")
+    ghc_versions = { version: ghc_bindists[version] for version in sorted(ghc_bindists.keys(), key=StrictVersion) }
+
+    working_directory = os.environ.get("BUILD_WORKING_DIRECTORY", ".")
+
+    with open(os.path.join(working_directory, "haskell/private/ghc_bindist_generated.json"), "w", encoding="utf-8") as json_file:
+        json.dump(ghc_versions, json_file, indent=4)
+        json_file.write('\n')
+
+

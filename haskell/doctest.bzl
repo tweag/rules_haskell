@@ -1,6 +1,7 @@
 """Doctest support"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/set.bzl", "set")
@@ -28,7 +29,7 @@ _doctest_toolchain = rule(
     attrs = {
         "doctest": attr.label(
             doc = "Doctest executable",
-            cfg = "host",
+            cfg = "exec",
             executable = True,
             allow_single_file = True,
             mandatory = True,
@@ -204,8 +205,7 @@ omitted, all exposed modules provided by `deps` will be tested.
         ),
     },
     fragments = ["cpp"],
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell:doctest-toolchain",
         "@rules_sh//sh/posix:toolchain_type",

@@ -14,14 +14,13 @@
 # because every bazel version tested requires a lot of space on CI
 # See https://github.com/tweag/rules_haskell/pull/1781#issuecomment-1187640454
 SUPPORTED_BAZEL_VERSIONS = [
-    "4.0.0",
-    "4.2.2",
-    "5.0.0",
-    "5.2.0",
+    "6.0.0",
+    "6.2.0",
+    "6.3.2",
 ]
 
 SUPPORTED_NIXPKGS_BAZEL_PACKAGES = [
-    "bazel_4",
+    "bazel_6",
 ]
 
 def _parse_version_chunk(version_chunk):

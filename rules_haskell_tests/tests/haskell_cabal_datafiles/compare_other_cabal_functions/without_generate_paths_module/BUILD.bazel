@@ -1,0 +1,47 @@
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_library",
+)
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_toolchain_library",
+)
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+
+package(default_testonly = 1)
+
+haskell_toolchain_library(name = "base")
+
+haskell_cabal_library(
+    name = "lib",
+    package_name = "lib",
+    srcs = [
+        "Lib.hs",
+        "lib.cabal",
+    ],
+    generate_paths_module = False,
+    setup_deps = ["@Cabal//:Cabal"],
+    tags = ["skip_profiling"],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = ["@rules_haskell//tools/runfiles"],
+)
+
+haskell_binary(
+    name = "write_values",
+    srcs = ["Write.hs"],
+    tags = ["skip_profiling"],
+    visibility = ["//tests/haskell_cabal_datafiles/compare_other_cabal_functions:__pkg__"],
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

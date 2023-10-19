@@ -1,0 +1,67 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_repl", "haskell_test")
+
+package(default_testonly = 1)
+
+# Regression tests for https://github.com/tweag/rules_haskell/issues/1377
+
+# Test that make variable expension is performed on `compiler_flags` forwarded
+# to the REPL.
+haskell_test(
+    name = "test-compiler-flags",
+    srcs = ["Main.hs"],
+    compiler_flags = ['-DDATA="$(rootpath data.txt)"'],
+    data = ["data.txt"],
+    visibility = ["//tests/asterius/repl-make-variables:__pkg__"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:filepath",
+        "@rules_haskell//tools/runfiles",
+    ],
+)
+
+haskell_test(
+    name = "test-repl-flags",
+    srcs = ["Main.hs"],
+    data = ["data.txt"],
+    repl_ghci_args = ['-DDATA="$(rootpath data.txt)"'],
+    tags = ["manual"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:filepath",
+        "@rules_haskell//tools/runfiles",
+    ],
+)
+
+# Test that make variable expension is performed on `repl_ghci_args` forwarded
+# to the REPL. We need to set `collect_data = False` to avoid a build failure
+# on `test-repl-flags`.
+haskell_repl(
+    name = "repl-indirect-flags",
+    deps = [":test-repl-flags"],
+)
+
+haskell_test(
+    name = "test-no-flags",
+    srcs = ["Main.hs"],
+    tags = ["manual"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/hackage:filepath",
+        "@rules_haskell//tools/runfiles",
+    ],
+)
+
+# Test that make variable expension is performed on `repl_ghci_args`.
+haskell_repl(
+    name = "repl-direct-flags",
+    data = ["data.txt"],
+    repl_ghci_args = ['-DDATA="$(rootpath data.txt)"'],
+    deps = [":test-no-flags"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

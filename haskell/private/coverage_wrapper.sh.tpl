@@ -56,7 +56,7 @@ hpc_dir_args=()
 mix_file_paths={mix_file_paths}
 for m in "${mix_file_paths[@]}"
 do
-  absolute_mix_file_path=$(rlocation $m)
+  absolute_mix_file_path=$(rlocation "$m")
   hpc_parent_dir=$(dirname "$absolute_mix_file_path")
   trimmed_hpc_parent_dir="${hpc_parent_dir%%_.hpc*}"
   hpc_dir_args+=("--hpcdir=${trimmed_hpc_parent_dir}_.hpc")

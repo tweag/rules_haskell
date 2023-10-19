@@ -1,0 +1,112 @@
+module(
+    name = "rules_haskell_examples",
+    version = "0.17",
+)
+
+bazel_dep(
+    name = "rules_nixpkgs_core",
+    version = "0.9.0",
+)
+bazel_dep(
+    name = "rules_haskell_nix",
+    version = "0.17",
+)
+bazel_dep(
+    name = "rules_haskell",
+    version = "0.17",
+)
+
+# TODO
+# bazel_dep(
+#     name = "rules_haskell_arm",
+#     version = "0.0.0",
+#     repo_name = "arm",
+# )
+
+# local_path_override(module_name = "rules_haskell_arm", path = "arm")
+
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.8",
+)
+bazel_dep(
+    name = "rules_sh",
+    version = "0.3.0",
+)
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.4.2",
+)
+
+non_module_deps = use_extension(":non_module_deps.bzl", "non_module_deps")
+use_repo(
+    non_module_deps,
+    "Cabal",
+    "os_info",
+    "split",
+    "zlib.hs",
+)
+
+stack_snapshot = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshot",
+)
+use_repo(
+    stack_snapshot,
+    "stackage",
+)
+stack_snapshot.snapshot(local_snapshot = "@rules_haskell//:stackage_snapshot.yaml")
+stack_snapshot.package(
+    name = "zlib",
+    extra_deps = ["@zlib.hs"],
+    flags =
+        # Sets the default explicitly to demonstrate the flags attribute.
+        [
+            "-non-blocking-ffi",
+            "-pkg-config",
+        ],
+)
+
+[
+    stack_snapshot.package(
+        name = pkg,  # See https://github.com/tweag/rules_haskell/issues/1871
+        setup_deps = ["@Cabal//:Cabal"],
+    )
+    for pkg in [
+        "base",
+        "bytestring",
+        "conduit",
+        "conduit-extra",
+        "hspec",
+        # Remove hspec-* packages once https://github.com/tweag/rules_haskell/issues/1871 is resolved
+        "hspec-core",
+        "hspec-discover",
+        "hspec-expectations",
+        "optparse-applicative",
+        "text",
+        "text-show",
+    ]
+]
+
+# example for a vendored package
+stack_snapshot.package(
+    name = "split",
+    # See https://github.com/tweag/rules_haskell/issues/1871
+    setup_deps = ["@Cabal//:Cabal"],
+    vendored = "@split//:split",
+)
+stack_snapshot.package(
+    name = "attoparsec",
+    components =
+        [
+            # attoparsec contains an internal library which is not exposed publicly,
+            # but required to build the public library, hence the declaration of
+            # those 2 components, as well as the explicit declaration of the
+            # dependency between them.
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    components_dependencies = {
+        "lib:attoparsec": ["lib:attoparsec-internal"],
+    },
+)

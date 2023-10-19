@@ -1,5 +1,6 @@
 """Experimental Haskell rules"""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load(
     "//haskell/experimental/private:module.bzl",
@@ -33,7 +34,7 @@ _haskell_module = rule(
             aspects = [haskell_cc_libraries_aspect],
         ),
         "tools": attr.label_list(
-            cfg = "host",
+            cfg = "exec",
             allow_files = True,
         ),
         "_cc_toolchain": attr.label(
@@ -41,13 +42,12 @@ _haskell_module = rule(
         ),
         "_ghc_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
         # TODO[AH] Suppport worker
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],

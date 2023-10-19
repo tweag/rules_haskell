@@ -35,10 +35,12 @@ exports_files(
         "private/cabal_wrapper.py",
         "private/coverage_wrapper.sh.tpl",
         "private/ghci_repl_wrapper.sh",
+        "private/hie_bios_wrapper.sh",
         "private/haddock_wrapper.sh.tpl",
         "private/cc_wrapper.py.tpl",
         "private/cc_wrapper_windows.sh.tpl",
         "private/pkgdb_to_bzl.py",
+        "private/haskell_runfiles.tpl",
     ],
 )
 
@@ -94,9 +96,12 @@ bzl_library(
         "@bazel_skylib//lib:collections",
         "@bazel_skylib//lib:dicts",
         "@bazel_skylib//lib:paths",
+        "@bazel_skylib//lib:sets",
         "@bazel_skylib//lib:shell",
         "@bazel_skylib//lib:versions",
-        "@io_tweag_rules_nixpkgs//nixpkgs",
+        "@bazel_skylib//rules:expand_template",
+        "@rules_nixpkgs_core//:nixpkgs",
+        "@rules_nixpkgs_posix//:posix",
         "@rules_sh//sh:posix",
     ],
 )
@@ -141,7 +146,7 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
-# generate the _GHC_BINDISTS dict
+# generate the GHC bindist JSON file
 py_binary(
     name = "gen-ghc-bindist",
     srcs = [":gen_ghc_bindist.py"],

@@ -1,6 +1,7 @@
 """Support for c2hs"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     ":providers.bzl",
     "C2hsLibraryInfo",
@@ -83,7 +84,7 @@ def _c2hs_library_impl(ctx):
             inputs,
         ]),
         input_manifests = input_manifests,
-        tools = [hs.tools.ghc, c2hs_exe],
+        tools = [hs.tools.ghc_pkg, c2hs_exe],
         outputs = [hs_file, chi_file],
         command =
             # cpp (called via c2hs) gets very unhappy if the mingw bin dir is
@@ -95,11 +96,13 @@ def _c2hs_library_impl(ctx):
             ) +
             """
         # Include libdir in include path just like hsc2hs does.
-        libdir=$({ghc} --print-libdir)
         # GHC >=9 on Windows stores the includes outside of libdir
-        {c2hs} -C-I$libdir/include -C-I$libdir/../include "$@"
+        # See: https://gitlab.haskell.org/ghc/ghc/-/issues/21609#note_435800
+        include_dirs=($({ghc_pkg} field rts include-dirs  --simple-output))
+        include_dirs_args=( "${{include_dirs[@]/#/-C-I}}" )
+        {c2hs} "${{include_dirs_args[@]}}" "$@"
         """.format(
-                ghc = hs.tools.ghc.path,
+                ghc_pkg = hs.tools.ghc_pkg.path,
                 c2hs = c2hs_exe.path,
             ),
         mnemonic = "HaskellC2Hs",
@@ -142,8 +145,7 @@ c2hs_library = rule(
             default = Label("@rules_cc//cc:current_cc_toolchain"),
         ),
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_haskell//haskell/c2hs:toolchain",
     ],
@@ -173,7 +175,7 @@ _c2hs_toolchain = rule(
             mandatory = True,
             allow_single_file = True,
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
     },
 )

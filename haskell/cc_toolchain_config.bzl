@@ -31,7 +31,7 @@ def _impl(ctx):
         ),
         tool_path(
             name = "gcc",
-            path = "mingw/bin/gcc",
+            path = "mingw/bin/clang" if ctx.attr.is_clang else "mingw/bin/gcc",
         ),
         tool_path(
             name = "gcov",
@@ -102,6 +102,8 @@ def _impl(ctx):
 
 cc_toolchain_config = rule(
     implementation = _impl,
-    attrs = {},
+    attrs = {
+        "is_clang": attr.bool(default = False, mandatory = False),
+    },
     provides = [CcToolchainConfigInfo],
 )

@@ -1,0 +1,34 @@
+resolver: lts-20.3
+packages:
+- co-log-core-0.3.2.0
+- ghcide-1.8.0.0
+- heapsize-0.3.0.1
+- hie-bios-0.11.0
+- hie-compat-0.3.0.0
+- hiedb-0.4.2.0
+- hls-graph-1.8.0.0
+- hls-plugin-api-1.5.0.0
+- implicit-hie-0.1.4.0
+- implicit-hie-cradle-0.5.0.0
+- lsp-1.6.0.0
+- lsp-test-0.14.1.0
+- retrie-1.2.1.1
+- git: https://github.com/tweag/cabal
+  commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
+  subdirs:
+  - Cabal
+
+# We drop the Win32 package from the stack snapshot so that stack considers it a toolchain library.
+# In this case we will use the Win32 provided by the compiler instead of recompiling it.
+#
+# Recompiling it should be fine for future versions of Win32,
+# but with versions <= 2.13.2.0 we encounter the following issue:
+# https://github.com/haskell/win32/issues/193
+drop-packages:
+- Win32
+
+
+# stackage lts-20.3/ghc 9.2.5 only contains Win32-2.12.0.1
+flags:
+  ansi-terminal:
+    Win32-2-13-1: false

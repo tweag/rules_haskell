@@ -1,0 +1,19 @@
+bazel_dep(
+    name = "platforms",
+    version = "0.0.6",
+)
+
+# rules_haskell_nix must come before rules_haskell so that nix
+# toolchains are considered first
+bazel_dep(
+    name = "rules_haskell_nix",
+    version = "0.17",
+)
+bazel_dep(
+    name = "rules_haskell",
+    version = "0.17",
+)
+bazel_dep(
+    name = "rules_nixpkgs_core",
+    version = "0.9.0",
+)

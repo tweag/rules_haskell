@@ -5,7 +5,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe", "read_netrc", "use_netrc")
 load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/actions/info.bzl", "library_info_output_groups")
 load(":private/actions/link.bzl", "darwin_flags_for_linking_indirect_cc_deps")
@@ -42,6 +42,7 @@ load(
     "get_library_files",
     "haskell_cc_libraries_aspect",
 )
+load(":private/versions.bzl", "check_bazel_version")
 
 def _get_auth(ctx, urls):
     """Find the .netrc file and obtain the auth dict for the required URLs.
@@ -339,9 +340,6 @@ def _prepare_cabal_inputs(
         extra_args.append("--ghc-option=-optl-static")
 
     path_args = [
-        "--package-db=" + _dirname(db)
-        for db in package_databases.to_list()
-    ] + [
         "--extra-include-dirs=" + d
         for d in direct_include_dirs.to_list()
     ] + _uniquify(["--extra-lib-dirs=" + d for d in direct_lib_dirs])
@@ -369,6 +367,7 @@ def _prepare_cabal_inputs(
         cabal_basename = cabal.basename,
         cabal_dirname = cabal.dirname,
         extra_ldflags_file = extra_ldflags_file.path if extra_ldflags_file else None,
+        package_databases = [p.path for p in package_databases.to_list()],
     )
 
     ghc_files = hs.toolchain.bindir + hs.toolchain.libdir
@@ -586,6 +585,7 @@ def _haskell_cabal_library_impl(ctx):
         version_macros = sets.make(),
         source_files = depset(),
         boot_files = depset(),
+        module_names = depset(),
         extra_source_files = depset(),
         import_dirs = sets.make(),
         hs_libraries = depset(
@@ -701,7 +701,7 @@ haskell_cabal_library = rule(
             Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
         "tools": attr.label_list(
-            cfg = "host",
+            cfg = "exec",
             allow_files = True,
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
@@ -719,12 +719,12 @@ haskell_cabal_library = rule(
         ),
         "_cabal_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
         "_runghc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:runghc"),
         ),
         "_cc_toolchain": attr.label(
@@ -743,8 +743,7 @@ haskell_cabal_library = rule(
             avoid exceeding the MACH-O header size limit on MacOS.""",
         ),
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -940,7 +939,7 @@ haskell_cabal_binary = rule(
             Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
         "tools": attr.label_list(
-            cfg = "host",
+            cfg = "exec",
             allow_files = True,
             doc = """Tool dependencies. They are built using the host configuration, since
             the tools are executed as part of the build.""",
@@ -958,12 +957,12 @@ haskell_cabal_binary = rule(
         ),
         "_cabal_wrapper": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:cabal_wrapper"),
         ),
         "_runghc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:runghc"),
         ),
         "_cc_toolchain": attr.label(
@@ -974,8 +973,7 @@ haskell_cabal_binary = rule(
             doc = "Whether to show the output of the build",
         ),
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -1307,10 +1305,10 @@ library
         ],
         "extra-deps": versioned_packages,
         "flags": {
-            pkg: {
-                flag[1:] if flag.startswith("-") else flag: not flag.startswith("-")
+            pkg: dict([
+                (flag[1:], True) if flag.startswith("+") else (flag[1:], False) if flag.startswith("-") else (flag, True)
                 for flag in flags
-            }
+            ])
             for (pkg, flags) in repository_ctx.attr.flags.items()
         },
     }).to_json()
@@ -1536,8 +1534,7 @@ def _download_packages(repository_ctx, snapshot, pinned):
 
     if stack_unpack:
         # Enforce dependency on stack_update.
-        # Hard-coded label since `stack_update` is `None` in this case.
-        repository_ctx.read(Label("@rules_haskell_stack_update//:stack_update"))
+        repository_ctx.read(repository_ctx.path(Label(repository_ctx.attr.stack_update)))
         _download_packages_unpinned(repository_ctx, snapshot, stack_unpack)
 
 def _download_packages_unpinned(repository_ctx, snapshot, resolved):
@@ -1586,8 +1583,15 @@ def _to_string_keyed_label_list_dict(d):
             out.setdefault(string_key, []).append(label)
     return out
 
+def _is_bzlmod_enabled():
+    return str(Label("@rules_haskell//:BUILD.bazel")).startswith("@@")
+
 def _label_to_string(label):
-    return "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
+    if check_bazel_version("6.0.0")[0]:
+        # `str` serializes the label to its canonical name starting from bazel 6
+        return str(label)
+    else:
+        return "@{}//{}:{}".format(label.workspace_name, label.package, label.name)
 
 def _parse_stack_snapshot(repository_ctx, snapshot, local_snapshot):
     if snapshot and local_snapshot:
@@ -1858,7 +1862,7 @@ def _stack_snapshot_unpinned_impl(repository_ctx):
 
     _write_snapshot_json(repository_ctx, all_cabal_hashes, resolved)
 
-    repository_name = repository_ctx.name[:-len("-unpinned")]
+    repository_name = repository_ctx.attr.unmangled_repo_name
 
     if repository_ctx.attr.stack_snapshot_json:
         stack_snapshot_location = paths.join(
@@ -1909,7 +1913,7 @@ def _stack_snapshot_impl(repository_ctx):
     # Resolve and fetch packages
     if repository_ctx.attr.stack_snapshot_json == None:
         # Enforce dependency on stack_update
-        repository_ctx.read(repository_ctx.attr.stack_update)
+        repository_ctx.read(repository_ctx.path(Label(repository_ctx.attr.stack_update)))
         resolved = _resolve_packages(
             repository_ctx,
             snapshot,
@@ -1925,6 +1929,7 @@ def _stack_snapshot_impl(repository_ctx):
 
     reverse_deps = {}
     for (name, spec) in resolved.items():
+        reverse_deps.setdefault(name, [])
         for dep in spec["dependencies"]:
             rdeps = reverse_deps.setdefault(dep, [])
             rdeps.append(name)
@@ -1981,12 +1986,12 @@ packages = {
                 executables = all_components[name].exe,
                 sublibs = all_components[name].sublibs,
                 deps = [
-                    Label("@{}//:{}".format(repository_ctx.name, dep))
+                    "@{}//:{}".format(repository_ctx.attr.unmangled_repo_name, dep)
                     for dep in spec["dependencies"]
                     if all_components[dep].lib
                 ],
                 tools = [
-                    Label("@{}-exe//{}:{}".format(repository_ctx.name, dep, exe))
+                    str(Label("@{}-exe//{}:{}".format(repository_ctx.attr.unmangled_repo_name, dep, exe)))
                     for dep in spec["dependencies"]
                     for exe in all_components[dep].exe
                 ],
@@ -2064,8 +2069,13 @@ haskell_library(
                 for dep in spec["dependencies"]
                 for exe in all_components[dep].exe
             ] + tools
+
             setup_deps = [
-                _label_to_string(Label("@{}//:{}".format(repository_ctx.name, name)).relative(label))
+                _label_to_string(Label("{}{}//:{}".format(
+                    "@@" if _is_bzlmod_enabled() else "@",
+                    repository_ctx.attr.name,
+                    name,
+                )).relative(label))
                 for label in repository_ctx.attr.setup_deps.get(name, [])
             ]
             if all_components[name].lib:
@@ -2126,7 +2136,7 @@ haskell_cabal_binary(
     verbose = {verbose},
 )
 """.format(
-                        workspace = repository_ctx.name,
+                        workspace = repository_ctx.attr.unmangled_repo_name,
                         name = name,
                         exe = exe,
                         flags = repository_ctx.attr.flags.get(name, []),
@@ -2160,7 +2170,6 @@ haskell_cabal_library(
     verbose = {verbose},
 )
 """.format(
-                        workspace = repository_ctx.name,
                         name = name,
                         version = version,
                         haddock = repr(repository_ctx.attr.haddock),
@@ -2183,6 +2192,9 @@ haskell_cabal_library(
 _stack_snapshot_unpinned = repository_rule(
     _stack_snapshot_unpinned_impl,
     attrs = {
+        "unmangled_repo_name": attr.string(
+            doc = "The name passed to the stack_snapshot call",
+        ),
         "stack_snapshot_json": attr.label(allow_single_file = True),
         "snapshot": attr.string(),
         "local_snapshot": attr.label(allow_single_file = True),
@@ -2200,6 +2212,9 @@ _stack_snapshot_unpinned = repository_rule(
 _stack_snapshot = repository_rule(
     _stack_snapshot_impl,
     attrs = {
+        "unmangled_repo_name": attr.string(
+            doc = "Apparent repository name (repository_ctx.name is the canonical name with bzlmod)",
+        ),
         "stack_snapshot_json": attr.label(allow_single_file = True),
         "snapshot": attr.string(),
         "local_snapshot": attr.label(allow_single_file = True),
@@ -2213,7 +2228,7 @@ _stack_snapshot = repository_rule(
         "components": attr.string_list_dict(),
         "components_dependencies": attr.string_dict(),
         "stack": attr.label(),
-        "stack_update": attr.label(),
+        "stack_update": attr.string(),
         "verbose": attr.bool(default = False),
         "custom_toolchain_libraries": attr.string_list(default = []),
         "enable_custom_toolchain_libraries": attr.bool(default = False),
@@ -2221,7 +2236,7 @@ _stack_snapshot = repository_rule(
 )
 
 def _stack_sublibraries(repository_ctx, all_components):
-    workspace = repository_ctx.name
+    workspace = repository_ctx.attr.unmangled_repo_name
     for (package, components) in all_components.items():
         main_lib_str = ""
         sublibraries_str = ""
@@ -2266,7 +2281,7 @@ load("@{workspace}//:packages.bzl", "packages")
             )
 
 def _stack_executables_impl(repository_ctx):
-    workspace = repository_ctx.name[:-len("-exe")]
+    workspace = repository_ctx.attr.unmangled_repo_name
     all_components = json.decode(repository_ctx.read(repository_ctx.attr.components_json))
     for (package, components) in all_components.items():
         if not components["exe"]:
@@ -2290,6 +2305,9 @@ _stack_executables = repository_rule(
     _stack_executables_impl,
     attrs = {
         "components_json": attr.label(),
+        "unmangled_repo_name": attr.string(
+            doc = "The name passed to the stack_snapshot call",
+        ),
     },
 )
 
@@ -2420,6 +2438,8 @@ def stack_snapshot(
         verbose = False,
         netrc = "",
         toolchain_libraries = None,
+        setup_stack = True,
+        label_builder = lambda l: Label(l),
         **kwargs):
     """Use Stack to download and extract Cabal source distributions.
 
@@ -2485,8 +2505,8 @@ def stack_snapshot(
       - visibility: The visibility of the given package.
 
     **NOTE:** Make sure your GHC version matches the version expected by the
-    snapshot. E.g. if you pass `snapshot = "lts-13.15"`, make sure you use
-    GHC 8.6.4 (e.g. by invoking `rules_haskell_toolchains(version="8.6.4")`).
+    snapshot. E.g. if you pass `snapshot = "lts-20.3"`, make sure you use
+    GHC 9.2.5 (e.g. by invoking `rules_haskell_toolchains(version="9.2.5")`).
     Sadly, rules_haskell cannot maintain this correspondence for you. You will
     need to manage it yourself. If you have a version mismatch, you will end up
     with versions of [core GHC packages][ghc-builtins] which do not match the
@@ -2506,7 +2526,7 @@ def stack_snapshot(
               "doctest": ["lib", "exe"],  # Optional since doctest is known to have an exe component.
               "happy": [],  # Override happy's default exe component.
           },
-          snapshot = "lts-13.15",
+          snapshot = "lts-20.3",
           extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
       )
       ```
@@ -2535,7 +2555,7 @@ def stack_snapshot(
       `snapshot.yaml`, at the root of the repository with content
 
       ```yaml
-      resolver: lts-13.15
+      resolver: lts-20.3
 
       packages:
         - zlib-0.6.2
@@ -2609,30 +2629,33 @@ def stack_snapshot(
             ...,
         )
         ```
-
+      setup_stack: Do not try to install stack if set to False (only usefull with bzlmod when only the first call to stack_snapshot must do the install).
+      label_builder: A function to build a Label from the context of the caller module extension (only useful with bzlmod until we provide our own module extension).
     """
     typecheck_stackage_extradeps(extra_deps)
 
     # Allow overriding stack binary at workspace level by `use_stack()`.
     # Otherwise this is a no-op.
-    if native.existing_rule("rules_haskell_stack"):
-        stack = Label("@rules_haskell_stack//:stack")
+    if native.existing_rule("rules_haskell_stack") or not setup_stack:
+        stack = label_builder("@rules_haskell_stack//:stack")
 
     if not stack:
         _fetch_stack(name = "rules_haskell_stack")
-        stack = Label("@rules_haskell_stack//:stack")
+        stack = label_builder("@rules_haskell_stack//:stack")
 
     # Execute stack update once before executing _stack_snapshot.
     # This is to avoid multiple concurrent executions of stack update,
     # which may fail due to ~/.stack/pantry/hackage/hackage-security-lock.
     # See https://github.com/tweag/rules_haskell/issues/1090.
-    maybe(
-        _stack_update,
-        name = "rules_haskell_stack_update",
-        stack = stack,
-    )
+    if setup_stack:
+        maybe(
+            _stack_update,
+            name = "rules_haskell_stack_update",
+            stack = stack,
+        )
     _stack_snapshot_unpinned(
         name = name + "-unpinned",
+        unmangled_repo_name = name,
         stack = stack,
         # Dependency for ordered execution, stack update before stack unpack.
         stack_update = "@rules_haskell_stack_update//:stack_update",
@@ -2646,11 +2669,19 @@ def stack_snapshot(
         custom_toolchain_libraries = toolchain_libraries,
         enable_custom_toolchain_libraries = toolchain_libraries != None,
     )
+    canonical_setup_deps = {
+        k: [
+            str(label_builder(label)) if label.startswith("@") else label
+            for label in labels
+        ]
+        for (k, labels) in setup_deps.items()
+    }
     _stack_snapshot(
         name = name,
+        unmangled_repo_name = name,
         stack = stack,
         # Dependency for ordered execution, stack update before stack unpack.
-        stack_update = None if stack_snapshot_json else "@rules_haskell_stack_update//:stack_update",
+        stack_update = str(label_builder("@rules_haskell_stack_update//:stack_update")),
         # TODO Remove _from_string_keyed_label_list_dict once following issue
         # is resolved: https://github.com/bazelbuild/bazel/issues/7989.
         extra_deps = _from_string_keyed_label_list_dict(extra_deps),
@@ -2663,7 +2694,7 @@ def stack_snapshot(
         packages = packages,
         flags = flags,
         haddock = haddock,
-        setup_deps = setup_deps,
+        setup_deps = canonical_setup_deps,
         tools = tools,
         components = components,
         components_dependencies = components_dependencies,
@@ -2674,6 +2705,7 @@ def stack_snapshot(
     )
     _stack_executables(
         name = name + "-exe",
+        unmangled_repo_name = name,
         components_json = "@{}//:components.json".format(name),
     )
 

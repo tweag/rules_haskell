@@ -1,5 +1,6 @@
 """Core Haskell rules"""
 
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     ":haddock.bzl",
     _haskell_doc = "haskell_doc",
@@ -42,6 +43,7 @@ load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 
 # NOTE: Documentation needs to be added to the wrapper macros below.
 #   Currently it is not possible to automatically inherit rule documentation in
@@ -76,7 +78,7 @@ _haskell_common_attrs = {
         aspects = [haskell_cc_libraries_aspect],
     ),
     "tools": attr.label_list(
-        cfg = "host",
+        cfg = "exec",
         allow_files = True,
     ),
     "_ghci_script": attr.label(
@@ -89,7 +91,7 @@ _haskell_common_attrs = {
     ),
     "_version_macros": attr.label(
         executable = True,
-        cfg = "host",
+        cfg = "exec",
         default = Label("@rules_haskell//haskell:version_macros"),
     ),
     "_cc_toolchain": attr.label(
@@ -97,13 +99,13 @@ _haskell_common_attrs = {
     ),
     "_ghc_wrapper": attr.label(
         executable = True,
-        cfg = "host",
+        cfg = "exec",
         default = Label("@rules_haskell//haskell:ghc_wrapper"),
     ),
     "worker": attr.label(
         default = None,
         executable = True,
-        cfg = "host",
+        cfg = "exec",
     ),
 }
 
@@ -180,8 +182,7 @@ def _mk_binary_rule(**kwargs):
         outputs = {
             "runghc": "%{name}@runghc",
         },
-        toolchains = [
-            "@rules_cc//cc:toolchain_type",
+        toolchains = use_cc_toolchain() + [
             "@rules_haskell//haskell:toolchain",
             "@rules_sh//sh/posix:toolchain_type",
         ],
@@ -215,8 +216,7 @@ _haskell_library = rule(
     outputs = {
         "runghc": "%{name}@runghc",
     },
-    toolchains = [
-        "@rules_cc//cc:toolchain_type",
+    toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
@@ -623,7 +623,7 @@ def haskell_library(
         if the version attribute is defined, see version attribute
         documentation. Optional, defaults to target name.
       version: Library version. Not normally necessary unless to build a library
-        originally defined as a Cabal package. If this is specified, CPP version macro will be generated.
+        originally defined as a Cabal package, or which is a dependency of a Cabal package. If this is specified, CPP version macro will be generated.
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
     _haskell_worker_wrapper(
@@ -686,7 +686,7 @@ haskell_import = rule(
         "haddock_html": attr.label(allow_single_file = True),
         "_version_macros": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("@rules_haskell//haskell:version_macros"),
         ),
     },
@@ -759,3 +759,52 @@ haskell_repl_aspect = _haskell_repl_aspect
 haskell_toolchain = _haskell_toolchain
 
 ghc_plugin = _ghc_plugin
+
+def haskell_runfiles(
+        name = "haskell_runfiles",
+        module_name = "Runfiles",
+        base = "@rules_haskell//tools/runfiles:base"):
+    """ Convenience wrapper around rules_haskell runfiles library.
+
+    This wrapper is especially usefull with bzlmod, when a haskell library with runfiles is used from another module
+    (see [runfiles](https://github.com/tweag/rules_haskell/blob/master/tools/runfiles/README.md)).
+
+    ### Usage
+
+    The `haskell_runfiles` rule is called in a `BUILD` file as follows, in order to generate the `haskell_runfiles` library
+    (this default name can be customized).
+
+      ```bzl
+      haskell_runfiles()
+      haskell_library(
+        ...
+        deps = [":haskell_runfiles"],
+      )
+      ```
+
+      The library can then be used similarly to the runfiles library:
+
+      ```
+      import Runfiles
+      r <- Runfiles.create
+      let location = Runfiles.rlocation r "module_name/path/to/datafile"
+      ```
+
+    Args:
+      name: A unique name for this rule.
+      module_name: The name of the generated haskell module
+      base: The label of the `base` library to depend on.
+    """
+    expand_template(
+        name = "{}_generated".format(module_name),
+        out = "{}.hs".format(module_name),
+        template = "@rules_haskell//haskell:private/haskell_runfiles.tpl",
+        substitutions = {
+            "%{module_name}": module_name,
+        },
+    )
+    haskell_library(
+        name = name,
+        srcs = ["{}.hs".format(module_name)],
+        deps = ["@rules_haskell//tools/runfiles", base],
+    )

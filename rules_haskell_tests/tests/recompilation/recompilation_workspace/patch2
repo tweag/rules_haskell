@@ -1,0 +1,15 @@
+diff --git a/src/A.hs b/src/A.hs
+index 3da440be..67790a51 100644
+--- a/src/A.hs
++++ b/src/A.hs
+@@ -5,8 +5,8 @@ data T = T0 | T1
+ a :: T
+ a = T1
+
+-f :: a -> b -> a
+-f x y = x
++f :: a -> b -> b
++f x y = y
+
+ g :: T -> T
+ g T0 = a

@@ -9,8 +9,6 @@ def cabal_wrapper(name, **kwargs):
         ],
         srcs_version = "PY3",
         python_version = "PY3",
-        deps = [
-            "@bazel_tools//tools/python/runfiles",
-        ],
+        imports = ["private"],
         **kwargs
     )

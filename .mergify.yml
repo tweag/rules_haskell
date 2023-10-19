@@ -1,25 +1,7 @@
-queue_rules:
-  - name: default
-    conditions:
-      - 'status-success~=Build & Test - Nixpkgs \(ubuntu-.*\).*'
-      - 'status-success~=Build & Test - Nixpkgs \(macos-.*\).*'
-      - 'status-success~=Build & Test - bindist \(ubuntu-.*\).*'
-      - 'status-success~=Build & Test - bindist \(macos-.*\).*'
-      - 'status-success~=Build & Test - bindist \(windows-.*\).*'
-      - 'status-success~=Build & Test - Cross.*'
-      - "status-success=deploy/netlify"
 
 pull_request_rules:
   - name: automatic merge
     conditions:
-      - 'status-success~=Build & Test - Nixpkgs \(ubuntu-.*\).*'
-      - 'status-success~=Build & Test - Nixpkgs \(macos-.*\).*'
-      - 'status-success~=Build & Test - bindist \(ubuntu-.*\).*'
-      - 'status-success~=Build & Test - bindist \(macos-.*\).*'
-      - 'status-success~=Build & Test - bindist \(windows-.*\).*'
-      - 'status-success~=Build & Test - Cross.*'
-      - "status-success=deploy/netlify"
-      - "#approved-reviews-by>=1"
       - "label=merge-queue"
       - "base=master"
     actions:
