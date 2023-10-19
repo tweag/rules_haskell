@@ -28,6 +28,7 @@ rules_haskell. To use a released version, do the following::
 
   http_archive(
       name = "rules_haskell",
+      sha256 = "298f6f0db23391274b4eca215daa01797d05699469048ef94540d5829b466377",
       strip_prefix = "rules_haskell-0.17",
       url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.17.tar.gz",
   )
