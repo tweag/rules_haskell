@@ -6,8 +6,8 @@
 set -eu
 
 # If the environment variable `GHC_VERSION` is not set yet,
-# we use the default version (currently "9.2.5").
-GHC_VERSION=${GHC_VERSION:="9.2.5"}
+# we use the default version (currently "9.2.8").
+GHC_VERSION=${GHC_VERSION:="9.2.8"}
 
 readonly MIN_BAZEL_MAJOR=6
 readonly MIN_BAZEL_MINOR=0
