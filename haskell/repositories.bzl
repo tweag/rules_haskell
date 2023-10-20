@@ -38,9 +38,9 @@ def rules_haskell_dependencies_bzlmod():
         http_archive,
         name = "zlib",
         build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-        sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
-        strip_prefix = "zlib-1.2.11",
-        urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
+        sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
+        strip_prefix = "zlib-1.3",
+        urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
     )
 
 def rules_haskell_dependencies():
