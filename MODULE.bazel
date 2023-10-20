@@ -213,7 +213,7 @@ go_sdk.download(
 
 bazel_dep(
     name = "gazelle",
-    version = "0.30.0",
+    version = "0.33.0",
     dev_dependency = True,
 )
 
