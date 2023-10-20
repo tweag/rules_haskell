@@ -298,7 +298,7 @@ case "${MODE}" in
 		# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
 		nixpkgs_git_repository(
 		    name = "nixpkgs",
-		    revision = "23.05",
+		    revision = "nixos-23.05",
 		)
 
 		nixpkgs_cc_configure(
