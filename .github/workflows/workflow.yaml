@@ -13,7 +13,7 @@ jobs:
   test-nixpkgs:
     name: Build & Test - Nixpkgs
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.module }}-${{ matrix.bzlmod }}-nixpkgs
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.module }}-${{ matrix.bzlmod }}-${{ matrix.ghc }}-nixpkgs
       cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
     strategy:
       fail-fast: false
@@ -21,6 +21,9 @@ jobs:
         os: [ubuntu-latest, macos-11]
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [bzlmod, workspace]
+        ghc:
+          - 9.2.5
+          - 9.4.5
         exclude:
           - module: rules_haskell_nix
             bzlmod: workspace
@@ -78,11 +81,11 @@ jobs:
           EOF
       - name: Check Bazel version
         run: |
-          nix-shell --arg docTools false --pure --run .ci/check-bazel-version
+          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run .ci/check-bazel-version
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
         run: |
-          nix-shell --arg docTools false --pure --run '
+          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
             set -euo pipefail
             bazel test //...
             bazel build //docs:api_html
@@ -91,7 +94,7 @@ jobs:
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
         run: |
-          nix-shell --arg docTools false --pure --run '
+          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
             set -euo pipefail
             cd rules_haskell_nix
             bazel test //...
@@ -99,7 +102,7 @@ jobs:
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
         run: |
-          nix-shell --arg docTools false --pure --run '
+          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
             set -euo pipefail
             cd rules_haskell_tests
             ./tests/run-start-script.sh --use-nix

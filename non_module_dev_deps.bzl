@@ -21,8 +21,11 @@ load(
 )
 load(
     "@rules_haskell//:constants.bzl",
-    "test_ghc_version",
+    _default_ghc_version = "test_ghc_version",
 )
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+
+test_ghc_version = GHC_VERSION or _default_ghc_version
 
 # Replaces local_repository in bzlmod
 # See https://groups.google.com/g/bazel-discuss/c/xpsg3mWQPZg
@@ -78,7 +81,9 @@ def repositories(*, bzlmod):
 
     haskell_register_ghc_nixpkgs(
         attribute_path = "",
-        nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
+        nix_file_content = """with import <nixpkgs> {{}}; haskell.packages.ghc{version}.ghc""".format(
+            version = test_ghc_version.replace(".", ""),
+        ),
         repository = "@nixpkgs_default",
         version = test_ghc_version,
         register = not bzlmod,

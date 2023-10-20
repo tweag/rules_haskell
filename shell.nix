@@ -1,4 +1,4 @@
-{ pkgs ? import ./nixpkgs {}, docTools ? true }:
+{ pkgs ? import ./nixpkgs { }, docTools ? true, ghcVersion ? "9.2.5" }:
 
 with pkgs;
 mkShell {
@@ -6,11 +6,13 @@ mkShell {
   # Note: this is set even for linux so any regression introduced by this flag
   # will be catched earlier
   # See: https://github.com/bazelbuild/bazel/issues/4231
-  BAZEL_USE_CPP_ONLY_TOOLCHAIN=1;
-  TMPDIR="/tmp";
+  BAZEL_USE_CPP_ONLY_TOOLCHAIN = 1;
+  TMPDIR = "/tmp";
+
+  GHC_VERSION = ghcVersion;
 
   # Set UTF-8 local so that run-tests can parse GHC's unicode output.
-  LANG="C.UTF-8";
+  LANG = "C.UTF-8";
 
   buildInputs = [
     go
@@ -22,7 +24,7 @@ mkShell {
     # For stack_install.
     stack
     # Needed for ghcide which expects ghc in PATH.
-    haskell.packages.ghc925.ghc
+    haskell.packages."ghc${ builtins.replaceStrings [ "." ] [ "" ] ghcVersion }".ghc
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
     # Needed to get correct locale for tests with encoding
@@ -34,10 +36,10 @@ mkShell {
     # check the start script for problems
     shellcheck
     file
-  ] ++ lib.optionals docTools [graphviz python39Packages.sphinx zip unzip];
+  ] ++ lib.optionals docTools [ graphviz python39Packages.sphinx zip unzip ];
 
   packages = [ bazel_6 ];
-  
+
   shellHook = ''
     # Add nix config flags to .bazelrc.local.
     #

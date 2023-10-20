@@ -322,7 +322,7 @@ case "${MODE}" in
 		# https://api.haskell.build/haskell/nixpkgs.html#haskell_register_ghc_nixpkgs
 		haskell_register_ghc_nixpkgs(
 		    repository = "@nixpkgs",
-		    attribute_path = "haskell.compiler.ghc925",
+		    attribute_path = "haskell.compiler.ghc$( echo "$GHC_VERSION" | tr -d . )",
 		    version = "${GHC_VERSION}",
 		)
 
