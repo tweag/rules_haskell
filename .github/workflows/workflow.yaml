@@ -12,6 +12,9 @@ env:
 jobs:
   test-nixpkgs:
     name: Build & Test - Nixpkgs
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.module }}-${{ matrix.bzlmod }}-nixpkgs
+      cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
     strategy:
       fail-fast: false
       matrix:
@@ -107,6 +110,9 @@ jobs:
 
   test-bindist:
     name: Build & Test - bindist
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.module }}-${{ matrix.bzlmod }}-${{ matrix.ghc }}-bindist
+      cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
     strategy:
       fail-fast: false
       matrix:
