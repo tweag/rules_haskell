@@ -102,11 +102,8 @@ cc_library(
 )
 """,
         sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-        strip_prefix = "zlib-1.2.11",
-        urls = [
-            "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
-            "http://zlib.net/zlib-1.2.11.tar.gz",
-        ],
+        strip_prefix = "zlib-1.3",
+        urls = ["b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0"],
     )
 
 def _non_module_deps_impl(_ctx):
