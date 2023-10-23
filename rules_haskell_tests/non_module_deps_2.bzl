@@ -53,7 +53,7 @@ def repositories(*, bzlmod):
         components_dependencies = {
             "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
         },
-        extra_deps = {"zlib": ["//tests:zlib"]},
+        extra_deps = {"zlib": ["//tests:zlib"], "streaming-commons": ["//tests:zlib"]},
         haddock = False,
         local_snapshot = "//:ghcide-stack-snapshot{}.yaml".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
