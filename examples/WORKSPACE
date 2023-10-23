@@ -57,7 +57,10 @@ stack_snapshot(
     components_dependencies = {
         "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
     },
-    extra_deps = {"zlib": ["@zlib.hs"]},
+    extra_deps = {
+        "zlib": ["@zlib.hs"],
+        "streaming-commons": ["@zlib.hs"],
+    },
     flags = {
         # Sets the default explicitly to demonstrate the flags attribute.
         "zlib": [

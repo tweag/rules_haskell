@@ -67,6 +67,12 @@ stack_snapshot.package(
         ],
 )
 
+stack_snapshot.package(
+    name = "streaming-commons",
+    extra_deps = ["@zlib.hs"],
+    setup_deps = ["@Cabal//:Cabal"],
+)
+
 [
     stack_snapshot.package(
         name = pkg,  # See https://github.com/tweag/rules_haskell/issues/1871
