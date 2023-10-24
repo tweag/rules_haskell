@@ -13,6 +13,7 @@ packages:
 - lsp-1.6.0.0
 - lsp-test-0.14.1.0
 - retrie-1.2.1.1
+- terminal-size-0.3.3
 - git: https://github.com/tweag/cabal
   commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
   subdirs:
