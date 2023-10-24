@@ -149,6 +149,7 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 stack_snapshot(
     name = "stackage",
     components = {
+        "c2hs": ["exe"],
         "proto-lens-protoc": [
             "lib",
             "exe",
@@ -167,6 +168,7 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
+        "c2hs",
         "lens-family-core",
         "data-default-class",
         "proto-lens",
