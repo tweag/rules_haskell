@@ -159,6 +159,7 @@ stack_snapshot(
         "_" + str(GHC_VERSION) if GHC_VERSION else "",
     ),
     packages = [
+        "Cabal",
         # Core libraries
         "base",
         "bytestring",
