@@ -169,7 +169,9 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
+        "alex",
         "c2hs",
+        "happy",
         "lens-family-core",
         "data-default-class",
         "proto-lens",
@@ -191,6 +193,9 @@ stack_snapshot(
         "type-errors": ["@Cabal//:Cabal"],
         "typed-process": ["@Cabal//:Cabal"],
         "unliftio-core": ["@Cabal//:Cabal"],
+        "alex": ["@Cabal//:Cabal"],
+        "c2hs": ["@Cabal//:Cabal"],
+        "happy": ["@Cabal//:Cabal"],
     },
     stack_snapshot_json = "//:stackage_snapshot{}.json".format(
         "_" + str(GHC_VERSION) if GHC_VERSION else "",
