@@ -198,7 +198,7 @@ case "$GHC_VERSION" in
         SNAPSHOT=lts-19.33
         ;;
     9.2.*)
-        SNAPSHOT=lts-20.3
+        SNAPSHOT=lts-20.26
         ;;
     9.4.*)
         SNAPSHOT=lts-21.5
