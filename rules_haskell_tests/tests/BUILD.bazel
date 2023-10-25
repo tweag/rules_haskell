@@ -222,12 +222,12 @@ rule_test(
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
         ],
-        "9.4.5": [
+        "9.4.6": [
             "haddock/array-0.5.4.0",
-            "haddock/base-4.17.1.0",
+            "haddock/base-4.17.2.0",
             "haddock/deepseq-1.4.8.0",
             "haddock/ghc-bignum-1.3",
-            "haddock/ghc-prim-0.9.0",
+            "haddock/ghc-prim-0.9.1",
             "haddock/index",
             "haddock/pretty-1.1.3.6",
             "haddock/template-haskell-2.19.0.0",
