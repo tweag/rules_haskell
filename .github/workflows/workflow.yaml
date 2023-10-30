@@ -180,6 +180,7 @@ jobs:
           fi
           cat >.bazelrc.local <<EOF
           common --config=ci
+          build --toolchain_resolution_debug=.*
           build --config=$BUILD_CONFIG
           build $cache_setting
           $output_root_setting
