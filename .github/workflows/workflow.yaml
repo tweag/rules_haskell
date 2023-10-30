@@ -164,7 +164,7 @@ jobs:
           else
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
-          if [ ${{ matrix.bzlmod }} == bzlmod]; then
+          if [ ${{ matrix.bzlmod }} == bzlmod ]; then
               bzlmod_setting='common --config bzlmod'
           else
               bzlmod_setting=''
