@@ -1,2 +1,6 @@
 import %workspace%/../.bazelrc.common
 import %workspace%/.bazelrc.bzlmod
+
+# User Configuration
+# ------------------
+try-import %workspace%/.bazelrc.local
