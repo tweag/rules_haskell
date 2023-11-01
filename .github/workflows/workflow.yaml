@@ -205,6 +205,8 @@ jobs:
           fi
 
       - name: Build & test - rules_haskell_tests
+        env:
+          USE_BAZEL_VERSION: '6.4.0'
         if: matrix.module == 'rules_haskell_tests'
         shell: bash
         run: |
@@ -214,12 +216,12 @@ jobs:
           if [[ ${{ runner.os }} == Windows ]]; then
             # On Windows `//...` expands to `/...`.
             if [[ ${{ matrix.bzlmod }} == bzlmod ]]; then
-               bazel test --enable_bzlmod ///...
+               bazelisk test --enable_bzlmod ///...
             else
-               bazel test ///...
+               bazelisk test ///...
             fi
           else
-            bazel test //...
+            bazelisk test //...
           fi
           # Test stack_snapshot pinning
           # NOTE keep in sync with tests/RunTests.hs
