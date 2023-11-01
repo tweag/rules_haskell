@@ -204,6 +204,8 @@ jobs:
         run: |
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           if [[ ${{ runner.os }} == Windows ]]; then
+            # prevent auto-detection of system compilers
+            export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
             # On Windows `//...` expands to `/...`.
             bazel test ///...
           else
@@ -218,6 +220,8 @@ jobs:
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           ./tests/run-start-script.sh --use-bindists
           if [[ ${{ runner.os }} == Windows ]]; then
+            # prevent auto-detection of system compilers
+            export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
             # On Windows `//...` expands to `/...`.
             bazel test ///...
           else
