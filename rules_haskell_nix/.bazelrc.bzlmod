@@ -1,3 +1,4 @@
 common:bzlmod --enable_bzlmod
+
 # Note, have to use /// to make Bazel not crash on Windows
-common:bzlmod --registry=file:///%workspace%/../registry --registry=https://bcr.bazel.build
+common --registry=file:///%workspace%/../registry --registry=https://bcr.bazel.build
