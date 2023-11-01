@@ -206,7 +206,7 @@ go_sdk.download(
 
 bazel_dep(
     name = "gazelle",
-    version = "0.30.0",
+    version = "0.33.0",
 )
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
