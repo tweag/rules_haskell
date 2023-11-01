@@ -207,6 +207,7 @@ jobs:
       - name: Build & test - rules_haskell_tests
         env:
           USE_BAZEL_VERSION: '6.4.0'
+          BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN: '1'
         if: matrix.module == 'rules_haskell_tests'
         shell: bash
         run: |
