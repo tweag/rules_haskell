@@ -387,7 +387,6 @@ stack_snapshot.package(
         "process",
         "profunctors",
         "proto-lens",
-        "proto-lens-runtime",
         "safe-exceptions",
         "streaming",
         "temporary",
@@ -410,13 +409,20 @@ stack_snapshot.package(
         setup_deps = ["@Cabal//:Cabal"],
     )
     for package in [
+        "bifunctors",
+        "call-stack",
         "c2hs",
         "doctest",
+        "HUnit",
         "happy",
         "hspec",
         "hspec-core",
         "hspec-discover",
         "hspec-expectations",
+        "proto-lens-runtime",
+        "quickcheck-io",
+        "transformers-compat",
+        "type-errors",
     ]
 ]
 
