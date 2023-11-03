@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: combine-prs
         id: combine-prs
-        uses: github/combine-prs@vX.X.X # where X.X.X is the latest version
+        uses: github/combine-prs@v4.1.0
         with:
           branch_prefix: renovate/
           min_combine_number: '3'
