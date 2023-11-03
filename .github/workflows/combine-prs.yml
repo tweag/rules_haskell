@@ -1,0 +1,25 @@
+name: Combine PRs
+
+on:
+  schedule:
+    - cron: '0 1 * * 3' # Wednesday at 01:00
+  workflow_dispatch: # allows you to manually trigger the workflow
+
+# The minimum permissions required to run this Action
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  combine-prs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: combine-prs
+        id: combine-prs
+        uses: github/combine-prs@vX.X.X # where X.X.X is the latest version
+        with:
+          branch_prefix: renovate/
+          min_combine_number: '3'
+          labels: dependencies,combined-pr
