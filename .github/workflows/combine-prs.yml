@@ -1,6 +1,7 @@
 name: Combine PRs
 
 on:
+  push:
   schedule:
     - cron: '0 1 * * 3' # Wednesday at 01:00
   workflow_dispatch: # allows you to manually trigger the workflow
