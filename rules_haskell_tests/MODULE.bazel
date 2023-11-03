@@ -84,6 +84,11 @@ bazel_dep(
     version = "21.7",
     repo_name = "com_google_protobuf",
 )
+bazel_dep(
+    name = "zlib",
+    version = "1.3",
+    repo_name = "zlib.hs",
+)
 
 ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_default_version")
 use_repo(
@@ -101,7 +106,6 @@ use_repo(
     "library_repo",
     "os_info",
     "rules_bazel_integration_test",
-    "zlib.hs",
 )
 
 non_modules_deps_1 = use_extension("//:non_module_deps_1.bzl", "non_module_deps_1")

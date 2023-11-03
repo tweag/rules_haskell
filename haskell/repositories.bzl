@@ -34,14 +34,14 @@ def rules_haskell_dependencies_bzlmod():
     # Alternately, consider adding another function from another
     # .bzl file that needs to be called from WORKSPACE, similar to:
     # https://github.com/grpc/grpc/blob/8c9dcf7c35e489c2072a9ad86635dbc4e28f88ea/bazel/grpc_extra_deps.bzl#L10
-    maybe(
-        http_archive,
-        name = "zlib",
-        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-        sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
-        strip_prefix = "zlib-1.3",
-        urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
-    )
+    # maybe(
+    #     http_archive,
+    #     name = "zlib",
+    #     build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+    #     sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
+    #     strip_prefix = "zlib-1.3",
+    #     urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
+    # )
 
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
