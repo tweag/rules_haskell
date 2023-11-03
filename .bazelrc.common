@@ -136,7 +136,3 @@ build:windows-bindist --proto_compiler @rules_haskell//tests:protoc.cmd
 # This flag will become the default in bazel 7
 # https://github.com/bazelbuild/bazel/issues/17032
 build --incompatible_disable_starlark_host_transitions
-
-# User Configuration
-# ------------------
-try-import %workspace%/.bazelrc.local

@@ -20,13 +20,17 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-11]
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
-        bzlmod: [bzlmod, workspace]
+        bzlmod: [true, false]
         ghc:
           - 9.2.5
           - 9.4.5
         exclude:
           - module: rules_haskell_nix
-            bzlmod: workspace
+            bzlmod: false
+          # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
+          #       and stack config per GHC version
+          - ghc: 9.4.5
+            bzlmod: true
     runs-on: ${{ matrix.os }}
     steps:
       - if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -62,16 +66,11 @@ jobs:
           else
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
-          if [ ${{ matrix.bzlmod }} == bzlmod ]; then
-              bzlmod_setting='common --config bzlmod'
-          else
-              bzlmod_setting=''
-          fi
           cat >.bazelrc.local <<EOF
           common --config=ci
           build --config=$BUILD_CONFIG
           build $cache_setting
-          $bzlmod_setting
+          common --enable_bzlmod=${{ matrix.bzlmod }}
           EOF
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
@@ -121,10 +120,15 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-11, windows-latest]
         module: [rules_haskell, rules_haskell_tests]
-        bzlmod: [bzlmod, workspace]
+        bzlmod: [true, false]
         ghc:
           - 9.2.5
           - 9.4.5
+        exclude:
+          # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
+          #       and stack config per GHC version
+          - ghc: 9.4.5
+            bzlmod: true
     env:
       GHC_VERSION: ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
@@ -168,16 +172,15 @@ jobs:
           else
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
-          if [ ${{ matrix.bzlmod }} == bzlmod]; then
-              bzlmod_setting='common --config bzlmod'
-          else
-              bzlmod_setting=''
-          fi
           if [[ ${{ runner.os }} == Windows ]]; then
               output_root_setting="startup --output_user_root=C:/_bzl"
               # On windows, we use a separate remote cache for bzlmod,
               # because the c dependency analysis is leaking absolute paths which are different
-              bzlmod_cache_silo_key="build --remote_default_exec_properties=bzlmod-cache-silo-key=${{ matrix.bzlmod }}"
+              if ${{ matrix.bzlmod }}; then
+                bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=bzlmod'
+              else
+                bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=workspace'
+              fi
           else
               output_root_setting=""
               bzlmod_cache_silo_key=""
@@ -188,7 +191,7 @@ jobs:
           build $cache_setting
           $output_root_setting
           $bzlmod_cache_silo_key
-          $bzlmod_setting
+          common --enable_bzlmod=${{ matrix.bzlmod }}
           EOF
           cp .bazelrc.local rules_haskell_tests
           cat >~/.netrc <<EOF
@@ -201,6 +204,8 @@ jobs:
         run: |
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           if [[ ${{ runner.os }} == Windows ]]; then
+            # prevent auto-detection of system compilers
+            export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
             # On Windows `//...` expands to `/...`.
             bazel test ///...
           else
@@ -215,6 +220,8 @@ jobs:
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           ./tests/run-start-script.sh --use-bindists
           if [[ ${{ runner.os }} == Windows ]]; then
+            # prevent auto-detection of system compilers
+            export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
             # On Windows `//...` expands to `/...`.
             bazel test ///...
           else
