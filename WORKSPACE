@@ -90,11 +90,21 @@ load(
     "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
     "haskell_register_ghc_bindists_hadrian",
 )
-load(
-    "non_module_deps_1.bzl",
-    "test_cabalopts",
-    "test_ghcopts",
-)
+
+test_ghcopts = [
+    "-XStandaloneDeriving",  # Flag used at compile time
+    "-threaded",  # Flag used at link time
+    # Used by `tests/repl-flags`
+    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+    # this is the default, so it does not harm other tests
+    "-XNoOverloadedStrings",
+]
+
+test_cabalopts = [
+    # Used by `tests/cabal-toolchain-flags`
+    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
+    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
+]
 
 haskell_register_ghc_bindists_hadrian(
     cabalopts = test_cabalopts,
