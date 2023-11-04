@@ -45,11 +45,11 @@ bazel_dep(
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.6",
+    version = "0.0.8",
 )
 bazel_dep(
     name = "rules_cc",
-    version = "0.0.8",
+    version = "0.0.9",
 )
 bazel_dep(
     name = "rules_sh",
@@ -65,11 +65,11 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nodejs",
-    version = "5.8.2",
+    version = "5.8.3",
 )
 bazel_dep(
     name = "aspect_rules_js",
-    version = "1.31.0",
+    version = "1.33.1",
 )
 bazel_dep(
     name = "aspect_bazel_lib",

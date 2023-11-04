@@ -29,9 +29,9 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "rules_proto",
-    sha256 = "36476f17a78a4c495b9a9e70bd92d182e6e78db476d90c74bac1f5f19f0d6d04",
-    strip_prefix = "rules_proto-fcad4680fee127dbd8344e6a961a28eef5820ef4",
-    urls = ["https://github.com/bazelbuild/rules_proto/archive/fcad4680fee127dbd8344e6a961a28eef5820ef4.tar.gz"],
+    sha256 = "b9776d391f9de6391d46423ed052b4d5f0e5813180be03e50af385e1759fb688",
+    strip_prefix = "rules_proto-52b80440af594d64d4e356f1e9a68059f7f204db",
+    urls = ["https://github.com/bazelbuild/rules_proto/archive/52b80440af594d64d4e356f1e9a68059f7f204db.tar.gz"],
 )
 
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
@@ -123,9 +123,9 @@ buildifier_dependencies()
 
 http_archive(
     name = "cgrindel_bazel_starlib",
-    sha256 = "ee0033d029b5eaddc21836b2944cf37c95eb5f214eb39834136a316dbc252a73",
+    sha256 = "9090280a9cff7322e7c22062506b3273a2e880ca464e520b5c77fdfbed4e8805",
     urls = [
-        "https://github.com/cgrindel/bazel-starlib/releases/download/v0.16.0/bazel-starlib.v0.16.0.tar.gz",
+        "https://github.com/cgrindel/bazel-starlib/releases/download/v0.18.1/bazel-starlib.v0.18.1.tar.gz",
     ],
 )
 
