@@ -64,7 +64,7 @@ load(
     "haskell_register_ghc_bindists",
 )
 
-haskell_register_ghc_bindists(version = GHC_VERSION)
+#haskell_register_ghc_bindists(version = GHC_VERSION)
 
 load(
     "@rules_haskell//haskell/asterius:repositories.bzl",
