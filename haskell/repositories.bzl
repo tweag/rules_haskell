@@ -23,26 +23,6 @@ def rules_haskell_dependencies_bzlmod():
         name = "rules_haskell_ghc_version",
     )
 
-    # Dependency of com_google_protobuf.
-    # TODO(judahjacobson): this is a bit of a hack.
-    # We can't call that repository's protobuf_deps() function
-    # from here, because load()ing it from this .bzl file would lead
-    # to a cycle:
-    # https://github.com/bazelbuild/bazel/issues/1550
-    # https://github.com/bazelbuild/bazel/issues/1943
-    # For now, just hard-code the subset that's needed to use `protoc`.
-    # Alternately, consider adding another function from another
-    # .bzl file that needs to be called from WORKSPACE, similar to:
-    # https://github.com/grpc/grpc/blob/8c9dcf7c35e489c2072a9ad86635dbc4e28f88ea/bazel/grpc_extra_deps.bzl#L10
-    maybe(
-        http_archive,
-        name = "zlib",
-        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-        sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
-        strip_prefix = "zlib-1.2.11",
-        urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
-    )
-
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
     if "bazel_version" in dir(native):
@@ -147,6 +127,26 @@ def rules_haskell_dependencies():
     )
 
     rules_haskell_dependencies_bzlmod()
+
+    # Dependency of com_google_protobuf.
+    # TODO(judahjacobson): this is a bit of a hack.
+    # We can't call that repository's protobuf_deps() function
+    # from here, because load()ing it from this .bzl file would lead
+    # to a cycle:
+    # https://github.com/bazelbuild/bazel/issues/1550
+    # https://github.com/bazelbuild/bazel/issues/1943
+    # For now, just hard-code the subset that's needed to use `protoc`.
+    # Alternately, consider adding another function from another
+    # .bzl file that needs to be called from WORKSPACE, similar to:
+    # https://github.com/grpc/grpc/blob/8c9dcf7c35e489c2072a9ad86635dbc4e28f88ea/bazel/grpc_extra_deps.bzl#L10
+    maybe(
+        http_archive,
+        name = "zlib",
+        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+        sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
+        strip_prefix = "zlib-1.3",
+        urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
+    )
 
     # For --incompatible_disable_starlark_host_transitions support (default in bazel 7)
     # Temporarily overrides the rules_licence that comes with bazel to workaround
