@@ -16,8 +16,11 @@ jobs:
           - '9.2'
           - '9.4'
           - '9.6'
+          - '9.8'
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: master
       - uses: cachix/install-nix-action@v23
         with:
           nix_path: nixpkgs=nixpkgs/default.nix
