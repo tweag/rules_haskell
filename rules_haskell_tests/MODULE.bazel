@@ -84,6 +84,10 @@ bazel_dep(
     version = "21.7",
     repo_name = "com_google_protobuf",
 )
+bazel_dep(
+    name = "zlib",
+    version = "1.3",
+)
 
 ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_default_version")
 use_repo(
@@ -246,12 +250,6 @@ use_repo(
     asterius,
     "rules_haskell_asterius_build_setting",
     "rules_haskell_asterius_webpack",
-)
-
-rules_haskell_dependencies = use_extension("@rules_haskell//extensions:rules_haskell_dependencies.bzl", "rules_haskell_dependencies")
-use_repo(
-    rules_haskell_dependencies,
-    "zlib",
 )
 
 haskell_toolchains = use_extension(
