@@ -18,8 +18,21 @@ jobs:
         run: |
           printf '\n-----\n\n' >> release_notes.txt
           awk -f .github/workflows/changelog.awk CHANGELOG.md >> release_notes.txt
+      - name: Create archive
+        id: archive
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          REPOSITORY_NAME="${GITHUB_REPOSITORY#*/}"
+          PREFIX="${REPOSITORY_NAME}-${TAG:1}"
+          ARCHIVE="${PREFIX}.tar.gz"
+
+          echo "tgz=${ARCHIVE}" >> $GITHUB_OUTPUT
+
+          git archive --format=tar.gz --prefix="${PREFIX}/" -o "$ARCHIVE" "${TAG}"
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           draft: true
           body_path: release_notes.txt
+          fail_on_unmatched_files: true
+          files: ${{ steps.archive.outputs.tgz }}
