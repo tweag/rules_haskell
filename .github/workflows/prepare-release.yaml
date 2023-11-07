@@ -12,12 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Prepare workspace snippet
-        run: .github/workflows/workspace_snippet.sh > release_notes.txt
-      - name: Generate changelog
-        run: |
-          printf '\n-----\n\n' >> release_notes.txt
-          awk -f .github/workflows/changelog.awk CHANGELOG.md >> release_notes.txt
       - name: Create archive
         id: archive
         run: |
@@ -29,6 +23,12 @@ jobs:
           echo "tgz=${ARCHIVE}" >> $GITHUB_OUTPUT
 
           git archive --format=tar.gz --prefix="${PREFIX}/" -o "$ARCHIVE" "${TAG}"
+      - name: Prepare workspace snippet
+        run: .github/workflows/workspace_snippet.sh ${{ steps.archive.outputs.tgz }} > release_notes.txt
+      - name: Generate changelog
+        run: |
+          printf '\n-----\n\n' >> release_notes.txt
+          awk -f .github/workflows/changelog.awk CHANGELOG.md >> release_notes.txt
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
