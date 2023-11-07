@@ -9,8 +9,8 @@ load(
 )
 load(":private/ghc_ci.bzl", "ghc_default_version")
 
-_rules_nixpkgs_version = "7e627d76ba65d6c42586fc265e46bd370672b4eb"
-_rules_nixpkgs_sha256 = "714a0bec45d23bfc23604de5d292a68f6e12272b303fb7bf33567d2878f52612"
+_rules_nixpkgs_version = "0.10.0"
+_rules_nixpkgs_sha256 = "980edfceef2e59e1122d9be6c52413bc298435f0a3d452532b8a48d7562ffd67"
 
 _rules_sh_version = "v0.3.0"
 _rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
@@ -77,12 +77,18 @@ def rules_haskell_dependencies():
         #
         # See https://github.com/tweag/rules_nixpkgs/issues/182 for the rational
 
-        strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version.lstrip("v")
+        strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version
+
+        rules_nixpkgs_url = \
+            "https://github.com/tweag/rules_nixpkgs/releases/download/v{version}/{prefix}.tar.gz".format(
+                version = _rules_nixpkgs_version,
+                prefix = strip_prefix,
+            )
 
         http_archive(
             name = "io_tweag_rules_nixpkgs",
             strip_prefix = strip_prefix,
-            urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+            urls = [rules_nixpkgs_url],
             sha256 = _rules_nixpkgs_sha256,
         )
 
@@ -96,7 +102,7 @@ def rules_haskell_dependencies():
         http_archive(
             name = "rules_nixpkgs_core",
             strip_prefix = strip_prefix + "/core",
-            urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+            urls = [rules_nixpkgs_url],
             sha256 = _rules_nixpkgs_sha256,
         )
 
@@ -104,7 +110,7 @@ def rules_haskell_dependencies():
             http_archive(
                 name = "rules_nixpkgs_" + toolchain,
                 strip_prefix = strip_prefix + "/toolchains/" + toolchain,
-                urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+                urls = [rules_nixpkgs_url],
                 sha256 = _rules_nixpkgs_sha256,
             )
 
