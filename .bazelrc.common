@@ -3,6 +3,9 @@
 # Global Configuration
 # --------------------
 
+# enable common config by default (needed for renovate to ignore the file: registry)
+common --config common
+
 # Force TLS 1.2. With TLS 1.3, we run into the following error on Darwin.
 # > No subject alternative DNS name matching github-releases.githubusercontent.com found.
 # It looks like this is a result of SNI being broken on TLS 1.3 which results
