@@ -23,8 +23,8 @@ jobs:
           echo "tgz=${ARCHIVE}" >> $GITHUB_OUTPUT
 
           git archive --format=tar.gz --prefix="${PREFIX}/" -o "$ARCHIVE" "${TAG}"
-      - name: Prepare workspace snippet
-        run: .github/workflows/workspace_snippet.sh ${{ steps.archive.outputs.tgz }} > release_notes.txt
+      - name: Prepare bzlmod / WORKSPACE snippets
+        run: .github/workflows/prepare_snippets.sh ${{ steps.archive.outputs.tgz }} > release_notes.txt
       - name: Generate changelog
         run: |
           printf '\n-----\n\n' >> release_notes.txt
