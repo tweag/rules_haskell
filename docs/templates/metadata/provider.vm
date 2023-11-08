@@ -1,3 +1,4 @@
   - name: ${providerName}
     type: provider
-    summary: ${providerInfo.docString.split("\n").get(0)}
+    summary: ${providerInfo.docString.replaceFirst("(?s)
+.*", "")}
