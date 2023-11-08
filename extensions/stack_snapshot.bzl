@@ -2,7 +2,7 @@
 This module extension gathers packages and configuration from all the modules that use it,
 in order to make a unique call to `stack_snapshot` to generate a "stackage" shared repository.
 
-Most of the configuration can only be made by the root module, and 
+Most of the configuration can only be made by the root module, and
 other modules can declare the packages they want installed.
 
 The rules_haskell module itself has more permissions, so that it can
@@ -13,6 +13,23 @@ snapshot to use.
 load("@rules_haskell//haskell:cabal.bzl", _stack_snapshot = "stack_snapshot")
 load("@bazel_skylib//lib:new_sets.bzl", "sets")
 load("@os_info//:os_info.bzl", "cpu_value", "is_darwin", "is_linux", "is_windows")
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+
+def _ghc_versioned(label, is_rules_haskell):
+    """
+    Add the GHC version to the name of the given label.
+    """
+    if not GHC_VERSION or not is_rules_haskell:
+        return label
+
+    name, ext = label.name.split(".")
+    versioned = ":{name}_{version}.{ext}".format(
+        name = name,
+        version = GHC_VERSION,
+        ext = ext,
+    )
+
+    return label.relative(versioned)
 
 _snapshot_tag = tag_class(
     doc = "The stack snapshot to use.",
@@ -241,7 +258,7 @@ def _stack_snapshot_impl(mctx):
                 snapshot_tag = module.tags.snapshot[0]
                 if "snapshot" not in kwargs and "local_snapshot" not in kwargs:
                     if snapshot_tag.local_snapshot:
-                        kwargs["local_snapshot"] = snapshot_tag.local_snapshot
+                        kwargs["local_snapshot"] = _ghc_versioned(snapshot_tag.local_snapshot, is_rules_haskell = module in rules_haskell_modules)
                     if snapshot_tag.name:
                         kwargs["snapshot"] = snapshot_tag.name
         else:
@@ -260,7 +277,7 @@ def _stack_snapshot_impl(mctx):
                         cpu_value in os_list,
                     ])
                 ):
-                    kwargs["stack_snapshot_json"] = stack_snapshot_json_tag.label
+                    kwargs["stack_snapshot_json"] = _ghc_versioned(stack_snapshot_json_tag.label, is_rules_haskell = module in rules_haskell_modules)
                     break
 
             if module.tags.verbose:

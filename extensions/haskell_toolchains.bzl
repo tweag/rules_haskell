@@ -8,6 +8,7 @@ load(
     "ghc_bindists_toolchain_declarations",
     "haskell_register_ghc_bindists",
 )
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 _bindists_tag = tag_class(
     attrs = {
@@ -118,7 +119,7 @@ def _haskell_toolchains_impl(mctx):
                 bindist_targets.append(bindist_tag.target)
             ghc_bindist(
                 name = name,
-                version = bindist_tag.version,
+                version = bindist_tag.version or GHC_VERSION,
                 target = bindist_tag.target,
                 ghcopts = bindist_tag.ghcopts,
                 haddock_flags = bindist_tag.haddock_flags,
@@ -152,7 +153,7 @@ def _haskell_toolchains_impl(mctx):
             targets = bindist_info_for_version(mctx, bindists_tag.version).keys()
 
             haskell_register_ghc_bindists(
-                version = bindists_tag.version,
+                version = bindists_tag.version or GHC_VERSION,
                 ghcopts = bindists_tag.ghcopts,
                 haddock_flags = bindists_tag.haddock_flags,
                 repl_ghci_args = bindists_tag.repl_ghci_args,
