@@ -1,3 +1,4 @@
   - name: ${ruleName}
     type: rule
-    summary: ${ruleInfo.docString.split("\n").get(0)}
+    summary: ${ruleInfo.docString.replaceFirst("(?s)
+.*", "")}

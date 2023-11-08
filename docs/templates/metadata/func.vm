@@ -1,3 +1,4 @@
   - name: ${funcInfo.functionName}
     type: function
-    summary: ${funcInfo.docString.split("\n").get(0)}
+    summary: ${funcInfo.docString.replaceFirst("(?s)
+.*", "")}

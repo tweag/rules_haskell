@@ -57,7 +57,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "bazel_skylib",
-    version = "1.4.2",
+    version = "1.5.0",
 )
 bazel_dep(
     name = "rules_java",
@@ -73,7 +73,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "aspect_bazel_lib",
-    version = "1.36.0",
+    version = "1.37.0",
 )
 bazel_dep(
     name = "rules_proto",
