@@ -5,7 +5,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UnboxedTuples #-}
-
+{-# LANGUAGE TemplateHaskellQuotes #-}
+{-# LANGUAGE RoleAnnotations #-}
 
 -- |
 -- Module      : Data.Primitive.PrimArray
@@ -15,46 +16,57 @@
 -- Maintainer  : Roman Leshchinskiy <rl@cse.unsw.edu.au>
 -- Portability : non-portable
 --
--- Arrays of unboxed primitive types. The function provided by this module
--- match the behavior of those provided by @Data.Primitive.ByteArray@, and
+-- Arrays of unboxed primitive types. The functions provided by this module
+-- match the behavior of those provided by "Data.Primitive.ByteArray", and
 -- the underlying types and primops that back them are the same.
 -- However, the type constructors 'PrimArray' and 'MutablePrimArray' take one additional
--- argument than their respective counterparts 'ByteArray' and 'MutableByteArray'.
+-- argument compared to their respective counterparts 'ByteArray' and 'Data.Primitive.ByteArray.MutableByteArray'.
 -- This argument is used to designate the type of element in the array.
--- Consequently, all function this modules accepts length and incides in
+-- Consequently, all functions in this module accept length and indices in
 -- terms of elements, not bytes.
 --
 -- @since 0.6.4.0
+
 module Data.Primitive.PrimArray
   ( -- * Types
     PrimArray(..)
   , MutablePrimArray(..)
     -- * Allocation
   , newPrimArray
+  , newPinnedPrimArray
+  , newAlignedPinnedPrimArray
   , resizeMutablePrimArray
-#if __GLASGOW_HASKELL__ >= 710
   , shrinkMutablePrimArray
-#endif
     -- * Element Access
   , readPrimArray
   , writePrimArray
   , indexPrimArray
     -- * Freezing and Thawing
+  , freezePrimArray
+  , thawPrimArray
+  , runPrimArray
   , unsafeFreezePrimArray
   , unsafeThawPrimArray
     -- * Block Operations
   , copyPrimArray
   , copyMutablePrimArray
-#if __GLASGOW_HASKELL__ >= 708
   , copyPrimArrayToPtr
   , copyMutablePrimArrayToPtr
-#endif
+  , copyPtrToMutablePrimArray
+  , clonePrimArray
+  , cloneMutablePrimArray
   , setPrimArray
     -- * Information
   , sameMutablePrimArray
   , getSizeofMutablePrimArray
   , sizeofMutablePrimArray
   , sizeofPrimArray
+  , primArrayContents
+  , mutablePrimArrayContents
+#if __GLASGOW_HASKELL__ >= 802
+  , isPrimArrayPinned
+  , isMutablePrimArrayPinned
+#endif
     -- * List Conversion
   , primArrayToList
   , primArrayFromList
@@ -69,6 +81,7 @@ module Data.Primitive.PrimArray
   , traversePrimArray_
   , itraversePrimArray_
     -- * Map/Create
+  , emptyPrimArray
   , mapPrimArray
   , imapPrimArray
   , generatePrimArray
@@ -77,6 +90,7 @@ module Data.Primitive.PrimArray
   , mapMaybePrimArray
     -- * Effectful Map/Create
     -- $effectfulMapCreate
+
     -- ** Lazy Applicative
   , traversePrimArray
   , itraversePrimArray
@@ -94,52 +108,74 @@ module Data.Primitive.PrimArray
   ) where
 
 import GHC.Exts
-import GHC.Base ( Int(..) )
-import Data.Primitive.Internal.Compat (isTrue#)
 import Data.Primitive.Types
 import Data.Primitive.ByteArray (ByteArray(..))
-import Data.Monoid (Monoid(..),(<>))
-import Control.Applicative
+#if !MIN_VERSION_base(4,11,0)
+import Data.Monoid ((<>))
+#endif
+#if !MIN_VERSION_base(4,18,0)
+import Control.Applicative (liftA2)
+#endif
+import Control.DeepSeq
 import Control.Monad.Primitive
 import Control.Monad.ST
 import qualified Data.List as L
 import qualified Data.Primitive.ByteArray as PB
 import qualified Data.Primitive.Types as PT
-
-#if MIN_VERSION_base(4,7,0)
-import GHC.Exts (IsList(..))
+#if MIN_VERSION_base(4,10,0)
+import qualified GHC.ST as GHCST
 #endif
+import Language.Haskell.TH.Syntax (Lift (..))
 
-#if MIN_VERSION_base(4,9,0)
+#if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup (Semigroup)
+#endif
 import qualified Data.Semigroup as SG
+
+#if __GLASGOW_HASKELL__ >= 802
+import qualified GHC.Exts as Exts
 #endif
 
 -- | Arrays of unboxed elements. This accepts types like 'Double', 'Char',
--- 'Int', and 'Word', as well as their fixed-length variants ('Word8',
+-- 'Int' and 'Word', as well as their fixed-length variants ('Word8',
 -- 'Word16', etc.). Since the elements are unboxed, a 'PrimArray' is strict
--- in its elements. This differs from the behavior of 'Array', which is lazy
--- in its elements.
+-- in its elements. This differs from the behavior of 'Data.Primitive.Array.Array',
+-- which is lazy in its elements.
 data PrimArray a = PrimArray ByteArray#
+
+type role PrimArray nominal
+
+instance Lift (PrimArray a) where
+#if MIN_VERSION_template_haskell(2,16,0)
+  liftTyped ary = [|| byteArrayToPrimArray ba ||]
+#else
+  lift ary = [| byteArrayToPrimArray ba |]
+#endif
+    where
+      ba = primArrayToByteArray ary
+
+instance NFData (PrimArray a) where
+  rnf (PrimArray _) = ()
 
 -- | Mutable primitive arrays associated with a primitive state token.
 -- These can be written to and read from in a monadic context that supports
--- sequencing such as 'IO' or 'ST'. Typically, a mutable primitive array will
--- be built and then convert to an immutable primitive array using
+-- sequencing, such as 'IO' or 'ST'. Typically, a mutable primitive array will
+-- be built and then converted to an immutable primitive array using
 -- 'unsafeFreezePrimArray'. However, it is also acceptable to simply discard
 -- a mutable primitive array since it lives in managed memory and will be
 -- garbage collected when no longer referenced.
 data MutablePrimArray s a = MutablePrimArray (MutableByteArray# s)
 
+instance Eq (MutablePrimArray s a) where
+  (==) = sameMutablePrimArray
+
+instance NFData (MutablePrimArray s a) where
+  rnf (MutablePrimArray _) = ()
+
 sameByteArray :: ByteArray# -> ByteArray# -> Bool
 sameByteArray ba1 ba2 =
     case reallyUnsafePtrEquality# (unsafeCoerce# ba1 :: ()) (unsafeCoerce# ba2 :: ()) of
-#if __GLASGOW_HASKELL__ >= 708
       r -> isTrue# r
-#else
-      1# -> True
-      _ -> False
-#endif
 
 -- | @since 0.6.4.0
 instance (Eq a, Prim a) => Eq (PrimArray a) where
@@ -155,12 +191,12 @@ instance (Eq a, Prim a) => Eq (PrimArray a) where
     sz2 = PB.sizeofByteArray (ByteArray ba2#)
     loop !i
       | i < 0 = True
-      | otherwise = indexPrimArray a1 i == indexPrimArray a2 i && loop (i-1)
+      | otherwise = indexPrimArray a1 i == indexPrimArray a2 i && loop (i - 1)
   {-# INLINE (==) #-}
 
 -- | Lexicographic ordering. Subject to change between major versions.
 --
---   @since 0.6.4.0
+-- @since 0.6.4.0
 instance (Ord a, Prim a) => Ord (PrimArray a) where
   compare a1@(PrimArray ba1#) a2@(PrimArray ba2#)
     | sameByteArray ba1# ba2# = EQ
@@ -170,18 +206,16 @@ instance (Ord a, Prim a) => Ord (PrimArray a) where
     sz2 = PB.sizeofByteArray (ByteArray ba2#)
     sz = quot (min sz1 sz2) (sizeOf (undefined :: a))
     loop !i
-      | i < sz = compare (indexPrimArray a1 i) (indexPrimArray a2 i) <> loop (i+1)
+      | i < sz = compare (indexPrimArray a1 i) (indexPrimArray a2 i) <> loop (i + 1)
       | otherwise = compare sz1 sz2
   {-# INLINE compare #-}
 
-#if MIN_VERSION_base(4,7,0)
 -- | @since 0.6.4.0
 instance Prim a => IsList (PrimArray a) where
   type Item (PrimArray a) = a
   fromList = primArrayFromList
   fromListN = primArrayFromListN
   toList = primArrayToList
-#endif
 
 -- | @since 0.6.4.0
 instance (Show a, Prim a) => Show (PrimArray a) where
@@ -192,9 +226,14 @@ instance (Show a, Prim a) => Show (PrimArray a) where
 die :: String -> String -> a
 die fun problem = error $ "Data.Primitive.PrimArray." ++ fun ++ ": " ++ problem
 
+-- | Create a 'PrimArray' from a list.
+--
+-- @primArrayFromList vs = `primArrayFromListN` (length vs) vs@
 primArrayFromList :: Prim a => [a] -> PrimArray a
 primArrayFromList vs = primArrayFromListN (L.length vs) vs
 
+-- | Create a 'PrimArray' from a list of a known length. If the length
+-- of the list does not match the given length, this throws an exception.
 primArrayFromListN :: forall a. Prim a => Int -> [a] -> PrimArray a
 primArrayFromListN len vs = runST run where
   run :: forall s. ST s (PrimArray a)
@@ -212,7 +251,7 @@ primArrayFromListN len vs = runST run where
     go vs 0
     unsafeFreezePrimArray arr
 
--- | Convert the primitive array to a list.
+-- | Convert a 'PrimArray' to a list.
 {-# INLINE primArrayToList #-}
 primArrayToList :: forall a. Prim a => PrimArray a -> [a]
 primArrayToList xs = build (\c n -> foldrPrimArray c n xs)
@@ -223,13 +262,11 @@ primArrayToByteArray (PrimArray x) = PB.ByteArray x
 byteArrayToPrimArray :: ByteArray -> PrimArray a
 byteArrayToPrimArray (PB.ByteArray x) = PrimArray x
 
-#if MIN_VERSION_base(4,9,0)
 -- | @since 0.6.4.0
 instance Semigroup (PrimArray a) where
   x <> y = byteArrayToPrimArray (primArrayToByteArray x SG.<> primArrayToByteArray y)
   sconcat = byteArrayToPrimArray . SG.sconcat . fmap primArrayToByteArray
   stimes i arr = byteArrayToPrimArray (SG.stimes i (primArrayToByteArray arr))
-#endif
 
 -- | @since 0.6.4.0
 instance Monoid (PrimArray a) where
@@ -239,7 +276,7 @@ instance Monoid (PrimArray a) where
 #endif
   mconcat = byteArrayToPrimArray . mconcat . map primArrayToByteArray
 
--- | The empty primitive array.
+-- | The empty 'PrimArray'.
 emptyPrimArray :: PrimArray a
 {-# NOINLINE emptyPrimArray #-}
 emptyPrimArray = runST $ primitive $ \s0# -> case newByteArray# 0# s0# of
@@ -248,6 +285,8 @@ emptyPrimArray = runST $ primitive $ \s0# -> case newByteArray# 0# s0# of
 
 -- | Create a new mutable primitive array of the given length. The
 -- underlying memory is left uninitialized.
+--
+-- /Note:/ this function does not check if the input is non-negative.
 newPrimArray :: forall m a. (PrimMonad m, Prim a) => Int -> m (MutablePrimArray (PrimState m) a)
 {-# INLINE newPrimArray #-}
 newPrimArray (I# n#)
@@ -271,23 +310,12 @@ resizeMutablePrimArray :: forall m a. (PrimMonad m, Prim a)
   -> Int -- ^ new size
   -> m (MutablePrimArray (PrimState m) a)
 {-# INLINE resizeMutablePrimArray #-}
-#if __GLASGOW_HASKELL__ >= 710
 resizeMutablePrimArray (MutablePrimArray arr#) (I# n#)
   = primitive (\s# -> case resizeMutableByteArray# arr# (n# *# sizeOf# (undefined :: a)) s# of
                         (# s'#, arr'# #) -> (# s'#, MutablePrimArray arr'# #))
-#else
-resizeMutablePrimArray arr n
-  = do arr' <- newPrimArray n
-       copyMutablePrimArray arr' 0 arr 0 (min (sizeofMutablePrimArray arr) n)
-       return arr'
-#endif
 
--- Although it is possible to shim resizeMutableByteArray for old GHCs, this
--- is not the case with shrinkMutablePrimArray.
-#if __GLASGOW_HASKELL__ >= 710
 -- | Shrink a mutable primitive array. The new size is given in elements.
 -- It must be smaller than the old size. The array will be resized in place.
--- This function is only available when compiling with GHC 7.10 or newer.
 shrinkMutablePrimArray :: forall m a. (PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a
   -> Int -- ^ new size
@@ -295,16 +323,20 @@ shrinkMutablePrimArray :: forall m a. (PrimMonad m, Prim a)
 {-# INLINE shrinkMutablePrimArray #-}
 shrinkMutablePrimArray (MutablePrimArray arr#) (I# n#)
   = primitive_ (shrinkMutableByteArray# arr# (n# *# sizeOf# (undefined :: a)))
-#endif
 
+-- | Read a value from the array at the given index.
+--
+-- /Note:/ this function does not do bounds checking.
 readPrimArray :: (Prim a, PrimMonad m) => MutablePrimArray (PrimState m) a -> Int -> m a
 {-# INLINE readPrimArray #-}
 readPrimArray (MutablePrimArray arr#) (I# i#)
   = primitive (readByteArray# arr# i#)
 
 -- | Write an element to the given index.
-writePrimArray ::
-     (Prim a, PrimMonad m)
+--
+-- /Note:/ this function does not do bounds checking.
+writePrimArray
+  :: (Prim a, PrimMonad m)
   => MutablePrimArray (PrimState m) a -- ^ array
   -> Int -- ^ index
   -> a -- ^ element
@@ -314,8 +346,10 @@ writePrimArray (MutablePrimArray arr#) (I# i#) x
   = primitive_ (writeByteArray# arr# i# x)
 
 -- | Copy part of a mutable array into another mutable array.
---   In the case that the destination and
---   source arrays are the same, the regions may overlap.
+-- In the case that the destination and
+-- source arrays are the same, the regions may overlap.
+--
+-- /Note:/ this function does not do bounds or overlap checking.
 copyMutablePrimArray :: forall m a.
      (PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a -- ^ destination array
@@ -328,13 +362,15 @@ copyMutablePrimArray :: forall m a.
 copyMutablePrimArray (MutablePrimArray dst#) (I# doff#) (MutablePrimArray src#) (I# soff#) (I# n#)
   = primitive_ (copyMutableByteArray#
       src#
-      (soff# *# (sizeOf# (undefined :: a)))
+      (soff# *# sizeOf# (undefined :: a))
       dst#
-      (doff# *# (sizeOf# (undefined :: a)))
-      (n# *# (sizeOf# (undefined :: a)))
+      (doff# *# sizeOf# (undefined :: a))
+      (n# *# sizeOf# (undefined :: a))
     )
 
 -- | Copy part of an array into another mutable array.
+--
+-- /Note:/ this function does not do bounds or overlap checking.
 copyPrimArray :: forall m a.
      (PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a -- ^ destination array
@@ -347,23 +383,23 @@ copyPrimArray :: forall m a.
 copyPrimArray (MutablePrimArray dst#) (I# doff#) (PrimArray src#) (I# soff#) (I# n#)
   = primitive_ (copyByteArray#
       src#
-      (soff# *# (sizeOf# (undefined :: a)))
+      (soff# *# sizeOf# (undefined :: a))
       dst#
-      (doff# *# (sizeOf# (undefined :: a)))
-      (n# *# (sizeOf# (undefined :: a)))
+      (doff# *# sizeOf# (undefined :: a))
+      (n# *# sizeOf# (undefined :: a))
     )
 
-#if __GLASGOW_HASKELL__ >= 708
--- | Copy a slice of an immutable primitive array to an address.
---   The offset and length are given in elements of type @a@.
---   This function assumes that the 'Prim' instance of @a@
---   agrees with the 'Storable' instance. This function is only
---   available when building with GHC 7.8 or newer.
+-- | Copy a slice of an immutable primitive array to a pointer.
+-- The offset and length are given in elements of type @a@.
+-- This function assumes that the 'Prim' instance of @a@
+-- agrees with the 'Storable' instance.
+--
+-- /Note:/ this function does not do bounds or overlap checking.
 copyPrimArrayToPtr :: forall m a. (PrimMonad m, Prim a)
   => Ptr a -- ^ destination pointer
   -> PrimArray a -- ^ source array
   -> Int -- ^ offset into source array
-  -> Int -- ^ number of prims to copy
+  -> Int -- ^ number of elements to copy
   -> m ()
 {-# INLINE copyPrimArrayToPtr #-}
 copyPrimArrayToPtr (Ptr addr#) (PrimArray ba#) (I# soff#) (I# n#) =
@@ -372,16 +408,17 @@ copyPrimArrayToPtr (Ptr addr#) (PrimArray ba#) (I# soff#) (I# n#) =
         in (# s'#, () #))
   where siz# = sizeOf# (undefined :: a)
 
--- | Copy a slice of an immutable primitive array to an address.
---   The offset and length are given in elements of type @a@.
---   This function assumes that the 'Prim' instance of @a@
---   agrees with the 'Storable' instance. This function is only
---   available when building with GHC 7.8 or newer.
+-- | Copy a slice of a mutable primitive array to a pointer.
+-- The offset and length are given in elements of type @a@.
+-- This function assumes that the 'Prim' instance of @a@
+-- agrees with the 'Storable' instance.
+--
+-- /Note:/ this function does not do bounds or overlap checking.
 copyMutablePrimArrayToPtr :: forall m a. (PrimMonad m, Prim a)
   => Ptr a -- ^ destination pointer
   -> MutablePrimArray (PrimState m) a -- ^ source array
   -> Int -- ^ offset into source array
-  -> Int -- ^ number of prims to copy
+  -> Int -- ^ number of elements to copy
   -> m ()
 {-# INLINE copyMutablePrimArrayToPtr #-}
 copyMutablePrimArrayToPtr (Ptr addr#) (MutablePrimArray mba#) (I# soff#) (I# n#) =
@@ -389,9 +426,28 @@ copyMutablePrimArrayToPtr (Ptr addr#) (MutablePrimArray mba#) (I# soff#) (I# n#)
         let s'# = copyMutableByteArrayToAddr# mba# (soff# *# siz#) addr# (n# *# siz#) s#
         in (# s'#, () #))
   where siz# = sizeOf# (undefined :: a)
-#endif
+
+-- | Copy from a pointer to a mutable primitive array.
+-- The offset and length are given in elements of type @a@.
+-- This function assumes that the 'Prim' instance of @a@
+-- agrees with the 'Storable' instance.
+--
+-- /Note:/ this function does not do bounds or overlap checking.
+copyPtrToMutablePrimArray :: forall m a. (PrimMonad m, Prim a)
+  => MutablePrimArray (PrimState m) a -- ^ destination array
+  -> Int -- ^ destination offset
+  -> Ptr a -- ^ source pointer
+  -> Int -- ^ number of elements
+  -> m ()
+{-# INLINE copyPtrToMutablePrimArray #-}
+copyPtrToMutablePrimArray (MutablePrimArray ba#) (I# doff#) (Ptr addr#) (I# n#) =
+  primitive_ (copyAddrToByteArray# addr# ba# (doff# *# siz#) (n# *# siz#))
+  where
+  siz# = sizeOf# (undefined :: a)
 
 -- | Fill a slice of a mutable primitive array with a value.
+--
+-- /Note:/ this function does not do bounds checking.
 setPrimArray
   :: (Prim a, PrimMonad m)
   => MutablePrimArray (PrimState m) a -- ^ array to fill
@@ -424,8 +480,8 @@ getSizeofMutablePrimArray arr
 #endif
 
 -- | Size of the mutable primitive array in elements. This function shall not
---   be used on primitive arrays that are an argument to or a result of
---   'resizeMutablePrimArray' or 'shrinkMutablePrimArray'.
+-- be used on primitive arrays that are an argument to or a result of
+-- 'resizeMutablePrimArray' or 'shrinkMutablePrimArray'.
 sizeofMutablePrimArray :: forall s a. Prim a => MutablePrimArray s a -> Int
 {-# INLINE sizeofMutablePrimArray #-}
 sizeofMutablePrimArray (MutablePrimArray arr#) =
@@ -437,7 +493,49 @@ sameMutablePrimArray :: MutablePrimArray s a -> MutablePrimArray s a -> Bool
 sameMutablePrimArray (MutablePrimArray arr#) (MutablePrimArray brr#)
   = isTrue# (sameMutableByteArray# arr# brr#)
 
--- | Convert a mutable byte array to an immutable one without copying. The
+-- | Create an immutable copy of a slice of a primitive array. The offset and
+-- length are given in elements.
+--
+-- This operation makes a copy of the specified section, so it is safe to
+-- continue using the mutable array afterward.
+--
+-- /Note:/ The provided array should contain the full subrange
+-- specified by the two Ints, but this is not checked.
+freezePrimArray
+  :: (PrimMonad m, Prim a)
+  => MutablePrimArray (PrimState m) a -- ^ source
+  -> Int                              -- ^ offset in elements
+  -> Int                              -- ^ length in elements
+  -> m (PrimArray a)
+{-# INLINE freezePrimArray #-}
+freezePrimArray !src !off !len = do
+  dst <- newPrimArray len
+  copyMutablePrimArray dst 0 src off len
+  unsafeFreezePrimArray dst
+
+-- | Create a mutable primitive array from a slice of an immutable primitive array.
+-- The offset and length are given in elements.
+--
+-- This operation makes a copy of the specified slice, so it is safe to
+-- use the immutable array afterward.
+--
+-- /Note:/ The provided array should contain the full subrange
+-- specified by the two Ints, but this is not checked.
+--
+-- @since 0.7.2.0
+thawPrimArray
+  :: (PrimMonad m, Prim a)
+  => PrimArray a -- ^ source
+  -> Int         -- ^ offset in elements
+  -> Int         -- ^ length in elements
+  -> m (MutablePrimArray (PrimState m) a)
+{-# INLINE thawPrimArray #-}
+thawPrimArray !src !off !len = do
+  dst <- newPrimArray len
+  copyPrimArray dst 0 src off len
+  return dst
+
+-- | Convert a mutable primitive array to an immutable one without copying. The
 -- array should not be modified after the conversion.
 unsafeFreezePrimArray
   :: PrimMonad m => MutablePrimArray (PrimState m) a -> m (PrimArray a)
@@ -455,6 +553,8 @@ unsafeThawPrimArray (PrimArray arr#)
   = primitive (\s# -> (# s#, MutablePrimArray (unsafeCoerce# arr#) #))
 
 -- | Read a primitive value from the primitive array.
+--
+-- /Note:/ this function does not do bounds checking.
 indexPrimArray :: forall a. Prim a => PrimArray a -> Int -> a
 {-# INLINE indexPrimArray #-}
 indexPrimArray (PrimArray arr#) (I# i#) = indexByteArray# arr# i#
@@ -464,6 +564,26 @@ sizeofPrimArray :: forall a. Prim a => PrimArray a -> Int
 {-# INLINE sizeofPrimArray #-}
 sizeofPrimArray (PrimArray arr#) = I# (quotInt# (sizeofByteArray# arr#) (sizeOf# (undefined :: a)))
 
+#if __GLASGOW_HASKELL__ >= 802
+-- | Check whether or not the primitive array is pinned. Pinned primitive arrays cannot
+-- be moved by the garbage collector. It is safe to use 'primArrayContents'
+-- on such arrays. This function is only available when compiling with
+-- GHC 8.2 or newer.
+--
+-- @since 0.7.1.0
+isPrimArrayPinned :: PrimArray a -> Bool
+{-# INLINE isPrimArrayPinned #-}
+isPrimArrayPinned (PrimArray arr#) = isTrue# (Exts.isByteArrayPinned# arr#)
+
+-- | Check whether or not the mutable primitive array is pinned. This function is
+-- only available when compiling with GHC 8.2 or newer.
+--
+-- @since 0.7.1.0
+isMutablePrimArrayPinned :: MutablePrimArray s a -> Bool
+{-# INLINE isMutablePrimArrayPinned #-}
+isMutablePrimArrayPinned (MutablePrimArray marr#) = isTrue# (Exts.isMutableByteArrayPinned# marr#)
+#endif
+
 -- | Lazy right-associated fold over the elements of a 'PrimArray'.
 {-# INLINE foldrPrimArray #-}
 foldrPrimArray :: forall a b. Prim a => (a -> b -> b) -> b -> PrimArray a -> b
@@ -471,7 +591,7 @@ foldrPrimArray f z arr = go 0
   where
     !sz = sizeofPrimArray arr
     go !i
-      | sz > i = f (indexPrimArray arr i) (go (i+1))
+      | i < sz = f (indexPrimArray arr i) (go (i + 1))
       | otherwise = z
 
 -- | Strict right-associated fold over the elements of a 'PrimArray'.
@@ -559,7 +679,7 @@ traversePrimArrayP f arr = do
   unsafeFreezePrimArray marr
 
 -- | Filter the primitive array, keeping the elements for which the monadic
--- predicate evaluates true.
+-- predicate evaluates to true.
 {-# INLINE filterPrimArrayP #-}
 filterPrimArrayP :: (PrimMonad m, Prim a)
   => (a -> m Bool)
@@ -642,7 +762,6 @@ replicatePrimArrayP sz f = do
   go 0
   unsafeFreezePrimArray marr
 
-
 -- | Map over the elements of a primitive array.
 {-# INLINE mapPrimArray #-}
 mapPrimArray :: (Prim a, Prim b)
@@ -703,8 +822,8 @@ filterPrimArray p arr = runST $ do
 
 -- | Filter the primitive array, keeping the elements for which the monadic
 -- predicate evaluates true.
-filterPrimArrayA ::
-     (Applicative f, Prim a)
+filterPrimArrayA
+  :: (Applicative f, Prim a)
   => (a -> f Bool) -- ^ mapping function
   -> PrimArray a -- ^ primitive array
   -> f (PrimArray a)
@@ -727,8 +846,8 @@ filterPrimArrayA f = \ !ary ->
 
 -- | Map over the primitive array, keeping the elements for which the applicative
 -- predicate provides a 'Just'.
-mapMaybePrimArrayA ::
-     (Applicative f, Prim a, Prim b)
+mapMaybePrimArrayA
+  :: (Applicative f, Prim a, Prim b)
   => (a -> f (Maybe b)) -- ^ mapping function
   -> PrimArray a -- ^ primitive array
   -> f (PrimArray b)
@@ -772,7 +891,6 @@ mapMaybePrimArray p arr = runST $ do
   marr' <- resizeMutablePrimArray marr dstLen
   unsafeFreezePrimArray marr'
 
-
 -- | Traverse a primitive array. The traversal performs all of the applicative
 -- effects /before/ forcing the resulting values and writing them to the new
 -- primitive array. Consequently:
@@ -786,8 +904,8 @@ mapMaybePrimArray p arr = runST $ do
 -- The function 'traversePrimArrayP' always outperforms this function, but it
 -- requires a 'PrimMonad' constraint, and it forces the values as
 -- it performs the effects.
-traversePrimArray ::
-     (Applicative f, Prim a, Prim b)
+traversePrimArray
+  :: (Applicative f, Prim a, Prim b)
   => (a -> f b) -- ^ mapping function
   -> PrimArray a -- ^ primitive array
   -> f (PrimArray b)
@@ -805,8 +923,8 @@ traversePrimArray f = \ !ary ->
      else runSTA len <$> go 0
 
 -- | Traverse a primitive array with the index of each element.
-itraversePrimArray ::
-     (Applicative f, Prim a, Prim b)
+itraversePrimArray
+  :: (Applicative f, Prim a, Prim b)
   => (Int -> a -> f b)
   -> PrimArray a
   -> f (PrimArray b)
@@ -873,8 +991,8 @@ replicatePrimArray len a = runST $ do
 -- | Generate a primitive array by evaluating the applicative generator
 -- function at each index.
 {-# INLINE generatePrimArrayA #-}
-generatePrimArrayA ::
-     (Applicative f, Prim a)
+generatePrimArrayA
+  :: (Applicative f, Prim a)
   => Int -- ^ length
   -> (Int -> f a) -- ^ element from index
   -> f (PrimArray a)
@@ -891,10 +1009,10 @@ generatePrimArrayA len f =
      else runSTA len <$> go 0
 
 -- | Execute the applicative action the given number of times and store the
--- results in a vector.
+-- results in a 'PrimArray'.
 {-# INLINE replicatePrimArrayA #-}
-replicatePrimArrayA ::
-     (Applicative f, Prim a)
+replicatePrimArrayA
+  :: (Applicative f, Prim a)
   => Int -- ^ length
   -> f a -- ^ applicative element producer
   -> f (PrimArray a)
@@ -911,10 +1029,10 @@ replicatePrimArrayA len f =
      else runSTA len <$> go 0
 
 -- | Traverse the primitive array, discarding the results. There
--- is no 'PrimMonad' variant of this function since it would not provide
+-- is no 'PrimMonad' variant of this function, since it would not provide
 -- any performance benefit.
-traversePrimArray_ ::
-     (Applicative f, Prim a)
+traversePrimArray_
+  :: (Applicative f, Prim a)
   => (a -> f b)
   -> PrimArray a
   -> f ()
@@ -925,10 +1043,10 @@ traversePrimArray_ f a = go 0 where
     else pure ()
 
 -- | Traverse the primitive array with the indices, discarding the results.
--- There is no 'PrimMonad' variant of this function since it would not
+-- There is no 'PrimMonad' variant of this function, since it would not
 -- provide any performance benefit.
-itraversePrimArray_ ::
-     (Applicative f, Prim a)
+itraversePrimArray_
+  :: (Applicative f, Prim a)
   => (Int -> a -> f b)
   -> PrimArray a
   -> f ()
@@ -965,4 +1083,94 @@ The naming conventions adopted in this section are explained in the
 documentation of the @Data.Primitive@ module.
 -}
 
+-- | Create a /pinned/ primitive array of the specified size (in elements). The garbage
+-- collector is guaranteed not to move it.
+--
+-- @since 0.7.1.0
+newPinnedPrimArray :: forall m a. (PrimMonad m, Prim a)
+  => Int -> m (MutablePrimArray (PrimState m) a)
+{-# INLINE newPinnedPrimArray #-}
+newPinnedPrimArray (I# n#)
+  = primitive (\s# -> case newPinnedByteArray# (n# *# sizeOf# (undefined :: a)) s# of
+                        (# s'#, arr# #) -> (# s'#, MutablePrimArray arr# #))
 
+-- | Create a /pinned/ primitive array of the specified size (in elements) and
+-- with the alignment given by its 'Prim' instance. The garbage collector is
+-- guaranteed not to move it.
+--
+-- @since 0.7.0.0
+newAlignedPinnedPrimArray :: forall m a. (PrimMonad m, Prim a)
+  => Int -> m (MutablePrimArray (PrimState m) a)
+{-# INLINE newAlignedPinnedPrimArray #-}
+newAlignedPinnedPrimArray (I# n#)
+  = primitive (\s# -> case newAlignedPinnedByteArray# (n# *# sizeOf# (undefined :: a)) (alignment# (undefined :: a)) s# of
+                        (# s'#, arr# #) -> (# s'#, MutablePrimArray arr# #))
+
+-- | Yield a pointer to the array's data. This operation is only safe on
+-- /pinned/ prim arrays allocated by 'newPinnedByteArray' or
+-- 'newAlignedPinnedByteArray'.
+--
+-- @since 0.7.1.0
+primArrayContents :: PrimArray a -> Ptr a
+{-# INLINE primArrayContents #-}
+primArrayContents (PrimArray arr#) = Ptr (byteArrayContents# arr#)
+
+-- | Yield a pointer to the array's data. This operation is only safe on
+-- /pinned/ byte arrays allocated by 'newPinnedByteArray' or
+-- 'newAlignedPinnedByteArray'.
+--
+-- @since 0.7.1.0
+mutablePrimArrayContents :: MutablePrimArray s a -> Ptr a
+{-# INLINE mutablePrimArrayContents #-}
+mutablePrimArrayContents (MutablePrimArray arr#)
+  = Ptr (byteArrayContents# (unsafeCoerce# arr#))
+
+-- | Return a newly allocated array with the specified subrange of the
+-- provided array. The provided array should contain the full subrange
+-- specified by the two Ints, but this is not checked.
+clonePrimArray :: Prim a
+  => PrimArray a -- ^ source array
+  -> Int     -- ^ offset into destination array
+  -> Int     -- ^ number of elements to copy
+  -> PrimArray a
+{-# INLINE clonePrimArray #-}
+clonePrimArray src off n = runPrimArray $ do
+  dst <- newPrimArray n
+  copyPrimArray dst 0 src off n
+  return dst
+
+-- | Return a newly allocated mutable array with the specified subrange of
+-- the provided mutable array. The provided mutable array should contain the
+-- full subrange specified by the two Ints, but this is not checked.
+cloneMutablePrimArray :: (PrimMonad m, Prim a)
+  => MutablePrimArray (PrimState m) a -- ^ source array
+  -> Int -- ^ offset into destination array
+  -> Int -- ^ number of elements to copy
+  -> m (MutablePrimArray (PrimState m) a)
+{-# INLINE cloneMutablePrimArray #-}
+cloneMutablePrimArray src off n = do
+  dst <- newPrimArray n
+  copyMutablePrimArray dst 0 src off n
+  return dst
+
+-- | Execute the monadic action and freeze the resulting array.
+--
+-- > runPrimArray m = runST $ m >>= unsafeFreezePrimArray
+runPrimArray
+  :: (forall s. ST s (MutablePrimArray s a))
+  -> PrimArray a
+#if MIN_VERSION_base(4,10,0) /* In new GHCs, runRW# is available. */
+runPrimArray m = PrimArray (runPrimArray# m)
+
+runPrimArray#
+  :: (forall s. ST s (MutablePrimArray s a))
+  -> ByteArray#
+runPrimArray# m = case runRW# $ \s ->
+  case unST m s of { (# s', MutablePrimArray mary# #) ->
+  unsafeFreezeByteArray# mary# s'} of (# _, ary# #) -> ary#
+
+unST :: ST s a -> State# s -> (# State# s, a #)
+unST (GHCST.ST f) = f
+#else /* In older GHCs, runRW# is not available. */
+runPrimArray m = runST $ m >>= unsafeFreezePrimArray
+#endif

@@ -11,7 +11,7 @@
 -- Maintainer  : Roman Leshchinskiy <rl@cse.unsw.edu.au>
 -- Portability : non-portable
 --
--- Primitive operations on machine addresses
+-- Primitive operations on machine addresses.
 --
 -- @since 0.6.4.0
 
@@ -28,20 +28,16 @@ module Data.Primitive.Ptr (
   -- * Block operations
   copyPtr, movePtr, setPtr
 
-#if __GLASGOW_HASKELL__ >= 708
   , copyPtrToMutablePrimArray
-#endif
+  , copyPtrToMutableByteArray
 ) where
 
 import Control.Monad.Primitive
 import Data.Primitive.Types
-#if __GLASGOW_HASKELL__ >= 708
-import Data.Primitive.PrimArray (MutablePrimArray(..))
-#endif
+import Data.Primitive.PrimArray (copyPtrToMutablePrimArray)
+import Data.Primitive.ByteArray (copyPtrToMutableByteArray)
 
-import GHC.Base ( Int(..) )
 import GHC.Exts
-
 import GHC.Ptr
 import Foreign.Marshal.Utils
 
@@ -52,8 +48,8 @@ advancePtr :: forall a. Prim a => Ptr a -> Int -> Ptr a
 advancePtr (Ptr a#) (I# i#) = Ptr (plusAddr# a# (i# *# sizeOf# (undefined :: a)))
 
 -- | Subtract a pointer from another pointer. The result represents
---   the number of elements of type @a@ that fit in the contiguous
---   memory range bounded by these two pointers.
+-- the number of elements of type @a@ that fit in the contiguous
+-- memory range bounded by these two pointers.
 subtractPtr :: forall a. Prim a => Ptr a -> Ptr a -> Int
 {-# INLINE subtractPtr #-}
 subtractPtr (Ptr a#) (Ptr b#) = I# (quotInt# (minusAddr# a# b#) (sizeOf# (undefined :: a)))
@@ -91,8 +87,8 @@ copyPtr (Ptr dst#) (Ptr src#) n
 -- | Copy the given number of elements from the second 'Ptr' to the first. The
 -- areas may overlap.
 movePtr :: forall m a. (PrimMonad m, Prim a)
-  => Ptr a -- ^ destination address
-  -> Ptr a -- ^ source address
+  => Ptr a -- ^ destination pointer
+  -> Ptr a -- ^ source pointer
   -> Int -- ^ number of elements
   -> m ()
 {-# INLINE movePtr #-}
@@ -104,22 +100,3 @@ movePtr (Ptr dst#) (Ptr src#) n
 setPtr :: (Prim a, PrimMonad m) => Ptr a -> Int -> a -> m ()
 {-# INLINE setPtr #-}
 setPtr (Ptr addr#) (I# n#) x = primitive_ (setOffAddr# addr# 0# n# x)
-
-
-#if __GLASGOW_HASKELL__ >= 708
--- | Copy from a pointer to a mutable primitive array.
--- The offset and length are given in elements of type @a@.
--- This function is only available when building with GHC 7.8
--- or newer.
-copyPtrToMutablePrimArray :: forall m a. (PrimMonad m, Prim a)
-  => MutablePrimArray (PrimState m) a -- ^ destination array
-  -> Int -- ^ destination offset
-  -> Ptr a -- ^ source pointer
-  -> Int -- ^ number of elements
-  -> m ()
-{-# INLINE copyPtrToMutablePrimArray #-}
-copyPtrToMutablePrimArray (MutablePrimArray ba#) (I# doff#) (Ptr addr#) (I# n#) =
-  primitive_ (copyAddrToByteArray# addr# ba# (doff# *# siz#) (n# *# siz#))
-  where
-  siz# = sizeOf# (undefined :: a)
-#endif

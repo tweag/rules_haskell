@@ -15,11 +15,55 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
-load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+load(
+    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+    "haskell_register_ghc_bindists_hadrian",
+)
 
-haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc925",
-    repository = "@rules_haskell//nixpkgs:default.nix",
+# FIXME copied from non_module_deps_1.bzl
+test_ghcopts = [
+    "-XStandaloneDeriving",  # Flag used at compile time
+    "-threaded",  # Flag used at link time
+    # Used by `tests/repl-flags`
+    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+    # this is the default, so it does not harm other tests
+    "-XNoOverloadedStrings",
+]
+
+test_haddock_flags = ["-U"]
+
+test_repl_ghci_args = [
+    # The repl test will need this flag, but set by the local
+    # `repl_ghci_args`.
+    "-UTESTS_TOOLCHAIN_REPL_FLAGS",
+    # The repl test will need OverloadedString
+    "-XOverloadedStrings",
+]
+
+test_cabalopts = [
+    # Used by `tests/cabal-toolchain-flags`
+    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
+    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
+] + ([
+    # To avoid ghcide linking errors with heapsize on Windows of the form
+    #
+    #   unknown symbol `heap_view_closurePtrs'
+    #
+    # See https://github.com/haskell/ghcide/pull/954
+    "--disable-library-for-ghci",
+] if False else [])
+
+# load(
+#     "@rules_haskell//:non_module_deps_1.bzl", "test_cabalopts", "test_ghcopts"
+# )
+
+haskell_register_ghc_bindists_hadrian(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    sha256 = "9dea9123cd53c0d48e72de68480492eaacc2e0bf487a3cd3dfa3ce18729aa3e4",
+    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
+    target = "x86_64-unknown-linux",
+    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
     version = "9.2.5",
 )
 
@@ -65,7 +109,6 @@ stack_snapshot(
             "-pkg-config",
         ],
     },
-    local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
     packages = [
         "base",
         "bytestring",
@@ -76,6 +119,8 @@ stack_snapshot(
         "text",
         "text-show",
     ],
+    #local_snapshot = "@rules_haskell//:stackage_snapshot.yaml",
+    snapshot = "nightly-2023-05-12",
     # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
     # uncomment the following line.

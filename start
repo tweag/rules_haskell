@@ -238,6 +238,14 @@ load(
 # Setup all Bazel dependencies required by rules_haskell.
 rules_haskell_dependencies()
 
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+    ],
+)
 load(
     "@rules_haskell//haskell:toolchain.bzl",
     "rules_haskell_toolchains",
@@ -267,9 +275,41 @@ EOF
 # Append toolchain and zlib rules
 case "${MODE}" in
     "bindists") cat <<-EOF
+		load(
+		    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+		    "haskell_register_ghc_bindists_hadrian",
+		)
+		test_ghcopts = [
+		    "-XStandaloneDeriving",  # Flag used at compile time
+		    "-threaded",  # Flag used at link time
+		    # Used by `tests/repl-flags`
+		    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+		    # this is the default, so it does not harm other tests
+		    "-XNoOverloadedStrings",
+		]
+		test_cabalopts = [
+		    # Used by `tests/cabal-toolchain-flags`
+		    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
+		    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
+		]
 		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
-		rules_haskell_toolchains(
-		    version = "${GHC_VERSION}",
+		haskell_register_ghc_bindists_hadrian(
+		    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
+		    sha256 = "9dea9123cd53c0d48e72de68480492eaacc2e0bf487a3cd3dfa3ce18729aa3e4",
+		    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
+		    version = "9.2.5",
+		    target = "x86_64-unknown-linux",
+		    cabalopts = test_cabalopts,
+		    ghcopts = test_ghcopts,
+		)
+		haskell_register_ghc_bindists_hadrian(
+		    cabalopts = test_cabalopts,
+		    ghcopts = test_ghcopts,
+		    sha256 = "55c6a09d00aac69efd03112bd5fcf9a50f87060b1feb6c81f8698752bf164536",
+		    strip_prefix = "ghc-9.2.5-x86_64-apple-darwin",
+		    target = "x86_64-apple-darwin",
+		    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-apple-darwin.tar.xz",
+		    version = "9.2.5",
 		)
 
 		http_archive(
@@ -352,6 +392,8 @@ test:ci --test_output=errors
 
 # Should become the default in bazel 7
 build --incompatible_enable_cc_toolchain_resolution
+
+common --toolchain_resolution_debug='.*'
 
 EOF
 

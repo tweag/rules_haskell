@@ -7,9 +7,13 @@ load(
 
 haskell_toolchain_library(name = "base")
 
+haskell_toolchain_library(name = "deepseq")
+
 haskell_toolchain_library(name = "ghc-prim")
 
 haskell_toolchain_library(name = "rts")
+
+haskell_toolchain_library(name = "template-haskell")
 
 cc_library(
     name = "memops",
@@ -28,8 +32,10 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         ":base",
+        ":deepseq",
         ":ghc-prim",
         ":memops",
+        ":template-haskell",
         "//transformers",
     ],
 )

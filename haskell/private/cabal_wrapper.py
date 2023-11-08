@@ -290,7 +290,7 @@ with mkdtemp(distdir_prefix()) as distdir, init_deps_db() as deps_package_db:
         del os.environ["RUNFILES_DIR"]
     if "RUNFILES_MANIFEST_FILE" in os.environ:
         del os.environ["RUNFILES_MANIFEST_FILE"]
-    runghc_args = [arg.replace("./", execroot + "/") for arg in runghc_args]
+    runghc_args = ["-f", ghc] + [arg.replace("./", execroot + "/") for arg in runghc_args]
 
     if not deps_package_db:
         path_args.extend(["--package-db=" + os.path.dirname(db) for db in deps_package_databases])

@@ -11,7 +11,10 @@ load(
 haskell_test(
     name = "ghc-check",
     srcs = ["Main.hs"],
-    data = ["@rules_haskell//tools/ghc-paths:libdir"],
+    data = [
+        "@rules_haskell//tools/ghc-paths:bin",
+        "@rules_haskell//tools/ghc-paths:libdir",
+    ],
     tags = ["requires_dynamic"],
     deps = [
         "@stackage//:base",
@@ -39,7 +42,10 @@ haskell_cabal_binary(
 sh_test(
     name = "ghc-check-cabal-test{}".format(".exe" if is_windows else ""),
     srcs = [":ghc-check-cabal"],
-    data = ["@rules_haskell//tools/ghc-paths:libdir"],
+    data = [
+        "@rules_haskell//tools/ghc-paths:bin",
+        "@rules_haskell//tools/ghc-paths:libdir",
+    ],
     tags = ["requires_dynamic"],
 )
 

@@ -11,6 +11,7 @@ import GHC.Core.Opt.Monad
 import GHC.Plugins
 import GHC.Types.Literal
 import GHC.Unit.Module.ModGuts
+import GHC.Plugins
 import System.Process (readProcess)
 
 

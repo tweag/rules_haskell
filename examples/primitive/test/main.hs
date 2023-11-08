@@ -26,24 +26,13 @@ import GHC.IO
 import GHC.Exts
 import Data.Function (on)
 import Control.Applicative (Const(..))
-import PrimLawsWIP (primLaws)
+import PrimLaws (primLaws)
 
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Monoid (Monoid(..))
-#endif
-#if MIN_VERSION_base(4,8,0)
 import Data.Functor.Identity (Identity(..))
 import qualified Data.Monoid as Monoid
-#endif
-#if MIN_VERSION_base(4,6,0)
 import Data.Ord (Down(..))
-#else
-import GHC.Exts (Down(..))
-#endif
-#if MIN_VERSION_base(4,9,0)
-import Data.Semigroup (stimes)
+import Data.Semigroup (stimes, stimesMonoid)
 import qualified Data.Semigroup as Semigroup
-#endif
 #if !(MIN_VERSION_base(4,11,0))
 import Data.Monoid ((<>))
 #endif
@@ -53,11 +42,11 @@ import Foreign.Storable (Storable)
 import Data.Orphans ()
 
 import Test.Tasty (defaultMain,testGroup,TestTree)
-import Test.QuickCheck (Arbitrary,Arbitrary1,Gen,(===),CoArbitrary,Function)
+import Test.QuickCheck (Arbitrary,Arbitrary1,Gen,CoArbitrary,Function,(===),(==>))
 import qualified Test.Tasty.QuickCheck as TQC
 import qualified Test.QuickCheck as QC
-import qualified Test.QuickCheck.Classes as QCC
-import qualified Test.QuickCheck.Classes.IsList as QCCL
+import qualified Test.QuickCheck.Classes.Base as QCC
+import qualified Test.QuickCheck.Classes.Base.IsList as QCCL
 import qualified Data.List as L
 
 main :: IO ()
@@ -70,57 +59,69 @@ main = do
       , lawsToTest (QCC.ordLaws (Proxy :: Proxy (Array Int)))
       , lawsToTest (QCC.monoidLaws (Proxy :: Proxy (Array Int)))
       , lawsToTest (QCC.showReadLaws (Proxy :: Proxy (Array Int)))
-#if MIN_VERSION_base(4,9,0) || MIN_VERSION_transformers(0,4,0)
       , lawsToTest (QCC.functorLaws (Proxy1 :: Proxy1 Array))
       , lawsToTest (QCC.applicativeLaws (Proxy1 :: Proxy1 Array))
       , lawsToTest (QCC.monadLaws (Proxy1 :: Proxy1 Array))
       , lawsToTest (QCC.foldableLaws (Proxy1 :: Proxy1 Array))
       , lawsToTest (QCC.traversableLaws (Proxy1 :: Proxy1 Array))
-#endif
-#if MIN_VERSION_base(4,7,0)
       , lawsToTest (QCC.isListLaws (Proxy :: Proxy (Array Int)))
       , TQC.testProperty "mapArray'" (QCCL.mapProp int16 int32 mapArray')
-#endif
+      , TQC.testProperty "*>" $ \(xs :: Array Int) (ys :: Array Int) -> toList (xs *> ys) === (toList xs *> toList ys)
+      , TQC.testProperty "<*" $ \(xs :: Array Int) (ys :: Array Int) -> toList (xs <* ys) === (toList xs <* toList ys)
+      , lawsToTest (QCC.semigroupLaws (Proxy :: Proxy (Array Int)))
+      , TQC.testProperty "stimes" $ \(QC.NonNegative (n :: Int)) (xs :: Array Int) -> stimes n xs == stimesMonoid n xs
       ]
     , testGroup "SmallArray"
       [ lawsToTest (QCC.eqLaws (Proxy :: Proxy (SmallArray Int)))
       , lawsToTest (QCC.ordLaws (Proxy :: Proxy (SmallArray Int)))
       , lawsToTest (QCC.monoidLaws (Proxy :: Proxy (SmallArray Int)))
       , lawsToTest (QCC.showReadLaws (Proxy :: Proxy (Array Int)))
-#if MIN_VERSION_base(4,9,0) || MIN_VERSION_transformers(0,4,0)
       , lawsToTest (QCC.functorLaws (Proxy1 :: Proxy1 SmallArray))
       , lawsToTest (QCC.applicativeLaws (Proxy1 :: Proxy1 SmallArray))
       , lawsToTest (QCC.monadLaws (Proxy1 :: Proxy1 SmallArray))
       , lawsToTest (QCC.foldableLaws (Proxy1 :: Proxy1 SmallArray))
       , lawsToTest (QCC.traversableLaws (Proxy1 :: Proxy1 SmallArray))
-#endif
-#if MIN_VERSION_base(4,7,0)
       , lawsToTest (QCC.isListLaws (Proxy :: Proxy (SmallArray Int)))
       , TQC.testProperty "mapSmallArray'" (QCCL.mapProp int16 int32 mapSmallArray')
-#endif
+      , TQC.testProperty "*>" $ \(xs :: SmallArray Int) (ys :: SmallArray Int) -> toList (xs *> ys) === (toList xs *> toList ys)
+      , TQC.testProperty "<*" $ \(xs :: SmallArray Int) (ys :: SmallArray Int) -> toList (xs <* ys) === (toList xs <* toList ys)
+      , lawsToTest (QCC.semigroupLaws (Proxy :: Proxy (SmallArray Int)))
+      , TQC.testProperty "stimes" $ \(QC.NonNegative (n :: Int)) (xs :: SmallArray Int) -> stimes n xs == stimesMonoid n xs
       ]
     , testGroup "ByteArray"
       [ testGroup "Ordering"
         [ TQC.testProperty "equality" byteArrayEqProp
         , TQC.testProperty "compare" byteArrayCompareProp
+      , testGroup "Filling"
+        [ TQC.testProperty "Int8" (setByteArrayProp (Proxy :: Proxy Int8))
+        , TQC.testProperty "Int16" (setByteArrayProp (Proxy :: Proxy Int16))
+        , TQC.testProperty "Int32" (setByteArrayProp (Proxy :: Proxy Int32))
+        , TQC.testProperty "Int64" (setByteArrayProp (Proxy :: Proxy Int64))
+        , TQC.testProperty "Int" (setByteArrayProp (Proxy :: Proxy Int))
+        , TQC.testProperty "Word8" (setByteArrayProp (Proxy :: Proxy Word8))
+        , TQC.testProperty "Word16" (setByteArrayProp (Proxy :: Proxy Word16))
+        , TQC.testProperty "Word32" (setByteArrayProp (Proxy :: Proxy Word32))
+        , TQC.testProperty "Word64" (setByteArrayProp (Proxy :: Proxy Word64))
+        , TQC.testProperty "Word" (setByteArrayProp (Proxy :: Proxy Word))
         ]
+      ]
       , testGroup "Resize"
         [ TQC.testProperty "shrink" byteArrayShrinkProp
         , TQC.testProperty "grow" byteArrayGrowProp
         ]
       , lawsToTest (QCC.eqLaws (Proxy :: Proxy ByteArray))
       , lawsToTest (QCC.ordLaws (Proxy :: Proxy ByteArray))
+      , lawsToTest (QCC.monoidLaws (Proxy :: Proxy ByteArray))
       , lawsToTest (QCC.showReadLaws (Proxy :: Proxy (Array Int)))
-#if MIN_VERSION_base(4,7,0)
       , lawsToTest (QCC.isListLaws (Proxy :: Proxy ByteArray))
       , TQC.testProperty "foldrByteArray" (QCCL.foldrProp word8 foldrByteArray)
-#endif
+      , lawsToTest (QCC.semigroupLaws (Proxy :: Proxy ByteArray))
+      , TQC.testProperty "stimes" $ \(QC.NonNegative (n :: Int)) (xs :: ByteArray) -> stimes n xs == stimesMonoid n xs
       ]
     , testGroup "PrimArray"
       [ lawsToTest (QCC.eqLaws (Proxy :: Proxy (PrimArray Word16)))
       , lawsToTest (QCC.ordLaws (Proxy :: Proxy (PrimArray Word16)))
       , lawsToTest (QCC.monoidLaws (Proxy :: Proxy (PrimArray Word16)))
-#if MIN_VERSION_base(4,7,0)
       , lawsToTest (QCC.isListLaws (Proxy :: Proxy (PrimArray Word16)))
       , TQC.testProperty "foldrPrimArray" (QCCL.foldrProp int16 foldrPrimArray)
       , TQC.testProperty "foldrPrimArray'" (QCCL.foldrProp int16 foldrPrimArray')
@@ -145,20 +146,18 @@ main = do
       , TQC.testProperty "mapMaybePrimArray" (QCCL.mapMaybeProp int16 int32 mapMaybePrimArray)
       , TQC.testProperty "mapMaybePrimArrayA" (QCCL.mapMaybeMProp int16 int32 mapMaybePrimArrayA)
       , TQC.testProperty "mapMaybePrimArrayP" (QCCL.mapMaybeMProp int16 int32 mapMaybePrimArrayP)
-#endif
+      , lawsToTest (QCC.semigroupLaws (Proxy :: Proxy (PrimArray Word16)))
+      , TQC.testProperty "stimes" $ \(QC.NonNegative (n :: Int)) (xs :: PrimArray Word16) -> stimes n xs == stimesMonoid n xs
       ]
-
-
-
-     ,testGroup "DefaultSetMethod"
+    , testGroup "DefaultSetMethod"
       [ lawsToTest (primLaws (Proxy :: Proxy DefaultSetMethod))
       ]
 #if __GLASGOW_HASKELL__ >= 805
-    ,testGroup "PrimStorable"
+    , testGroup "PrimStorable"
       [ lawsToTest (QCC.storableLaws (Proxy :: Proxy Derived))
       ]
 #endif
-     ,testGroup "Prim"
+    , testGroup "Prim"
       [ renameLawsToTest "Word" (primLaws (Proxy :: Proxy Word))
       , renameLawsToTest "Word8" (primLaws (Proxy :: Proxy Word8))
       , renameLawsToTest "Word16" (primLaws (Proxy :: Proxy Word16))
@@ -171,32 +170,24 @@ main = do
       , renameLawsToTest "Int64" (primLaws (Proxy :: Proxy Int64))
       , renameLawsToTest "Const" (primLaws (Proxy :: Proxy (Const Int16 Int16)))
       , renameLawsToTest "Down" (primLaws (Proxy :: Proxy (Down Int16)))
-#if MIN_VERSION_base(4,8,0)
       , renameLawsToTest "Identity" (primLaws (Proxy :: Proxy (Identity Int16)))
       , renameLawsToTest "Dual" (primLaws (Proxy :: Proxy (Monoid.Dual Int16)))
       , renameLawsToTest "Sum" (primLaws (Proxy :: Proxy (Monoid.Sum Int16)))
       , renameLawsToTest "Product" (primLaws (Proxy :: Proxy (Monoid.Product Int16)))
-#endif
-#if MIN_VERSION_base(4,9,0)
       , renameLawsToTest "First" (primLaws (Proxy :: Proxy (Semigroup.First Int16)))
       , renameLawsToTest "Last" (primLaws (Proxy :: Proxy (Semigroup.Last Int16)))
       , renameLawsToTest "Min" (primLaws (Proxy :: Proxy (Semigroup.Min Int16)))
       , renameLawsToTest "Max" (primLaws (Proxy :: Proxy (Semigroup.Max Int16)))
-#endif
-
       ]
-
     ]
 
 deriving instance Arbitrary a => Arbitrary (Down a)
 -- Const, Dual, Sum, Product: all have Arbitrary instances defined
 -- in QuickCheck itself
-#if MIN_VERSION_base(4,9,0)
 deriving instance Arbitrary a => Arbitrary (Semigroup.First a)
 deriving instance Arbitrary a => Arbitrary (Semigroup.Last a)
 deriving instance Arbitrary a => Arbitrary (Semigroup.Min a)
 deriving instance Arbitrary a => Arbitrary (Semigroup.Max a)
-#endif
 
 word8 :: Proxy Word8
 word8 = Proxy
@@ -206,6 +197,24 @@ int16 = Proxy
 
 int32 :: Proxy Int32
 int32 = Proxy
+
+
+setByteArrayProp :: forall a. (Prim a, Eq a, Arbitrary a, Show a) => Proxy a -> QC.Property
+setByteArrayProp _ = QC.property $ \(QC.NonNegative (n :: Int)) (QC.NonNegative (off :: Int)) (QC.NonNegative (len :: Int)) (x :: a) (y :: a) ->
+  (off < n && off + len <= n) ==>
+  -- We use PrimArray in this test because it makes it easier to
+  -- get the element-vs-byte distinction right.
+  let actual = runST $ do
+        m <- newPrimArray n
+        forM_ (enumFromTo 0 (n - 1)) $ \ix -> writePrimArray m ix x
+        setPrimArray m off len y
+        unsafeFreezePrimArray m
+      expected = runST $ do
+        m <- newPrimArray n
+        forM_ (enumFromTo 0 (n - 1)) $ \ix -> writePrimArray m ix x
+        forM_ (enumFromTo off (off + len - 1)) $ \ix -> writePrimArray m ix y
+        unsafeFreezePrimArray m
+   in expected === actual
 
 
 -- Tests that using resizeByteArray to shrink a byte array produces
@@ -327,8 +336,17 @@ testByteArray = do
         arr3 = mkByteArray ([0xde, 0xad, 0xbe, 0xee] :: [Word8])
         arr4 = mkByteArray ([0xde, 0xad, 0xbe, 0xdd] :: [Word8])
         arr5 = mkByteArray ([0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xdd] :: [Word8])
+        arr6 = mkByteArray ([0xde, 0xad, 0x00, 0x01, 0xb0] :: [Word8])
     when (show arr1 /= "[0xde, 0xad, 0xbe, 0xef]") $
         fail $ "ByteArray Show incorrect: "++show arr1
+    when (show arr6 /= "[0xde, 0xad, 0x00, 0x01, 0xb0]") $
+        fail $ "ByteArray Show incorrect: "++ show arr6
+    when (compareByteArrays arr3 1 arr4 1 3 /= GT) $
+        fail $ "arr3[1,3] should be greater than arr4[1,3]"
+    when (compareByteArrays arr3 0 arr4 1 3 /= GT) $
+        fail $ "arr3[0,3] should be greater than arr4[1,3]"
+    when (compareByteArrays arr5 1 arr2 1 3 /= EQ) $
+        fail $ "arr3[1,3] should be equal to than arr4[1,3]"
     unless (arr1 > arr3) $
         fail $ "ByteArray Ord incorrect"
     unless (arr1 == arr2) $
@@ -339,10 +357,8 @@ testByteArray = do
         fail $ "ByteArray Monoid mappend not associative"
     unless (mconcat [arr1,arr2,arr3,arr4,arr5] == (arr1 <> arr2 <> arr3 <> arr4 <> arr5)) $
         fail $ "ByteArray Monoid mconcat incorrect"
-#if MIN_VERSION_base(4,9,0)
     unless (stimes (3 :: Int) arr4 == (arr4 <> arr4 <> arr4)) $
         fail $ "ByteArray Semigroup stimes incorrect"
-#endif
 
 mkByteArray :: Prim a => [a] -> ByteArray
 mkByteArray xs = runST $ do

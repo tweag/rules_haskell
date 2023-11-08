@@ -25,6 +25,11 @@ filegroup(
 )
 
 filegroup(
+    name = "include",
+    srcs = glob(["include/**"]),
+)
+
+filegroup(
     name = "lib",
     srcs = glob(["lib/**"]),
 )

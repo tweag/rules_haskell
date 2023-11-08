@@ -16,8 +16,10 @@ load("@rules_python//python:defs.bzl", "py_binary")
 def _runghc_wrapper_impl(ctx):
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
 
+    lib_dir = hs_toolchain.libdir
+
     f = hs_toolchain.tools.runghc
-    runghc_runfile_path = paths.join(f.owner.workspace_name, f.owner.package, f.owner.name)
+    runghc_runfile_path = paths.join(f.owner.workspace_name, f.owner.package, hs_toolchain.tools_path, "runghc")
     runghc_wrapper_file = ctx.actions.declare_file(ctx.label.name)
     ctx.actions.write(
         output = runghc_wrapper_file,
@@ -38,7 +40,7 @@ subprocess.run([r.Rlocation("{runghc}")] + sys.argv[1:], check=True)
     return [DefaultInfo(
         executable = runghc_wrapper_file,
         runfiles = hs_toolchain.cc_wrapper.runfiles.merge(
-            ctx.runfiles(files = [runghc_wrapper_file, hs_toolchain.tools.runghc]),
+            ctx.runfiles(files = [runghc_wrapper_file, hs_toolchain.tools.runghc] + lib_dir),
         ),
     )]
 

@@ -64,7 +64,7 @@ load(
     "haskell_register_ghc_bindists",
 )
 
-haskell_register_ghc_bindists(version = GHC_VERSION)
+#haskell_register_ghc_bindists(version = GHC_VERSION)
 
 load(
     "@rules_haskell//haskell/asterius:repositories.bzl",
@@ -85,6 +85,46 @@ asterius_dependencies_nix(
 load("@rules_haskell_npm//:repositories.bzl", "npm_repositories")
 
 npm_repositories()
+
+load(
+    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+    "haskell_register_ghc_bindists_hadrian",
+)
+
+test_ghcopts = [
+    "-XStandaloneDeriving",  # Flag used at compile time
+    "-threaded",  # Flag used at link time
+    # Used by `tests/repl-flags`
+    "-DTESTS_TOOLCHAIN_COMPILER_FLAGS",
+    # this is the default, so it does not harm other tests
+    "-XNoOverloadedStrings",
+]
+
+test_cabalopts = [
+    # Used by `tests/cabal-toolchain-flags`
+    "--ghc-option=-DTESTS_TOOLCHAIN_CABALOPTS",
+    "--haddock-option=--optghc=-DTESTS_TOOLCHAIN_CABALOPTS",
+]
+
+haskell_register_ghc_bindists_hadrian(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    sha256 = "9dea9123cd53c0d48e72de68480492eaacc2e0bf487a3cd3dfa3ce18729aa3e4",
+    strip_prefix = "ghc-9.2.5-x86_64-unknown-linux",
+    target = "x86_64-unknown-linux",
+    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-unknown-linux.tar.xz",
+    version = "9.2.5",
+)
+
+haskell_register_ghc_bindists_hadrian(
+    cabalopts = test_cabalopts,
+    ghcopts = test_ghcopts,
+    sha256 = "55c6a09d00aac69efd03112bd5fcf9a50f87060b1feb6c81f8698752bf164536",
+    strip_prefix = "ghc-9.2.5-x86_64-apple-darwin",
+    target = "x86_64-apple-darwin",
+    url = "https://github.com/avdv/testproject/releases/download/ghc-9.2.5/ghc-9.2.5-x86_64-apple-darwin.tar.xz",
+    version = "9.2.5",
+)
 
 register_toolchains(
     "//tests:protobuf-toolchain",

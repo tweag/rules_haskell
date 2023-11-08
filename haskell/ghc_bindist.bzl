@@ -243,6 +243,7 @@ rm -f
         "haskell_toolchain",
         name = "toolchain-impl",
         tools = [":bin"],
+        tools_path = repr("bin"),
         libraries = "toolchain_libraries",
         # See Note [GHC toolchain files]
         libdir = [":lib"],

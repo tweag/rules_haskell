@@ -159,7 +159,7 @@ def _haskell_proto_aspect_impl(target, ctx):
         env = {
             "RULES_HASKELL_GHC_PATH": hs.tools.ghc.path,
             "RULES_HASKELL_GHC_PKG_PATH": hs.tools.ghc_pkg.path,
-            "RULES_HASKELL_LIBDIR_PATH": hs.libdir_path,
+            "RULES_HASKELL_LIBDIR_PATH": paths.join(paths.dirname(paths.dirname(hs.tools.ghc.path)), hs.libdir_path),
             "RULES_HASKELL_DOCDIR_PATH": hs.docdir_path,
         },
     )

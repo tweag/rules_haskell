@@ -20,13 +20,18 @@ load(":private/actions/package.bzl", "package")
 load(":cc.bzl", "ghc_cc_program_args")
 load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 load(":private/context.bzl", "append_to_path")
+load(":private/path_utils.bzl", "truly_relativize")
 load(
     "//haskell/asterius:asterius_config.bzl",
     "ASTERIUS_BINARIES",
     "asterius_tools_config",
 )
+load(
+    "@rules_haskell//haskell:ghc_bindist_hadrian.bzl",
+    "copy_filegroups_to_this_package",
+)
 
-_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
+_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "runghc", "hpc"]
 
 def _run_ghc(
         hs,
@@ -287,11 +292,13 @@ def _haskell_toolchain_impl(ctx):
         platform_common.ToolchainInfo(
             name = ctx.label.name,
             tools = struct(**tools_struct_args),
+            tools_path = ctx.attr.tools_path,
             bindir = ctx.files.tools,
-            libdir = libdir,
+            libdir = libdir + [ctx.file.settings] if ctx.attr.settings else libdir,
             libdir_path = libdir_path,
             docdir = docdir,
             docdir_path = docdir_path,
+            includedir = ctx.files.includedir,
             ghcopts = ctx.attr.ghcopts,
             repl_ghci_args = ctx.attr.repl_ghci_args,
             haddock_flags = ctx.attr.haddock_flags,
@@ -336,6 +343,10 @@ common_attrs = {
     "tools": attr.label_list(
         mandatory = True,
     ),
+    "tools_path": attr.string(
+        doc = "The path to the bin/ folder containing the binaries (`ghc`, `haddock`...) ran by bazel rules. Do not specify this for a globally installed GHC distribution, e.g. a Nix provided one.",
+        mandatory = False,
+    ),
     "libraries": attr.label_list(
         mandatory = True,
     ),
@@ -350,6 +361,10 @@ common_attrs = {
     ),
     "docdir_path": attr.string(
         doc = "The absolute path to GHC's docdir. C.f. `GHC.Paths.docdir` from `ghc-paths`. Specify this if `docdir` is left empty. One of `docdir` or `docdir_path` is required.",
+    ),
+    "includedir": attr.label_list(
+        doc = "The files contained in the GHC include/ folder that Bazel should track. Do not specify this for a globally installed GHC distribution, e.g. a Nix provided one.",
+        mandatory = False,
     ),
     "ghcopts": attr.string_list(),
     "repl_ghci_args": attr.string_list(),
@@ -376,6 +391,11 @@ common_attrs = {
         allow_single_file = True,
     ),
     "asterius_binaries": attr.label(),
+    "settings": attr.label(
+        default = None,
+        allow_single_file = True,
+        doc = "The lib/settings file for Hadrian bindist.",
+    ),
     "_cc_wrapper": attr.label(
         cfg = "exec",
         default = Label("@rules_haskell//haskell:cc_wrapper"),
@@ -423,6 +443,84 @@ _haskell_toolchain = rule(
     ),
 )
 
+def _hadrian_bindist_settings_impl(ctx):
+    cc = find_cc_toolchain(ctx)
+    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
+    settings_file = ctx.actions.declare_file("lib/settings")
+    outdir = paths.normalize(paths.join(
+        ctx.bin_dir.path,
+        ctx.label.workspace_root,
+        paths.dirname(ctx.build_file_path),
+    ))
+    workspace_root = ctx.label.workspace_root
+    args = ctx.actions.args()
+    ctx.actions.run_shell(
+        outputs = [settings_file],
+        inputs = [ctx.file.configure, ctx.file.makefile] + ctx.files.srcs,
+        mnemonic = "GhcMakeSettings",
+        command = """\
+pwd
+ls -R
+export AR={ar}
+export CC={cc}
+export LD={ld}
+export NM={nm}
+export OBJCOPY={objcopy}
+export OBJDUMP={objdump}
+export CPP={cpp}
+export STRIP={strip}
+export PATH="${{LD%/*}}:$PATH"
+mkdir -p {outdir}/mk
+cp {workspace_root}/mk/project.mk {outdir}/mk
+(cd {outdir} && {configure} && {make} -f {makefile} lib/settings)
+""".format(
+            outdir = outdir,
+            workspace_root = workspace_root,
+            configure = truly_relativize(ctx.file.configure.path, outdir),
+            ar = cc.ar_executable,
+            cc = cc.compiler_executable,
+            ld = cc.ld_executable,
+            nm = cc.nm_executable,
+            objcopy = cc.objcopy_executable,
+            objdump = cc.objdump_executable,
+            cpp = cc.preprocessor_executable,
+            strip = cc.strip_executable,
+            srcs = [src.path for src in ctx.files.srcs],
+            make = posix.commands["make"],
+            makefile = truly_relativize(ctx.file.makefile.path, outdir),
+        ),
+        progress_message = "Generating GHC settings file",
+    )
+
+    return [DefaultInfo(
+        files = depset(direct = [settings_file]),
+    )]
+
+_hadrian_bindist_settings = rule(
+    _hadrian_bindist_settings_impl,
+    attrs = {
+        "configure": attr.label(
+            allow_single_file = True,
+        ),
+        "makefile": attr.label(
+            allow_single_file = True,
+        ),
+        "srcs": attr.label_list(
+            allow_files = True,
+        ),
+        "_cc_toolchain": attr.label(
+            default = Label(
+                "@rules_cc//cc:current_cc_toolchain",
+            ),
+        ),
+    },
+    fragments = ["cpp"],
+    toolchains = [
+        "@rules_cc//cc:toolchain_type",
+        "@rules_sh//sh/posix:toolchain_type",
+    ],
+)
+
 def haskell_toolchain(
         name,
         version,
@@ -431,12 +529,15 @@ def haskell_toolchain(
         tools,
         libraries,
         asterius_binaries = None,
+        hadrian_bindist = False,
         compiler_flags = [],
         ghcopts = [],
         repl_ghci_args = [],
         haddock_flags = [],
         cabalopts = [],
         locale_archive = None,
+        docdir = None,
+        docdir_path = None,
         **kwargs):
     """Declare a compiler toolchain.
 
@@ -481,6 +582,7 @@ def haskell_toolchain(
       libraries: The set of libraries that come with GHC. Requires haskell_import targets.
       asterius_binaries: An optional filegroup containing asterius binaries.
         If present the toolchain will target WebAssembly and only use binaries from `tools` if needed to complete the toolchain.
+      hadrian_bindist: Whether the toolchain is based on a Hadrian generated GHC bindist.
       ghcopts: A collection of flags that will be passed to GHC on every invocation.
       compiler_flags: DEPRECATED. Use new name ghcopts.
       repl_ghci_args: A collection of flags that will be passed to GHCI on repl invocation. It extends the `ghcopts` collection.\\
@@ -504,6 +606,65 @@ def haskell_toolchain(
         new_attr_value = ghcopts,
     )
 
+    # if docdir_path:
+    #     print("path:", docdir_path)
+    # elif docdir:
+    #     docdir_path = None
+
+    #     # Find a file matching `html/libraries/base-*.*.*.*/*` and infer `docdir` from its path.
+    #     # `GHC.Paths.docdir` reports paths such as `.../doc/html/libraries/base-4.13.0.0`.
+    #     for f in docdir:
+    #         html_start = f.path.find("html/libraries/base")
+    #         if html_start != -1:
+    #             base_end = f.path.find("/", html_start + len("html/libraries/base"))
+    #             if base_end != -1:
+    #                 docdir_path = f.path[:base_end]
+    #                 break
+    #     if docdir_path == None:
+    #         fail("Could not infer `docdir_path` from provided `docdir` attribute. Missing `lib/settings` file.", "docdir")
+    # else:
+    #     fail("One of `docdir` and `docdir_path` is required.")
+
+    # fail("docdir: " + ", ".join(docdir))
+
+    if hadrian_bindist:
+        _hadrian_bindist_settings(
+            name = "settings",
+            configure = "configure",
+            makefile = "Makefile",
+            srcs = [
+                "config.guess",
+                "config.sub",
+                "install-sh",
+                "mk/config.mk.in",
+                "mk/install.mk.in",
+                "mk/project.mk",
+                #"mk/system-cxx-std-lib-1.0.conf.in",
+            ],
+        )
+        # Since Bazel regular rules generate files in the "execroots" and GHC requires some files to be next to each other,
+        # one has to move all the files coming from the GHC bindist tarball to an execroot.
+        # These copied versions of the files are the 'generated_*_filegroup' targets.
+
+        # These copied versions of the files are the 'generated_*_filegroup' targets.
+
+        copy_filegroups_to_this_package(
+            name = "generated_bin_filegroup",
+            srcs = [":bin"],
+        )
+        copy_filegroups_to_this_package(
+            name = "generated_lib_filegroup",
+            srcs = [":lib"],
+        )
+        copy_filegroups_to_this_package(
+            name = "generated_docdir_filegroup",
+            srcs = [":{}".format(docdir_path)],
+        )
+        copy_filegroups_to_this_package(
+            name = "generated_include_filegroup",
+            srcs = [":include"],
+        )
+
     toolchain_rule = _ahc_haskell_toolchain if asterius_binaries else _haskell_toolchain
     toolchain_rule(
         name = name,
@@ -513,6 +674,7 @@ def haskell_toolchain(
         tools = tools,
         libraries = libraries,
         ghcopts = ghcopts,
+        settings = ":settings" if hadrian_bindist else None,
         repl_ghci_args = corrected_ghci_args,
         haddock_flags = haddock_flags,
         cabalopts = cabalopts,
@@ -532,6 +694,8 @@ def haskell_toolchain(
             "//conditions:default": None,
         }),
         asterius_binaries = asterius_binaries,
+        docdir = docdir,
+        docdir_path = docdir_path,
         **kwargs
     )
 
