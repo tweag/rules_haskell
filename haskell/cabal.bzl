@@ -2283,10 +2283,11 @@ load("@{workspace}//:packages.bzl", "packages")
 def _stack_executables_impl(repository_ctx):
     workspace = repository_ctx.attr.unmangled_repo_name
     all_components = json.decode(repository_ctx.read(repository_ctx.attr.components_json))
-    for (package, components) in all_components.items():
-        if not components["exe"]:
-            continue
-        repository_ctx.file(package + "/BUILD.bazel", executable = False, content = """\
+    executables = [package for package, components in all_components.items() if components["exe"]]
+
+    if executables:
+        for package in executables:
+            repository_ctx.file(package + "/BUILD.bazel", executable = False, content = """\
 load("@{workspace}//:packages.bzl", "packages")
 [
     alias(
@@ -2297,9 +2298,12 @@ load("@{workspace}//:packages.bzl", "packages")
     for exe in packages["{package}"].executables
 ]
 """.format(
-            workspace = workspace,
-            package = package,
-        ))
+                workspace = workspace,
+                package = package,
+            ))
+    else:
+        # a repository rule has to create a file
+        repository_ctx.file("BUILD", executable = False)
 
 _stack_executables = repository_rule(
     _stack_executables_impl,

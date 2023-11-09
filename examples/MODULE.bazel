@@ -66,6 +66,11 @@ stack_snapshot.package(
             "-pkg-config",
         ],
 )
+stack_snapshot.package(
+    name = "streaming-commons",
+    extra_deps = ["@zlib.hs"],
+    setup_deps = ["@Cabal//:Cabal"],
+)
 
 [
     stack_snapshot.package(

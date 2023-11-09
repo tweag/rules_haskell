@@ -1,4 +1,4 @@
-{ pkgs ? import ./nixpkgs { }, docTools ? true, ghcVersion ? "9.2.5" }:
+{ pkgs ? import ./nixpkgs { }, docTools ? true, ghcVersion ? "9.2.8" }:
 
 with pkgs;
 mkShell {
