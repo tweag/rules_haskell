@@ -69,7 +69,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "aspect_rules_js",
-    version = "1.33.1",
+    version = "1.33.3",
 )
 bazel_dep(
     name = "aspect_bazel_lib",
