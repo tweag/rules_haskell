@@ -15,14 +15,6 @@ _rules_nixpkgs_sha256 = "980edfceef2e59e1122d9be6c52413bc298435f0a3d452532b8a48d
 _rules_sh_version = "v0.3.0"
 _rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
 
-def rules_haskell_dependencies_bzlmod():
-    """Provide rules_haskell dependencies which are not available as bzlmod modules."""
-
-    maybe(
-        ghc_default_version,
-        name = "rules_haskell_ghc_version",
-    )
-
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
     if "bazel_version" in dir(native):
@@ -131,8 +123,6 @@ def rules_haskell_dependencies():
         strip_prefix = "rules_js-1.33.3",
         url = "https://github.com/aspect-build/rules_js/releases/download/v1.33.3/rules_js-v1.33.3.tar.gz",
     )
-
-    rules_haskell_dependencies_bzlmod()
 
     # Dependency of com_google_protobuf.
     # TODO(judahjacobson): this is a bit of a hack.

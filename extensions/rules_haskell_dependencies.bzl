@@ -1,6 +1,5 @@
 """ This module extension contains rules_haskell dependencies that are not available as modules """
 
-load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies_bzlmod")
 load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
@@ -8,8 +7,6 @@ load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 def repositories(*, bzlmod):
-    rules_haskell_dependencies_bzlmod()
-
     # Some helpers for platform-dependent configuration
     maybe(
         os_info,

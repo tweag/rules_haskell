@@ -13,6 +13,7 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
 
     if "rules_haskell_worker_dependencies" not in excludes:
         snapshot_suffix = "_{}".format(GHC_VERSION) if GHC_VERSION else ""
+
         stack_snapshot(
             name = "rules_haskell_worker_dependencies",
             local_snapshot = "//:stackage_snapshot{}.yaml".format(snapshot_suffix),
