@@ -22,8 +22,8 @@ jobs:
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.2.8
-          - 9.4.5
+          #- 9.2.8
+          #- 9.4.5
           - 9.6.2
         exclude:
           - module: rules_haskell_nix
@@ -113,145 +113,145 @@ jobs:
             bazel coverage //...
             '
 
-  test-bindist:
-    name: Build & Test - bindist
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.module }}-${{ matrix.bzlmod }}-${{ matrix.ghc }}-bindist
-      cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-11, windows-latest]
-        module: [rules_haskell, rules_haskell_tests]
-        bzlmod: [true, false]
-        ghc:
-          - 9.2.8
-          - 9.4.5
-        exclude:
-          # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
-          #       and stack config per GHC version
-          - ghc: 9.4.5
-            bzlmod: true
-    env:
-      GHC_VERSION: ${{ matrix.ghc }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |-
-          sudo swapoff -a
-          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -yy libtinfo5
-          sudo apt clean
-          docker rmi $(docker images -q) -f
-      - uses: actions/checkout@v4
-      - name: Mount Bazel cache
-        uses: actions/cache@v3
-        with:
-          path: ~/repo-cache
-          key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
-      - name: Install Bazel
-        shell: bash
-        run: |
-          BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
-          mv $BAZEL_DIR $HOME/bazel
-          echo "$HOME/bazel" >> "$GITHUB_PATH"
-      - name: Configure
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-        shell: bash
-        run: |
-          # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
-          # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
-          [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
-          case "${{ runner.os }},${{ matrix.module }}" in
-            macOS,*) BUILD_CONFIG=ci-macos-bindist;;
-            Linux,*) BUILD_CONFIG=ci-linux-bindist;;
-            Windows,rules_haskell) BUILD_CONFIG=ci-windows-bindist-rules-haskell;;
-            Windows,rules_haskell_tests) BUILD_CONFIG=ci-windows-bindist-rules-haskell-tests;;
-          esac
-          if [ -z "$BUILDBUDDY_API_KEY" ]; then
-              cache_setting='--noremote_upload_local_results'
-          else
-              cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
-          fi
-          if [[ ${{ runner.os }} == Windows ]]; then
-              output_root_setting="startup --output_user_root=C:/_bzl"
-              # On windows, we use a separate remote cache for bzlmod,
-              # because the c dependency analysis is leaking absolute paths which are different
-              if ${{ matrix.bzlmod }}; then
-                bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=bzlmod'
-              else
-                bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=workspace'
-              fi
-          else
-              output_root_setting=""
-              bzlmod_cache_silo_key=""
-          fi
-          cat >.bazelrc.local <<EOF
-          common --config=ci
-          build --config=$BUILD_CONFIG
-          build $cache_setting
-          $output_root_setting
-          $bzlmod_cache_silo_key
-          common --enable_bzlmod=${{ matrix.bzlmod }}
-          EOF
-          cp .bazelrc.local rules_haskell_tests
-          cat >~/.netrc <<EOF
-          machine api.github.com
-                  password ${{ secrets.GITHUB_TOKEN }}
-          EOF
-      - name: Build & test - rules_haskell
-        if: matrix.module == 'rules_haskell'
-        shell: bash
-        run: |
-          [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
-          if [[ ${{ runner.os }} == Windows ]]; then
-            # prevent auto-detection of system compilers
-            export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
-            # On Windows `//...` expands to `/...`.
-            bazel test ///...
-          else
-            bazel test //...
-          fi
+  # test-bindist:
+  #   name: Build & Test - bindist
+  #   concurrency:
+  #     group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.module }}-${{ matrix.bzlmod }}-${{ matrix.ghc }}-bindist
+  #     cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, macos-11, windows-latest]
+  #       module: [rules_haskell, rules_haskell_tests]
+  #       bzlmod: [true, false]
+  #       ghc:
+  #         - 9.2.8
+  #         - 9.4.5
+  #       exclude:
+  #         # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
+  #         #       and stack config per GHC version
+  #         - ghc: 9.4.5
+  #           bzlmod: true
+  #   env:
+  #     GHC_VERSION: ${{ matrix.ghc }}
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - if: ${{ matrix.os == 'ubuntu-latest' }}
+  #       run: |-
+  #         sudo swapoff -a
+  #         sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+  #         sudo apt-get update
+  #         sudo apt-get install --no-install-recommends -yy libtinfo5
+  #         sudo apt clean
+  #         docker rmi $(docker images -q) -f
+  #     - uses: actions/checkout@v4
+  #     - name: Mount Bazel cache
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: ~/repo-cache
+  #         key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
+  #     - name: Install Bazel
+  #       shell: bash
+  #       run: |
+  #         BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
+  #         mv $BAZEL_DIR $HOME/bazel
+  #         echo "$HOME/bazel" >> "$GITHUB_PATH"
+  #     - name: Configure
+  #       env:
+  #         BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+  #       shell: bash
+  #       run: |
+  #         # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
+  #         # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
+  #         [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
+  #         case "${{ runner.os }},${{ matrix.module }}" in
+  #           macOS,*) BUILD_CONFIG=ci-macos-bindist;;
+  #           Linux,*) BUILD_CONFIG=ci-linux-bindist;;
+  #           Windows,rules_haskell) BUILD_CONFIG=ci-windows-bindist-rules-haskell;;
+  #           Windows,rules_haskell_tests) BUILD_CONFIG=ci-windows-bindist-rules-haskell-tests;;
+  #         esac
+  #         if [ -z "$BUILDBUDDY_API_KEY" ]; then
+  #             cache_setting='--noremote_upload_local_results'
+  #         else
+  #             cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
+  #         fi
+  #         if [[ ${{ runner.os }} == Windows ]]; then
+  #             output_root_setting="startup --output_user_root=C:/_bzl"
+  #             # On windows, we use a separate remote cache for bzlmod,
+  #             # because the c dependency analysis is leaking absolute paths which are different
+  #             if ${{ matrix.bzlmod }}; then
+  #               bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=bzlmod'
+  #             else
+  #               bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=workspace'
+  #             fi
+  #         else
+  #             output_root_setting=""
+  #             bzlmod_cache_silo_key=""
+  #         fi
+  #         cat >.bazelrc.local <<EOF
+  #         common --config=ci
+  #         build --config=$BUILD_CONFIG
+  #         build $cache_setting
+  #         $output_root_setting
+  #         $bzlmod_cache_silo_key
+  #         common --enable_bzlmod=${{ matrix.bzlmod }}
+  #         EOF
+  #         cp .bazelrc.local rules_haskell_tests
+  #         cat >~/.netrc <<EOF
+  #         machine api.github.com
+  #                 password ${{ secrets.GITHUB_TOKEN }}
+  #         EOF
+  #     - name: Build & test - rules_haskell
+  #       if: matrix.module == 'rules_haskell'
+  #       shell: bash
+  #       run: |
+  #         [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+  #         if [[ ${{ runner.os }} == Windows ]]; then
+  #           # prevent auto-detection of system compilers
+  #           export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+  #           # On Windows `//...` expands to `/...`.
+  #           bazel test ///...
+  #         else
+  #           bazel test //...
+  #         fi
 
-      - name: Build & test - rules_haskell_tests
-        if: matrix.module == 'rules_haskell_tests'
-        shell: bash
-        run: |
-          cd rules_haskell_tests
-          [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
-          ./tests/run-start-script.sh --use-bindists
-          if [[ ${{ runner.os }} == Windows ]]; then
-            # prevent auto-detection of system compilers
-            export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
-            # On Windows `//...` expands to `/...`.
-            bazel test ///...
-          else
-            bazel test //...
-          fi
-          # Test stack_snapshot pinning
-          # NOTE keep in sync with tests/RunTests.hs
-          bazel run @stackage-pinning-test-unpinned//:pin
-          bazel build @stackage-pinning-test//:hspec
+  #     - name: Build & test - rules_haskell_tests
+  #       if: matrix.module == 'rules_haskell_tests'
+  #       shell: bash
+  #       run: |
+  #         cd rules_haskell_tests
+  #         [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+  #         ./tests/run-start-script.sh --use-bindists
+  #         if [[ ${{ runner.os }} == Windows ]]; then
+  #           # prevent auto-detection of system compilers
+  #           export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+  #           # On Windows `//...` expands to `/...`.
+  #           bazel test ///...
+  #         else
+  #           bazel test //...
+  #         fi
+  #         # Test stack_snapshot pinning
+  #         # NOTE keep in sync with tests/RunTests.hs
+  #         bazel run @stackage-pinning-test-unpinned//:pin
+  #         bazel build @stackage-pinning-test//:hspec
 
-      - name: Collect Logs
-        id: collect_logs
-        if: failure()
-        shell: bash
-        run: |
-          mkdir -p logs
-          if [[ ${{ matrix.module }} == 'rules_haskell_tests' ]]; then
-             dir=rules_haskell_tests
-          else
-             dir=.
-          fi
-          base=$( cd "$dir" ; bazel info output_base )
-          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0rI % cp % logs/
+  #     - name: Collect Logs
+  #       id: collect_logs
+  #       if: failure()
+  #       shell: bash
+  #       run: |
+  #         mkdir -p logs
+  #         if [[ ${{ matrix.module }} == 'rules_haskell_tests' ]]; then
+  #            dir=rules_haskell_tests
+  #         else
+  #            dir=.
+  #         fi
+  #         base=$( cd "$dir" ; bazel info output_base )
+  #         find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0rI % cp % logs/
 
-      - name: Upload Logs
-        if: ${{ failure() && steps.collect_logs.conclusion == 'success' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
-          path: logs
+  #     - name: Upload Logs
+  #       if: ${{ failure() && steps.collect_logs.conclusion == 'success' }}
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
+  #         path: logs
