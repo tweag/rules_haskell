@@ -23,13 +23,13 @@ jobs:
         bzlmod: [true, false]
         ghc:
           - 9.2.8
-          - 9.4.5
+          - 9.4.6
         exclude:
           - module: rules_haskell_nix
             bzlmod: false
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.4.5
+          - ghc: 9.4.6
             bzlmod: true
     runs-on: ${{ matrix.os }}
     steps:
@@ -123,11 +123,11 @@ jobs:
         bzlmod: [true, false]
         ghc:
           - 9.2.8
-          - 9.4.5
+          - 9.4.6
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.4.5
+          - ghc: 9.4.6
             bzlmod: true
     env:
       GHC_VERSION: ${{ matrix.ghc }}
