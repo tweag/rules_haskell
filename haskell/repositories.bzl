@@ -117,19 +117,19 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "75be42bd736f4df6d702a0e4e4d30de9ee40eac024c4b845d17ae4cc831fe4ae",
-        strip_prefix = "protobuf-21.7",
+        sha256 = "22fdaf641b31655d4b2297f9981fa5203b2866f8332d3c6333f6b0107bb320de",
+        strip_prefix = "protobuf-21.12",
         urls = [
-            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v21.7.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v21.12.tar.gz",
         ],
     )
 
     maybe(
         http_archive,
         name = "aspect_rules_js",
-        sha256 = "a949d56fed8fa0a8dd82a0a660acc949253a05b2b0c52a07e4034e27f11218f6",
-        strip_prefix = "rules_js-1.33.1",
-        url = "https://github.com/aspect-build/rules_js/releases/download/v1.33.1/rules_js-v1.33.1.tar.gz",
+        sha256 = "295a73d963bad4b04a3c488d60dc8a76a659ee64708be3a66be75726e6277c7e",
+        strip_prefix = "rules_js-1.33.3",
+        url = "https://github.com/aspect-build/rules_js/releases/download/v1.33.3/rules_js-v1.33.3.tar.gz",
     )
 
     rules_haskell_dependencies_bzlmod()
