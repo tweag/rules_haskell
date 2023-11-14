@@ -31,7 +31,7 @@ def write_proto_file(hs, output_name, proto_type, content):
     """
     proto_txt = hs.actions.declare_file(output_name + ".txt")
     proto_pb = hs.actions.declare_file(output_name + ".pb")
-    hs.actions.write(output = proto_txt, content = content.to_proto())
+    hs.actions.write(output = proto_txt, content = proto.encode_text(content))
 
     protoc = hs.toolchain.protoc
     rule_info_protos = hs.toolchain.rule_info_proto[ProtoInfo].direct_sources
