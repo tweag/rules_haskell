@@ -559,7 +559,7 @@ def _haskell_cabal_library_impl(ctx):
 
     (_, runghc_manifest) = ctx.resolve_tools(tools = [ctx.attr._runghc])
     json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))
-    ctx.actions.write(json_args, c.args.to_json())
+    ctx.actions.write(json_args, json.encode(c.args))
     ctx.actions.run(
         executable = c.cabal_wrapper,
         arguments = [json_args.path],
@@ -861,7 +861,7 @@ def _haskell_cabal_binary_impl(ctx):
     )
     (_, runghc_manifest) = ctx.resolve_tools(tools = [ctx.attr._runghc])
     json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))
-    ctx.actions.write(json_args, c.args.to_json())
+    ctx.actions.write(json_args, json.encode(c.args))
     ctx.actions.run(
         executable = c.cabal_wrapper,
         arguments = [json_args.path],
@@ -1291,7 +1291,7 @@ library
     )
 
     # Create a stack.yaml capturing user overrides to the snapshot.
-    stack_yaml_content = struct(**{
+    stack_yaml_content = json.encode(struct(**{
         "resolver": str(snapshot),
         "packages": [resolve_package] + core_packages + [
             # Determines path to vendored package's root directory relative to
@@ -1311,7 +1311,7 @@ library
             ])
             for (pkg, flags) in repository_ctx.attr.flags.items()
         },
-    }).to_json()
+    }))
     repository_ctx.file("stack.yaml", content = stack_yaml_content, executable = False)
 
     # We declared core packages as local packages in stack.yaml for two reasons.
@@ -1679,7 +1679,7 @@ def _write_snapshot_json(repository_ctx, all_cabal_hashes, resolved):
             "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY": checksum,
             "all-cabal-hashes": repr(all_cabal_hashes),
             "resolved": _pretty_print_kvs(1, {
-                name: struct(**spec).to_json()
+                name: json.encode(struct(**spec))
                 for (name, spec) in resolved.items()
             }),
         }),
