@@ -15,7 +15,7 @@ common --config common
 startup --host_jvm_args=-Djdk.tls.client.protocols=TLSv1.2
 
 common --incompatible_require_linker_input_cc_api
-
+common --incompatible_struct_has_no_methods
 common --incompatible_disallow_empty_glob=true
 
 # test environment does not propagate locales by default some tests reads files
