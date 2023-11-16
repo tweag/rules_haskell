@@ -302,6 +302,13 @@ def _build_haskell_module(
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(user_ghcopts)
 
+    if hs.toolchain.is_darwin:
+        # assume `otool` and `install_name_tool` are available at the same location as `ar`
+        ar_bindir = paths.dirname(cc.tools.ar)
+
+        args.add(paths.join(ar_bindir, "otool"), format = "-pgmotool=%s")
+        args.add(paths.join(ar_bindir, "install_name_tool"), format = "-pgminstall_name_tool=%s")
+
     if plugins and not enable_th:
         # For #1681. These suppresses bogus warnings about missing libraries which
         # aren't really needed.
