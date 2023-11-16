@@ -133,6 +133,10 @@ jobs:
           - ghc: 9.4.6
             bzlmod: true
     env:
+      # prevent auto-detection of system compilers on Windows
+      BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN: ${{ matrix.os == 'windows-latest' && 1 || 0 }}
+      # do not use Xcode on macOS
+      BAZEL_USE_CPP_ONLY_TOOLCHAIN: ${{ matrix.os == 'macos-11' && 1 || 0 }}
       GHC_VERSION: ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -205,10 +209,7 @@ jobs:
         if: matrix.module == 'rules_haskell'
         shell: bash
         run: |
-          [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           if [[ ${{ runner.os }} == Windows ]]; then
-            # prevent auto-detection of system compilers
-            export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
             # On Windows `//...` expands to `/...`.
             bazel test ///...
           else
@@ -220,11 +221,8 @@ jobs:
         shell: bash
         run: |
           cd rules_haskell_tests
-          [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
           if [[ ${{ runner.os }} == Windows ]]; then
-            # prevent auto-detection of system compilers
-            export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
             # On Windows `//...` expands to `/...`.
             bazel test ///...
           else
