@@ -104,7 +104,10 @@ jobs:
           nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
             set -euo pipefail
             cd rules_haskell_tests
-            ./tests/run-start-script.sh --use-nix
+            # XXX run start script `--with-bzlmod=true` when supported
+            if ! ${{ matrix.bzlmod }}; then
+              ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
+            fi
             bazel build //tests:run-tests
             ./bazel-ci-bin/tests/run-tests
             bazel coverage //...
@@ -218,7 +221,7 @@ jobs:
         run: |
           cd rules_haskell_tests
           [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
-          ./tests/run-start-script.sh --use-bindists
+          ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
           if [[ ${{ runner.os }} == Windows ]]; then
             # prevent auto-detection of system compilers
             export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
