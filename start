@@ -23,12 +23,16 @@ usage () {
     exit_code="$1"
 
     cat >&2 <<-"EOF"
-	start [--use-bindists|--use-nix|--help]
+	start [--use-bindists|--use-nix|--help|--with-bzlmod=true|false]
 
 	Set up a minimal rules_haskell bazel configuration.
 
 	--use-bindists: The project is set up to provision GHC from binary distributions. This does not require nix to build.
 	--use-nix: The project is set up to provision GHC from nixpkgs. This requires nix to build.
+
+	--with-bzlmod=true|false:
+	    If enabled, use a MODULE.bazel file and enable bzlmod to fetch rules_haskell.
+	    (only supported in bindist mode)
 
 	If no argument is given, `--use-bindists` is assumed
 	and a helpful message is printed that `--use-nix` also exists.
@@ -40,23 +44,32 @@ usage () {
 }
 
 # either bindists or nix
-MODE=
+MODE="bindists"
 PRINT_NIX_USAGE=
+BZLMOD=false
 
 parse_args () {
     # Defaults, if no arguments provided
     if [ "$#" -eq 0 ]; then
-        MODE="bindists"
         PRINT_NIX_USAGE=1
         return
     fi
 
-    case "$1" in
-        "--help")         usage 0 ;;
-        "--use-bindists") MODE="bindists" ;;
-        "--use-nix")      MODE="nix" ;;
-        *)                usage 1 ;;
-    esac
+    for arg; do
+        case "$arg" in
+            "--help")              usage 0 ;;
+            "--use-bindists")      MODE="bindists" ;;
+            "--use-nix")           MODE="nix" ;;
+            "--with-bzlmod=true")  BZLMOD=true ;;
+            "--with-bzlmod=false") BZLMOD=false ;;
+            *)                     usage 1 ;;
+        esac
+    done
+
+    if $BZLMOD && [ $MODE != bindists ]; then
+        stderr "error: --with-bzlmod is only supported with --use-bindists"
+        exit 1
+    fi
 }
 
 check_dir () {
@@ -99,7 +112,7 @@ check_files_dont_exist () {
     check_alt WORKSPACE.bazel WORKSPACE
     check_alt BUILD BUILD.bazel
 
-    for clash in .bazelrc WORKSPACE BUILD.bazel zlib.BUILD.bazel Example.hs; do
+    for clash in .bazelrc WORKSPACE BUILD.bazel MODULE.bazel zlib.BUILD.bazel Example.hs non_module_deps.bzl; do
         check_clash "${clash}"
     done
 }
@@ -212,7 +225,10 @@ esac
 
 stderr "Creating WORKSPACE"
 
-cat > WORKSPACE <<EOF
+if $BZLMOD; then
+    touch WORKSPACE
+else
+    cat > WORKSPACE <<EOF
 # Give your project a name. :)
 workspace(name = "YOUR_PROJECT_NAME_HERE")
 
@@ -264,9 +280,9 @@ stack_snapshot(
 
 EOF
 
-# Append toolchain and zlib rules
-case "${MODE}" in
-    "bindists") cat <<-EOF
+    # Append toolchain and zlib rules
+    case "${MODE}" in
+        "bindists") cat <<-EOF
 		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
 		rules_haskell_toolchains(
 		    version = "${GHC_VERSION}",
@@ -282,7 +298,7 @@ case "${MODE}" in
 		EOF
         ;;
 
-    "nix") cat <<-EOF
+        "nix") cat <<-EOF
 		# Load nixpkgs_git_repository from rules_nixpkgs,
 		# which was already initialized by rules_haskell_dependencies above.
 		load(
@@ -337,7 +353,79 @@ case "${MODE}" in
 		)
 		EOF
         ;;
-esac >> WORKSPACE
+    esac >> WORKSPACE
+fi
+
+if $BZLMOD; then
+    stderr "Creating MODULE.bazel"
+
+    cat >MODULE.bazel <<EOF
+module(name = "your_project_name_here", version = "0.1")
+
+bazel_dep(name = "rules_haskell", version = "0.17")
+bazel_dep(name = "rules_cc", version = "0.0.9")
+
+haskell_toolchains = use_extension(
+    "@rules_haskell//extensions:haskell_toolchains.bzl",
+    "haskell_toolchains",
+)
+
+haskell_toolchains.bindists(version = "$GHC_VERSION")
+
+non_module_deps = use_extension(
+    "//:non_module_deps.bzl",
+    "non_module_deps",
+)
+
+use_repo(
+    non_module_deps,
+    "zlib.dev",
+)
+
+stack = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshot",
+)
+
+use_repo(
+    stack,
+    "stackage",
+    "stackage-exe",
+    "stackage-unpinned",
+)
+
+stack.package(
+    name = "zlib",
+    extra_deps = ["@zlib.dev//:zlib"],
+)
+
+# LTS snapshot published for ghc-${GHC_VERSION} (default version used by rules_haskell)
+stack.snapshot(name = "$SNAPSHOT")
+
+# This uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
+# To switch to pinned stackage dependencies, run \`bazel run @stackage-unpinned//:pin\` and
+# uncomment the following line.
+#stack.stack_snapshot_json(label = "//:stackage_snapshot.json")
+
+EOF
+
+    stderr "Creating non_module_deps.bzl"
+
+    cat >non_module_deps.bzl <<-EOF
+			load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+			def _non_module_deps_impl(_mctx):
+			    http_archive(
+			        name = "zlib.dev",
+			        build_file = "//:${ZLIB_BUILD_FILE}",
+			        sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
+			        strip_prefix = "zlib-1.3",
+			        urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
+			    )
+
+			non_module_deps = module_extension(implementation = _non_module_deps_impl)
+		EOF
+fi
 
 ## Write .bazelrc File #################################################
 
@@ -349,6 +437,8 @@ build:ci --jobs=2
 build:ci --verbose_failures
 common:ci --color=no
 test:ci --test_output=errors
+
+common --enable_bzlmod=$BZLMOD
 
 # Should become the default in bazel 7
 build --incompatible_enable_cc_toolchain_resolution
