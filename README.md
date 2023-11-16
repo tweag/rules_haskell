@@ -39,9 +39,15 @@ In a fresh directory, run:
 $ curl https://haskell.build/start | sh
 ```
 
+Alternatively, if you want to start a project with bzlmod, run:
+
+```console
+$ sh <(curl https://haskell.build/start) --with-bzlmod=true
+```
+
 This will generate initial `WORKSPACE` and `BUILD` files for you. See the
 [examples](./examples) and the [API reference](#Rules) below to adapt these for
-you project. Then,
+your project. Then,
 
 ```console
 $ bazel build //...    # Build all targets
@@ -51,6 +57,7 @@ $ bazel test //...     # Run all tests
 You can learn more about Bazel's command line
 syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
 `build`, `test`, `run` and `coverage`.
+
 
 ### Nixpkgs
 
