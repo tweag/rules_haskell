@@ -136,6 +136,23 @@ def link_binary(
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
 
+    # NOTE When linking, GHC < 9.6 ignores -fplugin= arguments.
+    #
+    #      GHC >= 9.6, however, tries to locate a package providing the given module.
+    #
+    #      Failing to find a corresponding package it tries to find a source file with
+    #      the given name and .hs, .lhs, .hsig or .lhsig extension.
+    #
+    #      Passing appropriate -package-db and -plugin-package-id flags for
+    #      the given plugin causes GHC to try building a dynamic library instead of
+    #      an executable which fails in the linking step with:
+    #
+    #      > error: main2.o: requires unsupported dynamic reloc 11; recompile with -fPIC
+    #
+    #      Since compilation is already done at this stage, we simply clear all plugins
+    #      here so they do not have any effect.
+    args.add("-fclear-plugins")
+
     # By default, GHC will produce mostly-static binaries, i.e. in which all
     # Haskell code is statically linked and foreign libraries and system
     # dependencies are dynamically linked. If linkstatic is false, i.e. the user
@@ -351,6 +368,18 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     args.add_all(["-shared", "-dynamic"])
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
+
+    # NOTE When linking, GHC < 9.6 ignores -fplugin= arguments.
+    #
+    #      GHC >= 9.6, however, tries to locate a package providing the given module.
+    #
+    #      Failing to find a corresponding package it tries to find a source file with
+    #      the given name and .hs, .lhs, .hsig or .lhsig extension.
+    #
+    #      Since compilation is already done at this stage, we simply clear all plugins
+    #      here so they do not have any effect.
+    args.add("-fclear-plugins")
+
     extra_prefix = empty_lib_prefix
 
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
