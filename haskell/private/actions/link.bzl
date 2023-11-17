@@ -134,7 +134,13 @@ def link_binary(
     if with_profiling:
         args.add("-prof")
     args.add_all(hs.toolchain.ghcopts)
-    args.add_all(compiler_flags)
+
+    # HACK when linking, GHC < 9.6 ignores -fplugin= arguments,
+    #      whereas GHC >= 9.6 tries to find a source file with the given name and
+    #      .hs, .lhs, .hsig or .lhsig extension
+    #      We remove this flag here, which makes the "binary-with-plugin2" test build again
+    link_compiler_flags = [flag for flag in compiler_flags if not flag.startswith("-fplugin=")]
+    args.add_all(link_compiler_flags)
 
     # By default, GHC will produce mostly-static binaries, i.e. in which all
     # Haskell code is statically linked and foreign libraries and system

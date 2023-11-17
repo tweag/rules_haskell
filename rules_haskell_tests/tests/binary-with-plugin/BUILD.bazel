@@ -61,16 +61,15 @@ haskell_test(
     deps = [":base"],
 )
 
-# FIXME <command line>: Could not find module ‘Plugin’ [ghc-9.6]
-# haskell_test(
-#     name = "binary-with-plugin2",
-#     srcs = ["main2.hs"],
-#     compiler_flags = ["-fplugin=Plugin"],
-#     non_default_plugins = [":plugin2"],
-#     tags = ["skip_profiling"],
-#     visibility = ["//visibility:public"],
-#     deps = [":base"],
-# )
+haskell_test(
+    name = "binary-with-plugin2",
+    srcs = ["main2.hs"],
+    compiler_flags = ["-fplugin=Plugin"],
+    non_default_plugins = [":plugin2"],
+    tags = ["skip_profiling"],
+    visibility = ["//visibility:public"],
+    deps = [":base"],
+)
 
 haskell_test(
     name = "binary-with-plugin3",
