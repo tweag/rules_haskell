@@ -351,13 +351,6 @@ def haskell_binary(
     )
 
     repl_kwargs = make_repl_kwargs(["testonly", "tags"], kwargs)
-    native.alias(
-        # XXX Temporary backwards compatibility hack. Remove eventually.
-        # See https://github.com/tweag/rules_haskell/pull/460.
-        name = "%s-repl" % name,
-        actual = "%s@repl" % name,
-        **repl_kwargs
-    )
     haskell_repl(
         name = "%s@repl" % name,
         deps = [name],
@@ -510,14 +503,6 @@ def haskell_test(
     )
 
     repl_kwargs = make_repl_kwargs(["tags"], kwargs)
-    native.alias(
-        # XXX Temporary backwards compatibility hack. Remove eventually.
-        # See https://github.com/tweag/rules_haskell/pull/460.
-        name = "%s-repl" % name,
-        actual = "%s@repl" % name,
-        testonly = kwargs.get("testonly", True),
-        **repl_kwargs
-    )
     haskell_repl(
         name = "%s@repl" % name,
         deps = [name],
@@ -644,13 +629,6 @@ def haskell_library(
     )
 
     repl_kwargs = make_repl_kwargs(["testonly", "tags"], kwargs)
-    native.alias(
-        # XXX Temporary backwards compatibility hack. Remove eventually.
-        # See https://github.com/tweag/rules_haskell/pull/460.
-        name = "%s-repl" % name,
-        actual = "%s@repl" % name,
-        **repl_kwargs
-    )
     haskell_repl(
         name = "%s@repl" % name,
         deps = [name],

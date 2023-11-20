@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Removed
 
 * remove `compiler_flags` option which was deprecated since 0.14 from macros and rules
+* remove `<name>-repl` aliases for repl targets introduced in 0.7
 
 ## [0.17] 2023-10-19
 
