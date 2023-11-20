@@ -7,4 +7,4 @@ packages:
 
 # support GHC 9.6
 - git: https://github.com/avdv/ghc-source-gen
-  commit: 4bc81b85c21094d1dc38b86205b1725b379a6e83
+  commit: 1e5244e4025302e8b028d02714682185f1f4b626
