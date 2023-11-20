@@ -18,7 +18,7 @@ haskell_library(
 haskell_test(
     name = "macro_conflict",
     srcs = ["Main.hs"],
-    compiler_flags = [
+    ghcopts = [
         "-XCPP",
         "-Werror",
     ] + select({

@@ -4,13 +4,13 @@ package(default_testonly = 1)
 
 # Regression tests for https://github.com/tweag/rules_haskell/issues/1377
 
-# Test that make variable expension is performed on `compiler_flags` forwarded
+# Test that make variable expension is performed on `ghcopts` forwarded
 # to the REPL.
 haskell_test(
     name = "test-compiler-flags",
     srcs = ["Main.hs"],
-    compiler_flags = ['-DDATA="$(rootpath data.txt)"'],
     data = ["data.txt"],
+    ghcopts = ['-DDATA="$(rootpath data.txt)"'],
     visibility = ["//tests/asterius/repl-make-variables:__pkg__"],
     deps = [
         "//tests/hackage:base",

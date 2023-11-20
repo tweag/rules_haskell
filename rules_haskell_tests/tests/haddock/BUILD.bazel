@@ -22,7 +22,7 @@ haskell_library(
         "LibA/A.hs",
         "header.h",
     ],
-    compiler_flags = ["-I."],
+    ghcopts = ["-I."],
     tags = ["requires_dynamic"],
     deps = [
         ":haddock-lib-deep",

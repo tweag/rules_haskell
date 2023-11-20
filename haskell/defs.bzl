@@ -536,7 +536,6 @@ def haskell_library(
         narrowed_deps = [],
         modules = [],
         data = [],
-        compiler_flags = [],
         ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
