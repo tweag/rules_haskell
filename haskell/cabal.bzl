@@ -458,11 +458,8 @@ def _haskell_cabal_library_impl(ctx):
 
     user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
     if ctx.attr.compiler_flags:
-        print("WARNING: compiler_flags attribute is deprecated. Use cabalopts instead.")
-        user_cabalopts.extend([
-            "--ghc-option=" + opt
-            for opt in _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
-        ])
+        fail("ERROR: `compiler_flags` attribute was removed. Use `cabalopts` with `--ghc-option` instead.")
+
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
@@ -696,7 +693,7 @@ haskell_cabal_library = rule(
             """,
         ),
         "compiler_flags": attr.string_list(
-            doc = """DEPRECATED. Use `cabalopts` with `--ghc-option` instead.
+            doc = """REMOVED. Use `cabalopts` with `--ghc-option` instead.
 
             Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
@@ -808,11 +805,8 @@ def _haskell_cabal_binary_impl(ctx):
     exe_name = ctx.attr.exe_name if ctx.attr.exe_name else hs.label.name
     user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
     if ctx.attr.compiler_flags:
-        print("WARNING: compiler_flags attribute is deprecated. Use cabalopts instead.")
-        user_cabalopts.extend([
-            "--ghc-option=" + opt
-            for opt in _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
-        ])
+        fail("ERROR: `compiler_flags` attribute was removed. Use `cabalopts` with `--ghc-option` instead.")
+
     cabal = _find_cabal(hs, ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(

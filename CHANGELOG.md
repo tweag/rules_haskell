@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## Unreleased
+
+### Removed
+
+* remove `compiler_flags` option which was deprecated since 0.14 from macros and rules
+
 ## [0.17] 2023-10-19
 
 [0.17]: https://github.com/tweag/rules_haskell/compare/v0.16...v0.17
