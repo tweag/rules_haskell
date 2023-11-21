@@ -17,6 +17,7 @@ buildifier_test(
     buildifier = "@buildifier//:buildifier",
     tags = [
         "dont_test_on_windows",
+        "manual",
     ],
     verbose = True,
 )

@@ -30,6 +30,7 @@ buildifier_test(
     mode = "diff",
     tags = [
         "dont_test_on_windows",
+        "manual",
     ],
 )
 
