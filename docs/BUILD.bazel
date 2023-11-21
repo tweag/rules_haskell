@@ -1,3 +1,4 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_haskell//docs/pandoc:pandoc.bzl", "set_site_end_location")
@@ -34,6 +35,17 @@ libraries = [
     "c2hs",
 ]
 
+# moved here so that //haskell is not dependent upon rules_nixpkgs_*
+bzl_library(
+    name = "haskell_nix",
+    srcs = ["//haskell:nixpkgs.bzl"],
+    deps = [
+        "//haskell",
+        "@rules_nixpkgs_core//:nixpkgs",
+        "@rules_nixpkgs_posix//:posix",
+    ],
+)
+
 [
     (
         # Extract API documentation metadata to generate navigation and index.
@@ -47,7 +59,10 @@ libraries = [
             provider_template = ":templates/metadata/provider.vm",
             rule_template = ":templates/metadata/rule.vm",
             tags = ["dont_test_on_windows"],
-            deps = ["//haskell"],
+            deps = [
+                ":haskell_nix",
+                "//haskell",
+            ],
         ),
         # Generate markdown API documentation.
         stardoc(
@@ -60,7 +75,10 @@ libraries = [
             provider_template = ":templates/markdown/provider.vm",
             rule_template = ":templates/markdown/rule.vm",
             tags = ["dont_test_on_windows"],
-            deps = ["//haskell"],
+            deps = [
+                ":haskell_nix",
+                "//haskell",
+            ],
         ),
         # Convert markdown to html.
         genrule(
