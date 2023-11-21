@@ -127,9 +127,9 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "aspect_rules_js",
-        sha256 = "295a73d963bad4b04a3c488d60dc8a76a659ee64708be3a66be75726e6277c7e",
-        strip_prefix = "rules_js-1.33.3",
-        url = "https://github.com/aspect-build/rules_js/releases/download/v1.33.3/rules_js-v1.33.3.tar.gz",
+        sha256 = "d9ceb89e97bb5ad53b278148e01a77a3e9100db272ce4ebdcd59889d26b9076e",
+        strip_prefix = "rules_js-1.34.0",
+        url = "https://github.com/aspect-build/rules_js/releases/download/v1.34.0/rules_js-v1.34.0.tar.gz",
     )
 
     rules_haskell_dependencies_bzlmod()
