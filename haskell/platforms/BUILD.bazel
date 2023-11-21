@@ -11,26 +11,6 @@ load(":list.bzl", "declare_config_settings")
 
 declare_config_settings()
 
-alias(
-    name = "nixpkgs",
-    actual = "@rules_nixpkgs_core//constraints:support_nix",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "linux_x86_64_nixpkgs",
-    actual = "@rules_nixpkgs_core//platforms:host",
-    deprecation = "Use @rules_nixpkgs_core//platforms:host instead.",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "darwin_x86_64_nixpkgs",
-    actual = "@rules_nixpkgs_core//platforms:host",
-    deprecation = "Use @rules_nixpkgs_core//platforms:host instead.",
-    visibility = ["//visibility:public"],
-)
-
 bzl_library(
     name = "platforms",
     srcs = ["list.bzl"],
