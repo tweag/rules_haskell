@@ -1,7 +1,6 @@
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
-    "haskell_test",
     "haskell_toolchain_library",
 )
 load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")

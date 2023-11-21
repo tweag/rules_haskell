@@ -285,7 +285,7 @@ def _so_extension(hs):
     """
     return "dylib" if hs.toolchain.is_darwin else "so"
 
-def link_library_static(hs, cc, object_files, my_pkg_id, with_profiling, libdir = ""):
+def link_library_static(hs, cc, _posix, _dep_info, object_files, my_pkg_id, with_profiling, libdir = ""):
     """Link a static library for the package using given object files.
 
     Returns:

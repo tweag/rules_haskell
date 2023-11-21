@@ -32,10 +32,6 @@ load(
     _ghc_plugin = "ghc_plugin",
 )
 load(
-    "//haskell:providers.bzl",
-    "HaskellLibraryInfo",
-)
-load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )

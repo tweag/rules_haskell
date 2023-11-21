@@ -9,7 +9,6 @@ load(
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellToolchainLibraryInfo",
-    "all_dependencies_package_ids",
 )
 load(":cc.bzl", "cc_interop_info")
 load(
@@ -40,7 +39,6 @@ load(
     "get_lib_extension",
     "get_static_hs_lib_name",
     "infer_main_module",
-    "ln",
     "match_label",
     "parse_pattern",
 )
@@ -54,7 +52,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
-load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 
 # Note [Empty Libraries]

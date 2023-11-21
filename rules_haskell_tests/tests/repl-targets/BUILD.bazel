@@ -1,7 +1,6 @@
 load("@rules_haskell//haskell:c2hs.bzl", "c2hs_library")
 load(
     "@rules_haskell//haskell:defs.bzl",
-    "haskell_binary",
     "haskell_library",
     "haskell_test",
 )

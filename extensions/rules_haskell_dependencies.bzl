@@ -7,7 +7,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
-def repositories(*, bzlmod):
+def repositories(*, bzlmod):  # @unused
     rules_haskell_dependencies_bzlmod()
 
     # Some helpers for platform-dependent configuration

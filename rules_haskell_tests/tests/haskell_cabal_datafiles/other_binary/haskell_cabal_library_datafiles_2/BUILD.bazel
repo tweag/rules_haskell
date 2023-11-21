@@ -1,12 +1,6 @@
 # tests that a haskell binary from another package can access
 # datafiles of it's cabal_library dependencY
 
-load("@rules_cc//cc:defs.bzl", "cc_library")
-load(
-    "@rules_haskell//haskell:cabal.bzl",
-    "haskell_cabal_binary",
-    "haskell_cabal_library",
-)
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_binary",

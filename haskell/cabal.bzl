@@ -20,7 +20,6 @@ load(
     "relative_rpath_prefix",
     "truly_relativize",
 )
-load(":private/set.bzl", "set")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/validate_attrs.bzl", "typecheck_stackage_extradeps")
 load(":haddock.bzl", "generate_unified_haddock_info")
@@ -803,7 +802,7 @@ def _haskell_cabal_binary_impl(ctx):
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     exe_name = ctx.attr.exe_name if ctx.attr.exe_name else hs.label.name
-    user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.atOBtr.cabalopts)
+    user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
     if ctx.attr.compiler_flags:
         fail("ERROR: `compiler_flags` attribute was removed. Use `cabalopts` with `--ghc-option` instead.")
 

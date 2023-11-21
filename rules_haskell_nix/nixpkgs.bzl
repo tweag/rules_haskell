@@ -19,7 +19,6 @@ load(
     "execute_or_fail_loudly",
     "resolve_labels",
 )
-load("@rules_haskell//haskell:private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 
 def check_ghc_version(repository_ctx):
     ghc_name = "ghc-{}".format(repository_ctx.attr.version)

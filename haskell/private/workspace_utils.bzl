@@ -1,5 +1,3 @@
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
-
 def execute_or_fail_loudly(
         repository_ctx,
         arguments,

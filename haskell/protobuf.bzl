@@ -8,13 +8,11 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     ":providers.bzl",
     "HaddockInfo",
-    "HaskellCcLibrariesInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "HaskellProtobufInfo",
 )
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
-load(":private/pkg_id.bzl", "pkg_id")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",

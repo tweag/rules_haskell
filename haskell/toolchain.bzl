@@ -18,7 +18,6 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":cc.bzl", "ghc_cc_program_args")
-load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 load(":private/context.bzl", "append_to_path")
 load(
     "//haskell/asterius:asterius_config.bzl",

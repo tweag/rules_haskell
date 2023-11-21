@@ -1,7 +1,6 @@
 """Experimental Haskell rules"""
 
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
-load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load(
     "//haskell/experimental/private:module.bzl",
     _haskell_module_impl = "haskell_module_impl",

@@ -1,13 +1,7 @@
 """Defines output groups that are consumed by tools such as 'hrepl'."""
 
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":providers.bzl", "all_package_ids")
 load(":private/cc_libraries.bzl", "get_ghci_library_files")
-load(
-    ":private/path_utils.bzl",
-    "get_lib_name",
-)
 
 def write_proto_file(hs, output_name, proto_type, content):
     """Write an encoded .proto file.
@@ -146,7 +140,7 @@ def compile_info_output_groups(
         hs,
         cc,
         c,
-        _posix,
+        posix,  # @unused
         runfiles):
     """Output groups for compiling a Haskell target.
 

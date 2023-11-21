@@ -17,7 +17,6 @@ load(
     "find_python",
     "resolve_labels",
 )
-load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
 
 _GHC_DEFAULT_VERSION = DEFAULT_GHC_VERSION
@@ -458,8 +457,6 @@ def ghc_bindist(
 
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
-
-    version_tuple = _split_version(version)
 
     patches = None
     if target == "windows_amd64":

@@ -3,10 +3,8 @@ load(
     "//haskell:private/workspace_utils.bzl",
     "define_rule",
     "execute_or_fail_loudly",
-    "find_python",
     "resolve_labels",
 )
-load("//haskell:private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 load(
     "//haskell:private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",

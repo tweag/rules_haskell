@@ -1,16 +1,11 @@
 # Check that we manage to access the runfile while using the generate_paths_module attribute of haskell_cabal_binary
 
-load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
-load("@rules_cc//cc:defs.bzl", "cc_library")
 load(
     "@rules_haskell//haskell:cabal.bzl",
     "haskell_cabal_binary",
-    "haskell_cabal_library",
 )
 load(
     "@rules_haskell//haskell:defs.bzl",
-    "haskell_binary",
-    "haskell_test",
     "haskell_toolchain_library",
 )
 load("@os_info//:os_info.bzl", "is_windows")

@@ -2,7 +2,6 @@
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 def rules_haskell_worker_dependencies(**stack_kwargs):
     """

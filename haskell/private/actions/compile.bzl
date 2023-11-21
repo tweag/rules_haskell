@@ -7,16 +7,9 @@ load(
 )
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(
-    ":private/path_utils.bzl",
-    "declare_compiled",
-    "target_unique_name",
-)
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/version_macros.bzl", "version_macro_includes")
 load(
     ":providers.bzl",
-    "HaskellLibraryInfo",
     "all_dependencies_package_ids",
 )
 load(
@@ -24,9 +17,7 @@ load(
     "get_ghci_library_files",
     "link_libraries",
 )
-load(":private/set.bzl", "set")
 load("@bazel_skylib//lib:sets.bzl", "sets")
-load("//haskell/experimental:providers.bzl", "HaskellModuleInfo")
 load(
     ":private/actions/process_hsc_file.bzl",
     "preprocess_hsc_flags_and_inputs",
@@ -347,7 +338,7 @@ def compile_binary(
         hs,
         cc,
         java,
-        posix,
+        posix,  # @unused
         dep_info,
         plugin_dep_info,
         srcs,
@@ -380,7 +371,6 @@ def compile_binary(
         hs,
         cc,
         java,
-        posix,
         dep_info,
         plugin_dep_info,
         srcs,
@@ -442,7 +432,7 @@ def compile_library(
         hs,
         cc,
         java,
-        posix,
+        posix,  # @unused
         dep_info,
         plugin_dep_info,
         srcs,
@@ -477,7 +467,6 @@ def compile_library(
         hs,
         cc,
         java,
-        posix,
         dep_info,
         plugin_dep_info,
         srcs,

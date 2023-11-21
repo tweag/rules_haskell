@@ -3,7 +3,6 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":private/version_macros.bzl", "version_macro_includes")
 load(":private/path_utils.bzl", "declare_compiled")
-load(":private/set.bzl", "set")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
