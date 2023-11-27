@@ -21,3 +21,10 @@ buildifier_test(
     ],
     verbose = True,
 )
+
+sh_test(
+    name = "nix_smoke_test",
+    size = "medium",
+    srcs = ["nix_test.sh"],
+    tags = ["external"],
+)
