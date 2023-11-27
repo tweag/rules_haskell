@@ -4,7 +4,6 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
-load(":private/set.bzl", "set")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load(
     "@rules_haskell//haskell:providers.bzl",
@@ -87,7 +86,6 @@ def _haskell_doctest_single(target, ctx):
         return []
 
     hs = haskell_context(ctx, ctx.attr)
-    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     hs_info = target[HaskellInfo]
     cc_info = target[CcInfo]

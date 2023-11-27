@@ -1,6 +1,5 @@
 """Haddock support"""
 
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load(
@@ -16,8 +15,6 @@ load(
     "haskell_cc_libraries_aspect",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
-load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def generate_unified_haddock_info(this_package_id, this_package_haddock, this_package_html, deps):
     """Collapse dependencies into a single `HaddockInfo`.

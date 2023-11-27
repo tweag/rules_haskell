@@ -1,4 +1,3 @@
-load(":private/set.bzl", "set")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def generate_version_macros(ctx, pkg_name, version):

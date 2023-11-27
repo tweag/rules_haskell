@@ -18,7 +18,6 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":cc.bzl", "ghc_cc_program_args")
-load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 load(":private/context.bzl", "append_to_path")
 load(
     "//haskell/asterius:asterius_config.bzl",
@@ -431,7 +430,6 @@ def haskell_toolchain(
         tools,
         libraries,
         asterius_binaries = None,
-        compiler_flags = [],
         ghcopts = [],
         repl_ghci_args = [],
         haddock_flags = [],
@@ -482,7 +480,6 @@ def haskell_toolchain(
       asterius_binaries: An optional filegroup containing asterius binaries.
         If present the toolchain will target WebAssembly and only use binaries from `tools` if needed to complete the toolchain.
       ghcopts: A collection of flags that will be passed to GHC on every invocation.
-      compiler_flags: DEPRECATED. Use new name ghcopts.
       repl_ghci_args: A collection of flags that will be passed to GHCI on repl invocation. It extends the `ghcopts` collection.\\
         Flags set here have precedance over `ghcopts`.
       haddock_flags: A collection of flags that will be passed to haddock.
@@ -496,13 +493,10 @@ def haskell_toolchain(
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
 
     """
+    if "compiler_flags" in kwargs:
+        fail("`compiler_flags` argument was removed, use `ghcopts` instead")
+
     corrected_ghci_args = repl_ghci_args + ["-no-user-package-db"]
-    ghcopts = check_deprecated_attribute_usage(
-        old_attr_name = "compiler_flags",
-        old_attr_value = compiler_flags,
-        new_attr_name = "ghcopts",
-        new_attr_value = ghcopts,
-    )
 
     toolchain_rule = _ahc_haskell_toolchain if asterius_binaries else _haskell_toolchain
     toolchain_rule(
@@ -537,7 +531,7 @@ def haskell_toolchain(
 
 def rules_haskell_toolchains(
         version = None,
-        compiler_flags = None,
+        compiler_flags = None,  # TODO remove
         ghcopts = None,
         haddock_flags = None,
         repl_ghci_args = None,
@@ -557,13 +551,14 @@ def rules_haskell_toolchains(
       version: The desired GHC version
       locale: Locale that will be set during compiler
         invocations. Default: C.UTF-8 (en_US.UTF-8 on MacOS)
-      compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: A collection of flags that will be passed to GHC on every invocation.
 
     """
+    if compiler_flags:
+        fail("`compiler_flags` argument was removed, use `ghcopts` instead")
+
     haskell_register_ghc_bindists(
         version = version,
-        compiler_flags = compiler_flags,
         ghcopts = ghcopts,
         haddock_flags = haddock_flags,
         repl_ghci_args = repl_ghci_args,

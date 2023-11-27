@@ -19,7 +19,6 @@ load(
     "execute_or_fail_loudly",
     "resolve_labels",
 )
-load("@rules_haskell//haskell:private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 
 def check_ghc_version(repository_ctx):
     ghc_name = "ghc-{}".format(repository_ctx.attr.version)
@@ -365,7 +364,6 @@ def haskell_register_ghc_nixpkgs(
         required in order to use statically-linked Haskell libraries with GHCi
         and Template Haskell.
       fully_static_link: True if and only if fully-statically-linked binaries are to be built.
-      compiler_flags: DEPRECADED. Use new name ghcopts.
       ghcopts: A collection of flags that will be passed to GHC
       compiler_flags_select: temporary workaround to pass conditional arguments.
         See https://github.com/bazelbuild/bazel/issues/9199 for details.
@@ -382,6 +380,9 @@ def haskell_register_ghc_nixpkgs(
         Passed to [nixpkgs_sh_posix_configure](https://github.com/tweag/rules_nixpkgs#nixpkgs_sh_posix_configure).
       register: Whether to register the toolchain (must be set to False if bzlmod is enabled)
     """
+    if compiler_flags:
+        fail("`compiler_flags` argument was removed, use `ghcopts` instead")
+
     nixpkgs_ghc_repo_name = "{}_ghc_nixpkgs".format(name)
     nixpkgs_sh_posix_repo_name = "{}_sh_posix_nixpkgs".format(name)
 
@@ -412,13 +413,6 @@ def haskell_register_ghc_nixpkgs(
         name = nixpkgs_sh_posix_repo_name,
         register = register,
         **sh_posix_nixpkgs_kwargs
-    )
-
-    ghcopts = check_deprecated_attribute_usage(
-        old_attr_name = "compiler_flags",
-        old_attr_value = compiler_flags,
-        new_attr_name = "ghcopts",
-        new_attr_value = ghcopts,
     )
 
     register_ghc_from_nixpkgs_package(

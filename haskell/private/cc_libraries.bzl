@@ -306,7 +306,6 @@ def extend_HaskellCcLibrariesInfo(
     Returns:
       HaskellCcLibrariesInfo
     """
-    hs = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
     libraries = dict(cc_libraries_info.libraries)
 
@@ -354,9 +353,6 @@ def _haskell_cc_libraries_aspect_impl(target, ctx):
         # To work around this we instead generate HaskellCcLibrariesInfo within
         # _haskell_proto_aspect and bundle it in HaskellProtobufInfo.
         return target[HaskellProtobufInfo].cc_libraries_info
-
-    hs = ctx.toolchains["@rules_haskell//haskell:toolchain"]
-    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = [
         dep[HaskellCcLibrariesInfo]

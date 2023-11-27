@@ -1,7 +1,6 @@
 """Utilities for module and path manipulations."""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def is_haskell_extension(extension):
     """Whether the given extension defines a Haskell source file."""

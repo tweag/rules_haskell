@@ -7,7 +7,6 @@ load(
     "haskell_binary",
     "haskell_toolchain_library",
 )
-load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 package(default_testonly = 1)
 

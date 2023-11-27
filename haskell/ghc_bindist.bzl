@@ -17,7 +17,6 @@ load(
     "find_python",
     "resolve_labels",
 )
-load(":private/validate_attrs.bzl", "check_deprecated_attribute_usage")
 load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
 
 _GHC_DEFAULT_VERSION = DEFAULT_GHC_VERSION
@@ -446,7 +445,6 @@ def ghc_bindist(
     Args:
       name: A unique name for the repository.
       version: The desired GHC version.
-      compiler_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-compiler_flags)
       ghcopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-ghcopts)
       haddock_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-haddock_flags)
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
@@ -454,17 +452,11 @@ def ghc_bindist(
       locale: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-locale)
       register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
     """
-    ghcopts = check_deprecated_attribute_usage(
-        old_attr_name = "compiler_flags",
-        old_attr_value = compiler_flags,
-        new_attr_name = "ghcopts",
-        new_attr_value = ghcopts,
-    )
+    if compiler_flags:
+        fail("`compiler_flags` argument was removed, use `ghcopts` instead")
 
     bindist_name = name
     toolchain_name = "{}-toolchain".format(name)
-
-    version_tuple = _split_version(version)
 
     patches = None
     if target == "windows_amd64":
@@ -525,7 +517,7 @@ _GHC_AVAILABLE_TARGETS = [
 
 def haskell_register_ghc_bindists(
         version = None,
-        compiler_flags = None,
+        compiler_flags = None,  # TODO remove
         ghcopts = None,
         haddock_flags = None,
         repl_ghci_args = None,
@@ -539,7 +531,6 @@ def haskell_register_ghc_bindists(
 
     Args:
       version: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-version)
-      compiler_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-compiler_flags)
       ghcopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-ghcopts)
       haddock_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-haddock_flags)
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)
@@ -548,6 +539,9 @@ def haskell_register_ghc_bindists(
       register: Whether to register the toolchains (must be set to False if bzlmod is enabled)
       targets: A list of target platforms to generate bindists for, e.g. `["linux_amd64", "windows_amd64"]` (default: all)
     """
+    if compiler_flags:
+        fail("`compiler_flags` argument was removed, use `ghcopts` instead")
+
     version = version or _GHC_DEFAULT_VERSION
 
     for target in targets:

@@ -1,6 +1,5 @@
 """Multi target Haskell REPL."""
 
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
@@ -33,7 +32,6 @@ load(
 )
 load(":private/java.bzl", "java_interop_info")
 load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:sets.bzl", "sets")
 
 HaskellReplLoadInfo = provider(
     doc = """Haskell REPL target information.

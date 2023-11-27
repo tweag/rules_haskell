@@ -20,7 +20,6 @@ load(
     "relative_rpath_prefix",
     "truly_relativize",
 )
-load(":private/set.bzl", "set")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/validate_attrs.bzl", "typecheck_stackage_extradeps")
 load(":haddock.bzl", "generate_unified_haddock_info")
@@ -93,7 +92,7 @@ def _chop_version(name):
     """Remove any version component from the given package name."""
     return name.rpartition("-")[0]
 
-def _find_cabal(hs, srcs):
+def _find_cabal(srcs):
     """Check that a .cabal file exists. Choose the root one."""
     cabal = None
     for f in srcs:
@@ -207,7 +206,7 @@ def _prepare_cabal_inputs(
         verbose,
         transitive_haddocks,
         generate_paths_module,
-        is_library = False,
+        is_library = False,  # @unused
         dynamic_file = None):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
@@ -458,12 +457,9 @@ def _haskell_cabal_library_impl(ctx):
 
     user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
     if ctx.attr.compiler_flags:
-        print("WARNING: compiler_flags attribute is deprecated. Use cabalopts instead.")
-        user_cabalopts.extend([
-            "--ghc-option=" + opt
-            for opt in _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
-        ])
-    cabal = _find_cabal(hs, ctx.files.srcs)
+        fail("ERROR: `compiler_flags` attribute was removed. Use `cabalopts` with `--ghc-option` instead.")
+
+    cabal = _find_cabal(ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
         "_install/{}.conf.d/package.cache".format(package_id),
@@ -696,7 +692,7 @@ haskell_cabal_library = rule(
             """,
         ),
         "compiler_flags": attr.string_list(
-            doc = """DEPRECATED. Use `cabalopts` with `--ghc-option` instead.
+            doc = """REMOVED. Use `cabalopts` with `--ghc-option` instead.
 
             Flags to pass to Haskell compiler, in addition to those defined the cabal file. Subject to Make variable substitution.""",
         ),
@@ -808,12 +804,9 @@ def _haskell_cabal_binary_impl(ctx):
     exe_name = ctx.attr.exe_name if ctx.attr.exe_name else hs.label.name
     user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
     if ctx.attr.compiler_flags:
-        print("WARNING: compiler_flags attribute is deprecated. Use cabalopts instead.")
-        user_cabalopts.extend([
-            "--ghc-option=" + opt
-            for opt in _expand_make_variables("compiler_flags", ctx, ctx.attr.compiler_flags)
-        ])
-    cabal = _find_cabal(hs, ctx.files.srcs)
+        fail("ERROR: `compiler_flags` attribute was removed. Use `cabalopts` with `--ghc-option` instead.")
+
+    cabal = _find_cabal(ctx.files.srcs)
     setup = _find_setup(hs, cabal, ctx.files.srcs)
     package_database = hs.actions.declare_file(
         "_install/{}.conf.d/package.cache".format(hs.label.name),
@@ -1400,7 +1393,7 @@ def _pin_packages(repository_ctx, resolved):
     hashes_url = "https://raw.githubusercontent.com/commercialhaskell/all-cabal-hashes/" + hashes_commit
 
     resolved = dict(**resolved)
-    for (name, spec) in resolved.items():
+    for (_name, spec) in resolved.items():
         # Determine package sha256
         if spec["location"]["type"] == "hackage":
             # stack does not expose sha256, see https://github.com/commercialhaskell/stack/issues/5274
@@ -2438,7 +2431,7 @@ def stack_snapshot(
         tools = [],
         components = {},
         components_dependencies = {},
-        stack_update = None,
+        stack_update = None,  # @unused
         verbose = False,
         netrc = "",
         toolchain_libraries = None,

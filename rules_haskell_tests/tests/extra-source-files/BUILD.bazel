@@ -35,13 +35,13 @@ haskell_test(
         "FooTH.hs",
         "Main.hs",
     ],
-    # Test that the linker can also see the extra_srcs.
-    compiler_flags = ["-optl-Wl,@tests/extra-source-files/ld-options.txt"],
     extra_srcs = [
         "file.txt",
         "Foo.hs",  # Test "Multiple entries with same key" in expand_location
         "ld-options.txt",
     ],
+    # Test that the linker can also see the extra_srcs.
+    ghcopts = ["-optl-Wl,@tests/extra-source-files/ld-options.txt"],
     tags = [
         # ld on darwin does not support response files.
         "dont_test_on_darwin_with_bindist",

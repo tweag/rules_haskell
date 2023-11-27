@@ -10,10 +10,6 @@ load(
     "expand_make_variables",
     "haskell_library_expand_make_variables",
 )
-load(
-    "//haskell:private/mode.bzl",
-    "is_profiling_enabled",
-)
 load("//haskell:private/pkg_id.bzl", "pkg_id")
 load(
     "//haskell:private/packages.bzl",
@@ -24,7 +20,6 @@ load(
     "//haskell:private/plugins.bzl",
     "resolve_plugin_tools",
 )
-load("//haskell:private/set.bzl", "set")
 load(
     "//haskell:providers.bzl",
     "GhcPluginInfo",
@@ -97,7 +92,7 @@ def _build_haskell_module(
         ctx,
         hs,
         cc,
-        posix,
+        posix,  # @unused
         dep_info,
         narrowed_deps_info,
         package_name,

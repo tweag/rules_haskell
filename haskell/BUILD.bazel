@@ -100,8 +100,6 @@ bzl_library(
         "@bazel_skylib//lib:shell",
         "@bazel_skylib//lib:versions",
         "@bazel_skylib//rules:expand_template",
-        "@rules_nixpkgs_core//:nixpkgs",
-        "@rules_nixpkgs_posix//:posix",
         "@rules_sh//sh:posix",
     ],
 )

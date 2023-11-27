@@ -64,7 +64,7 @@ haskell_test(
 haskell_test(
     name = "binary-with-plugin2",
     srcs = ["main2.hs"],
-    compiler_flags = ["-fplugin=Plugin"],
+    ghcopts = ["-fplugin=Plugin"],
     non_default_plugins = [":plugin2"],
     tags = ["skip_profiling"],
     visibility = ["//visibility:public"],

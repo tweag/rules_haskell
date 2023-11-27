@@ -8,9 +8,9 @@ package(default_testonly = 1)
 haskell_test(
     name = "bin1",
     srcs = ["bin1.hs"],
-    compiler_flags = ['-DBIN1_INPUT="$(rootpath bin1-input)"'],
     # Regular file input:
     data = ["bin1-input"],
+    ghcopts = ['-DBIN1_INPUT="$(rootpath bin1-input)"'],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",
