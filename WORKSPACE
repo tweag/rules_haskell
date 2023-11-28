@@ -179,7 +179,7 @@ stack_snapshot(
         "proto-lens-runtime",
         "lens-family",
     ],
-    setup_deps = {
+    setup_deps = {} if GHC_VERSION and GHC_VERSION.startswith("9.6.") else {
         # See https://github.com/tweag/rules_haskell/issues/1871
         "HUnit": ["@Cabal//:Cabal"],
         "bifunctors": ["@Cabal//:Cabal"],
