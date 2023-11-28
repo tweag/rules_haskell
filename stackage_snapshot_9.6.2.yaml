@@ -1,0 +1,10 @@
+resolver: nightly-2023-09-03
+
+packages:
+# See https://github.com/avdv/proto-lens/tree/protoc-update-bounds-9.6
+- git: https://github.com/avdv/proto-lens
+  commit: 9c53c26935ce98b1e38840c63327f41890c55ab4
+
+# support GHC 9.6
+- git: https://github.com/avdv/ghc-source-gen
+  commit: 4bc81b85c21094d1dc38b86205b1725b379a6e83
