@@ -5,6 +5,8 @@ on:
   pull_request:
     branches: master
   workflow_dispatch: # allows manual triggering
+  schedule:
+    - cron: '1 11 * * *'
 env:
   # Bump this number to invalidate the GH actions cache
   cache-version: 0
