@@ -85,9 +85,7 @@ jobs:
           extra_nix_config: |
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
             extra-substituters = https://cache.iog.io
-        # DO NOT MERGE!!!
-        # TODO: Update with the correct tagged release.
-      - uses: tweag/configure-bazel-remote-cache-auth@fix_output
+      - uses: tweag/configure-bazel-remote-cache-auth@v0
         with:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.local
@@ -201,9 +199,7 @@ jobs:
           BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
           mv $BAZEL_DIR $HOME/bazel
           echo "$HOME/bazel" >> "$GITHUB_PATH"
-        # DO NOT MERGE!!!
-        # TODO: Update with the correct tagged release.
-      - uses: tweag/configure-bazel-remote-cache-auth@fix_output
+      - uses: tweag/configure-bazel-remote-cache-auth@v0
         with:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.local
