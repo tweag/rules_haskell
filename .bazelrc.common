@@ -56,6 +56,9 @@ build:remote-cache --remote_timeout=3600
 build:remote-cache --keep_backend_build_event_connections_alive=false
 # All clients except CI should be configured as read-only
 build:remote-cache --noremote_upload_local_results
+build:remote-cache --remote_timeout=3600
+build:remote-cache --experimental_remote_cache_compression
+build:remote-cache --experimental_remote_build_event_upload=minimal
 
 # CI Configuration
 # ----------------
@@ -66,8 +69,6 @@ build:ci --remote_upload_local_results
 common:ci-common --color=no
 
 common:ci-common --nolegacy_important_outputs
-build:ci-common --experimental_remote_cache_compression
-build:ci-common --experimental_remote_build_event_upload=minimal
 build:ci-common --loading_phase_threads=1
 build:ci-common --verbose_failures
 # Make sure we don't rely on the names of convenience symlinks because those
@@ -82,10 +83,6 @@ build:ci-windows-bindist --bes_upload_mode=wait_for_upload_complete --bes_timeou
 # (see https://github.com/buildbuddy-io/buildbuddy/issues/4467)
 # increase the retries as a workaround.
 build:ci-windows-bindist --experimental_build_event_upload_max_retries=256
-build:ci-common --remote_timeout=3600
-# Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
-# See https://github.com/tweag/rules_haskell/issues/1498.
-build:ci-common --keep_backend_build_event_connections_alive=false
 
 test:ci-common --test_output=errors
 
