@@ -84,7 +84,7 @@ jobs:
       - uses: tweag/configure-bazel-remote-cache-auth@v0
         with:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
-          bazelrc_path: .bazelrc.local
+          bazelrc_path: .bazelrc.auth
       - name: Configure
         run: |
           # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
@@ -198,7 +198,7 @@ jobs:
       - uses: tweag/configure-bazel-remote-cache-auth@v0
         with:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
-          bazelrc_path: .bazelrc.local
+          bazelrc_path: .bazelrc.auth
       - name: Configure
         shell: bash
         run: |
