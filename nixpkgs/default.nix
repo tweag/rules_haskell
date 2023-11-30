@@ -1,8 +1,8 @@
 { ... }@args:
 let
-  # 2023-10-20
-  sha256 = "07dv5x236rqf5b718b7bhpqf2yaq43h6w8mrz9fcb0hxwjzsxlpg";
-  rev = "80c1aab725151632ddc2a20caeb914e76dd0673c";
+  # 2023-11-30
+  sha256 = "sha256:06m9r85brk6pcghm63ksl2zsx9j1kbagic3fx2p656z20v1bd48z";
+  rev = "781e2a9797ecf0f146e81425c822dca69fe4a348";
 in
 import (fetchTarball {
   inherit sha256;
