@@ -29,7 +29,7 @@ jobs:
           # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
           # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
           [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
-          cat >.bazelrc.local <<EOF
+          cat >>.bazelrc.local <<EOF
           common --config=ci
           EOF
           cat >~/.netrc <<EOF
