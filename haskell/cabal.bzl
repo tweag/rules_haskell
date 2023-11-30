@@ -135,9 +135,10 @@ _CABAL_TOOLS = ["alex", "c2hs", "cpphs", "doctest", "happy"]
 _EMPTY_PACKAGES_BLACKLIST = [
     "bytestring-builder",
     "fail",
+    "ghc-byteorder",
+    "haskell-gi-overloading",
     "mtl-compat",
     "nats",
-    "ghc-byteorder",
 ]
 
 def _cabal_tool_flag(tool):
