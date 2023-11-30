@@ -12,7 +12,7 @@ for Haskell. Get started building your own project using these rules
 with the [setup script below](#setup).
 
 [bazel]: https://bazel.build/
-[bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
+[bazel-getting-started]: https://bazel.build/start
 [bazel-cli]: https://docs.bazel.build/versions/master/command-line-reference.html
 [external-repositories]: https://docs.bazel.build/versions/master/external.html
 [nix]: https://nixos.org/nix
@@ -23,7 +23,7 @@ The full reference documentation for rules is at https://haskell.build.
 
 ## Setup
 
-You'll need [Bazel >= 5.0][bazel-getting-started] installed.
+You'll need [Bazel >= 6.0][bazel-getting-started] installed.
 
 If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
 
@@ -335,12 +335,12 @@ http_archive(
 
 To reference a local checkout instead, use the
 [`--override_repository`][override_repository] command line option:
-   
+
 ```
 bazel build/test/run/sync \
   --override_repository rules_haskell=/path/to/checkout
 ```
-   
+
 If you don’t want to type that every time, [temporarily add it to
 `.bazelrc`][bazelrc].
 
