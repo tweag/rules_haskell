@@ -2,6 +2,7 @@ import %workspace%/.bazelrc.common
 import %workspace%/.bazelrc.bzlmod
 
 # Remote Cache Authentication
+# ---------------------------
 try-import %workspace%/.bazelrc.auth
 
 # User Configuration
