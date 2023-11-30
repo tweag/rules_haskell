@@ -13,7 +13,7 @@ readonly MIN_BAZEL_MAJOR=6
 readonly MIN_BAZEL_MINOR=0
 
 readonly MAX_BAZEL_MAJOR=6
-readonly MAX_BAZEL_MINOR=3
+readonly MAX_BAZEL_MINOR=4
 
 stderr () {
   >&2 echo "$*"
