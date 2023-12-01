@@ -36,7 +36,11 @@ else:
 def resolve(path, pkgroot):
     """Resolve references to ${pkgroot} with the given value, resolve $topdir with `topdir`"""
     if path.find("${pkgroot}") != -1:
-        return path.strip("\"").replace("${pkgroot}", pkgroot)
+        norm_path = os.path.normpath(path.strip("\"").replace("${pkgroot}", pkgroot))
+        if not os.path.isabs(norm_path) and norm_path.startswith('..'):
+            return resolve(path, os.path.realpath(pkgroot))
+        else:
+            return norm_path
     elif path.startswith("$topdir"):
         return os.path.normpath(path.replace("$topdir", topdir)).replace('\\', '/')
     else:
@@ -48,12 +52,12 @@ def path_to_label(path, pkgroot):
         # determine if the given path is inside the repository root
         # if it is not, return None to signal it needs to be symlinked into the
         # repository
-        real_path = os.path.realpath(resolve(path, pkgroot))
-        relative_path = os.path.relpath(real_path, start=repo_root)
+        norm_path = os.path.normpath(resolve(path, pkgroot))
+        relative_path = os.path.relpath(norm_path, start=repo_root)
 
         return None if relative_path.startswith('..') else relative_path.replace('\\', '/')
 
-    topdir_relative_path = path.replace(pkgroot, "$topdir")
+    topdir_relative_path = path.replace(os.path.realpath(pkgroot), "$topdir")
     if topdir_relative_path.find("$topdir") != -1:
         return os.path.normpath(topdir_relative_path.replace("$topdir", topdir)).replace('\\', '/')
 
@@ -104,14 +108,15 @@ output = []
 # Accumulate package id to package name mappings.
 pkg_id_map = []
 
+# pkgroot is not part of .conf files. It's a computed value. It is
+# defined to be the directory enclosing the package database
+# directory.
+pkgroot = os.path.dirname(package_conf_dir)
+
+
 for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
     with open(conf, 'r') as f:
         pkg = package_configuration.parse_package_configuration(f)
-
-    # pkgroot is not part of .conf files. It's a computed value. It is
-    # defined to be the directory enclosing the package database
-    # directory.
-    pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
 
     pkg_id_map.append((pkg.name, pkg.id))
 
