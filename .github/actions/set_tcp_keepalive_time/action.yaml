@@ -1,0 +1,21 @@
+name: Set the TCP keep-alive time
+description: Avoids deadline exceeded errors on Linux.
+
+# Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
+# See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
+
+inputs:
+  tcp_keepalive_time:
+    type: number
+    description: The value to be set for the TCP keep-alive time.
+    default: 60
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      if: ${{ os.runner == 'Linux' }}
+      env:
+        TCP_KEEPALIVE_TIME: ${{ inputs.tcp_keepalive_time }}
+      run: |-
+        sudo sysctl -w "net.ipv4.tcp_keepalive_time=${TCP_KEEPALIVE_TIME}"

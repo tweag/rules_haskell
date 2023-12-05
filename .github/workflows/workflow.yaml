@@ -82,11 +82,9 @@ jobs:
         with:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
+      - uses: ./.github/actions/set_tcp_keepalive_time
       - name: Configure
         run: |
-          # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
-          # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
-          [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
           case ${{ runner.os }} in
             macOS) BUILD_CONFIG=ci-macos-nixpkgs;;
             Linux) BUILD_CONFIG=ci-linux-nixpkgs;;
@@ -194,12 +192,10 @@ jobs:
         with:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
+      - uses: ./.github/actions/set_tcp_keepalive_time
       - name: Configure
         shell: bash
         run: |
-          # Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
-          # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
-          [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
           case "${{ runner.os }},${{ matrix.module }}" in
             macOS,*) BUILD_CONFIG=ci-macos-bindist;;
             Linux,*) BUILD_CONFIG=ci-linux-bindist;;
