@@ -25,7 +25,6 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-        if: ${{ os.runner == 'Linux' }}
       - name: Configure
         run: |
           cat >>.bazelrc.local <<EOF
@@ -82,7 +81,6 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-        if: ${{ os.runner == 'Linux' }}
       - name: Configure
         run: |
           case ${{ runner.os }} in
@@ -193,7 +191,6 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-        if: ${{ os.runner == 'Linux' }}
       - name: Configure
         shell: bash
         run: |
