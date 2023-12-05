@@ -14,7 +14,6 @@ runs:
   using: composite
   steps:
     - shell: bash
-      if: ${{ os.runner == 'Linux' }}
       env:
         TCP_KEEPALIVE_TIME: ${{ inputs.tcp_keepalive_time }}
       run: |-
