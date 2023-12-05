@@ -26,6 +26,8 @@ jobs:
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
       - uses: ./.github/actions/authenticate_github_api
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure
         run: |
           cat >>.bazelrc.local <<EOF
@@ -79,6 +81,8 @@ jobs:
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
       - uses: ./.github/actions/authenticate_github_api
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure
         run: |
           case ${{ runner.os }} in
@@ -186,6 +190,8 @@ jobs:
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
       - uses: ./.github/actions/authenticate_github_api
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure
         shell: bash
         run: |
