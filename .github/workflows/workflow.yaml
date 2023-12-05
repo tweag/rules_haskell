@@ -64,11 +64,8 @@ jobs:
             bzlmod: true
     runs-on: ${{ matrix.os }}
     steps:
-      - if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |-
-          sudo swapoff -a
-          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
-          docker rmi $(docker images -q) -f
+      - uses: ./.github/actions/free_disk_space_on_linux
+        if: ${{ matrix.os == 'ubuntu-latest' }}
       - uses: actions/checkout@v4
       - name: Mount Bazel cache
         uses: actions/cache@v3
@@ -175,14 +172,13 @@ jobs:
       GHC_VERSION: ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: ./.github/actions/free_disk_space_on_linux
+        if: ${{ matrix.os == 'ubuntu-latest' }}
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |-
-          sudo swapoff -a
-          sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
           sudo apt-get update
           sudo apt-get install --no-install-recommends -yy libtinfo5
           sudo apt clean
-          docker rmi $(docker images -q) -f
       - uses: actions/checkout@v4
       - name: Mount Bazel cache
         uses: actions/cache@v3

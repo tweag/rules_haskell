@@ -1,0 +1,13 @@
+name: Free Disk Space on Linux
+description: Remove unneeded files from the Ubuntu GitHub runner.
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |-
+        sudo swapoff -a
+        sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        docker rmi $(docker images -q) -f
+
+
