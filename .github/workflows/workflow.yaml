@@ -174,11 +174,10 @@ jobs:
     steps:
       - uses: ./.github/actions/free_disk_space_on_linux
         if: ${{ matrix.os == 'ubuntu-latest' }}
-      - if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |-
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -yy libtinfo5
-          sudo apt clean
+      - uses: .github/actions/install_apt_pkgs
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        with: 
+          packages: libtinfo5
       - uses: actions/checkout@v4
       - name: Mount Bazel cache
         uses: actions/cache@v3
