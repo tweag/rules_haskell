@@ -10,6 +10,7 @@ runs:
   using: composite
   steps:
     - shell: bash
+      if: ${{ runner.os == 'Linux' }}
       env:
         APT_PACKAGES: ${{ inputs.packages }}
       run: |-

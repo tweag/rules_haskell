@@ -5,6 +5,7 @@ runs:
   using: composite
   steps:
     - shell: bash
+      if: ${{ runner.os == 'Linux' }}
       run: |-
         sudo swapoff -a
         sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc
