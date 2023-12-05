@@ -174,7 +174,7 @@ jobs:
     steps:
       - uses: ./.github/actions/free_disk_space_on_linux
         if: ${{ matrix.os == 'ubuntu-latest' }}
-      - uses: .github/actions/install_apt_pkgs
+      - uses: ./.github/actions/install_apt_pkgs
         if: ${{ matrix.os == 'ubuntu-latest' }}
         with: 
           packages: libtinfo5
