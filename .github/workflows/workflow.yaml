@@ -25,14 +25,11 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
+      - uses: ./.github/actions/authenticate_github_api
       - name: Configure
         run: |
           cat >>.bazelrc.local <<EOF
           common --config=ci
-          EOF
-          cat >~/.netrc <<EOF
-          machine api.github.com
-                  password ${{ secrets.GITHUB_TOKEN }}
           EOF
       - run: |
           bazelisk test buildifier:buildifier_test
@@ -81,6 +78,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
+      - uses: ./.github/actions/authenticate_github_api
       - name: Configure
         run: |
           case ${{ runner.os }} in
@@ -94,10 +92,6 @@ jobs:
           EOF
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
-          cat >~/.netrc <<EOF
-          machine api.github.com
-                  password ${{ secrets.GITHUB_TOKEN }}
-          EOF
       - name: Check Bazel version
         run: |
           nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run .ci/check-bazel-version
@@ -191,6 +185,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
+      - uses: ./.github/actions/authenticate_github_api
       - name: Configure
         shell: bash
         run: |
@@ -221,10 +216,6 @@ jobs:
           common --enable_bzlmod=${{ matrix.bzlmod }}
           EOF
           cp .bazelrc.local rules_haskell_tests
-          cat >~/.netrc <<EOF
-          machine api.github.com
-                  password ${{ secrets.GITHUB_TOKEN }}
-          EOF
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
         shell: bash

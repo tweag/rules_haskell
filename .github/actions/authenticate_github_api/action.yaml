@@ -1,0 +1,21 @@
+name: Authenticate with GitHub API
+description: |
+  Authenticated GitHub API requests are not rate-limited like unauthenticated requests.
+
+# For more details: https://github.com/tweag/rules_haskell/pull/1494
+
+inputs:
+  github_token:
+    type: string
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        cat >~/.netrc <<EOF
+        machine api.github.com
+                password ${GITHUB_TOKEN}
+        EOF
