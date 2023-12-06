@@ -3,10 +3,10 @@ name: Run nix-shell script
 inputs:
   ghc_version:
     type: string
-  script:
-    type: string
   run:
     type: string
+  # script:
+  #   type: string
 
 runs:
   using: composite
@@ -24,5 +24,5 @@ runs:
     - shell: bash
       env:
         GHC_VERSION: ${{ inputs.ghc_version }}
-        SCRIPT: ${{ inputs.script }}
+        SCRIPT: ${{ inputs.run }}
       run: ${GITHUB_ACTION_PATH}/run_nix_shell "${SCRIPT}"

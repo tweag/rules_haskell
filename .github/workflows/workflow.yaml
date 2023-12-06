@@ -95,18 +95,6 @@ jobs:
           EOF
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
-      - name: Check Bazel version
-        run: |
-          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run .ci/check-bazel-version
-      - name: Build & test - rules_haskell
-        if: matrix.module == 'rules_haskell'
-        run: |
-          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
-            set -euo pipefail
-            bazel test //...
-            bazel build //docs:api_html
-            bazel build //docs:guide_html
-            '
       # DEBUG BEGIN
       - uses: ./.github/actions/run_nix_shell
         with:
@@ -121,6 +109,18 @@ jobs:
             bazel build //docs:api_html
             bazel build //docs:guide_html
       # DEBUG END
+      - name: Check Bazel version
+        run: |
+          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run .ci/check-bazel-version
+      - name: Build & test - rules_haskell
+        if: matrix.module == 'rules_haskell'
+        run: |
+          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
+            set -euo pipefail
+            bazel test //...
+            bazel build //docs:api_html
+            bazel build //docs:guide_html
+            '
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
         run: |
