@@ -107,6 +107,20 @@ jobs:
             bazel build //docs:api_html
             bazel build //docs:guide_html
             '
+      # DEBUG BEGIN
+      - uses: ./.github/actions/run_nix_shell
+        with:
+          ghc_version: ${{ matrix.ghc }}
+          run: .ci/check-bazel-version
+      - uses: ./.github/actions/run_nix_shell
+        with:
+          ghc_version: ${{ matrix.ghc }}
+          run: |
+            set -euo pipefail
+            bazel test //...
+            bazel build //docs:api_html
+            bazel build //docs:guide_html
+      # DEBUG END
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
         run: |

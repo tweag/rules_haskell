@@ -1,0 +1,28 @@
+name: Run nix-shell script
+
+inputs:
+  ghc_version:
+    type: string
+  script:
+    type: string
+  run:
+    type: string
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      if: ${{ inputs.script == '' && inputs.run == '' }}
+      run: |
+        echo >&2 "You must specify a script value or a run value."
+        exit 1
+    - shell: bash
+      if: ${{ inputs.script != '' && inputs.run != '' }}
+      run: |
+        echo >&2 "You can only specify a script value or a run value, not both."
+        exit 1
+    - shell: bash
+      env:
+        GHC_VERSION: ${{ inputs.ghc_version }}
+        SCRIPT: ${{ inputs.script }}
+      run: ${GITHUB_ACTION_PATH}/run_nix_shell "${SCRIPT}"

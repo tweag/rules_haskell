@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -o errexit -o nounset -o pipefail
+
+# DEBUG BEGIN
+echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") ============" 
+echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") #: ${#}" 
+echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") @:" "${@}" 
+exit 0
+# DEBUG END
+
+# fail() {
+#   echo >&2 "$@"
+#   exit 1
+# }
+
+# ghc_version="${GHC_VERSION:-}"
+
+# while (("$#")); do
+#   case "${1}" in
+#     "--ghc-version")
+#       ghc_version="${2}"
+#       shift 2
+#       ;;
+#     *)
+#       if [[ -z "${script:-}" ]]; then
+#         script="${1}"
+#         shift 1
+#       else
+#         fail "Unexpected argument:" "${1}"
+#       fi
+#       ;;
+#   esac
+# done
+
+# if [[ -z "${ghc_version:-}" ]]; then
+#   fail "A ghc_version must be specified."
+# fi
+
+# if [[ -z "${script:-}" ]]; then
+#   fail "A script for a path to a file must be provided."
+# fi
+
+# nix-shell \
+#   --arg docTools false \
+#   --argstr ghcVersion "${ghc_version}" \
+#   --pure \
+#   --run "${script}"
