@@ -94,6 +94,11 @@ haskell_library(
     narrowed_deps = [
         ":TestLib2",
     ],
+    tags = [
+        # skip building this target on macos with GHC 9.6.2 since it crashes ghc-iserv
+        # see https://github.com/tweag/rules_haskell/issues/2073
+        "dont_build_on_macos_with_ghc_9.6.2",
+    ],
     deps = [
         ":NonModulesTestLib",
         ":TestLib",
@@ -113,6 +118,11 @@ haskell_test(
     name = "Test",
     modules = [":TestBinModule"],
     narrowed_deps = [":lib"],
+    tags = [
+        # skip testing this target on macos with GHC 9.6.2 since it crashes ghc-iserv
+        # see https://github.com/tweag/rules_haskell/issues/2073
+        "dont_build_on_macos_with_ghc_9.6.2",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",

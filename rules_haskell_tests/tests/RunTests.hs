@@ -10,6 +10,7 @@ import System.Directory (copyFile)
 import System.FilePath ((</>))
 import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
+import System.Environment (lookupEnv)
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
@@ -26,11 +27,15 @@ main = hspec $ do
     assertSuccess (bazel ["test", "//..."])
 
   it "bazel test prof" $ do
+    ghcVersion <- lookupEnv "GHC_VERSION"
+
     -- In .github/workflows/workflow.yaml we specify --test_tag_filters
     -- -dont_test_on_darwin. However, specifiying --test_tag_filters
     -- -requires_dynamic here alone would override that filter. So,
     -- we have to duplicate that filter here.
-    let tagFilter | os == "darwin" = "-dont_test_on_darwin,-requires_dynamic,-skip_profiling"
+    let tagFilter | os == "darwin" = "-dont_test_on_darwin,-requires_dynamic,-skip_profiling" ++ (
+                      -- skip tests for specific GHC version, see https://github.com/tweag/rules_haskell/issues/2073
+                      maybe "" (",-dont_build_on_macos_with_ghc_" ++) ghcVersion)
                   | otherwise      = "-requires_dynamic,-skip_profiling"
     assertSuccess (bazel ["test", "-c", "dbg", "//...", "--build_tag_filters", tagFilter, "--test_tag_filters", tagFilter])
 
