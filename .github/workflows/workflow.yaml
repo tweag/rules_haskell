@@ -223,12 +223,13 @@ jobs:
         if: matrix.module == 'rules_haskell'
         shell: bash
         run: |
-          if [[ ${{ runner.os }} == Windows ]]; then
-            # On Windows `//...` expands to `/...`.
-            bazel test ///...
-          else
-            bazel test //...
-          fi
+          # if [[ ${{ runner.os }} == Windows ]]; then
+          #   # On Windows `//...` expands to `/...`.
+          #   bazel test ///...
+          # else
+          #   bazel test //...
+          # fi
+          bazel test "//..."
 
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
@@ -236,12 +237,13 @@ jobs:
         run: |
           cd rules_haskell_tests
           ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
-          if [[ ${{ runner.os }} == Windows ]]; then
-            # On Windows `//...` expands to `/...`.
-            bazel test ///...
-          else
-            bazel test //...
-          fi
+          # if [[ ${{ runner.os }} == Windows ]]; then
+          #   # On Windows `//...` expands to `/...`.
+          #   bazel test ///...
+          # else
+          #   bazel test //...
+          # fi
+          bazel test "//..."
           # Test stack_snapshot pinning
           # NOTE keep in sync with tests/RunTests.hs
           bazel run @stackage-pinning-test-unpinned//:pin
