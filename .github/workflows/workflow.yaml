@@ -11,12 +11,13 @@ env:
   # Bump this number to invalidate the GH actions cache
   cache-version: 0
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 jobs:
   lint:
     name: Format & Lint
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-lint
-      cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,9 +41,6 @@ jobs:
     name: Build & Test - Nixpkgs
     needs:
       - lint
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.module }}-${{ matrix.bzlmod }}-${{ matrix.ghc }}-nixpkgs
-      cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
     strategy:
       fail-fast: false
       matrix:
@@ -134,9 +132,6 @@ jobs:
     name: Build & Test - bindist
     needs:
       - lint
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.module }}-${{ matrix.bzlmod }}-${{ matrix.ghc }}-bindist
-      cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
     strategy:
       fail-fast: false
       matrix:
