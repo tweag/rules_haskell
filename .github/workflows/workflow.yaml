@@ -11,8 +11,6 @@ env:
   # Bump this number to invalidate the GH actions cache
   cache-version: 0
 
-# TODO: REMOVE THIS COMMENT
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
