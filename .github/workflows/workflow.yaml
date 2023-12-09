@@ -99,7 +99,7 @@ jobs:
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
       - name: Check Bazel version
-        uses: tweag/run-nix-shell@intial_files
+        uses: tweag/run-nix-shell@51bed9187838a0ac93b2ae2ea6216691a43e5f84 # initial_files branch
         with:
           options: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
           run: .ci/check-bazel-version
