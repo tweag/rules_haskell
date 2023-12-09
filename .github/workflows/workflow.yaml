@@ -66,14 +66,14 @@ jobs:
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      # - uses: DeterminateSystems/nix-installer-action@v9
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: DeterminateSystems/nix-installer-action@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: DeterminateSystems/magic-nix-cache-action@v2
-        - uses: tweag/configure-bazel-remote-cache-auth@v0
-          with:
-            buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
-            bazelrc_path: .bazelrc.auth
+      - uses: tweag/configure-bazel-remote-cache-auth@v0
+        with:
+          buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
+          bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
       - name: Configure
         run: |
