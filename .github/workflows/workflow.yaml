@@ -107,13 +107,6 @@ jobs:
           run: .ci/check-bazel-version
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
-        # run: |
-        #   nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
-        #     set -euo pipefail
-        #     bazel test //...
-        #     bazel build //docs:api_html
-        #     bazel build //docs:guide_html
-        #     '
         uses: tweag/run-nix-shell@51bed9187838a0ac93b2ae2ea6216691a43e5f84 # initial_files branch
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
@@ -124,12 +117,6 @@ jobs:
             bazel build //docs:guide_html
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
-        # run: |
-        #   nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
-        #     set -euo pipefail
-        #     cd rules_haskell_nix
-        #     bazel test //...
-        #     '
         uses: tweag/run-nix-shell@51bed9187838a0ac93b2ae2ea6216691a43e5f84 # initial_files branch
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
@@ -139,18 +126,6 @@ jobs:
             bazel test //...
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
-        # run: |
-        #   nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
-        #     set -euo pipefail
-        #     cd rules_haskell_tests
-        #     # XXX run start script `--with-bzlmod=true` when supported
-        #     if ! ${{ matrix.bzlmod }}; then
-        #       ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
-        #     fi
-        #     bazel build //tests:run-tests
-        #     ./bazel-ci-bin/tests/run-tests
-        #     bazel coverage //...
-        #     '
         uses: tweag/run-nix-shell@51bed9187838a0ac93b2ae2ea6216691a43e5f84 # initial_files branch
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
