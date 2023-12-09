@@ -62,7 +62,7 @@ jobs:
             bzlmod: true
     runs-on: ${{ matrix.os }}
     env:
-      NIX_SHELL_ARGS:
+      NIX_SHELL_ARGS: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/free_disk_space_on_linux
@@ -101,7 +101,7 @@ jobs:
       - name: Check Bazel version
         uses: tweag/run-nix-shell@51bed9187838a0ac93b2ae2ea6216691a43e5f84 # initial_files branch
         with:
-          options: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
+          options: ${{ env.NIX_SHELL_ARGS }}
           run: .ci/check-bazel-version
         # run: |
         #   nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run .ci/check-bazel-version
