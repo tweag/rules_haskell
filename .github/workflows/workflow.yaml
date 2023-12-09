@@ -74,7 +74,7 @@ jobs:
       #       extra-substituters = https://cache.iog.io
       - uses: DeterminateSystems/nix-installer-action@v9
         with:
-          github-token: ${{ inputs.github_token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: DeterminateSystems/magic-nix-cache-action@v2
         - uses: tweag/configure-bazel-remote-cache-auth@v0
           with:
