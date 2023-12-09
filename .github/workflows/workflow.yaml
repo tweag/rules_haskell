@@ -1,3 +1,4 @@
+# TODO: Fix the version for tweag/run-nix-shell
 name: Continuous integration
 on:
   push:
@@ -60,6 +61,8 @@ jobs:
           - ghc: 9.6.2
             bzlmod: true
     runs-on: ${{ matrix.os }}
+    env:
+      NIX_SHELL_ARGS:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/free_disk_space_on_linux
@@ -96,8 +99,12 @@ jobs:
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
       - name: Check Bazel version
-        run: |
-          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run .ci/check-bazel-version
+        uses: tweag/run-nix-shell@intial_files
+        with:
+          options: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
+          run: .ci/check-bazel-version
+        # run: |
+        #   nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run .ci/check-bazel-version
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
         run: |
