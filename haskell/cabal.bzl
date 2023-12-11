@@ -289,6 +289,15 @@ def _prepare_cabal_inputs(
     ]
     extra_args = ["--flags=" + " ".join(flags)]
 
+    if hs.toolchain.is_darwin:
+        # assume `otool` and `install_name_tool` are available at the same location as `ar`
+        ar_bindir = paths.dirname(cc.tools.ar)
+
+        extra_args.append("--ghc-option=-pgmotool=" + paths.join(ar_bindir, "otool"))
+        extra_args.append("--ghc-option=-pgminstall_name_tool=" + paths.join(ar_bindir, "install_name_tool"))
+        extra_args.append("--haddock-option=--optghc=-pgmotool=" + paths.join(ar_bindir, "otool"))
+        extra_args.append("--haddock-option=--optghc=-pgminstall_name_tool=" + paths.join(ar_bindir, "install_name_tool"))
+
     ghc_version = [int(x) for x in hs.toolchain.version.split(".")]
     if dynamic_file:
         # See Note [No PIE when linking] in haskell/private/actions/link.bzl
