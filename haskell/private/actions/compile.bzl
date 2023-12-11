@@ -124,6 +124,15 @@ def _compilation_defaults(
     compile_flags += hs.toolchain.ghcopts
     compile_flags += user_compile_flags
 
+    if hs.toolchain.is_darwin:
+        # assume `otool` and `install_name_tool` are available at the same location as `ar`
+        ar_bindir = paths.dirname(cc.tools.ar)
+
+        compile_flags += [
+            "-pgmotool=" + paths.join(ar_bindir, "otool"),
+            "-pgminstall_name_tool=" + paths.join(ar_bindir, "install_name_tool"),
+        ]
+
     package_ids = []
     all_plugins = plugins + non_default_plugins
     for plugin in all_plugins:

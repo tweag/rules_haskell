@@ -133,6 +133,14 @@ def link_binary(
     args.add_all(cc.linker_flags, format_each = "-optl%s")
     if with_profiling:
         args.add("-prof")
+
+    if hs.toolchain.is_darwin:
+        # assume `otool` and `install_name_tool` are available at the same location as `ar`
+        ar_bindir = paths.dirname(cc.tools.ar)
+
+        args.add(paths.join(ar_bindir, "otool"), format = "-pgmotool=%s")
+        args.add(paths.join(ar_bindir, "install_name_tool"), format = "-pgminstall_name_tool=%s")
+
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
 
@@ -366,6 +374,14 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     args = hs.actions.args()
     args.add_all(cc.linker_flags, format_each = "-optl%s")
     args.add_all(["-shared", "-dynamic"])
+
+    if hs.toolchain.is_darwin:
+        # assume `otool` and `install_name_tool` are available at the same location as `ar`
+        ar_bindir = paths.dirname(cc.tools.ar)
+
+        args.add(paths.join(ar_bindir, "otool"), format = "-pgmotool=%s")
+        args.add(paths.join(ar_bindir, "install_name_tool"), format = "-pgminstall_name_tool=%s")
+
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
 

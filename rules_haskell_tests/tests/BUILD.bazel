@@ -248,9 +248,7 @@ rule_test(
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
         ],
-    }[TEST_GHC_VERSION] + ([
-        "haddock/rts-1.0.2",
-    ] if is_windows else []),
+    }[TEST_GHC_VERSION],
     rule = "//tests/haddock",
 )
 
