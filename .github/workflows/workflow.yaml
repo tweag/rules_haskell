@@ -39,8 +39,6 @@ jobs:
 
   test-nixpkgs:
     name: Build & Test - Nixpkgs
-    needs:
-      - lint
     strategy:
       fail-fast: false
       matrix:
@@ -53,6 +51,7 @@ jobs:
           - 9.6.2
         exclude:
           - module: rules_haskell_nix
+
             bzlmod: false
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
@@ -133,8 +132,6 @@ jobs:
 
   test-bindist:
     name: Build & Test - bindist
-    needs:
-      - lint
     strategy:
       fail-fast: false
       matrix:
@@ -257,3 +254,15 @@ jobs:
         with:
           name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
           path: logs
+
+  all_ci_tests:
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - test-nixpkgs
+      - test-bindist
+    if: ${{ always() }}
+    steps:
+      - uses: cgrindel/gha_join_jobs@794a2d117251f22607f1aab937d3fd3eaaf9a2f5 # v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
