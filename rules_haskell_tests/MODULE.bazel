@@ -116,6 +116,7 @@ use_repo(
     "build_bazel_bazel_6_2_0",
     "build_bazel_bazel_6_3_2",
     "build_bazel_bazel_6_4_0",
+    "build_bazel_bazel_7_0_0",
     "glibc_locales",
     "linux_amd64_asterius-toolchain",
     "nixpkgs_config_cc",
