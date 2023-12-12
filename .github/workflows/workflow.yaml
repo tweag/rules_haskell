@@ -26,9 +26,10 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: ./.github/actions/authenticate_github_api
+      - uses: extractions/netrc@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          machine: api.github.com
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure
         run: |
           cat >>.bazelrc.local <<EOF
@@ -79,9 +80,10 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: ./.github/actions/authenticate_github_api
+      - uses: extractions/netrc@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          machine: api.github.com
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure
         run: |
           case ${{ runner.os }} in
@@ -181,9 +183,10 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: ./.github/actions/authenticate_github_api
+      - uses: extractions/netrc@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          machine: api.github.com
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure
         shell: bash
         run: |
