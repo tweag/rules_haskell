@@ -3,8 +3,10 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
-load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE")
+load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
+load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
+load(":private/bazel_platforms.bzl", "bazel_platforms")
 load(
     ":private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
@@ -17,7 +19,6 @@ load(
     "find_python",
     "resolve_labels",
 )
-load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
 
 _GHC_DEFAULT_VERSION = DEFAULT_GHC_VERSION
 
@@ -86,7 +87,7 @@ def _ghc_bindist_impl(ctx):
     if GHC_BINDIST_STRIP_PREFIX.get(version) != None and GHC_BINDIST_STRIP_PREFIX[version].get(target) != None:
         stripPrefix = GHC_BINDIST_STRIP_PREFIX[version][target]
     else:
-        arch_suffix = {"arm64": "aarch64", "amd64": "x86_64"}.get(arch)
+        arch_suffix = {"amd64": "x86_64", "arm64": "aarch64"}.get(arch)
 
         if os == "windows" and version_tuple >= (9, 0, 1):
             stripPrefix += "-{}-unknown-mingw32".format(arch_suffix)
@@ -262,10 +263,10 @@ rm -f
         "BUILD",
         filepaths["@rules_haskell//haskell:ghc.BUILD.tpl"],
         substitutions = {
-            "%{toolchain_libraries}": toolchain_libraries,
-            "%{toolchain}": toolchain,
             "%{docdir}": docdir,
             "%{is_clang}": str(is_clang),
+            "%{toolchain_libraries}": toolchain_libraries,
+            "%{toolchain}": toolchain,
         },
         executable = False,
     )
@@ -274,24 +275,11 @@ _ghc_bindist = repository_rule(
     _ghc_bindist_impl,
     local = False,
     attrs = {
-        "version": attr.string(
-            default = _GHC_DEFAULT_VERSION,
-            doc = "The desired GHC version",
-        ),
-        "target": attr.string(),
+        "cabalopts": attr.string_list(),
         "ghcopts": attr.string_list(),
         "haddock_flags": attr.string_list(),
-        "repl_ghci_args": attr.string_list(),
-        "cabalopts": attr.string_list(),
-        "patches": attr.label_list(
-            default = [],
-            doc =
-                "A list of files that are to be applied as patches afer " +
-                "extracting the archive.",
-        ),
-        "patch_tool": attr.string(
-            default = "patch",
-            doc = "The patch(1) utility to use.",
+        "locale": attr.string(
+            mandatory = False,
         ),
         "patch_args": attr.string_list(
             default = ["-p0"],
@@ -301,8 +289,21 @@ _ghc_bindist = repository_rule(
             default = [],
             doc = "Sequence of commands to be applied after patches are applied.",
         ),
-        "locale": attr.string(
-            mandatory = False,
+        "patch_tool": attr.string(
+            default = "patch",
+            doc = "The patch(1) utility to use.",
+        ),
+        "patches": attr.label_list(
+            default = [],
+            doc =
+                "A list of files that are to be applied as patches afer " +
+                "extracting the archive.",
+        ),
+        "repl_ghci_args": attr.string_list(),
+        "target": attr.string(),
+        "version": attr.string(
+            default = _GHC_DEFAULT_VERSION,
+            doc = "The desired GHC version",
         ),
         "_relpath_script": attr.label(
             allow_single_file = True,
@@ -474,7 +475,7 @@ def ghc_bindist(
             "9.2.1": ["@rules_haskell//haskell:assets/ghc_9_2_1_mac.patch"],
         }.get(version)
 
-    extra_attrs = {"patches": patches, "patch_args": ["-p0"]} if patches else {}
+    extra_attrs = {"patch_args": ["-p0"], "patches": patches} if patches else {}
 
     # We want the toolchain definition to be tucked away in a separate
     # repository, that way `bazel build //...` will not match it (and
@@ -567,7 +568,7 @@ def haskell_register_ghc_bindists(
         configure_python3_toolchain(name = LOCAL_PYTHON_REPO_NAME, register = register)
 
 def _configure_python3_toolchain_impl(repository_ctx):
-    cpu = get_cpu_value(repository_ctx)
+    os_cpu = get_cpu_value(repository_ctx)
     python3_path = find_python(repository_ctx)
     if check_bazel_version("4.2.0")[0]:
         stub_shebang = """stub_shebang = "#!{python3_path}",""".format(
@@ -595,20 +596,18 @@ toolchain(
     toolchain = ":py_runtime_pair",
     toolchain_type = "@bazel_tools//tools/python:toolchain_type",
     exec_compatible_with = [
-        "@platforms//cpu:x86_64",
+        "@platforms//cpu:{cpu}",
         "@platforms//os:{os}",
     ],
     target_compatible_with = [
-        "@platforms//cpu:x86_64",
+        "@platforms//cpu:{cpu}",
         "@platforms//os:{os}",
     ],
 )
 """.format(
         python3 = python3_path,
-        os = {
-            "darwin": "osx",
-            "x64_windows": "windows",
-        }.get(cpu, "linux"),
+        os = bazel_platforms.get_os(os_cpu),
+        cpu = bazel_platforms.get_cpu(os_cpu),
         stub_shebang = stub_shebang,
     ))
 
