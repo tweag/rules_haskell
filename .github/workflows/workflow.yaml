@@ -41,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-11]
+        os: [macos-latest]
         module: [rules_haskell]
         bzlmod: [false]
         ghc:
