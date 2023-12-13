@@ -117,18 +117,18 @@ jobs:
         uses: tweag/run-nix-shell@v0
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
+          working-directory: rules_haskell_nix
           run: |
             set -euo pipefail
-            cd rules_haskell_nix
             bazel test //...
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
         uses: tweag/run-nix-shell@v0
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
+          working-directory: rules_haskell_tests
           run: |
             set -euo pipefail
-            cd rules_haskell_tests
             # XXX run start script `--with-bzlmod=true` when supported
             if ! ${{ matrix.bzlmod }}; then
               ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
