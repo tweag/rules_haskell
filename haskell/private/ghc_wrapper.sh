@@ -35,7 +35,7 @@ else
 
     # We use the information gathered from those 2 files to compile the Haskell file.
 
-    "${compile_flags[@]}" "${extra_args[@]}" 2>&1 \
+    (set -x ; "${compile_flags[@]}" "${extra_args[@]}") 2>&1 \
         | drop_loaded_and_warning >&2
 
     if [ "$MUST_EXTRACT_ABI" = "true" ]
