@@ -61,6 +61,8 @@ jobs:
           - ghc: 9.6.2
             bzlmod: true
     runs-on: ${{ matrix.os }}
+    env:
+      NIX_SHELL_ARGS: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/free_disk_space_on_linux
@@ -98,29 +100,35 @@ jobs:
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
       - name: Check Bazel version
-        run: |
-          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run .ci/check-bazel-version
+        uses: tweag/run-nix-shell@v0
+        with:
+          options: ${{ env.NIX_SHELL_ARGS }}
+          run: .ci/check-bazel-version
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
-        run: |
-          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
+        uses: tweag/run-nix-shell@v0
+        with:
+          options: ${{ env.NIX_SHELL_ARGS }}
+          run: |
             set -euo pipefail
             bazel test //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
-            '
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
-        run: |
-          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
+        uses: tweag/run-nix-shell@v0
+        with:
+          options: ${{ env.NIX_SHELL_ARGS }}
+          run: |
             set -euo pipefail
             cd rules_haskell_nix
             bazel test //...
-            '
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
-        run: |
-          nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
+        uses: tweag/run-nix-shell@v0
+        with:
+          options: ${{ env.NIX_SHELL_ARGS }}
+          run: |
             set -euo pipefail
             cd rules_haskell_tests
             # XXX run start script `--with-bzlmod=true` when supported
@@ -130,7 +138,6 @@ jobs:
             bazel build //tests:run-tests
             ./bazel-ci-bin/tests/run-tests
             bazel coverage //...
-            '
 
   test-bindist:
     name: Build & Test - bindist
