@@ -26,7 +26,7 @@ def _get_cpu(os_cpu):
     if os_cpu == "x64_windows":
         return "x86_64"
 
-    return "linux"
+    return "x86_64"
 
 bazel_platforms = struct(
     get_os = _get_os,
