@@ -83,7 +83,7 @@ jobs:
           nix-shell --arg docTools false --argstr ghcVersion ${{ matrix.ghc }} --pure --run '
             set -euo pipefail
             cd rules_haskell_tests
-            bazel test //tests/haskell_module/dep-narrowing-th:Test
+            bazel test --compilation_mode=dbg //tests/haskell_module/dep-narrowing-th:Test
             '
 
   test-bindist:
@@ -170,7 +170,7 @@ jobs:
         shell: bash
         run: |
           cd rules_haskell_tests
-          bazel test //tests/haskell_module/dep-narrowing-th:Test
+          bazel test --compilation_mode=dbg //tests/haskell_module/dep-narrowing-th:Test
 
       - name: Collect Logs
         id: collect_logs
