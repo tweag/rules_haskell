@@ -1,3 +1,4 @@
+# TODO: Fix the version for tweag/run-nix-shell
 name: Continuous integration
 on:
   push:
@@ -98,13 +99,13 @@ jobs:
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
       - name: Check Bazel version
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@51bed9187838a0ac93b2ae2ea6216691a43e5f84 # initial_files branch
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           run: .ci/check-bazel-version
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@51bed9187838a0ac93b2ae2ea6216691a43e5f84 # initial_files branch
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           run: |
@@ -114,7 +115,7 @@ jobs:
             bazel build //docs:guide_html
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@51bed9187838a0ac93b2ae2ea6216691a43e5f84 # initial_files branch
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_nix
@@ -123,7 +124,7 @@ jobs:
             bazel test //...
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@51bed9187838a0ac93b2ae2ea6216691a43e5f84 # initial_files branch
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_tests
