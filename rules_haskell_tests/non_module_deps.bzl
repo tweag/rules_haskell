@@ -89,9 +89,11 @@ cc_library(
     name = "z",
     srcs = glob(["*.c"]),
     hdrs = glob(["*.h"]),
-    # Needed because XCode 12.0 Clang errors by default.
-    # See https://developer.apple.com/documentation/xcode-release-notes/xcode-12-release-notes.
-    copts = ["-Wno-error=implicit-function-declaration"],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        # Needed to avoid "call to undeclared function" errors [-Wimplicit-function-declaration]
+        "//conditions:default": ["-DZ_HAVE_UNISTD_H"],
+    }),
     # Cabal packages depending on dynamic C libraries fail on MacOS
     # due to `-rpath` flags being forwarded indiscriminately.
     # See https://github.com/tweag/rules_haskell/issues/1317
