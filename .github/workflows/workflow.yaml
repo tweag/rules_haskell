@@ -123,9 +123,11 @@ jobs:
       #       set -euo pipefail
       #       cd rules_haskell_nix
       #       bazel test //...
+
+      # TODO: Find out if we should be using shell.nix in the rules_haskell_nix dir.
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
-        uses: tweag/run-nix-shell@8b229f2a38efe0e2fe2fb952468db0bf26c5c217 # cg/specify_shell_nix
+        uses: tweag/run-nix-shell@e50681d8e121ec471f540495d8179fcd333dd883 # cg/specify_shell_nix
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_nix
