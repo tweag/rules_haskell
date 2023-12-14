@@ -114,14 +114,25 @@ jobs:
             bazel test //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
+      # - name: Build & test - rules_haskell_nix
+      #   if: matrix.module == 'rules_haskell_nix'
+      #   uses: tweag/run-nix-shell@v0
+      #   with:
+      #     options: ${{ env.NIX_SHELL_ARGS }}
+      #     run: |
+      #       set -euo pipefail
+      #       cd rules_haskell_nix
+      #       bazel test //...
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@8b229f2a38efe0e2fe2fb952468db0bf26c5c217 # cg/specify_shell_nix
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
+          working-directory: rules_haskell_nix
+          derivation-path: .
+          verbose: true # TODO: Remove me
           run: |
             set -euo pipefail
-            cd rules_haskell_nix
             bazel test //...
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
