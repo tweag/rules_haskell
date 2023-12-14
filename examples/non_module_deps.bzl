@@ -21,7 +21,16 @@ cc_library(
     includes = ["."],
     visibility = ["//visibility:public"],
 )
-cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
+cc_library(
+    name = "z",
+    srcs = glob(["*.c"]),
+    hdrs = glob(["*.h"]),
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        # Needed to avoid "call to undeclared function" errors [-Wimplicit-function-declaration]
+        "//conditions:default": ["-DZ_HAVE_UNISTD_H"],
+    }),
+)
 """,
         sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
         strip_prefix = "zlib-1.3",
