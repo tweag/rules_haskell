@@ -129,7 +129,7 @@ jobs:
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_nix
-          derivation-path: .
+          derivation-path: shell.nix
           verbose: true # TODO: Remove me
           run: |
             set -euo pipefail
