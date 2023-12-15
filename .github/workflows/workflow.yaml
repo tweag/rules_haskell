@@ -141,7 +141,7 @@ jobs:
 
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
-        uses: tweag/run-nix-shell@d24a15d422b6dc00c7b67f76bfb55fab9b4403fa # cg/specify_shell_nix
+        uses: tweag/run-nix-shell@3e14d4b359cf27d18565087fefc5732635e76ae5 # cg/shell_flags
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_nix
@@ -152,7 +152,7 @@ jobs:
             bazel test //...
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
-        uses: tweag/run-nix-shell@d24a15d422b6dc00c7b67f76bfb55fab9b4403fa # cg/specify_shell_nix
+        uses: tweag/run-nix-shell@3e14d4b359cf27d18565087fefc5732635e76ae5 # cg/shell_flags
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_tests
