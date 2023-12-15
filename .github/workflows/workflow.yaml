@@ -145,10 +145,8 @@ jobs:
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_nix
-          # derivation-path: shell.nix
           verbose: true # TODO: Remove me
           run: |
-            set -euo pipefail
             bazel test //...
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
@@ -157,7 +155,6 @@ jobs:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_tests
           run: |
-            set -euo pipefail
             # XXX run start script `--with-bzlmod=true` when supported
             if ! ${{ matrix.bzlmod }}; then
               ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
