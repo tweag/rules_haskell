@@ -120,6 +120,7 @@ jobs:
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_nix
+          verbose: true # TODO: Remove me
           run: |
             bazel test //...
       - name: Build & test - rules_haskell_tests
@@ -128,6 +129,7 @@ jobs:
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_tests
+          verbose: true # TODO: Remove me
           run: |
             # XXX run start script `--with-bzlmod=true` when supported
             if ! ${{ matrix.bzlmod }}; then
