@@ -114,38 +114,12 @@ jobs:
             bazel test //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
-      # - name: Build & test - rules_haskell_nix
-      #   if: matrix.module == 'rules_haskell_nix'
-      #   uses: tweag/run-nix-shell@v0
-      #   with:
-      #     options: ${{ env.NIX_SHELL_ARGS }}
-      #     run: |
-      #       set -euo pipefail
-      #       cd rules_haskell_nix
-      #       bazel test //...
-      # - name: Build & test - rules_haskell_tests
-      #   if: matrix.module == 'rules_haskell_tests'
-      #   uses: tweag/run-nix-shell@v0
-      #   with:
-      #     options: ${{ env.NIX_SHELL_ARGS }}
-      #     run: |
-      #       set -euo pipefail
-      #       cd rules_haskell_tests
-      #       # XXX run start script `--with-bzlmod=true` when supported
-      #       if ! ${{ matrix.bzlmod }}; then
-      #         ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
-      #       fi
-      #       bazel build //tests:run-tests
-      #       ./bazel-ci-bin/tests/run-tests
-      #       bazel coverage //...
-
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
         uses: tweag/run-nix-shell@3e14d4b359cf27d18565087fefc5732635e76ae5 # cg/shell_flags
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_nix
-          verbose: true # TODO: Remove me
           run: |
             bazel test //...
       - name: Build & test - rules_haskell_tests
