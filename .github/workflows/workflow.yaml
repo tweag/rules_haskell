@@ -127,7 +127,7 @@ jobs:
       # TODO: Find out if we should be using shell.nix in the rules_haskell_nix dir.
       - name: Build & test - rules_haskell_nix
         if: matrix.module == 'rules_haskell_nix'
-        uses: tweag/run-nix-shell@e50681d8e121ec471f540495d8179fcd333dd883 # cg/specify_shell_nix
+        uses: tweag/run-nix-shell@d24a15d422b6dc00c7b67f76bfb55fab9b4403fa # cg/specify_shell_nix
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_nix
