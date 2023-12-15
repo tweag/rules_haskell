@@ -100,17 +100,16 @@ jobs:
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
       - name: Check Bazel version
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@3e14d4b359cf27d18565087fefc5732635e76ae5 # cg/shell_flags
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           run: .ci/check-bazel-version
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@3e14d4b359cf27d18565087fefc5732635e76ae5 # cg/shell_flags
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           run: |
-            set -euo pipefail
             bazel test //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
@@ -120,8 +119,7 @@ jobs:
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_nix
-          run: |
-            bazel test //...
+          run: bazel test //...
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
         uses: tweag/run-nix-shell@3e14d4b359cf27d18565087fefc5732635e76ae5 # cg/shell_flags
