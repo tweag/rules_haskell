@@ -260,7 +260,7 @@ jobs:
 
       - name: Upload Logs
         if: ${{ failure() && steps.collect_logs.conclusion == 'success' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
           path: logs
