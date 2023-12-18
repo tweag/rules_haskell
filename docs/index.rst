@@ -25,5 +25,5 @@ Requirements:
    haskell-use-cases
 
 .. _Bazel: https://bazel.build
-.. _Bazel documentation: https://docs.bazel.build/versions/master/getting-started.html
+.. _Bazel documentation: https://bazel.build/start
 .. _start script: https://haskell.build/start

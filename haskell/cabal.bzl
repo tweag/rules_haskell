@@ -164,8 +164,9 @@ def _cabal_toolchain_info(hs, cc, workspace_name, runghc):
     # TODO: remove this if Bazel fixes its behavior.
     # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
     ar = cc.tools.ar
-    if ar.find("libtool") >= 0:
-        ar = "/usr/bin/ar"
+    if paths.basename(ar) == "libtool":
+        # assume `ar` is available at the same place
+        ar = paths.join(paths.dirname(ar), "ar")
 
     return struct(
         ghc = hs.tools.ghc.path,

@@ -1,6 +1,13 @@
 { pkgs ? import ./nixpkgs { }, docTools ? true, ghcVersion ? "9.2.8" }:
 
 with pkgs;
+
+let
+  macOS-security =
+    # make `/usr/bin/security` available in `PATH`, which is needed for stack
+    # on darwin which calls this binary to find certificates
+    writeScriptBin "security" ''exec /usr/bin/security "$@"'';
+in
 mkShell {
   # XXX: hack for macosX, this flags disable bazel usage of xcode
   # Note: this is set even for linux so any regression introduced by this flag
@@ -36,7 +43,9 @@ mkShell {
     # check the start script for problems
     shellcheck
     file
-  ] ++ lib.optionals docTools [ graphviz python39Packages.sphinx zip unzip ];
+  ]
+  ++ lib.optionals docTools [ graphviz python39Packages.sphinx zip unzip ]
+  ++ lib.optional stdenv.isDarwin macOS-security;
 
   packages = [ bazel_6 ];
 

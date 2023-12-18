@@ -1228,7 +1228,7 @@ configuration can be avoided by telling Nix to fetch it from the
 `haskell.nix binary cache`_.
 
 .. _arm example: https://github.com/tweag/rules_haskell/blob/master/examples/arm/arm-cross.nix
-.. _haskell.nix binary cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started/#setting-up-the-binary-cache
+.. _haskell.nix binary cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started.html#setting-up-the-binary-cache
 
 To tell ``rules_haskell`` about the cross-compiler, we can register it
 in the `WORKSPACE file <https://github.com/tweag/rules_haskell/blob/master/examples/arm/WORKSPACE>`_. ::

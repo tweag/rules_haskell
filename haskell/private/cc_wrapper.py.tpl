@@ -570,7 +570,10 @@ def link(output, libraries, rpaths, args):
         rpaths = shorten_rpaths(rpaths, libraries, output)
 
     args.extend(rpath_args(rpaths))
-    run_cc(args, exit_on_error=True)
+    # Note: `RULES_HASKELL_SILENCE_LINKER` is only set if called from doctest,
+    #       which is used to silence the linker output to not interfere with the output
+    #       from GHCi
+    run_cc(args, capture_output="RULES_HASKELL_SILENCE_LINKER" in os.environ, exit_on_error=True)
 
     if is_darwin():
         darwin_rewrite_load_commands(darwin_rewrites, output)

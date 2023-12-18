@@ -9,6 +9,7 @@ load(
     "C_COMPILE_ACTION_NAME",
 )
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "//haskell:providers.bzl",
     "GhcPluginInfo",
@@ -136,8 +137,10 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
     # "/usr/bin/libtool". Since we call ar directly, override it.
     # TODO: remove this if Bazel fixes its behavior.
     # Upstream ticket: https://github.com/bazelbuild/bazel/issues/5127.
-    if tools["ar"].find("libtool") >= 0:
-        tools["ar"] = "/usr/bin/ar"
+    ar = tools["ar"]
+    if paths.basename(ar) == "libtool":
+        # assume `ar` is available at the same place
+        tools["ar"] = paths.join(paths.dirname(ar), "ar")
 
     env = {}
     if hs_toolchain.is_darwin:
