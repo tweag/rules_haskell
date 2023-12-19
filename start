@@ -362,7 +362,7 @@ if $BZLMOD; then
     cat >MODULE.bazel <<EOF
 module(name = "your_project_name_here", version = "0.1")
 
-bazel_dep(name = "rules_haskell", version = "0.17")
+bazel_dep(name = "rules_haskell", version = "0.18")
 bazel_dep(name = "rules_cc", version = "0.0.9")
 
 haskell_toolchains = use_extension(
