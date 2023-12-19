@@ -15,6 +15,7 @@ def _os_info_impl(repository_ctx):
     known_cpu_values = [
         "aarch64",
         "darwin",
+        "darwin_x86_64",
         "darwin_arm64",
         "darwin_x86_64",
         "k8",
