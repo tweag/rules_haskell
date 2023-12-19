@@ -4,7 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## Unreleased
+## [0.18] 2023-12-21
+
+[0.18]: https://github.com/tweag/rules_haskell/compare/v0.17...v0.18
+
+### Highlights
+
+* Support for GHC 9.6.x (See https://github.com/tweag/rules_haskell/pull/1921 and https://github.com/tweag/rules_haskell/issues/1986)
+
+### Changed
+
+* Use GHC 9.2.8 by default (See https://github.com/tweag/rules_haskell/pull/1994)
+* Use Bazel 6.4.0 by default (See https://github.com/tweag/rules_haskell/pull/2063)
+* `start` script supports bzlmod with bindists (See https://github.com/tweag/rules_haskell/pull/2046)
+* Support Python Windows App aliases (See https://github.com/tweag/rules_haskell/pull/2060)
+
+### Fixed
+
+* Error using `snapshot` tag from stack_snapshot module extension (See https://github.com/tweag/rules_haskell/issues/2001)
+* Build gi-gtk from stackage (See https://github.com/tweag/rules_haskell/issues/1752)
+* X is not a toolchain library (See https://github.com/tweag/rules_haskell/issues/1920)
 
 ### Removed
 
