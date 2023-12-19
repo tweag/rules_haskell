@@ -86,10 +86,6 @@ build:ci-windows-bindist --experimental_build_event_upload_max_retries=256
 
 test:ci-common --test_output=errors
 
-build:ci-linux-bindist --config=linux-bindist
-build:ci-linux-nixpkgs --config=linux-nixpkgs
-build:ci-macos-bindist --config=macos-bindist
-build:ci-macos-nixpkgs --config=macos-nixpkgs
 build:ci-windows-bindist --config=windows-bindist
 build:ci-windows-bindist-rules-haskell --config=ci-windows-bindist
 build:ci-windows-bindist-rules-haskell-tests --config=ci-windows-bindist
