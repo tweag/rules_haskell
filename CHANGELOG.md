@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Removed
 
+* GHC versions < 8.10 are no longer supported (see https://github.com/tweag/rules_haskell/issues/2093)
 * remove `compiler_flags` option which was deprecated since 0.14 from macros and rules
 * remove `<name>-repl` aliases for repl targets introduced in 0.7
 * remove deprecated nixpkgs platform aliases introduced in 0.13
