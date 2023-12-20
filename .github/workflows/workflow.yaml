@@ -139,6 +139,8 @@ jobs:
               ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
             fi
             bazel build //tests:run-tests
+            # Shutdown Bazel to free up memory
+            bazel shutdown
             ./bazel-ci-bin/tests/run-tests
             bazel coverage //...
 
