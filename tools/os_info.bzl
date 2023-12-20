@@ -16,6 +16,7 @@ def _os_info_impl(repository_ctx):
         "aarch64",
         "darwin",
         "darwin_arm64",
+        "darwin_x86_64",
         "k8",
         "x64_windows",
     ]
