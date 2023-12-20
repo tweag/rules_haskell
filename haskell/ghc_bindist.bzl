@@ -460,15 +460,6 @@ def ghc_bindist(
     toolchain_name = "{}-toolchain".format(name)
 
     patches = None
-    if target == "windows_amd64":
-        # Older GHC versions on Windows contain a bug:
-        # https://gitlab.haskell.org/ghc/ghc/issues/16466
-        # We work around this by patching the base configuration.
-        patches = {
-            "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
-            "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
-        }.get(version)
-
     if target == "darwin_amd64":
         patches = {
             # Patch for https://gitlab.haskell.org/ghc/ghc/-/issues/19963
