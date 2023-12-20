@@ -4,8 +4,6 @@
 # implementation for get_cpu_value in lib_cc_configure.bzl.
 # https://github.com/bazelbuild/bazel/blob/e11506feaea7401c3d27f55b47183ef49bd1d5a8/tools/cpp/lib_cc_configure.bzl#L186
 
-# TODO(chuck): Add unit tests.
-
 def _get_os(os_cpu):
     if os_cpu.find("darwin") >= 0:
         return "osx"
