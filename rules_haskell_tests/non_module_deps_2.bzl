@@ -22,7 +22,7 @@ _empty_repo = repository_rule(
     },
 )
 
-def repositories(*, bzlmod):
+def repositories(*, bzlmod):  # @unused
     # In a separate repo because not all platforms support zlib.
     stack_snapshot(
         name = "stackage-zlib",
@@ -53,7 +53,7 @@ def repositories(*, bzlmod):
         components_dependencies = {
             "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
         },
-        extra_deps = {"zlib": ["//tests:zlib"]},
+        extra_deps = {"zlib": ["//tests:zlib"], "streaming-commons": ["//tests:zlib"]},
         haddock = False,
         local_snapshot = "//:ghcide-stack-snapshot{}.yaml".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
@@ -62,30 +62,33 @@ def repositories(*, bzlmod):
             "ghcide",
         ],
         setup_deps = {
-            "bifunctors": ["@ghcide//:Cabal"],
-            "call-stack": ["@ghcide//:Cabal"],
-            "ghcide": ["@ghcide//:Cabal"],
-            "hie-bios": ["@ghcide//:Cabal"],
-            "hls-graph": ["@ghcide//:Cabal"],
-            "hspec-discover": ["@ghcide//:Cabal"],
-            "hw-prim": ["@ghcide//:Cabal"],
-            "hw-fingertree": ["@ghcide//:Cabal"],
-            "implicit-hie": ["@ghcide//:Cabal"],
-            "implicit-hie-cradle": ["@ghcide//:Cabal"],
-            "invariant": ["@ghcide//:Cabal"],
-            "js-dgtable": ["@ghcide//:Cabal"],
-            "js-flot": ["@ghcide//:Cabal"],
-            "js-jquery": ["@ghcide//:Cabal"],
-            "libyaml": ["@ghcide//:Cabal"],
-            "mono-traversable": ["@ghcide//:Cabal"],
-            "regex-base": ["@ghcide//:Cabal"],
-            "regex-tdfa": ["@ghcide//:Cabal"],
-            "regex-pcre-builtin": ["@ghcide//:Cabal"],
-            "transformers-compat": ["@ghcide//:Cabal"],
-            "typed-process": ["@ghcide//:Cabal"],
-            "unliftio": ["@ghcide//:Cabal"],
-            "unliftio-core": ["@ghcide//:Cabal"],
-            "yaml": ["@ghcide//:Cabal"],
+            name: deps
+            for name, deps in {
+                "bifunctors": ["@ghcide//:Cabal"],
+                "call-stack": ["@ghcide//:Cabal"],
+                "ghcide": ["@ghcide//:Cabal"],
+                "hie-bios": ["@ghcide//:Cabal"],
+                "hls-graph": ["@ghcide//:Cabal"],
+                "hspec-discover": ["@ghcide//:Cabal"],
+                "hw-prim": ["@ghcide//:Cabal"],
+                "hw-fingertree": ["@ghcide//:Cabal"],
+                "implicit-hie": ["@ghcide//:Cabal"],
+                "implicit-hie-cradle": ["@ghcide//:Cabal"],
+                "invariant": ["@ghcide//:Cabal"],
+                "js-dgtable": ["@ghcide//:Cabal"],
+                "js-flot": ["@ghcide//:Cabal"],
+                "js-jquery": ["@ghcide//:Cabal"],
+                "libyaml": ["@ghcide//:Cabal"],
+                "mono-traversable": ["@ghcide//:Cabal"],
+                "regex-base": ["@ghcide//:Cabal"],
+                "regex-tdfa": ["@ghcide//:Cabal"],
+                "transformers-compat": ["@ghcide//:Cabal"],
+                "typed-process": ["@ghcide//:Cabal"],
+                "unliftio": ["@ghcide//:Cabal"],
+                "unliftio-core": ["@ghcide//:Cabal"],
+                "yaml": ["@ghcide//:Cabal"],
+            }.items()
+            if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not GHC_VERSION.startswith("9.6.")
         },
         stack_snapshot_json = ("//:ghcide-snapshot{}.json".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
@@ -103,7 +106,7 @@ load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library", "haskell_caba
 
 haskell_cabal_library(
     name = "alex-lib",
-    setup_deps = ["@Cabal//:Cabal"],
+    {setup_deps}
     srcs = glob(["**"]),
     version = "3.2.7.1",
     visibility = ["//visibility:public"],
@@ -111,18 +114,25 @@ haskell_cabal_library(
 
 haskell_cabal_binary(
     name = "alex",
-    setup_deps = ["@Cabal//:Cabal"],
+    {setup_deps}
     srcs = glob(["**"]),
     verbose = False,
     visibility = ["//visibility:public"],
 )
-        """,
+        """.format(setup_deps = "" if GHC_VERSION and GHC_VERSION.startswith("9.6.") else """setup_deps = ["@Cabal//:Cabal"],"""),
         sha256 = "9bd2f1a27e8f1b2ffdb5b2fbd3ed82b6f0e85191459a1b24ffcbef4e68a81bec",
         strip_prefix = "alex-3.2.7.1",
         urls = ["http://hackage.haskell.org/package/alex-3.2.7.1/alex-3.2.7.1.tar.gz"],
     )
 
-    if GHC_VERSION and GHC_VERSION.startswith("9.4."):
+    # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
+    # See https://github.com/tweag/rules_haskell/issues/1871
+    if GHC_VERSION and GHC_VERSION.startswith("9.6."):
+        _empty_repo(
+            name = "Cabal",
+            error_msg = "When using GHC >= 9.6, do not depend on @Cabal, as https://github.com/tweag/rules_haskell/issues/1871 is fixed.",
+        )
+    elif GHC_VERSION and GHC_VERSION.startswith("9.4."):
         # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
         # See https://github.com/tweag/rules_haskell/issues/1871
         http_archive(
@@ -179,14 +189,18 @@ haskell_cabal_library(
             "package1",
         ],
         setup_deps = {
-            # See https://github.com/tweag/rules_haskell/issues/1871
-            "HUnit": ["@Cabal//:Cabal"],
-            "call-stack": ["@Cabal//:Cabal"],
-            "hspec": ["@Cabal//:Cabal"],
-            "hspec-core": ["@Cabal//:Cabal"],
-            "hspec-discover": ["@Cabal//:Cabal"],
-            "hspec-expectations": ["@Cabal//:Cabal"],
-            "quickcheck-io": ["@Cabal//:Cabal"],
+            name: deps
+            for name, deps in {
+                # See https://github.com/tweag/rules_haskell/issues/1871
+                "HUnit": ["@Cabal//:Cabal"],
+                "call-stack": ["@Cabal//:Cabal"],
+                "hspec": ["@Cabal//:Cabal"],
+                "hspec-core": ["@Cabal//:Cabal"],
+                "hspec-discover": ["@Cabal//:Cabal"],
+                "hspec-expectations": ["@Cabal//:Cabal"],
+                "quickcheck-io": ["@Cabal//:Cabal"],
+            }.items()
+            if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not GHC_VERSION.startswith("9.6.")
         },
         stack_snapshot_json = ("//:stackage-pinning-test_snapshot{}.json".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
@@ -217,7 +231,7 @@ haskell_cabal_library(
             error_msg = "The stackage_asterius-unpinned repository should only be used on linux",
         )
 
-def _non_module_deps_2_impl(ctx):
+def _non_module_deps_2_impl(_ctx):
     repositories(bzlmod = True)
 
 non_module_deps_2 = module_extension(

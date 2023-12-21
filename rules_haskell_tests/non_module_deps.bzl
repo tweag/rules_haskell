@@ -24,24 +24,24 @@ starlarkified_local_repository = repository_rule(
     },
 )
 
-def repositories(*, bzlmod):
+def repositories(*, bzlmod):  # @unused
     # Some helpers for platform-dependent configuration
     os_info(name = "os_info")
 
     # module rules_bazel_integration_test requires bazel >= 6.1.0
     http_archive(
         name = "rules_bazel_integration_test",
-        sha256 = "567ef30550a90c0dc22a9076743b2b2715b4d7148b4d573bdcc61aaa5d0177b3",
+        sha256 = "6e65d497c68f5794349bfa004369e144063686ce1ebd0227717cd23285be45ef",
         urls = [
-            "https://github.com/bazel-contrib/rules_bazel_integration_test/releases/download/v0.18.0/rules_bazel_integration_test.v0.18.0.tar.gz",
+            "https://github.com/bazel-contrib/rules_bazel_integration_test/releases/download/v0.20.0/rules_bazel_integration_test.v0.20.0.tar.gz",
         ],
     )
 
     http_archive(
         name = "cgrindel_bazel_starlib",
-        sha256 = "dfa423dbf5aac0a5217d3780b295abd3ea1c633d5f9198712b23f0f14f2e8d92",
+        sha256 = "9090280a9cff7322e7c22062506b3273a2e880ca464e520b5c77fdfbed4e8805",
         urls = [
-            "https://github.com/cgrindel/bazel-starlib/releases/download/v0.18.0/bazel-starlib.v0.18.0.tar.gz",
+            "https://github.com/cgrindel/bazel-starlib/releases/download/v0.18.1/bazel-starlib.v0.18.1.tar.gz",
         ],
     )
 
@@ -65,12 +65,9 @@ def repositories(*, bzlmod):
     # no modules are provided at the moment for buildifier
     http_archive(
         name = "com_github_bazelbuild_buildtools",
-        sha256 = "977a0bd4593c8d4c8f45e056d181c35e48aa01ad4f8090bdb84f78dca42f47dc",
-        # fix runner.bash.template always returning success, format MODULE.bazel and WORKSPACE.bzlmod too
-        patches = ["@rules_haskell//buildifier:buildifier_test-workspace.patch"],
-        patch_args = ["-p1"],
-        strip_prefix = "buildtools-6.1.2",
-        urls = ["https://github.com/bazelbuild/buildtools/archive/v6.1.2.tar.gz"],
+        sha256 = "05c3c3602d25aeda1e9dbc91d3b66e624c1f9fdadf273e5480b489e744ca7269",
+        strip_prefix = "buildtools-6.4.0",
+        urls = ["https://github.com/bazelbuild/buildtools/archive/v6.4.0.tar.gz"],
     )
 
     http_archive(
@@ -92,21 +89,20 @@ cc_library(
     name = "z",
     srcs = glob(["*.c"]),
     hdrs = glob(["*.h"]),
-    # Needed because XCode 12.0 Clang errors by default.
-    # See https://developer.apple.com/documentation/xcode-release-notes/xcode-12-release-notes.
-    copts = ["-Wno-error=implicit-function-declaration"],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        # Needed to avoid "call to undeclared function" errors [-Wimplicit-function-declaration]
+        "//conditions:default": ["-DZ_HAVE_UNISTD_H"],
+    }),
     # Cabal packages depending on dynamic C libraries fail on MacOS
     # due to `-rpath` flags being forwarded indiscriminately.
     # See https://github.com/tweag/rules_haskell/issues/1317
     linkstatic = is_darwin,
 )
 """,
-        sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-        strip_prefix = "zlib-1.2.11",
-        urls = [
-            "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
-            "http://zlib.net/zlib-1.2.11.tar.gz",
-        ],
+        sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
+        strip_prefix = "zlib-1.3",
+        urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
     )
 
 def _non_module_deps_impl(_ctx):

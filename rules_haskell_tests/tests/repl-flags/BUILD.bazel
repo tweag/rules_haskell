@@ -13,8 +13,8 @@ haskell_test(
     name = "compiler_flags",
     srcs = ["CompilerFlags.hs"],
 
-    # This also ensure that local `compiler_flags` does not override the `global ones`
-    compiler_flags = ["-XOverloadedStrings"],
+    # This also ensure that local `ghcopts` does not override the `global ones`
+    ghcopts = ["-XOverloadedStrings"],
     visibility = ["//visibility:public"],
     deps = [
         "//tests/hackage:base",

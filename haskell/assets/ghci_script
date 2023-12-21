@@ -1,2 +1,2 @@
-:add {ADD_SOURCES}
+:load {ADD_SOURCES}
 :module + {MODULES}

@@ -3,7 +3,6 @@ load(
     "HaskellInfo",
     "HaskellLibraryInfo",
 )
-load("@rules_haskell//haskell:private/set.bzl", "set")
 
 def _get_libraries_as_runfiles_impl(ctx):
     """Extract all library files from a haskell_library target

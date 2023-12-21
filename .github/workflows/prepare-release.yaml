@@ -12,8 +12,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Prepare workspace snippet
-        run: .github/workflows/workspace_snippet.sh > release_notes.txt
+      - name: Create archive
+        id: archive
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          REPOSITORY_NAME="${GITHUB_REPOSITORY#*/}"
+          PREFIX="${REPOSITORY_NAME}-${TAG:1}"
+          ARCHIVE="${PREFIX}.tar.gz"
+
+          echo "tgz=${ARCHIVE}" >> $GITHUB_OUTPUT
+
+          git archive --format=tar.gz --prefix="${PREFIX}/" -o "$ARCHIVE" "${TAG}"
+      - name: Prepare bzlmod / WORKSPACE snippets
+        run: .github/workflows/prepare_snippets.sh ${{ steps.archive.outputs.tgz }} > release_notes.txt
       - name: Generate changelog
         run: |
           printf '\n-----\n\n' >> release_notes.txt
@@ -23,3 +34,5 @@ jobs:
         with:
           draft: true
           body_path: release_notes.txt
+          fail_on_unmatched_files: true
+          files: ${{ steps.archive.outputs.tgz }}

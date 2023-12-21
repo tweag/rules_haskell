@@ -5,17 +5,6 @@
 # have the same behavior as cabal's one.
 #
 
-load(
-    "@rules_haskell//haskell:cabal.bzl",
-    "haskell_cabal_binary",
-    "haskell_cabal_library",
-)
-load(
-    "@rules_haskell//haskell:defs.bzl",
-    "haskell_binary",
-    "haskell_test",
-    "haskell_toolchain_library",
-)
 load("@os_info//:os_info.bzl", "is_windows")
 
 sh_test(

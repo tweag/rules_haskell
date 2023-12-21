@@ -28,9 +28,9 @@ rules_haskell. To use a released version, do the following::
 
   http_archive(
       name = "rules_haskell",
-      sha256 = "298f6f0db23391274b4eca215daa01797d05699469048ef94540d5829b466377",
-      strip_prefix = "rules_haskell-0.17",
-      url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.17.tar.gz",
+      sha256 = "d1f0e1bd4f1d5e248b2882bfdc7c31a146112f9d85b9d2f0ef77e78d02ecba45",
+      strip_prefix = "rules_haskell-0.18",
+      url = "https://github.com/tweag/rules_haskell/releases/download/v0.18/rules_haskell-0.18.tar.gz",
   )
 
 Picking a compiler
@@ -419,9 +419,9 @@ This declares that the Stackage package ``zlib`` has an additional dependency
   )
   cc_library(name = "z", srcs = glob(["*.c"]), hdrs = glob(["*.h"]))
   """,
-      sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-      strip_prefix = "zlib-1.2.11",
-      urls = ["http://zlib.net/zlib-1.2.11.tar.gz"],
+      sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
+      strip_prefix = "zlib-1.3",
+      urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
   )
 
 Vendoring packages
@@ -1228,7 +1228,7 @@ configuration can be avoided by telling Nix to fetch it from the
 `haskell.nix binary cache`_.
 
 .. _arm example: https://github.com/tweag/rules_haskell/blob/master/examples/arm/arm-cross.nix
-.. _haskell.nix binary cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started/#setting-up-the-binary-cache
+.. _haskell.nix binary cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started.html#setting-up-the-binary-cache
 
 To tell ``rules_haskell`` about the cross-compiler, we can register it
 in the `WORKSPACE file <https://github.com/tweag/rules_haskell/blob/master/examples/arm/WORKSPACE>`_. ::

@@ -1,19 +1,19 @@
 module(
     name = "rules_haskell_tests",
-    version = "0.17",
+    version = "0.18",
 )
 
 bazel_dep(
     name = "rules_nixpkgs_core",
-    version = "0.9.0",
+    version = "0.10.0",
 )
 bazel_dep(
     name = "rules_haskell_nix",
-    version = "0.17",
+    version = "0.18",
 )
 bazel_dep(
     name = "rules_haskell",
-    version = "0.17",
+    version = "0.18",
 )
 bazel_dep(
     name = "rules_license",
@@ -21,11 +21,11 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nixpkgs_cc",
-    version = "0.9.0",
+    version = "0.10.0",
 )
 bazel_dep(
     name = "rules_nixpkgs_python",
-    version = "0.9.0",
+    version = "0.10.0",
 )
 bazel_dep(
     name = "rules_python",
@@ -33,23 +33,23 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nixpkgs_go",
-    version = "0.9.0",
+    version = "0.10.0",
 )
 bazel_dep(
     name = "rules_nixpkgs_posix",
-    version = "0.9.0",
+    version = "0.10.0",
 )
 bazel_dep(
     name = "rules_nixpkgs_nodejs",
-    version = "0.9.0",
+    version = "0.10.0",
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.6",
+    version = "0.0.8",
 )
 bazel_dep(
     name = "rules_cc",
-    version = "0.0.8",
+    version = "0.0.9",
 )
 bazel_dep(
     name = "rules_sh",
@@ -57,7 +57,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "bazel_skylib",
-    version = "1.4.2",
+    version = "1.5.0",
 )
 bazel_dep(
     name = "rules_java",
@@ -65,15 +65,15 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nodejs",
-    version = "5.8.2",
+    version = "5.8.3",
 )
 bazel_dep(
     name = "aspect_rules_js",
-    version = "1.31.0",
+    version = "1.34.0",
 )
 bazel_dep(
     name = "aspect_bazel_lib",
-    version = "1.31.2",
+    version = "1.38.1",
 )
 bazel_dep(
     name = "rules_proto",
@@ -83,6 +83,10 @@ bazel_dep(
     name = "protobuf",
     version = "21.7",
     repo_name = "com_google_protobuf",
+)
+bazel_dep(
+    name = "zlib",
+    version = "1.3",
 )
 
 ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_default_version")
@@ -110,8 +114,8 @@ use_repo(
     "asterius_bundle_linux_amd64",
     "bazel_6",
     "build_bazel_bazel_6_0_0",
-    "build_bazel_bazel_6_2_0",
     "build_bazel_bazel_6_3_2",
+    "build_bazel_bazel_6_4_0",
     "glibc_locales",
     "linux_amd64_asterius-toolchain",
     "nixpkgs_config_cc",
@@ -206,7 +210,7 @@ go_sdk.download(
 
 bazel_dep(
     name = "gazelle",
-    version = "0.30.0",
+    version = "0.33.0",
 )
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
@@ -218,19 +222,12 @@ go_deps.module(
 use_repo(
     go_deps,
     "com_github_gogo_protobuf",
-    "com_github_golang_mock",
-    "com_github_golang_protobuf",
-    "org_golang_google_genproto",
-    "org_golang_google_grpc",
-    "org_golang_google_protobuf",
-    "org_golang_x_net",
-    "org_golang_x_tools",
 )
 
 # Java dependencies for the //tests/java_classpath test
 bazel_dep(
     name = "rules_jvm_external",
-    version = "5.1",
+    version = "5.3",
 )
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
@@ -248,18 +245,12 @@ use_repo(
     "rules_haskell_asterius_webpack",
 )
 
-rules_haskell_dependencies = use_extension("@rules_haskell//extensions:rules_haskell_dependencies.bzl", "rules_haskell_dependencies")
-use_repo(
-    rules_haskell_dependencies,
-    "zlib",
-)
-
 haskell_toolchains = use_extension(
     "@rules_haskell//extensions:haskell_toolchains.bzl",
     "haskell_toolchains",
 )
 
-test_ghc_version = "9.2.5"
+test_ghc_version = "9.2.8"
 
 test_ghcopts = [
     "-XStandaloneDeriving",  # Flag used at compile time
@@ -330,7 +321,7 @@ nix_haskell_toolchains.new(
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc928.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
@@ -387,7 +378,6 @@ stack_snapshot.package(
         "process",
         "profunctors",
         "proto-lens",
-        "proto-lens-runtime",
         "safe-exceptions",
         "streaming",
         "temporary",
@@ -410,13 +400,20 @@ stack_snapshot.package(
         setup_deps = ["@Cabal//:Cabal"],
     )
     for package in [
+        "bifunctors",
+        "call-stack",
         "c2hs",
         "doctest",
+        "HUnit",
         "happy",
         "hspec",
         "hspec-core",
         "hspec-discover",
         "hspec-expectations",
+        "proto-lens-runtime",
+        "quickcheck-io",
+        "transformers-compat",
+        "type-errors",
     ]
 ]
 

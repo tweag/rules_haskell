@@ -1,7 +1,7 @@
 """Derived context with Haskell-specific fields and methods"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("//haskell:providers.bzl", "HaskellLibraryInfo", "all_dependencies_package_ids")
+load("//haskell:providers.bzl", "all_dependencies_package_ids")
 load(":private/path_utils.bzl", "join_path_list")
 
 HaskellContext = provider()

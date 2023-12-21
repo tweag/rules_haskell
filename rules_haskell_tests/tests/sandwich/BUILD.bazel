@@ -15,7 +15,7 @@ cc_library(
 haskell_library(
     name = "testlib",
     srcs = ["Lib.hs"],
-    compiler_flags = [
+    ghcopts = [
         "-Wall",
         "-Werror",
     ],
@@ -28,7 +28,7 @@ haskell_library(
 haskell_test(
     name = "test",
     srcs = ["Main.hs"],
-    compiler_flags = [
+    ghcopts = [
         "-Wall",
         "-Werror",
     ],

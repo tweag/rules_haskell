@@ -1,0 +1,19 @@
+name: Install Apt Packages
+description: Install packages via apt-get install.
+
+inputs:
+  packages:
+    type: string
+    description: A space-separated list of apt packages to install.
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      if: ${{ runner.os == 'Linux' }}
+      env:
+        APT_PACKAGES: ${{ inputs.packages }}
+      run: |-
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -yy "${APT_PACKAGES}"
+        sudo apt clean

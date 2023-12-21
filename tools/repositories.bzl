@@ -2,7 +2,6 @@
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 def rules_haskell_worker_dependencies(**stack_kwargs):
     """
@@ -30,7 +29,7 @@ def rules_haskell_worker_dependencies(**stack_kwargs):
                 "text",
                 "vector",
             ],
-            setup_deps = {
+            setup_deps = {} if GHC_VERSION and GHC_VERSION.startswith("9.6.") else {
                 "bifunctors": ["@Cabal//:Cabal"],
                 "proto-lens-runtime": ["@Cabal//:Cabal"],
                 "transformers-compat": ["@Cabal//:Cabal"],

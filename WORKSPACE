@@ -29,9 +29,9 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "rules_proto",
-    sha256 = "36476f17a78a4c495b9a9e70bd92d182e6e78db476d90c74bac1f5f19f0d6d04",
-    strip_prefix = "rules_proto-fcad4680fee127dbd8344e6a961a28eef5820ef4",
-    urls = ["https://github.com/bazelbuild/rules_proto/archive/fcad4680fee127dbd8344e6a961a28eef5820ef4.tar.gz"],
+    sha256 = "c6d6f9bfd39b6417724fd4a504767aa1e8dbfe828d9d41ab4ccd1976aba53fb4",
+    strip_prefix = "rules_proto-7188888362a203892dec354f52623f9970bff48c",
+    urls = ["https://github.com/bazelbuild/rules_proto/archive/7188888362a203892dec354f52623f9970bff48c.tar.gz"],
 )
 
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
@@ -123,9 +123,9 @@ buildifier_dependencies()
 
 http_archive(
     name = "cgrindel_bazel_starlib",
-    sha256 = "ee0033d029b5eaddc21836b2944cf37c95eb5f214eb39834136a316dbc252a73",
+    sha256 = "9090280a9cff7322e7c22062506b3273a2e880ca464e520b5c77fdfbed4e8805",
     urls = [
-        "https://github.com/cgrindel/bazel-starlib/releases/download/v0.16.0/bazel-starlib.v0.16.0.tar.gz",
+        "https://github.com/cgrindel/bazel-starlib/releases/download/v0.18.1/bazel-starlib.v0.18.1.tar.gz",
     ],
 )
 
@@ -149,6 +149,7 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 stack_snapshot(
     name = "stackage",
     components = {
+        "c2hs": ["exe"],
         "proto-lens-protoc": [
             "lib",
             "exe",
@@ -158,6 +159,7 @@ stack_snapshot(
         "_" + str(GHC_VERSION) if GHC_VERSION else "",
     ),
     packages = [
+        "Cabal",
         # Core libraries
         "base",
         "bytestring",
@@ -167,6 +169,9 @@ stack_snapshot(
         "text",
         "vector",
         # For tests
+        "alex",
+        "c2hs",
+        "happy",
         "lens-family-core",
         "data-default-class",
         "proto-lens",
@@ -174,7 +179,7 @@ stack_snapshot(
         "proto-lens-runtime",
         "lens-family",
     ],
-    setup_deps = {
+    setup_deps = {} if GHC_VERSION and GHC_VERSION.startswith("9.6.") else {
         # See https://github.com/tweag/rules_haskell/issues/1871
         "HUnit": ["@Cabal//:Cabal"],
         "bifunctors": ["@Cabal//:Cabal"],
@@ -188,6 +193,9 @@ stack_snapshot(
         "type-errors": ["@Cabal//:Cabal"],
         "typed-process": ["@Cabal//:Cabal"],
         "unliftio-core": ["@Cabal//:Cabal"],
+        "alex": ["@Cabal//:Cabal"],
+        "c2hs": ["@Cabal//:Cabal"],
+        "happy": ["@Cabal//:Cabal"],
     },
     stack_snapshot_json = "//:stackage_snapshot{}.json".format(
         "_" + str(GHC_VERSION) if GHC_VERSION else "",

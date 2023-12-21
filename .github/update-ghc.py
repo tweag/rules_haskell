@@ -78,44 +78,23 @@ def main():
 
         print("found update:", latest_release, file=sys.stderr)
 
-        replace = re.compile(
-            r'^(?P<indent>\s+)\{\s*"version"\s*:\s*"'
-            + re.escape(GHC_MAJOR_MINOR + "."),
-            re.MULTILINE,
-        )
+        print(" 1. modify haskell/private/ghc_bindist_generated.json", file=sys.stderr)
 
-        print(" 1. modify haskell/gen_ghc_bindist.py", file=sys.stderr)
+        bindists[latest_release] = {}
 
-        gen_script_path = SCRIPT_PATH.parent.parent.joinpath(
-            "haskell/gen_ghc_bindist.py"
-        )
-        with open(gen_script_path, "r+") as gen:
-            gen_script = gen.read()
+        bindist_json.truncate(0)
+        bindist_json.seek(0)
+        json.dump(bindists, bindist_json)
 
-            added_version = replace.sub(
-                rf"""\g<indent>{{ "version": { repr(latest_release) },
-\g<indent>  "ignore_suffixes": [".bz2", ".lz", ".zip"] }},
-\g<0>""",
-                gen_script,
-                count=1,
-            )
+    gen_script_path = SCRIPT_PATH.parent.parent.joinpath("haskell/gen_ghc_bindist.py")
 
-            if added_version is gen_script:
-                sys.exit(
-                    f"could not add new version {latest_release} using regex {replace}"
-                )
+    print(" 2. call haskell/gen_ghc_bindist.py", file=sys.stderr)
 
-            gen.truncate(0)
-            gen.seek(0)
-            gen.write(added_version)
+    check_call([sys.executable, "haskell/gen_ghc_bindist.py"])
 
-        print(" 2. call haskell/gen_ghc_bindist.py", file=sys.stderr)
-
-        check_call([sys.executable, "haskell/gen_ghc_bindist.py"])
-
-        if "GITHUB_OUTPUT" in os.environ:
-            with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-                print(f"latest={ latest_release }", file=output)
+    if "GITHUB_OUTPUT" in os.environ:
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            print(f"latest={ latest_release }", file=output)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 # Haskell rules for [Bazel][bazel]
 
-[![Continuous integration](https://github.com/tweag/rules_haskell/workflows/Continuous%20integration/badge.svg)](https://github.com/tweag/rules_haskell/actions?query=branch%3Amaster)
+[![Continuous Integration](https://github.com/tweag/rules_haskell/actions/workflows/workflow.yaml/badge.svg?event=schedule)](https://github.com/tweag/rules_haskell/actions/workflows/workflow.yaml)
 
 Bazel CI: [![Build status](https://badge.buildkite.com/1de3270f1df070a99978adb6efa180d0c32eac58e0fd1938d1.svg?branch=master)](https://buildkite.com/bazel/rules-haskell-haskell)
 
@@ -12,7 +12,7 @@ for Haskell. Get started building your own project using these rules
 with the [setup script below](#setup).
 
 [bazel]: https://bazel.build/
-[bazel-getting-started]: https://docs.bazel.build/versions/master/getting-started.html
+[bazel-getting-started]: https://bazel.build/start
 [bazel-cli]: https://docs.bazel.build/versions/master/command-line-reference.html
 [external-repositories]: https://docs.bazel.build/versions/master/external.html
 [nix]: https://nixos.org/nix
@@ -23,7 +23,7 @@ The full reference documentation for rules is at https://haskell.build.
 
 ## Setup
 
-You'll need [Bazel >= 5.0][bazel-getting-started] installed.
+You'll need [Bazel >= 6.0][bazel-getting-started] installed.
 
 If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
 
@@ -39,9 +39,15 @@ In a fresh directory, run:
 $ curl https://haskell.build/start | sh
 ```
 
+Alternatively, if you want to start a project with bzlmod, run:
+
+```console
+$ sh <(curl https://haskell.build/start) --with-bzlmod=true
+```
+
 This will generate initial `WORKSPACE` and `BUILD` files for you. See the
 [examples](./examples) and the [API reference](#Rules) below to adapt these for
-you project. Then,
+your project. Then,
 
 ```console
 $ bazel build //...    # Build all targets
@@ -51,6 +57,7 @@ $ bazel test //...     # Run all tests
 You can learn more about Bazel's command line
 syntax [here][bazel-cli]. Common [commands][bazel-cli-commands] are
 `build`, `test`, `run` and `coverage`.
+
 
 ### Nixpkgs
 
@@ -328,12 +335,12 @@ http_archive(
 
 To reference a local checkout instead, use the
 [`--override_repository`][override_repository] command line option:
-   
+
 ```
 bazel build/test/run/sync \
   --override_repository rules_haskell=/path/to/checkout
 ```
-   
+
 If you don’t want to type that every time, [temporarily add it to
 `.bazelrc`][bazelrc].
 

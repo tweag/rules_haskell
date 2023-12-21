@@ -4,10 +4,17 @@ buildifier_exclude_patterns = [
     "./vendor/**",
 ]
 
+_lint_warnings = [
+    "load",
+    "unused-variable",
+]
+
 # Run this to fix the errors in BUILD files.
 buildifier(
     name = "buildifier",
     exclude_patterns = buildifier_exclude_patterns,
+    lint_mode = "fix",
+    lint_warnings = _lint_warnings,
     verbose = True,
 )
 
@@ -33,9 +40,12 @@ buildifier_test(
         "@examples//:all_files",
         "@tutorial//:all_files",
     ],
+    lint_mode = "warn",
+    lint_warnings = _lint_warnings,
     mode = "diff",
     tags = [
         "dont_test_on_windows",
+        "manual",
     ],
 )
 

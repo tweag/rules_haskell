@@ -32,14 +32,6 @@ load(
     _ghc_plugin = "ghc_plugin",
 )
 load(
-    ":private/validate_attrs.bzl",
-    "check_deprecated_attribute_usage",
-)
-load(
-    "//haskell:providers.bzl",
-    "HaskellLibraryInfo",
-)
-load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
 )
@@ -224,14 +216,6 @@ _haskell_library = rule(
 )
 
 def _haskell_worker_wrapper(rule_type, **kwargs):
-    kwargs["ghcopts"] = check_deprecated_attribute_usage(
-        old_attr_name = "compiler_flags",
-        old_attr_value = kwargs["compiler_flags"],
-        new_attr_name = "ghcopts",
-        new_attr_value = kwargs["ghcopts"],
-    )
-    kwargs.pop("compiler_flags")
-
     defaults = dict(
         worker = select({
             "@rules_haskell//haskell:use_worker": Label("@rules_haskell//tools/worker:bin"),
@@ -255,7 +239,6 @@ def haskell_binary(
         deps = [],
         narrowed_deps = [],
         data = [],
-        compiler_flags = [],
         ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
@@ -323,7 +306,6 @@ def haskell_binary(
       modules: List of extra haskell_module() dependencies to be linked into this binary.
           Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
-      compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
       repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
       runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
@@ -337,6 +319,10 @@ def haskell_binary(
       version: Executable version. If this is specified, CPP version macros will be generated for this build.
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
+
+    if "compiler_flags" in kwargs:
+        fail("`compiler_flags` argument was removed, use `ghcopts` instead")
+
     _haskell_worker_wrapper(
         "binary",
         name = name,
@@ -346,7 +332,6 @@ def haskell_binary(
         deps = deps,
         narrowed_deps = narrowed_deps,
         data = data,
-        compiler_flags = compiler_flags,
         ghcopts = ghcopts,
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
@@ -362,13 +347,6 @@ def haskell_binary(
     )
 
     repl_kwargs = make_repl_kwargs(["testonly", "tags"], kwargs)
-    native.alias(
-        # XXX Temporary backwards compatibility hack. Remove eventually.
-        # See https://github.com/tweag/rules_haskell/pull/460.
-        name = "%s-repl" % name,
-        actual = "%s@repl" % name,
-        **repl_kwargs
-    )
     haskell_repl(
         name = "%s@repl" % name,
         deps = [name],
@@ -406,7 +384,6 @@ def haskell_test(
         deps = [],
         narrowed_deps = [],
         data = [],
-        compiler_flags = [],
         ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
@@ -464,7 +441,6 @@ def haskell_test(
       modules: List of extra haskell_module() dependencies to be linked into this test.
           Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
-      compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
       repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
       runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
@@ -491,6 +467,9 @@ def haskell_test(
           Note, this attribute may leave experimental status depending on the outcome of https://github.com/bazelbuild/bazel/issues/7763.
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
+    if "compiler_flags" in kwargs:
+        fail("`compiler_flags` argument was removed, use `ghcopts` instead")
+
     _haskell_worker_wrapper(
         "test",
         name = name,
@@ -500,7 +479,6 @@ def haskell_test(
         deps = deps,
         narrowed_deps = narrowed_deps,
         data = data,
-        compiler_flags = compiler_flags,
         ghcopts = ghcopts,
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
@@ -521,14 +499,6 @@ def haskell_test(
     )
 
     repl_kwargs = make_repl_kwargs(["tags"], kwargs)
-    native.alias(
-        # XXX Temporary backwards compatibility hack. Remove eventually.
-        # See https://github.com/tweag/rules_haskell/pull/460.
-        name = "%s-repl" % name,
-        actual = "%s@repl" % name,
-        testonly = kwargs.get("testonly", True),
-        **repl_kwargs
-    )
     haskell_repl(
         name = "%s@repl" % name,
         deps = [name],
@@ -547,7 +517,6 @@ def haskell_library(
         narrowed_deps = [],
         modules = [],
         data = [],
-        compiler_flags = [],
         ghcopts = [],
         repl_ghci_args = [],
         runcompile_flags = [],
@@ -607,7 +576,6 @@ def haskell_library(
       modules: List of extra haskell_module() dependencies to be linked into this library.
           Note: This attribute is experimental and not ready for production, yet.
       data: See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common.data).,
-      compiler_flags: DEPRECATED. Use new name ghcopts.
       ghcopts: Flags to pass to Haskell compiler. Subject to Make variable substitution.
       repl_ghci_args: Arbitrary extra arguments to pass to GHCi. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.,
       runcompile_flags: Arbitrary extra arguments to pass to runghc. This extends `ghcopts` and `repl_ghci_args` from the toolchain. Subject to Make variable substitution.
@@ -626,6 +594,9 @@ def haskell_library(
         originally defined as a Cabal package, or which is a dependency of a Cabal package. If this is specified, CPP version macro will be generated.
       **kwargs: Common rule attributes. See [Bazel documentation](https://docs.bazel.build/versions/master/be/common-definitions.html#common-attributes).
     """
+    if "compiler_flags" in kwargs:
+        fail("`compiler_flags` argument was removed, use `ghcopts` instead")
+
     _haskell_worker_wrapper(
         "library",
         name = name,
@@ -637,7 +608,6 @@ def haskell_library(
         narrowed_deps = narrowed_deps,
         modules = modules,
         data = data,
-        compiler_flags = compiler_flags,
         ghcopts = ghcopts,
         repl_ghci_args = repl_ghci_args,
         runcompile_flags = runcompile_flags,
@@ -655,13 +625,6 @@ def haskell_library(
     )
 
     repl_kwargs = make_repl_kwargs(["testonly", "tags"], kwargs)
-    native.alias(
-        # XXX Temporary backwards compatibility hack. Remove eventually.
-        # See https://github.com/tweag/rules_haskell/pull/460.
-        name = "%s-repl" % name,
-        actual = "%s@repl" % name,
-        **repl_kwargs
-    )
     haskell_repl(
         name = "%s@repl" % name,
         deps = [name],

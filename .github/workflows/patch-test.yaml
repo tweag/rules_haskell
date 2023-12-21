@@ -22,6 +22,9 @@ jobs:
         name: Extract from gen_ghc_bindist
         run: python .github/extract_from_ghc_bindist.py
   test-ghc-patches:
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.ghc-version }}
+      cancel-in-progress: true
     name: Test GHC patches
     needs: find-ghc-version
     strategy:

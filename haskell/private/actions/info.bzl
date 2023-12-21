@@ -1,13 +1,7 @@
 """Defines output groups that are consumed by tools such as 'hrepl'."""
 
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":providers.bzl", "all_package_ids")
 load(":private/cc_libraries.bzl", "get_ghci_library_files")
-load(
-    ":private/path_utils.bzl",
-    "get_lib_name",
-)
 
 def write_proto_file(hs, output_name, proto_type, content):
     """Write an encoded .proto file.
@@ -31,7 +25,7 @@ def write_proto_file(hs, output_name, proto_type, content):
     """
     proto_txt = hs.actions.declare_file(output_name + ".txt")
     proto_pb = hs.actions.declare_file(output_name + ".pb")
-    hs.actions.write(output = proto_txt, content = content.to_proto())
+    hs.actions.write(output = proto_txt, content = proto.encode_text(content))
 
     protoc = hs.toolchain.protoc
     rule_info_protos = hs.toolchain.rule_info_proto[ProtoInfo].direct_sources
@@ -58,7 +52,7 @@ def _filter_package_env(flags):
     # groups will be responsible for setting the right GHC flags themselves,
     # based on the fields of haskell.LibraryInfo.
     result = []
-    for i in flags:
+    for _i in flags:
         if not flags:
             break
         if flags[0] == "-package-env":
@@ -146,7 +140,7 @@ def compile_info_output_groups(
         hs,
         cc,
         c,
-        posix,
+        posix,  # @unused
         runfiles):
     """Output groups for compiling a Haskell target.
 

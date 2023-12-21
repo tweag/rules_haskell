@@ -27,9 +27,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # For testing if bzlmod is enabled
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "97fa63d95cc9af006c4c7b2123ddd2a91fb8d273012f17648e6423bae2c69470",
-    strip_prefix = "bazel-lib-1.30.2",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.30.2/bazel-lib-v1.30.2.tar.gz",
+    sha256 = "262e3d6693cdc16dd43880785cdae13c64e6a3f63f75b1993c716295093d117f",
+    strip_prefix = "bazel-lib-1.38.1",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.38.1/bazel-lib-v1.38.1.tar.gz",
 )
 
 load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
@@ -45,9 +45,9 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "rules_proto",
-    sha256 = "36476f17a78a4c495b9a9e70bd92d182e6e78db476d90c74bac1f5f19f0d6d04",
-    strip_prefix = "rules_proto-fcad4680fee127dbd8344e6a961a28eef5820ef4",
-    urls = ["https://github.com/bazelbuild/rules_proto/archive/fcad4680fee127dbd8344e6a961a28eef5820ef4.tar.gz"],
+    sha256 = "c6d6f9bfd39b6417724fd4a504767aa1e8dbfe828d9d41ab4ccd1976aba53fb4",
+    strip_prefix = "rules_proto-7188888362a203892dec354f52623f9970bff48c",
+    urls = ["https://github.com/bazelbuild/rules_proto/archive/7188888362a203892dec354f52623f9970bff48c.tar.gz"],
 )
 
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
@@ -81,8 +81,11 @@ load(
 )
 load(
     "@rules_haskell//:constants.bzl",
-    "test_ghc_version",
+    _default_ghc_version = "test_ghc_version",
 )
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+
+test_ghc_version = GHC_VERSION or _default_ghc_version
 
 haskell_register_ghc_nixpkgs(
     attribute_path = "",
@@ -90,7 +93,9 @@ haskell_register_ghc_nixpkgs(
     ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
     locale_archive = "@glibc_locales//:locale-archive",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
+    nix_file_content = """with import <nixpkgs> {{}}; haskell.packages.ghc{version}.ghc""".format(
+        version = test_ghc_version.replace(".", ""),
+    ),
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,
@@ -100,7 +105,6 @@ load(
     "@rules_haskell//haskell:ghc_bindist.bzl",
     "haskell_register_ghc_bindists",
 )
-load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 haskell_register_ghc_bindists(
     cabalopts = test_cabalopts,
@@ -269,27 +273,31 @@ stack_snapshot(
         "temporary",
     ],
     setup_deps = {
-        "polysemy": ["cabal-doctest"],
-        # See https://github.com/tweag/rules_haskell/issues/1871
-        "HUnit": ["@Cabal//:Cabal"],
-        "bifunctors": ["@Cabal//:Cabal"],
-        "c2hs": ["@Cabal//:Cabal"],
-        "call-stack": ["@Cabal//:Cabal"],
-        "doctest": ["@Cabal//:Cabal"],
-        "generic-deriving": ["@Cabal//:Cabal"],
-        "happy": ["@Cabal//:Cabal"],
-        "hspec": ["@Cabal//:Cabal"],
-        "hspec-core": ["@Cabal//:Cabal"],
-        "hspec-discover": ["@Cabal//:Cabal"],
-        "hspec-expectations": ["@Cabal//:Cabal"],
-        "mono-traversable": ["@Cabal//:Cabal"],
-        "proto-lens-protoc": ["@Cabal//:Cabal"],
-        "proto-lens-runtime": ["@Cabal//:Cabal"],
-        "quickcheck-io": ["@Cabal//:Cabal"],
-        "transformers-compat": ["@Cabal//:Cabal"],
-        "type-errors": ["@Cabal//:Cabal"],
-        "typed-process": ["@Cabal//:Cabal"],
-        "unliftio-core": ["@Cabal//:Cabal"],
+        name: deps
+        for name, deps in {
+            "polysemy": ["cabal-doctest"],
+            # See https://github.com/tweag/rules_haskell/issues/1871
+            "HUnit": ["@Cabal//:Cabal"],
+            "bifunctors": ["@Cabal//:Cabal"],
+            "c2hs": ["@Cabal//:Cabal"],
+            "call-stack": ["@Cabal//:Cabal"],
+            "doctest": ["@Cabal//:Cabal"],
+            "generic-deriving": ["@Cabal//:Cabal"],
+            "happy": ["@Cabal//:Cabal"],
+            "hspec": ["@Cabal//:Cabal"],
+            "hspec-core": ["@Cabal//:Cabal"],
+            "hspec-discover": ["@Cabal//:Cabal"],
+            "hspec-expectations": ["@Cabal//:Cabal"],
+            "mono-traversable": ["@Cabal//:Cabal"],
+            "proto-lens-protoc": ["@Cabal//:Cabal"],
+            "proto-lens-runtime": ["@Cabal//:Cabal"],
+            "quickcheck-io": ["@Cabal//:Cabal"],
+            "transformers-compat": ["@Cabal//:Cabal"],
+            "type-errors": ["@Cabal//:Cabal"],
+            "typed-process": ["@Cabal//:Cabal"],
+            "unliftio-core": ["@Cabal//:Cabal"],
+        }.items()
+        if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not GHC_VERSION.startswith("9.6.")
     },
     stack_snapshot_json = "//:stackage_snapshot{}.json".format(
         "_" + str(GHC_VERSION) if GHC_VERSION else "",

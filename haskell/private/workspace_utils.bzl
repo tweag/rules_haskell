@@ -1,5 +1,3 @@
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
-
 def execute_or_fail_loudly(
         repository_ctx,
         arguments,
@@ -34,15 +32,24 @@ def _as_string(v):
         return repr(v)
 
 def find_python(repository_ctx):
-    python = repository_ctx.which("python3")
-    if not python:
-        python = repository_ctx.which("python")
-        if not python:
-            fail("There is no Python in PATH. Please install Python >= 3.3.")
-        result = execute_or_fail_loudly(repository_ctx, [python, "--version"])
-        if not result.stdout.startswith("Python 3"):
-            fail("rules_haskell requires Python >= 3.3. (found {})".format(result.stdout))
-    return python
+    python_version_script = "import sys; v=sys.version_info; print(v.major, v.minor, v.micro, sys.executable)"
+
+    ret = repository_ctx.execute(["python3", "-c", python_version_script])
+
+    if ret.return_code != 0:
+        ret = repository_ctx.execute(["python", "-c", python_version_script])
+
+    if ret.return_code != 0:
+        fail("There is no Python in PATH. Please install Python >= 3.3.")
+
+    tokens = ret.stdout.split("\n")[0].split(" ", 3)
+
+    py_version = [int(c) for c in tokens[0:3]]
+
+    if py_version < [3, 3]:
+        fail("rules_haskell requires Python >= 3.3. (found {})".format(".".join(tokens[0:3])))
+
+    return tokens[-1].replace("\\", "/").rstrip("\r")
 
 def resolve_labels(repository_ctx, labels):
     """

@@ -239,7 +239,7 @@ a single ``BUILD.bazel`` as follows::
   haskell_binary(
       name = "demorgan",
       srcs = ["Main.hs"],
-      compiler_flags = ["-threaded"],
+      ghcopts = ["-threaded"],
       deps = [":base", ":booleans"],
   )
 
@@ -317,7 +317,7 @@ And at the ``main/BUILD.bazel`` file::
   haskell_binary(
       name = "demorgan",
       srcs = ["Main.hs"],
-      compiler_flags = ["-threaded"],
+      ghcopts = ["-threaded"],
       deps = [":base", "//lib:booleans"],
   )
 

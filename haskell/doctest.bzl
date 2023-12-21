@@ -4,7 +4,6 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":private/context.bzl", "haskell_context", "render_env")
-load(":private/set.bzl", "set")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load(
     "@rules_haskell//haskell:providers.bzl",
@@ -87,7 +86,6 @@ def _haskell_doctest_single(target, ctx):
         return []
 
     hs = haskell_context(ctx, ctx.attr)
-    posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
 
     hs_info = target[HaskellInfo]
     cc_info = target[CcInfo]
@@ -150,6 +148,9 @@ def _haskell_doctest_single(target, ctx):
         {env}
         # doctest needs PATH to call GHC and the C compiler and linker.
         export PATH
+        # signal our cc_wrapper to silence linker outputs as GHC < 9.4 writes that to
+        # the GHCI ouput which interferes with doctest's expected ouput
+        export RULES_HASKELL_SILENCE_LINKER=1
         {doctest} "$@" {inputs} > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
         """.format(
             doctest = toolchain.doctest[0].path,

@@ -21,8 +21,11 @@ load(
 )
 load(
     "@rules_haskell//:constants.bzl",
-    "test_ghc_version",
+    _default_ghc_version = "test_ghc_version",
 )
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+
+test_ghc_version = GHC_VERSION or _default_ghc_version
 
 # Replaces local_repository in bzlmod
 # See https://groups.google.com/g/bazel-discuss/c/xpsg3mWQPZg
@@ -63,12 +66,9 @@ def repositories(*, bzlmod):
     # no modules are provided at the moment for buildifier
     http_archive(
         name = "com_github_bazelbuild_buildtools",
-        sha256 = "977a0bd4593c8d4c8f45e056d181c35e48aa01ad4f8090bdb84f78dca42f47dc",
-        # fix runner.bash.template always returning success, format MODULE.bazel and WORKSPACE.bzlmod too
-        patches = ["@rules_haskell//buildifier:buildifier_test-workspace.patch"],
-        patch_args = ["-p1"],
-        strip_prefix = "buildtools-6.1.2",
-        urls = ["https://github.com/bazelbuild/buildtools/archive/v6.1.2.tar.gz"],
+        sha256 = "05c3c3602d25aeda1e9dbc91d3b66e624c1f9fdadf273e5480b489e744ca7269",
+        strip_prefix = "buildtools-6.4.0",
+        urls = ["https://github.com/bazelbuild/buildtools/archive/v6.4.0.tar.gz"],
     )
 
     nixpkgs_local_repository(
@@ -78,7 +78,9 @@ def repositories(*, bzlmod):
 
     haskell_register_ghc_nixpkgs(
         attribute_path = "",
-        nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc925.ghc""",
+        nix_file_content = """with import <nixpkgs> {{}}; haskell.packages.ghc{version}.ghc""".format(
+            version = test_ghc_version.replace(".", ""),
+        ),
         repository = "@nixpkgs_default",
         version = test_ghc_version,
         register = not bzlmod,

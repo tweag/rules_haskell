@@ -1,6 +1,5 @@
 """Workspace rules (repositories)"""
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(
@@ -9,8 +8,8 @@ load(
 )
 load(":private/ghc_ci.bzl", "ghc_default_version")
 
-_rules_nixpkgs_version = "7e627d76ba65d6c42586fc265e46bd370672b4eb"
-_rules_nixpkgs_sha256 = "714a0bec45d23bfc23604de5d292a68f6e12272b303fb7bf33567d2878f52612"
+_rules_nixpkgs_version = "0.10.0"
+_rules_nixpkgs_sha256 = "980edfceef2e59e1122d9be6c52413bc298435f0a3d452532b8a48d7562ffd67"
 
 _rules_sh_version = "v0.3.0"
 _rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
@@ -23,26 +22,6 @@ def rules_haskell_dependencies_bzlmod():
         name = "rules_haskell_ghc_version",
     )
 
-    # Dependency of com_google_protobuf.
-    # TODO(judahjacobson): this is a bit of a hack.
-    # We can't call that repository's protobuf_deps() function
-    # from here, because load()ing it from this .bzl file would lead
-    # to a cycle:
-    # https://github.com/bazelbuild/bazel/issues/1550
-    # https://github.com/bazelbuild/bazel/issues/1943
-    # For now, just hard-code the subset that's needed to use `protoc`.
-    # Alternately, consider adding another function from another
-    # .bzl file that needs to be called from WORKSPACE, similar to:
-    # https://github.com/grpc/grpc/blob/8c9dcf7c35e489c2072a9ad86635dbc4e28f88ea/bazel/grpc_extra_deps.bzl#L10
-    maybe(
-        http_archive,
-        name = "zlib",
-        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-        sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
-        strip_prefix = "zlib-1.2.11",
-        urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
-    )
-
 def rules_haskell_dependencies():
     """Provide all repositories that are necessary for `rules_haskell` to function."""
     if "bazel_version" in dir(native):
@@ -52,28 +31,28 @@ def rules_haskell_dependencies():
         http_archive,
         name = "platforms",
         urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.7/platforms-0.0.7.tar.gz",
-            "https://github.com/bazelbuild/platforms/releases/download/0.0.7/platforms-0.0.7.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+            "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
         ],
-        sha256 = "3a561c99e7bdbe9173aa653fd579fe849f1d8d67395780ab4770b1f381431d51",
+        sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
     )
 
     maybe(
         http_archive,
         name = "bazel_skylib",
         urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
-            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
+            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz",
+            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz",
         ],
-        sha256 = "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
+        sha256 = "cd55a062e763b9349921f0f5db8c3933288dc8ba4f76dd9416aac68acee3cb94",
     )
 
     maybe(
         http_archive,
         name = "rules_cc",
-        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.7/rules_cc-0.0.7.tar.gz"],
-        sha256 = "eb389b5b74862a3d310ee9d6c63348388223b384ae4423ff0fd286fcd123942d",
-        strip_prefix = "rules_cc-0.0.7",
+        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.9/rules_cc-0.0.9.tar.gz"],
+        sha256 = "2037875b9a4456dce4a79d112a8ae885bbc4aad968e6587dca6e64f3a0900cdf",
+        strip_prefix = "rules_cc-0.0.9",
     )
 
     maybe(
@@ -97,26 +76,32 @@ def rules_haskell_dependencies():
         #
         # See https://github.com/tweag/rules_nixpkgs/issues/182 for the rational
 
-        strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version.lstrip("v")
+        strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version
+
+        rules_nixpkgs_url = \
+            "https://github.com/tweag/rules_nixpkgs/releases/download/v{version}/{prefix}.tar.gz".format(
+                version = _rules_nixpkgs_version,
+                prefix = strip_prefix,
+            )
 
         http_archive(
             name = "io_tweag_rules_nixpkgs",
             strip_prefix = strip_prefix,
-            urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+            urls = [rules_nixpkgs_url],
             sha256 = _rules_nixpkgs_sha256,
         )
 
         # required by rules_nixpkgs
         http_archive(
             name = "rules_nodejs",
-            sha256 = "08337d4fffc78f7fe648a93be12ea2fc4e8eb9795a4e6aa48595b66b34555626",
-            urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.0/rules_nodejs-core-5.8.0.tar.gz"],
+            sha256 = "8fc8e300cb67b89ceebd5b8ba6896ff273c84f6099fc88d23f24e7102319d8fd",
+            urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.4/rules_nodejs-core-5.8.4.tar.gz"],
         )
 
         http_archive(
             name = "rules_nixpkgs_core",
             strip_prefix = strip_prefix + "/core",
-            urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+            urls = [rules_nixpkgs_url],
             sha256 = _rules_nixpkgs_sha256,
         )
 
@@ -124,29 +109,58 @@ def rules_haskell_dependencies():
             http_archive(
                 name = "rules_nixpkgs_" + toolchain,
                 strip_prefix = strip_prefix + "/toolchains/" + toolchain,
-                urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % _rules_nixpkgs_version],
+                urls = [rules_nixpkgs_url],
                 sha256 = _rules_nixpkgs_sha256,
             )
 
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "87407cd28e7a9c95d9f61a098a53cf031109d451a7763e7dd1253abf8b4df422",
-        strip_prefix = "protobuf-3.19.1",
+        sha256 = "22fdaf641b31655d4b2297f9981fa5203b2866f8332d3c6333f6b0107bb320de",
+        strip_prefix = "protobuf-21.12",
         urls = [
-            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.19.1.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v21.12.tar.gz",
         ],
     )
 
     maybe(
         http_archive,
         name = "aspect_rules_js",
-        sha256 = "7b2a4d1d264e105eae49a27e2e78065b23e2e45724df2251eacdd317e95bfdfd",
-        strip_prefix = "rules_js-1.31.0",
-        url = "https://github.com/aspect-build/rules_js/releases/download/v1.31.0/rules_js-v1.31.0.tar.gz",
+        sha256 = "d9ceb89e97bb5ad53b278148e01a77a3e9100db272ce4ebdcd59889d26b9076e",
+        strip_prefix = "rules_js-1.34.0",
+        url = "https://github.com/aspect-build/rules_js/releases/download/v1.34.0/rules_js-v1.34.0.tar.gz",
     )
 
     rules_haskell_dependencies_bzlmod()
+
+    # Dependency of com_google_protobuf.
+    # TODO(judahjacobson): this is a bit of a hack.
+    # We can't call that repository's protobuf_deps() function
+    # from here, because load()ing it from this .bzl file would lead
+    # to a cycle:
+    # https://github.com/bazelbuild/bazel/issues/1550
+    # https://github.com/bazelbuild/bazel/issues/1943
+    # For now, just hard-code the subset that's needed to use `protoc`.
+    # Alternately, consider adding another function from another
+    # .bzl file that needs to be called from WORKSPACE, similar to:
+    # https://github.com/grpc/grpc/blob/8c9dcf7c35e489c2072a9ad86635dbc4e28f88ea/bazel/grpc_extra_deps.bzl#L10
+    maybe(
+        http_archive,
+        name = "zlib",
+        build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+        sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
+        strip_prefix = "zlib-1.3",
+        urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
+    )
+    maybe(
+        http_archive,
+        name = "rules_pkg",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.9.1/rules_pkg-0.9.1.tar.gz",
+            "https://github.com/bazelbuild/rules_pkg/releases/download/0.9.1/rules_pkg-0.9.1.tar.gz",
+        ],
+        sha256 = "8f9ee2dc10c1ae514ee599a8b42ed99fa262b757058f65ad3c384289ff70c4b8",
+    )
 
     # For --incompatible_disable_starlark_host_transitions support (default in bazel 7)
     # Temporarily overrides the rules_licence that comes with bazel to workaround

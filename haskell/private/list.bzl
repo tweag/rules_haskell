@@ -1,6 +1,5 @@
 """Helper functions on lists."""
 
-load(":private/set.bzl", "set")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def _dedup_on(f, list_):

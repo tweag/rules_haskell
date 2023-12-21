@@ -1,0 +1,13 @@
+{
+    "enabledManagers": [
+        "bazel",
+        "bazel-module"
+    ],
+    "extends": [
+        "config:recommended"
+    ],
+    "ignorePaths": ["registry/**"],
+    "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
+    "onboarding": false,
+    "platform": "github"
+}

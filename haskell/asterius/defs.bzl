@@ -47,7 +47,7 @@ asterius_toolchain = rule(
 # select the asterius platform.
 # We also set the asterius_targets_browser back to it's default value
 # as it in not needed anymore.
-def _asterius_transition_impl(settings, attr):
+def _asterius_transition_impl(_settings, _attr):
     return {
         "//command_line_option:platforms": "@rules_haskell//haskell/asterius:asterius_platform",
         "@rules_haskell_asterius_build_setting//:asterius_targets_browser": False,
@@ -64,7 +64,7 @@ _asterius_transition = transition(
 
 # ahc_dist targets used by asterius_webpack rules must be configured for the browser.
 # We use the following transition for this purpose.
-def _set_ahc_dist_browser_target_impl(settings, attr):
+def _set_ahc_dist_browser_target_impl(_settings, _attr):
     return {"@rules_haskell_asterius_build_setting//:asterius_targets_browser": True}
 
 _set_ahc_dist_browser_target = transition(

@@ -1,15 +1,10 @@
 """runghc support"""
 
-load(":private/context.bzl", "render_env")
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(
     ":private/path_utils.bzl",
     "ln",
     "target_unique_name",
-)
-load(
-    ":private/set.bzl",
-    "set",
 )
 load(
     ":private/cc_libraries.bzl",

@@ -133,8 +133,33 @@ def link_binary(
     args.add_all(cc.linker_flags, format_each = "-optl%s")
     if with_profiling:
         args.add("-prof")
+
+    if hs.toolchain.is_darwin:
+        # assume `otool` and `install_name_tool` are available at the same location as `ar`
+        ar_bindir = paths.dirname(cc.tools.ar)
+
+        args.add(paths.join(ar_bindir, "otool"), format = "-pgmotool=%s")
+        args.add(paths.join(ar_bindir, "install_name_tool"), format = "-pgminstall_name_tool=%s")
+
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
+
+    # NOTE When linking, GHC < 9.6 ignores -fplugin= arguments.
+    #
+    #      GHC >= 9.6, however, tries to locate a package providing the given module.
+    #
+    #      Failing to find a corresponding package it tries to find a source file with
+    #      the given name and .hs, .lhs, .hsig or .lhsig extension.
+    #
+    #      Passing appropriate -package-db and -plugin-package-id flags for
+    #      the given plugin causes GHC to try building a dynamic library instead of
+    #      an executable which fails in the linking step with:
+    #
+    #      > error: main2.o: requires unsupported dynamic reloc 11; recompile with -fPIC
+    #
+    #      Since compilation is already done at this stage, we simply clear all plugins
+    #      here so they do not have any effect.
+    args.add("-fclear-plugins")
 
     # By default, GHC will produce mostly-static binaries, i.e. in which all
     # Haskell code is statically linked and foreign libraries and system
@@ -285,7 +310,7 @@ def _so_extension(hs):
     """
     return "dylib" if hs.toolchain.is_darwin else "so"
 
-def link_library_static(hs, cc, posix, dep_info, object_files, my_pkg_id, with_profiling, libdir = ""):
+def link_library_static(hs, cc, _posix, _dep_info, object_files, my_pkg_id, with_profiling, libdir = ""):
     """Link a static library for the package using given object files.
 
     Returns:
@@ -349,8 +374,28 @@ def link_library_dynamic(hs, cc, posix, dep_info, extra_srcs, object_files, my_p
     args = hs.actions.args()
     args.add_all(cc.linker_flags, format_each = "-optl%s")
     args.add_all(["-shared", "-dynamic"])
+
+    if hs.toolchain.is_darwin:
+        # assume `otool` and `install_name_tool` are available at the same location as `ar`
+        ar_bindir = paths.dirname(cc.tools.ar)
+
+        args.add(paths.join(ar_bindir, "otool"), format = "-pgmotool=%s")
+        args.add(paths.join(ar_bindir, "install_name_tool"), format = "-pgminstall_name_tool=%s")
+
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(compiler_flags)
+
+    # NOTE When linking, GHC < 9.6 ignores -fplugin= arguments.
+    #
+    #      GHC >= 9.6, however, tries to locate a package providing the given module.
+    #
+    #      Failing to find a corresponding package it tries to find a source file with
+    #      the given name and .hs, .lhs, .hsig or .lhsig extension.
+    #
+    #      Since compilation is already done at this stage, we simply clear all plugins
+    #      here so they do not have any effect.
+    args.add("-fclear-plugins")
+
     extra_prefix = empty_lib_prefix
 
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(

@@ -1,5 +1,3 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
 local_repository(
     name = "rules_haskell",
     path = "%RULES_HASKELL_PATH%",
@@ -9,8 +7,6 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 load("@rules_haskell//tools:os_info.bzl", "os_info")
 
 os_info(name = "os_info")
-
-load("@os_info//:os_info.bzl", "is_windows")
 
 rules_haskell_dependencies()
 

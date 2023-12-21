@@ -1,4 +1,3 @@
-load("@rules_python//python:py_binary.bzl", "py_binary")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 
 def _protoc_wrapper_impl(ctx):
