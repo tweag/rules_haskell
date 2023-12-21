@@ -29,4 +29,5 @@ NIX_PATH=nixpkgs="$pwd/nixpkgs/default.nix" \
   bazel run \
   --config=ci \
   --override_repository=rules_haskell="$pwd/.." \
+  --override_module=rules_haskell="$pwd/.." \
   //:example
