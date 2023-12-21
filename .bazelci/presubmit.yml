@@ -27,7 +27,10 @@ tasks:
       if [[ $BAZEL_CONFIG_BZLMOD = yes ]]; then
         echo '--config=bzlmod' >> .bazelrc.local
       fi
+      bazel query --output build @@local_config_platform//:all
+      bazel query --output build @@rules_sh~0.3.0~sh_configure~local_posix_config//:local_posix
     build_flags:
+      - "--toolchain_resolution_debug=@@rules_sh//sh/posix:toolchain_type"
       - "--config=ci-common"
       - "--config=linux-bindist"
       - "--build_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci,-integration"
