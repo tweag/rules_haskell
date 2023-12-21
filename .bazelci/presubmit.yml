@@ -17,21 +17,23 @@ tasks:
       # haskell base uses the environment locale to decode sockets
       LANG: "C.UTF-8"
       BAZEL_USE_CPP_ONLY_TOOLCHAIN: '1'
+      BAZEL_CONFIG_BZLMOD: ${{ bzlmod }}
     shell_commands:
     - |
       if apt --version >/dev/null 2>/dev/null; then
         sudo apt update
         sudo apt install --no-install-recommends -yy libgmp-dev
       fi
+      if [[ $BAZEL_CONFIG_BZLMOD = yes ]]; then
+        echo '--config=bzlmod' >> .bazelrc.local
+      fi
     build_flags:
-      - "--enable_bzlmod=${{ bzlmod }}"
       - "--config=ci-common"
       - "--config=linux-bindist"
       - "--build_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci,-integration"
     build_targets:
       - "//tests/..."
     test_flags:
-      - "--enable_bzlmod=${{ bzlmod }}"
       - "--config=ci-common"
       - "--config=linux-bindist"
       - "--test_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci,-integration"
