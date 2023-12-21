@@ -149,10 +149,12 @@ main = hspec $ do
   it "bazel test examples" $ do
     assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "../examples" }
     assertSuccess $ (bazel ["test", "//..."]) { Process.cwd = Just "../examples" }
+    assertSuccess $ (bazel ["shutdown"]) { Process.cwd = Just "../examples" }
 
   it "bazel test tutorial" $ do
     assertSuccess $ (bazel ["build", "//..."]) { Process.cwd = Just "../tutorial" }
     assertSuccess (bazel ["test", "//..."]) { Process.cwd = Just "../tutorial" }
+    assertSuccess (bazel ["shutdown"]) { Process.cwd = Just "../tutorial" }
 
 -- * Bazel commands
 
