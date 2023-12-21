@@ -9,11 +9,11 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_haskell_nix",
-    version = "0.17",
+    version = "0.18",
 )
 bazel_dep(
     name = "rules_haskell",
-    version = "0.17",
+    version = "0.18",
 )
 
 # TODO
