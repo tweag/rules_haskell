@@ -19,7 +19,7 @@ tasks:
       BAZEL_USE_CPP_ONLY_TOOLCHAIN: '1'
     shell_commands:
     - |
-      if [[ ${{ platform }} = ubuntu* ]]; then
+      if apt --version >/dev/null 2>/dev/null; then
         sudo apt update
         sudo apt install --no-install-recommends -yy libgmp-dev
       fi
