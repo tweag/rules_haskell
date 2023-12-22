@@ -170,7 +170,9 @@ bazelQuery q = lines <$> runIO (Process.readProcess "bazel" ["query", q] "")
 
 shutdownBazel :: IO ()
 shutdownBazel = do
-  putStrLn "MADE IT!"
+  -- DEBUG BEGIN
+  putStrLn "Shutting down Bazel."
+  -- DEBUG END
   assertSuccess (bazel ["shutdown"]) 
   pure ()
 
