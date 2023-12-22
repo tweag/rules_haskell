@@ -3,7 +3,6 @@ exports_files(["start"])
 exports_files(
     [
         ".netlify/build.sh",
-        ".netlify/install.sh",
         "serve-docs.sh",
     ],
     visibility = ["//tests/shellcheck:__pkg__"],

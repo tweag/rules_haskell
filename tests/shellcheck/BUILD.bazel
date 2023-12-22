@@ -42,12 +42,6 @@ shellcheck(
 )
 
 shellcheck(
-    name = "netlify-install",
-    args = ["$(location @rules_haskell//:.netlify/install.sh)"],
-    data = ["@rules_haskell//:.netlify/install.sh"],
-)
-
-shellcheck(
     name = "serve-docs",
     args = ["$(location @rules_haskell//:serve-docs.sh)"],
     data = ["@rules_haskell//:serve-docs.sh"],

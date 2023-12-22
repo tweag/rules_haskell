@@ -46,11 +46,6 @@ jobs:
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
-      - name: Install Bazel
-        shell: bash
-        run: |
-          BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
-          mv $BAZEL_DIR $HOME/bazel
       - name: Configure
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
