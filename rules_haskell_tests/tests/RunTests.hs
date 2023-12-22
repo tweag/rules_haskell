@@ -182,7 +182,8 @@ shutdownBazel = do
 printMem :: String -> IO ()
 printMem msg = do
   putStrLn msg
-  (_, stdOut, _) <- Process.readProcessWithExitCode "/usr/bin/memory_pressure" [] ""
+  -- (_, stdOut, _) <- Process.readProcessWithExitCode "/usr/bin/memory_pressure" [] ""
+  (_, stdOut, _) <- Process.readProcessWithExitCode "/usr/bin/top" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
   putStrLn stdOut
 
 -- Generated dependencies for testing the ghcide support
