@@ -13,6 +13,7 @@ workdir=/tmp/bazel-run-start-script
 rm -rf $workdir
 mkdir $workdir
 cd $workdir
+cp "$rules_haskell_dir/.bazelversion" .
 # arguments are passed on to the start script
 "$rules_haskell_dir/start" "$@"
 
