@@ -171,10 +171,19 @@ bazelQuery q = lines <$> runIO (Process.readProcess "bazel" ["query", q] "")
 shutdownBazel :: IO ()
 shutdownBazel = do
   -- DEBUG BEGIN
-  putStrLn "Shutting down Bazel."
+  printMem "BEFORE"
   -- DEBUG END
   assertSuccess (bazel ["shutdown"]) 
+  -- DEBUG BEGIN
+  printMem "AFTER"
+  -- DEBUG END
   pure ()
+
+printMem :: String -> IO ()
+printMem msg = do
+  putStrLn msg
+  (_, stdOut, _) <- Process.readProcessWithExitCode "/usr/bin/memory_pressure" [] ""
+  putStrLn stdOut
 
 -- Generated dependencies for testing the ghcide support
 _ghciIDE :: Int
