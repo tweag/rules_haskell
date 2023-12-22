@@ -5,7 +5,8 @@
 
 set -e
 
-pwd=$(pwd)
+rules_haskell_dir=$(cd ..; pwd)
+
 # Always run start script in the same directory, for caching.
 # See https://docs.bazel.build/versions/master/output_directories.html.
 workdir=/tmp/bazel-run-start-script
@@ -13,7 +14,7 @@ rm -rf $workdir
 mkdir $workdir
 cd $workdir
 # arguments are passed on to the start script
-"$pwd/../start" "$@"
+"$rules_haskell_dir/start" "$@"
 
 # Set Nixpkgs in environment variable to avoid hardcoding it in
 # start script itself.
@@ -25,9 +26,9 @@ cd $workdir
 # changes, then we need to adapt to those changes in the branch.
 # Which in turn means the start script should pull in those changes too.
 
-NIX_PATH=nixpkgs="$pwd/nixpkgs/default.nix" \
+NIX_PATH=nixpkgs="$rules_haskell_dir/nixpkgs/default.nix" \
   bazel run \
   --config=ci \
-  --override_repository=rules_haskell="$pwd/.." \
-  --override_module=rules_haskell="$pwd/.." \
+  --override_repository=rules_haskell="$rules_haskell_dir" \
+  --override_module=rules_haskell="$rules_haskell_dir" \
   //:example
