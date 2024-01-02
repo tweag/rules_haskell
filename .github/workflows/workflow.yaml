@@ -43,8 +43,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
+        # TODO(chuck): FIX ME!
+        # os: [ubuntu-latest, macos-latest]
+        # module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
+        os: [macos-latest]
+        module: [rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
           - 9.2.8
@@ -130,7 +133,15 @@ jobs:
             # Shutdown Bazel to free up memory
             # https://github.com/tweag/rules_haskell/issues/2089.
             bazel shutdown
+            # DEBUG BEGIN
+            echo >&2 "CHUCK BEFORE"
+            top -l 1 -s 0 -o mem | head -n 25 >&2
+            # DEBUG END
             ./bazel-ci-bin/tests/run-tests
+            # DEBUG BEGIN
+            echo >&2 "CHUCK AFTER"
+            top -l 1 -s 0 -o mem | head -n 25 >&2
+            # DEBUG END
             bazel coverage //...
 
   test-bindist:
