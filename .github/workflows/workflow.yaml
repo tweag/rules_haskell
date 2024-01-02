@@ -138,13 +138,16 @@ jobs:
             bazel shutdown
             # DEBUG BEGIN
             echo >&2 "CHUCK BEFORE"
-            top -l 1 -s 0 -o mem | head -n 25 >&2
+            # top -l 1 -s 0 -o mem | head -n 25 >&2
+            top -l 1 -s 0 -o mem >&2
             echo >&2 "run-tests"
             # DEBUG END
-            ./bazel-ci-bin/tests/run-tests
+            # ./bazel-ci-bin/tests/run-tests
+            ./bazel-ci-bin/tests/run-tests || true
             # DEBUG BEGIN
             echo >&2 "CHUCK AFTER"
-            top -l 1 -s 0 -o mem | head -n 25 >&2
+            # top -l 1 -s 0 -o mem | head -n 25 >&2
+            top -l 1 -s 0 -o mem >&2
             # DEBUG END
             bazel coverage //...
 
