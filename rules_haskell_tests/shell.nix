@@ -38,7 +38,10 @@ mkShell {
     file
   ] ++ lib.optionals docTools [ graphviz python39Packages.sphinx zip unzip ];
 
-  packages = [ bazel_6 ];
+  # packages = [ bazel_6 ];
+  # DEBUG BEGIN
+  packages = [ bazel_6 darwin.top ];
+  # DEBUG END
 
   shellHook = ''
     # Add nix config flags to .bazelrc.local.
