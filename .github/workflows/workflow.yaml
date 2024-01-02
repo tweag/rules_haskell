@@ -124,6 +124,9 @@ jobs:
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_tests
+          # DEBUG BEGIN
+          pure: false
+          # DEBUG END
           run: |
             # XXX run start script `--with-bzlmod=true` when supported
             if ! ${{ matrix.bzlmod }}; then
