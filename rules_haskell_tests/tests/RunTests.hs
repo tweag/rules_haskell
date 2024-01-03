@@ -171,8 +171,8 @@ bazelQuery q = lines <$> runIO (Process.readProcess "bazel" ["query", q] "")
 shutdownBazel :: IO ()
 shutdownBazel = do
   -- Related to https://github.com/tweag/rules_haskell/issues/2089
-  -- We experience intermittent "Exit Code: ExitFailure (-9)" errors. Added the 
-  -- printMemory calls to help us debug when the error happens again.
+  -- We experience intermittent "Exit Code: ExitFailure (-9)" errors. Shutdown 
+  -- Bazel when done executing tests for the workspace.
   assertSuccess (bazel ["shutdown"]) 
   pure ()
 
@@ -181,7 +181,7 @@ printMemoryHook :: IO () -> IO ()
 printMemoryHook action = bracket_
   (printMemory "BEFORE")
   (printMemory "AFTER")
-  (const action)
+  action
 
 -- | Print information about the current memory state to debug intermittent failures
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
