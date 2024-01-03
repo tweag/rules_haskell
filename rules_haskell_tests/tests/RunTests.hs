@@ -181,7 +181,7 @@ shutdownBazel = do
 
 -- | Print memory information before and after each test
 printMemoryHook :: IO () -> IO ()
-printMemoryHook action = bracket
+printMemoryHook action = bracket_
   (printMemory "BEFORE")
   (printMemory "AFTER")
   (const action)
