@@ -189,10 +189,7 @@ printMemoryHook action = bracket_
 printMemory :: String -> IO ()
 printMemory msg = do
   putStrLn msg
-  (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode "top" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
-  -- (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode "/usr/bin/top" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
-  -- (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode "foo" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
-  -- putStrLn stdOut
+  (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode "/usr/bin/top" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
   case exitCode of
     ExitSuccess -> putStrLn stdOut
     ExitFailure _ -> putStrLn ("=== printMemory failed ===\n" ++ stdErr)
