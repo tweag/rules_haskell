@@ -14,7 +14,7 @@ import System.Environment (lookupEnv)
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
-import Test.Hspec (context, hspec, it, describe, runIO, after_, afterAll_)
+import Test.Hspec (context, hspec, it, describe, runIO, around_, afterAll_)
 
 import BinModule (b)
 import GenModule (a)
@@ -22,7 +22,7 @@ import GenModule (a)
 import IntegrationTesting
 
 main :: IO ()
-main = hspec $ afterAll_ shutdownBazel $ after_ printMemoryHook $ do
+main = hspec $ afterAll_ shutdownBazel $ around_ printMemoryHook $ do
   it "bazel test" $ do
     assertSuccess (bazel ["test", "//..."])
 
