@@ -23,7 +23,7 @@ import IntegrationTesting
 
 main :: IO ()
 main = hspec $ do
-  afterAll_ shutdownBazel $ do
+  afterAll_ shutdownBazel $ after_ printMemoryHook $ do
     it "bazel test" $ do
       assertSuccess (bazel ["test", "//..."])
 
@@ -178,6 +178,14 @@ shutdownBazel = do
   assertSuccess (bazel ["shutdown"]) 
   printMemory "AFTER"
   pure ()
+
+-- | Print memory information before and after each test
+printMemoryHook :: IO () -> IO ()
+printMemoryHook action = bracket
+  (printMemory "BEFORE")
+  (printMemory "AFTER")
+  (const action)
+
 
 -- | Print information about the current memory state to debug intermittent failures
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
