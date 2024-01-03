@@ -125,7 +125,7 @@ jobs:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_tests
           # DEBUG BEGIN
-          pure: false
+          # pure: false
           # DEBUG END
           run: |
             # XXX run start script `--with-bzlmod=true` when supported
@@ -136,19 +136,19 @@ jobs:
             # Shutdown Bazel to free up memory
             # https://github.com/tweag/rules_haskell/issues/2089.
             bazel shutdown
-            # DEBUG BEGIN
-            echo >&2 "CHUCK BEFORE"
-            # top -l 1 -s 0 -o mem | head -n 25 >&2
-            top -l 1 -s 0 -o mem >&2
-            echo >&2 "run-tests"
-            # DEBUG END
+            # # DEBUG BEGIN
+            # echo >&2 "CHUCK BEFORE"
+            # # top -l 1 -s 0 -o mem | head -n 25 >&2
+            # top -l 1 -s 0 -o mem >&2
+            # echo >&2 "run-tests"
+            # # DEBUG END
             # ./bazel-ci-bin/tests/run-tests
             ./bazel-ci-bin/tests/run-tests || true
-            # DEBUG BEGIN
-            echo >&2 "CHUCK AFTER"
-            # top -l 1 -s 0 -o mem | head -n 25 >&2
-            top -l 1 -s 0 -o mem >&2
-            # DEBUG END
+            # # DEBUG BEGIN
+            # echo >&2 "CHUCK AFTER"
+            # # top -l 1 -s 0 -o mem | head -n 25 >&2
+            # top -l 1 -s 0 -o mem >&2
+            # # DEBUG END
             bazel coverage //...
 
   test-bindist:
