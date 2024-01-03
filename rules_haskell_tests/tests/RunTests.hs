@@ -11,6 +11,7 @@ import System.FilePath ((</>))
 import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Environment (lookupEnv)
+import System.Exit (ExitCode(..))
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
@@ -179,8 +180,8 @@ shutdownBazel = do
 -- | Print memory information before and after each test
 printMemoryHook :: IO () -> IO ()
 printMemoryHook action = bracket_
-  (printMemory "BEFORE")
-  (printMemory "AFTER")
+  (printMemory "=== BEFORE ===")
+  (printMemory "=== AFTER ===")
   action
 
 -- | Print information about the current memory state to debug intermittent failures
@@ -188,8 +189,13 @@ printMemoryHook action = bracket_
 printMemory :: String -> IO ()
 printMemory msg = do
   putStrLn msg
-  (_, stdOut, _) <- Process.readProcessWithExitCode "/usr/bin/top" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
-  putStrLn stdOut
+  (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode "top" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
+  -- (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode "/usr/bin/top" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
+  -- (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode "foo" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
+  -- putStrLn stdOut
+  case exitCode of
+    ExitSuccess -> putStrLn stdOut
+    ExitFailure _ -> putStrLn ("=== printMemory failed ===\n" ++ stdErr)
 
 -- Generated dependencies for testing the ghcide support
 _ghciIDE :: Int
