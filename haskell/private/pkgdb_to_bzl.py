@@ -57,7 +57,7 @@ def path_to_label(path, pkgroot):
 
         return None if relative_path.startswith('..') else relative_path.replace('\\', '/')
 
-    topdir_relative_path = path.replace(os.path.realpath(pkgroot), "$topdir")
+    topdir_relative_path = path.replace(pkgroot, "$topdir")
     if topdir_relative_path.find("$topdir") != -1:
         return os.path.normpath(topdir_relative_path.replace("$topdir", topdir)).replace('\\', '/')
 
@@ -108,15 +108,14 @@ output = []
 # Accumulate package id to package name mappings.
 pkg_id_map = []
 
-# pkgroot is not part of .conf files. It's a computed value. It is
-# defined to be the directory enclosing the package database
-# directory.
-pkgroot = os.path.dirname(package_conf_dir)
-
-
 for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
     with open(conf, 'r') as f:
         pkg = package_configuration.parse_package_configuration(f)
+
+    # pkgroot is not part of .conf files. It's a computed value. It is
+    # defined to be the directory enclosing the package database
+    # directory.
+    pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
 
     pkg_id_map.append((pkg.name, pkg.id))
 
