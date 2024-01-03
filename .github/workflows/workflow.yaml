@@ -43,24 +43,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO(chuck): FIX ME!
-        # os: [ubuntu-latest, macos-latest]
-        # module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
-        # DEBUG BEGIN
-        os: [macos-latest]
-        module: [rules_haskell_tests]
-        # DEBUG END
-        # TODO(chuck): FIX ME!
-        # bzlmod: [true, false]
-        # ghc:
-        #   - 9.2.8
-        #   - 9.4.6
-        #   - 9.6.2
-        # DEBUG BEGIN
-        bzlmod: [true]
+        os: [ubuntu-latest, macos-latest]
+        module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
+        bzlmod: [true, false]
         ghc:
           - 9.2.8
-        # DEBUG END
+          - 9.4.6
+          - 9.6.2
         exclude:
           - module: rules_haskell_nix
 
@@ -110,10 +99,6 @@ jobs:
           EOF
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
-      # DEBUG BEGIN
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-      # DEBUG END
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
         uses: tweag/run-nix-shell@v0
@@ -136,9 +121,6 @@ jobs:
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_tests
-          # DEBUG BEGIN
-          # pure: false
-          # DEBUG END
           run: |
             # XXX run start script `--with-bzlmod=true` when supported
             if ! ${{ matrix.bzlmod }}; then
@@ -148,19 +130,7 @@ jobs:
             # Shutdown Bazel to free up memory
             # https://github.com/tweag/rules_haskell/issues/2089.
             bazel shutdown
-            # # DEBUG BEGIN
-            # echo >&2 "CHUCK BEFORE"
-            # # top -l 1 -s 0 -o mem | head -n 25 >&2
-            # top -l 1 -s 0 -o mem >&2
-            # echo >&2 "run-tests"
-            # # DEBUG END
             ./bazel-ci-bin/tests/run-tests
-            # ./bazel-ci-bin/tests/run-tests || true
-            # # DEBUG BEGIN
-            # echo >&2 "CHUCK AFTER"
-            # # top -l 1 -s 0 -o mem | head -n 25 >&2
-            # top -l 1 -s 0 -o mem >&2
-            # # DEBUG END
             bazel coverage //...
 
   test-bindist:
