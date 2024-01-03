@@ -46,7 +46,9 @@ jobs:
         # TODO(chuck): FIX ME!
         # os: [ubuntu-latest, macos-latest]
         # module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
+        # DEBUG BEGIN
         os: [macos-latest]
+        # DEBUG END
         module: [rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
