@@ -168,21 +168,22 @@ bazel args = Process.proc "bazel" args
 bazelQuery :: String -> SpecM a [String]
 bazelQuery q = lines <$> runIO (Process.readProcess "bazel" ["query", q] "")
 
+-- | Shutdown Bazel
 shutdownBazel :: IO ()
 shutdownBazel = do
-  -- DEBUG BEGIN
-  printMem "BEFORE"
-  -- DEBUG END
+  -- Related to https://github.com/tweag/rules_haskell/issues/2089
+  -- We experience intermittent "Exit Code: ExitFailure (-9)" errors. Added the 
+  -- printMemory calls to help us debug when the error happens again.
+  printMemory "BEFORE"
   assertSuccess (bazel ["shutdown"]) 
-  -- DEBUG BEGIN
-  printMem "AFTER"
-  -- DEBUG END
+  printMemory "AFTER"
   pure ()
 
-printMem :: String -> IO ()
-printMem msg = do
+-- | Print information about the current memory state to debug intermittent failures
+-- Related to https://github.com/tweag/rules_haskell/issues/2089
+printMemory :: String -> IO ()
+printMemory msg = do
   putStrLn msg
-  -- (_, stdOut, _) <- Process.readProcessWithExitCode "/usr/bin/memory_pressure" [] ""
   (_, stdOut, _) <- Process.readProcessWithExitCode "/usr/bin/top" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
   putStrLn stdOut
 
