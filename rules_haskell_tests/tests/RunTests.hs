@@ -183,7 +183,6 @@ printMemoryHook action = bracket_
   (printMemory "AFTER")
   (const action)
 
-
 -- | Print information about the current memory state to debug intermittent failures
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
 printMemory :: String -> IO ()
