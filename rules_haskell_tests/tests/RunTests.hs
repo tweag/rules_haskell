@@ -14,7 +14,7 @@ import System.Environment (lookupEnv)
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM)
-import Test.Hspec (context, hspec, it, describe, runIO, afterAll_)
+import Test.Hspec (context, hspec, it, describe, runIO, after_, afterAll_)
 
 import BinModule (b)
 import GenModule (a)
