@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -o errexit -o nounset -o pipefail
+
+# This script is called by Bazel before executing the specified command.
+# For more details:
+# https://github.com/bazelbuild/bazel/blob/7f782e3c1a1c4a21beea19c2cedb614be8316e67/scripts/packages/bazel.sh#L34-L39
+
+# MARK - Functions
+
+is_macos() {
+  local os
+  if ! which uname >/dev/null ; then
+    return 1
+  fi
+  os="$( uname -s )"
+  [[ "${os}" == "Darwin" ]]
+}
+
+# MARK - Execute Bazel command
+
+if is_macos ; then
+  # On MacOS, do not use Xcode. Use the client's value if they provided one.
+  [[ -z "${BAZEL_USE_CPP_ONLY_TOOLCHAIN:-}" ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+fi
+
+"${BAZEL_REAL}" "${@}"
