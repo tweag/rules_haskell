@@ -18,6 +18,7 @@ load(
     "resolve_labels",
 )
 load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
+load(":private/bazel_platforms.bzl", "bazel_platforms")
 
 _GHC_DEFAULT_VERSION = DEFAULT_GHC_VERSION
 
@@ -459,15 +460,6 @@ def ghc_bindist(
     toolchain_name = "{}-toolchain".format(name)
 
     patches = None
-    if target == "windows_amd64":
-        # Older GHC versions on Windows contain a bug:
-        # https://gitlab.haskell.org/ghc/ghc/issues/16466
-        # We work around this by patching the base configuration.
-        patches = {
-            "8.6.5": ["@rules_haskell//haskell:assets/ghc_8_6_5_win_base.patch"],
-            "8.8.4": ["@rules_haskell//haskell:assets/ghc_8_8_4_win_base.patch"],
-        }.get(version)
-
     if target == "darwin_amd64":
         patches = {
             # Patch for https://gitlab.haskell.org/ghc/ghc/-/issues/19963
@@ -567,7 +559,7 @@ def haskell_register_ghc_bindists(
         configure_python3_toolchain(name = LOCAL_PYTHON_REPO_NAME, register = register)
 
 def _configure_python3_toolchain_impl(repository_ctx):
-    cpu = get_cpu_value(repository_ctx)
+    os_cpu = get_cpu_value(repository_ctx)
     python3_path = find_python(repository_ctx)
     if check_bazel_version("4.2.0")[0]:
         stub_shebang = """stub_shebang = "#!{python3_path}",""".format(
@@ -595,20 +587,18 @@ toolchain(
     toolchain = ":py_runtime_pair",
     toolchain_type = "@bazel_tools//tools/python:toolchain_type",
     exec_compatible_with = [
-        "@platforms//cpu:x86_64",
+        "@platforms//cpu:{cpu}",
         "@platforms//os:{os}",
     ],
     target_compatible_with = [
-        "@platforms//cpu:x86_64",
+        "@platforms//cpu:{cpu}",
         "@platforms//os:{os}",
     ],
 )
 """.format(
         python3 = python3_path,
-        os = {
-            "darwin": "osx",
-            "x64_windows": "windows",
-        }.get(cpu, "linux"),
+        os = bazel_platforms.get_os(os_cpu),
+        cpu = bazel_platforms.get_cpu(os_cpu),
         stub_shebang = stub_shebang,
     ))
 

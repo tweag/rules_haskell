@@ -99,18 +99,12 @@ jobs:
           EOF
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
-      - name: Check Bazel version
-        uses: tweag/run-nix-shell@v0
-        with:
-          options: ${{ env.NIX_SHELL_ARGS }}
-          run: .ci/check-bazel-version
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
         uses: tweag/run-nix-shell@v0
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
           run: |
-            set -euo pipefail
             bazel test //...
             bazel build //docs:api_html
             bazel build //docs:guide_html
@@ -119,23 +113,23 @@ jobs:
         uses: tweag/run-nix-shell@v0
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
-          run: |
-            set -euo pipefail
-            cd rules_haskell_nix
-            bazel test //...
+          working-directory: rules_haskell_nix
+          run: bazel test //...
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
         uses: tweag/run-nix-shell@v0
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
+          working-directory: rules_haskell_tests
           run: |
-            set -euo pipefail
-            cd rules_haskell_tests
             # XXX run start script `--with-bzlmod=true` when supported
             if ! ${{ matrix.bzlmod }}; then
               ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
             fi
             bazel build //tests:run-tests
+            # Shutdown Bazel to free up memory
+            # https://github.com/tweag/rules_haskell/issues/2089.
+            bazel shutdown
             ./bazel-ci-bin/tests/run-tests
             bazel coverage //...
 
@@ -179,12 +173,6 @@ jobs:
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
-      - name: Install Bazel
-        shell: bash
-        run: |
-          BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
-          mv $BAZEL_DIR $HOME/bazel
-          echo "$HOME/bazel" >> "$GITHUB_PATH"
       - uses: tweag/configure-bazel-remote-cache-auth@v0
         with:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
@@ -229,7 +217,7 @@ jobs:
         shell: bash
         run: |
           # Quote the package specifier so that it works on Windows
-          bazel test "//..."
+          bazelisk test "//..."
 
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
@@ -238,11 +226,11 @@ jobs:
           cd rules_haskell_tests
           ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
           # Quote the package specifier so that it works on Windows
-          bazel test "//..."
+          bazelisk test "//..."
           # Test stack_snapshot pinning
           # NOTE keep in sync with tests/RunTests.hs
-          bazel run @stackage-pinning-test-unpinned//:pin
-          bazel build @stackage-pinning-test//:hspec
+          bazelisk run @stackage-pinning-test-unpinned//:pin
+          bazelisk build @stackage-pinning-test//:hspec
 
       - name: Collect Logs
         id: collect_logs
@@ -255,7 +243,7 @@ jobs:
           else
              dir=.
           fi
-          base=$( cd "$dir" ; bazel info output_base )
+          base=$( cd "$dir" ; bazelisk info output_base )
           find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0rI % cp % logs/
 
       - name: Upload Logs
