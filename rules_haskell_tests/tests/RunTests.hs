@@ -183,11 +183,16 @@ buildAndTest path = describe path $ afterAll_ (shutdownBazel path) $ do
 -- * Print Memory Hooks
 
 -- | Print memory information before and after each test
+-- Only perform the hook if RHT_PRINT_MEMORY is "true".
 printMemoryHook :: IO () -> IO ()
-printMemoryHook action = bracket_
-  (printMemory "=== BEFORE ===")
-  (printMemory "=== AFTER ===")
-  action
+printMemoryHook action = do
+  rhtPrintMem <- lookupEnv "RHT_PRINT_MEMORY"
+  case rhtPrintMem of
+    Just "true" -> bracket_
+                     (printMemory "=== BEFORE ===")
+                     (printMemory "=== AFTER ===")
+                     action
+    _ -> action
 
 -- | Print information about the current memory state to debug intermittent failures
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
