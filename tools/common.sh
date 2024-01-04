@@ -18,8 +18,4 @@ if is_macos ; then
   [[ -z "${BAZEL_USE_CPP_ONLY_TOOLCHAIN:-}" ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
 fi
 
-# DEBUG BEGIN
-echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") Actual" 
-# DEBUG END
-
 "${BAZEL_REAL}" "${@}"
