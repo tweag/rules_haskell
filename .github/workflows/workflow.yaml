@@ -130,7 +130,8 @@ jobs:
             # Shutdown Bazel to free up memory
             # https://github.com/tweag/rules_haskell/issues/2089.
             bazel shutdown
-            ./bazel-ci-bin/tests/run-tests
+            # Execute the tests dumping out memory/process information before and after each test.
+            RHT_PRINT_MEMORY=true ./bazel-ci-bin/tests/run-tests
             bazel coverage //...
 
   test-bindist:
