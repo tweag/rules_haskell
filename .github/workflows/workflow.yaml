@@ -158,8 +158,6 @@ jobs:
     env:
       # prevent auto-detection of system compilers on Windows
       BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN: ${{ matrix.os == 'windows-latest' && 1 || 0 }}
-      # do not use Xcode on macOS
-      BAZEL_USE_CPP_ONLY_TOOLCHAIN: ${{ matrix.os == 'macos-latest' && 1 || 0 }}
       GHC_VERSION: ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     steps:
