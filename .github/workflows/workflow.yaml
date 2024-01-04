@@ -89,8 +89,8 @@ jobs:
       - name: Configure
         run: |
           case ${{ runner.os }} in
-            macOS) BUILD_CONFIG=ci-macos-nixpkgs;;
-            Linux) BUILD_CONFIG=ci-linux-nixpkgs;;
+            macOS) BUILD_CONFIG=macos-nixpkgs;;
+            Linux) BUILD_CONFIG=linux-nixpkgs;;
           esac
           cat >>.bazelrc.local <<EOF
           common --config=ci
@@ -186,8 +186,8 @@ jobs:
         shell: bash
         run: |
           case "${{ runner.os }},${{ matrix.module }}" in
-            macOS,*) BUILD_CONFIG=ci-macos-bindist;;
-            Linux,*) BUILD_CONFIG=ci-linux-bindist;;
+            macOS,*) BUILD_CONFIG=macos-bindist;;
+            Linux,*) BUILD_CONFIG=linux-bindist;;
             Windows,rules_haskell) BUILD_CONFIG=ci-windows-bindist-rules-haskell;;
             Windows,rules_haskell_tests) BUILD_CONFIG=ci-windows-bindist-rules-haskell-tests;;
           esac
