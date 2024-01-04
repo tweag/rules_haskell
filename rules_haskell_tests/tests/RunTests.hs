@@ -194,12 +194,25 @@ printMemoryHook action = do
                      action
     _ -> action
 
+topPath :: String
+topPath = "/usr/bin/top"
+
 -- | Print information about the current memory state to debug intermittent failures
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
 printMemory :: String -> IO ()
 printMemory msg = do
+  -- Do not attempt to run top, if it does not exist.
+  (exitCode, _, _) <- Process.readProcessWithExitCode "test" [topPath] ""
+  case exitCode of
+    ExitSuccess -> _doPrintMemory msg
+    ExitFailure _ -> pure ()
+
+-- | Print information about the current memory state to debug intermittent failures
+-- Related to https://github.com/tweag/rules_haskell/issues/2089
+_doPrintMemory :: String -> IO ()
+_doPrintMemory msg = do
   putStrLn msg
-  (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode "/usr/bin/top" ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
+  (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode topPath ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
   case exitCode of
     ExitSuccess -> putStrLn stdOut
     ExitFailure _ -> putStrLn ("=== printMemory failed ===\n" ++ stdErr)
