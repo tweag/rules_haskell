@@ -227,12 +227,21 @@ jobs:
         run: |
           cd rules_haskell_tests
           # DEBUG BEGIN
+          echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") === BEGIN ===" 
           cat >&2 .bazelversion
           bazelisk info
+          echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") === RUN-START-SCRIPT ===" 
+          set -x
           # DEBUG END
           ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
+          # DEBUG BEGIN
+          echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") === BAZELISK TEST ===" 
+          # DEBUG END
           # Quote the package specifier so that it works on Windows
           bazelisk test "//..."
+          # DEBUG BEGIN
+          echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") === BAZELISK RUN ===" 
+          # DEBUG END
           # Test stack_snapshot pinning
           # NOTE keep in sync with tests/RunTests.hs
           bazelisk run @stackage-pinning-test-unpinned//:pin
