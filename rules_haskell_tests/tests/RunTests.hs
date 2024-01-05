@@ -7,7 +7,7 @@ import Control.Exception.Safe (bracket_)
 import Data.Foldable (for_)
 import Data.List (isInfixOf, sort)
 import GHC.Stack (HasCallStack)
-import System.Directory (copyFile)
+import System.Directory (copyFile, doesFileExist)
 import System.FilePath ((</>))
 import System.Info (os)
 import System.IO.Temp (withSystemTempDirectory)
@@ -202,10 +202,10 @@ topPath = "/usr/bin/top"
 printMemory :: String -> IO ()
 printMemory msg = do
   -- Do not attempt to run top, if it does not exist.
-  (exitCode, _, _) <- Process.readProcessWithExitCode "test" [topPath] ""
-  case exitCode of
-    ExitSuccess -> _doPrintMemory msg
-    ExitFailure _ -> pure ()
+  topExists <- doesFileExist topPath
+  if topExists
+    then _doPrintMemory msg
+    else pure()
 
 -- | Print information about the current memory state to debug intermittent failures
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
