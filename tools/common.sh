@@ -18,10 +18,15 @@ if is_macos ; then
   [[ -z "${BAZEL_USE_CPP_ONLY_TOOLCHAIN:-}" ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
 fi
 
+cmd=( "${BAZEL_REAL}" )
+if [[ ${#} -gt 0 ]]; then
+  cmd+=( "${@}" )
+fi
+
 # DEBUG BEGIN
 echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") ===============" 
-echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") BAZEL_USE_CPP_ONLY_TOOLCHAIN: ${BAZEL_USE_CPP_ONLY_TOOLCHAIN}" 
-echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") bazel" "${@}"
+echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") BAZEL_USE_CPP_ONLY_TOOLCHAIN: ${BAZEL_USE_CPP_ONLY_TOOLCHAIN:-}" 
+echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") " "${cmd[@]}"
 # DEBUG END
 
-"${BAZEL_REAL}" "${@}"
+"${cmd[@]}"
