@@ -16,7 +16,7 @@ import System.Exit (ExitCode(..))
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM, SpecWith)
-import Test.Hspec (context, hspec, it, describe, runIO, around_, afterAll_)
+import Test.Hspec (context, hspec, it, describe, runIO, around_, after_, afterAll_)
 
 import BinModule (b)
 import GenModule (a)
@@ -142,7 +142,7 @@ main = hspec $  around_ printStatsHook $ do
       let p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
       outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-ignore-dot-ghci", "-e", "stdin"])
 
-    it "Repl works with remote_download_toplevel" $ do
+    it "Repl works with remote_download_toplevel" $ after_ (shutdownBazel ".") $ do
       let p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
       withSystemTempDirectory "bazel_disk_cache" $ \tmp_disk_cache -> do
         assertSuccess $ bazel ["run", "//tests/multi_repl:c_only_repl", "--disk_cache=" <> tmp_disk_cache]
