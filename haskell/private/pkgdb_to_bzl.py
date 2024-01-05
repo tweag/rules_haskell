@@ -20,7 +20,7 @@ from pathlib import Path
 import package_configuration
 
 def match_glob(root_dir, pattern):
-    return sorted([str(p.relative_to(root_dir)) for p in Path(root_dir).glob(pattern)])
+    return sorted([p.relative_to(root_dir).as_posix() for p in Path(root_dir).glob(pattern)])
 
 if len(sys.argv) == 3:
     repo_dir = "external/" + sys.argv[1]
