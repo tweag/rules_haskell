@@ -15,8 +15,12 @@ import sys
 import textwrap
 import types
 import json
+from pathlib import Path
 
 import package_configuration
+
+def match_glob(root_dir, pattern):
+    return sorted([str(p.relative_to(root_dir)) for p in Path(root_dir).glob(pattern)])
 
 if len(sys.argv) == 3:
     repo_dir = "external/" + sys.argv[1]
@@ -46,7 +50,9 @@ def resolve(path, pkgroot):
     else:
         return path
 
-def path_to_label(path, pkgroot):
+symlinks = {}
+
+def path_to_label(path, pkgroot, output=None):
     """Substitute one pkgroot for another relative one to obtain a label."""
     if path.find("${pkgroot}") != -1:
         # determine if the given path is inside the repository root
@@ -57,9 +63,21 @@ def path_to_label(path, pkgroot):
 
         return None if relative_path.startswith('..') else relative_path.replace('\\', '/')
 
-    topdir_relative_path = path.replace(pkgroot, "$topdir")
-    if topdir_relative_path.find("$topdir") != -1:
+    topdir_relative_path = path.replace(os.path.realpath(pkgroot), "$topdir")
+    if topdir_relative_path.startswith("$topdir"):
         return os.path.normpath(topdir_relative_path.replace("$topdir", topdir)).replace('\\', '/')
+
+    if not output is None:
+        if os.path.isabs(path) and os.path.exists(path):
+            global symlinks
+            lnk = symlinks.get(path)
+            if not lnk:
+                lnk = "lnk_{}".format(len(symlinks))
+                symlinks[path] = lnk
+                output.append("#SYMLINK: {} {}".format(path.replace('\\', '/'), lnk))
+            return lnk
+        else:
+            print("WARN: could not handle", path, file=sys.stderr)
 
 def hs_library_pattern(name, mode = "static", profiling = False):
     """Convert hs-libraries entry to glob patterns.
@@ -115,7 +133,7 @@ for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
     # pkgroot is not part of .conf files. It's a computed value. It is
     # defined to be the directory enclosing the package database
     # directory.
-    pkgroot = os.path.dirname(os.path.dirname(os.path.realpath(conf)))
+    pkgroot = os.path.dirname(os.path.dirname(conf))
 
     pkg_id_map.append((pkg.name, pkg.id))
 
@@ -200,37 +218,36 @@ for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
                 name = pkg.name,
                 id = pkg.id,
                 version = pkg.version,
-                hdrs = "glob({}, allow_empty = True)".format([
-                    path_to_label("{}/**/*.h".format(include_dir), pkgroot)
+                hdrs = [
+                    "/".join([path_to_label(include_dir, pkgroot, output), header])
                     for include_dir in pkg.include_dirs
-                    if path_to_label(include_dir, pkgroot)
-                ]),
-                includes = [
-                    "/".join([repo_dir, path_to_label(include_dir, pkgroot)])
-                    for include_dir in pkg.include_dirs
-                    if path_to_label(include_dir, pkgroot)
+                    for header in match_glob(resolve(include_dir, pkgroot), "**/*.h")
                 ],
-                static_libraries = "glob({}, allow_empty = True)".format([
-                    path_to_label("{}/{}".format(library_dir, pattern), pkgroot)
+                includes = [
+                    "/".join([repo_dir, path_to_label(include_dir, pkgroot, output)])
+                    for include_dir in pkg.include_dirs
+                ],
+                static_libraries = [
+                    "/".join([path_to_label(library_dir, pkgroot, output), library])
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "static", profiling = False)
                     for library_dir in pkg.library_dirs
-                    if path_to_label(library_dir, pkgroot)
-                ]),
-                static_profiling_libraries = "glob({}, allow_empty = True)".format([
-                    path_to_label("{}/{}".format(library_dir, pattern), pkgroot)
+                    for library in match_glob(resolve(library_dir, pkgroot), pattern)
+                ],
+                static_profiling_libraries = [
+                    "/".join([path_to_label(library_dir, pkgroot, output), library])
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "static", profiling = True)
                     for library_dir in pkg.library_dirs
-                    if path_to_label(library_dir, pkgroot)
-                ]),
-                shared_libraries = "glob({}, allow_empty = True)".format([
-                    path_to_label("{}/{}".format(dynamic_library_dir, pattern), pkgroot)
+                    for library in match_glob(resolve(library_dir, pkgroot), pattern)
+                ],
+                shared_libraries = [
+                    "/".join([path_to_label(dynamic_library_dir, pkgroot, output), library])
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "dynamic", profiling = False)
-                    for dynamic_library_dir in pkg.dynamic_library_dirs + pkg.library_dirs
-                    if path_to_label(dynamic_library_dir, pkgroot)
-                ]),
+                    for dynamic_library_dir in set(pkg.dynamic_library_dirs + pkg.library_dirs)
+                    for library in match_glob(resolve(dynamic_library_dir, pkgroot), pattern)
+                ],
                 haddock_html = repr(haddock_html),
                 haddock_interfaces = repr(haddock_interfaces),
                 deps = pkg.depends,
