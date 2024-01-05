@@ -143,6 +143,9 @@ main = hspec $  around_ printStatsHook $ do
       outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-ignore-dot-ghci", "-e", "stdin"])
 
     it "Repl works with remote_download_toplevel" $ do
+      -- This test has a tendency to fail with Exit Code: ExitFailure (-9) on the GitHub macos 
+      -- runners. To give it every chance to succeed, we shutdown Bazel to provide as much 
+      -- memory as possible.
       shutdownBazel "."
       let p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
       withSystemTempDirectory "bazel_disk_cache" $ \tmp_disk_cache -> do
@@ -209,12 +212,8 @@ printStats msg = do
   topExists <- doesFileExist topPath
   dfExists <- doesFileExist dfPath
   if topExists || dfExists then putStrLn msg else pure()
-  if topExists
-    then _printMemory 
-    else pure()
-  if dfExists
-    then _printDiskInfo
-    else pure()
+  if topExists then _printMemory else pure()
+  if dfExists then _printDiskInfo else pure()
 
 -- | Print information about the current memory state to debug intermittent failures
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
