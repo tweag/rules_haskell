@@ -226,6 +226,10 @@ jobs:
         shell: bash
         run: |
           cd rules_haskell_tests
+          # DEBUG BEGIN
+          cat >&2 .bazelversion
+          bazelisk info
+          # DEBUG END
           ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
           # Quote the package specifier so that it works on Windows
           bazelisk test "//..."
