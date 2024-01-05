@@ -19,7 +19,9 @@ if is_macos ; then
 fi
 
 # DEBUG BEGIN
+echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") ===============" 
 echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") BAZEL_USE_CPP_ONLY_TOOLCHAIN: ${BAZEL_USE_CPP_ONLY_TOOLCHAIN}" 
+echo >&2 "*** CHUCK $(basename "${BASH_SOURCE[0]}") bazel" "${@}"
 # DEBUG END
 
 "${BAZEL_REAL}" "${@}"
