@@ -24,7 +24,7 @@ import GenModule (a)
 import IntegrationTesting
 
 main :: IO ()
-main = hspec $  around_ printMemoryHook $ do
+main = hspec $  around_ printStatsHook $ do
 
   describe "rules_haskell_tests" $ afterAll_ (shutdownBazel ".") $  do
     it "bazel test" $ do
@@ -184,38 +184,54 @@ buildAndTest path = describe path $ afterAll_ (shutdownBazel path) $ do
 
 -- | Print memory information before and after each test
 -- Only perform the hook if RHT_PRINT_MEMORY is "true".
-printMemoryHook :: IO () -> IO ()
-printMemoryHook action = do
+printStatsHook :: IO () -> IO ()
+printStatsHook action = do
   rhtPrintMem <- lookupEnv "RHT_PRINT_MEMORY"
   case rhtPrintMem of
     Just "true" -> bracket_
-                     (printMemory "=== BEFORE ===")
-                     (printMemory "=== AFTER ===")
+                     (printStats "=== BEFORE ===")
+                     (printStats "=== AFTER ===")
                      action
     _ -> action
 
 topPath :: String
 topPath = "/usr/bin/top"
 
--- | Print information about the current memory state to debug intermittent failures
+dfPath :: String
+dfPath = "/bin/df"
+
+-- | Print information about the computer state to debug intermittent failures
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
-printMemory :: String -> IO ()
-printMemory msg = do
+printStats :: String -> IO ()
+printStats msg = do
   -- Do not attempt to run top, if it does not exist.
   topExists <- doesFileExist topPath
+  dfExists <- doesFileExist dfPath
+  if topExists || dfExists then putStrLn msg else pure()
   if topExists
-    then _doPrintMemory msg
+    then _printMemory 
+    else pure()
+  if dfExists
+    then _printDiskInfo
     else pure()
 
 -- | Print information about the current memory state to debug intermittent failures
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
-_doPrintMemory :: String -> IO ()
-_doPrintMemory msg = do
-  putStrLn msg
+_printMemory :: IO ()
+_printMemory = do
   (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode topPath ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
   case exitCode of
     ExitSuccess -> putStrLn stdOut
-    ExitFailure _ -> putStrLn ("=== printMemory failed ===\n" ++ stdErr)
+    ExitFailure _ -> putStrLn ("=== _printMemory failed ===\n" ++ stdErr)
+
+-- | Print information about the disk drives to debug intermittent failures
+-- Related to https://github.com/tweag/rules_haskell/issues/2089
+_printDiskInfo :: IO ()
+_printDiskInfo = do
+  (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode dfPath ["-H"] ""
+  case exitCode of
+    ExitSuccess -> putStrLn stdOut
+    ExitFailure _ -> putStrLn ("=== _printDiskInfo failed ===\n" ++ stdErr)
 
 -- Generated dependencies for testing the ghcide support
 _ghciIDE :: Int
