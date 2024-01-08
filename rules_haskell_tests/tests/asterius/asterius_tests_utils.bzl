@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load(
     "@rules_haskell//haskell/asterius:defs.bzl",
     "ahc_dist",
@@ -6,7 +7,12 @@ load(
     "asterius_webpack",
 )
 
-tags = ["dont_test_on_windows", "dont_test_on_darwin", "skip_profiling", "dont_test_on_bazel_lt_4"]
+tags = ["dont_test_on_windows", "skip_profiling", "dont_test_on_bazel_lt_4"]
+
+target_compatible_with = selects.with_or({
+    ("//platforms/os:macos"): ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
 
 def asterius_test_macro(
         dep_label,
@@ -22,6 +28,7 @@ def asterius_test_macro(
         entry_point = entry_point,
         testonly = True,
         tags = tags,
+        target_compatible_with = target_compatible_with,
     )
 
     asterius_test(
@@ -30,6 +37,7 @@ def asterius_test_macro(
         entry_point = entry_point,
         testonly = True,
         tags = tags,
+        target_compatible_with = target_compatible_with,
     )
 
     asterius_binary(
@@ -38,6 +46,7 @@ def asterius_test_macro(
         entry_point = entry_point,
         testonly = True,
         tags = tags,
+        target_compatible_with = target_compatible_with,
     )
 
     # TODO the following `asterius_binary_from_genrule` rule is meant to test
@@ -51,6 +60,7 @@ def asterius_test_macro(
         tools = [":asterius_binary" + suffix],
         testonly = True,
         tags = tags + ["manual"],
+        target_compatible_with = target_compatible_with,
     )
 
     asterius_webpack(
@@ -59,4 +69,5 @@ def asterius_test_macro(
         entry_point = entry_point,
         testonly = True,
         tags = tags,
+        target_compatible_with = target_compatible_with,
     )
