@@ -1,10 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 load(
-    "@rules_haskell//haskell:private/haskell_impl.bzl",
-    "haskell_toolchain_libraries",
-)
-load(
     "@rules_haskell//haskell:private/cc_wrapper.bzl",
     "cc_wrapper",
 )
@@ -167,10 +163,6 @@ toolchain_type(
 # implemented, yet. See
 # https://github.com/bazelbuild/proposals/blob/master/designs/2019-02-12-toolchain-transitions.md
 # This will need to be revisited once that proposal is implemented.
-haskell_toolchain_libraries(
-    name = "toolchain-libraries",
-    visibility = ["//visibility:public"],
-)
 
 config_setting(
     name = "use_worker",

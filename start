@@ -449,8 +449,8 @@ if [ "${MODE}" = "nix" ]; then
     cat >> .bazelrc <<-EOF
 	# This project uses a GHC provisioned via nix.
 	# We need to use the rules_haskell nix toolchain accordingly:
-	build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
-	run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+	build --host_platform=@rules_nixpkgs_core//platforms:host
+	run --host_platform=@rules_nixpkgs_core//platforms:host
 
 	EOF
 fi
