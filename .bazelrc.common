@@ -23,6 +23,19 @@ common --incompatible_disallow_empty_glob=true
 # as LOCALE_ARCHIVE We also need to setup an utf8 locale
 test --test_env=LANG=C.UTF-8 --test_env=LOCALE_ARCHIVE
 
+# Enable automatic OS-specific config (e.g. build:linux, build:macos, build:windows).
+common --enable_platform_specific_config
+
+# MacOS Configuration
+# -------------------
+# do not use Xcode on macOS
+common:macos --repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+
+# Windows Configuration
+# ---------------------
+# prevent auto-detection of system compilers on Windows
+common:windows --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
 # Platform / Toolchain Selection
 # ------------------------------
 build:linux-nixpkgs --config=nixpkgs

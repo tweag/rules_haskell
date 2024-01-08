@@ -443,6 +443,19 @@ common --enable_bzlmod=$BZLMOD
 # Should become the default in bazel 7
 build --incompatible_enable_cc_toolchain_resolution
 
+# Enable automatic OS-specific config (e.g. build:linux, build:macos, build:windows).
+common --enable_platform_specific_config
+
+# MacOS Configuration
+# -------------------
+# do not use Xcode on macOS
+common:macos --repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+
+# Windows Configuration
+# ---------------------
+# prevent auto-detection of system compilers on Windows
+common:windows --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
 EOF
 
 if [ "${MODE}" = "nix" ]; then
