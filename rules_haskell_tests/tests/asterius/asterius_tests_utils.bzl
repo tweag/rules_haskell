@@ -10,7 +10,7 @@ load(
 tags = ["dont_test_on_windows", "skip_profiling", "dont_test_on_bazel_lt_4"]
 
 target_compatible_with = selects.with_or({
-    ("//platforms/os:macos"): ["@platforms//:incompatible"],
+    ("@platforms//os:macos"): ["@platforms//:incompatible"],
     "//conditions:default": [],
 })
 
