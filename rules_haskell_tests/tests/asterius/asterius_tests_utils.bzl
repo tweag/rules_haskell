@@ -29,6 +29,7 @@ def asterius_test_macro(
         testonly = True,
         tags = tags,
         target_compatible_with = target_compatible_with,
+        exec_compatible_with = target_compatible_with,
     )
 
     asterius_test(
@@ -38,6 +39,7 @@ def asterius_test_macro(
         testonly = True,
         tags = tags,
         target_compatible_with = target_compatible_with,
+        exec_compatible_with = target_compatible_with,
     )
 
     asterius_binary(
@@ -47,6 +49,7 @@ def asterius_test_macro(
         testonly = True,
         tags = tags,
         target_compatible_with = target_compatible_with,
+        exec_compatible_with = target_compatible_with,
     )
 
     # TODO the following `asterius_binary_from_genrule` rule is meant to test
@@ -61,6 +64,7 @@ def asterius_test_macro(
         testonly = True,
         tags = tags + ["manual"],
         target_compatible_with = target_compatible_with,
+        exec_compatible_with = target_compatible_with,
     )
 
     asterius_webpack(
@@ -70,4 +74,5 @@ def asterius_test_macro(
         testonly = True,
         tags = tags,
         target_compatible_with = target_compatible_with,
+        exec_compatible_with = target_compatible_with,
     )
