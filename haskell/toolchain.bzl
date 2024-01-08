@@ -559,7 +559,7 @@ _ahc_haskell_toolchain = rule(
             cfg = "exec",
         ),
     ),
-    toolchains = use_cc_toolchain(),
+    toolchains = use_cc_toolchain(mandatory = True),
     fragments = ["cpp"],
 )
 
@@ -573,7 +573,7 @@ _haskell_toolchain = rule(
             ),
         ),
     ),
-    toolchains = use_cc_toolchain(),
+    toolchains = use_cc_toolchain(mandatory = True),
     fragments = ["cpp"],
 )
 
