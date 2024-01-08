@@ -27,21 +27,14 @@ load(
 load(
     ":providers.bzl",
     "HaddockInfo",
-    "HaskellCcLibrariesInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
-    "HaskellProtobufInfo",
 )
 load(
     ":private/path_utils.bzl",
-    "determine_module_names",
     "get_dynamic_hs_lib_name",
     "get_lib_extension",
     "get_static_hs_lib_name",
-    "infer_main_module",
-    "ln",
-    "match_label",
-    "parse_pattern",
 )
 load(
     ":private/haskell_impl.bzl",

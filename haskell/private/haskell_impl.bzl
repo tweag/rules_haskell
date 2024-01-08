@@ -1,7 +1,6 @@
 """Implementation of core Haskell rules"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     ":providers.bzl",
     "C2hsLibraryInfo",
@@ -35,9 +34,7 @@ load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
     "determine_module_names",
-    "get_dynamic_hs_lib_name",
     "get_lib_extension",
-    "get_static_hs_lib_name",
     "infer_main_module",
     "match_label",
     "parse_pattern",
