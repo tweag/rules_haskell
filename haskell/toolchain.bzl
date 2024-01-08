@@ -561,6 +561,11 @@ _haskell_toolchain = rule(
     _haskell_toolchain_impl,
     attrs = dict(
         common_attrs,
+        _cc_toolchain = attr.label(
+            default = Label(
+                "@rules_cc//cc:current_cc_toolchain",
+            ),
+        ),
     ),
     toolchains = use_cc_toolchain(),
     fragments = ["cpp"],
