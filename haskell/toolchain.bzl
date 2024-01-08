@@ -541,6 +541,11 @@ _ahc_haskell_toolchain = rule(
     _haskell_toolchain_impl,
     attrs = dict(
         common_attrs,
+        _cc_toolchain = attr.label(
+            default = Label(
+                "@rules_cc//cc:current_cc_toolchain",
+            ),
+        ),
         _exec_nodejs_toolchain = attr.label(
             default = Label("@rules_haskell//haskell:current_nodejs_toolchain"),
             cfg = "exec",
@@ -554,6 +559,8 @@ _ahc_haskell_toolchain = rule(
             cfg = "exec",
         ),
     ),
+    toolchains = use_cc_toolchain(),
+    fragments = ["cpp"],
 )
 
 _haskell_toolchain = rule(
