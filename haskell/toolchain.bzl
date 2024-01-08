@@ -220,7 +220,6 @@ def _haskell_toolchain_libraries(ctx, libraries):
         target = libraries[package]
 
         # Construct CcInfo
-        additional_link_inputs = []
         if with_profiling:
             # GHC does not provide dynamic profiling mode libraries. The dynamic
             # libraries that are available are missing profiling symbols, that
