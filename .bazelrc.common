@@ -117,9 +117,7 @@ build:ci-windows-bindist-rules-haskell-tests --remote_default_exec_properties=ca
 
 # XXX: @com_google_protobuf sets `use_default_shell_env = True`, so we enable
 #   strict action env to avoid changes in `PATH` invalidating the cache.
-build:linux-bindist --experimental_strict_action_env
-build:macos-bindist --experimental_strict_action_env
-build:windows-bindist --experimental_strict_action_env
+build --experimental_strict_action_env
 
 # Note [backward compatible options]
 build:linux-bindist --incompatible_enable_cc_toolchain_resolution
