@@ -20,7 +20,7 @@ SUPPORTED_BAZEL_VERSIONS = [
 ]
 
 SUPPORTED_NIXPKGS_BAZEL_PACKAGES = [
-    "bazel_6",
+    "bazel_7",
 ]
 
 def _parse_version_chunk(version_chunk):
