@@ -24,8 +24,30 @@ load(
     "ASTERIUS_BINARIES",
     "asterius_tools_config",
 )
+load(
+    ":providers.bzl",
+    "HaddockInfo",
+    "HaskellInfo",
+    "HaskellLibraryInfo",
+)
+load(
+    ":private/path_utils.bzl",
+    "get_dynamic_hs_lib_name",
+    "get_lib_extension",
+    "get_static_hs_lib_name",
+)
+load(
+    ":private/haskell_impl.bzl",
+    "HaskellImportHack",
+    "HaskellToolchainLibraries",
+)
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
+
+def _toolchain_library_symlink(dynamic_library):
+    prefix = dynamic_library.owner.workspace_root.replace("_", "_U").replace("/", "_S")
+    basename = dynamic_library.basename
+    return paths.join(prefix, basename)
 
 def _run_ghc(
         hs,
@@ -174,6 +196,124 @@ def _lookup_binaries(names, files, version = ""):
             fail("Cannot find {} in {}".format(tool, files))
     return binaries
 
+def _haskell_toolchain_libraries(ctx, libraries):
+    with_profiling = ctx.var["COMPILATION_MODE"] == "dbg"  # TODO is_profiling_enabled(hs)
+    with_threaded = "-threaded" in ctx.attr.ghcopts
+
+    cc_toolchain = find_cc_toolchain(ctx)
+    feature_configuration = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+
+    # List of library in left-to-right post-ordering
+    # Meaning, if package B depends on package A, then A will appear before B.
+    ordered = depset(transitive = [
+        target[HaskellImportHack].transitive_depends
+        for target in libraries.values()
+    ])
+
+    library_dict = {}
+    for package in ordered.to_list():
+        target = libraries[package]
+
+        # Construct CcInfo
+        if with_profiling:
+            # GHC does not provide dynamic profiling mode libraries. The dynamic
+            # libraries that are available are missing profiling symbols, that
+            # other profiling mode build results will reference. Therefore, we
+            # don't import dynamic libraries in profiling mode.
+            libs = {
+                get_static_hs_lib_name(ctx.attr.version, lib): {"static": lib}
+                for lib in target[HaskellImportHack].static_profiling_libraries.to_list()
+            }
+        else:
+            # Workaround for https://github.com/tweag/rules_haskell/issues/881
+            # Static and dynamic libraries don't necessarily pair up 1 to 1.
+            # E.g. the rts package in the Unix GHC bindist contains the
+            # dynamic libHSrts and the static libCffi and libHSrts.
+            libs = {}
+            for lib in target[HaskellImportHack].dynamic_libraries.to_list():
+                libname = get_dynamic_hs_lib_name(ctx.attr.version, lib)
+                if libname == "ffi" and libname in libs:
+                    # Make sure that the file of libffi matching its soname
+                    # ends up in target runfiles. Otherwise, execution will
+                    # fail with "cannot open shared object file" errors.
+                    # On Linux libffi comes in three shapes:
+                    #   libffi.so, libffi.so.7, libffi.so.7.1.0
+                    # (version numbers may vary)
+                    # The soname is then libffi.so.7, meaning, at runtime the
+                    # dynamic linker will look for libffi.so.7. So, that file
+                    # should be the LibraryToLink.dynamic_library.
+                    ext_components = get_lib_extension(lib).split(".")
+                    if len(ext_components) == 2 and ext_components[0] == "so":
+                        libs[libname]["dynamic"] = lib
+                else:
+                    libs[libname] = {"dynamic": lib}
+            for lib in target[HaskellImportHack].static_libraries.to_list():
+                name = get_static_hs_lib_name(with_profiling, lib)
+                entry = libs.get(name, {})
+                entry["static"] = lib
+                libs[name] = entry
+
+            # Avoid duplicate runtime and ffi libraries. These libraries come
+            # in threaded and non-threaded flavors. Depending on the
+            # compilation mode we want to forward only one or the other.
+            # XXX: Threaded mode should be a per-target property. Use Bazel
+            # build configurations and transitions to select the threaded or
+            # non-threaded runtime and ffi on a per-target basis.
+            if "HSrts_thr" in libs:
+                if with_threaded:
+                    libs["HSrts"] = libs["HSrts_thr"]
+                libs.pop("HSrts_thr")
+            if "Cffi_thr" in libs:
+                if with_threaded:
+                    libs["ffi"]["static"] = libs["Cffi_thr"]["static"]
+                libs.pop("Cffi_thr")
+        linker_inputs = [
+            cc_common.create_linker_input(
+                owner = ctx.label,
+                libraries = depset(direct = [
+                    cc_common.create_library_to_link(
+                        actions = ctx.actions,
+                        feature_configuration = feature_configuration,
+                        dynamic_library = lib.get("dynamic", None),
+                        dynamic_library_symlink_path =
+                            _toolchain_library_symlink(lib["dynamic"]) if lib.get("dynamic") else "",
+                        static_library = lib.get("static", None),
+                        cc_toolchain = cc_toolchain,
+                    )
+                    for lib in libs.values()
+                ]),
+                user_link_flags = depset(direct = target[HaskellImportHack].linkopts),
+            ),
+        ]
+        compilation_context = cc_common.create_compilation_context(
+            headers = target[HaskellImportHack].headers,
+            includes = target[HaskellImportHack].includes,
+        )
+        linking_context = cc_common.create_linking_context(
+            linker_inputs = depset(direct = linker_inputs),
+        )
+        cc_info = CcInfo(
+            compilation_context = compilation_context,
+            linking_context = linking_context,
+        )
+        library_dict[package] = struct(
+            default_info = target[DefaultInfo],
+            hs_info = target[HaskellInfo],
+            hs_lib_info = target[HaskellLibraryInfo],
+            cc_info = cc_common.merge_cc_infos(cc_infos = [cc_info] + [
+                library_dict[dep].cc_info
+                for dep in target[HaskellImportHack].depends
+            ]),
+            haddock_info = target[HaddockInfo],
+        )
+
+    return HaskellToolchainLibraries(libraries = library_dict)
+
 def _haskell_toolchain_impl(ctx):
     numeric_version = [int(x) for x in ctx.attr.version.split(".")]
     if numeric_version == [8, 10, 1] or numeric_version == [8, 10, 2]:
@@ -313,7 +453,8 @@ def _haskell_toolchain_impl(ctx):
                 package = package,
                 run_ghc = _run_ghc,
             ),
-            libraries = libraries,
+            old_libraries = libraries,
+            new_libraries = _haskell_toolchain_libraries(ctx, libraries),
             is_darwin = ctx.attr.is_darwin,
             is_windows = ctx.attr.is_windows,
             static_runtime = ctx.attr.static_runtime,
@@ -400,6 +541,11 @@ _ahc_haskell_toolchain = rule(
     _haskell_toolchain_impl,
     attrs = dict(
         common_attrs,
+        _cc_toolchain = attr.label(
+            default = Label(
+                "@rules_cc//cc:current_cc_toolchain",
+            ),
+        ),
         _exec_nodejs_toolchain = attr.label(
             default = Label("@rules_haskell//haskell:current_nodejs_toolchain"),
             cfg = "exec",
@@ -413,13 +559,22 @@ _ahc_haskell_toolchain = rule(
             cfg = "exec",
         ),
     ),
+    toolchains = use_cc_toolchain(mandatory = True),
+    fragments = ["cpp"],
 )
 
 _haskell_toolchain = rule(
     _haskell_toolchain_impl,
     attrs = dict(
         common_attrs,
+        _cc_toolchain = attr.label(
+            default = Label(
+                "@rules_cc//cc:current_cc_toolchain",
+            ),
+        ),
     ),
+    toolchains = use_cc_toolchain(mandatory = True),
+    fragments = ["cpp"],
 )
 
 def haskell_toolchain(

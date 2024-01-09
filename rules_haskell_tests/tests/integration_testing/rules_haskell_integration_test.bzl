@@ -1,4 +1,4 @@
-load(":haskell_bazel_integration_test.bzl", "haskell_bazel_integration_test")
+load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 load(
     "@rules_bazel_integration_test//bazel_integration_test:defs.bzl",
     "integration_test_utils",
@@ -9,7 +9,7 @@ load(
     "SUPPORTED_NIXPKGS_BAZEL_PACKAGES",
 )
 load("//tests/integration_testing:dependencies.bzl", "nixpkgs_bazel_label")
-load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
+load(":haskell_bazel_integration_test.bzl", "haskell_bazel_integration_test")
 
 def rules_haskell_integration_test(
         name,
@@ -43,7 +43,6 @@ def rules_haskell_integration_test(
                 "//tests:nix": [],
                 "//conditions:default": ["@platforms//:incompatible"],
             }),
-            additional_env_inherit = ["BAZEL_USE_CPP_ONLY_TOOLCHAIN"],
             **kwargs
         )
     elif not is_windows:
@@ -58,6 +57,5 @@ def rules_haskell_integration_test(
                 "//tests:nix": ["@platforms//:incompatible"],
                 "//conditions:default": [],
             }),
-            additional_env_inherit = ["BAZEL_USE_CPP_ONLY_TOOLCHAIN"],
             **kwargs
         )

@@ -443,14 +443,27 @@ common --enable_bzlmod=$BZLMOD
 # Should become the default in bazel 7
 build --incompatible_enable_cc_toolchain_resolution
 
+# Enable automatic OS-specific config (e.g. build:linux, build:macos, build:windows).
+common --enable_platform_specific_config
+
+# MacOS Configuration
+# -------------------
+# do not use Xcode on macOS
+common:macos --repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+
+# Windows Configuration
+# ---------------------
+# prevent auto-detection of system compilers on Windows
+common:windows --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
 EOF
 
 if [ "${MODE}" = "nix" ]; then
     cat >> .bazelrc <<-EOF
 	# This project uses a GHC provisioned via nix.
 	# We need to use the rules_haskell nix toolchain accordingly:
-	build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
-	run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+	build --host_platform=@rules_nixpkgs_core//platforms:host
+	run --host_platform=@rules_nixpkgs_core//platforms:host
 
 	EOF
 fi
