@@ -29,7 +29,7 @@ jobs:
         run: nix shell 'nixpkgs#bazel-buildtools' 'nixpkgs#python3' --command python .github/update-ghc.py ${{ matrix.ghc }}
       - name: Create Pull Request
         if: steps.ghc_update.outputs.latest != ''
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "Add GHC bindist version ${{ steps.ghc_update.outputs.latest }}"
           title: "[update] GHC ${{ matrix.ghc }}"
