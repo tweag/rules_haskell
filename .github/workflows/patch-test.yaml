@@ -42,7 +42,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
       - uses: actions/checkout@v4
       - name: Mount Bazel cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
