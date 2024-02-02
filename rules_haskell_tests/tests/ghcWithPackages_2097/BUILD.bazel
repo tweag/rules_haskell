@@ -1,0 +1,14 @@
+load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_haskell_integration_test")
+
+rules_haskell_integration_test(
+    name = "ghc_with_packages_test",
+    srcs = ["Test.hs"],
+    workspace_path = "test",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
