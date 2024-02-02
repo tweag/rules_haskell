@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/free_disk_space_on_linux
       - name: Mount Bazel cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
@@ -166,7 +166,7 @@ jobs:
         with:
           packages: libtinfo5
       - name: Mount Bazel cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
