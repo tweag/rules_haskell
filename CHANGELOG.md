@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19] 2024-02-5
+
+[0.19]: https://github.com/tweag/rules_haskell/compare/v0.18...v0.19
+
+### Highlights 
+
+* Fix toolchain libraries creation when using `ghcWithPackages` (https://github.com/tweag/rules_haskell/pull/2098)
+
+### Added
+
+* Ghc 9.6.4 (https://github.com/tweag/rules_haskell/pull/2108)
+
+### Changed 
+
+* Upgrade  `rules_sh` to `0.4.0` (https://github.com/tweag/rules_haskell/pull/2103)
+
+### Fixed
+
+* Add `darwin_x86_64` to the `is_darwin` check (https://github.com/tweag/rules_haskell/pull/2109/files)
+
 ## [0.18] 2023-12-21
 
 [0.18]: https://github.com/tweag/rules_haskell/compare/v0.17...v0.18
