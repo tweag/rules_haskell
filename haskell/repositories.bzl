@@ -11,8 +11,8 @@ load(":private/ghc_ci.bzl", "ghc_default_version")
 _rules_nixpkgs_version = "0.10.0"
 _rules_nixpkgs_sha256 = "980edfceef2e59e1122d9be6c52413bc298435f0a3d452532b8a48d7562ffd67"
 
-_rules_sh_version = "v0.3.0"
-_rules_sh_sha256 = "d668bb32f112ead69c58bde2cae62f6b8acefe759a8c95a2d80ff6a85af5ac5e"
+_rules_sh_version = "v0.4.0"
+_rules_sh_sha256 = "3243af3fcb3768633fd39f3654de773e5fb61471a2fae5762a1653c22c412d2c"
 
 def rules_haskell_dependencies_bzlmod():
     """Provide rules_haskell dependencies which are not available as bzlmod modules."""
@@ -66,7 +66,12 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "rules_sh",
-        urls = ["https://github.com/tweag/rules_sh/archive/%s.tar.gz" % _rules_sh_version],
+        urls = [
+            "https://github.com/tweag/rules_sh/releases/download/{TAG}/rules_sh-{VERSION}.tar.gz".format(
+                TAG = _rules_sh_version,
+                VERSION = _rules_sh_version.lstrip("v"),
+            ),
+        ],
         sha256 = _rules_sh_sha256,
         strip_prefix = "rules_sh-%s" % _rules_sh_version.lstrip("v"),
     )

@@ -11,8 +11,6 @@ tasks:
   verify_targets:
     name: Verify build targets
     platform: ${{ platform }}
-    environment:
-      BAZEL_USE_CPP_ONLY_TOOLCHAIN: '1'
     shell_commands:
     - |
       if apt --version >/dev/null 2>/dev/null; then
@@ -22,7 +20,6 @@ tasks:
     batch_commands:
     # enforce certificate update
     - 'powershell -Command "Invoke-WebRequest -Uri https://hackage.haskell.org/root.json -OutFile out.json"'
-    - set BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
     build_flags:
       - '--incompatible_enable_cc_toolchain_resolution'
     build_targets:

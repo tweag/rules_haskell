@@ -1,11 +1,11 @@
 module(
     name = "rules_haskell_nix",
-    version = "0.18",
+    version = "0.19",
 )
 
 bazel_dep(
     name = "rules_haskell",
-    version = "0.18",
+    version = "0.19",
 )
 bazel_dep(
     name = "rules_sh",

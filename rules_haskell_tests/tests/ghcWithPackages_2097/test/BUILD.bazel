@@ -1,0 +1,35 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_library",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base")
+
+haskell_toolchain_library(name = "rts")
+
+haskell_library(
+    name = "add-one-hs",
+    srcs = ["One.hs"],
+    deps = [":base"],
+)
+
+cc_test(
+    name = "add-one",
+    srcs = [
+        "main.c",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":add-one-hs",
+        ":rts",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

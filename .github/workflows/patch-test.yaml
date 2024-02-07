@@ -42,15 +42,10 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
       - uses: actions/checkout@v4
       - name: Mount Bazel cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
-      - name: Install Bazel
-        shell: bash
-        run: |
-          BAZEL_DIR="$(.ci/fetch-bazel-bindist)"
-          mv $BAZEL_DIR $HOME/bazel
       - name: Configure
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
@@ -60,8 +55,8 @@ jobs:
           # See https://github.com/tweag/rules_haskell/issues/1498 and https://github.com/tweag/rules_haskell/pull/1692.
           [[ ${{ runner.os }} == Linux ]] && sudo sysctl -w net.ipv4.tcp_keepalive_time=60
           case ${{ runner.os }} in
-            macOS) BUILD_CONFIG=ci-macos-bindist;;
-            Linux) BUILD_CONFIG=ci-linux-bindist;;
+            macOS) BUILD_CONFIG=macos-bindist;;
+            Linux) BUILD_CONFIG=linux-bindist;;
             Windows) BUILD_CONFIG=ci-windows-bindist;;
           esac
           cat >.bazelrc.local <<EOF
@@ -77,7 +72,6 @@ jobs:
         shell: bash
         run: |
           export PATH=$HOME/bazel:$PATH
-          [[ ${{ runner.os }} == macOS ]] && export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
           export GHC_VERSION=${{ matrix.ghc-version }}
           cd rules_haskell_tests
           ./tests/run-start-script.sh --use-bindists

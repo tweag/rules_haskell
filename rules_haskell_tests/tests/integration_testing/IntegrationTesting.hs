@@ -78,6 +78,9 @@ generateBazelRc dir = do
 \ build:linux-bindist --incompatible_enable_cc_toolchain_resolution \n\
 \ build:macos-bindist --incompatible_enable_cc_toolchain_resolution \n\
 \ build:windows-bindist --incompatible_enable_cc_toolchain_resolution \n\
+\ common --enable_platform_specific_config \n\
+\ common:macos --repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1 \n\
+\ common:windows --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \n\
 \ ")
 
 setupWorkspace :: IO (String, String)

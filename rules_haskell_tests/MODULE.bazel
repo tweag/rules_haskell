@@ -1,6 +1,6 @@
 module(
     name = "rules_haskell_tests",
-    version = "0.18",
+    version = "0.19",
 )
 
 bazel_dep(
@@ -9,11 +9,11 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_haskell_nix",
-    version = "0.18",
+    version = "0.19",
 )
 bazel_dep(
     name = "rules_haskell",
-    version = "0.18",
+    version = "0.19",
 )
 bazel_dep(
     name = "rules_license",
@@ -53,7 +53,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_sh",
-    version = "0.3.0",
+    version = "0.4.0",
 )
 bazel_dep(
     name = "bazel_skylib",

@@ -2,7 +2,7 @@ load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 
 _os_info_bzl_template = """
 cpu_value = "{CPU_VALUE}"
-is_darwin = cpu_value == "darwin" or cpu_value == "darwin_arm64"
+is_darwin = cpu_value == "darwin" or cpu_value == "darwin_arm64" or cpu_value == "darwin_x86_64"
 is_darwin_arm64 = cpu_value == "darwin_arm64"
 is_linux = cpu_value == "k8" or cpu_value == "aarch64"
 is_windows = cpu_value == "x64_windows"

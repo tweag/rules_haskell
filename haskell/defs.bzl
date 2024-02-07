@@ -670,9 +670,6 @@ haskell_toolchain_library = rule(
         package = attr.string(
             doc = "The name of a GHC package not built by Bazel. Defaults to the name of the rule.",
         ),
-        _toolchain_libraries = attr.label(
-            default = Label("@rules_haskell//haskell:toolchain-libraries"),
-        ),
     ),
     toolchains = [
         "@rules_haskell//haskell:toolchain",

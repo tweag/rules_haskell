@@ -76,9 +76,6 @@ If you are on NixOS, this is the only way to set up your project,
 because the GHC toolchain provisioned through binary distributions
 cannot be executed on NixOS.
 
-If you are on macOS, you will have to set the environment variable
-`BAZEL_USE_CPP_ONLY_TOOLCHAIN = 1`, so that Bazel picks the correct C compiler.
-
 [bazel-cli-commands]: https://docs.bazel.build/versions/master/command-line-reference.html#commands
 [nixpkgs]: https://nixos.org/nixpkgs/
 
@@ -226,14 +223,6 @@ en_US.iso88591
 en_US.utf8
 POSIX
 ```
-
-### MacOS: Error: DEVELOPER_DIR not set.
-
-Make sure to set the following environment variable:
-```
-export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
-```
-This ensures that Bazel picks the correct C compiler.
 
 ### Windows: Incorrect `cc_toolchain` used
 
