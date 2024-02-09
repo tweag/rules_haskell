@@ -1,0 +1,22 @@
+resolver: lts-22.9
+
+packages:
+# See https://github.com/avdv/proto-lens/tree/protoc-update-bounds-9.6
+# - git: https://github.com/avdv/proto-lens
+#   commit: 9c53c26935ce98b1e38840c63327f41890c55ab4
+
+# support GHC 9.6
+# - git: https://github.com/avdv/ghc-source-gen
+#  commit: 4bc81b85c21094d1dc38b86205b1725b379a6e83
+
+# - git: https://github.com/google/proto-lens
+#   subdirs:
+#     - proto-lens
+#     - proto-lens-protoc
+#     - proto-lens-runtime
+#   commit: 7bee22e5c2777dd505a207910861e02f658fece9
+
+- proto-lens-0.7.1.4
+- proto-lens-protoc-0.8.0.0
+- proto-lens-runtime-0.7.0.5
+- ghc-source-gen-0.4.4.1
