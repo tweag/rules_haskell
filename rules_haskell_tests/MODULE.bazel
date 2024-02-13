@@ -250,7 +250,7 @@ haskell_toolchains = use_extension(
     "haskell_toolchains",
 )
 
-test_ghc_version = "9.2.8"
+test_ghc_version = "9.4.6"
 
 test_ghcopts = [
     "-XStandaloneDeriving",  # Flag used at compile time
@@ -316,12 +316,13 @@ nix_haskell_toolchains = use_extension(
     "@rules_haskell_nix//extensions:nix_haskell_toolchains.bzl",
     "nix_haskell_toolchains",
 )
+
 nix_haskell_toolchains.new(
     attribute_path = "",
     cabalopts = test_cabalopts,
     ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc928.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc946.ghc""",
     repl_ghci_args = test_repl_ghci_args,
     repository = "@nixpkgs_default",
     version = test_ghc_version,

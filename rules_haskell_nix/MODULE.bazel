@@ -42,9 +42,9 @@ nix_haskell_toolchains = use_extension(
 # Declare a default nix-based toolchain
 nix_haskell_toolchains.new(
     attribute_path = "",
-    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc928.ghc""",
+    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc946.ghc""",
     repository = "@nixpkgs_default",
-    version = "9.2.8",
+    version = "9.4.6",
 )
 use_repo(
     nix_haskell_toolchains,

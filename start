@@ -6,8 +6,8 @@
 set -eu
 
 # If the environment variable `GHC_VERSION` is not set yet,
-# we use the default version (currently "9.2.8").
-GHC_VERSION=${GHC_VERSION:="9.2.8"}
+# we use the default version (currently "9.4.6").
+GHC_VERSION=${GHC_VERSION:="9.4.6"}
 
 readonly MIN_BAZEL_MAJOR=6
 readonly MIN_BAZEL_MINOR=0
@@ -314,7 +314,7 @@ EOF
 		# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
 		nixpkgs_git_repository(
 		    name = "nixpkgs",
-		    revision = "nixos-23.05",
+		    revision = "nixos-23.11",
 		)
 
 		nixpkgs_cc_configure(
