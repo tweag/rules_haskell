@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
+## Next release
+
+### Changed
+
+* Use ghc 9.4.6 by default
 
 ## [0.19] 2024-02-5
 

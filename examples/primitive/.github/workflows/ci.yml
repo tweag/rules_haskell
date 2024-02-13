@@ -1,0 +1,51 @@
+name: ci
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        ghc: ['8.0', '8.2', '8.4', '8.6', '8.8', '8.10', '9.0', '9.2', '9.4', '9.6']
+        include:
+        - os: windows-latest
+          ghc: 'latest'
+        - os: macOS-latest
+          ghc: 'latest'
+        ## Already covered by '9.4'
+        # - os: ubuntu-latest
+        #   ghc: 'latest'
+    steps:
+    - uses: actions/checkout@v3
+    - uses: haskell/actions/setup@v2
+      id: setup-haskell-cabal
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        ghcup-release-channel: ${{ matrix.ghcup-release-channel }}
+    - name: Update cabal package database
+      run: cabal update
+    - uses: actions/cache@v3
+      name: Cache cabal stuff
+      with:
+        path: |
+          ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          dist-newstyle
+        key: ${{ runner.os }}-${{ matrix.ghc }}
+    - name: Build
+      run: cabal build all --enable-tests
+    - name: Test
+      run: cabal test all --enable-tests
+    - name: Bench
+      run: cabal bench --benchmark-option=-l
+    - name: Haddock
+      run: cabal haddock
