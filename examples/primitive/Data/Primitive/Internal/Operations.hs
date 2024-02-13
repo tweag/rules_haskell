@@ -1,4 +1,9 @@
-{-# LANGUAGE MagicHash, UnliftedFFITypes #-}
+{-# LANGUAGE CPP, MagicHash, UnliftedFFITypes, UnboxedTuples #-}
+{-# LANGUAGE RankNTypes, KindSignatures, ScopedTypeVariables #-} 
+{-# LANGUAGE DataKinds #-}
+#if __GLASGOW_HASKELL__ < 806
+{-# LANGUAGE TypeInType #-}
+#endif
 
 -- |
 -- Module      : Data.Primitive.Internal.Operations
@@ -8,9 +13,7 @@
 -- Maintainer  : Roman Leshchinskiy <rl@cse.unsw.edu.au>
 -- Portability : non-portable
 --
--- Internal operations
---
-
+-- Internal operations.
 
 module Data.Primitive.Internal.Operations (
   setWord8Array#, setWord16Array#, setWord32Array#,
@@ -26,32 +29,67 @@ module Data.Primitive.Internal.Operations (
   setInt64OffAddr#, setIntOffAddr#,
   setAddrOffAddr#, setFloatOffAddr#, setDoubleOffAddr#, setWideCharOffAddr#,
   setStablePtrOffAddr#
+
+
+#if defined(HAVE_KEEPALIVE)
+  , keepAliveLiftedLifted#
+  , keepAliveUnliftedLifted#
+#endif
+  , mutableByteArrayContentsShim
+  , UnliftedType
 ) where
 
 import Data.Primitive.MachDeps (Word64_#, Int64_#)
 import Foreign.C.Types
 import GHC.Exts
 
+#if defined(HAVE_KEEPALIVE)
+import Data.Kind (Type)
+#endif
+
+
+#if __GLASGOW_HASKELL__ >= 902
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
   setWord8Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word8# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
   setWord16Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word16# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
   setWord32Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word32# -> IO ()
+#else
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
+  setWord8Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word# -> IO ()
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
+  setWord16Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word# -> IO ()
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
+  setWord32Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word# -> IO ()
+#endif
+
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word64"
   setWord64Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word64_# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word"
   setWordArray# :: MutableByteArray# s -> CPtrdiff -> CSize -> Word# -> IO ()
+
+#if __GLASGOW_HASKELL__ >= 902
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
   setInt8Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int8# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
   setInt16Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int16# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
   setInt32Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int32# -> IO ()
+#else
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
+  setInt8Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int# -> IO ()
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
+  setInt16Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int# -> IO ()
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
+  setInt32Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int# -> IO ()
+#endif
+
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word64"
   setInt64Array# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int64_# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word"
   setIntArray# :: MutableByteArray# s -> CPtrdiff -> CSize -> Int# -> IO ()
+
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Ptr"
   setAddrArray# :: MutableByteArray# s -> CPtrdiff -> CSize -> Addr# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Ptr"
@@ -63,26 +101,48 @@ foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Double"
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Char"
   setWideCharArray# :: MutableByteArray# s -> CPtrdiff -> CSize -> Char# -> IO ()
 
+#if __GLASGOW_HASKELL__ >= 902
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
   setWord8OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word8# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
   setWord16OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word16# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
   setWord32OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word32# -> IO ()
+#else
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
+  setWord8OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word# -> IO ()
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
+  setWord16OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word# -> IO ()
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
+  setWord32OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word# -> IO ()
+#endif
+
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word64"
   setWord64OffAddr# :: Addr# -> CPtrdiff -> CSize -> Word64_# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word"
   setWordOffAddr# :: Addr# -> CPtrdiff -> CSize -> Word# -> IO ()
+
+#if __GLASGOW_HASKELL__ >= 902
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
   setInt8OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int8# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
   setInt16OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int16# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
   setInt32OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int32# -> IO ()
+#else
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word8"
+  setInt8OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int# -> IO ()
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word16"
+  setInt16OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int# -> IO ()
+foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word32"
+  setInt32OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int# -> IO ()
+#endif
+
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word64"
   setInt64OffAddr# :: Addr# -> CPtrdiff -> CSize -> Int64_# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Word"
   setIntOffAddr# :: Addr# -> CPtrdiff -> CSize -> Int# -> IO ()
+
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Ptr"
   setAddrOffAddr# :: Addr# -> CPtrdiff -> CSize -> Addr# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Ptr"
@@ -93,3 +153,53 @@ foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Double"
   setDoubleOffAddr# :: Addr# -> CPtrdiff -> CSize -> Double# -> IO ()
 foreign import ccall unsafe "primitive-memops.h hsprimitive_memset_Char"
   setWideCharOffAddr# :: Addr# -> CPtrdiff -> CSize -> Char# -> IO ()
+
+#if defined(HAVE_KEEPALIVE)
+keepAliveLiftedLifted# :: forall (s :: Type) (a :: Type) (b :: Type).
+     a
+  -> State# s
+  -> (State# s -> (# State# s, b #))
+  -> (# State# s, b #)
+{-# inline keepAliveLiftedLifted# #-}
+keepAliveLiftedLifted# x s0 f =
+  (unsafeCoerce# :: (# State# RealWorld, b #) -> (# State# s, b #))
+    ( keepAlive# x
+      ((unsafeCoerce# :: State# s -> State# RealWorld) s0)
+      ((unsafeCoerce# ::
+         (State# s -> (# State# s, b #)) ->
+         (State# RealWorld -> (# State# RealWorld, b #))
+       ) f)
+    )
+
+keepAliveUnliftedLifted# :: forall (s :: Type) (a :: UnliftedType) (b :: Type).
+     a
+  -> State# s
+  -> (State# s -> (# State# s, b #))
+  -> (# State# s, b #)
+{-# inline keepAliveUnliftedLifted# #-}
+keepAliveUnliftedLifted# x s0 f =
+  (unsafeCoerce# :: (# State# RealWorld, b #) -> (# State# s, b #))
+    ( keepAlive# x
+      ((unsafeCoerce# :: State# s -> State# RealWorld) s0)
+      ((unsafeCoerce# ::
+         (State# s -> (# State# s, b #)) ->
+         (State# RealWorld -> (# State# RealWorld, b #))
+       ) f)
+    )
+#endif
+
+#if __GLASGOW_HASKELL__ < 802
+type UnliftedType = TYPE 'PtrRepUnlifted
+#elif __GLASGOW_HASKELL__ < 902
+type UnliftedType = TYPE 'UnliftedRep
+#endif
+
+mutableByteArrayContentsShim :: MutableByteArray# s -> Addr#
+{-# INLINE mutableByteArrayContentsShim #-}
+mutableByteArrayContentsShim x =
+#if __GLASGOW_HASKELL__ >= 902
+  mutableByteArrayContents# x
+#else
+  byteArrayContents# (unsafeCoerce# x)
+#endif
+

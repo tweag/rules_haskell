@@ -1,9 +1,14 @@
-{-# LANGUAGE CPP, UnboxedTuples, MagicHash, DeriveDataTypeable #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving, StandaloneDeriving #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE TypeApplications #-}
+
+#if __GLASGOW_HASKELL__ < 906
 {-# LANGUAGE TypeInType #-}
-{-# LANGUAGE DeriveGeneric #-}
 #endif
 
 #include "HsBaseConfig.h"
@@ -16,66 +21,46 @@
 -- Maintainer  : Roman Leshchinskiy <rl@cse.unsw.edu.au>
 -- Portability : non-portable
 --
--- Basic types and classes for primitive array operations
---
+-- Basic types and classes for primitive array operations.
 
-module Data.Primitive.Types (
-  Prim(..)
-  ,sizeOf, alignment, defaultSetByteArray#, defaultSetOffAddr#
-  ,PrimStorable(..)
-  ,Ptr(..)
-) where
+module Data.Primitive.Types
+  ( Prim(..)
+  , sizeOf, sizeOfType, alignment, alignmentOfType, defaultSetByteArray#, defaultSetOffAddr#
+  , PrimStorable(..)
+  , Ptr(..)
+  ) where
 
 import Control.Monad.Primitive
 import Data.Primitive.MachDeps
 import Data.Primitive.Internal.Operations
+import Foreign.Ptr (IntPtr, intPtrToPtr, ptrToIntPtr, WordPtr, wordPtrToPtr, ptrToWordPtr)
 import Foreign.C.Types
 import System.Posix.Types
+import Data.Complex
 
-import GHC.Base (
-    Int(..), Char(..),
-  )
-import GHC.Float (
-    Float(..), Double(..)
-  )
-import GHC.Word (
-    Word(..), Word8(..), Word16(..), Word32(..), Word64(..)
-  )
-import GHC.Int (
-    Int8(..), Int16(..), Int32(..), Int64(..)
-  )
+import GHC.Word (Word8(..), Word16(..), Word32(..), Word64(..))
+import GHC.Int (Int8(..), Int16(..), Int32(..), Int64(..))
 
-import GHC.Ptr (
-    Ptr(..), FunPtr(..)
-  )
-import GHC.Stable (
-    StablePtr(..)
-  )
+import GHC.Stable (StablePtr(..))
 
-import GHC.Exts
-#if __GLASGOW_HASKELL__ >= 706
-    hiding (setByteArray#)
-#endif
+import GHC.Exts hiding (setByteArray#)
 
-
-import Data.Primitive.Internal.Compat ( isTrue# )
 import Foreign.Storable (Storable)
 
 
 import qualified Foreign.Storable as FS
 
+import GHC.IO (IO(..))
+import qualified GHC.Exts
+
 import Control.Applicative (Const(..))
-#if MIN_VERSION_base(4,8,0)
 import Data.Functor.Identity (Identity(..))
 import qualified Data.Monoid as Monoid
-#endif
-#if MIN_VERSION_base(4,6,0)
-import Data.Ord (Down(..))
-#else
-import GHC.Exts (Down(..))
-#endif
-#if MIN_VERSION_base(4,9,0)
 import qualified Data.Semigroup as Semigroup
+import Data.Proxy
+
+#if !MIN_VERSION_base(4,13,0)
+import Data.Ord (Down(..))
 #endif
 
 -- | Class of types supporting primitive array operations. This includes
@@ -83,12 +68,31 @@ import qualified Data.Semigroup as Semigroup
 -- and interfacing with unmanaged memory (functions suffixed with @Addr#@).
 -- Endianness is platform-dependent.
 class Prim a where
+  -- We use `Proxy` instead of `Proxy#`, since the latter doesn't work with GND for GHC <= 8.8.
 
-  -- | Size of values of type @a@. The argument is not used.
-  sizeOf#    :: a -> Int#
+  -- | The size of values of type @a@ in bytes. This has to be used with TypeApplications: @sizeOfType \@a@.
+  --
+  -- @since 0.9.0.0
+  sizeOfType# :: Proxy a -> Int#
+  sizeOfType# _ = sizeOf# (dummy :: a)
 
-  -- | Alignment of values of type @a@. The argument is not used.
+  -- | The size of values of type @a@ in bytes. The argument is not used.
+  --
+  -- It is recommended to use 'sizeOfType#' instead.
+  sizeOf# :: a -> Int#
+  sizeOf# _ = sizeOfType# (Proxy :: Proxy a)
+
+  -- | The alignment of values of type @a@ in bytes. This has to be used with TypeApplications: @alignmentOfType \@a@.
+  --
+  -- @since 0.9.0.0
+  alignmentOfType# :: Proxy a -> Int#
+  alignmentOfType# _ = alignment# (dummy :: a)
+
+  -- | The alignment of values of type @a@ in bytes. The argument is not used.
+  --
+  -- It is recommended to use 'alignmentOfType#' instead.
   alignment# :: a -> Int#
+  alignment# _ = alignmentOfType# (Proxy :: Proxy a)
 
   -- | Read a value from the array. The offset is in elements of type
   -- @a@ rather than in bytes.
@@ -104,7 +108,14 @@ class Prim a where
 
   -- | Fill a slice of the mutable array with a value. The offset and length
   -- of the chunk are in elements of type @a@ rather than in bytes.
-  setByteArray# :: MutableByteArray# s -> Int# -> Int# -> a -> State# s -> State# s
+  setByteArray#
+    :: MutableByteArray# s
+    -> Int# -- ^ offset
+    -> Int# -- ^ length
+    -> a
+    -> State# s
+    -> State# s
+  setByteArray# = defaultSetByteArray#
 
   -- | Read a value from a memory position given by an address and an offset.
   -- The memory block the address refers to must be immutable. The offset is in
@@ -121,33 +132,106 @@ class Prim a where
 
   -- | Fill a memory block given by an address, an offset and a length.
   -- The offset and length are in elements of type @a@ rather than in bytes.
-  setOffAddr# :: Addr# -> Int# -> Int# -> a -> State# s -> State# s
+  setOffAddr#
+    :: Addr#
+    -> Int# -- ^ offset
+    -> Int# -- ^ length
+    -> a
+    -> State# s
+    -> State# s
+  setOffAddr# = defaultSetOffAddr#
 
--- | Size of values of type @a@. The argument is not used.
+  {-# MINIMAL (sizeOfType# | sizeOf#), (alignmentOfType# | alignment#), indexByteArray#, readByteArray#, writeByteArray#,
+    indexOffAddr#, readOffAddr#, writeOffAddr# #-}
+
+-- | A dummy value of type @a@.
+dummy :: a
+dummy = errorWithoutStackTrace "Data.Primitive.Types: implementation mistake in `Prim` instance"
+{-# NOINLINE dummy #-}
+
+-- | The size of values of type @a@ in bytes. This has to be used with TypeApplications: @sizeOfType \@a@.
+--
+-- >>> :set -XTypeApplications
+-- >>> import Data.Int (Int32)
+-- >>> sizeOfType @Int32
+-- 4
+--
+-- @since 0.9.0.0
+sizeOfType :: forall a. Prim a => Int
+sizeOfType = I# (sizeOfType# (Proxy :: Proxy a))
+
+-- | The size of values of type @a@ in bytes. The argument is not used.
+--
+-- It is recommended to use 'sizeOfType' instead.
 --
 -- This function has existed since 0.1, but was moved from 'Data.Primitive'
--- to 'Data.Primitive.Types' in version 0.6.3.0
+-- to 'Data.Primitive.Types' in version 0.6.3.0.
 sizeOf :: Prim a => a -> Int
 sizeOf x = I# (sizeOf# x)
 
--- | Alignment of values of type @a@. The argument is not used.
+-- | The alignment of values of type @a@ in bytes. This has to be used with TypeApplications: @alignmentOfType \@a@.
+--
+-- @since 0.9.0.0
+alignmentOfType :: forall a. Prim a => Int
+alignmentOfType = I# (alignmentOfType# (Proxy :: Proxy a))
+
+-- | The alignment of values of type @a@ in bytes. The argument is not used.
+--
+-- It is recommended to use 'alignmentOfType' instead.
 --
 -- This function has existed since 0.1, but was moved from 'Data.Primitive'
--- to 'Data.Primitive.Types' in version 0.6.3.0
+-- to 'Data.Primitive.Types' in version 0.6.3.0.
 alignment :: Prim a => a -> Int
 alignment x = I# (alignment# x)
 
+-- | @since 0.9.0.0
+instance Prim a => Prim (Complex a) where
+  sizeOf# _ = 2# *# sizeOf# (undefined :: a)
+  alignment# _ = alignment# (undefined :: a)
+  indexByteArray# arr# i# =
+    let x = indexByteArray# arr# (2# *# i#)
+        y = indexByteArray# arr# (2# *# i# +# 1#)
+    in x :+ y
+  readByteArray# arr# i# =
+    \s0 -> case readByteArray# arr# (2# *# i#) s0 of
+       (# s1#, x #) -> case readByteArray# arr# (2# *# i# +# 1#) s1# of
+          (# s2#, y #) -> (# s2#, x :+ y #)
+  writeByteArray# arr# i# (a :+ b) =
+    \s0 -> case writeByteArray# arr# (2# *# i#) a s0 of
+       s1 -> case writeByteArray# arr# (2# *# i# +# 1#) b s1 of
+         s2 -> s2
+  indexOffAddr# addr# i# =
+    let x = indexOffAddr# addr# (2# *# i#)
+        y = indexOffAddr# addr# (2# *# i# +# 1#)
+    in x :+ y
+  readOffAddr# addr# i# =
+    \s0 -> case readOffAddr# addr# (2# *# i#) s0 of
+       (# s1, x #) -> case readOffAddr# addr# (2# *# i# +# 1#) s1 of
+         (# s2, y #) -> (# s2, x :+ y #)
+  writeOffAddr# addr# i# (a :+ b) =
+    \s0 -> case writeOffAddr# addr# (2# *# i#) a s0 of
+       s1 -> case writeOffAddr# addr# (2# *# i# +# 1#) b s1 of
+         s2 -> s2
+  {-# INLINE sizeOf# #-}
+  {-# INLINE alignment# #-}
+  {-# INLINE indexByteArray# #-}
+  {-# INLINE readByteArray# #-}
+  {-# INLINE writeByteArray# #-}
+  {-# INLINE indexOffAddr# #-}
+  {-# INLINE readOffAddr# #-}
+  {-# INLINE writeOffAddr# #-}
+
 -- | An implementation of 'setByteArray#' that calls 'writeByteArray#'
 -- to set each element. This is helpful when writing a 'Prim' instance
--- for a multi-word data type for which there is no cpu-accelerated way
+-- for a multi-word data type for which there is no CPU-accelerated way
 -- to broadcast a value to contiguous memory. It is typically used
 -- alongside 'defaultSetOffAddr#'. For example:
 --
 -- > data Trip = Trip Int Int Int
 -- >
 -- > instance Prim Trip
--- >   sizeOf# _ = 3# *# sizeOf# (undefined :: Int)
--- >   alignment# _ = alignment# (undefined :: Int)
+-- >   sizeOfType# _ = 3# *# sizeOfType# (proxy# :: Proxy# Int)
+-- >   alignmentOfType# _ = alignmentOfType# (proxy# :: Proxy# Int)
 -- >   indexByteArray# arr# i# = ...
 -- >   readByteArray# arr# i# = ...
 -- >   writeByteArray# arr# i# (Trip a b c) =
@@ -197,8 +281,8 @@ defaultSetOffAddr# addr# i# len# ident = go 0#
 newtype PrimStorable a = PrimStorable { getPrimStorable :: a }
 
 instance Prim a => Storable (PrimStorable a) where
-  sizeOf _ = sizeOf (undefined :: a)
-  alignment _ = alignment (undefined :: a)
+  sizeOf _ = sizeOfType @a
+  alignment _ = alignmentOfType @a
   peekElemOff (Ptr addr#) (I# i#) =
     primitive $ \s0# -> case readOffAddr# addr# i# s0# of
       (# s1, x #) -> (# s1, PrimStorable x #)
@@ -206,41 +290,57 @@ instance Prim a => Storable (PrimStorable a) where
     writeOffAddr# addr# i# a s#
 
 #define derivePrim(ty, ctr, sz, align, idx_arr, rd_arr, wr_arr, set_arr, idx_addr, rd_addr, wr_addr, set_addr) \
-instance Prim (ty) where {                                      \
-  sizeOf# _ = unI# sz                                           \
-; alignment# _ = unI# align                                     \
-; indexByteArray# arr# i# = ctr (idx_arr arr# i#)               \
-; readByteArray#  arr# i# s# = case rd_arr arr# i# s# of        \
-                        { (# s1#, x# #) -> (# s1#, ctr x# #) }  \
-; writeByteArray# arr# i# (ctr x#) s# = wr_arr arr# i# x# s#    \
-; setByteArray# arr# i# n# (ctr x#) s#                          \
-    = let { i = fromIntegral (I# i#)                            \
-          ; n = fromIntegral (I# n#)                            \
-          } in                                                  \
-      case unsafeCoerce# (internal (set_arr arr# i n x#)) s# of \
-        { (# s1#, _ #) -> s1# }                                 \
-                                                                \
-; indexOffAddr# addr# i# = ctr (idx_addr addr# i#)              \
-; readOffAddr#  addr# i# s# = case rd_addr addr# i# s# of       \
-                        { (# s1#, x# #) -> (# s1#, ctr x# #) }  \
-; writeOffAddr# addr# i# (ctr x#) s# = wr_addr addr# i# x# s#   \
-; setOffAddr# addr# i# n# (ctr x#) s#                           \
-    = let { i = fromIntegral (I# i#)                            \
-          ; n = fromIntegral (I# n#)                            \
-          } in                                                  \
+instance Prim (ty) where {                                        \
+  sizeOfType# _ = unI# sz                                         \
+; alignmentOfType# _ = unI# align                                 \
+; indexByteArray# arr# i# = ctr (idx_arr arr# i#)                 \
+; readByteArray#  arr# i# s# = case rd_arr arr# i# s# of          \
+                        { (# s1#, x# #) -> (# s1#, ctr x# #) }    \
+; writeByteArray# arr# i# (ctr x#) s# = wr_arr arr# i# x# s#      \
+; setByteArray# arr# i# n# (ctr x#) s#                            \
+    = let { i = fromIntegral (I# i#)                              \
+          ; n = fromIntegral (I# n#)                              \
+          } in                                                    \
+      case unsafeCoerce# (internal (set_arr arr# i n x#)) s# of   \
+        { (# s1#, _ #) -> s1# }                                   \
+                                                                  \
+; indexOffAddr# addr# i# = ctr (idx_addr addr# i#)                \
+; readOffAddr#  addr# i# s# = case rd_addr addr# i# s# of         \
+                        { (# s1#, x# #) -> (# s1#, ctr x# #) }    \
+; writeOffAddr# addr# i# (ctr x#) s# = wr_addr addr# i# x# s#     \
+; setOffAddr# addr# i# n# (ctr x#) s#                             \
+    = let { i = fromIntegral (I# i#)                              \
+          ; n = fromIntegral (I# n#)                              \
+          } in                                                    \
       case unsafeCoerce# (internal (set_addr addr# i n x#)) s# of \
-        { (# s1#, _ #) -> s1# }                                 \
-; {-# INLINE sizeOf# #-}                                        \
-; {-# INLINE alignment# #-}                                     \
-; {-# INLINE indexByteArray# #-}                                \
-; {-# INLINE readByteArray# #-}                                 \
-; {-# INLINE writeByteArray# #-}                                \
-; {-# INLINE setByteArray# #-}                                  \
-; {-# INLINE indexOffAddr# #-}                                  \
-; {-# INLINE readOffAddr# #-}                                   \
-; {-# INLINE writeOffAddr# #-}                                  \
-; {-# INLINE setOffAddr# #-}                                    \
+        { (# s1#, _ #) -> s1# }                                   \
+; {-# INLINE sizeOfType# #-}                                      \
+; {-# INLINE alignmentOfType# #-}                                 \
+; {-# INLINE indexByteArray# #-}                                  \
+; {-# INLINE readByteArray# #-}                                   \
+; {-# INLINE writeByteArray# #-}                                  \
+; {-# INLINE setByteArray# #-}                                    \
+; {-# INLINE indexOffAddr# #-}                                    \
+; {-# INLINE readOffAddr# #-}                                     \
+; {-# INLINE writeOffAddr# #-}                                    \
+; {-# INLINE setOffAddr# #-}                                      \
 }
+
+#if __GLASGOW_HASKELL__ >= 902
+liberate# :: State# s -> State# r
+liberate# = unsafeCoerce#
+shimmedSetWord8Array# :: MutableByteArray# s -> Int -> Int -> Word8# -> IO ()
+shimmedSetWord8Array# m (I# off) (I# len) w = IO (\s -> (# liberate# (GHC.Exts.setByteArray# m off len (GHC.Exts.word2Int# (GHC.Exts.word8ToWord# w)) (liberate# s)), () #))
+shimmedSetInt8Array# :: MutableByteArray# s -> Int -> Int -> Int8# -> IO ()
+shimmedSetInt8Array# m (I# off) (I# len) i = IO (\s -> (# liberate# (GHC.Exts.setByteArray# m off len (GHC.Exts.int8ToInt# i) (liberate# s)), () #))
+#else
+liberate# :: State# s -> State# r
+liberate# = unsafeCoerce#
+shimmedSetWord8Array# :: MutableByteArray# s -> Int -> Int -> Word# -> IO ()
+shimmedSetWord8Array# m (I# off) (I# len) w = IO (\s -> (# liberate# (GHC.Exts.setByteArray# m off len (GHC.Exts.word2Int# w) (liberate# s)), () #))
+shimmedSetInt8Array# :: MutableByteArray# s -> Int -> Int -> Int# -> IO ()
+shimmedSetInt8Array# m (I# off) (I# len) i = IO (\s -> (# liberate# (GHC.Exts.setByteArray# m off len i (liberate# s)), () #))
+#endif
 
 unI# :: Int -> Int#
 unI# (I# n#) = n#
@@ -249,7 +349,7 @@ derivePrim(Word, W#, sIZEOF_WORD, aLIGNMENT_WORD,
            indexWordArray#, readWordArray#, writeWordArray#, setWordArray#,
            indexWordOffAddr#, readWordOffAddr#, writeWordOffAddr#, setWordOffAddr#)
 derivePrim(Word8, W8#, sIZEOF_WORD8, aLIGNMENT_WORD8,
-           indexWord8Array#, readWord8Array#, writeWord8Array#, setWord8Array#,
+           indexWord8Array#, readWord8Array#, writeWord8Array#, shimmedSetWord8Array#,
            indexWord8OffAddr#, readWord8OffAddr#, writeWord8OffAddr#, setWord8OffAddr#)
 derivePrim(Word16, W16#, sIZEOF_WORD16, aLIGNMENT_WORD16,
            indexWord16Array#, readWord16Array#, writeWord16Array#, setWord16Array#,
@@ -264,7 +364,7 @@ derivePrim(Int, I#, sIZEOF_INT, aLIGNMENT_INT,
            indexIntArray#, readIntArray#, writeIntArray#, setIntArray#,
            indexIntOffAddr#, readIntOffAddr#, writeIntOffAddr#, setIntOffAddr#)
 derivePrim(Int8, I8#, sIZEOF_INT8, aLIGNMENT_INT8,
-           indexInt8Array#, readInt8Array#, writeInt8Array#, setInt8Array#,
+           indexInt8Array#, readInt8Array#, writeInt8Array#, shimmedSetInt8Array#,
            indexInt8OffAddr#, readInt8OffAddr#, writeInt8OffAddr#, setInt8OffAddr#)
 derivePrim(Int16, I16#, sIZEOF_INT16, aLIGNMENT_INT16,
            indexInt16Array#, readInt16Array#, writeInt16Array#, setInt16Array#,
@@ -390,11 +490,47 @@ deriving instance Prim CTimer
 #endif
 deriving instance Prim Fd
 
+-- Andrew Martin: The instances for WordPtr and IntPtr are written out by
+-- hand in a tedious way. We cannot use GND because the data constructors for
+-- these types were not available before GHC 8.2. The CPP for generating code
+-- for the Int and Word types does not work here. There is a way to clean this
+-- up a little with CPP, and if anyone wants to do that, go for it. In the
+-- meantime, I am going to ship this with the instances written out by hand.
+
+-- | @since 0.7.1.0
+instance Prim WordPtr where
+  sizeOfType# _ = sizeOfType# (Proxy :: Proxy (Ptr ()))
+  alignmentOfType# _ = alignmentOfType# (Proxy :: Proxy (Ptr ()))
+  indexByteArray# a i = ptrToWordPtr (indexByteArray# a i)
+  readByteArray# a i s0 = case readByteArray# a i s0 of
+    (# s1, p #) -> (# s1, ptrToWordPtr p #)
+  writeByteArray# a i wp = writeByteArray# a i (wordPtrToPtr wp)
+  setByteArray# a i n wp = setByteArray# a i n (wordPtrToPtr wp)
+  indexOffAddr# a i = ptrToWordPtr (indexOffAddr# a i)
+  readOffAddr# a i s0 = case readOffAddr# a i s0 of
+    (# s1, p #) -> (# s1, ptrToWordPtr p #)
+  writeOffAddr# a i wp = writeOffAddr# a i (wordPtrToPtr wp)
+  setOffAddr# a i n wp = setOffAddr# a i n (wordPtrToPtr wp)
+
+-- | @since 0.7.1.0
+instance Prim IntPtr where
+  sizeOfType# _ = sizeOfType# (Proxy :: Proxy (Ptr ()))
+  alignmentOfType# _ = alignmentOfType# (Proxy :: Proxy (Ptr ()))
+  indexByteArray# a i = ptrToIntPtr (indexByteArray# a i)
+  readByteArray# a i s0 = case readByteArray# a i s0 of
+    (# s1, p #) -> (# s1, ptrToIntPtr p #)
+  writeByteArray# a i wp = writeByteArray# a i (intPtrToPtr wp)
+  setByteArray# a i n wp = setByteArray# a i n (intPtrToPtr wp)
+  indexOffAddr# a i = ptrToIntPtr (indexOffAddr# a i)
+  readOffAddr# a i s0 = case readOffAddr# a i s0 of
+    (# s1, p #) -> (# s1, ptrToIntPtr p #)
+  writeOffAddr# a i wp = writeOffAddr# a i (intPtrToPtr wp)
+  setOffAddr# a i n wp = setOffAddr# a i n (intPtrToPtr wp)
+
 -- | @since 0.6.5.0
 deriving instance Prim a => Prim (Const a b)
 -- | @since 0.6.5.0
 deriving instance Prim a => Prim (Down a)
-#if MIN_VERSION_base(4,8,0)
 -- | @since 0.6.5.0
 deriving instance Prim a => Prim (Identity a)
 -- | @since 0.6.5.0
@@ -403,8 +539,6 @@ deriving instance Prim a => Prim (Monoid.Dual a)
 deriving instance Prim a => Prim (Monoid.Sum a)
 -- | @since 0.6.5.0
 deriving instance Prim a => Prim (Monoid.Product a)
-#endif
-#if MIN_VERSION_base(4,9,0)
 -- | @since 0.6.5.0
 deriving instance Prim a => Prim (Semigroup.First a)
 -- | @since 0.6.5.0
@@ -413,4 +547,3 @@ deriving instance Prim a => Prim (Semigroup.Last a)
 deriving instance Prim a => Prim (Semigroup.Min a)
 -- | @since 0.6.5.0
 deriving instance Prim a => Prim (Semigroup.Max a)
-#endif
