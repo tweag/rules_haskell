@@ -2746,7 +2746,8 @@ def use_stack(stack):
     Globally override the `stack` version used by all instances of `stack_snapshot`.
     WARNING: This should only be used in the top-level repository.
 
-    Example:
+    ### Examples
+    ```
     # WORKSPACE
 
     # Order is important! Placing `use_stack()` after any occurrence of `stack_snapshot`
@@ -2758,13 +2759,16 @@ def use_stack(stack):
         stack = "@y_stack:stack",
         # ...
     )
+    ```
 
-    # BUILD
+    ```
+    # BUILD.bazel
     haskell_binary(
         # ...
         # targets in `x` will be built using `x_stack`, NOT `y_stack`
         deps = ["@x//:all"],
     )
+    ```
     """
     if native.existing_rule("rules_haskell_stack"):
         fail("`rules_haskell_stack` already defined. call `use_stack()` before `stack_snapshot()` in `WORKSPACE`")
