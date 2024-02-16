@@ -6,6 +6,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
 
 def _empty_repo_impl(rctx):
     fail(rctx.attr.error_msg)
@@ -38,7 +39,8 @@ def repositories(*, bzlmod):  # @unused
 
     # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
     # See https://github.com/tweag/rules_haskell/issues/1871
-    if GHC_VERSION and GHC_VERSION.startswith("9.6."):
+
+    if GHC_VERSION and is_at_least("9.6", GHC_VERSION):
         _empty_repo(
             name = "Cabal",
             error_msg = "When using GHC >= 9.6, do not depend on @Cabal, as https://github.com/tweag/rules_haskell/issues/1871 is fixed.",

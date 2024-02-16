@@ -7,6 +7,7 @@ load(
     "haskell_binary",
     "haskell_toolchain_library",
 )
+load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 package(default_testonly = 1)
@@ -21,7 +22,7 @@ haskell_cabal_library(
         "lib.cabal",
     ],
     generate_paths_module = False,
-    setup_deps = [] if GHC_VERSION and GHC_VERSION.startswith("9.6.") else ["@Cabal//:Cabal"],
+    setup_deps = [] if GHC_VERSION and is_at_least("9.6", GHC_VERSION) else ["@Cabal//:Cabal"],
     tags = ["skip_profiling"],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],

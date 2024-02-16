@@ -4,6 +4,7 @@ load("//haskell:private/ghc_ci.bzl", "ghc_version")
 
 ghc_version(name = "rules_haskell_ghc_version")
 
+load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
 load("//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
@@ -179,7 +180,7 @@ stack_snapshot(
         "proto-lens-runtime",
         "lens-family",
     ],
-    setup_deps = {} if GHC_VERSION and GHC_VERSION.startswith("9.6.") else {
+    setup_deps = {} if GHC_VERSION and is_at_least("9.6", GHC_VERSION) else {
         # See https://github.com/tweag/rules_haskell/issues/1871
         "HUnit": ["@Cabal//:Cabal"],
         "bifunctors": ["@Cabal//:Cabal"],

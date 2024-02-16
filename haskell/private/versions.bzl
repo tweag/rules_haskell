@@ -51,7 +51,7 @@ def _parse_bazel_version(bazel_version):
     """
     return [int(_parse_version_chunk(x)) for x in bazel_version.split(".")]
 
-def _is_at_least(threshold, version):
+def is_at_least(threshold, version):
     """Check that a version is higher or equals to a threshold.
     Args:
       threshold: the minimum version string
@@ -64,7 +64,7 @@ def _is_at_least(threshold, version):
     # Needed for check_bazel_version below.
     return _parse_bazel_version(version) >= _parse_bazel_version(threshold)
 
-def _is_at_most(threshold, version):
+def is_at_most(threshold, version):
     """Check that a version is lower or equals to a threshold.
     Args:
       threshold: the maximum version string
@@ -103,7 +103,7 @@ def check_bazel_version(minimum_bazel_version, maximum_bazel_version = None, baz
         else:
             bazel_version = native.bazel_version
 
-    if not _is_at_least(
+    if not is_at_least(
         threshold = minimum_bazel_version,
         version = bazel_version,
     ):
@@ -113,7 +113,7 @@ def check_bazel_version(minimum_bazel_version, maximum_bazel_version = None, baz
         ))
 
     if maximum_bazel_version:
-        if not _is_at_most(
+        if not is_at_most(
             threshold = maximum_bazel_version,
             version = bazel_version,
         ):
