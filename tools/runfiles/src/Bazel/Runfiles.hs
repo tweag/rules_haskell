@@ -270,6 +270,10 @@ parseManifest = Map.fromList . map parseLine . lines
         let (key, value) = span (/= ' ') l in
         (normalize key, normalize $ dropWhile (== ' ') value)
 
+dropComma :: String -> String
+dropComma (',':xs) = xs
+dropComma s = error $ "expected first character to be a comma when parsing repository mapping (" ++ s ++ ")"
+
 -- | Parse Bazel _repo_mapping file.
 --
 -- See https://github.com/bazelbuild/proposals/blob/main/designs/2022-07-21-locating-runfiles-with-bzlmod.md
@@ -278,8 +282,8 @@ parseRepoMapping = Map.fromList . map parseLine . lines
   where
     parseLine l =
         let (context, rest) = span (/= ',') l in
-        let (apparent, resolved) = span (/= ',') (tail rest) in
-        ((context, apparent), tail resolved)
+        let (apparent, resolved) = span (/= ',') (dropComma rest) in
+        ((context, apparent), dropComma resolved)
 
 tryRepoMapping :: FilePath -> MaybeT IO RepoMapping
 tryRepoMapping repoMappingPath = do
