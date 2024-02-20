@@ -652,14 +652,16 @@ def haskell_library_impl(ctx):
     )
 
     exports = [
-        reexp[HaskellLibraryInfo]
+        reexp[HaskellLibraryInfo].exports
         for reexp in ctx.attr.exports
-        if HaskellCoverageInfo in reexp
     ]
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
         version = version,
-        exports = exports,
+        exports = depset(
+            [pkg_id.to_string(my_pkg_id)],
+            transitive = exports,
+        ),
     )
 
     dep_coverage_data = []
@@ -888,7 +890,7 @@ def haskell_import_impl(ctx):
     lib_info = HaskellLibraryInfo(
         package_id = id,
         version = ctx.attr.version,
-        exports = [],
+        exports = depset([id]),
     )
     default_info = DefaultInfo(
         files = depset(target_files),
