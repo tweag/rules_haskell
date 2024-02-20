@@ -98,7 +98,6 @@ jobs:
           common --enable_bzlmod=${{ matrix.bzlmod }}
           EOF
           cp .bazelrc.local rules_haskell_nix
-          cp .bazelrc.local rules_haskell_tests
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
         uses: tweag/run-nix-shell@v0
@@ -208,7 +207,6 @@ jobs:
           $bzlmod_cache_silo_key
           common --enable_bzlmod=${{ matrix.bzlmod }}
           EOF
-          cp .bazelrc.local rules_haskell_tests
       - name: Build & test - rules_haskell
         if: matrix.module == 'rules_haskell'
         shell: bash
