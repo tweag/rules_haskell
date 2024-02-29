@@ -26,7 +26,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v1
+      - uses: extractions/netrc@v2
         with:
           machine: api.github.com
           password: ${{ secrets.GITHUB_TOKEN }}
@@ -82,7 +82,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v1
+      - uses: extractions/netrc@v2
         with:
           machine: api.github.com
           password: ${{ secrets.GITHUB_TOKEN }}
@@ -175,7 +175,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v1
+      - uses: extractions/netrc@v2
         with:
           machine: api.github.com
           password: ${{ secrets.GITHUB_TOKEN }}
