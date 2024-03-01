@@ -398,12 +398,13 @@ haskell_library(
     ],
 )
 
+# See https://github.com/tweag/rules_haskell/issues/2127
 haskell_doc(
     name = "toto",
     tags = [
         "dont_test_on_windows",
         "requires_lz4",
-    ],
+    ] + (["skip_profiling"] if GHC_VERSION == "9.8.1" else []),
     deps = [":utils"],
 )
 
