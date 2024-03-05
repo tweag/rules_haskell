@@ -6,6 +6,7 @@ local_repository(
 )
 
 load("@rules_haskell//haskell:private/ghc_ci.bzl", "ghc_version")
+load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
 
 ghc_version(name = "rules_haskell_ghc_version")
 
@@ -297,7 +298,7 @@ stack_snapshot(
             "typed-process": ["@Cabal//:Cabal"],
             "unliftio-core": ["@Cabal//:Cabal"],
         }.items()
-        if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not GHC_VERSION.startswith("9.6.")
+        if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not is_at_least("9.6", GHC_VERSION)
     },
     stack_snapshot_json = "//:stackage_snapshot{}.json".format(
         "_" + str(GHC_VERSION) if GHC_VERSION else "",
