@@ -611,7 +611,7 @@ def _haskell_cabal_library_impl(ctx):
         user_compile_flags = [],
         user_repl_flags = [],
     )
-    lib_info = HaskellLibraryInfo(package_id = package_id, version = None, exports = [])
+    lib_info = HaskellLibraryInfo(package_id = package_id, version = None, exports = depset([package_id]))
     if with_haddock:
         doc_info = generate_unified_haddock_info(
             this_package_id = package_id,

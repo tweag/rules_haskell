@@ -117,6 +117,14 @@ main = hspec $  around_ printStatsHook $ do
       it "loads module with module dependency" $
         assertSuccess (Process.proc "./.ghcide" ["tests/binary-with-lib/Main.hs"])
 
+    describe "transitive re-exports" $ do
+      it "work" $
+        assertSuccess (bazel ["build", "//tests/package-reexport-transitive"])
+      it "work for long chains" $
+        assertSuccess (bazel ["build", "//tests/package-reexport-transitive:long"])
+      it "do not work for interrupted chains" $
+        assertFailure (bazel ["build", "//tests/package-reexport-transitive:interrupted"])
+
     describe "failures" $ do
       -- Make sure not to include haskell_repl (@repl) or alias (-repl) targets
       -- in the query. Those would not fail under bazel test.
@@ -130,9 +138,6 @@ main = hspec $  around_ printStatsHook $ do
         it "haskell_doc fails with plugins #1549" $
           -- https://github.com/tweag/rules_haskell/issues/1549
           assertFailure (bazel ["build", "//tests/haddock-with-plugin"])
-        it "transitive re-exports do not work #1145" $
-          -- https://github.com/tweag/rules_haskell/issues/1145
-          assertFailure (bazel ["build", "//tests/package-reexport-transitive"])
         it "doctest failure with foreign import #1559" $
           -- https://github.com/tweag/rules_haskell/issues/1559
           assertFailure (bazel ["build", "//tests/haskell_doctest_ffi_1559:doctest-a"])

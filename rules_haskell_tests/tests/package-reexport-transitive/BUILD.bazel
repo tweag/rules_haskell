@@ -14,12 +14,38 @@ haskell_library(
 
 haskell_library(
     name = "intermediate",
-    exports = [
-        ":root",
-    ],
-    deps = [
-        ":root",
-    ],
+    exports = [":root"],
+    deps = [":root"],
+)
+
+haskell_library(
+    name = "intermediate1",
+    exports = [":intermediate"],
+    deps = [":intermediate"],
+)
+
+haskell_library(
+    name = "intermediate2",
+    exports = [":intermediate1"],
+    deps = [":intermediate1"],
+)
+
+haskell_library(
+    name = "intermediate3",
+    exports = [":intermediate2"],
+    deps = [":intermediate2"],
+)
+
+haskell_library(
+    name = "intermediate4",
+    exports = [],
+    deps = [":intermediate2"],
+)
+
+haskell_library(
+    name = "intermediate5",
+    exports = [":intermediate4"],
+    deps = [":intermediate4"],
 )
 
 haskell_library(
@@ -30,8 +56,6 @@ haskell_library(
     ],
 )
 
-# Failure test for https://github.com/tweag/rules_haskell/issues/1145
-# TODO Turn into regression test once that issue is resolved.
 haskell_test(
     name = "final",
     srcs = ["Main.hs"],
@@ -47,3 +71,36 @@ test_suite(
     tags = ["manual"],
     tests = [":final"],
 )
+
+haskell_test(
+    name = "final-long",
+    srcs = ["Main.hs"],
+    tags = ["manual"],
+    deps = [
+        ":intermediate3",
+        "//tests/hackage:base",
+    ],
+)
+
+test_suite(
+    name = "long",
+    tags = ["manual"],
+    tests = [":final-long"],
+)
+
+haskell_test(
+    name = "final-interrupted",
+    srcs = ["Main.hs"],
+    tags = ["manual"],
+    deps = [
+        ":intermediate5",
+        "//tests/hackage:base",
+    ],
+)
+
+test_suite(
+    name = "interrupted",
+    tags = ["manual"],
+    tests = [":final-interrupted"],
+)
+

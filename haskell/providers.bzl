@@ -31,12 +31,12 @@ HaskellLibraryInfo = provider(
     fields = {
         "package_id": "Workspace unique package identifier.",
         "version": "Package version.",
-        "exports": "List of other `HaskellLibraryInfo` that this package reexports",
+        "exports": "List of `package_id`s that this package exports, that is to say, reexports and this package's own `package_id`",
     },
 )
 
 def all_package_ids(lib_info):
-    return [lib_info.package_id] + [sublib_info.package_id for sublib_info in lib_info.exports]
+    return lib_info.exports.to_list()
 
 # XXX: Does this belong here?
 def all_dependencies_package_ids(deps):
