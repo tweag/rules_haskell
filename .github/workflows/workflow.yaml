@@ -26,7 +26,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v1
+      - uses: extractions/netrc@v2
         with:
           machine: api.github.com
           password: ${{ secrets.GITHUB_TOKEN }}
@@ -47,16 +47,16 @@ jobs:
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.2.8
           - 9.4.6
           - 9.6.2
+          - 9.8.1
         exclude:
           - module: rules_haskell_nix
 
             bzlmod: false
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.2.8
+          - ghc: 9.8.1
             bzlmod: true
           - ghc: 9.6.2
             bzlmod: true
@@ -82,7 +82,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v1
+      - uses: extractions/netrc@v2
         with:
           machine: api.github.com
           password: ${{ secrets.GITHUB_TOKEN }}
@@ -143,18 +143,20 @@ jobs:
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.2.8
           - 9.4.6
           - 9.6.2
+          - 9.8.1
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.2.8
+          - ghc: 9.8.1
             bzlmod: true
           - ghc: 9.6.2
             bzlmod: true
           # currently proto-lens-protoc fails with an access violation on Windows
           - ghc: 9.6.2
+            os: windows-latest
+          - ghc: 9.8.1
             os: windows-latest
     env:
       GHC_VERSION: ${{ matrix.ghc }}
@@ -175,7 +177,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v1
+      - uses: extractions/netrc@v2
         with:
           machine: api.github.com
           password: ${{ secrets.GITHUB_TOKEN }}

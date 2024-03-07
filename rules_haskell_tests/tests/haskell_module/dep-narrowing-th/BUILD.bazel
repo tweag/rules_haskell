@@ -98,6 +98,9 @@ haskell_library(
         # skip building this target on macos with GHC 9.6.2 since it crashes ghc-iserv
         # see https://github.com/tweag/rules_haskell/issues/2073
         "dont_build_on_macos_with_ghc_9.6.2",
+
+        # The same error still happens with ghc 9.8.1 in profiling mode
+        "dont_build_on_macos_with_ghc_9.8.1",
     ],
     deps = [
         ":NonModulesTestLib",
@@ -122,6 +125,9 @@ haskell_test(
         # skip testing this target on macos with GHC 9.6.2 since it crashes ghc-iserv
         # see https://github.com/tweag/rules_haskell/issues/2073
         "dont_build_on_macos_with_ghc_9.6.2",
+
+        # The same error still happens with ghc 9.8.1 in profiling mode
+        "dont_build_on_macos_with_ghc_9.8.1",
     ],
     visibility = ["//visibility:public"],
     deps = [

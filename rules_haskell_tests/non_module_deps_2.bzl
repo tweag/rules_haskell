@@ -1,6 +1,7 @@
 """ External repositories for the CI that need to be shared between WORKSPACE and MODULE.bazel files """
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
 load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
@@ -9,7 +10,7 @@ load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 label_builder = lambda x: Label(x)
 
 def _empty_repo_impl(rctx):
-    fail(rctx.attrs.error_msg)
+    fail(rctx.attr.error_msg)
 
 _empty_repo = repository_rule(
     implementation = _empty_repo_impl,
@@ -88,7 +89,7 @@ def repositories(*, bzlmod):  # @unused
                 "unliftio-core": ["@ghcide//:Cabal"],
                 "yaml": ["@ghcide//:Cabal"],
             }.items()
-            if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not GHC_VERSION.startswith("9.6.")
+            if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not is_at_least("9.6", GHC_VERSION)
         },
         stack_snapshot_json = ("//:ghcide-snapshot{}.json".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
@@ -119,7 +120,7 @@ haskell_cabal_binary(
     verbose = False,
     visibility = ["//visibility:public"],
 )
-        """.format(setup_deps = "" if GHC_VERSION and GHC_VERSION.startswith("9.6.") else """setup_deps = ["@Cabal//:Cabal"],"""),
+        """.format(setup_deps = "" if GHC_VERSION and is_at_least("9.6", GHC_VERSION) else """setup_deps = ["@Cabal//:Cabal"],"""),
         sha256 = "9bd2f1a27e8f1b2ffdb5b2fbd3ed82b6f0e85191459a1b24ffcbef4e68a81bec",
         strip_prefix = "alex-3.2.7.1",
         urls = ["http://hackage.haskell.org/package/alex-3.2.7.1/alex-3.2.7.1.tar.gz"],
@@ -127,7 +128,7 @@ haskell_cabal_binary(
 
     # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
     # See https://github.com/tweag/rules_haskell/issues/1871
-    if GHC_VERSION and GHC_VERSION.startswith("9.6."):
+    if GHC_VERSION and is_at_least("9.6", GHC_VERSION):
         _empty_repo(
             name = "Cabal",
             error_msg = "When using GHC >= 9.6, do not depend on @Cabal, as https://github.com/tweag/rules_haskell/issues/1871 is fixed.",
@@ -200,7 +201,7 @@ haskell_cabal_library(
                 "hspec-expectations": ["@Cabal//:Cabal"],
                 "quickcheck-io": ["@Cabal//:Cabal"],
             }.items()
-            if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not GHC_VERSION.startswith("9.6.")
+            if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not is_at_least("9.6", GHC_VERSION)
         },
         stack_snapshot_json = ("//:stackage-pinning-test_snapshot{}.json".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
