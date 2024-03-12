@@ -30,7 +30,7 @@ jobs:
           printf '\n-----\n\n' >> release_notes.txt
           awk -f .github/workflows/changelog.awk CHANGELOG.md >> release_notes.txt
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           draft: true
           body_path: release_notes.txt
