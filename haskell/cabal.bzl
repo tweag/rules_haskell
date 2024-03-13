@@ -2154,7 +2154,7 @@ haskell_cabal_binary(
             for sublib in all_components[name].sublibs:
                 sublib_component_deps = [
                     _resolve_component_target_name(name, c)
-                    for c in package_components_dependencies.get("lib:".format(sublib), [])
+                    for c in package_components_dependencies.get("lib:{}".format(sublib), [])
                 ]
                 build_file_builder.append(
                     """
