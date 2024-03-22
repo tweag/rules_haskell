@@ -50,6 +50,11 @@ def resolve(path, pkgroot):
     else:
         return path
 
+
+def join_paths(paths):
+    return ["/".join(ps) for ps in paths if not None in ps]
+
+
 symlinks = {}
 
 def path_to_label(path, pkgroot, output=None):
@@ -218,36 +223,36 @@ for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
                 name = pkg.name,
                 id = pkg.id,
                 version = pkg.version,
-                hdrs = [
-                    "/".join([path_to_label(include_dir, pkgroot, output), header])
+                hdrs = join_paths([
+                    [path_to_label(include_dir, pkgroot, output), header]
                     for include_dir in pkg.include_dirs
                     for header in match_glob(resolve(include_dir, pkgroot), "**/*.h")
-                ],
-                includes = [
-                    "/".join([repo_dir, path_to_label(include_dir, pkgroot, output)])
+                ]),
+                includes = join_paths([
+                    [repo_dir, path_to_label(include_dir, pkgroot, output)]
                     for include_dir in pkg.include_dirs
-                ],
-                static_libraries = [
-                    "/".join([path_to_label(library_dir, pkgroot, output), library])
+                ]),
+                static_libraries = join_paths([
+                    [path_to_label(library_dir, pkgroot, output), library]
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "static", profiling = False)
                     for library_dir in pkg.library_dirs
                     for library in match_glob(resolve(library_dir, pkgroot), pattern)
-                ],
-                static_profiling_libraries = [
-                    "/".join([path_to_label(library_dir, pkgroot, output), library])
+                ]),
+                static_profiling_libraries = join_paths([
+                    [path_to_label(library_dir, pkgroot, output), library]
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "static", profiling = True)
                     for library_dir in pkg.library_dirs
                     for library in match_glob(resolve(library_dir, pkgroot), pattern)
-                ],
-                shared_libraries = [
-                    "/".join([path_to_label(dynamic_library_dir, pkgroot, output), library])
+                ]),
+                shared_libraries = join_paths([
+                    [path_to_label(dynamic_library_dir, pkgroot, output), library]
                     for hs_library in pkg.hs_libraries
                     for pattern in hs_library_pattern(hs_library, mode = "dynamic", profiling = False)
                     for dynamic_library_dir in set(pkg.dynamic_library_dirs + pkg.library_dirs)
                     for library in match_glob(resolve(dynamic_library_dir, pkgroot), pattern)
-                ],
+                ]),
                 haddock_html = repr(haddock_html),
                 haddock_interfaces = repr(haddock_interfaces),
                 deps = pkg.depends,
