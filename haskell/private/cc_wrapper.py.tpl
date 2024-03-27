@@ -83,9 +83,10 @@ WORKSPACE = "{:workspace:}"
 CC = os.environ.get("CC_WRAPPER_CC_PATH", "{:cc:}")
 PLATFORM = os.environ.get("CC_WRAPPER_PLATFORM", "{:platform:}")
 CPU = os.environ.get("CC_WRAPPER_CPU", "{:cpu:}")
-INSTALL_NAME_TOOL = "/usr/bin/install_name_tool"
-CODESIGN = "/usr/bin/codesign"
-OTOOL = "/usr/bin/otool"
+INSTALL_NAME_TOOL = "{:bindir:}/install_name_tool"
+CODESIGN = "{:bindir:}/codesign"
+CODESIGN_ALLOCATE = "{:bindir:}/codesign_allocate"
+OTOOL = "{:bindir:}/otool"
 
 
 def main():
@@ -935,7 +936,7 @@ def darwin_rewrite_load_commands(rewrites, output):
         # See this note from nixpkgs for reference:
         # https://github.com/NixOS/nixpkgs/blob/5855ff74f511423e3e2646248598b3ffff229223/pkgs/os-specific/darwin/signing-utils/utils.sh#L1-L6
         os.rename(output, f"{output}.resign")
-        subprocess.check_call([CODESIGN] + ["-f", "-s", "-"] + [f"{output}.resign"])
+        subprocess.check_call([CODESIGN] + ["-f", "-s", "-"] + [f"{output}.resign"], env = {'CODESIGN_ALLOCATE': CODESIGN_ALLOCATE})
         os.rename(f"{output}.resign", output)
 
 
