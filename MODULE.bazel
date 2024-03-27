@@ -188,7 +188,7 @@ register_toolchains(
 # For buildifier
 bazel_dep(
     name = "rules_go",
-    version = "0.39.1",
+    version = "0.46.0",
     dev_dependency = True,
     repo_name = "io_bazel_rules_go",
 )
