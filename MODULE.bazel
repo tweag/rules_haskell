@@ -30,7 +30,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_python",
-    version = "0.21.0",
+    version = "0.31.0",
 )
 bazel_dep(
     name = "bazel_skylib",
