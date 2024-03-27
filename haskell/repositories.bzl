@@ -9,7 +9,7 @@ load(
 load(":private/ghc_ci.bzl", "ghc_default_version")
 
 _rules_nixpkgs_version = "0.10.0"
-_rules_nixpkgs_sha256 = "a7ab0251c1a4440fd4bd59a4b6cd8b9ac0a86f1c8fdda8e53758f8c092eaa837"
+_rules_nixpkgs_sha256 = "c91c57115072cd0c797c471ef04d29f8a069dde0b387b04182ac66f9c9a699c3"
 
 _rules_sh_version = "v0.4.0"
 _rules_sh_sha256 = "3243af3fcb3768633fd39f3654de773e5fb61471a2fae5762a1653c22c412d2c"
@@ -81,9 +81,9 @@ def rules_haskell_dependencies():
         #
         # See https://github.com/tweag/rules_nixpkgs/issues/182 for the rational
 
-        strip_prefix = "rules_nixpkgs-%s" % "666dde3f47fff14e4b44afa1f8dde8524040ecc7"
+        strip_prefix = "rules_nixpkgs-%s" % "9daa03fab4f3342f68fe1d44fa052dfb886e936d"
 
-        rules_nixpkgs_url = "https://github.com/tweag/rules_nixpkgs/archive/666dde3f47fff14e4b44afa1f8dde8524040ecc7.tar.gz"
+        rules_nixpkgs_url = "https://github.com/tweag/rules_nixpkgs/archive/9daa03fab4f3342f68fe1d44fa052dfb886e936d.tar.gz"
 
         http_archive(
             name = "io_tweag_rules_nixpkgs",
