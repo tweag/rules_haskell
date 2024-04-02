@@ -8,8 +8,8 @@ load(
 )
 load(":private/ghc_ci.bzl", "ghc_default_version")
 
-_rules_nixpkgs_version = "0.10.0"
-_rules_nixpkgs_sha256 = "980edfceef2e59e1122d9be6c52413bc298435f0a3d452532b8a48d7562ffd67"
+_rules_nixpkgs_version = "0.11.1"
+_rules_nixpkgs_sha256 = "2a555348d7f8593fca2bf3fc6ce53c5d62929de81b6c292e23f16c557c0ae45a"
 
 _rules_sh_version = "v0.4.0"
 _rules_sh_sha256 = "3243af3fcb3768633fd39f3654de773e5fb61471a2fae5762a1653c22c412d2c"
