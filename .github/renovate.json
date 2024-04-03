@@ -4,5 +4,13 @@
         "github>tweag/renovate-presets:mergify"
     ],
     "ignorePaths": ["registry/**"],
+    "packageRules": [
+        {
+            "matchFiles": [
+                "rules_haskell_nix/MODULE.bazel"
+            ],
+            "enabled": false
+        }
+    ],
     "gitAuthor": "Renovate Bot <bot@renovateapp.com>"
 }
