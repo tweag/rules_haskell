@@ -1,6 +1,6 @@
 bazel_dep(
     name = "platforms",
-    version = "0.0.8",
+    version = "0.0.9",
 )
 
 # rules_haskell_nix must come before rules_haskell so that nix
