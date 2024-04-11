@@ -354,7 +354,6 @@ def _build_haskell_module(
                     dep_info.hs_libraries,
                     dep_info.deps_hs_libraries,
                     narrowed_deps_info.deps_hs_libraries,
-                    narrowed_deps_info.empty_hs_libraries,
                     object_inputs,
                 ]
                 # libraries and object inputs are only needed if the module uses TH
