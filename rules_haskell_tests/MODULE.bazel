@@ -61,7 +61,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_java",
-    version = "6.1.0",
+    version = "6.5.2",
 )
 bazel_dep(
     name = "rules_nodejs",
@@ -69,11 +69,11 @@ bazel_dep(
 )
 bazel_dep(
     name = "aspect_rules_js",
-    version = "1.34.0",
+    version = "1.40.1",
 )
 bazel_dep(
     name = "aspect_bazel_lib",
-    version = "1.38.1",
+    version = "1.42.2",
 )
 bazel_dep(
     name = "rules_proto",
