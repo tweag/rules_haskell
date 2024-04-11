@@ -2136,7 +2136,7 @@ haskell_cabal_binary(
     setup_deps = {setup_deps},
     tools = {tools},
     visibility = ["@{workspace}-exe//{name}:__pkg__"],
-    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w"],
+    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w", "--ghc-option=-static"],
     verbose = {verbose},
 )
 """.format(

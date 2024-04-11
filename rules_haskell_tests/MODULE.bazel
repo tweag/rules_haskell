@@ -5,7 +5,7 @@ module(
 
 bazel_dep(
     name = "rules_nixpkgs_core",
-    version = "0.10.0",
+    version = "0.11.1",
 )
 bazel_dep(
     name = "rules_haskell_nix",
@@ -17,15 +17,15 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_license",
-    version = "0.0.7",
+    version = "0.0.8",
 )
 bazel_dep(
     name = "rules_nixpkgs_cc",
-    version = "0.10.0",
+    version = "0.11.1",
 )
 bazel_dep(
     name = "rules_nixpkgs_python",
-    version = "0.10.0",
+    version = "0.11.1",
 )
 bazel_dep(
     name = "rules_python",
@@ -33,19 +33,19 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nixpkgs_go",
-    version = "0.10.0",
+    version = "0.11.1",
 )
 bazel_dep(
     name = "rules_nixpkgs_posix",
-    version = "0.10.0",
+    version = "0.11.1",
 )
 bazel_dep(
     name = "rules_nixpkgs_nodejs",
-    version = "0.10.0",
+    version = "0.11.1",
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.8",
+    version = "0.0.9",
 )
 bazel_dep(
     name = "rules_cc",
@@ -61,7 +61,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_java",
-    version = "6.1.0",
+    version = "6.5.2",
 )
 bazel_dep(
     name = "rules_nodejs",
@@ -86,7 +86,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "zlib",
-    version = "1.3",
+    version = "1.3.1.bcr.1",
 )
 
 ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_default_version")
@@ -210,7 +210,7 @@ go_sdk.download(
 
 bazel_dep(
     name = "gazelle",
-    version = "0.33.0",
+    version = "0.36.0",
 )
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
@@ -316,7 +316,6 @@ nix_haskell_toolchains = use_extension(
     "@rules_haskell_nix//extensions:nix_haskell_toolchains.bzl",
     "nix_haskell_toolchains",
 )
-
 nix_haskell_toolchains.new(
     attribute_path = "",
     cabalopts = test_cabalopts,

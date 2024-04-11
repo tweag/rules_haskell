@@ -39,9 +39,9 @@ def repositories(*, bzlmod):  # @unused
 
     http_archive(
         name = "cgrindel_bazel_starlib",
-        sha256 = "9090280a9cff7322e7c22062506b3273a2e880ca464e520b5c77fdfbed4e8805",
+        sha256 = "00b084e895146d2dc8c76437dd5f91a7203c7b46bb4edd1896d018b8795bc927",
         urls = [
-            "https://github.com/cgrindel/bazel-starlib/releases/download/v0.18.1/bazel-starlib.v0.18.1.tar.gz",
+            "https://github.com/cgrindel/bazel-starlib/releases/download/v0.20.2/bazel-starlib.v0.20.2.tar.gz",
         ],
     )
 
@@ -100,9 +100,9 @@ cc_library(
     linkstatic = is_darwin,
 )
 """,
-        sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
-        strip_prefix = "zlib-1.3",
-        urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
+        sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+        strip_prefix = "zlib-1.3.1",
+        urls = ["https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz"],
     )
 
 def _non_module_deps_impl(_ctx):
