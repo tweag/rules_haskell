@@ -53,17 +53,17 @@ load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_
 
 # Note [Empty Libraries]
 #
-# GHC 8.10.x wants to load the shared libraries corresponding to packages needed
-# for running TemplateHaskell splices. It wants to do this even when all the
-# necessary object files are passed in the command line.
-#
-# In order to satisfy GHC, and yet avoid passing the linked library as input, we
-# create a ficticious package which points to an empty shared library. The
-# ficticious and the real package share the same interface files.
+# GHC wants to load the shared libraries given in `extra-libraries` or
+# `hs-libraries` fields of package config files corresponding to packages needed
+# for running TemplateHaskell splices.
 #
 # Avoiding to pass the real shared library as input is necessary when building
 # individual modules with haskell_module, otherwise building the module would
 # need to wait until all of the modules of library dependencies have been built.
+#
+# In order to achieve that, we create a fictitious package which does not refer
+# to a library file at all. The fictitious and the real package share the same
+# interface files.
 #
 # See Note [Narrowed Dependencies] for an overview of what this feature is
 # needed for.
@@ -395,41 +395,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         )),
     ]
 
-def _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling, empty_libs_dir):
-    """See Note [Empty Libraries]"""
-    dep_info = gather_dep_info("haskell_module-empty_lib", [])
-    empty_c = hs.actions.declare_file("empty.c")
-    hs.actions.write(empty_c, "")
-
-    static_library = link_library_static(
-        hs,
-        cc,
-        posix,
-        dep_info,
-        depset([empty_c]),
-        my_pkg_id,
-        with_profiling = with_profiling,
-        libdir = empty_libs_dir,
-    )
-    libs = [static_library]
-
-    if with_shared:
-        dynamic_library = link_library_dynamic(
-            hs,
-            cc,
-            posix,
-            dep_info,
-            depset(),
-            depset([empty_c]),
-            my_pkg_id,
-            [],
-            None,
-            empty_libs_dir,
-        )
-        libs = [dynamic_library, static_library]
-
-    return libs
-
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
     deps = ctx.attr.deps + ctx.attr.exports + ctx.attr.narrowed_deps
@@ -589,8 +554,8 @@ def haskell_library_impl(ctx):
         exposed_modules,
         other_modules,
         my_pkg_id,
-        non_empty,
-        empty_libs_dir,
+        has_hs_library = False,
+        empty_libs_dir = empty_libs_dir,
     )
 
     interface_dirs = depset(
@@ -606,8 +571,6 @@ def haskell_library_impl(ctx):
         version_macros = sets.make([
             generate_version_macros(ctx, package_name, version),
         ])
-
-    empty_libs = _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling, empty_libs_dir)
 
     export_infos = gather_dep_info(ctx.attr.name, ctx.attr.exports)
     hs_info = HaskellInfo(
@@ -635,10 +598,6 @@ def haskell_library_impl(ctx):
         ),
         deps_hs_libraries = depset(
             transitive = [dep_info.hs_libraries, narrowed_deps_info.deps_hs_libraries],
-        ),
-        empty_hs_libraries = depset(
-            direct = empty_libs,
-            transitive = [all_deps_info.empty_hs_libraries, export_infos.empty_hs_libraries],
         ),
         interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
         deps_interface_dirs = depset(transitive = [dep_info.interface_dirs, narrowed_deps_info.deps_interface_dirs]),
@@ -857,7 +816,6 @@ def haskell_import_impl(ctx):
         import_dirs = sets.make(),
         hs_libraries = depset(),
         deps_hs_libraries = depset(),
-        empty_hs_libraries = depset(),
         interface_dirs = depset(),
         deps_interface_dirs = depset(),
         compile_flags = [],

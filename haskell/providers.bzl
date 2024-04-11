@@ -13,7 +13,6 @@ HaskellInfo = provider(
         "extra_source_files": "Depset of non-Haskell source files.",
         "hs_libraries": "Depset of compiled Haskell libraries in all available GHC ways.",
         "deps_hs_libraries": "Depset of compiled Haskell libraries belonging to libraries in the deps field of the rule or in the deps field of any transitive dependency (libraries in narrowed_deps are included in transitive dependencies for this sake)",
-        "empty_hs_libraries": "Depset of compiled empty Haskell libraries in all available GHC ways.",
         "interface_dirs": "Depset of interface dirs belonging to the packages.",
         "deps_interface_dirs": "Depset of interface dirs belonging to libraries in the deps field of the rule or in the deps field of any transitive dependency (libraries in narrowed_deps are included in transitive dependencies for this sake)",
         "compile_flags": "Arguments that were used to compile the code.",
