@@ -31,9 +31,9 @@ def repositories(*, bzlmod):  # @unused
     # module rules_bazel_integration_test requires bazel >= 6.1.0
     http_archive(
         name = "rules_bazel_integration_test",
-        sha256 = "6e65d497c68f5794349bfa004369e144063686ce1ebd0227717cd23285be45ef",
+        sha256 = "fe43a0ef76323813c912b7256a5f01f87f2697528b107627b70da58c50b1988a",
         urls = [
-            "https://github.com/bazel-contrib/rules_bazel_integration_test/releases/download/v0.20.0/rules_bazel_integration_test.v0.20.0.tar.gz",
+            "https://github.com/bazel-contrib/rules_bazel_integration_test/releases/download/v0.23.0/rules_bazel_integration_test.v0.23.0.tar.gz",
         ],
     )
 
