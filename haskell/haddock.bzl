@@ -89,16 +89,13 @@ def _haskell_doc_aspect_impl(target, ctx):
     html_dir = ctx.actions.declare_directory(html_dir_raw)
     haddock_file = ctx.actions.declare_file(_get_haddock_path(package_id))
 
-    # XXX Haddock really wants a version number, so invent one from
-    # thin air. See https://github.com/haskell/haddock/issues/898.
-    if target[HaskellLibraryInfo].version:
-        version = target[HaskellLibraryInfo].version
-    else:
-        version = "0"
-
     args = ctx.actions.args()
     args.add("--package-name={0}".format(package_id))
-    args.add("--package-version={0}".format(version))
+
+    if target[HaskellLibraryInfo].version:
+        version = target[HaskellLibraryInfo].version
+        args.add("--package-version={0}".format(version))
+
     args.add_all([
         "-D",
         haddock_file.path,
