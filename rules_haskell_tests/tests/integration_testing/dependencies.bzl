@@ -11,7 +11,8 @@ def integration_testing_bazel_binaries():
     for package in SUPPORTED_NIXPKGS_BAZEL_PACKAGES:
         nixpkgs_package(
             name = package,
-            repository = "@nixpkgs_default",
+            # TODO switch back to nixpkgs_default once bazel_* matches the version in .bazelversion
+            repository = "@nixpkgs_unstable",
             build_file_content = """\
 filegroup(
     name = "bazel_bin",

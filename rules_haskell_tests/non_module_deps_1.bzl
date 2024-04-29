@@ -58,6 +58,12 @@ def repositories(*, bzlmod):
         nix_file = "//nixpkgs:default.nix",
     )
 
+    # TODO switch back to nixpkgs_default once bazel_* matches the version in .bazelversion
+    nixpkgs_local_repository(
+        name = "nixpkgs_unstable",
+        nix_file = "//nixpkgs:nixos-unstable.nix",
+    )
+
     nixpkgs_package(
         name = "glibc_locales",
         attribute_path = "glibcLocales",
