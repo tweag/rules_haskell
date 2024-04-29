@@ -8,12 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Changed
 
 * Use ghc 9.4.6 by default
+* Use Bazel 6.5.0 by default (See https://github.com/tweag/rules_haskell/pull/2117)
 
 ## [0.19] 2024-02-5
 
 [0.19]: https://github.com/tweag/rules_haskell/compare/v0.18...v0.19
 
-### Highlights 
+### Highlights
 
 * Fix toolchain libraries creation when using `ghcWithPackages` (https://github.com/tweag/rules_haskell/pull/2098)
 
@@ -21,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 * Ghc 9.6.4 (https://github.com/tweag/rules_haskell/pull/2108)
 
-### Changed 
+### Changed
 
 * Upgrade  `rules_sh` to `0.4.0` (https://github.com/tweag/rules_haskell/pull/2103)
 

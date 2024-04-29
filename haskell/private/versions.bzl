@@ -16,7 +16,7 @@
 SUPPORTED_BAZEL_VERSIONS = [
     "6.0.0",
     "6.3.2",
-    "6.4.0",
+    "6.5.0",
 ]
 
 SUPPORTED_NIXPKGS_BAZEL_PACKAGES = [
