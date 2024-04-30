@@ -45,7 +45,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.9",
+    version = "0.0.10",
 )
 bazel_dep(
     name = "rules_cc",
