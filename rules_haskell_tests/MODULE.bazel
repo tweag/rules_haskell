@@ -199,7 +199,7 @@ local_path_override(
 # Go setup for buildifieR
 bazel_dep(
     name = "rules_go",
-    version = "0.46.0",
+    version = "0.47.0",
     repo_name = "io_bazel_rules_go",
 )
 
