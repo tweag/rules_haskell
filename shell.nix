@@ -3,6 +3,8 @@
 with pkgs;
 
 let
+  nixos-unstable = import ./nixpkgs/nixos-unstable.nix { };
+
   macOS-security =
     # make `/usr/bin/security` available in `PATH`, which is needed for stack
     # on darwin which calls this binary to find certificates
@@ -42,7 +44,8 @@ mkShell {
   ++ lib.optionals docTools [ graphviz python39Packages.sphinx zip unzip ]
   ++ lib.optional stdenv.isDarwin macOS-security;
 
-  packages = [ bazel_6 ];
+  # TODO switch back to default nixpkgs once bazel_* matches the version in .bazelversion
+  packages = [ nixos-unstable.bazel_6 ];
 
   shellHook = ''
     # Add nix config flags to .bazelrc.local.
