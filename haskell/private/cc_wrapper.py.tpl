@@ -931,12 +931,16 @@ def darwin_rewrite_load_commands(rewrites, output):
     if args:
         subprocess.check_call([INSTALL_NAME_TOOL] + args + [output])
         # Resign the binary after patching it.
+        # Fall back to /usr/bin/codesign if the `CODESIGN` executable is not available
+        # (this might happen when using a default cc toolchain from a nix shell on Darwin instead
+        #  of using a nixpkgs_cc_configure'd toolchain).
+        codesign = CODESIGN if os.access(CODESIGN, os.X_OK) else "/usr/bin/codesign"
         # This is necessary on MacOS Monterey on M1.
         # The moving back and forth is necessary because the OS caches the signature.
         # See this note from nixpkgs for reference:
         # https://github.com/NixOS/nixpkgs/blob/5855ff74f511423e3e2646248598b3ffff229223/pkgs/os-specific/darwin/signing-utils/utils.sh#L1-L6
         os.rename(output, f"{output}.resign")
-        subprocess.check_call([CODESIGN] + ["-f", "-s", "-"] + [f"{output}.resign"], env = {'CODESIGN_ALLOCATE': CODESIGN_ALLOCATE})
+        subprocess.check_call([codesign] + ["-f", "-s", "-"] + [f"{output}.resign"], env = {'CODESIGN_ALLOCATE': CODESIGN_ALLOCATE})
         os.rename(f"{output}.resign", output)
 
 
