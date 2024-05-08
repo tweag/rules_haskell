@@ -1,23 +1,23 @@
 """Support for protocol buffers"""
 
-load(
-    ":private/haskell_impl.bzl",
-    _haskell_library_impl = "haskell_library_impl",
-)
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(
-    ":providers.bzl",
-    "HaddockInfo",
-    "HaskellInfo",
-    "HaskellLibraryInfo",
-    "HaskellProtobufInfo",
-)
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
     "extend_HaskellCcLibrariesInfo",
     "haskell_cc_libraries_aspect",
+)
+load(
+    ":private/haskell_impl.bzl",
+    _haskell_library_impl = "haskell_library_impl",
+)
+load(
+    ":providers.bzl",
+    "HaddockInfo",
+    "HaskellInfo",
+    "HaskellLibraryInfo",
+    "HaskellProtobufInfo",
 )
 
 def _capitalize_first_letter(c):

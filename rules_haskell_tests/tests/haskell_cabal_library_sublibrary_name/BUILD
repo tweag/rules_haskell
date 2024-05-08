@@ -1,12 +1,12 @@
 load(
-    "@rules_haskell//haskell:defs.bzl",
-    "haskell_test",
-    "haskell_toolchain_library",
-)
-load(
     "@rules_haskell//haskell:cabal.bzl",
     "haskell_cabal_binary",
     "haskell_cabal_library",
+)
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
+    "haskell_toolchain_library",
 )
 
 haskell_toolchain_library(name = "base")

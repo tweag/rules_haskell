@@ -1,11 +1,10 @@
-load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
-
 # Load rules_haskell rules.
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
     "haskell_toolchain_library",
 )
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 
 package(default_visibility = ["//visibility:public"])
 

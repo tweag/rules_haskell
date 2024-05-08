@@ -1,11 +1,8 @@
 """Support for c2hs"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
-load(
-    ":providers.bzl",
-    "C2hsLibraryInfo",
-)
 load(":cc.bzl", "cc_interop_info")
 load(
     ":private/cc_libraries.bzl",
@@ -19,8 +16,11 @@ load(
     "target_unique_name",
 )
 load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/version_macros.bzl", "version_macro_includes")
+load(
+    ":providers.bzl",
+    "C2hsLibraryInfo",
+)
 
 def _c2hs_library_impl(ctx):
     hs = haskell_context(ctx)

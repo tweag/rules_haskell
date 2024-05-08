@@ -3,18 +3,18 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load(
+    ":private/cc_libraries.bzl",
+    "get_ghci_library_files",
+    "haskell_cc_libraries_aspect",
+)
+load(":private/context.bzl", "haskell_context", "render_env")
+load(
     ":providers.bzl",
     "HaddockInfo",
     "HaskellCcLibrariesInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
 )
-load(
-    ":private/cc_libraries.bzl",
-    "get_ghci_library_files",
-    "haskell_cc_libraries_aspect",
-)
-load(":private/context.bzl", "haskell_context", "render_env")
 
 def generate_unified_haddock_info(this_package_id, this_package_haddock, this_package_html, deps):
     """Collapse dependencies into a single `HaddockInfo`.

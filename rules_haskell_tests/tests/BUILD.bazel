@@ -1,8 +1,9 @@
-load("@rules_haskell//tests:inline_tests.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("@os_info//:os_info.bzl", "is_windows")
-load("//tests:rule_test_exe.bzl", "rule_test_exe")
-load("//tests:test_haddock.bzl", "expected_values")
+load(
+    "@rules_haskell//:constants.bzl",
+    DEFAULT_TEST_GHC_VERSION = "test_ghc_version",
+)
 load(
     "@rules_haskell//haskell:c2hs.bzl",
     "c2hs_toolchain",
@@ -22,11 +23,10 @@ load(
     "@rules_haskell//haskell:protobuf.bzl",
     "haskell_proto_toolchain",
 )
+load("@rules_haskell//tests:inline_tests.bzl", "sh_inline_test")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
-load(
-    "@rules_haskell//:constants.bzl",
-    DEFAULT_TEST_GHC_VERSION = "test_ghc_version",
-)
+load("//tests:rule_test_exe.bzl", "rule_test_exe")
+load("//tests:test_haddock.bzl", "expected_values")
 
 # prefer the GHC version set by rules_haskell, use the default test GHC version otherwise
 TEST_GHC_VERSION = GHC_VERSION or DEFAULT_TEST_GHC_VERSION

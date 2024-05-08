@@ -3,8 +3,8 @@ load(
     "asserts",
     unit = "unittest",
 )
-load("@rules_haskell//haskell:private/path_utils.bzl", "create_rpath_entry", "parent_dir_path")
 load("@rules_haskell//haskell:private/list.bzl", "list")
+load("@rules_haskell//haskell:private/path_utils.bzl", "create_rpath_entry", "parent_dir_path")
 
 def parent_dir_path_test_impl(ctx):
     env = unit.begin(ctx)

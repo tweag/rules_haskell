@@ -1,18 +1,9 @@
 """ External repositories for the CI that need to be shared between WORKSPACE and MODULE.bazel files """
 
-load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
-    "@rules_nixpkgs_core//:nixpkgs.bzl",
-    "nixpkgs_local_repository",
-    "nixpkgs_package",
-)
-load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
-load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
-load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
-load(
-    "@rules_haskell//haskell:nixpkgs.bzl",
-    "haskell_register_ghc_nixpkgs",
+    "@rules_haskell//:constants.bzl",
+    _default_ghc_version = "test_ghc_version",
 )
 load(
     "@rules_haskell//docs/pandoc:pandoc.bzl",
@@ -20,10 +11,19 @@ load(
     "nixpkgs_pandoc_configure",
 )
 load(
-    "@rules_haskell//:constants.bzl",
-    _default_ghc_version = "test_ghc_version",
+    "@rules_haskell//haskell:nixpkgs.bzl",
+    "haskell_register_ghc_nixpkgs",
 )
+load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
+load(
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
+    "nixpkgs_local_repository",
+    "nixpkgs_package",
+)
+load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
+load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
 
 test_ghc_version = GHC_VERSION or _default_ghc_version
 
@@ -66,9 +66,9 @@ def repositories(*, bzlmod):
     # no modules are provided at the moment for buildifier
     http_archive(
         name = "com_github_bazelbuild_buildtools",
-        sha256 = "05c3c3602d25aeda1e9dbc91d3b66e624c1f9fdadf273e5480b489e744ca7269",
-        strip_prefix = "buildtools-6.4.0",
-        urls = ["https://github.com/bazelbuild/buildtools/archive/v6.4.0.tar.gz"],
+        sha256 = "60a9025072ae237f325d0e7b661e1685f34922c29883888c2d06f5789462b939",
+        strip_prefix = "buildtools-7.1.1",
+        urls = ["https://github.com/bazelbuild/buildtools/archive/v7.1.1.tar.gz"],
     )
 
     nixpkgs_local_repository(
