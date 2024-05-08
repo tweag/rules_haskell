@@ -1,10 +1,10 @@
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load(
     "//haskell:providers.bzl",
     "HaskellInfo",
     "HaskellLibraryInfo",
 )
 load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def gather_dep_info(name, deps):
     """Collapse dependencies into a single `HaskellInfo`.

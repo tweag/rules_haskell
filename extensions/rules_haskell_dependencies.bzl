@@ -1,12 +1,12 @@
 """ This module extension contains rules_haskell dependencies that are not available as modules """
 
-load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies_bzlmod")
-load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("@rules_haskell//tools:os_info.bzl", "os_info")
-load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
+load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies_bzlmod")
+load("@rules_haskell//tools:os_info.bzl", "os_info")
+load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 def _empty_repo_impl(rctx):
     fail(rctx.attr.error_msg)

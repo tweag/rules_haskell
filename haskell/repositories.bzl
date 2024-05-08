@@ -2,11 +2,11 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load(":private/ghc_ci.bzl", "ghc_default_version")
 load(
     ":private/versions.bzl",
     "check_bazel_version_compatible",
 )
-load(":private/ghc_ci.bzl", "ghc_default_version")
 
 _rules_nixpkgs_version = "0.11.1"
 _rules_nixpkgs_sha256 = "2a555348d7f8593fca2bf3fc6ce53c5d62929de81b6c292e23f16c557c0ae45a"

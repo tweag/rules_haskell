@@ -1,13 +1,13 @@
 load(
+    "@rules_haskell//haskell:c2hs.bzl",
+    "c2hs_library",
+)
+load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
     "haskell_test",
 )
 load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
-load(
-    "@rules_haskell//haskell:c2hs.bzl",
-    "c2hs_library",
-)
 
 package(default_testonly = 1)
 

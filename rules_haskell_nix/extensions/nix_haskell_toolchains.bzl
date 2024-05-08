@@ -6,9 +6,10 @@ Once posix toolchains can be registered directly via the rules_nixpkgs_posix mod
 the handling of these toolchains could be removed from this extension.
 """
 
+load("@rules_haskell//extensions:haskell_toolchains.bzl", "all_toolchains")
 load(
-    "@rules_nixpkgs_posix//:posix.bzl",
-    "nixpkgs_sh_posix_configure",
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
+    "nixpkgs_package",
 )
 load(
     "@rules_nixpkgs_core//:util.bzl",
@@ -16,10 +17,9 @@ load(
     "ensure_constraints_pure",
 )
 load(
-    "@rules_nixpkgs_core//:nixpkgs.bzl",
-    "nixpkgs_package",
+    "@rules_nixpkgs_posix//:posix.bzl",
+    "nixpkgs_sh_posix_configure",
 )
-load("@rules_haskell//extensions:haskell_toolchains.bzl", "all_toolchains")
 
 # Based on _nixpkgs_sh_posix_toolchain from:
 # https://github.com/tweag/rules_nixpkgs/blob/420370f64f03ed9c1ff9b5e2994d06c0439cb1f2/toolchains/posix/posix.bzl#LL109C1-L128C1

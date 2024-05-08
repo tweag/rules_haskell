@@ -1,7 +1,7 @@
 """Package identifiers"""
 
-load(":private/mode.bzl", "is_profiling_enabled")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/mode.bzl", "is_profiling_enabled")
 
 def _zencode(s):
     """Z-escape special characters to make a valid GHC package identifier.

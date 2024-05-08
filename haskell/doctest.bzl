@@ -1,21 +1,21 @@
 """Doctest support"""
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
-load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
-load(":private/context.bzl", "haskell_context", "render_env")
 load("@bazel_skylib//lib:sets.bzl", "sets")
-load(
-    "@rules_haskell//haskell:providers.bzl",
-    "HaskellCcLibrariesInfo",
-    "HaskellInfo",
-)
+load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 load(
     "@rules_haskell//haskell:private/cc_libraries.bzl",
     "get_ghci_library_files",
     "haskell_cc_libraries_aspect",
     "link_libraries",
 )
+load(
+    "@rules_haskell//haskell:providers.bzl",
+    "HaskellCcLibrariesInfo",
+    "HaskellInfo",
+)
+load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
+load(":private/context.bzl", "haskell_context", "render_env")
 
 def _doctest_toolchain_impl(ctx):
     return platform_common.ToolchainInfo(

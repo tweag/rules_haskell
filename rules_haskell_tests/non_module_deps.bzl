@@ -1,7 +1,7 @@
 """ External repositories for the CI that need to be shared between WORKSPACE and MODULE.bazel files """
 
-load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@rules_haskell//tools:os_info.bzl", "os_info")
 load(
     "//tests/external-haskell-repository:workspace_dummy.bzl",
     "haskell_package_repository_dummy",

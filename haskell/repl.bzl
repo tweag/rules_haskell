@@ -4,22 +4,6 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load(":cc.bzl", "ghc_cc_program_args")
-load(":private/context.bzl", "haskell_context", "render_env")
-load(":private/expansions.bzl", "expand_make_variables")
-load(
-    ":private/path_utils.bzl",
-    "match_label",
-    "parse_pattern",
-    "target_unique_name",
-)
-load(
-    ":providers.bzl",
-    "HaskellCcLibrariesInfo",
-    "HaskellInfo",
-    "HaskellLibraryInfo",
-    "HaskellToolchainLibraryInfo",
-    "all_package_ids",
-)
 load(
     ":private/cc_libraries.bzl",
     "deps_HaskellCcLibrariesInfo",
@@ -30,8 +14,24 @@ load(
     "link_libraries",
     "merge_HaskellCcLibrariesInfo",
 )
+load(":private/context.bzl", "haskell_context", "render_env")
+load(":private/expansions.bzl", "expand_make_variables")
 load(":private/java.bzl", "java_interop_info")
+load(
+    ":private/path_utils.bzl",
+    "match_label",
+    "parse_pattern",
+    "target_unique_name",
+)
 load(":private/set.bzl", "set")
+load(
+    ":providers.bzl",
+    "HaskellCcLibrariesInfo",
+    "HaskellInfo",
+    "HaskellLibraryInfo",
+    "HaskellToolchainLibraryInfo",
+    "all_package_ids",
+)
 
 HaskellReplLoadInfo = provider(
     doc = """Haskell REPL target information.

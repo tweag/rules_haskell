@@ -1,18 +1,9 @@
 """ External repositories for the CI that need to be shared between WORKSPACE and MODULE.bazel files """
 
-load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
-    "@rules_nixpkgs_core//:nixpkgs.bzl",
-    "nixpkgs_local_repository",
-    "nixpkgs_package",
-)
-load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
-load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
-load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
-load(
-    "@rules_haskell//haskell:nixpkgs.bzl",
-    "haskell_register_ghc_nixpkgs",
+    "@rules_haskell//:constants.bzl",
+    _default_ghc_version = "test_ghc_version",
 )
 load(
     "@rules_haskell//docs/pandoc:pandoc.bzl",
@@ -20,10 +11,19 @@ load(
     "nixpkgs_pandoc_configure",
 )
 load(
-    "@rules_haskell//:constants.bzl",
-    _default_ghc_version = "test_ghc_version",
+    "@rules_haskell//haskell:nixpkgs.bzl",
+    "haskell_register_ghc_nixpkgs",
 )
+load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
+load(
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
+    "nixpkgs_local_repository",
+    "nixpkgs_package",
+)
+load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
+load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
 
 test_ghc_version = GHC_VERSION or _default_ghc_version
 

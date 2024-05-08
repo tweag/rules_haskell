@@ -1,8 +1,13 @@
 """Rules for defining toolchains"""
 
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load(
+    "//haskell/asterius:asterius_config.bzl",
+    "ASTERIUS_BINARIES",
+    "asterius_tools_config",
+)
+load(":cc.bzl", "ghc_cc_program_args")
 load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load(
     ":private/actions/compile.bzl",
@@ -17,18 +22,11 @@ load(
     "merge_parameter_files",
 )
 load(":private/actions/package.bzl", "package")
-load(":cc.bzl", "ghc_cc_program_args")
 load(":private/context.bzl", "append_to_path")
 load(
-    "//haskell/asterius:asterius_config.bzl",
-    "ASTERIUS_BINARIES",
-    "asterius_tools_config",
-)
-load(
-    ":providers.bzl",
-    "HaddockInfo",
-    "HaskellInfo",
-    "HaskellLibraryInfo",
+    ":private/haskell_impl.bzl",
+    "HaskellImportHack",
+    "HaskellToolchainLibraries",
 )
 load(
     ":private/path_utils.bzl",
@@ -37,9 +35,10 @@ load(
     "get_static_hs_lib_name",
 )
 load(
-    ":private/haskell_impl.bzl",
-    "HaskellImportHack",
-    "HaskellToolchainLibraries",
+    ":providers.bzl",
+    "HaddockInfo",
+    "HaskellInfo",
+    "HaskellLibraryInfo",
 )
 
 _GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]

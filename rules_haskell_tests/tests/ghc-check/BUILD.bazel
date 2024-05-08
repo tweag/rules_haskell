@@ -1,11 +1,11 @@
 load("@os_info//:os_info.bzl", "is_windows")
 load(
-    "@rules_haskell//haskell:defs.bzl",
-    "haskell_test",
-)
-load(
     "@rules_haskell//haskell:cabal.bzl",
     "haskell_cabal_binary",
+)
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_test",
 )
 
 haskell_test(

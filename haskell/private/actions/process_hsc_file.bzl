@@ -1,9 +1,9 @@
 """Action processing hsc files"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/version_macros.bzl", "version_macro_includes")
-load(":private/path_utils.bzl", "declare_compiled")
 load("@bazel_skylib//lib:sets.bzl", "sets")
+load(":private/path_utils.bzl", "declare_compiled")
+load(":private/version_macros.bzl", "version_macro_includes")
 
 def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     """Process a single hsc file.

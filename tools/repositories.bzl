@@ -1,8 +1,8 @@
 """Workspace rules (tools/repositories)"""
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
-load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 def rules_haskell_worker_dependencies(**stack_kwargs):
     """

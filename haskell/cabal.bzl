@@ -2,13 +2,22 @@
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe", "read_netrc", "use_netrc")
-load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
+load(":haddock.bzl", "generate_unified_haddock_info")
 load(":private/actions/info.bzl", "library_info_output_groups")
 load(":private/actions/link.bzl", "darwin_flags_for_linking_indirect_cc_deps")
+load(
+    ":private/cc_libraries.bzl",
+    "get_cc_libraries",
+    "get_ghci_library_files",
+    "get_library_files",
+    "haskell_cc_libraries_aspect",
+)
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -20,9 +29,8 @@ load(
     "relative_rpath_prefix",
     "truly_relativize",
 )
-load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/validate_attrs.bzl", "typecheck_stackage_extradeps")
-load(":haddock.bzl", "generate_unified_haddock_info")
+load(":private/versions.bzl", "check_bazel_version")
 load(
     ":private/workspace_utils.bzl",
     _execute_or_fail_loudly = "execute_or_fail_loudly",
@@ -34,14 +42,6 @@ load(
     "HaskellLibraryInfo",
     "all_dependencies_package_ids",
 )
-load(
-    ":private/cc_libraries.bzl",
-    "get_cc_libraries",
-    "get_ghci_library_files",
-    "get_library_files",
-    "haskell_cc_libraries_aspect",
-)
-load(":private/versions.bzl", "check_bazel_version")
 
 def _get_auth(ctx, urls):
     """Find the .netrc file and obtain the auth dict for the required URLs.

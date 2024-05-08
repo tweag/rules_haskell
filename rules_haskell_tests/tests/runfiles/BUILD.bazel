@@ -1,6 +1,6 @@
+load("@os_info//:os_info.bzl", "is_windows")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
-load("@os_info//:os_info.bzl", "is_windows")
 
 package(default_testonly = 1)
 
