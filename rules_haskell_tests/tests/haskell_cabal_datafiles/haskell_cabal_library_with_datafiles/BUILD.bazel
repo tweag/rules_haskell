@@ -1,5 +1,6 @@
 # Check that we manage to access the runfile while using the generate_paths_module attribute of haskell_cabal_library
 
+load("@os_info//:os_info.bzl", "is_windows")
 load(
     "@rules_haskell//haskell:cabal.bzl",
     "haskell_cabal_binary",
@@ -10,7 +11,6 @@ load(
     "haskell_test",
     "haskell_toolchain_library",
 )
-load("@os_info//:os_info.bzl", "is_windows")
 
 package(default_testonly = 1)
 

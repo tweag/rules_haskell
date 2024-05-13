@@ -3,8 +3,10 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
-load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE")
+load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
+load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
+load(":private/bazel_platforms.bzl", "bazel_platforms")
 load(
     ":private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
@@ -17,8 +19,6 @@ load(
     "find_python",
     "resolve_labels",
 )
-load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
-load(":private/bazel_platforms.bzl", "bazel_platforms")
 
 _GHC_DEFAULT_VERSION = DEFAULT_GHC_VERSION
 

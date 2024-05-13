@@ -1,18 +1,18 @@
 """runghc support"""
 
+load("@bazel_skylib//lib:sets.bzl", "sets")
+load("@bazel_skylib//lib:shell.bzl", "shell")
+load(
+    ":private/cc_libraries.bzl",
+    "get_ghci_library_files",
+    "link_libraries",
+)
 load(":private/packages.bzl", "expose_packages", "pkg_info_to_compile_flags")
 load(
     ":private/path_utils.bzl",
     "ln",
     "target_unique_name",
 )
-load(
-    ":private/cc_libraries.bzl",
-    "get_ghci_library_files",
-    "link_libraries",
-)
-load("@bazel_skylib//lib:shell.bzl", "shell")
-load("@bazel_skylib//lib:sets.bzl", "sets")
 
 def build_haskell_runghc(
         hs,

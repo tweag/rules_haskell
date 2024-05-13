@@ -1,11 +1,21 @@
 """Core Haskell rules"""
 
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
+load(
+    "//haskell/experimental:providers.bzl",
+    "HaskellModuleInfo",
+)
 load(
     ":haddock.bzl",
     _haskell_doc = "haskell_doc",
     _haskell_doc_aspect = "haskell_doc_aspect",
 )
+load(
+    ":plugins.bzl",
+    _ghc_plugin = "ghc_plugin",
+)
+load(":private/cc_libraries.bzl", "haskell_cc_libraries_aspect")
 load(
     ":private/haskell_impl.bzl",
     _haskell_binary_impl = "haskell_binary_impl",
@@ -19,7 +29,6 @@ load(
     _haskell_repl = "haskell_repl",
     _haskell_repl_aspect = "haskell_repl_aspect",
 )
-load(":private/cc_libraries.bzl", "haskell_cc_libraries_aspect")
 
 # For re-exports:
 load(
@@ -27,15 +36,6 @@ load(
     _haskell_register_toolchains = "rules_haskell_toolchains",
     _haskell_toolchain = "haskell_toolchain",
 )
-load(
-    ":plugins.bzl",
-    _ghc_plugin = "ghc_plugin",
-)
-load(
-    "//haskell/experimental:providers.bzl",
-    "HaskellModuleInfo",
-)
-load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 
 # NOTE: Documentation needs to be added to the wrapper macros below.
 #   Currently it is not possible to automatically inherit rule documentation in

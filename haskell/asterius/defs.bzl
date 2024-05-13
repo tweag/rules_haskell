@@ -4,8 +4,8 @@
 # And for now stardoc always try to explore third party dependencies
 # https://github.com/bazelbuild/stardoc/issues/93.
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_haskell_asterius_webpack//:package_json.bzl", "bin")
 

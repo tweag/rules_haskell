@@ -33,10 +33,9 @@ http_archive(
     url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.7.2/bazel-lib-v2.7.2.tar.gz",
 )
 
-load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
-
 # bazel dependencies
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
+load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 
 rules_js_dependencies()
 
@@ -67,12 +66,18 @@ http_archive(
     ],
 )
 
+load(
+    "@rules_haskell//:constants.bzl",
+    _default_ghc_version = "test_ghc_version",
+)
+
 # This tests loading haskell_register_ghc_nixpkgs via @rules_haskell.
 # This is not shared with the bzlmod configuration because @rules_haskell_nix must be used in this case.
 load(
     "@rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 load(
     "@rules_haskell_tests//:non_module_deps_1.bzl",
     "test_cabalopts",
@@ -80,11 +85,6 @@ load(
     "test_haddock_flags",
     "test_repl_ghci_args",
 )
-load(
-    "@rules_haskell//:constants.bzl",
-    _default_ghc_version = "test_ghc_version",
-)
-load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 test_ghc_version = GHC_VERSION or _default_ghc_version
 

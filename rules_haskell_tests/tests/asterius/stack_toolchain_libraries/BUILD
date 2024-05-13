@@ -2,7 +2,6 @@
 # The :bin example can be compiled with both the asterius toolchain and the regular one.
 # We make use of aliases to select the correct libraries depending on the target platform.
 
-load("//tests:asterius/asterius_tests_utils.bzl", "tags")
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_test",
@@ -14,6 +13,7 @@ load(
     "asterius_test",
     "asterius_webpack",
 )
+load("//tests:asterius/asterius_tests_utils.bzl", "tags")
 
 # base is a target platform for all toolchains.
 haskell_toolchain_library(name = "base")

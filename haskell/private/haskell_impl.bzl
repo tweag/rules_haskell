@@ -1,14 +1,12 @@
 """Implementation of core Haskell rules"""
 
+load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load(
-    ":providers.bzl",
-    "C2hsLibraryInfo",
-    "HaddockInfo",
-    "HaskellInfo",
-    "HaskellLibraryInfo",
-    "HaskellToolchainLibraryInfo",
-)
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", "sets")
+load("@bazel_skylib//lib:shell.bzl", "shell")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 load(":cc.bzl", "cc_interop_info")
 load(
     ":private/actions/info.bzl",
@@ -24,12 +22,12 @@ load(
     "link_library_static",
 )
 load(":private/actions/package.bzl", "package")
-load(":private/plugins.bzl", "resolve_plugin_tools")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "haskell_library_expand_make_variables")
 load(":private/java.bzl", "java_interop_info")
+load(":private/list.bzl", "list")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
@@ -40,16 +38,19 @@ load(
     "parse_pattern",
 )
 load(":private/pkg_id.bzl", "pkg_id")
+load(":private/plugins.bzl", "resolve_plugin_tools")
 load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:sets.bzl", "sets")
-load(":private/list.bzl", "list")
 load(":private/version_macros.bzl", "generate_version_macros")
-load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_skylib//lib:collections.bzl", "collections")
-load("@bazel_skylib//lib:shell.bzl", "shell")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
-load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
+load(
+    ":providers.bzl",
+    "C2hsLibraryInfo",
+    "GhcPluginInfo",
+    "HaddockInfo",
+    "HaskellCoverageInfo",
+    "HaskellInfo",
+    "HaskellLibraryInfo",
+    "HaskellToolchainLibraryInfo",
+)
 
 # Note [Empty Libraries]
 #

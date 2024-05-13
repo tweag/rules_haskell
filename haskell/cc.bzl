@@ -3,13 +3,13 @@
 These rules are deprecated.
 """
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "@rules_cc//cc:action_names.bzl",
     "CPP_LINK_EXECUTABLE_ACTION_NAME",
     "C_COMPILE_ACTION_NAME",
 )
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "//haskell:providers.bzl",
     "GhcPluginInfo",

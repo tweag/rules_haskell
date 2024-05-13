@@ -1,11 +1,11 @@
 """Experimental Haskell rules"""
 
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
+load("//haskell:private/cc_libraries.bzl", "haskell_cc_libraries_aspect")
 load(
     "//haskell/experimental/private:module.bzl",
     _haskell_module_impl = "haskell_module_impl",
 )
-load("//haskell:private/cc_libraries.bzl", "haskell_cc_libraries_aspect")
 
 # TODO[GL] should we have repl_ghci_args here?
 _haskell_module = rule(

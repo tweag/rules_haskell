@@ -2,7 +2,7 @@
 This module extension gathers packages and configuration from all the modules that use it,
 in order to make a unique call to `stack_snapshot` to generate a "stackage" shared repository.
 
-Most of the configuration can only be made by the root module, and 
+Most of the configuration can only be made by the root module, and
 other modules can declare the packages they want installed.
 
 The rules_haskell module itself has more permissions, so that it can
@@ -10,9 +10,9 @@ set default configurations for packages as well as set the default
 snapshot to use.
 """
 
-load("@rules_haskell//haskell:cabal.bzl", _stack_snapshot = "stack_snapshot")
 load("@bazel_skylib//lib:new_sets.bzl", "sets")
 load("@os_info//:os_info.bzl", "cpu_value", "is_darwin", "is_linux", "is_windows")
+load("@rules_haskell//haskell:cabal.bzl", _stack_snapshot = "stack_snapshot")
 
 _snapshot_tag = tag_class(
     doc = "The stack snapshot to use.",

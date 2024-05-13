@@ -1,10 +1,10 @@
-load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_doc",
     "haskell_library",
 )
 load("@rules_haskell//haskell:protobuf.bzl", "haskell_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 
 proto_library(
     name = "hello_world_proto",

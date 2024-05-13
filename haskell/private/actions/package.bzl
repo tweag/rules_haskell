@@ -1,10 +1,10 @@
 """Action for creating packages and registering them with ghc-pkg"""
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":private/cc_libraries.bzl", "get_library_files")
 load(":private/packages.bzl", "ghc_pkg_recache", "write_package_conf")
 load(":private/path_utils.bzl", "get_lib_name")
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/cc_libraries.bzl", "get_library_files")
 
 def _get_extra_libraries(hs, cc, with_shared, dynamic = False):
     """Get directories and library names for extra library dependencies.

@@ -1,11 +1,11 @@
-package(default_visibility = ["//visibility:public"])
-
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_binary",
     "haskell_library",
     "haskell_toolchain_library",
 )
+
+package(default_visibility = ["//visibility:public"])
 
 haskell_toolchain_library(name = "base")
 

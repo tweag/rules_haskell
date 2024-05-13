@@ -1,11 +1,11 @@
 """ External repositories for the CI that need to be shared between WORKSPACE and MODULE.bazel files """
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@os_info//:os_info.bzl", "is_linux", "is_windows")
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
-load("@os_info//:os_info.bzl", "is_linux", "is_windows")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+load("@toolchains_libraries//:toolchain_libraries.bzl", "toolchain_libraries")
 
 label_builder = lambda x: Label(x)
 

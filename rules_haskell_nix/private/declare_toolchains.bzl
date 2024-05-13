@@ -10,20 +10,20 @@ They are however visible from the `nix_haskell_toolchains_configurations` reposi
   - `toolchains` contains the configuration of these toolchains.
 """
 
+load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load(
     "@nix_haskell_toolchains_configurations//:nix_haskell_toolchains_configurations.bzl",
     "ghc_labels",
     "toolchain_ids",
     "toolchains",
 )
+load("@rules_haskell//extensions:haskell_toolchains.bzl", "all_toolchains")
 load(
     "@rules_haskell_nix//:nixpkgs.bzl",
     "HASKELL_TOOLCHAIN_REPO_NAME_SUFFIX",
     "ghc_nixpkgs_toolchain_declaration",
     "register_ghc_from_nixpkgs_package",
 )
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
-load("@rules_haskell//extensions:haskell_toolchains.bzl", "all_toolchains")
 
 def _declare_nix_toolchains_impl(mctx):
     # Instead of creating one external repository for each `toolchain(...)` declaration,

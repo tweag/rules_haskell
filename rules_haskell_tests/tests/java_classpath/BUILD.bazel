@@ -1,8 +1,8 @@
+load("@aspect_bazel_lib//lib:utils.bzl", "is_bzlmod_enabled")
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_test",
 )
-load("@aspect_bazel_lib//lib:utils.bzl", "is_bzlmod_enabled")
 
 package(default_testonly = 1)
 
