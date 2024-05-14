@@ -127,6 +127,15 @@ def rules_haskell_dependencies():
             "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v27.0.tar.gz",
         ],
     )
+    maybe(
+        http_archive,
+        name = "com_google_absl",
+        urls = [
+            "https://github.com/abseil/abseil-cpp/releases/download/20240116.0/abseil-cpp-20240116.0.tar.gz",
+        ],
+        sha256 = "338420448b140f0dfd1a1ea3c3ce71b3bc172071f24f4d9a57d59b45037da440",
+        strip_prefix = "abseil-cpp-20240116.0",
+    )
 
     maybe(
         http_archive,
