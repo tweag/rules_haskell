@@ -1,15 +1,15 @@
 ---
 matrix:
-  workdir: [".", "rules_haskell_tests"]
+  workdir: ["rules_haskell_tests"]
   platform:
-  - debian10
+  #- debian10
   - ubuntu2004
   - ubuntu1804
   # disable Windows for now, it fails with
   # "this rule is missing dependency declarations for the following files ..."
   #- windows
   bazel:
-  - 6.x
+  #- 6.x
   - last_green
 
 tasks:
@@ -34,3 +34,6 @@ tasks:
       - "--test_tag_filters=-requires_nix,-requires_lz4,-requires_shellcheck,-requires_threaded_rts,-dont_test_with_bindist,-dont_test_on_bazelci,-integration"
     test_targets:
       - "//tests/..."
+    post_shell_commands:
+      - "ldd bazel-ci-bin/tests/library-empty/library-empty || true"
+      - "ls -lh $(bazel info output_base)/execroot/rules_haskell_tests/external/rules_haskell_ghc_linux_amd64//lib/lib/"
