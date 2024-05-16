@@ -1,11 +1,22 @@
 ---
 matrix:
   workdir: [".", "rules_haskell_tests"]
+  platform:
+  - debian10
+  - ubuntu2004
+  - ubuntu1804
+  # disable Windows for now, it fails with
+  # "this rule is missing dependency declarations for the following files ..."
+  #- windows
+  bazel:
+  - 6.x
+  - last_green
 
 tasks:
   ubuntu1804:
     working_directory: ${{ workdir }}
-    platform: "ubuntu1804"
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
     environment:
       # haskell base uses the environment locale to decode sockets
       LANG: "C.UTF-8"
