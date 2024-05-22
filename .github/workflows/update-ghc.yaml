@@ -17,6 +17,7 @@ jobs:
           - '9.4'
           - '9.6'
           - '9.8'
+          - '9.10'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,4 +37,3 @@ jobs:
           branch: "automation/update-ghc-${{ matrix.ghc }}"
           base: master
           token: "${{ secrets.PR_TRIGGER_TOKEN }}"
-
