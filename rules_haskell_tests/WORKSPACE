@@ -45,14 +45,16 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "rules_proto",
-    sha256 = "8c850822dbd47121ca697279aa1129fcc7f2c4a8633921f06f81bc2df4f792c4",
-    strip_prefix = "rules_proto-d205d37866925569d99b4d6cdcba172326ecf812",
-    urls = ["https://github.com/bazelbuild/rules_proto/archive/d205d37866925569d99b4d6cdcba172326ecf812.tar.gz"],
+    sha256 = "303e86e722a520f6f326a50b41cfc16b98fe6d1955ce46642a5b7a67c11c0f5d",
+    strip_prefix = "rules_proto-6.0.0",
+    url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.0/rules_proto-6.0.0.tar.gz",
 )
 
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
 
 rules_proto_dependencies()
+
+load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
 
 rules_proto_toolchains()
 
