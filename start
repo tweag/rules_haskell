@@ -201,8 +201,6 @@ case "${MODE}" in
         ;;
 esac > "${ZLIB_BUILD_FILE}"
 
-SNAPSHOT=lts-20.3
-
 case "$GHC_VERSION" in
     8.10.*)
         SNAPSHOT=lts-18.28
@@ -216,7 +214,11 @@ case "$GHC_VERSION" in
     9.4.*)
         SNAPSHOT=lts-21.5
         ;;
+    9.6.*)
+        SNAPSHOT=lts-22.22
+        ;;
     *)
+        SNAPSHOT=nightly-2024-05-24
         stderr "warning: unsupported GHC version: ${GHC_VERSION}, using stack resolver ${SNAPSHOT}"
 esac
 
