@@ -226,9 +226,9 @@ rm -f
     libdir = "lib"
     if GHC_BINDIST_LIBDIR.get(version) != None and GHC_BINDIST_LIBDIR[version].get(target) != None:
         libdir = GHC_BINDIST_LIBDIR[version][target]
-    elif os == "darwin" and version_tuple >= (9, 0, 2):
+    elif os == "darwin" and version_tuple >= (9, 0, 2) and version_tuple < (9, 10, 1):
         libdir = "lib/lib"
-    elif os == "linux" and version_tuple >= (9, 4, 1):
+    elif os == "linux" and version_tuple >= (9, 4, 1) and version_tuple < (9, 10, 1):
         libdir = "lib/lib"
 
     docdir = "doc"
