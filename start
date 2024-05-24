@@ -271,6 +271,9 @@ stack_snapshot(
     extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
     packages = ["zlib"],
 
+    # disable calling pkg-config
+    flags = {"zlib": ["-pkg-config"]},
+
     # LTS snapshot published for ghc-${GHC_VERSION} (default version used by rules_haskell)
     snapshot = "$SNAPSHOT",
 

@@ -31,6 +31,8 @@ def repositories(*, bzlmod):  # @unused
         local_snapshot = "//:stackage_snapshot{}.yaml".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
         ),
+        # disable calling pkg-config
+        flags = {"zlib": ["-pkg-config"]},
         packages = ["zlib"],
         stack_snapshot_json = ("//:stackage-zlib-snapshot{}.json".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
