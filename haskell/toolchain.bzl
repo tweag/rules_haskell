@@ -41,7 +41,7 @@ load(
     "HaskellLibraryInfo",
 )
 
-_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
+_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "runghc", "hpc"]
 
 def _toolchain_library_symlink(dynamic_library):
     prefix = dynamic_library.owner.workspace_root.replace("_", "_U").replace("/", "_S")
@@ -331,7 +331,19 @@ def _haskell_toolchain_impl(ctx):
         for tool, asterius_binary in ahc_binaries.items():
             tools_struct_args[ASTERIUS_BINARIES[tool]] = asterius_binary
     else:
-        ghc_binaries = _lookup_binaries(_GHC_BINARIES, ctx.files.tools, ctx.attr.version)
+        ghc_tools = _GHC_BINARIES
+
+        # GHC > 9.10 does not install ghci with relocatable = true, add the tool if it is available
+        if any([file.basename.startswith("ghci") for file in ctx.files.tools]):
+            ghc_tools = ghc_tools + ["ghci"]
+        else:
+            print(
+                "WARN: ghci binary is not available for {}, `tools.ghci` will not exist on its haskell toolchain".format(
+                    ctx.label.repo_name,
+                ),
+            )
+
+        ghc_binaries = _lookup_binaries(ghc_tools, ctx.files.tools, ctx.attr.version)
         tools_struct_args = {
             name.replace("-", "_"): file
             for name, file in ghc_binaries.items()

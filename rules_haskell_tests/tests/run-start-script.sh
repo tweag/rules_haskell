@@ -14,6 +14,11 @@ rm -rf $workdir
 mkdir $workdir
 cd $workdir
 cp "$rules_haskell_dir/.bazelversion" .
+
+# specify version for bazelisk via `USE_BAZEL_VERSION`, since it does not read the .bazelversion when there is no WORKSPACE file
+USE_BAZEL_VERSION=$( cat .bazelversion )
+export USE_BAZEL_VERSION
+
 # arguments are passed on to the start script
 "$rules_haskell_dir/start" "$@"
 

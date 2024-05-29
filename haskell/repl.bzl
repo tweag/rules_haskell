@@ -486,10 +486,10 @@ def _haskell_repl_impl(ctx):
         is_executable = True,
         substitutions = {
             "%{ENV}": render_env(env),
-            "%{TOOL}": hs.tools.ghci.path,
+            "%{TOOL}": hs.tools.ghc.path,
             "%{OUTPUT}": paths.dirname(output.path),
             "%{ARGS}": "(" + " ".join(
-                args + [
+                ["--interactive"] + args + [
                     shell.quote(a)
                     for a in quote_args
                 ],
@@ -500,7 +500,7 @@ def _haskell_repl_impl(ctx):
     runfiles = [
         ctx.runfiles(
             files = [
-                hs.tools.ghci,
+                hs.tools.ghc,
                 ghci_repl_script,
             ],
             transitive_files = inputs,

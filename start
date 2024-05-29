@@ -13,7 +13,7 @@ readonly MIN_BAZEL_MAJOR=6
 readonly MIN_BAZEL_MINOR=0
 
 readonly MAX_BAZEL_MAJOR=6
-readonly MAX_BAZEL_MINOR=4
+readonly MAX_BAZEL_MINOR=5
 
 stderr () {
   >&2 echo "$*"
@@ -201,7 +201,7 @@ case "${MODE}" in
         ;;
 esac > "${ZLIB_BUILD_FILE}"
 
-SNAPSHOT=lts-20.3
+WITH_HADDOCK=True
 
 case "$GHC_VERSION" in
     8.10.*)
@@ -216,7 +216,17 @@ case "$GHC_VERSION" in
     9.4.*)
         SNAPSHOT=lts-21.5
         ;;
+    9.6.*)
+        SNAPSHOT=lts-22.22
+        ;;
     *)
+        # zlib >= 0.7.1.0 depends on zlib-clib on Windows (unless using pkg-config), since zlib-clib is
+        # a C only cabal library that does not produce any haddock this results in an error.
+        # See https://github.com/tweag/rules_haskell/issues/2200
+        case "$( uname )" in
+            WindowsNT | MINGW* | MSYS* ) WITH_HADDOCK=False ;;
+        esac
+        SNAPSHOT=nightly-2024-05-24
         stderr "warning: unsupported GHC version: ${GHC_VERSION}, using stack resolver ${SNAPSHOT}"
 esac
 
@@ -268,6 +278,10 @@ stack_snapshot(
     name = "stackage",
     extra_deps = {"zlib": ["@zlib.dev//:zlib"]},
     packages = ["zlib"],
+
+    # disable calling pkg-config
+    flags = {"zlib": ["-pkg-config"]},
+    haddock = $WITH_HADDOCK,
 
     # LTS snapshot published for ghc-${GHC_VERSION} (default version used by rules_haskell)
     snapshot = "$SNAPSHOT",
