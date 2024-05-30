@@ -100,7 +100,7 @@ def hs_library_pattern(name, mode = "static", profiling = False):
     # See https://gitlab.haskell.org/ghc/ghc/wikis/commentary/rts/config#rts-configurations
     configs = ["_p"] if profiling else [""]
     # Special case HSrts or Cffi - include both libXYZ and libXYZ_thr.
-    if name == "HSrts" or name == "Cffi":
+    if name == "HSrts" or name.startswith("HSrts-") or name == "Cffi":
         configs = [
             prefix + config
             for config in configs
