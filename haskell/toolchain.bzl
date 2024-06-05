@@ -262,6 +262,16 @@ def _haskell_toolchain_libraries(ctx, libraries):
                     libs[libname] = {"dynamic": lib}
             for lib in target[HaskellImportHack].static_libraries.to_list():
                 name = get_static_hs_lib_name(with_profiling, lib)
+
+                # with GHC >= 9.4.1 the rts library has a version number
+                # included in the name.
+                # for handling single-threaded and threading variants below,
+                # we normalize the name and strip the version number
+                if name.startswith("HSrts-"):
+                    idx = name.find("_")
+                    suffix = name[idx:] if idx > 0 else ""
+                    name = "HSrts" + suffix
+
                 entry = libs.get(name, {})
                 entry["static"] = lib
                 libs[name] = entry
