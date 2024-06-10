@@ -84,10 +84,11 @@ def path_to_label(path, pkgroot, output=None):
         else:
             print("WARN: could not handle", path, file=sys.stderr)
 
-def hs_library_pattern(name, mode = "static", profiling = False):
+def hs_library_pattern(package_name, name, mode = "static", profiling = False):
     """Convert hs-libraries entry to glob patterns.
 
     Args:
+        package_name: The name of the package.
         name: The library name. E.g. HSrts or Cffi.
         mode: The linking mode. Either "static" or "dynamic".
         profiling: Look for profiling mode libraries.
@@ -96,30 +97,41 @@ def hs_library_pattern(name, mode = "static", profiling = False):
         List of globbing patterns for the library file.
 
     """
+    configs = ["_p"] if profiling else [""]
+
+    # Library names must either be prefixed with "HS" or "C" and corresponding
+    # library file names must match:
+    # - Libraries with name "HS<library-name>":
+    #    - `libHS<library-name>.a`
+    #    - `libHS<library-name>-ghc<ghc-flavour><ghc-version>.<dyn-library-extension>*`
+    # - Libraries with name "C<library-name>":
+    #    - `libC<library-name>.a`
+    #    - `lib<library-name>.<dyn-library-extension>*`
+    if name.startswith("C"):
+        libname = name[1:] if mode == "dynamic" else name
+    elif name.startswith("HS"):
+        libname = name
+    else:
+        sys.error("do not know how to handle hs-library `{}` in package {}".format(name, package_name))
+
     # The RTS configuration suffix.
     # See https://gitlab.haskell.org/ghc/ghc/wikis/commentary/rts/config#rts-configurations
-    configs = ["_p"] if profiling else [""]
-    # Special case HSrts or Cffi - include both libXYZ and libXYZ_thr.
-    if name == "HSrts" or name.startswith("HSrts-") or name == "Cffi":
+    # Special case for rts - include multi threaded and single threaded, and debug / non-debug variants
+    if package_name == "rts":
         configs = [
             prefix + config
             for config in configs
-            for prefix in ["", "_thr"]
+            for prefix in ["", "_thr", "_debug", "_thr_debug"]
         ]
-    # Special case libCffi - dynamic lib has no configs and is called libffi.
-    if name == "Cffi" and mode == "dynamic":
-        libname = "ffi"
-        configs = [""]
-    else:
-        libname = name
+
     libnames = [libname + config for config in configs]
-    # Special case libCffi - dynamic lib has no version suffix.
-    if mode == "dynamic" and name != "Cffi":
-        libnames = [libname + "-ghc*" for libname in libnames]
+
     if mode == "dynamic":
-        exts = ["so", "so.*", "dylib", "dll"]
+        libnames = [libname + "-ghc*" for libname in libnames]
+        exts = ["so", "so.*", "dylib", "dll"] if mode == "dynamic" else ["a"]
     else:
         exts = ["a"]
+
     return [
         "lib{}.{}".format(libname, ext)
         for libname in libnames
@@ -235,21 +247,21 @@ for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
                 static_libraries = join_paths([
                     [path_to_label(library_dir, pkgroot, output), library]
                     for hs_library in pkg.hs_libraries
-                    for pattern in hs_library_pattern(hs_library, mode = "static", profiling = False)
+                    for pattern in hs_library_pattern(pkg.name, hs_library, mode = "static", profiling = False)
                     for library_dir in pkg.library_dirs
                     for library in match_glob(resolve(library_dir, pkgroot), pattern)
                 ]),
                 static_profiling_libraries = join_paths([
                     [path_to_label(library_dir, pkgroot, output), library]
                     for hs_library in pkg.hs_libraries
-                    for pattern in hs_library_pattern(hs_library, mode = "static", profiling = True)
+                    for pattern in hs_library_pattern(pkg.name, hs_library, mode = "static", profiling = True)
                     for library_dir in pkg.library_dirs
                     for library in match_glob(resolve(library_dir, pkgroot), pattern)
                 ]),
                 shared_libraries = join_paths([
                     [path_to_label(dynamic_library_dir, pkgroot, output), library]
                     for hs_library in pkg.hs_libraries
-                    for pattern in hs_library_pattern(hs_library, mode = "dynamic", profiling = False)
+                    for pattern in hs_library_pattern(pkg.name, hs_library, mode = "dynamic", profiling = False)
                     for dynamic_library_dir in set(pkg.dynamic_library_dirs + pkg.library_dirs)
                     for library in match_glob(resolve(dynamic_library_dir, pkgroot), pattern)
                 ]),
