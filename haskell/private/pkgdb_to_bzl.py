@@ -109,8 +109,10 @@ def hs_library_pattern(package_name, name, mode = "static", profiling = False):
     #    - `lib<library-name>.<dyn-library-extension>*`
     if name.startswith("C"):
         libname = name[1:] if mode == "dynamic" else name
+        dyn_suffix = ""
     elif name.startswith("HS"):
         libname = name
+        dyn_suffix = "-ghc*"
     else:
         sys.error("do not know how to handle hs-library `{}` in package {}".format(name, package_name))
 
@@ -127,7 +129,7 @@ def hs_library_pattern(package_name, name, mode = "static", profiling = False):
     libnames = [libname + config for config in configs]
 
     if mode == "dynamic":
-        libnames = [libname + "-ghc*" for libname in libnames]
+        libnames = [libname + dyn_suffix for libname in libnames]
         exts = ["so", "so.*", "dylib", "dll"] if mode == "dynamic" else ["a"]
     else:
         exts = ["a"]
