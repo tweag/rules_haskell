@@ -130,7 +130,7 @@ def hs_library_pattern(package_name, name, mode = "static", profiling = False):
 
     if mode == "dynamic":
         libnames = [libname + dyn_suffix for libname in libnames]
-        exts = ["so", "so.*", "dylib", "dll"] if mode == "dynamic" else ["a"]
+        exts = ["so", "so.*", "dylib", "dll"]
     else:
         exts = ["a"]
 
