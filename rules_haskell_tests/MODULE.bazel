@@ -61,7 +61,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_java",
-    version = "6.5.2",
+    version = "7.6.5",
 )
 bazel_dep(
     name = "rules_nodejs",
