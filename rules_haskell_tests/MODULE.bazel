@@ -65,7 +65,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nodejs",
-    version = "5.8.3",
+    version = "5.8.5",
 )
 bazel_dep(
     name = "aspect_rules_js",
