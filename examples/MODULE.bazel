@@ -35,7 +35,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "bazel_skylib",
-    version = "1.6.1",
+    version = "1.7.1",
 )
 
 non_module_deps = use_extension(":non_module_deps.bzl", "non_module_deps")
