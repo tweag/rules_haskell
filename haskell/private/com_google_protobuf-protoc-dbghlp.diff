@@ -1,0 +1,27 @@
+diff --git a/build_defs/cpp_opts.bzl b/build_defs/cpp_opts.bzl
+index f667a4088..da463ca45 100644
+--- a/build_defs/cpp_opts.bzl
++++ b/build_defs/cpp_opts.bzl
+@@ -44,6 +44,9 @@ LINK_OPTS = select({
+         "-lm",
+         "-framework CoreFoundation",
+     ],
++    "@platforms//os:windows": [
++        "-ldbghelp",
++    ],
+     "//conditions:default": [
+         "-lpthread",
+         "-lm",
+diff --git a/src/google/protobuf/port_def.inc b/src/google/protobuf/port_def.inc
+index 60900d215..10c41b441 100644
+--- a/src/google/protobuf/port_def.inc
++++ b/src/google/protobuf/port_def.inc
+@@ -673,7 +673,7 @@ static_assert(PROTOBUF_ABSL_MIN(20230125, 3),
+ #error PROTOBUF_DESCRIPTOR_WEAK_MESSAGES_ALLOWED was previously defined
+ #endif
+ #if defined(__GNUC__) && defined(__clang__) && !defined(__APPLE__) && \
+-    !defined(_MSC_VER)
++    !defined(_MSC_VER) && !defined(_WIN32)
+ #define PROTOBUF_DESCRIPTOR_WEAK_MESSAGES_ALLOWED
+ #endif
+ 

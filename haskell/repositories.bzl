@@ -126,6 +126,11 @@ def rules_haskell_dependencies():
         urls = [
             "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v27.0.tar.gz",
         ],
+        patches = [
+            # see https://github.com/protocolbuffers/protobuf/issues/16844
+            "@rules_haskell//haskell:private/com_google_protobuf-protoc-dbghlp.diff",
+        ],
+        patch_args = ["-p1"],
     )
     maybe(
         http_archive,
