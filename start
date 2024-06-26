@@ -65,11 +65,6 @@ parse_args () {
             *)                     usage 1 ;;
         esac
     done
-
-    if $BZLMOD && [ $MODE != bindists ]; then
-        stderr "error: --with-bzlmod is only supported with --use-bindists"
-        exit 1
-    fi
 }
 
 check_dir () {
@@ -376,25 +371,105 @@ if $BZLMOD; then
     cat >MODULE.bazel <<EOF
 module(name = "your_project_name_here", version = "0.1")
 
-bazel_dep(name = "rules_haskell", version = "0.19")
-bazel_dep(name = "rules_cc", version = "0.0.9")
+EOF
 
-haskell_toolchains = use_extension(
-    "@rules_haskell//extensions:haskell_toolchains.bzl",
-    "haskell_toolchains",
-)
+    case "${MODE}" in
+        "bindists") cat <<-EOF
+		bazel_dep(name = "rules_haskell", version = "0.19")
+		bazel_dep(name = "rules_cc", version = "0.0.9")
+		
+		haskell_toolchains = use_extension(
+		    "@rules_haskell//extensions:haskell_toolchains.bzl",
+		    "haskell_toolchains",
+		)
+		
+		haskell_toolchains.bindists(version = "$GHC_VERSION")
+		
+		non_module_deps = use_extension(
+		    "//:non_module_deps.bzl",
+		    "non_module_deps",
+		)
+		EOF
+        ;;
+	"nix") cat <<-EOF
+		# Archive overrides
+		###################
+		
+		archive_override(
+		    module_name = "rules_nixpkgs_posix",
+		    integrity = "sha256-mA7fzu8uWeESLZvmxSQTvCmENfCj1FJTK4pI11Yv/Wc=",
+		    strip_prefix = "rules_nixpkgs-0.10.0/toolchains/posix",
+		    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.10.0/rules_nixpkgs-0.10.0.tar.gz"],
+		)
+		
+		archive_override(
+		    module_name = "rules_nixpkgs_cc",
+		    integrity = "sha256-KlVTSNf4WT/KK/P8bOU8XWKSnegbbCkuI/FsVXwK5Fo=",
+		    strip_prefix = "rules_nixpkgs-0.11.1/toolchains/cc",
+		    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.11.1/rules_nixpkgs-0.11.1.tar.gz"],
+		)
+		
+		archive_override(
+		    module_name = "rules_nixpkgs_python",
+		    integrity = "sha256-KlVTSNf4WT/KK/P8bOU8XWKSnegbbCkuI/FsVXwK5Fo=",
+		    strip_prefix = "rules_nixpkgs-0.11.1/toolchains/python",
+		    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.11.1/rules_nixpkgs-0.11.1.tar.gz"],
+		)
+		
+		archive_override(
+		    module_name = "rules_haskell_nix",
+		    integrity = "sha256-J88OdrV8P6lWf1nVxzwcpzcQMKohoakdze0K3SFzwzU=",
+		    strip_prefix = "rules_haskell-0.19/rules_haskell_nix/",
+		    urls = ["https://github.com/tweag/rules_haskell/archive/refs/tags/v0.19.tar.gz"],
+		)
+		
+		
+		# Dependencies
+		##############
+		
+		bazel_dep(name = "platforms", version = "0.0.10")
+		bazel_dep(name = "rules_nixpkgs_posix", version = "0.10.0")
+		bazel_dep(name = "rules_cc", version = "0.0.9")
+		bazel_dep(name = "rules_nixpkgs_core", version = "0.11.1")
+		bazel_dep(name = "rules_nixpkgs_cc", version = "0.11.1")
+		bazel_dep(name = "rules_nixpkgs_python", version = "0.11.1")
+		
+		# Important! rules_haskell_nix must be loaded BEFORE rules_haskell
+		bazel_dep(name = "rules_haskell_nix", version = "0.19")
+		bazel_dep(name = "rules_haskell", version = "0.19")
+		
+		# Toolchains
+		############
+		
+		non_module_deps = use_extension(
+		  "//:non_module_deps.bzl",
+		  "non_module_deps"
+		)
+		use_repo(
+		  non_module_deps,
+		  "nixpkgs",
+		  "local_config_cc_info",
+		  "local_config_cc_toolchains",
+		  "nixpkgs_python_toolchain",
+		)
+		register_toolchains("@local_config_cc_toolchains//:all")
+		register_toolchains("@nixpkgs_python_toolchain//:toolchain")
+		
+		nix_haskell_toolchains = use_extension(
+		    "@rules_haskell_nix//extensions:nix_haskell_toolchains.bzl",
+		    "nix_haskell_toolchains",
+		)
+		nix_haskell_toolchains.new(
+		    attribute_path = "",
+		    nix_file_content = """with import <nixpkgs> {}; haskell.packages.ghc$( echo "$GHC_VERSION" | tr -d . ).ghc""",
+		    repository = "@nixpkgs",
+		    version = "${GHC_VERSION}",
+		)
+		EOF
+        ;;
+    esac >>MODULE.bazel
 
-haskell_toolchains.bindists(version = "$GHC_VERSION")
-
-non_module_deps = use_extension(
-    "//:non_module_deps.bzl",
-    "non_module_deps",
-)
-
-use_repo(
-    non_module_deps,
-    "zlib.dev",
-)
+    cat >>MODULE.bazel <<EOF
 
 stack = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",
@@ -406,6 +481,11 @@ use_repo(
     "stackage",
     "stackage-exe",
     "stackage-unpinned",
+)
+
+use_repo(
+    non_module_deps,
+    "zlib.dev",
 )
 
 stack.package(
@@ -425,20 +505,64 @@ EOF
 
     stderr "Creating non_module_deps.bzl"
 
-    cat >non_module_deps.bzl <<-EOF
-			load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-			def _non_module_deps_impl(_mctx):
-			    http_archive(
-			        name = "zlib.dev",
-			        build_file = "//:${ZLIB_BUILD_FILE}",
-			        sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
-			        strip_prefix = "zlib-1.3",
-			        urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
-			    )
-
-			non_module_deps = module_extension(implementation = _non_module_deps_impl)
+    case "${MODE}" in
+        "bindists") cat <<-EOF
+		load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+		def _non_module_deps_impl(_mctx):
+		    http_archive(
+		        name = "zlib.dev",
+		        build_file = "//:${ZLIB_BUILD_FILE}",
+		        sha256 = "b5b06d60ce49c8ba700e0ba517fa07de80b5d4628a037f4be8ad16955be7a7c0",
+		        strip_prefix = "zlib-1.3",
+		        urls = ["https://github.com/madler/zlib/archive/v1.3.tar.gz"],
+		    )
+		non_module_deps = module_extension(implementation = _non_module_deps_impl)
 		EOF
+        ;;
+	"nix") cat <<-EOF
+		# Load nixpkgs_git_repository from rules_nixpkgs,
+		# which was already initialized by rules_haskell_dependencies above.
+		load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
+		load(
+		    "@rules_nixpkgs_core//:nixpkgs.bzl",
+		    "nixpkgs_git_repository",
+		    "nixpkgs_package",
+		)
+		load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
+		def _non_module_deps_impl(_mctx):
+		    # Fetch a version of nixpkgs from GitHub.
+		    # For more information see the documentation of rules_nixpkgs at
+		    # https://github.com/tweag/rules_nixpkgs/blob/master/README.md
+		    nixpkgs_git_repository(
+		        name = "nixpkgs",
+		        revision = "nixos-23.11",
+		    )
+		    nixpkgs_cc_configure(
+		        name = "local_config_cc",
+		        repository = "@nixpkgs",
+		        register = False,
+		    )
+		    nixpkgs_python_configure(
+		        name = "nixpkgs_python_toolchain",
+		        repository = "@nixpkgs",
+		        register = False,
+		    )
+		    # For zlib.BUILD.bazel
+		    nixpkgs_package(
+		        name = "nixpkgs_zlib",
+		        attribute_path = "zlib",
+		        repository = "@nixpkgs",
+		    )
+		    nixpkgs_package(
+		        name = "zlib.dev",
+		        build_file = "//:zlib.BUILD.bazel",
+		        repository = "@nixpkgs",
+		    )
+		non_module_deps = module_extension(implementation = _non_module_deps_impl)
+		EOF
+        ;;
+    esac >non_module_deps.bzl
+
 fi
 
 ## Write .bazelrc File #################################################
