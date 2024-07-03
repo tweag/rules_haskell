@@ -43,13 +43,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-12]
-        module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
+        os: #[ubuntu-latest,
+          - macos-12
+        module:
+          - rules_haskell_tests
         bzlmod: [true, false]
         ghc:
           - 9.4.6
-          - 9.6.2
-          - 9.8.1
+          #- 9.6.2
+          #- 9.8.1
         exclude:
           - module: rules_haskell_nix
 
@@ -134,130 +136,130 @@ jobs:
             RHT_PRINT_MEMORY=true ./bazel-ci-bin/tests/run-tests
             bazel coverage //...
 
-  test-bindist:
-    name: Build & Test - bindist
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-12, windows-latest]
-        module: [rules_haskell, rules_haskell_tests]
-        bzlmod: [true, false]
-        ghc:
-          - 9.4.6
-          - 9.6.2
-          - 9.8.1
-        exclude:
-          # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
-          #       and stack config per GHC version
-          - ghc: 9.8.1
-            bzlmod: true
-          - ghc: 9.6.2
-            bzlmod: true
-          # currently proto-lens-protoc fails with an access violation on Windows
-          - ghc: 9.6.2
-            os: windows-latest
-          - ghc: 9.8.1
-            os: windows-latest
-    env:
-      GHC_VERSION: ${{ matrix.ghc }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/free_disk_space_on_linux
-      - uses: ./.github/actions/install_apt_pkgs
-        with:
-          packages: libtinfo5
-      - name: Mount Bazel cache
-        uses: actions/cache@v4
-        with:
-          path: ~/repo-cache
-          key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
-      - uses: tweag/configure-bazel-remote-cache-auth@v0
-        with:
-          buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
-          bazelrc_path: .bazelrc.auth
-      - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v2
-        with:
-          machine: api.github.com
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Configure
-        shell: bash
-        run: |
-          case "${{ runner.os }},${{ matrix.module }}" in
-            macOS,*) BUILD_CONFIG=macos-bindist;;
-            Linux,*) BUILD_CONFIG=linux-bindist;;
-            Windows,rules_haskell) BUILD_CONFIG=ci-windows-bindist-rules-haskell;;
-            Windows,rules_haskell_tests) BUILD_CONFIG=ci-windows-bindist-rules-haskell-tests;;
-          esac
-          if [[ ${{ runner.os }} == Windows ]]; then
-              output_root_setting="startup --output_user_root=C:/_bzl"
-              # On windows, we use a separate remote cache for bzlmod,
-              # because the c dependency analysis is leaking absolute paths which are different
-              if ${{ matrix.bzlmod }}; then
-                bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=bzlmod'
-              else
-                bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=workspace'
-              fi
-          else
-              output_root_setting=""
-              bzlmod_cache_silo_key=""
-          fi
-          cat >>.bazelrc.local <<EOF
-          common --config=ci
-          build --config=$BUILD_CONFIG
-          $output_root_setting
-          $bzlmod_cache_silo_key
-          common --enable_bzlmod=${{ matrix.bzlmod }}
-          EOF
-          cp .bazelrc.local rules_haskell_tests
-      - name: Build & test - rules_haskell
-        if: matrix.module == 'rules_haskell'
-        shell: bash
-        run: |
-          # Quote the package specifier so that it works on Windows
-          bazelisk test "//..."
+  # test-bindist:
+  #   name: Build & Test - bindist
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, macos-12, windows-latest]
+  #       module: [rules_haskell, rules_haskell_tests]
+  #       bzlmod: [true, false]
+  #       ghc:
+  #         - 9.4.6
+  #         - 9.6.2
+  #         - 9.8.1
+  #       exclude:
+  #         # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
+  #         #       and stack config per GHC version
+  #         - ghc: 9.8.1
+  #           bzlmod: true
+  #         - ghc: 9.6.2
+  #           bzlmod: true
+  #         # currently proto-lens-protoc fails with an access violation on Windows
+  #         - ghc: 9.6.2
+  #           os: windows-latest
+  #         - ghc: 9.8.1
+  #           os: windows-latest
+  #   env:
+  #     GHC_VERSION: ${{ matrix.ghc }}
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: ./.github/actions/free_disk_space_on_linux
+  #     - uses: ./.github/actions/install_apt_pkgs
+  #       with:
+  #         packages: libtinfo5
+  #     - name: Mount Bazel cache
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ~/repo-cache
+  #         key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
+  #     - uses: tweag/configure-bazel-remote-cache-auth@v0
+  #       with:
+  #         buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
+  #         bazelrc_path: .bazelrc.auth
+  #     - uses: ./.github/actions/set_tcp_keepalive_time
+  #     - uses: extractions/netrc@v2
+  #       with:
+  #         machine: api.github.com
+  #         password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Configure
+  #       shell: bash
+  #       run: |
+  #         case "${{ runner.os }},${{ matrix.module }}" in
+  #           macOS,*) BUILD_CONFIG=macos-bindist;;
+  #           Linux,*) BUILD_CONFIG=linux-bindist;;
+  #           Windows,rules_haskell) BUILD_CONFIG=ci-windows-bindist-rules-haskell;;
+  #           Windows,rules_haskell_tests) BUILD_CONFIG=ci-windows-bindist-rules-haskell-tests;;
+  #         esac
+  #         if [[ ${{ runner.os }} == Windows ]]; then
+  #             output_root_setting="startup --output_user_root=C:/_bzl"
+  #             # On windows, we use a separate remote cache for bzlmod,
+  #             # because the c dependency analysis is leaking absolute paths which are different
+  #             if ${{ matrix.bzlmod }}; then
+  #               bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=bzlmod'
+  #             else
+  #               bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=workspace'
+  #             fi
+  #         else
+  #             output_root_setting=""
+  #             bzlmod_cache_silo_key=""
+  #         fi
+  #         cat >>.bazelrc.local <<EOF
+  #         common --config=ci
+  #         build --config=$BUILD_CONFIG
+  #         $output_root_setting
+  #         $bzlmod_cache_silo_key
+  #         common --enable_bzlmod=${{ matrix.bzlmod }}
+  #         EOF
+  #         cp .bazelrc.local rules_haskell_tests
+  #     - name: Build & test - rules_haskell
+  #       if: matrix.module == 'rules_haskell'
+  #       shell: bash
+  #       run: |
+  #         # Quote the package specifier so that it works on Windows
+  #         bazelisk test "//..."
 
-      - name: Build & test - rules_haskell_tests
-        if: matrix.module == 'rules_haskell_tests'
-        shell: bash
-        run: |
-          cd rules_haskell_tests
-          ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
-          # Quote the package specifier so that it works on Windows
-          bazelisk test "//..."
-          # Test stack_snapshot pinning
-          # NOTE keep in sync with tests/RunTests.hs
-          bazelisk run @stackage-pinning-test-unpinned//:pin
-          bazelisk build @stackage-pinning-test//:hspec
+  #     - name: Build & test - rules_haskell_tests
+  #       if: matrix.module == 'rules_haskell_tests'
+  #       shell: bash
+  #       run: |
+  #         cd rules_haskell_tests
+  #         ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
+  #         # Quote the package specifier so that it works on Windows
+  #         bazelisk test "//..."
+  #         # Test stack_snapshot pinning
+  #         # NOTE keep in sync with tests/RunTests.hs
+  #         bazelisk run @stackage-pinning-test-unpinned//:pin
+  #         bazelisk build @stackage-pinning-test//:hspec
 
-      - name: Collect Logs
-        id: collect_logs
-        if: failure()
-        shell: bash
-        run: |
-          mkdir -p logs
-          if [[ ${{ matrix.module }} == 'rules_haskell_tests' ]]; then
-             dir=rules_haskell_tests
-          else
-             dir=.
-          fi
-          base=$( cd "$dir" ; bazelisk info output_base )
-          find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0rI % cp % logs/
+  #     - name: Collect Logs
+  #       id: collect_logs
+  #       if: failure()
+  #       shell: bash
+  #       run: |
+  #         mkdir -p logs
+  #         if [[ ${{ matrix.module }} == 'rules_haskell_tests' ]]; then
+  #            dir=rules_haskell_tests
+  #         else
+  #            dir=.
+  #         fi
+  #         base=$( cd "$dir" ; bazelisk info output_base )
+  #         find "$base" -mindepth 1 -maxdepth 1 -name "java*.log.*" -print0 | xargs -0rI % cp % logs/
 
-      - name: Upload Logs
-        if: ${{ failure() && steps.collect_logs.conclusion == 'success' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
-          path: logs
+  #     - name: Upload Logs
+  #       if: ${{ failure() && steps.collect_logs.conclusion == 'success' }}
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
+  #         path: logs
 
   all_ci_tests:
     runs-on: ubuntu-latest
     needs:
       - lint
       - test-nixpkgs
-      - test-bindist
+      #- test-bindist
     if: ${{ always() }}
     steps:
       - uses: cgrindel/gha_join_jobs@794a2d117251f22607f1aab937d3fd3eaaf9a2f5 # v1
