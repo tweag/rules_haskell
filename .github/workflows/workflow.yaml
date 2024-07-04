@@ -125,15 +125,23 @@ jobs:
           run: |
             # XXX run start script `--with-bzlmod=true` when supported
             if ! ${{ matrix.bzlmod }}; then
+              echo '::group::Run start script'
               ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
+              echo '::endgroup::'
             fi
+            echo '::group::Build //tests:run-tests'
             bazel build //tests:run-tests
+            echo '::endgroup::'
             # Shutdown Bazel to free up memory
             # https://github.com/tweag/rules_haskell/issues/2089.
             bazel shutdown
+            echo '::group::Run tests'
             # Execute the tests dumping out memory/process information before and after each test.
             RHT_PRINT_MEMORY=true ./bazel-ci-bin/tests/run-tests
+            echo '::endgroup::'
+            echo '::group::Coverage'
             bazel coverage //...
+            echo '::endgroup::'
       - name: Setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
