@@ -126,7 +126,6 @@ use_repo(
     "nixpkgs_go_sdk_toolchains",
     "nixpkgs_lz4",
     "nixpkgs_python_toolchain",
-    "nixpkgs_unstable",
     "toolchains_libraries",
     "zlib.dev",
 )
