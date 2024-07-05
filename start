@@ -328,7 +328,7 @@ EOF
 		# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
 		nixpkgs_git_repository(
 		    name = "nixpkgs",
-		    revision = "nixos-23.11",
+		    revision = "nixos-24.05",
 		)
 
 		nixpkgs_cc_configure(
