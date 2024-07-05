@@ -33,10 +33,10 @@ def expected_values(test_ghc_version):
             "haddock/testsZShaddockZShaddock-lib-deep",
             "haddock/ghc-boot-th-9.4.6",
         ]
-    elif test_ghc_version == "9.6.2":
+    elif test_ghc_version == "9.6.5":
         return [
-            "haddock/array-0.5.5.0",
-            "haddock/base-4.18.0.0",
+            "haddock/array-0.5.6.0",
+            "haddock/base-4.18.2.1",
             "haddock/deepseq-1.4.8.1",
             "haddock/ghc-bignum-1.3",
             "haddock/ghc-prim-0.10.0",
@@ -46,7 +46,7 @@ def expected_values(test_ghc_version):
             "haddock/testsZShaddockZShaddock-lib-a",
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
-            "haddock/ghc-boot-th-9.6.2",
+            "haddock/ghc-boot-th-9.6.5",
         ]
     elif test_ghc_version == "9.8.1" and is_nix_shell:
         return [

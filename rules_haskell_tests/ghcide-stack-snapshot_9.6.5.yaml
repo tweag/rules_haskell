@@ -1,4 +1,4 @@
-resolver: nightly-2023-09-03
+resolver: lts-22.27
 
 packages:
  - ghcide-2.2.0.0
