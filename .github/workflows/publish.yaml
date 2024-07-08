@@ -7,19 +7,38 @@ on:
 
 jobs:
   webpage:
-    name: Update webpage
+    name: prepare release
     runs-on: ubuntu-latest
+    permissions:
+      # write permission is required to create a github release
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          ref: release
-      - name: Configure git
+          ref: master
+      - name: Create archive
+        id: archive
         run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-      - name: Merge master into release
-        run: git merge --no-edit origin/master
-      - name: Push
-        run: git push
+          TAG="v0.20" # FIXME
+          REPOSITORY_NAME="${GITHUB_REPOSITORY#*/}"
+          PREFIX="${REPOSITORY_NAME}-${TAG:1}"
+          ARCHIVE="${PREFIX}.tar.gz"
+
+          echo "tgz=${ARCHIVE}" >> $GITHUB_OUTPUT
+
+          git archive --format=tar.gz --prefix="${PREFIX}/" -o "$ARCHIVE" HEAD
+      - name: Prepare bzlmod / WORKSPACE snippets
+        run: .github/workflows/prepare_snippets.sh ${{ steps.archive.outputs.tgz }} > release_notes.txt
+      - name: Generate changelog
+        env:
+          GITHUB_REF_NAME: 'v0.20' # FIXME
+        run: |
+          printf '\n-----\n\n' >> release_notes.txt
+          awk -f .github/workflows/changelog.awk CHANGELOG.md >> release_notes.txt
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: 'v0.20' # FIXME
+        run: |
+          gh release create --draft --notes-file release_notes.txt $TAG ${{ steps.archive.outputs.tgz }}
