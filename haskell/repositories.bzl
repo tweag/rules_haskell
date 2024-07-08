@@ -8,8 +8,9 @@ load(
     "check_bazel_version_compatible",
 )
 
-_rules_nixpkgs_version = "0.11.1"
-_rules_nixpkgs_sha256 = "2a555348d7f8593fca2bf3fc6ce53c5d62929de81b6c292e23f16c557c0ae45a"
+# FIXME need a new rules_nixpkgs release
+_rules_nixpkgs_version = "f9a387aabad2b50e9c8271a2a9d3923077c88667"
+_rules_nixpkgs_sha256 = None
 
 _rules_sh_version = "v0.4.0"
 _rules_sh_sha256 = "3243af3fcb3768633fd39f3654de773e5fb61471a2fae5762a1653c22c412d2c"
@@ -84,7 +85,7 @@ def rules_haskell_dependencies():
         strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version
 
         rules_nixpkgs_url = \
-            "https://github.com/tweag/rules_nixpkgs/releases/download/v{version}/{prefix}.tar.gz".format(
+            "https://github.com/tweag/rules_nixpkgs/archive/{version}/{prefix}.tar.gz".format(
                 version = _rules_nixpkgs_version,
                 prefix = strip_prefix,
             )
