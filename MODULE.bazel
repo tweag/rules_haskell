@@ -127,6 +127,12 @@ bazel_dep(
     version = "0.11.1",
     dev_dependency = True,
 )
+single_version_override(
+    module_name = "rules_nixpkgs_cc",
+    patch_strip = 3,
+    patches = ["//haskell:private/rules_nixpkgs-libcxxabi.diff"],
+)
+
 bazel_dep(
     name = "rules_nixpkgs_python",
     version = "0.11.1",
