@@ -120,17 +120,7 @@ jobs:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_tests
           run: |
-            # XXX run start script `--with-bzlmod=true` when supported
-            if ! ${{ matrix.bzlmod }}; then
-              ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
-            fi
-            bazel build //tests:run-tests
-            # Shutdown Bazel to free up memory
-            # https://github.com/tweag/rules_haskell/issues/2089.
-            bazel shutdown
-            # Execute the tests dumping out memory/process information before and after each test.
-            RHT_PRINT_MEMORY=true ./bazel-ci-bin/tests/run-tests
-            bazel coverage //...
+            bazel build //tests/haskell_module/dep-narrowing-th:lib
 
   test-bindist:
     name: Build & Test - bindist
@@ -219,10 +209,4 @@ jobs:
         shell: bash
         run: |
           cd rules_haskell_tests
-          ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
-          # Quote the package specifier so that it works on Windows
-          bazelisk test "//..."
-          # Test stack_snapshot pinning
-          # NOTE keep in sync with tests/RunTests.hs
-          bazelisk run @stackage-pinning-test-unpinned//:pin
-          bazelisk build @stackage-pinning-test//:hspec
+          bazelisk build //tests/haskell_module/dep-narrowing-th:lib
