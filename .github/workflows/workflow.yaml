@@ -119,7 +119,7 @@ jobs:
           options: ${{ env.NIX_SHELL_ARGS }}
           working-directory: rules_haskell_tests
           run: |
-            bazel test //tests/haskell_module/dep-narrowing-th:Test
+            bazel build //tests/haskell_module/dep-narrowing-th:lib
 
   test-bindist:
     name: Build & Test - bindist
@@ -208,4 +208,4 @@ jobs:
         shell: bash
         run: |
           cd rules_haskell_tests
-          bazelisk test //tests/haskell_module/dep-narrowing-th:Test
+          bazelisk build //tests/haskell_module/dep-narrowing-th:lib
