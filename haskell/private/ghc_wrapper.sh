@@ -35,6 +35,8 @@ else
 
     # We use the information gathered from those 2 files to compile the Haskell file.
 
+    echo 'DEBUG |' "${compile_flags[@]}" "${extra_args[@]}" >&2
+
     "${compile_flags[@]}" "${extra_args[@]}" 2>&1 \
         | drop_loaded_and_warning >&2
 

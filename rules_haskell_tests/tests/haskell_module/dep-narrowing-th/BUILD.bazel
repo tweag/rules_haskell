@@ -87,6 +87,7 @@ haskell_module(
 
 haskell_library(
     name = "lib",
+    ghcopts = ["-v"],
     modules = [
         ":TestModule",
         ":TestModule2",
