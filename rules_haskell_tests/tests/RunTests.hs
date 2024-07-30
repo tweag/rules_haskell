@@ -3,20 +3,21 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-import Control.Exception.Safe (bracket_)
+import Control.Exception.Safe (bracket, bracket_)
 import Data.Foldable (for_)
-import Data.List (isInfixOf, sort)
+import Data.List (delete, intercalate, isInfixOf, isPrefixOf, isSuffixOf, sort, stripPrefix)
 import GHC.Stack (HasCallStack)
 import System.Directory (copyFile, doesFileExist)
 import System.FilePath ((</>))
 import System.Info (os)
+import System.IO (IOMode (..), hClose, hGetContents', openFile)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode(..))
 
 import qualified System.Process as Process
 import Test.Hspec.Core.Spec (SpecM, SpecWith)
-import Test.Hspec (context, hspec, it, describe, runIO, around_, afterAll_)
+import Test.Hspec (context, hspec, it, describe, runIO, around_, afterAll_, expectationFailure, shouldBe)
 
 import BinModule (b)
 import GenModule (a)
@@ -100,16 +101,100 @@ main = hspec $  around_ printStatsHook $ do
 
     describe "multi_repl" $ do
       it "loads transitive library dependencies" $ do
-        let p' (stdout, _stderr) = lines stdout == ["tests/multi_repl/bc/src/BC/C.hs"]
+        let p' (stdout, _stderr) = lines stdout == ["tests/multi_repl/bc/src-c/BC/C.hs"]
         outputSatisfy p' (bazel ["run", "//tests/multi_repl:c_only_repl", "--", "-ignore-dot-ghci", "-e", ":show targets"])
       it "loads transitive source dependencies" $ do
-        let p' (stdout, _stderr) = sort (lines stdout) == ["tests/multi_repl/a/src/A/A.hs","tests/multi_repl/bc/src/BC/B.hs","tests/multi_repl/bc/src/BC/C.hs"]
+        let p' (stdout, _stderr) = sort (lines stdout) == ["tests/multi_repl/a/src/A/A.hs","tests/multi_repl/bc/src-b/BC/B.hs","tests/multi_repl/bc/src-c/BC/C.hs"]
         outputSatisfy p' (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":show targets"])
       it "loads core library dependencies" $ do
         let p' (stdout, _stderr) = sort (lines stdout) == ["tests/multi_repl/core_package_dep/Lib.hs"]
         outputSatisfy p' (bazel ["run", "//tests/multi_repl:core_package_dep", "--", "-ignore-dot-ghci", "-e", ":show targets"])
       it "doesn't allow to manually load modules" $ do
         assertFailure (bazel ["run", "//tests/multi_repl:c_multi_repl", "--", "-ignore-dot-ghci", "-e", ":load BC.C", "-e", "c"])
+      it "produces correct unit files for a repl flagged multi" $ do
+        let unitFiles = ["a_a_unit_file", "bc_b_unit_file", "bc_c_unit_file", "bc_d_unit_file"]
+            makeExpected prefix =
+              [ "-hide-all-packages" ]
+              ++ concatMap (\unitFile ->
+                [ "-unit"
+                , prefix ++ unitFile
+                ]
+              ) unitFiles
+            stripPrefix' pfx object =
+              case stripPrefix pfx object of
+                Nothing -> error "unexpected prefix strip failure"
+                Just stripped -> stripped
+            readLines :: FilePath -> IO [String]
+            readLines filePath = bracket
+                (openFile filePath ReadMode)
+                (hClose)
+                (\h -> lines <$> hGetContents' h)
+            checkUnitFile :: FilePath -> [String] -> [FilePath] -> [FilePath] -> IO ()
+            checkUnitFile unitFile startDeps startSources startIncludes = do
+              unitArgs <- readLines unitFile
+              go unitArgs startDeps startSources startIncludes
+             where
+              go [] [] [] [] = pure ()
+              go [] deps sources includes = expectationFailure(
+                  "At least one of expected (dependecies, sources, include directories) was not-found:"
+                  ++ (if (null deps) then "" else " missing dependencies: " ++ show deps)
+                  ++ (if (null sources) then "" else " missing sources: " ++ show sources)
+                  ++ (if (null includes) then "" else " missing include directories: " ++ show includes)
+                )
+              go ("-package-id":pkgId:rest) deps sources includes =
+                if "base" `isPrefixOf` pkgId
+                  then go rest deps sources includes
+                  else if pkgId `elem` deps
+                    then go rest (delete pkgId deps) sources includes
+                    else expectationFailure ("unexpected dependency: " ++ pkgId)
+              go (x:rest) deps sources includes | "-i" `isPrefixOf` x =
+                let includeDir = drop 2 x
+                 in if includeDir `elem` includes
+                      then go rest deps sources (delete includeDir includes)
+                      else expectationFailure ("unexpected include dir: " ++ x ++ "\n" ++ "expected includes:\n" ++ (intercalate "\n" startIncludes))
+              go (x:rest) deps sources includes | "tests/" `isPrefixOf` x =
+                if x `elem` sources
+                  then go rest deps (delete x sources) includes
+                  else expectationFailure ("unexpected source file: " ++ x)
+              go (_:rest) deps sources includes | otherwise = go rest deps sources includes
+            checkUnitFiles :: Process.CreateProcess -> IO ()
+            checkUnitFiles cmd = do
+              (exitCode, stdout, stderrCapture) <- Process.readCreateProcessWithExitCode cmd ""
+              case exitCode of
+                ExitFailure _ -> expectationFailure (formatOutput exitCode stdout stderrCapture)
+                ExitSuccess -> do
+                  let stdoutLines = lines stdout
+                  case take 1 $ filter ("a_a_unit_file" `isSuffixOf`) stdoutLines of
+                    [] -> expectationFailure "Could not find prefix to read unit files."
+                    (_:_:_) -> error "take 1 returned a list of length 2 or greater"
+                    [fullAUnitFile] -> do
+                      let atPrefix = stripSuffix' "a_a_unit_file" fullAUnitFile
+                          prefix = stripPrefix' "@" atPrefix
+                          shortPrefix = stripSuffix' "_tests/multi_repl/" prefix
+                          stripSuffix' sfx target = reverse $ stripPrefix' (reverse sfx) $ reverse target 
+                          expandPath f = prefix ++ f
+                      lines stdout `shouldBe` makeExpected atPrefix
+                      checkUnitFile
+                        (expandPath "a_a_unit_file")
+                        []
+                        ["tests/multi_repl/a/src/A/A.hs"]
+                        ["tests/multi_repl/a/src", shortPrefix ++ "a/src"]
+                      checkUnitFile
+                        (expandPath "bc_b_unit_file")
+                        ["testsZSmultiZUreplZSaZSa"]
+                        ["tests/multi_repl/bc/src-b/BC/B.hs"]
+                        ["tests/multi_repl/bc/src-b", shortPrefix ++ "bc/src-b"]
+                      checkUnitFile
+                        (expandPath "bc_c_unit_file")
+                        ["testsZSmultiZUreplZSbcZSb"]
+                        ["tests/multi_repl/bc/src-c/BC/C.hs"]
+                        ["tests/multi_repl/bc/src-c", shortPrefix ++ "bc/src-c"]
+                      checkUnitFile
+                        (expandPath "bc_d_unit_file")
+                        ["testsZSmultiZUreplZSbcZSc"]
+                        ["tests/multi_repl/bc/src-d/BC/D.hs"]
+                        ["tests/multi_repl/bc/src-d", shortPrefix ++ "bc/src-d"]
+        checkUnitFiles (bazel ["run", "//tests/multi_repl:d_unit_repl@bios"])
 
     describe "ghcide" $ do
       it "loads RunTests.hs" $
@@ -144,7 +229,7 @@ main = hspec $  around_ printStatsHook $ do
 
     -- Test that the repl still works if we shadow some Prelude functions
     it "repl name shadowing" $ do
-      let p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
+      let p (stdout, stderrCapture) = not $ any ("error" `isInfixOf`) [stdout, stderrCapture]
       outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-ignore-dot-ghci", "-e", "stdin"])
 
     -- GH2096: This test is flaky in CI using the MacOS GitHub runners. The flakiness is slowing 
