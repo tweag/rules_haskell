@@ -20,6 +20,12 @@ haskell_repl(
     deps = ["//tests/multi_repl/core_package_dep"],
 )
 
+haskell_repl(
+    name = "d_unit_repl",
+    deps = ["//tests/multi_repl/bc:d"],
+    multi = True,
+)
+
 filegroup(
     name = "all_files",
     testonly = True,
