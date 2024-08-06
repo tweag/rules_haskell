@@ -1,8 +1,8 @@
 {
-  "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY": -1839214865,
-  "all-cabal-hashes": "https://raw.githubusercontent.com/commercialhaskell/all-cabal-hashes/64569eb85ade372e2e155d64169a99a43b94a29a",
+  "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY": 963132288,
+  "all-cabal-hashes": "https://raw.githubusercontent.com/commercialhaskell/all-cabal-hashes/7984d2867c5cb9c0dcdf7f36413315a772cd4b32",
   "resolved": {
     "base": {"dependencies":[],"location":{"type":"core"},"name":"base","version":"0.0.0.0"},
-    "xhtml": {"dependencies":["base"],"location":{"type":"hackage","url":"https://hackage.haskell.org/package/xhtml-3000.2.2.1/xhtml-3000.2.2.1.tar.gz"},"name":"xhtml","pinned":{"url":["https://hackage.haskell.org/package/xhtml-3000.2.2.1/xhtml-3000.2.2.1.tar.gz","https://s3.amazonaws.com/hackage.fpcomplete.com/package/xhtml-3000.2.2.1.tar.gz"],"sha256":"5cc869013ecc07ff68b3f873c0ab7f03b943fd7fa16d6f8725d4601b2f9f6924","cabal-sha256":"4d9e149310cbbc1c337684fef4e1287281905b2dd39d0cc736736ed416a4f87b"},"version":"3000.2.2.1"}
+    "xhtml": {"dependencies":["base"],"location":{"type":"hackage","url":"https://hackage.haskell.org/package/xhtml-3000.2.2.1/xhtml-3000.2.2.1.tar.gz"},"name":"xhtml","pinned":{"cabal-sha256":"4d9e149310cbbc1c337684fef4e1287281905b2dd39d0cc736736ed416a4f87b","sha256":"5cc869013ecc07ff68b3f873c0ab7f03b943fd7fa16d6f8725d4601b2f9f6924","url":["https://hackage.haskell.org/package/xhtml-3000.2.2.1/xhtml-3000.2.2.1.tar.gz","https://s3.amazonaws.com/hackage.fpcomplete.com/package/xhtml-3000.2.2.1.tar.gz"]},"version":"3000.2.2.1"}
   }
 }
