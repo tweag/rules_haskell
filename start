@@ -328,9 +328,7 @@ EOF
 		# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
 		nixpkgs_git_repository(
 		    name = "nixpkgs",
-		    # The darwin channel tends to have cached packages for linux,
-		    # but not always vice versa.
-		    revision = "nixpkgs-23.11-darwin",
+		    revision = "nixos-24.05",
 		)
 
 		nixpkgs_cc_configure(

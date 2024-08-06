@@ -1,9 +1,9 @@
-resolver: nightly-2023-09-03
+resolver: lts-22.27
 packages:
   - github: hspec/hspec
     # NOTE Keep in sync with resolver version
-    commit: "a8c7472ca344fa5b87dfaea8f1dd760ec9feceb2"
-    sha256: "d8aac8b70bcd6208d59383fdb132fcbaaa3be650e17d8316476d75cc9d60b993"
+    commit: "c19f465d082b585e21f4e0d9f62691bdc9b0792a"
+    sha256: "114792383e60e91dc4d5a177c6c1c0a42ba200449e4294ab891d1b0a6b820739"
     subdirs:
       - .
       - hspec-contrib

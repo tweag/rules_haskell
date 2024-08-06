@@ -21,11 +21,11 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nixpkgs_cc",
-    version = "0.11.1",
+    version = "0.12.0",
 )
 bazel_dep(
     name = "rules_nixpkgs_python",
-    version = "0.11.1",
+    version = "0.12.0",
 )
 bazel_dep(
     name = "rules_python",
@@ -33,15 +33,15 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nixpkgs_go",
-    version = "0.11.1",
+    version = "0.12.0",
 )
 bazel_dep(
     name = "rules_nixpkgs_posix",
-    version = "0.11.1",
+    version = "0.12.0",
 )
 bazel_dep(
     name = "rules_nixpkgs_nodejs",
-    version = "0.11.1",
+    version = "0.12.0",
 )
 bazel_dep(
     name = "platforms",
@@ -126,7 +126,6 @@ use_repo(
     "nixpkgs_go_sdk_toolchains",
     "nixpkgs_lz4",
     "nixpkgs_python_toolchain",
-    "nixpkgs_unstable",
     "toolchains_libraries",
     "zlib.dev",
 )
