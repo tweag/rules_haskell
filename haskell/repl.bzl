@@ -203,7 +203,7 @@ def _merge_HaskellReplLoadInfoMulti(root_info, load_infos):
         java_deps = depset(transitive = java_deps),
     )
 
-def _merge_HaskellReplDepInfo(dep_infos):
+def _merge_HaskellReplDepInfo(dep_infos, dep_infos_for_package_dbs = []):
     package_ids = depset()
     package_databases = depset()
     interface_dirs = depset()
@@ -218,6 +218,9 @@ def _merge_HaskellReplDepInfo(dep_infos):
         cc_libraries_infos.append(dep_info.cc_libraries_info)
         cc_infos.append(dep_info.cc_info)
         runfiles.append(dep_info.runfiles)
+
+    for dep_info in dep_infos_for_package_dbs:
+        package_databases = depset(transitive = [package_databases, dep_info.package_databases])
 
     return HaskellReplDepInfo(
         direct_package_ids = [],
@@ -409,7 +412,12 @@ def _create_HaskellMultiReplInfo(from_source, from_binary, collect_info):
             for label in deps_list
             if label in dep_infos and not sets.contains(local_labels, label)
         ]
-        merged_dep_info = _merge_HaskellReplDepInfo(dep_infos_to_merge)
+        dep_infos_for_package_dbs = [
+            dep_infos[label]
+            for label in deps_list
+            if label in dep_infos and sets.contains(local_labels, label)
+        ]
+        merged_dep_info = _merge_HaskellReplDepInfo(dep_infos_to_merge, dep_infos_for_package_dbs)
         if dep_info and not load_as_source:
             dep_info_with_self = _merge_HaskellReplDepInfo([dep_info, merged_dep_info])
         else:
