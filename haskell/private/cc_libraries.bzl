@@ -132,6 +132,7 @@ def get_library_files(hs, cc_libraries_info, libraries_to_link, dynamic = False,
             # happens during profiling builds.
             static_libs.append(lib_to_link.static_library)
 
+    print("get_library_files -> {}, {}".format(static_libs, dynamic_libs))
     return (static_libs, dynamic_libs)
 
 def link_libraries(libs, args, get_dirname = get_dirname, prefix_optl = False):
