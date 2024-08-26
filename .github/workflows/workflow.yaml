@@ -133,6 +133,11 @@ jobs:
             # Execute the tests dumping out memory/process information before and after each test.
             RHT_PRINT_MEMORY=true ./bazel-ci-bin/tests/run-tests
             bazel coverage //...
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
   test-bindist:
     name: Build & Test - bindist
