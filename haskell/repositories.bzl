@@ -9,7 +9,7 @@ load(
 )
 
 _rules_nixpkgs_version = "0.12.0"
-_rules_nixpkgs_sha256 = "1adb04dc0416915fef427757f4272c4f7dacefeceeefc50f683aec7f7e9b787a"
+_rules_nixpkgs_sha256 = "eb2eae2738ddff6492d1ba06190c4bc2e33c1dd3a620fbe788c29069501e0a7d"
 
 _rules_sh_version = "v0.4.0"
 _rules_sh_sha256 = "3243af3fcb3768633fd39f3654de773e5fb61471a2fae5762a1653c22c412d2c"
@@ -82,12 +82,14 @@ def rules_haskell_dependencies():
         # See https://github.com/tweag/rules_nixpkgs/issues/182 for the rational
 
         strip_prefix = "rules_nixpkgs-%s" % _rules_nixpkgs_version
+        strip_prefix = "rules_nixpkgs-f33397dcc416e0bd37f45a93cfef36b80bfede22"
 
         rules_nixpkgs_url = \
             "https://github.com/tweag/rules_nixpkgs/releases/download/v{version}/{prefix}.tar.gz".format(
                 version = _rules_nixpkgs_version,
                 prefix = strip_prefix,
             )
+        rules_nixpkgs_url = "https://github.com/tweag/rules_nixpkgs/archive/f33397dcc416e0bd37f45a93cfef36b80bfede22.tar.gz"
 
         http_archive(
             name = "io_tweag_rules_nixpkgs",
