@@ -12,7 +12,6 @@ load(
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(
     "//haskell:providers.bzl",
-    "GhcPluginInfo",
     "HaskellInfo",
 )
 load(":private/cc_libraries.bzl", "deps_HaskellCcLibrariesInfo", "get_cc_libraries")
