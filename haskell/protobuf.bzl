@@ -215,7 +215,7 @@ def _haskell_proto_aspect_impl(target, ctx):
     # TODO this pattern match is very brittle. Let's not do this. The
     # order should match the order in the return value expression in
     # haskell_library_impl().
-    [hs_info, cc_info, _coverage_info, default_info, library_info, output_groups] = _haskell_library_impl(patched_ctx)
+    [hs_info, cc_info, cc_shared_library_info, _coverage_info, default_info, library_info, output_groups] = _haskell_library_impl(patched_ctx)
 
     # Build haddock informations
     transitive_html = {}
@@ -255,11 +255,13 @@ def _haskell_proto_aspect_impl(target, ctx):
             for dep in getattr(ctx.rule.attr, attr, [])
         ]),
         cc_info = cc_info,
+        cc_shared_info = cc_shared_library_info,
         is_haskell = True,
     )
 
     return [
         cc_info,  # CcInfo
+        cc_shared_library_info,  # CcSharedLibraryInfo
         hs_info,  # HaskellInfo
         library_info,  # HaskellLibraryInfo
         # We can't return DefaultInfo here because target already provides that.
