@@ -42,6 +42,13 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
+cc_shared_library(
+    name = "ourclibrary_shared",
+    deps = [
+        ":ourclibrary",
+    ],
+)
+
 config_setting(
     name = "nix",
     constraint_values = [
@@ -72,7 +79,7 @@ haskell_library(
     deps = [
         ":array",
         ":base",
-        ":ourclibrary",
+        ":ourclibrary_shared",
         ":zlib",
     ],
 )
