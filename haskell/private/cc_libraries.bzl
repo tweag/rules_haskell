@@ -291,6 +291,7 @@ def extend_HaskellCcLibrariesInfo(
         ctx,
         cc_libraries_info,
         cc_info,
+        cc_shared_info,
         is_haskell):
     """Adapt new LibraryToLink and add to HaskellCcLibrariesInfo.
 
@@ -302,6 +303,7 @@ def extend_HaskellCcLibrariesInfo(
       ctx: Aspect or rule context.
       cc_libraries_info: HaskellCcLibrariesInfo of all dependencies.
       cc_info: CcInfo of the current target.
+      cc_shared_info: CcSharedLibraryInfo of the current target.
       is_haskell: Bool, whether the current target is a Haskell library.
 
     Returns:
@@ -310,7 +312,11 @@ def extend_HaskellCcLibrariesInfo(
     posix = ctx.toolchains["@rules_sh//sh/posix:toolchain_type"]
     libraries = dict(cc_libraries_info.libraries)
 
-    for li in cc_info.linking_context.linker_inputs.to_list():
+    linker_inputs = cc_info.linking_context.linker_inputs.to_list() if cc_info else []
+    if cc_shared_info:
+        linker_inputs.append(cc_shared_info.linker_input)
+
+    for li in linker_inputs:
         for lib_to_link in li.libraries:
             key = cc_library_key(lib_to_link)
             if key in libraries:
@@ -344,7 +350,7 @@ def extend_HaskellCcLibrariesInfo(
 
 def _haskell_cc_libraries_aspect_impl(target, ctx):
     if HaskellProtobufInfo in target:
-        # haskell_cc_libraries_aspect depends on the CcInfo and optionally
+        # haskell_cc_libraries_aspect depends on the CcInfo, CcSharedLibraryInfo and optionally
         # HaskellInfo providers of a target. In the case of proto_library
         # targets these providers are returned by the _haskell_proto_aspect.
         # That aspect in turn requires HaskellCcLibrariesInfo in all its
@@ -362,11 +368,14 @@ def _haskell_cc_libraries_aspect_impl(target, ctx):
         if HaskellCcLibrariesInfo in dep
     ])
 
-    if CcInfo in target:
+    cc_info = target[CcInfo] if CcInfo in target else None
+    cc_shared_info = target[CcSharedLibraryInfo] if CcSharedLibraryInfo in target else None
+    if cc_info or cc_shared_info:
         cc_libraries_info = extend_HaskellCcLibrariesInfo(
             ctx = ctx,
             cc_libraries_info = cc_libraries_info,
-            cc_info = target[CcInfo],
+            cc_info = cc_info,
+            cc_shared_info = cc_shared_info,
             is_haskell = HaskellInfo in target,
         )
 
@@ -387,3 +396,40 @@ haskell_cc_libraries_aspect = aspect(
 Create a symbolic link for each static library whose name doesn't match the
 mangled name of the corresponding dynamic library.
 """
+
+def merge_cc_shared_library_infos(owner, cc_shared_library_infos):
+    """Similar to cc_common.merge_cc_infos but for CcSharedLibraryInfo
+
+    Args:
+        owner: The label of the target that produced all files used in this input.
+        cc_shared_library_infos: CcSharedLibraryInfo providers to be merged.
+
+    Returns:
+      CcSharedLibraryInfo
+    """
+    dynamic_deps = []
+    exports = []
+    link_once_static_libs = {}
+    transitive_dynamic_deps = []
+    libraries_to_link = []
+    for cc_shared_library_info in cc_shared_library_infos:
+        dynamic_dep_entry = struct(
+            exports = cc_shared_library_info.exports,
+            linker_input = cc_shared_library_info.linker_input,
+            link_once_static_libs = cc_shared_library_info.link_once_static_libs,
+        )
+        dynamic_deps.append(dynamic_dep_entry)
+        transitive_dynamic_deps.append(cc_shared_library_info.dynamic_deps)
+        libraries_to_link.extend(cc_shared_library_info.linker_input.libraries)
+        link_once_static_libs.update(pairs = cc_shared_library_info.link_once_static_libs)
+        exports.extend(cc_shared_library_info.exports)
+
+    return CcSharedLibraryInfo(
+        dynamic_deps = depset(direct = dynamic_deps, transitive = transitive_dynamic_deps, order = "topological"),
+        exports = exports,
+        link_once_static_libs = link_once_static_libs,
+        linker_input = cc_common.create_linker_input(
+            owner = owner,
+            libraries = depset(libraries_to_link),
+        ),
+    )
