@@ -140,3 +140,14 @@ stack_snapshot(
 register_toolchains(
     ":c2hs-toolchain",
 )
+
+http_archive(
+    name = "bazel_features",
+    sha256 = "ba1282c1aa1d1fffdcf994ab32131d7c7551a9bc960fbf05f42d55a1b930cbfb",
+    strip_prefix = "bazel_features-1.15.0",
+    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.15.0/bazel_features-v1.15.0.tar.gz",
+)
+
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
+
+bazel_features_deps()
