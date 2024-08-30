@@ -23,6 +23,7 @@ load(
 )
 load(":private/actions/package.bzl", "package")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
+load(":private/cc_libraries.bzl", "merge_cc_shared_library_infos")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "haskell_library_expand_make_variables")
@@ -710,10 +711,15 @@ def haskell_library_impl(ctx):
             ),
         ] + [dep[CcInfo] for dep in deps if CcInfo in dep],
     )
+    out_cc_shared_library_info = merge_cc_shared_library_infos(
+        owner = ctx.label,
+        cc_shared_library_infos = [dep[CcSharedLibraryInfo] for dep in deps if CcSharedLibraryInfo in dep],
+    )
 
     return [
         hs_info,
         out_cc_info,
+        out_cc_shared_library_info,
         coverage_info,
         default_info,
         lib_info,

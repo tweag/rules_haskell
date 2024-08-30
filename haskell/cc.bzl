@@ -12,7 +12,6 @@ load(
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load(
     "//haskell:providers.bzl",
-    "GhcPluginInfo",
     "HaskellInfo",
 )
 load(":private/cc_libraries.bzl", "deps_HaskellCcLibrariesInfo", "get_cc_libraries")
@@ -156,6 +155,11 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
     cc_libraries_info = deps_HaskellCcLibrariesInfo(
         ctx.attr.deps + getattr(ctx.attr, "plugins", []) + getattr(ctx.attr, "setup_deps", []),
     )
+
+    transitive_libraries = _transitive_libraries_from_attr(ctx, "deps")
+    plugin_libraries = _transitive_libraries_from_attr(ctx, "plugins")
+    setup_libraries = _transitive_libraries_from_attr(ctx, "setup_deps")
+
     return CcInteropInfo(
         tools = struct(**tools),
         env = env,
@@ -171,22 +175,9 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
         linker_flags = linker_flags,
         cc_libraries_info = cc_libraries_info,
         cc_libraries = get_cc_libraries(cc_libraries_info, [lib for li in cc_common.merge_cc_infos(cc_infos = ccs).linking_context.linker_inputs.to_list() for lib in li.libraries]),
-        transitive_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = [
-            dep[CcInfo]
-            for dep in ctx.attr.deps
-            if CcInfo in dep
-        ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
-        plugin_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = [
-            dep[CcInfo]
-            for plugin in getattr(ctx.attr, "plugins", [])
-            for dep in plugin[GhcPluginInfo].deps
-            if CcInfo in dep
-        ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
-        setup_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = [
-            dep[CcInfo]
-            for dep in getattr(ctx.attr, "setup_deps", [])
-            if CcInfo in dep
-        ]).linking_context.linker_inputs.to_list() for lib in li.libraries],
+        transitive_libraries = transitive_libraries,
+        plugin_libraries = plugin_libraries,
+        setup_libraries = setup_libraries,
     )
 
 def ghc_cc_program_args(hs, cc, ld):
@@ -237,3 +228,17 @@ def ghc_cc_program_args(hs, cc, ld):
             "-r",
         ])
     return args
+
+def _transitive_libraries_from_attr(ctx, attr_name):
+    cc_infos = [
+        input[CcInfo]
+        for input in getattr(ctx.attr, attr_name, [])
+        if CcInfo in input
+    ]
+    cc_shared_library_infos = [
+        input[CcSharedLibraryInfo]
+        for input in getattr(ctx.attr, attr_name, [])
+        if CcSharedLibraryInfo in input
+    ]
+    linker_inputs = cc_common.merge_cc_infos(cc_infos = cc_infos).linking_context.linker_inputs.to_list() + [info.linker_input for info in cc_shared_library_infos]
+    return [lib for li in linker_inputs for lib in li.libraries]
