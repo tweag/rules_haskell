@@ -4,6 +4,7 @@ load(
     "haskell_library",
     "haskell_toolchain_library",
 )
+load(":maybe_cc_shared_library.bzl", "maybe_cc_shared_library")
 
 [
     haskell_toolchain_library(name = name)
@@ -42,6 +43,8 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
+library_name = maybe_cc_shared_library(name = "ourclibrary")
+
 config_setting(
     name = "nix",
     constraint_values = [
@@ -72,7 +75,7 @@ haskell_library(
     deps = [
         ":array",
         ":base",
-        ":ourclibrary",
         ":zlib",
+        library_name,
     ],
 )

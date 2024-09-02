@@ -14,6 +14,7 @@ load(
     "haskell_cc_libraries_aspect",
     "link_libraries",
     "merge_HaskellCcLibrariesInfo",
+    "merge_cc_shared_library_infos",
 )
 load(":private/context.bzl", "haskell_context", "render_env")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -48,6 +49,7 @@ HaskellReplLoadInfo = provider(
         "import_dirs": "Depset of Haskell import directories.",
         "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of transitive C dependencies.",
+        "cc_shared_library_infos": "CcSharedLibraryInfo providers of transitive C dependencies.",
         "compiler_flags": "Flags to pass to the Haskell compiler.",
         "repl_ghci_args": "Arbitrary extra arguments to pass to GHCi. This extends `compiler_flags` and `repl_ghci_args` from the toolchain",
         "data_runfiles": "Runtime data dependencies of this target, i.e. the files and runfiles of the `data` attribute.",
@@ -68,6 +70,7 @@ HaskellReplDepInfo = provider(
         "interface_dirs": "Set of interface dirs for all the dependencies",
         "cc_libraries_info": "HaskellCcLibrariesInfo of transitive C dependencies.",
         "cc_info": "CcInfo of the package itself (includes its transitive dependencies).",
+        "cc_shared_library_infos": "CcSharedLibraryInfo providers of transitive C dependencies.",
         "runfiles": "Runfiles of this target.",
     },
 )
@@ -146,6 +149,7 @@ def _merge_HaskellReplLoadInfo(load_infos):
     import_dirs = depset()
     cc_libraries_infos = []
     cc_infos = []
+    cc_shared_library_infos = []
     compiler_flags = []
     repl_ghci_args = []
     data_runfiles = []
@@ -158,6 +162,7 @@ def _merge_HaskellReplLoadInfo(load_infos):
         import_dirs = depset(transitive = [import_dirs, load_info.import_dirs])
         cc_libraries_infos.append(load_info.cc_libraries_info)
         cc_infos.append(load_info.cc_info)
+        cc_shared_library_infos.extend(load_info.cc_shared_library_infos)
         compiler_flags += load_info.compiler_flags
         repl_ghci_args += load_info.repl_ghci_args
         data_runfiles.append(load_info.data_runfiles)
@@ -171,6 +176,7 @@ def _merge_HaskellReplLoadInfo(load_infos):
         import_dirs = import_dirs,
         cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = cc_libraries_infos),
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
+        cc_shared_library_infos = cc_shared_library_infos,
         compiler_flags = compiler_flags,
         repl_ghci_args = repl_ghci_args,
         data_runfiles = _merge_runfiles(data_runfiles),
@@ -180,11 +186,13 @@ def _merge_HaskellReplLoadInfo(load_infos):
 def _merge_HaskellReplLoadInfoMulti(root_info, load_infos):
     cc_libraries_infos = []
     cc_infos = []
+    cc_shared_library_infos = []
     data_runfiles = []
     java_deps = []
     for load_info in load_infos:
         cc_libraries_infos.append(load_info.cc_libraries_info)
         cc_infos.append(load_info.cc_info)
+        cc_shared_library_infos.extend(load_info.cc_shared_library_infos)
         data_runfiles.append(load_info.data_runfiles)
         java_deps.append(load_info.java_deps)
 
@@ -197,6 +205,7 @@ def _merge_HaskellReplLoadInfoMulti(root_info, load_infos):
         import_dirs = root_info.import_dirs,
         cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = cc_libraries_infos),
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
+        cc_shared_library_infos = cc_shared_library_infos,
         compiler_flags = root_info.compiler_flags,
         repl_ghci_args = root_info.repl_ghci_args,
         data_runfiles = _merge_runfiles(data_runfiles),
@@ -209,6 +218,7 @@ def _merge_HaskellReplDepInfo(dep_infos, dep_infos_for_package_dbs = []):
     interface_dirs = depset()
     cc_libraries_infos = []
     cc_infos = []
+    cc_shared_library_infos = []
     runfiles = []
 
     for dep_info in dep_infos:
@@ -217,6 +227,7 @@ def _merge_HaskellReplDepInfo(dep_infos, dep_infos_for_package_dbs = []):
         interface_dirs = depset(transitive = [interface_dirs, dep_info.interface_dirs])
         cc_libraries_infos.append(dep_info.cc_libraries_info)
         cc_infos.append(dep_info.cc_info)
+        cc_shared_library_infos.extend(dep_info.cc_shared_library_infos)
         runfiles.append(dep_info.runfiles)
 
     for dep_info in dep_infos_for_package_dbs:
@@ -229,6 +240,7 @@ def _merge_HaskellReplDepInfo(dep_infos, dep_infos_for_package_dbs = []):
         interface_dirs = interface_dirs,
         cc_libraries_info = merge_HaskellCcLibrariesInfo(infos = cc_libraries_infos),
         cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos),
+        cc_shared_library_infos = cc_shared_library_infos,
         runfiles = _merge_runfiles(runfiles),
     )
 
@@ -260,6 +272,11 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
             for dep in getattr(ctx.rule.attr, "deps", []) + getattr(ctx.rule.attr, "narrowed_deps", [])
             if CcInfo in dep and not HaskellInfo in dep
         ]
+        ccSharedLibraryInfoDeps = [
+            dep
+            for dep in getattr(ctx.rule.attr, "deps", []) + getattr(ctx.rule.attr, "narrowed_deps", [])
+            if CcSharedLibraryInfo in dep and not HaskellInfo in dep
+        ]
         if HaskellLibraryInfo in target:
             package_id = target[HaskellLibraryInfo].package_id
         load_info = HaskellReplLoadInfo(
@@ -269,12 +286,19 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
             boot_files = hs_info.boot_files,
             module_names = hs_info.module_names,
             import_dirs = set.to_depset(hs_info.import_dirs),
-            cc_libraries_info = deps_HaskellCcLibrariesInfo(ccInfoDeps),
+            cc_libraries_info = deps_HaskellCcLibrariesInfo(ccInfoDeps + ccSharedLibraryInfoDeps),
             cc_info = cc_common.merge_cc_infos(cc_infos = [
                 # Collect pure C library dependencies, no Haskell dependencies.
                 dep[CcInfo]
                 for dep in ccInfoDeps
             ]),
+            cc_shared_library_infos = [merge_cc_shared_library_infos(
+                owner = ctx.label,
+                cc_shared_library_infos = [
+                    dep[CcSharedLibraryInfo]
+                    for dep in ccSharedLibraryInfoDeps
+                ],
+            )],
             compiler_flags = hs_info.user_compile_flags,
             repl_ghci_args = hs_info.user_repl_flags,
             data_runfiles = _data_runfiles(ctx, ctx.rule, "data"),
@@ -290,6 +314,7 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
             interface_dirs = hs_info.interface_dirs,
             cc_libraries_info = target[HaskellCcLibrariesInfo],
             cc_info = target[CcInfo],
+            cc_shared_library_infos = [target[CcSharedLibraryInfo]] if CcSharedLibraryInfo in target else [],
             runfiles = target[DefaultInfo].default_runfiles,
         )
         dep_infos[target.label] = dep_info
@@ -492,7 +517,9 @@ def _compiler_flags_and_inputs(hs, cc, repl_info, get_dirname, static = False, i
         repl_info.load_info.cc_info,
         repl_info.dep_info.cc_info,
     ])
-    all_libraries = [lib for li in cc_info.linking_context.linker_inputs.to_list() for lib in li.libraries]
+    cc_shared_library_infos = repl_info.load_info.cc_shared_library_infos + repl_info.dep_info.cc_shared_library_infos
+    linker_inputs = cc_info.linking_context.linker_inputs.to_list() + [info.linker_input for info in cc_shared_library_infos]
+    all_libraries = [lib for li in linker_inputs for lib in li.libraries]
     cc_libraries = get_cc_libraries(cc_libraries_info, all_libraries)
     if static:
         cc_library_files = _concat(get_library_files(hs, cc_libraries_info, cc_libraries))

@@ -21,3 +21,10 @@ haskell_register_ghc_nixpkgs(
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
 rules_haskell_toolchains(version = "8.10.7")
+
+load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_cc_configure")
+
+nixpkgs_cc_configure(
+    name = "nixpkgs_config_cc",
+    repository = "@rules_haskell//nixpkgs:default.nix",
+)
