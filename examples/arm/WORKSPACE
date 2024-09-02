@@ -57,6 +57,7 @@ nixpkgs_cc_configure(
 nixpkgs_cc_configure(
     name = "nixpkgs_config_cc_arm",
     attribute_path = "cc-aarch64",
+    cc_std = "c++14",
     exec_constraints = [
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
