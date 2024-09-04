@@ -1,7 +1,9 @@
 # Disable bzlmod explicitly by default, see https://github.com/tweag/rules_haskell/issues/1977
 common --noenable_bzlmod
+common --enable_workspace
 
 common:bzlmod --enable_bzlmod
+common:bzlmod --noenable_workspace
 # Note, have to use /// to make Bazel not crash on Windows
 common:common --registry=file:///%workspace%/registry --registry=https://bcr.bazel.build
 
