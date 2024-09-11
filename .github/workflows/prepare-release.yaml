@@ -46,4 +46,4 @@ jobs:
             --notes-file release_notes.txt \
             --title v${{ inputs.version }} \
             v${{ inputs.version }} \
-            rules_nixpkgs-${{ inputs.version }}.tar.gz
+            ${GITHUB_REPOSITORY#*/}-${{ inputs.version }}.tar.gz
