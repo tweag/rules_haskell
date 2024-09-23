@@ -1,13 +1,16 @@
 {
-    "enabledManagers": [
-        "bazel",
-        "bazel-module"
-    ],
     "extends": [
-        "config:recommended"
+        "github>tweag/renovate-presets:ruleset_base",
+        "github>tweag/renovate-presets:mergify"
     ],
     "ignorePaths": ["registry/**"],
-    "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
-    "onboarding": false,
-    "platform": "github"
+    "packageRules": [
+        {
+            "matchFiles": [
+                "rules_haskell_nix/MODULE.bazel"
+            ],
+            "enabled": false
+        }
+    ],
+    "gitAuthor": "Renovate Bot <bot@renovateapp.com>"
 }

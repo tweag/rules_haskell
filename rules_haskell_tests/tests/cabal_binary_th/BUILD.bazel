@@ -1,8 +1,8 @@
 # repro for https://github.com/tweag/rules_haskell/issues/1551
 
-package(default_testonly = 1)
-
 load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_binary", "haskell_cabal_library")
+
+package(default_testonly = 1)
 
 haskell_cabal_library(
     name = "cabal-test-th",

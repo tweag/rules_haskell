@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP, MagicHash #-}
+
 -- |
 -- Module      : Data.Primitive.MachDeps
 -- Copyright   : (c) Roman Leshchinskiy 2009-2012
@@ -7,8 +8,7 @@
 -- Maintainer  : Roman Leshchinskiy <rl@cse.unsw.edu.au>
 -- Portability : non-portable
 --
--- Machine-dependent constants
---
+-- Machine-dependent constants.
 
 module Data.Primitive.MachDeps where
 
@@ -113,11 +113,10 @@ aLIGNMENT_INT64 = ALIGNMENT_INT64
 sIZEOF_WORD64 = SIZEOF_WORD64
 aLIGNMENT_WORD64 = ALIGNMENT_WORD64
 
-#if WORD_SIZE_IN_BITS == 32
+#if WORD_SIZE_IN_BITS == 32 || __GLASGOW_HASKELL__ >= 903
 type Word64_# = Word64#
 type Int64_# = Int64#
 #else
 type Word64_# = Word#
 type Int64_# = Int#
 #endif
-

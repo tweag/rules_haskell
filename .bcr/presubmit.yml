@@ -7,15 +7,25 @@ matrix:
   # disable Windows for now, it fails with
   # "this rule is missing dependency declarations for the following files ..."
   #- windows
+  bazel:
+  - 6.x
+  - 7.x
 tasks:
   verify_targets:
     name: Verify build targets
     platform: ${{ platform }}
+    bazel: ${{ bazel }}
     shell_commands:
     - |
       if apt --version >/dev/null 2>/dev/null; then
         sudo apt update
         sudo apt install --no-install-recommends -yy libtinfo5 libgmp-dev
+      fi
+    - |
+      if xcodebuild -version; then
+        # Setup xcode because GHC bindists expect the following directory on mac:
+        # /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/ffi
+        xcodebuild -runFirstLaunch
       fi
     batch_commands:
     # enforce certificate update

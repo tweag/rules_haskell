@@ -1,14 +1,12 @@
 """Implementation of core Haskell rules"""
 
+load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
-load(
-    ":providers.bzl",
-    "C2hsLibraryInfo",
-    "HaddockInfo",
-    "HaskellInfo",
-    "HaskellLibraryInfo",
-    "HaskellToolchainLibraryInfo",
-)
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", "sets")
+load("@bazel_skylib//lib:shell.bzl", "shell")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 load(":cc.bzl", "cc_interop_info")
 load(
     ":private/actions/info.bzl",
@@ -24,12 +22,13 @@ load(
     "link_library_static",
 )
 load(":private/actions/package.bzl", "package")
-load(":private/plugins.bzl", "resolve_plugin_tools")
 load(":private/actions/runghc.bzl", "build_haskell_runghc")
+load(":private/cc_libraries.bzl", "merge_cc_shared_library_infos")
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "haskell_library_expand_make_variables")
 load(":private/java.bzl", "java_interop_info")
+load(":private/list.bzl", "list")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",
@@ -40,30 +39,33 @@ load(
     "parse_pattern",
 )
 load(":private/pkg_id.bzl", "pkg_id")
+load(":private/plugins.bzl", "resolve_plugin_tools")
 load(":private/set.bzl", "set")
-load("@bazel_skylib//lib:sets.bzl", "sets")
-load(":private/list.bzl", "list")
 load(":private/version_macros.bzl", "generate_version_macros")
-load(":providers.bzl", "GhcPluginInfo", "HaskellCoverageInfo")
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_skylib//lib:collections.bzl", "collections")
-load("@bazel_skylib//lib:shell.bzl", "shell")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
-load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
+load(
+    ":providers.bzl",
+    "C2hsLibraryInfo",
+    "GhcPluginInfo",
+    "HaddockInfo",
+    "HaskellCoverageInfo",
+    "HaskellInfo",
+    "HaskellLibraryInfo",
+    "HaskellToolchainLibraryInfo",
+)
 
 # Note [Empty Libraries]
 #
-# GHC 8.10.x wants to load the shared libraries corresponding to packages needed
-# for running TemplateHaskell splices. It wants to do this even when all the
-# necessary object files are passed in the command line.
-#
-# In order to satisfy GHC, and yet avoid passing the linked library as input, we
-# create a ficticious package which points to an empty shared library. The
-# ficticious and the real package share the same interface files.
+# GHC wants to load the shared libraries given in `extra-libraries` or
+# `hs-libraries` fields of package config files corresponding to packages needed
+# for running TemplateHaskell splices.
 #
 # Avoiding to pass the real shared library as input is necessary when building
 # individual modules with haskell_module, otherwise building the module would
 # need to wait until all of the modules of library dependencies have been built.
+#
+# In order to achieve that, we create a fictitious package which does not refer
+# to a library file at all. The fictitious and the real package share the same
+# interface files.
 #
 # See Note [Narrowed Dependencies] for an overview of what this feature is
 # needed for.
@@ -395,41 +397,6 @@ def _haskell_binary_common_impl(ctx, is_test):
         )),
     ]
 
-def _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling, empty_libs_dir):
-    """See Note [Empty Libraries]"""
-    dep_info = gather_dep_info("haskell_module-empty_lib", [])
-    empty_c = hs.actions.declare_file("empty.c")
-    hs.actions.write(empty_c, "")
-
-    static_library = link_library_static(
-        hs,
-        cc,
-        posix,
-        dep_info,
-        depset([empty_c]),
-        my_pkg_id,
-        with_profiling = with_profiling,
-        libdir = empty_libs_dir,
-    )
-    libs = [static_library]
-
-    if with_shared:
-        dynamic_library = link_library_dynamic(
-            hs,
-            cc,
-            posix,
-            dep_info,
-            depset(),
-            depset([empty_c]),
-            my_pkg_id,
-            [],
-            None,
-            empty_libs_dir,
-        )
-        libs = [dynamic_library, static_library]
-
-    return libs
-
 def haskell_library_impl(ctx):
     hs = haskell_context(ctx)
     deps = ctx.attr.deps + ctx.attr.exports + ctx.attr.narrowed_deps
@@ -589,8 +556,8 @@ def haskell_library_impl(ctx):
         exposed_modules,
         other_modules,
         my_pkg_id,
-        non_empty,
-        empty_libs_dir,
+        has_hs_library = False,
+        empty_libs_dir = empty_libs_dir,
     )
 
     interface_dirs = depset(
@@ -606,8 +573,6 @@ def haskell_library_impl(ctx):
         version_macros = sets.make([
             generate_version_macros(ctx, package_name, version),
         ])
-
-    empty_libs = _create_empty_library(hs, cc, posix, my_pkg_id, with_shared, with_profiling, empty_libs_dir)
 
     export_infos = gather_dep_info(ctx.attr.name, ctx.attr.exports)
     hs_info = HaskellInfo(
@@ -636,10 +601,6 @@ def haskell_library_impl(ctx):
         deps_hs_libraries = depset(
             transitive = [dep_info.hs_libraries, narrowed_deps_info.deps_hs_libraries],
         ),
-        empty_hs_libraries = depset(
-            direct = empty_libs,
-            transitive = [all_deps_info.empty_hs_libraries, export_infos.empty_hs_libraries],
-        ),
         interface_dirs = depset(transitive = [interface_dirs, export_infos.interface_dirs]),
         deps_interface_dirs = depset(transitive = [dep_info.interface_dirs, narrowed_deps_info.deps_interface_dirs]),
         compile_flags = c.compile_flags,
@@ -652,14 +613,16 @@ def haskell_library_impl(ctx):
     )
 
     exports = [
-        reexp[HaskellLibraryInfo]
+        reexp[HaskellLibraryInfo].exports
         for reexp in ctx.attr.exports
-        if HaskellCoverageInfo in reexp
     ]
     lib_info = HaskellLibraryInfo(
         package_id = pkg_id.to_string(my_pkg_id),
         version = version,
-        exports = exports,
+        exports = depset(
+            [pkg_id.to_string(my_pkg_id)],
+            transitive = exports,
+        ),
     )
 
     dep_coverage_data = []
@@ -748,10 +711,15 @@ def haskell_library_impl(ctx):
             ),
         ] + [dep[CcInfo] for dep in deps if CcInfo in dep],
     )
+    out_cc_shared_library_info = merge_cc_shared_library_infos(
+        owner = ctx.label,
+        cc_shared_library_infos = [dep[CcSharedLibraryInfo] for dep in deps if CcSharedLibraryInfo in dep],
+    )
 
     return [
         hs_info,
         out_cc_info,
+        out_cc_shared_library_info,
         coverage_info,
         default_info,
         lib_info,
@@ -855,7 +823,6 @@ def haskell_import_impl(ctx):
         import_dirs = sets.make(),
         hs_libraries = depset(),
         deps_hs_libraries = depset(),
-        empty_hs_libraries = depset(),
         interface_dirs = depset(),
         deps_interface_dirs = depset(),
         compile_flags = [],
@@ -888,7 +855,7 @@ def haskell_import_impl(ctx):
     lib_info = HaskellLibraryInfo(
         package_id = id,
         version = ctx.attr.version,
-        exports = [],
+        exports = depset([id]),
     )
     default_info = DefaultInfo(
         files = depset(target_files),

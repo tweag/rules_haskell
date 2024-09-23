@@ -2,13 +2,22 @@
 
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe", "read_netrc", "use_netrc")
-load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
+load(":haddock.bzl", "generate_unified_haddock_info")
 load(":private/actions/info.bzl", "library_info_output_groups")
 load(":private/actions/link.bzl", "darwin_flags_for_linking_indirect_cc_deps")
+load(
+    ":private/cc_libraries.bzl",
+    "get_cc_libraries",
+    "get_ghci_library_files",
+    "get_library_files",
+    "haskell_cc_libraries_aspect",
+)
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "expand_make_variables")
@@ -20,9 +29,8 @@ load(
     "relative_rpath_prefix",
     "truly_relativize",
 )
-load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/validate_attrs.bzl", "typecheck_stackage_extradeps")
-load(":haddock.bzl", "generate_unified_haddock_info")
+load(":private/versions.bzl", "check_bazel_version")
 load(
     ":private/workspace_utils.bzl",
     _execute_or_fail_loudly = "execute_or_fail_loudly",
@@ -34,14 +42,6 @@ load(
     "HaskellLibraryInfo",
     "all_dependencies_package_ids",
 )
-load(
-    ":private/cc_libraries.bzl",
-    "get_cc_libraries",
-    "get_ghci_library_files",
-    "get_library_files",
-    "haskell_cc_libraries_aspect",
-)
-load(":private/versions.bzl", "check_bazel_version")
 
 def _get_auth(ctx, urls):
     """Find the .netrc file and obtain the auth dict for the required URLs.
@@ -604,14 +604,13 @@ def _haskell_cabal_library_impl(ctx):
             transitive = [dep_info.deps_hs_libraries],
             order = "topological",
         ),
-        empty_hs_libraries = dep_info.empty_hs_libraries,
         interface_dirs = depset([interfaces_dir], transitive = [dep_info.interface_dirs]),
         deps_interface_dirs = dep_info.deps_interface_dirs,
         compile_flags = [],
         user_compile_flags = [],
         user_repl_flags = [],
     )
-    lib_info = HaskellLibraryInfo(package_id = package_id, version = None, exports = [])
+    lib_info = HaskellLibraryInfo(package_id = package_id, version = None, exports = depset([package_id]))
     if with_haddock:
         doc_info = generate_unified_haddock_info(
             this_package_id = package_id,
@@ -892,7 +891,6 @@ def _haskell_cabal_binary_impl(ctx):
         import_dirs = sets.make(),
         hs_libraries = dep_info.hs_libraries,
         deps_hs_libraries = dep_info.deps_hs_libraries,
-        empty_hs_libraries = dep_info.empty_hs_libraries,
         interface_dirs = dep_info.interface_dirs,
         deps_interface_dirs = dep_info.deps_interface_dirs,
         compile_flags = [],
@@ -2136,7 +2134,7 @@ haskell_cabal_binary(
     setup_deps = {setup_deps},
     tools = {tools},
     visibility = ["@{workspace}-exe//{name}:__pkg__"],
-    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w"],
+    cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w", "--ghc-option=-static"],
     verbose = {verbose},
 )
 """.format(
@@ -2154,7 +2152,7 @@ haskell_cabal_binary(
             for sublib in all_components[name].sublibs:
                 sublib_component_deps = [
                     _resolve_component_target_name(name, c)
-                    for c in package_components_dependencies.get("lib:".format(sublib), [])
+                    for c in package_components_dependencies.get("lib:{}".format(sublib), [])
                 ]
                 build_file_builder.append(
                     """
@@ -2746,7 +2744,8 @@ def use_stack(stack):
     Globally override the `stack` version used by all instances of `stack_snapshot`.
     WARNING: This should only be used in the top-level repository.
 
-    Example:
+    ### Examples
+    ```
     # WORKSPACE
 
     # Order is important! Placing `use_stack()` after any occurrence of `stack_snapshot`
@@ -2758,13 +2757,16 @@ def use_stack(stack):
         stack = "@y_stack:stack",
         # ...
     )
+    ```
 
-    # BUILD
+    ```
+    # BUILD.bazel
     haskell_binary(
         # ...
         # targets in `x` will be built using `x_stack`, NOT `y_stack`
         deps = ["@x//:all"],
     )
+    ```
     """
     if native.existing_rule("rules_haskell_stack"):
         fail("`rules_haskell_stack` already defined. call `use_stack()` before `stack_snapshot()` in `WORKSPACE`")

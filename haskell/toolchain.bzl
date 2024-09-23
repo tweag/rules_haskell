@@ -1,8 +1,13 @@
 """Rules for defining toolchains"""
 
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load(
+    "//haskell/asterius:asterius_config.bzl",
+    "ASTERIUS_BINARIES",
+    "asterius_tools_config",
+)
+load(":cc.bzl", "ghc_cc_program_args")
 load(":ghc_bindist.bzl", "haskell_register_ghc_bindists")
 load(
     ":private/actions/compile.bzl",
@@ -17,18 +22,11 @@ load(
     "merge_parameter_files",
 )
 load(":private/actions/package.bzl", "package")
-load(":cc.bzl", "ghc_cc_program_args")
 load(":private/context.bzl", "append_to_path")
 load(
-    "//haskell/asterius:asterius_config.bzl",
-    "ASTERIUS_BINARIES",
-    "asterius_tools_config",
-)
-load(
-    ":providers.bzl",
-    "HaddockInfo",
-    "HaskellInfo",
-    "HaskellLibraryInfo",
+    ":private/haskell_impl.bzl",
+    "HaskellImportHack",
+    "HaskellToolchainLibraries",
 )
 load(
     ":private/path_utils.bzl",
@@ -37,12 +35,13 @@ load(
     "get_static_hs_lib_name",
 )
 load(
-    ":private/haskell_impl.bzl",
-    "HaskellImportHack",
-    "HaskellToolchainLibraries",
+    ":providers.bzl",
+    "HaddockInfo",
+    "HaskellInfo",
+    "HaskellLibraryInfo",
 )
 
-_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "ghci", "runghc", "hpc"]
+_GHC_BINARIES = ["ghc", "ghc-pkg", "hsc2hs", "haddock", "runghc", "hpc"]
 
 def _toolchain_library_symlink(dynamic_library):
     prefix = dynamic_library.owner.workspace_root.replace("_", "_U").replace("/", "_S")
@@ -251,9 +250,28 @@ def _haskell_toolchain_libraries(ctx, libraries):
                     if len(ext_components) == 2 and ext_components[0] == "so":
                         libs[libname]["dynamic"] = lib
                 else:
+                    # with GHC >= 9.4.1 the rts library has a version number
+                    # included in the name.
+                    # for handling single-threaded and threading variants below,
+                    # we normalize the name and strip the version number
+                    if libname.startswith("HSrts-"):
+                        idx = libname.find("_")
+                        suffix = libname[idx:] if idx > 0 else ""
+                        libname = "HSrts" + suffix
+
                     libs[libname] = {"dynamic": lib}
             for lib in target[HaskellImportHack].static_libraries.to_list():
                 name = get_static_hs_lib_name(with_profiling, lib)
+
+                # with GHC >= 9.4.1 the rts library has a version number
+                # included in the name.
+                # for handling single-threaded and threading variants below,
+                # we normalize the name and strip the version number
+                if name.startswith("HSrts-"):
+                    idx = name.find("_")
+                    suffix = name[idx:] if idx > 0 else ""
+                    name = "HSrts" + suffix
+
                 entry = libs.get(name, {})
                 entry["static"] = lib
                 libs[name] = entry
@@ -332,7 +350,19 @@ def _haskell_toolchain_impl(ctx):
         for tool, asterius_binary in ahc_binaries.items():
             tools_struct_args[ASTERIUS_BINARIES[tool]] = asterius_binary
     else:
-        ghc_binaries = _lookup_binaries(_GHC_BINARIES, ctx.files.tools, ctx.attr.version)
+        ghc_tools = _GHC_BINARIES
+
+        # GHC > 9.10 does not install ghci with relocatable = true, add the tool if it is available
+        if any([file.basename.startswith("ghci") for file in ctx.files.tools]):
+            ghc_tools = ghc_tools + ["ghci"]
+        else:
+            print(
+                "WARN: ghci binary is not available for {}, `tools.ghci` will not exist on its haskell toolchain".format(
+                    ctx.label.repo_name,
+                ),
+            )
+
+        ghc_binaries = _lookup_binaries(ghc_tools, ctx.files.tools, ctx.attr.version)
         tools_struct_args = {
             name.replace("-", "_"): file
             for name, file in ghc_binaries.items()

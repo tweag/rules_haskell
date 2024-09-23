@@ -6,6 +6,7 @@ local_repository(
 )
 
 load("@rules_haskell//haskell:private/ghc_ci.bzl", "ghc_version")
+load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
 
 ghc_version(name = "rules_haskell_ghc_version")
 
@@ -27,15 +28,14 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # For testing if bzlmod is enabled
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "262e3d6693cdc16dd43880785cdae13c64e6a3f63f75b1993c716295093d117f",
-    strip_prefix = "bazel-lib-1.38.1",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.38.1/bazel-lib-v1.38.1.tar.gz",
+    sha256 = "688354ee6beeba7194243d73eb0992b9a12e8edeeeec5b6544f4b531a3112237",
+    strip_prefix = "bazel-lib-2.8.1",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.8.1/bazel-lib-v2.8.1.tar.gz",
 )
-
-load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 
 # bazel dependencies
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
+load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 
 rules_js_dependencies()
 
@@ -45,25 +45,32 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "rules_proto",
-    sha256 = "c6d6f9bfd39b6417724fd4a504767aa1e8dbfe828d9d41ab4ccd1976aba53fb4",
-    strip_prefix = "rules_proto-7188888362a203892dec354f52623f9970bff48c",
-    urls = ["https://github.com/bazelbuild/rules_proto/archive/7188888362a203892dec354f52623f9970bff48c.tar.gz"],
+    sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
+    strip_prefix = "rules_proto-6.0.2",
+    url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.2/rules_proto-6.0.2.tar.gz",
 )
 
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
 
 rules_proto_dependencies()
+
+load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
 
 rules_proto_toolchains()
 
 # For buildifier
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
+    sha256 = "f4a9314518ca6acfa16cc4ab43b0b8ce1e4ea64b81c38d8a3772883f153346b8",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
     ],
+)
+
+load(
+    "@rules_haskell//:constants.bzl",
+    _default_ghc_version = "test_ghc_version",
 )
 
 # This tests loading haskell_register_ghc_nixpkgs via @rules_haskell.
@@ -72,6 +79,7 @@ load(
     "@rules_haskell//haskell:nixpkgs.bzl",
     "haskell_register_ghc_nixpkgs",
 )
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 load(
     "@rules_haskell_tests//:non_module_deps_1.bzl",
     "test_cabalopts",
@@ -79,11 +87,6 @@ load(
     "test_haddock_flags",
     "test_repl_ghci_args",
 )
-load(
-    "@rules_haskell//:constants.bzl",
-    _default_ghc_version = "test_ghc_version",
-)
-load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 test_ghc_version = GHC_VERSION or _default_ghc_version
 
@@ -297,7 +300,7 @@ stack_snapshot(
             "typed-process": ["@Cabal//:Cabal"],
             "unliftio-core": ["@Cabal//:Cabal"],
         }.items()
-        if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not GHC_VERSION.startswith("9.6.")
+        if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not is_at_least("9.6", GHC_VERSION)
     },
     stack_snapshot_json = "//:stackage_snapshot{}.json".format(
         "_" + str(GHC_VERSION) if GHC_VERSION else "",

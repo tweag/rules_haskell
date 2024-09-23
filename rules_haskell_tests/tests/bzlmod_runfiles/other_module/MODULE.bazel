@@ -5,17 +5,17 @@ module(
 
 bazel_dep(
     name = "rules_haskell_nix",
-    version = "0.19",
+    version = "1.0",
 )
 bazel_dep(
     name = "rules_haskell",
-    version = "0.19",
+    version = "1.0",
 )
 bazel_dep(
     name = "rules_nixpkgs_core",
-    version = "0.10.0",
+    version = "0.12.0",
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.8",
+    version = "0.0.10",
 )

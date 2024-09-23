@@ -1,3 +1,136 @@
+## Changes in version 0.9.0.0
+
+  * Add `withByteArrayContents`, `withMutableByteArrayContents`,
+    `withPrimArrayContents`, `withMutablePrimArrayContents`.
+
+  * Fix signature of `keepAlive`.
+
+  * Remove re-export of `fromList` and `fromListN` from `Data.Primitive.Array`.
+
+  * Use `mutableByteArrayContents#` in GHC 9.2+
+
+  * Add `Prim` instance for `Complex`.
+
+  * Add `getSizeofSmallMutableArray` that wraps `getSizeofSmallMutableArray#`
+    from `GHC.Exts`.
+
+  * Add default definitions for the `setByteArray#` and `setOffAddr#` methods,
+    so they don't need to be defined explicitly anymore.
+
+  * Add standalone `sizeOfType`/`alignmentOfType` (recommended over `sizeOf`/`alignment`)
+    and `Prim` class methods `sizeOfType#`/`alignmentOfType#` (recommended over `sizeOf#`/`alignment#`)
+
+  * Change `Show` instances of `PrimArray`, `Array`, and `SmallArray`. These
+    previously used the `fromListN n [...]` form, but they now used the more
+    terse `[...]` form.
+
+  * Correct the `Read` instances of `Array` and `SmallArray`. These instances
+    are supposed to be able to handle all three of these forms: `fromList [...]`,
+    `fromListN n [...]`, and `[...]`. They had been rejected the last form, but
+    this mistake was discovered by the test suite when the Show instances were
+    changed.
+
+## Changes in version 0.8.0.0
+
+  * Add `resizeSmallMutableArray` that wraps `resizeSmallMutableArray#` from
+    `GHC.Exts`.
+
+  * New module `Data.Primitive.PrimVar`. This is essentially `PrimArray` with
+    element length 1. For types with `Prim` instances, this is a drop-in
+    replacement for `MutVar` with fewer indirections.
+
+  * `PrimArray`'s type argument has been given a nominal role instead of a phantom role.
+    This is a breaking change.
+
+  * Add `readCharArray`, `writeCharArray`, `indexCharArray` for operating on
+    8-bit characters in a byte array.
+
+  * When building with `base-4.17` and newer, re-export the `ByteArray` and
+    `MutableByteArray` types from `base` instead of defining them in this
+    library. This does not change the user-facing interface of
+    `Data.Primitive.ByteArray`.
+
+  * Add `keepAlive` that wraps `keepAlive#` for GHC 9.2 and newer. It
+    falls back to using `touch` for older GHCs.
+
+## Changes in version 0.7.4.0
+
+  * Add Lift instances (#332)
+
+  * Expose `copyPtrToMutablePrimArray`
+
+  * Improve definitions for stimes (#326)
+
+  * Support GHC 9.4. Note: GHC 9.4 is not released at the time of
+    primitive-0.7.4.0's release, so this support might be reverted by
+    a hackage metadata revision if things change.
+
+  * Drop support for GHC 7.10
+
+## Changes in version 0.7.3.0
+
+  * Correct implementations of `*>` for `Array` and `SmallArray`.
+
+  * Drop support for GHC < 7.10
+
+  * Export `runByteArray` and `runPrimArray`.
+
+  * Export `createArray` and `createSmallArray`.
+
+  * Export `emptyByteArray`, `emptyPrimArray`, `emptyArray` and `emptySmallArray`.
+
+## Changes in version 0.7.2.0
+
+  * Add `thawByteArray` and `thawPrimArray`.
+
+  * Changed the `Show` instance of `ByteArray`, so that all 8-bit words
+    are rendered as two digits. For example, display `0x0D` instead of `0xD`.
+
+## Changes in version 0.7.1.0
+
+  * Introduce convenience class `MonadPrim` and `MonadPrimBase`.
+
+  * Add `PrimMonad` and `PrimBase` instances for `Lazy.ST` (GHC >= 8.2).
+    thanks to Avi Dessauer (@Avi-D-coder) for this first contribution
+
+  * Add `freezeByteArray` and `freezePrimArray`.
+
+  * Add `compareByteArrays`.
+
+  * Add `shrinkMutableByteArray`.
+
+  * Add `Eq` instances for `MutableByteArray` and `MutablePrimArray`.
+    by Andrew Martin
+
+  * Add functions for manipulating pinned Prim Arrays
+    by Andrew Martin
+
+  * Add `copyPtrToMutableByteArray`.
+
+  * Add `NFData` instances for `ByteArray`, `MutableByteArray`,
+    `PrimArray` and `MutablePrimArray`.
+    by Callan McGill
+
+  * Add `shrinkSmallMutableArray`.
+
+  * Add `clonePrimArray` and `cloneMutablePrimArray`.
+
+  * Add `cloneMutableByteArray` and `cloneByteArray`.
+
+  * Add `Prim` instances for `WordPtr` and `IntPtr`.
+
+  * Add `NFData` instances for `Array` and `SmallArray`.
+    by Callan McGill
+
+  * Add `copyByteArrayToPtr` and `copyMutableByteArrayToPtr`.
+
+  * Export `arrayFromList` and `arrayFromListN`.
+
+## Changes in version 0.7.0.1
+
+  * Allow building with GHC 8.12.
+    Thanks Ryan GL Scott for this and every compat patch over time.
+
 ## Changes in version 0.7.0.0
 
   * Remove `Addr` data type, lifted code should use `Ptr a` now

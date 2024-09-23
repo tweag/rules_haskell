@@ -1,7 +1,9 @@
-load("@rules_haskell//tests:inline_tests.bzl", "sh_inline_test")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("@os_info//:os_info.bzl", "is_windows")
-load("//tests:rule_test_exe.bzl", "rule_test_exe")
+load(
+    "@rules_haskell//:constants.bzl",
+    DEFAULT_TEST_GHC_VERSION = "test_ghc_version",
+)
 load(
     "@rules_haskell//haskell:c2hs.bzl",
     "c2hs_toolchain",
@@ -21,11 +23,10 @@ load(
     "@rules_haskell//haskell:protobuf.bzl",
     "haskell_proto_toolchain",
 )
+load("@rules_haskell//tests:inline_tests.bzl", "sh_inline_test")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
-load(
-    "@rules_haskell//:constants.bzl",
-    DEFAULT_TEST_GHC_VERSION = "test_ghc_version",
-)
+load("//tests:rule_test_exe.bzl", "rule_test_exe")
+load("//tests:test_haddock.bzl", "expected_values")
 
 # prefer the GHC version set by rules_haskell, use the default test GHC version otherwise
 TEST_GHC_VERSION = GHC_VERSION or DEFAULT_TEST_GHC_VERSION
@@ -206,49 +207,7 @@ rule_test_exe(
 rule_test(
     name = "test-haddock",
     size = "small",
-    generates = [
-        "haddock/ghc-boot-th-{}".format(TEST_GHC_VERSION),
-    ] + {
-        "9.2.8": [
-            "haddock/array-0.5.4.0",
-            "haddock/base-4.16.4.0",
-            "haddock/deepseq-1.4.6.1",
-            "haddock/ghc-bignum-1.2",
-            "haddock/ghc-prim-0.8.0",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6",
-            "haddock/template-haskell-2.18.0.0",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-        ],
-        "9.4.6": [
-            "haddock/array-0.5.4.0",
-            "haddock/base-4.17.2.0",
-            "haddock/deepseq-1.4.8.0",
-            "haddock/ghc-bignum-1.3",
-            "haddock/ghc-prim-0.9.1",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6",
-            "haddock/template-haskell-2.19.0.0",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-        ],
-        "9.6.2": [
-            "haddock/array-0.5.5.0",
-            "haddock/base-4.18.0.0",
-            "haddock/deepseq-1.4.8.1",
-            "haddock/ghc-bignum-1.3",
-            "haddock/ghc-prim-0.10.0",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6",
-            "haddock/template-haskell-2.20.0.0",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-        ],
-    }[TEST_GHC_VERSION],
+    generates = expected_values(TEST_GHC_VERSION),
     rule = "//tests/haddock",
 )
 
@@ -439,12 +398,13 @@ haskell_library(
     ],
 )
 
+# See https://github.com/tweag/rules_haskell/issues/2127
 haskell_doc(
     name = "toto",
     tags = [
         "dont_test_on_windows",
         "requires_lz4",
-    ],
+    ] + (["skip_profiling"] if GHC_VERSION == "9.8.1" else []),
     deps = [":utils"],
 )
 

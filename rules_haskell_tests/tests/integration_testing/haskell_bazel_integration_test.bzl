@@ -1,10 +1,10 @@
-load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+load("@cgrindel_bazel_starlib//shlib/rules:execute_binary.bzl", "execute_binary")
 load(
     "@rules_bazel_integration_test//bazel_integration_test:defs.bzl",
     "bazel_integration_test",
     "integration_test_utils",
 )
-load("@cgrindel_bazel_starlib//shlib/rules:execute_binary.bzl", "execute_binary")
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
 
 DEFAULT_TAGS = ["exclusive", "integration"]
 DEFAULT_HASKELL_DEPS = [

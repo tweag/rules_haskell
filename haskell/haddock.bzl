@@ -3,18 +3,18 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load(
+    ":private/cc_libraries.bzl",
+    "get_ghci_library_files",
+    "haskell_cc_libraries_aspect",
+)
+load(":private/context.bzl", "haskell_context", "render_env")
+load(
     ":providers.bzl",
     "HaddockInfo",
     "HaskellCcLibrariesInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
 )
-load(
-    ":private/cc_libraries.bzl",
-    "get_ghci_library_files",
-    "haskell_cc_libraries_aspect",
-)
-load(":private/context.bzl", "haskell_context", "render_env")
 
 def generate_unified_haddock_info(this_package_id, this_package_haddock, this_package_html, deps):
     """Collapse dependencies into a single `HaddockInfo`.
@@ -89,16 +89,13 @@ def _haskell_doc_aspect_impl(target, ctx):
     html_dir = ctx.actions.declare_directory(html_dir_raw)
     haddock_file = ctx.actions.declare_file(_get_haddock_path(package_id))
 
-    # XXX Haddock really wants a version number, so invent one from
-    # thin air. See https://github.com/haskell/haddock/issues/898.
-    if target[HaskellLibraryInfo].version:
-        version = target[HaskellLibraryInfo].version
-    else:
-        version = "0"
-
     args = ctx.actions.args()
     args.add("--package-name={0}".format(package_id))
-    args.add("--package-version={0}".format(version))
+
+    if target[HaskellLibraryInfo].version:
+        version = target[HaskellLibraryInfo].version
+        args.add("--package-version={0}".format(version))
+
     args.add_all([
         "-D",
         haddock_file.path,

@@ -1,9 +1,9 @@
-package(default_visibility = ["//visibility:public"])
-
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
 )
+
+package(default_visibility = ["//visibility:public"])
 
 haskell_library(
     name = "a",
@@ -14,6 +14,8 @@ haskell_library(
     deps = [
         "//tests/hackage:base",
     ],
+    package_name = "a",
+    version = "0.0.0",
 )
 
 filegroup(

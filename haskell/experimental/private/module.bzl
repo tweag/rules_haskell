@@ -1,6 +1,10 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:sets.bzl", "sets")
-load("//haskell:private/path_utils.bzl", "infer_main_module")
+load(
+    "//haskell:private/actions/process_hsc_file.bzl",
+    "preprocess_hsc_flags_and_inputs",
+    "process_hsc_file",
+)
 load(
     "//haskell:private/dependencies.bzl",
     "gather_dep_info",
@@ -10,12 +14,13 @@ load(
     "expand_make_variables",
     "haskell_library_expand_make_variables",
 )
-load("//haskell:private/pkg_id.bzl", "pkg_id")
 load(
     "//haskell:private/packages.bzl",
     "expose_packages",
     "pkg_info_to_compile_flags",
 )
+load("//haskell:private/path_utils.bzl", "infer_main_module")
+load("//haskell:private/pkg_id.bzl", "pkg_id")
 load(
     "//haskell:private/plugins.bzl",
     "resolve_plugin_tools",
@@ -23,17 +28,13 @@ load(
 load(
     "//haskell:providers.bzl",
     "GhcPluginInfo",
+    "HaskellInfo",
+    "HaskellLibraryInfo",
     "all_dependencies_package_ids",
 )
 load(
     "//haskell/experimental:providers.bzl",
     "HaskellModuleInfo",
-)
-load("//haskell:providers.bzl", "HaskellInfo", "HaskellLibraryInfo")
-load(
-    "//haskell:private/actions/process_hsc_file.bzl",
-    "preprocess_hsc_flags_and_inputs",
-    "process_hsc_file",
 )
 
 # Note [Narrowed Dependencies]
@@ -354,7 +355,6 @@ def _build_haskell_module(
                     dep_info.hs_libraries,
                     dep_info.deps_hs_libraries,
                     narrowed_deps_info.deps_hs_libraries,
-                    narrowed_deps_info.empty_hs_libraries,
                     object_inputs,
                 ]
                 # libraries and object inputs are only needed if the module uses TH

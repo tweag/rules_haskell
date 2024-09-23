@@ -1,27 +1,27 @@
 """Actions for compiling Haskell source code"""
 
-load(
-    ":private/packages.bzl",
-    "expose_packages",
-    "pkg_info_to_compile_flags",
-)
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(":private/pkg_id.bzl", "pkg_id")
+load("@bazel_skylib//lib:sets.bzl", "sets")
 load(
-    ":providers.bzl",
-    "all_dependencies_package_ids",
+    ":private/actions/process_hsc_file.bzl",
+    "preprocess_hsc_flags_and_inputs",
+    "process_hsc_file",
 )
 load(
     ":private/cc_libraries.bzl",
     "get_ghci_library_files",
     "link_libraries",
 )
-load("@bazel_skylib//lib:sets.bzl", "sets")
 load(
-    ":private/actions/process_hsc_file.bzl",
-    "preprocess_hsc_flags_and_inputs",
-    "process_hsc_file",
+    ":private/packages.bzl",
+    "expose_packages",
+    "pkg_info_to_compile_flags",
+)
+load(":private/pkg_id.bzl", "pkg_id")
+load(
+    ":providers.bzl",
+    "all_dependencies_package_ids",
 )
 
 def _compilation_defaults(

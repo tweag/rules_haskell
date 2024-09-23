@@ -1,32 +1,50 @@
-package(default_visibility = ["//visibility:public"])
-
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_library",
 )
 
+package(default_visibility = ["//visibility:public"])
+
 haskell_library(
     name = "b",
     srcs = [
-        "src/BC/B.hs",
+        "src-b/BC/B.hs",
     ],
-    src_strip_prefix = "src",
+    src_strip_prefix = "src-b",
     deps = [
         "//tests/hackage:base",
         "//tests/multi_repl/a",
     ],
+    package_name = "b",
+    version = "0.0.0",
 )
 
 haskell_library(
     name = "c",
     srcs = [
-        "src/BC/C.hs",
+        "src-c/BC/C.hs",
     ],
-    src_strip_prefix = "src",
+    src_strip_prefix = "src-c",
     deps = [
         ":b",
         "//tests/hackage:base",
     ],
+    package_name = "c",
+    version = "0.0.0",
+)
+
+haskell_library(
+    name = "d",
+    srcs = [
+        "src-d/BC/D.hs",
+    ],
+    src_strip_prefix = "src-d",
+    deps = [
+        ":c",
+        "//tests/hackage:base",
+    ],
+    package_name = "d",
+    version = "0.0.0",
 )
 
 filegroup(

@@ -4,6 +4,7 @@ load("//haskell:private/ghc_ci.bzl", "ghc_version")
 
 ghc_version(name = "rules_haskell_ghc_version")
 
+load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
 load("//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
@@ -12,10 +13,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "io_bazel_stardoc",
-    sha256 = "3fd8fec4ddec3c670bd810904e2e33170bedfe12f90adf943508184be458c8bb",
+    sha256 = "62bd2e60216b7a6fec3ac79341aa201e0956477e7c8f6ccc286f279ad1d96432",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
-        "https://github.com/bazelbuild/stardoc/releases/download/0.5.3/stardoc-0.5.3.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/releases/download/0.6.2/stardoc-0.6.2.tar.gz",
+        "https://github.com/bazelbuild/stardoc/releases/download/0.6.2/stardoc-0.6.2.tar.gz",
     ],
 )
 
@@ -29,24 +30,26 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "rules_proto",
-    sha256 = "c6d6f9bfd39b6417724fd4a504767aa1e8dbfe828d9d41ab4ccd1976aba53fb4",
-    strip_prefix = "rules_proto-7188888362a203892dec354f52623f9970bff48c",
-    urls = ["https://github.com/bazelbuild/rules_proto/archive/7188888362a203892dec354f52623f9970bff48c.tar.gz"],
+    sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
+    strip_prefix = "rules_proto-6.0.2",
+    url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.2/rules_proto-6.0.2.tar.gz",
 )
 
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
 
 rules_proto_dependencies()
+
+load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
 
 rules_proto_toolchains()
 
 # For buildifier
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
+    sha256 = "f4a9314518ca6acfa16cc4ab43b0b8ce1e4ea64b81c38d8a3772883f153346b8",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
     ],
 )
 
@@ -58,14 +61,15 @@ load("//extensions:rules_haskell_dependencies.bzl", _repositories_3 = "repositor
 
 _repositories_3(bzlmod = False)
 
-load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 load(
     "@rules_haskell//haskell:ghc_bindist.bzl",
     "haskell_register_ghc_bindists",
 )
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
 haskell_register_ghc_bindists(version = GHC_VERSION)
 
+load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 load(
     "@rules_haskell//haskell/asterius:repositories.bzl",
     "asterius_dependencies_bindist",
@@ -75,7 +79,6 @@ load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_package",
 )
-load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 
 asterius_dependencies_nix(
     nix_repository = "@nixpkgs_default",
@@ -94,6 +97,22 @@ register_toolchains(
 load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
 
 stardoc_repositories()
+
+load("@rules_jvm_external//:repositories.bzl", "rules_jvm_external_deps")
+
+rules_jvm_external_deps()
+
+load("@rules_jvm_external//:setup.bzl", "rules_jvm_external_setup")
+
+rules_jvm_external_setup()
+
+load("@io_bazel_stardoc//:deps.bzl", "stardoc_external_deps")
+
+stardoc_external_deps()
+
+load("@stardoc_maven//:defs.bzl", stardoc_pinned_maven_install = "pinned_maven_install")
+
+stardoc_pinned_maven_install()
 
 register_toolchains(
     "@rules_haskell//docs/pandoc:nixpkgs",
@@ -123,9 +142,9 @@ buildifier_dependencies()
 
 http_archive(
     name = "cgrindel_bazel_starlib",
-    sha256 = "9090280a9cff7322e7c22062506b3273a2e880ca464e520b5c77fdfbed4e8805",
+    sha256 = "43e375213dabe0c3928e65412ea7ec16850db93285c8c6f8b0eaa41cacd0f882",
     urls = [
-        "https://github.com/cgrindel/bazel-starlib/releases/download/v0.18.1/bazel-starlib.v0.18.1.tar.gz",
+        "https://github.com/cgrindel/bazel-starlib/releases/download/v0.21.0/bazel-starlib.v0.21.0.tar.gz",
     ],
 )
 
@@ -179,7 +198,7 @@ stack_snapshot(
         "proto-lens-runtime",
         "lens-family",
     ],
-    setup_deps = {} if GHC_VERSION and GHC_VERSION.startswith("9.6.") else {
+    setup_deps = {} if GHC_VERSION and is_at_least("9.6", GHC_VERSION) else {
         # See https://github.com/tweag/rules_haskell/issues/1871
         "HUnit": ["@Cabal//:Cabal"],
         "bifunctors": ["@Cabal//:Cabal"],

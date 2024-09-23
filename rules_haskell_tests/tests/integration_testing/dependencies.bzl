@@ -1,10 +1,10 @@
-load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_package")
 load("@rules_bazel_integration_test//bazel_integration_test:defs.bzl", "bazel_binaries")
 load(
     "@rules_haskell//haskell:private/versions.bzl",
     "SUPPORTED_BAZEL_VERSIONS",
     "SUPPORTED_NIXPKGS_BAZEL_PACKAGES",
 )
+load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_package")
 
 def integration_testing_bazel_binaries():
     bazel_binaries(versions = SUPPORTED_BAZEL_VERSIONS)

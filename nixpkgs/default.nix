@@ -1,8 +1,8 @@
 { ... }@args:
 let
-  # 2023-11-30
-  sha256 = "sha256:06m9r85brk6pcghm63ksl2zsx9j1kbagic3fx2p656z20v1bd48z";
-  rev = "781e2a9797ecf0f146e81425c822dca69fe4a348";
+  # nixos-24.05 @ 2024-07-02
+  sha256 = "sha256:0bpw6x46mp0xqfdwbrhnjn6qlb4avglir993n3cdqg8zv4klgllw";
+  rev = "706eef542dec88cc0ed25b9075d3037564b2d164";
 in
 import (fetchTarball {
   inherit sha256;

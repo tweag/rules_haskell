@@ -1,18 +1,14 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load(
-    "//haskell:private/workspace_utils.bzl",
-    "define_rule",
-    "execute_or_fail_loudly",
-    "resolve_labels",
-)
+load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE")
 load(
     "//haskell:private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
 )
 load(
-    "//haskell/platforms:list.bzl",
-    "os_of_constraints",
-    "platform_of_constraints",
+    "//haskell:private/workspace_utils.bzl",
+    "define_rule",
+    "execute_or_fail_loudly",
+    "resolve_labels",
 )
 load("//haskell/asterius:asterius_config.bzl", "asterius_cabalopts")
 load(
@@ -21,7 +17,11 @@ load(
     _asterius_dependencies_custom = "asterius_dependencies_custom",
     _asterius_dependencies_nix = "asterius_dependencies_nix",
 )
-load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE")
+load(
+    "//haskell/platforms:list.bzl",
+    "os_of_constraints",
+    "platform_of_constraints",
+)
 
 # For now the asterius bundle is built and uploaded manually for linux.
 # When the asterius build works inside the ci we will be able to download the artifacts from there.

@@ -1,24 +1,24 @@
 """ External repositories for the CI that need to be shared between WORKSPACE and MODULE.bazel files """
 
-load(
-    "@rules_nixpkgs_core//:nixpkgs.bzl",
-    "nixpkgs_local_repository",
-    "nixpkgs_package",
-)
-load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
-load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
-load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
 load("@os_info//:os_info.bzl", "is_linux", "is_windows")
+load(
+    "@rules_haskell//:constants.bzl",
+    "test_asterius_version",
+)
 load(
     "@rules_haskell//haskell/asterius:repositories.bzl",
     "rules_haskell_asterius_toolchains",
     "toolchain_libraries",
 )
-load("//tests/integration_testing:dependencies.bzl", "integration_testing_bazel_binaries")
+load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
 load(
-    "@rules_haskell//:constants.bzl",
-    "test_asterius_version",
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
+    "nixpkgs_local_repository",
+    "nixpkgs_package",
 )
+load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
+load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
+load("//tests/integration_testing:dependencies.bzl", "integration_testing_bazel_binaries")
 
 test_ghcopts = [
     "-XStandaloneDeriving",  # Flag used at compile time

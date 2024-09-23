@@ -13,7 +13,6 @@ HaskellInfo = provider(
         "extra_source_files": "Depset of non-Haskell source files.",
         "hs_libraries": "Depset of compiled Haskell libraries in all available GHC ways.",
         "deps_hs_libraries": "Depset of compiled Haskell libraries belonging to libraries in the deps field of the rule or in the deps field of any transitive dependency (libraries in narrowed_deps are included in transitive dependencies for this sake)",
-        "empty_hs_libraries": "Depset of compiled empty Haskell libraries in all available GHC ways.",
         "interface_dirs": "Depset of interface dirs belonging to the packages.",
         "deps_interface_dirs": "Depset of interface dirs belonging to libraries in the deps field of the rule or in the deps field of any transitive dependency (libraries in narrowed_deps are included in transitive dependencies for this sake)",
         "compile_flags": "Arguments that were used to compile the code.",
@@ -31,12 +30,12 @@ HaskellLibraryInfo = provider(
     fields = {
         "package_id": "Workspace unique package identifier.",
         "version": "Package version.",
-        "exports": "List of other `HaskellLibraryInfo` that this package reexports",
+        "exports": "List of `package_id`s that this package exports, that is to say, reexports and this package's own `package_id`",
     },
 )
 
 def all_package_ids(lib_info):
-    return [lib_info.package_id] + [sublib_info.package_id for sublib_info in lib_info.exports]
+    return lib_info.exports.to_list()
 
 # XXX: Does this belong here?
 def all_dependencies_package_ids(deps):

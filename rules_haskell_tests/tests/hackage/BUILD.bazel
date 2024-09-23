@@ -3,15 +3,15 @@
     for better bindist support.
 """
 
-package(default_visibility = [
-    "//tests:__subpackages__",
-    "@haskell_package_repository_dummy//:__subpackages__",
-])
-
 load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_toolchain_library",
 )
+
+package(default_visibility = [
+    "//tests:__subpackages__",
+    "@haskell_package_repository_dummy//:__subpackages__",
+])
 
 [
     haskell_toolchain_library(name = name)

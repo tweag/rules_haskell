@@ -28,9 +28,9 @@ rules_haskell. To use a released version, do the following::
 
   http_archive(
       name = "rules_haskell",
-      sha256 = "34742848a8882d94a0437b3b1917dea6f58c82fe5762afe8d249d3a36e51935d",
-      strip_prefix = "rules_haskell-0.19",
-      url = "https://github.com/tweag/rules_haskell/releases/download/v0.19/rules_haskell-0.19.tar.gz",
+      sha256 = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      strip_prefix = "rules_haskell-M.NN",
+      url = "https://github.com/tweag/rules_haskell/releases/download/vM.NN/rules_haskell-M.NN.tar.gz",
   )
 
 Picking a compiler
@@ -1081,47 +1081,40 @@ globally on the `command line`_.
 .. _per package: https://docs.bazel.build/versions/master/be/functions.html#package.features
 .. _command line: https://docs.bazel.build/versions/master/command-line-reference.html#flag--features
 
-Containerization with rules_docker
+Containerization with rules_oci
 ----------------------------------
 
-Making use of both ``rules_docker`` and ``rules_nixpkgs``, it's possible to containerize
+Making use of both ``rules_oci`` and ``rules_nixpkgs``, it's possible to containerize
 ``rules_haskell`` ``haskell_binary`` build targets for deployment. In a nutshell, first we must use
 ``rules_nixpkgs`` to build a ``dockerTools.buildLayeredImage`` target with the basic library dependencies
-required to run a typical Haskell binary. Thereafter, we can use ``rules_docker`` to use this as
+required to run a typical Haskell binary. Thereafter, we can use ``rules_oci`` to use this as
 a base image upon which we can layer a Bazel built Haskell binary.
 
-Step one is to ensure you have all the necessary ``rules_docker`` paraphernalia loaded in your ``WORKSPACE``
+Step one is to ensure you have all the necessary ``rules_oci`` paraphernalia loaded in your ``WORKSPACE``
 file: ::
 
   http_archive(
-      name = "io_bazel_rules_docker",
-      sha256 = "df13123c44b4a4ff2c2f337b906763879d94871d16411bf82dcfeba892b58607",
-      strip_prefix = "rules_docker-0.13.0",
-      urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.13.0/rules_docker-v0.13.0.tar.gz"],
+      name = "rules_oci",
+      sha256 = "4a276e9566c03491649eef63f27c2816cc222f41ccdebd97d2c5159e84917c3b",
+      strip_prefix = "rules_oci-1.7.4",
+      url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.7.4/rules_oci-v1.7.4.tar.gz",
   )
 
-  load("@io_bazel_rules_docker//toolchains/docker:toolchain.bzl", docker_toolchain_configure="toolchain_configure")
+  load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")
 
-To make full use of post-build ``rules_docker`` functionality, we'll want to make sure this is set
-to the Docker binary's location ::
+  rules_oci_dependencies()
 
-  docker_toolchain_configure(
-      name = "docker_config",
-      docker_path = "/usr/bin/docker"
+  load("@rules_oci//oci:repositories.bzl", "LATEST_CRANE_VERSION", "oci_register_toolchains")
+
+  oci_register_toolchains(
+      name = "oci",
+      crane_version = LATEST_CRANE_VERSION,
   )
 
-  load("@io_bazel_rules_docker//container:container.bzl", "container_load")
-
-  load("@io_bazel_rules_docker//repositories:repositories.bzl", container_repositories = "repositories")
-  container_repositories()
-
-  load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
-  container_deps()
-
-Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nixpkgs_package`` rule for ``rules_docker`` to layer its products on top of ::
+Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nixpkgs_package`` rule for ``rules_oci`` to layer its products on top of ::
 
   nixpkgs_package(
-      name = "raw-haskell-base-image",
+      name = "haskell-base-image",
       repository = "//nixpkgs:default.nix",
       # See below for how to define this
       nix_file = "//nixpkgs:haskellBaseImageDocker.nix",
@@ -1131,22 +1124,16 @@ Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nix
       """,
   )
 
-And finally use the ``rules_docker`` ``container_load`` functionality to grab the Docker image built by the previous ``raw-haskell-base-image`` target ::
-
-  container_load(
-      name = "haskell-base-image",
-      file = "@raw-haskell-base-image//:image",
-  )
-
 Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as follows ::
 
   # nixpkgs is provisioned by rules_nixpkgs for us which we set to be ./default.nix
   with import <nixpkgs> { system = "x86_64-linux"; };
 
   # Build the base image.
-  # The output of this derivation will be a Docker archive in the same format as
+  # The output of this derivation will be a Docker format archive in the same format as
   # the output of `docker save` that we can feed to
-  # [container_load](https://github.com/bazelbuild/rules_docker#container_load)
+  # [oci_image](https://github.com/bazel-contrib/rules_oci/blob/main/docs/image.md#oci_image)
+  # as a base image.
   let
     haskellBase = dockerTools.buildLayeredImage {
       name = "haskell-base-image-unwrapped";
@@ -1160,13 +1147,13 @@ Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as
     gunzip -c ${haskellBase} > $out/image
   ''
 
-Step three pulls all this together in a build file to actually assemble our final Docker image. In a BUILD.bazel file, we'll need the following ::
+Step three pulls all this together in a build file to actually assemble our final container image. In a BUILD.bazel file, we'll need the following ::
 
-  load("@io_bazel_rules_docker//cc:image.bzl", "cc_image")
-  load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+  load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push")
+  load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
   haskell_binary(
-      name = "my_binary,
+      name = "my_binary",
       srcs = ["Main.hs"],
       ghcopts = [
           "-O2",
@@ -1180,28 +1167,31 @@ Step three pulls all this together in a build file to actually assemble our fina
       ],
   )
 
-  cc_image(
-      name = "my_binary_image",
-      base = "@haskell-base-image//image",
-      binary = ":my_binary",
-      ports = [ "8000/tcp" ],
-      creation_time = "{BUILD_TIMESTAMP}",
-      stamp = True,
+  pkg_tar(
+      name = "my_binary_tar",
+      srcs = [":my_binary"],
   )
 
-And you may want to use ``rules_docker`` to push your Docker image as follows ::
+  oci_image(
+      name = "my_binary_image",
+      base = "@haskell-base-image//image",
+      tars = [":pkg_tar"],
+      exposed_ports = [ "8000/tcp" ],
+      entrypoint = ["/my_binary"],
+  )
 
-  container_push(
+And you may want to use ``rules_oci`` to push your container image as follows ::
+
+  oci_push(
       name = "my_binary_push",
       image = ":my_binary_image",
-      format = "Docker",
-      registry = "gcr.io", # For example using a GCP GCR repository
-      repository = "$project-name-here/$my_binary_image_label",
-      tag = "{BUILD_USER}",
- )
+      # For example using a GCP GCR repository
+      repository = "gcr.io/$project-name-here/$my_binary_image_label",
+      remote_tags = ["{BUILD_USER}"],
+  )
 
 *n.b.* Due to the `current inability`_ of Nix to be used on macOS (darwin) for building Docker images, it's currently
-not possible to build Docker images for Haskell binaries as above using ``rules_docker`` and Nixpkgs on macOS.
+not possible to build Docker images for Haskell binaries as above using ``rules_oci`` and Nixpkgs on macOS.
 
 .. _current inability: https://github.com/NixOS/nixpkgs/issues/16696
 

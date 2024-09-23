@@ -1,13 +1,5 @@
 """Workspace rules (Nixpkgs)"""
 
-load(
-    "@rules_nixpkgs_core//:nixpkgs.bzl",
-    "nixpkgs_package",
-)
-load(
-    "@rules_nixpkgs_posix//:posix.bzl",
-    "nixpkgs_sh_posix_configure",
-)
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load(
     "@rules_haskell//haskell:private/pkgdb_to_bzl.bzl",
@@ -18,6 +10,14 @@ load(
     "define_rule",
     "execute_or_fail_loudly",
     "resolve_labels",
+)
+load(
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
+    "nixpkgs_package",
+)
+load(
+    "@rules_nixpkgs_posix//:posix.bzl",
+    "nixpkgs_sh_posix_configure",
 )
 
 def check_ghc_version(repository_ctx):

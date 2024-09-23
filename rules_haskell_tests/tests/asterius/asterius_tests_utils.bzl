@@ -6,7 +6,7 @@ load(
     "asterius_webpack",
 )
 
-tags = ["dont_test_on_windows", "dont_test_on_darwin", "skip_profiling", "dont_test_on_bazel_lt_4"]
+tags = ["dont_test_on_windows", "dont_test_on_darwin", "skip_profiling", "dont_test_on_bazel_lt_4", "manual"]
 
 def asterius_test_macro(
         dep_label,

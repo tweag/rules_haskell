@@ -1,5 +1,6 @@
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_python//python:defs.bzl", "py_binary")
 
 # Note [On configuring the cc_wrapper]
@@ -46,6 +47,10 @@ def _cc_wrapper_impl(ctx):
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.c_compile,
     )
+    ar = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.cpp_link_static_library,
+    )
     cc_wrapper = ctx.actions.declare_file(ctx.label.name)
     ctx.actions.expand_template(
         template = ctx.file.template,
@@ -56,6 +61,7 @@ def _cc_wrapper_impl(ctx):
             "{:cpu:}": cc_toolchain.cpu,
             "{:workspace:}": ctx.workspace_name,
             "{:platform:}": ctx.attr.platform,
+            "{:bindir:}": paths.dirname(ar),
         },
     )
     return [DefaultInfo(

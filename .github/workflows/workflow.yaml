@@ -26,7 +26,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v1
+      - uses: extractions/netrc@v2
         with:
           machine: api.github.com
           password: ${{ secrets.GITHUB_TOKEN }}
@@ -43,22 +43,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-12]
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.2.8
           - 9.4.6
-          - 9.6.2
+          - 9.6.5
+          - 9.8.1
         exclude:
           - module: rules_haskell_nix
 
             bzlmod: false
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.4.6
+          - ghc: 9.8.1
             bzlmod: true
-          - ghc: 9.6.2
+          - ghc: 9.6.5
             bzlmod: true
     runs-on: ${{ matrix.os }}
     env:
@@ -71,7 +71,7 @@ jobs:
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v25
+      - uses: cachix/install-nix-action@V28
         with:
           nix_path: nixpkgs=./nixpkgs/default.nix
           extra_nix_config: |
@@ -82,7 +82,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v1
+      - uses: extractions/netrc@v2
         with:
           machine: api.github.com
           password: ${{ secrets.GITHUB_TOKEN }}
@@ -139,22 +139,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-12, windows-latest]
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.2.8
           - 9.4.6
-          - 9.6.2
+          - 9.6.5
+          - 9.8.1
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.4.6
+          - ghc: 9.8.1
             bzlmod: true
-          - ghc: 9.6.2
+          - ghc: 9.6.5
             bzlmod: true
           # currently proto-lens-protoc fails with an access violation on Windows
-          - ghc: 9.6.2
+          - ghc: 9.6.5
+            os: windows-latest
+          - ghc: 9.8.1
             os: windows-latest
     env:
       GHC_VERSION: ${{ matrix.ghc }}
@@ -175,7 +177,7 @@ jobs:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
       - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v1
+      - uses: extractions/netrc@v2
         with:
           machine: api.github.com
           password: ${{ secrets.GITHUB_TOKEN }}
