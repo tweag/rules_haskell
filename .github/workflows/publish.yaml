@@ -34,22 +34,13 @@ jobs:
           sed -i \
              -e '/bazel_dep(name = "rules_haskell"/s/version = "[^"]*"/version = "${{ steps.latest.outputs.version }}"/' \
              start
-          # update http_archive attrs between `cat > WORKSPACE` and `EOF`
-          sed -i \
-             -e '/cat > WORKSPACE/,/^EOF/{' \
-             -e '  s%sha256 = "[^"]*"%sha256 = "${{ steps.latest.outputs.hash }}"%; ' \
-             -e '  s%strip_prefix = "[^"]*"%strip_prefix = "rules_haskell-${{ steps.latest.outputs.version }}"%; ' \
-             -e '  s%url = "[^"]*"%url = "https://github.com/tweag/rules_haskell/releases/download/v${{ steps.latest.outputs.version }}/rules_haskell-${{ steps.latest.outputs.version }}.tar.gz"%' \
-             -e '}' \
-             start
-          # update http_archive attrs in docs between `name = "rules_haskell"` and `url = "`
+          # update http_archive attrs between `name = "rules_haskell"` and `url = "`
           sed -i \
              -e '/name = "rules_haskell"/,/url = "/{' \
-             -e '  s%sha256 = "[^"]*"%sha256 = "${{ steps.latest.outputs.hash }}"%; ' \
-             -e '  s%strip_prefix = "[^"]*"%strip_prefix = "rules_haskell-${{ steps.latest.outputs.version }}"%; ' \
-             -e '  s%url = "[^"]*"%url = "https://github.com/tweag/rules_haskell/releases/download/v${{ steps.latest.outputs.version }}/rules_haskell-${{ steps.latest.outputs.version }}.tar.gz"%; ' \
+             -e '  s%x\{64\}%${{ steps.latest.outputs.hash }}%; ' \
+             -e '  s%M[.]NN%${{ steps.latest.outputs.version }}%g ' \
              -e '}' \
-             docs/haskell-use-cases.rst
+             start docs/haskell-use-cases.rst
       - name: Commit and Push
         run: |
           if ! git diff --exit-code ; then
