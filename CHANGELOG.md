@@ -3,14 +3,41 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
-## Next release
+
+## [1.0] 2024-09-23
+
+[1.0]: https://github.com/tweag/rules_haskell/compare/v0.19...v1.0
+
+### Highlights
+
+* Support for Bazel 7 (see https://github.com/tweag/rules_haskell/pull/2232)
+* Support for GHC 9.8.x (see https://github.com/tweag/rules_haskell/pull/2132)
+
+### Added
+
+* Support for unit-based hie-bios script for ghc 9.4+ (See https://github.com/tweag/rules_haskell/pull/2218)
+* Preliminary support for GHC 9.10.x (See https://github.com/tweag/rules_haskell/pull/2198)
+
+### Fixed
+
+* Handle RTS library for GHC 9.4+ (See https://github.com/tweag/rules_haskell/pull/2202)
+* Error when building cabal sub-libraries (See https://github.com/tweag/rules_haskell/pull/2135)
 
 ### Changed
 
 * Use ghc 9.4.6 by default
 * Use Bazel 6.5.0 by default (See https://github.com/tweag/rules_haskell/pull/2117)
+* Update nixpkgs revision to nixos-24.05,
+  **note***: requires rules\_nixpkgs version >= 0.12 (See https://github.com/tweag/rules_haskell/pull/2217)
+* Asterius is deprecated and not tested anymore (See https://github.com/tweag/rules_haskell/pull/2182)
+* No longer create empty libraries (See https://github.com/tweag/rules_haskell/pull/2158)
+* Make static linking of haskell_cabal_binary explicit (See https://github.com/tweag/rules_haskell/pull/2148)
 
-## [0.19] 2024-02-5
+### Removed
+
+* Testing GHC 9.2.x on CI
+
+## [0.19] 2024-02-07
 
 [0.19]: https://github.com/tweag/rules_haskell/compare/v0.18...v0.19
 
