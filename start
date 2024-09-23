@@ -251,9 +251,9 @@ load(
 # Download rules_haskell and make it accessible as "@rules_haskell".
 http_archive(
     name = "rules_haskell",
-    sha256 = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    strip_prefix = "rules_haskell-M.NN",
-    url = "https://github.com/tweag/rules_haskell/releases/download/vM.NN/rules_haskell-M.NN.tar.gz",
+    sha256 = "4cae22bc84f327bf3cb7605021c3663160ff6bc8a0b7b6266062366bcbd19e79",
+    strip_prefix = "rules_haskell-1.0",
+    url = "https://github.com/tweag/rules_haskell/releases/download/v1.0/rules_haskell-1.0.tar.gz",
 )
 
 load(
@@ -376,7 +376,7 @@ if $BZLMOD; then
     cat >MODULE.bazel <<EOF
 module(name = "your_project_name_here", version = "0.1")
 
-bazel_dep(name = "rules_haskell", version = "0.0")
+bazel_dep(name = "rules_haskell", version = "1.0")
 bazel_dep(name = "rules_cc", version = "0.0.9")
 
 haskell_toolchains = use_extension(
