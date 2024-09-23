@@ -9,6 +9,7 @@ matrix:
   #- windows
   bazel:
   - 6.x
+  - 7.x
 tasks:
   verify_targets:
     name: Verify build targets
@@ -31,7 +32,6 @@ tasks:
     - 'powershell -Command "Invoke-WebRequest -Uri https://hackage.haskell.org/root.json -OutFile out.json"'
     build_flags:
       - '--incompatible_enable_cc_toolchain_resolution'
-      - '--repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1'
     build_targets:
     - '@rules_haskell//haskell/...'
     - '@rules_haskell//tools/...'

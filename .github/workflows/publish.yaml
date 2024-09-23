@@ -2,7 +2,7 @@ name: Publish
 
 on:
   release:
-    types: [published]
+    types: [released]
   workflow_dispatch: # allows manual triggering
 
 jobs:
@@ -21,5 +21,30 @@ jobs:
           git config user.email github-actions@github.com
       - name: Merge master into release
         run: git merge --no-edit origin/master
-      - name: Push
-        run: git push
+      - name: Fetch latest release artifact
+        id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download -p '*.tar.gz' -D release
+          ls release | sed -ne 's/rules_haskell-\(.*\)[.]tar[.]gz/version=\1/p' >> "${GITHUB_OUTPUT}"
+          shasum -a 256 release/*.tar.gz | awk '{print "hash=" $1}' >> "${GITHUB_OUTPUT}"
+      - name: Update hash in start script and docs
+        run: |
+          sed -i \
+             -e '/bazel_dep(name = "rules_haskell"/s/version = "[^"]*"/version = "${{ steps.latest.outputs.version }}"/' \
+             start
+          # update http_archive attrs between `name = "rules_haskell"` and `url = "`
+          sed -i \
+             -e '/name = "rules_haskell"/,/url = "/{' \
+             -e '  s%x\{64\}%${{ steps.latest.outputs.hash }}%; ' \
+             -e '  s%M[.]NN%${{ steps.latest.outputs.version }}%g ' \
+             -e '}' \
+             start docs/haskell-use-cases.rst
+      - name: Commit and Push
+        run: |
+          if ! git diff --exit-code ; then
+            git add start docs/haskell-use-cases.rst
+            git commit -m "Update rules_haskell in start script and docs to version ${{ steps.latest.outputs.version }}"
+            git push
+          fi
