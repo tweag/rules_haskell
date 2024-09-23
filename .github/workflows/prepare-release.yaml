@@ -46,4 +46,6 @@ jobs:
             --notes-file release_notes.txt \
             --title v${{ inputs.version }} \
             v${{ inputs.version }} \
-            ${GITHUB_REPOSITORY#*/}-${{ inputs.version }}.tar.gz
+            ${GITHUB_REPOSITORY#*/}-${{ inputs.version }}.tar.gz | tee release_url
+      - name: Write summary
+        run: 'echo ":rocket: Draft release created [here]($( cat release_url ))" >> "${GITHUB_STEP_SUMMARY}"'
