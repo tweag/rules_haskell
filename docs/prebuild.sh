@@ -14,11 +14,12 @@ function get_sha256() {
     curl -L "$1" | python -uc 'import hashlib, sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())'
 }
 
-if [[ "${READTHEDOCS_VERSION_TYPE}" == branch && "${READTHEDOCS_VERSION_NAME}" == master ]]; then
+if [[ "${READTHEDOCS_VERSION_TYPE}" == branch && "${READTHEDOCS_VERSION}" == latest ]]; then
     # a commit was pushed to the master branch
     url="https://github.com/tweag/rules_haskell/archive/${READTHEDOCS_GIT_COMMIT_HASH}.tar.gz"
     hash=$( get_sha256 "$url" )
     sed -i \
+        -e 's/To use a released version/To use the latest commit/' \
         -e '/name = "rules_haskell"/,/url = "/{' \
         -e '  s%x\{64\}%'"${hash}"'%; ' \
         -e '  s%/releases/download/vM[.]NN/rules_haskell-%/archive/%' \
@@ -38,5 +39,5 @@ elif [[ "${READTHEDOCS_VERSION_TYPE}" == tag && "${READTHEDOCS_GIT_IDENTIFIER}" 
         -e '}' \
         docs/haskell-use-cases.rst
 else
-    die "cannot handle version type ${READTHEDOCS_VERSION_TYPE} / ${READTHEDOCS_VERSION_NAME}"
+    echo "skipping version type ${READTHEDOCS_VERSION_TYPE} / ${READTHEDOCS_VERSION_NAME}"
 fi
