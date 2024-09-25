@@ -255,7 +255,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - lint
-      - test-nixpkgs
       - test-bindist
     if: ${{ always() }}
     steps:
