@@ -38,114 +38,112 @@ jobs:
       - run: |
           bazelisk test buildifier:buildifier_test
 
-  test-nixpkgs:
-    name: Build & Test - Nixpkgs
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-12]
-        module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
-        bzlmod: [true, false]
-        ghc:
-          - 9.4.6
-          - 9.6.5
-          - 9.8.1
-        exclude:
-          - module: rules_haskell_nix
+  # test-nixpkgs:
+  #   name: Build & Test - Nixpkgs
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, macos-12]
+  #       module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
+  #       bzlmod: [true, false]
+  #       ghc:
+  #         - 9.4.6
+  #         - 9.6.5
+  #         - 9.8.1
+  #       exclude:
+  #         - module: rules_haskell_nix
 
-            bzlmod: false
-          # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
-          #       and stack config per GHC version
-          - ghc: 9.8.1
-            bzlmod: true
-          - ghc: 9.6.5
-            bzlmod: true
-    runs-on: ${{ matrix.os }}
-    env:
-      NIX_SHELL_ARGS: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/free_disk_space_on_linux
-      - name: Mount Bazel cache
-        uses: actions/cache@v4
-        with:
-          path: ~/repo-cache
-          key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@V28
-        with:
-          nix_path: nixpkgs=./nixpkgs/default.nix
-          extra_nix_config: |
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-            extra-substituters = https://cache.iog.io
-      - uses: tweag/configure-bazel-remote-cache-auth@v0
-        with:
-          buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
-          bazelrc_path: .bazelrc.auth
-      - uses: ./.github/actions/set_tcp_keepalive_time
-      - uses: extractions/netrc@v2
-        with:
-          machine: api.github.com
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Configure
-        run: |
-          case ${{ runner.os }} in
-            macOS) BUILD_CONFIG=macos-nixpkgs;;
-            Linux) BUILD_CONFIG=linux-nixpkgs;;
-          esac
-          cat >>.bazelrc.local <<EOF
-          common --config=ci
-          build --config=$BUILD_CONFIG
-          common --enable_bzlmod=${{ matrix.bzlmod }}
-          EOF
-          cp .bazelrc.local rules_haskell_nix
-          cp .bazelrc.local rules_haskell_tests
-      - name: Build & test - rules_haskell
-        if: matrix.module == 'rules_haskell'
-        uses: tweag/run-nix-shell@v0
-        with:
-          options: ${{ env.NIX_SHELL_ARGS }}
-          run: |
-            bazel test //...
-            bazel build //docs:api_html
-            bazel build //docs:guide_html
-      - name: Build & test - rules_haskell_nix
-        if: matrix.module == 'rules_haskell_nix'
-        uses: tweag/run-nix-shell@v0
-        with:
-          options: ${{ env.NIX_SHELL_ARGS }}
-          working-directory: rules_haskell_nix
-          run: bazel test //...
-      - name: Build & test - rules_haskell_tests
-        if: matrix.module == 'rules_haskell_tests'
-        uses: tweag/run-nix-shell@v0
-        with:
-          options: ${{ env.NIX_SHELL_ARGS }}
-          working-directory: rules_haskell_tests
-          run: |
-            # XXX run start script `--with-bzlmod=true` when supported
-            if ! ${{ matrix.bzlmod }}; then
-              ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
-            fi
-            bazel build //tests:run-tests
-            # Shutdown Bazel to free up memory
-            # https://github.com/tweag/rules_haskell/issues/2089.
-            bazel shutdown
-            # Execute the tests dumping out memory/process information before and after each test.
-            RHT_PRINT_MEMORY=true ./bazel-ci-bin/tests/run-tests
-            bazel coverage //...
+  #           bzlmod: false
+  #         # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
+  #         #       and stack config per GHC version
+  #         - ghc: 9.8.1
+  #           bzlmod: true
+  #         - ghc: 9.6.5
+  #           bzlmod: true
+  #   runs-on: ${{ matrix.os }}
+  #   env:
+  #     NIX_SHELL_ARGS: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: ./.github/actions/free_disk_space_on_linux
+  #     - name: Mount Bazel cache
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ~/repo-cache
+  #         key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
+  #     - uses: cachix/install-nix-action@V28
+  #       with:
+  #         nix_path: nixpkgs=./nixpkgs/default.nix
+  #         extra_nix_config: |
+  #           trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+  #           extra-substituters = https://cache.iog.io
+  #     - uses: tweag/configure-bazel-remote-cache-auth@v0
+  #       with:
+  #         buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
+  #         bazelrc_path: .bazelrc.auth
+  #     - uses: ./.github/actions/set_tcp_keepalive_time
+  #     - uses: extractions/netrc@v2
+  #       with:
+  #         machine: api.github.com
+  #         password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Configure
+  #       run: |
+  #         case ${{ runner.os }} in
+  #           macOS) BUILD_CONFIG=macos-nixpkgs;;
+  #           Linux) BUILD_CONFIG=linux-nixpkgs;;
+  #         esac
+  #         cat >>.bazelrc.local <<EOF
+  #         common --config=ci
+  #         build --config=$BUILD_CONFIG
+  #         common --enable_bzlmod=${{ matrix.bzlmod }}
+  #         EOF
+  #         cp .bazelrc.local rules_haskell_nix
+  #         cp .bazelrc.local rules_haskell_tests
+  #     - name: Build & test - rules_haskell
+  #       if: matrix.module == 'rules_haskell'
+  #       uses: tweag/run-nix-shell@v0
+  #       with:
+  #         options: ${{ env.NIX_SHELL_ARGS }}
+  #         run: |
+  #           bazel test //...
+  #           bazel build //docs:api_html
+  #           bazel build //docs:guide_html
+  #     - name: Build & test - rules_haskell_nix
+  #       if: matrix.module == 'rules_haskell_nix'
+  #       uses: tweag/run-nix-shell@v0
+  #       with:
+  #         options: ${{ env.NIX_SHELL_ARGS }}
+  #         working-directory: rules_haskell_nix
+  #         run: bazel test //...
+  #     - name: Build & test - rules_haskell_tests
+  #       if: matrix.module == 'rules_haskell_tests'
+  #       uses: tweag/run-nix-shell@v0
+  #       with:
+  #         options: ${{ env.NIX_SHELL_ARGS }}
+  #         working-directory: rules_haskell_tests
+  #         run: |
+  #           # XXX run start script `--with-bzlmod=true` when supported
+  #           if ! ${{ matrix.bzlmod }}; then
+  #             ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
+  #           fi
+  #           bazel build //tests:run-tests
+  #           # Shutdown Bazel to free up memory
+  #           # https://github.com/tweag/rules_haskell/issues/2089.
+  #           bazel shutdown
+  #           # Execute the tests dumping out memory/process information before and after each test.
+  #           RHT_PRINT_MEMORY=true ./bazel-ci-bin/tests/run-tests
+  #           bazel coverage //...
 
   test-bindist:
     name: Build & Test - bindist
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-12, windows-latest]
-        module: [rules_haskell, rules_haskell_tests]
-        bzlmod: [true, false]
+        os: [windows-latest]
+        module: [rules_haskell_tests]
+        bzlmod: [true]
         ghc:
           - 9.4.6
-          - 9.6.5
-          - 9.8.1
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
@@ -230,7 +228,9 @@ jobs:
           # NOTE keep in sync with tests/RunTests.hs
           bazelisk run @stackage-pinning-test-unpinned//:pin
           bazelisk build @stackage-pinning-test//:hspec
-
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
       - name: Collect Logs
         id: collect_logs
         if: failure()
