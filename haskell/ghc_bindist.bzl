@@ -201,6 +201,8 @@ include Makefile""")
             # https://source.chromium.org/chromium/chromium/src/+/62848c8d298690e086e49a9832278ff56b6976b5.
             environment = {"ZERO_AR_DATE": "1"},
             working_directory = unpack_dir,
+            # use a big timeout because copying GHC is slow (1.5G)
+            timeout = 30 * 60,
         )
 
         if not is_hadrian_dist:
