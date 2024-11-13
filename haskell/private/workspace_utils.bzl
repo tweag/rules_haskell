@@ -2,13 +2,15 @@ def execute_or_fail_loudly(
         repository_ctx,
         arguments,
         environment = {},
-        working_directory = ""):
+        working_directory = "",
+        timeout = 600):
     """Execute the given command
 
     Fails if the command does not exit with exit-code 0.
 
     Args:
       arguments: List, the command line to execute.
+      timeout: The timeout for the command in seconds (default: 600).
 
     Returns:
       exec_result: The output of the command.
@@ -19,6 +21,7 @@ def execute_or_fail_loudly(
         environment = environment,
         quiet = True,
         working_directory = working_directory,
+        timeout = timeout,
     )
     if exec_result.return_code != 0:
         arguments = [_as_string(x) for x in arguments]
