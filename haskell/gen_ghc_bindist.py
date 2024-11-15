@@ -8,7 +8,7 @@ import os
 import json
 import sys
 from urllib.request import urlopen
-from distutils.version import StrictVersion
+from packaging.version import Version
 
 # Sometimes bindists have errors and are updated by new bindists.
 # This dict is used to keep a version -> corrected_version mapping.
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
         ghc_versions = {
             version: ghc_bindists[version]
-            for version in sorted(ghc_bindists.keys(), key=StrictVersion)
+            for version in sorted(ghc_bindists.keys(), key=Version)
         }
 
         json_file.truncate(0)
