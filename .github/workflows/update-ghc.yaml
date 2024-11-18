@@ -2,9 +2,8 @@ name: Update GHC
 on:
   schedule:
     # run weekly on Thursday
-    - cron:  '0 15 * * THU'
+    - cron: '0 15 * * THU'
   workflow_dispatch: # allows manual triggering
-
 jobs:
   update_ghc:
     name: GHC ${{ matrix.ghc }} Update
@@ -27,7 +26,9 @@ jobs:
           nix_path: nixpkgs=nixpkgs/default.nix
       - name: Fetch updates
         id: ghc_update
-        run: nix shell 'nixpkgs#bazel-buildtools' 'nixpkgs#python3' --command python .github/update-ghc.py ${{ matrix.ghc }}
+        run: |-
+          nix-shell -p 'bazel-buildtools' 'python3.withPackages (ps: [ps.packaging])' --run \
+            'python .github/update-ghc.py ${{ matrix.ghc }}'
       - name: Create Pull Request
         if: steps.ghc_update.outputs.latest != ''
         uses: peter-evans/create-pull-request@v7
