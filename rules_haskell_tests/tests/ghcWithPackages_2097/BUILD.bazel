@@ -3,6 +3,7 @@ load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_ha
 rules_haskell_integration_test(
     name = "ghc_with_packages_test",
     srcs = ["Test.hs"],
+    tags = ["requires_nix"],
     workspace_path = "test",
 )
 
