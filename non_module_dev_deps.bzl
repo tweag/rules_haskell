@@ -119,7 +119,7 @@ def repositories(*, bzlmod):
 
     nixpkgs_package(
         name = "sphinx",
-        attribute_path = "python39Packages.sphinx",
+        attribute_path = "python3Packages.sphinx",
         repository = "@nixpkgs_default",
     )
 

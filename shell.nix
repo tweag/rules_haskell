@@ -39,7 +39,7 @@ mkShell {
     shellcheck
     file
   ]
-  ++ lib.optionals docTools [ graphviz python39Packages.sphinx zip unzip ]
+  ++ lib.optionals docTools [ graphviz python3Packages.sphinx zip unzip ]
   ++ lib.optional stdenv.isDarwin macOS-security;
 
   packages = [ bazel_6 ];

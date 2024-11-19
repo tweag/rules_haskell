@@ -31,7 +31,7 @@ mkShell {
     # check the start script for problems
     shellcheck
     file
-  ] ++ lib.optionals docTools [ graphviz python39Packages.sphinx zip unzip ];
+  ] ++ lib.optionals docTools [ graphviz python3Packages.sphinx zip unzip ];
 
   packages = [ bazel_6 ];
 
