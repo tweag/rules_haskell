@@ -16,6 +16,7 @@ def rules_haskell_integration_test(
         workspace_path,
         srcs,
         deps = [],
+        env = {},
         bindist_bazel_versions = SUPPORTED_BAZEL_VERSIONS,
         nixpkgs_bazel_packages = SUPPORTED_NIXPKGS_BAZEL_PACKAGES,
         target_compatible_with = [],
@@ -34,7 +35,7 @@ def rules_haskell_integration_test(
             name = "%s_nixpkgs" % name,
             srcs = srcs,
             deps = deps,
-            env = {
+            env = env | {
                 "NIXPKGS": "1",
             },
             bazel_binaries = nixpkgs_bazel_binaries,
@@ -51,6 +52,7 @@ def rules_haskell_integration_test(
             name = "%s_bindist" % name,
             srcs = srcs,
             deps = deps,
+            env = env,
             bazel_binaries = bindist_bazel_binaries,
             workspace_path = workspace_path,
             rule_files = ["@rules_haskell//:distribution"],
