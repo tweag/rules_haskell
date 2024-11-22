@@ -3,6 +3,6 @@
     "strip_prefix": "rules_nixpkgs-0.12.0/core",
     "url": "https://github.com/tweag/rules_nixpkgs/releases/download/v0.12.0/rules_nixpkgs-0.12.0.tar.gz",
     "patches": {
-        "bazelignore.patch": "sha256-G5xeLdAOe5lV2QeymoKCaIl2AIt3cXhq1rKV/rbGAzA="
+        "bazelignore.patch": "sha256-ZfaE3Ej4NpUIV8jh/pOrZ5WIVPmYE7zrqIv7jGbxgYc="
     }
 }
