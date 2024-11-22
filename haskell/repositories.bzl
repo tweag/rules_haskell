@@ -109,7 +109,8 @@ def rules_haskell_dependencies():
             urls = [rules_nixpkgs_url],
             sha256 = _rules_nixpkgs_sha256,
             # work around invalid path on Windows
-            patch_cmds_win = ["del /f /q .bazelignore"],
+            patches = ["@rules_haskell//:rules_nixpkgs_core_bazelignore.patch"],
+            patch_args = ["-p1"],
         )
 
         for toolchain in ["cc", "java", "python", "go", "rust", "posix", "nodejs"]:
@@ -118,8 +119,6 @@ def rules_haskell_dependencies():
                 strip_prefix = strip_prefix + "/toolchains/" + toolchain,
                 urls = [rules_nixpkgs_url],
                 sha256 = _rules_nixpkgs_sha256,
-                # work around invalid path on Windows
-                patch_cmds_win = ["del /f /q .bazelignore"],
             )
 
     maybe(
