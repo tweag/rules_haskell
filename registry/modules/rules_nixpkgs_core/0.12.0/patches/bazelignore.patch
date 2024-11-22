@@ -1,0 +1,8 @@
+diff --git a/.bazelignore b/.bazelignore
+index a61f183..850ed9f 100644
+--- a/.bazelignore
++++ b/.bazelignore
+@@ -1,2 +1,2 @@
+-bazel-*
++bazel-core
+ testing
