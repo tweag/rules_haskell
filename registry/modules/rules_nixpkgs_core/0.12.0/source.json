@@ -2,6 +2,7 @@
     "integrity": "sha256-GtsE3AQWkV/vQndX9CcsT32s7+zu78UPaDrsf36beHo=",
     "strip_prefix": "rules_nixpkgs-0.12.0/core",
     "url": "https://github.com/tweag/rules_nixpkgs/releases/download/v0.12.0/rules_nixpkgs-0.12.0.tar.gz",
+    "patch_strip": 1,
     "patches": {
         "bazelignore.patch": "sha256-ZfaE3Ej4NpUIV8jh/pOrZ5WIVPmYE7zrqIv7jGbxgYc="
     }
