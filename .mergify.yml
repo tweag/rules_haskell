@@ -1,21 +1,12 @@
+queue_rules: []
 
 pull_request_rules:
-  - name: automatic merge
-    conditions:
-      - "label=merge-queue"
-      - "base=master"
-    actions:
-      queue:
-        name: default
-        method: merge
-
   - name: delete head branch after merge
     conditions:
       - merged
       - closed
     actions:
       delete_head_branch: {}
-
   - name: remove from merge-queue after merge
     conditions:
       - merged
@@ -23,3 +14,7 @@ pull_request_rules:
       label:
         remove:
           - "merge-queue"
+  - name: automatic merge
+    conditions: []
+    actions:
+      queue:
