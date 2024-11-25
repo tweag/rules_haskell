@@ -37,7 +37,6 @@ filegroup(
         "//protobuf:all_files",
         "//rule_info:all_files",
         "//tools:all_files",
-        "//vendor/bazel_json/lib:all_files",
     ],
     visibility = ["//visibility:public"],
 )
