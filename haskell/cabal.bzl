@@ -6,7 +6,6 @@ load("@bazel_skylib//lib:sets.bzl", "sets")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe", "read_netrc", "use_netrc")
 load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
-load("//vendor/bazel_json/lib:json_parser.bzl", "json_parse")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":haddock.bzl", "generate_unified_haddock_info")
 load(":private/actions/info.bzl", "library_info_output_groups")
@@ -1339,7 +1338,7 @@ version: 0.0.0.0
         repository_ctx,
         stack + ["ls", "dependencies", "json", "--global-hints", "--external"],
     )
-    package_specs = json_parse(exec_result.stdout)
+    package_specs = json.decode(exec_result.stdout)
 
     resolved = {}
     versioned_packages_names = {_chop_version(p): _version(p) for p in versioned_packages}
@@ -1386,7 +1385,7 @@ def _pin_packages(repository_ctx, resolved):
         executable = False,
         auth = auth,
     )
-    hashes_json = json_parse(repository_ctx.read("all-cabal-hashes-hackage.json"))
+    hashes_json = json.decode(repository_ctx.read("all-cabal-hashes-hackage.json"))
     hashes_object = _parse_json_field(
         json = hashes_json,
         field = "object",
@@ -1413,9 +1412,9 @@ def _pin_packages(repository_ctx, resolved):
                 output = "{name}-{version}.json".format(**spec),
                 executable = False,
             )
-            json = json_parse(repository_ctx.read("{name}-{version}.json".format(**spec)))
+            name_version_json = json.decode(repository_ctx.read("{name}-{version}.json".format(**spec)))
             hashes = _parse_json_field(
-                json = json,
+                json = name_version_json,
                 field = "package-hashes",
                 ty = "dict",
                 errmsg = errmsg.format(context = "all-cabal-hashes package description"),
@@ -1426,7 +1425,7 @@ def _pin_packages(repository_ctx, resolved):
             cabal_url = "{url}/{name}/{version}/{name}.cabal".format(url = hashes_url, **spec)
             spec["pinned"] = {
                 "url": _parse_json_field(
-                    json = json,
+                    json = name_version_json,
                     field = "package-locations",
                     ty = "list",
                     errmsg = errmsg.format(context = "all-cabal-hashes package description"),
@@ -1704,12 +1703,9 @@ Try to regenerate it by running the following command:
 """.format(filename = filename, workspace = repository_ctx.name)
 
     # Parse JSON
-    pinned = json_parse(
+    pinned = json.decode(
         repository_ctx.read(repository_ctx.attr.stack_snapshot_json),
-        fail_on_invalid = False,
     )
-    if pinned == None:
-        fail(errmsg.format(error = "Failed to parse JSON."))
 
     # Read snapshot.json data and validate required fields.
     expected_checksum = _parse_json_field(
@@ -1969,7 +1965,7 @@ def _stack_snapshot_impl(repository_ctx):
     tools = [_label_to_string(label) for label in repository_ctx.attr.tools]
 
     components_dependencies = {
-        comp: json_parse(deps)
+        comp: json.decode(deps)
         for comp, deps in repository_ctx.attr.components_dependencies.items()
     }
 
