@@ -2,10 +2,10 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
 load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
+load("//tools:get_cpu_value.bzl", "get_cpu_value")
 load(":private/bazel_platforms.bzl", "bazel_platforms")
 load(
     ":private/pkgdb_to_bzl.bzl",

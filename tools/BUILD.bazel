@@ -8,3 +8,5 @@ filegroup(
     ],
     visibility = ["//visibility:public"],
 )
+
+exports_files(["get_cpu_value.bzl"])

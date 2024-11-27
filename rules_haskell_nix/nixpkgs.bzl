@@ -1,6 +1,5 @@
 """Workspace rules (Nixpkgs)"""
 
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load(
     "@rules_haskell//haskell:private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
@@ -11,6 +10,7 @@ load(
     "execute_or_fail_loudly",
     "resolve_labels",
 )
+load("@rules_haskell//tools:get_cpu_value.bzl", "get_cpu_value")
 load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_package",
