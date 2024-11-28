@@ -7,7 +7,8 @@ matrix:
   workdir: [".", "rules_haskell_tests"]
 
 tasks:
-  ubuntu1804:
+  workspace:
+    name: "${{ workdir }} - workspace (${{ bazel }})"
     bazel: ${{ bazel }}
     working_directory: ${{ workdir }}
     platform: "ubuntu2004"
@@ -36,7 +37,8 @@ tasks:
     test_targets:
       - "//tests/..."
 
-  ubuntu1804bzlmod:
+  bzlmod:
+    name: "${{ workdir }} - bzlmod (${{ bazel }})"
     bazel: ${{ bazel }}
     working_directory: ${{ workdir }}
     platform: "ubuntu2004"
