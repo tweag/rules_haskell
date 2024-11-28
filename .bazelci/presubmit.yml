@@ -3,7 +3,7 @@ matrix:
   bazel:
   - 6.x
   - 7.x
-  - 8.0.0rc4
+  - 8.0.0rc5
   workdir: [".", "rules_haskell_tests"]
 
 tasks:
