@@ -8,7 +8,7 @@ matrix:
 
 tasks:
   workspace:
-    name: "${{ workdir }} - workspace (${{ bazel }})"
+    name: "workspace ($USE_BAZEL_VERSION)"
     bazel: ${{ bazel }}
     working_directory: ${{ workdir }}
     platform: "ubuntu2004"
@@ -38,7 +38,7 @@ tasks:
       - "//tests/..."
 
   bzlmod:
-    name: "${{ workdir }} - bzlmod (${{ bazel }})"
+    name: "bzlmod ($USE_BAZEL_VERSION)"
     bazel: ${{ bazel }}
     working_directory: ${{ workdir }}
     platform: "ubuntu2004"
