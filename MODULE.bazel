@@ -122,6 +122,14 @@ bazel_dep(
     version = "0.12.0",
     dev_dependency = True,
 )
+single_version_override(
+    module_name = "rules_nixpkgs_core",
+    patch_strip = 2,
+    patches = [
+        "//haskell/assets:rules_nixpkgs-get_cpu_value.patch",
+    ],
+)
+
 bazel_dep(
     name = "rules_nixpkgs_cc",
     version = "0.12.0",
