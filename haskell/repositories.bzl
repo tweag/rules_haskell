@@ -108,6 +108,10 @@ def rules_haskell_dependencies():
             strip_prefix = strip_prefix + "/core",
             urls = [rules_nixpkgs_url],
             sha256 = _rules_nixpkgs_sha256,
+            remote_patches = {
+                "https://github.com/tweag/rules_nixpkgs/commit/1aa2aeaac8e43b60d4cdbc41cc47154d55ae628a.patch": "sha256-AG5t+K47q4OoS3jx5a9udtOFVI8xuxGb5QAx39kp0Fg=",
+            },
+            remote_patch_strip = 1,
         )
 
         for toolchain in ["cc", "java", "python", "go", "rust", "posix", "nodejs"]:
