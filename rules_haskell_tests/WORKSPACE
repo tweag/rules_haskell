@@ -68,6 +68,32 @@ http_archive(
     ],
 )
 
+http_archive(
+    name = "cgrindel_bazel_starlib",
+    sha256 = "43e375213dabe0c3928e65412ea7ec16850db93285c8c6f8b0eaa41cacd0f882",
+    urls = [
+        "https://github.com/cgrindel/bazel-starlib/releases/download/v0.21.0/bazel-starlib.v0.21.0.tar.gz",
+    ],
+)
+
+load("@cgrindel_bazel_starlib//:deps.bzl", "bazel_starlib_dependencies")
+
+bazel_starlib_dependencies()
+
+# module rules_bazel_integration_test requires bazel >= 6.1.0
+http_archive(
+    name = "rules_bazel_integration_test",
+    sha256 = "44ed2cacf9dfdbfd0e2ef60022ca5ada9b11f337ecaec3c428d5003b38043589",
+    urls = [
+        "https://github.com/bazel-contrib/rules_bazel_integration_test/releases/download/v0.28.0/rules_bazel_integration_test.v0.28.0.tar.gz",
+    ],
+)
+
+load("@rules_bazel_integration_test//bazel_integration_test:deps.bzl", "bazel_integration_test_rules_dependencies")
+
+bazel_integration_test_rules_dependencies()
+
+
 load(
     "@rules_haskell//:constants.bzl",
     _default_ghc_version = "test_ghc_version",
@@ -184,14 +210,6 @@ go_register_toolchains(version = "1.20.2")
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
 buildifier_dependencies()
-
-load("@rules_bazel_integration_test//bazel_integration_test:deps.bzl", "bazel_integration_test_rules_dependencies")
-
-bazel_integration_test_rules_dependencies()
-
-load("@cgrindel_bazel_starlib//:deps.bzl", "bazel_starlib_dependencies")
-
-bazel_starlib_dependencies()
 
 # For profiling
 # Required to make use of `bazel build --profile`.
