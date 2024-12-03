@@ -34,7 +34,7 @@ jobs:
         ghcup-release-channel: ${{ matrix.ghcup-release-channel }}
     - name: Update cabal package database
       run: cabal update
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       name: Cache cabal stuff
       with:
         path: |
