@@ -88,6 +88,13 @@ bazel_dep(
     name = "zlib",
     version = "1.3.1.bcr.3",
 )
+bazel_dep(
+    name = "rules_bazel_integration_test",
+    version = "0.27.0",
+    dev_dependency = True,
+)
+bazel_dep(name = "cgrindel_bazel_starlib", version = "0.21.0")
+bazel_dep(name = "rules_shell", version = "0.2.0")
 
 ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_default_version")
 use_repo(
@@ -99,12 +106,10 @@ non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
 use_repo(
     non_module_deps,
     "c2hs_repo",
-    "cgrindel_bazel_starlib",
     "com_github_bazelbuild_buildtools",
     "haskell_package_repository_dummy",
     "library_repo",
     "os_info",
-    "rules_bazel_integration_test",
     "zlib.hs",
 )
 
