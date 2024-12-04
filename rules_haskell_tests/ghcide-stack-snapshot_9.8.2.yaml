@@ -1,4 +1,4 @@
-resolver: nightly-2024-02-01
+resolver: nightly-2024-10-10
 
 packages:
  - ghcide-2.5.0.0
@@ -13,6 +13,6 @@ packages:
  - special-functors-1.0.0.1
  - Diff-0.4.1
 
- # no release on hackage 
+ # no release on hackage
  - git: https://github.com/haskell-works/hw-fingertree
    commit: 8b2f9003b6aebf958f0f03a5d0cc5bb6f7854727

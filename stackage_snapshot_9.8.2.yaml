@@ -1,0 +1,16 @@
+resolver: nightly-2024-10-10
+
+# The following packages are forked because they do not support 9.8.1 yet
+#packages:
+
+# This branch updates bounds and removes symlinks because of issue: https://github.com/commercialhaskell/stack/issues/5004
+# https://github.com/ylecornec/proto-lens/tree/update_bounds_ghc_9_8_1
+#- git: https://github.com/ylecornec/proto-lens
+#  subdirs:
+#    - proto-lens
+#    - proto-lens-protoc
+#    - proto-lens-runtime
+#  commit: bfde441f830091965ba3a4a41516c53375b82962
+
+#- git: https://github.com/ylecornec/ghc-source-gen
+#;  commit: ef74dd646805bf823ae093b90e6d9e4843ea182d
