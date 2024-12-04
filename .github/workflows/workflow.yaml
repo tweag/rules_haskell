@@ -148,7 +148,7 @@ jobs:
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.8.1
+          - ghc: 9.8.2
             bzlmod: true
           - ghc: 9.6.5
             bzlmod: true
