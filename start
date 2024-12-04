@@ -126,15 +126,22 @@ have () {
 check_bazel_version () {
     if ! have bazel; then
         # shellcheck disable=SC2016
-        stderr 'Warning: cannot find `bazel` executable in $PATH'
+        stderr 'Warning: cannot find `bazel` executable in $PATH (skipping version check)'
         return
     fi
-    actual_raw=$(bazel version | grep -E '^Build label:' | grep -Eo '[0-9.]+')
+    if ! actual_raw=$(bazel version | grep -E '^Build label:' | grep -Eo '[0-9.]+'); then
+        stderr 'Warning: cannot determine bazel version (skipping version check)'
+        return
+    fi
 
     # shellcheck disable=SC2034
-    IFS=. read -r actual_major actual_minor actual_patch <<-EOF
+    if ! IFS=. read -r actual_major actual_minor actual_patch <<-EOF
 	${actual_raw}
 	EOF
+    then
+        stderr "Warning: cannot parse version from bazel output (skipping version check)"
+        return
+    fi
 
     expected_min="${MIN_BAZEL_MAJOR}.${MIN_BAZEL_MINOR}.0"
     expected_max="${MAX_BAZEL_MAJOR}.${MAX_BAZEL_MINOR}.x"
