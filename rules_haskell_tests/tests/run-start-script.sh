@@ -36,7 +36,9 @@ function have() {
 
 if have nix; then
     NIXPKGS_REVISION=$( getattr_value "rev" )
-    NIXPKGS_HASH=$( nix hash to-sri "$(getattr_value "sha256")" )
+    # N.B. the sha256 hash attribute given to `builtins.fetchTarball` is computed after unpacking
+    #      the archive, it is not the hash of the downloaded artifact
+    #NIXPKGS_HASH=$( nix hash to-sri "$(getattr_value "sha256")" )
 fi
 
 export NIXPKGS_REVISION NIXPKGS_HASH
