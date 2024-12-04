@@ -119,7 +119,16 @@ check_files_dont_exist () {
     done
 }
 
+have () {
+    command -v "$1" > /dev/null 2>&1
+}
+
 check_bazel_version () {
+    if ! have bazel; then
+        # shellcheck disable=SC2016
+        stderr 'Warning: cannot find `bazel` executable in $PATH'
+        return
+    fi
     actual_raw=$(bazel version | grep -E '^Build label:' | grep -Eo '[0-9.]+')
 
     # shellcheck disable=SC2034
