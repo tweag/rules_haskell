@@ -1,18 +1,17 @@
-resolver: nightly-2024-02-01
+resolver: nightly-2024-10-10
 
 packages:
- - ghcide-2.5.0.0
+ - ghcide-2.9.0.0
  - hie-compat-0.3.1.2
- - hie-bios-0.12.1
- - hiedb-0.4.4.0
- - hls-graph-2.5.0.0
- - hls-plugin-api-2.5.0.0
- - implicit-hie-0.1.2.7
+ - hie-bios-0.14.0
+ - hiedb-0.6.0.1
+ - hls-graph-2.9.0.0
+ - hls-plugin-api-2.9.0.0
+ - implicit-hie-0.1.4.0
  - implicit-hie-cradle-0.5.0.1
  - logict-0.8.1.0
  - special-functors-1.0.0.1
- - Diff-0.4.1
 
- # no release on hackage 
+ # no release on hackage
  - git: https://github.com/haskell-works/hw-fingertree
    commit: 8b2f9003b6aebf958f0f03a5d0cc5bb6f7854727

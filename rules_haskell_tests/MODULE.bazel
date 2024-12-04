@@ -257,7 +257,7 @@ haskell_toolchains = use_extension(
     "haskell_toolchains",
 )
 
-test_ghc_version = "9.4.6"
+test_ghc_version = "9.4.8"
 
 test_ghcopts = [
     "-XStandaloneDeriving",  # Flag used at compile time

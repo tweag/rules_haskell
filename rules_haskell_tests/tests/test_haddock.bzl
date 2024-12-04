@@ -18,7 +18,7 @@ def expected_values(test_ghc_version):
             "haddock/testsZShaddockZShaddock-lib-deep",
             "haddock/ghc-boot-th-9.2.8",
         ]
-    elif test_ghc_version == "9.4.6":
+    elif test_ghc_version == "9.4.8":
         return [
             "haddock/array-0.5.4.0",
             "haddock/base-4.17.2.0",
@@ -31,7 +31,7 @@ def expected_values(test_ghc_version):
             "haddock/testsZShaddockZShaddock-lib-a",
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
-            "haddock/ghc-boot-th-9.4.6",
+            "haddock/ghc-boot-th-9.4.8",
         ]
     elif test_ghc_version == "9.6.5":
         return [
@@ -48,7 +48,7 @@ def expected_values(test_ghc_version):
             "haddock/testsZShaddockZShaddock-lib-deep",
             "haddock/ghc-boot-th-9.6.5",
         ]
-    elif test_ghc_version == "9.8.1" and is_nix_shell:
+    elif test_ghc_version == "9.8.2" and is_nix_shell:
         return [
             "haddock/array-0.5.6.0-inplace",
             "haddock/base-4.19.0.0-inplace",
@@ -61,15 +61,15 @@ def expected_values(test_ghc_version):
             "haddock/testsZShaddockZShaddock-lib-a",
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
-            "haddock/ghc-boot-th-9.8.1-inplace",
+            "haddock/ghc-boot-th-9.8.2-inplace",
         ]
-    elif test_ghc_version == "9.8.1" and is_windows:
+    elif test_ghc_version == "9.8.2" and is_windows:
         return [
             "haddock/array-0.5.6.0-eeeb",
             "haddock/base-4.19.0.0-1e7d",
             "haddock/deepseq-1.5.0.0-940f",
             "haddock/ghc-bignum-1.3-7ca5",
-            "haddock/ghc-boot-th-9.8.1-d8a4",
+            "haddock/ghc-boot-th-9.8.2-d8a4",
             "haddock/ghc-prim-0.11.0-6ef2",
             "haddock/index",
             "haddock/pretty-1.1.3.6-39a4",
@@ -78,13 +78,13 @@ def expected_values(test_ghc_version):
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
         ]
-    elif test_ghc_version == "9.8.1" and is_linux:
+    elif test_ghc_version == "9.8.2" and is_linux:
         return [
             "haddock/array-0.5.6.0-88aa",
             "haddock/base-4.19.0.0-48cd",
             "haddock/deepseq-1.5.0.0-8148",
             "haddock/ghc-bignum-1.3-3882",
-            "haddock/ghc-boot-th-9.8.1-bc0e",
+            "haddock/ghc-boot-th-9.8.2-bc0e",
             "haddock/ghc-prim-0.11.0-6b66",
             "haddock/index",
             "haddock/pretty-1.1.3.6-b1b6",
@@ -93,13 +93,13 @@ def expected_values(test_ghc_version):
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
         ]
-    elif test_ghc_version == "9.8.1" and is_darwin:
+    elif test_ghc_version == "9.8.2" and is_darwin:
         return [
             "haddock/array-0.5.6.0-256c",
             "haddock/base-4.19.0.0-d6d2",
             "haddock/deepseq-1.5.0.0-c140",
             "haddock/ghc-bignum-1.3-93be",
-            "haddock/ghc-boot-th-9.8.1-5d14",
+            "haddock/ghc-boot-th-9.8.2-5d14",
             "haddock/ghc-prim-0.11.0-5379",
             "haddock/index",
             "haddock/pretty-1.1.3.6-eec0",
