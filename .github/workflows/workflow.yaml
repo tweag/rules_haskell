@@ -142,9 +142,9 @@ jobs:
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.4.6
+          - 9.4.8
           - 9.6.5
-          - 9.8.1
+          - 9.8.2
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
