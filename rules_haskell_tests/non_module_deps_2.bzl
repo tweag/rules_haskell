@@ -57,6 +57,8 @@ def repositories(*, bzlmod):  # @unused
             "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
         },
         extra_deps = {"zlib": ["//tests:zlib"], "streaming-commons": ["//tests:zlib"]},
+        # disable calling pkg-config
+        flags = {"zlib": ["-pkg-config"]},
         haddock = False,
         local_snapshot = "//:ghcide-stack-snapshot{}.yaml".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
