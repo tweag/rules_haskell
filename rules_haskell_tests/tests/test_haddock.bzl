@@ -21,7 +21,7 @@ def expected_values(test_ghc_version):
     elif test_ghc_version == "9.4.8":
         return [
             "haddock/array-0.5.4.0",
-            "haddock/base-4.17.2.0",
+            "haddock/base-4.17.2.1",
             "haddock/deepseq-1.4.8.0",
             "haddock/ghc-bignum-1.3",
             "haddock/ghc-prim-0.9.1",
@@ -51,7 +51,7 @@ def expected_values(test_ghc_version):
     elif test_ghc_version == "9.8.2" and is_nix_shell:
         return [
             "haddock/array-0.5.6.0-inplace",
-            "haddock/base-4.19.0.0-inplace",
+            "haddock/base-4.19.1.0-inplace",
             "haddock/deepseq-1.5.0.0-inplace",
             "haddock/ghc-bignum-1.3-inplace",
             "haddock/ghc-prim-0.11.0-inplace",
@@ -80,30 +80,30 @@ def expected_values(test_ghc_version):
         ]
     elif test_ghc_version == "9.8.2" and is_linux:
         return [
-            "haddock/array-0.5.6.0-88aa",
-            "haddock/base-4.19.0.0-48cd",
-            "haddock/deepseq-1.5.0.0-8148",
-            "haddock/ghc-bignum-1.3-3882",
-            "haddock/ghc-boot-th-9.8.2-bc0e",
-            "haddock/ghc-prim-0.11.0-6b66",
+            "haddock/array-0.5.6.0-329f",
+            "haddock/base-4.19.1.0-1d34",
+            "haddock/deepseq-1.5.0.0-b1d8",
+            "haddock/ghc-bignum-1.3-aeb5",
+            "haddock/ghc-boot-th-9.8.2-0d88",
+            "haddock/ghc-prim-0.11.0-4a6b",
             "haddock/index",
-            "haddock/pretty-1.1.3.6-b1b6",
-            "haddock/template-haskell-2.21.0.0-c6f4",
+            "haddock/pretty-1.1.3.6-2201",
+            "haddock/template-haskell-2.21.0.0-1d77",
             "haddock/testsZShaddockZShaddock-lib-a",
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
         ]
     elif test_ghc_version == "9.8.2" and is_darwin:
         return [
-            "haddock/array-0.5.6.0-256c",
-            "haddock/base-4.19.0.0-d6d2",
-            "haddock/deepseq-1.5.0.0-c140",
-            "haddock/ghc-bignum-1.3-93be",
-            "haddock/ghc-boot-th-9.8.2-5d14",
-            "haddock/ghc-prim-0.11.0-5379",
+            "haddock/array-0.5.6.0-28ee",
+            "haddock/base-4.19.1.0-654f",
+            "haddock/deepseq-1.5.0.0-778c",
+            "haddock/ghc-bignum-1.3-8434",
+            "haddock/ghc-boot-th-9.8.2-bc62",
+            "haddock/ghc-prim-0.11.0-a7d8",
             "haddock/index",
-            "haddock/pretty-1.1.3.6-eec0",
-            "haddock/template-haskell-2.21.0.0-be6e",
+            "haddock/pretty-1.1.3.6-ffc0",
+            "haddock/template-haskell-2.21.0.0-fc14",
             "haddock/testsZShaddockZShaddock-lib-a",
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
