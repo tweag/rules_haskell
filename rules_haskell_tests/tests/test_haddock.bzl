@@ -21,7 +21,7 @@ def expected_values(test_ghc_version):
     elif test_ghc_version == "9.4.8":
         return [
             "haddock/array-0.5.4.0",
-            "haddock/base-4.17.2.0",
+            "haddock/base-4.17.2.1",
             "haddock/deepseq-1.4.8.0",
             "haddock/ghc-bignum-1.3",
             "haddock/ghc-prim-0.9.1",
