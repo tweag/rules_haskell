@@ -51,7 +51,7 @@ def expected_values(test_ghc_version):
     elif test_ghc_version == "9.8.2" and is_nix_shell:
         return [
             "haddock/array-0.5.6.0-inplace",
-            "haddock/base-4.19.0.0-inplace",
+            "haddock/base-4.19.1.0-inplace",
             "haddock/deepseq-1.5.0.0-inplace",
             "haddock/ghc-bignum-1.3-inplace",
             "haddock/ghc-prim-0.11.0-inplace",
