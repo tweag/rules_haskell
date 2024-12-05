@@ -91,7 +91,7 @@ def repositories(*, bzlmod):  # @unused
                 "unliftio-core": ["@ghcide//:Cabal"],
                 "yaml": ["@ghcide//:Cabal"],
             }.items()
-            if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not is_at_least("9.6", GHC_VERSION)
+            if [d for d in deps if d != "@ghcide//:Cabal"] or not GHC_VERSION or not is_at_least("9.6", GHC_VERSION)
         },
         stack_snapshot_json = ("//:ghcide-snapshot{}.json".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
