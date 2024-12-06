@@ -15,6 +15,34 @@ mkdir $workdir
 cd $workdir
 cp "$rules_haskell_dir/.bazelversion" .
 
+function getattr_value() {
+    local nix_file="$rules_haskell_dir/nixpkgs/default.nix"
+    while IFS=$' \t;' read -r key eq value rest ; do
+        if [ "$key" == "$1" ] && [ "$eq" == '=' ]; then
+            value="${value%\"}"
+            value="${value#\"}"
+
+            echo "$value"
+            return
+        fi
+    done < "$nix_file"
+    echo "could not lookup ${1} in $nix_file" >&2
+    exit 1
+}
+
+function have() {
+    command -v "$1" &> /dev/null
+}
+
+if have nix; then
+    NIXPKGS_REVISION=$( getattr_value "rev" )
+    # N.B. the sha256 hash attribute given to `builtins.fetchTarball` is computed after unpacking
+    #      the archive, it is not the hash of the downloaded artifact
+    #NIXPKGS_HASH=$( nix hash to-sri "$(getattr_value "sha256")" )
+fi
+
+export NIXPKGS_REVISION NIXPKGS_HASH
+
 # specify version for bazelisk via `USE_BAZEL_VERSION`, since it does not read the .bazelversion when there is no WORKSPACE file
 USE_BAZEL_VERSION=$( cat .bazelversion )
 export USE_BAZEL_VERSION

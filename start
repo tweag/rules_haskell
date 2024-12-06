@@ -9,6 +9,8 @@ set -eu
 # we use the default version (currently "9.4.6").
 GHC_VERSION=${GHC_VERSION:="9.4.6"}
 
+NIXPKGS_REVISION=${NIXPKGS_REVISION:-nixos-24.05}
+
 readonly MIN_BAZEL_MAJOR=6
 readonly MIN_BAZEL_MINOR=0
 
@@ -117,13 +119,29 @@ check_files_dont_exist () {
     done
 }
 
+have () {
+    command -v "$1" > /dev/null 2>&1
+}
+
 check_bazel_version () {
-    actual_raw=$(bazel version | grep -E '^Build label:' | grep -Eo '[0-9.]+')
+    if ! have bazel; then
+        # shellcheck disable=SC2016
+        stderr 'Warning: cannot find `bazel` executable in $PATH (skipping version check)'
+        return
+    fi
+    if ! actual_raw=$(bazel version | grep -E '^Build label:' | grep -Eo '[0-9.]+'); then
+        stderr 'Warning: cannot determine bazel version (skipping version check)'
+        return
+    fi
 
     # shellcheck disable=SC2034
-    IFS=. read -r actual_major actual_minor actual_patch <<-EOF
+    if ! IFS=. read -r actual_major actual_minor actual_patch <<-EOF
 	${actual_raw}
 	EOF
+    then
+        stderr "Warning: cannot parse version from bazel output (skipping version check)"
+        return
+    fi
 
     expected_min="${MIN_BAZEL_MAJOR}.${MIN_BAZEL_MINOR}.0"
     expected_max="${MAX_BAZEL_MAJOR}.${MAX_BAZEL_MINOR}.x"
@@ -328,7 +346,8 @@ EOF
 		# https://github.com/tweag/rules_nixpkgs/blob/master/README.md
 		nixpkgs_git_repository(
 		    name = "nixpkgs",
-		    revision = "nixos-24.05",
+		    revision = "${NIXPKGS_REVISION}",${NIXPKGS_HASH:+
+		    integrity = \"$NIXPKGS_HASH\",}
 		)
 
 		nixpkgs_cc_configure(
