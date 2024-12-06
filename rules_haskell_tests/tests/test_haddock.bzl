@@ -80,15 +80,15 @@ def expected_values(test_ghc_version):
         ]
     elif test_ghc_version == "9.8.2" and is_linux:
         return [
-            "haddock/array-0.5.6.0-88aa",
-            "haddock/base-4.19.0.0-48cd",
-            "haddock/deepseq-1.5.0.0-8148",
-            "haddock/ghc-bignum-1.3-3882",
-            "haddock/ghc-boot-th-9.8.2-bc0e",
-            "haddock/ghc-prim-0.11.0-6b66",
+            "haddock/array-0.5.6.0-329f",
+            "haddock/base-4.19.1.0-1d34",
+            "haddock/deepseq-1.5.0.0-b1d8",
+            "haddock/ghc-bignum-1.3-aeb5",
+            "haddock/ghc-boot-th-9.8.2-0d88",
+            "haddock/ghc-prim-0.11.0-4a6b",
             "haddock/index",
-            "haddock/pretty-1.1.3.6-b1b6",
-            "haddock/template-haskell-2.21.0.0-c6f4",
+            "haddock/pretty-1.1.3.6-2201",
+            "haddock/template-haskell-2.21.0.0-1d77",
             "haddock/testsZShaddockZShaddock-lib-a",
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
