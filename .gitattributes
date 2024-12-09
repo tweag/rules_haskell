@@ -1,3 +1,6 @@
 # Prevent git from automatically introducing \r characters in .sha256 files.
 # Otherwise msys sha256sum fails.
 *.sha256 binary
+
+# keep LF line endings in patch files to keep hash the same
+registry/**/*.patch  text eol=lf
