@@ -1,7 +1,10 @@
 resolver: nightly-2024-10-10
 
 # The following packages are forked because they do not support 9.8.1 yet
-#packages:
+packages:
+
+# downgrade happy to version < 2, see https://github.com/tweag/rules_haskell/issues/2274
+- happy-1.20.1.1
 
 # This branch updates bounds and removes symlinks because of issue: https://github.com/commercialhaskell/stack/issues/5004
 # https://github.com/ylecornec/proto-lens/tree/update_bounds_ghc_9_8_1
