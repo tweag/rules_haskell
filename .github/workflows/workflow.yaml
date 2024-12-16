@@ -47,16 +47,16 @@ jobs:
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.4.6
+          - 9.4.8
           - 9.6.5
-          - 9.8.1
+          - 9.8.2
         exclude:
           - module: rules_haskell_nix
 
             bzlmod: false
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.8.1
+          - ghc: 9.8.2
             bzlmod: true
           - ghc: 9.6.5
             bzlmod: true
@@ -143,20 +143,20 @@ jobs:
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.4.6
+          - 9.4.8
           - 9.6.5
-          - 9.8.1
+          - 9.8.2
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.8.1
+          - ghc: 9.8.2
             bzlmod: true
           - ghc: 9.6.5
             bzlmod: true
-          # currently proto-lens-protoc fails with an access violation on Windows
+          # currently proto-lens-protoc (read: protoc-gen-haskell) fails with an access violation on Windows
           - ghc: 9.6.5
             os: windows-latest
-          - ghc: 9.8.1
+          - ghc: 9.8.2
             os: windows-latest
     env:
       GHC_VERSION: ${{ matrix.ghc }}

@@ -11,15 +11,17 @@ rules_haskell_dependencies()
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
+GHC_VERSION = "9.4.8"
+
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc946",
+    attribute_path = "haskell.compiler.ghc{}".format(GHC_VERSION.replace(".", "")),
     repository = "@rules_haskell//nixpkgs:default.nix",
-    version = "9.4.6",
+    version = GHC_VERSION,
 )
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
-rules_haskell_toolchains(version = "9.4.6")
+rules_haskell_toolchains(version = GHC_VERSION)
 
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
