@@ -404,7 +404,7 @@ haskell_doc(
     tags = [
         "dont_test_on_windows",
         "requires_lz4",
-    ] + (["skip_profiling"] if GHC_VERSION == "9.8.1" else []),
+    ] + (["skip_profiling"] if GHC_VERSION == "9.8.2" else []),
     deps = [":utils"],
 )
 

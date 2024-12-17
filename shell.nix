@@ -1,4 +1,4 @@
-{ pkgs ? import ./nixpkgs { }, docTools ? true, ghcVersion ? "9.4.6" }:
+{ pkgs ? import ./nixpkgs { }, docTools ? true, ghcVersion ? "9.4.8" }:
 
 with pkgs;
 
@@ -42,7 +42,7 @@ mkShell {
   ++ lib.optionals docTools [ graphviz python3Packages.sphinx zip unzip ]
   ++ lib.optional stdenv.isDarwin macOS-security;
 
-  packages = [ bazel_6 ];
+  packages = [ bazel_7 ];
 
   shellHook = ''
     # Add nix config flags to .bazelrc.local.

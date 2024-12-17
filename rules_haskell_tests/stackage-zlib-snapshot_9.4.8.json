@@ -1,0 +1,9 @@
+{
+  "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY": -1723899021,
+  "all-cabal-hashes": "https://raw.githubusercontent.com/commercialhaskell/all-cabal-hashes/9ab70e9e537b1ba58b81ef52aff56f95e96b7357",
+  "resolved": {
+    "base": {"dependencies":[],"location":{"type":"core"},"name":"base","version":"4.17.2.1"},
+    "bytestring": {"dependencies":[],"location":{"type":"core"},"name":"bytestring","version":"0.11.5.3"},
+    "zlib": {"dependencies":["base","bytestring"],"location":{"type":"hackage","url":"https://hackage.haskell.org/package/zlib-0.6.3.0/zlib-0.6.3.0.tar.gz"},"name":"zlib","pinned":{"cabal-sha256":"96d388c95a98d6db94b74053130c00aea3c8c8ee041b5594bbe09242f1714356","sha256":"9eaa989ad4534438b5beb51c1d3a4c8f6a088fdff0b259a5394fbf39aaee04da","url":["https://hackage.haskell.org/package/zlib-0.6.3.0/zlib-0.6.3.0.tar.gz","https://s3.amazonaws.com/hackage.fpcomplete.com/package/zlib-0.6.3.0.tar.gz"]},"version":"0.6.3.0"}
+  }
+}

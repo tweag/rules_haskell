@@ -153,6 +153,13 @@ bazel_dep(
     version = "0.12.0",
     dev_dependency = True,
 )
+single_version_override(
+    module_name = "rules_nixpkgs_nodejs",
+    patch_strip = 3,
+    patches = [
+        "rules_nixpkgs_nodejs-bazelignore.patch",
+    ],
+)
 
 non_module_dev_deps = use_extension(
     "//:non_module_dev_deps.bzl",

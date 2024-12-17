@@ -1,0 +1,8 @@
+diff --git a/toolchains/nodejs/.bazelignore b/toolchains/nodejs/.bazelignore
+index a61f183..18a7578 100644
+--- a/toolchains/nodejs/.bazelignore
++++ b/toolchains/nodejs/.bazelignore
+@@ -1,2 +1,2 @@
+-bazel-*
++bazel-nodejs
+ testing

@@ -1,0 +1,30 @@
+diff --git a/core/.bazelignore b/core/.bazelignore
+index a61f183..850ed9f 100644
+--- a/core/.bazelignore
++++ b/core/.bazelignore
+@@ -1,2 +1,2 @@
+-bazel-*
++bazel-core
+ testing
+diff --git a/toolchains/nodejs/.bazelignore b/toolchains/nodejs/.bazelignore
+index a61f183..18a7578 100644
+--- a/toolchains/nodejs/.bazelignore
++++ b/toolchains/nodejs/.bazelignore
+@@ -1,2 +1,2 @@
+-bazel-*
++bazel-nodejs
+ testing
+diff --git a/toolchains/nodejs/testing/.bazelignore b/toolchains/nodejs/testing/.bazelignore
+new file mode 100644
+index 0000000..0d9926e
+--- /dev/null
++++ b/toolchains/nodejs/testing/.bazelignore
+@@ -0,0 +1 @@
++bazel-nodejs
+diff --git a/toolchains/rust/.bazelignore b/toolchains/rust/.bazelignore
+new file mode 100644
+index 0000000..ee88e84
+--- /dev/null
++++ b/toolchains/rust/.bazelignore
+@@ -0,0 +1 @@
++bazel-rust
