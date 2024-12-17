@@ -155,7 +155,7 @@ bazel_dep(
 )
 single_version_override(
     module_name = "rules_nixpkgs_nodejs",
-    patch_strip = 2,
+    patch_strip = 3,
     patches = [
         "rules_nixpkgs_nodejs-bazelignore.patch",
     ],
