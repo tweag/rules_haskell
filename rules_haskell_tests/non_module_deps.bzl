@@ -48,9 +48,9 @@ def repositories(*, bzlmod):  # @unused
     # no modules are provided at the moment for buildifier
     http_archive(
         name = "com_github_bazelbuild_buildtools",
-        sha256 = "60a9025072ae237f325d0e7b661e1685f34922c29883888c2d06f5789462b939",
-        strip_prefix = "buildtools-7.1.1",
-        urls = ["https://github.com/bazelbuild/buildtools/archive/v7.1.1.tar.gz"],
+        sha256 = "051951c10ff8addeb4f10be3b0cf474b304b2ccd675f2cc7683cdd9010320ca9",
+        strip_prefix = "buildtools-7.3.1",
+        urls = ["https://github.com/bazelbuild/buildtools/archive/v7.3.1.tar.gz"],
     )
 
     http_archive(
