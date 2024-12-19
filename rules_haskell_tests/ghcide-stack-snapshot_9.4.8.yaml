@@ -1,4 +1,4 @@
-resolver: lts-21.11
+resolver: lts-21.25
 
 packages:
 - algebraic-graphs-0.6
@@ -32,7 +32,7 @@ drop-packages:
 - Win32
 
 
-# stackage lts-21.11/ghc 9.4.6 only contains Win32-2.12.0.1
+# stackage lts-21.25/ghc 9.4.8 only contains Win32-2.12.0.1
 flags:
   ansi-terminal:
     Win32-2-13-1: false

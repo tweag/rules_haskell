@@ -57,6 +57,8 @@ def repositories(*, bzlmod):  # @unused
             "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
         },
         extra_deps = {"zlib": ["//tests:zlib"], "streaming-commons": ["//tests:zlib"]},
+        # disable calling pkg-config
+        flags = {"zlib": ["-pkg-config"]},
         haddock = False,
         local_snapshot = "//:ghcide-stack-snapshot{}.yaml".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
@@ -91,7 +93,7 @@ def repositories(*, bzlmod):  # @unused
                 "unliftio-core": ["@ghcide//:Cabal"],
                 "yaml": ["@ghcide//:Cabal"],
             }.items()
-            if [d for d in deps if d != "@Cabal//:Cabal"] or not GHC_VERSION or not is_at_least("9.6", GHC_VERSION)
+            if [d for d in deps if d != "@ghcide//:Cabal"] or not GHC_VERSION or not is_at_least("9.6", GHC_VERSION)
         },
         stack_snapshot_json = ("//:ghcide-snapshot{}.json".format(
             "_" + str(GHC_VERSION) if GHC_VERSION else "",
