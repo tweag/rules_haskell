@@ -29,6 +29,7 @@ filegroup(
         "BUILD.bazel",
         "WORKSPACE",
         "constants.bzl",
+        "rules_nixpkgs_core_bazelignore.patch",
         "stackage_snapshot.json",
         "stackage_snapshot.yaml",
         "//debug/linking_utils:all_files",
