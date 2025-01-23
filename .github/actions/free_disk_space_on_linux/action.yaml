@@ -9,4 +9,4 @@ runs:
       run: |-
         sudo swapoff -a
         sudo rm -rf /swapfile /usr/share/dotnet /usr/local/lib/android /opt/ghc "$ANDROID_HOME" /usr/local/.ghcup /usr/local/share/powershell /opt/az /opt/microsoft /etc/skel
-        docker rmi $(docker images -q) -f
+        docker images -q | xargs -r docker rmi -f
