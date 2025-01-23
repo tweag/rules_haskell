@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13, windows-latest]
+        os: [ubuntu-24.04, macos-13, windows-2022]
         ghc-version: ${{ fromJSON(needs.find-ghc-version.outputs.ghc-matrix) }}
     runs-on: ${{ matrix.os }}
     steps:

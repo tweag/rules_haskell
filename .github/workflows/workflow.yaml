@@ -139,7 +139,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13, windows-latest]
+        os: [ubuntu-24.04, macos-13, windows-2022]
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
@@ -155,9 +155,9 @@ jobs:
             bzlmod: true
           # currently proto-lens-protoc (read: protoc-gen-haskell) fails with an access violation on Windows
           - ghc: 9.6.5
-            os: windows-latest
+            os: windows-2022
           - ghc: 9.8.2
-            os: windows-latest
+            os: windows-2022
     env:
       GHC_VERSION: ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
