@@ -18,7 +18,7 @@ concurrency:
 jobs:
   lint:
     name: Format & Lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: tweag/configure-bazel-remote-cache-auth@v0
@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13]
+        os: [ubuntu-24.04, macos-13]
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
@@ -139,7 +139,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, windows-latest]
+        os: [ubuntu-24.04, macos-13, windows-latest]
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
@@ -257,7 +257,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, macos-14, windows-latest]
+        os: [ubuntu-24.04, macos-13, macos-14, windows-latest]
         bzlmod: [true, false]
         bazel:
           - "6.x"
@@ -332,7 +332,7 @@ jobs:
           bazelisk build "//..."
 
   all_ci_tests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - lint
       - examples-bindist
