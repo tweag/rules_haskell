@@ -164,9 +164,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/free_disk_space_on_linux
-      - uses: ./.github/actions/install_apt_pkgs
-        with:
-          packages: libtinfo5
       - name: Mount Bazel cache
         uses: actions/cache@v4
         with:
@@ -272,9 +269,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/free_disk_space_on_linux
-      - uses: ./.github/actions/install_apt_pkgs
-        with:
-          packages: libtinfo5
       - name: Mount Bazel cache
         uses: actions/cache@v4
         with:
