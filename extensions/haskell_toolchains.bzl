@@ -14,6 +14,12 @@ _bindists_tag = tag_class(
         "version": attr.string(
             doc = "[see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-version)",
         ),
+        "dist": attr.string_dict(
+            doc = "Select a specific `dist` of a GHC binary tarball (e.g. deb10, alpine312) for a platform",
+        ),
+        "variant": attr.string_dict(
+            doc = "Select a specific `variant` of a GHC binary tarball (e.g. dwarf, native_int) for a platform",
+        ),
         "ghcopts": attr.string_list(
             doc = "[see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-ghcopts)",
         ),
@@ -40,6 +46,12 @@ _bindist_tag = tag_class(
         "version": attr.string(
             mandatory = True,
             doc = "The desired GHC version",
+        ),
+        "dist": attr.string_dict(
+            doc = "Select a specific `dist` of a GHC binary tarball (e.g. deb10, alpine312) for a platform",
+        ),
+        "variant": attr.string_dict(
+            doc = "Select a specific `variant` of a GHC binary tarball (e.g. dwarf, native_int) for a platform",
         ),
         "target": attr.string(
             mandatory = True,

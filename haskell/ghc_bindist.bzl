@@ -71,7 +71,46 @@ def _ghc_bindist_impl(ctx):
     if target not in bindist:
         fail("Operating system {0} does not have a bindist for GHC version {1}".format(ctx.os.name, ctx.attr.version))
     else:
-        url, sha256 = bindist[target]
+        bindists = bindist[target]
+        dist = ctx.attr.dist.get(target)
+        if dist:
+            bindists = [bindist for bindist in bindists if bindist["dist"] == dist]
+            if not bindists:
+                fail("no GHC bindist found with specified `dist` of `{}`".format(dist))
+
+        variant = ctx.attr.variant.get(target)
+        if variant:
+            bindists = [bindist for bindist in bindists if bindist.get("variant") == variant]
+            if not bindists:
+                fail("no GHC bindist found with specified `dist` of `{}`".format(dist))
+
+        if len(bindists) > 1:
+            dists = [bindist["dist"] for bindist in bindists]
+
+            if os.startswith("linux"):
+                # for Linux, we use debian dists by default
+                debian_dists = sorted([int(d[3:]) for d in dists if d.startswith("deb")])
+
+                if debian_dists:
+                    # prefer the oldest version by default
+                    deb_version = "deb{}".format(debian_dists[0])
+
+                    bindists = [bindist for bindist in bindists if bindist["dist"] == deb_version]
+
+            if len(bindists) > 1:
+                # prefer the one without a variant, but fail if ambiguous
+                dists = [bindist for bindist in bindists if "variant" not in bindist]
+                if len(dists) > 1:
+                    # we should never get here, for a given version, architecture and dist there can only be one
+                    # tarball without a variant
+                    fail("multiple non-variant entries for GHC {} {}:\n\n{}".format(version, target, bindists))
+                if not dists:
+                    fail("multiple variant entries for GHC {} {}:\n\n{}\n\nSelect one explicitly using `variant = 'xyz'`".format(version, target, bindists))
+
+        bindist = bindists[0]
+
+        url = bindist["url"]
+        sha256 = bindist["sha256"]
 
     bindist_dir = ctx.path(".")  # repo path
 
@@ -286,6 +325,12 @@ _ghc_bindist = repository_rule(
         "haddock_flags": attr.string_list(),
         "repl_ghci_args": attr.string_list(),
         "cabalopts": attr.string_list(),
+        "dist": attr.string_dict(
+            doc = "Select a specific `dist` of a GHC binary tarball (e.g. deb10, alpine312) for a platform",
+        ),
+        "variant": attr.string_dict(
+            doc = "Select a specific `variant` of a GHC binary tarball (e.g. dwarf, native_int) for a platform",
+        ),
         "patches": attr.label_list(
             default = [],
             doc =
@@ -419,7 +464,8 @@ def ghc_bindist(
         repl_ghci_args = None,
         cabalopts = None,
         locale = None,
-        register = True):
+        register = True,
+        **kwargs):
     """Create a new repository from binary distributions of GHC.
 
     The repository exports two targets:
@@ -469,6 +515,7 @@ def ghc_bindist(
         }.get(version)
 
     extra_attrs = {"patches": patches, "patch_args": ["-p0"]} if patches else {}
+    extra_attrs.update(kwargs)
 
     # We want the toolchain definition to be tucked away in a separate
     # repository, that way `bazel build //...` will not match it (and
@@ -518,7 +565,8 @@ def haskell_register_ghc_bindists(
         cabalopts = None,
         locale = None,
         register = True,
-        targets = _GHC_AVAILABLE_TARGETS):
+        targets = _GHC_AVAILABLE_TARGETS,
+        **kwargs):
     """ Register GHC binary distributions for all platforms as toolchains.
 
     See [rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains).
@@ -550,6 +598,7 @@ def haskell_register_ghc_bindists(
             cabalopts = cabalopts,
             locale = locale,
             register = register,
+            **kwargs
         )
     local_sh_posix_repo_name = "rules_haskell_sh_posix_local"
     if local_sh_posix_repo_name not in native.existing_rules():
