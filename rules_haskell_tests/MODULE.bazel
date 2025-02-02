@@ -41,7 +41,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nixpkgs_nodejs",
-    version = "0.12.0",
+    version = "0.13.0",
 )
 bazel_dep(
     name = "platforms",
