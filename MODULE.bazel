@@ -79,7 +79,11 @@ haskell_toolchains = use_extension(
     "@rules_haskell//extensions:haskell_toolchains.bzl",
     "haskell_toolchains",
 )
-haskell_toolchains.bindists()
+haskell_toolchains.bindists(
+    dist = {
+        "linux_amd64": "deb10",
+    },
+)
 use_repo(
     haskell_toolchains,
     "all_bindist_toolchains",

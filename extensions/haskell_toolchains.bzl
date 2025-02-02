@@ -130,6 +130,8 @@ def _haskell_toolchains_impl(mctx):
                 bindist_targets.append(bindist_tag.target)
             ghc_bindist(
                 name = name,
+                dist = bindist_tag.dist,
+                variant = bindist_tag.variant,
                 version = bindist_tag.version,
                 target = bindist_tag.target,
                 ghcopts = bindist_tag.ghcopts,
@@ -164,6 +166,8 @@ def _haskell_toolchains_impl(mctx):
             targets = bindist_info_for_version(mctx, bindists_tag.version).keys()
 
             haskell_register_ghc_bindists(
+                dist = bindists_tag.dist,
+                variant = bindists_tag.variant,
                 version = bindists_tag.version,
                 ghcopts = bindists_tag.ghcopts,
                 haddock_flags = bindists_tag.haddock_flags,
