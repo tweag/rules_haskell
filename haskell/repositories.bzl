@@ -8,8 +8,8 @@ load(
     "check_bazel_version_compatible",
 )
 
-_rules_nixpkgs_version = "0.12.0"
-_rules_nixpkgs_sha256 = "1adb04dc0416915fef427757f4272c4f7dacefeceeefc50f683aec7f7e9b787a"
+_rules_nixpkgs_version = "0.13.0"
+_rules_nixpkgs_sha256 = "30271f7bd380e4e20e4d7132c324946c4fdbc31ebe0bbb6638a0f61a37e74397"
 
 _rules_sh_version = "v0.4.0"
 _rules_sh_sha256 = "3243af3fcb3768633fd39f3654de773e5fb61471a2fae5762a1653c22c412d2c"
