@@ -74,15 +74,24 @@ def _ghc_bindist_impl(ctx):
         bindists = bindist[target]
         dist = ctx.attr.dist.get(target)
         if dist:
-            bindists = [bindist for bindist in bindists if bindist["dist"] == dist]
-            if not bindists:
-                fail("no GHC bindist found with specified `dist` of `{}`".format(dist))
+            filtered_bindists = [bindist for bindist in bindists if bindist["dist"] == dist]
+            if not filtered_bindists:
+                fail("no GHC bindist found with specified `dist` of `{}`\n  available dists: {}".format(
+                    dist,
+                    ", ".join(sorted([bindist["dist"] for bindist in bindists])),
+                ))
+            bindists = filtered_bindists
 
         variant = ctx.attr.variant.get(target)
         if variant:
-            bindists = [bindist for bindist in bindists if bindist.get("variant") == variant]
-            if not bindists:
-                fail("no GHC bindist found with specified `dist` of `{}`".format(dist))
+            filtered_bindists = [bindist for bindist in bindists if bindist.get("variant") == variant]
+            if not filtered_bindists:
+                fail("no GHC bindist found with specified `variant` of `{}`\n  available dists{}: {}".format(
+                    variant,
+                    " (where `dist` == {})".format(dist) if dist else "",
+                    ", ".join(sorted([bindist.get("variant", "(none)") for bindist in bindists])),
+                ))
+            bindists = filtered_bindists
 
         if len(bindists) > 1:
             dists = [bindist["dist"] for bindist in bindists]
