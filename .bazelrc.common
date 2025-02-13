@@ -17,6 +17,10 @@ startup --host_jvm_args=-Djdk.tls.client.protocols=TLSv1.2
 common --incompatible_require_linker_input_cc_api
 common --incompatible_disallow_empty_glob=true
 
+# explicitly disable sandboxing exclusive tests (it was false in Bazel 6, but is true in Bazel 7+)
+# (otherise this causes some integration tests to fail)
+common --noincompatible_exclusive_test_sandboxed
+
 # test environment does not propagate locales by default some tests reads files
 # written in UTF8, we need to propagate the correct environment variables, such
 # as LOCALE_ARCHIVE We also need to setup an utf8 locale
