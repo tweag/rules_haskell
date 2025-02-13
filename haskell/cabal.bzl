@@ -387,6 +387,9 @@ def _prepare_cabal_inputs(
     if extra_ldflags_file:
         input_files.append(extra_ldflags_file)
 
+    if hs.toolchain.locale_archive:
+        input_files.append(hs.toolchain.locale_archive)
+
     inputs = depset(
         input_files,
         transitive = [
