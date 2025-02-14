@@ -65,6 +65,13 @@ HaddockInfo = provider(
     },
 )
 
+HaskellIndexerInfo = provider(
+    doc = "haskell-indexer information.",
+    fields = {
+        "entries": "Kythe entry files, in binary protobuf format.",
+    },
+)
+
 HaskellLintInfo = provider(
     doc = "Provider that collects files produced by linters",
     fields = {
