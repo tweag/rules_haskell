@@ -28,9 +28,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # For testing if bzlmod is enabled
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "349aabd3c2b96caeda6181eb0ae1f14f2a1d9f3cd3c8b05d57f709ceb12e9fb3",
-    strip_prefix = "bazel-lib-2.9.4",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.9.4/bazel-lib-v2.9.4.tar.gz",
+    sha256 = "40ba9d0f62deac87195723f0f891a9803a7b720d7b89206981ca5570ef9df15b",
+    strip_prefix = "bazel-lib-2.14.0",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.14.0/bazel-lib-v2.14.0.tar.gz",
 )
 
 # bazel dependencies
