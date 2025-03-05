@@ -3,10 +3,12 @@
         "github>tweag/renovate-presets:ruleset_base",
         "github>tweag/renovate-presets:mergify"
     ],
-    "ignorePaths": ["registry/**"],
+    "ignorePaths": [
+        "registry/**"
+    ],
     "packageRules": [
         {
-            "matchFiles": [
+            "matchFileNames": [
                 "rules_haskell_nix/MODULE.bazel"
             ],
             "enabled": false
