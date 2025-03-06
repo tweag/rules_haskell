@@ -394,7 +394,7 @@ def make_relocatable_paths(line):
     line = re.sub(re.escape(cfg_execroot) + r'\S*', make_relative_to_pkgroot, line)
     return line
 
-if libraries != [] and os.path.isfile(package_conf_file):
+if os.path.isfile(package_conf_file):
     for lib in libraries:
         os.rename(lib, os.path.join(dynlibdir, os.path.basename(lib)))
 
