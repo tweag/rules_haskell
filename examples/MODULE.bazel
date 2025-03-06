@@ -83,13 +83,23 @@ stack_snapshot.package(
         "conduit",
         "conduit-extra",
         "hspec",
-        # Remove hspec-* packages once https://github.com/tweag/rules_haskell/issues/1871 is resolved
-        "hspec-core",
-        "hspec-discover",
-        "hspec-expectations",
         "optparse-applicative",
         "text",
         "text-show",
+        # TODO(cb) remove these transitive deps once
+        #          https://github.com/tweag/rules_haskell/issues/1871 is resolved
+        "bifunctors",
+        "call-stack",
+        "generic-deriving",
+        "hspec-core",
+        "hspec-discover",
+        "hspec-expectations",
+        "HUnit",
+        "mono-traversable",
+        "quickcheck-io",
+        "transformers-compat",
+        "typed-process",
+        "unliftio-core",
     ]
 ]
 
