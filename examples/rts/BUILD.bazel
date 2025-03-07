@@ -12,6 +12,11 @@ haskell_toolchain_library(name = "rts")
 haskell_library(
     name = "add-one-hs",
     srcs = ["One.hs"],
+    # FIXME: this is broken on Windows, see https://github.com/tweag/rules_haskell/issues/2299
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [":base"],
 )
 
