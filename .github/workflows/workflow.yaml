@@ -262,6 +262,10 @@ jobs:
         bazel:
           - "6.x"
           - "7.x"
+        exclude:
+          # TODO(cb) add full support for Bazel 7
+          - os: windows-latest
+            bazel: "7.x"
     env:
       USE_BAZEL_VERSION: ${{ matrix.bazel }}
     runs-on: ${{ matrix.os }}
