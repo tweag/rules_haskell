@@ -78,11 +78,6 @@ def package(
         paths.join(pkg_db_dir + empty_libs_suffix, "{0}.conf".format(pkg_db_dir)),
     )
 
-    import_dir = paths.join(
-        "${pkgroot}",
-        paths.join(pkg_db_dir, "_iface"),
-    )
-
     (extra_lib_dirs, extra_libs) = _get_extra_libraries(hs, cc, with_shared)
     if with_shared:
         (extra_dynamic_lib_dirs, _) = _get_extra_libraries(hs, cc, with_shared, dynamic = True)
@@ -98,7 +93,6 @@ def package(
         "key": pkg_id.to_string(my_pkg_id),
         "exposed": "True",
         "hidden-modules": other_modules,
-        "import-dirs": [import_dir],
         "library-dirs": [pkgroot_lib_path] + extra_lib_dirs,
         "dynamic-library-dirs": [pkgroot_lib_path] + extra_dynamic_lib_dirs,
         "extra-libraries": extra_libs,
@@ -108,7 +102,13 @@ def package(
     }
 
     if has_hs_library:
+        import_dir = paths.join(
+            "${pkgroot}",
+            paths.join(pkg_db_dir, "_iface"),
+        )
+
         config.update({
+            "import-dirs": [import_dir],
             "hs-libraries": [pkg_id.library_name(hs, my_pkg_id)],
         })
 

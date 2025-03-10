@@ -140,21 +140,21 @@ def _haskell_doc_aspect_impl(target, ctx):
     # TODO(aherrmann): Convert to a standalone sh_binary.
     # Executable shell script files don't work on Windows.
     # This fails with `%1 is not a valid Win32 application.`.
-    haddock_wrapper = ctx.actions.declare_file("haddock_wrapper-{}".format(hs.name))
-    ctx.actions.expand_template(
-        template = ctx.file._haddock_wrapper_tpl,
-        output = haddock_wrapper,
-        substitutions = {
-            "%{ghc-pkg}": hs.tools.ghc_pkg.path,  # not mentioned in bash XXX delete?
-            "%{haddock}": shell.quote(hs.tools.haddock.path),
-            # XXX Workaround
-            # https://github.com/bazelbuild/bazel/issues/5980.
-            "%{env}": render_env(hs.env),
-        },
-        is_executable = True,
-    )
+    # haddock_wrapper = ctx.actions.declare_file("haddock_wrapper-{}".format(hs.name))
+    # ctx.actions.expand_template(
+    #     template = ctx.file._haddock_wrapper_tpl,
+    #     output = haddock_wrapper,
+    #     substitutions = {
+    #         "%{ghc-pkg}": hs.tools.ghc_pkg.path,  # not mentioned in bash XXX delete?
+    #         "%{haddock}": shell.quote(hs.tools.haddock.path),
+    #         # XXX Workaround
+    #         # https://github.com/bazelbuild/bazel/issues/5980.
+    #         "%{env}": render_env(hs.env),
+    #     },
+    #     is_executable = True,
+    # )
 
-    ctx.actions.run(
+    ctx.actions.run_shell(
         inputs = depset(transitive = [
             target[HaskellInfo].package_databases,
             target[HaskellInfo].interface_dirs,
@@ -177,7 +177,23 @@ def _haskell_doc_aspect_impl(target, ctx):
         outputs = [haddock_file, html_dir],
         mnemonic = "HaskellHaddock",
         progress_message = "HaskellHaddock {}".format(ctx.label),
-        executable = haddock_wrapper,
+        #executable = haddock_wrapper,
+        command = """
+set -eo pipefail
+
+{env}
+
+# BSD and GNU mktemp are very different; attempt GNU first
+TEMP=$(mktemp -d 2>/dev/null || mktemp -d -t 'haddock_wrapper')
+trap cleanup 1 2 3 6
+cleanup() {{ rm -rf "$TEMP"; }}
+# XXX Override TMPDIR to prevent race conditions on certain platforms.
+# This is a workaround for
+# https://github.com/haskell/haddock/issues/894.
+TMPDIR=$TEMP {haddock} "$@"
+cleanup
+        """.format(env = render_env(hs.env), haddock = shell.quote(hs.tools.haddock.path)),
+        #hs.toolchain.is_windows
         arguments = [
             args,
             compile_flags,
