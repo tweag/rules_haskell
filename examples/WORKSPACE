@@ -80,6 +80,31 @@ stack_snapshot(
         "text",
         "text-show",
     ],
+    # TODO(cb) remove once we use Cabal >= 3.10.1 / GHC >= 9.6.1
+    # See https://github.com/tweag/rules_haskell/issues/1871
+    setup_deps = {
+        pkg: ["@Cabal//:Cabal"]
+        for pkg in [
+            "bifunctors",
+            "call-stack",
+            "conduit",
+            "conduit-extra",
+            "generic-deriving",
+            "hspec",
+            "hspec-core",
+            "hspec-discover",
+            "hspec-expectations",
+            "HUnit",
+            "mono-traversable",
+            "optparse-applicative",
+            "quickcheck-io",
+            "split",
+            "text-show",
+            "transformers-compat",
+            "typed-process",
+            "unliftio-core",
+        ]
+    },
     # This example uses an unpinned version of stack_snapshot, meaning that stack is invoked on every build.
     # To switch to pinned stackage dependencies, run `bazel run @stackage-unpinned//:pin` and
     # uncomment the following line.

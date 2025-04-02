@@ -252,10 +252,90 @@ jobs:
           name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
           path: logs
 
+  examples-bindist:
+    name: Build & Test Examples - bindist
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-13, macos-14, windows-latest]
+        bzlmod: [true, false]
+        bazel:
+          - "6.x"
+          - "7.x"
+        exclude:
+          # TODO(cb) add full support for Bazel 7
+          - os: windows-latest
+            bazel: "7.x"
+    env:
+      USE_BAZEL_VERSION: ${{ matrix.bazel }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/free_disk_space_on_linux
+      - uses: ./.github/actions/install_apt_pkgs
+        with:
+          packages: libtinfo5
+      - name: Mount Bazel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/repo-cache
+          key: repo-cache-${{ runner.os }}-bindist-${{ env.cache-version }}
+      - uses: tweag/configure-bazel-remote-cache-auth@v0
+        with:
+          buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
+          bazelrc_path: .bazelrc.auth
+      - uses: ./.github/actions/set_tcp_keepalive_time
+      - uses: extractions/netrc@v2
+        with:
+          machine: api.github.com
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Configure
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            macOS) BUILD_CONFIG=macos-bindist;;
+            Linux) BUILD_CONFIG=linux-bindist;;
+            Windows) BUILD_CONFIG=ci-windows-bindist;;
+          esac
+          if [[ ${{ runner.os }} == Windows ]]; then
+              output_root_setting="startup --output_user_root=C:/_bzl"
+              # On windows, we use a separate remote cache for bzlmod,
+              # because the c dependency analysis is leaking absolute paths which are different
+              if ${{ matrix.bzlmod }}; then
+                bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=bzlmod'
+              else
+                bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=workspace'
+              fi
+          else
+              output_root_setting=""
+              bzlmod_cache_silo_key=""
+          fi
+          cat >>.bazelrc.local <<EOF
+          common --config=ci
+          build --config=$BUILD_CONFIG
+          $output_root_setting
+          $bzlmod_cache_silo_key
+          common --enable_bzlmod=${{ matrix.bzlmod }}
+          EOF
+      - name: Build
+        shell: bash
+        working-directory: examples
+        run: |
+          # Quote the package specifier so that it works on Windows
+          bazelisk build "//..."
+
+      - name: Test
+        shell: bash
+        working-directory: examples
+        run: |
+          # Quote the package specifier so that it works on Windows
+          bazelisk build "//..."
+
   all_ci_tests:
     runs-on: ubuntu-22.04
     needs:
       - lint
+      - examples-bindist
       - test-nixpkgs
       - test-bindist
     if: ${{ always() }}

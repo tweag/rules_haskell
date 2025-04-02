@@ -245,7 +245,7 @@ with mkdtemp(distdir_prefix()) as distdir, init_deps_db() as deps_package_db:
         for db in deps_package_databases:
             try:
                 ps = subprocess.Popen([ghc_pkg, "dump", "--expand-pkgroot", "-f", os.path.dirname(os.path.join(execroot,db))], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                subprocess.check_output([ghc_pkg, "update", "-f", deps_package_db, "-"], stdin=ps.stdout, stderr=subprocess.PIPE)
+                subprocess.check_output([ghc_pkg, "update", "--force", "-f", deps_package_db, "-"], stdin=ps.stdout, stderr=subprocess.PIPE)
                 ps.wait()
             except subprocess.CalledProcessError as err:
                 sys.stdout.buffer.write(err.stdout)
