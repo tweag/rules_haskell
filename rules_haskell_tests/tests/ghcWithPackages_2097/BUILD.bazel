@@ -3,6 +3,8 @@ load("//tests/integration_testing:rules_haskell_integration_test.bzl", "rules_ha
 rules_haskell_integration_test(
     name = "ghc_with_packages_test",
     srcs = ["Test.hs"],
+    # this test is only useful with a nixpkgs based ghc toolchain
+    target_compatible_with = ["@rules_nixpkgs_core//constraints:support_nix"],
     workspace_path = "test",
 )
 
