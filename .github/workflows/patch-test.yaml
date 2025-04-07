@@ -62,6 +62,10 @@ jobs:
           machine api.github.com
                   password ${{ secrets.GITHUB_TOKEN }}
           EOF
+      - uses: ./.github/actions/install_apt_pkgs
+        with:
+          # some old ghc distributions require libnuma, see https://gitlab.haskell.org/ghc/ghc/-/issues/15688
+          packages: libnuma-dev
       - name: Build & test
         shell: bash
         run: |
