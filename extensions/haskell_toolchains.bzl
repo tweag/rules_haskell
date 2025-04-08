@@ -14,6 +14,12 @@ _bindists_tag = tag_class(
         "version": attr.string(
             doc = "[see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-version)",
         ),
+        "dist": attr.string_dict(
+            doc = "Select a specific `dist` of a GHC binary tarball (e.g. deb10, alpine312) for a platform",
+        ),
+        "variant": attr.string_dict(
+            doc = "Select a specific `variant` of a GHC binary tarball (e.g. dwarf, native_int) for a platform",
+        ),
         "ghcopts": attr.string_list(
             doc = "[see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-ghcopts)",
         ),
@@ -40,6 +46,12 @@ _bindist_tag = tag_class(
         "version": attr.string(
             mandatory = True,
             doc = "The desired GHC version",
+        ),
+        "dist": attr.string_dict(
+            doc = "Select a specific `dist` of a GHC binary tarball (e.g. deb10, alpine312) for a platform",
+        ),
+        "variant": attr.string_dict(
+            doc = "Select a specific `variant` of a GHC binary tarball (e.g. dwarf, native_int) for a platform",
         ),
         "target": attr.string(
             mandatory = True,
@@ -118,6 +130,8 @@ def _haskell_toolchains_impl(mctx):
                 bindist_targets.append(bindist_tag.target)
             ghc_bindist(
                 name = name,
+                dist = bindist_tag.dist,
+                variant = bindist_tag.variant,
                 version = bindist_tag.version,
                 target = bindist_tag.target,
                 ghcopts = bindist_tag.ghcopts,
@@ -152,6 +166,8 @@ def _haskell_toolchains_impl(mctx):
             targets = bindist_info_for_version(mctx, bindists_tag.version).keys()
 
             haskell_register_ghc_bindists(
+                dist = bindists_tag.dist,
+                variant = bindists_tag.variant,
                 version = bindists_tag.version,
                 ghcopts = bindists_tag.ghcopts,
                 haddock_flags = bindists_tag.haddock_flags,

@@ -54,9 +54,17 @@ toolchain resolution based on the target platform)::
   )
 
   rules_haskell_toolchains(
+      dist = {
+          "<arch>": "abc", # Select a concrete dist available for the <arch>
+      },
+      variant = {
+          "<arch>": "abc", # Select a concrete variant available for the <arch> and <dist>
+      }
       version = "X.Y.Z", # Any GHC version
   )
 
+*Note*: if no `dist` attribute is specified, we pick a Debian based binary
+        distribution on Linux by default.
 
 The compiler can also be pulled from Nixpkgs_, a set of package
 definitions for the `Nix package manager`_. Pulling the compiler from

@@ -26,7 +26,12 @@ haskell_register_ghc_nixpkgs(
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
 
-rules_haskell_toolchains(version = GHC_VERSION)
+rules_haskell_toolchains(
+    dist = {
+        "linux_amd64": "deb10",
+    },
+    version = GHC_VERSION,
+)
 
 load(
     "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",

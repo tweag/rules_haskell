@@ -317,6 +317,9 @@ EOF
         "bindists") cat <<-EOF
 		# Download a GHC binary distribution from haskell.org and register it as a toolchain.
 		rules_haskell_toolchains(
+		    dist = {
+		        "linux_amd64": "deb10",
+		    },
 		    version = "${GHC_VERSION}",
 		)
 
@@ -403,7 +406,12 @@ haskell_toolchains = use_extension(
     "haskell_toolchains",
 )
 
-haskell_toolchains.bindists(version = "$GHC_VERSION")
+haskell_toolchains.bindists(
+    dist = {
+        "linux_amd64": "deb10",
+    },
+    version = "$GHC_VERSION",
+)
 
 non_module_deps = use_extension(
     "//:non_module_deps.bzl",

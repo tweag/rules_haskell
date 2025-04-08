@@ -6,7 +6,9 @@
 
 import os
 import json
+import re
 import sys
+from collections import OrderedDict
 from urllib.request import urlopen
 from packaging.version import Version
 
@@ -16,28 +18,14 @@ VERSIONS_CORRECTED = {}
 
 # All architectures we generate.
 # bazel: bazel name
-# upstream: list of download.haskell.org name
+# upstream: corresponding os / arch on download.haskell.org
 ARCHES = [
-    {
-        "bazel": "linux_amd64",
-        "upstream": ["x86_64-deb8-linux", "x86_64-deb9-linux", "x86_64-deb10-linux"],
-    },
-    {
-        "bazel": "linux_arm64",
-        "upstream": ["aarch64-deb10-linux"],
-    },
-    {"bazel": "darwin_amd64", "upstream": ["x86_64-apple-darwin"]},
-    {"bazel": "darwin_arm64", "upstream": ["aarch64-apple-darwin"]},
-    {"bazel": "windows_amd64", "upstream": ["x86_64-unknown-mingw32"]},
+    {"bazel": "linux_amd64", "upstream": {"os": "linux", "arch": "x86_64"}},
+    {"bazel": "linux_arm64", "upstream": {"os": "linux", "arch": "aarch64"}},
+    {"bazel": "darwin_amd64", "upstream": {"os": "darwin", "arch": "x86_64"}},
+    {"bazel": "darwin_arm64", "upstream": {"os": "darwin", "arch": "aarch64"}},
+    {"bazel": "windows_amd64", "upstream": {"os": "mingw32", "arch": "x86_64"}},
 ]
-
-
-# An url to a bindist tarball.
-def link_for_tarball(arch, version):
-    return "https://downloads.haskell.org/~ghc/{ver}/ghc-{ver}-{arch}.tar.xz".format(
-        ver=version,
-        arch=arch,
-    )
 
 
 # An url to a version's tarball hashsum file.
@@ -48,23 +36,37 @@ def link_for_sha256_file(version):
 
 # Parses the tarball hashsum file for a distribution version.
 def parse_sha256_file(content, version, url):
-    res = {}
+    res = []
 
-    prefix = "ghc-{ver}-".format(ver=VERSIONS_CORRECTED.get(version, version))
+    version = VERSIONS_CORRECTED.get(version, version)
     suffix = ".tar.xz"
+
+    ghc_regex = re.compile(
+        r"ghc-(?P<version>[^-]+)-(?P<arch>[^-]+)-(?P<dist>[^-]+)-(?P<os>[^-]+)(?:-(?P<variant>[^.]+))?\.tar\.xz"
+    )
 
     for line in content:
         # f5763983a26dedd88b65a0b17267359a3981b83a642569b26334423f684f8b8c  ./ghc-8.4.3-i386-deb8-linux.tar.xz
         (hash, file_) = line.decode().strip().split("  ./")
 
-        if file_.startswith(prefix) and file_.endswith(suffix):
-            # i386-deb8-linux
-            name = file_[len(prefix) : -len(suffix)]
-            res[name] = hash
+        m = ghc_regex.match(file_)
+
+        if m:
+            v = m.group('version')
+            arch = m.group('arch')
+            dist = m.group('dist')
+            variant = m.group('variant')
+            os = m.group('os')
+
+            if v == version:
+                spec = {"os": os, "arch": arch, "dist": dist, "sha256": hash, "url": f"https://downloads.haskell.org/~ghc/{version}/{file_}" }
+                if variant:
+                    spec["variant"] = variant
+                res.append(spec)
 
     if not res:
         eprint(
-            f"Errors parsing file at {url}. Could not find entries for {prefix}…{suffix}"
+            f"Errors parsing file at {url}. Could not find entries for GHC version {version} with {suffix}"
         )
         exit(1)
 
@@ -84,7 +86,7 @@ def select_one(xs, ys):
 
 def fetch_hashsums(versions):
     # Fetch all hashsum files
-    # grab : { version: { arch: sha256 } }
+    # grab : { version: { arch: "..", sha256: "..", dist: "..", variant = "..", url: "..." } }
     grab = {}
     for ver in versions:
         eprint("fetching " + ver)
@@ -96,44 +98,35 @@ def fetch_hashsums(versions):
         else:
             grab[ver] = parse_sha256_file(res, ver, url)
 
-    # check whether any version is missing arches we need
-    # errs : { version: set(missing_arches) }
-    errs = {}
-    for ver, hashes in grab.items():
-        real_arches = frozenset(hashes.keys())
-        upstreams = [select_one(a["upstream"], real_arches) for a in ARCHES]
-        needed_arches = frozenset(upstreams)
-        missing_arches = needed_arches.difference(real_arches)
-        if missing_arches:
-            errs[ver] = missing_arches
-    if errs:
-        for ver, missing in errs.items():
-            print(
-                "WARN: version {ver} is missing hashes for architectures {arches}".format(
-                    ver=ver, arches=",".join(missing)
-                ),
-                file=sys.stderr,
-            )
-
     return grab
 
 
 def fetch_bindists(grab):
     # fetch the arches we need and create the GHC_BINDISTS dict
-    # ghc_bindists : { version: { bazel_arch: (tarball_url, sha256_hash) } }
+    # ghc_bindists : { version: { bazel_arch: [ {url, sha256, dist, variant} ] } }
     ghc_bindists = {}
-    for ver, hashes in grab.items():
+    for ver, infos in grab.items():
         # { bazel_arch: (tarball_url, sha256_hash) }
         arch_dists = {}
         for arch in ARCHES:
-            upstream = select_one(arch["upstream"], hashes)
+            spec = arch["upstream"]
+            upstreams = [
+                upstream
+                for upstream in infos if all([spec[k] == upstream.get(k) for k in spec])
+            ]
 
-            if upstream in hashes:
-                arch_dists[arch["bazel"]] = (
-                    link_for_tarball(upstream, ver),
-                    hashes[upstream],
+            if not upstreams:
+                print(
+                    "WARN: version {ver} is missing hashes for {arch} {os}".format(ver=ver, **spec),
+                    file=sys.stderr,
                 )
-        ghc_bindists[ver] = arch_dists
+
+            else:
+                arch_dists[arch["bazel"]] = [
+                    { k: v for k, v in upstream.items() if k not in ["os", "arch"]}
+                    for upstream in sorted(upstreams, key=lambda u: (u["dist"], u.get("variant", "")))
+                ]
+        ghc_bindists[ver] = OrderedDict(sorted(arch_dists.items()))
 
     return ghc_bindists
 
@@ -156,10 +149,10 @@ if __name__ == "__main__":
 
         ghc_bindists = fetch_bindists(grab)
 
-        ghc_versions = {
-            version: ghc_bindists[version]
+        ghc_versions = OrderedDict(
+            (version, ghc_bindists[version])
             for version in sorted(ghc_bindists.keys(), key=Version)
-        }
+        )
 
         json_file.truncate(0)
         json_file.seek(0)

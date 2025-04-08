@@ -721,7 +721,8 @@ def rules_haskell_toolchains(
         haddock_flags = None,
         repl_ghci_args = None,
         cabalopts = None,
-        locale = None):
+        locale = None,
+        **kwargs):
     """Register GHC binary distributions for all platforms as toolchains.
 
     Toolchains can be used to compile Haskell code. This function
@@ -749,6 +750,7 @@ def rules_haskell_toolchains(
         repl_ghci_args = repl_ghci_args,
         cabalopts = cabalopts,
         locale = locale,
+        **kwargs
     )
 
 # Utility rules forwarding various toolchain providers.

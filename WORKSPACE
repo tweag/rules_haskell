@@ -67,7 +67,12 @@ load(
 )
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 
-haskell_register_ghc_bindists(version = GHC_VERSION)
+haskell_register_ghc_bindists(
+    dist = {
+        "linux_amd64": "deb10",
+    },
+    version = GHC_VERSION,
+)
 
 load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 load(
