@@ -295,6 +295,9 @@ cabalopts_windows = test_cabalopts + [
 
 haskell_toolchains.bindists(
     cabalopts = test_cabalopts,
+    dist = {
+        "linux_amd64": "deb10",
+    },
     ghcopts = test_ghcopts,
     haddock_flags = test_haddock_flags,
     repl_ghci_args = test_repl_ghci_args,

@@ -30,14 +30,17 @@ On a Unix system you will need the following tools installed.
 * ``gcc``
 * ``libffi``
 * ``libgmp``
-* ``libtinfo5``
+* ``libtinfo6``
 * ``make``
-* ``python3`` (``python`` also needs to be available in ``$PATH``. Depending on your distribution, this might require installing the ``python`` meta-package, which might use Python 2 or 3, ``rules_haskell`` works with both.)
+* ``python3``
 * JDK (e.g., OpenJDK 8 or 11)
 
 On Ubuntu you can obtain them by installing the following packages. ::
 
-  build-essential libffi-dev libgmp-dev libtinfo5 libtinfo-dev python python3 openjdk-11-jdk
+  build-essential libffi-dev libgmp-dev libtinfo6 libtinfo-dev python3 openjdk-11-jdk
+
+*Note*: on older Unix systems, with older GHC versions you might need to install
+        ``libtinfo5`` instead of ``libtinfo6`` and ``libnuma-dev`` additionally.
 
 On Windows you will need.
 

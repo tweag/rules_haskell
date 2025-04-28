@@ -3,7 +3,7 @@
 This package provides a set of rules for writing test scenarios for `rules_haskell`'s rules testing. It supports:
     * Creating test workspaces inside the `rules_haskell` codebase
     * Writing test scenarios in Haskell and provides a small testing library with helper functions
-    * Running tests against multiple bazel verions including binary bazel distributions and nixpkgs bazel packages
+    * Running tests against multiple bazel versions including binary bazel distributions and nixpkgs bazel packages
     * Reusing the bazel cache between test runs to significantly speedup test process
 
 ## How to write an integration test

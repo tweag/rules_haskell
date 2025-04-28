@@ -9,7 +9,7 @@ tasks:
   ubuntu1804:
     bazel: ${{ bazel }}
     working_directory: ${{ workdir }}
-    platform: "ubuntu1804"
+    platform: "ubuntu2204"
     environment:
       # haskell base uses the environment locale to decode sockets
       LANG: "C.UTF-8"

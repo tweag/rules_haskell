@@ -18,6 +18,7 @@ def rules_haskell_integration_test(
         deps = [],
         bindist_bazel_versions = SUPPORTED_BAZEL_VERSIONS,
         nixpkgs_bazel_packages = SUPPORTED_NIXPKGS_BAZEL_PACKAGES,
+        target_compatible_with = [],
         **kwargs):
     bindist_bazel_binaries = {
         version.replace(".", "_"): integration_test_utils.bazel_binary_label(version)
@@ -40,7 +41,7 @@ def rules_haskell_integration_test(
             workspace_path = workspace_path,
             rule_files = ["@rules_haskell//:distribution"],
             target_compatible_with = select({
-                "//tests:nix": [],
+                "//tests:nix": target_compatible_with,
                 "//conditions:default": ["@platforms//:incompatible"],
             }),
             **kwargs
@@ -55,7 +56,7 @@ def rules_haskell_integration_test(
             rule_files = ["@rules_haskell//:distribution"],
             target_compatible_with = select({
                 "//tests:nix": ["@platforms//:incompatible"],
-                "//conditions:default": [],
+                "//conditions:default": target_compatible_with,
             }),
             **kwargs
         )
