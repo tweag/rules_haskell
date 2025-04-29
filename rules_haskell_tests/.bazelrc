@@ -1,6 +1,9 @@
 import %workspace%/../.bazelrc.common
 import %workspace%/.bazelrc.bzlmod
 
+# abseil c++ (a dependency of protobuf) needs a C++14 compiler, but rules_nixpkgs cc sets `-std=c++0x`
+build:nixpkgs --host_cxxopt=-std=c++14
+
 # User Configuration
 # ------------------
 try-import %workspace%/.bazelrc.local
