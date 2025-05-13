@@ -24,6 +24,7 @@ load(
 
 nixpkgs_cc_configure(
     name = "nixpkgs_config_cc",
+    cc_std = "c++14",
     repository = "@rules_haskell//nixpkgs:default.nix",
 )
 
