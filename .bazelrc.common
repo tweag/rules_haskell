@@ -41,6 +41,9 @@ build:linux-nixpkgs --config=nixpkgs
 build:macos-nixpkgs --config=nixpkgs
 build:nixpkgs --host_platform=@rules_nixpkgs_core//platforms:host
 
+# abseil c++ (a dependency of protobuf) needs a C++14 compiler, but rules_nixpkgs cc sets `-std=c++0x`
+build:nixpkgs --host_cxxopt=-std=c++14
+
 # Build and Test Filters
 # ----------------------
 # Note tag filters do not compose. If you wish to augment these filters on the
