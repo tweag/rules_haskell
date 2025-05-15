@@ -126,21 +126,6 @@ main = defaultMain
 
 _CABAL_TOOLS = ["alex", "c2hs", "cpphs", "doctest", "happy"]
 
-# Some old packages are empty compatibility shims. Empty packages
-# cause Cabal to not produce the outputs it normally produces. Instead
-# of detecting that, we blacklist the offending packages, on the
-# assumption that such packages are old and rare.
-#
-# TODO: replace this with a more general solution.
-_EMPTY_PACKAGES_BLACKLIST = [
-    "bytestring-builder",
-    "fail",
-    "ghc-byteorder",
-    "haskell-gi-overloading",
-    "mtl-compat",
-    "nats",
-]
-
 def _cabal_tool_flag(tool):
     """Return a --with-PROG=PATH flag if input is a recognized Cabal tool. None otherwise."""
     if tool.basename in _CABAL_TOOLS:
@@ -1168,6 +1153,16 @@ _default_components = {
     "cpphs": struct(lib = True, exe = ["cpphs"], sublibs = []),
     "doctest": struct(lib = True, exe = ["doctest"], sublibs = []),
     "happy": struct(lib = False, exe = ["happy"], sublibs = []),
+    # Below are compatibility libraries that produce an empty cabal library.
+}
+
+_default_components_args = {
+    "bytestring-builder:lib:bytestring-builder": "@rules_haskell//haskell/cabal:empty_library",
+    "fail:lib:fail": "@rules_haskell//haskell/cabal:empty_library",
+    "ghc-byteorder:lib:ghc-byteorder": "@rules_haskell//haskell/cabal:empty_library",
+    "haskell-gi-overloading:lib:haskell-gi-overloading": "@rules_haskell//haskell/cabal:empty_library",
+    "mtl-compat:lib:mtl-compat": "@rules_haskell//haskell/cabal:empty_library",
+    "nats:lib:nats": "@rules_haskell//haskell/cabal:empty_library",
 }
 
 def _get_components(components, package):
@@ -1178,6 +1173,9 @@ def _get_components(components, package):
     there then it will default to a library and no executable components.
     """
     return components.get(package, _default_components.get(package, struct(lib = True, exe = [], sublibs = [])))
+
+def _get_components_args(components_args, component):
+    return components_args.get(component, _default_components_args.get(component, None))
 
 def _parse_json_field(json, field, ty, errmsg):
     """Read and type-check a field from a JSON object.
@@ -1203,6 +1201,17 @@ def _parse_json_field(json, field, ty, errmsg):
             got = actual_ty,
         )))
     return json[field]
+
+def _parse_components_args_key(component):
+    pieces = component.split(":")
+    if len(pieces) == 1:
+        component = "{}:lib:{}".format(component, component)
+    elif len(pieces) == 2 or (len(pieces) == 3 and pieces[2] == ""):
+        if pieces[1] == "lib" or pieces[1] == "exe":
+            component = "{}:{}:{}".format(pieces[0], pieces[1], pieces[0])
+        else:
+            component = "{}:lib:{}".format(pieces[0], pieces[1])
+    return component
 
 def _parse_package_spec(package_spec, enable_custom_toolchain_libraries, custom_toolchain_libraries):
     """Parse a package description from `stack ls dependencies json`.
@@ -1999,6 +2008,10 @@ def _stack_snapshot_impl(repository_ctx):
         for (name, components) in repository_ctx.attr.components.items()
     }
     all_components = {}
+    user_components_args = {
+        _parse_components_args_key(component): args
+        for (component, args) in repository_ctx.attr.components_args.items()
+    }
     for (name, spec) in resolved.items():
         all_components[name] = _get_components(user_components, name)
         user_components.pop(name, None)
@@ -2083,20 +2096,6 @@ alias(name = "_{name}_exe_{exe}", actual = "{actual}_exe_{exe}", visibility = {v
 haskell_toolchain_library(name = "{name}", visibility = {visibility})
 """.format(name = name, visibility = visibility),
             )
-        elif name in _EMPTY_PACKAGES_BLACKLIST:
-            build_file_builder.append(
-                """
-haskell_library(
-    name = "{name}",
-    version = "{version}",
-    visibility = {visibility},
-)
-""".format(
-                    name = name,
-                    version = version,
-                    visibility = visibility,
-                ),
-            )
         else:
             library_deps = [
                 dep
@@ -2127,6 +2126,12 @@ haskell_library(
                 )).relative(label))
                 for label in repository_ctx.attr.setup_deps.get(name, [])
             ]
+
+            lib_args = _get_components_args(user_components_args, "{}:lib:{}".format(name, name))
+            cabal_args = ""
+            if lib_args != None:
+                cabal_args = "cabal_args = \"{}\",".format(lib_args)
+
             if all_components[name].lib:
                 build_file_builder.append(
                     """
@@ -2142,6 +2147,7 @@ haskell_cabal_library(
     visibility = {visibility},
     cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w"],
     verbose = {verbose},
+    {cabal_args}
     unique_name = True,
 )
 """.format(
@@ -2155,6 +2161,7 @@ haskell_cabal_library(
                         tools = library_tools,
                         visibility = visibility,
                         verbose = repr(repository_ctx.attr.verbose),
+                        cabal_args = cabal_args,
                     ),
                 )
                 build_file_builder.append(
@@ -2170,6 +2177,10 @@ haskell_cabal_library(
                     for comp in ["exe:{}".format(exe)] + (["exe"] if exe == name else [])
                     for comp_dep in package_components_dependencies.get(comp, [])
                 ]
+                exe_args = _get_components_args(user_components_args, "{}:exe:{}".format(name, exe))
+                cabal_args = ""
+                if exe_args != None:
+                    cabal_args = "cabal_args = \"{}\",".format(lib_args)
                 build_file_builder.append(
                     """
 haskell_cabal_binary(
@@ -2182,6 +2193,7 @@ haskell_cabal_binary(
     tools = {tools},
     visibility = ["@{workspace}-exe//{name}:__pkg__"],
     cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w", "--ghc-option=-static"],
+    {cabal_args}
     verbose = {verbose},
 )
 """.format(
@@ -2193,6 +2205,7 @@ haskell_cabal_binary(
                         deps = library_deps + exe_component_deps + ([name] if all_components[name].lib else []),
                         setup_deps = setup_deps,
                         tools = library_tools,
+                        cabal_args = cabal_args,
                         verbose = repr(repository_ctx.attr.verbose),
                     ),
                 )
@@ -2201,6 +2214,10 @@ haskell_cabal_binary(
                     _resolve_component_target_name(name, c)
                     for c in package_components_dependencies.get("lib:{}".format(sublib), [])
                 ]
+                lib_args = _get_components_args(user_components_args, "{}:lib:{}".format(name, sublib))
+                cabal_args = ""
+                if lib_args != None:
+                    cabal_args = "cabal_args = \"{}\",".format(lib_args)
                 build_file_builder.append(
                     """
 haskell_cabal_library(
@@ -2216,6 +2233,7 @@ haskell_cabal_library(
     tools = {tools},
     visibility = {visibility},
     cabalopts = ["--ghc-option=-w", "--ghc-option=-optF=-w"],
+    {cabal_args}
     verbose = {verbose},
 )
 """.format(
@@ -2230,8 +2248,10 @@ haskell_cabal_library(
                         tools = library_tools,
                         verbose = repr(repository_ctx.attr.verbose),
                         visibility = visibility,
+                        cabal_args = cabal_args,
                     ),
                 )
+
     build_file_content = "\n".join(build_file_builder)
     repository_ctx.file("BUILD.bazel", build_file_content, executable = False)
 
@@ -2281,6 +2301,9 @@ _stack_snapshot = repository_rule(
         "verbose": attr.bool(default = False),
         "custom_toolchain_libraries": attr.string_list(default = []),
         "enable_custom_toolchain_libraries": attr.bool(default = False),
+        # TODO: change to attr.string_keyed_label_dict(providers = [HaskellCabalLibraryArgs])
+        # when minimum bazel version supports it.
+        "components_args": attr.string_dict(),
     },
 )
 
@@ -2493,6 +2516,7 @@ def stack_snapshot(
         netrc = "",
         toolchain_libraries = None,
         setup_stack = True,
+        components_args = {},
         label_builder = lambda l: Label(l),
         **kwargs):
     """Use Stack to download and extract Cabal source distributions.
@@ -2752,6 +2776,7 @@ def stack_snapshot(
         tools = tools,
         components = components,
         components_dependencies = components_dependencies,
+        components_args = components_args,
         verbose = verbose,
         custom_toolchain_libraries = toolchain_libraries,
         enable_custom_toolchain_libraries = toolchain_libraries != None,
