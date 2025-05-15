@@ -34,6 +34,13 @@ HaskellLibraryInfo = provider(
     },
 )
 
+HaskellCabalArgsInfo = provider(
+    doc = "Settings for a haskell_cabal_library",
+    fields = {
+        "is_empty": "True if this (sub) library is empty, with only re-exports, and no source files of its own.",
+    },
+)
+
 def all_package_ids(lib_info):
     return lib_info.exports.to_list()
 

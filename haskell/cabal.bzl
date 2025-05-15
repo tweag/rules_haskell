@@ -37,6 +37,7 @@ load(
 load(
     ":providers.bzl",
     "HaddockInfo",
+    "HaskellCabalArgsInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "all_dependencies_package_ids",
@@ -437,6 +438,25 @@ def _shorten_library_symlink(dynamic_library):
     basename = dynamic_library.basename
     return paths.join(prefix, basename)
 
+def _haskell_cabal_args_impl(ctx):
+    is_empty = ctx.attr.is_empty
+    cabal_args = HaskellCabalArgsInfo(
+        is_empty = is_empty,
+    )
+    return [cabal_args]
+
+haskell_cabal_args = rule(
+    _haskell_cabal_args_impl,
+    attrs = {
+        "is_empty": attr.bool(
+            default = False,
+            doc = """True if this (sub) library is empty, with only re-exports, and no source files of its own.
+            It is necessary to set this, otherwise bazel will complain about missing "*libHS.a" files.""",
+        ),
+    },
+    provides = [HaskellCabalArgsInfo],
+)
+
 def _haskell_cabal_library_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
@@ -446,6 +466,10 @@ def _haskell_cabal_library_impl(ctx):
         ctx,
         override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
     )
+
+    is_empty = False
+    if ctx.attr.cabal_args:
+        is_empty = ctx.attr.cabal_args[HaskellCabalArgsInfo].is_empty
 
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(
@@ -487,7 +511,7 @@ def _haskell_cabal_library_impl(ctx):
         "_install/{}_data".format(package_id),
         sibling = cabal,
     )
-    with_haddock = ctx.attr.haddock and hs.tools_config.supports_haddock
+    with_haddock = ctx.attr.haddock and hs.tools_config.supports_haddock and not is_empty
     if with_haddock:
         haddock_file = hs.actions.declare_file(
             "_install/{}_haddock/{}.haddock".format(package_id, package_name),
@@ -500,30 +524,36 @@ def _haskell_cabal_library_impl(ctx):
     else:
         haddock_file = None
         haddock_html_dir = None
-    vanilla_library = hs.actions.declare_file(
-        "_install/lib/libHS{}.a".format(package_id),
-        sibling = cabal,
-    )
-    if with_profiling:
-        profiling_library = hs.actions.declare_file(
-            "_install/lib/libHS{}_p.a".format(package_id),
-            sibling = cabal,
-        )
-        static_library = profiling_library
-    else:
+    if is_empty:
+        vanilla_library = None
+        static_library = None
         profiling_library = None
-        static_library = vanilla_library
-    if hs.toolchain.static_runtime:
         dynamic_library = None
     else:
-        dynamic_library = hs.actions.declare_file(
-            "_install/lib/libHS{}-ghc{}.{}".format(
-                package_id,
-                hs.toolchain.version,
-                _so_extension(hs),
-            ),
+        vanilla_library = hs.actions.declare_file(
+            "_install/lib/libHS{}.a".format(package_id),
             sibling = cabal,
         )
+        if with_profiling:
+            profiling_library = hs.actions.declare_file(
+                "_install/lib/libHS{}_p.a".format(package_id),
+                sibling = cabal,
+            )
+            static_library = profiling_library
+        else:
+            profiling_library = None
+            static_library = vanilla_library
+        if hs.toolchain.static_runtime:
+            dynamic_library = None
+        else:
+            dynamic_library = hs.actions.declare_file(
+                "_install/lib/libHS{}-ghc{}.{}".format(
+                    package_id,
+                    hs.toolchain.version,
+                    _so_extension(hs),
+                ),
+                sibling = cabal,
+            )
     (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
     c = _prepare_cabal_inputs(
         hs,
@@ -557,11 +587,12 @@ def _haskell_cabal_library_impl(ctx):
     outputs = [
         package_database,
         interfaces_dir,
-        vanilla_library,
         data_dir,
     ]
     if with_haddock:
         outputs.extend([haddock_file, haddock_html_dir])
+    if vanilla_library != None:
+        outputs.append(vanilla_library)
     if dynamic_library != None:
         outputs.append(dynamic_library)
     if with_profiling:
@@ -582,8 +613,13 @@ def _haskell_cabal_library_impl(ctx):
         progress_message = "HaskellCabalLibrary {}".format(hs.label),
     )
 
+    if not is_empty:
+        default_info_libs = depset([static_library] + ([dynamic_library] if dynamic_library != None else []))
+    else:
+        default_info_libs = depset([package_database])
+
     default_info = DefaultInfo(
-        files = depset([static_library] + ([dynamic_library] if dynamic_library != None else [])),
+        files = default_info_libs,
         runfiles = ctx.runfiles(
             files = [data_dir],
             collect_default = True,
@@ -632,7 +668,7 @@ def _haskell_cabal_library_impl(ctx):
     )
     linker_input = cc_common.create_linker_input(
         owner = ctx.label,
-        libraries = depset(direct = [
+        libraries = depset(direct = ([] if is_empty else [
             cc_common.create_library_to_link(
                 actions = ctx.actions,
                 feature_configuration = feature_configuration,
@@ -642,7 +678,7 @@ def _haskell_cabal_library_impl(ctx):
                 static_library = static_library,
                 cc_toolchain = cc_toolchain,
             ),
-        ]),
+        ])),
     )
     compilation_context = cc_common.create_compilation_context()
     linking_context = cc_common.create_linking_context(
@@ -750,6 +786,10 @@ haskell_cabal_library = rule(
             known to be unique within the snapshot. If true, then the dynamic
             library symlink underneath `_solib_<cpu>` will be shortened to
             avoid exceeding the MACH-O header size limit on MacOS.""",
+        ),
+        "cabal_args": attr.label(
+            doc = """A haskell_cabal_args target with cabal specific settings for this package.""",
+            providers = [[HaskellCabalArgsInfo]],
         ),
     },
     toolchains = use_cc_toolchain() + [
@@ -959,6 +999,10 @@ haskell_cabal_binary = rule(
         ),
         "flags": attr.string_list(
             doc = "List of Cabal flags, will be passed to `Setup.hs configure --flags=...`.",
+        ),
+        "cabal_args": attr.label(
+            doc = """A haskell_cabal_args target with cabal specific settings for this package.""",
+            providers = [[HaskellCabalArgsInfo]],
         ),
         "_cabal_wrapper": attr.label(
             executable = True,
