@@ -103,13 +103,14 @@ def _find_cabal(srcs):
         fail("A .cabal file was not found in the srcs attribute.")
     return cabal
 
-def _find_setup(hs, cabal, srcs):
+def _find_setup(hs, cabal, srcs, ignore_setup = False):
     """Check that a Setup script exists. If not, create a default one."""
     setup = None
-    for f in srcs:
-        if f.basename in ["Setup.hs", "Setup.lhs"]:
-            if not setup or f.dirname < setup.dirname:
-                setup = f
+    if not ignore_setup:
+        for f in srcs:
+            if f.basename in ["Setup.hs", "Setup.lhs"]:
+                if not setup or f.dirname < setup.dirname:
+                    setup = f
     if not setup:
         setup = hs.actions.declare_file("Setup.hs", sibling = cabal)
         hs.actions.write(
@@ -425,8 +426,10 @@ def _shorten_library_symlink(dynamic_library):
 
 def _haskell_cabal_args_impl(ctx):
     is_empty = ctx.attr.is_empty
+    ignore_setup = ctx.attr.ignore_setup
     cabal_args = HaskellCabalArgsInfo(
         is_empty = is_empty,
+        ignore_setup = ignore_setup,
     )
     return [cabal_args]
 
@@ -437,6 +440,10 @@ haskell_cabal_args = rule(
             default = False,
             doc = """True if this (sub) library is empty, with only re-exports, and no source files of its own.
             It is necessary to set this, otherwise bazel will complain about missing "*libHS.a" files.""",
+        ),
+        "ignore_setup": attr.bool(
+            default = False,
+            doc = """True if this package has a "Setup.hs" that is not a cabal "Setup.hs". """,
         ),
     },
     provides = [HaskellCabalArgsInfo],
@@ -453,8 +460,10 @@ def _haskell_cabal_library_impl(ctx):
     )
 
     is_empty = False
+    ignore_setup = False
     if ctx.attr.cabal_args:
         is_empty = ctx.attr.cabal_args[HaskellCabalArgsInfo].is_empty
+        ignore_setup = ctx.attr.cabal_args[HaskellCabalArgsInfo].ignore_setup
 
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(
@@ -483,7 +492,7 @@ def _haskell_cabal_library_impl(ctx):
         fail("ERROR: `compiler_flags` attribute was removed. Use `cabalopts` with `--ghc-option` instead.")
 
     cabal = _find_cabal(ctx.files.srcs)
-    setup = _find_setup(hs, cabal, ctx.files.srcs)
+    setup = _find_setup(hs, cabal, ctx.files.srcs, ignore_setup)
     package_database = hs.actions.declare_file(
         "_install/{}.conf.d/package.cache".format(package_id),
         sibling = cabal,
@@ -824,6 +833,10 @@ def _haskell_cabal_binary_impl(ctx):
         override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
     )
 
+    ignore_setup = False
+    if ctx.attr.cabal_args:
+        ignore_setup = ctx.attr.cabal_args[HaskellCabalArgsInfo].ignore_setup
+
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(
         cc_infos = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep],
@@ -845,7 +858,7 @@ def _haskell_cabal_binary_impl(ctx):
         fail("ERROR: `compiler_flags` attribute was removed. Use `cabalopts` with `--ghc-option` instead.")
 
     cabal = _find_cabal(ctx.files.srcs)
-    setup = _find_setup(hs, cabal, ctx.files.srcs)
+    setup = _find_setup(hs, cabal, ctx.files.srcs, ignore_setup)
     package_database = hs.actions.declare_file(
         "_install/{}.conf.d/package.cache".format(hs.label.name),
         sibling = cabal,
