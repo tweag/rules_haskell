@@ -67,9 +67,8 @@ def package(
       my_pkg_id: Package id object for this package.
       has_hs_library: Whether hs-libraries should be created.
       has_iface: Whether the import-dirs field should be populated.
-	  empty_libs_dir: Directory name where the empty library should be.
-          If empty, this is assumed to be a package description
-		  for a real library. See Note [Empty Libraries] in haskell_impl.bzl.
+      empty_libs_dir: Directory name where the empty library should be.
+          If empty, this is assumed to be a package description for a real library. See Note [Empty Libraries] in haskell_impl.bzl.
 
     Returns:
       (File, File): GHC package conf file, GHC package cache file
