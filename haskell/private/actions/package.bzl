@@ -52,6 +52,7 @@ def package(
         other_modules,
         my_pkg_id,
         has_hs_library,
+        has_iface = True,
         empty_libs_dir = ""):
     """Create GHC package using ghc-pkg.
 
@@ -65,6 +66,7 @@ def package(
       other_modules: List of hidden modules.
       my_pkg_id: Package id object for this package.
       has_hs_library: Whether hs-libraries should be created.
+      has_iface: Whether the import-dirs field should be populated.
 	  empty_libs_dir: Directory name where the empty library should be.
           If empty, this is assumed to be a package description
 		  for a real library. See Note [Empty Libraries] in haskell_impl.bzl.
@@ -98,7 +100,7 @@ def package(
         "key": pkg_id.to_string(my_pkg_id),
         "exposed": "True",
         "hidden-modules": other_modules,
-        "import-dirs": [import_dir],
+        "import-dirs": [import_dir] if has_iface else [],
         "library-dirs": [pkgroot_lib_path] + extra_lib_dirs,
         "dynamic-library-dirs": [pkgroot_lib_path] + extra_dynamic_lib_dirs,
         "extra-libraries": extra_libs,
