@@ -544,6 +544,7 @@ def haskell_library_impl(ctx):
         other_modules,
         my_pkg_id,
         non_empty,
+        has_iface = non_empty,
     )
 
     empty_libs_dir = "empty_libs"
@@ -557,6 +558,7 @@ def haskell_library_impl(ctx):
         other_modules,
         my_pkg_id,
         has_hs_library = False,
+        has_iface = non_empty,
         empty_libs_dir = empty_libs_dir,
     )
 
