@@ -323,7 +323,7 @@ jobs:
         working-directory: examples
         run: |
           # Quote the package specifier so that it works on Windows
-          bazelisk build "//..."
+          bazelisk test "//..."
 
   all_ci_tests:
     runs-on: ubuntu-24.04
