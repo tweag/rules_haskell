@@ -45,7 +45,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "platforms",
-    version = "0.0.11",
+    version = "1.0.0",
 )
 bazel_dep(
     name = "rules_cc",
@@ -217,7 +217,7 @@ go_sdk.download(
 
 bazel_dep(
     name = "gazelle",
-    version = "0.43.0",
+    version = "0.44.0",
 )
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
