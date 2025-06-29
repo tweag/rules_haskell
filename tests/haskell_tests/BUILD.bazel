@@ -1,3 +1,6 @@
 load(":bazel_platforms_tests.bzl", "bazel_platforms_test_suite")
+load(":stack_snapshot_tests.bzl", "stack_snapshot_test_suite")
 
 bazel_platforms_test_suite()
+
+stack_snapshot_test_suite()
