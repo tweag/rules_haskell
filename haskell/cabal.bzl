@@ -2028,6 +2028,12 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_toolchain_l
 alias(name = "{name}", actual = "{actual}", visibility = {visibility})
 """.format(name = name, actual = vendored_packages[name], visibility = visibility),
             )
+            for exe in all_components[name].exe:
+                build_file_builder.append(
+                    """
+alias(name = "_{name}_exe_{exe}", actual = "{actual}_exe_{exe}", visibility = {visibility})
+""".format(name = name, exe = exe, actual = vendored_packages[name], visibility = visibility),
+                )
 
         elif spec["location"]["type"] == "core":
             build_file_builder.append(
