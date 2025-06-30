@@ -103,6 +103,7 @@ def repositories(*, bzlmod):
         name = "nixpkgs_config_cc",
         repository = "@nixpkgs_default",
         register = not bzlmod,
+        cc_std = "c++14",
     )
 
     nixpkgs_package(
