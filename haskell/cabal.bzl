@@ -1005,37 +1005,34 @@ be listed in `srcs` (crucially, including the `.cabal` file).
 """,
 )
 
-_STACK_DEFAULT_VERSION = "2.7.5"
+_STACK_DEFAULT_VERSION = "2.15.7"
 
 # minimum required version
-_STACK_MIN_VERSION = (2, 3)
+_STACK_MIN_VERSION = (2, 15)
 
 # Only ever need one version, but use same structure as for GHC bindists.
 _STACK_BINDISTS = \
     {
-        "2.7.5": {
+        "2.15.7": {
             "linux-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-linux-x86_64-static.tar.gz",
-                "2a02fefefcc1758033d0aea566a521a290e3c68739ce9894bd6492a346af79c5",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.15.7/stack-2.15.7-linux-x86_64.tar.gz",
+                "4e635d6168f7578a5694a0d473c980c3c7ed35d971acae969de1fd48ef14e030",
             ),
             "linux-aarch64": (
-                # GHCup provides unofficial aarch64 linux binaries
-                # FIXME: use the official ones after upgrading to 2.9.1
-                "https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-linux-aarch64.tar.gz",
-                "f362fa4786b17252004b2619ec96b9687e561dc4e55c2612c53d60be767cabba",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.15.7/stack-2.15.7-linux-aarch64.tar.gz",
+                "f0c4b038c7e895902e133a2f4c4c217e03c4be44aa5da48aec9f7947f4af090b",
             ),
             "osx-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-osx-x86_64.tar.gz",
-                "94176b71425d76b94b088515103316ae1ff96d123344b1f4609c103d0d5bdcc4",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.15.7/stack-2.15.7-osx-x86_64.tar.gz",
+                "ef97f65759a922bc7f5399d9311afdc4a43cc454b70ea7426f991c067899cef1",
             ),
             "osx-aarch64": (
-                # GHCup provides unofficial aarch64 macOS binaries
-                "https://downloads.haskell.org/ghcup/unofficial-bindists/stack/2.7.5/stack-2.7.5-osx-aarch64.tar.gz",
-                "cea34367981ed6f5629d23d17957920b1a06cc0a00580ba62e960a64087f25fe",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.15.7/stack-2.15.7-osx-aarch64.tar.gz",
+                "fc963f041fbe3ddf3ff12271c74334846a583a0714ce808d8a2d2c91de4a3968",
             ),
             "windows-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.7.5/stack-2.7.5-windows-x86_64.tar.gz",
-                "c9b07982590d63db2310a44bfcf33c9f8bd84a0828abc17b2a394e90fbf6a914",
+                "https://github.com/commercialhaskell/stack/releases/download/v2.15.7/stack-2.15.7-windows-x86_64.tar.gz",
+                "0e051f44aadcec138ffc1c1056bfec5c8216f0d256413c2e3a60ce55fe2db0ba",
             ),
         },
     }
