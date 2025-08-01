@@ -925,8 +925,7 @@ def _exposed_modules_reexports(reexported_modules):
                 reexported = cabal_decl_parts[1]
             else:
                 reexported = cabal_decl_parts[0]
-            if HaskellLibraryInfo in dep:
-                pkg = dep[HaskellLibraryInfo].package_id
+            pkg = dep[HaskellLibraryInfo].package_id
             exposed_reexport = "{reexported} from {pkg}:{original}".format(
                 reexported = reexported,
                 pkg = pkg,
