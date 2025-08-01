@@ -356,6 +356,7 @@ def _haskell_toolchain_impl(ctx):
         if any([file.basename.startswith("ghci") for file in ctx.files.tools]):
             ghc_tools = ghc_tools + ["ghci"]
         else:
+            # buildifier: disable=print
             print(
                 "WARN: ghci binary is not available for {}, `tools.ghci` will not exist on its haskell toolchain".format(
                     ctx.label.repo_name,

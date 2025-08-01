@@ -8,6 +8,7 @@ def _ghc_version_impl(repository_ctx):
     GHC_VERSION = repository_ctx.os.environ.get("GHC_VERSION")
 
     if GHC_VERSION:
+        # buildifier: disable=print
         print("Using GHC version {} from env variable `GHC_VERSION`".format(GHC_VERSION))
 
     _init_ghc_version_repository(repository_ctx, GHC_VERSION)

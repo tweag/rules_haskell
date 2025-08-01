@@ -2387,8 +2387,8 @@ def _fetch_stack_impl(repository_ctx):
     if not error:
         repository_ctx.symlink(stack_cmd, "stack")
         return
-    print(error)
-    print("Downloading Stack {} ...".format(_STACK_DEFAULT_VERSION))
+    print(error)  # buildifier: disable=print
+    print("Downloading Stack {} ...".format(_STACK_DEFAULT_VERSION))  # buildifier: disable=print
     (os, arch) = _get_platform(repository_ctx)
     version = _STACK_DEFAULT_VERSION
     (url, sha256) = _STACK_BINDISTS[version]["{}-{}".format(os, arch)]

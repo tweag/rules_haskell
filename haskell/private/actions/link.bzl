@@ -170,6 +170,7 @@ def link_binary(
     # nicely with dynamic linking.
     if dynamic:
         if with_profiling:
+            # buildifier: disable=print
             print("WARNING: dynamic linking and profiling don't mix. Omitting -dynamic.\nSee https://ghc.haskell.org/trac/ghc/ticket/15394")
         else:
             args.add_all(["-pie", "-dynamic"])
