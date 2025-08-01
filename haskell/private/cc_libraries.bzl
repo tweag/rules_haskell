@@ -389,12 +389,12 @@ haskell_cc_libraries_aspect = aspect(
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
-)
-"""Extend LibraryToLink of C dependencies for GHC compatibility
+    doc = """Extend LibraryToLink of C dependencies for GHC compatibility
 
 Create a symbolic link for each static library whose name doesn't match the
 mangled name of the corresponding dynamic library.
-"""
+""",
+)
 
 def merge_cc_shared_library_infos(owner, cc_shared_library_infos):
     """Similar to cc_common.merge_cc_infos but for CcSharedLibraryInfo
