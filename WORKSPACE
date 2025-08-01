@@ -85,6 +85,7 @@ load(
     "nixpkgs_package",
 )
 
+# buildifier: disable=no-effect
 asterius_dependencies_nix(
     nix_repository = "@nixpkgs_default",
     nixpkgs_package_rule = nixpkgs_package,
