@@ -5,3 +5,4 @@ def find(d, value):
     for (k, v) in d.items():
         if v == value:
             return k
+    return None

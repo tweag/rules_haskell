@@ -144,6 +144,7 @@ def _cabal_tool_flag(tool):
     """Return a --with-PROG=PATH flag if input is a recognized Cabal tool. None otherwise."""
     if tool.basename in _CABAL_TOOLS:
         return "--with-{}={}".format(tool.basename, tool.path)
+    return None
 
 def _binary_paths(binaries):
     return [binary.dirname for binary in binaries.to_list()]

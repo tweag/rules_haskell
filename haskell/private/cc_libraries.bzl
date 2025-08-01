@@ -244,8 +244,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
     return (cache_file, static_libs, dynamic_libs)
 
 def _path_or_none(f):
-    if f != None:
-        return f.path
+    return f.path if f != None else None
 
 def cc_library_key(library_to_link):
     """Convert a LibraryToLink into a hashable dictionary key."""
