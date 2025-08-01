@@ -2333,13 +2333,13 @@ _stack_update = repository_rule(
     # Marked as local so that stack update is always executed before
     # _stack_snapshot is executed.
     local = True,
-)
-"""Execute stack update.
+    doc = """Execute stack update.
 
 This is extracted into a singleton repository rule to avoid concurrent
 invocations of stack update.
 See https://github.com/tweag/rules_haskell/issues/1090
-"""
+""",
+)
 
 def _get_platform(repository_ctx):
     """Map OS name and architecture to Stack platform identifiers."""
@@ -2424,8 +2424,9 @@ _fetch_stack = repository_rule(
     _fetch_stack_impl,
     configure = True,
     environ = ["PATH"],
+    doc =
+        """Find a suitably recent local Stack or download it.""",
 )
-"""Find a suitably recent local Stack or download it."""
 
 def stack_snapshot(
         name,
