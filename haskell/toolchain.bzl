@@ -375,6 +375,7 @@ def _haskell_toolchain_impl(ctx):
         libdir_path = ctx.attr.libdir_path
     elif libdir:
         # Find the `lib/settings` file and infer `libdir` from its path.
+        libdir_path = None
         for f in libdir:
             if f.path.endswith("lib/settings"):
                 libdir_path = paths.dirname(f.path)
