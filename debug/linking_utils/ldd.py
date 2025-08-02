@@ -44,7 +44,7 @@ def memoized(cache, f, arg):
 
 ### IO functions that find elf dependencies
 
-_field_matcher = re.compile(b"  ([A-Z0-9_]+) +(.*)$")
+_field_matcher = re.compile(b"  ([A-Zx0-9_]+) +(.*)$")
 
 def read_dynamic_fields(elf_path):
     """Read the dynamic header fields from an elf binary
@@ -70,7 +70,10 @@ def read_dynamic_fields(elf_path):
     dyn_section = to_end[: 1 + to_end.find(b"\n\n")]
     def read_dynamic_field(s):
         """return (field_key, field_value)"""
-        return _field_matcher.match(s).groups()
+        m = _field_matcher.match(s)
+        if not m:
+            raise Exception("{}: could not match {}".format(elf_path, s))
+        return m.groups()
     return list(map(read_dynamic_field, dyn_section.splitlines(True)))
 
 def __query_dynamic_fields(df, key):
