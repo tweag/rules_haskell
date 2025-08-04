@@ -194,7 +194,7 @@ def _compilation_defaults(
     optp_args.add_all(cc.cpp_flags)
     optp_args.set_param_file_format("multiline")
     hs.actions.write(optp_args_file, optp_args)
-    compile_flags += ["-optP@" + optp_args_file.path]
+    compile_flags.append("-optP@" + optp_args_file.path)
 
     compile_flags += cc.include_args
 

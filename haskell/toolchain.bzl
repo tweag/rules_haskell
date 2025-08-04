@@ -77,7 +77,7 @@ def _run_ghc(
         tools = [hs.worker]
     else:
         args.add(hs.tools.ghc)
-        extra_inputs += [hs.tools.ghc]
+        extra_inputs.append(hs.tools.ghc)
 
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
     # C libraries with Haskell targets.
@@ -117,7 +117,7 @@ def _run_ghc(
         unused_inputs_list = hs.actions.declare_file("unused_%s_%s" % (hs.name, extra_name))
 
         extra_inputs += [show_iface_file, interface_with_abis_list]
-        outputs += [unused_inputs_list]
+        outputs.append(unused_inputs_list)
         env.update({"MUST_EXTRACT_ABI": "true"})
 
         new_args = [show_iface_file.path, abi_file.path, interface_with_abis_list.path, unused_inputs_list.path]

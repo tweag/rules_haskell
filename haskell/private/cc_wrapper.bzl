@@ -125,7 +125,7 @@ def cc_wrapper(name, **kwargs):
     # See https://github.com/bazelbuild/bazel/issues/8981
     # In principle the python cc_wrapper would be sufficient for all platforms,
     # however, execution is too slow on Windows to be practical.
-    native.sh_binary(
+    sh_binary(
         name = name + "-bash",
         srcs = [name + ".sh"],
         deps = [
