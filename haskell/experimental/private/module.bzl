@@ -319,11 +319,11 @@ def _build_haskell_module(
 
     outputs = [module_outputs.hi, module_outputs.abi]
     if module_outputs.o:
-        outputs += [module_outputs.o]
+        outputs.append(module_outputs.o)
     if with_shared:
-        outputs += [module_outputs.dyn_hi]
+        outputs.append(module_outputs.dyn_hi)
         if module_outputs.dyn_o:
-            outputs += [module_outputs.dyn_o]
+            outputs.append(module_outputs.dyn_o)
 
     input_files = [src] + extra_srcs + [optp_args_file]
     if enable_th and extra_ldflags_file:

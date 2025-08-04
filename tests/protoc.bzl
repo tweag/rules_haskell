@@ -45,7 +45,7 @@ _protoc_wrapper = rule(
 
 def protoc_wrapper(name):
     _protoc_wrapper(name = name + "wrapper.cmd")
-    native.sh_binary(
+    sh_binary(
         name = name + ".cmd",
         srcs = [name + "wrapper.cmd"],
         target_compatible_with = ["@platforms//os:windows"],

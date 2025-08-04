@@ -258,11 +258,11 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
         java_deps_list = []
 
         if hasattr(ctx.rule.attr, "deps"):
-            java_deps_list += [java_interop_info(ctx.rule.attr.deps).inputs]
+            java_deps_list.append(java_interop_info(ctx.rule.attr.deps).inputs)
 
         # TODO[GL]: add tests for the java deps in narrowed_deps
         if hasattr(ctx.rule.attr, "narrowed_deps"):
-            java_deps_list += [java_interop_info(ctx.rule.attr.narrowed_deps).inputs]
+            java_deps_list.append(java_interop_info(ctx.rule.attr.narrowed_deps).inputs)
 
         java_deps = depset(transitive = java_deps_list)
 
@@ -1227,8 +1227,7 @@ information.
         multi = multi,
         **kwargs
     )
-
-    native.sh_binary(
+    sh_binary(
         name = hie_bios_runnable_target_name,
         srcs = [
             hie_bios_script_name,

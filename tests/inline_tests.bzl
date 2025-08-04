@@ -56,8 +56,7 @@ def sh_inline_test(name, script, **kwargs):
     target_from_string(script_name, script)
 
     deps = kwargs.pop("deps", [])
-
-    native.sh_test(
+    sh_test(
         name = name,
         srcs = [script_name],
         deps = ["@bazel_tools//tools/bash/runfiles"] + deps,
