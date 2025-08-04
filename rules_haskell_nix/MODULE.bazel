@@ -7,6 +7,11 @@ bazel_dep(
     name = "rules_haskell",
     version = "1.0",
 )
+local_path_override(
+    module_name = "rules_haskell",
+    path = "..",
+)
+
 bazel_dep(
     name = "rules_sh",
     version = "0.3.0",
