@@ -752,8 +752,8 @@ def haskell_library_impl(ctx):
 #
 # TODO Get rid of this by computing a CcInfo in haskell_import
 # instead. Currently blocked on upstream.
-HaskellImportHack = provider()
-HaskellToolchainLibraries = provider()
+HaskellImportHack = provider()  # buildifier: disable=name-conventions
+HaskellToolchainLibraries = provider()  # buildifier: disable=name-conventions
 
 def haskell_toolchain_library_impl(ctx):
     hs = haskell_context(ctx)

@@ -267,12 +267,12 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
         java_deps = depset(transitive = java_deps_list)
 
         # TODO[GL]: add tests for CcInfo deps in narrowed_deps
-        ccInfoDeps = [
+        cc_info_deps = [
             dep
             for dep in getattr(ctx.rule.attr, "deps", []) + getattr(ctx.rule.attr, "narrowed_deps", [])
             if CcInfo in dep and not HaskellInfo in dep
         ]
-        ccSharedLibraryInfoDeps = [
+        cc_shared_library_info_deps = [
             dep
             for dep in getattr(ctx.rule.attr, "deps", []) + getattr(ctx.rule.attr, "narrowed_deps", [])
             if CcSharedLibraryInfo in dep and not HaskellInfo in dep
@@ -286,17 +286,17 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
             boot_files = hs_info.boot_files,
             module_names = hs_info.module_names,
             import_dirs = set.to_depset(hs_info.import_dirs),
-            cc_libraries_info = deps_HaskellCcLibrariesInfo(ccInfoDeps + ccSharedLibraryInfoDeps),
+            cc_libraries_info = deps_HaskellCcLibrariesInfo(cc_info_deps + cc_shared_library_info_deps),
             cc_info = cc_common.merge_cc_infos(cc_infos = [
                 # Collect pure C library dependencies, no Haskell dependencies.
                 dep[CcInfo]
-                for dep in ccInfoDeps
+                for dep in cc_info_deps
             ]),
             cc_shared_library_infos = [merge_cc_shared_library_infos(
                 owner = ctx.label,
                 cc_shared_library_infos = [
                     dep[CcSharedLibraryInfo]
-                    for dep in ccSharedLibraryInfoDeps
+                    for dep in cc_shared_library_info_deps
                 ],
             )],
             compiler_flags = hs_info.user_compile_flags,
