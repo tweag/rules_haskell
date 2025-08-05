@@ -1191,13 +1191,7 @@ information.
             Arbitrary extra commands to execute in GHCi.
       collect_data:
             Whether to collect the data runfiles from the dependencies in srcs, data and deps attributes.
-
-    Deprecated:
-      hie_bios_path_prefix: Attribute has no effect (now that we output absolute paths).
 """
-    if "hie_bios_path_prefix" in kwargs:
-        kwargs.pop("hie_bios_path_prefix")
-
     _haskell_repl(
         name = name,
         deps = deps,
