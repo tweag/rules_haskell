@@ -469,7 +469,7 @@ def _create_HaskellMultiReplInfo(from_source, from_binary, collect_info):
     )
 
 def _concat(lists):
-    return [item for l in lists for item in l]
+    return [item for sublist in lists for item in sublist]
 
 def _compiler_flags_and_inputs(hs, cc, repl_info, get_dirname, static = False, include_package_ids = True):
     """Collect compiler flags and inputs.
