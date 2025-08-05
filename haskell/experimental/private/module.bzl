@@ -140,23 +140,23 @@ def _build_haskell_module(
     """
 
     version = getattr(ctx.attr, "version", None)
-    moduleAttr = module[HaskellModuleInfo].attr
+    module_attr = module[HaskellModuleInfo].attr
 
     # Collect dependencies
-    src = moduleAttr.src.files.to_list()[0]
-    extra_srcs = [f for t in moduleAttr.extra_srcs + ctx.attr.extra_srcs for f in t.files.to_list()]
+    src = module_attr.src.files.to_list()[0]
+    extra_srcs = [f for t in module_attr.extra_srcs + ctx.attr.extra_srcs for f in t.files.to_list()]
 
     user_ghcopts = []
     user_ghcopts += haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
 
     module_extra_attrs = [
-        [moduleAttr.src],
-        moduleAttr.extra_srcs,
-        moduleAttr.plugins,
-        moduleAttr.tools,
+        [module_attr.src],
+        module_attr.extra_srcs,
+        module_attr.plugins,
+        module_attr.tools,
     ]
 
-    user_compile_flags = expand_make_variables("ghcopts", ctx, moduleAttr.ghcopts, module_extra_attrs)
+    user_compile_flags = expand_make_variables("ghcopts", ctx, module_attr.ghcopts, module_extra_attrs)
     user_ghcopts += user_compile_flags
 
     import_dir = None
@@ -168,13 +168,13 @@ def _build_haskell_module(
         import_dir = idir
 
     # Note [Plugin order]
-    plugin_decl = reversed(ctx.attr.plugins + moduleAttr.plugins)
+    plugin_decl = reversed(ctx.attr.plugins + module_attr.plugins)
     plugin_dep_info = gather_dep_info(
-        moduleAttr.name,
+        module_attr.name,
         [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
     )
     plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
-    (preprocessors_inputs, preprocessors_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools + moduleAttr.tools)
+    (preprocessors_inputs, preprocessors_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools + module_attr.tools)
 
     # TODO[AH] Support additional outputs such as `.hie`.
 
@@ -185,14 +185,14 @@ def _build_haskell_module(
     main_function = getattr(ctx.attr, "main_function", None)
 
     if main_function:
-        if moduleAttr.module_name:
-            guess_module_name = moduleAttr.module_name
+        if module_attr.module_name:
+            guess_module_name = module_attr.module_name
         else:
             guess_module_name = get_module_path_from_target(module).replace("/", ".")
 
         main_file = getattr(ctx.attr, "main_file", None)
         main_function_module = infer_main_module(main_function)
-        if (moduleAttr.src == main_file or main_function_module == guess_module_name):
+        if (module_attr.src == main_file or main_function_module == guess_module_name):
             args.add_all(["-main-is", ctx.attr.main_function])
 
     args.add_all([
