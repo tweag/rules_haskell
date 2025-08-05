@@ -143,10 +143,10 @@ def _data_runfiles(ctx, rule, attr):
     )
 
 def _merge_HaskellReplLoadInfo(load_infos):
-    source_files = depset()
-    boot_files = depset()
-    module_names = depset()
-    import_dirs = depset()
+    source_files = depset(transitive = [load_info.source_files for load_info in load_infos])
+    boot_files = depset(transitive = [load_info.boot_files for load_info in load_infos])
+    module_names = depset(transitive = [load_info.module_names for load_info in load_infos])
+    import_dirs = depset(transitive = [load_info.import_dirs for load_info in load_infos])
     cc_libraries_infos = []
     cc_infos = []
     cc_shared_library_infos = []
@@ -156,10 +156,6 @@ def _merge_HaskellReplLoadInfo(load_infos):
     java_deps = []
 
     for load_info in load_infos:
-        source_files = depset(transitive = [source_files, load_info.source_files])
-        boot_files = depset(transitive = [boot_files, load_info.boot_files])
-        module_names = depset(transitive = [module_names, load_info.module_names])
-        import_dirs = depset(transitive = [import_dirs, load_info.import_dirs])
         cc_libraries_infos.append(load_info.cc_libraries_info)
         cc_infos.append(load_info.cc_info)
         cc_shared_library_infos.extend(load_info.cc_shared_library_infos)
@@ -213,25 +209,25 @@ def _merge_HaskellReplLoadInfoMulti(root_info, load_infos):
     )
 
 def _merge_HaskellReplDepInfo(dep_infos, dep_infos_for_package_dbs = []):
-    package_ids = depset()
-    package_databases = depset()
-    interface_dirs = depset()
+    package_ids = depset(transitive = [dep_info.package_ids for dep_info in dep_infos])
+    package_databases = depset(transitive = [
+        dep_info.package_databases
+        for dep_info in dep_infos
+    ] + [
+        dep_info.package_databases
+        for dep_info in dep_infos_for_package_dbs
+    ])
+    interface_dirs = depset(transitive = [dep_info.interface_dirs for dep_info in dep_infos])
     cc_libraries_infos = []
     cc_infos = []
     cc_shared_library_infos = []
     runfiles = []
 
     for dep_info in dep_infos:
-        package_ids = depset(transitive = [package_ids, dep_info.package_ids])
-        package_databases = depset(transitive = [package_databases, dep_info.package_databases])
-        interface_dirs = depset(transitive = [interface_dirs, dep_info.interface_dirs])
         cc_libraries_infos.append(dep_info.cc_libraries_info)
         cc_infos.append(dep_info.cc_info)
         cc_shared_library_infos.extend(dep_info.cc_shared_library_infos)
         runfiles.append(dep_info.runfiles)
-
-    for dep_info in dep_infos_for_package_dbs:
-        package_databases = depset(transitive = [package_databases, dep_info.package_databases])
 
     return HaskellReplDepInfo(
         direct_package_ids = [],
@@ -329,11 +325,10 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
 def _merge_HaskellReplCollectInfo(root_args, dep_args):
     load_infos = {}
     dep_infos = {}
-    haskell_targets_root = depset()
+    haskell_targets_root = depset(transitive = [arg.haskell_targets_postorder for arg in root_args])
     for arg in root_args:
         load_infos.update(arg.load_infos)
         dep_infos.update(arg.dep_infos)
-        haskell_targets_root = depset(transitive = [haskell_targets_root, arg.haskell_targets_postorder])
 
     transitive_targets = []
     for arg in dep_args:
@@ -457,6 +452,8 @@ def _create_HaskellMultiReplInfo(from_source, from_binary, collect_info):
             load_info = merged_load_info,
             dep_info = merged_dep_info,
         )
+
+        # buildifier: disable=overly-nested-depset
         label_order = depset(direct = [label], transitive = [label_order])
         repl_infos[label] = repl_info
 
@@ -868,6 +865,8 @@ def _hie_bios_impl_multi(ctx):
                 inputs,
             ],
         )
+
+        # buildifier: disable=overly-nested-depset
         global_runfiles_depset = depset(direct = [unit_file_fragment], transitive = [global_runfiles_depset, runfiles_depset])
         cc_path = _rlocation(ctx, hs.toolchain.cc_wrapper.executable)
         ld_path = "$(rlocation {}{})".format(
