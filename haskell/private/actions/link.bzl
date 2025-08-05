@@ -101,7 +101,7 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, basename, dynamic):
             nm = cc.tools.nm,
             head = posix.commands["head"],
             sed = posix.commands["sed"],
-            solibs = " ".join(["\"" + l.path + "\"" for l in cc_dynamic_libs]),
+            solibs = " ".join(["\"" + lib.path + "\"" for lib in cc_dynamic_libs]),
             out = linker_flags_file.path,
         ),
     )
