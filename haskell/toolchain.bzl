@@ -139,10 +139,7 @@ def _run_ghc(
         flagsfile = merge_parameter_files(hs, extra_args_file, params_file)
         extra_inputs.append(flagsfile)
 
-    if type(inputs) == type(depset()):
-        inputs = depset(extra_inputs, transitive = [inputs])
-    else:
-        inputs += extra_inputs
+    inputs = depset(extra_inputs, transitive = [inputs])
 
     if input_manifests != None:
         input_manifests = input_manifests + cc.manifests
