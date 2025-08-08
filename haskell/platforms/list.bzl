@@ -31,7 +31,7 @@ ARCH = {
     "x86_64": "x86_64",
 }
 
-def declare_config_settings():
+def declare_config_settings(name = None):
     for os, constraint_value in OS.items():
         if constraint_value:
             native.config_setting(

@@ -274,6 +274,7 @@ def rules_haskell_asterius_toolchain(
         native.register_toolchains("@{}//:wasm_cc_toolchain".format(toolchain_name))
 
 def rules_haskell_asterius_toolchains(
+        name = "asterius",
         version = AHC_DEFAULT_VERSION,
         ghcopts = [],
         cabalopts = [],
@@ -297,7 +298,7 @@ def rules_haskell_asterius_toolchains(
         fail("Binary distribution of Asterius {} not available.".format(version))
     for platform in AHC_BINDIST[version]:
         # Download the asterius bundle.
-        bundle_repo_name = "asterius_bundle_{}".format(platform)
+        bundle_repo_name = "{}_bundle_{}".format(name, platform)
         _asterius_bundle(
             name = bundle_repo_name,
             version = version,
@@ -319,7 +320,7 @@ def rules_haskell_asterius_toolchains(
         (asterius_lib_setting_file, ahc_pkg, asterius_binaries, full_bundle, wasm_cc_toolchain) = _labels_from_bundle_name(bundle_repo_name, version)
 
         rules_haskell_asterius_toolchain(
-            "{}_asterius".format(platform),
+            "{}_{}".format(platform, name),
             version,
             exec_constraints,
             asterius_lib_setting_file,
