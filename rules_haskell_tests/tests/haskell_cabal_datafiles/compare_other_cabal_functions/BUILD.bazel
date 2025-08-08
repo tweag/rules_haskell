@@ -6,6 +6,7 @@
 #
 
 load("@os_info//:os_info.bzl", "is_windows")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 sh_test(
     name = "same_other_functions{}".format(".exe" if is_windows else ""),

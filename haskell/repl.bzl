@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:new_sets.bzl", "sets")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load(":cc.bzl", "ghc_cc_program_args")
 load(
     ":private/cc_libraries.bzl",

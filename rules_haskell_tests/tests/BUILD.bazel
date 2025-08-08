@@ -25,6 +25,7 @@ load(
 )
 load("@rules_haskell//tests:inline_tests.bzl", "sh_inline_test")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//tests:rule_test_exe.bzl", "rule_test_exe")
 load("//tests:test_haddock.bzl", "expected_values")
 

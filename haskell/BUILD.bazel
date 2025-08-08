@@ -23,6 +23,7 @@ load(
     "haskell_toolchain_info",
 )
 load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 exports_files(
     glob(["*.bzl"]) + [
