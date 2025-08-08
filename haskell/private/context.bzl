@@ -4,7 +4,9 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//haskell:providers.bzl", "all_dependencies_package_ids")
 load(":private/path_utils.bzl", "join_path_list")
 
-HaskellContext = provider()  # buildifier: disable=name-conventions
+# buildifier: disable=name-conventions
+# buildifier: disable=provider-params
+HaskellContext = provider()
 
 def append_to_path(env, is_windows, path_list):
     if path_list:
