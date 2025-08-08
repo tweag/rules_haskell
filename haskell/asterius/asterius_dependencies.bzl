@@ -67,6 +67,7 @@ npm_repositories()
 def asterius_dependencies_nix(
         nix_repository,
         nixpkgs_package_rule,
+        name = "rules_haskell",
         nixpkgs_nodejs = DEFAULT_NIXPKGS_NODEJS,
         register = True):
     """Install asterius dependencies based on nix.
@@ -87,22 +88,23 @@ npm_repositories()
 
     _nixpkgs_nodejs(nixpkgs_nodejs, nix_repository, nixpkgs_package_rule)
 
+    node_toolchain_name = name + "_nix_node_toolchain"
     _declare_nix_node_toolchain(
-        name = "rules_haskell_nix_node_toolchain",
+        name = node_toolchain_name,
         nixpkgs_nodejs = nixpkgs_nodejs,
     )
     if register:
-        native.register_toolchains("@rules_haskell_nix_node_toolchain//:node_nixpkgs_toolchain")
+        native.register_toolchains("@{}//:node_nixpkgs_toolchain".format(node_toolchain_name))
         npm_translate_lock(
-            name = "rules_haskell_npm",
+            name = name + "_npm",
             pnpm_lock = DEFAULT_PNPM_LOCK,
             verify_node_modules_ignored = "@rules_haskell//:.bazelignore",
             link_workspace = "rules_haskell",
         )
-    _ahc_target_build_setting(name = "rules_haskell_asterius_build_setting")
+    _ahc_target_build_setting(name = name + "_asterius_build_setting")
 
     _declare_webpack(
-        name = "rules_haskell_asterius_webpack",
+        name = name + "_asterius_webpack",
     )
 
 def asterius_dependencies_custom(webpack_cli_package_json_bzl):
