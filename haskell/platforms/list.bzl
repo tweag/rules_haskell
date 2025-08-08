@@ -31,7 +31,7 @@ ARCH = {
     "x86_64": "x86_64",
 }
 
-def declare_config_settings():
+def declare_config_settings(name = None):
     for os, constraint_value in OS.items():
         if constraint_value:
             native.config_setting(
@@ -54,6 +54,7 @@ def os_of_constraints(constraints):
     for c in constraints:
         if c.package == "os":
             return find(OS, c.name)
+    return None
 
 def arch_of_constraints(constraints):
     """ Returns the architecture corresponding to the first arch constraint.
@@ -62,6 +63,7 @@ def arch_of_constraints(constraints):
     for c in constraints:
         if c.package == "cpu":
             return find(ARCH, c.name)
+    return None
 
 def platform_of_constraints(constraints):
     os = os_of_constraints(constraints)

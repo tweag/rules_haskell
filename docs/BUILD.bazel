@@ -62,6 +62,7 @@ bzl_library(
             deps = [
                 ":haskell_nix",
                 "//haskell",
+                "@rules_shell//shell:rules_bzl",
             ],
         ),
         # Generate markdown API documentation.
@@ -78,6 +79,7 @@ bzl_library(
             deps = [
                 ":haskell_nix",
                 "//haskell",
+                "@rules_shell//shell:rules_bzl",
             ],
         ),
         # Convert markdown to html.

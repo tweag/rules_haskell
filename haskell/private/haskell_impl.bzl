@@ -6,6 +6,8 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+
+# buildifier: disable=bzl-visibility
 load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 load(":cc.bzl", "cc_interop_info")
 load(
@@ -113,17 +115,17 @@ def _condition_coverage_src(hs, src):
     if not src.path.startswith(hs.genfiles_dir.path):
         return src
 
-    """ Genfiles have the genfile directory as part of their path,
-    so declaring a file with the sample path actually makes the new
-    file double-qualified by the genfile directory.
+    # Genfiles have the genfile directory as part of their path,
+    # so declaring a file with the sample path actually makes the new
+    # file double-qualified by the genfile directory.
+    #
+    # This is necessary because mix files capture the genfile
+    # path before compilation, and then expect those files to be
+    # qualified by the genfile directory when `hpc report` or
+    # `hpc markup` are used. But, genfiles included as runfiles
+    # are no longer qualified. So, double-qualifying them results in
+    # only one level of qualification as runfiles.
 
-    This is necessary because mix files capture the genfile
-    path before compilation, and then expect those files to be
-    qualified by the genfile directory when `hpc report` or
-    `hpc markup` are used. But, genfiles included as runfiles
-    are no longer qualified. So, double-qualifying them results in
-    only one level of qualification as runfiles.
-    """
     conditioned_src = hs.actions.declare_file(src.path)
     hs.actions.run_shell(
         inputs = [src],
@@ -752,7 +754,12 @@ def haskell_library_impl(ctx):
 #
 # TODO Get rid of this by computing a CcInfo in haskell_import
 # instead. Currently blocked on upstream.
+# buildifier: disable=name-conventions
+# buildifier: disable=provider-params
 HaskellImportHack = provider()
+
+# buildifier: disable=name-conventions
+# buildifier: disable=provider-params
 HaskellToolchainLibraries = provider()
 
 def haskell_toolchain_library_impl(ctx):
@@ -925,8 +932,7 @@ def _exposed_modules_reexports(reexported_modules):
                 reexported = cabal_decl_parts[1]
             else:
                 reexported = cabal_decl_parts[0]
-            if HaskellLibraryInfo in dep:
-                pkg = dep[HaskellLibraryInfo].package_id
+            pkg = dep[HaskellLibraryInfo].package_id
             exposed_reexport = "{reexported} from {pkg}:{original}".format(
                 reexported = reexported,
                 pkg = pkg,

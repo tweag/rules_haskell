@@ -76,6 +76,14 @@ def rules_haskell_dependencies():
         strip_prefix = "rules_sh-%s" % _rules_sh_version.lstrip("v"),
     )
 
+    maybe(
+        http_archive,
+        name = "rules_shell",
+        sha256 = "410e8ff32e018b9efd2743507e7595c26e2628567c42224411ff533b57d27c28",
+        strip_prefix = "rules_shell-0.2.0",
+        url = "https://github.com/bazelbuild/rules_shell/releases/download/v0.2.0/rules_shell-v0.2.0.tar.gz",
+    )
+
     if "io_tweag_rules_nixpkgs" not in native.existing_rules():
         # N.B. rules_nixpkgs was split into separate components, which need to be loaded separately
         #

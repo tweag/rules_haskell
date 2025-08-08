@@ -138,7 +138,7 @@ load(
 haskell_register_ghc_bindists(
     cabalopts = test_cabalopts,
     dist = {
-      "linux_amd64": "deb10",
+        "linux_amd64": "deb10",
     },
     ghcopts = test_ghcopts,
     version = GHC_VERSION,

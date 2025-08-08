@@ -2,6 +2,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 # Note [On configuring the cc_wrapper]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,7 +126,7 @@ def cc_wrapper(name, **kwargs):
     # See https://github.com/bazelbuild/bazel/issues/8981
     # In principle the python cc_wrapper would be sufficient for all platforms,
     # however, execution is too slow on Windows to be practical.
-    native.sh_binary(
+    sh_binary(
         name = name + "-bash",
         srcs = [name + ".sh"],
         deps = [

@@ -3,6 +3,7 @@ load(
     "haskell_doc",
     "haskell_library",
 )
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 package(
     default_testonly = 1,

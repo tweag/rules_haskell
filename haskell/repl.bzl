@@ -4,6 +4,7 @@ load("@bazel_skylib//lib:new_sets.bzl", "sets")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load(":cc.bzl", "ghc_cc_program_args")
 load(
     ":private/cc_libraries.bzl",
@@ -143,10 +144,10 @@ def _data_runfiles(ctx, rule, attr):
     )
 
 def _merge_HaskellReplLoadInfo(load_infos):
-    source_files = depset()
-    boot_files = depset()
-    module_names = depset()
-    import_dirs = depset()
+    source_files = depset(transitive = [load_info.source_files for load_info in load_infos])
+    boot_files = depset(transitive = [load_info.boot_files for load_info in load_infos])
+    module_names = depset(transitive = [load_info.module_names for load_info in load_infos])
+    import_dirs = depset(transitive = [load_info.import_dirs for load_info in load_infos])
     cc_libraries_infos = []
     cc_infos = []
     cc_shared_library_infos = []
@@ -156,10 +157,6 @@ def _merge_HaskellReplLoadInfo(load_infos):
     java_deps = []
 
     for load_info in load_infos:
-        source_files = depset(transitive = [source_files, load_info.source_files])
-        boot_files = depset(transitive = [boot_files, load_info.boot_files])
-        module_names = depset(transitive = [module_names, load_info.module_names])
-        import_dirs = depset(transitive = [import_dirs, load_info.import_dirs])
         cc_libraries_infos.append(load_info.cc_libraries_info)
         cc_infos.append(load_info.cc_info)
         cc_shared_library_infos.extend(load_info.cc_shared_library_infos)
@@ -213,25 +210,25 @@ def _merge_HaskellReplLoadInfoMulti(root_info, load_infos):
     )
 
 def _merge_HaskellReplDepInfo(dep_infos, dep_infos_for_package_dbs = []):
-    package_ids = depset()
-    package_databases = depset()
-    interface_dirs = depset()
+    package_ids = depset(transitive = [dep_info.package_ids for dep_info in dep_infos])
+    package_databases = depset(transitive = [
+        dep_info.package_databases
+        for dep_info in dep_infos
+    ] + [
+        dep_info.package_databases
+        for dep_info in dep_infos_for_package_dbs
+    ])
+    interface_dirs = depset(transitive = [dep_info.interface_dirs for dep_info in dep_infos])
     cc_libraries_infos = []
     cc_infos = []
     cc_shared_library_infos = []
     runfiles = []
 
     for dep_info in dep_infos:
-        package_ids = depset(transitive = [package_ids, dep_info.package_ids])
-        package_databases = depset(transitive = [package_databases, dep_info.package_databases])
-        interface_dirs = depset(transitive = [interface_dirs, dep_info.interface_dirs])
         cc_libraries_infos.append(dep_info.cc_libraries_info)
         cc_infos.append(dep_info.cc_info)
         cc_shared_library_infos.extend(dep_info.cc_shared_library_infos)
         runfiles.append(dep_info.runfiles)
-
-    for dep_info in dep_infos_for_package_dbs:
-        package_databases = depset(transitive = [package_databases, dep_info.package_databases])
 
     return HaskellReplDepInfo(
         direct_package_ids = [],
@@ -258,21 +255,21 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
         java_deps_list = []
 
         if hasattr(ctx.rule.attr, "deps"):
-            java_deps_list += [java_interop_info(ctx.rule.attr.deps).inputs]
+            java_deps_list.append(java_interop_info(ctx.rule.attr.deps).inputs)
 
         # TODO[GL]: add tests for the java deps in narrowed_deps
         if hasattr(ctx.rule.attr, "narrowed_deps"):
-            java_deps_list += [java_interop_info(ctx.rule.attr.narrowed_deps).inputs]
+            java_deps_list.append(java_interop_info(ctx.rule.attr.narrowed_deps).inputs)
 
         java_deps = depset(transitive = java_deps_list)
 
         # TODO[GL]: add tests for CcInfo deps in narrowed_deps
-        ccInfoDeps = [
+        cc_info_deps = [
             dep
             for dep in getattr(ctx.rule.attr, "deps", []) + getattr(ctx.rule.attr, "narrowed_deps", [])
             if CcInfo in dep and not HaskellInfo in dep
         ]
-        ccSharedLibraryInfoDeps = [
+        cc_shared_library_info_deps = [
             dep
             for dep in getattr(ctx.rule.attr, "deps", []) + getattr(ctx.rule.attr, "narrowed_deps", [])
             if CcSharedLibraryInfo in dep and not HaskellInfo in dep
@@ -286,17 +283,17 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
             boot_files = hs_info.boot_files,
             module_names = hs_info.module_names,
             import_dirs = set.to_depset(hs_info.import_dirs),
-            cc_libraries_info = deps_HaskellCcLibrariesInfo(ccInfoDeps + ccSharedLibraryInfoDeps),
+            cc_libraries_info = deps_HaskellCcLibrariesInfo(cc_info_deps + cc_shared_library_info_deps),
             cc_info = cc_common.merge_cc_infos(cc_infos = [
                 # Collect pure C library dependencies, no Haskell dependencies.
                 dep[CcInfo]
-                for dep in ccInfoDeps
+                for dep in cc_info_deps
             ]),
             cc_shared_library_infos = [merge_cc_shared_library_infos(
                 owner = ctx.label,
                 cc_shared_library_infos = [
                     dep[CcSharedLibraryInfo]
-                    for dep in ccSharedLibraryInfoDeps
+                    for dep in cc_shared_library_info_deps
                 ],
             )],
             compiler_flags = hs_info.user_compile_flags,
@@ -329,11 +326,10 @@ def _create_HaskellReplCollectInfo(target, dep_labels, dep_package_ids, dep_pack
 def _merge_HaskellReplCollectInfo(root_args, dep_args):
     load_infos = {}
     dep_infos = {}
-    haskell_targets_root = depset()
+    haskell_targets_root = depset(transitive = [arg.haskell_targets_postorder for arg in root_args])
     for arg in root_args:
         load_infos.update(arg.load_infos)
         dep_infos.update(arg.dep_infos)
-        haskell_targets_root = depset(transitive = [haskell_targets_root, arg.haskell_targets_postorder])
 
     transitive_targets = []
     for arg in dep_args:
@@ -457,6 +453,8 @@ def _create_HaskellMultiReplInfo(from_source, from_binary, collect_info):
             load_info = merged_load_info,
             dep_info = merged_dep_info,
         )
+
+        # buildifier: disable=overly-nested-depset
         label_order = depset(direct = [label], transitive = [label_order])
         repl_infos[label] = repl_info
 
@@ -469,7 +467,7 @@ def _create_HaskellMultiReplInfo(from_source, from_binary, collect_info):
     )
 
 def _concat(lists):
-    return [item for l in lists for item in l]
+    return [item for sublist in lists for item in sublist]
 
 def _compiler_flags_and_inputs(hs, cc, repl_info, get_dirname, static = False, include_package_ids = True):
     """Collect compiler flags and inputs.
@@ -868,6 +866,8 @@ def _hie_bios_impl_multi(ctx):
                 inputs,
             ],
         )
+
+        # buildifier: disable=overly-nested-depset
         global_runfiles_depset = depset(direct = [unit_file_fragment], transitive = [global_runfiles_depset, runfiles_depset])
         cc_path = _rlocation(ctx, hs.toolchain.cc_wrapper.executable)
         ld_path = "$(rlocation {}{})".format(
@@ -1192,13 +1192,7 @@ information.
             Arbitrary extra commands to execute in GHCi.
       collect_data:
             Whether to collect the data runfiles from the dependencies in srcs, data and deps attributes.
-
-    Deprecated:
-      hie_bios_path_prefix: Attribute has no effect (now that we output absolute paths).
 """
-    if "hie_bios_path_prefix" in kwargs:
-        kwargs.pop("hie_bios_path_prefix")
-
     _haskell_repl(
         name = name,
         deps = deps,
@@ -1227,8 +1221,7 @@ information.
         multi = multi,
         **kwargs
     )
-
-    native.sh_binary(
+    sh_binary(
         name = hie_bios_runnable_target_name,
         srcs = [
             hie_bios_script_name,

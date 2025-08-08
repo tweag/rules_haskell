@@ -1,6 +1,7 @@
 # Test that datafiles of a haskell_cabal_binary with generate_paths_module are accessible.
 
 load("@os_info//:os_info.bzl", "is_windows")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 package(default_testonly = 1)
 
