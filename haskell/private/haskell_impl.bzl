@@ -6,6 +6,8 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain")
+
+# buildifier: disable=bzl-visibility
 load("//haskell/experimental/private:module.bzl", "build_haskell_modules", "get_module_path_from_target")
 load(":cc.bzl", "cc_interop_info")
 load(
