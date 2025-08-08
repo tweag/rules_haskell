@@ -4,6 +4,7 @@
 
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 def quote_make_variables(s):
     """Quote all genrule “Make” Variables in a string."""

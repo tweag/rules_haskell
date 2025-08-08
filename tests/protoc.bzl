@@ -1,4 +1,5 @@
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 def _protoc_wrapper_impl(ctx):
     """
