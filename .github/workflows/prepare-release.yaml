@@ -24,7 +24,7 @@ jobs:
              exit 1
            fi
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: master           # only create releases from main branch
       - name: Read section from CHANGELOG.md

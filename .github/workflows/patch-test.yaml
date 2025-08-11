@@ -17,7 +17,7 @@ jobs:
     outputs:
       ghc-matrix: ${{ steps.set-ghc-versions.outputs.ghc-matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: set-ghc-versions
         name: Extract from gen_ghc_bindist
         run: python .github/extract_from_ghc_bindist.py
@@ -34,7 +34,7 @@ jobs:
         ghc-version: ${{ fromJSON(needs.find-ghc-version.outputs.ghc-matrix) }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Mount Bazel cache
         uses: actions/cache@v4
         with:

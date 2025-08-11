@@ -20,7 +20,7 @@ jobs:
     name: Format & Lint
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: tweag/configure-bazel-remote-cache-auth@v0
         with:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
@@ -64,7 +64,7 @@ jobs:
     env:
       NIX_SHELL_ARGS: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/free_disk_space_on_linux
       - name: Mount Bazel cache
         uses: actions/cache@v4
@@ -162,7 +162,7 @@ jobs:
       GHC_VERSION: ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/free_disk_space_on_linux
       - name: Mount Bazel cache
         uses: actions/cache@v4
@@ -267,7 +267,7 @@ jobs:
       USE_BAZEL_VERSION: ${{ matrix.bazel }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/free_disk_space_on_linux
       - name: Mount Bazel cache
         uses: actions/cache@v4
