@@ -66,9 +66,9 @@ def repositories(*, bzlmod):
     # no modules are provided at the moment for buildifier
     http_archive(
         name = "com_github_bazelbuild_buildtools",
-        sha256 = "573345c2039889a4001b9933a7ebde8dcaf910c47787993aecccebc3117a4425",
-        strip_prefix = "buildtools-8.0.3",
-        urls = ["https://github.com/bazelbuild/buildtools/archive/v8.0.3.tar.gz"],
+        sha256 = "53119397bbce1cd7e4c590e117dcda343c2086199de62932106c80733526c261",
+        strip_prefix = "buildtools-8.2.1",
+        urls = ["https://github.com/bazelbuild/buildtools/archive/v8.2.1.tar.gz"],
     )
 
     nixpkgs_local_repository(
