@@ -6,12 +6,10 @@ def maybe_cc_shared_library(name, **kwargs):
         native.cc_shared_library(
             name = shared_name,
             deps = [name],
-            **kwargs,
+            **kwargs
         )
         return shared_name
     return name
-
-
 
 def _has_cc_shared_library():
     return bazel_features.globals.CcSharedLibraryInfo != None

@@ -1,5 +1,6 @@
 load("@os_info//:os_info.bzl", "is_windows")
 load("@rules_haskell//tools/ghc-paths:defs.bzl", "add_data")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 add_data(
     name = "ghcide",

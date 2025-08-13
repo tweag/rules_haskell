@@ -211,10 +211,11 @@ omitted, all exposed modules provided by `deps` will be tested.
         "@rules_haskell//haskell:doctest-toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
-)
-"""Run doctest test on targets in `deps`.
+    doc =
+        """Run doctest test on targets in `deps`.
 
 Note that your toolchain must be equipped with `doctest` executable, i.e.
 you should specify location of the executable using the `doctest` attribute
 of `haskell_doctest_toolchain`.
-"""
+""",
+)

@@ -334,8 +334,8 @@ browser_transition = rule(
     doc = "Wrapper rule used to execute webpack and its ahc_dist dependency in a configuration where asterius targets the browser",
 )
 
-def _name_of_label(l):
-    return l.split(":")[-1]
+def _name_of_label(label):
+    return label.split(":")[-1]
 
 def asterius_webpack(name, ahc_dist_dep, entry_point, tags = [], srcs = [], **kwargs):
     """

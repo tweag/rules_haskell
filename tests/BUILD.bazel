@@ -10,7 +10,7 @@ load(
 # This call creates a wrapper for the protoc executable which is needed on
 # Windows when protoc.exe is compiled with clang since the executable depends on
 # runtime DLLs from the mingw\bin folder.
-protoc_wrapper("protoc")
+protoc_wrapper(name = "protoc")
 
 # This toolchain is morally testonly. However, that would break our
 # tests of haskell_library_rules: aspects of non-testonly

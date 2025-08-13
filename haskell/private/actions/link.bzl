@@ -101,7 +101,7 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, basename, dynamic):
             nm = cc.tools.nm,
             head = posix.commands["head"],
             sed = posix.commands["sed"],
-            solibs = " ".join(["\"" + l.path + "\"" for l in cc_dynamic_libs]),
+            solibs = " ".join(["\"" + lib.path + "\"" for lib in cc_dynamic_libs]),
             out = linker_flags_file.path,
         ),
     )
@@ -170,6 +170,7 @@ def link_binary(
     # nicely with dynamic linking.
     if dynamic:
         if with_profiling:
+            # buildifier: disable=print
             print("WARNING: dynamic linking and profiling don't mix. Omitting -dynamic.\nSee https://ghc.haskell.org/trac/ghc/ticket/15394")
         else:
             args.add_all(["-pie", "-dynamic"])

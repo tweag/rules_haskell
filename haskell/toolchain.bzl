@@ -77,7 +77,7 @@ def _run_ghc(
         tools = [hs.worker]
     else:
         args.add(hs.tools.ghc)
-        extra_inputs += [hs.tools.ghc]
+        extra_inputs.append(hs.tools.ghc)
 
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
     # C libraries with Haskell targets.
@@ -117,7 +117,7 @@ def _run_ghc(
         unused_inputs_list = hs.actions.declare_file("unused_%s_%s" % (hs.name, extra_name))
 
         extra_inputs += [show_iface_file, interface_with_abis_list]
-        outputs += [unused_inputs_list]
+        outputs.append(unused_inputs_list)
         env.update({"MUST_EXTRACT_ABI": "true"})
 
         new_args = [show_iface_file.path, abi_file.path, interface_with_abis_list.path, unused_inputs_list.path]
@@ -139,10 +139,7 @@ def _run_ghc(
         flagsfile = merge_parameter_files(hs, extra_args_file, params_file)
         extra_inputs.append(flagsfile)
 
-    if type(inputs) == type(depset()):
-        inputs = depset(extra_inputs, transitive = [inputs])
-    else:
-        inputs += extra_inputs
+    inputs = depset(extra_inputs, transitive = [inputs])
 
     if input_manifests != None:
         input_manifests = input_manifests + cc.manifests
@@ -356,6 +353,7 @@ def _haskell_toolchain_impl(ctx):
         if any([file.basename.startswith("ghci") for file in ctx.files.tools]):
             ghc_tools = ghc_tools + ["ghci"]
         else:
+            # buildifier: disable=print
             print(
                 "WARN: ghci binary is not available for {}, `tools.ghci` will not exist on its haskell toolchain".format(
                     ctx.label.repo_name,
@@ -374,6 +372,7 @@ def _haskell_toolchain_impl(ctx):
         libdir_path = ctx.attr.libdir_path
     elif libdir:
         # Find the `lib/settings` file and infer `libdir` from its path.
+        libdir_path = None
         for f in libdir:
             if f.path.endswith("lib/settings"):
                 libdir_path = paths.dirname(f.path)

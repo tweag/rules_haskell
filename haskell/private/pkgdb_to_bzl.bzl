@@ -21,6 +21,7 @@ def pkgdb_to_bzl(repository_ctx, paths, libdir):
         fail("Error executing pkgdb_to_bzl.py: {stderr}".format(stderr = result.stderr))
     elif result.stderr:
         # print any warnings from pkgdb_to_bzl.py
+        # buildifier: disable=print
         print(result.stderr)
 
     result_dict = json.decode(result.stdout)

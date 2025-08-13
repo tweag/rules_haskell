@@ -131,25 +131,25 @@ def _ghc_bindist_impl(ctx):
     # the raw distribution.
     unpack_dir = "bindist_unpacked" if os != "windows" else ""
 
-    stripPrefix = "ghc-" + version
+    strip_prefix = "ghc-" + version
     if GHC_BINDIST_STRIP_PREFIX.get(version) != None and GHC_BINDIST_STRIP_PREFIX[version].get(target) != None:
-        stripPrefix = GHC_BINDIST_STRIP_PREFIX[version][target]
+        strip_prefix = GHC_BINDIST_STRIP_PREFIX[version][target]
     else:
         arch_suffix = {"arm64": "aarch64", "amd64": "x86_64"}.get(arch)
 
         if os == "windows" and version_tuple >= (9, 0, 1):
-            stripPrefix += "-{}-unknown-mingw32".format(arch_suffix)
+            strip_prefix += "-{}-unknown-mingw32".format(arch_suffix)
         elif os == "darwin" and version_tuple >= (9, 0, 2):
-            stripPrefix += "-{}-apple-darwin".format(arch_suffix)
+            strip_prefix += "-{}-apple-darwin".format(arch_suffix)
         elif os == "linux" and version_tuple >= (9, 4, 1):
-            stripPrefix += "-{}-unknown-linux".format(arch_suffix)
+            strip_prefix += "-{}-unknown-linux".format(arch_suffix)
 
     ctx.download_and_extract(
         url = url,
         output = unpack_dir,
         sha256 = sha256,
         type = "tar.xz",
-        stripPrefix = stripPrefix,
+        stripPrefix = strip_prefix,
     )
 
     if os == "windows":

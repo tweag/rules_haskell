@@ -9,6 +9,7 @@ load(
     "@rules_haskell//haskell:defs.bzl",
     "haskell_toolchain_library",
 )
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 package(default_testonly = 1)
 
