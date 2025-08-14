@@ -49,6 +49,14 @@ def rules_haskell_dependencies():
 
     maybe(
         http_archive,
+        name = "bazel_features",
+        sha256 = "bdc12fcbe6076180d835c9dd5b3685d509966191760a0eb10b276025fcb76158",
+        strip_prefix = "bazel_features-1.17.0",
+        url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.17.0/bazel_features-v1.17.0.tar.gz",
+    )
+
+    maybe(
+        http_archive,
         name = "rules_cc",
         urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.2.0/rules_cc-0.2.0.tar.gz"],
         sha256 = "ae244f400218f4a12ee81658ff246c0be5cb02c5ca2de5519ed505a6795431e9",
