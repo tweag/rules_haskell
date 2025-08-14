@@ -15,6 +15,10 @@ rules_shell_dependencies()
 
 rules_shell_toolchains()
 
+load("@platforms//host:extension.bzl", "host_platform_repo")
+
+host_platform_repo(name = "host_platform")
+
 load("@rules_cc//cc:repositories.bzl", "rules_cc_dependencies", "rules_cc_toolchains")
 
 rules_cc_dependencies()
